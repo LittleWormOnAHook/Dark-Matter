@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8d9e0f1a2b3c4d5e6f708192a3b4c5, type: 3}
+  m_Name: Get more Rocks
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Quests.QuestDefinition
+  questId: Get more Rocks
+  title: Get more Rocks
+  description: Collect 10 Rocks
+  objectives:
+  - type: 0
+    targetId: Rock
+    requiredCount: 10
+    description: Collect 10 rocks
+  rewards:
+  - type: 1
+    amount: 5
+    item: {fileID: 11400000, guid: 17fb7a508038b574f94dfda43a5eedd5, type: 2}
+    statUpgradeId: 
+  - type: 0
+    amount: 1
+    item: {fileID: 0}
+    statUpgradeId: 

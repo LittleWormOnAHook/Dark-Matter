@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8d9e0f1a2b3c4d5e6f708192a3b4c5, type: 3}
+  m_Name: GuideSupplyRun
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Quests.QuestDefinition
+  questId: guide_supply_run
+  title: Supply Run
+  description: The Pioneer Guide needs mushrooms for camp stew. Gather them and return
+    for your pay.
+  objectives:
+  - type: 2
+    targetId: pioneer_guide
+    requiredCount: 1
+    description: Speak with the Pioneer Guide
+  - type: 0
+    targetId: Mushroom
+    requiredCount: 2
+    description: Gather mushrooms
+  rewards:
+  - type: 0
+    amount: 40
+    item: {fileID: 0}
+    statUpgradeId: 
+  - type: 1
+    amount: 1
+    item: {fileID: 11400000, guid: a9618f10f8cb43842bdd8f8bbf4ba058, type: 2}
+    statUpgradeId: 

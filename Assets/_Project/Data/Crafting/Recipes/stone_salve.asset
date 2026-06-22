@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a8c2e1b9d0437fa6e5d834c12b5678, type: 3}
+  m_Name: stone_salve
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeDefinition
+  recipeId: stone_salve
+  displayName: Stone Salve
+  description: Crush rocks into a crude salve.
+  icon: {fileID: 21300000, guid: d2c85206e194a924da24cbcea4d5e618, type: 3}
+  stationType: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
+    amount: 3
+  outputItem: {fileID: 11400000, guid: efc7bf626774516478369a90a06f846b, type: 2}
+  outputAmount: 1

@@ -1,0 +1,864 @@
+using System.Collections.Generic;
+using ECM2;
+using Project.AI;
+using Project.Core;
+using Project.Crafting;
+using Project.Inventory;
+using Project.Player;
+using Project.Quests;
+using Project.Survival;
+using UnityEngine;
+
+namespace Project.Interaction
+{
+    /// <summary>
+    /// Central Use (E) handler for pickups, gathering, crafting stations, NPCs, and future world interactions.
+    /// </summary>
+    [RequireComponent(typeof(ResourceGatherer))]
+    [RequireComponent(typeof(InventorySystem))]
+    public class WorldUseController : MonoBehaviour
+    {
+        private const float UseDebounce = 0.15f;
+        private const float AimBonus = 500f;
+        private const float MaxPickupAimRadius = 0.72f;
+        private const float PickupIntentAimRadius = 1.45f;
+        private const float PickupIntentDistanceMultiplier = 2.5f;
+        private const float MinRegisteredUsePriority = 70f;
+
+        /// <summary>Normalized screen offset used when the forward aim point is off-screen.</summary>
+        private static readonly Vector2 PickupAimScreenOffset = new Vector2(0f, 0f);
+
+        private const float PickupAimForwardDistance = 1f;
+        private const float DefaultPickupAimHeight = 1f;
+        /// <summary>How much the reticle follows camera pitch (0 = locked, 1 = full).</summary>
+        private const float PickupAimVerticalArc = 0.25f;
+        /// <summary>Extra normalized screen push toward the ground / forward of the player.</summary>
+        private const float PickupAimForwardScreenBias = 0.04f;
+        private const float CraftingStationAimRadius = 1.25f;
+        private const float QuestGiverAimRadius = 1.25f;
+        private const float RecipePickupScanRange = 8f;
+
+        private static readonly List<IWorldUsable> RegisteredUsables = new List<IWorldUsable>();
+
+        [SerializeField] private float useRange = 4f;
+
+        private ResourceGatherer gatherer;
+        private InventorySystem inventory;
+        private PlayerController playerController;
+        private Camera viewCamera;
+        private float lastUseTime = -999f;
+
+        public static void Register(IWorldUsable usable)
+        {
+            if (usable == null || RegisteredUsables.Contains(usable))
+                return;
+
+            RegisteredUsables.Add(usable);
+        }
+
+        public static void Unregister(IWorldUsable usable)
+        {
+            if (usable == null)
+                return;
+
+            RegisteredUsables.Remove(usable);
+        }
+
+        private void Awake()
+        {
+            gatherer = GetComponent<ResourceGatherer>();
+            inventory = GetComponent<InventorySystem>();
+            playerController = GetComponent<PlayerController>();
+        }
+
+        private void Start()
+        {
+            ResolveCamera();
+        }
+
+        public void TryUse()
+        {
+            if (!CanUseNow())
+                return;
+
+            if (Time.time - lastUseTime < UseDebounce)
+                return;
+
+            lastUseTime = Time.time;
+
+            if (inventory == null)
+                inventory = GetComponent<InventorySystem>();
+
+            if (gatherer == null)
+                gatherer = GetComponent<ResourceGatherer>();
+
+            Camera camera = ResolveCamera();
+            if (camera == null)
+                return;
+
+            Ray viewRay = BuildScreenCenterRay(camera, transform);
+            RaycastHit? aimHit = null;
+            LayerMask aimMask = gatherer != null ? gatherer.resourceLayer : Physics.DefaultRaycastLayers;
+
+            if (Physics.Raycast(viewRay, out RaycastHit hit, gatherer != null ? gatherer.gatherRange : useRange, aimMask, QueryTriggerInteraction.Collide))
+                aimHit = hit;
+
+            float range = gatherer != null ? gatherer.pickupRange : useRange;
+            WorldUseContext context = new WorldUseContext(
+                transform,
+                transform.position,
+                camera,
+                inventory,
+                gatherer,
+                range,
+                viewRay,
+                aimHit);
+
+            if (TryHandleAimedPriorityInteractUse(context))
+                return;
+
+            if (TryHandleEnemyLootUse(context))
+                return;
+
+            if (TryHandlePickupUse(context, range))
+                return;
+
+            if (TryBestRegisteredUse(context, MinRegisteredUsePriority))
+                return;
+
+            if (TryAimedUse(context))
+                return;
+        }
+
+        public static bool IsCollectiblePickup(ItemPickup pickup, Transform playerRoot = null)
+        {
+            if (pickup == null || pickup.IsPickedUp || pickup.itemData == null || !pickup.isActiveAndEnabled)
+                return false;
+
+            if (pickup.GetComponent<EquippedVisualMarker>() != null || pickup.GetComponentInParent<EquippedVisualMarker>() != null)
+                return false;
+
+            if (playerRoot != null && (pickup.transform == playerRoot || pickup.transform.IsChildOf(playerRoot)))
+                return false;
+
+            Transform current = pickup.transform;
+            while (current != null)
+            {
+                if (current.CompareTag("Player"))
+                    return false;
+
+                current = current.parent;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// True when the player is looking at a collectible pickup (items or recipe scrolls), even if out of range.
+        /// </summary>
+        public static bool IsPlayerFocusedOnPickup(WorldUseContext context)
+        {
+            if (TryFindFocusedItemPickup(context, context.UseRange, out _, out _))
+                return true;
+
+            return TryFindFocusedRecipePickup(context, out _, out _);
+        }
+
+        /// <summary>
+        /// True when a nearby item pickup is roughly aimed at — blocks crafting/NPC use stealing E.
+        /// </summary>
+        public static bool HasCompetingNearbyItemPickup(WorldUseContext context)
+        {
+            if (IsAimedAtPriorityWorldInteractable(context))
+                return false;
+
+            float range = context.UseRange;
+            ItemPickup[] pickups = Object.FindObjectsByType<ItemPickup>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < pickups.Length; i++)
+            {
+                ItemPickup candidate = pickups[i];
+                if (!IsCollectiblePickup(candidate, context.PlayerTransform))
+                    continue;
+
+                float distance = Vector3.Distance(context.PlayerPosition, candidate.transform.position);
+                if (distance > range)
+                    continue;
+
+                Vector3 aimPoint = GetItemPickupAimPoint(candidate);
+                if (ScorePickupAim(context.ViewRay, aimPoint, distance, range, MaxPickupAimRadius * 1.35f) >= 0f)
+                    return true;
+            }
+
+            RecipePickup[] recipePickups = Object.FindObjectsByType<RecipePickup>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < recipePickups.Length; i++)
+            {
+                RecipePickup candidate = recipePickups[i];
+                if (candidate == null || candidate.IsLearned)
+                    continue;
+
+                float distance = Vector3.Distance(context.PlayerPosition, candidate.transform.position);
+                if (distance > range)
+                    continue;
+
+                Vector3 aimPoint = GetRecipePickupAimPoint(candidate);
+                if (ScorePickupAim(context.ViewRay, aimPoint, distance, range, MaxPickupAimRadius * 1.35f) >= 0f)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool HasActiveEnemyLootInRange(WorldUseContext context)
+        {
+            EnemyLootable[] lootables = Object.FindObjectsByType<EnemyLootable>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < lootables.Length; i++)
+            {
+                EnemyLootable lootable = lootables[i];
+                if (lootable != null && lootable.CanPlayerLoot(context.PlayerPosition))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsAimedAtPriorityWorldInteractable(WorldUseContext context)
+        {
+            return IsAimedAtAnyInRangeQuestGiver(context) || IsAimedAtAnyInRangeCraftingStation(context);
+        }
+
+        public static bool IsAimedAtAnyInRangeCraftingStation(WorldUseContext context)
+        {
+            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < stations.Length; i++)
+            {
+                CraftingStation station = stations[i];
+                if (station == null || !station.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider stationCollider = station.InteractCollider;
+                if (IsAimedAtCraftingStation(context, station, stationCollider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsAimedAtAnyInRangeQuestGiver(WorldUseContext context)
+        {
+            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < givers.Length; i++)
+            {
+                QuestGiverNpc giver = givers[i];
+                if (giver == null || !giver.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider giverCollider = giver.GetComponentInChildren<Collider>();
+                if (IsAimedAtQuestGiver(context, giver, giverCollider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool ShouldBlockNonPickupUse(Transform playerTransform, ResourceGatherer gatherer, float useRange)
+        {
+            if (playerTransform == null)
+                return false;
+
+            Camera camera = ResolveViewCamera(playerTransform);
+            if (camera == null)
+                return false;
+
+            Ray viewRay = BuildScreenCenterRay(camera, playerTransform);
+            WorldUseContext context = new WorldUseContext(
+                playerTransform,
+                playerTransform.position,
+                camera,
+                playerTransform.GetComponent<InventorySystem>(),
+                gatherer,
+                useRange,
+                viewRay,
+                null);
+
+            if (IsAimedAtPriorityWorldInteractable(context))
+                return false;
+
+            return IsPlayerFocusedOnPickup(context) || HasCompetingNearbyItemPickup(context);
+        }
+
+        private bool TryHandleAimedPriorityInteractUse(WorldUseContext context)
+        {
+            IWorldUsable best = null;
+            float bestScore = float.MinValue;
+
+            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < givers.Length; i++)
+            {
+                QuestGiverNpc giver = givers[i];
+                if (giver == null || !giver.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider giverCollider = giver.GetComponentInChildren<Collider>();
+                if (!IsAimedAtQuestGiver(context, giver, giverCollider))
+                    continue;
+
+                float distance = PlayerInteractionUtility.DistanceToInteractable(
+                    context.PlayerPosition,
+                    giverCollider,
+                    giver.transform.position);
+                float score = 95f - distance;
+                if (score <= bestScore)
+                    continue;
+
+                best = giver;
+                bestScore = score;
+            }
+
+            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < stations.Length; i++)
+            {
+                CraftingStation station = stations[i];
+                if (station == null || !station.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider stationCollider = station.InteractCollider;
+                if (!IsAimedAtCraftingStation(context, station, stationCollider))
+                    continue;
+
+                float distance = PlayerInteractionUtility.DistanceToInteractable(
+                    context.PlayerPosition,
+                    stationCollider,
+                    station.transform.position);
+                float score = 88f - distance;
+                if (score <= bestScore)
+                    continue;
+
+                best = station;
+                bestScore = score;
+            }
+
+            return best != null && best.TryUse(context);
+        }
+
+        private bool TryHandleEnemyLootUse(WorldUseContext context)
+        {
+            EnemyLootable best = null;
+            float bestScore = float.MinValue;
+
+            EnemyLootable[] lootables = Object.FindObjectsByType<EnemyLootable>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < lootables.Length; i++)
+            {
+                EnemyLootable lootable = lootables[i];
+                if (lootable == null || !lootable.CanPlayerLoot(context.PlayerPosition))
+                    continue;
+
+                float score = lootable.GetUsePriority(context);
+                if (score < MinRegisteredUsePriority || score <= bestScore)
+                    continue;
+
+                best = lootable;
+                bestScore = score;
+            }
+
+            return best != null && best.TryUse(context);
+        }
+
+        private bool TryHandlePickupUse(WorldUseContext context, float range)
+        {
+            if (IsAimedAtPriorityWorldInteractable(context))
+                return false;
+
+            if (HasActiveEnemyLootInRange(context))
+                return false;
+
+            if (TryFindFocusedItemPickup(context, range, out ItemPickup itemPickup, out bool itemInRange))
+            {
+                if (itemInRange)
+                    itemPickup.TryUse(context);
+
+                return true;
+            }
+
+            if (TryFindFocusedRecipePickup(context, out RecipePickup recipePickup, out bool recipeInRange))
+            {
+                if (recipeInRange)
+                    recipePickup.TryUse(context);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryFindFocusedItemPickup(
+            WorldUseContext context,
+            float range,
+            out ItemPickup pickup,
+            out bool inPickupRange)
+        {
+            pickup = null;
+            inPickupRange = false;
+
+            LayerMask itemMask = context.Gatherer != null ? context.Gatherer.itemLayer : Physics.DefaultRaycastLayers;
+            float intentRange = range * PickupIntentDistanceMultiplier;
+            if (Physics.Raycast(context.ViewRay, out RaycastHit hit, intentRange, itemMask, QueryTriggerInteraction.Collide))
+            {
+                ItemPickup rayPickup = hit.collider.GetComponentInParent<ItemPickup>();
+                if (IsCollectiblePickup(rayPickup, context.PlayerTransform))
+                {
+                    pickup = rayPickup;
+                    inPickupRange = Vector3.Distance(context.PlayerPosition, pickup.transform.position) <= range;
+                    return true;
+                }
+            }
+
+            return TryResolveAimedPickup(context, range, out pickup, out inPickupRange);
+        }
+
+        public static bool TryFindFocusedRecipePickup(
+            WorldUseContext context,
+            out RecipePickup pickup,
+            out bool inInteractRange)
+        {
+            pickup = null;
+            inInteractRange = false;
+
+            if (Physics.Raycast(
+                    context.ViewRay,
+                    out RaycastHit hit,
+                    RecipePickupScanRange,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide))
+            {
+                RecipePickup rayPickup = hit.collider.GetComponentInParent<RecipePickup>();
+                if (rayPickup != null && !rayPickup.IsLearned)
+                {
+                    pickup = rayPickup;
+                    inInteractRange = Vector3.Distance(context.PlayerPosition, pickup.transform.position) <= pickup.InteractRange;
+                    return true;
+                }
+            }
+
+            RecipePickup[] recipePickups = Object.FindObjectsByType<RecipePickup>(FindObjectsInactive.Exclude);
+            float bestScore = -1f;
+            for (int i = 0; i < recipePickups.Length; i++)
+            {
+                RecipePickup candidate = recipePickups[i];
+                if (candidate == null || candidate.IsLearned)
+                    continue;
+
+                float distance = Vector3.Distance(context.PlayerPosition, candidate.transform.position);
+                if (distance > candidate.InteractRange * PickupIntentDistanceMultiplier)
+                    continue;
+
+                Vector3 aimPoint = candidate.transform.position + Vector3.up * 0.35f;
+                bool candidateInRange = distance <= candidate.InteractRange;
+                float aimRadius = candidateInRange ? MaxPickupAimRadius : PickupIntentAimRadius;
+                float score = ScorePickupAim(context.ViewRay, aimPoint, distance, candidate.InteractRange, aimRadius);
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                pickup = candidate;
+                inInteractRange = candidateInRange;
+            }
+
+            return pickup != null;
+        }
+
+        public static float GetPickupAimHeight(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return DefaultPickupAimHeight;
+
+            Character character = playerTransform.GetComponent<Character>();
+            if (character != null && character.height > 0.1f)
+                return character.height * 0.5f;
+
+            return DefaultPickupAimHeight;
+        }
+
+        public static Vector3 GetPickupAimWorldPoint(Transform playerTransform, Camera camera)
+        {
+            Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            float aimHeight = GetPickupAimHeight(playerTransform);
+            Vector3 forward = GetHorizontalForward(playerTransform, camera);
+            return playerPosition + Vector3.up * aimHeight + forward * PickupAimForwardDistance;
+        }
+
+        public static Vector3 GetPickupAimScreenPoint(Camera camera, Transform playerTransform)
+        {
+            float baseScreenY = GetBaseAimScreenY();
+            float baseScreenX = Screen.width * (0.5f + PickupAimScreenOffset.x);
+
+            if (camera == null || playerTransform == null)
+                return new Vector3(baseScreenX, baseScreenY, 0f);
+
+            Vector3 projected = camera.WorldToScreenPoint(GetPickupAimWorldPoint(playerTransform, camera));
+            if (projected.z < 0f)
+                return new Vector3(baseScreenX, baseScreenY, 0f);
+
+            float screenX = projected.x;
+            float screenY = Mathf.Lerp(baseScreenY, projected.y, PickupAimVerticalArc);
+            return new Vector3(screenX, screenY, 0f);
+        }
+
+        public static Vector2 GetReticleCanvasOffset(Camera camera, Transform playerTransform, RectTransform canvasRect)
+        {
+            if (canvasRect == null)
+                return Vector2.zero;
+
+            Canvas canvas = canvasRect.GetComponentInParent<Canvas>();
+            Camera uiCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+
+            Vector3 screenPoint = GetPickupAimScreenPoint(camera, playerTransform);
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect,
+                    screenPoint,
+                    uiCamera,
+                    out Vector2 localPoint))
+                return localPoint;
+
+            return GetFallbackReticleCanvasOffset(canvasRect);
+        }
+
+        public static Vector2 GetFallbackReticleCanvasOffset(RectTransform canvasRect)
+        {
+            if (canvasRect == null)
+                return Vector2.zero;
+
+            Rect rect = canvasRect.rect;
+            return new Vector2(
+                rect.width * PickupAimScreenOffset.x,
+                rect.height * (PickupAimScreenOffset.y - PickupAimForwardScreenBias));
+        }
+
+        public static Ray BuildScreenCenterRay(Camera camera, Transform playerTransform = null)
+        {
+            if (camera == null)
+                return default;
+
+            return camera.ScreenPointToRay(GetPickupAimScreenPoint(camera, playerTransform));
+        }
+
+        private static Vector3 GetHorizontalForward(Transform playerTransform, Camera camera)
+        {
+            Vector3 cameraForward = Vector3.forward;
+            if (camera != null)
+            {
+                cameraForward = camera.transform.forward;
+                cameraForward.y = 0f;
+            }
+
+            Vector3 playerForward = Vector3.forward;
+            if (playerTransform != null)
+            {
+                playerForward = playerTransform.forward;
+                playerForward.y = 0f;
+            }
+
+            Vector3 blended = Vector3.zero;
+            if (cameraForward.sqrMagnitude > 0.001f)
+                blended += cameraForward.normalized;
+            if (playerForward.sqrMagnitude > 0.001f)
+                blended += playerForward.normalized;
+
+            if (blended.sqrMagnitude < 0.001f)
+                return Vector3.forward;
+
+            return blended.normalized;
+        }
+
+        private static float GetBaseAimScreenY()
+        {
+            return Screen.height * (0.5f + PickupAimScreenOffset.y - PickupAimForwardScreenBias);
+        }
+
+        private static Vector3 GetFallbackAimScreenPoint()
+        {
+            return new Vector3(
+                Screen.width * (0.5f + PickupAimScreenOffset.x),
+                GetBaseAimScreenY(),
+                0f);
+        }
+
+        public static bool TryGetAimedItemPickup(
+            Ray viewRay,
+            ResourceGatherer gatherer,
+            float fallbackRange,
+            out ItemPickup pickup,
+            Vector3? playerPosition = null)
+        {
+            return TryResolveAimedPickup(
+                viewRay,
+                gatherer,
+                fallbackRange,
+                playerPosition,
+                out pickup,
+                out bool inPickupRange)
+                && inPickupRange;
+        }
+
+        private static bool TryResolveAimedPickup(
+            WorldUseContext context,
+            float range,
+            out ItemPickup pickup,
+            out bool inPickupRange)
+        {
+            return TryResolveAimedPickup(
+                context.ViewRay,
+                context.Gatherer,
+                range,
+                context.PlayerPosition,
+                out pickup,
+                out inPickupRange);
+        }
+
+        private static bool TryResolveAimedPickup(
+            Ray viewRay,
+            ResourceGatherer gatherer,
+            float fallbackRange,
+            Vector3? playerPosition,
+            out ItemPickup pickup,
+            out bool inPickupRange)
+        {
+            pickup = null;
+            inPickupRange = false;
+            float range = gatherer != null ? gatherer.pickupRange : fallbackRange;
+            Vector3 rangeOrigin = playerPosition ?? viewRay.origin;
+            float intentRange = range * PickupIntentDistanceMultiplier;
+            ItemPickup[] pickups = Object.FindObjectsByType<ItemPickup>(FindObjectsInactive.Exclude);
+
+            float bestScore = -1f;
+            for (int i = 0; i < pickups.Length; i++)
+            {
+                ItemPickup candidate = pickups[i];
+                if (!IsCollectiblePickup(candidate, context.PlayerTransform))
+                    continue;
+
+                float distance = Vector3.Distance(rangeOrigin, candidate.transform.position);
+                if (distance > intentRange)
+                    continue;
+
+                Vector3 aimPoint = GetItemPickupAimPoint(candidate);
+                bool candidateInRange = distance <= range;
+                float aimRadius = candidateInRange ? MaxPickupAimRadius : PickupIntentAimRadius;
+                float score = ScorePickupAim(viewRay, aimPoint, distance, range, aimRadius);
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                pickup = candidate;
+                inPickupRange = candidateInRange;
+            }
+
+            return pickup != null;
+        }
+
+        private static Vector3 GetItemPickupAimPoint(ItemPickup pickup)
+        {
+            if (pickup == null)
+                return Vector3.zero;
+
+            Collider col = pickup.GetComponentInChildren<Collider>();
+            if (col != null)
+                return col.bounds.center;
+
+            return pickup.transform.position + Vector3.up * 0.2f;
+        }
+
+        private static Vector3 GetRecipePickupAimPoint(RecipePickup pickup)
+        {
+            if (pickup == null)
+                return Vector3.zero;
+
+            return pickup.transform.position + Vector3.up * 0.35f;
+        }
+
+        public static Vector2 PickupAimScreenOffsetNormalized => PickupAimScreenOffset;
+
+        public static bool IsAimedAtCraftingStation(WorldUseContext context, CraftingStation station, Collider stationCollider)
+        {
+            if (station == null)
+                return false;
+
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                CraftingStation hitStation = context.AimHit.Value.collider.GetComponentInParent<CraftingStation>();
+                if (hitStation == station)
+                    return true;
+            }
+
+            Collider targetCollider = stationCollider;
+            if (targetCollider == null)
+                targetCollider = station.GetComponentInChildren<Collider>();
+
+            if (targetCollider == null)
+                return false;
+
+            Vector3 aimPoint = targetCollider.bounds.center;
+            return GetViewRayDistance(context.ViewRay, aimPoint) <= CraftingStationAimRadius;
+        }
+
+        public static bool IsAimedAtQuestGiver(WorldUseContext context, QuestGiverNpc giver, Collider giverCollider)
+        {
+            if (giver == null)
+                return false;
+
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                QuestGiverNpc hitGiver = context.AimHit.Value.collider.GetComponentInParent<QuestGiverNpc>();
+                if (hitGiver == giver)
+                    return true;
+            }
+
+            Collider targetCollider = giverCollider;
+            if (targetCollider == null)
+                targetCollider = giver.GetComponentInChildren<Collider>();
+
+            if (targetCollider == null)
+                return false;
+
+            Vector3 aimPoint = targetCollider.bounds.center;
+            return GetViewRayDistance(context.ViewRay, aimPoint) <= QuestGiverAimRadius;
+        }
+
+        private bool CanUseNow()
+        {
+            if (!GameSession.HasStarted)
+                return false;
+
+            SurvivalStats survivalStats = GetComponent<SurvivalStats>();
+            if (survivalStats != null && survivalStats.IsDead)
+                return false;
+
+            if (playerController == null)
+                playerController = GetComponent<PlayerController>();
+
+            if (playerController != null)
+            {
+                if (playerController.IsInventoryOpen
+                    || playerController.IsJournalOpen
+                    || playerController.IsMapOpen
+                    || playerController.IsQuestDialogOpen
+                    || playerController.IsLootDialogOpen
+                    || playerController.IsOpticsOpen)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool TryAimedUse(WorldUseContext context)
+        {
+            if (IsPlayerFocusedOnPickup(context) || HasCompetingNearbyItemPickup(context))
+                return false;
+
+            if (!context.AimHit.HasValue)
+                return false;
+
+            Collider hitCollider = context.AimHit.Value.collider;
+            if (hitCollider == null)
+                return false;
+
+            ItemPickup pickup = hitCollider.GetComponentInParent<ItemPickup>();
+            if (IsCollectiblePickup(pickup, context.PlayerTransform) && pickup.TryUse(context))
+                return true;
+
+            ResourceNode node = hitCollider.GetComponentInParent<ResourceNode>();
+            if (node != null && context.Gatherer != null)
+            {
+                node.Gather(context.Gatherer);
+                return true;
+            }
+
+            IWorldUsable usable = hitCollider.GetComponentInParent<IWorldUsable>();
+            if (usable != null && usable.TryUse(context))
+                return true;
+
+            return false;
+        }
+
+        private bool TryBestRegisteredUse(WorldUseContext context, float minPriority)
+        {
+            if (!IsAimedAtPriorityWorldInteractable(context) && !HasActiveEnemyLootInRange(context))
+            {
+                if (IsPlayerFocusedOnPickup(context))
+                    return false;
+
+                if (HasCompetingNearbyItemPickup(context))
+                    return false;
+            }
+
+            IWorldUsable best = null;
+            float bestScore = float.MinValue;
+
+            for (int i = 0; i < RegisteredUsables.Count; i++)
+            {
+                IWorldUsable usable = RegisteredUsables[i];
+                if (usable == null)
+                    continue;
+
+                float score = usable.GetUsePriority(context);
+                if (score < minPriority || score <= bestScore)
+                    continue;
+
+                best = usable;
+                bestScore = score;
+            }
+
+            return best != null && best.TryUse(context);
+        }
+
+        internal static float GetViewRayDistance(Ray viewRay, Vector3 worldPoint)
+        {
+            Vector3 offset = worldPoint - viewRay.origin;
+            float projection = Vector3.Dot(offset, viewRay.direction);
+            if (projection < 0f)
+                return float.MaxValue;
+
+            Vector3 closestPoint = viewRay.origin + viewRay.direction * projection;
+            return Vector3.Distance(closestPoint, worldPoint);
+        }
+
+        internal static float ScorePickupAim(Ray viewRay, Vector3 pickupPosition, float distance, float useRange, float maxAimRadius = MaxPickupAimRadius)
+        {
+            float rayDistance = GetViewRayDistance(viewRay, pickupPosition);
+            if (rayDistance > maxAimRadius)
+                return -1f;
+
+            float aimScore = (1f - rayDistance / maxAimRadius) * 400f;
+            float distanceScore = Mathf.Max(0f, useRange - distance) * 2f;
+            return aimScore + distanceScore;
+        }
+
+        private Camera ResolveCamera()
+        {
+            if (viewCamera != null)
+                return viewCamera;
+
+            viewCamera = ResolveViewCamera(transform);
+            return viewCamera;
+        }
+
+        private static Camera ResolveViewCamera(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return Camera.main;
+
+            PlayerController controller = playerTransform.GetComponent<PlayerController>();
+            if (controller != null && controller.GameplayCamera != null)
+                return controller.GameplayCamera;
+
+            Character character = playerTransform.GetComponent<Character>();
+            if (character != null && character.camera != null)
+                return character.camera;
+
+            return Camera.main;
+        }
+
+        public static Camera ResolveViewCameraForInteract(Transform playerTransform) => ResolveViewCamera(playerTransform);
+    }
+}

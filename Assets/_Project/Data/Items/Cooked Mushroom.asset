@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: Cooked Mushroom
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: Cooked Mushroom
+  icon: {fileID: 21300000, guid: 01f306e51ae729b4dbc6cd5279f0e6e7, type: 3}
+  worldPrefab: {fileID: 4131714642898419157, guid: 8440a364416e8de41987b0616e833268, type: 3}
+  maxStack: 64
+  itemType: 0
+  weaponGrip: 0
+  heldPrefab: {fileID: 0}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  useHeldLocalRotation: 0
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  gatherPower: 1
+  attackTrigger: Attack
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  hungerRestore: 35
+  thirstRestore: 0
+  energyRestore: 15
+  isPiInfused: 0
+  piValue: 0
+  tooltipDescription: A warm grilled mushroom. Restores hunger and energy.

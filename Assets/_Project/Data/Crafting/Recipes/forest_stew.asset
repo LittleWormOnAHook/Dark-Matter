@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a8c2e1b9d0437fa6e5d834c12b5678, type: 3}
+  m_Name: forest_stew
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeDefinition
+  recipeId: forest_stew
+  displayName: Forest Stew
+  description: A hearty stew from foraged ingredients.
+  icon: {fileID: 21300000, guid: b586aac0c3622d942b364a52cd65a8dd, type: 3}
+  stationType: 0
+  ingredients:
+  - item: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
+    amount: 1
+  outputItem: {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
+  outputAmount: 1

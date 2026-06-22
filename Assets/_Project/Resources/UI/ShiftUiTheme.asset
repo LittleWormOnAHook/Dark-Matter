@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8e7d6c5b4a3928170695a4b3c2d1e0f, type: 3}
+  m_Name: ShiftUiTheme
+  m_EditorClassIdentifier: Assembly-CSharp::Project.UI.ShiftUiTheme
+  primaryColor: {r: 0.3882353, g: 0.7764706, b: 1, a: 1}
+  backgroundColor: {r: 0.09803922, g: 0.09803922, b: 0.09803922, a: 0.94}
+  negativeColor: {r: 1, g: 0.43137255, b: 0.39215687, a: 1}
+  secondaryTextColor: {r: 0.75, g: 0.82, b: 0.9, a: 0.9}
+  slotBackgroundTint: {r: 0.16, g: 0.17, b: 0.21, a: 0.82}
+  selectionGlowColor: {r: 0.3882353, g: 0.7764706, b: 1, a: 0.85}
+  regularFont: {fileID: 11400000, guid: baf5990ef136e594abc52299c06d9b48, type: 2}
+  semiBoldFont: {fileID: 11400000, guid: 581c047ed60765249b12f37ff2895497, type: 2}
+  boldFont: {fileID: 11400000, guid: 194c956b3d864664890e731c63fd4a02, type: 2}
+  panelFrame: {fileID: 21300000, guid: dc2366542d8657842a8bf5378c77bee0, type: 3}
+  panelFrameBig: {fileID: 21300000, guid: ec5758608299d7640a970e6a2d3cc107, type: 3}
+  circleGlow: {fileID: 21300000, guid: 447f19d95ff0c504da9f0a9dacc358d7, type: 3}
+  squareGlow: {fileID: 21300000, guid: fc01a4a612e79e14094d3a06a0ac5f35, type: 3}
+  circleFilled: {fileID: 21300000, guid: c26a820b2129e2f4eb122efd27df5339, type: 3}
+  circleOutline: {fileID: 21300000, guid: eb5b293700185344e9c5653bb0e49c0c, type: 3}
+  keyCapFrame: {fileID: 21300000, guid: 465cd841017ec5b42b92b8b90e5094f1, type: 3}

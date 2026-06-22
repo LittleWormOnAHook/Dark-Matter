@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: 2 Hander
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: 2 Hander
+  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  worldPrefab: {fileID: 4368949753760633901, guid: e46114fb89a894f4dbb7ff7a92e6f74c, type: 3}
+  maxStack: 1
+  itemType: 2
+  weaponGrip: 1
+  heldPrefab: {fileID: 8288410919335774527, guid: 4fb32a674abc96c48b079cc3bea542c1, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0.08156498, y: 0.0073087644, z: 0.07160928}
+  heldLocalEuler: {x: 0.5364001, y: 272.62952, z: 349.93903}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: 0.06393556, y: -0.68773144, z: -0.060188197, w: 0.72063524}
+  heldLocalScale: {x: 1.5417, y: 0.99999964, z: 0.99999964}
+  swingEulerAngles: {x: -90, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: -0.59448534, y: -0.12776479, z: -0.18241131}
+  sheathedLocalEuler: {x: 344.41852, y: 164.03569, z: 0.11844179}
+  useSheathedLocalRotation: 1
+  sheathedLocalRotation: {x: 0.017809708, y: -0.98118955, z: -0.13438417, w: -0.13744411}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  meleeDamage: 28
+  meleeDamageRandomRange: 12
+  criticalDamageMultiplier: 3.5
+  meleeRange: 3.4
+  meleeCooldown: 0.85
+  gatherPower: 2
+  attackTrigger: Attack
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  healthRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
+  energyRestore: 0
+  isPiInfused: 0
+  piValue: 0
+  tooltipDescription: 2 Hander of Mortal Death

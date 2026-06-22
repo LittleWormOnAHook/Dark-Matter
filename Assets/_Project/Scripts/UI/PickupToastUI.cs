@@ -1,0 +1,126 @@
+using System.Collections;
+using TMPro;
+using UnityEngine;
+
+namespace Project.UI
+{
+    public class PickupToastUI : MonoBehaviour
+    {
+        private static PickupToastUI instance;
+
+        private RectTransform toastRect;
+        private CanvasGroup canvasGroup;
+        private TextMeshProUGUI label;
+        private Coroutine activeRoutine;
+        private Transform canvasRoot;
+
+        public static PickupToastUI EnsureExists(Transform canvasRootTransform)
+        {
+            if (instance != null)
+                return instance;
+
+            GameObject host = new GameObject("PickupToastUI", typeof(RectTransform));
+            host.transform.SetParent(canvasRootTransform, false);
+            instance = host.AddComponent<PickupToastUI>();
+            instance.Build(canvasRootTransform);
+            return instance;
+        }
+
+        public static void Show(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas == null)
+                return;
+
+            PickupToastUI toast = EnsureExists(canvas.transform);
+            toast.Present(message);
+        }
+
+        private void Build(Transform canvasRootTransform)
+        {
+            canvasRoot = canvasRootTransform;
+
+            toastRect = transform as RectTransform;
+            toastRect.anchorMin = new Vector2(0.5f, 0.5f);
+            toastRect.anchorMax = new Vector2(0.5f, 0.5f);
+            toastRect.pivot = new Vector2(0.5f, 0.5f);
+            toastRect.anchoredPosition = Vector2.zero;
+            toastRect.sizeDelta = new Vector2(520f, 48f);
+
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+
+            label = gameObject.AddComponent<TextMeshProUGUI>();
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+            {
+                theme.ApplyFont(label, semiBold: true);
+                label.color = theme.primaryColor;
+            }
+            else
+            {
+                TmpUiHelper.ApplyDefaultFont(label);
+                label.color = Color.white;
+            }
+
+            label.fontSize = 33f;
+            label.alignment = TextAlignmentOptions.Center;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.raycastTarget = false;
+        }
+
+        private void Present(string message)
+        {
+            label.text = message;
+            if (activeRoutine != null)
+                StopCoroutine(activeRoutine);
+
+            activeRoutine = StartCoroutine(AnimateToast());
+            UiFrontLayer.ReparentToFront(transform, canvasRoot);
+        }
+
+        private IEnumerator AnimateToast()
+        {
+            const float slideInDuration = 0.35f;
+            const float holdDuration = 2.3f;
+            const float fadeOutDuration = 0.35f;
+            const float slideDistance = 36f;
+
+            toastRect.anchoredPosition = new Vector2(0f, -slideDistance);
+            canvasGroup.alpha = 0f;
+
+            float elapsed = 0f;
+            while (elapsed < slideInDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / slideInDuration);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                toastRect.anchoredPosition = new Vector2(0f, Mathf.Lerp(-slideDistance, 0f, eased));
+                canvasGroup.alpha = eased;
+                yield return null;
+            }
+
+            toastRect.anchoredPosition = Vector2.zero;
+            canvasGroup.alpha = 1f;
+            yield return new WaitForSecondsRealtime(holdDuration);
+
+            elapsed = 0f;
+            while (elapsed < fadeOutDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / fadeOutDuration);
+                canvasGroup.alpha = 1f - t;
+                toastRect.anchoredPosition = new Vector2(0f, t * 12f);
+                yield return null;
+            }
+
+            canvasGroup.alpha = 0f;
+            activeRoutine = null;
+        }
+    }
+}

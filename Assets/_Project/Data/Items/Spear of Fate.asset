@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: Spear of Fate
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: Spear of Fate
+  icon: {fileID: 21300000, guid: 4f6f941c99fc5e541bbe175e2df2c231, type: 3}
+  worldPrefab: {fileID: 4286136864832538557, guid: aab565988cb820c4bbd38d5220084171, type: 3}
+  maxStack: 1
+  itemType: 2
+  heldPrefab: {fileID: 4286136864832538557, guid: aab565988cb820c4bbd38d5220084171, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0.092, y: 0.045, z: -0.009}
+  heldLocalEuler: {x: 356.0183, y: 271.9723, z: 342.9534}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: -0.07821211, y: 0.6904465, z: 0.13039702, w: -0.70722204}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -90, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: -0.59448534, y: -0.12776479, z: -0.18241131}
+  sheathedLocalEuler: {x: 344.41852, y: 164.03569, z: 0.11844179}
+  useSheathedLocalRotation: 1
+  sheathedLocalRotation: {x: 0.017809708, y: -0.98118955, z: -0.13438417, w: -0.13744411}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  meleeDamage: 15
+  meleeDamageRandomRange: 4
+  criticalDamageMultiplier: 2
+  meleeRange: 2.4
+  meleeCooldown: 0.6
+  gatherPower: 1
+  attackTrigger: Attack
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  healthRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
+  energyRestore: 0
+  isPiInfused: 0
+  piValue: 0

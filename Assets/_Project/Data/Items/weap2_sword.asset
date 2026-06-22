@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: weap2_sword
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: weap2_sword
+  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  worldPrefab: {fileID: 156012, guid: 875da639eb8d24e41b892b65cab27b5f, type: 3}
+  maxStack: 1
+  itemType: 2
+  weaponGrip: 0
+  heldPrefab: {fileID: 156012, guid: 875da639eb8d24e41b892b65cab27b5f, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0.096, y: 0.072, z: -0.052}
+  heldLocalEuler: {x: 13.723781, y: 269.8003, z: 327.57907}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: 0.2773101, y: -0.6517609, z: -0.11437952, w: 0.69658035}
+  heldLocalScale: {x: 1.5417, y: 0.99999964, z: 0.99999964}
+  swingEulerAngles: {x: -90, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: -0.59448534, y: -0.12776479, z: -0.18241131}
+  sheathedLocalEuler: {x: 344.41852, y: 164.03569, z: 0.11844179}
+  useSheathedLocalRotation: 1
+  sheathedLocalRotation: {x: 0.017809708, y: -0.98118955, z: -0.13438417, w: -0.13744411}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  meleeDamage: 18
+  meleeDamageRandomRange: 10
+  criticalDamageMultiplier: 3.5
+  meleeRange: 2.6
+  meleeCooldown: 0.55
+  gatherPower: 1
+  attackTrigger: Attack
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  healthRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
+  energyRestore: 0
+  isPiInfused: 0
+  piValue: 0
+  tooltipDescription: 

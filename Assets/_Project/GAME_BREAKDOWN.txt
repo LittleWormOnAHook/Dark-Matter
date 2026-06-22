@@ -1,0 +1,591 @@
+================================================================================
+  SURVIVAL PIONEER — GAME & FEATURE BREAKDOWN
+  Project: Pi Pioneer Survival
+  Document generated from codebase and scene assets (Assets/_Project/)
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+  1.  Overview
+  2.  Controls
+  3.  Player Systems
+  4.  Survival & Death
+  5.  Inventory & Equipment
+  6.  Combat
+  7.  Enemies & Loot
+  8.  World Interaction (E Key)
+  9.  Resource Gathering
+  10. Crafting & Recipes
+  11. Quest System
+  12. Pi Currency
+  13. UI & Menus
+  14. Map
+  15. Pet Companion
+  16. Optics & Scanner Tools
+  17. Audio
+  18. Save & Load
+  19. Main Scene & Content
+  20. Editor Tools (Development)
+  21. Known Limits / Not Yet Implemented
+
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+Survival Pioneer is a third-person survival action game built in Unity. The
+player is a "Pioneer" exploring a forest wilderness camp environment. Core
+gameplay loops:
+
+  - Manage survival vitals (health, hunger, thirst, energy)
+  - Gather resources from the world
+  - Craft items at cooking pots and workbenches
+  - Fight enemies with melee weapons
+  - Complete quests from an NPC guide
+  - Earn and spend Pi currency
+  - Explore the map and use scanner/binocular tools
+
+Main playable scene: Assets/Pioneer.unity
+Core project folder: Assets/_Project/
+
+Movement is powered by ECM2 (third-person character controller).
+UI uses a Shift sci-fi theme with a journal hub for most panels.
+
+
+================================================================================
+2. CONTROLS
+================================================================================
+
+  WASD          Move
+  Mouse         Look / orbit camera
+  Scroll        Camera zoom (optics) / map zoom
+  Space         Jump
+  Shift         Sprint (uses energy)
+  Ctrl          Crouch
+
+  E             Interact (pickups, stations, NPCs, enemy loot, recipes)
+  I             Open inventory tab (journal)
+  J             Toggle journal hub
+  M             Toggle world map
+  Escape        Pause menu / close panels
+
+  1, 2          Primary / secondary weapon hotbar slots
+  3–0           General hotbar slots
+  N             Scanner tool (toolbar)
+  B             Binoculars tool (toolbar)
+
+  LMB           Melee attack (hold for power hit)
+  RMB           Block (one-handed weapons) / optics zoom when using tools
+
+Weapon draw: press the same hotbar key again to draw or holster a weapon.
+
+
+================================================================================
+3. PLAYER SYSTEMS
+================================================================================
+
+MOVEMENT & CAMERA
+  - Third-person walk, sprint, crouch, jump
+  - Orbit camera with pitch limits, collision avoidance, terrain clearance
+  - Optics mode replaces camera FOV when using scanner or binoculars
+  - Movement and combat blocked while UI panels, dialogs, or optics are open
+
+SCRIPTS
+  - PlayerController.cs       Movement, camera, input gating
+  - PlayerAnimationController Animation sync
+  - PlayerDeathHandler.cs     Death and respawn flow
+  - OpticsController.cs       Scanner/binoculars behavior
+  - OpticsCameraRig.cs        Optics camera setup
+
+
+================================================================================
+4. SURVIVAL & DEATH
+================================================================================
+
+FOUR VITAL STATS (SurvivalStats.cs)
+  - Health
+  - Hunger
+  - Thirst
+  - Energy
+
+MECHANICS
+  - Hunger, thirst, and energy drain passively over time
+  - Sprinting drains energy
+  - When hunger or thirst fall below a threshold (default 25%), health drains
+  - Consumable items restore individual stats (ItemData fields)
+  - Optional health regeneration (disabled by default in current setup)
+
+DEATH
+  - Player death pauses gameplay
+  - Death popup with retry / end game options (UIManager)
+  - Respawn restores position and vitals (PlayerDeathHandler)
+
+
+================================================================================
+5. INVENTORY & EQUIPMENT
+================================================================================
+
+INVENTORY LAYOUT (InventorySystem.cs)
+  - 24 main inventory slots
+  - 10 hotbar slots (keys 1–0)
+  - 2 toolbar slots (scanner, binoculars)
+
+FEATURES
+  - Stackable items with per-item max stack sizes
+  - Drag and drop between slots
+  - Context menu: Use, Equip, Unequip, Split, Drop
+  - Drop spawns world pickup prefabs
+  - Item tooltips on hover
+
+EQUIPMENT (EquipmentController.cs)
+  - Primary weapon: hotbar slot 0 (key 1)
+  - Secondary weapon: hotbar slot 1 (key 2)
+  - Draw/holster toggle on re-selecting the same weapon slot
+  - Toolbar tools: Scanner (N), Binoculars (B)
+  - Held weapon visuals on hand socket; sheathed weapons on back/spine
+  - EquippedItemVisual.cs manages spawned weapon models and swing animation
+
+ITEM TYPES (ItemData.cs)
+  - Consumable   Food, medpacks, cooked meals
+  - Resource     Rocks, mushrooms, herbs
+  - MeleeWeapon  Axes, swords, spears, two-handers
+  - Tool         Scanner, binoculars
+  - Quest        Quest-specific items
+
+EXAMPLE ITEMS (Assets/_Project/Data/Items/)
+  Rock, Mushroom, Red Lilly, Cooked Mushroom, Forest Stew, Pimican, Medpack,
+  Wood Axe, Sword of Fear, Spear of Fate, Death Axe, 2 Hander,
+  Scanner B44, Binnos 250
+
+
+================================================================================
+6. COMBAT
+================================================================================
+
+PLAYER MELEE (MeleeCombatController.cs)
+  - One-handed combo chain (5 attack animation states)
+  - Two-handed attack set (4 animation states)
+  - Power / critical hit: hold LMB ~2 seconds, release for heavy strike
+  - Charge wind-up pose begins at ~1.5 seconds of holding
+  - Block with RMB (one-handed weapons only; two-handers cannot block)
+  - Weapon switch via dedicated input
+
+HIT DETECTION
+  - Primary: WeaponHitbox.cs — box collider on equipped weapon scans overlaps
+    during swing window (~0.45s); hits follow weapon motion, not camera aim
+  - Fallback: sphere overlap in front of player if no weapon visual exists
+  - Camera raycasts removed as primary hit method (fixes orbit-camera misses)
+
+WEAPON STATS (per ItemData)
+  - Melee damage + random range
+  - Critical damage multiplier
+  - Attack range, cooldown
+  - Gather power (can hit resource nodes with weapon)
+
+COMBAT FEEDBACK
+  - Floating damage numbers (CombatUiSpawner.cs)
+  - Blood splatter VFX (CombatHitVfx.cs, FX_Blood_Splatter prefab)
+  - Weapon swing and hit sounds (GameAudioManager.cs)
+  - Enemy noise events alert nearby AI (EnemyNoiseEvents.cs)
+
+TRAINING DUMMY
+  - Practice target with high HP (TrainingDummy.cs)
+  - Floating health bar and damage numbers (DummyCombatUI.cs)
+  - Prefab: Prefabs/Combat/TrainingDummy.prefab
+  - Placed in Pioneer.unity scene
+
+
+================================================================================
+7. ENEMIES & LOOT
+================================================================================
+
+ENEMY TYPES
+  - Generic Enemy (placeholder capsule prefab)
+  - Gongo (troll model)
+  - The Evil One (humanoid enemy)
+  - Definitions: Assets/_Project/Data/Enemies/*.asset (EnemyDefinition.cs)
+  - Prefabs: Assets/_Project/Prefabs/Combat/
+
+ENEMY AI (EnemyAiController.cs)
+  - Behavior presets: Aggressive Hunter, Guard, Patrol Investigator, Ambush
+  - Movement modes: Stationary, Idle, Wander, Patrol
+  - States: Idle, Wander, Patrol, Investigate noise, Return home, Chase,
+    Attack, Search for lost target
+  - Senses: vision (range + FOV), hearing, proximity (EnemySenses.cs)
+  - Responds to player noise from combat and movement
+
+ENEMY COMBAT
+  - Melee attacks with windup, cooldown, and damage to player SurvivalStats
+  - Floating health bar above enemy (EnemyHealthBarPresenter.cs)
+  - Death animation and AI/combat shutdown on death
+
+RESPAWN
+  - Enemies can respawn at spawn point after configurable delay
+  - Loot phase pauses respawn until loot is taken or loot timer expires (20s)
+
+ENEMY LOOT (EnemyLootable.cs)
+  - Enabled on enemy prefabs via EnemyDefinition loot settings
+  - On death: rolls Pi coins (min/max) and random items from loot pool
+  - Empty loot pool falls back to item registry (excluding quest items and
+    melee weapons from random rolls)
+  - Press E near corpse opens loot dialog (EnemyLootDialogUI.cs):
+      [Loot]      Take one reward entry
+      [Loot All]  Take everything
+      [Close]     Close dialog; corpse remains lootable until empty or timer
+  - Respawn resumes after all loot taken or loot delay expires
+
+EDITOR
+  - Enemy Prefab Creator (Tools > Survival Pioneer > Combat)
+  - Update All Enemy Prefabs And Scene (EnemyLootSetupUtility.cs)
+
+
+================================================================================
+8. WORLD INTERACTION (E KEY)
+================================================================================
+
+Central system: WorldUseController.cs
+
+E-KEY PRIORITY ORDER
+  1. Aimed priority interactables (quest giver, crafting station when aimed)
+  2. Active enemy loot (corpse in range)
+  3. Item pickups and recipe scroll pickups (aim-assisted reticle)
+  4. Other registered IWorldUsable objects
+  5. Raycast fallback for generic world use
+
+AIM ASSIST FOR PICKUPS
+  - PickupAimReticleUI.cs — screen reticle for focused pickup
+  - PickupProximityDotUI.cs — dots for nearby collectibles
+  - Crafting stations and quest givers take priority over nearby ground loot
+
+INTERACTION PROMPT
+  - "Press E to ..." text shown via UIManager when near interactables
+
+
+================================================================================
+9. RESOURCE GATHERING
+================================================================================
+
+RESOURCE NODES (ResourceNode.cs)
+  - World objects with hit threshold (must be struck multiple times)
+  - Yield items added to inventory via ResourceGatherer
+  - Can be hit with melee weapons (uses weapon gather power)
+
+RESOURCE GATHERER (ResourceGatherer.cs)
+  - Attached to player; defines pickup range and gather range/layers
+  - Notifies quest system when resources are collected
+
+WORLD ITEM PICKUPS (ItemPickup.cs)
+  - Physical items on ground (rocks, mushrooms, weapons, etc.)
+  - Press E to collect into inventory
+  - Optional respawn timer (20–90 seconds)
+  - Pi-infused items grant Pi currency on pickup (ItemData.isPiInfused)
+
+
+================================================================================
+10. CRAFTING & RECIPES
+================================================================================
+
+STATIONS (CraftingStation.cs)
+  - Cooking pot  — CraftingStationType.Cooking
+  - Workbench    — CraftingStationType.Workbench
+  - Press E while aimed at station to open journal craft tab + side craft panel
+  - Scene prefabs: Prefabs/Crafting/Stations/
+
+RECIPE SYSTEM
+  - RecipeDefinition assets in Data/Crafting/Recipes/
+  - RecipeRegistry (Resources/Crafting/RecipeRegistry.asset)
+  - CraftingManager tracks discovered recipes and pending scrolls
+
+RECIPE LEARNING FLOW
+  1. Find a recipe scroll pickup in the world (RecipePickup prefabs)
+  2. Press E to pick up scroll (goes to pending scrolls)
+  3. Open journal Craft tab; learn scroll to permanently unlock recipe
+  4. Craft at correct station when ingredients are in inventory
+
+CURRENT RECIPES
+  grilled_mushroom   Cooking   — Grill mushrooms
+  forest_stew        Cooking   — Mushrooms + Red Lilly
+  stone_salve        Workbench — 3x Rock
+  herbal_medpack     Workbench — Healing craft
+  Pemican (Pimican)  Workbench — Red Lilly + Rock
+
+CRAFTING UI
+  - CraftingUI.cs — recipe list, ingredient check, craft button
+  - Embedded in journal Craft tab and standalone side panel at stations
+  - Recipe hover tooltips show ingredients and station requirement
+
+
+================================================================================
+11. QUEST SYSTEM
+================================================================================
+
+CORE (QuestManager.cs, QuestDefinition.cs)
+  - Quest registry: Resources/Quests/QuestRegistry.asset
+  - Status flow: Locked → Available → Active → Completed → TurnedIn
+
+OBJECTIVE TYPES
+  - CollectItem    Gather specific items (tracked via inventory)
+  - ReachLocation  Enter a trigger zone (QuestLocationTrigger.cs)
+  - TalkToNpc      Speak to quest giver
+  - CraftItem      Craft a specific recipe
+  - Custom         Manual/scripted hooks
+
+CURRENT QUESTS (Resources/Quests/)
+  gather_rocks       — Collect 3 Rocks → Pi reward
+  guide_supply_run   — Talk to Pioneer Guide, gather mushrooms for camp stew
+  Get more Rocks     — Collect 10 Rocks → item + Pi reward
+
+QUEST GIVER
+  - NPC: QuestGiver_PioneerGuide (QuestGiverNpc.cs)
+  - Prefab: Prefabs/NPCs/QuestGiver_PioneerGuide.prefab
+  - Press E to open quest board dialog (QuestGiverDialogUI.cs)
+  - Accept, track, and turn in quests from the board
+  - Quest status colors in UI (QuestUiPalette.cs)
+
+QUEST HUD
+  - ActiveQuestHudUI.cs — right-side tracker for active quests
+  - Updates on progress; hides after turn-in
+
+
+================================================================================
+12. PI CURRENCY
+================================================================================
+
+Pi is the in-game reward currency (Pi Network theme).
+
+DISPLAY
+  - HUD balance: "Pi: {amount}" (UIManager.piBalance)
+
+SOURCES
+  - Starting bonus on new game (+10 Pi)
+  - Quest completion rewards
+  - Enemy loot rolls (Pi coins on corpses)
+  - Pi-infused item pickups in the world
+
+FEEDBACK
+  - Animated Pi reward popup (+N Pi) on gain (PiRewardPopup.cs)
+
+PERSISTENCE
+  - Saved in GameSaveData.piBalance across save slots
+
+
+================================================================================
+13. UI & MENUS
+================================================================================
+
+MAIN MENU / PAUSE (MainMenuController.cs)
+  - New Game, Resume, Save Game, Load Game, Settings, Exit
+  - Escape opens pause when in gameplay
+
+GAME START POPUP (GameStartPopup.cs)
+  - Welcome message and control summary
+  - Must press START GAME before gameplay begins (GameSession gate)
+
+JOURNAL HUB (JournalPanelUI.cs) — key J
+  Tabs:
+    Journal    Quest log / notes area
+    Inventory  Full inventory grid + hotbar (also key I)
+    Map        World map overlay (also key M from journal)
+    Pet        Companion management
+    Craft      Recipes, scroll learning, crafting panel
+
+HUD ELEMENTS
+  - Survival stat bars (health, hunger, thirst, energy)
+  - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
+  - Pi balance text
+  - Hotbar (10 slots)
+  - Toolbar (scanner / binoculars)
+  - Interaction prompt (center/bottom)
+  - Active quest tracker
+  - Pickup aim reticle and proximity dots
+  - Pickup toast messages (+Item name)
+
+DIALOGS
+  - QuestGiverDialogUI.cs  — NPC quest board
+  - EnemyLootDialogUI.cs   — Corpse loot menu
+
+INVENTORY UX
+  - Drag/drop (UIDragHandler.cs)
+  - Resizable panels (UIResizeHandler.cs)
+  - Context menu (InventoryContextMenu.cs)
+  - Item hover tooltips (ItemHoverTooltip.cs)
+
+SAVE SLOTS (SaveSlotsPanelController.cs)
+  - 5 save slots with timestamp, Pi, HP summary
+  - Slot screenshots (SaveSlotScreenshotUtility.cs)
+
+SETTINGS (SettingsPanelController.cs, GameSettings.cs)
+  - Master / music / SFX volume
+  - Post-processing toggle
+  - Map system enable/disable
+  - Fullscreen, vsync, quality level
+
+THEME
+  - ShiftUiTheme asset and bootstrap (Shift UI sci-fi styling)
+
+
+================================================================================
+14. MAP
+================================================================================
+
+  - Full-screen map overlay (M key when journal closed, or Map tab)
+  - Runtime-generated terrain top-down texture (WorldMapProvider.cs)
+  - Player position marker
+  - Resource location markers (MapMarker.cs)
+  - Can be disabled in settings (GameSettings.MapSystemEnabled)
+  - Editor setup: Tools > Survival Pioneer > Scene > Map System
+
+
+================================================================================
+15. PET COMPANION
+================================================================================
+
+  - PetController.cs — follow, wander, fetch nearby items
+  - PetManager.cs — registry of available pets
+  - Default companion: Fox Cub
+  - Journal Pet tab: PetUI.cs, PetEntryUI.cs
+  - Fetch notification via UIManager.ShowPetFetchMessage()
+
+
+================================================================================
+16. OPTICS & SCANNER TOOLS
+================================================================================
+
+TOOLS
+  - Scanner B44 (toolbar key N)
+  - Binnos 250 binoculars (toolbar key B)
+
+FEATURES
+  - OpticsController.cs — zoom, overlay, input handling
+  - OpticsOverlayUI.cs — viewport overlay with crosshair library
+  - OpticsViewport.shader — scanner viewport effect
+  - ScannerWorldHighlight.cs — highlights scannable world targets
+  - ScannableTarget.cs — marks interactable scan points
+  - RMB for zoom while optics active; blocks normal melee block
+
+
+================================================================================
+17. AUDIO
+================================================================================
+
+  - GameAudioManager.cs — central music loop, UI sounds, SFX pool
+  - GameAudioProfile.asset — clip assignments
+  - FootstepController.cs — surface-based footstep sounds
+  - LandingAudioController.cs — landing impact sounds
+  - AmbientAudioZone.cs — trigger volumes (e.g. Forest Ambience in scene)
+  - Weapon swing/hit, resource hit, UI click sounds
+  - AudioGameplayBootstrap.cs — auto-wires audio components on player
+
+
+================================================================================
+18. SAVE & LOAD
+================================================================================
+
+SYSTEM (GameSaveSystem.cs)
+  - 5 JSON save slots in Application.persistentDataPath
+  - Legacy save migration supported
+  - Save data version 7 (GameSaveData.cs)
+
+PERSISTED DATA
+  - Survival stats (health, hunger, thirst, energy)
+  - Player position and rotation
+  - Pi balance
+  - Full inventory (main, hotbar, toolbar slots)
+  - Equipment state (drawn weapon, selected slots)
+  - Quest progress per quest ID
+  - Discovered recipes and pending recipe scroll IDs
+
+ENTRY POINTS
+  - Main menu: New Game / Load Game
+  - Pause menu: Save Game / Load Game
+
+
+================================================================================
+19. MAIN SCENE & CONTENT
+================================================================================
+
+SCENE: Assets/Pioneer.unity
+
+ENVIRONMENT
+  - Terrain, forest biome, swamp water, clouds, wind zone
+  - Forest ambience audio zone
+  - Reflection probes and lighting
+
+KEY PLACED OBJECTS
+  - Player spawn
+  - QuestGiver_PioneerGuide (NPC)
+  - TrainingDummy (combat practice)
+  - Enemies container (Gongo, The Evil One, etc.)
+  - Items container (world pickups)
+  - Cooking Variant station
+  - Workbench Variant station
+  - Recipe pickup scrolls
+  - MainCanvas (full HUD)
+  - Game Manager (SimpleGameManager)
+
+PREFAB FOLDERS (Assets/_Project/Prefabs/)
+  Players/          Player.prefab
+  NPCs/             Quest giver
+  Combat/           Enemies, training dummy
+  Crafting/         Recipe scroll pickups
+  Crafting/Stations/ Cooking, workbench
+  Items/            World drop prefabs
+  Items/Held/       Equipped weapon/tool visuals
+  UI/               Inventory slot prefab
+
+
+================================================================================
+20. EDITOR TOOLS (DEVELOPMENT)
+================================================================================
+
+Menu root: Tools > Survival Pioneer/
+
+TOOLS WINDOW
+  - SurvivalPioneerToolsWindow.cs — hub for common setup actions
+
+PROJECT & CONTENT
+  - Project structure setup and organizer
+  - Item Data Creator, Starting Items, Equipment Item Creator
+
+CRAFTING
+  - Recipe Creator, Crafting Item Creator, Craftable Equipment Creator
+  - Wire Scene Stations, Seed Starter Recipes, Sync Recipe Registry
+
+QUESTS
+  - Quest Creator, Quest Giver Setup, Quest Giver NPC Editor
+
+COMBAT
+  - Enemy Prefab Creator (AI, animation, loot, collider setup)
+  - Update All Enemy Prefabs And Scene (loot wiring)
+  - Weapon prefab creators, training dummy placement
+  - Enemy animation pipeline (Mixamo clip assignment, controller build)
+
+UI
+  - Full canvas bootstrap, inventory panel creator
+  - UI Layout Editor (runtime panel sizing/sprites in editor)
+  - Shift UI setup
+
+SCENE & SYSTEMS
+  - Map system wiring
+  - Reflection probe setup
+  - Ambient audio zone editor
+  - Optics crosshair library setup
+
+MAINTENANCE
+  - Play mode edit persistence toggle
+  - Editor layout recovery (EditorLayoutGuard)
+
+
+================================================================================
+21. KNOWN LIMITS / NOT YET IMPLEMENTED
+================================================================================
+
+  - Player ranged / projectile combat (melee only)
+  - StatUpgrade quest reward type (logged as placeholder only)
+  - No dedicated in-project README (this document serves that role)
+  - Some third-party asset packs provide art/animation only; custom logic lives
+    under Assets/_Project/Scripts/
+
+================================================================================
+END OF DOCUMENT
+================================================================================
