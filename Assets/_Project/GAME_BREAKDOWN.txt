@@ -37,7 +37,7 @@ Survival Pioneer is a third-person survival action game built in Unity. The
 player is a "Pioneer" exploring a forest wilderness camp environment. Core
 gameplay loops:
 
-  - Manage survival vitals (health, hunger, thirst, energy)
+  - Manage survival vitals (health, energy, stamina, oxygen)
   - Gather resources from the world
   - Craft items at cooking pots and workbenches
   - Fight enemies with melee weapons
@@ -60,7 +60,7 @@ UI uses a Shift sci-fi theme with a journal hub for most panels.
   Mouse         Look / orbit camera
   Scroll        Camera zoom (optics) / map zoom
   Space         Jump
-  Shift         Sprint (uses energy)
+  Shift         Sprint (uses stamina)
   Ctrl          Crouch
 
   E             Interact (pickups, stations, NPCs, enemy loot, recipes)
@@ -104,14 +104,14 @@ SCRIPTS
 
 FOUR VITAL STATS (SurvivalStats.cs)
   - Health
-  - Hunger
-  - Thirst
-  - Energy
+  - Energy (combined survival need; replaces hunger/thirst)
+  - Stamina (sprint resource; regenerates when not sprinting)
+  - Oxygen (displayed as MM:SS; 40 min full, drains to empty in 10 min real time)
 
 MECHANICS
-  - Hunger, thirst, and energy drain passively over time
-  - Sprinting drains energy
-  - When hunger or thirst fall below a threshold (default 25%), health drains
+  - Energy and oxygen drain passively over time
+  - Sprinting drains stamina; stamina regenerates when not sprinting
+  - When energy falls below a threshold (default 25%) or oxygen is depleted, health drains
   - Consumable items restore individual stats (ItemData fields)
   - Optional health regeneration (disabled by default in current setup)
 
@@ -314,6 +314,20 @@ CRAFTING UI
   - Embedded in journal Craft tab and standalone side panel at stations
   - Recipe hover tooltips show ingredients and station requirement
 
+BUILDING CONTROL PANELS (GDD TARGET — NOT YET IMPLEMENTED)
+  Canon (GAME_DESIGN_DOCUMENT.txt Section 8):
+    - Each major base building has an interactable Control Panel (E at terminal)
+    - Opens Building Control UI overlay (NOT journal) with tabs:
+        Overview | Pioneers | Production | Craft | Changes
+    - Assign base-22 pioneers, set production/craft queues, per-building settings
+    - Queues run while player is on expedition; pause during sulfur storms
+  Prototype today: CraftingStation.cs + journal Craft tab (migrate in Phase 6)
+  Implementation path:
+    1. BuildingControlPanel interactable + shared UI shell
+    2. Wire Science Labs + Medical Facility first (craft + production)
+    3. Harvester / worker buildings (settings + assignments)
+    4. Journal Craft becomes recipe library only; craft executes at panels
+
 
 ================================================================================
 11. QUEST SYSTEM
@@ -387,10 +401,14 @@ JOURNAL HUB (JournalPanelUI.cs) — key J
     Inventory  Full inventory grid + hotbar (also key I)
     Map        World map overlay (also key M from journal)
     Pet        Companion management
-    Craft      Recipes, scroll learning, crafting panel
+    Craft      Recipe library, scroll learning (target: not primary craft UI)
+
+BUILDING CONTROL UI (TARGET — see Section 10 crafting)
+  - Opened from in-world building Control Panel interactables only
+  - Pioneer assign, production queue, building-specific craft, settings/changes
 
 HUD ELEMENTS
-  - Survival stat bars (health, hunger, thirst, energy)
+  - Survival stat bars (health, energy, stamina, oxygen)
   - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
   - Pi balance text
   - Hotbar (10 slots)
@@ -487,7 +505,7 @@ SYSTEM (GameSaveSystem.cs)
   - Save data version 7 (GameSaveData.cs)
 
 PERSISTED DATA
-  - Survival stats (health, hunger, thirst, energy)
+  - Survival stats (health, energy, stamina, oxygen)
   - Player position and rotation
   - Pi balance
   - Full inventory (main, hotbar, toolbar slots)

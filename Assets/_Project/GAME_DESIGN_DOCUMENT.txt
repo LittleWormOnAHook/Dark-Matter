@@ -1,0 +1,828 @@
+================================================================================
+  DARK MATTER STUDIOS presents
+  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD)
+================================================================================
+
+  Studio:       Dark Matter Studios
+  Unity project: Survival Pioneer / Pi Pioneer Survivors (working title)
+  Document:     DRAFT — subject to user revision
+  Consolidated: June 26, 2026
+
+================================================================================
+REVISION NOTES (changes from prior draft)
+================================================================================
+
+  + Branding: Dark Matter Studios; year 2160; Pi Pioneer Survivors naming
+  + Setting status: flat terrain prototype (not Io, not forest camp label)
+  + Pioneer classes renamed: Architect Engineer, Science Specialist, Combat
+    Tactician, Infiltrator Scout (+ Io hybrids); player has combat/skills too
+  + Echoes integrate as Pioneers (basic + Special); lore tied to failed past
+    expeditions on Io; rescue failure can lose Echo permanently
+  + Environmental Suits added as standard trio gear (upgradeable)
+  + Buildings: Medical Facility, Science Labs; craft + maintain buildings
+  + Economy: NFT minting on Pi Network; Pioneer Survivor External Exchange /
+    separate marketplace; Dark Matter earns listing Pi fees; HUD shows AC + Pi
+  + Pillar 8 clarified: rescue primary; can also purchase/trade for Pioneers
+  + Pet/AI follower FOLDED into Echo/trio companion system (no separate pet loop)
+  + Starter AC: 5000 on new game (enough to choose 1 Skilled Pioneer)
+  + Cold/Heat: single combined thermal stress meter (cold ↔ heat poles)
+  + NFT mint: on marketplace LIST only (not on rescue)
+  + Controls: keyboard-mouse, mobile, controller schemes
+  + Journal tabs expanded: Pet/Pioneers, Skills, Craft, Recipes, Echos
+  + Building Control Panels at each base structure — assign pioneers, craft,
+    production queues, and per-building settings (changes) at in-world terminals
+  + Aether-9 shares quest duty with small portion of side quest givers
+  + Story: failed human/alien expeditions left tech and materials on Io
+
+
+================================================================================
+SECTION 0 — FULL RECAP
+================================================================================
+
+WHAT THIS GAME IS
+-----------------
+Year 2160. Pioneer Survivors is a semi-low-poly survival + light base-builder on
+Jupiter's moon Io. You lead up to 25 pioneers: up to 22 work at base while you
+take a trio of 3 on expeditions. You rescue procedurally generated Neural
+Echoes (named, upgraded specialists—thought to be imprints of previous failed
+expeditions), recover Memory Cores for the ancient probe Aether-9, materialize,
+craft, and maintain buildings from resources, survive harsh biomes, and
+optionally trade or sell trained Echoes for Pi on the Pioneer Survivor Exchange
+(minted as NFTs on the Pi Network).
+
+Pi is NOT earned from normal gameplay. Aether Credits (AC) are the in-game
+currency. Pi enters only via wallet, Pi-to-AC conversion, or selling Echoes on
+the external marketplace. AC can also be bought with a credit card (IAP).
+
+TARGET PLATFORMS
+----------------
+WebGL first (50–100 MB total build budget), then PC, later PS5 / Xbox.
+Art: semi-low-poly, modular, not flat low-poly.
+
+EXAMPLE CORE LOOPS
+------------------
+  BASE:       Walk to building Control Panel → assign pioneers → set production /
+              craft queues and building changes → output ticks → sulfur storm
+              pauses all panels → Command Center shelter → heal injured → resume
+
+  EXPEDITION: Pick trio of 3 → face multiple biome/environment pressures →
+              rescue Echo signals → recover Memory Cores → return for Resonance
+              Events
+
+  ECONOMY:    Earn AC in-game → spend on base, expeditions, pioneer upgrades,
+              and skills → optional Pi→AC swap → sell upgraded Named Pioneers
+              for Pi on separate marketplace / Exchange (NFT)
+
+CURRENT STATUS (PROTOTYPE)
+--------------------------
+Flat terrain setting (NOT Io yet). Working: movement, combat, inventory, hotbar
++ toolbar (scanner/binoculars), health/energy/stamina/oxygen, crafting, quests,
+Pi HUD (needs redesign to include AC), map, save/load, pet/AI follower system
+with small skills, enemy AI, loot container system, main menu, journal hub,
+editor tools (Unity).
+
+NOT BUILT YET: Io biomes, 25-pioneer roster, trio system, Aether-9 probe,
+memory cores, Resonance Events, procedural Echo generator, Pioneer Exchange /
+NFT minting, Aether Credits, Command Center and other sim systems, sulfur
+storm base logic, building materialization pipeline, four biome exposure meters
+beyond oxygen tuning.
+
+DESIGN WORKFLOW (AI / TEAM)
+---------------------------
+Follow this GDD when building in Unity. If a request does not fit vision, ASK
+whether it is canon, prototype, or a new direction. Unrelated experiments are
+OK when explicitly labeled.
+
+BUILDING CONTROL PANEL WORKFLOW (CANON)
+---------------------------------------
+  1. Player materializes or unlocks a building (Section 8).
+  2. Building spawns with an interactable Control Panel (terminal / holo console).
+  3. Player aims + presses E at panel → Building Control UI opens (dedicated
+     overlay — NOT the journal Craft tab).
+  4. Player configures that building only:
+       - Assign / unassign base pioneers (from 22 pool; respect injured state)
+       - Set production queue, craft queue, or service queue (building-specific)
+       - Adjust building settings ("changes"): depth, priority, filters, modes
+  5. Assigned pioneers drive passive output while player is on expedition or at
+     another panel. Aggregate sim updates output / Strain / maintenance.
+  6. Sulfur storm: all building work pauses; panels show PAUSED; pioneers
+     evacuate to Command Center per Section 5.
+  7. Maintenance due or building damage: panel shows warnings; player spends
+     resources or sends injured to Medical Facility before full resume.
+
+IMPLEMENTATION ORDER (PANELS)
+---------------------------
+  Prototype today: global CraftingStation + journal Craft tab (flat terrain).
+  Migrate toward building panels in this order:
+    a) Shared BuildingControlPanelUI shell (tabs, pioneer slots, queue list)
+    b) Science Labs + Medical Facility (craft + production queues)
+    c) Geothermal Harvester + worker-output buildings (settings + assignments)
+    d) Command Center status board (read-only aggregate + room assignment view)
+  Reuse CraftingUI recipe filtering by building/station type where possible.
+
+LEGAL NOTE (ECONOMY)
+--------------------
+This document describes game-design intent only. Before launch: Pi Network app
+review, NFT/marketplace policies, IAP/store rules, and virtual-asset
+regulations for target regions and platforms.
+
+
+================================================================================
+SECTION 1 — VISION & PILLARS
+================================================================================
+
+ONE-LINE PITCH
+--------------
+Lead 25 pioneers on Io: trio expeditions face oxygen and biome/environment
+hazards; 22 base pioneer workers shelter during sulfur storms and resume if
+unharmed and/or healed; rescue procedural Echoes; slot Aether-9 memory cores
+for world-changing Resonance Events; trade or sell trained specialists for Pi
+(minted NFTs)—without earning Pi from routine play.
+
+CORE PILLARS
+------------
+  1. Max 25 pioneers — scarcity forces meaningful roster choices
+
+  2. Trios of 3 skilled pioneers on expeditions — synergies matter
+     Typical named pioneer types include:
+       Architect Engineer, Science Specialist, Combat Tactician,
+       Infiltrator Scout, and more (+ Io hybrids)
+
+  3. Procedural Neural Echoes — unique names, stats, abilities, tradable NFT
+     cards on Pioneer Survivor Exchange
+
+  4. Aether-9 + Memory Cores + Resonance Events — story + dynamic world
+
+  5. Light materialization building — spend resources, prefab appears + VFX;
+     craft and maintain structures over time
+
+  6. Dynamic risky structures (e.g. Geothermal Harvester depth vs tremors)
+
+  7. One-way Pi economy — no gameplay Pi drip; AC is the survival currency
+
+  8. Rescue and reintegrate — do not "hire from a shop menu"; players may
+     also purchase or trade for Pioneers via Pi marketplace (external)
+
+  9. Semi-low-poly modular art — 50–100 MB WebGL target
+
+
+================================================================================
+SECTION 2 — SETTING & STORY
+================================================================================
+
+LOCATION
+--------
+Io, Jupiter's moon — volcanic hellscape: lava, sulfur, radiation, tremors,
+sulfur storms, cave networks, varying extreme temperatures.
+
+TONE
+----
+Harsh survival + sci-fi mystery. Sci-fi HUD. Pi Network meta flavor in probe
+logs optional ("currency of pioneers").
+
+QUEST HUB: AETHER-9
+-------------------
+Ancient weathered probe from early colonization. Glitchy synth voice, short
+bursts. Not a human NPC (prototype currently uses Pioneer Guide — replace).
+Aether-9 handles main mystery arc; a small portion of side quests and tasks
+use other givers.
+
+MYSTERY ARC (8–12 MEMORY CORES)
+--------------------------------
+  Early:   Corporate isotope rush, probe reactivation, survival basics
+  Mid:     Human-AI symbiosis experiments, anomalies in lava tubes
+  Late:    Something ancient waking — planetary defense or prior visitors
+  Additional: Humans or aliens landed on Io, failed their expedition, and
+               left tech and materials scattered on the surface.
+
+
+================================================================================
+SECTION 3 — SURVIVAL: NORMS & BIOME/ENVIRONMENT PRESSURES
+================================================================================
+
+SURVIVAL NORM (ALWAYS ON)
+-------------------------
+  OXYGEN — baseline pressure everywhere. Prototype implements O2 tank,
+  deprivation FX, health drain when depleted. Caves, shelter, and habitat
+  reduce consumption rate; not permanent immunity.
+
+FOUR MAJOR IO BIOME / ENVIRONMENT PRESSURES
+--------------------------------------------
+  1. RADIATION      — open flats, anomaly zones, Jovian exposure
+  2. COLD / HEAT    — single THERMAL STRESS meter (cold pole ↔ heat pole)
+  3. VOLCANOS       — calderas, lava, eruptions, tremors, sudden heat
+  4. SULFUR STORMS  — corrosive weather, geyser fields, toxic buildup
+
+Pressures stack by zone and weather (e.g. caldera + sulfur storm + heat).
+Resonance Events can spike one pressure globally for 10–15 in-game minutes.
+
+OFFSETS (TRIO / SURFACE)
+------------------------
+  SHELTER              — built modules; partial to full protection by tier
+  CAVES                — natural refuge; strong rad/thermal; map POIs
+  INOCULATIONS         — consumables; temp resist (rad, sulfur, thermal gel)
+  PORTABLE HABITAT     — Architect Engineer deployable; sealed bubble; limited
+  ENVIRONMENTAL SUITS  — trio standard gear; upgradeable over time
+
+Protection matrix (design target):
+
+  Offset              O2    Rad   Cold/Heat   Volcano   Sulfur
+  Shelter (basic)     slow  part  part        part      part
+  Shelter (upgraded)  slow  full  full        partial   filtered
+  Cave                slow  strong stable     refuge    partial
+  Inoculation         —     temp  temp        —         temp
+  Portable habitat    sealed strong climate   strong    sealed
+  Env. suit (base)    slow  part  part        part      part
+  Env. suit (upgraded) slow improved improved partial   improved
+
+Volcanos hardest to fully offset — lava still kills; portable habitat for
+eruption windows.
+
+
+================================================================================
+SECTION 4 — PIONEER ROSTER (25 CAP)
+================================================================================
+
+SPLIT
+-----
+  Maximum 25 pioneers total under player command.
+
+  ~12–13 WORKERS
+    - Anonymous or lightly named labor pool
+    - Jobs: materialization speed, harvester output, purification support,
+      reclamation, defense standby, passive gathering, production
+    - Collective STRAIN meter — overwork → accidents, slowdowns
+
+  ~12–13 SKILLED ECHOES / SPECIAL PIONEERS
+    - Named, unique, upgradable, tradable on Pioneer Survivor Exchange
+    - Classes: Architect Engineer, Science Specialist, Combat Tactician,
+      Infiltrator Scout, and more + Io hybrids
+    - SATURATION meter (radiation/sulfur narrative layer) — hallucinations,
+      false intel, friendly fire risk; cleanse at Purification Hub
+    - XP from expeditions, core recoveries, Resonance Events, tasks
+    - Leveling improves stats, abilities, Pi / NFT market value
+
+EXPEDITION VS BASE (CRITICAL RULE)
+----------------------------------
+  TRIO (3 skilled) on surface — full O2 norm + all four biome pressures
+  BASE (up to 22 remaining)   — see Section 5
+
+TRIO SYNERGIES
+--------------
+  Infiltrator Scout      — reveals terrain / Echo signals
+  Architect Engineer     — shields, drones, portable habitat
+  Combat Tactician       — draws aggro; combat focus
+  Science Specialist     — scans, inoculation support, lab tie-ins (TBD)
+  Player + trio          — combat capabilities and skills
+  Together               — burst abilities (e.g. clear lava field briefly)
+  Rescued Echoes         — synergy bonuses with specific companions
+
+
+================================================================================
+SECTION 5 — BASE PIONEERS (22) & COMMAND CENTER
+================================================================================
+
+WHILE TRIO IS ON EXPEDITION, up to 22 REMAIN AT BASE (adjust if skilled stay).
+
+IMPERVIOUS TO (NO PASSIVE BIOME DRAIN)
+--------------------------------------
+  Radiation, cold/heat, open volcano exposure, routine surface O2 concern.
+  They operate inside the sealed base / Command Center loop.
+
+NOT IMPERVIOUS TO
+-----------------
+  Sulfur storms (triggers shelter behavior)
+  Command Center building damage (injury)
+  Optional Strain from overwork
+
+SULFUR STORM FLOW
+-----------------
+  1. All base work PAUSES (harvesters, materialization, production, etc.)
+  2. All base pioneers evacuate to COMMAND CENTER
+  3. Random / weighted assignment to ROOMS (med, engineering, living, storage)
+  4. Storm duration — work paused; trio on surface still faces full sulfur
+  5. Storm ends — healthy pioneers return to jobs
+
+BUILDING DAMAGE
+---------------
+  Tremor, eruption debris, raid, Resonance Event hits Command Center:
+    - Pioneers inside take DAMAGE
+    - They DO NOT DIE — incapacitated / down state
+    - Must HEAL or RESTORE (med bay, AC, resources, time) before resuming
+    - Injured pioneers cannot contribute until restored
+
+RANDOMNESS
+----------
+  Storm timing, duration, intensity, room fill, rooms damaged, injury count,
+  severity — procedural tables, not 22 full AI agents.
+  UI: aggregate bars (base output, sheltered count, injured count).
+
+
+================================================================================
+SECTION 6 — NEURAL ECHO RESCUE & PROCEDURAL GENERATION
+================================================================================
+
+PHILOSOPHY
+----------
+  Do not hire from a menu. RESCUE and REINTEGRATE neural echoes from Io's
+  environment and probe archives. Echoes integrate into Pioneers—some basic,
+  some Special. Echoes are thought to be imprints of previous inhabitants or
+  members of failed expeditions on Io.
+
+DISCOVERY
+---------
+  Infiltrator Scout detects Echo Signals (holographic glitches) near vents,
+  calderas, caves. Player can also scan.
+  Memory cores slotted into Aether-9 amplify scan range.
+  Resonance Events may spawn Echo Storms (more signals + more hazards).
+
+RESCUE SETPIECE
+---------------
+  Architect Engineer:  portable Purification Field
+  Combat Tactician:    hold enemies
+  Infiltrator Scout:   time vent bursts
+  Integration:         new Echo starts with high Saturation — may glitch
+                       hostile until synced (trio synergy / ability combo)
+  Success:             procedural Echo joins roster if under 25 cap
+  Failure:             injure trio member; lose Echo forever (permanent loss)
+
+ECHO VARIANTS (EXAMPLES)
+------------------------
+  Sulfur-Blooded   — high rad resist; damages nearby allies if Saturation high
+  Lava-Phased      — brief hazard phase; slower worker materialization
+  Probe Fragment   — predictive glitch abilities; periodic reboot at base
+
+PROCEDURAL GENERATION (AT INTEGRATION)
+--------------------------------------
+  Seeded by: rescue location + core count + random seed
+  Lightweight: ScriptableObjects + tables (WebGL friendly)
+
+  UNIQUE NAME FORMAT: [Io Prefix] [Core Name] [Designation]
+
+  Prefix pool (examples):
+    Sulfur-Blooded, Lava-Phased, Neural-Scarred, Rift-Touched, Echo-Bound,
+    Pyroclast, Magma-Forged, Tectonic, Void-Glitched, Crystalized,
+    Storm-Wrought, Anomaly-Born, Fractured, Ashen, Caldera, and Io hybrids
+
+  Name pool (examples):
+    Kael, Ryn, Lira, Thorne, Voss, Nyx, Solara, Draven, Quill, Mira, Calder,
+    Pyra, Vesper, Sol, Drak, Lumen, Ash, Vale, Sable, Orion, Juno
+
+  Designation: 3-9, X, Prime, Echo, Core, -7V, etc.
+
+  Example names:
+    1. Sulfur-Blooded Kael-9       6. Neural-Scarred Calder Sol
+    2. Rift-Touched Lira Prime     7. Magma-Forged Draven-4
+    3. Lava-Phased Thorne-7X       8. Void-Glitched Mira Storm
+    4. Echo-Bound Voss Nyx         9. Tectonic Quill Prime
+    5. Pyroclast Ryn Vale         10. Crystalized Vesper-9
+
+  Also generated:
+    Class/role + hybrid twist
+    3–5 stats: Radiation Resistance, Expedition Efficiency, Combat Synergy,
+               Durability, Anomaly Affinity
+    1–2 active + 1–2 passive from curated pool (~15–20 abilities total)
+    Backstory fragment for Aether-9 archive
+    Visual: material tint + modular attachments (no unique mesh per Echo)
+
+ABILITY POOL SEEDS
+------------------
+  Active:   Vent Burst, Crust Fracture, Purification Field, Shield Drone,
+            Aggro Pulse, Decoy Beacon, Phase Step
+  Passive:  Echo Reverb, Rad Hardening, Tremor Sense, Harvest Boost, Synergy Link
+  Mix 2–3 per Echo; rarity weighting; deep cores unlock rarer combos
+
+
+================================================================================
+SECTION 7 — AETHER-9, MEMORY CORES & RESONANCE EVENTS
+================================================================================
+
+FLOW
+----
+  Find core → recovery setpiece (not pure fetch) → slot into Aether-9 →
+  RESONANCE EVENT (10–15 min world change) + story fragment + unlocks
+
+CORE RECOVERY (NOT FETCH QUESTS)
+--------------------------------
+  Timed to volcanic events (crystal breaks only during eruption)
+  Seismic data from base scanner
+  Swarms attracted to core energy — decoys / stealth
+  Core may calm or destabilize local area when approached
+
+EXAMPLE CORES & EVENTS
+----------------------
+  Core 1 "Fractured Log"
+    Story: First corporate isotope rush
+    Event: Echo Field — bonus vent resources + Echo Clones (weaker past enemies)
+    Unlock: Resonance Beacon
+
+  Core 2 "Anomaly Warning"
+    Story: Non-natural seismic patterns
+    Event: Stability Bubble — one building immune to tremors but drains others
+    Unlock: Geothermal Stabilizer
+
+  Core 3 "Corporate Directive"
+    Story: Human-AI symbiosis testing
+    Event: Synergy Overcharge — trio massively boosted, then one Reboots
+    Unlock: Probe Uplink Tower
+
+RESONANCE EVENTS & BASE
+-----------------------
+  May spike sulfur storms, damage Command Center rooms, injure base pioneers,
+  spawn Echo rescue opportunities, boost worker output or Strain.
+
+
+================================================================================
+SECTION 8 — BUILDINGS, CRAFT & MATERIALIZATION
+================================================================================
+
+LIGHT BUILDING & MAINTENANCE
+----------------------------
+  Spend resources → building MATERIALIZES (scale-up + VFX).
+  Structures require maintenance over time (resources / worker assignment).
+
+KEY BUILDINGS
+-------------
+  Command Center           — sulfur storm shelter; rooms; damage/injury target
+  Purification Hub         — Saturation + toxic cleanse
+  Geothermal Harvester     — drills lava; depth vs tremors/spawns
+  Echo Reclamation Chamber — post-rescue stabilization; Echo leveling
+  Resonance Beacon         — amplify core / companion echo effects
+  Probe Uplink Tower       — orbital scans; hidden nodes; safe lava paths
+  Geothermal Stabilizer    — hazard reduction radius; faster materialization
+  Medical Facility         — heal, cure, medical research, medical crafting
+  Science Labs             — crafting facilities, upgrading, supply-line production
+  Pi → AC Terminal         — one-way conversion station or UI
+
+DYNAMIC RISK
+------------
+  Some buildings unstable during Resonance Events or volcano phases.
+  Worker assignments boost output; Geothermal depth = risk/reward.
+
+
+BUILDING CONTROL PANELS (CANON)
+-------------------------------
+Each major base building has an in-world CONTROL PANEL the player interacts
+with (E / use). Panels are the primary place to manage that structure — not
+a distant global menu.
+
+SHARED PANEL SHELL (ALL BUILDINGS)
+----------------------------------
+  Tabs (building may hide unused tabs):
+    OVERVIEW     — status, output rate, maintenance %, storm pause state
+    PIONEERS     — assign / unassign slots from base 22 (names or role chips)
+    PRODUCTION   — queued jobs, passive output, supply-line targets
+    CRAFT        — recipes valid AT THIS BUILDING only
+    CHANGES      — building-specific settings and modes (see per-building)
+
+  Rules:
+    - Injured pioneers cannot be assigned until healed (Medical Facility).
+    - Over-assigning pioneers raises collective Strain (Section 4).
+    - Queues pause during sulfur storms; UI shows PAUSED badge.
+    - AC may rush queue slots or maintenance (economy sink).
+    - Player on expedition: base pioneers keep running assigned queues.
+
+PER-BUILDING PANEL BEHAVIOR
+---------------------------
+  Command Center
+    - OVERVIEW + PIONEERS focus; storm room assignment preview
+    - CHANGES: shelter priority, which rooms accept injured overflow
+    - No craft queue; aggregate base status widget links here
+
+  Medical Facility
+    - CRAFT: medpacks, inoculations, cleanse consumables
+    - PRODUCTION: heal / restore queue for injured base pioneers
+    - CHANGES: triage priority (workers vs skilled), research unlock tier
+
+  Science Labs
+    - CRAFT: lab-tier recipes, upgrades, components for other buildings
+    - PRODUCTION: supply-line production (feeds Harvester, Beacon, etc.)
+    - CHANGES: research focus, output target building, batch size
+
+  Geothermal Harvester
+    - PRODUCTION: resource extraction tick (lava / isotope output)
+    - CHANGES: drill depth (risk vs reward), tremor throttle, auto-pause on quake
+    - PIONEERS: operator slots boost yield; deep settings raise spawn risk
+
+  Purification Hub
+    - PRODUCTION: Saturation cleanse queue for skilled pioneers
+    - CHANGES: cleanse speed vs AC cost, batch vs single
+
+  Echo Reclamation Chamber
+    - PRODUCTION: post-rescue stabilization + Echo XP leveling queue
+    - CHANGES: sync priority, failure mitigation (does not prevent permanent
+      loss on failed surface rescue — Section 6)
+
+  Resonance Beacon / Probe Uplink / Geothermal Stabilizer
+    - PRODUCTION: passive buff timers or scan cycles
+    - CHANGES: radius, target zone, buff intensity vs Strain
+
+  Pi → AC Terminal
+    - No pioneer assignment; wallet / conversion UI only
+
+PROTOTYPE VS TARGET
+-------------------
+  Current prototype: CraftingStation prefabs open journal Craft tab globally.
+  Target: replace station-first flow with building Control Panels; journal
+  Craft tab becomes recipe library + scroll learning only (read / plan),
+  while actual crafting and production happen at building panels.
+
+UI / INPUT
+----------
+  - Panel opens as modal overlay (Shift UI theme); does not replace journal.
+  - Optional quick-link from journal Pioneers tab → "Open assigned building".
+  - Mobile / controller: panel navigable with same schemes as journal (Section 10).
+
+================================================================================
+SECTION 9 — ECONOMY & MONETIZATION
+================================================================================
+
+AETHER CREDITS (AC) — IN-GAME CURRENCY
+--------------------------------------
+  NEW GAME STARTER GRANT: 5000 AC
+    Enough to purchase player's choice of 1 starter Skilled Pioneer (Echo)
+    from the opening roster offer. Balance starter Skilled Pioneer prices to
+    fit this budget (target ~5000 AC per starter pick; tune in data).
+
+  EARN FROM GAMEPLAY:
+    Selling resources, quests, expeditions, Resonance bonuses, base output,
+    tasks, etc.
+
+  SPEND ON:
+    Workers, rushing materialization/crafting, supplies, building upgrades,
+    player and pioneer upgrades/skills, healing injured base pioneers,
+    inoculations, environmental suit upgrades, optional listing prep fees, etc.
+
+PI — PREMIUM / EXTERNAL LAYER
+-----------------------------
+  NOT EARNED FROM ROUTINE GAMEPLAY. No quest Pi. No loot Pi. No drip rewards.
+
+  PI ENTERS VIA:
+    External Pi wallet
+    Selling upgraded Named Pioneers on Pioneer Survivor Exchange (seller Pi)
+    No onboarding Pi grant (locked)
+
+  PI SPENT ON:
+    Buying skilled Pioneers on Pioneer Survivor External Exchange (buyer pays Pi;
+    NFT already minted at list time by seller)
+    Pi → Aether Credits conversion (ONE-WAY ONLY)
+    Optional cosmetics / attestation — TBD
+
+  NOT ALLOWED:
+    AC → Pi conversion
+    Gameplay loops that mint Pi
+
+REAL MONEY (IAP)
+----------------
+  Credit card purchase → Aether Credits (same sink as earned AC)
+
+PIONEER SURVIVOR EXCHANGE (NFT / MARKETPLACE)
+---------------------------------------------
+  NFT MINT TIMING (LOCKED): Mint occurs when player LISTS a skilled Named
+  Pioneer for sale — NOT on rescue, NOT on roster add. Until listed, Pioneer
+  exists only in save data (no NFT).
+
+  On list: mint Echo Card NFT on Pi Network → external marketplace listing.
+
+  Echo Card (NFT metadata) includes:
+    Portrait, name, class, rarity, stats, abilities, backstory, rescue origin,
+    level, suggested Pi ask price (player adjustable)
+
+  Sell flow:
+    List on marketplace → buyer pays Pi via Pi SDK → seller receives Pi →
+    Echo Pioneer REMOVED from seller persistent account → added to buyer account
+
+  Trade: Pi-based; avoid AC in Echo trades. Direct barter TBD.
+
+  Guardrails:
+    Only skilled / named tradable (not workers, not raw resources)
+    Pi SDK for settlements on external marketplace
+    Optional AC listing fee in-game; Dark Matter earns listing Pi fees on
+    marketplace
+    Legal review before launch
+
+WORKERS VS SKILLED MARKET
+-------------------------
+  Workers: replace/recruit with AC; not Pi / NFT market
+  Skilled: full procedural depth; Pi market value scales with level/abilities
+
+
+================================================================================
+SECTION 10 — CONTROLS & UI (TARGET)
+================================================================================
+
+INPUT SCHEMES
+-------------
+  Keyboard + mouse (primary PC / WebGL)
+  Mobile touch controls
+  Controller schemes (gamepad — PC and console targets)
+
+JOURNAL TABS
+------------
+  Current / extend toward:
+    Journal, Inventory, Map, Pioneers/Echos (trios + roster), Skills, Craft,
+    Recipes, Echos
+  Note: legacy pet/AI follower UI folds into Pioneers/Echos tab — no separate
+  pet progression track.
+  Craft / Recipes tabs: discovery, scroll learning, recipe reference — NOT the
+  primary craft/production surface (use Building Control Panels at structures).
+  Future:
+    Roster detail, Command Center status, Pioneer Exchange link / UI
+
+BUILDING CONTROL UI (IN-WORLD)
+------------------------------
+  Opened only from building Control Panel interactables (E at terminal).
+  Shared shell: Overview | Pioneers | Production | Craft | Changes (per Section 8).
+  Base status widget on HUD links injured / sheltered counts; deep config at panels.
+
+HUD
+---
+  O2 norm + four biome exposure indicators (compact); thermal = one cold/heat meter
+  AC and Pi balance (Pi = wallet / marketplace; AC = gameplay)
+  Base status widget (injured, sheltered, output)
+  Hotbar + toolbar
+
+
+================================================================================
+SECTION 11 — PLATFORMS, ART & TECH
+================================================================================
+
+BUILD BUDGET
+------------
+  WebGL: 50–100 MB total
+  Semi-low-poly modular art
+
+CHARACTER STRATEGY
+------------------
+  2–3 base humanoid meshes + modular attachments + material swaps
+  Procedural Echo variety without unique mesh per character
+
+OPTIMIZATION
+------------
+  Addressables, 512px textures, URP, LODs, compression
+  Aggregate sim for base pioneers (no per-NPC pathfinding required at scale)
+
+
+================================================================================
+SECTION 12 — CURRENT IMPLEMENTATION STATUS (UNITY PROTOTYPE)
+================================================================================
+
+DONE — REUSE & EXTEND
+---------------------
+  [x] Third-person movement / ECM2 camera
+  [x] SurvivalStats: health, energy, stamina, oxygen
+  [x] Melee combat, weapon hitboxes, block, charge attack
+  [x] Inventory 24 + hotbar 10 + toolbar 2 (scanner, binoculars)
+  [x] Crafting, recipes, scroll pickups, stations
+  [x] Quest system + quest giver NPC (reflavor to Aether-9 + side givers)
+  [x] Pi HUD + save (REDESIGN → AC + external Pi wallet display)
+  [x] Map, optics/scanner, pet/AI follower (MIGRATE → Echo/trio companion fold)
+  [x] Save/load (5 slots, inventory, quests, equipment)
+  [x] Enemy AI, loot container system, disintegration + smoke VFX, respawn hold
+  [x] Main menu, start popup, journal, Shift UI theme
+  [x] Editor tools (Unity)
+  [x] Input/cursor fixes; toolbar hidden until game start
+
+NOT STARTED — VISION SYSTEMS
+----------------------------
+  [ ] Io environment / biome zones (prototype: flat terrain)
+  [ ] Exposure system (radiation, cold/heat, volcano, sulfur)
+  [ ] Environmental suits (upgradeable)
+  [ ] Command Center + 22 pioneer aggregate sim + sulfur shelter
+  [ ] 25 cap roster + trio selection
+  [ ] Procedural Echo generator + rescue setpieces
+  [ ] Aether-9 probe + memory cores + Resonance Events
+  [ ] Building materialization + maintenance pipeline
+  [ ] Building Control Panels (per-structure craft, production, pioneer assign)
+  [ ] Medical Facility, Science Labs gameplay
+  [ ] Aether Credits economy + IAP
+  [ ] Pioneer Exchange + NFT mint + Pi SDK external marketplace
+  [ ] Saturation, Strain, Purification Hub gameplay
+  [ ] Remove gameplay Pi rewards from quests/loot
+  [ ] Starter 5000 AC + opening Skilled Pioneer choice shop
+  [ ] Single thermal (cold/heat) exposure meter
+  [ ] Fold pet/AI follower into Echo/trio companion system
+  [ ] NFT mint on list only (Phase 7)
+  [ ] Mobile + controller input schemes
+
+
+================================================================================
+SECTION 13 — DEVELOPMENT ROADMAP (ORDER)
+================================================================================
+
+PHASE 0 — DOCUMENT & AUDIT (NOW)
+  [x] GDD consolidated (June 26, 2026)
+  [ ] ScriptableObject type list
+  [ ] Io scene strategy (flat terrain → Io biomes)
+
+PHASE 1 — SURVIVAL FOUNDATION (2–3 weeks)
+  [ ] ExposureZoneProfile + four pressures + O2 norm
+  [ ] Offsets: shelter, cave, portable habitat, env. suits (base tier)
+  [ ] Inoculation consumables
+  [ ] Sulfur storm scheduler (player/trio first)
+
+PHASE 2 — COMMAND CENTER & BASE 22 (2–3 weeks)
+  [ ] Command Center prefab + rooms
+  [ ] Aggregate pioneer sim (working / sheltered / injured)
+  [ ] Sulfur storm pause + room fill + randomness
+  [ ] Building damage → injury (no death) → heal to resume
+  [ ] Command Center Control Panel (overview + storm room preview)
+
+PHASE 3 — ROSTER & TRIO (2–4 weeks)
+  [ ] 25 cap roster UI
+  [ ] Trio pick (Architect Engineer, Science Specialist, Combat Tactician,
+      Infiltrator Scout roles)
+  [ ] Saturation + Strain + Purification Hub v1
+  [ ] Save roster state
+
+PHASE 4 — PROCEDURAL ECHOES & RESCUE (3–4 weeks)
+  [ ] Name + stat + ability generator
+  [ ] Echo signals + player scan + rescue setpiece v1
+  [ ] Echo Reclamation Chamber
+  [ ] Permanent Echo loss on failed rescue
+
+PHASE 5 — AETHER-9 & RESONANCE (3–4 weeks)
+  [ ] Probe quest hub + memory cores + side quest givers
+  [ ] 2–3 Resonance Events
+  [ ] Core setpieces + building unlocks
+  [ ] Failed expedition lore pickups (tech/materials)
+
+PHASE 6 — BUILDINGS, CRAFT & MAINTENANCE (2–3 weeks)
+  [ ] Materialize VFX
+  [ ] Medical Facility, Science Labs, Harvester, Uplink, Beacon, Stabilizer
+  [ ] Building Control Panel interactable + shared UI shell per Section 8
+  [ ] Per-building Production / Craft / Changes tabs wired to pioneer assign
+  [ ] Migrate prototype CraftingStation flow → building panels (journal = library)
+  [ ] Worker job assignments → output
+  [ ] Maintenance costs over time
+
+PHASE 7 — ECONOMY & EXCHANGE (2–3 weeks)
+  [ ] Aether Credits (replace gameplay Pi)
+  [ ] Pi → AC terminal; IAP for AC
+  [ ] Echo Card UI → NFT mint → Pi SDK external marketplace
+  [ ] Sell trained Named Pioneer (persistent account transfer)
+  [ ] Dark Matter listing Pi fee flow
+
+PHASE 8 — IO WORLD & SHIP (4+ weeks)
+  [ ] Biome zones, 8–12 core arc, balance pass
+  [ ] Mobile + controller polish
+  [ ] WebGL size audit; PC build; console prep later
+
+IMMEDIATE NEXT STEPS
+  1. Exposure zones + sulfur storm prototype (player/trio)
+  2. Command Center + 22 sim + Control Panel shell (overview / pioneers)
+  3. Roster cap + trio picker with new class names
+  4. Echo name/stats tables (data only)
+  5. AC currency pass: starter 5000 AC, remove gameplay Pi drip
+  6. Design BuildingControlPanel data schema (building id, queues, settings)
+
+
+================================================================================
+SECTION 14 — LOCKED DECISIONS & OPEN QUESTIONS
+================================================================================
+
+LOCKED DECISIONS (June 26, 2026)
+--------------------------------
+  [x] Starter AC on new game: 5000 AC
+  [x] Starter spend: enough to choose 1 starter Skilled Pioneer (~5000 AC tier)
+  [x] Pet/AI follower: FOLD into Echo/trio companion system (not separate pet)
+  [x] Cold/Heat: one combined thermal stress meter (cold ↔ heat poles)
+  [x] NFT mint: on marketplace LIST only (not on rescue or roster add)
+  [x] No onboarding Pi grant for new players
+  [x] Building Control Panels: per-building craft, production, pioneer assign,
+      and settings at in-world terminals (journal Craft = library only)
+
+STILL OPEN
+----------
+  [ ] Flat terrain → Io: incremental retexture vs new scene?
+  [ ] Exchange trade — Pi-only listings or barter two Echoes?
+  [ ] Science Specialist ability kit — define before Phase 3?
+  [ ] Exact starter Skilled Pioneer roster (which classes offered at new game)?
+  [ ] Dark Matter listing Pi fee percentage / structure
+  [ ] Max pioneer slots per building panel (fixed per type vs upgradeable)?
+
+
+================================================================================
+SECTION 15 — GLOSSARY
+================================================================================
+
+  AC                  Aether Credits — in-game currency from gameplay
+  Echo                Procedurally generated rescued pioneer (skilled/Special)
+  NFT / Echo Card     Minted on LIST only; tradable skilled Pioneer on Pi Network
+  Thermal meter       Single cold/heat exposure bar (biome pressure #2)
+  Starter grant       5000 AC on new game for 1 starter Skilled Pioneer choice
+  Resonance Event     Temporary world change after slotting a memory core
+  Saturation          Skilled pioneer mental/rad/sulfur stress (hallucinations)
+  Strain              Worker collective overwork meter
+  Norm                Oxygen — always tracked baseline survival pressure
+  One-way Pi          No gameplay Pi earn; no AC→Pi; Pi→AC and Exchange only
+  Pioneer Survivor    External Pi Network marketplace for NFT Echo trading
+  Exchange
+  Control Panel       In-world terminal per building; craft, production, assign
+  Building Control UI Modal overlay from panel; tabs Overview/Pioneers/Production/
+                      Craft/Changes
+
+
+================================================================================
+END OF GAME DESIGN DOCUMENT — DARK MATTER STUDIOS — PIONEER SURVIVORS
+================================================================================

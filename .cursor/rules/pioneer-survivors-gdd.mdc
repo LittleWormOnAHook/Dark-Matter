@@ -1,0 +1,40 @@
+---
+description: Pioneer Survivors GDD — canonical direction for Unity work in Assets/_Project
+globs: Assets/_Project/**/*
+alwaysApply: true
+---
+
+# Pioneer Survivors — GDD Authority
+
+**Read first:** `Assets/_Project/GAME_DESIGN_DOCUMENT.txt` (Dark Matter Studios, June 26, 2026).
+
+## Identity
+- Year 2160, Io survival + light base-builder, semi-low-poly, WebGL 50–100 MB
+- 25 pioneers max: **22 base** + **trio of 3** on expeditions
+- Rescue procedural **Neural Echoes**; **Aether-9** memory cores → **Resonance Events**
+- Materialize/craft/maintain buildings; four biome pressures + **O₂ norm**
+
+## Locked decisions (do not contradict)
+- **Starter AC:** 5000 on new game → player picks **1 starter Skilled Pioneer** (~5000 AC tier)
+- **Pi:** NOT earned in gameplay. AC from play; Pi via wallet, Pi→AC (one-way), or selling Echoes
+- **NFT:** mint **on marketplace LIST only** — not on rescue/roster add
+- **Thermal:** single **cold/heat** meter (one bar, two poles)
+- **Pet:** fold legacy pet/AI follower into **Echo/trio** system — no separate pet loop
+- **Base 22:** impervious to most pressures; **sulfur storms** → Command Center rooms; building damage **injures, never kills**
+- **Classes:** Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout (+ hybrids)
+- **Building Control Panels:** each major structure has an in-world terminal (E) → **Building Control UI** with tabs **Overview | Pioneers | Production | Craft | Changes**. Assign base-22 pioneers, queues, and per-building settings here. **Journal Craft = recipe library / scroll learning only** — not primary production UI. Queues pause in sulfur storms.
+
+## Before building off-design
+If the user asks for features unrelated to the GDD, **ask** whether it is canon, prototype, or a new direction. Prototypes OK when explicitly labeled.
+
+## Unity scope
+- Code lives under `Assets/_Project/`
+- Reuse existing systems (combat, inventory, quests, save) where possible
+- Prototype is flat terrain — Io biomes not shipped yet
+- Replace gameplay Pi drip with **Aether Credits** when touching economy UI/save
+
+## Economy quick reference
+| Currency | Source | Use |
+|----------|--------|-----|
+| AC | Gameplay, IAP | Base, craft, pioneers, heals, upgrades |
+| Pi | Wallet, sell listed Echo NFT | Buy Echo NFTs, Pi→AC terminal |
