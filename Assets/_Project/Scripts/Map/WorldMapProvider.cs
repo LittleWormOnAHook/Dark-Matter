@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using Project.Core;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Project.Map
 {
@@ -10,6 +13,9 @@ namespace Project.Map
     /// </summary>
     public class WorldMapProvider : MonoBehaviour
     {
+        private const string FakeMapResourcePath = "UI/FakeMap";
+        private const string FakeMapAssetPath = "Assets/_Project/Textures/UI/FakeMap.png";
+
         public static WorldMapProvider Instance { get; private set; }
 
         [SerializeField] private Terrain terrain;
@@ -33,10 +39,12 @@ namespace Project.Map
         private Coroutine buildRoutine;
         private Texture2D runtimeGeneratedTexture;
         private Texture2D fallbackTexture;
+        private static Texture2D cachedFakeMapTexture;
 
         internal static void ResetStaticState()
         {
             Instance = null;
+            cachedFakeMapTexture = null;
         }
 
         private void Awake()
@@ -48,7 +56,11 @@ namespace Project.Map
             }
 
             Instance = this;
+            EnsureTerrainReference();
             ResolveBounds();
+
+            if (mapTextureOverride == null)
+                mapTextureOverride = LoadFakeMapTexture();
 
             if (!GameSettings.MapSystemEnabled)
             {
@@ -56,20 +68,19 @@ namespace Project.Map
                 return;
             }
 
-            if (mapTextureOverride != null)
-            {
-                MapTexture = mapTextureOverride;
-                IsMapTextureReady = true;
-                MapTextureReady?.Invoke();
+            InitializeMapTexture();
+        }
+
+        private void Start()
+        {
+            if (!GameSettings.MapSystemEnabled)
                 return;
-            }
 
-            fallbackTexture = CreateFallbackTexture();
-            MapTexture = fallbackTexture;
-            IsMapTextureReady = true;
+            EnsureTerrainReference();
+            ResolveBounds();
 
-            if (buildTerrainTextureAtRuntime && isActiveAndEnabled)
-                buildRoutine = StartCoroutine(BuildTerrainMapTextureAsync());
+            if (!UsesStaticMapTexture())
+                TryStartTerrainBuild();
         }
 
         private void OnDestroy()
@@ -86,7 +97,7 @@ namespace Project.Map
             DestroyTexture(ref runtimeGeneratedTexture);
             DestroyTexture(ref fallbackTexture);
 
-            if (MapTexture != mapTextureOverride)
+            if (!IsExternalMapTexture(MapTexture))
                 MapTexture = null;
         }
 
@@ -126,26 +137,179 @@ namespace Project.Map
             if (!this.enabled)
                 this.enabled = true;
 
-            if (mapTextureOverride != null || IsMapTextureReady)
+            EnsureTerrainReference();
+            ResolveBounds();
+
+            if (IsMapTextureReady)
+            {
+                MapTextureReady?.Invoke();
                 return;
+            }
+
+            InitializeMapTexture();
+        }
+
+        private void InitializeMapTexture()
+        {
+            if (TryApplyStaticMapTexture())
+            {
+                MapTextureReady?.Invoke();
+                return;
+            }
 
             fallbackTexture = CreateFallbackTexture();
             MapTexture = fallbackTexture;
             IsMapTextureReady = true;
+            MapTextureReady?.Invoke();
 
-            if (buildTerrainTextureAtRuntime && buildRoutine == null)
-                buildRoutine = StartCoroutine(BuildTerrainMapTextureAsync());
+            if (TrySyncBakeTerrainPreview())
+                MapTextureReady?.Invoke();
+
+            if (TryStartTerrainBuild())
+                return;
+        }
+
+        private bool TryApplyStaticMapTexture()
+        {
+            Texture2D texture = mapTextureOverride;
+            if (texture == null || !IsDedicatedMapTexture(texture))
+                texture = LoadFakeMapTexture();
+
+            if (texture == null)
+                return false;
+
+            mapTextureOverride = texture;
+            MapTexture = texture;
+            IsMapTextureReady = true;
+            return true;
+        }
+
+        private bool UsesStaticMapTexture()
+        {
+            Texture2D texture = mapTextureOverride != null ? mapTextureOverride : LoadFakeMapTexture();
+            return texture != null && IsDedicatedMapTexture(texture);
+        }
+
+        private bool IsExternalMapTexture(Texture2D texture)
+        {
+            if (texture == null)
+                return false;
+
+            if (texture == mapTextureOverride || texture == LoadFakeMapTexture())
+                return true;
+
+            return false;
+        }
+
+        private bool TrySyncBakeTerrainPreview()
+        {
+            if (UsesStaticMapTexture() || !buildTerrainTextureAtRuntime)
+                return false;
+
+            EnsureTerrainReference();
+            TerrainData data = terrain != null ? terrain.terrainData : null;
+            if (data == null)
+                return false;
+
+            int resolution = Mathf.Clamp(Mathf.Min(mapTextureResolution, 128), 32, 128);
+            float maxHeight = Mathf.Max(0.001f, data.size.y);
+            int alphaWidth = data.alphamapWidth;
+            int alphaHeight = data.alphamapHeight;
+            int layerCount = data.alphamapLayers;
+            float[,,] alphamaps = layerCount > 0
+                ? data.GetAlphamaps(0, 0, alphaWidth, alphaHeight)
+                : null;
+            TerrainLayer[] layers = data.terrainLayers;
+
+            Texture2D texture = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false)
+            {
+                name = "SyncTerrainMapPreview",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+
+            Color[] pixels = new Color[resolution * resolution];
+            for (int y = 0; y < resolution; y++)
+            {
+                float sampleY = resolution <= 1 ? 0f : (float)y / (resolution - 1);
+                for (int x = 0; x < resolution; x++)
+                {
+                    float sampleX = resolution <= 1 ? 0f : (float)x / (resolution - 1);
+                    pixels[y * resolution + x] = SampleTerrainMapColor(
+                        data,
+                        alphamaps,
+                        layers,
+                        alphaWidth,
+                        alphaHeight,
+                        sampleX,
+                        sampleY,
+                        maxHeight);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+
+            DestroyTexture(ref runtimeGeneratedTexture);
+            runtimeGeneratedTexture = texture;
+            MapTexture = texture;
+            IsMapTextureReady = true;
+            return true;
+        }
+
+        public static Texture2D CreateDisplayFallback()
+        {
+            Texture2D fakeMap = LoadFakeMapTexture();
+            if (fakeMap != null)
+                return fakeMap;
+
+            return CreateFallbackTexture();
+        }
+
+        public static Texture2D LoadFakeMapTexture()
+        {
+            if (cachedFakeMapTexture != null)
+                return cachedFakeMapTexture;
+
+            cachedFakeMapTexture = Resources.Load<Texture2D>(FakeMapResourcePath);
+#if UNITY_EDITOR
+            if (cachedFakeMapTexture == null)
+                cachedFakeMapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FakeMapAssetPath);
+#endif
+            return cachedFakeMapTexture;
+        }
+
+        private bool TryStartTerrainBuild()
+        {
+            if (UsesStaticMapTexture() || !buildTerrainTextureAtRuntime || !isActiveAndEnabled)
+                return false;
+
+            EnsureTerrainReference();
+            if (terrain == null || terrain.terrainData == null)
+                return false;
+
+            if (buildRoutine != null)
+                return true;
+
+            buildRoutine = StartCoroutine(BuildTerrainMapTextureAsync());
+            return true;
+        }
+
+        private void EnsureTerrainReference()
+        {
+            if (terrain != null)
+                return;
+
+            terrain = GetComponent<Terrain>();
+            if (terrain == null)
+                terrain = FindAnyObjectByType<Terrain>();
         }
 
         private void ResolveBounds()
         {
             if (useTerrainBounds)
             {
-                if (terrain == null)
-                    terrain = GetComponent<Terrain>();
-
-                if (terrain == null)
-                    terrain = FindAnyObjectByType<Terrain>();
+                EnsureTerrainReference();
 
                 if (terrain != null && terrain.terrainData != null)
                 {
@@ -165,17 +329,18 @@ namespace Project.Map
             yield return null;
             yield return null;
 
-            if (terrain == null)
-                terrain = GetComponent<Terrain>();
+            if (UsesStaticMapTexture())
+            {
+                buildRoutine = null;
+                yield break;
+            }
 
-            if (terrain == null)
-                terrain = FindAnyObjectByType<Terrain>();
-
+            EnsureTerrainReference();
             TerrainData data = terrain != null ? terrain.terrainData : null;
             if (data == null)
                 yield break;
 
-            int resolution = Mathf.Clamp(mapTextureResolution, 64, 128);
+            int resolution = Mathf.Clamp(mapTextureResolution, 64, 512);
             float maxHeight = Mathf.Max(0.001f, data.size.y);
             Texture2D texture = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false)
             {
@@ -183,6 +348,14 @@ namespace Project.Map
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear
             };
+
+            int alphaWidth = data.alphamapWidth;
+            int alphaHeight = data.alphamapHeight;
+            int layerCount = data.alphamapLayers;
+            float[,,] alphamaps = layerCount > 0
+                ? data.GetAlphamaps(0, 0, alphaWidth, alphaHeight)
+                : null;
+            TerrainLayer[] layers = data.terrainLayers;
 
             Color[] pixels = new Color[resolution * resolution];
 
@@ -192,12 +365,19 @@ namespace Project.Map
                 for (int x = 0; x < resolution; x++)
                 {
                     float sampleX = resolution <= 1 ? 0f : (float)x / (resolution - 1);
-                    float height = data.GetInterpolatedHeight(sampleX, sampleY);
-                    float normalized = Mathf.Clamp01(height / maxHeight);
-                    pixels[y * resolution + x] = Color.Lerp(lowlandColor, highlandColor, normalized);
+                    pixels[y * resolution + x] = SampleTerrainMapColor(
+                        data,
+                        alphamaps,
+                        layers,
+                        alphaWidth,
+                        alphaHeight,
+                        sampleX,
+                        sampleY,
+                        maxHeight);
                 }
 
-                yield return null;
+                if ((y & 7) == 0)
+                    yield return null;
             }
 
             texture.SetPixels(pixels);
@@ -209,6 +389,78 @@ namespace Project.Map
 
             DestroyTexture(ref fallbackTexture);
             MapTextureReady?.Invoke();
+            buildRoutine = null;
+        }
+
+        private Color SampleTerrainMapColor(
+            TerrainData data,
+            float[,,] alphamaps,
+            TerrainLayer[] layers,
+            int alphaWidth,
+            int alphaHeight,
+            float sampleX,
+            float sampleY,
+            float maxHeight)
+        {
+            float height = data.GetInterpolatedHeight(sampleX, sampleY);
+            float normalizedHeight = Mathf.Clamp01(height / maxHeight);
+            Color heightColor = Color.Lerp(lowlandColor, highlandColor, normalizedHeight);
+
+            if (alphamaps == null || layers == null || layers.Length == 0 || alphaWidth <= 0 || alphaHeight <= 0)
+                return heightColor;
+
+            int alphaX = Mathf.Clamp(Mathf.FloorToInt(sampleX * (alphaWidth - 1)), 0, alphaWidth - 1);
+            int alphaY = Mathf.Clamp(Mathf.FloorToInt(sampleY * (alphaHeight - 1)), 0, alphaHeight - 1);
+
+            Color splatColor = Color.black;
+            float weightSum = 0f;
+            int layerLimit = Mathf.Min(layers.Length, alphamaps.GetLength(2));
+            for (int layerIndex = 0; layerIndex < layerLimit; layerIndex++)
+            {
+                float weight = alphamaps[alphaY, alphaX, layerIndex];
+                if (weight <= 0.001f)
+                    continue;
+
+                TerrainLayer layer = layers[layerIndex];
+                Color layerColor = layer != null
+                    ? SampleTerrainLayerColor(layer, sampleX, sampleY)
+                    : Color.gray;
+                splatColor += layerColor * weight;
+                weightSum += weight;
+            }
+
+            if (weightSum <= 0.001f)
+                return heightColor;
+
+            splatColor /= weightSum;
+            return Color.Lerp(heightColor, splatColor, 0.85f);
+        }
+
+        private static Color SampleTerrainLayerColor(TerrainLayer layer, float sampleX, float sampleY)
+        {
+            if (layer == null)
+                return Color.gray;
+
+            Color tint = layer.diffuseRemapMax;
+            Texture2D diffuse = layer.diffuseTexture;
+            if (diffuse == null || !diffuse.isReadable)
+                return tint;
+
+            int texX = Mathf.Clamp(Mathf.FloorToInt(sampleX * diffuse.width), 0, diffuse.width - 1);
+            int texY = Mathf.Clamp(Mathf.FloorToInt(sampleY * diffuse.height), 0, diffuse.height - 1);
+            Color sampled = diffuse.GetPixel(texX, texY);
+            return Color.Lerp(tint, sampled, 0.65f);
+        }
+
+        private static bool IsDedicatedMapTexture(Texture2D texture)
+        {
+            if (texture == null)
+                return false;
+
+            string name = texture.name;
+            return name.Contains("FakeMap", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Map", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Minimap", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void DestroyTexture(ref Texture2D texture)

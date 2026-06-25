@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Project.Core;
+using Project.Pioneers;
 using Project.Player;
 using Project.Quests;
 using Project.Survival;
@@ -13,16 +14,16 @@ namespace Project.UI
     {
         [Header("Survival Stats UI")]
         public Slider healthSlider;
-        public Slider hungerSlider;
-        public Slider thirstSlider;
         public Slider energySlider;
+        public Slider staminaSlider;
+        public Slider oxygenSlider;
 
         public TextMeshProUGUI healthText;
-        public TextMeshProUGUI hungerText;
-        public TextMeshProUGUI thirstText;
         public TextMeshProUGUI energyText;
+        public TextMeshProUGUI staminaText;
+        public TextMeshProUGUI oxygenText;
 
-        [Header("Pi Network")]
+        [Header("Currency")]
         public TextMeshProUGUI piBalanceText;
 
         [Header("Interaction Prompt")]
@@ -42,10 +43,13 @@ namespace Project.UI
 
         private SurvivalStats survivalStats;
         private Camera worldCamera;
-        private float piBalance = 0f;
+        private float aetherCredits;
+        private float piWalletBalance;
+        private float piBalance;
 
         private void Awake()
         {
+            ResolveSurvivalUiReferences();
             BindSurvivalStats();
             EnsureSurvivalPanelBinder();
             EnsureMapUi();
@@ -56,6 +60,13 @@ namespace Project.UI
             EnsureJournalPanelUi();
             EnsureQuestManager();
             EnsureCraftingUi();
+
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster != null)
+            {
+                SetAetherCredits(roster.AetherCredits);
+                SetPiWalletBalance(roster.PiWalletBalance);
+            }
         }
 
         private void EnsureJournalPanelUi()
@@ -107,12 +118,13 @@ namespace Project.UI
 
         private void Start()
         {
+            ResolveSurvivalUiReferences();
             BindSurvivalStats();
+            EnsureOxygenDeprivationFx();
             UpdateSurvivalUI();
-            if (piBalanceText != null) piBalanceText.text = "Pi: 0";
+            SetCurrencyHudVisible(false);
             if (interactionPrompt != null) interactionPrompt.gameObject.SetActive(false);
             ConfigureInteractionPromptPosition();
-            ConfigurePiBalancePosition();
             EnsureGameplayUiHelpers();
             worldCamera = Camera.main;
             EnsureCombatUiReady();
@@ -177,6 +189,19 @@ namespace Project.UI
                 : new Color(0.82f, 0.92f, 1f, 0.98f);
         }
 
+        public void SetCurrencyHudVisible(bool visible)
+        {
+            if (piBalanceText == null)
+                return;
+
+            piBalanceText.gameObject.SetActive(visible);
+            if (visible)
+            {
+                ConfigurePiBalancePosition();
+                RefreshCurrencyHud();
+            }
+        }
+
         private void ConfigurePiBalancePosition()
         {
             if (!applyRuntimeHudLayout || piBalanceText == null)
@@ -231,6 +256,8 @@ namespace Project.UI
 
         private void BindSurvivalStats()
         {
+            ResolveSurvivalUiReferences();
+
             SurvivalStats found = null;
 
             GameObject player = PlayerLocator.FindPlayerObject();
@@ -251,8 +278,16 @@ namespace Project.UI
             survivalStats.OnStatsChanged += UpdateSurvivalUI;
         }
 
+        private void EnsureOxygenDeprivationFx()
+        {
+            if (GetComponent<OxygenDeprivationFx>() == null)
+                gameObject.AddComponent<OxygenDeprivationFx>();
+        }
+
         private void EnsureSurvivalPanelBinder()
         {
+            ResolveSurvivalUiReferences();
+
             if (healthSlider == null)
                 return;
 
@@ -281,18 +316,105 @@ namespace Project.UI
             if (survivalStats == null) return;
 
             SetSliderValue(healthSlider, survivalStats.CurrentHealth / survivalStats.maxHealth);
-            SetSliderValue(hungerSlider, survivalStats.CurrentHunger / survivalStats.maxHunger);
-            SetSliderValue(thirstSlider, survivalStats.CurrentThirst / survivalStats.maxThirst);
             SetSliderValue(energySlider, survivalStats.CurrentEnergy / survivalStats.maxEnergy);
+            SetSliderValue(staminaSlider, survivalStats.CurrentStamina / survivalStats.maxStamina);
+            SetSliderValue(oxygenSlider, survivalStats.GetOxygenNormalized());
 
             if (healthText != null)
                 healthText.text = FormatStatValue(survivalStats.CurrentHealth, "Health");
-            if (hungerText != null)
-                hungerText.text = FormatStatValue(survivalStats.CurrentHunger, "Hunger");
-            if (thirstText != null)
-                thirstText.text = FormatStatValue(survivalStats.CurrentThirst, "Thirst");
             if (energyText != null)
                 energyText.text = FormatStatValue(survivalStats.CurrentEnergy, "Energy");
+            if (staminaText != null)
+                staminaText.text = FormatStatValue(survivalStats.CurrentStamina, "Stamina");
+            if (oxygenText != null)
+            {
+                if (CondensedSurvivalStatsHud.IsActive)
+                    oxygenText.gameObject.SetActive(true);
+
+                oxygenText.text = FormatOxygenValue(survivalStats.CurrentOxygen);
+            }
+        }
+
+        private void ResolveSurvivalUiReferences()
+        {
+            Transform panel = GetSurvivalStatsPanelTransform();
+            if (panel == null)
+                return;
+
+            healthSlider ??= FindRowSlider(panel, "HealthRow");
+            energySlider ??= FindRowSlider(panel, "EnergyRow");
+            staminaSlider ??= FindRowSlider(panel, "StaminaRow");
+            oxygenSlider ??= FindRowSlider(panel, "OxygenRow");
+
+            healthText ??= FindRowLabel(panel, "HealthRow");
+            energyText ??= FindRowLabel(panel, "EnergyRow");
+            staminaText ??= FindRowLabel(panel, "StaminaRow");
+            oxygenText ??= FindRowLabel(panel, "OxygenRow");
+        }
+
+        private Transform GetSurvivalStatsPanelTransform()
+        {
+            if (healthSlider != null)
+            {
+                Transform current = healthSlider.transform;
+                while (current != null)
+                {
+                    if (current.name == "SurvivalStatsPanel")
+                        return current;
+
+                    current = current.parent;
+                }
+            }
+
+            Transform panel = FindDeepChild(transform, "SurvivalStatsPanel");
+            if (panel != null)
+                return panel;
+
+            Canvas canvas = GetComponent<Canvas>();
+            return canvas != null ? FindDeepChild(canvas.transform, "SurvivalStatsPanel") : null;
+        }
+
+        private static Transform FindDeepChild(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            if (parent.name == childName)
+                return parent;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform found = FindDeepChild(parent.GetChild(i), childName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
+
+        private static Slider FindRowSlider(Transform panel, string rowName)
+        {
+            Transform row = panel.Find(rowName);
+            return row != null ? row.GetComponentInChildren<Slider>(true) : null;
+        }
+
+        private static TextMeshProUGUI FindRowLabel(Transform panel, string rowName)
+        {
+            Transform row = panel.Find(rowName);
+            return row != null ? row.GetComponentInChildren<TextMeshProUGUI>(true) : null;
+        }
+
+        private static string FormatOxygenValue(float displaySeconds)
+        {
+            int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(displaySeconds));
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            string formatted = $"{minutes:00}:{seconds:00}";
+
+            if (CondensedSurvivalStatsHud.IsActive)
+                return formatted;
+
+            return $"Oxygen: {formatted}";
         }
 
         private static string FormatStatValue(float value, string statName)
@@ -305,29 +427,25 @@ namespace Project.UI
 
         private static void SetSliderValue(Slider slider, float normalizedValue)
         {
-            if (slider == null) return;
+            if (slider == null)
+                return;
 
             float clamped = Mathf.Clamp01(normalizedValue);
             slider.SetValueWithoutNotify(clamped);
 
-            if (CondensedSurvivalStatsHud.IsActive)
+            Transform fillTransform = slider.transform.Find("RingFill");
+            if (fillTransform is RectTransform)
             {
                 CondensedSurvivalStatsHud.ApplyBarFill(slider, clamped);
                 return;
             }
 
-            Transform fillTransform = slider.transform.Find("RingFill");
-            if (fillTransform != null && fillTransform.TryGetComponent<Image>(out Image fillImage))
+            if (fillTransform != null && fillTransform.TryGetComponent<Image>(out Image fillImage)
+                && fillImage.type == Image.Type.Filled
+                && fillImage.fillMethod == Image.FillMethod.Horizontal)
             {
-                bool useHorizontalFill = CondensedSurvivalStatsHud.IsActive
-                    || (fillImage.type == Image.Type.Filled
-                        && fillImage.fillMethod == Image.FillMethod.Horizontal);
-
-                if (useHorizontalFill)
-                {
-                    fillImage.fillAmount = clamped;
-                    return;
-                }
+                fillImage.fillAmount = clamped;
+                return;
             }
 
             CircularProgressBar progress = slider.GetComponent<CircularProgressBar>();
@@ -335,36 +453,81 @@ namespace Project.UI
                 progress.UpdateRadialFill(clamped);
         }
 
+        public float GetAetherCredits() => aetherCredits;
+
+        public void SetAetherCredits(float balance)
+        {
+            aetherCredits = Mathf.Max(0f, balance);
+            RefreshCurrencyHud();
+        }
+
+        public float GetPiWalletBalance() => piWalletBalance;
+
+        public void SetPiWalletBalance(float balance)
+        {
+            piWalletBalance = Mathf.Max(0f, balance);
+            RefreshCurrencyHud();
+        }
+
         public float GetPiBalance() => piBalance;
 
         public void SetPiBalance(float balance)
         {
             piBalance = Mathf.Max(0f, balance);
-            if (piBalanceText != null)
-                piBalanceText.text = $"Pi: {piBalance}";
+            RefreshCurrencyHud();
+        }
+
+        public void ShowAcReward(int amount, string source = "Reward")
+        {
+            if (amount <= 0)
+                return;
+
+            PioneerRosterManager roster = PioneerRosterManager.Instance;
+            if (roster != null)
+            {
+                roster.AddAetherCredits(amount, source);
+                return;
+            }
+
+            aetherCredits += amount;
+            ShowAcRewardPopup(amount, source);
+            RefreshCurrencyHud();
+        }
+
+        public void ShowAcRewardPopup(int amount, string source = "Reward")
+        {
+            if (amount <= 0)
+                return;
+
+            ShowCurrencyPopup($"+{amount} AC", source);
         }
 
         public void ShowPiReward(int amount, string source = "Gathering")
         {
-            piBalance += amount;
+            ShowAcReward(amount, source);
+        }
 
+        private void RefreshCurrencyHud()
+        {
+            if (piBalanceText == null || !piBalanceText.gameObject.activeSelf)
+                return;
+
+            piBalanceText.text =
+                $"Pi Wallet: {Mathf.RoundToInt(piWalletBalance)}  |  AC: {Mathf.RoundToInt(aetherCredits)}";
+        }
+
+        private void ShowCurrencyPopup(string amountLine, string source)
+        {
             if (piRewardPopupPrefab != null && popupParent != null)
             {
                 GameObject popup = Instantiate(piRewardPopupPrefab, popupParent);
                 TextMeshProUGUI txt = popup.GetComponentInChildren<TextMeshProUGUI>();
                 if (txt != null)
-                    txt.text = $"+{amount} Pi\n{source}";
+                    txt.text = $"{amountLine}\n{source}";
 
-                // If the popup has its own animation handler, let it manage its lifetime.
-                // Otherwise, fall back to the basic fade-and-destroy routine.
                 if (popup.GetComponent<PiRewardPopup>() == null)
-                {
                     StartCoroutine(FadeAndDestroyPopup(popup));
-                }
             }
-
-            if (piBalanceText != null)
-                piBalanceText.text = $"Pi: {piBalance}";
         }
 
         public void ShowInteractionPrompt(string message)
@@ -428,6 +591,7 @@ namespace Project.UI
                 survivalStats.OnStatsChanged -= UpdateSurvivalUI;
 
             survivalStats = null;
+            ResolveSurvivalUiReferences();
             BindSurvivalStats();
             UpdateSurvivalUI();
         }
@@ -452,6 +616,7 @@ namespace Project.UI
             if (existing != null)
             {
                 existing.gameObject.SetActive(true);
+                existing.SetAsLastSibling();
                 WireDeathPopupButtons(existing);
                 ConfigurePopupCursor();
                 return;
@@ -521,6 +686,7 @@ namespace Project.UI
             Button exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(QuitGame);
 
+            deathPanel.transform.SetAsLastSibling();
             ConfigurePopupCursor();
         }
 

@@ -218,11 +218,39 @@ namespace Project.Player
                 _character.SetMovementDirection(Vector3.zero);
         }
 
+        /// <summary>
+        /// Clears stale UI pause flags and reapplies cursor lock after menus / popups close.
+        /// </summary>
+        public void EnsureGameplayInputReady()
+        {
+            _inventoryOpen = false;
+            _journalOpen = false;
+            _mapOpen = false;
+            _questDialogOpen = false;
+            _lootDialogOpen = false;
+            _gameplayPaused = false;
+            ApplyCursorState();
+        }
+
         private void ApplyCursorState()
         {
-            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _gameplayPaused || _opticsOpen || !GameSession.HasStarted;
-            Cursor.lockState = cursorFree ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = cursorFree;
+            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _gameplayPaused || !GameSession.HasStarted;
+
+            if (_opticsOpen)
+            {
+                Cursor.lockState = CursorLockMode.Confined;
+                Cursor.visible = true;
+            }
+            else if (cursorFree)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
 
             if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen) && _character != null)
                 _character.SetMovementDirection(Vector3.zero);
@@ -341,9 +369,20 @@ namespace Project.Player
 
         private void PollLookInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || IsGameplayPaused || Mouse.current == null) return;
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || IsGameplayPaused)
+                return;
 
-            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+            Vector2 mouseDelta = Vector2.zero;
+            if (Mouse.current != null)
+                mouseDelta = Mouse.current.delta.ReadValue();
+
+            if (mouseDelta.sqrMagnitude <= 0.0001f)
+            {
+                mouseDelta = new Vector2(
+                    Input.GetAxisRaw("Mouse X"),
+                    Input.GetAxisRaw("Mouse Y"));
+            }
+
             if (mouseDelta.sqrMagnitude > 0.0001f)
                 _lookInput = mouseDelta;
         }
@@ -370,8 +409,12 @@ namespace Project.Player
 
             _character.maxWalkSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
-            if (isSprinting && _survivalStats != null)
-                _survivalStats.SetEnergy(_survivalStats.CurrentEnergy - Time.deltaTime * 12f);
+            if (_survivalStats != null)
+            {
+                _survivalStats.SetSprinting(isSprinting);
+                if (isSprinting)
+                    _survivalStats.SetStamina(_survivalStats.CurrentStamina - Time.deltaTime * 12f);
+            }
 
             Vector3 movementDirection = Vector3.right * _moveInput.x + Vector3.forward * _moveInput.y;
 

@@ -37,6 +37,7 @@ namespace Project.EditorTools.UiLayout
         private bool showSlider = true;
         private bool showScrollRect = true;
         private bool showInventorySlot = true;
+        private bool showMapUi = true;
         private bool showGamePanels = true;
         private bool showOtherComponents = true;
 
@@ -245,6 +246,9 @@ namespace Project.EditorTools.UiLayout
 
             if (GUILayout.Button("Prepare Selected", GUILayout.Width(120f)))
                 PrepareSelectedForManualLayout();
+
+            if (GUILayout.Button("Create Map Shells", GUILayout.Width(120f)))
+                CreateMapLayoutShellsWithFeedback();
 
             if (Application.isPlaying && GUILayout.Button("Capture Visible Panels", GUILayout.Width(150f)))
                 CaptureVisiblePanels();
@@ -468,6 +472,19 @@ namespace Project.EditorTools.UiLayout
                 showInventorySlot = EditorGUILayout.Foldout(showInventorySlot, "Inventory Slot", true);
                 if (showInventorySlot)
                     UiLayoutEditorInspectorDrawers.DrawInventorySlotSection(slotUi);
+            }
+
+            if (target.TryGetComponent(out MapUI mapUiOnTarget))
+            {
+                showMapUi = EditorGUILayout.Foldout(showMapUi, "Map UI", true);
+                if (showMapUi)
+                    UiLayoutEditorInspectorDrawers.DrawMapUiSection(mapUiOnTarget);
+            }
+            else if (target.GetComponentInParent<MapUI>() is MapUI parentMapUi)
+            {
+                showMapUi = EditorGUILayout.Foldout(showMapUi, "Map UI", true);
+                if (showMapUi)
+                    UiLayoutEditorInspectorDrawers.DrawMapUiSection(parentMapUi);
             }
 
             if (rootCanvas != null && selectedRect == rootCanvas.GetComponent<RectTransform>())
@@ -915,6 +932,28 @@ namespace Project.EditorTools.UiLayout
                 captured > 0
                     ? $"Captured {captured} visible panel(s). Exit Play Mode to write layouts into the scene."
                     : "No visible panels found. Open panels in-game first, then capture again.",
+                "OK");
+        }
+
+        private void CreateMapLayoutShellsWithFeedback()
+        {
+            if (rootCanvas == null)
+                TryResolveCanvasFromSelection();
+
+            if (!UiLayoutEditorPanelRegistry.CreateMapLayoutShells(rootCanvas))
+            {
+                EditorUtility.DisplayDialog(
+                    "UI Layout Editor",
+                    "MapUI was not found on the canvas. Add MapUI to MainCanvas first (Tools > Survival Pioneer > Scene > Map System).",
+                    "OK");
+                return;
+            }
+
+            MarkSceneDirtyStatic();
+            RebuildFlatList();
+            EditorUtility.DisplayDialog(
+                "UI Layout Editor",
+                "Created MinimapPanel and FullMapOverlay under MapUI. Select entries in the Map category, adjust rects, click Prep, then capture in Play Mode if needed.",
                 "OK");
         }
     }

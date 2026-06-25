@@ -16,9 +16,8 @@ namespace Project.UI
     {
       Journal = 0,
       Inventory = 1,
-      Map = 2,
-      Pet = 3,
-      Craft = 4
+      Pet = 2,
+      Craft = 3
     }
 
     private const float UiScale = 0.75f;
@@ -31,8 +30,7 @@ namespace Project.UI
     private RectTransform panelRect;
     private Transform journalTabContent;
     private Transform inventoryTabContent;
-    private Transform mapTabContent;
-    private Transform petTabContent;
+    private Transform pioneersTabContent;
     private Transform craftTabContent;
     private RectTransform tabContentHostRect;
     private RectTransform headerRect;
@@ -50,8 +48,7 @@ namespace Project.UI
     private bool uiBuilt;
 
     private InventoryUI inventoryUi;
-    private MapUI mapUi;
-    private PetUI petUi;
+    private PioneerRosterPanelUI pioneerRosterPanelUi;
     private CraftingUI craftingUi;
     private QuestManager questManager;
     private CraftingManager craftingManager;
@@ -65,8 +62,9 @@ namespace Project.UI
     private void Start()
     {
       inventoryUi = FindAnyObjectByType<InventoryUI>();
-      mapUi = FindAnyObjectByType<MapUI>();
-      petUi = FindAnyObjectByType<PetUI>();
+      pioneerRosterPanelUi = GetComponent<PioneerRosterPanelUI>();
+      if (pioneerRosterPanelUi == null)
+        pioneerRosterPanelUi = gameObject.AddComponent<PioneerRosterPanelUI>();
       craftingUi = FindAnyObjectByType<CraftingUI>();
       questManager = FindAnyObjectByType<QuestManager>();
       craftingManager = FindAnyObjectByType<CraftingManager>();
@@ -128,6 +126,8 @@ namespace Project.UI
 
       TogglePanel();
     }
+
+    public bool IsOpen => isOpen;
 
     public void TogglePanel()
     {
@@ -224,16 +224,30 @@ namespace Project.UI
     public static void CloseAnyOpenJournal()
     {
       JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-      journal?.ClosePanel();
+      journal?.ReleaseInputCapture();
+    }
+
+    public void ReleaseInputCapture()
+    {
+      if (isOpen)
+      {
+        ClosePanel();
+        return;
+      }
+
+      PlayerController player = FindAnyObjectByType<PlayerController>();
+      if (player != null)
+        player.SetJournalOpen(false);
+
+      CameraController camera = FindAnyObjectByType<CameraController>();
+      if (camera != null)
+        camera.SetJournalOpen(false);
     }
 
     private void CloseConflictingPanels()
     {
       InventoryUI.CloseAnyOpenInventory();
-      if (mapUi != null)
-        mapUi.CloseFullMap();
-      if (petUi != null)
-        petUi.ClosePanel();
+      MapUI.CloseAnyOpenMap();
     }
 
     private void EnsureUiBuilt()
@@ -295,6 +309,13 @@ namespace Project.UI
         UiPanelDragHandle.Bind(tabBarRect, panelRect);
       if (tabContentHostRect != null)
         UiPanelDragHandle.Bind(tabContentHostRect, panelRect);
+
+      UiPanelResizeHandles.AddAll(
+        panelRoot.transform,
+        panelRect,
+        lockAspectRatio: false,
+        minSize: new Vector2(Sc(420f), Sc(320f)),
+        maxSize: new Vector2(Sc(1400f), Sc(980f)));
     }
 
     private void CreateHeaderRow(ShiftUiTheme theme)
@@ -344,7 +365,7 @@ namespace Project.UI
       LayoutElement tabBarLayout = tabBar.AddComponent<LayoutElement>();
       tabBarLayout.minHeight = Sc(44f);
 
-      string[] labels = { "Journal", "Inventory", "Map", "Pet", "Recipes" };
+      string[] labels = { "Journal", "Inventory", "Pioneers", "Recipes" };
       for (int i = 0; i < labels.Length; i++)
       {
         Button tabButton = CreateSmallButton(tabBar.transform, labels[i], theme, new Vector2(Sc(138f), Sc(40f)));
@@ -368,14 +389,12 @@ namespace Project.UI
 
       journalTabContent = CreateTabContentRoot(contentHost.transform, "JournalTabContent", out GameObject journalGo);
       inventoryTabContent = CreateTabContentRoot(contentHost.transform, "InventoryTabContent", out GameObject inventoryGo);
-      mapTabContent = CreateTabContentRoot(contentHost.transform, "MapTabContent", out GameObject mapGo);
-      petTabContent = CreateTabContentRoot(contentHost.transform, "PetTabContent", out GameObject petGo);
+      pioneersTabContent = CreateTabContentRoot(contentHost.transform, "PioneersTabContent", out GameObject pioneersGo);
       craftTabContent = CreateTabContentRoot(contentHost.transform, "CraftTabContent", out GameObject craftGo);
 
       tabContents.Add(journalGo);
       tabContents.Add(inventoryGo);
-      tabContents.Add(mapGo);
-      tabContents.Add(petGo);
+      tabContents.Add(pioneersGo);
       tabContents.Add(craftGo);
     }
 
@@ -530,11 +549,8 @@ namespace Project.UI
         case JournalTab.Inventory:
           EmbedInventoryTab();
           break;
-        case JournalTab.Map:
-          EmbedMapTab();
-          break;
         case JournalTab.Pet:
-          EmbedPetTab();
+          EmbedPioneersTab();
           break;
         case JournalTab.Craft:
           EmbedCraftTab();
@@ -570,23 +586,16 @@ namespace Project.UI
       inventoryUi?.RefreshMainInventoryLayout();
     }
 
-    private void EmbedMapTab()
+    private void EmbedPioneersTab()
     {
-      if (mapUi == null)
-        mapUi = FindAnyObjectByType<MapUI>();
+      if (pioneerRosterPanelUi == null)
+      {
+        pioneerRosterPanelUi = GetComponent<PioneerRosterPanelUI>();
+        if (pioneerRosterPanelUi == null)
+          pioneerRosterPanelUi = gameObject.AddComponent<PioneerRosterPanelUI>();
+      }
 
-      mapUi?.EmbedFullMapPanel(mapTabContent);
-      ApplyEmbeddedInsets(GetFirstChildRect(mapTabContent));
-    }
-
-    private void EmbedPetTab()
-    {
-      if (petUi == null)
-        petUi = FindAnyObjectByType<PetUI>();
-
-      petUi?.EmbedPanel(petTabContent);
-      if (petUi != null)
-        ApplyEmbeddedInsets(petTabContent.GetChild(0) as RectTransform);
+      pioneerRosterPanelUi.EmbedIn(pioneersTabContent);
     }
 
     private void EmbedCraftTab()
@@ -601,8 +610,7 @@ namespace Project.UI
     private void UnembedAllTabs()
     {
       inventoryUi?.RestoreInventoryPanel();
-      mapUi?.RestoreFullMapPanel();
-      petUi?.RestorePanel();
+      pioneerRosterPanelUi?.Unembed();
       craftingUi?.RestorePanel();
     }
 

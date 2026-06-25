@@ -3,6 +3,7 @@ namespace Project.Core
     public enum GamePhase
     {
         MainMenu,
+        StarterPioneerSelect,
         StartPopup,
         Playing
     }

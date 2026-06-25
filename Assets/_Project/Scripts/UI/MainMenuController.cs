@@ -2,7 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
 using Project.Core;
+using Project.Interaction;
 using Project.Managers;
+using Project.Pioneers;
 using Project.Player;
 using Project.Survival;
 using UnityEngine;
@@ -16,7 +18,7 @@ namespace Project.UI
     [DefaultExecutionOrder(-200)]
     public class MainMenuController : MonoBehaviour
     {
-        private const float MenuScale = 1.5f;
+        private const float MenuScale = 1f;
 
         [SerializeField] private bool buildOnAwake = true;
 
@@ -24,6 +26,7 @@ namespace Project.UI
         private GameObject menuBackground;
         private SettingsPanelController settingsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
+        private MainMenuWalletPanelController walletPanel;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
@@ -68,6 +71,9 @@ namespace Project.UI
                 return;
 
             if (saveSlotsPanel != null && saveSlotsPanel.IsOpen)
+                return;
+
+            if (walletPanel != null && walletPanel.IsSwapPanelOpen)
                 return;
 
             if (pauseOverlayActive)
@@ -167,24 +173,27 @@ namespace Project.UI
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(420f * MenuScale, 900f);
+            panelRect.sizeDelta = new Vector2(360f * MenuScale, 640f * MenuScale);
 
             VerticalLayoutGroup layout = menuPanel.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(
-                Mathf.RoundToInt(28f * MenuScale),
-                Mathf.RoundToInt(28f * MenuScale),
-                Mathf.RoundToInt(28f * MenuScale),
-                Mathf.RoundToInt(28f * MenuScale));
-            layout.spacing = Mathf.RoundToInt(28f * MenuScale);
+                Mathf.RoundToInt(20f * MenuScale),
+                Mathf.RoundToInt(20f * MenuScale),
+                Mathf.RoundToInt(20f * MenuScale),
+                Mathf.RoundToInt(20f * MenuScale));
+            layout.spacing = Mathf.RoundToInt(20f * MenuScale);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            MenuUiBuilder.CreateTitle(menuPanel.transform, "Survival Pioneer", 42f * MenuScale);
+            MenuUiBuilder.CreateTitle(menuPanel.transform, "Survival Pioneer", 32f * MenuScale);
 
-            TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(menuPanel.transform, "Pi Network Survival", 18f * MenuScale);
+            TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(menuPanel.transform, "Pi Network Survival", 15f * MenuScale);
             subtitle.color = new Color(0.75f, 0.75f, 0.75f, 1f);
+
+            walletPanel = gameObject.AddComponent<MainMenuWalletPanelController>();
+            walletPanel.Build(menuPanel.transform);
 
             mapSystemToggle = MenuUiBuilder.CreateToggleRow(menuPanel.transform, "Map System", GameSettings.MapSystemEnabled);
             mapSystemToggle.onValueChanged.AddListener(value =>
@@ -194,8 +203,8 @@ namespace Project.UI
                 MapUI.ApplyMapSystemEnabled(value);
             });
 
-            Vector2 buttonSize = new Vector2(280f * MenuScale, 52f * MenuScale);
-            float buttonFontSize = 24f * MenuScale;
+            Vector2 buttonSize = new Vector2(240f * MenuScale, 44f * MenuScale);
+            float buttonFontSize = 20f * MenuScale;
 
             newGameButton = MenuUiBuilder.CreateButton(menuPanel.transform, "New Game", buttonSize, buttonFontSize);
             resumeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Resume", buttonSize, buttonFontSize);
@@ -239,9 +248,13 @@ namespace Project.UI
 
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
+            walletPanel?.CloseSwapPanel();
             ClearMenuMessage();
 
             ResolveStartPopup()?.HidePopup();
+
+            walletPanel?.Refresh();
+            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
 
             if (mapSystemToggle != null)
                 mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
@@ -269,7 +282,10 @@ namespace Project.UI
 
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
+            walletPanel?.CloseSwapPanel();
             ClearMenuMessage();
+            walletPanel?.Refresh();
+            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
             if (mapSystemToggle != null)
                 mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
             RefreshMenuButtonStates();
@@ -352,6 +368,7 @@ namespace Project.UI
             GameSession.MarkStarted();
             RestoreGameplayUi();
             SetGameWorldPaused(false);
+            ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
             UnityEngine.Object.FindAnyObjectByType<UIManager>()?.RefreshSurvivalDisplay();
@@ -366,8 +383,20 @@ namespace Project.UI
                 menuPanel.SetActive(false);
 
             pauseOverlayActive = false;
-            GameSession.SetPhase(GamePhase.StartPopup);
 
+            StarterPioneerSelectUI starterUi = StarterPioneerSelectUI.EnsureExists();
+            if (starterUi != null)
+            {
+                starterUi.Show(() =>
+                {
+                    GameSession.SetPhase(GamePhase.StartPopup);
+                    ResolveStartPopup()?.ShowPopup();
+                });
+                return;
+            }
+
+            PioneerRosterManager.EnsureExists()?.PrepareNewGameSession();
+            GameSession.SetPhase(GamePhase.StartPopup);
             ResolveStartPopup()?.ShowPopup();
         }
 
@@ -382,7 +411,19 @@ namespace Project.UI
                 menuPanel.SetActive(false);
 
             SetGameWorldPaused(false);
+            ReleaseGameplayInputCapture();
             RefreshMenuButtonStates();
+        }
+
+        private void ReleaseGameplayInputCapture()
+        {
+            if (playerInput == null)
+                playerInput = FindAnyObjectByType<PlayerInput>();
+            if (playerInput != null)
+                playerInput.enabled = true;
+
+            FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
+            PlayerLocator.FindPlayerController()?.EnsureGameplayInputReady();
         }
 
         private void OpenSettings()
@@ -485,6 +526,7 @@ namespace Project.UI
 
             PetUI petUi = FindAnyObjectByType<PetUI>();
             petUi?.HideForStartScreen();
+            ToolBarUI.ApplyGameplayVisibility();
         }
 
         private static bool ShouldStayClosedAfterRestore(GameObject candidate)
@@ -503,6 +545,8 @@ namespace Project.UI
             hiddenCanvasRoots.Clear();
             InventoryUI.CloseAnyOpenInventory();
             JournalPanelUI.CloseAnyOpenJournal();
+            ToolBarUI.ApplyGameplayVisibility();
+            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
         }
 
         public static void RestoreGameplayUiFromMenu()
@@ -517,6 +561,7 @@ namespace Project.UI
                    candidate == menuBackground ||
                    candidate.name == "SettingsPanel" ||
                    candidate.name == "SaveSlotsPanel" ||
+                   candidate.name == "WalletSwapPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
                    candidate.name == "PetPanel";
@@ -551,8 +596,8 @@ namespace Project.UI
 
         private static void SetSurvivalSimulationPaused(bool paused)
         {
-            SurvivalStats stats = FindAnyObjectByType<SurvivalStats>();
-            stats?.SetSimulationPaused(paused);
+            GameObject player = PlayerLocator.FindPlayerObject();
+            player?.GetComponent<SurvivalStats>()?.SetSimulationPaused(paused);
         }
     }
 }

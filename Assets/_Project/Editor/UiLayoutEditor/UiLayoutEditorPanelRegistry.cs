@@ -10,6 +10,8 @@ namespace Project.EditorTools.UiLayout
         public string Label;
         public string Category;
         public string[] SearchNames;
+        public string ParentSearchName;
+        public string RelativePath;
         public Type ComponentType;
         public bool PlayModeOnly;
         public string PrefabAssetPath;
@@ -29,8 +31,67 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Pi Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Minimap", Category = "HUD", SearchNames = new[] { "MinimapPanel" }, ComponentType = typeof(MapUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Proximity Dots", Category = "HUD", SearchNames = new[] { "PickupProximityDots" }, PlayModeOnly = true },
+
+            new UiPanelDefinition
+            {
+                Label = "Minimap Panel",
+                Category = "Map",
+                SearchNames = new[] { "MinimapPanel" },
+                ComponentType = typeof(MapUI),
+                Description = "Top-right circular minimap shell. Use Create Map Shells if missing."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Minimap Ring",
+                Category = "Map",
+                ParentSearchName = "MinimapPanel",
+                SearchNames = new[] { "RingBorder" }
+            },
+            new UiPanelDefinition
+            {
+                Label = "Minimap Viewport",
+                Category = "Map",
+                ParentSearchName = "MinimapPanel",
+                RelativePath = "CircleAssembly/CircularViewport"
+            },
+            new UiPanelDefinition
+            {
+                Label = "Minimap Map Image",
+                Category = "Map",
+                ParentSearchName = "MinimapPanel",
+                RelativePath = "CircleAssembly/CircularViewport/MapContent/MapImage",
+                Description = "RawImage showing the baked terrain texture."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Full Map Overlay",
+                Category = "Map",
+                SearchNames = new[] { "FullMapOverlay" },
+                ComponentType = typeof(MapUI),
+                Description = "Standalone world map opened with M."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Full Map Panel",
+                Category = "Map",
+                ParentSearchName = "FullMapOverlay",
+                SearchNames = new[] { "FullMapPanel" }
+            },
+            new UiPanelDefinition
+            {
+                Label = "Full Map Viewport",
+                Category = "Map",
+                ParentSearchName = "FullMapPanel",
+                RelativePath = "MapFrame/MapViewport"
+            },
+            new UiPanelDefinition
+            {
+                Label = "Full Map Image",
+                Category = "Map",
+                ParentSearchName = "FullMapPanel",
+                RelativePath = "MapFrame/MapViewport/MapContent/MapImage"
+            },
 
             new UiPanelDefinition { Label = "Inventory Panel", Category = "Panels", SearchNames = new[] { "InventoryPanel" }, ComponentType = typeof(InventoryUI) },
             new UiPanelDefinition { Label = "Main Inventory Grid", Category = "Panels", SearchNames = new[] { "MainInventoryGrid" } },
@@ -38,7 +99,6 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Crafting Window", Category = "Panels", SearchNames = new[] { "CraftingWindow", "CraftPanel" }, ComponentType = typeof(CraftingUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Quest Giver Dialog", Category = "Panels", SearchNames = new[] { "DialogPanel", "QuestGiverDialogUI" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Toast", Category = "Panels", SearchNames = new[] { "PickupToastUI" }, PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Full Map", Category = "Panels", SearchNames = new[] { "FullMapOverlay", "FullMapPanel" }, ComponentType = typeof(MapUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pet Panel", Category = "Panels", SearchNames = new[] { "PetPanel" }, ComponentType = typeof(PetUI), PlayModeOnly = true },
 
             new UiPanelDefinition { Label = "Item Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "ItemHoverTooltip" }, PlayModeOnly = true, Description = "Runtime tooltip shown when hovering inventory slots." },
@@ -69,9 +129,54 @@ namespace Project.EditorTools.UiLayout
             if (panel == null)
                 return null;
 
+            Transform searchRoot = rootCanvas != null ? rootCanvas.transform : null;
+            if (!string.IsNullOrEmpty(panel.ParentSearchName))
+            {
+                RectTransform parentRect = FindDeepRect(searchRoot, panel.ParentSearchName);
+                if (parentRect == null && panel.ComponentType != null)
+                {
+                    UnityEngine.Object[] components = UnityEngine.Object.FindObjectsByType(
+                        panel.ComponentType,
+                        FindObjectsInactive.Include);
+
+                    for (int i = 0; i < components.Length; i++)
+                    {
+                        if (components[i] is not Component component)
+                            continue;
+
+                        parentRect = FindDeepRect(component.transform, panel.ParentSearchName);
+                        if (parentRect != null)
+                            break;
+                    }
+                }
+
+                if (parentRect == null)
+                    return null;
+
+                searchRoot = parentRect;
+
+                if (!string.IsNullOrEmpty(panel.RelativePath))
+                    return FindRelativeRect(searchRoot, panel.RelativePath);
+
+                if (panel.SearchNames != null)
+                {
+                    for (int i = 0; i < panel.SearchNames.Length; i++)
+                    {
+                        RectTransform child = FindScopedRect(searchRoot, panel.SearchNames[i]);
+                        if (child != null)
+                            return child;
+                    }
+                }
+
+                return null;
+            }
+
+            if (panel.SearchNames == null)
+                return null;
+
             for (int i = 0; i < panel.SearchNames.Length; i++)
             {
-                RectTransform fromCanvas = FindDeepRect(rootCanvas != null ? rootCanvas.transform : null, panel.SearchNames[i]);
+                RectTransform fromCanvas = FindDeepRect(searchRoot, panel.SearchNames[i]);
                 if (fromCanvas != null)
                     return fromCanvas;
             }
@@ -156,6 +261,11 @@ namespace Project.EditorTools.UiLayout
                     return PrepareHudLabelLayout();
                 case "Active Quest HUD":
                     return PrepareActiveQuestHudLayout();
+                case "Minimap Panel":
+                case "Full Map Overlay":
+                case "Minimap Viewport":
+                case "Full Map Panel":
+                    return PrepareMapUiLayout();
                 case "Inventory Slot Prefab":
                 case "Main Inventory Grid":
                     return PrepareInventorySlotLayout();
@@ -282,6 +392,70 @@ namespace Project.EditorTools.UiLayout
         {
             UIManager uiManager = UnityEngine.Object.FindAnyObjectByType<UIManager>();
             return uiManager != null && SetSerializedBoolIfExists(uiManager, "applyRuntimeHudLayout", false);
+        }
+
+        public static RectTransform FindScopedRect(Transform searchRoot, string objectName)
+        {
+            if (searchRoot == null || string.IsNullOrEmpty(objectName))
+                return null;
+
+            Transform direct = searchRoot.Find(objectName);
+            if (direct is RectTransform directRect)
+                return directRect;
+
+            for (int i = 0; i < searchRoot.childCount; i++)
+            {
+                Transform child = searchRoot.GetChild(i);
+                if (child.name != objectName)
+                    continue;
+
+                if (child is RectTransform rect)
+                    return rect;
+            }
+
+            Transform[] descendants = searchRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < descendants.Length; i++)
+            {
+                if (descendants[i].name == objectName && descendants[i] is RectTransform rect)
+                    return rect;
+            }
+
+            return null;
+        }
+
+        public static RectTransform FindRelativeRect(Transform searchRoot, string relativePath)
+        {
+            if (searchRoot == null || string.IsNullOrEmpty(relativePath))
+                return null;
+
+            Transform found = searchRoot.Find(relativePath);
+            return found as RectTransform;
+        }
+
+        public static bool CreateMapLayoutShells(Canvas rootCanvas)
+        {
+            MapUI mapUi = rootCanvas != null
+                ? rootCanvas.GetComponent<MapUI>()
+                : null;
+            mapUi ??= UnityEngine.Object.FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            if (mapUi == null)
+                return false;
+
+            Undo.RegisterFullObjectHierarchyUndo(mapUi.gameObject, "Create Map Layout Shells");
+            mapUi.EnsureLayoutShells();
+            EditorUtility.SetDirty(mapUi);
+            return true;
+        }
+
+        private static bool PrepareMapUiLayout()
+        {
+            MapUI mapUi = UnityEngine.Object.FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            if (mapUi == null)
+                return false;
+
+            bool prepared = SetSerializedBoolIfExists(mapUi, "preserveManualLayout", true);
+            prepared |= SetSerializedBoolIfExists(mapUi, "applyRuntimeLayout", false);
+            return prepared;
         }
 
         private static bool PrepareActiveQuestHudLayout()

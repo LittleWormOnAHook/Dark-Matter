@@ -10,15 +10,11 @@ namespace Project.UI
         public RectTransform targetWindow;
 
         private Canvas canvas;
-        private RectTransform rectTransform;
+
+        private RectTransform DragTarget => targetWindow != null ? targetWindow : transform as RectTransform;
 
         private void Awake()
         {
-            if (targetWindow == null)
-            {
-                targetWindow = GetComponent<RectTransform>();
-            }
-            rectTransform = targetWindow;
             canvas = GetComponentInParent<Canvas>();
         }
 
@@ -29,16 +25,24 @@ namespace Project.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData.button != PointerEventData.InputButton.Left)
+                return;
+
             if (canvas == null)
                 canvas = GetComponentInParent<Canvas>();
 
-            if (rectTransform != null)
-                rectTransform.SetAsLastSibling();
+            RectTransform dragTarget = DragTarget;
+            if (dragTarget != null)
+                dragTarget.SetAsLastSibling();
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (rectTransform == null)
+            if (eventData.button != PointerEventData.InputButton.Left)
+                return;
+
+            RectTransform dragTarget = DragTarget;
+            if (dragTarget == null)
                 return;
 
             if (canvas == null)
@@ -47,7 +51,7 @@ namespace Project.UI
             if (canvas == null)
                 return;
 
-            rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
+            dragTarget.anchoredPosition += eventData.delta / canvas.scaleFactor;
         }
     }
 }

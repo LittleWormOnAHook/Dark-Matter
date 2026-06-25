@@ -468,6 +468,46 @@ namespace Project.EditorTools.UiLayout
             }
         }
 
+        public static void DrawMapUiSection(MapUI mapUi)
+        {
+            EditorGUILayout.LabelField("Map UI", EditorStyles.boldLabel);
+
+            EditorGUI.BeginChangeCheck();
+            bool preserveManualLayout = EditorGUILayout.Toggle("Preserve Manual Layout", mapUi.PreservesManualLayout);
+            SerializedObject serialized = new SerializedObject(mapUi);
+            SerializedProperty applyRuntimeLayout = serialized.FindProperty("applyRuntimeLayout");
+            bool runtimeLayout = applyRuntimeLayout != null && applyRuntimeLayout.boolValue;
+            if (applyRuntimeLayout != null)
+                runtimeLayout = EditorGUILayout.Toggle("Apply Runtime Layout", runtimeLayout);
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Create Layout Shells", GUILayout.Width(140f)))
+            {
+                Undo.RecordObject(mapUi, "Create Map Layout Shells");
+                mapUi.EnsureLayoutShells();
+                CommitChange(mapUi, "Create Map Layout Shells");
+            }
+
+            if (GUILayout.Button("Prep Manual Layout", GUILayout.Width(140f)))
+            {
+                UiLayoutEditorPanelRegistry.SetSerializedBoolIfExists(mapUi, "preserveManualLayout", true);
+                UiLayoutEditorPanelRegistry.SetSerializedBoolIfExists(mapUi, "applyRuntimeLayout", false);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UiLayoutEditorPanelRegistry.SetSerializedBoolIfExists(mapUi, "preserveManualLayout", preserveManualLayout);
+                if (applyRuntimeLayout != null)
+                {
+                    applyRuntimeLayout.boolValue = runtimeLayout;
+                    serialized.ApplyModifiedProperties();
+                }
+
+                CommitChange(mapUi, "Edit Map UI Layout");
+            }
+        }
+
         public static void DrawInventorySlotSection(InventorySlotUI slotUi)
         {
             EditorGUILayout.LabelField("Inventory Slot", EditorStyles.boldLabel);
