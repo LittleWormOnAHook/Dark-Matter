@@ -19,6 +19,8 @@ namespace Project.UI
         private static int Si(float value) => Mathf.RoundToInt(value * PanelScale);
 
         private GameObject craftPanel;
+        private VerticalLayoutGroup panelLayout;
+        private LayoutElement recipeScrollLayoutElement;
         private Image panelBackground;
         private GameObject headerObject;
         private Image recipeScrollBackground;
@@ -213,14 +215,22 @@ namespace Project.UI
                 if (recipes.Count == 0)
                 {
                     statusText.text = pendingScrolls > 0
-                        ? "Right-click recipe scrolls above to learn them."
-                        : "Collect recipe scrolls in the world to learn recipes.";
+                        ? craftPanelEmbedded
+                            ? "Recipe library — right-click recipe scrolls above to learn them."
+                            : "Right-click recipe scrolls above to learn them."
+                        : craftPanelEmbedded
+                            ? "Recipe library — collect recipe scrolls in the world to unlock recipes."
+                            : "Collect recipe scrolls in the world to learn recipes.";
                 }
                 else if (!craftingManager.CurrentStation.HasValue)
                 {
                     statusText.text = pendingScrolls > 0
-                        ? $"{recipes.Count} learned recipe(s). Right-click scrolls above or use a station to craft."
-                        : $"{recipes.Count} learned recipe(s). Use a cooking pot or workbench to craft.";
+                        ? craftPanelEmbedded
+                            ? $"Recipe library — {recipes.Count} learned recipe(s). Right-click scrolls above; visit a station to craft."
+                            : $"{recipes.Count} learned recipe(s). Right-click scrolls above or use a station to craft."
+                        : craftPanelEmbedded
+                            ? $"Recipe library — {recipes.Count} learned recipe(s). Visit a cooking pot or workbench to craft."
+                            : $"{recipes.Count} learned recipe(s). Use a cooking pot or workbench to craft.";
                 }
                 else
                 {
@@ -334,6 +344,12 @@ namespace Project.UI
 
             if (headerObject != null)
                 headerObject.SetActive(!embedded);
+
+            if (panelLayout != null)
+                panelLayout.childForceExpandHeight = embedded;
+
+            if (recipeScrollLayoutElement != null)
+                recipeScrollLayoutElement.minHeight = embedded ? S(240f) : S(180f);
         }
 
         private void BindSystems()
@@ -417,9 +433,8 @@ namespace Project.UI
             windowLayout.childForceExpandWidth = true;
             windowLayout.childForceExpandHeight = false;
 
-            UiPanelDragHandle.Create(
+            MenuUiBuilder.CreatePanelTitleBar(
                 standaloneWindowRoot.transform,
-                standaloneWindowRect,
                 "Crafting",
                 S(34f),
                 S(14f));
@@ -444,8 +459,6 @@ namespace Project.UI
             standaloneContentParent = contentHost.transform;
 
             windowBg.raycastTarget = true;
-            UiPanelDragHandle.Bind(standaloneWindowRect, standaloneWindowRect);
-            UiPanelDragHandle.Bind(closeRow.GetComponent<RectTransform>(), standaloneWindowRect);
 
             standaloneWindowRoot.SetActive(false);
         }
@@ -474,7 +487,8 @@ namespace Project.UI
             panelBackground = craftPanel.AddComponent<Image>();
             panelBackground.color = new Color(0f, 0f, 0f, 0.82f);
 
-            VerticalLayoutGroup panelLayout = craftPanel.AddComponent<VerticalLayoutGroup>();
+            VerticalLayoutGroup panelLayoutGroup = craftPanel.AddComponent<VerticalLayoutGroup>();
+            panelLayout = panelLayoutGroup;
             panelLayout.padding = new RectOffset(Si(12f), Si(12f), Si(12f), Si(12f));
             panelLayout.spacing = Si(8f);
             panelLayout.childAlignment = TextAnchor.UpperCenter;
@@ -550,9 +564,9 @@ namespace Project.UI
 
             GameObject scrollObj = new GameObject("RecipeScrollView", typeof(RectTransform));
             scrollObj.transform.SetParent(craftPanel.transform, false);
-            LayoutElement scrollLayout = scrollObj.AddComponent<LayoutElement>();
-            scrollLayout.flexibleHeight = 1f;
-            scrollLayout.minHeight = S(180f);
+            recipeScrollLayoutElement = scrollObj.AddComponent<LayoutElement>();
+            recipeScrollLayoutElement.flexibleHeight = 1f;
+            recipeScrollLayoutElement.minHeight = S(180f);
 
             recipeScrollBackground = scrollObj.AddComponent<Image>();
             recipeScrollBackground.color = new Color(0.08f, 0.08f, 0.1f, 0.95f);
@@ -614,14 +628,7 @@ namespace Project.UI
 
         private static void StretchToParent(RectTransform rect)
         {
-            if (rect == null)
-                return;
-
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            rect.localScale = Vector3.one;
+            MenuUiBuilder.StretchRectToFill(rect);
         }
     }
 }

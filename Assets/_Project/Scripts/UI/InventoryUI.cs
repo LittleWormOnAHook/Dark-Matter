@@ -135,7 +135,14 @@ namespace Project.UI
             inventoryPanelEmbedded = true;
             Canvas.ForceUpdateCanvases();
             RefreshMainInventoryLayout();
-            RaiseHudSlotsAboveJournal();
+        }
+
+        public void SetBottomHudVisible(bool visible)
+        {
+            RestoreHudSlotsFromFrontLayer();
+
+            if (hotbarParent != null)
+                hotbarParent.gameObject.SetActive(visible);
         }
 
         public void RestoreInventoryPanel()
@@ -153,40 +160,6 @@ namespace Project.UI
 
             inventoryPanel.SetActive(false);
             inventoryPanelEmbedded = false;
-        }
-
-        private void RaiseHudSlotsAboveJournal()
-        {
-            if (hudSlotsRaised)
-                return;
-
-            Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
-            if (canvas == null)
-                return;
-
-            if (hotbarParent != null)
-            {
-                hotbarOriginalParent = hotbarParent.parent;
-                hotbarOriginalSiblingIndex = hotbarParent.GetSiblingIndex();
-                UiFrontLayer.ReparentToFront(hotbarParent, canvas.transform);
-            }
-
-            FindAnyObjectByType<ToolBarUI>()?.RaiseToFrontLayer(canvas.transform);
-
-            if (inventorySystem != null)
-                LayoutHotbarContainer(inventorySystem.hotbarSize);
-
-            CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>();
-            if (statsHud != null)
-            {
-                Transform statsTransform = statsHud.transform;
-                statsPanelOriginalParent = statsTransform.parent;
-                statsPanelOriginalSiblingIndex = statsTransform.GetSiblingIndex();
-                UiFrontLayer.ReparentToFront(statsTransform, canvas.transform);
-                statsHud.RefreshLayout();
-            }
-
-            hudSlotsRaised = true;
         }
 
         private void RestoreHudSlotsFromFrontLayer()
@@ -229,20 +202,19 @@ namespace Project.UI
 
         public void EnsureInventoryClosed()
         {
-            if (inventoryPanel == null || !inventoryPanel.activeSelf)
-                return;
-
-            inventoryPanel.SetActive(false);
+            bool panelWasOpen = inventoryPanel != null && inventoryPanel.activeSelf;
+            if (panelWasOpen)
+                inventoryPanel.SetActive(false);
 
             PlayerController pc = FindAnyObjectByType<PlayerController>();
-            if (pc != null)
+            if (pc != null && (panelWasOpen || pc.IsInventoryOpen))
                 pc.SetInventoryOpen(false);
 
             CameraController cam = FindAnyObjectByType<CameraController>();
             if (cam != null)
                 cam.SetInventoryOpen(false);
 
-            if (GameSession.HasStarted)
+            if (GameSession.HasStarted && panelWasOpen)
                 ResumeGame();
         }
 
@@ -466,6 +438,8 @@ namespace Project.UI
             {
                 0 => "1",
                 1 => "2",
+                2 => "3",
+                3 => "4",
                 4 => "5",
                 5 => "6",
                 6 => "7",
@@ -575,26 +549,30 @@ namespace Project.UI
 
         private void HandleHotbarHotkeys()
         {
-            if (equipmentController == null)
+            if (equipmentController == null || Keyboard.current == null)
                 return;
 
             int hotbarStartSlot = inventorySystem.inventorySize;
 
-            if (Input.GetKeyDown(KeyCode.Alpha1) || (Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame))
+            if (Keyboard.current.digit1Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.PrimaryWeaponHotbarSlot);
-            else if (Input.GetKeyDown(KeyCode.Alpha2) || (Keyboard.current != null && Keyboard.current.digit2Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit2Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.SecondaryWeaponHotbarSlot);
-            else if (Input.GetKeyDown(KeyCode.Alpha5) || (Keyboard.current != null && Keyboard.current.digit5Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit3Key.wasPressedThisFrame)
+                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.TertiaryWeaponHotbarSlot);
+            else if (Keyboard.current.digit4Key.wasPressedThisFrame)
+                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.QuaternaryWeaponHotbarSlot);
+            else if (Keyboard.current.digit5Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 4);
-            else if (Input.GetKeyDown(KeyCode.Alpha6) || (Keyboard.current != null && Keyboard.current.digit6Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit6Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 5);
-            else if (Input.GetKeyDown(KeyCode.Alpha7) || (Keyboard.current != null && Keyboard.current.digit7Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit7Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 6);
-            else if (Input.GetKeyDown(KeyCode.Alpha8) || (Keyboard.current != null && Keyboard.current.digit8Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit8Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 7);
-            else if (Input.GetKeyDown(KeyCode.Alpha9) || (Keyboard.current != null && Keyboard.current.digit9Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit9Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 8);
-            else if (Input.GetKeyDown(KeyCode.Alpha0) || (Keyboard.current != null && Keyboard.current.digit0Key.wasPressedThisFrame))
+            else if (Keyboard.current.digit0Key.wasPressedThisFrame)
                 SelectOrUseHotbarSlot(hotbarStartSlot + 9);
         }
 
@@ -626,10 +604,9 @@ namespace Project.UI
 
             if (item.IsEquippable && equipmentController.IsWeaponHotbarSlot(hotbarIndex))
             {
-                if (hotbarIndex == equipmentController.PrimaryWeaponHotbarSlot)
-                    equipmentController.SelectWeaponSlot(0);
-                else if (hotbarIndex == equipmentController.SecondaryWeaponHotbarSlot)
-                    equipmentController.SelectWeaponSlot(1);
+                int weaponSlot = equipmentController.GetWeaponSlotIndexForHotbar(hotbarIndex);
+                if (weaponSlot >= 0)
+                    equipmentController.SelectWeaponSlot(weaponSlot);
                 return;
             }
 

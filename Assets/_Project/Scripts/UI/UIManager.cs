@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 using TMPro;
 using Project.Core;
 using Project.Pioneers;
@@ -60,6 +61,7 @@ namespace Project.UI
             EnsureJournalPanelUi();
             EnsureQuestManager();
             EnsureCraftingUi();
+            EnsurePeakScreenUi();
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (roster != null)
@@ -75,6 +77,62 @@ namespace Project.UI
                 gameObject.AddComponent<JournalPanelUI>();
         }
 
+        public void OnToggleJournal(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.JournalQuest);
+        }
+
+        public void OnToggleCraft(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Craft);
+        }
+
+        public void OnToggleRecipes(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Recipes);
+        }
+
+        public void OnTogglePioneers(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers);
+        }
+
+        public void OnToggleSkills(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Skills);
+        }
+
+        public void OnToggleEchoes(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Echoes);
+        }
+
+        private JournalPanelUI GetJournalPanel()
+        {
+            JournalPanelUI journal = GetComponent<JournalPanelUI>();
+            if (journal == null)
+                journal = gameObject.AddComponent<JournalPanelUI>();
+            return journal;
+        }
+
         private void EnsureQuestManager()
         {
             QuestManager.EnsureExists();
@@ -84,6 +142,11 @@ namespace Project.UI
         {
             if (GetComponent<CraftingUI>() == null)
                 gameObject.AddComponent<CraftingUI>();
+        }
+
+        private void EnsurePeakScreenUi()
+        {
+            EnvironmentalCrisisHudMode.EnsureExists(transform);
         }
 
         private void EnsurePickupProximityDotUi()

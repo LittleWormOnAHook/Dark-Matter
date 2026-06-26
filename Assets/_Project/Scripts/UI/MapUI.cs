@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Draggable circular minimap plus full world map overlay (static snapshot, pan with mouse).
+    /// Fixed-position circular minimap plus full world map overlay (static snapshot, pan with mouse).
     /// </summary>
     public class MapUI : MonoBehaviour
     {
@@ -18,7 +18,7 @@ namespace Project.UI
         private const float DefaultMinimapWorldSpan = 96f;
         private const float MinimapScreenDownShift = 0f;
         private const float MinimapEdgeInset = 16f;
-        private const float MinimapDragBarHeight = 29f;
+        private const float MinimapTitleBarHeight = 29f;
         private const float MinimapInfoPanelHeight = 24f;
         private const float MinimapEdgeButtonSize = 22f;
         private const float MinMinimapSpan = 40f;
@@ -67,6 +67,7 @@ namespace Project.UI
         private WorldMapProvider mapProvider;
         private bool uiBuilt;
         private bool fullMapOpen;
+        private bool openedViaNavigator;
         private float fullMapZoom = DefaultFullMapZoom;
         private int lastMapToggleFrame = -1;
         private Vector2 lastFullMapViewportSize;
@@ -80,9 +81,9 @@ namespace Project.UI
         private readonly Dictionary<MapMarker, RectTransform> fullMapMarkerIcons = new Dictionary<MapMarker, RectTransform>();
 
         private const float FullMapHeaderHeight = 64f;
-        private const float FullMapDragBarHeight = 34f;
+        private const float FullMapTitleBarHeight = 34f;
 
-        private GameObject fullMapDragHandle;
+        private GameObject fullMapTitleBar;
         private Vector2 fullMapPanOffset;
 
         private void Awake()
@@ -210,11 +211,13 @@ namespace Project.UI
             if (!GameSettings.MapSystemEnabled || !GameSession.HasStarted)
                 return;
 
-            if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame && !IsJournalOpen())
-                ToggleFullMap();
-
             if (fullMapOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                if (FullscreenUiNavigator.Instance != null && FullscreenUiNavigator.Instance.IsAnyOpen)
+                    return;
+
                 CloseFullMap();
+            }
 
             if (!fullMapOpen || Mouse.current == null)
                 return;
@@ -232,7 +235,14 @@ namespace Project.UI
             if (!context.performed)
                 return;
 
-            ToggleFullMap();
+            try
+            {
+                ToggleFullMap();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         public static void ApplyMapSystemEnabled(bool enabled)
@@ -290,12 +300,11 @@ namespace Project.UI
             if (fullMapOverlay == null)
                 return;
 
-            bool showStandaloneOverlay = GameSettings.MapSystemEnabled
+            bool showFullMapOverlay = GameSettings.MapSystemEnabled
                 && fullMapOpen
-                && GameSession.HasStarted
-                && !journalOpen;
+                && GameSession.HasStarted;
 
-            fullMapOverlay.SetActive(showStandaloneOverlay);
+            fullMapOverlay.SetActive(showFullMapOverlay);
         }
 
         public static void CloseAnyOpenMap()
@@ -309,13 +318,60 @@ namespace Project.UI
 
         private static bool IsJournalOpen()
         {
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return true;
+
             JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
             return journal != null && journal.IsOpen;
         }
 
+        public void OpenMapFullscreen()
+        {
+            if (!GameSettings.MapSystemEnabled)
+                return;
+
+            if (!uiBuilt)
+                EnsureUiBuilt();
+
+            EnsureMapProvider();
+            if (mapProvider == null)
+                mapProvider = EnsureWorldMapProviderExists();
+
+            fullMapOpen = true;
+            openedViaNavigator = true;
+            RefreshMapShellVisibility();
+            if (fullMapOverlay != null)
+            {
+                fullMapOverlay.transform.SetAsLastSibling();
+                UiFrontLayer.BringLayerToFront(transform);
+            }
+
+            fullMapZoom = DefaultFullMapZoom;
+            UpdateFullMapZoomLabel();
+            CenterFullMapOnPlayer();
+        }
+
+        public void CloseFullMapFromNavigator()
+        {
+            if (!fullMapOpen)
+                return;
+
+            fullMapOpen = false;
+            openedViaNavigator = false;
+            RefreshMapShellVisibility();
+        }
+
         public void ToggleFullMap()
         {
-            if (!GameSettings.MapSystemEnabled || IsJournalOpen())
+            if (!GameSettings.MapSystemEnabled)
+                return;
+
+            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+            if (journal != null && journal.TryToggleMapTab())
+                return;
+
+            if (IsJournalOpen())
                 return;
 
             if (Time.frameCount == lastMapToggleFrame)
@@ -331,6 +387,7 @@ namespace Project.UI
                 mapProvider = EnsureWorldMapProviderExists();
 
             fullMapOpen = !fullMapOpen;
+            openedViaNavigator = false;
             RefreshMapShellVisibility();
             if (fullMapOpen && fullMapOverlay != null)
             {
@@ -399,7 +456,18 @@ namespace Project.UI
             if (!fullMapOpen)
                 return;
 
+            if (openedViaNavigator)
+            {
+                FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+                if (navigator != null && navigator.CurrentWindow == JournalWindowId.Map)
+                {
+                    navigator.PopWindow();
+                    return;
+                }
+            }
+
             fullMapOpen = false;
+            openedViaNavigator = false;
             RefreshMapShellVisibility();
             PauseForFullMap(false);
         }
@@ -924,7 +992,7 @@ namespace Project.UI
             fullMapZoomLabel = null;
             fullMapCloseButton = null;
             minimapScanButton = null;
-            fullMapDragHandle = null;
+            fullMapTitleBar = null;
             fullMapPanOffset = Vector2.zero;
         }
 
@@ -985,14 +1053,11 @@ namespace Project.UI
                 header = headerObject.transform;
                 ConfigureTopStretchBar(header as RectTransform, FullMapHeaderHeight);
 
-                Transform dragHandle = panel.Find("DragHandle");
-                if (dragHandle != null)
+                Transform titleBar = FindMapTitleBar(panel);
+                if (titleBar != null)
                 {
-                    dragHandle.SetParent(header, false);
-                    ConfigureTopStretchBar(dragHandle as RectTransform, FullMapDragBarHeight);
-                    UIDragHandler dragHandler = dragHandle.GetComponent<UIDragHandler>();
-                    if (dragHandler != null)
-                        dragHandler.targetWindow = fullMapPanelRect;
+                    titleBar.SetParent(header, false);
+                    ConfigureTopStretchBar(titleBar as RectTransform, FullMapTitleBarHeight);
                 }
 
                 Transform zoomRow = panel.Find("ZoomControls");
@@ -1023,17 +1088,14 @@ namespace Project.UI
                 }
             }
 
-            Transform dragOnPanel = panel.Find("DragHandle");
-            if (dragOnPanel != null && dragOnPanel.parent == panel)
+            Transform titleOnPanel = FindMapTitleBar(panel);
+            if (titleOnPanel != null && titleOnPanel.parent == panel)
             {
                 Transform headerChrome = panel.Find("HeaderChrome");
                 if (headerChrome != null)
                 {
-                    dragOnPanel.SetParent(headerChrome, false);
-                    ConfigureTopStretchBar(dragOnPanel as RectTransform, FullMapDragBarHeight);
-                    UIDragHandler dragHandler = dragOnPanel.GetComponent<UIDragHandler>();
-                    if (dragHandler != null)
-                        dragHandler.targetWindow = fullMapPanelRect;
+                    titleOnPanel.SetParent(headerChrome, false);
+                    ConfigureTopStretchBar(titleOnPanel as RectTransform, FullMapTitleBarHeight);
                 }
             }
 
@@ -1119,7 +1181,7 @@ namespace Project.UI
 
             if (applyRuntimeLayout && minimapRootRect != null)
             {
-                float totalChrome = MinimapDragBarHeight + MinimapInfoPanelHeight;
+                float totalChrome = MinimapTitleBarHeight + MinimapInfoPanelHeight;
                 minimapRootRect.sizeDelta = new Vector2(DefaultMinimapSize, DefaultMinimapSize + totalChrome);
 
                 if (circleAssembly is RectTransform circleRect)
@@ -1127,7 +1189,7 @@ namespace Project.UI
                     circleRect.anchorMin = new Vector2(0.5f, 1f);
                     circleRect.anchorMax = new Vector2(0.5f, 1f);
                     circleRect.pivot = new Vector2(0.5f, 1f);
-                    circleRect.anchoredPosition = new Vector2(0f, -(MinimapDragBarHeight + 2f));
+                    circleRect.anchoredPosition = new Vector2(0f, -(MinimapTitleBarHeight + 2f));
                     circleRect.sizeDelta = Vector2.one * (DefaultMinimapSize - 10f);
                 }
 
@@ -1381,8 +1443,8 @@ namespace Project.UI
                             fullMapZoomLabel = labels[0];
                     }
 
-                    Transform dragHandle = header != null ? header.Find("DragHandle") : panel.Find("DragHandle");
-                    fullMapDragHandle = dragHandle != null ? dragHandle.gameObject : null;
+                    Transform titleBar = FindMapTitleBar(panel);
+                    fullMapTitleBar = titleBar != null ? titleBar.gameObject : null;
                 }
             }
         }
@@ -1404,7 +1466,7 @@ namespace Project.UI
 
         private void BuildMinimap()
         {
-            float totalChrome = MinimapDragBarHeight + MinimapInfoPanelHeight;
+            float totalChrome = MinimapTitleBarHeight + MinimapInfoPanelHeight;
 
             minimapRoot = new GameObject("MinimapPanel", typeof(RectTransform));
             minimapRoot.transform.SetParent(transform, false);
@@ -1418,7 +1480,7 @@ namespace Project.UI
                 minimapRootRect.sizeDelta = new Vector2(DefaultMinimapSize, DefaultMinimapSize + totalChrome);
             }
 
-            CreateDragHandle(minimapRoot.transform, minimapRootRect, "Minimap", MinimapDragBarHeight);
+            CreateTitleBar(minimapRoot.transform, "Minimap", MinimapTitleBarHeight);
 
             GameObject circleAssembly = new GameObject("CircleAssembly", typeof(RectTransform));
             circleAssembly.transform.SetParent(minimapRoot.transform, false);
@@ -1428,7 +1490,7 @@ namespace Project.UI
                 circleAssemblyRect.anchorMin = new Vector2(0.5f, 1f);
                 circleAssemblyRect.anchorMax = new Vector2(0.5f, 1f);
                 circleAssemblyRect.pivot = new Vector2(0.5f, 1f);
-                circleAssemblyRect.anchoredPosition = new Vector2(0f, -(MinimapDragBarHeight + 2f));
+                circleAssemblyRect.anchoredPosition = new Vector2(0f, -(MinimapTitleBarHeight + 2f));
                 circleAssemblyRect.sizeDelta = Vector2.one * (DefaultMinimapSize - 10f);
             }
 
@@ -1473,7 +1535,7 @@ namespace Project.UI
             fullMapOverlay = MenuUiBuilder.CreateFullScreenPanel(
                 transform,
                 "FullMapOverlay",
-                new Color(0f, 0f, 0f, 0.45f),
+                new Color(0f, 0f, 0f, 0.82f),
                 blockRaycasts: true);
 
             fullMapOverlay.transform.SetAsLastSibling();
@@ -1483,10 +1545,10 @@ namespace Project.UI
             fullMapPanelRect = panelObject.GetComponent<RectTransform>();
             if (applyRuntimeLayout)
             {
-                fullMapPanelRect.anchorMin = new Vector2(0.5f, 0.5f);
-                fullMapPanelRect.anchorMax = new Vector2(0.5f, 0.5f);
-                fullMapPanelRect.pivot = new Vector2(0.5f, 0.5f);
-                fullMapPanelRect.sizeDelta = new Vector2(980f, 680f);
+                fullMapPanelRect.anchorMin = Vector2.zero;
+                fullMapPanelRect.anchorMax = Vector2.one;
+                fullMapPanelRect.offsetMin = Vector2.zero;
+                fullMapPanelRect.offsetMax = Vector2.zero;
             }
 
             Image panelBg = panelObject.AddComponent<Image>();
@@ -1563,7 +1625,7 @@ namespace Project.UI
 
             fullMapPlayerIconRect = CreatePlayerArrow(viewportObject.transform);
 
-            fullMapDragHandle = CreateDragHandle(headerObject.transform, fullMapPanelRect, "World Map", FullMapDragBarHeight);
+            fullMapTitleBar = CreateTitleBar(headerObject.transform, "World Map", FullMapTitleBarHeight);
 
             CreateHeaderZoomControls(
                 headerObject.transform,
@@ -1644,46 +1706,31 @@ namespace Project.UI
             markerLayerRect.pivot = new Vector2(0.5f, 0.5f);
         }
 
-        private static GameObject CreateDragHandle(
-            Transform parent,
-            RectTransform targetWindow,
-            string title,
-            float height)
+        private static Transform FindMapTitleBar(Transform panel)
         {
-            GameObject dragObject = new GameObject("DragHandle", typeof(RectTransform));
-            dragObject.transform.SetParent(parent, false);
-            RectTransform dragRect = dragObject.GetComponent<RectTransform>();
-            dragRect.anchorMin = new Vector2(0f, 1f);
-            dragRect.anchorMax = new Vector2(1f, 1f);
-            dragRect.pivot = new Vector2(0.5f, 1f);
-            dragRect.sizeDelta = new Vector2(0f, height);
-            dragRect.anchoredPosition = Vector2.zero;
+            if (panel == null)
+                return null;
 
-            Image dragBg = dragObject.AddComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(dragBg);
-            dragBg.color = new Color(0.1f, 0.12f, 0.16f, 0.95f);
-            dragBg.raycastTarget = true;
+            Transform header = panel.Find("HeaderChrome");
+            Transform titleBar = header != null ? header.Find("TitleBar") : null;
+            if (titleBar == null)
+                titleBar = panel.Find("TitleBar");
+            if (titleBar == null && header != null)
+                titleBar = header.Find("DragHandle");
+            if (titleBar == null)
+                titleBar = panel.Find("DragHandle");
+            return titleBar;
+        }
 
-            UIDragHandler dragHandler = dragObject.AddComponent<UIDragHandler>();
-            dragHandler.targetWindow = targetWindow;
+        private static GameObject CreateTitleBar(Transform parent, string title, float height)
+        {
+            GameObject titleBarObject = MenuUiBuilder.CreatePanelTitleBar(parent, title, height);
+            LayoutElement layout = titleBarObject.GetComponent<LayoutElement>();
+            if (layout != null)
+                Object.Destroy(layout);
 
-            GameObject titleObject = new GameObject("Title", typeof(RectTransform));
-            titleObject.transform.SetParent(dragObject.transform, false);
-            RectTransform titleRect = titleObject.GetComponent<RectTransform>();
-            titleRect.anchorMin = Vector2.zero;
-            titleRect.anchorMax = Vector2.one;
-            titleRect.offsetMin = new Vector2(8f, 0f);
-            titleRect.offsetMax = new Vector2(-8f, 0f);
-            TextMeshProUGUI label = titleObject.AddComponent<TextMeshProUGUI>();
-            TmpUiHelper.ApplyDefaultFont(label);
-            label.text = title;
-            label.fontSize = 12f;
-            label.fontStyle = FontStyles.Bold;
-            label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = new Color(0.78f, 0.84f, 0.92f, 1f);
-            label.raycastTarget = false;
-
-            return dragObject;
+            ConfigureTopStretchBar(titleBarObject.GetComponent<RectTransform>(), height);
+            return titleBarObject;
         }
 
         private static void CreateHeaderZoomControls(

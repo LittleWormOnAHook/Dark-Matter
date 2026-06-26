@@ -94,6 +94,7 @@ namespace Project.EditorTools
             DrawSection("Scene", new[]
             {
                 (SurvivalPioneerEditorMenus.Scene + "Map System", "Wire map UI and providers"),
+                (SurvivalPioneerEditorMenus.Scene + "Journal Input Shortcuts", "Wire J/I/M/K/P/C/R/T/L journal tab hotkeys"),
                 (SurvivalPioneerEditorMenus.Scene + "Reflection Probe", "Add an active realtime reflection probe to the scene"),
             });
 

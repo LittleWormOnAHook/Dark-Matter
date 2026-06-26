@@ -64,7 +64,23 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+            if (journal != null)
+            {
+                journal.TryToggleTab(JournalWindowId.Pet);
+                return;
+            }
+
             TogglePanel();
+        }
+
+        public static void CloseAnyOpenPet()
+        {
+            foreach (PetUI petUi in FindObjectsByType<PetUI>(FindObjectsInactive.Include))
+            {
+                if (petUi != null)
+                    petUi.ClosePanel();
+            }
         }
 
         public void TogglePanel()

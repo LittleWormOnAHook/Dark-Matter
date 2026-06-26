@@ -12,51 +12,32 @@ namespace Project.UI
 {
   public class JournalPanelUI : MonoBehaviour
   {
-    private enum JournalTab
-    {
-      Journal = 0,
-      Inventory = 1,
-      Pet = 2,
-      Craft = 3
-    }
-
     private const float UiScale = 0.75f;
-    private const float PanelWidth = 1080f * UiScale;
-    private const float PanelHeight = 720f * UiScale;
-    private const float PanelGap = 12f * UiScale;
 
     private GameObject overlayRoot;
-    private GameObject panelRoot;
-    private RectTransform panelRect;
-    private Transform journalTabContent;
-    private Transform inventoryTabContent;
-    private Transform pioneersTabContent;
-    private Transform craftTabContent;
-    private RectTransform tabContentHostRect;
-    private RectTransform headerRect;
-    private RectTransform tabBarRect;
+    private RectTransform windowHostRect;
+    private JournalTabRail tabRail;
+    private FullscreenUiNavigator navigator;
     private Transform questListParent;
     private TextMeshProUGUI questDetailTitle;
     private TextMeshProUGUI questDetailBody;
     private Transform objectiveListParent;
 
-    private readonly List<Button> tabButtons = new List<Button>();
-    private readonly List<GameObject> tabContents = new List<GameObject>();
-    private JournalTab activeTab = JournalTab.Journal;
     private string selectedQuestId;
-    private bool isOpen;
     private bool uiBuilt;
+    private int lastToggleFrame = -1;
 
     private InventoryUI inventoryUi;
     private PioneerRosterPanelUI pioneerRosterPanelUi;
     private CraftingUI craftingUi;
+    private MapUI mapUi;
+    private PetUI petUi;
     private QuestManager questManager;
     private CraftingManager craftingManager;
 
     private void Awake()
     {
-      EnsureUiBuilt();
-      ClosePanel();
+      MenuUiBuilder.StretchRectToFill(GetComponent<RectTransform>());
     }
 
     private void Start()
@@ -66,6 +47,8 @@ namespace Project.UI
       if (pioneerRosterPanelUi == null)
         pioneerRosterPanelUi = gameObject.AddComponent<PioneerRosterPanelUI>();
       craftingUi = FindAnyObjectByType<CraftingUI>();
+      mapUi = FindAnyObjectByType<MapUI>();
+      petUi = FindAnyObjectByType<PetUI>();
       questManager = FindAnyObjectByType<QuestManager>();
       craftingManager = FindAnyObjectByType<CraftingManager>();
 
@@ -86,6 +69,9 @@ namespace Project.UI
           questManager = QuestManager.EnsureExists();
       }
 
+      EnsureUiBuilt();
+      navigator?.CloseAll();
+
       if (questManager != null)
       {
         questManager.OnQuestUpdated += HandleQuestUpdated;
@@ -97,6 +83,12 @@ namespace Project.UI
 
     private void OnDestroy()
     {
+      if (navigator != null)
+      {
+        navigator.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;
+        navigator.OnActiveWindowChanged -= HandleActiveWindowChanged;
+      }
+
       if (questManager != null)
       {
         questManager.OnQuestUpdated -= HandleQuestUpdated;
@@ -104,57 +96,95 @@ namespace Project.UI
       }
     }
 
-    private void Update()
-    {
-      if (!GameSession.HasStarted)
-        return;
-
-      if (Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
-        TogglePanel();
-
-      if (Keyboard.current != null && Keyboard.current.iKey.wasPressedThisFrame)
-        OpenToInventoryTab();
-
-      if (isOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-        ClosePanel();
-    }
-
     public void OnToggleJournal(InputAction.CallbackContext context)
     {
-      if (!GameSession.HasStarted || !context.performed)
+      if (!context.performed)
         return;
 
-      TogglePanel();
+      TryToggleJournal();
     }
 
-    public bool IsOpen => isOpen;
+    public bool IsOpen => navigator != null && navigator.IsAnyOpen;
 
     public void TogglePanel()
     {
-      if (isOpen)
-        ClosePanel();
-      else
-        OpenPanel();
+      if (Time.frameCount == lastToggleFrame)
+        return;
+
+      if (!EnsureNavigatorReady())
+        return;
+
+      lastToggleFrame = Time.frameCount;
+      TryToggleTab(JournalWindowId.JournalQuest);
     }
 
-    public void OpenToInventoryTab()
+    public bool TryToggleTab(JournalWindowId windowId)
     {
-      if (isOpen && activeTab == JournalTab.Inventory)
+      if (!GameSession.HasStarted)
+        return false;
+
+      if (windowId == JournalWindowId.Map && !GameSettings.MapSystemEnabled)
+        return false;
+
+      if (Time.frameCount == lastToggleFrame)
+        return false;
+
+      if (!EnsureNavigatorReady())
+        return false;
+
+      lastToggleFrame = Time.frameCount;
+
+      if (navigator.IsAnyOpen && navigator.CurrentWindow == windowId)
       {
-        ClosePanel();
-        return;
+        navigator.CloseAll();
+        return true;
       }
 
-      activeTab = JournalTab.Inventory;
-      if (isOpen)
-      {
-        SetActiveTab(JournalTab.Inventory);
-        return;
-      }
-
-      OpenPanel();
-      SetActiveTab(JournalTab.Inventory);
+      CloseConflictingPanels();
+      navigator.SwitchToWindow(windowId);
+      ItemHoverTooltip.HideAny();
+      RecipeHoverTooltip.HideAny();
+      UiFrontLayer.BringLayerToFront(transform);
+      return true;
     }
+
+    public bool TryToggleJournal()
+    {
+      if (!GameSession.HasStarted)
+        return false;
+
+      TogglePanel();
+      return true;
+    }
+
+    public bool TryToggleMapTab() => TryToggleTab(JournalWindowId.Map);
+
+    private bool EnsureNavigatorReady()
+    {
+      if (uiBuilt && navigator == null)
+        uiBuilt = false;
+
+      EnsureUiBuilt();
+      if (navigator != null && uiBuilt)
+        return true;
+
+      Debug.LogError("[JournalPanelUI] Journal navigator is unavailable. UI build may have failed.");
+      return false;
+    }
+
+    public void OpenToInventoryTab() => TryToggleTab(JournalWindowId.Inventory);
+
+    public void OpenToMap() => TryToggleTab(JournalWindowId.Map);
+
+    public void OpenToPetTab() => TryToggleTab(JournalWindowId.Pet);
+
+    public void OpenToPioneersTab() => TryToggleTab(JournalWindowId.Pioneers);
+
+    public void OpenToRecipesTab() => TryToggleTab(JournalWindowId.Recipes);
+
+    public void OpenToSkillsTab() => TryToggleTab(JournalWindowId.Skills);
+
+    public void OpenToEchoesTab() => TryToggleTab(JournalWindowId.Echoes);
 
     public void OpenToCraftTab(CraftingStationType? station)
     {
@@ -164,61 +194,7 @@ namespace Project.UI
       if (craftingManager != null)
         craftingManager.CurrentStation = station;
 
-      if (!isOpen)
-        OpenPanel();
-
-      OpenStandaloneCraftingPanel();
-    }
-
-    private void OpenStandaloneCraftingPanel()
-    {
-      if (craftingUi == null)
-        craftingUi = FindAnyObjectByType<CraftingUI>() ?? GetComponent<CraftingUI>();
-
-      if (craftingUi == null)
-        craftingUi = gameObject.AddComponent<CraftingUI>();
-
-      if (panelRect == null)
-        panelRect = panelRoot.GetComponent<RectTransform>();
-
-      craftingUi.OpenStandalonePanel(overlayRoot.transform, panelRect, PanelGap);
-    }
-
-    public void OpenPanel()
-    {
-      EnsureUiBuilt();
-      CloseConflictingPanels();
-
-      isOpen = true;
-      overlayRoot.SetActive(true);
-      overlayRoot.transform.SetAsLastSibling();
-      panelRoot.SetActive(true);
-
-      ItemHoverTooltip.HideAny();
-      RecipeHoverTooltip.HideAny();
-      SetActiveTab(activeTab);
-      RefreshQuestList();
-      UiFrontLayer.BringLayerToFront(transform);
-      PauseGameplay(true);
-    }
-
-    public void ClosePanel()
-    {
-      if (!uiBuilt)
-        return;
-
-      isOpen = false;
-      overlayRoot.SetActive(false);
-      ItemHoverTooltip.HideAny();
-      RecipeHoverTooltip.HideAny();
-      InventoryContextMenu.Instance?.Hide();
-      if (craftingManager == null)
-        craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
-      if (craftingManager != null)
-        craftingManager.CurrentStation = null;
-      craftingUi?.CloseStandalonePanel();
-      UnembedAllTabs();
-      PauseGameplay(false);
+      TryToggleTab(JournalWindowId.Craft);
     }
 
     public static void CloseAnyOpenJournal()
@@ -229,11 +205,7 @@ namespace Project.UI
 
     public void ReleaseInputCapture()
     {
-      if (isOpen)
-      {
-        ClosePanel();
-        return;
-      }
+      navigator?.CloseAll();
 
       PlayerController player = FindAnyObjectByType<PlayerController>();
       if (player != null)
@@ -248,6 +220,7 @@ namespace Project.UI
     {
       InventoryUI.CloseAnyOpenInventory();
       MapUI.CloseAnyOpenMap();
+      PetUI.CloseAnyOpenPet();
     }
 
     private void EnsureUiBuilt()
@@ -255,175 +228,210 @@ namespace Project.UI
       if (uiBuilt)
         return;
 
-      BuildUi();
-      uiBuilt = true;
+      CleanupPartialUi();
+
+      try
+      {
+        BuildUi();
+        if (navigator == null || navigator.GetWindowCount() == 0)
+          throw new System.InvalidOperationException("[JournalPanelUI] Journal UI build did not register any windows.");
+
+        uiBuilt = true;
+      }
+      catch (System.Exception ex)
+      {
+        Debug.LogException(ex);
+        CleanupPartialUi();
+      }
+    }
+
+    private void CleanupPartialUi()
+    {
+      if (navigator != null)
+      {
+        navigator.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;
+        navigator.OnActiveWindowChanged -= HandleActiveWindowChanged;
+        navigator.CloseAll();
+      }
+
+      if (navigator != null)
+        Destroy(navigator.gameObject);
+      else if (windowHostRect != null)
+        Destroy(windowHostRect.gameObject);
+
+      if (overlayRoot != null)
+        Destroy(overlayRoot);
+
+      if (tabRail != null)
+        Destroy(tabRail.gameObject);
+
+      overlayRoot = null;
+      windowHostRect = null;
+      tabRail = null;
+      navigator = null;
+      questListParent = null;
+      questDetailTitle = null;
+      questDetailBody = null;
+      objectiveListParent = null;
     }
 
     private void BuildUi()
     {
-      ShiftUiTheme theme = ShiftUiTheme.Current;
-
       overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "JournalOverlay", new Color(0f, 0f, 0f, 0.55f), blockRaycasts: true);
-      overlayRoot.transform.SetAsLastSibling();
+      overlayRoot.SetActive(false);
 
-      panelRoot = new GameObject("JournalPanel", typeof(RectTransform));
-      panelRoot.transform.SetParent(overlayRoot.transform, false);
-      panelRect = panelRoot.GetComponent<RectTransform>();
-      panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-      panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-      panelRect.pivot = new Vector2(0.5f, 0.5f);
-      panelRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
-      panelRect.anchoredPosition = Vector2.zero;
+      GameObject windowHostObject = new GameObject("JournalWindowHost", typeof(RectTransform));
+      windowHostObject.transform.SetParent(transform, false);
+      windowHostRect = windowHostObject.GetComponent<RectTransform>();
+      windowHostRect.anchorMin = Vector2.zero;
+      windowHostRect.anchorMax = Vector2.one;
+      windowHostRect.offsetMin = new Vector2(Sc(JournalTabRail.RailWidth), 0f);
+      windowHostRect.offsetMax = Vector2.zero;
 
-      Image panelBg = panelRoot.AddComponent<Image>();
-      if (theme != null)
-        theme.ApplyPanelImage(panelBg, large: true);
+      navigator = FullscreenUiNavigator.EnsureExists(windowHostRect);
+      if (navigator == null)
+        throw new System.InvalidOperationException("[JournalPanelUI] Failed to create FullscreenUiNavigator.");
+
+      navigator.OnPauseGameplayChanged += HandleNavigatorPauseChanged;
+      navigator.OnActiveWindowChanged += HandleActiveWindowChanged;
+
+      GameObject tabRailObject = new GameObject("JournalTabRailHost", typeof(RectTransform));
+      tabRail = tabRailObject.AddComponent<JournalTabRail>();
+      tabRail.Build(transform, UiScale, HandleTabSelected);
+
+      RegisterWindow<JournalQuestFullscreenWindow>(JournalWindowId.JournalQuest, "Journal", quest =>
+      {
+        quest.Configure(this);
+      });
+
+      RegisterWindow<InventoryFullscreenWindow>(JournalWindowId.Inventory, "Inventory", inv =>
+      {
+        inv.Configure(inventoryUi ?? FindAnyObjectByType<InventoryUI>());
+      });
+
+      RegisterWindow<MapFullscreenWindow>(JournalWindowId.Map, "Map", map =>
+      {
+        map.Configure(mapUi ?? FindAnyObjectByType<MapUI>());
+      });
+
+      RegisterWindow<PetFullscreenWindow>(JournalWindowId.Pet, "Pet", pet =>
+      {
+        pet.Configure(petUi ?? FindAnyObjectByType<PetUI>());
+      });
+
+      RegisterWindow<CraftFullscreenWindow>(JournalWindowId.Craft, "Craft", craft =>
+      {
+        craft.Configure(craftingUi ?? FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>());
+      });
+
+      RegisterWindow<PioneersFullscreenWindow>(JournalWindowId.Pioneers, "Pioneers", pioneers =>
+      {
+        pioneers.Configure(pioneerRosterPanelUi ?? GetComponent<PioneerRosterPanelUI>() ?? gameObject.AddComponent<PioneerRosterPanelUI>());
+      });
+
+      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Recipes, "Recipes", stub => stub.Configure(
+        "Recipe Library",
+        "Browse learned recipes and scroll slots. Production runs at in-world crafting stations and future building control panels.",
+        "Collect and learn recipe scrolls",
+        "View ingredients and station requirements",
+        "Plan crafts before visiting a station"));
+
+      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Skills, "Skills", stub => stub.Configure(
+        "Pioneer Skill Trees",
+        "Specialize your base pioneers and expedition trio with class-focused skill branches.",
+        "Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout paths",
+        "Hybrid pioneer builds",
+        "Resonance-linked skill unlocks"));
+
+      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Echoes, "Echoes", stub => stub.Configure(
+        "Neural Echo Memories",
+        "Rescued Neural Echoes become pioneers whose memories fuel Resonance Events across Io.",
+        "Echo rescue chronicle",
+        "Aether-9 memory core archive",
+        "Marketplace listing preparation"));
+    }
+
+    private void RegisterWindow<T>(JournalWindowId id, string title, System.Action<T> configure)
+      where T : FullscreenUiWindow
+    {
+      GameObject host = new GameObject(id + "WindowHost", typeof(RectTransform));
+      host.transform.SetParent(windowHostRect != null ? windowHostRect : transform, false);
+      StretchRectToParent(host.GetComponent<RectTransform>());
+
+      T window = host.AddComponent<T>();
+      configure?.Invoke(window);
+      window.Initialize(navigator, id, title, new Color(0.05f, 0.06f, 0.09f, 0.98f));
+      navigator.RegisterWindow(window);
+    }
+
+    private void HandleNavigatorPauseChanged(bool paused)
+    {
+      if (overlayRoot != null)
+        overlayRoot.SetActive(paused);
+
+      if (tabRail != null)
+        tabRail.gameObject.SetActive(paused);
+
+      if (paused)
+      {
+        overlayRoot?.transform.SetAsLastSibling();
+        tabRail?.transform.SetAsLastSibling();
+        windowHostRect?.transform.SetAsLastSibling();
+        HandleActiveWindowChanged(navigator?.CurrentWindow);
+        GameplayHudVisibility.SetModalOverlayOpen(true);
+        ItemHoverTooltip.HideAny();
+        RecipeHoverTooltip.HideAny();
+        InventoryContextMenu.Instance?.Hide();
+      }
       else
       {
-        MenuUiBuilder.ApplyUiSprite(panelBg);
-        panelBg.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
-      }
-
-      VerticalLayoutGroup panelLayout = panelRoot.AddComponent<VerticalLayoutGroup>();
-      panelLayout.padding = new RectOffset(Sc(10), Sc(10), Sc(10), Sc(10));
-      panelLayout.spacing = Sc(8f);
-      panelLayout.childControlWidth = true;
-      panelLayout.childControlHeight = true;
-      panelLayout.childForceExpandWidth = true;
-      panelLayout.childForceExpandHeight = false;
-
-      UiPanelDragHandle.Create(panelRoot.transform, panelRect, "Journal", Sc(34f), Sc(14f));
-
-      CreateHeaderRow(theme);
-      CreateTabBar(theme);
-      CreateTabContents(theme);
-      CreateJournalTabUi(theme);
-
-      UIDragHandler panelDrag = UiPanelDragHandle.EnsureHandler(panelRect);
-      if (panelDrag != null)
-        panelDrag.targetWindow = panelRect;
-
-      if (headerRect != null)
-        UiPanelDragHandle.Bind(headerRect, panelRect);
-      if (tabBarRect != null)
-        UiPanelDragHandle.Bind(tabBarRect, panelRect);
-      if (tabContentHostRect != null)
-        UiPanelDragHandle.Bind(tabContentHostRect, panelRect);
-
-      UiPanelResizeHandles.AddAll(
-        panelRoot.transform,
-        panelRect,
-        lockAspectRatio: false,
-        minSize: new Vector2(Sc(420f), Sc(320f)),
-        maxSize: new Vector2(Sc(1400f), Sc(980f)));
-    }
-
-    private void CreateHeaderRow(ShiftUiTheme theme)
-    {
-      GameObject header = new GameObject("Header", typeof(RectTransform));
-      header.transform.SetParent(panelRoot.transform, false);
-      headerRect = header.GetComponent<RectTransform>();
-      Image headerBg = header.AddComponent<Image>();
-      headerBg.color = new Color(0f, 0f, 0f, 0.001f);
-      headerBg.raycastTarget = true;
-      HorizontalLayoutGroup layout = header.AddComponent<HorizontalLayoutGroup>();
-      layout.childAlignment = TextAnchor.MiddleLeft;
-      layout.childControlWidth = true;
-      layout.childForceExpandWidth = true;
-
-      GameObject titleObj = new GameObject("Title", typeof(RectTransform));
-      titleObj.transform.SetParent(header.transform, false);
-      TextMeshProUGUI title = titleObj.AddComponent<TextMeshProUGUI>();
-      ApplyFont(title, theme, bold: true);
-      title.text = "Quests & Inventory";
-      title.fontSize = Sc(18f);
-      title.alignment = TextAlignmentOptions.MidlineLeft;
-      LayoutElement titleLayout = titleObj.AddComponent<LayoutElement>();
-      titleLayout.flexibleWidth = 1f;
-
-      Button closeButton = MenuUiBuilder.CreateTextCloseButton(header.transform, Sc(16f), ClosePanel);
-      LayoutElement closeLayout = closeButton.gameObject.AddComponent<LayoutElement>();
-      closeLayout.minWidth = Sc(24f);
-      closeLayout.preferredWidth = Sc(24f);
-      closeLayout.minHeight = Sc(24f);
-      closeLayout.preferredHeight = Sc(24f);
-    }
-
-    private void CreateTabBar(ShiftUiTheme theme)
-    {
-      GameObject tabBar = new GameObject("TabBar", typeof(RectTransform));
-      tabBar.transform.SetParent(panelRoot.transform, false);
-      tabBarRect = tabBar.GetComponent<RectTransform>();
-      Image tabBarBg = tabBar.AddComponent<Image>();
-      tabBarBg.color = new Color(0f, 0f, 0f, 0.001f);
-      tabBarBg.raycastTarget = true;
-      HorizontalLayoutGroup layout = tabBar.AddComponent<HorizontalLayoutGroup>();
-      layout.spacing = Sc(6f);
-      layout.childAlignment = TextAnchor.MiddleLeft;
-      layout.childControlWidth = false;
-      layout.childControlHeight = true;
-      LayoutElement tabBarLayout = tabBar.AddComponent<LayoutElement>();
-      tabBarLayout.minHeight = Sc(44f);
-
-      string[] labels = { "Journal", "Inventory", "Pioneers", "Recipes" };
-      for (int i = 0; i < labels.Length; i++)
-      {
-        Button tabButton = CreateSmallButton(tabBar.transform, labels[i], theme, new Vector2(Sc(138f), Sc(40f)));
-        int tabIndex = i;
-        tabButton.onClick.AddListener(() => SetActiveTab((JournalTab)tabIndex));
-        tabButtons.Add(tabButton);
+        GameplayHudVisibility.SetModalOverlayOpen(false);
+        if (craftingManager == null)
+          craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
+        if (craftingManager != null)
+          craftingManager.CurrentStation = null;
       }
     }
 
-    private void CreateTabContents(ShiftUiTheme theme)
+    private void HandleActiveWindowChanged(JournalWindowId? windowId)
     {
-      GameObject contentHost = new GameObject("TabContentHost", typeof(RectTransform));
-      contentHost.transform.SetParent(panelRoot.transform, false);
-      tabContentHostRect = contentHost.GetComponent<RectTransform>();
-      Image hostCapture = contentHost.AddComponent<Image>();
-      hostCapture.color = new Color(0f, 0f, 0f, 0.001f);
-      hostCapture.raycastTarget = true;
-      LayoutElement hostLayout = contentHost.AddComponent<LayoutElement>();
-      hostLayout.flexibleHeight = 1f;
-      hostLayout.minHeight = Sc(520f);
-
-      journalTabContent = CreateTabContentRoot(contentHost.transform, "JournalTabContent", out GameObject journalGo);
-      inventoryTabContent = CreateTabContentRoot(contentHost.transform, "InventoryTabContent", out GameObject inventoryGo);
-      pioneersTabContent = CreateTabContentRoot(contentHost.transform, "PioneersTabContent", out GameObject pioneersGo);
-      craftTabContent = CreateTabContentRoot(contentHost.transform, "CraftTabContent", out GameObject craftGo);
-
-      tabContents.Add(journalGo);
-      tabContents.Add(inventoryGo);
-      tabContents.Add(pioneersGo);
-      tabContents.Add(craftGo);
+      tabRail?.SetActiveTab(windowId);
     }
 
-    private Transform CreateTabContentRoot(Transform parent, string name, out GameObject rootGo)
+    private void HandleTabSelected(JournalWindowId windowId)
     {
-      rootGo = new GameObject(name, typeof(RectTransform));
-      rootGo.transform.SetParent(parent, false);
-      RectTransform rect = rootGo.GetComponent<RectTransform>();
-      rect.anchorMin = Vector2.zero;
-      rect.anchorMax = Vector2.one;
-      rect.offsetMin = Vector2.zero;
-      rect.offsetMax = Vector2.zero;
+      if (windowId == JournalWindowId.Map && !GameSettings.MapSystemEnabled)
+        return;
 
-      rootGo.SetActive(false);
-      return rootGo.transform;
+      if (!EnsureNavigatorReady())
+        return;
+
+      if (navigator.CurrentWindow == windowId)
+        return;
+
+      CloseConflictingPanels();
+      navigator.SwitchToWindow(windowId);
+      ItemHoverTooltip.HideAny();
+      RecipeHoverTooltip.HideAny();
+      UiFrontLayer.BringLayerToFront(transform);
     }
 
-    private void CreateJournalTabUi(ShiftUiTheme theme)
+    public void BuildQuestWindowContent(RectTransform parent)
     {
+      if (parent == null)
+        return;
+
+      for (int i = parent.childCount - 1; i >= 0; i--)
+        Destroy(parent.GetChild(i).gameObject);
+
+      ShiftUiTheme theme = ShiftUiTheme.Current;
       GameObject split = new GameObject("JournalSplit", typeof(RectTransform));
-      split.transform.SetParent(journalTabContent, false);
-      RectTransform splitRect = split.GetComponent<RectTransform>();
-      splitRect.anchorMin = Vector2.zero;
-      splitRect.anchorMax = Vector2.one;
-      splitRect.offsetMin = new Vector2(Sc(4f), Sc(4f));
-      splitRect.offsetMax = new Vector2(-Sc(4f), -Sc(4f));
+      split.transform.SetParent(parent, false);
+      StretchRectToParent(split.GetComponent<RectTransform>());
 
       HorizontalLayoutGroup splitLayout = split.AddComponent<HorizontalLayoutGroup>();
       splitLayout.spacing = Sc(8f);
+      splitLayout.padding = new RectOffset(Sc(8), Sc(8), Sc(8), Sc(8));
       splitLayout.childControlWidth = true;
       splitLayout.childControlHeight = true;
       splitLayout.childForceExpandHeight = true;
@@ -458,9 +466,6 @@ namespace Project.UI
       Image scrollBg = scrollObj.AddComponent<Image>();
       scrollBg.color = new Color(0.08f, 0.09f, 0.12f, 0.92f);
       scrollBg.raycastTarget = true;
-      Outline scrollOutline = scrollObj.AddComponent<Outline>();
-      scrollOutline.effectColor = new Color(0.22f, 0.26f, 0.32f, 0.65f);
-      scrollOutline.effectDistance = new Vector2(1f, -1f);
 
       ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
       scroll.horizontal = false;
@@ -497,12 +502,15 @@ namespace Project.UI
 
       scroll.viewport = viewportRt;
       scroll.content = contentRt;
+
       questListParent = content.transform;
     }
 
     private void CreateQuestDetailColumn(Transform parent, ShiftUiTheme theme)
     {
-      VerticalLayoutGroup layout = parent.gameObject.AddComponent<VerticalLayoutGroup>();
+      VerticalLayoutGroup layout = parent.GetComponent<VerticalLayoutGroup>();
+      if (layout == null)
+        layout = parent.gameObject.AddComponent<VerticalLayoutGroup>();
       layout.spacing = Sc(8f);
       layout.padding = new RectOffset(Sc(8), Sc(8), Sc(8), Sc(8));
       layout.childControlWidth = true;
@@ -529,118 +537,22 @@ namespace Project.UI
       objectiveHostLayout.flexibleHeight = 1f;
       objectiveHostLayout.minHeight = Sc(120f);
       objectiveListParent = objectiveHost.transform;
-
-      TextMeshProUGUI skillsLabel = CreateText(parent, "Skills — Coming soon", theme, Sc(15f), TextAlignmentOptions.TopLeft);
-      skillsLabel.color = theme != null ? theme.secondaryTextColor : new Color(0.75f, 0.82f, 0.9f, 0.9f);
     }
 
-    private void SetActiveTab(JournalTab tab)
+    public void RefreshQuestList()
     {
-      activeTab = tab;
-
-      for (int i = 0; i < tabContents.Count; i++)
-        tabContents[i].SetActive(i == (int)tab);
-
-      HighlightTabButtons((int)tab);
-      UnembedAllTabs();
-
-      switch (tab)
-      {
-        case JournalTab.Inventory:
-          EmbedInventoryTab();
-          break;
-        case JournalTab.Pet:
-          EmbedPioneersTab();
-          break;
-        case JournalTab.Craft:
-          EmbedCraftTab();
-          break;
-      }
+      RefreshQuestListParents(questListParent, questDetailTitle, questDetailBody);
     }
 
-    private void HighlightTabButtons(int activeIndex)
+    private void RefreshQuestListParents(
+      Transform listParent,
+      TextMeshProUGUI detailTitle,
+      TextMeshProUGUI detailBody)
     {
-      ShiftUiTheme theme = ShiftUiTheme.Current;
-      for (int i = 0; i < tabButtons.Count; i++)
-      {
-        Image image = tabButtons[i].GetComponent<Image>();
-        if (image == null)
-          continue;
-
-        bool active = i == activeIndex;
-        image.color = active
-          ? (theme != null ? new Color(theme.primaryColor.r, theme.primaryColor.g, theme.primaryColor.b, 0.35f) : new Color(0.24f, 0.36f, 0.48f, 1f))
-          : new Color(0.14f, 0.16f, 0.2f, 0.95f);
-      }
-    }
-
-    private void EmbedInventoryTab()
-    {
-      if (inventoryUi == null)
-        inventoryUi = FindAnyObjectByType<InventoryUI>();
-
-      inventoryUi?.EmbedInventoryPanel(inventoryTabContent);
-      if (inventoryUi != null && inventoryUi.inventoryPanel != null)
-        ApplyEmbeddedInsets(inventoryUi.inventoryPanel.GetComponent<RectTransform>());
-
-      inventoryUi?.RefreshMainInventoryLayout();
-    }
-
-    private void EmbedPioneersTab()
-    {
-      if (pioneerRosterPanelUi == null)
-      {
-        pioneerRosterPanelUi = GetComponent<PioneerRosterPanelUI>();
-        if (pioneerRosterPanelUi == null)
-          pioneerRosterPanelUi = gameObject.AddComponent<PioneerRosterPanelUI>();
-      }
-
-      pioneerRosterPanelUi.EmbedIn(pioneersTabContent);
-    }
-
-    private void EmbedCraftTab()
-    {
-      if (craftingUi == null)
-        craftingUi = FindAnyObjectByType<CraftingUI>();
-
-      craftingUi?.EmbedPanel(craftTabContent);
-      ApplyEmbeddedInsets(GetFirstChildRect(craftTabContent));
-    }
-
-    private void UnembedAllTabs()
-    {
-      inventoryUi?.RestoreInventoryPanel();
-      pioneerRosterPanelUi?.Unembed();
-      craftingUi?.RestorePanel();
-    }
-
-    private static RectTransform GetFirstChildRect(Transform container)
-    {
-      if (container == null || container.childCount == 0)
-        return null;
-
-      return container.GetChild(0) as RectTransform;
-    }
-
-    private static void ApplyEmbeddedInsets(RectTransform rect)
-    {
-      if (rect == null)
+      if (listParent == null)
         return;
 
-      float pad = Sc(6f);
-      rect.anchorMin = Vector2.zero;
-      rect.anchorMax = Vector2.one;
-      rect.offsetMin = new Vector2(pad, pad);
-      rect.offsetMax = new Vector2(-pad, -pad);
-      rect.localScale = Vector3.one;
-    }
-
-    private void RefreshQuestList()
-    {
-      if (questListParent == null)
-        return;
-
-      foreach (Transform child in questListParent)
+      foreach (Transform child in listParent)
         Destroy(child.gameObject);
 
       if (questManager == null)
@@ -659,7 +571,7 @@ namespace Project.UI
         if (definition == null)
           continue;
 
-        CreateQuestListEntry(definition, progress);
+        CreateQuestListEntry(listParent, definition, progress);
       }
 
       if (string.IsNullOrEmpty(selectedQuestId) && allProgress.Count > 0)
@@ -674,79 +586,82 @@ namespace Project.UI
         }
       }
 
-      RefreshQuestDetail();
+      RefreshQuestDetailFor(detailTitle, detailBody, includeObjectives: true);
     }
 
-        private void CreateQuestListEntry(QuestDefinition definition, QuestProgress progress)
-        {
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            bool selected = definition.ResolvedId == selectedQuestId;
-
-            GameObject row = new GameObject($"Quest_{definition.ResolvedId}", typeof(RectTransform));
-            row.transform.SetParent(questListParent, false);
-
-            Image rowBg = row.AddComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(rowBg);
-            rowBg.color = QuestUiPalette.GetRowBackgroundColor(progress.status, selected, theme);
-
-            Button button = row.AddComponent<Button>();
-            button.onClick.AddListener(() =>
-            {
-                selectedQuestId = definition.ResolvedId;
-                RefreshQuestList();
-            });
-
-            LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.minHeight = Sc(52f);
-            rowLayout.preferredHeight = Sc(52f);
-            rowLayout.flexibleWidth = 1f;
-
-            VerticalLayoutGroup rowGroup = row.AddComponent<VerticalLayoutGroup>();
-            rowGroup.padding = new RectOffset(Sc(8), Sc(8), Sc(6), Sc(6));
-            rowGroup.childAlignment = TextAnchor.UpperLeft;
-            rowGroup.childControlWidth = true;
-            rowGroup.childControlHeight = true;
-            rowGroup.childForceExpandWidth = true;
-            rowGroup.childForceExpandHeight = false;
-
-            TextMeshProUGUI title = CreateText(row.transform, definition.title, theme, Sc(16f), TextAlignmentOptions.TopLeft);
-            title.fontStyle = FontStyles.Bold;
-            title.textWrappingMode = TextWrappingModes.Normal;
-            title.color = QuestUiPalette.GetTitleColor(progress.status, theme);
-            LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
-            titleLayout.flexibleWidth = 1f;
-
-            TextMeshProUGUI status = CreateText(
-                row.transform,
-                QuestUiPalette.GetStatusLabel(progress.status),
-                theme,
-                Sc(13f),
-                TextAlignmentOptions.TopLeft);
-            status.color = QuestUiPalette.GetStatusLabelColor(progress.status, theme);
-        }
-
-    private void RefreshQuestDetail()
+    private void CreateQuestListEntry(Transform listParent, QuestDefinition definition, QuestProgress progress)
     {
-      if (questDetailTitle == null)
+      ShiftUiTheme theme = ShiftUiTheme.Current;
+      bool selected = definition.ResolvedId == selectedQuestId;
+
+      GameObject row = new GameObject($"Quest_{definition.ResolvedId}", typeof(RectTransform));
+      row.transform.SetParent(listParent, false);
+
+      Image rowBg = row.AddComponent<Image>();
+      MenuUiBuilder.ApplyUiSprite(rowBg);
+      rowBg.color = QuestUiPalette.GetRowBackgroundColor(progress.status, selected, theme);
+
+      Button button = row.AddComponent<Button>();
+      button.onClick.AddListener(() =>
+      {
+        selectedQuestId = definition.ResolvedId;
+        RefreshQuestList();
+      });
+
+      LayoutElement rowLayout = row.AddComponent<LayoutElement>();
+      rowLayout.minHeight = Sc(52f);
+      rowLayout.preferredHeight = Sc(52f);
+      rowLayout.flexibleWidth = 1f;
+
+      VerticalLayoutGroup rowGroup = row.AddComponent<VerticalLayoutGroup>();
+      rowGroup.padding = new RectOffset(Sc(8), Sc(8), Sc(6), Sc(6));
+      rowGroup.childAlignment = TextAnchor.UpperLeft;
+      rowGroup.childControlWidth = true;
+      rowGroup.childControlHeight = true;
+      rowGroup.childForceExpandWidth = true;
+      rowGroup.childForceExpandHeight = false;
+
+      TextMeshProUGUI title = CreateText(row.transform, definition.title, theme, Sc(16f), TextAlignmentOptions.TopLeft);
+      title.fontStyle = FontStyles.Bold;
+      title.textWrappingMode = TextWrappingModes.Normal;
+      title.color = QuestUiPalette.GetTitleColor(progress.status, theme);
+
+      TextMeshProUGUI status = CreateText(
+        row.transform,
+        QuestUiPalette.GetStatusLabel(progress.status),
+        theme,
+        Sc(13f),
+        TextAlignmentOptions.TopLeft);
+      status.color = QuestUiPalette.GetStatusLabelColor(progress.status, theme);
+    }
+
+    private void RefreshQuestDetailFor(TextMeshProUGUI detailTitle, TextMeshProUGUI detailBody, bool includeObjectives)
+    {
+      if (detailTitle == null)
         return;
 
-        if (string.IsNullOrEmpty(selectedQuestId) || questManager == null)
-        {
-          questDetailTitle.text = "No active quests";
-          questDetailBody.text = "Accept and complete quests with NPCs. Turn them in at the quest giver for rewards.";
+      if (string.IsNullOrEmpty(selectedQuestId) || questManager == null)
+      {
+        detailTitle.text = "No active quests";
+        if (detailBody != null)
+          detailBody.text = "Accept and complete quests with NPCs.";
+        if (includeObjectives)
           ClearObjectiveRows();
-          return;
-        }
+        return;
+      }
 
       QuestDefinition definition = questManager.GetDefinition(selectedQuestId);
       QuestProgress progress = questManager.GetProgress(selectedQuestId);
       if (definition == null || progress == null)
         return;
 
-      questDetailTitle.text = definition.title;
-      questDetailTitle.color = QuestUiPalette.GetTitleColor(progress.status, ShiftUiTheme.Current);
-      questDetailBody.text = definition.description;
-      RefreshObjectiveRows(definition, progress);
+      detailTitle.text = definition.title;
+      detailTitle.color = QuestUiPalette.GetTitleColor(progress.status, ShiftUiTheme.Current);
+      if (detailBody != null)
+        detailBody.text = definition.description;
+
+      if (includeObjectives)
+        RefreshObjectiveRows(definition, progress);
     }
 
     private void HandleQuestUpdated(QuestProgress progress)
@@ -831,57 +746,6 @@ namespace Project.UI
       countLayout.minWidth = Sc(56f);
       countLayout.preferredWidth = Sc(56f);
       countLayout.flexibleWidth = 0f;
-    }
-
-    private static void PauseGameplay(bool pause)
-    {
-      Cursor.lockState = pause ? CursorLockMode.None : CursorLockMode.Locked;
-      Cursor.visible = pause;
-
-      PlayerController player = FindAnyObjectByType<PlayerController>();
-      if (player != null)
-        player.SetJournalOpen(pause);
-
-      CameraController camera = FindAnyObjectByType<CameraController>();
-      if (camera != null)
-        camera.SetJournalOpen(pause);
-    }
-
-    private static Button CreateSmallButton(Transform parent, string label, ShiftUiTheme theme, Vector2 size)
-    {
-      GameObject buttonObj = new GameObject(label + "Button", typeof(RectTransform));
-      buttonObj.transform.SetParent(parent, false);
-
-      RectTransform rect = buttonObj.GetComponent<RectTransform>();
-      rect.sizeDelta = size;
-
-      LayoutElement layout = buttonObj.AddComponent<LayoutElement>();
-      layout.minWidth = size.x;
-      layout.preferredWidth = size.x;
-      layout.minHeight = size.y;
-      layout.preferredHeight = size.y;
-
-      Image image = buttonObj.AddComponent<Image>();
-      MenuUiBuilder.ApplyUiSprite(image);
-      image.color = new Color(0.14f, 0.16f, 0.2f, 0.95f);
-
-      Button button = buttonObj.AddComponent<Button>();
-      UiSoundHelper.BindButton(button);
-
-      GameObject textObj = new GameObject("Text", typeof(RectTransform));
-      textObj.transform.SetParent(buttonObj.transform, false);
-      TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
-      ApplyFont(text, theme, semiBold: true);
-      text.text = label;
-      text.fontSize = Sc(15f);
-      text.alignment = TextAlignmentOptions.Center;
-      RectTransform textRect = textObj.GetComponent<RectTransform>();
-      textRect.anchorMin = Vector2.zero;
-      textRect.anchorMax = Vector2.one;
-      textRect.offsetMin = Vector2.zero;
-      textRect.offsetMax = Vector2.zero;
-
-      return button;
     }
 
     private static TextMeshProUGUI CreateText(Transform parent, string textValue, ShiftUiTheme theme, float fontSize, TextAlignmentOptions alignment)

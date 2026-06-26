@@ -46,6 +46,32 @@ namespace Project.UI
             image.type = ShiftUiTheme.PanelFrame != null ? Image.Type.Sliced : Image.Type.Simple;
         }
 
+        public static void StretchRectToFill(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.localScale = Vector3.one;
+        }
+
+        /// <summary>Returns the Header/Title TMP on a shell from <see cref="CreateFullscreenShell"/>.</summary>
+        public static TextMeshProUGUI GetShellTitleText(GameObject shell)
+        {
+            if (shell == null)
+                return null;
+
+            Transform header = shell.transform.Find("Header");
+            if (header == null)
+                return null;
+
+            Transform titleTransform = header.Find("Title");
+            return titleTransform != null ? titleTransform.GetComponent<TextMeshProUGUI>() : null;
+        }
+
         public static GameObject CreateFullScreenPanel(Transform parent, string name, Color backgroundColor, bool blockRaycasts = false)
         {
             GameObject panel = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -236,6 +262,42 @@ namespace Project.UI
             LayoutElement layout = titleObject.AddComponent<LayoutElement>();
             layout.minHeight = fontSize + 12f;
             return title;
+        }
+
+        /// <summary>Visual-only panel header row (no drag/resize).</summary>
+        public static GameObject CreatePanelTitleBar(Transform parent, string title, float height, float fontSize = 12f)
+        {
+            GameObject titleBarObject = new GameObject("TitleBar", typeof(RectTransform));
+            titleBarObject.transform.SetParent(parent, false);
+
+            LayoutElement layout = titleBarObject.AddComponent<LayoutElement>();
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleHeight = 0f;
+
+            Image titleBarBg = titleBarObject.AddComponent<Image>();
+            ApplyUiSprite(titleBarBg);
+            titleBarBg.color = new Color(0.1f, 0.12f, 0.16f, 0.95f);
+            titleBarBg.raycastTarget = false;
+
+            GameObject titleObject = new GameObject("Title", typeof(RectTransform));
+            titleObject.transform.SetParent(titleBarObject.transform, false);
+            RectTransform titleRect = titleObject.GetComponent<RectTransform>();
+            titleRect.anchorMin = Vector2.zero;
+            titleRect.anchorMax = Vector2.one;
+            titleRect.offsetMin = new Vector2(8f, 0f);
+            titleRect.offsetMax = new Vector2(-8f, 0f);
+
+            TextMeshProUGUI label = titleObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.text = title;
+            label.fontSize = fontSize;
+            label.fontStyle = FontStyles.Bold;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.color = new Color(0.78f, 0.84f, 0.92f, 1f);
+            label.raycastTarget = false;
+
+            return titleBarObject;
         }
 
         public static Slider CreateSliderRow(Transform parent, string label, float initialValue, out TextMeshProUGUI valueLabel)
@@ -498,6 +560,127 @@ namespace Project.UI
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
             rowLayout.minHeight = 72f;
             return dropdown;
+        }
+
+        public static Button CreateTiltedMenuButton(
+            Transform parent,
+            string label,
+            Vector2 size,
+            float fontSize,
+            float yRotationDegrees = -6f)
+        {
+            Button button = CreateButton(parent, label, size, fontSize);
+            button.transform.localRotation = Quaternion.Euler(0f, yRotationDegrees, 0f);
+            return button;
+        }
+
+        public static GameObject CreateFullscreenShell(
+            Transform parent,
+            string title,
+            out RectTransform contentArea,
+            out Button closeButton)
+        {
+            GameObject shell = CreateFullScreenPanel(parent, title + "Shell", new Color(0.05f, 0.06f, 0.09f, 0.98f), blockRaycasts: true);
+            RectTransform shellRect = shell.GetComponent<RectTransform>();
+
+            GameObject header = new GameObject("Header", typeof(RectTransform), typeof(Image));
+            header.transform.SetParent(shell.transform, false);
+            RectTransform headerRect = header.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0f, 1f);
+            headerRect.anchorMax = new Vector2(1f, 1f);
+            headerRect.pivot = new Vector2(0.5f, 1f);
+            headerRect.sizeDelta = new Vector2(0f, FullscreenUiWindow.HeaderHeight);
+
+            Image headerBg = header.GetComponent<Image>();
+            ApplyUiSprite(headerBg);
+            headerBg.color = new Color(0.08f, 0.1f, 0.14f, 0.98f);
+
+            GameObject titleObject = new GameObject("Title", typeof(RectTransform));
+            titleObject.transform.SetParent(header.transform, false);
+            TextMeshProUGUI titleText = titleObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(titleText);
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+                theme.ApplyFont(titleText, bold: true);
+            titleText.text = title;
+            titleText.fontSize = 26f;
+            titleText.fontStyle = FontStyles.Bold;
+            titleText.color = Color.white;
+            titleText.alignment = TextAlignmentOptions.MidlineLeft;
+            titleText.raycastTarget = false;
+
+            RectTransform titleRect = titleObject.GetComponent<RectTransform>();
+            titleRect.anchorMin = Vector2.zero;
+            titleRect.anchorMax = Vector2.one;
+            titleRect.offsetMin = new Vector2(20f, 0f);
+            titleRect.offsetMax = new Vector2(-56f, 0f);
+
+            closeButton = CreateCircleCloseButton(header.transform, 32f);
+            RectTransform closeRect = closeButton.GetComponent<RectTransform>();
+            closeRect.anchorMin = new Vector2(1f, 0.5f);
+            closeRect.anchorMax = new Vector2(1f, 0.5f);
+            closeRect.pivot = new Vector2(1f, 0.5f);
+            closeRect.anchoredPosition = new Vector2(-16f, 0f);
+
+            GameObject content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(shell.transform, false);
+            contentArea = content.GetComponent<RectTransform>();
+            contentArea.anchorMin = Vector2.zero;
+            contentArea.anchorMax = Vector2.one;
+            contentArea.offsetMin = Vector2.zero;
+            contentArea.offsetMax = new Vector2(0f, -FullscreenUiWindow.HeaderHeight);
+
+            return shell;
+        }
+
+        public static Button CreateLaunchTile(Transform parent, string label, Vector2 size)
+        {
+            GameObject tileObject = new GameObject(label + "Tile", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+            tileObject.transform.SetParent(parent, false);
+
+            RectTransform rect = tileObject.GetComponent<RectTransform>();
+            rect.sizeDelta = size;
+
+            LayoutElement layoutElement = tileObject.AddComponent<LayoutElement>();
+            layoutElement.minWidth = size.x;
+            layoutElement.preferredWidth = size.x;
+            layoutElement.minHeight = size.y;
+            layoutElement.preferredHeight = size.y;
+
+            Image image = tileObject.GetComponent<Image>();
+            ApplyUiSprite(image);
+            image.color = new Color(0.12f, 0.14f, 0.18f, 0.96f);
+
+            Button button = tileObject.GetComponent<Button>();
+            ColorBlock colors = button.colors;
+            colors.normalColor = image.color;
+            colors.highlightedColor = new Color(0.2f, 0.24f, 0.32f, 1f);
+            colors.pressedColor = new Color(0.08f, 0.1f, 0.14f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            button.colors = colors;
+            UiSoundHelper.BindButton(button);
+
+            GameObject textObject = new GameObject("Text", typeof(RectTransform));
+            textObject.transform.SetParent(tileObject.transform, false);
+            TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(text);
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+                theme.ApplyFont(text, semiBold: true);
+            text.text = label;
+            text.fontSize = 18f;
+            text.fontStyle = FontStyles.Bold;
+            text.color = Color.white;
+            text.alignment = TextAlignmentOptions.Center;
+            text.raycastTarget = false;
+
+            RectTransform textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            return button;
         }
 
         private static TextMeshProUGUI CreateRowLabel(Transform parent, string text, float size, TextAlignmentOptions alignment)
