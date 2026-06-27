@@ -10,12 +10,14 @@ namespace Project.EditorTools
 {
     public static class EnemyLootSetupUtility
     {
-        private const string PioneerScenePath = "Assets/Pioneer.unity";
+        private const string PioneerScenePath = ProjectAssetPaths.MainScene;
 
         [MenuItem(SurvivalPioneerEditorMenus.Combat + "Update All Enemy Prefabs And Scene", false, 20)]
         public static void UpdateAllEnemyPrefabsAndScene()
         {
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EnemiesData);
+            EnsureDissolveMaterialAsset();
+            EnsureSmokeMaterialAsset();
 
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectAssetPaths.PrefabsCombat });
             int updatedPrefabs = 0;
@@ -55,6 +57,7 @@ namespace Project.EditorTools
             EnemyDefinition definition = ResolveOrCreateDefinition(instance, prefabPath);
             displayName = definition.displayName;
             EnemyPrefabBuilder.ApplyLootToPrefab(instance, definition);
+            EnemyPrefabBuilder.ApplyDisintegrationToPrefab(instance);
             PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
             PrefabUtility.UnloadPrefabContents(instance);
             return true;
@@ -197,7 +200,68 @@ namespace Project.EditorTools
                 $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(enemyRoot.name, enemyRoot.name)}.asset");
 
             EnemyPrefabBuilder.ApplyLootToPrefab(enemyRoot, definition);
+            EnemyPrefabBuilder.ApplyDisintegrationToPrefab(enemyRoot);
             return true;
+        }
+
+        private static void EnsureDissolveMaterialAsset()
+        {
+            const string folder = "Assets/_Project/Resources/Combat";
+            const string materialPath = folder + "/EnemyDisintegrate.mat";
+
+            CraftingEditorUtility.EnsureFolder(folder);
+
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Shaders/EnemyDisintegrate.shader");
+            if (shader == null)
+                shader = Shader.Find("Project/EnemyDisintegrate");
+            if (shader == null)
+            {
+                Debug.LogWarning("Enemy disintegrate shader was not found. Import shaders and retry.");
+                return;
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader)
+                {
+                    name = "EnemyDisintegrate"
+                };
+                material.SetColor("_DissolveEdgeColor", new Color(1f, 0.45f, 0.1f, 1f));
+                material.SetFloat("_DissolveEdgeWidth", 0.045f);
+                AssetDatabase.CreateAsset(material, materialPath);
+                AssetDatabase.SaveAssets();
+            }
+        }
+
+        private static void EnsureSmokeMaterialAsset()
+        {
+            const string folder = "Assets/_Project/Resources/Combat";
+            const string materialPath = folder + "/EnemyDissolveSmoke.mat";
+
+            CraftingEditorUtility.EnsureFolder(folder);
+
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Shaders/EnemyDissolveSmoke.shader");
+            if (shader == null)
+                shader = Shader.Find("Project/EnemyDissolveSmoke");
+            if (shader == null)
+            {
+                Debug.LogWarning("Enemy dissolve smoke shader was not found. Import shaders and retry.");
+                return;
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader)
+                {
+                    name = "EnemyDissolveSmoke"
+                };
+                material.SetColor("_BaseColor", new Color(0.38f, 0.38f, 0.42f, 0.55f));
+                material.SetFloat("_Expand", 0.1f);
+                AssetDatabase.CreateAsset(material, materialPath);
+                AssetDatabase.SaveAssets();
+            }
         }
     }
 }

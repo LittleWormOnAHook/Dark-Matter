@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Binnos 250
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Binoculars 250
-  icon: {fileID: 21300000, guid: 9f3203351c0abaf4387dbb6c642aa34d, type: 3}
+  icon: {fileID: 21300000, guid: ab8bf710661f67d49bed63e4c8d99116, type: 3}
   worldPrefab: {fileID: 1758933096871503508, guid: c42505d280d5b404d9f0b660c09f49d6, type: 3}
   maxStack: 1
   itemType: 3
@@ -46,9 +46,9 @@ MonoBehaviour:
   opticsMinZoomFov: 12
   opticsMaxZoomFov: 55
   healthRestore: 0
-  hungerRestore: 0
-  thirstRestore: 0
   energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
   tooltipDescription: 

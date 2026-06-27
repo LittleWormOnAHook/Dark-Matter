@@ -25,6 +25,13 @@ namespace Project.EditorTools
         private static readonly string[] EnsureFolders =
         {
             ProjectAssetPaths.ArtTextures,
+            ProjectAssetPaths.Settings,
+            ProjectAssetPaths.SettingsInput,
+            ProjectAssetPaths.World,
+            ProjectAssetPaths.WorldTerrain,
+            ProjectAssetPaths.Scenes + "/Pioneer",
+            ProjectAssetPaths.ScriptsPrototypes,
+            ProjectAssetPaths.EditorDevTools,
             ProjectAssetPaths.PrefabsCraftingStations,
             ProjectAssetPaths.PrefabsItemsWorld,
             ProjectAssetPaths.PrefabsWorld,

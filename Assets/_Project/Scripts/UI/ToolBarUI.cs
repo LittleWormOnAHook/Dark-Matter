@@ -117,7 +117,20 @@ namespace Project.UI
             }
 
             uiBuilt = true;
+            SetGameplayVisible(false);
             RefreshUI();
+        }
+
+        public void SetGameplayVisible(bool visible)
+        {
+            if (toolbarRoot != null)
+                toolbarRoot.gameObject.SetActive(visible);
+        }
+
+        public static void ApplyGameplayVisibility()
+        {
+            ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
+            toolbar?.SetGameplayVisible(false);
         }
 
         public void RepositionRelativeToHotbar(Transform hotbarAnchor)
@@ -166,6 +179,20 @@ namespace Project.UI
             toolbarOriginalSiblingIndex = toolbarRoot.GetSiblingIndex();
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             raisedToFrontLayer = true;
+        }
+
+        public void EnsureRaisedToFrontLayer(Transform canvasRoot)
+        {
+            if (toolbarRoot == null || canvasRoot == null)
+                return;
+
+            if (!raisedToFrontLayer)
+            {
+                RaiseToFrontLayer(canvasRoot);
+                return;
+            }
+
+            UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
         }
 
         public void RestoreFromFrontLayer(Transform hotbarAnchor)
@@ -222,9 +249,12 @@ namespace Project.UI
 
         private void HandleToolbarHotkeys()
         {
-            if (Input.GetKeyDown(KeyCode.N) || (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame))
+            if (Keyboard.current == null)
+                return;
+
+            if (Keyboard.current.nKey.wasPressedThisFrame)
                 UseTool(ToolType.Scanner);
-            else if (Input.GetKeyDown(KeyCode.B) || (Keyboard.current != null && Keyboard.current.bKey.wasPressedThisFrame))
+            else if (Keyboard.current.bKey.wasPressedThisFrame)
                 UseTool(ToolType.Binoculars);
         }
 

@@ -46,9 +46,9 @@ MonoBehaviour:
   opticsMinZoomFov: 18
   opticsMaxZoomFov: 55
   healthRestore: 50
-  hungerRestore: 0
-  thirstRestore: 0
   energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
   tooltipDescription: 

@@ -143,8 +143,10 @@ namespace Project.EditorTools.UiLayout
             EditorGUI.BeginChangeCheck();
             TMP_FontAsset font = (TMP_FontAsset)EditorGUILayout.ObjectField("Font Asset", text.font, typeof(TMP_FontAsset), false);
             Material fontMaterial = (Material)EditorGUILayout.ObjectField("Font Material", text.fontSharedMaterial, typeof(Material), false);
-            string content = EditorGUILayout.TextField("Text", text.text);
+            EditorGUILayout.LabelField("Text");
+            string content = EditorGUILayout.TextArea(text.text ?? string.Empty, GUILayout.MinHeight(40f));
             float fontSize = EditorGUILayout.FloatField("Font Size", text.fontSize);
+            FontStyles fontStyle = (FontStyles)EditorGUILayout.EnumFlagsField("Font Style", text.fontStyle);
             Color color = EditorGUILayout.ColorField("Color", text.color);
             TextAlignmentOptions alignment = (TextAlignmentOptions)EditorGUILayout.EnumPopup("Alignment", text.alignment);
             bool autoSize = EditorGUILayout.Toggle("Auto Size", text.enableAutoSizing);
@@ -157,6 +159,10 @@ namespace Project.EditorTools.UiLayout
             }
 
             bool wordWrap = EditorGUILayout.Toggle("Word Wrap", text.textWrappingMode != TextWrappingModes.NoWrap);
+            TextOverflowModes overflow = (TextOverflowModes)EditorGUILayout.EnumPopup("Overflow", text.overflowMode);
+            float characterSpacing = EditorGUILayout.FloatField("Character Spacing", text.characterSpacing);
+            float lineSpacing = EditorGUILayout.FloatField("Line Spacing", text.lineSpacing);
+            float paragraphSpacing = EditorGUILayout.FloatField("Paragraph Spacing", text.paragraphSpacing);
             bool richText = EditorGUILayout.Toggle("Rich Text", text.richText);
             bool raycast = EditorGUILayout.Toggle("Raycast Target", text.raycastTarget);
             Vector4 margin = EditorGUILayout.Vector4Field("Margin", text.margin);
@@ -169,16 +175,67 @@ namespace Project.EditorTools.UiLayout
                     text.fontSharedMaterial = fontMaterial;
                 text.text = content;
                 text.fontSize = fontSize;
+                text.fontStyle = fontStyle;
                 text.color = color;
                 text.alignment = alignment;
                 text.enableAutoSizing = autoSize;
                 text.fontSizeMin = minSize;
                 text.fontSizeMax = maxSize;
                 text.textWrappingMode = wordWrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+                text.overflowMode = overflow;
+                text.characterSpacing = characterSpacing;
+                text.lineSpacing = lineSpacing;
+                text.paragraphSpacing = paragraphSpacing;
                 text.richText = richText;
                 text.raycastTarget = raycast;
                 text.margin = margin;
                 CommitChange(text, "Edit UI Text");
+            }
+        }
+
+        public static void DrawLegacyTextSection(Text text)
+        {
+            EditorGUI.BeginChangeCheck();
+            Font font = (Font)EditorGUILayout.ObjectField("Font", text.font, typeof(Font), false);
+            EditorGUILayout.LabelField("Text");
+            string content = EditorGUILayout.TextArea(text.text ?? string.Empty, GUILayout.MinHeight(40f));
+            int fontSize = EditorGUILayout.IntField("Font Size", text.fontSize);
+            FontStyle fontStyle = (FontStyle)EditorGUILayout.EnumPopup("Font Style", text.fontStyle);
+            Color color = EditorGUILayout.ColorField("Color", text.color);
+            TextAnchor alignment = (TextAnchor)EditorGUILayout.EnumPopup("Alignment", text.alignment);
+            float lineSpacing = EditorGUILayout.FloatField("Line Spacing", text.lineSpacing);
+            bool richText = EditorGUILayout.Toggle("Rich Text", text.supportRichText);
+            bool raycast = EditorGUILayout.Toggle("Raycast Target", text.raycastTarget);
+            bool bestFit = EditorGUILayout.Toggle("Best Fit", text.resizeTextForBestFit);
+            int minSize = text.resizeTextMinSize;
+            int maxSize = text.resizeTextMaxSize;
+            if (bestFit)
+            {
+                minSize = EditorGUILayout.IntField("Min Size", text.resizeTextMinSize);
+                maxSize = EditorGUILayout.IntField("Max Size", text.resizeTextMaxSize);
+            }
+
+            HorizontalWrapMode horizontalOverflow = (HorizontalWrapMode)EditorGUILayout.EnumPopup("Horizontal Overflow", text.horizontalOverflow);
+            VerticalWrapMode verticalOverflow = (VerticalWrapMode)EditorGUILayout.EnumPopup("Vertical Overflow", text.verticalOverflow);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(text, "Edit UI Legacy Text");
+                text.font = font;
+                text.text = content;
+                text.fontSize = fontSize;
+                text.fontStyle = fontStyle;
+                text.color = color;
+                text.alignment = alignment;
+                text.lineSpacing = lineSpacing;
+                text.supportRichText = richText;
+                text.raycastTarget = raycast;
+                text.resizeTextForBestFit = bestFit;
+                text.resizeTextMinSize = minSize;
+                text.resizeTextMaxSize = maxSize;
+                text.horizontalOverflow = horizontalOverflow;
+                text.verticalOverflow = verticalOverflow;
+                CommitChange(text, "Edit UI Legacy Text");
             }
         }
 
@@ -340,14 +397,37 @@ namespace Project.EditorTools.UiLayout
             bool interactable = EditorGUILayout.Toggle("Interactable", button.interactable);
             Selectable.Transition transition = (Selectable.Transition)EditorGUILayout.EnumPopup("Transition", button.transition);
             Graphic targetGraphic = (Graphic)EditorGUILayout.ObjectField("Target Graphic", button.targetGraphic, typeof(Graphic), true);
+
             ColorBlock colors = button.colors;
-            colors.normalColor = EditorGUILayout.ColorField("Normal Color", colors.normalColor);
-            colors.highlightedColor = EditorGUILayout.ColorField("Highlighted Color", colors.highlightedColor);
-            colors.pressedColor = EditorGUILayout.ColorField("Pressed Color", colors.pressedColor);
-            colors.selectedColor = EditorGUILayout.ColorField("Selected Color", colors.selectedColor);
-            colors.disabledColor = EditorGUILayout.ColorField("Disabled Color", colors.disabledColor);
-            colors.colorMultiplier = EditorGUILayout.FloatField("Color Multiplier", colors.colorMultiplier);
-            colors.fadeDuration = EditorGUILayout.FloatField("Fade Duration", colors.fadeDuration);
+            if (transition == Selectable.Transition.ColorTint || transition == Selectable.Transition.None)
+            {
+                colors.normalColor = EditorGUILayout.ColorField("Normal Color", colors.normalColor);
+                colors.highlightedColor = EditorGUILayout.ColorField("Highlighted Color", colors.highlightedColor);
+                colors.pressedColor = EditorGUILayout.ColorField("Pressed Color", colors.pressedColor);
+                colors.selectedColor = EditorGUILayout.ColorField("Selected Color", colors.selectedColor);
+                colors.disabledColor = EditorGUILayout.ColorField("Disabled Color", colors.disabledColor);
+                colors.colorMultiplier = EditorGUILayout.FloatField("Color Multiplier", colors.colorMultiplier);
+                colors.fadeDuration = EditorGUILayout.FloatField("Fade Duration", colors.fadeDuration);
+            }
+
+            SpriteState spriteState = button.spriteState;
+            if (transition == Selectable.Transition.SpriteSwap)
+            {
+                spriteState.highlightedSprite = (Sprite)EditorGUILayout.ObjectField("Highlighted Sprite", spriteState.highlightedSprite, typeof(Sprite), false);
+                spriteState.pressedSprite = (Sprite)EditorGUILayout.ObjectField("Pressed Sprite", spriteState.pressedSprite, typeof(Sprite), false);
+                spriteState.selectedSprite = (Sprite)EditorGUILayout.ObjectField("Selected Sprite", spriteState.selectedSprite, typeof(Sprite), false);
+                spriteState.disabledSprite = (Sprite)EditorGUILayout.ObjectField("Disabled Sprite", spriteState.disabledSprite, typeof(Sprite), false);
+            }
+
+            AnimationTriggers triggers = button.animationTriggers;
+            if (transition == Selectable.Transition.Animation)
+            {
+                triggers.normalTrigger = EditorGUILayout.TextField("Normal Trigger", triggers.normalTrigger);
+                triggers.highlightedTrigger = EditorGUILayout.TextField("Highlighted Trigger", triggers.highlightedTrigger);
+                triggers.pressedTrigger = EditorGUILayout.TextField("Pressed Trigger", triggers.pressedTrigger);
+                triggers.selectedTrigger = EditorGUILayout.TextField("Selected Trigger", triggers.selectedTrigger);
+                triggers.disabledTrigger = EditorGUILayout.TextField("Disabled Trigger", triggers.disabledTrigger);
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -356,7 +436,27 @@ namespace Project.EditorTools.UiLayout
                 button.transition = transition;
                 button.targetGraphic = targetGraphic;
                 button.colors = colors;
+                button.spriteState = spriteState;
+                button.animationTriggers = triggers;
                 CommitChange(button, "Edit UI Button");
+            }
+
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Button Label", EditorStyles.boldLabel);
+                DrawTextSection(label);
+            }
+            else
+            {
+                Text legacyLabel = button.GetComponentInChildren<Text>(true);
+                if (legacyLabel != null)
+                {
+                    EditorGUILayout.Space(4f);
+                    EditorGUILayout.LabelField("Button Label", EditorStyles.boldLabel);
+                    DrawLegacyTextSection(legacyLabel);
+                }
             }
         }
 
@@ -619,7 +719,9 @@ namespace Project.EditorTools.UiLayout
             if (go.GetComponent<Image>() != null || go.GetComponent<RawImage>() != null)
                 UiLayoutEditorStyles.DrawMiniBadge("IMG", new Color(0.75f, 0.55f, 1f));
             if (go.GetComponent<TextMeshProUGUI>() != null)
-                UiLayoutEditorStyles.DrawMiniBadge("TXT", new Color(0.45f, 0.85f, 1f));
+                UiLayoutEditorStyles.DrawMiniBadge("TMP", new Color(0.45f, 0.85f, 1f));
+            else if (go.GetComponent<Text>() != null)
+                UiLayoutEditorStyles.DrawMiniBadge("TXT", new Color(0.55f, 0.75f, 0.95f));
             if (go.GetComponent<Button>() != null)
                 UiLayoutEditorStyles.DrawMiniBadge("BTN", new Color(1f, 0.7f, 0.35f));
             if (go.GetComponent<LayoutGroup>() != null || go.GetComponent<LayoutElement>() != null)

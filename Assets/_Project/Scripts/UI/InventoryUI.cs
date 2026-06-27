@@ -27,6 +27,19 @@ namespace Project.UI
         [Tooltip("When enabled, hotbar size/position from the scene is kept instead of being rebuilt at runtime.")]
         [SerializeField] private bool preserveHotbarLayout;
 
+        [Tooltip("Optional data-driven layout applied before default code positioning.")]
+        [SerializeField] private UiLayoutProfile layoutProfile;
+
+        [SerializeField] private bool applyLayoutProfile = true;
+
+        [Tooltip("When a profile applies, skip default anchor/offset layout on the main inventory grid.")]
+        [SerializeField] private bool skipDefaultLayoutWhenProfileApplied = true;
+
+        [Tooltip("When enabled, GridLayoutGroup cell size, spacing, and padding are not rebuilt at runtime.")]
+        [SerializeField] private bool preserveMainGridLayout;
+
+        public bool IsInventoryEmbedded => inventoryPanelEmbedded;
+
         private InventorySystem inventorySystem;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
@@ -51,6 +64,9 @@ namespace Project.UI
 
         private void Awake()
         {
+            if (UiPreviewContext.IsActive)
+                return;
+
             inventorySystem = FindAnyObjectByType<InventorySystem>();
             equipmentController = inventorySystem != null
                 ? inventorySystem.GetComponent<EquipmentController>()
@@ -64,10 +80,15 @@ namespace Project.UI
             }
 
             EnsureInventoryClosed();
+            GameplayHudVisibility.RefreshGameplayHud();
+            HideLegacyPanelTitleLabels();
         }
 
         private void Start()
         {
+            if (UiPreviewContext.IsActive)
+                return;
+
             Canvas canvas = GetComponent<Canvas>();
             if (canvas == null)
                 canvas = GetComponentInParent<Canvas>();
@@ -96,6 +117,8 @@ namespace Project.UI
             RefreshUI();
             RefreshMainInventoryLayout();
             EnsureInventoryClosed();
+            GameplayHudVisibility.RefreshGameplayHud();
+            HideLegacyPanelTitleLabels();
         }
 
         private void ApplyShiftPanelVisuals()
@@ -124,6 +147,16 @@ namespace Project.UI
             if (inventoryPanel == null || container == null)
                 return;
 
+            if (inventoryPanelEmbedded && inventoryPanel.transform.parent == container)
+            {
+                inventoryPanel.SetActive(true);
+                RefreshMainInventoryLayout();
+                return;
+            }
+
+            if (inventoryPanelEmbedded)
+                RestoreInventoryPanel();
+
             inventoryPanelOriginalParent = inventoryPanel.transform.parent;
             inventoryPanel.transform.SetParent(container, false);
             StretchToParent(inventoryPanel.GetComponent<RectTransform>());
@@ -133,33 +166,81 @@ namespace Project.UI
 
             inventoryPanel.SetActive(true);
             inventoryPanelEmbedded = true;
+            HideLegacyPanelTitleLabels();
             Canvas.ForceUpdateCanvases();
             RefreshMainInventoryLayout();
         }
 
         public void SetBottomHudVisible(bool visible)
         {
-            RestoreHudSlotsFromFrontLayer();
+            if (!visible)
+            {
+                if (hotbarParent != null)
+                    hotbarParent.gameObject.SetActive(false);
+
+                FindAnyObjectByType<ToolBarUI>()?.SetGameplayVisible(false);
+                RestoreHudSlotsFromFrontLayer();
+                return;
+            }
+
+            EnsureToolbar();
 
             if (hotbarParent != null)
-                hotbarParent.gameObject.SetActive(visible);
+                hotbarParent.gameObject.SetActive(true);
+
+            Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
+            Transform canvasRoot = canvas != null ? canvas.transform : null;
+            if (canvasRoot == null)
+                return;
+
+            if (hotbarParent != null)
+            {
+                if (!hudSlotsRaised)
+                {
+                    hotbarOriginalParent = hotbarParent.parent;
+                    hotbarOriginalSiblingIndex = hotbarParent.GetSiblingIndex();
+                    hudSlotsRaised = true;
+                }
+
+                UiFrontLayer.ReparentToFront(hotbarParent, canvasRoot);
+                if (inventorySystem != null)
+                    LayoutHotbarContainer(inventorySystem.hotbarSize);
+            }
+
+            ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
+            toolbar?.SetGameplayVisible(true);
+            toolbar?.EnsureRaisedToFrontLayer(canvasRoot);
+            toolbar?.RepositionRelativeToHotbar(hotbarParent);
+        }
+
+        private void HideLegacyPanelTitleLabels()
+        {
+            if (inventoryPanel == null)
+                return;
+
+            Transform[] children = inventoryPanel.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || child.name != "TitleText")
+                    continue;
+
+                child.gameObject.SetActive(false);
+            }
         }
 
         public void RestoreInventoryPanel()
         {
             RestoreHudSlotsFromFrontLayer();
 
-            if (!inventoryPanelEmbedded || inventoryPanel == null || inventoryPanelOriginalParent == null)
+            if (inventoryPanel == null)
                 return;
 
-            if (!UiEmbedRestore.TryRestoreParent(inventoryPanel.transform, inventoryPanelOriginalParent))
-            {
-                inventoryPanelEmbedded = false;
-                return;
-            }
+            if (inventoryPanelEmbedded && inventoryPanelOriginalParent != null)
+                UiEmbedRestore.TryRestoreParent(inventoryPanel.transform, inventoryPanelOriginalParent);
 
-            inventoryPanel.SetActive(false);
             inventoryPanelEmbedded = false;
+            inventoryPanel.SetActive(false);
         }
 
         private void RestoreHudSlotsFromFrontLayer()
@@ -203,8 +284,7 @@ namespace Project.UI
         public void EnsureInventoryClosed()
         {
             bool panelWasOpen = inventoryPanel != null && inventoryPanel.activeSelf;
-            if (panelWasOpen)
-                inventoryPanel.SetActive(false);
+            RestoreInventoryPanel();
 
             PlayerController pc = FindAnyObjectByType<PlayerController>();
             if (pc != null && (panelWasOpen || pc.IsInventoryOpen))
@@ -213,9 +293,6 @@ namespace Project.UI
             CameraController cam = FindAnyObjectByType<CameraController>();
             if (cam != null)
                 cam.SetInventoryOpen(false);
-
-            if (GameSession.HasStarted && panelWasOpen)
-                ResumeGame();
         }
 
         public static void CloseAnyOpenInventory()
@@ -289,15 +366,37 @@ namespace Project.UI
 
         public void RefreshMainInventoryLayout()
         {
-            if (mainInventoryParent is not RectTransform gridRect || inventorySystem == null)
+            if (mainInventoryParent is not RectTransform gridRect)
                 return;
 
-            gridRect.anchorMin = Vector2.zero;
-            gridRect.anchorMax = Vector2.one;
-            gridRect.pivot = new Vector2(0.5f, 0.5f);
-            gridRect.anchoredPosition = Vector2.zero;
-            gridRect.offsetMin = new Vector2(MainInventoryInset, MainInventoryInset);
-            gridRect.offsetMax = new Vector2(-MainInventoryInset, -MainInventoryInset);
+            bool profileApplied = TryApplyLayoutProfile();
+            bool useSavedGrid = preserveMainGridLayout || ProfileHasSavedMainGridLayout();
+
+            if (!profileApplied)
+            {
+                gridRect.anchorMin = Vector2.zero;
+                gridRect.anchorMax = Vector2.one;
+                gridRect.pivot = new Vector2(0.5f, 0.5f);
+                gridRect.anchoredPosition = Vector2.zero;
+                gridRect.offsetMin = new Vector2(MainInventoryInset, MainInventoryInset);
+                gridRect.offsetMax = new Vector2(-MainInventoryInset, -MainInventoryInset);
+            }
+
+            if (useSavedGrid)
+            {
+                GridLayoutGroup savedGrid = mainInventoryParent.GetComponent<GridLayoutGroup>();
+                if (savedGrid != null)
+                {
+                    Canvas.ForceUpdateCanvases();
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gridRect);
+                    ApplyMetricsToMainInventorySlots(savedGrid.cellSize.x);
+                }
+
+                return;
+            }
+
+            if (inventorySystem == null)
+                return;
 
             GridLayoutGroup grid = mainInventoryParent.GetComponent<GridLayoutGroup>();
             if (grid == null)
@@ -326,6 +425,57 @@ namespace Project.UI
             grid.cellSize = new Vector2(cellSize, cellSize);
 
             ApplyMetricsToMainInventorySlots(cellSize);
+        }
+
+        private bool ProfileHasSavedMainGridLayout()
+        {
+            if (!applyLayoutProfile)
+                return false;
+
+            UiLayoutProfile profile = layoutProfile;
+            if (profile == null)
+                profile = UiLayoutProfileResolver.Load(UiPanelIds.InventoryPanel);
+
+            if (profile == null || profile.nodes == null)
+                return false;
+
+            if (mainInventoryParent != null && inventoryPanel != null)
+            {
+                string path = UiLayoutProfileApplier.GetRelativePath(inventoryPanel.transform, mainInventoryParent);
+                UiLayoutNodeEntry node = profile.FindNode(path);
+                if (node != null && node.hasGridLayout)
+                    return true;
+            }
+
+            for (int i = 0; i < profile.nodes.Count; i++)
+            {
+                UiLayoutNodeEntry node = profile.nodes[i];
+                if (node == null || !node.hasGridLayout)
+                    continue;
+
+                if (node.relativePath == "MainInventoryGrid"
+                    || node.relativePath.EndsWith("/MainInventoryGrid", System.StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryApplyLayoutProfile()
+        {
+            if (!applyLayoutProfile)
+                return false;
+
+            UiLayoutProfile profile = layoutProfile;
+            if (profile == null)
+                profile = UiLayoutProfileResolver.Load(UiPanelIds.InventoryPanel);
+
+            if (profile == null || profile.nodes == null || profile.nodes.Count == 0)
+                return false;
+
+            Transform root = inventoryPanel != null ? inventoryPanel.transform : transform;
+            bool applied = UiLayoutProfileApplier.Apply(root, profile, panelEmbedded: inventoryPanelEmbedded);
+            return applied && skipDefaultLayoutWhenProfileApplied;
         }
 
         private void ApplyMetricsToMainInventorySlots(float cellSize)
@@ -618,38 +768,11 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            EnsureInventoryClosed();
-
             JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-            if (journal != null)
-                journal.OpenToInventoryTab();
+            if (journal == null)
+                return;
+
+            journal.OpenToInventoryTab();
         }
-
-                private void PauseForInventory()
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-
-                    PlayerController pc = FindAnyObjectByType<PlayerController>();
-                    if (pc != null) pc.SetInventoryOpen(true);
-
-                    OpticsController optics = FindAnyObjectByType<OpticsController>();
-                    optics?.CloseOpticsIfActive();
-
-                    CameraController cam = FindAnyObjectByType<CameraController>();
-                    if (cam != null) cam.SetInventoryOpen(true);
-                }
-
-                private void ResumeGame()
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-
-                    PlayerController pc = FindAnyObjectByType<PlayerController>();
-                    if (pc != null) pc.SetInventoryOpen(false);
-
-                    CameraController cam = FindAnyObjectByType<CameraController>();
-                    if (cam != null) cam.SetInventoryOpen(false);
-                }
     }
 }

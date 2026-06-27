@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8231507325958716528}
   - component: {fileID: 88331554869034284}
   - component: {fileID: 7123456789012345680}
+  - component: {fileID: 4284518462737861779}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -76,6 +77,9 @@ MonoBehaviour:
   maxHealth: 60
   destroyOnDeath: 1
   destroyDelay: 3
+  respawnTime: 4
+  healthBarAnchor: {fileID: 0}
+  healthBarOffset: {x: 0, y: 2, z: 0}
 --- !u!114 &2201646606617968480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125,6 +129,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87122d74b24d9214a8a55477e60e51a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyAiController
+  movementMode: 2
+  patrolMode: 0
+  investigateNoise: 1
+  chasePlayer: 1
+  returnToHomeAfterSearch: 1
+  chaseRadius: 0
   walkSpeed: 2.4
   runSpeed: 4.8
   turnSpeed: 8
@@ -132,6 +142,9 @@ MonoBehaviour:
   groundOffset: 0
   groundProbeHeight: 40
   groundProbeDistance: 80
+  wanderRadius: 8
+  wanderPauseMin: 2
+  wanderPauseMax: 5
   patrolPoints: []
   patrolWaitDuration: 2
   idleDuration: 3
@@ -139,6 +152,56 @@ MonoBehaviour:
   investigateArriveDistance: 1.2
   searchDuration: 6
   searchRadius: 4
+--- !u!114 &7123456789012345680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1855561914623042465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5faa33e28a66b2145a866873ec710964, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
+  enableLoot: 1
+  lootDisplayName: Enemy
+  piCoinsMin: 1
+  piCoinsMax: 3
+  randomLootCountMin: 0
+  randomLootCountMax: 1
+  lootItemPool: []
+  lootUnlootedLifetime: 20
+  lootedBagDissolveDelay: 2
+  lootInteractRange: 2.75
+  promptText: Press E to loot
+--- !u!114 &4284518462737861779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1855561914623042465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc995163a8cad04fbeba3ffe4ed3dba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.EnemyDisintegrationEffect
+  enableDeathLift: 1
+  liftDuration: 2
+  liftHeight: 2
+  dissolveMaterialTemplate: {fileID: 0}
+  dissolveDuration: 1.4
+  dissolveEdgeWidth: 0.045
+  dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  replaceDeathAnimation: 1
+  enableSmoke: 1
+  smokeDuration: 3.2
+  smokeRiseHeight: 1.1
+  smokeExpand: 0.18
+  smokeColor: {r: 0.62, g: 0.64, b: 0.68, a: 0.48}
+  enableVolumetricSmoke: 1
+  volumetricSmokeLinger: 2.4
 --- !u!1 &6143134183511430617
 GameObject:
   m_ObjectHideFlags: 0
@@ -229,25 +292,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &7123456789012345680
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1855561914623042465}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5faa33e28a66b2145a866873ec710964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
-  enableLoot: 1
-  lootDisplayName: Enemy
-  piCoinsMin: 1
-  piCoinsMax: 3
-  randomLootCountMin: 0
-  randomLootCountMax: 1
-  lootItemPool: []
-  lootRespawnDelay: 20
-  lootInteractRange: 2.75
-  promptText: Press E to loot

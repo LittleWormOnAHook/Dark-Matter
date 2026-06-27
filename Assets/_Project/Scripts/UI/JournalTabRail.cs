@@ -102,11 +102,16 @@ namespace Project.UI
         {
             foreach (KeyValuePair<JournalWindowId, Image> pair in tabBackgrounds)
             {
-                bool active = windowId.HasValue && pair.Key == windowId.Value;
-                pair.Value.color = active ? ActiveTabColor : InactiveTabColor;
+                Image bg = pair.Value;
+                if (bg == null)
+                    continue;
 
-                if (tabLabels.TryGetValue(pair.Key, out TextMeshProUGUI label))
-                    label.color = active ? ActiveLabelColor : InactiveLabelColor;
+                bool active = windowId.HasValue && pair.Key == windowId.Value;
+                if (!bg.TryGetComponent(out Button button))
+                    continue;
+
+                ColorBlock colors = button.colors;
+                bg.color = active ? colors.pressedColor : colors.normalColor;
             }
         }
 

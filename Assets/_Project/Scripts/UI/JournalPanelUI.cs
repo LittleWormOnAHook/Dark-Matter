@@ -108,14 +108,34 @@ namespace Project.UI
 
     public void TogglePanel()
     {
+      TryToggleJournal();
+    }
+
+    public bool TryToggleJournal()
+    {
+      if (!GameSession.HasStarted)
+        return false;
+
       if (Time.frameCount == lastToggleFrame)
-        return;
+        return false;
 
       if (!EnsureNavigatorReady())
-        return;
+        return false;
 
       lastToggleFrame = Time.frameCount;
-      TryToggleTab(JournalWindowId.JournalQuest);
+
+      if (navigator.IsAnyOpen)
+      {
+        ReleaseInputCapture();
+        return true;
+      }
+
+      CloseConflictingPanels();
+      navigator.SwitchToWindow(JournalWindowId.JournalQuest);
+      ItemHoverTooltip.HideAny();
+      RecipeHoverTooltip.HideAny();
+      UiFrontLayer.BringLayerToFront(transform);
+      return true;
     }
 
     public bool TryToggleTab(JournalWindowId windowId)
@@ -136,7 +156,7 @@ namespace Project.UI
 
       if (navigator.IsAnyOpen && navigator.CurrentWindow == windowId)
       {
-        navigator.CloseAll();
+        ReleaseInputCapture();
         return true;
       }
 
@@ -145,15 +165,6 @@ namespace Project.UI
       ItemHoverTooltip.HideAny();
       RecipeHoverTooltip.HideAny();
       UiFrontLayer.BringLayerToFront(transform);
-      return true;
-    }
-
-    public bool TryToggleJournal()
-    {
-      if (!GameSession.HasStarted)
-        return false;
-
-      TogglePanel();
       return true;
     }
 
@@ -206,6 +217,10 @@ namespace Project.UI
     public void ReleaseInputCapture()
     {
       navigator?.CloseAll();
+      EnsureInventoryUi()?.RestoreInventoryPanel();
+
+      if (windowHostRect != null)
+        windowHostRect.gameObject.SetActive(false);
 
       PlayerController player = FindAnyObjectByType<PlayerController>();
       if (player != null)
@@ -214,13 +229,42 @@ namespace Project.UI
       CameraController camera = FindAnyObjectByType<CameraController>();
       if (camera != null)
         camera.SetJournalOpen(false);
+
+      GameplayInputRecovery.FinalizeGameplayInput();
+    }
+
+    private InventoryUI EnsureInventoryUi()
+    {
+      if (inventoryUi == null)
+        inventoryUi = FindAnyObjectByType<InventoryUI>();
+      return inventoryUi;
     }
 
     private void CloseConflictingPanels()
     {
-      InventoryUI.CloseAnyOpenInventory();
+      // Inventory is journal-only; InventoryFullscreenWindow OnShow/OnHide owns embed lifecycle.
       MapUI.CloseAnyOpenMap();
       PetUI.CloseAnyOpenPet();
+    }
+
+    public void EnsureUiBuiltForLayoutEditor()
+    {
+      EnsureUiBuilt();
+      if (uiBuilt)
+      {
+        ApplySavedLayoutProfiles();
+        EnforceJournalChromeLayout();
+        RefreshTabRailVisualState();
+      }
+    }
+
+    public void ResetToDefaultLayout()
+    {
+      if (navigator != null && navigator.IsAnyOpen)
+        ReleaseInputCapture();
+
+      uiBuilt = false;
+      EnsureUiBuilt();
     }
 
     private void EnsureUiBuilt()
@@ -237,12 +281,39 @@ namespace Project.UI
           throw new System.InvalidOperationException("[JournalPanelUI] Journal UI build did not register any windows.");
 
         uiBuilt = true;
+        ApplySavedLayoutProfiles();
+        EnforceJournalChromeLayout();
+        RefreshTabRailVisualState();
       }
       catch (System.Exception ex)
       {
         Debug.LogException(ex);
         CleanupPartialUi();
       }
+    }
+
+    private void ApplySavedLayoutProfiles()
+    {
+      ApplyLayoutProfile(overlayRoot != null ? overlayRoot.transform : null, UiPanelIds.JournalOverlay);
+      ApplyLayoutProfile(tabRail != null ? tabRail.transform : null, UiPanelIds.JournalTabRail);
+      ApplyLayoutProfile(windowHostRect, UiPanelIds.JournalWindowHost);
+    }
+
+    private static void ApplyLayoutProfile(Transform root, string panelId)
+    {
+      if (root == null || string.IsNullOrEmpty(panelId))
+        return;
+
+      UiLayoutProfile profile = UiLayoutProfileResolver.Load(panelId);
+      if (profile == null)
+        return;
+
+      UiLayoutProfileApplier.Apply(root, profile);
+    }
+
+    private void RefreshTabRailVisualState()
+    {
+      tabRail?.SetActiveTab(navigator != null && navigator.IsAnyOpen ? navigator.CurrentWindow : null);
     }
 
     private void CleanupPartialUi()
@@ -364,6 +435,73 @@ namespace Project.UI
       navigator.RegisterWindow(window);
     }
 
+    public void BringJournalChromeToFront()
+    {
+      if (!IsOpen)
+        return;
+
+      transform.SetAsLastSibling();
+      if (overlayRoot != null)
+        overlayRoot.SetActive(true);
+      if (tabRail != null)
+        tabRail.gameObject.SetActive(true);
+
+      ApplyJournalChromeSortOrder();
+    }
+
+    private void ApplyJournalChromeSortOrder()
+    {
+      // Bottom → top: dim overlay, window content, tab rail (always receives clicks on the left).
+      overlayRoot?.transform.SetAsLastSibling();
+      windowHostRect?.transform.SetAsLastSibling();
+      tabRail?.transform.SetAsLastSibling();
+    }
+
+    private void EnforceJournalChromeLayout()
+    {
+      float railWidth = Sc(JournalTabRail.RailWidth);
+
+      if (windowHostRect != null)
+      {
+        Vector2 hostOffsetMin = windowHostRect.offsetMin;
+        if (hostOffsetMin.x < railWidth - 0.5f)
+          windowHostRect.offsetMin = new Vector2(railWidth, hostOffsetMin.y);
+
+        windowHostRect.anchorMin = Vector2.zero;
+        windowHostRect.anchorMax = Vector2.one;
+        windowHostRect.offsetMax = Vector2.zero;
+
+        if (windowHostRect.TryGetComponent(out Image hostImage))
+        {
+          hostImage.raycastTarget = false;
+          if (hostImage.color.a > 0.01f)
+            hostImage.color = new Color(hostImage.color.r, hostImage.color.g, hostImage.color.b, 0f);
+        }
+      }
+
+      if (tabRail != null)
+      {
+        RectTransform railRect = tabRail.GetComponent<RectTransform>();
+        if (railRect != null)
+        {
+          railRect.anchorMin = new Vector2(0f, 0f);
+          railRect.anchorMax = new Vector2(0f, 1f);
+          railRect.pivot = new Vector2(0f, 0.5f);
+          railRect.anchoredPosition = Vector2.zero;
+          railRect.sizeDelta = new Vector2(railWidth, 0f);
+        }
+
+        if (tabRail.TryGetComponent(out Image railImage) && railImage.color.a < 0.05f)
+          railImage.color = new Color(0.04f, 0.05f, 0.08f, 0.96f);
+      }
+
+      if (overlayRoot != null && overlayRoot.TryGetComponent(out Image overlayImage))
+      {
+        if (overlayImage.color.a < 0.05f)
+          overlayImage.color = new Color(0f, 0f, 0f, 0.55f);
+      }
+    }
+
     private void HandleNavigatorPauseChanged(bool paused)
     {
       if (overlayRoot != null)
@@ -374,18 +512,25 @@ namespace Project.UI
 
       if (paused)
       {
-        overlayRoot?.transform.SetAsLastSibling();
-        tabRail?.transform.SetAsLastSibling();
-        windowHostRect?.transform.SetAsLastSibling();
+        if (windowHostRect != null)
+          windowHostRect.gameObject.SetActive(true);
+
+        ApplyJournalChromeSortOrder();
         HandleActiveWindowChanged(navigator?.CurrentWindow);
-        GameplayHudVisibility.SetModalOverlayOpen(true);
+        UpdateJournalOverlayInputBlocking(navigator?.CurrentWindow);
+        GameplayHudVisibility.SetJournalTabHud(navigator?.CurrentWindow);
         ItemHoverTooltip.HideAny();
         RecipeHoverTooltip.HideAny();
         InventoryContextMenu.Instance?.Hide();
       }
       else
       {
-        GameplayHudVisibility.SetModalOverlayOpen(false);
+        EnsureInventoryUi()?.RestoreInventoryPanel();
+
+        if (windowHostRect != null)
+          windowHostRect.gameObject.SetActive(false);
+
+        GameplayHudVisibility.RefreshGameplayHud();
         if (craftingManager == null)
           craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
         if (craftingManager != null)
@@ -396,6 +541,22 @@ namespace Project.UI
     private void HandleActiveWindowChanged(JournalWindowId? windowId)
     {
       tabRail?.SetActiveTab(windowId);
+      UpdateJournalOverlayInputBlocking(windowId);
+      if (navigator != null && navigator.IsAnyOpen)
+        GameplayHudVisibility.SetJournalTabHud(windowId);
+    }
+
+    private void UpdateJournalOverlayInputBlocking(JournalWindowId? windowId)
+    {
+      if (overlayRoot == null)
+        return;
+
+      Image overlayImage = overlayRoot.GetComponent<Image>();
+      if (overlayImage == null)
+        return;
+
+      // Full map pan needs pointer events to reach MapViewportPanHandler beneath the journal chrome.
+      overlayImage.raycastTarget = windowId != JournalWindowId.Map;
     }
 
     private void HandleTabSelected(JournalWindowId windowId)

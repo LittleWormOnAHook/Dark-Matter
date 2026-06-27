@@ -127,20 +127,6 @@ namespace Project.Interaction
             trigger.radius = 0.45f;
         }
 
-        private void OnTriggerEnter(Collider other)
-        {
-            if (isPickedUp) return;
-            if (other.CompareTag("Player") && uiManager != null && itemData != null)
-                uiManager.ShowInteractionPrompt(promptText + " " + itemData.itemName);
-        }
-
-        private void OnTriggerExit(Collider other)
-        {
-            if (isPickedUp) return;
-            if (other.CompareTag("Player") && uiManager != null)
-                uiManager.HideInteractionPrompt();
-        }
-
         public void TryPickup(InventorySystem inventory = null)
         {
             if (inventory == null)
@@ -175,14 +161,12 @@ namespace Project.Interaction
                 if (showPlayerPrompt && uiManager != null)
                 {
                     if (itemData.isPiInfused)
-                        uiManager.ShowPiReward(itemData.piValue, "Pickup");
+                        uiManager.ShowAcReward(itemData.piValue, "Pickup");
 
                     uiManager.HideInteractionPrompt();
                 }
 
                 PickupToastUI.Show($"+{amount} {itemData.itemName}");
-
-                Debug.Log($"✅ Picked up {amount} {itemData.itemName}");
 
                 isPickedUp = true;
                 PickupProximityDotUI.NotifyCollected(this);
@@ -204,8 +188,6 @@ namespace Project.Interaction
             {
                 if (uiManager != null)
                     uiManager.ShowInteractionPrompt("Inventory is full!");
-                else
-                    Debug.Log("Inventory is full!");
             }
 
             return false;
@@ -275,7 +257,6 @@ namespace Project.Interaction
                 mainCollider.isTrigger = true;
             }
 
-            Debug.Log($"♻️ Respawned: {itemData.itemName}");
             PickupProximityDotUI.Register(this);
         }
     }

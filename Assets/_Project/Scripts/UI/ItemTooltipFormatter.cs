@@ -29,7 +29,7 @@ namespace Project.UI
             AppendConsumableLines(text, item);
             AppendWeaponLines(text, item);
             AppendToolLines(text, item);
-            AppendPiLine(text, item);
+            AppendAcLine(text, item);
             AppendCraftedItemLine(text, item);
 
             if (!string.IsNullOrWhiteSpace(item.tooltipDescription))
@@ -73,9 +73,20 @@ namespace Project.UI
 
             text.AppendLine("<color=#A0A8B8>Restores:</color>");
             AppendRestoreLine(text, "Health", item.healthRestore, "#FF7070");
-            AppendRestoreLine(text, "Hunger", item.hungerRestore, "#E8A045");
-            AppendRestoreLine(text, "Thirst", item.thirstRestore, "#6EC1FF");
-            AppendRestoreLine(text, "Energy", item.energyRestore, "#B6E067");
+            AppendRestoreLine(text, "Energy", item.energyRestore, "#E8A045");
+            AppendRestoreLine(text, "Stamina", item.staminaRestore, "#B6E067");
+            AppendOxygenRestoreLine(text, item.oxygenRestore);
+        }
+
+        private static void AppendOxygenRestoreLine(StringBuilder text, float oxygenRestore)
+        {
+            if (oxygenRestore <= 0f)
+                return;
+
+            int totalSeconds = Mathf.CeilToInt(oxygenRestore);
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            text.AppendLine($"  <color=#6EC1FF>+{minutes:00}:{seconds:00} Oxygen</color>");
         }
 
         private static void AppendRestoreLine(StringBuilder text, string label, float value, string color)
@@ -125,12 +136,12 @@ namespace Project.UI
             }
         }
 
-        private static void AppendPiLine(StringBuilder text, ItemData item)
+        private static void AppendAcLine(StringBuilder text, ItemData item)
         {
             if (!item.isPiInfused || item.piValue <= 0)
                 return;
 
-            text.AppendLine($"<color=#FFD966>Pi Value: {item.piValue}</color>");
+            text.AppendLine($"<color=#FFD966>AC Value: {item.piValue}</color>");
         }
 
         private static void AppendCraftedItemLine(StringBuilder text, ItemData item)
@@ -236,18 +247,33 @@ namespace Project.UI
             if (item == null || !item.IsConsumable)
                 return;
 
-            bool hasRestore = item.healthRestore > 0f || item.hungerRestore > 0f
-                || item.thirstRestore > 0f || item.energyRestore > 0f;
+            bool hasRestore = item.healthRestore > 0f || item.energyRestore > 0f
+                || item.staminaRestore > 0f || item.oxygenRestore > 0f;
             if (!hasRestore)
                 return;
 
             text.Append("  <color=#8890A0>Restores ");
             bool first = true;
             AppendRestore(text, ref first, "HP", item.healthRestore);
-            AppendRestore(text, ref first, "Hunger", item.hungerRestore);
-            AppendRestore(text, ref first, "Thirst", item.thirstRestore);
             AppendRestore(text, ref first, "Energy", item.energyRestore);
+            AppendRestore(text, ref first, "Stamina", item.staminaRestore);
+            AppendOxygenRestore(text, ref first, item.oxygenRestore);
             text.AppendLine("</color>");
+        }
+
+        private static void AppendOxygenRestore(StringBuilder text, ref bool first, float oxygenRestore)
+        {
+            if (oxygenRestore <= 0f)
+                return;
+
+            if (!first)
+                text.Append(", ");
+
+            int totalSeconds = Mathf.CeilToInt(oxygenRestore);
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            text.Append($"{minutes:00}:{seconds:00} Oxygen");
+            first = false;
         }
 
         private static void AppendRestore(StringBuilder text, ref bool first, string label, float value)

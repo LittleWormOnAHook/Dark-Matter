@@ -38,10 +38,10 @@ namespace Project.UI
             windowImage.color = new Color(0.08f, 0.08f, 0.1f, 0.98f);
 
             RectTransform windowRect = window.GetComponent<RectTransform>();
-            windowRect.anchorMin = new Vector2(0.5f, 0.5f);
-            windowRect.anchorMax = new Vector2(0.5f, 0.5f);
-            windowRect.pivot = new Vector2(0.5f, 0.5f);
-            windowRect.sizeDelta = new Vector2(MenuUiBuilder.ScaledSize(720f), MenuUiBuilder.ScaledSize(760f));
+            windowRect.anchorMin = Vector2.zero;
+            windowRect.anchorMax = Vector2.one;
+            windowRect.offsetMin = Vector2.zero;
+            windowRect.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup windowLayout = window.GetComponent<VerticalLayoutGroup>();
             windowLayout.padding = new RectOffset(

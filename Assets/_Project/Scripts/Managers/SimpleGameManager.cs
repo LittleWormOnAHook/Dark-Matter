@@ -4,6 +4,7 @@ using Project.Survival;
 using Project.Inventory;
 using Project.UI;
 using Project.Data;
+using Project.Pioneers;
 
 namespace Project.Managers
 {
@@ -32,6 +33,8 @@ namespace Project.Managers
 
             if (startingItems != null)
                 ItemRegistry.RegisterRuntimeItems(startingItems);
+
+            PioneerRosterManager.EnsureExists();
         }
 
         private void Start()
@@ -71,17 +74,24 @@ namespace Project.Managers
                     }
                 }
             }
+        }
+
+        public void AddAetherCredits(int amount, string source = "Unknown")
+        {
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster != null)
+            {
+                roster.AddAetherCredits(amount, source);
+                return;
+            }
 
             UIManager ui = FindAnyObjectByType<UIManager>();
-            if (ui != null)
-                ui.ShowPiReward(10, "Starting Bonus");
+            ui?.ShowAcReward(amount, source);
         }
 
         public void AddPi(int amount, string source = "Unknown")
         {
-            UIManager ui = FindAnyObjectByType<UIManager>();
-            if (ui != null)
-                ui.ShowPiReward(amount, source);
+            AddAetherCredits(amount, source);
         }
 
         public void SaveGame(int slotIndex = 0)

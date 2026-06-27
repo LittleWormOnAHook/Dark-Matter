@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7415cd1a5d6341b459dd8f826e9b90bc
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/HELLSLAYER Crosshairs/_Demo/Scripts/Gun.cs
+  uploadId: 496396

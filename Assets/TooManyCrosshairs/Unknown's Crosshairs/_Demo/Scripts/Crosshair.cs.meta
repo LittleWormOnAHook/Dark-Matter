@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1d49887da1a651a42b5d283aad7c9c28
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/Unknown's Crosshairs/_Demo/Scripts/Crosshair.cs
+  uploadId: 496396

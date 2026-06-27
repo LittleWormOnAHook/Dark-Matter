@@ -1,65 +1,101 @@
 using System.Collections.Generic;
+using Project.UI;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Project.EditorTools.UiLayout
 {
     internal static class UiLayoutEditorCapture
     {
-        internal sealed class CapturedRectTransform
-        {
-            public Vector2 AnchorMin;
-            public Vector2 AnchorMax;
-            public Vector2 Pivot;
-            public Vector2 AnchoredPosition;
-            public Vector2 SizeDelta;
-            public Vector3 LocalScale;
-            public bool ActiveSelf;
-        }
-
-        private static readonly Dictionary<string, CapturedRectTransform> PendingRectCaptures = new Dictionary<string, CapturedRectTransform>();
+        private static readonly Dictionary<string, UiLayoutNodeEntry> PendingCaptures = new Dictionary<string, UiLayoutNodeEntry>();
+        private static Transform pendingCaptureRoot;
 
         [InitializeOnLoadMethod]
         private static void RegisterPlayModeCaptureHandler()
         {
             EditorApplication.playModeStateChanged += state =>
             {
-                if (state != PlayModeStateChange.EnteredEditMode || PendingRectCaptures.Count == 0)
+                if (state != PlayModeStateChange.EnteredEditMode || PendingCaptures.Count == 0)
                     return;
 
-                Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-                if (canvas == null)
-                {
-                    PendingRectCaptures.Clear();
+                if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
                     return;
-                }
 
-                foreach (KeyValuePair<string, CapturedRectTransform> entry in PendingRectCaptures)
-                {
-                    Transform target = string.IsNullOrEmpty(entry.Key)
-                        ? canvas.transform
-                        : FindDeep(canvas.transform, entry.Key);
-
-                    if (target is not RectTransform rect)
-                        continue;
-
-                    CapturedRectTransform captured = entry.Value;
-                    Undo.RecordObject(rect, "Capture UI Layout");
-                    rect.gameObject.SetActive(captured.ActiveSelf);
-                    rect.anchorMin = captured.AnchorMin;
-                    rect.anchorMax = captured.AnchorMax;
-                    rect.pivot = captured.Pivot;
-                    rect.anchoredPosition = captured.AnchoredPosition;
-                    rect.sizeDelta = captured.SizeDelta;
-                    rect.localScale = captured.LocalScale;
-                    EditorUtility.SetDirty(rect);
-                }
-
-                PendingRectCaptures.Clear();
-                UiLayoutEditorWindow.MarkSceneDirtyStatic();
-                SceneView.RepaintAll();
+                EditorApplication.delayCall += FlushPendingCaptures;
             };
+        }
+
+        private static void FlushPendingCaptures()
+        {
+            if (PendingCaptures.Count == 0 || Application.isPlaying)
+                return;
+
+            Transform searchRoot = ResolveCaptureRoot();
+            if (searchRoot == null)
+            {
+                PendingCaptures.Clear();
+                pendingCaptureRoot = null;
+                return;
+            }
+
+            foreach (KeyValuePair<string, UiLayoutNodeEntry> entry in PendingCaptures)
+            {
+                Transform target = string.IsNullOrEmpty(entry.Key)
+                    ? searchRoot
+                    : FindDeep(searchRoot, entry.Key);
+
+                if (target is not RectTransform rect)
+                    continue;
+
+                Undo.RecordObject(rect, "Capture UI Layout");
+                if (rect.TryGetComponent(out Graphic graphic))
+                    Undo.RecordObject(graphic, "Capture UI Layout");
+
+                if (entry.Value.hasLayoutElement && rect.TryGetComponent(out LayoutElement layoutElement))
+                    Undo.RecordObject(layoutElement, "Capture UI Layout");
+
+                if (entry.Value.hasGridLayout && rect.TryGetComponent(out GridLayoutGroup gridLayout))
+                    Undo.RecordObject(gridLayout, "Capture UI Layout");
+
+                if (entry.Value.hasButtonStyle && rect.TryGetComponent(out Button button))
+                    Undo.RecordObject(button, "Capture UI Layout");
+
+                if (entry.Value.hasTextStyle && rect.TryGetComponent(out TextMeshProUGUI text))
+                    Undo.RecordObject(text, "Capture UI Layout");
+
+                if (entry.Value.hasLegacyTextStyle && rect.TryGetComponent(out Text legacyText))
+                    Undo.RecordObject(legacyText, "Capture UI Layout");
+
+                UiLayoutProfileApplier.ApplyEntry(rect, entry.Value);
+                EditorUtility.SetDirty(rect);
+            }
+
+            PendingCaptures.Clear();
+            pendingCaptureRoot = null;
+            UiStudioWindow.MarkSceneDirtyStatic();
+            SceneView.RepaintAll();
+        }
+
+        private static Transform ResolveCaptureRoot()
+        {
+            if (pendingCaptureRoot != null)
+            {
+                try
+                {
+                    if (pendingCaptureRoot)
+                        return pendingCaptureRoot;
+                }
+                catch (MissingReferenceException)
+                {
+                    pendingCaptureRoot = null;
+                }
+            }
+
+            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+            return canvas != null ? canvas.transform : null;
         }
 
         public static void CaptureRect(RectTransform selectedRect, Transform root)
@@ -67,17 +103,9 @@ namespace Project.EditorTools.UiLayout
             if (selectedRect == null || root == null)
                 return;
 
+            pendingCaptureRoot = root;
             string path = GetRelativePath(selectedRect, root);
-            PendingRectCaptures[path] = new CapturedRectTransform
-            {
-                AnchorMin = selectedRect.anchorMin,
-                AnchorMax = selectedRect.anchorMax,
-                Pivot = selectedRect.pivot,
-                AnchoredPosition = selectedRect.anchoredPosition,
-                SizeDelta = selectedRect.sizeDelta,
-                LocalScale = selectedRect.localScale,
-                ActiveSelf = selectedRect.gameObject.activeSelf
-            };
+            PendingCaptures[path] = UiLayoutProfileApplier.CaptureNode(selectedRect, path);
         }
 
         public static void CaptureHierarchy(RectTransform root, Transform canvasRoot)
@@ -93,23 +121,11 @@ namespace Project.EditorTools.UiLayout
             }
         }
 
-        public static int PendingCount => PendingRectCaptures.Count;
+        public static int PendingCount => PendingCaptures.Count;
 
         private static string GetRelativePath(Transform target, Transform root)
         {
-            if (target == null || root == null || target == root)
-                return string.Empty;
-
-            List<string> parts = new List<string>();
-            Transform current = target;
-            while (current != null && current != root)
-            {
-                parts.Add(current.name);
-                current = current.parent;
-            }
-
-            parts.Reverse();
-            return string.Join("/", parts);
+            return UiLayoutProfileApplier.GetRelativePath(root, target);
         }
 
         private static Transform FindDeep(Transform parent, string path)

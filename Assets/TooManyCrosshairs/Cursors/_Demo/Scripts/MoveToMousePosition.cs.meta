@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5bc906271b067064aa4868f792ad158b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/Cursors/_Demo/Scripts/MoveToMousePosition.cs
+  uploadId: 496396

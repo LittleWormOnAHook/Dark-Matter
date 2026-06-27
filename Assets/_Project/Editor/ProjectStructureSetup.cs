@@ -17,6 +17,11 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Audio);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Materials);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Shaders);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Settings);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.SettingsInput);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.World);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.WorldTerrain);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ConceptualUiArt);
 
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Data);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsData);
@@ -42,7 +47,9 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ResourcesOptics);
 
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scenes);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scenes + "/Pioneer");
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ScriptsPrototypes);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Core");
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Player");
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Inventory");
@@ -57,6 +64,8 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Pet");
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Quests");
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Scripts + "/Data");
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Editor);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EditorDevTools);
 
             AssetDatabase.Refresh();
             ProjectFolderColorizer.RefreshFolderColors();

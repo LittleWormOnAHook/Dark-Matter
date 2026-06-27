@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 345ce91541cd9cf4fb545764b185bbf8, type: 3}
   m_Name: OpticsCrosshairLibrary
   m_EditorClassIdentifier: Assembly-CSharp::Project.UI.OpticsCrosshairLibrary
-  binocularScopeFull: {fileID: 2800000, guid: 98cdaf10aaf6628468a14d0242685512, type: 3}
+  binocularScopeFull: {fileID: 2800000, guid: 304a0e06e8f58e04fb144f71738e49ab, type: 3}
   binocularScopeInnerGlow: {fileID: 2800000, guid: 739939cde7348b24aaec3d9bb4218868, type: 3}
-  binocularScopeOuter: {fileID: 2800000, guid: 028756c98ee0f5e4cbfce8f3dd524811, type: 3}
-  scannerHolographic: {fileID: 2800000, guid: 70941c94a8feb564592fa153314a413f, type: 3}
-  scannerHolographicGlow: {fileID: 2800000, guid: a8f56a4ca06b2da4bb0d9cfec235b954, type: 3}
-  scannerRectMask: {fileID: 2800000, guid: 8398af7ec1763f648878033eac5479c8, type: 3}
+  binocularScopeOuter: {fileID: 2800000, guid: 24bf4a983fbd0454490537e91cc19e92, type: 3}
+  scannerHolographic: {fileID: 2800000, guid: 6c06e4ddf453e924c917466e28980a39, type: 3}
+  scannerHolographicGlow: {fileID: 2800000, guid: a880b4ed4b31ef545ae5ed68589da1f2, type: 3}
+  scannerRectMask: {fileID: 10914, guid: 0000000000000000f000000000000000, type: 0}

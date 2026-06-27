@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0dbdf348a743687418d350f30ff6c421
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/Cursors/Cursors/SelectionBox/CursorSelectionBox.anim
+  uploadId: 496396

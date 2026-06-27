@@ -22,6 +22,9 @@ namespace Project.UI
         private EnemyHealth enemyTarget;
         private Vector3 enemyBarOffset;
         private Camera worldCamera;
+        private bool userVisible = true;
+
+        public EnemyHealth EnemyTarget => enemyTarget;
 
         private void Awake()
         {
@@ -75,7 +78,9 @@ namespace Project.UI
 
         public void SetVisible(bool visible)
         {
-            SetBarVisible(visible ? 1f : 0f);
+            userVisible = visible;
+            if (!visible)
+                SetBarVisible(0f);
         }
 
         private void ClearBindings()
@@ -113,6 +118,12 @@ namespace Project.UI
             }
             else if (enemyTarget != null)
             {
+                if (enemyTarget.IsDead)
+                {
+                    SetBarVisible(0f);
+                    return;
+                }
+
                 worldPosition = enemyTarget.HealthBarAnchor.position + enemyBarOffset;
             }
             else
@@ -121,7 +132,7 @@ namespace Project.UI
             }
 
             Vector3 screenPoint = worldCamera.WorldToScreenPoint(worldPosition);
-            if (screenPoint.z <= 0f)
+            if (!userVisible || screenPoint.z <= 0f)
             {
                 SetBarVisible(0f);
                 return;

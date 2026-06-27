@@ -36,9 +36,11 @@ namespace Project.EditorTools
             EnsureFolders();
             ItemData cookedMushroom = EnsureCookedMushroomItem();
             ItemData forestStew = EnsureForestStewItem();
+            ItemData oxygenTank = EnsureOxygenTankItem();
             Dictionary<string, ItemData> items = LoadItemLookup();
             items["Cooked Mushroom"] = cookedMushroom;
             items["Forest Stew"] = forestStew;
+            items["Oxygen Tank"] = oxygenTank;
 
             List<RecipeDefinition> recipes = EnsureRecipeAssets(items);
             EnsureRecipeRegistry(recipes);
@@ -61,9 +63,11 @@ namespace Project.EditorTools
             EnsureFolders();
             ItemData cookedMushroom = EnsureCookedMushroomItem();
             ItemData forestStew = EnsureForestStewItem();
+            ItemData oxygenTank = EnsureOxygenTankItem();
             Dictionary<string, ItemData> items = LoadItemLookup();
             items["Cooked Mushroom"] = cookedMushroom;
             items["Forest Stew"] = forestStew;
+            items["Oxygen Tank"] = oxygenTank;
 
             List<RecipeDefinition> recipes = EnsureRecipeAssets(items);
             EnsureRecipeRegistry(recipes);
@@ -120,9 +124,9 @@ namespace Project.EditorTools
             item.itemName = "Cooked Mushroom";
             item.itemType = ItemType.Consumable;
             item.maxStack = 64;
-            item.hungerRestore = 35f;
-            item.energyRestore = 15f;
-            item.tooltipDescription = "A warm grilled mushroom. Restores hunger and energy.";
+            item.energyRestore = 35f;
+            item.staminaRestore = 15f;
+            item.tooltipDescription = "A warm grilled mushroom. Restores energy and stamina.";
             if (item.icon == null && mushroom != null)
                 item.icon = mushroom.icon;
             if (item.worldPrefab == null && mushroom != null)
@@ -147,13 +151,33 @@ namespace Project.EditorTools
             item.itemName = "Forest Stew";
             item.itemType = ItemType.Consumable;
             item.maxStack = 32;
-            item.hungerRestore = 50f;
-            item.thirstRestore = 20f;
+            item.energyRestore = 70f;
+            item.staminaRestore = 5f;
             item.healthRestore = 10f;
             item.tooltipDescription = "A nourishing forest stew.";
             if (item.icon == null && mushroom != null)
                 item.icon = mushroom.icon;
 
+            EditorUtility.SetDirty(item);
+            return item;
+        }
+
+        private static ItemData EnsureOxygenTankItem()
+        {
+            string path = ItemsFolder + "/Oxygen Tank.asset";
+            ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
+
+            if (item == null)
+            {
+                item = ScriptableObject.CreateInstance<ItemData>();
+                AssetDatabase.CreateAsset(item, path);
+            }
+
+            item.itemName = "Oxygen Tank";
+            item.itemType = ItemType.Consumable;
+            item.maxStack = 16;
+            item.oxygenRestore = 600f;
+            item.tooltipDescription = "Portable oxygen supply. Restores 10 minutes of breathable air.";
             EditorUtility.SetDirty(item);
             return item;
         }

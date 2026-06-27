@@ -1,5 +1,6 @@
 using Project.Data;
 using Project.Inventory;
+using Project.Pioneers;
 using Project.Managers;
 using Project.UI;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace Project.Quests
             switch (reward.type)
             {
                 case QuestRewardType.Pi:
-                    GrantPi(reward.amount, source);
+                    GrantAetherCredits(reward.amount, source);
                     break;
 
                 case QuestRewardType.Item:
@@ -43,19 +44,26 @@ namespace Project.Quests
             }
         }
 
-        private static void GrantPi(int amount, string source)
+        private static void GrantAetherCredits(int amount, string source)
         {
             if (amount <= 0)
                 return;
 
-            UIManager ui = Object.FindAnyObjectByType<UIManager>();
-            if (ui != null)
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster != null)
             {
-                ui.ShowPiReward(amount, source ?? "Quest");
+                roster.AddAetherCredits(amount, source ?? "Quest");
                 return;
             }
 
-            SimpleGameManager.Instance?.AddPi(amount, source ?? "Quest");
+            UIManager ui = Object.FindAnyObjectByType<UIManager>();
+            if (ui != null)
+            {
+                ui.ShowAcReward(amount, source ?? "Quest");
+                return;
+            }
+
+            SimpleGameManager.Instance?.AddAetherCredits(amount, source ?? "Quest");
         }
 
         private static void GrantItem(ItemData item, int amount)

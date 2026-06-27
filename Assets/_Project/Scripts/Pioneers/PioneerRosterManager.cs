@@ -98,7 +98,54 @@ namespace Project.Pioneers
             starterPioneerSelected = false;
             aetherCredits = StarterPioneerCatalog.StarterAcGrant;
             EnsureWalletBootstrapped();
+            ImportWalletPioneersToSkilledRoster();
             PushCurrencyToUi();
+            NotifyRosterChanged();
+        }
+
+        public bool TryAddSkilledPioneer(SkilledPioneerRecord record, out string message)
+        {
+            message = string.Empty;
+            if (record == null)
+            {
+                message = "Invalid pioneer record.";
+                return false;
+            }
+
+            if (HasSkilledPioneerByName(record.displayName))
+            {
+                message = "This pioneer is already on your base roster.";
+                return false;
+            }
+
+            if (skilledPioneers.Count >= MaxSkilledPioneers)
+            {
+                message = "Skilled pioneer roster is full.";
+                return false;
+            }
+
+            skilledPioneers.Add(CloneRecord(record));
+            NotifyRosterChanged();
+            return true;
+        }
+
+        public void ImportWalletPioneersToSkilledRoster()
+        {
+            for (int i = 0; i < walletOwnedPioneers.Count; i++)
+            {
+                SkilledPioneerRecord walletRecord = walletOwnedPioneers[i];
+                if (walletRecord == null || IsWalletPrototypeRecord(walletRecord))
+                    continue;
+
+                if (HasSkilledPioneerByName(walletRecord.displayName))
+                    continue;
+
+                if (skilledPioneers.Count >= MaxSkilledPioneers)
+                    break;
+
+                skilledPioneers.Add(CloneRecord(walletRecord));
+            }
+
             NotifyRosterChanged();
         }
 
@@ -203,26 +250,39 @@ namespace Project.Pioneers
                 return false;
             }
 
-            for (int i = 0; i < walletOwnedPioneers.Count; i++)
+            if (OwnsMarketplaceListing(offerId))
             {
-                if (walletOwnedPioneers[i].displayName == offer.displayName)
-                {
-                    message = "You already own this pioneer.";
-                    return false;
-                }
-            }
-
-            if (piWalletBalance + 0.01f < offer.piListPrice)
-            {
-                message = $"Need {offer.piListPrice} Pi (wallet: {Mathf.FloorToInt(piWalletBalance)}).";
+                message = "You already own this pioneer.";
                 return false;
             }
 
-            piWalletBalance -= offer.piListPrice;
-            walletOwnedPioneers.Add(WalletMarketplaceCatalog.CreateOwnedFromListing(offer));
+            if (aetherCredits + 0.01f < offer.acListPrice)
+            {
+                message = $"Need {offer.acListPrice} AC (balance: {Mathf.FloorToInt(aetherCredits)}).";
+                return false;
+            }
+
+            SkilledPioneerRecord record = WalletMarketplaceCatalog.CreateOwnedFromListing(offer);
+            if (record == null)
+            {
+                message = "Could not create pioneer record.";
+                return false;
+            }
+
+            aetherCredits -= offer.acListPrice;
+            walletOwnedPioneers.Add(record);
+
+            if (!TryAddSkilledPioneer(record, out string rosterMessage))
+            {
+                message = $"Purchased {offer.displayName} for {offer.acListPrice} AC (wallet only: {rosterMessage}).";
+                PushCurrencyToUi();
+                NotifyRosterChanged();
+                return true;
+            }
+
             PushCurrencyToUi();
             NotifyRosterChanged();
-            message = $"Purchased {offer.displayName} for {offer.piListPrice} Pi.";
+            message = $"Purchased {offer.displayName} for {offer.acListPrice} AC. Added to base roster.";
             return true;
         }
 
@@ -290,6 +350,43 @@ namespace Project.Pioneers
 
             PushCurrencyToUi();
             NotifyRosterChanged();
+        }
+
+        private bool HasSkilledPioneerByName(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+                return false;
+
+            for (int i = 0; i < skilledPioneers.Count; i++)
+            {
+                if (skilledPioneers[i].displayName == displayName)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsWalletPrototypeRecord(SkilledPioneerRecord record)
+        {
+            return record != null
+                && !string.IsNullOrEmpty(record.backstory)
+                && record.backstory.Contains("Mock wallet roster pioneer", System.StringComparison.Ordinal);
+        }
+
+        private static SkilledPioneerRecord CloneRecord(SkilledPioneerRecord source)
+        {
+            return new SkilledPioneerRecord
+            {
+                id = string.IsNullOrEmpty(source.id) ? System.Guid.NewGuid().ToString("N") : source.id,
+                displayName = source.displayName,
+                pioneerClass = source.pioneerClass,
+                level = source.level,
+                radiationResistance = source.radiationResistance,
+                expeditionEfficiency = source.expeditionEfficiency,
+                combatSynergy = source.combatSynergy,
+                backstory = source.backstory,
+                isStarterPick = source.isStarterPick
+            };
         }
 
         public void ApplyLegacyPiBalanceMigration(float legacyPiBalance)

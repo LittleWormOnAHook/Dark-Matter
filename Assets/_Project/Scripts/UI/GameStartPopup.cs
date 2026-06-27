@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
 using Project.Audio;
+using Project.Interaction;
 using Project.Managers;
 using Project.Player;
 using Project.Survival;
@@ -26,7 +27,7 @@ namespace Project.UI
 
         [TextArea(3, 10)]
         public string messageText =
-            "Welcome, Pioneer!\n\nSurvival is key. Gather resources, watch your stats, and earn Pi rewards.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-2] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
+            "Welcome, Pioneer!\n\nSurvival is key. Gather resources, watch your stats, and earn Aether Credits (AC) from quests and loot.\n\nManage Pi Wallet and AC on the main menu. Pick your starter specialist before deploying.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-4] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
 
         public Sprite imageSprite;
         public bool showOnStart = false;
@@ -50,6 +51,9 @@ namespace Project.UI
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+                return;
+
             EnsureScreenOverlay();
 
             if (closeButton != null)
@@ -94,6 +98,7 @@ namespace Project.UI
 
             if (popupPanel != null)
             {
+                EnsurePopupPanelFullBleed();
                 popupPanel.SetActive(true);
                 popupPanel.transform.SetAsLastSibling();
             }
@@ -147,27 +152,32 @@ namespace Project.UI
 
             GameSession.MarkStarted();
 
-            if (popupPanel != null)
-                popupPanel.SetActive(false);
-
-            if (screenOverlay != null)
-                screenOverlay.SetActive(false);
-
             RestoreHiddenCanvasUi();
             MainMenuController.RestoreGameplayUiFromMenu();
             HideRuntimeStartScreenUi();
             Time.timeScale = 1f;
             SetGameplayPaused(false);
+            ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
 
-            SurvivalStats survivalStats = FindAnyObjectByType<SurvivalStats>();
+            GameObject player = PlayerLocator.FindPlayerObject();
+            SurvivalStats survivalStats = player != null ? player.GetComponent<SurvivalStats>() : null;
             survivalStats?.ResetForNewGame();
             survivalStats?.SetSimulationPaused(false);
 
             FindAnyObjectByType<UIManager>()?.SyncSurvivalBars();
 
             SimpleGameManager.Instance?.BeginNewGameSession();
+
+            if (popupPanel != null)
+                popupPanel.SetActive(false);
+
+            if (screenOverlay != null)
+                screenOverlay.SetActive(false);
+
+            GameSaveSystem.TrySave(0, out _);
+            GameplayHudVisibility.SetGameplayHudVisible(true);
         }
 
         private IEnumerator RefreshStartScreenUiNextFrame()
@@ -181,6 +191,22 @@ namespace Project.UI
 
             if (popupPanel != null)
                 popupPanel.transform.SetAsLastSibling();
+        }
+
+        private void EnsurePopupPanelFullBleed()
+        {
+            if (popupPanel == null)
+                return;
+
+            RectTransform rect = popupPanel.GetComponent<RectTransform>();
+            if (rect == null)
+                return;
+
+            if (rect.anchorMin == Vector2.zero && rect.anchorMax == Vector2.one &&
+                rect.offsetMin == Vector2.zero && rect.offsetMax == Vector2.zero)
+                return;
+
+            MenuUiBuilder.StretchRectToFill(rect);
         }
 
         private void EnsureScreenOverlay()
@@ -261,6 +287,8 @@ namespace Project.UI
             GameObject petPanel = GameObject.Find("PetPanel");
             if (petPanel != null && petPanel.activeSelf)
                 petPanel.SetActive(false);
+
+            ToolBarUI.ApplyGameplayVisibility();
         }
 
         private bool IsStartScreenElement(GameObject candidate)
@@ -269,6 +297,8 @@ namespace Project.UI
                 return true;
 
             return candidate.name == "PetPanel" ||
+                   candidate.name == "StarterPioneerOverlay" ||
+                   candidate.name == "StarterPioneerPanel" ||
                    candidate.name == "MainMenuPanel" ||
                    candidate.name == "MainMenuBackground" ||
                    candidate.name == "SettingsPanel" ||
@@ -297,6 +327,9 @@ namespace Project.UI
 
         private void SetGameplayPaused(bool paused)
         {
+            if (playerInput == null)
+                playerInput = FindAnyObjectByType<PlayerInput>();
+
             Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = paused;
 
@@ -306,10 +339,38 @@ namespace Project.UI
             PlayerController playerController = FindAnyObjectByType<PlayerController>();
             if (playerController != null)
                 playerController.SetGameplayPaused(paused);
+        }
 
-            CameraController cameraController = FindAnyObjectByType<CameraController>();
-            if (cameraController != null)
-                cameraController.SetInventoryOpen(paused);
+        private void ReleaseGameplayInputCapture()
+        {
+            GameplayInputRecovery.ReleaseAllInputCapture();
+
+            MonoBehaviour coroutineHost = ResolveCoroutineHost();
+            if (coroutineHost != null)
+                coroutineHost.StartCoroutine(ApplyGameplayCursorNextFrame());
+        }
+
+        private static MonoBehaviour ResolveCoroutineHost()
+        {
+            UIManager uiManager = FindAnyObjectByType<UIManager>();
+            if (uiManager != null)
+                return uiManager;
+
+            MainMenuController menu = FindAnyObjectByType<MainMenuController>();
+            if (menu != null)
+                return menu;
+
+            return PlayerLocator.FindPlayerController();
+        }
+
+        private IEnumerator ApplyGameplayCursorNextFrame()
+        {
+            yield return null;
+
+            if (!GameSession.HasStarted)
+                yield break;
+
+            GameplayInputRecovery.FinalizeGameplayInput();
         }
     }
 }

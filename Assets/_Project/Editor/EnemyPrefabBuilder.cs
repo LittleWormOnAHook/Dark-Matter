@@ -1,5 +1,6 @@
 using System.IO;
 using Project.AI;
+using Project.Combat;
 using Project.Data;
 using UnityEditor;
 using UnityEngine;
@@ -162,11 +163,17 @@ namespace Project.EditorTools
             ConfigureHealthBar(root, definition);
             ConfigureAnimation(root, definition);
             ConfigureLoot(root, definition);
+            GetOrAdd<EnemyDisintegrationEffect>(root);
         }
 
         public static void ApplyLootToPrefab(GameObject root, EnemyDefinition definition)
         {
             ConfigureLoot(root, definition);
+        }
+
+        public static void ApplyDisintegrationToPrefab(GameObject root)
+        {
+            GetOrAdd<EnemyDisintegrationEffect>(root);
         }
 
         private static void ConfigureLoot(GameObject root, EnemyDefinition definition)
@@ -179,7 +186,8 @@ namespace Project.EditorTools
             SetSerializedField(lootable, "randomLootCountMin", definition.randomLootCountMin);
             SetSerializedField(lootable, "randomLootCountMax", definition.randomLootCountMax);
             SetSerializedField(lootable, "lootItemPool", definition.lootItemPool);
-            SetSerializedField(lootable, "lootRespawnDelay", definition.lootRespawnDelay);
+            SetSerializedField(lootable, "lootUnlootedLifetime", definition.lootRespawnDelay);
+            SetSerializedField(lootable, "lootedBagDissolveDelay", 2f);
             SetSerializedField(lootable, "lootInteractRange", definition.lootInteractRange);
         }
 

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b98287f5260c15f4ba57818a866655e6, type: 3}
+  m_Name: GameAudioProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Audio.GameAudioProfile
+  musicTracks:
+  - {fileID: 8300000, guid: 0742d4741f3aae1458a62ff15f518cda, type: 3}
+  musicVolume: 0.45
+  shuffleMusic: 1
+  loopCurrentTrack: 1
+  defaultFootsteps:
+    surfaceTag: Default
+    walkClips: []
+    runClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  surfaceFootsteps: []
+  weaponSwingClips: []
+  weaponHitClips: []
+  weaponCriticalHitClips: []
+  resourceHitClips: []
+  combatVolume: 1
+  sfxSpatialBlend: 1
+  sfxMinDistance: 1
+  sfxMaxDistance: 22

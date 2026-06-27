@@ -82,7 +82,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            GetJournalPanel()?.TryToggleTab(JournalWindowId.JournalQuest);
+            GetJournalPanel()?.TryToggleJournal();
         }
 
         public void OnToggleCraft(InputAction.CallbackContext context)

@@ -7,7 +7,7 @@ namespace Project.Pioneers
         public string offerId;
         public string displayName;
         public SkilledPioneerClass pioneerClass;
-        public int piListPrice;
+        public int acListPrice;
         public int level = 1;
         public float radiationResistance;
         public float expeditionEfficiency;
@@ -17,7 +17,7 @@ namespace Project.Pioneers
     }
 
     /// <summary>
-    /// Mock Pioneer Survivor Exchange listings (Pi-priced, NFT prototype).
+    /// Mock Pioneer Survivor Exchange listings (AC-priced, in-game currency).
     /// </summary>
     public static class WalletMarketplaceCatalog
     {
@@ -30,7 +30,7 @@ namespace Project.Pioneers
                 offerId = "market_vexa",
                 displayName = "Ash-Veiled Vexa Null",
                 pioneerClass = SkilledPioneerClass.InfiltratorScout,
-                piListPrice = 35,
+                acListPrice = 35,
                 level = 3,
                 radiationResistance = 0.58f,
                 expeditionEfficiency = 0.74f,
@@ -43,7 +43,7 @@ namespace Project.Pioneers
                 offerId = "market_brann",
                 displayName = "Basalt Warden Brann-7",
                 pioneerClass = SkilledPioneerClass.CombatTactician,
-                piListPrice = 42,
+                acListPrice = 42,
                 level = 4,
                 radiationResistance = 0.66f,
                 expeditionEfficiency = 0.49f,
@@ -56,7 +56,7 @@ namespace Project.Pioneers
                 offerId = "market_iora",
                 displayName = "Isotope Scribe Iora-3",
                 pioneerClass = SkilledPioneerClass.ScienceSpecialist,
-                piListPrice = 38,
+                acListPrice = 38,
                 level = 2,
                 radiationResistance = 0.72f,
                 expeditionEfficiency = 0.61f,
@@ -69,7 +69,7 @@ namespace Project.Pioneers
                 offerId = "market_dex",
                 displayName = "Forge-Saint Dex Hale",
                 pioneerClass = SkilledPioneerClass.ArchitectEngineer,
-                piListPrice = 40,
+                acListPrice = 40,
                 level = 3,
                 radiationResistance = 0.52f,
                 expeditionEfficiency = 0.57f,

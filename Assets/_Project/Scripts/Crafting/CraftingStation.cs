@@ -59,7 +59,6 @@ namespace Project.Crafting
             playerInRange = nearby;
             if (playerInRange)
             {
-                ShowPrompt();
                 if (craftingManager == null)
                     craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
 
@@ -71,7 +70,6 @@ namespace Project.Crafting
             }
             else
             {
-                ResolveUiManager()?.HideInteractionPrompt();
                 if (craftingManager != null && craftingManager.CurrentStation == stationType)
                     craftingManager.CurrentStation = null;
             }
@@ -164,14 +162,19 @@ namespace Project.Crafting
             return uiManager;
         }
 
+        public string GetInteractionPromptMessage()
+        {
+            string stationLabel = stationType == CraftingStationType.Cooking ? "Cooking Pot" : "Workbench";
+            return $"{promptText} — {stationLabel}";
+        }
+
         private void ShowPrompt()
         {
             UIManager manager = ResolveUiManager();
             if (manager == null)
                 return;
 
-            string stationLabel = stationType == CraftingStationType.Cooking ? "Cooking Pot" : "Workbench";
-            manager.ShowInteractionPrompt($"{promptText} — {stationLabel}");
+            manager.ShowInteractionPrompt(GetInteractionPromptMessage());
         }
 
         private void Start()
@@ -180,8 +183,8 @@ namespace Project.Crafting
             craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
 
             playerInRange = IsPlayerNearby();
-            if (playerInRange)
-                ShowPrompt();
+            if (playerInRange && craftingManager == null)
+                craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -190,7 +193,6 @@ namespace Project.Crafting
                 return;
 
             playerInRange = true;
-            ShowPrompt();
 
             if (craftingManager == null)
                 craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
@@ -210,7 +212,6 @@ namespace Project.Crafting
             if (!IsPlayerNearby())
             {
                 playerInRange = false;
-                ResolveUiManager()?.HideInteractionPrompt();
 
                 if (craftingManager == null)
                     craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();

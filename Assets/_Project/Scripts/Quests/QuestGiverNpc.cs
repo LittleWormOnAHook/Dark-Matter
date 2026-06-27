@@ -479,14 +479,19 @@ namespace Project.Quests
             return uiManager;
         }
 
+        public string GetInteractionPromptMessage()
+        {
+            string label = string.IsNullOrEmpty(displayName) ? "NPC" : displayName;
+            return $"{promptText} — {label}";
+        }
+
         private void ShowPrompt()
         {
             UIManager manager = ResolveUiManager();
             if (manager == null)
                 return;
 
-            string label = string.IsNullOrEmpty(displayName) ? "NPC" : displayName;
-            manager.ShowInteractionPrompt($"{promptText} — {label}");
+            manager.ShowInteractionPrompt(GetInteractionPromptMessage());
         }
 
         private void ShowDialogue(string message, Action onContinue = null, string buttonLabel = "Continue")
@@ -548,10 +553,7 @@ namespace Project.Quests
                     builder.Append(", ");
                 first = false;
 
-                if (reward.type == QuestRewardType.Pi)
-                    builder.Append($"{reward.amount} Pi");
-                else if (reward.type == QuestRewardType.Item && reward.item != null)
-                    builder.Append($"{reward.amount}x {reward.item.itemName}");
+                builder.Append(QuestRewardFormatter.FormatShort(reward));
             }
 
             builder.Append(". Press Continue to claim.");

@@ -69,8 +69,10 @@ namespace Project.AI
         private int patrolDirection = 1;
         private bool hasPatrolRoute;
         private float currentLocomotionSpeed;
+        private Vector3 currentLocalMoveDirection;
 
         public float CurrentLocomotionSpeed => currentLocomotionSpeed;
+        public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
 
         public bool IsEngagedWithTarget =>
             state == AiState.Attack || state == AiState.Chase;
@@ -92,6 +94,7 @@ namespace Project.AI
         {
             homePosition = transform.position;
             currentLocomotionSpeed = 0f;
+            currentLocalMoveDirection = Vector3.zero;
 
             if (health != null)
                 health.Died += HandleDeath;
@@ -116,6 +119,7 @@ namespace Project.AI
         private void Update()
         {
             currentLocomotionSpeed = 0f;
+            currentLocalMoveDirection = Vector3.zero;
 
             if (health != null && health.IsDead)
                 return;
@@ -500,6 +504,12 @@ namespace Project.AI
 
                 transform.position += step;
                 currentLocomotionSpeed = speed;
+                currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
+            }
+            else
+            {
+                currentLocomotionSpeed = 0f;
+                currentLocalMoveDirection = Vector3.zero;
             }
 
             if (toTarget.sqrMagnitude > 0.01f)

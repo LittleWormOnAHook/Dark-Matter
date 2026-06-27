@@ -45,7 +45,7 @@ gameplay loops:
   - Earn and spend Pi currency
   - Explore the map and use scanner/binocular tools
 
-Main playable scene: Assets/Pioneer.unity
+Main playable scene: Assets/_Project/Scenes/Pioneer.unity
 Core project folder: Assets/_Project/
 
 Movement is powered by ECM2 (third-person character controller).
@@ -311,22 +311,26 @@ CURRENT RECIPES
 
 CRAFTING UI
   - CraftingUI.cs — recipe list, ingredient check, craft button
-  - Embedded in journal Craft tab and standalone side panel at stations
+  - Journal Craft tab: fullscreen embedded recipe library (scroll learning + browse)
+  - At-world stations: journal opens Craft tab; production executes at station when bound
   - Recipe hover tooltips show ingredients and station requirement
 
-BUILDING CONTROL PANELS (GDD TARGET — NOT YET IMPLEMENTED)
+BUILDING CONTROL PANELS (GDD Section 8 — prototype shell)
   Canon (GAME_DESIGN_DOCUMENT.txt Section 8):
     - Each major base building has an interactable Control Panel (E at terminal)
     - Opens Building Control UI overlay (NOT journal) with tabs:
         Overview | Pioneers | Production | Craft | Changes
     - Assign base-22 pioneers, set production/craft queues, per-building settings
     - Queues run while player is on expedition; pause during sulfur storms
-  Prototype today: CraftingStation.cs + journal Craft tab (migrate in Phase 6)
-  Implementation path:
-    1. BuildingControlPanel interactable + shared UI shell
-    2. Wire Science Labs + Medical Facility first (craft + production)
-    3. Harvester / worker buildings (settings + assignments)
-    4. Journal Craft becomes recipe library only; craft executes at panels
+  Prototype today (Milestone C):
+    - BuildingControlPanel.cs — world interactable on building terminals
+    - BuildingControlPanelUI.cs — fullscreen shell over dim overlay (MenuUiBuilder)
+    - Tab placeholders + optional Craft tab embeds CraftingUI when station type bound
+    - PlayerController.SetBuildingControlOpen pauses movement/camera while open
+    - Editor: Tools/Survival Pioneer/Content/Add Building Control Panel to Selected
+  Still TODO:
+    - Pioneer assignment slots, live production queues, sulfur-storm pause wiring
+    - Wire Science Labs + Medical Facility first; migrate journal Craft to library-only
 
 
 ================================================================================
@@ -396,16 +400,33 @@ GAME START POPUP (GameStartPopup.cs)
   - Must press START GAME before gameplay begins (GameSession gate)
 
 JOURNAL HUB (JournalPanelUI.cs) — key J
-  Tabs:
-    Journal    Quest log / notes area
+  Fullscreen hub + child windows (Milestone A/B UI) with left tab rail (GDD Phase C):
+    Tab rail   Quest Preview, Journal, Inventory, Map, Pioneers, Craft, Recipes, Skills, Echoes
+    Quest Preview  Launch tiles + active quest preview (default J screen)
+    Journal    Quest log / notes (fullscreen child window)
     Inventory  Full inventory grid + hotbar (also key I)
     Map        World map overlay (also key M from journal)
-    Pet        Companion management
-    Craft      Recipe library, scroll learning (target: not primary craft UI)
+    Craft      Fullscreen recipe library + scroll learning (GDD: not primary production UI)
+    Pioneers   Base roster management
+    Recipes    Placeholder — station crafting preview (future)
+    Skills     Placeholder — pioneer skill trees (future)
+    Echoes     Placeholder — neural echo memories (future)
+  Navigator stack: FullscreenUiNavigator pushes/pops child windows with header + close.
 
-BUILDING CONTROL UI (TARGET — see Section 10 crafting)
-  - Opened from in-world building Control Panel interactables only
-  - Pioneer assign, production queue, building-specific craft, settings/changes
+BUILDING CONTROL UI (BuildingControlPanelUI.cs) — in-world terminals only (Milestone C)
+  - Opened from BuildingControlPanel interactables (E); NOT from journal
+  - Fullscreen shell (MenuUiBuilder.CreateFullscreenShell) over dim overlay
+  - Tabs: Overview | Pioneers | Production | Craft | Changes (placeholder copy per GDD)
+  - Craft tab embeds CraftingUI when panel has CraftingStationType bound
+  - Esc or header close dismisses; SetBuildingControlOpen on PlayerController
+  - Sulfur storm PAUSED stub on Overview tab
+
+PEAK SCREENS (GDD Phase E — prototype shells)
+  EnvironmentalCrisisHudMode.cs — sulfur storm HUD retraction + PAUSED banner
+    Debug: Tools → Survival Pioneer → Debug → Toggle Sulfur Crisis HUD (Play mode)
+  EchoRescueRevealUI.cs — fullscreen Neural Echo rescue reveal
+    Debug: Tools → Survival Pioneer → Debug → Show Echo Rescue Reveal (Test)
+  MainMenuWalletPanelController — wallet overlay (Balances / Marketplace / Pioneers)
 
 HUD ELEMENTS
   - Survival stat bars (health, energy, stamina, oxygen)
@@ -418,9 +439,10 @@ HUD ELEMENTS
   - Pickup aim reticle and proximity dots
   - Pickup toast messages (+Item name)
 
-DIALOGS
-  - QuestGiverDialogUI.cs  — NPC quest board
-  - EnemyLootDialogUI.cs   — Corpse loot menu
+DIALOGS (fullscreen shells — Milestone B)
+  - QuestGiverDialogUI.cs  — NPC quest board / conversation (fullscreen over dim overlay)
+  - EnemyLootDialogUI.cs   — Corpse loot menu (fullscreen over dim overlay)
+  - StarterPioneerSelectUI — New-game starter pioneer recruit (required screen; header close hidden)
 
 INVENTORY UX
   - Drag/drop (UIDragHandler.cs)
@@ -522,7 +544,30 @@ ENTRY POINTS
 19. MAIN SCENE & CONTENT
 ================================================================================
 
-SCENE: Assets/Pioneer.unity
+SCENE: Assets/_Project/Scenes/Pioneer.unity
+TERRAIN DATA: Assets/_Project/World/Terrain/
+INPUT: Assets/_Project/Settings/Input/ (InputSystem_Actions, input settings)
+BAKED LIGHTING: Assets/_Project/Scenes/Pioneer/
+
+PROJECT ROOT LAYOUT (Assets/_Project/)
+  Animations/     Controllers for player, enemies, pets, NPCs
+  Art/            Icons, logos, concept art (Conceptual UI art/)
+  Audio/          Game audio clips and profiles (not terrain layers)
+  Data/           ScriptableObjects (Items, Enemies, Recipes)
+  Editor/         All Survival Pioneer editor tools (+ DevTools/)
+  Materials/      Game materials
+  Prefabs/        Combat, items, players, UI, world, crafting
+  Resources/      Runtime-loaded assets (Combat, Crafting, UI, Optics, Quests)
+  Scenes/         Pioneer.unity + baked lighting subfolder
+  Scripts/        All runtime C# (Prototypes/ for experiments)
+  Settings/       Input actions and project input settings
+  Shaders/        Custom shaders (disintegrate, dissolve smoke)
+  Textures/UI/    UI textures (map art, etc.)
+  World/Terrain/  TerrainData and terrain layers
+
+THIRD-PARTY ASSETS (stay outside _Project — referenced by GUID)
+  ECM2, Shift Sci-Fi UI, TextMesh Pro, PolygonNature/Town, Synty, Blink,
+  Scifi Melee Weapons, TooManyCrosshairs, Survival Flat Icons, etc.
 
 ENVIRONMENT
   - Terrain, forest biome, swamp water, clouds, wind zone

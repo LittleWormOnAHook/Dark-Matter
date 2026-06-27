@@ -15,11 +15,17 @@ namespace Project.Inventory
         [SerializeField] private int primaryWeaponHotbarSlot = 0;
         [Tooltip("Hotbar index for weapon slot 2 (keyboard 2).")]
         [SerializeField] private int secondaryWeaponHotbarSlot = 1;
+        [Tooltip("Hotbar index for weapon slot 3 (keyboard 3).")]
+        [SerializeField] private int tertiaryWeaponHotbarSlot = 2;
+        [Tooltip("Hotbar index for weapon slot 4 (keyboard 4).")]
+        [SerializeField] private int quaternaryWeaponHotbarSlot = 3;
+
+        public const int WeaponSlotCount = 4;
 
         [Header("Toolbar")]
-        [Tooltip("Toolbar index for the scanner (keyboard 3).")]
+        [Tooltip("Toolbar index for the scanner (keyboard N).")]
         [SerializeField] private int scannerToolbarSlot = 0;
-        [Tooltip("Toolbar index for binoculars (keyboard 4).")]
+        [Tooltip("Toolbar index for binoculars (keyboard B).")]
         [SerializeField] private int binocularsToolbarSlot = 1;
 
         private InventorySystem inventory;
@@ -35,10 +41,12 @@ namespace Project.Inventory
         public int ActiveWeaponSlot => activeWeaponSlot;
         public int PrimaryWeaponHotbarSlot => primaryWeaponHotbarSlot;
         public int SecondaryWeaponHotbarSlot => secondaryWeaponHotbarSlot;
+        public int TertiaryWeaponHotbarSlot => tertiaryWeaponHotbarSlot;
+        public int QuaternaryWeaponHotbarSlot => quaternaryWeaponHotbarSlot;
         public int ScannerToolbarSlot => scannerToolbarSlot;
         public int BinocularsToolbarSlot => binocularsToolbarSlot;
-        public int ActiveWeaponHotbarSlot => activeWeaponSlot == 0 ? primaryWeaponHotbarSlot : secondaryWeaponHotbarSlot;
-        public int InactiveWeaponHotbarSlot => activeWeaponSlot == 0 ? secondaryWeaponHotbarSlot : primaryWeaponHotbarSlot;
+        public int ActiveWeaponHotbarSlot => GetWeaponHotbarSlot(activeWeaponSlot);
+        public int InactiveWeaponHotbarSlot => GetWeaponHotbarSlot((activeWeaponSlot + 1) % WeaponSlotCount);
         public int SelectedSlotIndex => inventory != null ? inventory.inventorySize + selectedHotbarSlot : -1;
         public bool IsWeaponDrawn { get; private set; } = true;
 
@@ -49,6 +57,76 @@ namespace Project.Inventory
         public ItemData ActiveToolItem => GetToolbarItem(selectedToolbarSlot);
 
         public ItemData SecondaryWeaponItem => GetHotbarItem(InactiveWeaponHotbarSlot);
+
+        public int GetWeaponHotbarSlot(int weaponSlotIndex)
+        {
+            weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
+            return weaponSlotIndex switch
+            {
+                0 => primaryWeaponHotbarSlot,
+                1 => secondaryWeaponHotbarSlot,
+                2 => tertiaryWeaponHotbarSlot,
+                3 => quaternaryWeaponHotbarSlot,
+                _ => primaryWeaponHotbarSlot
+            };
+        }
+
+        public int GetWeaponSlotIndexForHotbar(int hotbarSlot)
+        {
+            if (hotbarSlot == primaryWeaponHotbarSlot)
+                return 0;
+            if (hotbarSlot == secondaryWeaponHotbarSlot)
+                return 1;
+            if (hotbarSlot == tertiaryWeaponHotbarSlot)
+                return 2;
+            if (hotbarSlot == quaternaryWeaponHotbarSlot)
+                return 3;
+            return -1;
+        }
+
+        public void ForEachWeaponHotbarSlot(Action<int> visit)
+        {
+            if (visit == null)
+                return;
+
+            visit(primaryWeaponHotbarSlot);
+            visit(secondaryWeaponHotbarSlot);
+            visit(tertiaryWeaponHotbarSlot);
+            visit(quaternaryWeaponHotbarSlot);
+        }
+
+        public int FindFirstEmptyWeaponHotbarSlot()
+        {
+            int result = -1;
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                if (result >= 0)
+                    return;
+
+                if (GetHotbarItem(hotbarIndex) == null)
+                    result = hotbarIndex;
+            });
+            return result;
+        }
+
+        public int FindFirstEmptyToolbarSlot(ItemData toolItem)
+        {
+            if (inventory == null || toolItem == null || toolItem.itemType != ItemType.Tool)
+                return -1;
+
+            int preferred = toolItem.toolType == ToolType.Scanner ? scannerToolbarSlot : binocularsToolbarSlot;
+            preferred = Mathf.Clamp(preferred, 0, inventory.toolbarSize - 1);
+            if (GetToolbarItem(preferred) == null)
+                return preferred;
+
+            for (int i = 0; i < inventory.toolbarSize; i++)
+            {
+                if (GetToolbarItem(i) == null)
+                    return i;
+            }
+
+            return -1;
+        }
 
         public bool HasOpticsToolSelected()
         {
@@ -91,7 +169,7 @@ namespace Project.Inventory
         public void SwitchActiveWeapon()
         {
             ClearToolbarSelection();
-            activeWeaponSlot = activeWeaponSlot == 0 ? 1 : 0;
+            activeWeaponSlot = (activeWeaponSlot + 1) % WeaponSlotCount;
             selectedHotbarSlot = ActiveWeaponHotbarSlot;
             IsWeaponDrawn = HasEquippableInHotbarSlot(ActiveWeaponHotbarSlot);
             NotifySelectionChanged();
@@ -99,8 +177,8 @@ namespace Project.Inventory
 
         public void SelectWeaponSlot(int weaponSlotIndex)
         {
-            weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, 1);
-            int hotbarIndex = weaponSlotIndex == 0 ? primaryWeaponHotbarSlot : secondaryWeaponHotbarSlot;
+            weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
+            int hotbarIndex = GetWeaponHotbarSlot(weaponSlotIndex);
 
             ClearToolbarSelection();
 
@@ -128,7 +206,7 @@ namespace Project.Inventory
 
             if (IsWeaponHotbarSlot(clamped))
             {
-                SelectWeaponSlot(clamped == primaryWeaponHotbarSlot ? 0 : 1);
+                SelectWeaponSlot(GetWeaponSlotIndexForHotbar(clamped));
                 return;
             }
 
@@ -223,7 +301,7 @@ namespace Project.Inventory
 
         public bool IsWeaponHotbarSlot(int hotbarSlot)
         {
-            return hotbarSlot == primaryWeaponHotbarSlot || hotbarSlot == secondaryWeaponHotbarSlot;
+            return GetWeaponSlotIndexForHotbar(hotbarSlot) >= 0;
         }
 
         public bool IsUtilityHotbarSlot(int hotbarSlot)
@@ -335,7 +413,7 @@ namespace Project.Inventory
                 return;
 
             selectedHotbarSlot = Mathf.Clamp(hotbarSlot, 0, Mathf.Max(0, inventory.hotbarSize - 1));
-            activeWeaponSlot = Mathf.Clamp(weaponSlot, 0, 1);
+            activeWeaponSlot = Mathf.Clamp(weaponSlot, 0, WeaponSlotCount - 1);
             IsWeaponDrawn = drawn;
             selectedToolbarSlot = toolbarSlot >= 0 && GetToolbarItem(toolbarSlot) != null
                 ? Mathf.Clamp(toolbarSlot, 0, inventory.toolbarSize - 1)
@@ -439,20 +517,31 @@ namespace Project.Inventory
 
         private int ResolveEquipHotbarSlot(int sourceAbsolute)
         {
-            int primaryAbsolute = inventory.inventorySize + primaryWeaponHotbarSlot;
-            int secondaryAbsolute = inventory.inventorySize + secondaryWeaponHotbarSlot;
+            int hotbarStart = inventory.inventorySize;
+            int bestMatch = -1;
 
-            if (sourceAbsolute == primaryAbsolute)
-                return primaryWeaponHotbarSlot;
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                int absolute = hotbarStart + hotbarIndex;
+                if (sourceAbsolute == absolute)
+                    bestMatch = hotbarIndex;
+            });
 
-            if (sourceAbsolute == secondaryAbsolute)
-                return secondaryWeaponHotbarSlot;
+            if (bestMatch >= 0)
+                return bestMatch;
 
-            if (inventory.slots[primaryAbsolute].IsEmpty)
-                return primaryWeaponHotbarSlot;
+            int firstEmpty = -1;
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                if (firstEmpty >= 0)
+                    return;
 
-            if (inventory.slots[secondaryAbsolute].IsEmpty)
-                return secondaryWeaponHotbarSlot;
+                if (inventory.slots[hotbarStart + hotbarIndex].IsEmpty)
+                    firstEmpty = hotbarIndex;
+            });
+
+            if (firstEmpty >= 0)
+                return firstEmpty;
 
             return ActiveWeaponHotbarSlot;
         }

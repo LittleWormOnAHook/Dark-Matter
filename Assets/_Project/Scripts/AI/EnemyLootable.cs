@@ -1,44 +1,43 @@
 using System;
 using System.Collections.Generic;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
-using Project.Interaction;
 using Project.Quests;
-using Project.UI;
 using UnityEngine;
 
 namespace Project.AI
 {
+    /// <summary>
+    /// Generates enemy loot on death and spawns a world loot bag after disintegration completes.
+    /// </summary>
     [DisallowMultipleComponent]
-    public class EnemyLootable : MonoBehaviour, IWorldUsable
+    public class EnemyLootable : MonoBehaviour
     {
         [Header("Loot")]
         [SerializeField] private bool enableLoot = true;
         [SerializeField] private string lootDisplayName = "Enemy";
+        [Header("Loot AC")]
+        [Tooltip("Aether Credits (AC) dropped by this enemy.")]
         [SerializeField] private int piCoinsMin = 1;
         [SerializeField] private int piCoinsMax = 5;
         [SerializeField] private int randomLootCountMin = 0;
         [SerializeField] private int randomLootCountMax = 2;
         [SerializeField] private ItemData[] lootItemPool = Array.Empty<ItemData>();
-        [SerializeField] private float lootRespawnDelay = 20f;
+        [SerializeField] private float lootUnlootedLifetime = 20f;
+        [SerializeField] private float lootedBagDissolveDelay = 2f;
         [SerializeField] private float lootInteractRange = 2.75f;
-        [SerializeField] private string promptText = "Press E to loot";
+        [SerializeField] private string promptText = "Press E to loot bag";
 
         private readonly List<QuestRewardDefinition> remainingLoot = new List<QuestRewardDefinition>();
 
         private EnemyHealth health;
-        private UIManager uiManager;
-        private bool lootActive;
-        private bool playerInRange;
-        private float respawnDeadline;
+        private bool lootPending;
+        private bool bagSpawned;
+        private Vector3 pendingBagPosition;
 
         public bool HasRemainingLoot => remainingLoot.Count > 0;
-        public bool IsLootActive => lootActive;
-
-        public bool CanPlayerLoot(Vector3 playerPosition)
-        {
-            return lootActive && HasRemainingLoot && IsWithinLootRange(playerPosition);
-        }
+        public bool IsLootPending => lootPending;
 
         private void Awake()
         {
@@ -56,21 +55,8 @@ namespace Project.AI
             if (health != null)
                 health.Died -= HandleEnemyDied;
 
-            WorldUseController.Unregister(this);
-            ResolveUiManager()?.HideInteractionPrompt();
-            lootActive = false;
-            playerInRange = false;
-        }
-
-        private void Update()
-        {
-            if (!lootActive)
-                return;
-
-            RefreshProximityPrompt();
-
-            if (Time.time >= respawnDeadline)
-                FinishLootPhase();
+            lootPending = false;
+            bagSpawned = false;
         }
 
         public void ConfigureFromDefinition(EnemyDefinition definition)
@@ -87,73 +73,38 @@ namespace Project.AI
             randomLootCountMin = definition.randomLootCountMin;
             randomLootCountMax = definition.randomLootCountMax;
             lootItemPool = definition.lootItemPool ?? Array.Empty<ItemData>();
-            lootRespawnDelay = definition.lootRespawnDelay;
+            lootUnlootedLifetime = definition.lootRespawnDelay;
             lootInteractRange = definition.lootInteractRange;
         }
 
-        public float GetUsePriority(WorldUseContext context)
+        public void TrySpawnLootBag(Vector3 worldPosition)
         {
-            if (!lootActive || !HasRemainingLoot || !IsWithinLootRange(context.PlayerPosition))
-                return -1f;
+            if (!lootPending || bagSpawned || !HasRemainingLoot)
+                return;
 
-            float distance = Vector3.Distance(context.PlayerPosition, transform.position);
-            return 92f - distance;
-        }
+            bagSpawned = true;
+            pendingBagPosition = worldPosition;
 
-        public bool TryUse(WorldUseContext context)
-        {
-            if (!lootActive || !HasRemainingLoot || !IsWithinLootRange(context.PlayerPosition))
-                return false;
+            EnemyLootBag bag = EnemyLootBag.Spawn(
+                pendingBagPosition,
+                this,
+                remainingLoot,
+                lootDisplayName,
+                lootInteractRange,
+                promptText,
+                lootUnlootedLifetime,
+                lootedBagDissolveDelay);
 
-            OpenLootDialog();
-            return true;
-        }
-
-        public bool TryLootNextEntry()
-        {
-            if (!HasRemainingLoot)
-                return false;
-
-            QuestRewardDefinition entry = remainingLoot[0];
-            remainingLoot.RemoveAt(0);
-            GrantLootEntry(entry);
-            RefreshLootState();
-            return true;
-        }
-
-        public bool TryLootAll()
-        {
-            if (!HasRemainingLoot)
-                return false;
-
-            for (int i = remainingLoot.Count - 1; i >= 0; i--)
-                GrantLootEntry(remainingLoot[i]);
-
-            remainingLoot.Clear();
-            RefreshLootState();
-            return true;
-        }
-
-        public string BuildLootSummary()
-        {
-            if (!HasRemainingLoot)
-                return "Nothing left to loot.";
-
-            System.Text.StringBuilder builder = new System.Text.StringBuilder();
-            builder.AppendLine("Remaining loot:");
-            for (int i = 0; i < remainingLoot.Count; i++)
+            if (bag == null)
             {
-                QuestRewardDefinition entry = remainingLoot[i];
-                if (entry == null)
-                    continue;
-
-                if (entry.type == QuestRewardType.Pi)
-                    builder.AppendLine($"- {entry.amount} Pi");
-                else if (entry.type == QuestRewardType.Item && entry.item != null)
-                    builder.AppendLine($"- {entry.amount}x {entry.item.itemName}");
+                bagSpawned = false;
+                FinishLootPhase();
             }
+        }
 
-            return builder.ToString().TrimEnd();
+        public void NotifyLootBagDissolved()
+        {
+            FinishLootPhase();
         }
 
         private void HandleEnemyDied()
@@ -165,20 +116,23 @@ namespace Project.AI
             if (!HasRemainingLoot)
                 return;
 
-            lootActive = true;
-            respawnDeadline = Time.time + Mathf.Max(1f, lootRespawnDelay);
+            lootPending = true;
+            bagSpawned = false;
+            pendingBagPosition = transform.position;
 
             if (health != null)
                 health.SetRespawnExternallyManaged(true);
 
-            WorldUseController.Register(this);
+            EnemyDisintegrationEffect disintegration = GetComponent<EnemyDisintegrationEffect>();
+            if (disintegration == null)
+                TrySpawnLootBag(pendingBagPosition);
         }
 
         private void GenerateLoot()
         {
             remainingLoot.Clear();
 
-            int piAmount = RollPiAmount();
+            int piAmount = RollAcAmount();
             if (piAmount > 0)
             {
                 remainingLoot.Add(new QuestRewardDefinition
@@ -214,7 +168,7 @@ namespace Project.AI
             }
         }
 
-        private int RollPiAmount()
+        private int RollAcAmount()
         {
             int min = Mathf.Max(0, piCoinsMin);
             int max = Mathf.Max(min, piCoinsMax);
@@ -257,95 +211,17 @@ namespace Project.AI
             return pool;
         }
 
-        private void GrantLootEntry(QuestRewardDefinition entry)
-        {
-            if (entry == null)
-                return;
-
-            QuestRewardGranter.GrantReward(entry, lootDisplayName);
-
-            if (entry.type == QuestRewardType.Item && entry.item != null)
-                PickupToastUI.Show($"+{entry.amount} {entry.item.itemName}");
-        }
-
-        private void OpenLootDialog()
-        {
-            if (EnemyLootDialogUI.IsDialogOpen)
-                return;
-
-            EnemyLootDialogUI.Show(this, lootDisplayName, BuildLootSummary());
-        }
-
-        private void RefreshLootState()
-        {
-            if (HasRemainingLoot)
-            {
-                if (playerInRange)
-                    ShowPrompt();
-                return;
-            }
-
-            FinishLootPhase();
-        }
-
         private void FinishLootPhase()
         {
-            if (!lootActive)
+            if (!lootPending && !bagSpawned && remainingLoot.Count == 0)
                 return;
 
-            lootActive = false;
+            lootPending = false;
+            bagSpawned = false;
             remainingLoot.Clear();
-            playerInRange = false;
 
-            WorldUseController.Unregister(this);
-            ResolveUiManager()?.HideInteractionPrompt();
-
-            if (health != null && health.respawnTime > 0f)
-            {
-                health.SetRespawnExternallyManaged(false);
-                health.ForceRespawn();
-            }
-        }
-
-        private void RefreshProximityPrompt()
-        {
-            if (!GameSession.HasStarted || !HasRemainingLoot)
-                return;
-
-            if (!PlayerInteractionUtility.TryGetPlayerPosition(out Vector3 playerPosition))
-                return;
-
-            bool nearby = IsWithinLootRange(playerPosition);
-            if (nearby == playerInRange)
-                return;
-
-            playerInRange = nearby;
-            if (playerInRange)
-                ShowPrompt();
-            else
-                ResolveUiManager()?.HideInteractionPrompt();
-        }
-
-        private bool IsWithinLootRange(Vector3 playerPosition)
-        {
-            return Vector3.Distance(playerPosition, transform.position) <= lootInteractRange;
-        }
-
-        private void ShowPrompt()
-        {
-            UIManager manager = ResolveUiManager();
-            if (manager == null)
-                return;
-
-            string label = string.IsNullOrWhiteSpace(lootDisplayName) ? "Enemy" : lootDisplayName;
-            manager.ShowInteractionPrompt($"{promptText} — {label}");
-        }
-
-        private UIManager ResolveUiManager()
-        {
-            if (uiManager == null)
-                uiManager = FindAnyObjectByType<UIManager>();
-            return uiManager;
+            if (health != null && health.IsDead)
+                health.FinishLootHoldAndRespawn();
         }
     }
 }

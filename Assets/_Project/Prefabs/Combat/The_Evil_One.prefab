@@ -1631,6 +1631,7 @@ GameObject:
   - component: {fileID: 1872267020696362376}
   - component: {fileID: 8698466548513082506}
   - component: {fileID: 7123456789012345679}
+  - component: {fileID: 6296094059926941886}
   m_Layer: 0
   m_Name: The_Evil_One
   m_TagString: Untagged
@@ -1803,7 +1804,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyHealthBarPresenter
   showFloatingHealthBar: 1
-  hideUntilDamaged: 0
+  hideUntilDamaged: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
 --- !u!114 &8698466548513082506
 MonoBehaviour:
@@ -1836,6 +1837,56 @@ MonoBehaviour:
   idleSwapMax: 8
   lockVisualRootPosition: 0
   visualChildName: scene
+--- !u!114 &7123456789012345679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818667370058463670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5faa33e28a66b2145a866873ec710964, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
+  enableLoot: 1
+  lootDisplayName: The Evil One
+  piCoinsMin: 2
+  piCoinsMax: 8
+  randomLootCountMin: 0
+  randomLootCountMax: 2
+  lootItemPool: []
+  lootUnlootedLifetime: 20
+  lootedBagDissolveDelay: 2
+  lootInteractRange: 2.75
+  promptText: Press E to loot
+--- !u!114 &6296094059926941886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818667370058463670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc995163a8cad04fbeba3ffe4ed3dba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.EnemyDisintegrationEffect
+  enableDeathLift: 1
+  liftDuration: 2
+  liftHeight: 2
+  dissolveMaterialTemplate: {fileID: 0}
+  dissolveDuration: 1.4
+  dissolveEdgeWidth: 0.045
+  dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  replaceDeathAnimation: 1
+  enableSmoke: 1
+  smokeDuration: 3.2
+  smokeRiseHeight: 1.1
+  smokeExpand: 0.18
+  smokeColor: {r: 0.62, g: 0.64, b: 0.68, a: 0.48}
+  enableVolumetricSmoke: 1
+  volumetricSmokeLinger: 2.4
 --- !u!1 &9020768278938481343
 GameObject:
   m_ObjectHideFlags: 0
@@ -1931,25 +1982,3 @@ Transform:
   - {fileID: 953807605854740617}
   m_Father: {fileID: 6766412148234215231}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7123456789012345679
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8818667370058463670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5faa33e28a66b2145a866873ec710964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
-  enableLoot: 1
-  lootDisplayName: The Evil One
-  piCoinsMin: 2
-  piCoinsMax: 8
-  randomLootCountMin: 0
-  randomLootCountMax: 2
-  lootItemPool: []
-  lootRespawnDelay: 20
-  lootInteractRange: 2.75
-  promptText: Press E to loot

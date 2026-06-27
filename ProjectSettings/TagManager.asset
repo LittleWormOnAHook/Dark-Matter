@@ -6,9 +6,8 @@ TagManager:
   tags:
   - Animal
   - Dirt
-  - Default
-  - Player
   - Enemy
+  - Building
   layers:
   - Default
   - TransparentFX

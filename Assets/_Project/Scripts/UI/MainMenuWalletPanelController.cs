@@ -62,39 +62,10 @@ namespace Project.UI
             }
         }
 
-        public void Build(Transform menuPanelTransform)
+        public void Build(Transform canvasRoot)
         {
-            if (menuPanelTransform == null || piBalanceLabel != null)
+            if (canvasRoot == null || walletOverlayRoot != null)
                 return;
-
-            Transform canvasRoot = menuPanelTransform.parent;
-
-            GameObject walletBlock = new GameObject("WalletBlock", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            walletBlock.transform.SetParent(menuPanelTransform, false);
-            VerticalLayoutGroup walletLayout = walletBlock.GetComponent<VerticalLayoutGroup>();
-            walletLayout.spacing = Mathf.RoundToInt(6f * MenuScale);
-            walletLayout.childAlignment = TextAnchor.UpperCenter;
-            walletLayout.childControlWidth = true;
-            walletLayout.childForceExpandWidth = true;
-            walletLayout.childForceExpandHeight = false;
-
-            TextMeshProUGUI walletTitle = MenuUiBuilder.CreateTitle(walletBlock.transform, "Wallet", 16f * MenuScale);
-            walletTitle.color = new Color(0.72f, 0.8f, 0.92f, 1f);
-
-            piBalanceLabel = MenuUiBuilder.CreateTitle(walletBlock.transform, "Pi Wallet: 0", 15f * MenuScale);
-            piBalanceLabel.alignment = TextAlignmentOptions.Center;
-            piBalanceLabel.color = new Color(0.82f, 0.86f, 0.92f, 1f);
-
-            acBalanceLabel = MenuUiBuilder.CreateTitle(walletBlock.transform, "Aether Credits: 0", 15f * MenuScale);
-            acBalanceLabel.alignment = TextAlignmentOptions.Center;
-            acBalanceLabel.color = new Color(0.82f, 0.86f, 0.92f, 1f);
-
-            Button openWalletButton = MenuUiBuilder.CreateButton(
-                walletBlock.transform,
-                "Wallet",
-                new Vector2(220f * MenuScale, 44f * MenuScale),
-                18f * MenuScale);
-            openWalletButton.onClick.AddListener(OpenWalletPanel);
 
             BuildWalletOverlay(canvasRoot);
             walletOverlayRoot.SetActive(false);
@@ -137,7 +108,7 @@ namespace Project.UI
                 Refresh();
         }
 
-        private void OpenWalletPanel()
+        public void OpenWalletPanel()
         {
             if (walletOverlayRoot == null)
                 return;
@@ -162,10 +133,10 @@ namespace Project.UI
             windowImage.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
 
             RectTransform windowRect = window.GetComponent<RectTransform>();
-            windowRect.anchorMin = new Vector2(0.5f, 0.5f);
-            windowRect.anchorMax = new Vector2(0.5f, 0.5f);
-            windowRect.pivot = new Vector2(0.5f, 0.5f);
-            windowRect.sizeDelta = new Vector2(640f * MenuScale, 520f * MenuScale);
+            windowRect.anchorMin = Vector2.zero;
+            windowRect.anchorMax = Vector2.one;
+            windowRect.offsetMin = Vector2.zero;
+            windowRect.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup windowLayout = window.GetComponent<VerticalLayoutGroup>();
             windowLayout.padding = new RectOffset(24, 24, 20, 20);
@@ -327,7 +298,7 @@ namespace Project.UI
 
             TextMeshProUGUI intro = MenuUiBuilder.CreateTitle(
                 root.transform,
-                "Pioneer Survivor Exchange — mock Pi listings (prototype).",
+                "Pioneer Survivor Exchange — mock AC listings (prototype).",
                 14f * MenuScale);
             intro.alignment = TextAlignmentOptions.TopLeft;
             intro.color = new Color(0.78f, 0.82f, 0.88f, 1f);
@@ -459,15 +430,23 @@ namespace Project.UI
             if (roster == null)
                 return;
 
-            IReadOnlyList<SkilledPioneerRecord> owned = roster.WalletOwnedPioneers;
-            if (owned.Count == 0)
+            IReadOnlyList<SkilledPioneerRecord> owned = roster.SkilledPioneers;
+            if (owned.Count > 0)
             {
-                CreateInfoCard(pioneersListParent, "No pioneers in wallet yet. Browse the Marketplace tab.");
+                for (int i = 0; i < owned.Count; i++)
+                    CreateOwnedPioneerCard(pioneersListParent, owned[i]);
                 return;
             }
 
-            for (int i = 0; i < owned.Count; i++)
-                CreateOwnedPioneerCard(pioneersListParent, owned[i]);
+            IReadOnlyList<SkilledPioneerRecord> wallet = roster.WalletOwnedPioneers;
+            if (wallet.Count == 0)
+            {
+                CreateInfoCard(pioneersListParent, "No pioneers on your base roster yet. Browse the Marketplace tab.");
+                return;
+            }
+
+            for (int i = 0; i < wallet.Count; i++)
+                CreateOwnedPioneerCard(pioneersListParent, wallet[i]);
         }
 
         private void CreateMarketplaceCard(Transform parent, WalletMarketplaceOffer offer, bool owned)
@@ -505,7 +484,7 @@ namespace Project.UI
             {
                 Button buyButton = MenuUiBuilder.CreateButton(
                     actionHost.transform,
-                    $"{offer.piListPrice} Pi",
+                    $"{offer.acListPrice} AC",
                     new Vector2(110f * MenuScale, 40f * MenuScale),
                     14f * MenuScale);
                 string offerId = offer.offerId;

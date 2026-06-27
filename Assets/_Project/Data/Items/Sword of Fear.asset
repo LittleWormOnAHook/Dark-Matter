@@ -41,8 +41,8 @@ MonoBehaviour:
   toolRange: 8
   scanRange: 24
   healthRestore: 0
-  hungerRestore: 0
-  thirstRestore: 0
   energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
   isPiInfused: 0
   piValue: 0

@@ -18,10 +18,55 @@ MonoBehaviour:
   maxHealth: 60
   destroyOnDeath: 1
   destroyDelay: 3
-  respawnTime: 0
+  respawnTime: 4
   showFloatingHealthBar: 0
-  hideHealthBarUntilDamaged: 0
+  hideHealthBarUntilDamaged: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
+  visionRange: 16
+  visionFov: 110
+  eyeHeight: 1.4
+  hearingRange: 18
+  proximityRange: 2.5
+  attackRange: 1.8
+  attackDamage: 12
+  attackCooldown: 1.4
+  attackWindup: 0.35
+  movementMode: 2
+  patrolMode: 0
+  investigateNoise: 1
+  chasePlayer: 1
+  returnToHomeAfterSearch: 1
+  chaseRadius: 0
+  wanderRadius: 8
+  wanderPauseMin: 2
+  wanderPauseMax: 5
+  patrolPointCount: 4
+  patrolRadius: 6
+  patrolWaitDuration: 2
+  behaviorPreset: 1
+  walkSpeed: 2.4
+  runSpeed: 4.8
+  turnSpeed: 8
+  loseTargetDelay: 4
+  searchDuration: 6
+  searchRadius: 4
+  idleDuration: 3
+  colliderRadius: 0.45
+  colliderHeight: 2
+  colliderCenter: {x: 0, y: 1, z: 0}
+  fitColliderToRenderers: 1
+  idleClips: []
+  walkClips: []
+  runClips: []
+  attackClips: []
+  hitClips: []
+  deathClips: []
+  animatorController: {fileID: 0}
+  animatorControllerFileName: 
+  buildAnimatorFromClips: 1
+  addEnemyAnimationController: 1
+  lockVisualRootPosition: 0
+  visualChildName: scene
   enableLoot: 1
   piCoinsMin: 1
   piCoinsMax: 3

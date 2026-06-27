@@ -1,0 +1,238 @@
+fileFormatVersion: 2
+guid: 8b9d91193dbaa5c468feddeee7f0cb1e
+ModelImporter:
+  serializedVersion: 21
+  fileIDToRecycleName:
+    100000: Body
+    100002: Breast_L
+    100004: Breast_R
+    100006: Chest
+    100008: Eye_L
+    100010: Eye_R
+    100012: HairJoint_075310cc_2c55_4f87_bee0_66afe35050fb
+    100014: HairJoint_497a97b7_0bdc_4267_b035_69f3756b7131
+    100016: HairJoint_57e03dad_29d9_4b6e_9cbd_9d7abc5241b0
+    100018: HairJoint_657f1584_c779_4ae9_b57d_5930319d77a4
+    100020: HairJoint_7a62315d_abea_4b4a_8710_52770aea9364
+    100022: HairJoint_a6e7e603_7ea0_4e51_b4ef_7eb38f08503a
+    100024: HairJoint_bd3d74cd_25c5_4b6f_8ab4_26e33295af50
+    100026: HairJoint_bdda9c05_5e10_4c8a_abe5_be7e2c14be93
+    100028: HairJoint_e7d28e69_662e_4477_aab0_b5306c3d289e
+    100030: Head
+    100032: Hips
+    100034: IndexFinger1_L
+    100036: IndexFinger1_R
+    100038: IndexFinger2_L
+    100040: IndexFinger2_R
+    100042: IndexFinger3_L
+    100044: IndexFinger3_R
+    100046: J_Sec_L_Bust2
+    100048: J_Sec_L_CoatSkirtBack
+    100050: J_Sec_L_CoatSkirtFront
+    100052: J_Sec_L_CoatSkirtSide1
+    100054: J_Sec_L_CoatSkirtSide2
+    100056: J_Sec_R_Bust2
+    100058: J_Sec_R_CoatSkirtBack
+    100060: J_Sec_R_CoatSkirtFront
+    100062: J_Sec_R_CoatSkirtSide1
+    100064: J_Sec_R_CoatSkirtSide2
+    100066: Left ankle
+    100068: Left arm
+    100070: Left elbow
+    100072: Left knee
+    100074: Left leg
+    100076: Left shoulder
+    100078: Left toe
+    100080: Left wrist
+    100082: LittleFinger1_L
+    100084: LittleFinger1_R
+    100086: LittleFinger2_L
+    100088: LittleFinger2_R
+    100090: LittleFinger3_L
+    100092: LittleFinger3_R
+    100094: MiddleFinger1_L
+    100096: MiddleFinger1_R
+    100098: MiddleFinger2_L
+    100100: MiddleFinger2_R
+    100102: MiddleFinger3_L
+    100104: MiddleFinger3_R
+    100106: Neck
+    100108: Right ankle
+    100110: Right arm
+    100112: Right elbow
+    100114: Right knee
+    100116: Right leg
+    100118: Right shoulder
+    100120: Right toe
+    100122: Right wrist
+    100124: RingFinger1_L
+    100126: RingFinger1_R
+    100128: RingFinger2_L
+    100130: RingFinger2_R
+    100132: RingFinger3_L
+    100134: RingFinger3_R
+    100136: Spine
+    100138: Thumb0_L
+    100140: Thumb0_R
+    100142: Thumb1_L
+    100144: Thumb1_R
+    100146: Thumb2_L
+    100148: Thumb2_R
+    100150: //RootNode
+    100152: USS_Tessa
+    400000: Body
+    400002: Breast_L
+    400004: Breast_R
+    400006: Chest
+    400008: Eye_L
+    400010: Eye_R
+    400012: HairJoint_075310cc_2c55_4f87_bee0_66afe35050fb
+    400014: HairJoint_497a97b7_0bdc_4267_b035_69f3756b7131
+    400016: HairJoint_57e03dad_29d9_4b6e_9cbd_9d7abc5241b0
+    400018: HairJoint_657f1584_c779_4ae9_b57d_5930319d77a4
+    400020: HairJoint_7a62315d_abea_4b4a_8710_52770aea9364
+    400022: HairJoint_a6e7e603_7ea0_4e51_b4ef_7eb38f08503a
+    400024: HairJoint_bd3d74cd_25c5_4b6f_8ab4_26e33295af50
+    400026: HairJoint_bdda9c05_5e10_4c8a_abe5_be7e2c14be93
+    400028: HairJoint_e7d28e69_662e_4477_aab0_b5306c3d289e
+    400030: Head
+    400032: Hips
+    400034: IndexFinger1_L
+    400036: IndexFinger1_R
+    400038: IndexFinger2_L
+    400040: IndexFinger2_R
+    400042: IndexFinger3_L
+    400044: IndexFinger3_R
+    400046: J_Sec_L_Bust2
+    400048: J_Sec_L_CoatSkirtBack
+    400050: J_Sec_L_CoatSkirtFront
+    400052: J_Sec_L_CoatSkirtSide1
+    400054: J_Sec_L_CoatSkirtSide2
+    400056: J_Sec_R_Bust2
+    400058: J_Sec_R_CoatSkirtBack
+    400060: J_Sec_R_CoatSkirtFront
+    400062: J_Sec_R_CoatSkirtSide1
+    400064: J_Sec_R_CoatSkirtSide2
+    400066: Left ankle
+    400068: Left arm
+    400070: Left elbow
+    400072: Left knee
+    400074: Left leg
+    400076: Left shoulder
+    400078: Left toe
+    400080: Left wrist
+    400082: LittleFinger1_L
+    400084: LittleFinger1_R
+    400086: LittleFinger2_L
+    400088: LittleFinger2_R
+    400090: LittleFinger3_L
+    400092: LittleFinger3_R
+    400094: MiddleFinger1_L
+    400096: MiddleFinger1_R
+    400098: MiddleFinger2_L
+    400100: MiddleFinger2_R
+    400102: MiddleFinger3_L
+    400104: MiddleFinger3_R
+    400106: Neck
+    400108: Right ankle
+    400110: Right arm
+    400112: Right elbow
+    400114: Right knee
+    400116: Right leg
+    400118: Right shoulder
+    400120: Right toe
+    400122: Right wrist
+    400124: RingFinger1_L
+    400126: RingFinger1_R
+    400128: RingFinger2_L
+    400130: RingFinger2_R
+    400132: RingFinger3_L
+    400134: RingFinger3_R
+    400136: Spine
+    400138: Thumb0_L
+    400140: Thumb0_R
+    400142: Thumb1_L
+    400144: Thumb1_R
+    400146: Thumb2_L
+    400148: Thumb2_R
+    400150: //RootNode
+    400152: USS_Tessa
+    4300000: Body
+    9500000: //RootNode
+    13700000: Body
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: "Invalid Avatar Rig Configuration. Missing or invalid transform:\n\tRequired
+      human bone 'Hips' not found\n"
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 3
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

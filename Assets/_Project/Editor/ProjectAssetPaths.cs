@@ -16,6 +16,11 @@ namespace Project.EditorTools
         public const string Audio = Root + "/Audio";
         public const string Materials = Root + "/Materials";
         public const string Shaders = Root + "/Shaders";
+        public const string Settings = Root + "/Settings";
+        public const string SettingsInput = Settings + "/Input";
+        public const string World = Root + "/World";
+        public const string WorldTerrain = World + "/Terrain";
+        public const string ConceptualUiArt = Root + "/Conceptual UI art";
 
         public const string Data = Root + "/Data";
         public const string ItemsData = Data + "/Items";
@@ -42,9 +47,15 @@ namespace Project.EditorTools
         public const string ResourcesOptics = Resources + "/Optics";
 
         public const string Scenes = Root + "/Scenes";
+        public const string MainScene = Scenes + "/Pioneer.unity";
+        public const string UiPreviewScene = Scenes + "/UI_Preview.unity";
+        public const string UiLayoutProfiles = Data + "/UI/LayoutProfiles";
+        public const string InputActions = SettingsInput + "/InputSystem_Actions.inputactions";
         public const string Scripts = Root + "/Scripts";
+        public const string ScriptsPrototypes = Scripts + "/Prototypes";
         public const string ScriptsAi = Scripts + "/AI";
         public const string Editor = Root + "/Editor";
+        public const string EditorDevTools = Editor + "/DevTools";
 
         public const string PlayerPrefab = PrefabsPlayers + "/Player.prefab";
         public const string QuestGiverPrefab = PrefabsNpcs + "/QuestGiver_PioneerGuide.prefab";

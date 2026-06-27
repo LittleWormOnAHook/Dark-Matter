@@ -1,4 +1,5 @@
 using Project.Data;
+using Project.Interaction;
 using Project.UI;
 using UnityEngine;
 
@@ -21,6 +22,35 @@ namespace Project.Map
         public bool ShowOnMinimap => showOnMinimap;
         public bool ShowOnFullMap => showOnFullMap;
         public Vector3 WorldPosition => transform.position;
+
+        public bool IsResourceMarker
+        {
+            get
+            {
+                if (TryGetComponent(out ResourceNode _))
+                    return true;
+
+                return TryGetComponent(out ItemPickup pickup)
+                    && pickup.itemData != null
+                    && !pickup.IsPickedUp;
+            }
+        }
+
+        public string GetInteractionHintText()
+        {
+            if (TryGetComponent(out ItemPickup pickup)
+                && pickup.itemData != null
+                && !pickup.IsPickedUp)
+            {
+                return $"{pickup.promptText} {pickup.itemData.itemName}";
+            }
+
+            ResourceNode node = GetComponent<ResourceNode>();
+            if (node != null && node.resourceItem != null)
+                return $"Hit to gather {node.resourceItem.itemName}";
+
+            return string.IsNullOrWhiteSpace(label) ? null : label;
+        }
 
         public void ConfigureForResource(ItemData item)
         {

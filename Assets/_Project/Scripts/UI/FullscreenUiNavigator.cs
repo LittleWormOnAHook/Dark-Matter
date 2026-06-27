@@ -132,7 +132,7 @@ namespace Project.UI
 
         public void CloseAll()
         {
-            HideAllWindows();
+            HideAllWindows(forceAll: true);
             windowStack.Clear();
             NotifyPauseChanged(false);
             NotifyActiveWindowChanged();
@@ -166,10 +166,16 @@ namespace Project.UI
             transform.SetAsLastSibling();
         }
 
-        private void HideAllWindows()
+        private void HideAllWindows(bool forceAll = false)
         {
             foreach (FullscreenUiWindow window in windows.Values)
-                window?.Hide();
+            {
+                if (window == null)
+                    continue;
+
+                if (forceAll || window.IsVisible)
+                    window.Hide();
+            }
         }
 
         private FullscreenUiWindow GetWindow(JournalWindowId id)

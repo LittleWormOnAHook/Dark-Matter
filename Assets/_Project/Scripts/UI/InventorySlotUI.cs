@@ -265,7 +265,11 @@ namespace Project.UI
                     {
                         int hotbarIndex = slotIndex - inventory.inventorySize;
                         if (equipmentController.IsWeaponHotbarSlot(hotbarIndex))
-                            equipmentController.SelectWeaponSlot(hotbarIndex == equipmentController.PrimaryWeaponHotbarSlot ? 0 : 1);
+                        {
+                            int weaponSlot = equipmentController.GetWeaponSlotIndexForHotbar(hotbarIndex);
+                            if (weaponSlot >= 0)
+                                equipmentController.SelectWeaponSlot(weaponSlot);
+                        }
                         else
                             equipmentController.SelectInventorySlot(slotIndex);
                         return;

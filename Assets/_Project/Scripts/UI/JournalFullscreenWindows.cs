@@ -73,8 +73,7 @@ namespace Project.UI
                 inventoryUi = FindAnyObjectByType<InventoryUI>();
 
             inventoryUi?.EmbedInventoryPanel(contentArea);
-            MenuUiBuilder.StretchRectToFill(inventoryUi?.inventoryPanel?.GetComponent<RectTransform>());
-            inventoryUi?.RefreshMainInventoryLayout();
+            GameplayHudVisibility.SetJournalTabHud(JournalWindowId.Inventory);
         }
 
         public override void OnHide()
@@ -84,7 +83,7 @@ namespace Project.UI
 
         public override void Refresh()
         {
-            inventoryUi?.RefreshMainInventoryLayout();
+            inventoryUi?.RefreshUI();
         }
     }
 
@@ -166,6 +165,7 @@ namespace Project.UI
                 rootRect.gameObject.SetActive(false);
 
             mapUi?.OpenMapFullscreen();
+            GameplayHudVisibility.SetJournalTabHud(JournalWindowId.Map);
         }
 
         public override void OnHide()
@@ -195,7 +195,7 @@ namespace Project.UI
             VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(32, 32, 32, 32);
             layout.spacing = 20f;
-            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
@@ -214,7 +214,7 @@ namespace Project.UI
             iconLayout.minWidth = 96f;
             iconLayout.preferredWidth = 96f;
 
-            TextMeshProUGUI heading = CreateStubText(contentArea, stubHeading ?? "Coming Soon", 32f, FontStyles.Bold, TextAlignmentOptions.Center, theme);
+            TextMeshProUGUI heading = CreateStubText(contentArea, stubHeading ?? "Coming Soon", 32f, FontStyles.Bold, TextAlignmentOptions.TopLeft, theme);
             heading.color = Color.white;
 
             TextMeshProUGUI body = CreateStubText(

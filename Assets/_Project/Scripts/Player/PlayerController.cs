@@ -4,6 +4,7 @@ using ECM2;
 using Project.Core;
 using Project.Interaction;
 using Project.Survival;
+using Project.UI;
 
 namespace Project.Player
 {
@@ -48,6 +49,7 @@ namespace Project.Player
         private bool _mapOpen;
         private bool _questDialogOpen;
         private bool _lootDialogOpen;
+        private bool _buildingControlOpen;
         private bool _opticsOpen;
         private bool _gameplayPaused;
         private float _opticsTargetFov = 40f;
@@ -56,17 +58,22 @@ namespace Project.Player
         private float _cameraPitch;
         private float _currentFollowDistance;
         private float _followDistanceSmoothVelocity;
+        private float _inputRecoveryCheckTimer;
+        private CombatFocusController _combatFocus;
 
         public bool IsInventoryOpen => _inventoryOpen;
         public bool IsJournalOpen => _journalOpen;
         public bool IsMapOpen => _mapOpen;
         public bool IsQuestDialogOpen => _questDialogOpen;
         public bool IsLootDialogOpen => _lootDialogOpen;
+        public bool IsBuildingControlOpen => _buildingControlOpen;
         public bool IsOpticsOpen => _opticsOpen;
         public bool BlocksCombatInput =>
-            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _opticsOpen || IsGameplayPaused;
+            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || IsGameplayPaused;
         public bool IsGameplayPaused => _gameplayPaused || !GameSession.HasStarted;
         public float CameraYaw => _cameraYaw;
+        public float LastLookYawDelta { get; private set; }
+        public Vector2 MoveInput => _moveInput;
         public float OpticsZoomFov => _opticsCurrentFov;
         public float OpticsTargetFov => _opticsTargetFov;
         public Camera GameplayCamera => _character != null ? _character.camera : null;
@@ -90,6 +97,9 @@ namespace Project.Player
             _character = GetComponent<Character>();
             _survivalStats = GetComponent<SurvivalStats>();
             _worldUse = GetComponent<WorldUseController>();
+            _combatFocus = GetComponent<CombatFocusController>();
+            if (_combatFocus == null)
+                _combatFocus = gameObject.AddComponent<CombatFocusController>();
 
             if (cameraFollowTarget == null)
             {
@@ -102,10 +112,7 @@ namespace Project.Player
         private void Start()
         {
             if (GameSession.HasStarted)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
+                GameplayInputRecovery.ReleaseAllInputCapture();
             else
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -170,6 +177,15 @@ namespace Project.Player
                 _character.SetMovementDirection(Vector3.zero);
         }
 
+        public void SetBuildingControlOpen(bool open)
+        {
+            _buildingControlOpen = open;
+            ApplyCursorState();
+
+            if (open && _character != null)
+                _character.SetMovementDirection(Vector3.zero);
+        }
+
         public void SetOpticsOpen(bool open, float zoomFov = 40f)
         {
             if (open == _opticsOpen && (!open || Mathf.Approximately(_opticsTargetFov, zoomFov)))
@@ -228,13 +244,19 @@ namespace Project.Player
             _mapOpen = false;
             _questDialogOpen = false;
             _lootDialogOpen = false;
+            _buildingControlOpen = false;
             _gameplayPaused = false;
+
+            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
+            if (playerInput != null)
+                playerInput.enabled = true;
+
             ApplyCursorState();
         }
 
         private void ApplyCursorState()
         {
-            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _gameplayPaused || !GameSession.HasStarted;
+            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _gameplayPaused || !GameSession.HasStarted;
 
             if (_opticsOpen)
             {
@@ -252,7 +274,7 @@ namespace Project.Player
                 Cursor.visible = false;
             }
 
-            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen) && _character != null)
+            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen) && _character != null)
                 _character.SetMovementDirection(Vector3.zero);
         }
 
@@ -269,7 +291,7 @@ namespace Project.Player
             if (IsGameplayPaused)
                 return;
 
-            if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen)
+            if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen && !_buildingControlOpen)
                 _lookInput = context.ReadValue<Vector2>();
         }
 
@@ -312,7 +334,7 @@ namespace Project.Player
             if (_survivalStats != null && _survivalStats.IsDead)
                 return;
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _opticsOpen)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen)
                 return;
 
             if (_worldUse == null)
@@ -338,7 +360,7 @@ namespace Project.Player
                 return;
             }
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _opticsOpen || IsGameplayPaused)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused)
             {
                 _character.SetMovementDirection(Vector3.zero);
                 return;
@@ -348,14 +370,48 @@ namespace Project.Player
             HandleMovement();
             HandleJump();
             HandleZoom();
+            TryRecoverStaleInputBlockers();
+        }
+
+        private void TryRecoverStaleInputBlockers()
+        {
+            if (!GameSession.HasStarted || Time.timeScale <= 0f)
+                return;
+
+            _inputRecoveryCheckTimer += Time.unscaledDeltaTime;
+            if (_inputRecoveryCheckTimer < 1f)
+                return;
+
+            _inputRecoveryCheckTimer = 0f;
+
+            if (HasVisibleUiBlockingInput())
+                return;
+
+            if (!_journalOpen && !_mapOpen && !_lootDialogOpen && !_questDialogOpen && !_buildingControlOpen && !_gameplayPaused)
+                return;
+
+            EnsureGameplayInputReady();
+        }
+
+        private static bool HasVisibleUiBlockingInput()
+        {
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return true;
+
+            if (EnemyLootDialogUI.IsDialogOpen)
+                return true;
+
+            return false;
         }
 
         private void LateUpdate()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
                 return;
 
             ApplyLookInput();
+            _combatFocus?.UpdateFocus();
             UpdateCamera();
 
             if (_opticsOpen)
@@ -369,27 +425,20 @@ namespace Project.Player
 
         private void PollLookInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || IsGameplayPaused)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused)
                 return;
 
-            Vector2 mouseDelta = Vector2.zero;
-            if (Mouse.current != null)
-                mouseDelta = Mouse.current.delta.ReadValue();
+            if (Mouse.current == null)
+                return;
 
-            if (mouseDelta.sqrMagnitude <= 0.0001f)
-            {
-                mouseDelta = new Vector2(
-                    Input.GetAxisRaw("Mouse X"),
-                    Input.GetAxisRaw("Mouse Y"));
-            }
-
+            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
             if (mouseDelta.sqrMagnitude > 0.0001f)
                 _lookInput = mouseDelta;
         }
 
         private void HandleCrouchInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
                 return;
 
             bool wantCrouch = _crouchInput;
@@ -436,11 +485,37 @@ namespace Project.Player
                 _character.StopJumping();
         }
 
+        public Vector3 GetPlanarForward()
+        {
+            return Quaternion.Euler(0f, _cameraYaw, 0f) * Vector3.forward;
+        }
+
+        public Vector3 GetCameraRelativeMoveDirection()
+        {
+            Vector3 movementDirection = Vector3.right * _moveInput.x + Vector3.forward * _moveInput.y;
+            if (_character != null && _character.cameraTransform != null)
+                movementDirection = movementDirection.relativeTo(_character.cameraTransform);
+
+            movementDirection.y = 0f;
+            return movementDirection;
+        }
+
+        public void ApplyCombatFocusYaw(float targetYawDegrees, float smoothLambda)
+        {
+            _cameraYaw = MathLib.Damp(_cameraYaw, targetYawDegrees, smoothLambda, Time.deltaTime);
+            _cameraYaw = MathLib.ClampAngle(_cameraYaw, -180f, 180f);
+        }
+
         private void ApplyLookInput()
         {
-            if (_lookInput.sqrMagnitude < 0.0001f) return;
+            if (_lookInput.sqrMagnitude < 0.0001f)
+            {
+                LastLookYawDelta = 0f;
+                return;
+            }
 
             Vector2 scaledLook = _lookInput * mouseSensitivity;
+            LastLookYawDelta = scaledLook.x;
             _cameraYaw = MathLib.ClampAngle(_cameraYaw + scaledLook.x, -180f, 180f);
 
             float pitchDelta = invertLook ? -scaledLook.y : scaledLook.y;
@@ -451,13 +526,18 @@ namespace Project.Player
 
         private void HandleZoom()
         {
-            if (_opticsOpen)
+            if (_opticsOpen || Mouse.current == null)
                 return;
 
-            float scrollWheel = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Approximately(scrollWheel, 0f)) return;
+            float scroll = Mouse.current.scroll.ReadValue().y;
+            if (Mathf.Approximately(scroll, 0f))
+                return;
 
-            followDistance = Mathf.Clamp(followDistance - scrollWheel * 8f, followMinDistance, followMaxDistance);
+            const float scrollUnitsPerNotch = 120f;
+            followDistance = Mathf.Clamp(
+                followDistance - (scroll / scrollUnitsPerNotch) * 8f,
+                followMinDistance,
+                followMaxDistance);
         }
 
         private void UpdateCamera()

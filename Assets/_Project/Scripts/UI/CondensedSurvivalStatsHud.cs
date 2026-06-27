@@ -8,6 +8,7 @@ namespace Project.UI
     /// Survival vitals as horizontal bars spanning the hotbar width, stacked above it.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-50)]
     public class CondensedSurvivalStatsHud : MonoBehaviour
     {
         [Header("Layout")]
@@ -21,20 +22,21 @@ namespace Project.UI
         private static readonly string[] SegmentOrder =
         {
             "HealthRow",
-            "HungerRow",
-            "ThirstRow",
-            "EnergyRow"
+            "EnergyRow",
+            "StaminaRow",
+            "OxygenRow"
         };
 
         private static readonly Color[] SegmentFillColors =
         {
             new Color(0.92f, 0.18f, 0.14f, 1f),
             new Color(0.91f, 0.63f, 0.27f, 1f),
-            new Color(0.43f, 0.76f, 1f, 1f),
-            new Color(0.71f, 0.88f, 0.40f, 1f)
+            new Color(0.71f, 0.88f, 0.40f, 1f),
+            new Color(0.43f, 0.76f, 1f, 1f)
         };
 
         private bool layoutApplied;
+        private bool radialBarsDisabled;
 
         public static bool IsActive => FindAnyObjectByType<CondensedSurvivalStatsHud>() != null;
 
@@ -61,6 +63,8 @@ namespace Project.UI
 
         private void Start()
         {
+            DisableRadialBarsOnRows();
+
             if (applyRuntimeLayout)
                 RefreshLayout();
             else
@@ -194,7 +198,58 @@ namespace Project.UI
                 ConfigureHorizontalBar(slider, SegmentFillColors[segmentIndex], iconWidth + IconGap, barWidth);
 
             if (label != null)
-                label.gameObject.SetActive(false);
+            {
+                if (row.name == "OxygenRow")
+                    ConfigureOxygenLabel(label, iconWidth + IconGap, barWidth);
+                else
+                    label.gameObject.SetActive(false);
+            }
+        }
+
+        private static void ConfigureOxygenLabel(TextMeshProUGUI label, float barLeftInset, float barWidth)
+        {
+            label.gameObject.SetActive(true);
+
+            if (label.rectTransform is not RectTransform rect)
+                return;
+
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(barLeftInset + barWidth * 0.5f, BarHeight * 0.5f);
+            rect.sizeDelta = new Vector2(barWidth, BarHeight);
+            rect.SetAsLastSibling();
+
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = Mathf.Max(8f, BarHeight * 0.72f);
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 6f;
+            label.fontSizeMax = BarHeight * 0.85f;
+            label.color = new Color(0.95f, 0.98f, 1f, 0.95f);
+            label.raycastTarget = false;
+            label.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        private void DisableRadialBarsOnRows()
+        {
+            if (radialBarsDisabled)
+                return;
+
+            radialBarsDisabled = true;
+
+            for (int i = 0; i < SegmentOrder.Length; i++)
+            {
+                Transform row = transform.Find(SegmentOrder[i]);
+                if (row == null)
+                    continue;
+
+                Slider slider = row.GetComponentInChildren<Slider>(true);
+                if (slider == null)
+                    continue;
+
+                if (slider.TryGetComponent(out CircularProgressBar radialBar))
+                    radialBar.enabled = false;
+            }
         }
 
         private static void ConfigureSegmentIcon(Transform iconTransform, float iconSize)
@@ -228,7 +283,12 @@ namespace Project.UI
             sliderRect.sizeDelta = new Vector2(barWidth, BarHeight);
 
             if (slider.TryGetComponent<CircularProgressBar>(out CircularProgressBar radialBar))
-                DestroyImmediate(radialBar);
+            {
+                if (Application.isPlaying)
+                    Destroy(radialBar);
+                else
+                    DestroyImmediate(radialBar);
+            }
 
             ShiftUiTheme theme = ShiftUiTheme.Current;
             Sprite trackSprite = theme?.panelFrame;

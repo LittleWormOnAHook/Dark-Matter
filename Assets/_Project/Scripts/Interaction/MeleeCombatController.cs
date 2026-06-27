@@ -7,6 +7,7 @@ using Project.Inventory;
 using Project.Player;
 using Project.Survival;
 using Project.UI;
+using ECM2;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -33,8 +34,9 @@ namespace Project.Interaction
         [SerializeField] private string powerHitStateName = "AttackCombo5";
         [SerializeField] private string powerHitChargeStateName = "PowerHitCharge";
         [SerializeField] private int powerHitChargeLayerIndex = 1;
-        [SerializeField] private float powerHitChargeBlendTime = 0.15f;
+        [SerializeField] private float powerHitChargeBlendTime = 0.2f;
         [SerializeField] private float powerHitCooldownMultiplier = 1.5f;
+        [SerializeField] private float upperBodyAttackBlendTime = 0.22f;
 
         private static readonly int PowerHitCharge = Animator.StringToHash("PowerHitCharge");
         private static readonly int Block = Animator.StringToHash("Block");
@@ -42,9 +44,11 @@ namespace Project.Interaction
         [Header("Block")]
         [SerializeField] private string blockStateName = "Block";
         [SerializeField] private int blockLayerIndex = 1;
-        [SerializeField] private float blockBlendTime = 0.12f;
+        [SerializeField] private float blockBlendTime = 0.18f;
 
         public bool IsBlocking { get; private set; }
+        public bool IsAttackInputActive => attackInputHeld;
+        public float LastAttackTime => lastComboAttackTime;
 
         [Header("Combo")]
         [SerializeField] private float comboResetWindow = 1.35f;
@@ -77,11 +81,13 @@ namespace Project.Interaction
         private Animator animator;
         private float nextAttackTime;
         private int comboIndex;
-        private float lastComboAttackTime;
+        private float lastComboAttackTime = float.NegativeInfinity;
         private float attackHoldStartTime;
         private bool attackInputHeld;
         private bool chargePoseStarted;
         private bool combatBlockedByUiPointer;
+        private int upperBodyCombatLayerIndex = -1;
+        private Character character;
 
         private void Awake()
         {
@@ -91,7 +97,14 @@ namespace Project.Interaction
             playerController = GetComponent<PlayerController>();
             survivalStats = GetComponent<SurvivalStats>();
             uiManager = FindAnyObjectByType<UIManager>();
-            animator = GetComponentInChildren<Animator>();
+
+            Character character = GetComponent<Character>();
+            this.character = character;
+            animator = character != null ? character.GetAnimator() : null;
+            if (animator == null)
+                animator = GetComponentInChildren<Animator>();
+
+            upperBodyCombatLayerIndex = PlayerCombatAnimationLayer.ResolveUpperBodyCombatLayer(animator);
 
             if (animator != null && animator.layerCount > powerHitChargeLayerIndex)
                 animator.SetLayerWeight(powerHitChargeLayerIndex, 0f);
@@ -174,6 +187,7 @@ namespace Project.Interaction
         private void Update()
         {
             RefreshCombatUiPointerBlock();
+            PlayerCombatAnimationLayer.UpdateUpperBodyLayerWeight(animator, upperBodyCombatLayerIndex);
 
             if (IsBlocking)
                 return;
@@ -228,7 +242,7 @@ namespace Project.Interaction
             animator.SetBool(PowerHitCharge, false);
 
             if (animator.layerCount > powerHitChargeLayerIndex && !IsBlocking)
-                animator.SetLayerWeight(powerHitChargeLayerIndex, 0f);
+                PlayerCombatAnimationLayer.SetUpperBodyLayerWeight(animator, powerHitChargeLayerIndex, 0f, Time.deltaTime);
         }
 
         private void BeginBlock()
@@ -264,7 +278,7 @@ namespace Project.Interaction
             animator.SetBool(Block, false);
 
             if (animator.layerCount > blockLayerIndex && !animator.GetBool(PowerHitCharge))
-                animator.SetLayerWeight(blockLayerIndex, 0f);
+                PlayerCombatAnimationLayer.SetUpperBodyLayerWeight(animator, blockLayerIndex, 0f, Time.deltaTime);
         }
 
         private void RefreshCombatUiPointerBlock()
@@ -381,7 +395,7 @@ namespace Project.Interaction
             bool bodyAnimationPlayed = item.IsTwoHanded
                 ? PlayRandomTwoHandedAttackAnimation()
                 : PlayComboAttackAnimation();
-            if (!bodyAnimationPlayed && heldVisual != null && !item.IsTwoHanded)
+            if (!bodyAnimationPlayed && heldVisual != null)
                 heldVisual.PlaySwing(cooldown);
 
             GameAudioManager.Instance?.PlayWeaponSwing(transform.position + Vector3.up * attackOriginHeight);
@@ -481,14 +495,8 @@ namespace Project.Interaction
                 comboIndex = 0;
 
             string stateName = comboStateNames[Mathf.Clamp(comboIndex, 0, comboStateNames.Length - 1)];
-            int stateHash = Animator.StringToHash(stateName);
-            if (!animator.HasState(0, stateHash))
-                return false;
-
-            animator.CrossFadeInFixedTime(stateName, 0.08f, 0, 0f);
             comboIndex = (comboIndex + 1) % comboStateNames.Length;
-            lastComboAttackTime = Time.time;
-            return true;
+            return PlayAttackState(stateName, upperBodyAttackBlendTime);
         }
 
         private bool PlayRandomTwoHandedAttackAnimation()
@@ -508,16 +516,26 @@ namespace Project.Interaction
             return PlayAttackState(twoHandedPowerHitStateName);
         }
 
-        private bool PlayAttackState(string stateName)
+        private bool PlayAttackState(string stateName, float blendTime = 0.1f)
         {
             if (animator == null || string.IsNullOrWhiteSpace(stateName))
                 return false;
 
+            bool grounded = character == null || character.IsGrounded();
+            PlayerCombatAnimationLayer.EnsureBaseLocomotionState(animator, grounded);
+
             int stateHash = Animator.StringToHash(stateName);
-            if (!animator.HasState(0, stateHash))
+            int layer = upperBodyCombatLayerIndex >= 0 && animator.HasState(upperBodyCombatLayerIndex, stateHash)
+                ? upperBodyCombatLayerIndex
+                : 0;
+
+            if (!animator.HasState(layer, stateHash))
                 return false;
 
-            animator.CrossFadeInFixedTime(stateName, 0.1f, 0, 0f);
+            if (layer == upperBodyCombatLayerIndex)
+                PlayerCombatAnimationLayer.BeginUpperBodyAttack(animator, upperBodyCombatLayerIndex);
+
+            animator.CrossFadeInFixedTime(stateName, blendTime, layer, 0f);
             lastComboAttackTime = Time.time;
             return true;
         }
@@ -527,13 +545,7 @@ namespace Project.Interaction
             if (animator == null || string.IsNullOrWhiteSpace(powerHitStateName))
                 return false;
 
-            int stateHash = Animator.StringToHash(powerHitStateName);
-            if (!animator.HasState(0, stateHash))
-                return false;
-
-            animator.CrossFadeInFixedTime(powerHitStateName, 0.08f, 0, 0f);
-            lastComboAttackTime = Time.time;
-            return true;
+            return PlayAttackState(powerHitStateName, upperBodyAttackBlendTime);
         }
 
         private void PerformFallbackHit(ItemData item, bool isCritical)

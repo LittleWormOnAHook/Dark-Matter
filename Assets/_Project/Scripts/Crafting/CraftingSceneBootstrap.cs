@@ -16,6 +16,9 @@ namespace Project.Crafting
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoWireAfterSceneLoad()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!SceneHasCraftingObjects())
                 return;
 

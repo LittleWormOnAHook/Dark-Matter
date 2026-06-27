@@ -7,6 +7,7 @@ namespace Project.EditorTools.UiLayout
 {
     internal sealed class UiPanelDefinition
     {
+        public string PanelId;
         public string Label;
         public string Category;
         public string[] SearchNames;
@@ -24,8 +25,8 @@ namespace Project.EditorTools.UiLayout
 
         public static readonly UiPanelDefinition[] Panels =
         {
-            new UiPanelDefinition { Label = "Survival Stats", Category = "HUD", SearchNames = new[] { "SurvivalStatsPanel", "CondensedSurvivalStatsHud" }, ComponentType = typeof(CondensedSurvivalStatsHud) },
-            new UiPanelDefinition { Label = "Hotbar", Category = "HUD", SearchNames = new[] { "Hotbar" } },
+            new UiPanelDefinition { Label = "Survival Stats", Category = "HUD", PanelId = UiPanelIds.SurvivalStats, SearchNames = new[] { "SurvivalStatsPanel", "CondensedSurvivalStatsHud" }, ComponentType = typeof(CondensedSurvivalStatsHud) },
+            new UiPanelDefinition { Label = "Hotbar", Category = "HUD", PanelId = UiPanelIds.Hotbar, SearchNames = new[] { "Hotbar" } },
             new UiPanelDefinition { Label = "Toolbar", Category = "HUD", SearchNames = new[] { "ToolBar" }, ComponentType = typeof(ToolBarUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Aim Reticle", Category = "HUD", SearchNames = new[] { "PickupAimReticle" }, ComponentType = typeof(PickupAimReticleUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pi Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText" } },
@@ -37,6 +38,7 @@ namespace Project.EditorTools.UiLayout
             {
                 Label = "Minimap Panel",
                 Category = "Map",
+                PanelId = UiPanelIds.Minimap,
                 SearchNames = new[] { "MinimapPanel" },
                 ComponentType = typeof(MapUI),
                 Description = "Top-right circular minimap shell. Use Create Map Shells if missing."
@@ -67,6 +69,7 @@ namespace Project.EditorTools.UiLayout
             {
                 Label = "Full Map Overlay",
                 Category = "Map",
+                PanelId = UiPanelIds.MapFull,
                 SearchNames = new[] { "FullMapOverlay" },
                 ComponentType = typeof(MapUI),
                 Description = "Standalone world map opened with M."
@@ -93,13 +96,123 @@ namespace Project.EditorTools.UiLayout
                 RelativePath = "MapFrame/MapViewport/MapContent/MapImage"
             },
 
-            new UiPanelDefinition { Label = "Inventory Panel", Category = "Panels", SearchNames = new[] { "InventoryPanel" }, ComponentType = typeof(InventoryUI) },
+            new UiPanelDefinition { Label = "Inventory Panel", Category = "Panels", PanelId = UiPanelIds.InventoryPanel, SearchNames = new[] { "InventoryPanel" }, ComponentType = typeof(InventoryUI) },
             new UiPanelDefinition { Label = "Main Inventory Grid", Category = "Panels", SearchNames = new[] { "MainInventoryGrid" } },
-            new UiPanelDefinition { Label = "Journal", Category = "Panels", SearchNames = new[] { "JournalPanel", "JournalOverlay" }, ComponentType = typeof(JournalPanelUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Crafting Window", Category = "Panels", SearchNames = new[] { "CraftingWindow", "CraftPanel" }, ComponentType = typeof(CraftingUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Quest Giver Dialog", Category = "Panels", SearchNames = new[] { "DialogPanel", "QuestGiverDialogUI" }, PlayModeOnly = true },
+
+            new UiPanelDefinition
+            {
+                Label = "Journal Shell",
+                Category = "Journal",
+                PanelId = UiPanelIds.JournalOverlay,
+                SearchNames = new[] { "JournalOverlay", "JournalPanel" },
+                ComponentType = typeof(JournalPanelUI),
+                PlayModeOnly = true,
+                Description = "Fullscreen journal overlay and navigator host on UIManager."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Tab Rail",
+                Category = "Journal",
+                PanelId = UiPanelIds.JournalTabRail,
+                SearchNames = new[] { "JournalTabRailHost" },
+                ComponentType = typeof(JournalTabRail),
+                PlayModeOnly = true,
+                Description = "Left vertical tab rail (J/I/M/K/P/C/R/T/L shortcuts)."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Window Host",
+                Category = "Journal",
+                PanelId = UiPanelIds.JournalWindowHost,
+                SearchNames = new[] { "JournalWindowHost" },
+                ComponentType = typeof(FullscreenUiNavigator),
+                PlayModeOnly = true,
+                Description = "Content area to the right of the tab rail; holds fullscreen journal windows."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Quest Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "JournalQuestWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Inventory Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "InventoryWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Map Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "MapWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Craft Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "CraftWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Pet Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "PetWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Pioneers Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "PioneersWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Recipes Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "RecipesWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Skills Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "SkillsWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Echoes Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "EchoesWindowHost" },
+                PlayModeOnly = true
+            },
+
+            new UiPanelDefinition { Label = "Crafting Window", Category = "Panels", PanelId = UiPanelIds.CraftPanel, SearchNames = new[] { "CraftingWindow", "CraftPanel" }, ComponentType = typeof(CraftingUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Quest Giver Dialog", Category = "Panels", SearchNames = new[] { "DialogPanel", "QuestGiverDialogUI" }, ComponentType = typeof(QuestGiverDialogUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Enemy Loot Dialog", Category = "Panels", PanelId = UiPanelIds.EnemyLootDialog, SearchNames = new[] { "LootOverlay", "EnemyLootDialogUI" }, ComponentType = typeof(EnemyLootDialogUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Echo Rescue Reveal", Category = "Panels", SearchNames = new[] { "EchoRescueRevealUI", "Neural Echo Rescued" }, ComponentType = typeof(EchoRescueRevealUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Starter Pioneer Select", Category = "Panels", SearchNames = new[] { "StarterPioneerSelectUI" }, ComponentType = typeof(StarterPioneerSelectUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Game Start Popup", Category = "Panels", SearchNames = new[] { "GameStartPopup" }, ComponentType = typeof(GameStartPopup), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pioneer Roster Panel", Category = "Panels", SearchNames = new[] { "PioneerRosterPanelUI" }, ComponentType = typeof(PioneerRosterPanelUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Toast", Category = "Panels", SearchNames = new[] { "PickupToastUI" }, PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Pet Panel", Category = "Panels", SearchNames = new[] { "PetPanel" }, ComponentType = typeof(PetUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pet Panel", Category = "Panels", PanelId = UiPanelIds.PetPanel, SearchNames = new[] { "PetPanel" }, ComponentType = typeof(PetUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Main Menu", Category = "Panels", PanelId = UiPanelIds.MainMenu, SearchNames = new[] { "MainMenuPanel", "MainMenuBackground" }, ComponentType = typeof(MainMenuController), PlayModeOnly = true, Description = "Runtime-built main menu (MenuUiBuilder)." },
+            new UiPanelDefinition { Label = "Building Control", Category = "Panels", PanelId = UiPanelIds.BuildingControl, SearchNames = new[] { "BuildingControlOverlay", "BuildingControlPanelUI" }, ComponentType = typeof(BuildingControlPanelUI), PlayModeOnly = true },
 
             new UiPanelDefinition { Label = "Item Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "ItemHoverTooltip" }, PlayModeOnly = true, Description = "Runtime tooltip shown when hovering inventory slots." },
             new UiPanelDefinition { Label = "Inventory Context Menu", Category = "Mini Windows", SearchNames = new[] { "InventoryContextMenu", "MenuPanel" }, PlayModeOnly = true },
@@ -266,9 +379,12 @@ namespace Project.EditorTools.UiLayout
                 case "Minimap Viewport":
                 case "Full Map Panel":
                     return PrepareMapUiLayout();
+                case "Inventory Panel":
+                    return PrepareInventoryUiLayout();
                 case "Inventory Slot Prefab":
-                case "Main Inventory Grid":
                     return PrepareInventorySlotLayout();
+                case "Main Inventory Grid":
+                    return PrepareInventoryUiLayout() | PrepareInventorySlotLayout();
                 default:
                     return TryPrepareKnownComponents(panel);
             }
@@ -286,6 +402,7 @@ namespace Project.EditorTools.UiLayout
                 prepared += SetSerializedBoolIfExists(behaviours[i], "applyRuntimeLayout", false) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "applyRuntimeHudLayout", false) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "preserveHotbarLayout", true) ? 1 : 0;
+                prepared += SetSerializedBoolIfExists(behaviours[i], "preserveMainGridLayout", true) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "preserveManualLayout", true) ? 1 : 0;
             }
 
@@ -380,6 +497,18 @@ namespace Project.EditorTools.UiLayout
         {
             InventoryUI inventoryUi = UnityEngine.Object.FindAnyObjectByType<InventoryUI>();
             return inventoryUi != null && SetSerializedBoolIfExists(inventoryUi, "preserveHotbarLayout", true);
+        }
+
+        private static bool PrepareInventoryUiLayout()
+        {
+            InventoryUI inventoryUi = UnityEngine.Object.FindAnyObjectByType<InventoryUI>();
+            if (inventoryUi == null)
+                return false;
+
+            bool prepared = SetSerializedBoolIfExists(inventoryUi, "preserveMainGridLayout", true);
+            prepared |= SetSerializedBoolIfExists(inventoryUi, "applyLayoutProfile", true);
+            prepared |= SetSerializedBoolIfExists(inventoryUi, "skipDefaultLayoutWhenProfileApplied", true);
+            return prepared;
         }
 
         private static bool PrepareToolbarLayout()

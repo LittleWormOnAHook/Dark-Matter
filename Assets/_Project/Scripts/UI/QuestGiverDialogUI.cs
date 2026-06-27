@@ -27,6 +27,14 @@ namespace Project.UI
 
         public static QuestGiverDialogUI Instance => instance;
 
+        public static bool IsDialogOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
+
+        public static void CloseAnyOpenQuestDialog()
+        {
+            if (instance != null && IsDialogOpen)
+                instance.Close();
+        }
+
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
             if (instance != null)
@@ -34,9 +42,64 @@ namespace Project.UI
 
             GameObject host = new GameObject("QuestGiverDialogUI", typeof(RectTransform));
             host.transform.SetParent(canvasRoot, false);
+            MenuUiBuilder.StretchRectToFill(host.GetComponent<RectTransform>());
             instance = host.AddComponent<QuestGiverDialogUI>();
             instance.Build(canvasRoot);
             return instance;
+        }
+
+        public static void ResetToDefaultLayout()
+        {
+            TeardownAllInstances();
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas != null)
+                EnsureExists(canvas.transform);
+        }
+
+        public static void EnsureBuiltForLayoutEditor()
+        {
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas != null)
+                EnsureExists(canvas.transform);
+        }
+
+        private static void TeardownAllInstances()
+        {
+            if (instance != null)
+            {
+                instance.TeardownInternal();
+                instance = null;
+            }
+
+            QuestGiverDialogUI[] existing = FindObjectsByType<QuestGiverDialogUI>(FindObjectsInactive.Include);
+            for (int i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] == null)
+                    continue;
+
+                existing[i].TeardownInternal();
+            }
+
+            instance = null;
+        }
+
+        private void TeardownInternal()
+        {
+            built = false;
+            onClosed = null;
+            overlayRoot = null;
+            dialogPanel = null;
+            titleText = null;
+            bodyText = null;
+            questListRoot = null;
+            questListContent = null;
+            primaryButton = null;
+            primaryButtonLabel = null;
+
+            if (instance == this)
+                instance = null;
+
+            Destroy(gameObject);
         }
 
         public static void Show(string speakerName, string message, Action closedCallback = null, string primaryLabel = "Continue")
@@ -68,50 +131,42 @@ namespace Project.UI
             EnsureUiInput(canvasRoot);
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
-            overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "DialogOverlay", new Color(0f, 0f, 0f, 0.45f), blockRaycasts: true);
+            overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "DialogOverlay", new Color(0f, 0f, 0f, 0.5f), blockRaycasts: true);
             overlayRoot.transform.SetAsLastSibling();
 
-            dialogPanel = new GameObject("DialogPanel", typeof(RectTransform));
-            dialogPanel.transform.SetParent(overlayRoot.transform, false);
-            RectTransform panelRect = dialogPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(680f, 460f);
+            dialogPanel = MenuUiBuilder.CreateCenteredModalShell(
+                overlayRoot.transform,
+                "Quest Giver",
+                GameplayHudLayout.GameplayModalSize,
+                out RectTransform contentArea,
+                out Button headerCloseButton);
+            titleText = MenuUiBuilder.GetShellTitleText(dialogPanel);
+            headerCloseButton.onClick.AddListener(Close);
 
-            Image panelBg = dialogPanel.AddComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(panelBg, large: true);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(panelBg);
-                panelBg.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
-            }
-
-            VerticalLayoutGroup layout = dialogPanel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(20, 20, 18, 18);
+            VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(16, 16, 16, 16);
             layout.spacing = 12f;
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-            titleText = CreateText(dialogPanel.transform, "NPC", theme, 34f, FontStyles.Bold);
-            bodyText = CreateText(dialogPanel.transform, "", theme, 22f, FontStyles.Normal);
+            bodyText = CreateText(contentArea, "", theme, 22f, FontStyles.Normal);
             bodyText.textWrappingMode = TextWrappingModes.Normal;
+            LayoutElement bodyLayout = bodyText.gameObject.AddComponent<LayoutElement>();
+            bodyLayout.flexibleHeight = 0f;
 
             questListRoot = new GameObject("QuestList", typeof(RectTransform));
-            questListRoot.transform.SetParent(dialogPanel.transform, false);
+            questListRoot.transform.SetParent(contentArea, false);
             LayoutElement listLayout = questListRoot.AddComponent<LayoutElement>();
             listLayout.flexibleHeight = 1f;
-            listLayout.minHeight = 180f;
+            listLayout.minHeight = 160f;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
             viewport.transform.SetParent(questListRoot.transform, false);
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
-            viewportRect.anchorMin = Vector2.zero;
-            viewportRect.anchorMax = Vector2.one;
-            viewportRect.offsetMin = Vector2.zero;
-            viewportRect.offsetMax = Vector2.zero;
+            MenuUiBuilder.StretchRectToFill(viewportRect);
             viewport.AddComponent<RectMask2D>();
 
             GameObject content = new GameObject("Content", typeof(RectTransform));
@@ -137,10 +192,11 @@ namespace Project.UI
             scroll.content = contentRect;
             questListContent = content.transform;
 
-            primaryButton = CreateButton(dialogPanel.transform, "Close", theme, out primaryButtonLabel);
+            primaryButton = CreateButton(contentArea, "Close", theme, out primaryButtonLabel);
             primaryButton.onClick.AddListener(Close);
 
             questListRoot.SetActive(false);
+            EnforceQuestDialogLayout();
             overlayRoot.SetActive(false);
             UiFrontLayer.BringLayerToFront(canvasRoot);
         }
@@ -264,7 +320,23 @@ namespace Project.UI
 
             overlayRoot.SetActive(true);
             overlayRoot.transform.SetAsLastSibling();
+            EnforceQuestDialogLayout();
             UiFrontLayer.BringLayerToFront(transform.parent);
+        }
+
+        private void EnforceQuestDialogLayout()
+        {
+            MenuUiBuilder.StretchRectToFill(GetComponent<RectTransform>());
+
+            if (overlayRoot == null)
+                return;
+
+            MenuUiBuilder.StretchRectToFill(overlayRoot.GetComponent<RectTransform>());
+
+            if (dialogPanel == null)
+                return;
+
+            MenuUiBuilder.ApplyCenteredModalShellLayout(dialogPanel, GameplayHudLayout.GameplayModalSize);
         }
 
         private static void EnsureUiInput(Transform canvasRoot)
@@ -283,7 +355,8 @@ namespace Project.UI
 
         private void Close()
         {
-            overlayRoot.SetActive(false);
+            if (overlayRoot != null)
+                overlayRoot.SetActive(false);
             ClearQuestList();
 
             PlayerController player = FindAnyObjectByType<PlayerController>();

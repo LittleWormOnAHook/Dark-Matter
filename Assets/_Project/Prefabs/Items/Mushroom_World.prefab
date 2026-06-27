@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6546880221705288861}
   - component: {fileID: 8199775835227230232}
   - component: {fileID: 816158817471521597}
+  - component: {fileID: -972654047772215680}
   m_Layer: 0
   m_Name: Mushroom_World
   m_TagString: Untagged
@@ -151,3 +152,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.48454309, y: 0.4536653, z: 0.47379628}
   m_Center: {x: 0.0011010543, y: 0.104594454, z: -0.03207539}
+--- !u!114 &-972654047772215680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4131714642898419157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
+  itemData: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
+  amount: 1
+  promptText: Press E to use
+  canRespawn: 1
+  minRespawnTime: 20
+  maxRespawnTime: 90

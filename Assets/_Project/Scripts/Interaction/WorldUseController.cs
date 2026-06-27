@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using ECM2;
 using Project.AI;
+using Project.Building;
+using Project.Combat;
 using Project.Core;
 using Project.Crafting;
 using Project.Inventory;
 using Project.Player;
 using Project.Quests;
 using Project.Survival;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -35,6 +38,7 @@ namespace Project.Interaction
         /// <summary>Extra normalized screen push toward the ground / forward of the player.</summary>
         private const float PickupAimForwardScreenBias = 0.04f;
         private const float CraftingStationAimRadius = 1.25f;
+        private const float BuildingControlPanelAimRadius = 1.25f;
         private const float QuestGiverAimRadius = 1.25f;
         private const float RecipePickupScanRange = 8f;
 
@@ -47,6 +51,8 @@ namespace Project.Interaction
         private PlayerController playerController;
         private Camera viewCamera;
         private float lastUseTime = -999f;
+        private UIManager promptUiManager;
+        private bool worldPromptOwned;
 
         public static void Register(IWorldUsable usable)
         {
@@ -74,6 +80,11 @@ namespace Project.Interaction
         private void Start()
         {
             ResolveCamera();
+        }
+
+        private void LateUpdate()
+        {
+            ResolveWorldInteractionPrompt();
         }
 
         public void TryUse()
@@ -210,11 +221,10 @@ namespace Project.Interaction
 
         public static bool HasActiveEnemyLootInRange(WorldUseContext context)
         {
-            EnemyLootable[] lootables = Object.FindObjectsByType<EnemyLootable>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < lootables.Length; i++)
+            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < bags.Length; i++)
             {
-                EnemyLootable lootable = lootables[i];
-                if (lootable != null && lootable.CanPlayerLoot(context.PlayerPosition))
+                if (bags[i] != null && bags[i].CanPlayerLoot(context.PlayerPosition))
                     return true;
             }
 
@@ -223,7 +233,9 @@ namespace Project.Interaction
 
         public static bool IsAimedAtPriorityWorldInteractable(WorldUseContext context)
         {
-            return IsAimedAtAnyInRangeQuestGiver(context) || IsAimedAtAnyInRangeCraftingStation(context);
+            return IsAimedAtAnyInRangeQuestGiver(context)
+                || IsAimedAtAnyInRangeCraftingStation(context)
+                || IsAimedAtAnyInRangeBuildingControlPanel(context);
         }
 
         public static bool IsAimedAtAnyInRangeCraftingStation(WorldUseContext context)
@@ -258,6 +270,46 @@ namespace Project.Interaction
             }
 
             return false;
+        }
+
+        public static bool IsAimedAtAnyInRangeBuildingControlPanel(WorldUseContext context)
+        {
+            BuildingControlPanel[] panels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < panels.Length; i++)
+            {
+                BuildingControlPanel panel = panels[i];
+                if (panel == null || !panel.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider panelCollider = panel.InteractCollider;
+                if (IsAimedAtBuildingControlPanel(context, panel, panelCollider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsAimedAtBuildingControlPanel(WorldUseContext context, BuildingControlPanel panel, Collider panelCollider)
+        {
+            if (panel == null)
+                return false;
+
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                BuildingControlPanel hitPanel = context.AimHit.Value.collider.GetComponentInParent<BuildingControlPanel>();
+                if (hitPanel == panel)
+                    return true;
+            }
+
+            Collider targetCollider = panelCollider;
+            if (targetCollider == null)
+                targetCollider = panel.GetComponentInChildren<Collider>();
+
+            if (targetCollider == null)
+                return false;
+
+            Vector3 aimPoint = targetCollider.bounds.center;
+            return GetViewRayDistance(context.ViewRay, aimPoint) <= BuildingControlPanelAimRadius;
         }
 
         public static bool ShouldBlockNonPickupUse(Transform playerTransform, ResourceGatherer gatherer, float useRange)
@@ -337,26 +389,49 @@ namespace Project.Interaction
                 bestScore = score;
             }
 
+            BuildingControlPanel[] controlPanels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < controlPanels.Length; i++)
+            {
+                BuildingControlPanel panel = controlPanels[i];
+                if (panel == null || !panel.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider panelCollider = panel.InteractCollider;
+                if (!IsAimedAtBuildingControlPanel(context, panel, panelCollider))
+                    continue;
+
+                float distance = PlayerInteractionUtility.DistanceToInteractable(
+                    context.PlayerPosition,
+                    panelCollider,
+                    panel.transform.position);
+                float score = 90f - distance;
+                if (score <= bestScore)
+                    continue;
+
+                best = panel;
+                bestScore = score;
+            }
+
             return best != null && best.TryUse(context);
         }
 
         private bool TryHandleEnemyLootUse(WorldUseContext context)
         {
-            EnemyLootable best = null;
+            EnemyLootBag best = null;
             float bestScore = float.MinValue;
 
-            EnemyLootable[] lootables = Object.FindObjectsByType<EnemyLootable>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < lootables.Length; i++)
+            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < bags.Length; i++)
             {
-                EnemyLootable lootable = lootables[i];
-                if (lootable == null || !lootable.CanPlayerLoot(context.PlayerPosition))
+                EnemyLootBag bag = bags[i];
+                if (bag == null)
                     continue;
 
-                float score = lootable.GetUsePriority(context);
+                float score = bag.GetUsePriority(context);
                 if (score < MinRegisteredUsePriority || score <= bestScore)
                     continue;
 
-                best = lootable;
+                best = bag;
                 bestScore = score;
             }
 
@@ -596,6 +671,7 @@ namespace Project.Interaction
                 gatherer,
                 fallbackRange,
                 playerPosition,
+                null,
                 out pickup,
                 out bool inPickupRange)
                 && inPickupRange;
@@ -612,6 +688,7 @@ namespace Project.Interaction
                 context.Gatherer,
                 range,
                 context.PlayerPosition,
+                context.PlayerTransform,
                 out pickup,
                 out inPickupRange);
         }
@@ -621,6 +698,7 @@ namespace Project.Interaction
             ResourceGatherer gatherer,
             float fallbackRange,
             Vector3? playerPosition,
+            Transform playerRoot,
             out ItemPickup pickup,
             out bool inPickupRange)
         {
@@ -635,7 +713,7 @@ namespace Project.Interaction
             for (int i = 0; i < pickups.Length; i++)
             {
                 ItemPickup candidate = pickups[i];
-                if (!IsCollectiblePickup(candidate, context.PlayerTransform))
+                if (!IsCollectiblePickup(candidate, playerRoot))
                     continue;
 
                 float distance = Vector3.Distance(rangeOrigin, candidate.transform.position);
@@ -744,6 +822,7 @@ namespace Project.Interaction
                     || playerController.IsMapOpen
                     || playerController.IsQuestDialogOpen
                     || playerController.IsLootDialogOpen
+                    || playerController.IsBuildingControlOpen
                     || playerController.IsOpticsOpen)
                     return false;
             }
@@ -860,5 +939,241 @@ namespace Project.Interaction
         }
 
         public static Camera ResolveViewCameraForInteract(Transform playerTransform) => ResolveViewCamera(playerTransform);
+
+        private void ResolveWorldInteractionPrompt()
+        {
+            if (!ShouldDriveWorldInteractionPrompt())
+            {
+                ClearOwnedWorldPrompt();
+                return;
+            }
+
+            WorldUseContext context = BuildPromptContext();
+            if (context.PlayerTransform == null)
+            {
+                ClearOwnedWorldPrompt();
+                return;
+            }
+
+            string message = BuildWorldInteractionPrompt(context);
+            if (!string.IsNullOrEmpty(message))
+            {
+                if (promptUiManager == null)
+                    promptUiManager = FindAnyObjectByType<UIManager>();
+
+                promptUiManager?.ShowInteractionPrompt(message);
+                worldPromptOwned = true;
+                return;
+            }
+
+            ClearOwnedWorldPrompt();
+        }
+
+        private bool ShouldDriveWorldInteractionPrompt()
+        {
+            if (!GameSession.HasStarted)
+                return false;
+
+            if (playerController == null)
+                playerController = GetComponent<PlayerController>();
+
+            if (playerController == null)
+                return true;
+
+            return !playerController.IsInventoryOpen
+                && !playerController.IsJournalOpen
+                && !playerController.IsMapOpen
+                && !playerController.IsQuestDialogOpen
+                && !playerController.IsLootDialogOpen
+                && !playerController.IsBuildingControlOpen
+                && !playerController.IsOpticsOpen;
+        }
+
+        private void ClearOwnedWorldPrompt()
+        {
+            if (!worldPromptOwned)
+                return;
+
+            if (promptUiManager == null)
+                promptUiManager = FindAnyObjectByType<UIManager>();
+
+            promptUiManager?.HideInteractionPrompt();
+            worldPromptOwned = false;
+        }
+
+        private WorldUseContext BuildPromptContext()
+        {
+            if (gatherer == null)
+                gatherer = GetComponent<ResourceGatherer>();
+
+            if (inventory == null)
+                inventory = GetComponent<InventorySystem>();
+
+            Camera camera = ResolveCamera();
+            Ray viewRay = camera != null
+                ? BuildScreenCenterRay(camera, transform)
+                : default;
+
+            RaycastHit? aimHit = null;
+            if (camera != null && gatherer != null
+                && Physics.Raycast(viewRay, out RaycastHit hit, gatherer.gatherRange, gatherer.resourceLayer, QueryTriggerInteraction.Collide))
+            {
+                aimHit = hit;
+            }
+
+            float range = gatherer != null ? gatherer.pickupRange : useRange;
+            return new WorldUseContext(
+                transform,
+                transform.position,
+                camera,
+                inventory,
+                gatherer,
+                range,
+                viewRay,
+                aimHit);
+        }
+
+        private static string BuildWorldInteractionPrompt(WorldUseContext context)
+        {
+            if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
+                && itemInRange
+                && itemPickup != null
+                && itemPickup.itemData != null)
+            {
+                return itemPickup.promptText + " " + itemPickup.itemData.itemName;
+            }
+
+            if (TryFindFocusedRecipePickup(context, out RecipePickup recipePickup, out bool recipeInRange)
+                && recipeInRange
+                && recipePickup != null
+                && !recipePickup.IsLearned)
+            {
+                return recipePickup.GetInteractionPromptMessage();
+            }
+
+            QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
+            if (questGiver != null)
+                return questGiver.GetInteractionPromptMessage();
+
+            CraftingStation craftingStation = FindAimedCraftingStationInRange(context);
+            if (craftingStation != null)
+                return craftingStation.GetInteractionPromptMessage();
+
+            BuildingControlPanel controlPanel = FindAimedBuildingControlPanelInRange(context);
+            if (controlPanel != null)
+                return controlPanel.GetInteractionPromptMessage();
+
+            EnemyLootBag lootBag = FindClosestLootBagInRange(context.PlayerPosition);
+            if (lootBag != null)
+                return lootBag.GetInteractionPromptMessage();
+
+            return null;
+        }
+
+        private static QuestGiverNpc FindClosestQuestGiverInRange(Vector3 playerPosition)
+        {
+            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            QuestGiverNpc best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < givers.Length; i++)
+            {
+                QuestGiverNpc giver = givers[i];
+                if (giver == null || !giver.IsWithinInteractRange(playerPosition))
+                    continue;
+
+                float distance = Vector3.Distance(playerPosition, giver.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                best = giver;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        private static CraftingStation FindAimedCraftingStationInRange(WorldUseContext context)
+        {
+            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            CraftingStation best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < stations.Length; i++)
+            {
+                CraftingStation station = stations[i];
+                if (station == null || !station.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider stationCollider = station.InteractCollider;
+                if (!IsAimedAtCraftingStation(context, station, stationCollider))
+                    continue;
+
+                float distance = PlayerInteractionUtility.DistanceToInteractable(
+                    context.PlayerPosition,
+                    stationCollider,
+                    station.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                best = station;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        private static BuildingControlPanel FindAimedBuildingControlPanelInRange(WorldUseContext context)
+        {
+            BuildingControlPanel[] panels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            BuildingControlPanel best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < panels.Length; i++)
+            {
+                BuildingControlPanel panel = panels[i];
+                if (panel == null || !panel.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                Collider panelCollider = panel.InteractCollider;
+                if (!IsAimedAtBuildingControlPanel(context, panel, panelCollider))
+                    continue;
+
+                float distance = PlayerInteractionUtility.DistanceToInteractable(
+                    context.PlayerPosition,
+                    panelCollider,
+                    panel.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                best = panel;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        private static EnemyLootBag FindClosestLootBagInRange(Vector3 playerPosition)
+        {
+            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            EnemyLootBag best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < bags.Length; i++)
+            {
+                EnemyLootBag bag = bags[i];
+                if (bag == null || !bag.CanPlayerLoot(playerPosition))
+                    continue;
+
+                float distance = Vector3.Distance(playerPosition, bag.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                best = bag;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
     }
 }

@@ -132,6 +132,7 @@ namespace Project.EditorTools
             {
                 hierarchyPath = GetHierarchyPath(transform),
                 activeSelf = transform.gameObject.activeSelf,
+                hasRectTransform = transform is RectTransform,
                 localPosition = transform.localPosition,
                 localRotation = transform.localRotation,
                 localScale = transform.localScale,
@@ -294,19 +295,27 @@ namespace Project.EditorTools
             Transform transform = target.transform;
 
             Undo.RecordObject(transform, "Apply Play Mode Transform");
-            if (transform.localPosition != snapshot.localPosition)
+            if (!snapshot.hasRectTransform)
             {
-                transform.localPosition = snapshot.localPosition;
-                changed = true;
-            }
+                if (transform.localPosition != snapshot.localPosition)
+                {
+                    transform.localPosition = snapshot.localPosition;
+                    changed = true;
+                }
 
-            if (transform.localRotation != snapshot.localRotation)
-            {
-                transform.localRotation = snapshot.localRotation;
-                changed = true;
-            }
+                if (transform.localRotation != snapshot.localRotation)
+                {
+                    transform.localRotation = snapshot.localRotation;
+                    changed = true;
+                }
 
-            if (transform.localScale != snapshot.localScale)
+                if (transform.localScale != snapshot.localScale)
+                {
+                    transform.localScale = snapshot.localScale;
+                    changed = true;
+                }
+            }
+            else if (transform.localScale != snapshot.localScale)
             {
                 transform.localScale = snapshot.localScale;
                 changed = true;
@@ -444,6 +453,24 @@ namespace Project.EditorTools
                     Rect rect = property.rectValue;
                     value = $"{rect.x},{rect.y},{rect.width},{rect.height}";
                     return true;
+                case SerializedPropertyType.ObjectReference:
+                {
+                    UnityEngine.Object reference = property.objectReferenceValue;
+                    if (reference == null)
+                    {
+                        value = string.Empty;
+                        return true;
+                    }
+
+                    string assetPath = AssetDatabase.GetAssetPath(reference);
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        value = "asset:" + assetPath + "|" + reference.GetType().AssemblyQualifiedName;
+                        return true;
+                    }
+
+                    return false;
+                }
                 case SerializedPropertyType.Bounds:
                     Bounds bounds = property.boundsValue;
                     value = $"{bounds.center.x},{bounds.center.y},{bounds.center.z}|{bounds.size.x},{bounds.size.y},{bounds.size.z}";
@@ -556,6 +583,34 @@ namespace Project.EditorTools
                         return false;
                     property.rectValue = rect;
                     return true;
+                case SerializedPropertyType.ObjectReference:
+                {
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        if (property.objectReferenceValue == null)
+                            return false;
+                        property.objectReferenceValue = null;
+                        return true;
+                    }
+
+                    if (!value.StartsWith("asset:", StringComparison.Ordinal))
+                        return false;
+
+                    string payload = value.Substring("asset:".Length);
+                    int typeSeparator = payload.LastIndexOf('|');
+                    if (typeSeparator <= 0)
+                        return false;
+
+                    string assetPath = payload.Substring(0, typeSeparator);
+                    string typeName = payload.Substring(typeSeparator + 1);
+                    Type referenceType = Type.GetType(typeName) ?? typeof(UnityEngine.Object);
+                    UnityEngine.Object loaded = AssetDatabase.LoadAssetAtPath(assetPath, referenceType);
+                    if (loaded == null || property.objectReferenceValue == loaded)
+                        return false;
+
+                    property.objectReferenceValue = loaded;
+                    return true;
+                }
                 case SerializedPropertyType.Bounds:
                 {
                     string[] boundsGroups = value.Split('|');
@@ -642,6 +697,7 @@ namespace Project.EditorTools
         {
             public string hierarchyPath;
             public bool activeSelf;
+            public bool hasRectTransform;
             public Vector3 localPosition;
             public Quaternion localRotation;
             public Vector3 localScale;

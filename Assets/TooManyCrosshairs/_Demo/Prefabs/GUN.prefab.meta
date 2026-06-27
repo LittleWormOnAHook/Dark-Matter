@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 8ab8c9d1437b06442a9344130fab5ac7
+timeCreated: 1534067134
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/_Demo/Prefabs/GUN.prefab
+  uploadId: 496396

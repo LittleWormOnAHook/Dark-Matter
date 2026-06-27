@@ -13,6 +13,7 @@ namespace Project.UI
         private TextMeshProUGUI label;
         private Coroutine activeRoutine;
         private Transform canvasRoot;
+        private Vector2 restAnchoredPosition;
 
         public static PickupToastUI EnsureExists(Transform canvasRootTransform)
         {
@@ -44,11 +45,12 @@ namespace Project.UI
             canvasRoot = canvasRootTransform;
 
             toastRect = transform as RectTransform;
-            toastRect.anchorMin = new Vector2(0.5f, 0.5f);
-            toastRect.anchorMax = new Vector2(0.5f, 0.5f);
-            toastRect.pivot = new Vector2(0.5f, 0.5f);
-            toastRect.anchoredPosition = Vector2.zero;
-            toastRect.sizeDelta = new Vector2(520f, 48f);
+            toastRect.anchorMin = new Vector2(1f, 1f);
+            toastRect.anchorMax = new Vector2(1f, 1f);
+            toastRect.pivot = new Vector2(1f, 1f);
+            restAnchoredPosition = GameplayHudLayout.PickupToastAnchoredPosition;
+            toastRect.anchoredPosition = restAnchoredPosition;
+            toastRect.sizeDelta = new Vector2(GameplayHudLayout.ToastWidth, 48f);
 
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0f;
@@ -68,20 +70,30 @@ namespace Project.UI
                 label.color = Color.white;
             }
 
-            label.fontSize = 33f;
-            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = 24f;
+            label.alignment = TextAlignmentOptions.TopRight;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
         }
 
         private void Present(string message)
         {
+            ApplyToastAnchor();
             label.text = message;
             if (activeRoutine != null)
                 StopCoroutine(activeRoutine);
 
             activeRoutine = StartCoroutine(AnimateToast());
             UiFrontLayer.ReparentToFront(transform, canvasRoot);
+        }
+
+        private void ApplyToastAnchor()
+        {
+            restAnchoredPosition = GameplayHudLayout.PickupToastAnchoredPosition;
+            toastRect.anchorMin = new Vector2(1f, 1f);
+            toastRect.anchorMax = new Vector2(1f, 1f);
+            toastRect.pivot = new Vector2(1f, 1f);
+            toastRect.anchoredPosition = restAnchoredPosition;
         }
 
         private IEnumerator AnimateToast()
@@ -91,7 +103,8 @@ namespace Project.UI
             const float fadeOutDuration = 0.35f;
             const float slideDistance = 36f;
 
-            toastRect.anchoredPosition = new Vector2(0f, -slideDistance);
+            Vector2 startPosition = restAnchoredPosition + new Vector2(slideDistance, 0f);
+            toastRect.anchoredPosition = startPosition;
             canvasGroup.alpha = 0f;
 
             float elapsed = 0f;
@@ -100,12 +113,12 @@ namespace Project.UI
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / slideInDuration);
                 float eased = 1f - Mathf.Pow(1f - t, 3f);
-                toastRect.anchoredPosition = new Vector2(0f, Mathf.Lerp(-slideDistance, 0f, eased));
+                toastRect.anchoredPosition = Vector2.Lerp(startPosition, restAnchoredPosition, eased);
                 canvasGroup.alpha = eased;
                 yield return null;
             }
 
-            toastRect.anchoredPosition = Vector2.zero;
+            toastRect.anchoredPosition = restAnchoredPosition;
             canvasGroup.alpha = 1f;
             yield return new WaitForSecondsRealtime(holdDuration);
 
@@ -115,7 +128,7 @@ namespace Project.UI
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / fadeOutDuration);
                 canvasGroup.alpha = 1f - t;
-                toastRect.anchoredPosition = new Vector2(0f, t * 12f);
+                toastRect.anchoredPosition = restAnchoredPosition + new Vector2(t * 12f, 0f);
                 yield return null;
             }
 

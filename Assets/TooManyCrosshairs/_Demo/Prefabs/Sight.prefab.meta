@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e321a4f200a451f45949c1555f8dd41e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 126069
+  packageName: Too Many Crosshairs
+  packageVersion: 1.5
+  assetPath: Assets/TooManyCrosshairs/_Demo/Prefabs/Sight.prefab
+  uploadId: 496396

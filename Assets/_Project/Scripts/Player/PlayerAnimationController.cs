@@ -16,11 +16,15 @@ namespace Project.Player
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int JumpLeg = Animator.StringToHash("JumpLeg");
 
+        [SerializeField] private float locomotionSmoothTime = 0.12f;
+
         private Character _character;
+        private CombatFocusController _combatFocus;
 
         private void Awake()
         {
             _character = GetComponentInParent<Character>();
+            _combatFocus = GetComponentInParent<CombatFocusController>();
         }
 
         private void Update()
@@ -31,26 +35,43 @@ namespace Project.Player
             if (animator == null) return;
 
             float deltaTime = Time.deltaTime;
+            bool isMoving = _character.GetSpeed() > 0.15f;
             bool isPickingUp = animator.GetCurrentAnimatorStateInfo(0).IsName("Pickup");
-            bool isAttacking = animator.GetCurrentAnimatorStateInfo(0).IsTag("Attack");
 
-            if (isPickingUp && _character.GetSpeed() > 0.15f)
-            {
-                animator.CrossFadeInFixedTime("Grounded", 0.15f);
+            if (isPickingUp && isMoving)
+                animator.CrossFadeInFixedTime(PlayerCombatAnimationLayer.GroundedStateName, 0.15f);
+            else if (isPickingUp)
                 return;
+
+            if (!PlayerCombatAnimationLayer.IsUpperBodyAttackPlaying(animator))
+                PlayerCombatAnimationLayer.EnsureBaseLocomotionState(animator, _character.IsGrounded());
+
+            Vector3 worldMove = _character.GetMovementDirection();
+            if (worldMove.sqrMagnitude < 0.0001f)
+            {
+                Vector3 velocity = _character.GetVelocity();
+                velocity.y = 0f;
+                if (velocity.sqrMagnitude > 0.01f)
+                    worldMove = velocity;
             }
 
-            if (isPickingUp || isAttacking)
-                return;
+            Transform moveReference = transform;
+            if (_combatFocus != null && _combatFocus.IsLocked && _character.cameraTransform != null)
+                moveReference = _character.cameraTransform;
 
-            Vector3 move = transform.InverseTransformDirection(_character.GetMovementDirection());
+            Vector3 localMove = worldMove.sqrMagnitude > 0.0001f
+                ? moveReference.InverseTransformDirection(worldMove).normalized
+                : Vector3.zero;
 
-            float forwardAmount = _character.useRootMotion && _character.GetRootMotionController()
-                ? move.z
+            float speedNorm = _character.useRootMotion && _character.GetRootMotionController()
+                ? new Vector2(localMove.x, localMove.z).magnitude
                 : Mathf.InverseLerp(0f, _character.GetMaxSpeed(), _character.GetSpeed());
 
-            animator.SetFloat(Forward, forwardAmount, 0.1f, deltaTime);
-            animator.SetFloat(Turn, Mathf.Atan2(move.x, move.z), 0.1f, deltaTime);
+            float forwardAmount = localMove.z * speedNorm;
+            float turnAmount = localMove.x * speedNorm;
+
+            animator.SetFloat(Forward, forwardAmount, locomotionSmoothTime, deltaTime);
+            animator.SetFloat(Turn, turnAmount, locomotionSmoothTime, deltaTime);
             animator.SetBool(Ground, _character.IsGrounded());
             animator.SetBool(Crouch, _character.IsCrouched());
 

@@ -43,7 +43,7 @@ namespace Project.AI
 
         [Header("Health Bar")]
         public bool showFloatingHealthBar = true;
-        public bool hideHealthBarUntilDamaged;
+        public bool hideHealthBarUntilDamaged = true;
         public Vector3 healthBarOffset = new Vector3(0f, 2f, 0f);
 
         [Header("Senses")]
@@ -113,6 +113,9 @@ namespace Project.AI
 
         [Header("Loot")]
         public bool enableLoot = true;
+
+        [Header("Loot AC")]
+        [Tooltip("Aether Credits (AC) range dropped by this enemy.")]
         public int piCoinsMin = 1;
         public int piCoinsMax = 5;
         public int randomLootCountMin = 0;

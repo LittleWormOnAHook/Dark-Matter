@@ -19,6 +19,7 @@ namespace Project.UI
     public class MainMenuController : MonoBehaviour
     {
         private const float MenuScale = 1f;
+        private static readonly Color MenuBackgroundColor = new Color(0.039f, 0.055f, 0.078f, 1f);
 
         [SerializeField] private bool buildOnAwake = true;
 
@@ -27,23 +28,27 @@ namespace Project.UI
         private SettingsPanelController settingsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
         private MainMenuWalletPanelController walletPanel;
+        private MainMenuWalletPreviewWidget walletPreview;
+        private MainMenuEnvironmentStatusBar environmentStatusBar;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
 
         private Button newGameButton;
         private Button resumeButton;
-        private Button saveGameButton;
-        private Button loadGameButton;
+        private Button saveLoadButton;
+        private Button walletButton;
         private Button settingsButton;
         private Button exitButton;
-        private Toggle mapSystemToggle;
         private TextMeshProUGUI menuMessageLabel;
         private bool pauseOverlayActive;
         private Texture2D pendingSaveScreenshot;
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!buildOnAwake)
                 return;
 
@@ -76,6 +81,10 @@ namespace Project.UI
             if (walletPanel != null && walletPanel.IsSwapPanelOpen)
                 return;
 
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return;
+
             if (pauseOverlayActive)
                 ResumeFromPause();
             else
@@ -85,11 +94,17 @@ namespace Project.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
+            if (!Application.isPlaying)
+                return;
+
             EnsureExists();
         }
 
         public static void EnsureExists()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (FindAnyObjectByType<MainMenuController>() != null)
                 return;
 
@@ -159,72 +174,24 @@ namespace Project.UI
 
             EnsureGraphicRaycaster(canvas);
 
-            menuBackground = MenuUiBuilder.CreateFullScreenPanel(canvasRoot, "MainMenuBackground", Color.black, blockRaycasts: false);
+            menuBackground = MenuUiBuilder.CreateFullScreenPanel(canvasRoot, "MainMenuBackground", MenuBackgroundColor, blockRaycasts: false);
 
-            menuPanel = new GameObject("MainMenuPanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-            menuPanel.transform.SetParent(canvasRoot, false);
+            menuPanel = MenuUiBuilder.CreateFullScreenPanel(canvasRoot, "MainMenuPanel", new Color(0f, 0f, 0f, 0.001f), blockRaycasts: true);
 
-            Image panelImage = menuPanel.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(panelImage);
-            panelImage.color = new Color(0.05f, 0.05f, 0.07f, 0.94f);
-            panelImage.raycastTarget = true;
-
-            RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(360f * MenuScale, 640f * MenuScale);
-
-            VerticalLayoutGroup layout = menuPanel.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(
-                Mathf.RoundToInt(20f * MenuScale),
-                Mathf.RoundToInt(20f * MenuScale),
-                Mathf.RoundToInt(20f * MenuScale),
-                Mathf.RoundToInt(20f * MenuScale));
-            layout.spacing = Mathf.RoundToInt(20f * MenuScale);
-            layout.childAlignment = TextAnchor.UpperCenter;
-            layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-
-            MenuUiBuilder.CreateTitle(menuPanel.transform, "Survival Pioneer", 32f * MenuScale);
-
-            TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(menuPanel.transform, "Pi Network Survival", 15f * MenuScale);
-            subtitle.color = new Color(0.75f, 0.75f, 0.75f, 1f);
+            BuildTitleBlock(menuPanel.transform);
+            BuildButtonColumn(menuPanel.transform);
+            BuildVersionLabel(menuPanel.transform);
 
             walletPanel = gameObject.AddComponent<MainMenuWalletPanelController>();
-            walletPanel.Build(menuPanel.transform);
+            walletPanel.Build(canvasRoot);
 
-            mapSystemToggle = MenuUiBuilder.CreateToggleRow(menuPanel.transform, "Map System", GameSettings.MapSystemEnabled);
-            mapSystemToggle.onValueChanged.AddListener(value =>
-            {
-                GameSettings.SetMapSystemEnabled(value);
-                GameSettings.Save();
-                MapUI.ApplyMapSystemEnabled(value);
-            });
+            walletPreview = menuPanel.AddComponent<MainMenuWalletPreviewWidget>();
+            walletPreview.Build(menuPanel.transform);
 
-            Vector2 buttonSize = new Vector2(240f * MenuScale, 44f * MenuScale);
-            float buttonFontSize = 20f * MenuScale;
+            environmentStatusBar = menuPanel.AddComponent<MainMenuEnvironmentStatusBar>();
+            environmentStatusBar.Build(menuPanel.transform);
 
-            newGameButton = MenuUiBuilder.CreateButton(menuPanel.transform, "New Game", buttonSize, buttonFontSize);
-            resumeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Resume", buttonSize, buttonFontSize);
-            saveGameButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Save Game", buttonSize, buttonFontSize);
-            loadGameButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Load Game", buttonSize, buttonFontSize);
-            settingsButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Settings", buttonSize, buttonFontSize);
-            exitButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Exit", buttonSize, buttonFontSize);
-
-            newGameButton.onClick.AddListener(StartNewGame);
-            resumeButton.onClick.AddListener(ResumeFromPause);
-            saveGameButton.onClick.AddListener(SaveGame);
-            loadGameButton.onClick.AddListener(LoadGame);
-            settingsButton.onClick.AddListener(OpenSettings);
-            exitButton.onClick.AddListener(ExitGame);
-
-            resumeButton.gameObject.SetActive(false);
-
-            menuMessageLabel = MenuUiBuilder.CreateTitle(menuPanel.transform, string.Empty, 16f * MenuScale);
-            menuMessageLabel.color = new Color(0.85f, 0.68f, 0.18f, 1f);
-            menuMessageLabel.gameObject.SetActive(false);
+            menuMessageLabel = CreateAnchoredMessageLabel(menuPanel.transform);
 
             settingsPanel = gameObject.AddComponent<SettingsPanelController>();
             settingsPanel.Build(canvasRoot);
@@ -233,6 +200,105 @@ namespace Project.UI
             saveSlotsPanel.Build(canvasRoot, this);
 
             RefreshMenuButtonStates();
+        }
+
+        private void BuildTitleBlock(Transform parent)
+        {
+            GameObject titleBlock = new GameObject("TitleBlock", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            titleBlock.transform.SetParent(parent, false);
+            RectTransform titleRect = titleBlock.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(0f, 1f);
+            titleRect.pivot = new Vector2(0f, 1f);
+            titleRect.anchoredPosition = new Vector2(48f, -48f);
+            titleRect.sizeDelta = new Vector2(520f, 120f);
+
+            VerticalLayoutGroup layout = titleBlock.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childAlignment = TextAnchor.UpperLeft;
+
+            TextMeshProUGUI title = MenuUiBuilder.CreateTitle(titleBlock.transform, "PIONEER SURVIVORS 2160", 34f * MenuScale);
+            title.alignment = TextAlignmentOptions.TopLeft;
+
+            TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(titleBlock.transform, "IO // JUPITER SYSTEM", 16f * MenuScale);
+            subtitle.alignment = TextAlignmentOptions.TopLeft;
+            subtitle.color = new Color(0.62f, 0.72f, 0.82f, 0.95f);
+        }
+
+        private void BuildButtonColumn(Transform parent)
+        {
+            GameObject column = new GameObject("MenuButtonColumn", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            column.transform.SetParent(parent, false);
+            RectTransform columnRect = column.GetComponent<RectTransform>();
+            columnRect.anchorMin = new Vector2(0f, 0.5f);
+            columnRect.anchorMax = new Vector2(0f, 0.5f);
+            columnRect.pivot = new Vector2(0f, 0.5f);
+            columnRect.anchoredPosition = new Vector2(72f, 0f);
+            columnRect.sizeDelta = new Vector2(280f, 420f);
+
+            VerticalLayoutGroup layout = column.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = Mathf.RoundToInt(14f * MenuScale);
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = false;
+            layout.childForceExpandWidth = false;
+
+            Vector2 buttonSize = new Vector2(260f * MenuScale, 48f * MenuScale);
+            float buttonFontSize = 20f * MenuScale;
+
+            resumeButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Continue", buttonSize, buttonFontSize);
+            newGameButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "New Expedition", buttonSize, buttonFontSize);
+            walletButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Wallet", buttonSize, buttonFontSize);
+            saveLoadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save / Load", buttonSize, buttonFontSize);
+            settingsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Settings", buttonSize, buttonFontSize);
+            exitButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Quit", buttonSize, buttonFontSize);
+
+            resumeButton.onClick.AddListener(ResumeFromPause);
+            newGameButton.onClick.AddListener(StartNewGame);
+            walletButton.onClick.AddListener(OpenWallet);
+            saveLoadButton.onClick.AddListener(OpenSaveLoad);
+            settingsButton.onClick.AddListener(OpenSettings);
+            exitButton.onClick.AddListener(ExitGame);
+
+            resumeButton.gameObject.SetActive(false);
+        }
+
+        private static TextMeshProUGUI CreateAnchoredMessageLabel(Transform parent)
+        {
+            GameObject messageObject = new GameObject("MenuMessage", typeof(RectTransform));
+            messageObject.transform.SetParent(parent, false);
+            RectTransform rect = messageObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(72f, -260f);
+            rect.sizeDelta = new Vector2(420f, 48f);
+
+            TextMeshProUGUI label = messageObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.fontSize = 16f * MenuScale;
+            label.color = new Color(0.85f, 0.68f, 0.18f, 1f);
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.gameObject.SetActive(false);
+            return label;
+        }
+
+        private void BuildVersionLabel(Transform parent)
+        {
+            GameObject versionObject = new GameObject("VersionLabel", typeof(RectTransform));
+            versionObject.transform.SetParent(parent, false);
+            RectTransform rect = versionObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 0f);
+            rect.anchoredPosition = new Vector2(24f, 24f);
+            rect.sizeDelta = new Vector2(120f, 24f);
+
+            TextMeshProUGUI label = versionObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.text = "v0.1";
+            label.fontSize = 14f;
+            label.color = new Color(0.55f, 0.62f, 0.72f, 0.85f);
+            label.alignment = TextAlignmentOptions.BottomLeft;
         }
 
         public void ShowMainMenu()
@@ -253,11 +319,8 @@ namespace Project.UI
 
             ResolveStartPopup()?.HidePopup();
 
-            walletPanel?.Refresh();
+            walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
-
-            if (mapSystemToggle != null)
-                mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
 
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
@@ -284,10 +347,8 @@ namespace Project.UI
             saveSlotsPanel?.Close();
             walletPanel?.CloseSwapPanel();
             ClearMenuMessage();
-            walletPanel?.Refresh();
+            walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
-            if (mapSystemToggle != null)
-                mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
@@ -307,10 +368,8 @@ namespace Project.UI
                 newGameButton.gameObject.SetActive(!pauseOverlayActive);
             if (resumeButton != null)
                 resumeButton.gameObject.SetActive(pauseOverlayActive);
-            if (saveGameButton != null)
-                saveGameButton.interactable = GameSession.HasStarted;
-            if (loadGameButton != null)
-                loadGameButton.interactable = GameSaveSystem.HasAnySaveFile;
+            if (saveLoadButton != null)
+                saveLoadButton.interactable = pauseOverlayActive || GameSaveSystem.HasAnySaveFile;
         }
 
         public void SaveToSlot(int slotIndex)
@@ -326,8 +385,6 @@ namespace Project.UI
             {
                 ClearPendingSaveScreenshot();
                 saveSlotsPanel?.Close();
-                if (loadGameButton != null)
-                    loadGameButton.interactable = true;
                 ShowMenuMessage(message);
             }
             else
@@ -417,13 +474,7 @@ namespace Project.UI
 
         private void ReleaseGameplayInputCapture()
         {
-            if (playerInput == null)
-                playerInput = FindAnyObjectByType<PlayerInput>();
-            if (playerInput != null)
-                playerInput.enabled = true;
-
-            FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
-            PlayerLocator.FindPlayerController()?.EnsureGameplayInputReady();
+            GameplayInputRecovery.ReleaseAllInputCapture();
         }
 
         private void OpenSettings()
@@ -431,15 +482,26 @@ namespace Project.UI
             settingsPanel?.Open();
         }
 
-        private void SaveGame()
+        private void OpenWallet()
         {
-            if (!GameSession.HasStarted)
+            walletPanel?.OpenWalletPanel();
+        }
+
+        private void OpenSaveLoad()
+        {
+            if (pauseOverlayActive && GameSession.HasStarted)
             {
-                ShowMenuMessage("Start a game before saving.");
+                StartCoroutine(OpenSaveSlotsWithScreenshot());
                 return;
             }
 
-            StartCoroutine(OpenSaveSlotsWithScreenshot());
+            if (!GameSaveSystem.HasAnySaveFile)
+            {
+                ShowMenuMessage("No save files found.");
+                return;
+            }
+
+            saveSlotsPanel?.Open(SaveSlotsPanelController.Mode.Load);
         }
 
         private IEnumerator OpenSaveSlotsWithScreenshot()
@@ -464,17 +526,6 @@ namespace Project.UI
                 menuPanel.SetActive(true);
 
             saveSlotsPanel?.Open(SaveSlotsPanelController.Mode.Save);
-        }
-
-        private void LoadGame()
-        {
-            if (!GameSaveSystem.HasAnySaveFile)
-            {
-                ShowMenuMessage("No save files found.");
-                return;
-            }
-
-            saveSlotsPanel?.Open(SaveSlotsPanelController.Mode.Load);
         }
 
         private void ExitGame()
@@ -545,7 +596,7 @@ namespace Project.UI
             hiddenCanvasRoots.Clear();
             InventoryUI.CloseAnyOpenInventory();
             JournalPanelUI.CloseAnyOpenJournal();
-            ToolBarUI.ApplyGameplayVisibility();
+            GameplayHudVisibility.SetGameplayHudVisible(true);
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
         }
 

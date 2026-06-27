@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef8affb8725ad014ca7ff8200bd941c4, type: 3}
+  m_Name: UiLayoutProfile_inventory_panel
+  m_EditorClassIdentifier: Assembly-CSharp::Project.UI.UiLayoutProfile
+  panelId: inventory_panel
+  nodes:
+  - relativePath: 
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: -29.13, y: -30}
+    offsetMin: {x: 14.565, y: 15}
+    offsetMax: {x: -14.565, y: -15}
+    localScale: {x: 1, y: 1, z: 1}
+    activeSelf: 1
+    hasImageStyle: 1
+    imageSprite: {fileID: 21300000, guid: 465cd841017ec5b42b92b8b90e5094f1, type: 3}
+    imageColor: {r: 1, g: 0.64005435, b: 0, a: 1}
+    imagePreserveAspect: 0
+    imageType: 1
+    hasRawImageStyle: 0
+    rawTexture: {fileID: 0}
+    rawImageColor: {r: 1, g: 1, b: 1, a: 1}
+    hasLayoutElement: 1
+    layoutMinWidth: -1
+    layoutMinHeight: -1
+    layoutPreferredWidth: -1
+    layoutPreferredHeight: -1
+    layoutFlexibleWidth: -1
+    layoutFlexibleHeight: -1
+    hasGridLayout: 0
+    gridCellSize: {x: 64, y: 64}
+    gridSpacing: {x: 8, y: 8}
+    gridPaddingLeft: 0
+    gridPaddingRight: 0
+    gridPaddingTop: 0
+    gridPaddingBottom: 0
+    gridConstraint: 0
+    gridConstraintCount: 1
+    gridStartCorner: 0
+    gridStartAxis: 0
+    gridChildAlignment: 0
+  - relativePath: MainInventoryGrid
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: -24, y: -24}
+    offsetMin: {x: 12, y: 12}
+    offsetMax: {x: -12, y: -12}
+    localScale: {x: 1, y: 1, z: 1}
+    activeSelf: 1
+    hasImageStyle: 1
+    imageSprite: {fileID: 21300000, guid: b3486bd401291a246b3037077d083acf, type: 3}
+    imageColor: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 1}
+    imagePreserveAspect: 0
+    imageType: 1
+    hasRawImageStyle: 0
+    rawTexture: {fileID: 0}
+    rawImageColor: {r: 1, g: 1, b: 1, a: 1}
+    hasLayoutElement: 0
+    layoutMinWidth: -1
+    layoutMinHeight: -1
+    layoutPreferredWidth: -1
+    layoutPreferredHeight: -1
+    layoutFlexibleWidth: -1
+    layoutFlexibleHeight: -1
+    hasGridLayout: 1
+    gridCellSize: {x: 80, y: 80}
+    gridSpacing: {x: 9, y: 9}
+    gridPaddingLeft: 0
+    gridPaddingRight: 0
+    gridPaddingTop: 40
+    gridPaddingBottom: 0
+    gridConstraint: 1
+    gridConstraintCount: 10
+    gridStartCorner: 0
+    gridStartAxis: 0
+    gridChildAlignment: 1

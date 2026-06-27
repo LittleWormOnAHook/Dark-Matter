@@ -46,9 +46,9 @@ MonoBehaviour:
   opticsMinZoomFov: 18
   opticsMaxZoomFov: 55
   healthRestore: 0
-  hungerRestore: 35
-  thirstRestore: 0
-  energyRestore: 15
+  energyRestore: 35
+  staminaRestore: 15
+  oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
-  tooltipDescription: A warm grilled mushroom. Restores hunger and energy.
+  tooltipDescription: A warm grilled mushroom. Restores energy and stamina.

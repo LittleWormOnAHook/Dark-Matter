@@ -10,6 +10,7 @@ namespace Project.AI
         [SerializeField] private string[] idleStateNames = { "Idle01" };
         [SerializeField] private string walkStateName = "Walk";
         [SerializeField] private string runStateName = "Run";
+        [SerializeField] private string locomotionBlendStateName = "Locomotion";
         [SerializeField] private string[] attackStateNames = { "Attack01" };
         [SerializeField] private string[] hitStateNames = { "Hit01" };
         [SerializeField] private string deathStateName = "Death";
@@ -18,6 +19,7 @@ namespace Project.AI
         [SerializeField] private float crossFadeDuration = 0.12f;
         [SerializeField] private float walkSpeedThreshold = 0.05f;
         [SerializeField] private float runSpeedThreshold = 3.2f;
+        [SerializeField] private float locomotionSmoothTime = 0.12f;
         [SerializeField] private float idleSwapMin = 4f;
         [SerializeField] private float idleSwapMax = 8f;
         [SerializeField] private bool lockVisualRootPosition;
@@ -35,6 +37,10 @@ namespace Project.AI
         private int currentIdleIndex;
         private int nextAttackIndex;
         private string currentLocomotionState;
+        private bool useDirectionalLocomotion;
+
+        private static readonly int ForwardHash = Animator.StringToHash("Forward");
+        private static readonly int TurnHash = Animator.StringToHash("Turn");
 
         private void Awake()
         {
@@ -46,6 +52,10 @@ namespace Project.AI
             health = GetComponent<EnemyHealth>();
             combat = GetComponent<EnemyCombat>();
             CacheVisualRoot();
+            useDirectionalLocomotion = HasAnimatorParameter(animator, "Forward") &&
+                                       HasAnimatorParameter(animator, "Turn") &&
+                                       !string.IsNullOrWhiteSpace(locomotionBlendStateName) &&
+                                       animator.HasState(0, Animator.StringToHash(locomotionBlendStateName));
         }
 
         private void OnEnable()
@@ -195,6 +205,12 @@ namespace Project.AI
             if (combat != null && combat.IsAttacking)
                 return;
 
+            if (useDirectionalLocomotion)
+            {
+                UpdateDirectionalLocomotion();
+                return;
+            }
+
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
             if (IsTransientState(stateInfo) && stateInfo.normalizedTime < 0.95f)
                 return;
@@ -218,6 +234,9 @@ namespace Project.AI
 
         private void UpdateReturnToIdle()
         {
+            if (useDirectionalLocomotion)
+                return;
+
             if (combat != null && combat.IsAttacking)
                 return;
 
@@ -230,6 +249,9 @@ namespace Project.AI
 
         private void UpdateIdleVariation()
         {
+            if (useDirectionalLocomotion)
+                return;
+
             if (combat != null && combat.IsAttacking)
                 return;
 
@@ -266,6 +288,50 @@ namespace Project.AI
         private void OnDied()
         {
             PlayDeath();
+        }
+
+        private void UpdateDirectionalLocomotion()
+        {
+            float speed = ai != null ? ai.CurrentLocomotionSpeed : 0f;
+            Vector3 localMove = ai != null ? ai.CurrentLocalMoveDirection : Vector3.zero;
+            if (localMove.sqrMagnitude > 0.0001f)
+                localMove.Normalize();
+
+            float speedNorm = speed <= walkSpeedThreshold
+                ? 0f
+                : speed >= runSpeedThreshold
+                    ? 1f
+                    : Mathf.InverseLerp(walkSpeedThreshold, runSpeedThreshold, speed);
+
+            animator.SetFloat(ForwardHash, localMove.z * speedNorm, locomotionSmoothTime, Time.deltaTime);
+            animator.SetFloat(TurnHash, localMove.x * speedNorm, locomotionSmoothTime, Time.deltaTime);
+
+            if (speedNorm <= 0.001f)
+            {
+                if (currentLocomotionState != null)
+                {
+                    currentLocomotionState = null;
+                    PlayIdle();
+                }
+
+                return;
+            }
+
+            PlayLocomotionState(locomotionBlendStateName);
+        }
+
+        private static bool HasAnimatorParameter(Animator targetAnimator, string parameterName)
+        {
+            if (targetAnimator == null)
+                return false;
+
+            foreach (AnimatorControllerParameter parameter in targetAnimator.parameters)
+            {
+                if (parameter.name == parameterName)
+                    return true;
+            }
+
+            return false;
         }
 
         private void PlayLocomotionOrIdle()

@@ -581,15 +581,76 @@ namespace Project.UI
             out Button closeButton)
         {
             GameObject shell = CreateFullScreenPanel(parent, title + "Shell", new Color(0.05f, 0.06f, 0.09f, 0.98f), blockRaycasts: true);
-            RectTransform shellRect = shell.GetComponent<RectTransform>();
+            BuildModalShellInterior(shell.transform, title, FullscreenUiWindow.HeaderHeight, 26f, out contentArea, out closeButton);
+            return shell;
+        }
 
+        public static GameObject CreateCenteredModalShell(
+            Transform parent,
+            string title,
+            Vector2 size,
+            out RectTransform contentArea,
+            out Button closeButton)
+        {
+            GameObject shell = new GameObject(title + "Shell", typeof(RectTransform), typeof(Image));
+            shell.transform.SetParent(parent, false);
+
+            Image shellBg = shell.GetComponent<Image>();
+            ApplyUiSprite(shellBg);
+            shellBg.color = new Color(0.05f, 0.06f, 0.09f, 0.98f);
+            shellBg.raycastTarget = true;
+
+            ApplyCenteredModalShellLayout(shell, size);
+            BuildModalShellInterior(shell.transform, title, GameplayHudLayout.ModalHeaderHeight, 22f, out contentArea, out closeButton);
+            return shell;
+        }
+
+        public static void ApplyCenteredModalShellLayout(GameObject shell, Vector2 size)
+        {
+            if (shell == null)
+                return;
+
+            RectTransform shellRect = shell.GetComponent<RectTransform>();
+            shellRect.anchorMin = new Vector2(0.5f, 0.5f);
+            shellRect.anchorMax = new Vector2(0.5f, 0.5f);
+            shellRect.pivot = new Vector2(0.5f, 0.5f);
+            shellRect.sizeDelta = size;
+            shellRect.anchoredPosition = Vector2.zero;
+
+            Transform content = shell.transform.Find("Content");
+            if (content is RectTransform contentRect)
+            {
+                contentRect.anchorMin = Vector2.zero;
+                contentRect.anchorMax = Vector2.one;
+                contentRect.offsetMin = Vector2.zero;
+                contentRect.offsetMax = new Vector2(0f, -GameplayHudLayout.ModalHeaderHeight);
+            }
+
+            Transform header = shell.transform.Find("Header");
+            if (header is RectTransform headerRect)
+            {
+                headerRect.anchorMin = new Vector2(0f, 1f);
+                headerRect.anchorMax = new Vector2(1f, 1f);
+                headerRect.pivot = new Vector2(0.5f, 1f);
+                headerRect.sizeDelta = new Vector2(0f, GameplayHudLayout.ModalHeaderHeight);
+            }
+        }
+
+        private static void BuildModalShellInterior(
+            Transform shellTransform,
+            string title,
+            float headerHeight,
+            float titleFontSize,
+            out RectTransform contentArea,
+            out Button closeButton)
+        {
             GameObject header = new GameObject("Header", typeof(RectTransform), typeof(Image));
-            header.transform.SetParent(shell.transform, false);
+            header.transform.SetParent(shellTransform, false);
             RectTransform headerRect = header.GetComponent<RectTransform>();
             headerRect.anchorMin = new Vector2(0f, 1f);
             headerRect.anchorMax = new Vector2(1f, 1f);
             headerRect.pivot = new Vector2(0.5f, 1f);
-            headerRect.sizeDelta = new Vector2(0f, FullscreenUiWindow.HeaderHeight);
+            headerRect.sizeDelta = new Vector2(0f, headerHeight);
 
             Image headerBg = header.GetComponent<Image>();
             ApplyUiSprite(headerBg);
@@ -603,34 +664,32 @@ namespace Project.UI
             if (theme != null)
                 theme.ApplyFont(titleText, bold: true);
             titleText.text = title;
-            titleText.fontSize = 26f;
+            titleText.fontSize = titleFontSize;
             titleText.fontStyle = FontStyles.Bold;
             titleText.color = Color.white;
-            titleText.alignment = TextAlignmentOptions.MidlineLeft;
+            titleText.alignment = TextAlignmentOptions.TopLeft;
             titleText.raycastTarget = false;
 
             RectTransform titleRect = titleObject.GetComponent<RectTransform>();
-            titleRect.anchorMin = Vector2.zero;
-            titleRect.anchorMax = Vector2.one;
-            titleRect.offsetMin = new Vector2(20f, 0f);
-            titleRect.offsetMax = new Vector2(-56f, 0f);
+            titleRect.anchorMin = new Vector2(0f, 0f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.offsetMin = new Vector2(16f, 6f);
+            titleRect.offsetMax = new Vector2(-48f, -6f);
 
-            closeButton = CreateCircleCloseButton(header.transform, 32f);
+            closeButton = CreateCircleCloseButton(header.transform, 28f);
             RectTransform closeRect = closeButton.GetComponent<RectTransform>();
             closeRect.anchorMin = new Vector2(1f, 0.5f);
             closeRect.anchorMax = new Vector2(1f, 0.5f);
             closeRect.pivot = new Vector2(1f, 0.5f);
-            closeRect.anchoredPosition = new Vector2(-16f, 0f);
+            closeRect.anchoredPosition = new Vector2(-12f, 0f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform));
-            content.transform.SetParent(shell.transform, false);
+            content.transform.SetParent(shellTransform, false);
             contentArea = content.GetComponent<RectTransform>();
             contentArea.anchorMin = Vector2.zero;
             contentArea.anchorMax = Vector2.one;
             contentArea.offsetMin = Vector2.zero;
-            contentArea.offsetMax = new Vector2(0f, -FullscreenUiWindow.HeaderHeight);
-
-            return shell;
+            contentArea.offsetMax = new Vector2(0f, -headerHeight);
         }
 
         public static Button CreateLaunchTile(Transform parent, string label, Vector2 size)

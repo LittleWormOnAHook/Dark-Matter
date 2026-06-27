@@ -6,6 +6,7 @@ using Project.Inventory;
 using Project.Managers;
 using Project.Player;
 using Project.Crafting;
+using Project.Pioneers;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
@@ -68,6 +69,7 @@ namespace Project.Core
             info.HasScreenshot = SaveSlotScreenshotUtility.HasScreenshot(slotIndex);
             info.SavedAtUtcTicks = data.savedAtUtcTicks;
             info.Health = data.health;
+            info.AetherCredits = data.version >= 9 ? data.aetherCredits : data.piBalance;
             info.PiBalance = data.piBalance;
             return info;
         }
@@ -95,6 +97,8 @@ namespace Project.Core
             QuestManager questManager = UnityEngine.Object.FindAnyObjectByType<QuestManager>();
             CraftingManager craftingManager = UnityEngine.Object.FindAnyObjectByType<CraftingManager>();
 
+            PioneerRosterManager roster = UnityEngine.Object.FindAnyObjectByType<PioneerRosterManager>();
+
             if (inventory == null || stats == null)
             {
                 message = "Player data is missing.";
@@ -103,14 +107,19 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 7,
+                version = 9,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,
-                hunger = stats.CurrentHunger,
-                thirst = stats.CurrentThirst,
                 energy = stats.CurrentEnergy,
-                piBalance = ui != null ? ui.GetPiBalance() : 0f,
+                stamina = stats.CurrentStamina,
+                oxygen = stats.CurrentOxygen,
+                piBalance = 0f,
+                aetherCredits = roster != null ? roster.AetherCredits : (ui != null ? ui.GetAetherCredits() : 0f),
+                piWalletBalance = roster != null ? roster.PiWalletBalance : (ui != null ? ui.GetPiWalletBalance() : 0f),
+                starterPioneerSelected = roster != null && roster.StarterPioneerSelected,
+                workerCount = roster != null ? roster.WorkerCount : 0,
+                skilledPioneers = roster != null ? roster.BuildSaveRecords() : null,
                 posX = player.transform.position.x,
                 posY = player.transform.position.y,
                 posZ = player.transform.position.z,
@@ -180,8 +189,8 @@ namespace Project.Core
 
             if (stats != null)
             {
-                ResolveSurvivalValues(stats, data, out float health, out float hunger, out float thirst, out float energy);
-                stats.ApplySaveState(health, hunger, thirst, energy);
+                ResolveSurvivalValues(stats, data, out float health, out float energy, out float stamina, out float oxygen);
+                stats.ApplySaveState(health, energy, stamina, oxygen);
                 stats.SetSimulationPaused(false);
             }
 
@@ -204,15 +213,43 @@ namespace Project.Core
 
             if (ui != null)
             {
-                ui.SetPiBalance(data.piBalance);
                 ui.HideDeathPopup();
                 ui.RefreshSurvivalDisplay();
             }
+
+            ApplyRosterSave(data, ui);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
 
             SimpleGameManager.Instance?.BeginNewGameSession(grantStartingItems: false);
+        }
+
+        private static void ApplyRosterSave(GameSaveData data, UIManager ui)
+        {
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster == null)
+                return;
+
+            if (data.version >= 9)
+            {
+                roster.ApplySave(
+                    data.aetherCredits,
+                    data.piWalletBalance,
+                    data.workerCount,
+                    data.starterPioneerSelected,
+                    data.skilledPioneers);
+                return;
+            }
+
+            roster.ApplySave(0f, 0f, 0, false, null);
+            roster.ApplyLegacyPiBalanceMigration(data.piBalance);
+
+            if (ui != null)
+            {
+                ui.SetAetherCredits(roster.AetherCredits);
+                ui.SetPiWalletBalance(roster.PiWalletBalance);
+            }
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)
@@ -241,22 +278,40 @@ namespace Project.Core
             SurvivalStats stats,
             GameSaveData data,
             out float health,
-            out float hunger,
-            out float thirst,
-            out float energy)
+            out float energy,
+            out float stamina,
+            out float oxygen)
         {
             health = data.health;
-            hunger = data.hunger;
-            thirst = data.thirst;
             energy = data.energy;
+            stamina = data.stamina;
+            oxygen = data.oxygen;
 
-            bool missingSurvivalFields = hunger <= 0f && thirst <= 0f && energy <= 0f;
+            if (data.version < 8)
+            {
+                float legacyHunger = data.hunger;
+                float legacyThirst = data.thirst;
+                float legacyStamina = data.energy;
+
+                if (health <= 0f)
+                    health = stats.maxHealth;
+
+                energy = (legacyHunger + legacyThirst) * 0.5f;
+                if (energy <= 0f && legacyHunger <= 0f && legacyThirst <= 0f)
+                    energy = stats.maxEnergy;
+
+                stamina = legacyStamina > 0f ? legacyStamina : stats.maxStamina;
+                oxygen = stats.maxOxygen;
+                return;
+            }
+
+            bool missingSurvivalFields = energy <= 0f && stamina <= 0f && oxygen <= 0f;
             if (data.version < 2 && missingSurvivalFields)
             {
                 health = health > 0f ? health : stats.maxHealth;
-                hunger = stats.maxHunger;
-                thirst = stats.maxThirst;
                 energy = stats.maxEnergy;
+                stamina = stats.maxStamina;
+                oxygen = stats.maxOxygen;
             }
         }
 

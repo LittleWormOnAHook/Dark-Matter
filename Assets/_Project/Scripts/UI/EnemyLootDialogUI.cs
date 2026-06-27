@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Project.AI;
 using Project.Player;
 using TMPro;
@@ -21,7 +20,7 @@ namespace Project.UI
         private Button lootButton;
         private Button lootAllButton;
         private Button closeButton;
-        private EnemyLootable activeLootable;
+        private IEnemyLootProvider activeLootProvider;
         private Action onClosed;
         private bool built;
 
@@ -29,14 +28,20 @@ namespace Project.UI
 
         public static bool IsDialogOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
 
-        public static void Show(EnemyLootable lootable, string enemyName, string lootSummary)
+        public static void CloseAnyOpenLoot()
+        {
+            if (instance != null && IsDialogOpen)
+                instance.Close();
+        }
+
+        public static void Show(IEnemyLootProvider lootProvider, string enemyName, string lootSummary)
         {
             Canvas canvas = ResolveGameplayCanvas();
-            if (canvas == null || lootable == null)
+            if (canvas == null || lootProvider == null)
                 return;
 
             EnemyLootDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.Present(lootable, enemyName, lootSummary);
+            dialog.Present(lootProvider, enemyName, lootSummary);
         }
 
         private static Canvas ResolveGameplayCanvas()
@@ -63,9 +68,97 @@ namespace Project.UI
 
             GameObject host = new GameObject("EnemyLootDialogUI", typeof(RectTransform));
             host.transform.SetParent(canvasRoot, false);
+            MenuUiBuilder.StretchRectToFill(host.GetComponent<RectTransform>());
             instance = host.AddComponent<EnemyLootDialogUI>();
             instance.Build(canvasRoot);
             return instance;
+        }
+
+        /// <summary>
+        /// Destroys any existing loot dialog host and rebuilds the default compact centered popup.
+        /// </summary>
+        public static void ResetToDefaultLayout()
+        {
+            TeardownAllInstances();
+            Canvas canvas = ResolveGameplayCanvas();
+            if (canvas != null)
+                EnsureExists(canvas.transform);
+        }
+
+        public static void EnsureBuiltForLayoutEditor()
+        {
+            Canvas canvas = ResolveGameplayCanvas();
+            if (canvas != null)
+                EnsureExists(canvas.transform);
+        }
+
+        private static void TeardownAllInstances()
+        {
+            if (instance != null)
+            {
+                instance.TeardownInternal();
+                instance = null;
+            }
+
+            EnemyLootDialogUI[] existing = FindObjectsByType<EnemyLootDialogUI>(FindObjectsInactive.Include);
+            for (int i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] == null)
+                    continue;
+
+                existing[i].TeardownInternal();
+            }
+
+            instance = null;
+        }
+
+        private void TeardownInternal()
+        {
+            ReleaseLootInputCapture();
+            built = false;
+            activeLootProvider = null;
+            onClosed = null;
+            overlayRoot = null;
+            dialogPanel = null;
+            titleText = null;
+            bodyText = null;
+            lootButton = null;
+            lootAllButton = null;
+            closeButton = null;
+
+            if (instance == this)
+                instance = null;
+
+            DestroyUiHost(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseLootInputCapture();
+
+            if (instance == this)
+                instance = null;
+        }
+
+        private void ReleaseLootInputCapture()
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            player?.SetLootDialogOpen(false);
+        }
+
+        private static void DestroyUiHost(GameObject host)
+        {
+            if (host == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+                return;
+            }
+#endif
+            UnityEngine.Object.Destroy(host);
         }
 
         private void Build(Transform canvasRoot)
@@ -77,45 +170,44 @@ namespace Project.UI
             EnsureUiInput(canvasRoot);
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
-            overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "LootOverlay", new Color(0f, 0f, 0f, 0.45f), blockRaycasts: true);
+            overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "LootOverlay", new Color(0f, 0f, 0f, 0.5f), blockRaycasts: true);
             overlayRoot.transform.SetAsLastSibling();
 
-            dialogPanel = new GameObject("LootDialogPanel", typeof(RectTransform));
-            dialogPanel.transform.SetParent(overlayRoot.transform, false);
-            RectTransform panelRect = dialogPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(560f, 360f);
+            dialogPanel = MenuUiBuilder.CreateCenteredModalShell(
+                overlayRoot.transform,
+                "Loot",
+                GameplayHudLayout.GameplayModalSize,
+                out RectTransform contentArea,
+                out Button headerCloseButton);
+            titleText = MenuUiBuilder.GetShellTitleText(dialogPanel);
+            headerCloseButton.onClick.AddListener(Close);
 
-            Image panelBg = dialogPanel.AddComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(panelBg, large: true);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(panelBg);
-                panelBg.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
-            }
-
-            VerticalLayoutGroup layout = dialogPanel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(20, 20, 18, 18);
+            VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(16, 16, 16, 16);
             layout.spacing = 12f;
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-            titleText = CreateText(dialogPanel.transform, "Loot", theme, 34f, FontStyles.Bold);
-            bodyText = CreateText(dialogPanel.transform, "", theme, 22f, FontStyles.Normal);
+            bodyText = CreateText(contentArea, "", theme, 22f, FontStyles.Normal);
             bodyText.textWrappingMode = TextWrappingModes.Normal;
+            LayoutElement bodyLayout = bodyText.gameObject.AddComponent<LayoutElement>();
+            bodyLayout.flexibleHeight = 1f;
+            bodyLayout.minHeight = 72f;
 
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform));
-            buttonRow.transform.SetParent(dialogPanel.transform, false);
+            buttonRow.transform.SetParent(contentArea, false);
             HorizontalLayoutGroup buttonLayout = buttonRow.AddComponent<HorizontalLayoutGroup>();
             buttonLayout.spacing = 10f;
             buttonLayout.childAlignment = TextAnchor.MiddleCenter;
             buttonLayout.childControlWidth = true;
             buttonLayout.childForceExpandWidth = true;
             buttonLayout.childForceExpandHeight = false;
+            LayoutElement buttonRowLayout = buttonRow.AddComponent<LayoutElement>();
+            buttonRowLayout.minHeight = 48f;
+            buttonRowLayout.preferredHeight = 48f;
 
             lootButton = CreateButton(buttonRow.transform, "Loot", theme, out _);
             lootAllButton = CreateButton(buttonRow.transform, "Loot All", theme, out _);
@@ -125,13 +217,14 @@ namespace Project.UI
             lootAllButton.onClick.AddListener(OnLootAllClicked);
             closeButton.onClick.AddListener(Close);
 
+            EnforceLootDialogLayout();
             overlayRoot.SetActive(false);
             UiFrontLayer.BringLayerToFront(canvasRoot);
         }
 
-        private void Present(EnemyLootable lootable, string enemyName, string lootSummary)
+        private void Present(IEnemyLootProvider lootProvider, string enemyName, string lootSummary)
         {
-            activeLootable = lootable;
+            activeLootProvider = lootProvider;
             onClosed = null;
             titleText.text = string.IsNullOrWhiteSpace(enemyName) ? "Loot" : $"Loot — {enemyName}";
             bodyText.text = lootSummary ?? string.Empty;
@@ -141,31 +234,31 @@ namespace Project.UI
 
         private void RefreshButtonStates()
         {
-            bool hasLoot = activeLootable != null && activeLootable.HasRemainingLoot;
+            bool hasLoot = activeLootProvider != null && activeLootProvider.HasRemainingLoot;
             lootButton.interactable = hasLoot;
             lootAllButton.interactable = hasLoot;
-            if (activeLootable != null)
-                bodyText.text = activeLootable.BuildLootSummary();
+            if (activeLootProvider != null)
+                bodyText.text = activeLootProvider.BuildLootSummary();
         }
 
         private void OnLootClicked()
         {
-            if (activeLootable == null)
+            if (activeLootProvider == null)
                 return;
 
-            activeLootable.TryLootNextEntry();
+            activeLootProvider.TryLootNextEntry();
             RefreshButtonStates();
 
-            if (activeLootable == null || !activeLootable.HasRemainingLoot)
+            if (activeLootProvider == null || !activeLootProvider.HasRemainingLoot)
                 Close();
         }
 
         private void OnLootAllClicked()
         {
-            if (activeLootable == null)
+            if (activeLootProvider == null)
                 return;
 
-            activeLootable.TryLootAll();
+            activeLootProvider.TryLootAll();
             Close();
         }
 
@@ -178,6 +271,7 @@ namespace Project.UI
 
             overlayRoot.SetActive(true);
             overlayRoot.transform.SetAsLastSibling();
+            EnforceLootDialogLayout();
             if (transform.parent != null)
                 UiFrontLayer.BringLayerToFront(transform.parent);
             Canvas.ForceUpdateCanvases();
@@ -185,11 +279,11 @@ namespace Project.UI
 
         private void Close()
         {
-            overlayRoot.SetActive(false);
-            activeLootable = null;
+            if (overlayRoot != null)
+                overlayRoot.SetActive(false);
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
-            player?.SetLootDialogOpen(false);
+            activeLootProvider = null;
+            ReleaseLootInputCapture();
 
             Action callback = onClosed;
             onClosed = null;
@@ -263,6 +357,21 @@ namespace Project.UI
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
             return button;
+        }
+
+        private void EnforceLootDialogLayout()
+        {
+            MenuUiBuilder.StretchRectToFill(GetComponent<RectTransform>());
+
+            if (overlayRoot == null)
+                return;
+
+            MenuUiBuilder.StretchRectToFill(overlayRoot.GetComponent<RectTransform>());
+
+            if (dialogPanel == null)
+                return;
+
+            MenuUiBuilder.ApplyCenteredModalShellLayout(dialogPanel, GameplayHudLayout.GameplayModalSize);
         }
     }
 }

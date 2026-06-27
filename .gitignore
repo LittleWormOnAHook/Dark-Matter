@@ -27,3 +27,13 @@ Thumbs.db
 
 .plastic/
 ignore.conf
+
+# Local / generated
+compile_check.log
+Assets/LocalAgent_*.txt
+Assets/LocalAgent_*.txt.meta
+
+# Vendor packages and oversized assets (GitHub 100MB limit)
+*.unitypackage
+"Assets/Audio/QP01 0016 Thunderstorm.wav"
+"Assets/Audio/QP01 0016 Thunderstorm.wav.meta"

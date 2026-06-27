@@ -190,17 +190,31 @@ namespace Project.Crafting
             gameObject.SetActive(false);
         }
 
-        private void ShowPrompt()
+        public bool IsPlayerInRange => playerInRange;
+
+        public string GetInteractionPromptMessage()
         {
-            if (uiManager == null || learned)
-                return;
+            if (learned)
+                return null;
 
             RecipeDefinition recipe = RecipeRegistry.Resolve(recipeId);
             string label = recipe != null && !string.IsNullOrEmpty(recipe.displayName)
                 ? recipe.displayName
                 : "Recipe";
 
-            uiManager.ShowInteractionPrompt($"{promptText} — {label}");
+            return $"{promptText} — {label}";
+        }
+
+        private void ShowPrompt()
+        {
+            if (uiManager == null || learned)
+                return;
+
+            string message = GetInteractionPromptMessage();
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            uiManager.ShowInteractionPrompt(message);
         }
     }
 }

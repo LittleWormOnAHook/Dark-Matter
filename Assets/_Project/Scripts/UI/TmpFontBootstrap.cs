@@ -7,6 +7,9 @@ namespace Project.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void ApplyFallbackFontAfterSceneLoad()
         {
+            if (!Application.isPlaying)
+                return;
+
             TmpUiHelper.ApplyToAllLoadedObjects();
         }
     }

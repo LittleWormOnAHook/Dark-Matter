@@ -25,11 +25,13 @@ namespace Project.AI
         public event Action<float, float> HealthChanged;
         public event Action<float, bool> Damaged;
         public event Action Died;
+        public event Action Respawned;
 
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
         public bool IsDead => isDead;
         public bool IsRespawnExternallyManaged => respawnExternallyManaged;
+        public bool ShouldRespawn => respawnTime > 0f;
         public Transform HealthBarAnchor => healthBarAnchor != null ? healthBarAnchor : transform;
         public Vector3 HealthBarOffset => healthBarOffset;
 
@@ -112,6 +114,40 @@ namespace Project.AI
             Respawn();
         }
 
+        /// <summary>
+        /// Ensures respawn waits at least through death presentation (lift + dissolve).
+        /// </summary>
+        public void DeferRespawnUntil(float minimumPresentationSeconds)
+        {
+            if (!isDead || respawnTime <= 0f || respawnExternallyManaged)
+                return;
+
+            CancelInvoke(nameof(Respawn));
+            float delay = Mathf.Max(respawnTime, minimumPresentationSeconds);
+            Invoke(nameof(Respawn), delay);
+        }
+
+        /// <summary>
+        /// Called when loot phase ends. Respawns if configured, otherwise destroys corpse.
+        /// </summary>
+        public void FinishLootHoldAndRespawn()
+        {
+            respawnExternallyManaged = false;
+            CancelInvoke(nameof(Respawn));
+
+            if (!isDead)
+                return;
+
+            if (respawnTime > 0f)
+            {
+                ForceRespawn();
+                return;
+            }
+
+            if (destroyOnDeath)
+                Destroy(gameObject, destroyDelay);
+        }
+
         private void Respawn()
         {
             respawnExternallyManaged = false;
@@ -139,6 +175,8 @@ namespace Project.AI
                 animation.enabled = false;
                 animation.enabled = true;
             }
+
+            Respawned?.Invoke();
         }
 
         private void CaptureSpawnPoint()

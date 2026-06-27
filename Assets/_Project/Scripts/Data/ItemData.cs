@@ -84,11 +84,12 @@ namespace Project.Data
 
         [Header("Survival Restore")]
         public float healthRestore = 0;
-        public float hungerRestore = 0;
-        public float thirstRestore = 0;
         public float energyRestore = 0;
+        public float staminaRestore = 0;
+        public float oxygenRestore = 0;
 
-        [Header("Pi Network")]
+        [Header("Aether Credits")]
+        [Tooltip("World pickup grants AC when collected.")]
         public bool isPiInfused = false;
         public int piValue = 0;
 
@@ -98,7 +99,7 @@ namespace Project.Data
 
         public bool IsConsumable =>
             itemType == ItemType.Consumable &&
-            (healthRestore > 0 || hungerRestore > 0 || thirstRestore > 0 || energyRestore > 0);
+            (healthRestore > 0 || energyRestore > 0 || staminaRestore > 0 || oxygenRestore > 0);
 
         public bool IsEquippable =>
             itemType == ItemType.MeleeWeapon || itemType == ItemType.Tool;

@@ -109,6 +109,9 @@ namespace Project.Inventory
                 }
             }
 
+            if (remaining > 0 && equipment != null && item.IsEquippable)
+                remaining = TryAddRemainingToEquipSlots(item, remaining);
+
             for (int i = 0; i < slots.Count && remaining > 0; i++)
             {
                 if (slots[i].IsEmpty && CanAcceptItemAt(i, item))
@@ -125,6 +128,54 @@ namespace Project.Inventory
                 OnInventoryChanged?.Invoke();
 
             return added;
+        }
+
+        private int TryAddRemainingToEquipSlots(ItemData item, int remaining)
+        {
+            if (equipment == null || remaining <= 0 || item == null)
+                return remaining;
+
+            if (EquipmentController.IsMeleeWeaponItem(item))
+            {
+                while (remaining > 0)
+                {
+                    int hotbarSlot = equipment.FindFirstEmptyWeaponHotbarSlot();
+                    if (hotbarSlot < 0)
+                        break;
+
+                    int absolute = inventorySize + hotbarSlot;
+                    if (!CanAcceptItemAt(absolute, item) || !slots[absolute].IsEmpty)
+                        break;
+
+                    slots[absolute].item = item;
+                    int canAdd = Mathf.Min(remaining, item.maxStack);
+                    slots[absolute].amount = canAdd;
+                    remaining -= canAdd;
+                }
+
+                return remaining;
+            }
+
+            if (item.itemType == ItemType.Tool)
+            {
+                while (remaining > 0)
+                {
+                    int toolbarSlot = equipment.FindFirstEmptyToolbarSlot(item);
+                    if (toolbarSlot < 0)
+                        break;
+
+                    int absolute = ToolbarStartIndex + toolbarSlot;
+                    if (!CanAcceptItemAt(absolute, item) || !slots[absolute].IsEmpty)
+                        break;
+
+                    slots[absolute].item = item;
+                    int canAdd = Mathf.Min(remaining, item.maxStack);
+                    slots[absolute].amount = canAdd;
+                    remaining -= canAdd;
+                }
+            }
+
+            return remaining;
         }
 
         public int CountItem(ItemData item)

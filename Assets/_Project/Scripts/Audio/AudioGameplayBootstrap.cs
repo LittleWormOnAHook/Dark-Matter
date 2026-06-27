@@ -9,6 +9,9 @@ namespace Project.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsurePlayerAudio()
         {
+            if (!Application.isPlaying)
+                return;
+
             GameAudioManager.EnsureExists();
 
             GameObject player = PlayerLocator.FindPlayerObject();

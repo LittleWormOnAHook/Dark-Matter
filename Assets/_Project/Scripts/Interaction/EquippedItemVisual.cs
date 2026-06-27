@@ -27,10 +27,10 @@ namespace Project.Interaction
         private InventorySystem inventory;
         private ItemData currentHandItem;
         private WeaponHitbox activeHandHitbox;
-        private readonly List<ItemData> currentBackItems = new List<ItemData>(2);
-        private readonly List<ItemData> pendingBackItems = new List<ItemData>(2);
+        private readonly List<ItemData> currentBackItems = new List<ItemData>(4);
+        private readonly List<ItemData> pendingBackItems = new List<ItemData>(4);
         private GameObject handInstance;
-        private readonly List<GameObject> backInstances = new List<GameObject>(2);
+        private readonly List<GameObject> backInstances = new List<GameObject>(4);
         private Quaternion handRestRotation = Quaternion.identity;
         private Vector3 handRestLocalPosition = Vector3.zero;
         private Vector3 swingEuler = new Vector3(-120f, 0f, 0f);
@@ -182,25 +182,26 @@ namespace Project.Interaction
             if (inventory == null || equipment == null)
                 return;
 
-            ItemData primaryWeapon = equipment.GetHotbarItem(equipment.PrimaryWeaponHotbarSlot);
-            ItemData secondaryWeapon = equipment.GetHotbarItem(equipment.SecondaryWeaponHotbarSlot);
-            bool primaryValid = primaryWeapon != null && primaryWeapon.IsEquippable;
-            bool secondaryValid = secondaryWeapon != null && secondaryWeapon.IsEquippable;
+            int activeHotbar = equipment.ActiveWeaponHotbarSlot;
             bool activeWeaponSelected = equipment.IsWeaponHotbarSlot(equipment.SelectedHotbarSlot);
 
-            if (equipment.IsWeaponDrawn && activeWeaponSelected)
+            equipment.ForEachWeaponHotbarSlot(hotbarIndex =>
             {
-                ItemData inactiveWeapon = equipment.SecondaryWeaponItem;
-                if (inactiveWeapon != null && inactiveWeapon.IsEquippable)
-                    results.Add(inactiveWeapon);
-                return;
-            }
+                if (equipment.IsWeaponDrawn && activeWeaponSelected && hotbarIndex == activeHotbar)
+                    return;
 
-            if (primaryValid)
-                results.Add(primaryWeapon);
+                ItemData weapon = equipment.GetHotbarItem(hotbarIndex);
+                if (weapon == null || !weapon.IsEquippable)
+                    return;
 
-            if (secondaryValid && secondaryWeapon != primaryWeapon)
-                results.Add(secondaryWeapon);
+                for (int i = 0; i < results.Count; i++)
+                {
+                    if (results[i] == weapon)
+                        return;
+                }
+
+                results.Add(weapon);
+            });
         }
 
         private static bool BackItemsEqual(List<ItemData> a, List<ItemData> b)
@@ -384,7 +385,7 @@ namespace Project.Interaction
 
         public void PlaySwing(float duration)
         {
-            if (!isActiveAndEnabled || handInstance == null || currentHandItem != null && currentHandItem.IsTwoHanded)
+            if (!isActiveAndEnabled || handInstance == null)
                 return;
 
             StopHandPoseCoroutines();
