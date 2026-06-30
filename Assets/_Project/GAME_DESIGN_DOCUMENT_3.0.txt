@@ -29,12 +29,8 @@ REVISION NOTES (changes from prior draft)
   + NFT mint: on marketplace LIST only (not on rescue)
   + Controls: keyboard-mouse, mobile, controller schemes
   + Journal tabs expanded: Pet/Pioneers, Skills, Craft, Recipes, Echos
-  + Building Control Panels at each base structure — assign pioneers, craft,
-    production queues, and per-building settings (changes) at in-world terminals
   + Aether-9 shares quest duty with small portion of side quest givers
   + Story: failed human/alien expeditions left tech and materials on Io
-  + Conceptual UI art folder (June 20, 2026): nine reference mockups under
-    Assets/_Project/Conceptual UI art/ — layered HUD + terminal direction (Section 10)
 
 
 ================================================================================
@@ -63,9 +59,8 @@ Art: semi-low-poly, modular, not flat low-poly.
 
 EXAMPLE CORE LOOPS
 ------------------
-  BASE:       Walk to building Control Panel → assign pioneers → set production /
-              craft queues and building changes → output ticks → sulfur storm
-              pauses all panels → Command Center shelter → heal injured → resume
+  BASE:       Assign up to 22 pioneers → buildings produce → sulfur storm pauses
+              work → Command Center shelter → heal injured → resume output
 
   EXPEDITION: Pick trio of 3 → face multiple biome/environment pressures →
               rescue Echo signals → recover Memory Cores → return for Resonance
@@ -94,33 +89,6 @@ DESIGN WORKFLOW (AI / TEAM)
 Follow this GDD when building in Unity. If a request does not fit vision, ASK
 whether it is canon, prototype, or a new direction. Unrelated experiments are
 OK when explicitly labeled.
-
-BUILDING CONTROL PANEL WORKFLOW (CANON)
----------------------------------------
-  1. Player materializes or unlocks a building (Section 8).
-  2. Building spawns with an interactable Control Panel (terminal / holo console).
-  3. Player aims + presses E at panel → Building Control UI opens (dedicated
-     overlay — NOT the journal Craft tab).
-  4. Player configures that building only:
-       - Assign / unassign base pioneers (from 22 pool; respect injured state)
-       - Set production queue, craft queue, or service queue (building-specific)
-       - Adjust building settings ("changes"): depth, priority, filters, modes
-  5. Assigned pioneers drive passive output while player is on expedition or at
-     another panel. Aggregate sim updates output / Strain / maintenance.
-  6. Sulfur storm: all building work pauses; panels show PAUSED; pioneers
-     evacuate to Command Center per Section 5.
-  7. Maintenance due or building damage: panel shows warnings; player spends
-     resources or sends injured to Medical Facility before full resume.
-
-IMPLEMENTATION ORDER (PANELS)
----------------------------
-  Prototype today: global CraftingStation + journal Craft tab (flat terrain).
-  Migrate toward building panels in this order:
-    a) Shared BuildingControlPanelUI shell (tabs, pioneer slots, queue list)
-    b) Science Labs + Medical Facility (craft + production queues)
-    c) Geothermal Harvester + worker-output buildings (settings + assignments)
-    d) Command Center status board (read-only aggregate + room assignment view)
-  Reuse CraftingUI recipe filtering by building/station type where possible.
 
 LEGAL NOTE (ECONOMY)
 --------------------
@@ -462,79 +430,6 @@ DYNAMIC RISK
   Worker assignments boost output; Geothermal depth = risk/reward.
 
 
-BUILDING CONTROL PANELS (CANON)
--------------------------------
-Each major base building has an in-world CONTROL PANEL the player interacts
-with (E / use). Panels are the primary place to manage that structure — not
-a distant global menu.
-
-SHARED PANEL SHELL (ALL BUILDINGS)
-----------------------------------
-  Tabs (building may hide unused tabs):
-    OVERVIEW     — status, output rate, maintenance %, storm pause state
-    PIONEERS     — assign / unassign slots from base 22 (names or role chips)
-    PRODUCTION   — queued jobs, passive output, supply-line targets
-    CRAFT        — recipes valid AT THIS BUILDING only
-    CHANGES      — building-specific settings and modes (see per-building)
-
-  Rules:
-    - Injured pioneers cannot be assigned until healed (Medical Facility).
-    - Over-assigning pioneers raises collective Strain (Section 4).
-    - Queues pause during sulfur storms; UI shows PAUSED badge.
-    - AC may rush queue slots or maintenance (economy sink).
-    - Player on expedition: base pioneers keep running assigned queues.
-
-PER-BUILDING PANEL BEHAVIOR
----------------------------
-  Command Center
-    - OVERVIEW + PIONEERS focus; storm room assignment preview
-    - CHANGES: shelter priority, which rooms accept injured overflow
-    - No craft queue; aggregate base status widget links here
-
-  Medical Facility
-    - CRAFT: medpacks, inoculations, cleanse consumables
-    - PRODUCTION: heal / restore queue for injured base pioneers
-    - CHANGES: triage priority (workers vs skilled), research unlock tier
-
-  Science Labs
-    - CRAFT: lab-tier recipes, upgrades, components for other buildings
-    - PRODUCTION: supply-line production (feeds Harvester, Beacon, etc.)
-    - CHANGES: research focus, output target building, batch size
-
-  Geothermal Harvester
-    - PRODUCTION: resource extraction tick (lava / isotope output)
-    - CHANGES: drill depth (risk vs reward), tremor throttle, auto-pause on quake
-    - PIONEERS: operator slots boost yield; deep settings raise spawn risk
-
-  Purification Hub
-    - PRODUCTION: Saturation cleanse queue for skilled pioneers
-    - CHANGES: cleanse speed vs AC cost, batch vs single
-
-  Echo Reclamation Chamber
-    - PRODUCTION: post-rescue stabilization + Echo XP leveling queue
-    - CHANGES: sync priority, failure mitigation (does not prevent permanent
-      loss on failed surface rescue — Section 6)
-
-  Resonance Beacon / Probe Uplink / Geothermal Stabilizer
-    - PRODUCTION: passive buff timers or scan cycles
-    - CHANGES: radius, target zone, buff intensity vs Strain
-
-  Pi → AC Terminal
-    - No pioneer assignment; wallet / conversion UI only
-
-PROTOTYPE VS TARGET
--------------------
-  Current prototype: CraftingStation prefabs open journal Craft tab globally.
-  Target: replace station-first flow with building Control Panels; journal
-  Craft tab becomes recipe library + scroll learning only (read / plan),
-  while actual crafting and production happen at building panels.
-
-UI / INPUT
-----------
-  - Panel opens as modal overlay (Shift UI theme); does not replace journal.
-  - Optional quick-link from journal Pioneers tab → "Open assigned building".
-  - Mobile / controller: panel navigable with same schemes as journal (Section 10).
-
 ================================================================================
 SECTION 9 — ECONOMY & MONETIZATION
 ================================================================================
@@ -626,16 +521,8 @@ JOURNAL TABS
     Recipes, Echos
   Note: legacy pet/AI follower UI folds into Pioneers/Echos tab — no separate
   pet progression track.
-  Craft / Recipes tabs: discovery, scroll learning, recipe reference — NOT the
-  primary craft/production surface (use Building Control Panels at structures).
   Future:
     Roster detail, Command Center status, Pioneer Exchange link / UI
-
-BUILDING CONTROL UI (IN-WORLD)
-------------------------------
-  Opened only from building Control Panel interactables (E at terminal).
-  Shared shell: Overview | Pioneers | Production | Craft | Changes (per Section 8).
-  Base status widget on HUD links injured / sheltered counts; deep config at panels.
 
 HUD
 ---
@@ -643,107 +530,6 @@ HUD
   AC and Pi balance (Pi = wallet / marketplace; AC = gameplay)
   Base status widget (injured, sheltered, output)
   Hotbar + toolbar
-
-CONCEPTUAL UI ART (REFERENCE — NOT IN-GAME ASSETS)
---------------------------------------------------
-  Folder: Assets/_Project/Conceptual UI art/
-  Purpose: Visual target for UI redesign beyond default Unity uGUI / raw Shift
-  panels. Reference only until implemented in prefabs and ShiftUiTheme.
-
-  LAYERED UI MODEL (CANON DIRECTION — approved June 20, 2026)
-  ----------------------------------------------------------
-  Layer 1 — Diegetic body (RIG): survival stats on suit / weapon projection
-  Layer 2 — Tactical glass HUD: minimap ring, hotbar hexes, quest rail, tools
-  Layer 3 — Holographic terminals: journal hub, building panels, wallet, Echo
-  Peak moments: crisis HUD (storms), Echo rescue reveal, main menu cinematic
-
-  COLOR LANGUAGE (apply across all layers)
-  ----------------------------------------
-  Cyan / electric blue  — interactive, navigation, safe
-  Amber / orange        — warning, heat pole, Io environment, low O2
-  Ice blue              — cold pole, shelter, medical
-  Red                   — danger, locked, hostile
-  Purple / glitch       — Echo, Neural, Aether-9, memory cores
-  Gold                  — Aether Credits (AC) in-game economy
-  Pi accent (distinct)  — wallet / marketplace only; never merge with AC visually
-
-  SHAPE LANGUAGE
-  --------------
-  Arcs      — meters (O2, thermal, stamina, queue progress)
-  Hexagons  — inventory / hotbar / toolbar slots
-  Rings     — minimap, scan pulse, craft timers, loading
-  Bezels    — panel frames (extend Shift UI sprites)
-  Cards     — items, quests, pioneers, recipes
-
-  CONCEPT MOCKUPS (filename → screen / system)
-  --------------------------------------------
-  ui-concept-diegetic-rig-hud.png
-    → Exploration HUD: O2 + thermal on suit RIG; weapon-projected ammo; minimal
-      screen clutter. Target for SurvivalStats / CondensedSurvivalStatsHud redesign.
-
-  ui-concept-tactical-glass-hud.png
-    → Default gameplay overlay: circular minimap + compass, icon rail, arc gauges,
-      hex hotbar. Target for minimap, hotbar, toolbar, active quest tracker.
-
-  ui-concept-environmental-crisis-hud.png
-    → Sulfur storm / crisis mode: vignette, PAUSED building state, dual-pole
-      thermal bar, O2 pulse, HUD retraction to essentials only.
-
-  ui-concept-journal-inventory-hub.png
-    → Journal hub (J) + inventory (I): tab rail (Journal, Inventory, Map,
-      Pioneers/Echos, Skills, Craft, Recipes, Echos), item cards, suit loadout
-      silhouette, hex hotbar.
-
-  ui-concept-map-scanner-overlay.png
-    → World map (M) + scanner: tactical map, fog of war, scan radial pulse,
-      sector info strip. Extends current MapUI / FakeMap prototype.
-
-  ui-concept-building-control-terminal.png
-    → Building Control Panel (E at terminal): tabs Overview | Pioneers |
-      Production | Craft | Changes; pioneer cards; queue progress rings.
-      Primary target for Section 8 building panel implementation.
-
-  ui-concept-dialog-loot-contextual.png
-    → World-triggered UI: quest giver dialog (card choices), enemy loot AR overlay,
-      anchored Press E prompts. Target for QuestGiverDialogUI, EnemyLootDialogUI.
-
-  ui-concept-echo-rescue-roster.png
-    → Echo rescue reveal + 25-pioneer roster (22 base + trio highlight), Aether-9
-      memory core, Exchange list badge. Target for procedural Echo + roster UI.
-
-  ui-concept-main-menu-wallet.png
-    → Main menu cinematic + wallet sub-panel (AC vs Pi). Target for
-      MainMenuController, wallet / Pi SDK integration.
-
-  SCREEN → STYLE MAP (implementation guide)
-  -----------------------------------------
-  Survival HUD          Layer 1 + 2; crisis variant Layer 1 retraction
-  Minimap / world map   Layer 2 glass; map tab Layer 3 projection
-  Journal / inventory   Layer 3 terminal (concept 4)
-  Building Control      Layer 3 in-world terminal (concept 7)
-  Quest / loot dialogs  Contextual Layer 2/3 hybrid (concept 6)
-  Echo / roster         Layer 3 dramatic (concept 9)
-  Main menu / wallet    Layer 3 cinematic (concept 8)
-
-  IMPLEMENTATION PHASES (UI — aligns with roadmap)
-  ------------------------------------------------
-  Phase A — Visual tokens: color table, arc meter prefab, hex slot, glass panel
-  Phase B — HUD: arc meters, minimap bezel, health-on-hit (already started)
-  Phase C — Journal shell: tab rail + inventory cards on JournalPanelUI
-  Phase D — Building Control Panel prefab + shared shell (Section 8)
-  Phase E — Peak screens: Echo rescue, wallet, sulfur crisis HUD mode
-
-  PLATFORM LAYOUT NOTES
-  ---------------------
-  Same art direction; layout presets per input scheme (GDD input schemes above):
-  keyboard-mouse (drag/resize panels), controller (focus grid, no drag),
-  mobile (larger arcs, bottom thumb zone, long-press tooltips).
-
-  PROTOTYPE TODAY
-  ---------------
-  Shift sci-fi theme + journal hub + map/minimap + toolbar. Concept art defines
-  the migration path; do not ship concept PNGs as runtime UI — rebuild in uGUI
-  using ShiftUiTheme, custom materials, and arc/hex prefabs.
 
 
 ================================================================================
@@ -796,7 +582,6 @@ NOT STARTED — VISION SYSTEMS
   [ ] Procedural Echo generator + rescue setpieces
   [ ] Aether-9 probe + memory cores + Resonance Events
   [ ] Building materialization + maintenance pipeline
-  [ ] Building Control Panels (per-structure craft, production, pioneer assign)
   [ ] Medical Facility, Science Labs gameplay
   [ ] Aether Credits economy + IAP
   [ ] Pioneer Exchange + NFT mint + Pi SDK external marketplace
@@ -829,7 +614,6 @@ PHASE 2 — COMMAND CENTER & BASE 22 (2–3 weeks)
   [ ] Aggregate pioneer sim (working / sheltered / injured)
   [ ] Sulfur storm pause + room fill + randomness
   [ ] Building damage → injury (no death) → heal to resume
-  [ ] Command Center Control Panel (overview + storm room preview)
 
 PHASE 3 — ROSTER & TRIO (2–4 weeks)
   [ ] 25 cap roster UI
@@ -853,9 +637,6 @@ PHASE 5 — AETHER-9 & RESONANCE (3–4 weeks)
 PHASE 6 — BUILDINGS, CRAFT & MAINTENANCE (2–3 weeks)
   [ ] Materialize VFX
   [ ] Medical Facility, Science Labs, Harvester, Uplink, Beacon, Stabilizer
-  [ ] Building Control Panel interactable + shared UI shell per Section 8
-  [ ] Per-building Production / Craft / Changes tabs wired to pioneer assign
-  [ ] Migrate prototype CraftingStation flow → building panels (journal = library)
   [ ] Worker job assignments → output
   [ ] Maintenance costs over time
 
@@ -873,11 +654,10 @@ PHASE 8 — IO WORLD & SHIP (4+ weeks)
 
 IMMEDIATE NEXT STEPS
   1. Exposure zones + sulfur storm prototype (player/trio)
-  2. Command Center + 22 sim + Control Panel shell (overview / pioneers)
+  2. Command Center + 22 sim
   3. Roster cap + trio picker with new class names
   4. Echo name/stats tables (data only)
   5. AC currency pass: starter 5000 AC, remove gameplay Pi drip
-  6. Design BuildingControlPanel data schema (building id, queues, settings)
 
 
 ================================================================================
@@ -892,10 +672,6 @@ LOCKED DECISIONS (June 26, 2026)
   [x] Cold/Heat: one combined thermal stress meter (cold ↔ heat poles)
   [x] NFT mint: on marketplace LIST only (not on rescue or roster add)
   [x] No onboarding Pi grant for new players
-  [x] Building Control Panels: per-building craft, production, pioneer assign,
-      and settings at in-world terminals (journal Craft = library only)
-  [x] Conceptual UI art direction: three-layer model (RIG + glass HUD + terminal);
-      nine reference mockups in Assets/_Project/Conceptual UI art/ (Section 10)
 
 STILL OPEN
 ----------
@@ -904,7 +680,6 @@ STILL OPEN
   [ ] Science Specialist ability kit — define before Phase 3?
   [ ] Exact starter Skilled Pioneer roster (which classes offered at new game)?
   [ ] Dark Matter listing Pi fee percentage / structure
-  [ ] Max pioneer slots per building panel (fixed per type vs upgradeable)?
 
 
 ================================================================================
@@ -923,11 +698,6 @@ SECTION 15 — GLOSSARY
   One-way Pi          No gameplay Pi earn; no AC→Pi; Pi→AC and Exchange only
   Pioneer Survivor    External Pi Network marketplace for NFT Echo trading
   Exchange
-  Control Panel       In-world terminal per building; craft, production, assign
-  Building Control UI Modal overlay from panel; tabs Overview/Pioneers/Production/
-                      Craft/Changes
-  Conceptual UI art   Reference mockups in Assets/_Project/Conceptual UI art/;
-                      layered HUD direction (Section 10)
 
 
 ================================================================================
