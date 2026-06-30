@@ -3,9 +3,11 @@ using ECM2;
 using Project.AI;
 using Project.Building;
 using Project.Combat;
+using Project.Companions;
 using Project.Core;
 using Project.Crafting;
 using Project.Inventory;
+using Project.Pet;
 using Project.Player;
 using Project.Quests;
 using Project.Survival;
@@ -84,7 +86,7 @@ namespace Project.Interaction
 
         private void LateUpdate()
         {
-            ResolveWorldInteractionPrompt();
+            ClearOwnedWorldPrompt();
         }
 
         public void TryUse()
@@ -129,6 +131,9 @@ namespace Project.Interaction
                 return;
 
             if (TryHandleEnemyLootUse(context))
+                return;
+
+            if (TryHandlePetAdoptUse(context))
                 return;
 
             if (TryHandlePickupUse(context, range))
@@ -413,6 +418,27 @@ namespace Project.Interaction
             }
 
             return best != null && best.TryUse(context);
+        }
+
+        private bool TryHandlePetAdoptUse(WorldUseContext context)
+        {
+            PetWorldAdoptable closest = PetWorldAdoptable.FindClosestAdoptable(context.PlayerPosition, context.UseRange);
+            if (closest != null && PetWorldAdoptable.IsWithinImmediateAdoptRange(context.PlayerPosition, closest))
+                return closest.TryUse(context);
+
+            if (IsAimedAtPriorityWorldInteractable(context))
+                return false;
+
+            PetWorldAdoptable best = PetWorldAdoptable.FindBestAdoptable(context, MinRegisteredUsePriority);
+            if (best == null)
+            {
+                if (closest == null || closest.GetUsePriority(context) < 0f)
+                    return false;
+
+                return closest.TryUse(context);
+            }
+
+            return best.TryUse(context);
         }
 
         private bool TryHandleEnemyLootUse(WorldUseContext context)
@@ -1050,6 +1076,14 @@ namespace Project.Interaction
             {
                 return recipePickup.GetInteractionPromptMessage();
             }
+
+            PetWorldAdoptable adoptable = PetWorldAdoptable.FindAdoptableForPrompt(context);
+            if (adoptable != null)
+                return adoptable.PromptText + " " + (adoptable.GetComponent<PetController>()?.DisplayName ?? "pet");
+
+            InjuredPioneerLabRecoverable injuredRecoverable = InjuredPioneerLabRecoverable.FindForPrompt(context);
+            if (injuredRecoverable != null)
+                return injuredRecoverable.GetPromptText();
 
             QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
             if (questGiver != null)

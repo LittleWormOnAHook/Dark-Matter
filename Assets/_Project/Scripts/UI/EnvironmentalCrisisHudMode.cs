@@ -93,7 +93,7 @@ namespace Project.UI
             vignetteRoot = MenuUiBuilder.CreateFullScreenPanel(
                 transform,
                 "CrisisVignette",
-                new Color(0.45f, 0.18f, 0.05f, 0.38f),
+                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.38f),
                 blockRaycasts: false);
             vignetteRoot.SetActive(false);
 
@@ -108,7 +108,8 @@ namespace Project.UI
 
             Image bannerBg = bannerRoot.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bannerBg);
-            bannerBg.color = new Color(0.55f, 0.22f, 0.06f, 0.92f);
+            bannerBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.92f);
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(bannerRoot);
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
             labelObject.transform.SetParent(bannerRoot.transform, false);
@@ -121,7 +122,7 @@ namespace Project.UI
             bannerLabel.fontSize = 22f;
             bannerLabel.fontStyle = FontStyles.Bold;
             bannerLabel.alignment = TextAlignmentOptions.Center;
-            bannerLabel.color = new Color(1f, 0.88f, 0.62f, 1f);
+            bannerLabel.color = SurvivalPioneerUiPalette.BodyText;
             bannerLabel.raycastTarget = false;
 
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
@@ -140,6 +141,7 @@ namespace Project.UI
             SetRootActive(FindAnyObjectByType<ActiveQuestHudUI>()?.gameObject, !crisis);
             SetRootActive(FindAnyObjectByType<PickupAimReticleUI>()?.gameObject, !crisis);
             SetRootActive(FindAnyObjectByType<PickupProximityDotUI>()?.gameObject, !crisis);
+            SetRootActive(FindAnyObjectByType<WorldInteractionDotUI>()?.gameObject, !crisis);
 
             UIManager uiManager = FindAnyObjectByType<UIManager>();
             if (uiManager != null)

@@ -27,6 +27,7 @@ namespace Project.UI
         [SerializeField] private GameObject slotPrefab;
 
         private RectTransform toolbarRoot;
+        private RectTransform slotsRowRect;
         private readonly List<InventorySlotUI> toolbarSlots = new List<InventorySlotUI>(2);
         private readonly List<TextMeshProUGUI> keyLabels = new List<TextMeshProUGUI>(2);
         private InventorySystem inventorySystem;
@@ -76,12 +77,12 @@ namespace Project.UI
             if (theme != null)
             {
                 theme.ApplyFont(title, semiBold: true);
-                title.color = theme.primaryColor;
+                title.color = SurvivalPioneerUiPalette.HotbarLabelText;
             }
             else
             {
                 TmpUiHelper.ApplyDefaultFont(title);
-                title.color = new Color(0.75f, 0.82f, 0.9f, 0.9f);
+                title.color = SurvivalPioneerUiPalette.HotbarLabelText;
             }
             title.text = "TOOLS";
             title.fontSize = HudLayoutMetrics.ScaledInt(13f);
@@ -90,12 +91,13 @@ namespace Project.UI
 
             GameObject slotsRow = new GameObject("Slots", typeof(RectTransform));
             slotsRow.transform.SetParent(toolbarRoot, false);
-            RectTransform slotsRect = slotsRow.GetComponent<RectTransform>();
-            slotsRect.anchorMin = new Vector2(0.5f, 0f);
-            slotsRect.anchorMax = new Vector2(0.5f, 0f);
-            slotsRect.pivot = new Vector2(0.5f, 0f);
-            slotsRect.anchoredPosition = new Vector2(0f, HudLayoutMetrics.Scaled(4f));
-            slotsRect.sizeDelta = new Vector2(SlotSize * 2f + SlotSpacing, SlotSize);
+            slotsRowRect = slotsRow.GetComponent<RectTransform>();
+            slotsRowRect.anchorMin = new Vector2(0.5f, 0f);
+            slotsRowRect.anchorMax = new Vector2(0.5f, 0f);
+            slotsRowRect.pivot = new Vector2(0.5f, 0f);
+            slotsRowRect.anchoredPosition = new Vector2(0f, HudLayoutMetrics.Scaled(4f));
+            float rowWidth = SlotSize * 2f + SlotSpacing;
+            slotsRowRect.sizeDelta = new Vector2(rowWidth, SlotSize);
 
             HorizontalLayoutGroup layout = slotsRow.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = SlotSpacing;
@@ -105,7 +107,19 @@ namespace Project.UI
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            CreateToolbarSlots(slotsRect);
+            CreateToolbarSlots(slotsRowRect);
+
+            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
+            if (petToolbar == null)
+                petToolbar = gameObject.AddComponent<PetToolbarUI>();
+
+            petToolbar.EnsureBuilt(canvasRoot, toolbarRoot, toolbarRoot.anchoredPosition.y);
+
+            ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+            if (pioneerHud == null)
+                pioneerHud = gameObject.AddComponent<ExpeditionPioneerHudUI>();
+
+            pioneerHud.EnsureBuilt(layoutParent, toolbarRoot.anchoredPosition.y);
 
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged += RefreshUI;
@@ -125,6 +139,9 @@ namespace Project.UI
         {
             if (toolbarRoot != null)
                 toolbarRoot.gameObject.SetActive(visible);
+
+            FindAnyObjectByType<PetToolbarUI>()?.SetGameplayVisible(visible);
+            GetComponent<ExpeditionPioneerHudUI>()?.SetGameplayVisible(visible);
         }
 
         public static void ApplyGameplayVisibility()
@@ -145,29 +162,45 @@ namespace Project.UI
 
         public float GetToolbarHeight() => SlotSize + ToolbarExtraHeight;
 
+        public RectTransform ToolbarRoot => toolbarRoot;
+
         public void AlignCenteredWithHotbar(RectTransform hotbarRect, float anchoredY)
         {
             if (toolbarRoot == null || hotbarRect == null)
                 return;
 
+            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
+            ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+            float pioneerWidth = pioneerHud != null && pioneerHud.IsBuilt ? pioneerHud.GetClusterWidth() : 0f;
+            float pioneerGap = pioneerWidth > 0f ? ExpeditionPioneerHudUI.ClusterGap : 0f;
+            float petWidth = petToolbar != null && petToolbar.IsBuilt ? petToolbar.GetPetClusterWidth() : 0f;
+            float petGap = petWidth > 0f ? PetToolbarUI.PetClusterGap : 0f;
             float toolbarWidth = GetToolbarWidth();
             float toolbarHeight = GetToolbarHeight();
             float hotbarWidth = hotbarRect.sizeDelta.x;
-            float totalWidth = toolbarWidth + HotbarGap + hotbarWidth;
+            float totalWidth = petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap + pioneerWidth;
             float clusterStartX = -totalWidth * 0.5f;
+            float petRight = clusterStartX + petWidth;
+            float toolbarRight = clusterStartX + petWidth + petGap + toolbarWidth;
+            float hotbarCenterX = clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth * 0.5f;
+            float pioneerLeft = clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap;
 
             hotbarRect.anchorMin = new Vector2(0.5f, 0f);
             hotbarRect.anchorMax = new Vector2(0.5f, 0f);
             hotbarRect.pivot = new Vector2(0.5f, 0f);
-            hotbarRect.anchoredPosition = new Vector2(
-                clusterStartX + toolbarWidth + HotbarGap + hotbarWidth * 0.5f,
-                anchoredY);
+            hotbarRect.anchoredPosition = new Vector2(hotbarCenterX, anchoredY);
 
             toolbarRoot.anchorMin = new Vector2(0.5f, 0f);
             toolbarRoot.anchorMax = new Vector2(0.5f, 0f);
             toolbarRoot.pivot = new Vector2(1f, hotbarRect.pivot.y);
             toolbarRoot.sizeDelta = new Vector2(toolbarWidth, toolbarHeight);
-            toolbarRoot.anchoredPosition = new Vector2(clusterStartX + toolbarWidth, anchoredY);
+            toolbarRoot.anchoredPosition = new Vector2(toolbarRight, anchoredY);
+
+            if (petToolbar != null && petToolbar.IsBuilt)
+                petToolbar.AlignLeftOfToolbarCluster(petRight, anchoredY);
+
+            if (pioneerHud != null && pioneerHud.IsBuilt)
+                pioneerHud.AlignRightOfHotbar(pioneerLeft, anchoredY);
         }
 
         public void RaiseToFrontLayer(Transform canvasRoot)
@@ -179,6 +212,7 @@ namespace Project.UI
             toolbarOriginalSiblingIndex = toolbarRoot.GetSiblingIndex();
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             raisedToFrontLayer = true;
+            GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void EnsureRaisedToFrontLayer(Transform canvasRoot)
@@ -193,6 +227,7 @@ namespace Project.UI
             }
 
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
+            GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void RestoreFromFrontLayer(Transform hotbarAnchor)
@@ -203,7 +238,28 @@ namespace Project.UI
             toolbarRoot.SetParent(toolbarOriginalParent, true);
             toolbarRoot.SetSiblingIndex(Mathf.Clamp(toolbarOriginalSiblingIndex, 0, toolbarOriginalParent.childCount - 1));
             raisedToFrontLayer = false;
-            RepositionRelativeToHotbar(hotbarAnchor);
+
+            if (hotbarAnchor is RectTransform hotbarRect)
+            {
+                RepositionRelativeToHotbar(hotbarRect);
+                float pioneerLeft = ComputePioneerLeftEdge(hotbarRect);
+                GetComponent<ExpeditionPioneerHudUI>()?.RestoreFromFrontLayer(pioneerLeft, hotbarRect.anchoredPosition.y);
+            }
+        }
+
+        private float ComputePioneerLeftEdge(RectTransform hotbarRect)
+        {
+            ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
+            float pioneerWidth = pioneerHud != null && pioneerHud.IsBuilt ? pioneerHud.GetClusterWidth() : 0f;
+            float pioneerGap = pioneerWidth > 0f ? ExpeditionPioneerHudUI.ClusterGap : 0f;
+            float petWidth = petToolbar != null && petToolbar.IsBuilt ? petToolbar.GetPetClusterWidth() : 0f;
+            float petGap = petWidth > 0f ? PetToolbarUI.PetClusterGap : 0f;
+            float toolbarWidth = GetToolbarWidth();
+            float hotbarWidth = hotbarRect.sizeDelta.x;
+            float totalWidth = petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap + pioneerWidth;
+            float clusterStartX = -totalWidth * 0.5f;
+            return clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap;
         }
 
         private void PositionLeftOfHotbar(Transform hotbarAnchor)
@@ -330,30 +386,36 @@ namespace Project.UI
         private static TextMeshProUGUI CreateToolbarKeyLabel(Transform slotTransform, string keyText)
         {
             ShiftUiTheme keyTheme = ShiftUiTheme.Current;
+            TextMeshProUGUI keyLabel;
             if (keyTheme != null)
-                return keyTheme.CreateKeyLabel(
+            {
+                keyLabel = keyTheme.CreateKeyLabel(
                     slotTransform,
                     keyText,
                     new Vector2(HudLayoutMetrics.Scaled(2f), HudLayoutMetrics.Scaled(-2f)),
                     new Vector2(HudLayoutMetrics.Scaled(22f), HudLayoutMetrics.Scaled(18f)),
                     showFrame: false);
+            }
+            else
+            {
+                GameObject keyObject = new GameObject("KeyLabel", typeof(RectTransform));
+                keyObject.transform.SetParent(slotTransform, false);
+                RectTransform keyRect = keyObject.GetComponent<RectTransform>();
+                keyRect.anchorMin = new Vector2(0f, 1f);
+                keyRect.anchorMax = new Vector2(0f, 1f);
+                keyRect.pivot = new Vector2(0f, 1f);
+                keyRect.anchoredPosition = new Vector2(HudLayoutMetrics.Scaled(4f), HudLayoutMetrics.Scaled(-4f));
+                keyRect.sizeDelta = new Vector2(HudLayoutMetrics.Scaled(24f), HudLayoutMetrics.Scaled(18f));
 
-            GameObject keyObject = new GameObject("KeyLabel", typeof(RectTransform));
-            keyObject.transform.SetParent(slotTransform, false);
-            RectTransform keyRect = keyObject.GetComponent<RectTransform>();
-            keyRect.anchorMin = new Vector2(0f, 1f);
-            keyRect.anchorMax = new Vector2(0f, 1f);
-            keyRect.pivot = new Vector2(0f, 1f);
-            keyRect.anchoredPosition = new Vector2(HudLayoutMetrics.Scaled(4f), HudLayoutMetrics.Scaled(-4f));
-            keyRect.sizeDelta = new Vector2(HudLayoutMetrics.Scaled(24f), HudLayoutMetrics.Scaled(18f));
+                keyLabel = keyObject.AddComponent<TextMeshProUGUI>();
+                TmpUiHelper.ApplyDefaultFont(keyLabel);
+                keyLabel.text = keyText;
+                keyLabel.fontSize = HudLayoutMetrics.ScaledInt(14f);
+                keyLabel.fontStyle = FontStyles.Bold;
+                keyLabel.alignment = TextAlignmentOptions.TopLeft;
+            }
 
-            TextMeshProUGUI keyLabel = keyObject.AddComponent<TextMeshProUGUI>();
-            TmpUiHelper.ApplyDefaultFont(keyLabel);
-            keyLabel.text = keyText;
-            keyLabel.fontSize = HudLayoutMetrics.ScaledInt(14f);
-            keyLabel.fontStyle = FontStyles.Bold;
-            keyLabel.alignment = TextAlignmentOptions.TopLeft;
-            keyLabel.color = ShiftUiTheme.PrimaryColor;
+            keyLabel.color = SurvivalPioneerUiPalette.HotbarLabelText;
             return keyLabel;
         }
 

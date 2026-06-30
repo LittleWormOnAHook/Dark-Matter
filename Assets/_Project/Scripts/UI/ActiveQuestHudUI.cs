@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Project.Core;
+using Project.Progression;
 using Project.Quests;
 using TMPro;
 using UnityEngine;
@@ -18,7 +19,9 @@ namespace Project.UI
         private static ActiveQuestHudUI instance;
 
         private RectTransform listRoot;
+        private TextMeshProUGUI progressionHeader;
         private QuestManager questManager;
+        private PlayerProgressionManager progression;
         private bool built;
 
         public static ActiveQuestHudUI EnsureExists(Transform canvasRoot)
@@ -46,8 +49,29 @@ namespace Project.UI
                 rect.anchorMax = new Vector2(1f, 0.5f);
                 rect.pivot = new Vector2(1f, 0.5f);
                 rect.anchoredPosition = new Vector2(-HudLayoutMetrics.RightHudInset, 0f);
-                rect.sizeDelta = new Vector2(220f, 320f);
+                rect.sizeDelta = new Vector2(220f, 340f);
             }
+
+            GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
+            headerObject.transform.SetParent(transform, false);
+            RectTransform headerRect = headerObject.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0f, 1f);
+            headerRect.anchorMax = new Vector2(1f, 1f);
+            headerRect.pivot = new Vector2(1f, 1f);
+            headerRect.anchoredPosition = Vector2.zero;
+            headerRect.sizeDelta = new Vector2(0f, 28f);
+
+            progressionHeader = headerObject.AddComponent<TextMeshProUGUI>();
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+                theme.ApplyFont(progressionHeader, semiBold: true);
+            else
+                TmpUiHelper.ApplyDefaultFont(progressionHeader);
+            progressionHeader.fontSize = 16f;
+            progressionHeader.fontStyle = FontStyles.Bold;
+            progressionHeader.alignment = TextAlignmentOptions.TopRight;
+            progressionHeader.color = SurvivalPioneerUiPalette.HighlightText;
+            progressionHeader.raycastTarget = false;
 
             GameObject listObject = new GameObject("QuestList", typeof(RectTransform));
             listObject.transform.SetParent(transform, false);
@@ -55,7 +79,7 @@ namespace Project.UI
             listRoot.anchorMin = new Vector2(0f, 0f);
             listRoot.anchorMax = new Vector2(1f, 1f);
             listRoot.offsetMin = Vector2.zero;
-            listRoot.offsetMax = Vector2.zero;
+            listRoot.offsetMax = new Vector2(0f, -32f);
 
             VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 2f;
@@ -74,6 +98,11 @@ namespace Project.UI
                 questManager.OnQuestCompleted += HandleQuestUpdated;
             }
 
+            progression = PlayerProgressionManager.EnsureExists();
+            if (progression != null)
+                progression.OnXpChanged += RefreshProgressionHeader;
+
+            RefreshProgressionHeader();
             Refresh();
         }
 
@@ -84,6 +113,9 @@ namespace Project.UI
                 questManager.OnQuestUpdated -= HandleQuestUpdated;
                 questManager.OnQuestCompleted -= HandleQuestUpdated;
             }
+
+            if (progression != null)
+                progression.OnXpChanged -= RefreshProgressionHeader;
         }
 
         private void HandleQuestUpdated(QuestProgress progress)
@@ -105,8 +137,26 @@ namespace Project.UI
             questManager.OnQuestCompleted += HandleQuestUpdated;
         }
 
+        private void RefreshProgressionHeader()
+        {
+            if (progressionHeader == null)
+                return;
+
+            progression ??= PlayerProgressionManager.EnsureExists();
+            if (progression == null)
+            {
+                progressionHeader.text = "Lv 1  |  XP 0/100";
+                return;
+            }
+
+            progressionHeader.text =
+                $"Lv {progression.Level}  |  XP {progression.GetXpProgressInCurrentLevel()}/{progression.GetXpRequiredForNextLevel()}";
+        }
+
         public void Refresh()
         {
+            RefreshProgressionHeader();
+
             if (listRoot == null)
                 return;
 
@@ -153,7 +203,9 @@ namespace Project.UI
             layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
 
-            Color titleColor = QuestUiPalette.GetTitleColor(progress.status, theme);
+            Color titleColor = progress.status == QuestStatus.Completed
+                ? SurvivalPioneerUiPalette.Gold
+                : SurvivalPioneerUiPalette.WarmOffWhite;
             TextMeshProUGUI title = CreateLine(block.transform, FormatThreeWordsPerLine(definition.title), 24f, FontStyles.Bold, theme);
             title.alignment = TextAlignmentOptions.TopRight;
             title.lineSpacing = -6f;
@@ -178,7 +230,7 @@ namespace Project.UI
                     objectiveText.lineSpacing = -12f;
                     objectiveText.paragraphSpacing = -6f;
                     objectiveText.margin = Vector4.zero;
-                    objectiveText.color = QuestUiPalette.GetObjectiveTextColor(complete, progress.status, theme);
+                    objectiveText.color = SurvivalPioneerUiPalette.RichFuchsia;
 
                     LayoutElement objectiveLayout = objectiveText.gameObject.AddComponent<LayoutElement>();
                     objectiveLayout.minHeight = 0f;
@@ -191,7 +243,7 @@ namespace Project.UI
                 turnIn.alignment = TextAlignmentOptions.TopRight;
                 turnIn.lineSpacing = -10f;
                 turnIn.margin = new Vector4(0f, 1f, 0f, 0f);
-                turnIn.color = QuestUiPalette.ReadyToTurnInText;
+                turnIn.color = SurvivalPioneerUiPalette.RichFuchsia;
             }
             else if (progress.status == QuestStatus.Active)
             {
@@ -199,7 +251,7 @@ namespace Project.UI
                 statusLine.alignment = TextAlignmentOptions.TopRight;
                 statusLine.lineSpacing = -10f;
                 statusLine.margin = new Vector4(0f, 1f, 0f, 0f);
-                statusLine.color = QuestUiPalette.InProgressText;
+                statusLine.color = SurvivalPioneerUiPalette.RichFuchsia;
             }
         }
 

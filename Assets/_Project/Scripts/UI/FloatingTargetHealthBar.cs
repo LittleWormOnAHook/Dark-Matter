@@ -1,5 +1,6 @@
 using Project.AI;
 using Project.Combat;
+using Project.Companions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,7 +21,8 @@ namespace Project.UI
         private RectTransform rectTransform;
         private TrainingDummy dummyTarget;
         private EnemyHealth enemyTarget;
-        private Vector3 enemyBarOffset;
+        private CompanionHealth companionTarget;
+        private Vector3 targetBarOffset;
         private Camera worldCamera;
         private bool userVisible = true;
 
@@ -68,12 +70,24 @@ namespace Project.UI
         {
             ClearBindings();
             enemyTarget = health;
-            enemyBarOffset = worldOffset;
+            targetBarOffset = worldOffset;
             if (enemyTarget == null)
                 return;
 
             enemyTarget.HealthChanged += HandleHealthChanged;
             HandleHealthChanged(enemyTarget.CurrentHealth, enemyTarget.MaxHealth);
+        }
+
+        public void Bind(CompanionHealth health, Vector3 worldOffset)
+        {
+            ClearBindings();
+            companionTarget = health;
+            targetBarOffset = worldOffset;
+            if (companionTarget == null)
+                return;
+
+            companionTarget.HealthChanged += HandleHealthChanged;
+            HandleHealthChanged(companionTarget.CurrentHealth, companionTarget.MaxHealth);
         }
 
         public void SetVisible(bool visible)
@@ -91,8 +105,12 @@ namespace Project.UI
             if (enemyTarget != null)
                 enemyTarget.HealthChanged -= HandleHealthChanged;
 
+            if (companionTarget != null)
+                companionTarget.HealthChanged -= HandleHealthChanged;
+
             dummyTarget = null;
             enemyTarget = null;
+            companionTarget = null;
         }
 
         private void OnDestroy()
@@ -124,7 +142,17 @@ namespace Project.UI
                     return;
                 }
 
-                worldPosition = enemyTarget.HealthBarAnchor.position + enemyBarOffset;
+                worldPosition = enemyTarget.HealthBarAnchor.position + targetBarOffset;
+            }
+            else if (companionTarget != null)
+            {
+                if (companionTarget.IsDead)
+                {
+                    SetBarVisible(0f);
+                    return;
+                }
+
+                worldPosition = companionTarget.HealthBarAnchor.position + targetBarOffset;
             }
             else
             {

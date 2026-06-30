@@ -1,12 +1,16 @@
 using System;
 using System.IO;
 using System.Linq;
+using Project.Building;
 using Project.Data;
 using Project.Inventory;
 using Project.Managers;
 using Project.Player;
 using Project.Crafting;
+using Project.Pet;
 using Project.Pioneers;
+using Project.Progression;
+using Project.Achievements;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
@@ -71,6 +75,7 @@ namespace Project.Core
             info.Health = data.health;
             info.AetherCredits = data.version >= 9 ? data.aetherCredits : data.piBalance;
             info.PiBalance = data.piBalance;
+            info.PlayerLevel = data.version >= 10 ? data.playerLevel : 1;
             return info;
         }
 
@@ -96,8 +101,12 @@ namespace Project.Core
             UIManager ui = UnityEngine.Object.FindAnyObjectByType<UIManager>();
             QuestManager questManager = UnityEngine.Object.FindAnyObjectByType<QuestManager>();
             CraftingManager craftingManager = UnityEngine.Object.FindAnyObjectByType<CraftingManager>();
+            PlayerProgressionManager progressionManager = player.GetComponent<PlayerProgressionManager>()
+                ?? PlayerProgressionManager.EnsureExists();
+            AchievementManager achievementManager = AchievementManager.EnsureExists();
 
             PioneerRosterManager roster = UnityEngine.Object.FindAnyObjectByType<PioneerRosterManager>();
+            PetManager petManager = PetManager.EnsureExists();
 
             if (inventory == null || stats == null)
             {
@@ -107,7 +116,7 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 9,
+                version = 14,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,
@@ -120,6 +129,14 @@ namespace Project.Core
                 starterPioneerSelected = roster != null && roster.StarterPioneerSelected,
                 workerCount = roster != null ? roster.WorkerCount : 0,
                 skilledPioneers = roster != null ? roster.BuildSaveRecords() : null,
+                expeditionTrioIds = roster != null ? roster.BuildExpeditionTrioSave() : null,
+                colonistAggregate = roster != null ? roster.BuildColonistAggregateSave() : null,
+                echoChronicle = roster != null ? roster.BuildEchoChronicleSave() : null,
+                buildingOperations = BuildingOperationRegistry.BuildSaveSnapshot(),
+                ownedPetIds = petManager != null ? petManager.BuildOwnedPetSave() : null,
+                toolbarPetId = petManager != null ? petManager.BuildToolbarPetSave() : string.Empty,
+                petTamingProgress = petManager != null ? petManager.BuildTamingSave() : null,
+                achievementProgress = achievementManager != null ? achievementManager.BuildSaveSnapshot() : null,
                 posX = player.transform.position.x,
                 posY = player.transform.position.y,
                 posZ = player.transform.position.z,
@@ -136,6 +153,18 @@ namespace Project.Core
                 discoveredRecipeIds = craftingManager != null ? craftingManager.BuildSave() : null,
                 pendingRecipeScrollIds = craftingManager != null ? craftingManager.BuildPendingSave() : null
             };
+
+            if (progressionManager != null)
+            {
+                ProgressionSaveSnapshot snapshot = progressionManager.BuildSaveSnapshot();
+                data.playerLevel = snapshot.playerLevel;
+                data.playerXp = snapshot.playerXp;
+                data.unspentSkillPoints = snapshot.unspentSkillPoints;
+                data.allocatedSkillIds = snapshot.allocatedSkillIds;
+                data.allocatedSkillRanks = snapshot.allocatedSkillRanks;
+                data.exploredXpIds = snapshot.exploredXpIds;
+                data.claimedOneTimeXpKeys = snapshot.claimedOneTimeXpKeys;
+            }
 
             string json = JsonUtility.ToJson(data, prettyPrint: true);
             File.WriteAllText(GetSlotFilePath(slotIndex), json);
@@ -218,11 +247,46 @@ namespace Project.Core
             }
 
             ApplyRosterSave(data, ui);
+            ApplyPetSave(data);
+            ApplyAchievementSave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
+            ApplyProgressionSave(player, data);
 
             SimpleGameManager.Instance?.BeginNewGameSession(grantStartingItems: false);
+        }
+
+        private static void ApplyProgressionSave(GameObject player, GameSaveData data)
+        {
+            PlayerProgressionManager progression = player.GetComponent<PlayerProgressionManager>();
+            if (progression == null)
+                progression = PlayerProgressionManager.EnsureExists();
+
+            ProgressionStatScaler scaler = player.GetComponent<ProgressionStatScaler>();
+            if (scaler == null)
+                scaler = player.AddComponent<ProgressionStatScaler>();
+
+            if (data.version >= 10)
+            {
+                progression.ApplySaveSnapshot(new ProgressionSaveSnapshot
+                {
+                    playerLevel = data.playerLevel,
+                    playerXp = data.playerXp,
+                    unspentSkillPoints = data.unspentSkillPoints,
+                    allocatedSkillIds = data.allocatedSkillIds,
+                    allocatedSkillRanks = data.allocatedSkillRanks,
+                    exploredXpIds = data.exploredXpIds,
+                    claimedOneTimeXpKeys = data.claimedOneTimeXpKeys
+                });
+            }
+            else
+            {
+                progression.ResetToNewGame();
+            }
+
+            scaler.CaptureBaseMaxValues();
+            scaler.ApplyLevelScaling();
         }
 
         private static void ApplyRosterSave(GameSaveData data, UIManager ui)
@@ -230,6 +294,21 @@ namespace Project.Core
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (roster == null)
                 return;
+
+            if (data.version >= 11)
+            {
+                roster.ApplySaveV11(
+                    data.aetherCredits,
+                    data.piWalletBalance,
+                    data.workerCount,
+                    data.starterPioneerSelected,
+                    data.skilledPioneers,
+                    data.expeditionTrioIds,
+                    data.colonistAggregate,
+                    data.echoChronicle);
+                BuildingOperationRegistry.ApplySaveSnapshot(data.buildingOperations);
+                return;
+            }
 
             if (data.version >= 9)
             {
@@ -239,6 +318,7 @@ namespace Project.Core
                     data.workerCount,
                     data.starterPioneerSelected,
                     data.skilledPioneers);
+                roster.EnsureDefaultTrioIfNeededPublic();
                 return;
             }
 
@@ -250,6 +330,28 @@ namespace Project.Core
                 ui.SetAetherCredits(roster.AetherCredits);
                 ui.SetPiWalletBalance(roster.PiWalletBalance);
             }
+        }
+
+        private static void ApplyPetSave(GameSaveData data)
+        {
+            if (data.version < 12)
+                return;
+
+            PetManager manager = PetManager.EnsureExists();
+            manager?.ApplySave(data.ownedPetIds, data.toolbarPetId);
+
+            if (data.version >= 13)
+                manager?.ApplyTamingSave(data.petTamingProgress);
+        }
+
+        private static void ApplyAchievementSave(GameSaveData data)
+        {
+            if (data.version < 13)
+                return;
+
+            AchievementManager manager = AchievementManager.EnsureExists();
+            manager?.ApplySave(data.achievementProgress);
+            DynamicAchievementGenerator.EnsureSessionGoals();
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

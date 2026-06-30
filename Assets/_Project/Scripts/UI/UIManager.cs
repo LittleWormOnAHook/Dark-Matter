@@ -3,10 +3,12 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 using TMPro;
+using Project.Achievements;
 using Project.Core;
 using Project.Pioneers;
 using Project.Player;
 using Project.Quests;
+using Project.Progression;
 using Project.Survival;
 
 namespace Project.UI
@@ -47,6 +49,9 @@ namespace Project.UI
         private float aetherCredits;
         private float piWalletBalance;
         private float piBalance;
+        private PlayerProgressionManager trackedProgression;
+
+        private InputAction characterToggleAction;
 
         private void Awake()
         {
@@ -57,11 +62,15 @@ namespace Project.UI
             EnsureToolBarUi();
             EnsureShiftHudBootstrap();
             EnsurePickupProximityDotUi();
+            EnsureWorldInteractionDotUi();
             EnsurePickupAimReticleUi();
             EnsureJournalPanelUi();
             EnsureQuestManager();
+            EnsureAchievementSystems();
             EnsureCraftingUi();
             EnsurePeakScreenUi();
+            EnsureProgressionHud();
+            BindCharacterTabInput();
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (roster != null)
@@ -75,6 +84,23 @@ namespace Project.UI
         {
             if (GetComponent<JournalPanelUI>() == null)
                 gameObject.AddComponent<JournalPanelUI>();
+
+        }
+
+        private void EnsureProgressionHud()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player != null)
+            {
+                if (player.GetComponent<PlayerProgressionManager>() == null)
+                    player.AddComponent<PlayerProgressionManager>();
+                if (player.GetComponent<ProgressionStatScaler>() == null)
+                    player.AddComponent<ProgressionStatScaler>();
+                return;
+            }
+
+            if (GetComponent<PlayerProgressionManager>() == null)
+                gameObject.AddComponent<PlayerProgressionManager>();
         }
 
         public void OnToggleJournal(InputAction.CallbackContext context)
@@ -109,6 +135,14 @@ namespace Project.UI
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers);
         }
 
+        public void OnToggleCharacter(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            GetJournalPanel()?.OpenToCharacterTab();
+        }
+
         public void OnToggleSkills(InputAction.CallbackContext context)
         {
             if (!GameSession.HasStarted || !context.performed)
@@ -133,9 +167,30 @@ namespace Project.UI
             return journal;
         }
 
+        private void BindCharacterTabInput()
+        {
+            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
+            if (playerInput == null)
+                return;
+
+            characterToggleAction = playerInput.actions.FindAction("Character", false);
+            if (characterToggleAction == null)
+                return;
+
+            characterToggleAction.performed -= OnToggleCharacter;
+            characterToggleAction.performed += OnToggleCharacter;
+        }
+
         private void EnsureQuestManager()
         {
             QuestManager.EnsureExists();
+        }
+
+        private void EnsureAchievementSystems()
+        {
+            AchievementManager.EnsureExists();
+            if (GetComponent<AchievementProgressBridge>() == null)
+                gameObject.AddComponent<AchievementProgressBridge>();
         }
 
         private void EnsureCraftingUi()
@@ -153,6 +208,12 @@ namespace Project.UI
         {
             if (GetComponent<PickupProximityDotUI>() == null)
                 gameObject.AddComponent<PickupProximityDotUI>();
+        }
+
+        private void EnsureWorldInteractionDotUi()
+        {
+            if (GetComponent<WorldInteractionDotUI>() == null)
+                gameObject.AddComponent<WorldInteractionDotUI>();
         }
 
         private void EnsurePickupAimReticleUi()
@@ -189,6 +250,7 @@ namespace Project.UI
             if (interactionPrompt != null) interactionPrompt.gameObject.SetActive(false);
             ConfigureInteractionPromptPosition();
             EnsureGameplayUiHelpers();
+            EnsureProgressionLevelUpFeedback();
             worldCamera = Camera.main;
             EnsureCombatUiReady();
         }
@@ -196,9 +258,27 @@ namespace Project.UI
         private void EnsureGameplayUiHelpers()
         {
             PickupToastUI.EnsureExists(transform);
+            XpToastUI.EnsureExists(transform);
+            AchievementUnlockPopupUI.EnsureExists(transform);
+            AchievementProgressBridge.EnsureExists();
             QuestGiverDialogUI.EnsureExists(transform);
             ActiveQuestHudUI.EnsureExists(transform);
             UiFrontLayer.Get(transform);
+        }
+
+        private void EnsureProgressionLevelUpFeedback()
+        {
+            trackedProgression = PlayerProgressionManager.EnsureExists();
+            if (trackedProgression == null)
+                return;
+
+            trackedProgression.OnLevelUp -= HandleProgressionLevelUp;
+            trackedProgression.OnLevelUp += HandleProgressionLevelUp;
+        }
+
+        private void HandleProgressionLevelUp(int newLevel, int levelsGained)
+        {
+            ShowLevelUpPopup(newLevel, levelsGained);
         }
 
         private void ConfigureInteractionPromptPosition()
@@ -243,13 +323,11 @@ namespace Project.UI
             promptRect.anchoredPosition = new Vector2(0f, 96f);
             promptRect.sizeDelta = new Vector2(760f, 56f);
 
-            interactionPrompt.fontSize = 24f;
+            interactionPrompt.fontSize = 28f;
             interactionPrompt.alignment = TextAlignmentOptions.Center;
             interactionPrompt.textWrappingMode = TextWrappingModes.NoWrap;
             interactionPrompt.overflowMode = TextOverflowModes.Overflow;
-            interactionPrompt.color = ShiftUiTheme.Current != null
-                ? ShiftUiTheme.Current.primaryColor
-                : new Color(0.82f, 0.92f, 1f, 0.98f);
+            interactionPrompt.color = SurvivalPioneerUiPalette.InteractionPromptText;
         }
 
         public void SetCurrencyHudVisible(bool visible)
@@ -565,6 +643,13 @@ namespace Project.UI
             ShowCurrencyPopup($"+{amount} AC", source);
         }
 
+        public void ShowLevelUpPopup(int newLevel, int skillPointsGained)
+        {
+            ShowCurrencyPopup(
+                $"Level Up! Lv {newLevel}",
+                skillPointsGained > 0 ? $"+{skillPointsGained} skill point(s)" : "Level increased");
+        }
+
         public void ShowPiReward(int amount, string source = "Gathering")
         {
             ShowAcReward(amount, source);
@@ -711,13 +796,9 @@ namespace Project.UI
             contentRt.anchoredPosition = Vector2.zero;
 
             Image contentBg = contentPanel.AddComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(contentBg, large: true);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(contentBg);
-                contentBg.color = new Color(0.08f, 0.08f, 0.1f, 0.95f);
-            }
+            MenuUiBuilder.ApplyUiSprite(contentBg);
+            SurvivalPioneerUiPalette.ApplyPanelShellBackground(contentBg, 0.98f);
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(contentPanel);
 
             // Create title text "GAME OVER"
             GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
@@ -730,7 +811,7 @@ namespace Project.UI
             titleText.text = "GAME OVER";
             titleText.fontSize = 64f;
             titleText.fontStyle = FontStyles.Bold;
-            titleText.color = theme != null ? theme.negativeColor : new Color(0.9f, 0.1f, 0.1f, 1f);
+            titleText.color = SurvivalPioneerUiPalette.WarningText;
             titleText.alignment = TextAlignmentOptions.Center;
             
             RectTransform titleRt = titleObj.GetComponent<RectTransform>();
@@ -803,24 +884,12 @@ namespace Project.UI
             rt.anchoredPosition = pos;
 
             Image img = btnObj.AddComponent<Image>();
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            if (theme != null)
-                theme.ApplyPanelImage(img, large: false, alphaMultiplier: 0.98f);
-            else
-                img.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+            MenuUiBuilder.ApplyUiSprite(img);
+            img.color = SurvivalPioneerUiPalette.ButtonNormal;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(btnObj);
 
             Button btn = btnObj.AddComponent<Button>();
-            
-            ColorBlock cb = btn.colors;
-            Color normal = theme != null ? theme.backgroundColor : new Color(0.2f, 0.2f, 0.2f, 1f);
-            cb.normalColor = normal;
-            cb.highlightedColor = theme != null
-                ? new Color(theme.primaryColor.r, theme.primaryColor.g, theme.primaryColor.b, 0.35f)
-                : new Color(0.35f, 0.35f, 0.35f, 1f);
-            cb.pressedColor = theme != null
-                ? new Color(theme.primaryColor.r * 0.5f, theme.primaryColor.g * 0.5f, theme.primaryColor.b * 0.5f, 0.85f)
-                : new Color(0.15f, 0.15f, 0.15f, 1f);
-            btn.colors = cb;
+            SurvivalPioneerUiPalette.StylePrimaryButton(btn, img);
 
             // Add text child
             GameObject txtObj = new GameObject("Text", typeof(RectTransform));
@@ -832,6 +901,7 @@ namespace Project.UI
             txtRt.sizeDelta = Vector2.zero;
 
             TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+            ShiftUiTheme theme = ShiftUiTheme.Current;
             if (theme != null)
                 theme.ApplyFont(tmp, semiBold: true);
             else
@@ -839,7 +909,7 @@ namespace Project.UI
             tmp.text = labelText;
             tmp.fontSize = 20f;
             tmp.fontStyle = FontStyles.Bold;
-            tmp.color = theme != null ? theme.primaryColor : Color.white;
+            tmp.color = SurvivalPioneerUiPalette.BodyText;
             tmp.alignment = TextAlignmentOptions.Center;
 
             return btnObj;
@@ -847,6 +917,12 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            if (trackedProgression != null)
+                trackedProgression.OnLevelUp -= HandleProgressionLevelUp;
+
+            if (characterToggleAction != null)
+                characterToggleAction.performed -= OnToggleCharacter;
+
             if (survivalStats != null)
                 survivalStats.OnStatsChanged -= UpdateSurvivalUI;
         }

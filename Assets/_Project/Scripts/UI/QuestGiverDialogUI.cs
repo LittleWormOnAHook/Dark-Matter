@@ -18,12 +18,25 @@ namespace Project.UI
         private GameObject dialogPanel;
         private TextMeshProUGUI titleText;
         private TextMeshProUGUI bodyText;
-        private GameObject questListRoot;
-        private Transform questListContent;
+        private GameObject simpleContentRoot;
+        private GameObject boardContentRoot;
+        private Transform questPickerContent;
+        private ScrollRect questListScroll;
+        private TextMeshProUGUI leftTitleText;
+        private TextMeshProUGUI leftDescriptionText;
+        private TextMeshProUGUI leftObjectivesText;
+        private TextMeshProUGUI rightProgressText;
+        private TextMeshProUGUI rightXpText;
+        private TextMeshProUGUI rightRewardsText;
+        private TextMeshProUGUI rightStatusText;
         private Button primaryButton;
         private TextMeshProUGUI primaryButtonLabel;
+        private Button questActionButton;
+        private TextMeshProUGUI questActionButtonLabel;
         private Action onClosed;
         private bool built;
+        private IList<QuestBoardEntry> currentEntries;
+        private int selectedEntryIndex = -1;
 
         public static QuestGiverDialogUI Instance => instance;
 
@@ -37,6 +50,12 @@ namespace Project.UI
 
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
+            if (instance != null && instance.built && instance.questListScroll == null)
+            {
+                instance.TeardownInternal();
+                instance = null;
+            }
+
             if (instance != null)
                 return instance;
 
@@ -91,10 +110,23 @@ namespace Project.UI
             dialogPanel = null;
             titleText = null;
             bodyText = null;
-            questListRoot = null;
-            questListContent = null;
+            simpleContentRoot = null;
+            boardContentRoot = null;
+            questPickerContent = null;
+            questListScroll = null;
+            leftTitleText = null;
+            leftDescriptionText = null;
+            leftObjectivesText = null;
+            rightProgressText = null;
+            rightXpText = null;
+            rightRewardsText = null;
+            rightStatusText = null;
             primaryButton = null;
             primaryButtonLabel = null;
+            questActionButton = null;
+            questActionButtonLabel = null;
+            currentEntries = null;
+            selectedEntryIndex = -1;
 
             if (instance == this)
                 instance = null;
@@ -137,13 +169,37 @@ namespace Project.UI
             dialogPanel = MenuUiBuilder.CreateCenteredModalShell(
                 overlayRoot.transform,
                 "Quest Giver",
-                GameplayHudLayout.GameplayModalSize,
+                GameplayHudLayout.QuestGiverModalSize,
                 out RectTransform contentArea,
                 out Button headerCloseButton);
             titleText = MenuUiBuilder.GetShellTitleText(dialogPanel);
+            if (titleText != null)
+            {
+                titleText.alignment = TextAlignmentOptions.MidlineLeft;
+                RectTransform titleRect = titleText.rectTransform;
+                titleRect.anchorMin = new Vector2(0f, 0f);
+                titleRect.anchorMax = new Vector2(1f, 1f);
+                titleRect.offsetMin = new Vector2(16f, 0f);
+                titleRect.offsetMax = new Vector2(-56f, 0f);
+            }
+
             headerCloseButton.onClick.AddListener(Close);
 
-            VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
+            BuildSimpleContent(contentArea, theme);
+            BuildBoardContent(contentArea, theme);
+
+            EnforceQuestDialogLayout();
+            overlayRoot.SetActive(false);
+            UiFrontLayer.BringLayerToFront(canvasRoot);
+        }
+
+        private void BuildSimpleContent(RectTransform contentArea, ShiftUiTheme theme)
+        {
+            simpleContentRoot = new GameObject("SimpleContent", typeof(RectTransform));
+            simpleContentRoot.transform.SetParent(contentArea, false);
+            MenuUiBuilder.StretchRectToFill(simpleContentRoot.GetComponent<RectTransform>());
+
+            VerticalLayoutGroup layout = simpleContentRoot.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(16, 16, 16, 16);
             layout.spacing = 12f;
             layout.childAlignment = TextAnchor.UpperLeft;
@@ -152,53 +208,167 @@ namespace Project.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            bodyText = CreateText(contentArea, "", theme, 22f, FontStyles.Normal);
+            bodyText = CreateText(simpleContentRoot.transform, "", theme, 22f, FontStyles.Normal);
             bodyText.textWrappingMode = TextWrappingModes.Normal;
             LayoutElement bodyLayout = bodyText.gameObject.AddComponent<LayoutElement>();
-            bodyLayout.flexibleHeight = 0f;
+            bodyLayout.flexibleHeight = 1f;
 
-            questListRoot = new GameObject("QuestList", typeof(RectTransform));
-            questListRoot.transform.SetParent(contentArea, false);
-            LayoutElement listLayout = questListRoot.AddComponent<LayoutElement>();
-            listLayout.flexibleHeight = 1f;
-            listLayout.minHeight = 160f;
+            primaryButton = CreateButton(simpleContentRoot.transform, "Close", theme, out primaryButtonLabel);
+            primaryButton.onClick.AddListener(Close);
+        }
+
+        private void BuildBoardContent(RectTransform contentArea, ShiftUiTheme theme)
+        {
+            boardContentRoot = new GameObject("BoardContent", typeof(RectTransform));
+            boardContentRoot.transform.SetParent(contentArea, false);
+            MenuUiBuilder.StretchRectToFill(boardContentRoot.GetComponent<RectTransform>());
+
+            VerticalLayoutGroup rootLayout = boardContentRoot.AddComponent<VerticalLayoutGroup>();
+            rootLayout.padding = new RectOffset(12, 12, 12, 12);
+            rootLayout.spacing = 10f;
+            rootLayout.childControlWidth = true;
+            rootLayout.childControlHeight = true;
+            rootLayout.childForceExpandWidth = true;
+            rootLayout.childForceExpandHeight = false;
+
+            GameObject splitRow = new GameObject("SplitRow", typeof(RectTransform), typeof(LayoutElement));
+            splitRow.transform.SetParent(boardContentRoot.transform, false);
+            LayoutElement splitLayout = splitRow.GetComponent<LayoutElement>();
+            splitLayout.flexibleHeight = 1f;
+            splitLayout.minHeight = 320f;
+
+            HorizontalLayoutGroup splitHBox = splitRow.AddComponent<HorizontalLayoutGroup>();
+            splitHBox.spacing = 12f;
+            splitHBox.childControlWidth = true;
+            splitHBox.childControlHeight = true;
+            splitHBox.childForceExpandWidth = true;
+            splitHBox.childForceExpandHeight = true;
+
+            BuildQuestListColumn(splitRow.transform, theme, out questPickerContent, out questListScroll);
+
+            GameObject leftPanel = CreatePanel(splitRow.transform, "QuestInfoPanel", flexibleWidth: 1f);
+            leftTitleText = CreateText(leftPanel.transform, "Select a quest", theme, 24f, FontStyles.Bold);
+            leftDescriptionText = CreateText(leftPanel.transform, string.Empty, theme, 18f, FontStyles.Normal);
+            leftDescriptionText.textWrappingMode = TextWrappingModes.Normal;
+            leftObjectivesText = CreateText(leftPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
+            leftObjectivesText.textWrappingMode = TextWrappingModes.Normal;
+            leftObjectivesText.color = QuestUiPalette.InProgressText;
+
+            GameObject rightPanel = CreatePanel(splitRow.transform, "QuestProgressPanel", flexibleWidth: 1f);
+            rightStatusText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
+            rightProgressText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
+            rightProgressText.textWrappingMode = TextWrappingModes.Normal;
+            rightXpText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
+            rightXpText.color = SurvivalPioneerUiPalette.Gold;
+            rightRewardsText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
+            rightRewardsText.textWrappingMode = TextWrappingModes.Normal;
+
+            questActionButton = CreateButton(boardContentRoot.transform, "Accept", theme, out questActionButtonLabel);
+            questActionButton.onClick.AddListener(HandleQuestActionClicked);
+
+            boardContentRoot.SetActive(false);
+        }
+
+        private static void BuildQuestListColumn(Transform parent, ShiftUiTheme theme, out Transform listContent, out ScrollRect scroll)
+        {
+            GameObject listColumn = new GameObject("QuestListColumn", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            listColumn.transform.SetParent(parent, false);
+
+            Image columnBg = listColumn.GetComponent<Image>();
+            columnBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.95f);
+
+            LayoutElement columnLayout = listColumn.GetComponent<LayoutElement>();
+            columnLayout.flexibleWidth = 0.38f;
+            columnLayout.minWidth = 220f;
+            columnLayout.flexibleHeight = 1f;
+
+            VerticalLayoutGroup columnVBox = listColumn.AddComponent<VerticalLayoutGroup>();
+            columnVBox.padding = new RectOffset(8, 8, 8, 8);
+            columnVBox.spacing = 6f;
+            columnVBox.childControlWidth = true;
+            columnVBox.childControlHeight = true;
+            columnVBox.childForceExpandWidth = true;
+            columnVBox.childForceExpandHeight = false;
+
+            TextMeshProUGUI listHeader = CreateText(listColumn.transform, "Quests", theme, 18f, FontStyles.Bold);
+            LayoutElement headerLayout = listHeader.gameObject.AddComponent<LayoutElement>();
+            headerLayout.preferredHeight = 24f;
+
+            GameObject scrollRoot = new GameObject("QuestScroll", typeof(RectTransform), typeof(LayoutElement));
+            scrollRoot.transform.SetParent(listColumn.transform, false);
+            LayoutElement scrollLayout = scrollRoot.GetComponent<LayoutElement>();
+            scrollLayout.flexibleHeight = 1f;
+            scrollLayout.minHeight = 120f;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
-            viewport.transform.SetParent(questListRoot.transform, false);
+            viewport.transform.SetParent(scrollRoot.transform, false);
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
-            MenuUiBuilder.StretchRectToFill(viewportRect);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
             viewport.AddComponent<RectMask2D>();
 
-            GameObject content = new GameObject("Content", typeof(RectTransform));
-            content.transform.SetParent(viewport.transform, false);
-            RectTransform contentRect = content.GetComponent<RectTransform>();
+            GameObject contentObject = new GameObject("Content", typeof(RectTransform));
+            contentObject.transform.SetParent(viewport.transform, false);
+            RectTransform contentRect = contentObject.GetComponent<RectTransform>();
             contentRect.anchorMin = new Vector2(0f, 1f);
             contentRect.anchorMax = new Vector2(1f, 1f);
             contentRect.pivot = new Vector2(0.5f, 1f);
             contentRect.anchoredPosition = Vector2.zero;
             contentRect.sizeDelta = new Vector2(0f, 0f);
 
-            VerticalLayoutGroup contentLayout = content.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 8f;
+            VerticalLayoutGroup contentLayout = contentObject.AddComponent<VerticalLayoutGroup>();
+            contentLayout.spacing = 6f;
+            contentLayout.padding = new RectOffset(2, 2, 2, 2);
+            contentLayout.childAlignment = TextAnchor.UpperLeft;
             contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
             contentLayout.childForceExpandWidth = true;
             contentLayout.childForceExpandHeight = false;
-            content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter contentFitter = contentObject.AddComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            ScrollRect scroll = questListRoot.AddComponent<ScrollRect>();
+            scroll = scrollRoot.AddComponent<ScrollRect>();
             scroll.horizontal = false;
             scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.viewport = viewportRect;
             scroll.content = contentRect;
-            questListContent = content.transform;
 
-            primaryButton = CreateButton(contentArea, "Close", theme, out primaryButtonLabel);
-            primaryButton.onClick.AddListener(Close);
+            listContent = contentObject.transform;
+        }
 
-            questListRoot.SetActive(false);
-            EnforceQuestDialogLayout();
-            overlayRoot.SetActive(false);
-            UiFrontLayer.BringLayerToFront(canvasRoot);
+        private static GameObject CreatePanel(Transform parent, string name, float preferredHeight = 0f, float flexibleWidth = 0f)
+        {
+            GameObject panel = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            panel.transform.SetParent(parent, false);
+
+            Image bg = panel.GetComponent<Image>();
+            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.92f);
+
+            LayoutElement layout = panel.GetComponent<LayoutElement>();
+            if (preferredHeight > 0f)
+            {
+                layout.preferredHeight = preferredHeight;
+                layout.minHeight = preferredHeight;
+            }
+
+            if (flexibleWidth > 0f)
+            {
+                layout.flexibleWidth = flexibleWidth;
+                layout.flexibleHeight = 1f;
+            }
+
+            VerticalLayoutGroup panelLayout = panel.AddComponent<VerticalLayoutGroup>();
+            panelLayout.padding = new RectOffset(12, 12, 12, 12);
+            panelLayout.spacing = 8f;
+            panelLayout.childControlWidth = true;
+            panelLayout.childControlHeight = true;
+            panelLayout.childForceExpandWidth = true;
+            panelLayout.childForceExpandHeight = false;
+            return panel;
         }
 
         private void PresentSimple(string speakerName, string message, Action closedCallback, string primaryLabel)
@@ -206,8 +376,8 @@ namespace Project.UI
             onClosed = closedCallback;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             bodyText.text = message ?? string.Empty;
-            bodyText.gameObject.SetActive(true);
-            questListRoot.SetActive(false);
+            simpleContentRoot.SetActive(true);
+            boardContentRoot.SetActive(false);
             primaryButtonLabel.text = string.IsNullOrEmpty(primaryLabel) ? "Continue" : primaryLabel;
             primaryButton.interactable = true;
             OpenOverlay();
@@ -217,98 +387,174 @@ namespace Project.UI
         {
             onClosed = closedCallback;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
-            bodyText.text = introMessage ?? "Choose a quest:";
-            bodyText.gameObject.SetActive(true);
-            questListRoot.SetActive(true);
-            primaryButtonLabel.text = "Close";
-            primaryButton.interactable = true;
+            currentEntries = entries;
+            selectedEntryIndex = entries != null && entries.Count > 0 ? 0 : -1;
 
-            ClearQuestList();
+            simpleContentRoot.SetActive(false);
+            boardContentRoot.SetActive(true);
+
+            ClearQuestPicker();
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
-            for (int i = 0; i < entries.Count; i++)
+            if (entries != null)
             {
-                QuestBoardEntry entry = entries[i];
-                CreateQuestListRow(entry, theme);
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    int capturedIndex = i;
+                    CreateQuestPickerButton(entries[i], capturedIndex, theme);
+                }
             }
 
+            if (selectedEntryIndex >= 0)
+                SelectEntry(selectedEntryIndex);
+            else
+            {
+                leftTitleText.text = "No quests available";
+                leftDescriptionText.text = introMessage ?? string.Empty;
+                leftObjectivesText.text = string.Empty;
+                rightStatusText.text = string.Empty;
+                rightProgressText.text = string.Empty;
+                rightXpText.text = string.Empty;
+                rightRewardsText.text = string.Empty;
+                questActionButton.interactable = false;
+                questActionButtonLabel.text = "Close";
+            }
+
+            RefreshQuestListLayout();
             OpenOverlay();
         }
 
-        private void CreateQuestListRow(QuestBoardEntry entry, ShiftUiTheme theme)
+        private void RefreshQuestListLayout()
         {
-            GameObject row = new GameObject("QuestRow", typeof(RectTransform));
-            row.transform.SetParent(questListContent, false);
+            if (questPickerContent is RectTransform contentRect)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
 
-            Image rowBg = row.AddComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(rowBg);
-            rowBg.color = entry.CanSelect
-                ? QuestUiPalette.GetRowBackgroundColor(entry.Status, false, theme)
-                : QuestUiPalette.GetRowBackgroundColor(entry.Status, false, theme) * new Color(1f, 1f, 1f, 0.82f);
+            if (questListScroll != null)
+                questListScroll.verticalNormalizedPosition = 1f;
+        }
+
+        private void CreateQuestPickerButton(QuestBoardEntry entry, int index, ShiftUiTheme theme)
+        {
+            GameObject row = new GameObject($"QuestRow_{index}", typeof(RectTransform));
+            row.transform.SetParent(questPickerContent, false);
+
+            Image bg = row.AddComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(bg);
+            bg.color = QuestUiPalette.GetRowBackgroundColor(entry.Status, index == selectedEntryIndex, theme);
 
             Button button = row.AddComponent<Button>();
-            button.targetGraphic = rowBg;
-            button.interactable = entry.CanSelect;
+            button.targetGraphic = bg;
             UiSoundHelper.BindButton(button);
 
+            LayoutElement layout = row.AddComponent<LayoutElement>();
+            layout.minHeight = 58f;
+            layout.preferredHeight = 58f;
+            layout.flexibleWidth = 1f;
+
             HorizontalLayoutGroup rowLayout = row.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.padding = new RectOffset(12, 12, 10, 10);
-            rowLayout.spacing = 12f;
+            rowLayout.padding = new RectOffset(10, 10, 8, 8);
+            rowLayout.spacing = 8f;
             rowLayout.childAlignment = TextAnchor.MiddleLeft;
             rowLayout.childControlWidth = true;
             rowLayout.childForceExpandWidth = true;
             rowLayout.childForceExpandHeight = false;
 
-            LayoutElement rowElement = row.AddComponent<LayoutElement>();
-            rowElement.minHeight = 72f;
-            rowElement.preferredHeight = 72f;
-
             GameObject textColumn = new GameObject("TextColumn", typeof(RectTransform));
             textColumn.transform.SetParent(row.transform, false);
             VerticalLayoutGroup textLayout = textColumn.AddComponent<VerticalLayoutGroup>();
-            textLayout.spacing = 4f;
+            textLayout.spacing = 2f;
             textLayout.childControlWidth = true;
             textLayout.childForceExpandWidth = true;
             textLayout.childForceExpandHeight = false;
             LayoutElement textColumnLayout = textColumn.AddComponent<LayoutElement>();
             textColumnLayout.flexibleWidth = 1f;
 
-            TextMeshProUGUI title = CreateText(textColumn.transform, entry.Title, theme, 22f, FontStyles.Bold);
+            TextMeshProUGUI title = CreateText(textColumn.transform, entry.Title, theme, 16f, FontStyles.Bold);
             title.alignment = TextAlignmentOptions.TopLeft;
+            title.textWrappingMode = TextWrappingModes.Normal;
             title.color = QuestUiPalette.GetTitleColor(entry.Status, theme);
-            TextMeshProUGUI detail = CreateText(textColumn.transform, entry.Detail, theme, 16f, FontStyles.Normal);
-            detail.alignment = TextAlignmentOptions.TopLeft;
-            detail.color = QuestUiPalette.GetStatusLabelColor(entry.Status, theme) * new Color(1f, 1f, 1f, 0.92f);
-            detail.textWrappingMode = TextWrappingModes.Normal;
 
-            GameObject actionColumn = new GameObject("Action", typeof(RectTransform));
-            actionColumn.transform.SetParent(row.transform, false);
-            LayoutElement actionLayout = actionColumn.AddComponent<LayoutElement>();
-            actionLayout.minWidth = 120f;
-            actionLayout.preferredWidth = 120f;
+            TextMeshProUGUI status = CreateText(textColumn.transform, QuestUiPalette.GetStatusLabel(entry.Status), theme, 13f, FontStyles.Normal);
+            status.alignment = TextAlignmentOptions.TopLeft;
+            status.color = QuestUiPalette.GetStatusLabelColor(entry.Status, theme);
 
-            TextMeshProUGUI actionLabel = CreateText(actionColumn.transform, entry.ActionLabel, theme, 18f, FontStyles.Bold);
-            actionLabel.alignment = TextAlignmentOptions.MidlineRight;
-            actionLabel.color = QuestUiPalette.GetStatusLabelColor(entry.Status, theme);
+            button.onClick.AddListener(() => SelectEntry(index));
+        }
 
-            if (entry.CanSelect && entry.OnSelected != null)
+        private void SelectEntry(int index)
+        {
+            if (currentEntries == null || index < 0 || index >= currentEntries.Count)
+                return;
+
+            selectedEntryIndex = index;
+            QuestBoardEntry entry = currentEntries[index];
+
+            leftTitleText.text = entry.Title;
+            leftDescriptionText.text = string.IsNullOrWhiteSpace(entry.Description) ? entry.Detail : entry.Description;
+            leftObjectivesText.text = string.IsNullOrWhiteSpace(entry.ObjectivesSummary)
+                ? "Objectives unavailable."
+                : entry.ObjectivesSummary;
+
+            rightStatusText.text = QuestUiPalette.GetStatusLabel(entry.Status);
+            rightStatusText.color = QuestUiPalette.GetStatusLabelColor(entry.Status, ShiftUiTheme.Current);
+            rightProgressText.text = string.IsNullOrWhiteSpace(entry.ProgressSummary)
+                ? "Progress unavailable."
+                : entry.ProgressSummary;
+            rightXpText.text = $"XP Reward: {Mathf.Max(0, entry.XpReward)}";
+            rightRewardsText.text = string.IsNullOrWhiteSpace(entry.RewardsSummary)
+                ? "No item rewards."
+                : entry.RewardsSummary;
+
+            questActionButtonLabel.text = string.IsNullOrEmpty(entry.ActionLabel) ? "Continue" : entry.ActionLabel;
+            questActionButton.interactable = entry.CanSelect && entry.OnSelected != null;
+
+            RefreshPickerHighlights();
+        }
+
+        private void RefreshPickerHighlights()
+        {
+            if (questPickerContent == null || currentEntries == null)
+                return;
+
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            for (int i = 0; i < questPickerContent.childCount; i++)
             {
-                Action captured = entry.OnSelected;
-                button.onClick.AddListener(() =>
-                {
-                    Close();
-                    captured.Invoke();
-                });
+                Transform child = questPickerContent.GetChild(i);
+                Image bg = child.GetComponent<Image>();
+                if (bg == null || i >= currentEntries.Count)
+                    continue;
+
+                bg.color = QuestUiPalette.GetRowBackgroundColor(currentEntries[i].Status, i == selectedEntryIndex, theme);
             }
         }
 
-        private void ClearQuestList()
+        private void HandleQuestActionClicked()
         {
-            if (questListContent == null)
+            if (currentEntries == null || selectedEntryIndex < 0 || selectedEntryIndex >= currentEntries.Count)
+            {
+                Close();
+                return;
+            }
+
+            QuestBoardEntry entry = currentEntries[selectedEntryIndex];
+            if (!entry.CanSelect || entry.OnSelected == null)
+            {
+                Close();
+                return;
+            }
+
+            Action callback = entry.OnSelected;
+            Close();
+            callback.Invoke();
+        }
+
+        private void ClearQuestPicker()
+        {
+            if (questPickerContent == null)
                 return;
 
-            for (int i = questListContent.childCount - 1; i >= 0; i--)
-                Destroy(questListContent.GetChild(i).gameObject);
+            for (int i = questPickerContent.childCount - 1; i >= 0; i--)
+                Destroy(questPickerContent.GetChild(i).gameObject);
         }
 
         private void OpenOverlay()
@@ -336,7 +582,7 @@ namespace Project.UI
             if (dialogPanel == null)
                 return;
 
-            MenuUiBuilder.ApplyCenteredModalShellLayout(dialogPanel, GameplayHudLayout.GameplayModalSize);
+            MenuUiBuilder.ApplyCenteredModalShellLayout(dialogPanel, GameplayHudLayout.QuestGiverModalSize);
         }
 
         private static void EnsureUiInput(Transform canvasRoot)
@@ -357,7 +603,10 @@ namespace Project.UI
         {
             if (overlayRoot != null)
                 overlayRoot.SetActive(false);
-            ClearQuestList();
+
+            ClearQuestPicker();
+            currentEntries = null;
+            selectedEntryIndex = -1;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);
@@ -387,7 +636,7 @@ namespace Project.UI
 
         private static Button CreateButton(Transform parent, string label, ShiftUiTheme theme, out TextMeshProUGUI labelText)
         {
-            GameObject buttonObject = new GameObject("PrimaryButton", typeof(RectTransform));
+            GameObject buttonObject = new GameObject("Button", typeof(RectTransform));
             buttonObject.transform.SetParent(parent, false);
             LayoutElement layout = buttonObject.AddComponent<LayoutElement>();
             layout.minHeight = 48f;
@@ -395,7 +644,7 @@ namespace Project.UI
 
             Image image = buttonObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = new Color(0.14f, 0.16f, 0.2f, 0.95f);
+            image.color = SurvivalPioneerUiPalette.ButtonNormal;
             image.raycastTarget = true;
 
             Button button = buttonObject.AddComponent<Button>();

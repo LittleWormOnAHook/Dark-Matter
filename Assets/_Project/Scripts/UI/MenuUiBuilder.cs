@@ -110,14 +110,14 @@ namespace Project.UI
                 ApplyUiSprite(circleImage);
             }
 
-            Color normalColor = new Color(0.82f, 0.86f, 0.92f, 0.95f);
+            Color normalColor = SurvivalPioneerUiPalette.BodyText;
             circleImage.color = normalColor;
 
             Button button = buttonObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = normalColor;
-            colors.highlightedColor = new Color(1f, 1f, 1f, 1f);
-            colors.pressedColor = new Color(0.62f, 0.66f, 0.72f, 1f);
+            colors.highlightedColor = SurvivalPioneerUiPalette.RichFuchsia;
+            colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
 
@@ -135,7 +135,7 @@ namespace Project.UI
             text.text = "X";
             text.fontSize = Mathf.Max(12f, size * 0.42f);
             text.fontStyle = FontStyles.Bold;
-            text.color = new Color(0.92f, 0.94f, 0.98f, 1f);
+            text.color = SurvivalPioneerUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -164,8 +164,8 @@ namespace Project.UI
             Button button = buttonObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1f, 0.85f, 0.85f, 1f);
-            colors.pressedColor = new Color(0.75f, 0.75f, 0.75f, 1f);
+            colors.highlightedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f);
+            colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
             button.transition = Selectable.Transition.ColorTint;
@@ -184,7 +184,7 @@ namespace Project.UI
             text.text = "X";
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
-            text.color = new Color(0.88f, 0.9f, 0.94f, 0.95f);
+            text.color = SurvivalPioneerUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -213,15 +213,11 @@ namespace Project.UI
 
             Image image = buttonObject.GetComponent<Image>();
             ApplyUiSprite(image);
-            image.color = new Color(0.16f, 0.18f, 0.24f, 0.95f);
+            image.color = SurvivalPioneerUiPalette.ButtonNormal;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(buttonObject);
 
             Button button = buttonObject.GetComponent<Button>();
-            ColorBlock colors = button.colors;
-            colors.normalColor = image.color;
-            colors.highlightedColor = new Color(0.24f, 0.28f, 0.36f, 1f);
-            colors.pressedColor = new Color(0.1f, 0.12f, 0.16f, 1f);
-            colors.selectedColor = colors.highlightedColor;
-            button.colors = colors;
+            SurvivalPioneerUiPalette.StylePrimaryButton(button, image);
 
             UiSoundHelper.BindButton(button);
 
@@ -232,7 +228,7 @@ namespace Project.UI
             text.text = label;
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
-            text.color = Color.white;
+            text.color = SurvivalPioneerUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -255,7 +251,7 @@ namespace Project.UI
             title.text = text;
             title.fontSize = fontSize;
             title.fontStyle = FontStyles.Bold;
-            title.color = Color.white;
+            title.color = SurvivalPioneerUiPalette.BodyText;
             title.alignment = TextAlignmentOptions.Center;
             title.raycastTarget = false;
 
@@ -277,7 +273,8 @@ namespace Project.UI
 
             Image titleBarBg = titleBarObject.AddComponent<Image>();
             ApplyUiSprite(titleBarBg);
-            titleBarBg.color = new Color(0.1f, 0.12f, 0.16f, 0.95f);
+            SurvivalPioneerUiPalette.ApplyThinPanelBackground(titleBarBg, 0.95f);
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(titleBarObject);
             titleBarBg.raycastTarget = false;
 
             GameObject titleObject = new GameObject("Title", typeof(RectTransform));
@@ -294,7 +291,7 @@ namespace Project.UI
             label.fontSize = fontSize;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = new Color(0.78f, 0.84f, 0.92f, 1f);
+            label.color = SurvivalPioneerUiPalette.BodyText;
             label.raycastTarget = false;
 
             return titleBarObject;
@@ -339,7 +336,7 @@ namespace Project.UI
             background.transform.SetParent(sliderObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
             ApplyUiSprite(backgroundImage);
-            backgroundImage.color = new Color(0.1f, 0.1f, 0.12f, 1f);
+            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 1f);
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.anchorMax = Vector2.one;
@@ -358,7 +355,7 @@ namespace Project.UI
             fill.transform.SetParent(fillArea.transform, false);
             Image fillImage = fill.GetComponent<Image>();
             ApplyUiSprite(fillImage);
-            fillImage.color = new Color(0.85f, 0.68f, 0.18f, 1f);
+            fillImage.color = SurvivalPioneerUiPalette.Gold;
             RectTransform fillRect = fill.GetComponent<RectTransform>();
             fillRect.anchorMin = Vector2.zero;
             fillRect.anchorMax = Vector2.one;
@@ -414,7 +411,7 @@ namespace Project.UI
             background.transform.SetParent(toggleObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
             ApplyUiSprite(backgroundImage);
-            backgroundImage.color = new Color(0.12f, 0.12f, 0.14f, 1f);
+            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.anchorMax = Vector2.one;
@@ -425,7 +422,7 @@ namespace Project.UI
             checkmark.transform.SetParent(background.transform, false);
             Image checkImage = checkmark.GetComponent<Image>();
             ApplyUiSprite(checkImage);
-            checkImage.color = new Color(0.85f, 0.68f, 0.18f, 1f);
+            checkImage.color = SurvivalPioneerUiPalette.RichFuchsia;
             RectTransform checkRect = checkmark.GetComponent<RectTransform>();
             checkRect.anchorMin = new Vector2(0.15f, 0.15f);
             checkRect.anchorMax = new Vector2(0.85f, 0.85f);
@@ -457,7 +454,7 @@ namespace Project.UI
             dropdownObject.transform.SetParent(row.transform, false);
             Image dropdownImage = dropdownObject.GetComponent<Image>();
             ApplyUiSprite(dropdownImage);
-            dropdownImage.color = new Color(0.12f, 0.12f, 0.14f, 1f);
+            dropdownImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
             RectTransform dropdownRect = dropdownObject.GetComponent<RectTransform>();
             dropdownRect.sizeDelta = new Vector2(0f, 36f);
 
@@ -468,7 +465,7 @@ namespace Project.UI
             labelObject.transform.SetParent(dropdownObject.transform, false);
             Text labelText = labelObject.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.color = Color.white;
+            labelText.color = SurvivalPioneerUiPalette.BodyText;
             labelText.alignment = TextAnchor.MiddleLeft;
             labelText.raycastTarget = false;
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
@@ -483,7 +480,7 @@ namespace Project.UI
             template.SetActive(false);
             Image templateImage = template.GetComponent<Image>();
             ApplyUiSprite(templateImage);
-            templateImage.color = new Color(0.1f, 0.1f, 0.12f, 0.98f);
+            templateImage.color = SurvivalPioneerUiPalette.ScrollBackground;
             RectTransform templateRect = template.GetComponent<RectTransform>();
             templateRect.anchorMin = new Vector2(0f, 0f);
             templateRect.anchorMax = new Vector2(1f, 0f);
@@ -523,7 +520,7 @@ namespace Project.UI
             itemBackground.transform.SetParent(item.transform, false);
             Image itemBackgroundImage = itemBackground.GetComponent<Image>();
             ApplyUiSprite(itemBackgroundImage);
-            itemBackgroundImage.color = new Color(0.14f, 0.14f, 0.16f, 1f);
+            itemBackgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 1f);
             RectTransform itemBackgroundRect = itemBackground.GetComponent<RectTransform>();
             itemBackgroundRect.anchorMin = Vector2.zero;
             itemBackgroundRect.anchorMax = Vector2.one;
@@ -534,7 +531,7 @@ namespace Project.UI
             itemLabelObject.transform.SetParent(item.transform, false);
             Text itemLabel = itemLabelObject.AddComponent<Text>();
             itemLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            itemLabel.color = Color.white;
+            itemLabel.color = SurvivalPioneerUiPalette.BodyText;
             itemLabel.alignment = TextAnchor.MiddleLeft;
             itemLabel.raycastTarget = false;
             RectTransform itemLabelRect = itemLabelObject.GetComponent<RectTransform>();
@@ -580,7 +577,7 @@ namespace Project.UI
             out RectTransform contentArea,
             out Button closeButton)
         {
-            GameObject shell = CreateFullScreenPanel(parent, title + "Shell", new Color(0.05f, 0.06f, 0.09f, 0.98f), blockRaycasts: true);
+            GameObject shell = CreateFullScreenPanel(parent, title + "Shell", SurvivalPioneerUiPalette.PanelBackground, blockRaycasts: true);
             BuildModalShellInterior(shell.transform, title, FullscreenUiWindow.HeaderHeight, 26f, out contentArea, out closeButton);
             return shell;
         }
@@ -597,7 +594,8 @@ namespace Project.UI
 
             Image shellBg = shell.GetComponent<Image>();
             ApplyUiSprite(shellBg);
-            shellBg.color = new Color(0.05f, 0.06f, 0.09f, 0.98f);
+            SurvivalPioneerUiPalette.ApplyPanelShellBackground(shellBg, 0.98f);
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(shell);
             shellBg.raycastTarget = true;
 
             ApplyCenteredModalShellLayout(shell, size);
@@ -654,7 +652,7 @@ namespace Project.UI
 
             Image headerBg = header.GetComponent<Image>();
             ApplyUiSprite(headerBg);
-            headerBg.color = new Color(0.08f, 0.1f, 0.14f, 0.98f);
+            headerBg.color = SurvivalPioneerUiPalette.PanelHeader;
 
             GameObject titleObject = new GameObject("Title", typeof(RectTransform));
             titleObject.transform.SetParent(header.transform, false);
@@ -666,7 +664,7 @@ namespace Project.UI
             titleText.text = title;
             titleText.fontSize = titleFontSize;
             titleText.fontStyle = FontStyles.Bold;
-            titleText.color = Color.white;
+            titleText.color = SurvivalPioneerUiPalette.BodyText;
             titleText.alignment = TextAlignmentOptions.TopLeft;
             titleText.raycastTarget = false;
 
@@ -708,13 +706,13 @@ namespace Project.UI
 
             Image image = tileObject.GetComponent<Image>();
             ApplyUiSprite(image);
-            image.color = new Color(0.12f, 0.14f, 0.18f, 0.96f);
+            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
 
             Button button = tileObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = image.color;
-            colors.highlightedColor = new Color(0.2f, 0.24f, 0.32f, 1f);
-            colors.pressedColor = new Color(0.08f, 0.1f, 0.14f, 1f);
+            colors.highlightedColor = SurvivalPioneerUiPalette.ButtonHighlighted;
+            colors.pressedColor = SurvivalPioneerUiPalette.ButtonPressed;
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
             UiSoundHelper.BindButton(button);
@@ -729,7 +727,7 @@ namespace Project.UI
             text.text = label;
             text.fontSize = 18f;
             text.fontStyle = FontStyles.Bold;
-            text.color = Color.white;
+            text.color = SurvivalPioneerUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -750,7 +748,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = text;
             label.fontSize = size;
-            label.color = new Color(0.92f, 0.92f, 0.92f, 1f);
+            label.color = SurvivalPioneerUiPalette.BodyText;
             label.alignment = alignment;
             label.raycastTarget = false;
             return label;

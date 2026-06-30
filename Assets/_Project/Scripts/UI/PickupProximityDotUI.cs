@@ -8,17 +8,14 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Shows a small on-screen dot for nearby pickup items within range.
+    /// Shows a soft colored on-screen dot for nearby pickup items within range.
     /// </summary>
     public class PickupProximityDotUI : MonoBehaviour
     {
         public static PickupProximityDotUI Instance { get; private set; }
 
         [SerializeField] private float proximityRadius = 2f;
-        [SerializeField] private float dotSize = 10f;
-        [SerializeField] private float glowSizeMultiplier = 2.35f;
-        [SerializeField] private float glowAlpha = 0.5f;
-        [SerializeField] private float verticalWorldOffset = 0.45f;
+        [SerializeField] private float verticalWorldOffset = ProximityDotStyle.DefaultWorldOffset;
 
         private readonly HashSet<ItemPickup> trackedPickups = new HashSet<ItemPickup>();
         private readonly Dictionary<ItemPickup, RectTransform> activeDots = new Dictionary<ItemPickup, RectTransform>();
@@ -233,89 +230,10 @@ namespace Project.UI
 
         private RectTransform AcquireDot(ItemType itemType)
         {
-            RectTransform dotRect;
-            if (dotPool.Count > 0)
-            {
-                dotRect = dotPool.Pop();
-                ApplyDotStyle(dotRect, itemType);
-            }
-            else
-            {
-                dotRect = CreateDotWidget();
-                ApplyDotStyle(dotRect, itemType);
-            }
-
+            RectTransform dotRect = dotPool.Count > 0 ? dotPool.Pop() : ProximityDotStyle.CreateDotWidget(dotLayer);
+            ProximityDotStyle.ApplyColor(dotRect, ProximityDotStyle.PickupColor(itemType));
             dotRect.gameObject.SetActive(true);
             return dotRect;
-        }
-
-        private RectTransform CreateDotWidget()
-        {
-            GameObject dotObject = new GameObject("PickupDot", typeof(RectTransform));
-            dotObject.transform.SetParent(dotLayer, false);
-
-            RectTransform dotRect = dotObject.GetComponent<RectTransform>();
-            dotRect.sizeDelta = new Vector2(dotSize * glowSizeMultiplier, dotSize * glowSizeMultiplier);
-
-            GameObject glowObject = new GameObject("Glow", typeof(RectTransform));
-            glowObject.transform.SetParent(dotObject.transform, false);
-            RectTransform glowRect = glowObject.GetComponent<RectTransform>();
-            glowRect.anchorMin = Vector2.zero;
-            glowRect.anchorMax = Vector2.one;
-            glowRect.offsetMin = Vector2.zero;
-            glowRect.offsetMax = Vector2.zero;
-
-            Image glowImage = glowObject.AddComponent<Image>();
-            glowImage.sprite = ShiftUiTheme.CircleGlow ?? MapUiSprites.Dot;
-            glowImage.color = BuildGlowColor(MapUiSprites.GetResourceColor(ItemType.Resource));
-            glowImage.raycastTarget = false;
-            glowImage.preserveAspect = true;
-
-            GameObject coreObject = new GameObject("Core", typeof(RectTransform));
-            coreObject.transform.SetParent(dotObject.transform, false);
-            RectTransform coreRect = coreObject.GetComponent<RectTransform>();
-            coreRect.anchorMin = new Vector2(0.5f, 0.5f);
-            coreRect.anchorMax = new Vector2(0.5f, 0.5f);
-            coreRect.pivot = new Vector2(0.5f, 0.5f);
-            coreRect.anchoredPosition = Vector2.zero;
-            coreRect.sizeDelta = new Vector2(dotSize, dotSize);
-
-            Image coreImage = coreObject.AddComponent<Image>();
-            coreImage.sprite = ShiftUiTheme.CircleFilled ?? MapUiSprites.Dot;
-            coreImage.raycastTarget = false;
-            coreImage.preserveAspect = true;
-
-            return dotRect;
-        }
-
-        private void ApplyDotStyle(RectTransform dotRect, ItemType itemType)
-        {
-            if (dotRect == null)
-                return;
-
-            dotRect.sizeDelta = new Vector2(dotSize * glowSizeMultiplier, dotSize * glowSizeMultiplier);
-
-            Color color = MapUiSprites.GetResourceColor(itemType);
-
-            Transform glow = dotRect.Find("Glow");
-            if (glow != null && glow.TryGetComponent<Image>(out Image glowImage))
-            {
-                glowImage.sprite = ShiftUiTheme.CircleGlow ?? MapUiSprites.Dot;
-                glowImage.color = BuildGlowColor(color);
-            }
-
-            Transform core = dotRect.Find("Core");
-            if (core != null && core.TryGetComponent<Image>(out Image coreImage))
-            {
-                coreImage.sprite = ShiftUiTheme.CircleFilled ?? MapUiSprites.Dot;
-                coreImage.color = color;
-            }
-        }
-
-        private Color BuildGlowColor(Color baseColor)
-        {
-            baseColor.a = glowAlpha;
-            return baseColor;
         }
 
         private void BuildDotLayer()
