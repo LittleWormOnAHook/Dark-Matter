@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Building;
+using Project.Companions;
 using Project.Crafting;
 using Project.Pioneers;
 using Project.Player;
@@ -21,7 +22,8 @@ namespace Project.UI
             Pioneers = 1,
             Production = 2,
             Craft = 3,
-            Changes = 4
+            Changes = 4,
+            Health = 5
         }
 
         private static readonly string[] TabLabels =
@@ -30,7 +32,8 @@ namespace Project.UI
             "Pioneers",
             "Production",
             "Craft",
-            "Changes"
+            "Changes",
+            "Health"
         };
 
         private static BuildingControlPanelUI instance;
@@ -40,6 +43,7 @@ namespace Project.UI
         private TextMeshProUGUI buildingSubtitleText;
         private RectTransform tabBodyArea;
         private readonly Dictionary<BuildingControlTab, GameObject> tabPanels = new Dictionary<BuildingControlTab, GameObject>();
+        private readonly Dictionary<BuildingControlTab, GameObject> tabButtonRoots = new Dictionary<BuildingControlTab, GameObject>();
         private readonly Dictionary<BuildingControlTab, Image> tabButtonBackgrounds = new Dictionary<BuildingControlTab, Image>();
         private readonly Dictionary<BuildingControlTab, TextMeshProUGUI> tabButtonLabels = new Dictionary<BuildingControlTab, TextMeshProUGUI>();
 
@@ -66,13 +70,18 @@ namespace Project.UI
         private TextMeshProUGUI productionPausedOverlay;
         private Transform changesToggleHost;
 
+        private Transform healthListParent;
+        private TextMeshProUGUI healthStatusLabel;
+        private PioneerRosterManager healthRoster;
+        private bool healthRosterSubscribed;
+
         private float nextProductionTick;
         private bool lastCrisisState;
 
-        private static readonly Color ActiveTabColor = new Color(0.14f, 0.22f, 0.32f, 0.98f);
-        private static readonly Color InactiveTabColor = new Color(0.09f, 0.1f, 0.14f, 0.94f);
-        private static readonly Color ActiveLabelColor = new Color(0.55f, 0.88f, 1f, 1f);
-        private static readonly Color InactiveLabelColor = new Color(0.72f, 0.78f, 0.86f, 0.88f);
+        private static readonly Color ActiveTabColor = SurvivalPioneerUiPalette.ActiveTabBackground;
+        private static readonly Color InactiveTabColor = SurvivalPioneerUiPalette.InactiveTabBackground;
+        private static readonly Color ActiveLabelColor = SurvivalPioneerUiPalette.Gold;
+        private static readonly Color InactiveLabelColor = SurvivalPioneerUiPalette.BodyText;
 
         public static BuildingControlPanelUI Instance => instance;
         public static bool IsOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
@@ -144,6 +153,7 @@ namespace Project.UI
             {
                 nextProductionTick = Time.unscaledTime + 0.45f;
                 TickLiveProduction();
+                TickLiveHealthTab();
             }
         }
 
@@ -214,6 +224,7 @@ namespace Project.UI
             bodyLayout.minHeight = 320f;
 
             CreateTabPanels(tabBodyArea, theme);
+            ScienceLabHealthContextMenu.EnsureExists(canvasRoot, this);
 
             overlayRoot.SetActive(false);
             UiFrontLayer.BringLayerToFront(canvasRoot);
@@ -226,8 +237,38 @@ namespace Project.UI
             tabPanels[BuildingControlTab.Production] = CreateProductionTabPanel(parent, theme);
             tabPanels[BuildingControlTab.Craft] = CreateCraftTabPanel(parent, theme);
             tabPanels[BuildingControlTab.Changes] = CreateChangesTabPanel(parent, theme);
+            tabPanels[BuildingControlTab.Health] = CreateHealthTabPanel(parent, theme);
 
             ShowTab(BuildingControlTab.Overview);
+        }
+
+        private GameObject CreateHealthTabPanel(Transform parent, ShiftUiTheme theme)
+        {
+            GameObject panel = CreateOperationalScrollPanel(parent, "HealthPanel", out Transform content);
+            TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
+            heading.text = "Injured Pioneers";
+            heading.fontStyle = FontStyles.Bold;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
+
+            CreateBodyText(content, theme, 18f).text =
+                "Pioneers sent here after falling in combat. Right-click a row and choose Reassign when recovery is complete.";
+
+            healthStatusLabel = CreateBodyText(content, theme, 18f);
+            healthStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
+
+            GameObject listHost = new GameObject("InjuredList", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            listHost.transform.SetParent(content, false);
+            VerticalLayoutGroup listLayout = listHost.GetComponent<VerticalLayoutGroup>();
+            listLayout.spacing = 10f;
+            listLayout.childAlignment = TextAnchor.UpperLeft;
+            listLayout.childControlWidth = true;
+            listLayout.childControlHeight = true;
+            listLayout.childForceExpandWidth = true;
+            listLayout.childForceExpandHeight = false;
+            healthListParent = listHost.transform;
+
+            panel.SetActive(false);
+            return panel;
         }
 
         private GameObject CreateCraftTabPanel(Transform parent, ShiftUiTheme theme)
@@ -259,7 +300,7 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Overview";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = Color.white;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
 
             overviewBuildingNameText = CreateBodyText(content, theme, 22f);
             overviewAssignedText = CreateBodyText(content, theme, 20f);
@@ -282,7 +323,7 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Pioneer Assignments";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = Color.white;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Click a slot to cycle through available base pioneers (up to four per building).";
@@ -298,14 +339,14 @@ namespace Project.UI
 
                 Image rowBackground = slotRow.GetComponent<Image>();
                 MenuUiBuilder.ApplyUiSprite(rowBackground);
-                rowBackground.color = new Color(0.12f, 0.14f, 0.18f, 0.95f);
+                rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
 
                 Button slotButton = slotRow.GetComponent<Button>();
                 slotButton.targetGraphic = rowBackground;
                 ColorBlock colors = slotButton.colors;
                 colors.normalColor = rowBackground.color;
-                colors.highlightedColor = new Color(0.18f, 0.22f, 0.3f, 0.98f);
-                colors.pressedColor = new Color(0.1f, 0.12f, 0.16f, 1f);
+                colors.highlightedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.22f);
+                colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.85f);
                 colors.selectedColor = colors.highlightedColor;
                 slotButton.colors = colors;
                 UiSoundHelper.BindButton(slotButton);
@@ -321,7 +362,7 @@ namespace Project.UI
                     TmpUiHelper.ApplyDefaultFont(label);
                 label.fontSize = 18f;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
-                label.color = theme != null ? theme.secondaryTextColor : Color.white;
+                label.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
                 label.raycastTarget = false;
                 RectTransform labelRect = label.GetComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero;
@@ -341,14 +382,14 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Production Queue";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = Color.white;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Queued recipes run while you are on expedition and pause during sulfur storms.";
 
             productionPausedOverlay = CreateBodyText(content, theme, 20f);
             productionPausedOverlay.fontStyle = FontStyles.Bold;
-            productionPausedOverlay.color = new Color(1f, 0.78f, 0.45f, 1f);
+            productionPausedOverlay.color = SurvivalPioneerUiPalette.WarningText;
             productionPausedOverlay.gameObject.SetActive(false);
 
             GameObject listHost = new GameObject("QueueList", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -372,7 +413,7 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Building Settings";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = Color.white;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Per-building automation and mode toggles. Changes apply to this structure only.";
@@ -476,7 +517,7 @@ namespace Project.UI
             TextMeshProUGUI headingText = CreateBodyText(content.transform, theme, 26f);
             headingText.text = heading;
             headingText.fontStyle = FontStyles.Bold;
-            headingText.color = Color.white;
+            headingText.color = SurvivalPioneerUiPalette.BodyText;
 
             for (int i = 0; i < paragraphs.Length; i++)
             {
@@ -504,6 +545,7 @@ namespace Project.UI
             Image background = tabObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
             background.color = InactiveTabColor;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(tabObject);
 
             Button button = tabObject.GetComponent<Button>();
             button.targetGraphic = background;
@@ -525,6 +567,7 @@ namespace Project.UI
 
             tabButtonBackgrounds[tab] = background;
             tabButtonLabels[tab] = text;
+            tabButtonRoots[tab] = tabObject;
 
             BuildingControlTab captured = tab;
             button.onClick.AddListener(() => ShowTab(captured));
@@ -543,9 +586,37 @@ namespace Project.UI
 
             lastCrisisState = EnvironmentalCrisisHudMode.IsCrisisActive;
             BuildingOperationRegistry.AddDemoQueueEntry(panel.BuildingId);
+            UpdateScienceLabTabVisibility();
+            EnsureHealthRosterSubscription();
             RefreshOperationalTabs();
             ShowTab(BuildingControlTab.Overview);
             OpenOverlay();
+        }
+
+        internal void TryReassignInjuredPioneer(string pioneerId)
+        {
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (!roster.TryRecoverSkilledFromLab(pioneerId, out string message))
+            {
+                if (healthStatusLabel != null)
+                {
+                    healthStatusLabel.text = message;
+                    healthStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+                }
+
+                return;
+            }
+
+            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            bridge?.RefreshCompanions();
+
+            if (healthStatusLabel != null)
+            {
+                healthStatusLabel.text = message;
+                healthStatusLabel.color = SurvivalPioneerUiPalette.BodyText;
+            }
+
+            RefreshHealthTab();
         }
 
         private void ShowTab(BuildingControlTab tab)
@@ -573,12 +644,65 @@ namespace Project.UI
                 RefreshOperationalTab(tab);
         }
 
+        private void UpdateScienceLabTabVisibility()
+        {
+            bool showHealth = IsActiveScienceLab();
+            if (tabButtonRoots.TryGetValue(BuildingControlTab.Health, out GameObject healthButton))
+                healthButton.SetActive(showHealth);
+
+            if (!showHealth && activeTab == BuildingControlTab.Health)
+                ShowTab(BuildingControlTab.Overview);
+        }
+
+        private bool IsActiveScienceLab()
+        {
+            if (activePanel == null)
+                return false;
+
+            string id = activePanel.BuildingId ?? string.Empty;
+            string name = activePanel.BuildingDisplayName ?? string.Empty;
+            return id.IndexOf("science", StringComparison.OrdinalIgnoreCase) >= 0
+                || id.IndexOf("lab", StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("science", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void EnsureHealthRosterSubscription()
+        {
+            if (healthRosterSubscribed)
+                return;
+
+            healthRoster = PioneerRosterManager.EnsureExists();
+            if (healthRoster == null)
+                return;
+
+            healthRoster.OnRosterChanged += HandleHealthRosterChanged;
+            healthRosterSubscribed = true;
+        }
+
+        private void HandleHealthRosterChanged()
+        {
+            if (!IsOpen || activeTab != BuildingControlTab.Health)
+                return;
+
+            RefreshHealthTab();
+        }
+
+        private void TickLiveHealthTab()
+        {
+            if (activePanel == null || activeTab != BuildingControlTab.Health || !IsActiveScienceLab())
+                return;
+
+            RefreshHealthTab();
+        }
+
         private void RefreshOperationalTabs()
         {
+            UpdateScienceLabTabVisibility();
             RefreshOverviewTab();
             RefreshPioneersTab();
             RefreshProductionTab();
             RefreshChangesTab();
+            RefreshHealthTab();
         }
 
         private void RefreshOperationalTab(BuildingControlTab tab)
@@ -597,7 +721,94 @@ namespace Project.UI
                 case BuildingControlTab.Changes:
                     RefreshChangesTab();
                     break;
+                case BuildingControlTab.Health:
+                    RefreshHealthTab();
+                    break;
             }
+        }
+
+        private void RefreshHealthTab()
+        {
+            if (healthListParent == null)
+                return;
+
+            for (int i = healthListParent.childCount - 1; i >= 0; i--)
+                Destroy(healthListParent.GetChild(i).gameObject);
+
+            if (!IsActiveScienceLab())
+                return;
+
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster == null)
+                return;
+
+            List<SkilledPioneerRecord> injured = roster.GetInjuredSkilledPioneers();
+            if (injured.Count == 0)
+            {
+                CreateHealthInfoRow("No pioneers are recovering here.");
+                if (healthStatusLabel != null)
+                    healthStatusLabel.text = "All expedition pioneers are field-ready.";
+                return;
+            }
+
+            for (int i = 0; i < injured.Count; i++)
+                CreateHealthRow(injured[i], roster);
+
+            if (healthStatusLabel != null)
+                healthStatusLabel.text = $"{injured.Count} pioneer(s) in recovery. Reassign when the timer reaches 0s.";
+        }
+
+        private void CreateHealthInfoRow(string message)
+        {
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            TextMeshProUGUI label = CreateBodyText(healthListParent, theme, 18f);
+            label.text = message;
+            label.color = SurvivalPioneerUiPalette.MutedText;
+        }
+
+        private void CreateHealthRow(SkilledPioneerRecord record, PioneerRosterManager roster)
+        {
+            GameObject row = new GameObject($"Injured_{record.id}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            row.transform.SetParent(healthListParent, false);
+
+            Image bg = row.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(bg);
+            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+
+            LayoutElement rowLayout = row.GetComponent<LayoutElement>();
+            rowLayout.minHeight = 56f;
+            rowLayout.preferredHeight = 56f;
+
+            float remaining = roster.GetInjuryRecoveryRemaining(record);
+            bool ready = remaining <= 0.5f;
+            string status = ready
+                ? "Ready to reassign"
+                : $"Recovering ({Mathf.CeilToInt(remaining)}s)";
+
+            GameObject textHost = new GameObject("Label", typeof(RectTransform));
+            textHost.transform.SetParent(row.transform, false);
+            RectTransform textRect = textHost.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(12f, 6f);
+            textRect.offsetMax = new Vector2(-12f, -6f);
+
+            TextMeshProUGUI label = textHost.AddComponent<TextMeshProUGUI>();
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+                theme.ApplyFont(label, semiBold: true);
+            else
+                TmpUiHelper.ApplyDefaultFont(label);
+
+            label.fontSize = 16f;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.color = ready ? SurvivalPioneerUiPalette.BodyText : SurvivalPioneerUiPalette.MutedText;
+            label.text =
+                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
+                $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  {status}";
+
+            ScienceLabHealthRowHandler handler = row.AddComponent<ScienceLabHealthRowHandler>();
+            handler.Configure(this, record.id);
         }
 
         private void RefreshOverviewTab()
@@ -622,8 +833,8 @@ namespace Project.UI
                 ? "Sulfur storm: PAUSED"
                 : "Sulfur storm: Running";
             overviewStormText.color = crisisActive
-                ? new Color(1f, 0.78f, 0.45f, 1f)
-                : new Color(0.55f, 0.88f, 1f, 1f);
+                ? SurvivalPioneerUiPalette.WarningText
+                : SurvivalPioneerUiPalette.PositiveGreen;
 
             if (overviewMaintenanceText != null)
             {
@@ -661,8 +872,8 @@ namespace Project.UI
                     && pioneerSlotButtons[i].TryGetComponent(out Image rowBackground))
                 {
                     rowBackground.color = string.IsNullOrEmpty(assigned)
-                        ? new Color(0.12f, 0.14f, 0.18f, 0.95f)
-                        : new Color(0.14f, 0.22f, 0.32f, 0.98f);
+                        ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f)
+                        : ActiveTabColor;
                 }
             }
         }
@@ -718,7 +929,7 @@ namespace Project.UI
 
             Image rowBackground = row.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(rowBackground);
-            rowBackground.color = new Color(0.12f, 0.14f, 0.18f, 0.95f);
+            rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
 
             GameObject labelObject = new GameObject("RecipeLabel", typeof(RectTransform));
             labelObject.transform.SetParent(row.transform, false);
@@ -729,7 +940,7 @@ namespace Project.UI
                 TmpUiHelper.ApplyDefaultFont(recipeLabel);
             recipeLabel.fontSize = 18f;
             recipeLabel.alignment = TextAlignmentOptions.TopLeft;
-            recipeLabel.color = Color.white;
+            recipeLabel.color = SurvivalPioneerUiPalette.BodyText;
             recipeLabel.raycastTarget = false;
             RectTransform recipeRect = recipeLabel.rectTransform;
             recipeRect.anchorMin = new Vector2(0f, 0.55f);
@@ -745,7 +956,7 @@ namespace Project.UI
             barBackgroundObject.transform.SetParent(row.transform, false);
             Image barBackground = barBackgroundObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barBackground);
-            barBackground.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
+            barBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.98f);
             RectTransform barBackgroundRect = barBackgroundObject.GetComponent<RectTransform>();
             barBackgroundRect.anchorMin = new Vector2(0f, 0.2f);
             barBackgroundRect.anchorMax = new Vector2(1f, 0.45f);
@@ -757,8 +968,8 @@ namespace Project.UI
             Image barFill = barFillObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barFill);
             barFill.color = paused
-                ? new Color(0.55f, 0.35f, 0.18f, 1f)
-                : new Color(0.28f, 0.62f, 0.92f, 1f);
+                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f)
+                : SurvivalPioneerUiPalette.RichFuchsia;
             barFill.type = Image.Type.Filled;
             barFill.fillMethod = Image.FillMethod.Horizontal;
             barFill.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -774,7 +985,7 @@ namespace Project.UI
                 TmpUiHelper.ApplyDefaultFont(percentLabel);
             percentLabel.fontSize = 14f;
             percentLabel.alignment = TextAlignmentOptions.BottomRight;
-            percentLabel.color = theme != null ? theme.secondaryTextColor : new Color(0.8f, 0.86f, 0.92f, 1f);
+            percentLabel.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
             percentLabel.raycastTarget = false;
             RectTransform percentRect = percentLabel.rectTransform;
             percentRect.anchorMin = new Vector2(0f, 0f);
@@ -789,8 +1000,8 @@ namespace Project.UI
             if (activePanel == null)
                 return;
 
-            string[] rosterNames = BuildRosterDisplayNames().ToArray();
-            BuildingOperationRegistry.CycleAssignSlot(activePanel.BuildingId, slotIndex, rosterNames);
+            BuildRosterAssignableLists(out string[] rosterIds, out string[] rosterNames);
+            BuildingOperationRegistry.CycleAssignSlotById(activePanel.BuildingId, slotIndex, rosterIds, rosterNames);
             RefreshOverviewTab();
             RefreshPioneersTab();
         }
@@ -916,7 +1127,7 @@ namespace Project.UI
 
             Image toggleBg = toggleObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(toggleBg);
-            toggleBg.color = new Color(0.1f, 0.12f, 0.16f, 1f);
+            toggleBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
 
             Toggle toggle = toggleObject.GetComponent<Toggle>();
             toggle.targetGraphic = toggleBg;
@@ -926,7 +1137,7 @@ namespace Project.UI
             checkmark.transform.SetParent(toggleObject.transform, false);
             Image checkImage = checkmark.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(checkImage);
-            checkImage.color = new Color(0.45f, 0.82f, 1f, 1f);
+            checkImage.color = SurvivalPioneerUiPalette.RichFuchsia;
             MenuUiBuilder.StretchRectToFill(checkmark.GetComponent<RectTransform>());
             toggle.graphic = checkImage;
 
@@ -952,7 +1163,7 @@ namespace Project.UI
                 theme.ApplyFont(subtitle);
             subtitle.fontSize = 14f;
             subtitle.fontStyle = FontStyles.Italic;
-            subtitle.color = new Color(0.62f, 0.72f, 0.84f, 0.92f);
+            subtitle.color = SurvivalPioneerUiPalette.MutedText;
             subtitle.alignment = TextAlignmentOptions.BottomLeft;
             subtitle.raycastTarget = false;
 
@@ -973,24 +1184,49 @@ namespace Project.UI
             return normalized.ToUpperInvariant();
         }
 
-        private static List<string> BuildRosterDisplayNames()
+        private static void BuildRosterAssignableLists(out string[] rosterIds, out string[] rosterNames)
         {
+            List<string> ids = new List<string>();
             List<string> names = new List<string>();
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (roster == null)
-                return names;
+            {
+                rosterIds = System.Array.Empty<string>();
+                rosterNames = System.Array.Empty<string>();
+                return;
+            }
 
+            HashSet<string> trioIds = new HashSet<string>(roster.ExpeditionTrioIds);
             IReadOnlyList<SkilledPioneerRecord> skilled = roster.SkilledPioneers;
             for (int i = 0; i < skilled.Count; i++)
             {
-                if (!string.IsNullOrWhiteSpace(skilled[i].displayName))
-                    names.Add(skilled[i].displayName);
+                SkilledPioneerRecord record = skilled[i];
+                if (record == null || trioIds.Contains(record.id))
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(record.displayName))
+                {
+                    ids.Add(record.id);
+                    names.Add(record.displayName);
+                }
             }
 
-            for (int workerIndex = 1; workerIndex <= roster.WorkerCount; workerIndex++)
-                names.Add($"Worker {workerIndex}");
+            ColonistAggregateState colonists = roster.GetColonistState();
+            int availableWorkers = colonists.AvailableWorkers;
+            for (int workerIndex = 1; workerIndex <= availableWorkers; workerIndex++)
+            {
+                ids.Add($"colonist:{workerIndex}");
+                names.Add($"Colonist {workerIndex}");
+            }
 
-            return names;
+            rosterIds = ids.ToArray();
+            rosterNames = names.ToArray();
+        }
+
+        private static List<string> BuildRosterDisplayNames()
+        {
+            BuildRosterAssignableLists(out _, out string[] rosterNames);
+            return new List<string>(rosterNames);
         }
 
         private void RefreshCraftTab()
@@ -1060,6 +1296,7 @@ namespace Project.UI
 
         private void Close()
         {
+            ScienceLabHealthContextMenu.HideAny();
             UnembedCraft();
             overlayRoot.SetActive(false);
             activePanel = null;
@@ -1098,7 +1335,7 @@ namespace Project.UI
             else
                 TmpUiHelper.ApplyDefaultFont(text);
             text.fontSize = size;
-            text.color = theme != null ? theme.secondaryTextColor : Color.white;
+            text.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
             text.raycastTarget = false;
             return text;
         }

@@ -213,11 +213,7 @@ namespace Project.Combat
         private void RefreshLootState()
         {
             if (HasRemainingLoot)
-            {
-                if (playerInRange)
-                    ShowPrompt();
                 return;
-            }
 
             ScheduleDissolveAfterLoot();
         }
@@ -402,10 +398,6 @@ namespace Project.Combat
                 return;
 
             playerInRange = nearby;
-            if (playerInRange)
-                ShowPrompt();
-            else
-                ResolveUiManager()?.HideInteractionPrompt();
         }
 
         private bool IsWithinRange(Vector3 playerPosition)
@@ -417,15 +409,6 @@ namespace Project.Combat
         {
             string label = string.IsNullOrWhiteSpace(displayName) ? "Loot Bag" : displayName;
             return $"{promptText} — {label}";
-        }
-
-        private void ShowPrompt()
-        {
-            UIManager manager = ResolveUiManager();
-            if (manager == null)
-                return;
-
-            manager.ShowInteractionPrompt(GetInteractionPromptMessage());
         }
 
         private UIManager ResolveUiManager()

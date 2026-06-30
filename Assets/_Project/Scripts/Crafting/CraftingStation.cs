@@ -168,15 +168,6 @@ namespace Project.Crafting
             return $"{promptText} — {stationLabel}";
         }
 
-        private void ShowPrompt()
-        {
-            UIManager manager = ResolveUiManager();
-            if (manager == null)
-                return;
-
-            manager.ShowInteractionPrompt(GetInteractionPromptMessage());
-        }
-
         private void Start()
         {
             uiManager = FindAnyObjectByType<UIManager>();

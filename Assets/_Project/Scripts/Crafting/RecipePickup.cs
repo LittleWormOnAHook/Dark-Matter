@@ -67,7 +67,6 @@ namespace Project.Crafting
                 return;
 
             playerInRange = true;
-            ShowPrompt();
         }
 
         private void OnTriggerExit(Collider other)
@@ -76,7 +75,6 @@ namespace Project.Crafting
                 return;
 
             playerInRange = false;
-            uiManager?.HideInteractionPrompt();
         }
 
         public static RecipePickup GetInteractable(Vector3 playerPosition, float range)
@@ -203,18 +201,6 @@ namespace Project.Crafting
                 : "Recipe";
 
             return $"{promptText} — {label}";
-        }
-
-        private void ShowPrompt()
-        {
-            if (uiManager == null || learned)
-                return;
-
-            string message = GetInteractionPromptMessage();
-            if (string.IsNullOrEmpty(message))
-                return;
-
-            uiManager.ShowInteractionPrompt(message);
         }
     }
 }

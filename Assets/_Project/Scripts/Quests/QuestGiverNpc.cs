@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Core;
 using Project.Interaction;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -67,10 +68,6 @@ namespace Project.Quests
                 return;
 
             playerInRange = nearby;
-            if (playerInRange)
-                ShowPrompt();
-            else
-                ResolveUiManager()?.HideInteractionPrompt();
         }
 
         private void LateUpdate()
@@ -194,8 +191,6 @@ namespace Project.Quests
             ApplyIdleAnimation();
 
             playerInRange = IsPlayerNearby();
-            if (playerInRange)
-                ShowPrompt();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -204,7 +199,6 @@ namespace Project.Quests
                 return;
 
             playerInRange = true;
-            ShowPrompt();
         }
 
         private void OnTriggerExit(Collider other)
@@ -213,10 +207,7 @@ namespace Project.Quests
                 return;
 
             if (!IsPlayerNearby())
-            {
                 playerInRange = false;
-                ResolveUiManager()?.HideInteractionPrompt();
-            }
         }
 
         public static QuestGiverNpc GetInteractable(Vector3 playerPosition, float range)
@@ -290,11 +281,7 @@ namespace Project.Quests
                 displayName,
                 questBoardIntro,
                 entries,
-                () =>
-                {
-                    if (playerInRange)
-                        ShowPrompt();
-                });
+                null);
 
             return true;
         }
@@ -325,6 +312,11 @@ namespace Project.Quests
                         {
                             Title = offer.quest.title,
                             Detail = offer.GetOfferDialogue(),
+                            Description = offer.quest.description,
+                            ObjectivesSummary = BuildObjectivesSummary(offer.quest, null),
+                            ProgressSummary = "Not started",
+                            RewardsSummary = BuildRewardsSummary(offer.quest),
+                            XpReward = GetQuestXpReward(offer.quest),
                             ActionLabel = "Accept",
                             Status = QuestStatus.Available,
                             CanSelect = true,
@@ -341,6 +333,11 @@ namespace Project.Quests
                             {
                                 Title = offer.quest.title,
                                 Detail = offer.GetReadyDialogue(),
+                                Description = offer.quest.description,
+                                ObjectivesSummary = BuildObjectivesSummary(offer.quest, progress),
+                                ProgressSummary = BuildProgressSummary(offer.quest, progress),
+                                RewardsSummary = BuildRewardsSummary(offer.quest),
+                                XpReward = GetQuestXpReward(offer.quest),
                                 ActionLabel = "Claim Reward",
                                 Status = QuestStatus.Completed,
                                 CanSelect = true,
@@ -353,6 +350,11 @@ namespace Project.Quests
                             {
                                 Title = offer.quest.title,
                                 Detail = offer.GetProgressDialogue(),
+                                Description = offer.quest.description,
+                                ObjectivesSummary = BuildObjectivesSummary(offer.quest, progress),
+                                ProgressSummary = BuildProgressSummary(offer.quest, progress),
+                                RewardsSummary = BuildRewardsSummary(offer.quest),
+                                XpReward = GetQuestXpReward(offer.quest),
                                 ActionLabel = "In Progress",
                                 Status = QuestStatus.Active,
                                 CanSelect = false
@@ -365,6 +367,11 @@ namespace Project.Quests
                         {
                             Title = offer.quest.title,
                             Detail = offer.GetReadyDialogue(),
+                            Description = offer.quest.description,
+                            ObjectivesSummary = BuildObjectivesSummary(offer.quest, progress),
+                            ProgressSummary = BuildProgressSummary(offer.quest, progress),
+                            RewardsSummary = BuildRewardsSummary(offer.quest),
+                            XpReward = GetQuestXpReward(offer.quest),
                             ActionLabel = "Claim Reward",
                             Status = QuestStatus.Completed,
                             CanSelect = true,
@@ -377,6 +384,11 @@ namespace Project.Quests
                         {
                             Title = offer.quest.title,
                             Detail = offer.GetDoneDialogue(),
+                            Description = offer.quest.description,
+                            ObjectivesSummary = BuildObjectivesSummary(offer.quest, progress),
+                            ProgressSummary = "Completed",
+                            RewardsSummary = BuildRewardsSummary(offer.quest),
+                            XpReward = GetQuestXpReward(offer.quest),
                             ActionLabel = "Completed",
                             Status = QuestStatus.TurnedIn,
                             CanSelect = false
@@ -485,15 +497,6 @@ namespace Project.Quests
             return $"{promptText} — {label}";
         }
 
-        private void ShowPrompt()
-        {
-            UIManager manager = ResolveUiManager();
-            if (manager == null)
-                return;
-
-            manager.ShowInteractionPrompt(GetInteractionPromptMessage());
-        }
-
         private void ShowDialogue(string message, Action onContinue = null, string buttonLabel = "Continue")
         {
             if (string.IsNullOrEmpty(message))
@@ -503,9 +506,89 @@ namespace Project.Quests
             QuestGiverDialogUI.Show(displayName, message, () =>
             {
                 onContinue?.Invoke();
-                if (playerInRange && onContinue == null)
-                    ShowPrompt();
             }, buttonLabel);
+        }
+
+        private static int GetQuestXpReward(QuestDefinition quest)
+        {
+            if (quest == null)
+                return ProgressionXpDefaults.QuestCompleteXp;
+
+            return quest.xpReward > 0 ? quest.xpReward : ProgressionXpDefaults.QuestCompleteXp;
+        }
+
+        private static string BuildObjectivesSummary(QuestDefinition quest, QuestProgress progress)
+        {
+            if (quest?.objectives == null || quest.objectives.Count == 0)
+                return "No objectives listed.";
+
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            for (int i = 0; i < quest.objectives.Count; i++)
+            {
+                QuestObjectiveDefinition objective = quest.objectives[i];
+                if (objective == null)
+                    continue;
+
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                string label = string.IsNullOrEmpty(objective.description)
+                    ? objective.type.ToString()
+                    : objective.description;
+                builder.Append("- ").Append(label);
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildProgressSummary(QuestDefinition quest, QuestProgress progress)
+        {
+            if (quest?.objectives == null || quest.objectives.Count == 0)
+                return "No progress tracked.";
+
+            if (progress == null)
+                return "Not started.";
+
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            for (int i = 0; i < quest.objectives.Count; i++)
+            {
+                QuestObjectiveDefinition objective = quest.objectives[i];
+                if (objective == null)
+                    continue;
+
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                int required = Mathf.Max(1, objective.requiredCount);
+                int current = progress.GetObjectiveProgress(i);
+                string label = string.IsNullOrEmpty(objective.description)
+                    ? objective.type.ToString()
+                    : objective.description;
+                builder.Append(label).Append(": ").Append(Mathf.Min(current, required)).Append('/').Append(required);
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildRewardsSummary(QuestDefinition quest)
+        {
+            if (quest?.rewards == null || quest.rewards.Count == 0)
+                return "No item rewards.";
+
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            for (int i = 0; i < quest.rewards.Count; i++)
+            {
+                QuestRewardDefinition reward = quest.rewards[i];
+                if (reward == null)
+                    continue;
+
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                builder.Append("- ").Append(QuestRewardFormatter.FormatShort(reward));
+            }
+
+            return builder.ToString();
         }
     }
 
@@ -570,6 +653,11 @@ namespace Project.Quests
     {
         public string Title;
         public string Detail;
+        public string Description;
+        public string ObjectivesSummary;
+        public string ProgressSummary;
+        public string RewardsSummary;
+        public int XpReward;
         public string ActionLabel;
         public QuestStatus Status;
         public bool CanSelect;
