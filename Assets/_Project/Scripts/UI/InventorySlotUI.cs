@@ -36,7 +36,7 @@ namespace Project.UI
         private InventoryItemActions itemActions;
         private GameObject dragGhost;
         private Image selectionGlowImage;
-        private Color defaultBackgroundColor = new Color(0.16f, 0.17f, 0.21f, 0.82f);
+        private Color defaultBackgroundColor = SurvivalPioneerUiPalette.SlotBackground;
         private bool wasDragged;
         private bool isSelected;
         private bool suppressAmountOutline;

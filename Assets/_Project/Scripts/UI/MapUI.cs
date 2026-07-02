@@ -15,11 +15,11 @@ namespace Project.UI
     /// </summary>
     public class MapUI : MonoBehaviour
     {
-        private const float DefaultMinimapSize = 128f;
+        private const float DefaultMinimapSize = 147f;
         private const float DefaultMinimapWorldSpan = 96f;
         private const float MinimapScreenDownShift = 0f;
         private const float MinimapEdgeInset = 16f;
-        private const float MinimapTitleBarHeight = 29f;
+        private const float MinimapTitleBarHeight = 0f;
         private const float MinimapInfoPanelHeight = 24f;
         private const float MinimapEdgeButtonSize = 22f;
         private const float MinMinimapSpan = 40f;
@@ -68,8 +68,8 @@ namespace Project.UI
         private RawImage fullMapImage;
         private TextMeshProUGUI minimapInfoLabel;
         private TextMeshProUGUI fullMapZoomLabel;
-        private TextMeshProUGUI fullMapResourceTooltipLabel;
-        private RectTransform fullMapResourceTooltipRect;
+        private TextMeshProUGUI fullMapMarkerTooltipLabel;
+        private RectTransform fullMapMarkerTooltipRect;
         private Button fullMapCloseButton;
         private Button minimapScanButton;
         private WorldMapProvider mapProvider;
@@ -122,12 +122,6 @@ namespace Project.UI
 
         private void Start()
         {
-            if (!GameSettings.MapSystemEnabled)
-            {
-                SetMapProviderActive(false);
-                return;
-            }
-
             EnsureMapProvider();
             if (mapProvider != null)
                 mapProvider.MapTextureReady += HandleMapTextureReady;
@@ -158,13 +152,6 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            if (!GameSettings.MapSystemEnabled)
-            {
-                if (minimapRoot != null)
-                    minimapRoot.SetActive(false);
-                return;
-            }
-
             RefreshMapShellVisibility();
 
             if (!GameSession.HasStarted)
@@ -203,30 +190,22 @@ namespace Project.UI
             if (mapProvider == null)
                 return;
 
-            Vector2 mapUv = playerTransform != null
-                ? mapProvider.WorldToMap01(playerTransform.position)
-                : new Vector2(0.5f, 0.5f);
-
-            if (playerTransform != null && minimapContentRect != null && minimapViewportRect != null)
+            if (minimapContentRect != null && minimapViewportRect != null)
             {
-                Vector2 contentSize = minimapContentRect.sizeDelta;
-                if (contentSize.sqrMagnitude < 1f)
-                    contentSize = minimapViewportRect.rect.size;
-                UpdateMarkerLayer(minimapMarkerLayer, minimapMarkerIcons, mapUv, contentSize, relativeToPlayer: true, forFullMap: false);
+                Vector2 contentSize = GetMinimapContentSize();
+                UpdateMarkerLayer(minimapMarkerLayer, minimapMarkerIcons, contentSize);
             }
 
             if (fullMapOpen && fullMapContentRect != null)
             {
-                Vector2 contentSize = fullMapContentRect.sizeDelta;
-                if (contentSize.sqrMagnitude < 1f && fullMapViewportRect != null)
-                    contentSize = fullMapViewportRect.rect.size * fullMapZoom;
-                UpdateMarkerLayer(fullMapMarkerLayer, fullMapMarkerIcons, mapUv, contentSize, relativeToPlayer: false, forFullMap: true);
+                Vector2 contentSize = GetFullMapContentSize();
+                UpdateMarkerLayer(fullMapMarkerLayer, fullMapMarkerIcons, contentSize);
             }
         }
 
         private void Update()
         {
-            if (!GameSettings.MapSystemEnabled || !GameSession.HasStarted)
+            if (!GameSession.HasStarted)
                 return;
 
             if (fullMapOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -240,7 +219,7 @@ namespace Project.UI
             if (!fullMapOpen || Mouse.current == null)
                 return;
 
-            UpdateFullMapResourceTooltip();
+            UpdateFullMapMarkerTooltip();
 
             float scroll = Mouse.current.scroll.ReadValue().y;
             if (Mathf.Abs(scroll) > 0.01f)
@@ -249,7 +228,7 @@ namespace Project.UI
 
         public void OnToggleMap(InputAction.CallbackContext context)
         {
-            if (!GameSettings.MapSystemEnabled || !GameSession.HasStarted)
+            if (!GameSession.HasStarted)
                 return;
 
             if (!context.performed)
@@ -265,64 +244,41 @@ namespace Project.UI
             }
         }
 
-        public static void ApplyMapSystemEnabled(bool enabled)
+        public static void ApplyMinimapEnabled(bool enabled)
         {
             foreach (MapUI mapUi in FindObjectsByType<MapUI>(FindObjectsInactive.Include))
             {
                 if (mapUi != null)
-                    mapUi.ApplySystemEnabled(enabled);
-            }
-
-            foreach (WorldMapProvider provider in FindObjectsByType<WorldMapProvider>(FindObjectsInactive.Include))
-            {
-                if (provider != null)
-                    provider.ApplySystemEnabled(enabled);
+                    mapUi.ApplyMinimapVisibility(enabled);
             }
         }
 
+        private void ApplyMinimapVisibility(bool enabled)
+        {
+            if (!enabled && minimapRoot != null)
+                minimapRoot.SetActive(false);
+
+            RefreshMapShellVisibility();
+        }
+
+        [System.Obsolete("Use ApplyMinimapEnabled instead.")]
+        public static void ApplyMapSystemEnabled(bool enabled) => ApplyMinimapEnabled(enabled);
+
         private void ApplySystemEnabled(bool enabled)
         {
-            if (!enabled)
-            {
-                CloseFullMap();
-                if (minimapRoot != null)
-                    minimapRoot.SetActive(false);
-                RefreshMapShellVisibility();
-                SetMapProviderActive(false);
-                return;
-            }
-
-            SetMapProviderActive(true);
-            EnsureMapProvider();
-            if (mapProvider != null)
-                mapProvider.MapTextureReady -= HandleMapTextureReady;
-
-            if (mapProvider != null)
-                mapProvider.MapTextureReady += HandleMapTextureReady;
-
-            if (!uiBuilt)
-            {
-                EnsureUiBuilt();
-                BindPlayer();
-            }
-
-            fullMapOpen = false;
-            ApplyMapTexture();
-            RefreshMapShellVisibility();
+            ApplyMinimapVisibility(enabled);
         }
 
         private void RefreshMapShellVisibility()
         {
             bool journalOpen = IsJournalOpen();
             if (minimapRoot != null)
-                minimapRoot.SetActive(GameSettings.MapSystemEnabled && GameSession.HasStarted && !journalOpen);
+                minimapRoot.SetActive(GameSettings.MinimapEnabled && GameSession.HasStarted && !journalOpen);
 
             if (fullMapOverlay == null)
                 return;
 
-            bool showFullMapOverlay = GameSettings.MapSystemEnabled
-                && fullMapOpen
-                && GameSession.HasStarted;
+            bool showFullMapOverlay = fullMapOpen && GameSession.HasStarted;
 
             fullMapOverlay.SetActive(showFullMapOverlay);
         }
@@ -348,9 +304,6 @@ namespace Project.UI
 
         public void OpenMapFullscreen()
         {
-            if (!GameSettings.MapSystemEnabled)
-                return;
-
             if (!uiBuilt)
                 EnsureUiBuilt();
 
@@ -414,14 +367,12 @@ namespace Project.UI
 
             fullMapOpen = false;
             openedViaNavigator = false;
+            HideFullMapMarkerTooltip();
             RefreshMapShellVisibility();
         }
 
         public void ToggleFullMap()
         {
-            if (!GameSettings.MapSystemEnabled)
-                return;
-
             JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
             if (journal != null && journal.TryToggleMapTab())
                 return;
@@ -456,6 +407,10 @@ namespace Project.UI
                 fullMapZoom = DefaultFullMapZoom;
                 UpdateFullMapZoomLabel();
                 CenterFullMapOnPlayer();
+            }
+            else
+            {
+                HideFullMapMarkerTooltip();
             }
         }
 
@@ -492,13 +447,11 @@ namespace Project.UI
             if (viewportSize.sqrMagnitude < 1f)
                 viewportSize = new Vector2(640f, 480f);
 
-            Vector2 contentSize = viewportSize * fullMapZoom;
+            Vector2 contentSize = GetFullMapContentSize();
             if (playerTransform != null)
             {
                 Vector2 mapUv = mapProvider.WorldToMap01(playerTransform.position);
-                fullMapPanOffset = -new Vector2(
-                    (mapUv.x - 0.5f) * contentSize.x,
-                    (mapUv.y - 0.5f) * contentSize.y);
+                fullMapPanOffset = -MapUvToContentLocal(mapUv, contentSize);
             }
             else
             {
@@ -526,6 +479,7 @@ namespace Project.UI
 
             fullMapOpen = false;
             openedViaNavigator = false;
+            HideFullMapMarkerTooltip();
             RefreshMapShellVisibility();
             PauseForFullMap(false);
         }
@@ -549,6 +503,8 @@ namespace Project.UI
                 return;
 
             mapProvider = FindAnyObjectByType<WorldMapProvider>();
+            if (mapProvider == null)
+                mapProvider = EnsureWorldMapProviderExists();
         }
 
         private static WorldMapProvider EnsureWorldMapProviderExists()
@@ -645,47 +601,22 @@ namespace Project.UI
             if (mapProvider == null || minimapContentRect == null || minimapViewportRect == null)
                 return;
 
+            Vector2 contentSize = GetMinimapContentSize();
+            minimapContentRect.sizeDelta = contentSize;
+
             Vector2 mapUv = playerTransform != null
                 ? mapProvider.WorldToMap01(playerTransform.position)
                 : new Vector2(0.5f, 0.5f);
-
-            float span = Mathf.Max(32f, minimapWorldSpan);
-            float zoom = Mathf.Max(
-                mapProvider.WorldBounds.size.x / span,
-                mapProvider.WorldBounds.size.z / span);
-
-            Vector2 viewportSize = minimapViewportRect.rect.size;
-            if (viewportSize.sqrMagnitude < 1f)
-                viewportSize = Vector2.one * DefaultMinimapSize;
-
-            Vector2 contentSize = viewportSize * zoom;
-            minimapContentRect.sizeDelta = contentSize;
-
-            Vector2 uvOffset = new Vector2(0.5f - mapUv.x, 0.5f - mapUv.y);
-            if (rotateMinimapWithPlayer)
-            {
-                float yaw = GetMapFacingYaw();
-                float rad = yaw * Mathf.Deg2Rad;
-                float cos = Mathf.Cos(rad);
-                float sin = Mathf.Sin(rad);
-                Vector2 rotatedOffset = new Vector2(
-                    uvOffset.x * cos - uvOffset.y * sin,
-                    uvOffset.x * sin + uvOffset.y * cos);
-                minimapContentRect.anchoredPosition = new Vector2(
-                    rotatedOffset.x * contentSize.x,
-                    rotatedOffset.y * contentSize.y);
-                minimapContentRect.localEulerAngles = new Vector3(0f, 0f, yaw);
-            }
-            else
-            {
-                minimapContentRect.anchoredPosition = new Vector2(
-                    uvOffset.x * contentSize.x,
-                    uvOffset.y * contentSize.y);
-                minimapContentRect.localEulerAngles = Vector3.zero;
-            }
+            minimapContentRect.anchoredPosition = GetMinimapContentPan(mapUv, contentSize);
+            minimapContentRect.localEulerAngles = rotateMinimapWithPlayer
+                ? new Vector3(0f, 0f, GetMapFacingYaw())
+                : Vector3.zero;
 
             if (minimapMarkerLayer is RectTransform markerLayerRect)
+            {
                 markerLayerRect.sizeDelta = contentSize;
+                markerLayerRect.anchoredPosition = Vector2.zero;
+            }
 
             if (minimapPlayerIconRect != null)
             {
@@ -698,6 +629,59 @@ namespace Project.UI
             }
         }
 
+        private Vector2 GetMinimapContentSize()
+        {
+            Vector2 viewportSize = minimapViewportRect != null
+                ? minimapViewportRect.rect.size
+                : Vector2.one * DefaultMinimapSize;
+            if (viewportSize.sqrMagnitude < 1f)
+                viewportSize = Vector2.one * DefaultMinimapSize;
+
+            if (mapProvider == null)
+                return viewportSize;
+
+            float span = Mathf.Max(32f, minimapWorldSpan);
+            float zoom = Mathf.Max(
+                mapProvider.WorldBounds.size.x / span,
+                mapProvider.WorldBounds.size.z / span);
+            return viewportSize * zoom;
+        }
+
+        private Vector2 GetMinimapContentPan(Vector2 playerMapUv, Vector2 contentSize)
+        {
+            Vector2 pan = new Vector2(
+                (0.5f - playerMapUv.x) * contentSize.x,
+                (0.5f - playerMapUv.y) * contentSize.y);
+
+            if (!rotateMinimapWithPlayer)
+                return pan;
+
+            float yaw = GetMapFacingYaw() * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(yaw);
+            float sin = Mathf.Sin(yaw);
+            return new Vector2(
+                pan.x * cos - pan.y * sin,
+                pan.x * sin + pan.y * cos);
+        }
+
+        private Vector2 GetFullMapContentSize()
+        {
+            Vector2 viewportSize = fullMapViewportRect != null
+                ? fullMapViewportRect.rect.size
+                : new Vector2(640f, 480f);
+            if (viewportSize.sqrMagnitude < 1f)
+                viewportSize = new Vector2(640f, 480f);
+
+            return viewportSize * fullMapZoom;
+        }
+
+        private static Vector2 MapUvToContentLocal(Vector2 mapUv, Vector2 contentSize)
+        {
+            return new Vector2(
+                (mapUv.x - 0.5f) * contentSize.x,
+                (mapUv.y - 0.5f) * contentSize.y);
+        }
+
         private void UpdateFullMap()
         {
             if (mapProvider == null || fullMapContentRect == null || fullMapViewportRect == null)
@@ -707,29 +691,46 @@ namespace Project.UI
             if (viewportSize.sqrMagnitude < 1f)
                 viewportSize = new Vector2(640f, 480f);
 
-            Vector2 contentSize = viewportSize * fullMapZoom;
+            Vector2 contentSize = GetFullMapContentSize();
             fullMapContentRect.sizeDelta = contentSize;
             fullMapPanOffset = ClampMapPan(fullMapPanOffset, contentSize, viewportSize);
             fullMapContentRect.anchoredPosition = fullMapPanOffset;
             fullMapContentRect.localEulerAngles = Vector3.zero;
 
             if (fullMapMarkerLayer is RectTransform markerLayerRect)
-                markerLayerRect.sizeDelta = contentSize;
-
-            if (fullMapPlayerIconRect != null)
             {
-                if (playerTransform != null)
-                {
-                    Vector2 mapUv = mapProvider.WorldToMap01(playerTransform.position);
-                    fullMapPlayerIconRect.anchoredPosition = fullMapPanOffset + new Vector2(
-                        (mapUv.x - 0.5f) * contentSize.x,
-                        (mapUv.y - 0.5f) * contentSize.y);
-                    fullMapPlayerIconRect.localEulerAngles = new Vector3(0f, 0f, -GetMapFacingYaw());
-                ApplyPlayerMapIconColor(fullMapPlayerIconRect);
-                }
-
-                fullMapPlayerIconRect.SetAsLastSibling();
+                markerLayerRect.sizeDelta = contentSize;
+                markerLayerRect.anchoredPosition = Vector2.zero;
             }
+
+            EnsureFullMapPlayerIconOnContentLayer();
+            UpdateFullMapPlayerIconPosition(contentSize);
+        }
+
+        private void EnsureFullMapPlayerIconOnContentLayer()
+        {
+            if (fullMapPlayerIconRect == null || fullMapMarkerLayer == null)
+                return;
+
+            if (fullMapPlayerIconRect.parent == fullMapMarkerLayer)
+                return;
+
+            fullMapPlayerIconRect.SetParent(fullMapMarkerLayer, false);
+            fullMapPlayerIconRect.anchorMin = new Vector2(0.5f, 0.5f);
+            fullMapPlayerIconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            fullMapPlayerIconRect.pivot = new Vector2(0.5f, 0.5f);
+        }
+
+        private void UpdateFullMapPlayerIconPosition(Vector2 contentSize)
+        {
+            if (fullMapPlayerIconRect == null || playerTransform == null || mapProvider == null)
+                return;
+
+            Vector2 mapUv = mapProvider.WorldToMap01(playerTransform.position);
+            fullMapPlayerIconRect.anchoredPosition = MapUvToContentLocal(mapUv, contentSize);
+            fullMapPlayerIconRect.localEulerAngles = new Vector3(0f, 0f, -GetMapFacingYaw());
+            ApplyPlayerMapIconColor(fullMapPlayerIconRect);
+            fullMapPlayerIconRect.SetAsLastSibling();
         }
 
         private void HandleFullMapPanDelta(Vector2 delta)
@@ -738,21 +739,10 @@ namespace Project.UI
                 return;
 
             Vector2 viewportSize = fullMapViewportRect.rect.size;
-            Vector2 contentSize = fullMapContentRect.sizeDelta;
-            if (contentSize.sqrMagnitude < 1f)
-                contentSize = viewportSize * fullMapZoom;
-
+            Vector2 contentSize = GetFullMapContentSize();
             fullMapPanOffset += delta;
             fullMapPanOffset = ClampMapPan(fullMapPanOffset, contentSize, viewportSize);
             fullMapContentRect.anchoredPosition = fullMapPanOffset;
-
-            if (fullMapPlayerIconRect != null && playerTransform != null && mapProvider != null)
-            {
-                Vector2 mapUv = mapProvider.WorldToMap01(playerTransform.position);
-                fullMapPlayerIconRect.anchoredPosition = fullMapPanOffset + new Vector2(
-                    (mapUv.x - 0.5f) * contentSize.x,
-                    (mapUv.y - 0.5f) * contentSize.y);
-            }
         }
 
         private static Vector2 ClampMapPan(Vector2 pan, Vector2 contentSize, Vector2 viewportSize)
@@ -825,16 +815,14 @@ namespace Project.UI
         private void UpdateMarkerLayer(
             Transform layer,
             Dictionary<MapMarker, RectTransform> iconLookup,
-            Vector2 playerUv,
-            Vector2 contentSize,
-            bool relativeToPlayer,
-            bool forFullMap)
+            Vector2 contentSize)
         {
-            if (layer == null)
+            if (layer == null || mapProvider == null)
                 return;
 
             IReadOnlyList<MapMarker> markers = MapRegistry.ActiveMarkers;
             var seen = new HashSet<MapMarker>();
+            bool forFullMap = layer == fullMapMarkerLayer;
             int markerBudget = forFullMap ? markers.Count : MaxMinimapMarkers;
 
             for (int i = 0; i < markers.Count; i++)
@@ -855,13 +843,13 @@ namespace Project.UI
                     iconRect = CreateMarkerIcon(layer, marker);
                     iconLookup[marker] = iconRect;
                 }
+                else
+                {
+                    ApplyMarkerIconVisual(iconRect, marker);
+                }
 
                 Vector2 markerUv = mapProvider.WorldToMap01(marker.WorldPosition);
-                iconRect.anchoredPosition = relativeToPlayer
-                    ? (markerUv - playerUv) * contentSize
-                    : new Vector2(
-                        (markerUv.x - 0.5f) * contentSize.x,
-                        (markerUv.y - 0.5f) * contentSize.y);
+                iconRect.anchoredPosition = MapUvToContentLocal(markerUv, contentSize);
             }
 
             List<MapMarker> toRemove = null;
@@ -908,10 +896,26 @@ namespace Project.UI
 
             Image image = iconObject.AddComponent<Image>();
             image.raycastTarget = false;
+            ApplyMarkerIconVisual(rect, marker);
+
+            return rect;
+        }
+
+        private static void ApplyMarkerIconVisual(RectTransform iconRect, MapMarker marker)
+        {
+            if (iconRect == null || marker == null)
+                return;
+
+            Image image = iconRect.GetComponent<Image>();
+            if (image == null)
+                return;
+
+            iconRect.sizeDelta = marker.IconSprite != null ? new Vector2(16f, 16f) : new Vector2(10f, 10f);
+
             if (marker.IconSprite != null)
             {
                 image.sprite = marker.IconSprite;
-                image.color = Color.white;
+                image.color = marker.Color;
             }
             else
             {
@@ -919,8 +923,6 @@ namespace Project.UI
                 image.sprite = MapUiSprites.Dot;
                 image.color = marker.Color;
             }
-
-            return rect;
         }
 
         private static RectTransform CreatePlayerArrow(Transform parent, float size)
@@ -1070,8 +1072,8 @@ namespace Project.UI
             fullMapImage = null;
             minimapInfoLabel = null;
             fullMapZoomLabel = null;
-            fullMapResourceTooltipLabel = null;
-            fullMapResourceTooltipRect = null;
+            fullMapMarkerTooltipLabel = null;
+            fullMapMarkerTooltipRect = null;
             fullMapCloseButton = null;
             minimapScanButton = null;
             fullMapTitleBar = null;
@@ -1250,6 +1252,8 @@ namespace Project.UI
             if (minimapRoot == null)
                 return;
 
+            RemoveMinimapTitleBar();
+
             if (preserveManualLayout && !applyRuntimeLayout)
             {
                 WireMinimapScanButton();
@@ -1289,7 +1293,7 @@ namespace Project.UI
                     circleRect.anchorMin = new Vector2(0.5f, 1f);
                     circleRect.anchorMax = new Vector2(0.5f, 1f);
                     circleRect.pivot = new Vector2(0.5f, 1f);
-                    circleRect.anchoredPosition = new Vector2(0f, -(MinimapTitleBarHeight + 2f));
+                    circleRect.anchoredPosition = new Vector2(0f, -2f);
                     circleRect.sizeDelta = Vector2.one * (DefaultMinimapSize - 10f);
                 }
 
@@ -1305,6 +1309,16 @@ namespace Project.UI
 
             WireMinimapScanButton();
             UpdateMinimapInfoPanel();
+        }
+
+        private void RemoveMinimapTitleBar()
+        {
+            if (minimapRoot == null)
+                return;
+
+            Transform titleBar = minimapRoot.transform.Find("TitleBar");
+            if (titleBar != null)
+                DestroyUiObject(titleBar.gameObject);
         }
 
         private void BuildMinimapEdgeControls(Transform circleAssembly)
@@ -1581,8 +1595,6 @@ namespace Project.UI
                 minimapRootRect.sizeDelta = new Vector2(DefaultMinimapSize, DefaultMinimapSize + totalChrome);
             }
 
-            CreateTitleBar(minimapRoot.transform, "Minimap", MinimapTitleBarHeight);
-
             GameObject circleAssembly = new GameObject("CircleAssembly", typeof(RectTransform));
             circleAssembly.transform.SetParent(minimapRoot.transform, false);
             RectTransform circleAssemblyRect = circleAssembly.GetComponent<RectTransform>();
@@ -1591,7 +1603,7 @@ namespace Project.UI
                 circleAssemblyRect.anchorMin = new Vector2(0.5f, 1f);
                 circleAssemblyRect.anchorMax = new Vector2(0.5f, 1f);
                 circleAssemblyRect.pivot = new Vector2(0.5f, 1f);
-                circleAssemblyRect.anchoredPosition = new Vector2(0f, -(MinimapTitleBarHeight + 2f));
+                circleAssemblyRect.anchoredPosition = new Vector2(0f, -2f);
                 circleAssemblyRect.sizeDelta = Vector2.one * (DefaultMinimapSize - 10f);
             }
 
@@ -1724,7 +1736,7 @@ namespace Project.UI
             MapViewportPanHandler panHandler = panHitObject.AddComponent<MapViewportPanHandler>();
             panHandler.Initialize(HandleFullMapPanDelta);
 
-            fullMapPlayerIconRect = CreatePlayerArrow(viewportObject.transform, FullMapPlayerIconSize);
+            fullMapPlayerIconRect = CreatePlayerArrow(fullMapMarkerLayer, FullMapPlayerIconSize);
 
             fullMapTitleBar = CreateTitleBar(headerObject.transform, "World Map", FullMapTitleBarHeight);
 
@@ -1749,7 +1761,7 @@ namespace Project.UI
             headerObject.transform.SetAsLastSibling();
             fullMapCloseButton.transform.SetAsLastSibling();
 
-            CreateFullMapResourceTooltip(mapFrame.transform);
+            CreateFullMapMarkerTooltip(mapFrame.transform);
 
             SetFullMapZoom(DefaultFullMapZoom);
             RefreshMapShellVisibility();
@@ -1965,12 +1977,7 @@ namespace Project.UI
             fullMapZoom = Mathf.Clamp(zoom, MinFullMapZoom, MaxFullMapZoom);
             UpdateFullMapZoomLabel();
             if (fullMapOpen)
-            {
-                Vector2 viewportSize = fullMapViewportRect != null ? fullMapViewportRect.rect.size : Vector2.zero;
-                Vector2 contentSize = viewportSize * fullMapZoom;
-                fullMapPanOffset = ClampMapPan(fullMapPanOffset, contentSize, viewportSize);
-                UpdateFullMap();
-            }
+                CenterFullMapOnPlayer();
         }
 
         private void UpdateMinimapInfoPanel(string message = null)
@@ -1988,13 +1995,13 @@ namespace Project.UI
             minimapInfoLabel.text = $"Range {Mathf.RoundToInt(percent)}%  |  Scan: standby";
         }
 
-        private void CreateFullMapResourceTooltip(Transform parent)
+        private void CreateFullMapMarkerTooltip(Transform parent)
         {
-            GameObject tooltipObject = new GameObject("ResourceTooltip", typeof(RectTransform));
+            GameObject tooltipObject = new GameObject("MarkerTooltip", typeof(RectTransform));
             tooltipObject.transform.SetParent(parent, false);
-            fullMapResourceTooltipRect = tooltipObject.GetComponent<RectTransform>();
-            fullMapResourceTooltipRect.pivot = new Vector2(0f, 1f);
-            fullMapResourceTooltipRect.sizeDelta = new Vector2(280f, 36f);
+            fullMapMarkerTooltipRect = tooltipObject.GetComponent<RectTransform>();
+            fullMapMarkerTooltipRect.pivot = new Vector2(0f, 1f);
+            fullMapMarkerTooltipRect.sizeDelta = new Vector2(280f, 36f);
 
             Image background = tooltipObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
@@ -2009,20 +2016,26 @@ namespace Project.UI
             textRect.offsetMin = new Vector2(10f, 4f);
             textRect.offsetMax = new Vector2(-10f, -4f);
 
-            fullMapResourceTooltipLabel = textObject.AddComponent<TextMeshProUGUI>();
-            TmpUiHelper.ApplyDefaultFont(fullMapResourceTooltipLabel);
-            fullMapResourceTooltipLabel.fontSize = 14f;
-            fullMapResourceTooltipLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            fullMapResourceTooltipLabel.color = new Color(0.86f, 0.9f, 0.96f, 1f);
-            fullMapResourceTooltipLabel.overflowMode = TextOverflowModes.Ellipsis;
-            fullMapResourceTooltipLabel.raycastTarget = false;
+            fullMapMarkerTooltipLabel = textObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(fullMapMarkerTooltipLabel);
+            fullMapMarkerTooltipLabel.fontSize = 14f;
+            fullMapMarkerTooltipLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            fullMapMarkerTooltipLabel.color = new Color(0.86f, 0.9f, 0.96f, 1f);
+            fullMapMarkerTooltipLabel.overflowMode = TextOverflowModes.Ellipsis;
+            fullMapMarkerTooltipLabel.raycastTarget = false;
 
             tooltipObject.SetActive(false);
         }
 
-        private void UpdateFullMapResourceTooltip()
+        private void HideFullMapMarkerTooltip()
         {
-            if (fullMapResourceTooltipLabel == null || fullMapResourceTooltipRect == null)
+            if (fullMapMarkerTooltipRect != null)
+                fullMapMarkerTooltipRect.gameObject.SetActive(false);
+        }
+
+        private void UpdateFullMapMarkerTooltip()
+        {
+            if (fullMapMarkerTooltipLabel == null || fullMapMarkerTooltipRect == null)
             {
                 if (!fullMapOpen || fullMapPanelRect == null)
                     return;
@@ -2031,45 +2044,54 @@ namespace Project.UI
                 if (mapFrame == null)
                     return;
 
-                CreateFullMapResourceTooltip(mapFrame);
+                Transform existingTooltip = mapFrame.Find("MarkerTooltip") ?? mapFrame.Find("ResourceTooltip");
+                if (existingTooltip != null)
+                {
+                    fullMapMarkerTooltipRect = existingTooltip as RectTransform;
+                    fullMapMarkerTooltipLabel = existingTooltip.GetComponentInChildren<TextMeshProUGUI>(true);
+                }
+                else
+                {
+                    CreateFullMapMarkerTooltip(mapFrame);
+                }
             }
 
-            if (fullMapResourceTooltipLabel == null || fullMapResourceTooltipRect == null)
+            if (fullMapMarkerTooltipLabel == null || fullMapMarkerTooltipRect == null)
                 return;
 
             if (!fullMapOpen || fullMapOverlay == null || !fullMapOverlay.activeSelf)
             {
-                fullMapResourceTooltipRect.gameObject.SetActive(false);
+                HideFullMapMarkerTooltip();
                 return;
             }
 
-            MapMarker hoveredMarker = GetFullMapResourceMarkerUnderMouse();
+            MapMarker hoveredMarker = GetFullMapMarkerUnderMouse();
             if (hoveredMarker == null)
             {
-                fullMapResourceTooltipRect.gameObject.SetActive(false);
+                HideFullMapMarkerTooltip();
                 return;
             }
 
             string hint = hoveredMarker.GetInteractionHintText();
             if (string.IsNullOrEmpty(hint))
             {
-                fullMapResourceTooltipRect.gameObject.SetActive(false);
+                HideFullMapMarkerTooltip();
                 return;
             }
 
-            fullMapResourceTooltipLabel.text = hint;
-            fullMapResourceTooltipRect.gameObject.SetActive(true);
-            fullMapResourceTooltipRect.SetAsLastSibling();
+            fullMapMarkerTooltipLabel.text = hint;
+            fullMapMarkerTooltipRect.gameObject.SetActive(true);
+            fullMapMarkerTooltipRect.SetAsLastSibling();
 
             if (Mouse.current == null)
                 return;
 
             Vector2 mousePosition = Mouse.current.position.ReadValue();
-            fullMapResourceTooltipRect.position = mousePosition + new Vector2(18f, -18f);
-            ItemHoverTooltip.ClampTooltipToScreen(fullMapResourceTooltipRect);
+            fullMapMarkerTooltipRect.position = mousePosition + new Vector2(18f, -18f);
+            ItemHoverTooltip.ClampTooltipToScreen(fullMapMarkerTooltipRect);
         }
 
-        private MapMarker GetFullMapResourceMarkerUnderMouse()
+        private MapMarker GetFullMapMarkerUnderMouse()
         {
             if (fullMapViewportRect == null || Mouse.current == null)
                 return null;
@@ -2087,7 +2109,7 @@ namespace Project.UI
             {
                 MapMarker marker = pair.Key;
                 RectTransform iconRect = pair.Value;
-                if (marker == null || iconRect == null || !marker.IsResourceMarker)
+                if (marker == null || iconRect == null)
                     continue;
 
                 Vector3 iconScreen = RectTransformUtility.WorldToScreenPoint(uiCamera, iconRect.position);

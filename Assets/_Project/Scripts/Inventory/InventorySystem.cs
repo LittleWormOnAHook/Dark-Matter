@@ -283,6 +283,15 @@ namespace Project.Inventory
             return added;
         }
 
+        public bool TryConsumeItemById(string itemId, int amount = 1)
+        {
+            if (string.IsNullOrEmpty(itemId) || amount <= 0)
+                return false;
+
+            ItemData item = ItemRegistry.Resolve(itemId);
+            return item != null && RemoveItem(item, amount);
+        }
+
         public bool RemoveItem(ItemData item, int amount = 1)
         {
             if (item == null) return false;

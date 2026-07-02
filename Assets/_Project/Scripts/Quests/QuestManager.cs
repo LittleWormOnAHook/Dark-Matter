@@ -4,6 +4,7 @@ using Project.Core;
 using Project.Crafting;
 using Project.Data;
 using Project.Inventory;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -165,6 +166,12 @@ namespace Project.Quests
                 return false;
 
             QuestRewardGranter.GrantRewards(definition);
+
+            if (definition.xpReward > 0)
+                ProgressionRewardGranter.GrantXp(definition.xpReward, XpSource.Quest, $"quest-turnin:{questId}", "Quest");
+            else
+                ProgressionRewardGranter.GrantXp(ProgressionXpDefaults.QuestCompleteXp, XpSource.Quest, $"quest-turnin-default:{questId}", "Quest");
+
             progress.status = QuestStatus.TurnedIn;
             NotifyUpdated(progress);
             return true;

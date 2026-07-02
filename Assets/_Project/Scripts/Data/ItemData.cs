@@ -1,3 +1,5 @@
+using Project.Data;
+using Project.Progression;
 using UnityEngine;
 
 namespace Project.Data
@@ -25,6 +27,18 @@ namespace Project.Data
         TwoHanded
     }
 
+    /// <summary>
+    /// GKC animator Weapon ID blend-tree selector. Infer resolves from grip/name.
+    /// </summary>
+    public enum GkcWeaponKind
+    {
+        Infer = -1,
+        Unarmed = 0,
+        OneHandSword = 1,
+        TwoHand = 2,
+        OneHandAxe = 3
+    }
+
     [CreateAssetMenu(menuName = "Project/Survival/Item Data")]
     public class ItemData : ScriptableObject
     {
@@ -39,6 +53,12 @@ namespace Project.Data
 
         [Header("Equipment")]
         public WeaponGrip weaponGrip = WeaponGrip.OneHanded;
+        [Tooltip("GKC Weapon ID for locomotion/attacks. Infer: two-hand=2, axe name=3, else 1H sword.")]
+        public GkcWeaponKind gkcWeaponKind = GkcWeaponKind.Infer;
+        [Tooltip("Optional GKC Right Arm ID while drawn. -1 keeps bridge defaults.")]
+        public int gkcRightArmId = -1;
+        [Tooltip("Optional GKC Left Arm ID while drawn. -1 keeps bridge defaults.")]
+        public int gkcLeftArmId = -1;
         public GameObject heldPrefab;
         public string equipSocketName = "RightHand";
         public Vector3 heldLocalPosition = Vector3.zero;
@@ -64,6 +84,8 @@ namespace Project.Data
         public float criticalDamageMultiplier = 2f;
         public float meleeRange = 2.2f;
         public float meleeCooldown = 0.65f;
+        [Tooltip("Animator playback multiplier for melee attacks. 0 uses grip + held scale.")]
+        public float attackAnimationSpeed;
         public int gatherPower = 1;
         public string attackTrigger = "Attack";
 
@@ -93,6 +115,18 @@ namespace Project.Data
         public bool isPiInfused = false;
         public int piValue = 0;
 
+        [Header("Progression")]
+        [Tooltip("When true, collecting this item grants XP (shards, recipe scrolls, etc.). Normal pickups stay false.")]
+        public bool grantsXp;
+        public int xpAmount = 10;
+        public XpSource xpSource = XpSource.SpecialItem;
+
+        [Header("Level Gates")]
+        [Tooltip("Minimum player level required to equip or use this item.")]
+        public int requiredLevelToEquip = 1;
+        [Tooltip("Minimum player level required to craft recipes that output this item.")]
+        public int requiredLevelToCraft = 1;
+
         [Header("Tooltip")]
         [TextArea(2, 5)]
         public string tooltipDescription;
@@ -107,11 +141,97 @@ namespace Project.Data
         public bool IsTwoHanded =>
             itemType == ItemType.MeleeWeapon && weaponGrip == WeaponGrip.TwoHanded;
 
+        public bool IsOneHandedAxe =>
+            itemType == ItemType.MeleeWeapon && !IsTwoHanded && ResolveGkcWeaponKind() == GkcWeaponKind.OneHandAxe;
+
+        public GkcWeaponKind ResolveGkcWeaponKind()
+        {
+            if (itemType != ItemType.MeleeWeapon)
+                return GkcWeaponKind.Unarmed;
+
+            if (gkcWeaponKind != GkcWeaponKind.Infer)
+                return gkcWeaponKind;
+
+            if (IsTwoHanded)
+                return GkcWeaponKind.TwoHand;
+
+            if (InfersAsOneHandAxe())
+                return GkcWeaponKind.OneHandAxe;
+
+            return GkcWeaponKind.OneHandSword;
+        }
+
+        public float ResolveGkcWeaponId() =>
+            (float)ResolveGkcWeaponKind();
+
+        public int ResolveGkcRightArmId()
+        {
+            if (gkcRightArmId >= 0)
+                return gkcRightArmId;
+
+            if (itemType != ItemType.MeleeWeapon)
+                return 0;
+
+            return 0;
+        }
+
+        public int ResolveGkcLeftArmId()
+        {
+            if (gkcLeftArmId >= 0)
+                return gkcLeftArmId;
+
+            return 0;
+        }
+
+        private bool InfersAsOneHandAxe()
+        {
+            if (!string.IsNullOrWhiteSpace(itemName)
+                && itemName.IndexOf("axe", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            string heldName = heldPrefab != null ? heldPrefab.name : string.Empty;
+            return !string.IsNullOrWhiteSpace(heldName)
+                && heldName.IndexOf("axe", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>
+        /// Lower values slow attack clips. Bigger held scale and two-handed grips play slower by default.
+        /// </summary>
+        public float ResolveAttackAnimationSpeed()
+        {
+            if (attackAnimationSpeed > 0f)
+                return attackAnimationSpeed;
+
+            float gripSpeed = IsTwoHanded ? 0.72f : 0.9f;
+            if (ResolveGkcWeaponKind() == GkcWeaponKind.OneHandAxe)
+                gripSpeed *= 1.25f;
+
+            float scaleFactor = heldLocalScale.magnitude / 1.7320508f;
+            float sizeSlowdown = 1f / Mathf.Clamp(scaleFactor, 0.75f, 1.75f);
+            float cooldownSlowdown = Mathf.Clamp(meleeCooldown / 0.65f, 0.85f, 1.35f);
+            return Mathf.Clamp(gripSpeed * sizeSlowdown * cooldownSlowdown, 0.5f, 1.35f);
+        }
+
+        public float GetAverageMeleeDamage()
+        {
+            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float minDamage = Mathf.Max(1f, meleeDamage + bonus);
+            if (meleeDamageRandomRange <= 0f)
+                return minDamage;
+
+            float maxDamage = Mathf.Max(minDamage, meleeDamage + meleeDamageRandomRange + bonus);
+            return (minDamage + maxDamage) * 0.5f;
+        }
+
         public float RollMeleeDamage(bool isCritical = false)
         {
+            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float minDamage = Mathf.Max(1f, meleeDamage + bonus);
             float rolledDamage = meleeDamageRandomRange <= 0f
-                ? Mathf.Max(1f, meleeDamage)
-                : Random.Range(Mathf.Max(1f, meleeDamage), Mathf.Max(1f, meleeDamage) + meleeDamageRandomRange);
+                ? minDamage
+                : Random.Range(minDamage, Mathf.Max(minDamage, meleeDamage + meleeDamageRandomRange + bonus));
 
             if (isCritical && criticalDamageMultiplier > 0f)
                 rolledDamage *= criticalDamageMultiplier;

@@ -1632,6 +1632,7 @@ GameObject:
   - component: {fileID: 8698466548513082506}
   - component: {fileID: 7123456789012345679}
   - component: {fileID: 6296094059926941886}
+  - component: {fileID: 6852445488520919925}
   m_Layer: 0
   m_Name: The_Evil_One
   m_TagString: Untagged
@@ -1791,6 +1792,16 @@ MonoBehaviour:
   investigateArriveDistance: 1.2
   searchDuration: 6
   searchRadius: 4
+  chaseStaminaPauseMin: 0.35
+  chaseStaminaPauseMax: 1.15
+  chaseStaminaRollIntervalMin: 2.4
+  chaseStaminaRollIntervalMax: 5.2
+  chaseStaminaPauseChance: 0.38
+  pioneerRetargetChanceMin: 0.1
+  pioneerRetargetChanceMax: 0.2
+  pioneerRetargetRadius: 4
+  pioneerRetargetRollIntervalMin: 0.75
+  pioneerRetargetRollIntervalMax: 1.35
 --- !u!114 &1872267020696362376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1822,6 +1833,7 @@ MonoBehaviour:
   - Idle01
   walkStateName: Walk
   runStateName: Run
+  locomotionBlendStateName: Locomotion
   attackStateNames:
   - Attack01
   - Attack02
@@ -1833,6 +1845,7 @@ MonoBehaviour:
   crossFadeDuration: 0.12
   walkSpeedThreshold: 0.05
   runSpeedThreshold: 3.94
+  locomotionSmoothTime: 0.12
   idleSwapMin: 4
   idleSwapMax: 8
   lockVisualRootPosition: 0
@@ -1887,6 +1900,23 @@ MonoBehaviour:
   smokeColor: {r: 0.62, g: 0.64, b: 0.68, a: 0.48}
   enableVolumetricSmoke: 1
   volumetricSmokeLinger: 2.4
+--- !u!114 &6852445488520919925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818667370058463670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6f7b2a3a0c3c2248b6e34f3890da87e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
+  label: Point of Interest
+  color: {r: 1, g: 0.0019782386, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: 1e3b0a949ff691c4782fe566fe74e657, type: 3}
+  showOnMinimap: 1
+  showOnFullMap: 1
 --- !u!1 &9020768278938481343
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Project.Companions;
 
 namespace Project.AI
 {
@@ -55,6 +57,20 @@ namespace Project.AI
         [SerializeField] private float searchDuration = 6f;
         [SerializeField] private float searchRadius = 4f;
 
+        [Header("Chase Stamina")]
+        [SerializeField] private float chaseStaminaPauseMin = 0.35f;
+        [SerializeField] private float chaseStaminaPauseMax = 1.15f;
+        [SerializeField] private float chaseStaminaRollIntervalMin = 2.4f;
+        [SerializeField] private float chaseStaminaRollIntervalMax = 5.2f;
+        [SerializeField] [Range(0f, 1f)] private float chaseStaminaPauseChance = 0.38f;
+
+        [Header("Pioneer Retarget")]
+        [SerializeField] private float pioneerRetargetChanceMin = 0.10f;
+        [SerializeField] private float pioneerRetargetChanceMax = 0.20f;
+        [SerializeField] private float pioneerRetargetRadius = 4f;
+        [SerializeField] private float pioneerRetargetRollIntervalMin = 0.75f;
+        [SerializeField] private float pioneerRetargetRollIntervalMax = 1.35f;
+
         private EnemySenses senses;
         private EnemyHealth health;
         private EnemyCombat combat;
@@ -70,6 +86,10 @@ namespace Project.AI
         private bool hasPatrolRoute;
         private float currentLocomotionSpeed;
         private Vector3 currentLocalMoveDirection;
+        private float chaseStaminaPauseUntil;
+        private float nextChaseStaminaRollTime;
+        private float nextPioneerRetargetRollTime;
+        private Transform playerTarget;
 
         public float CurrentLocomotionSpeed => currentLocomotionSpeed;
         public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
@@ -127,9 +147,12 @@ namespace Project.AI
             Transform sensedTarget = senses.GetSensedTarget();
             if (sensedTarget != null)
             {
+                playerTarget = sensedTarget;
                 lastKnownPlayerPosition = sensedTarget.position;
                 lostTargetTimer = 0f;
-                combat.SetTarget(sensedTarget);
+
+                if (!IsTargetingLivingPioneer())
+                    combat.SetTarget(sensedTarget);
 
                 if (combat.IsTargetInRange())
                 {
@@ -148,7 +171,10 @@ namespace Project.AI
             }
             else
             {
-                combat.SetTarget(null);
+                playerTarget = null;
+
+                if (!IsTargetingLivingPioneer())
+                    combat.SetTarget(null);
 
                 if (state == AiState.Chase || state == AiState.Attack)
                 {
@@ -157,6 +183,9 @@ namespace Project.AI
                         GiveUpChaseAndReturnHome();
                 }
             }
+
+            if (state == AiState.Attack || state == AiState.Chase)
+                TryRetargetToNearbyPioneer();
 
             switch (state)
             {
@@ -283,19 +312,54 @@ namespace Project.AI
 
         private void UpdateChase()
         {
-            if (!CanContinueChase(lastKnownPlayerPosition))
+            Transform chaseTarget = combat.CurrentTarget;
+            Vector3 chasePosition = chaseTarget != null ? chaseTarget.position : lastKnownPlayerPosition;
+
+            if (!CanContinueChase(chasePosition))
             {
                 GiveUpChaseAndReturnHome();
                 return;
             }
 
-            moveTarget = lastKnownPlayerPosition;
+            if (Time.time < chaseStaminaPauseUntil)
+            {
+                currentLocomotionSpeed = 0f;
+                currentLocalMoveDirection = Vector3.zero;
+                FaceTowards(chasePosition);
+                return;
+            }
+
+            if (Time.time >= nextChaseStaminaRollTime)
+                TryStartChaseStaminaPause();
+
+            moveTarget = chasePosition;
             MoveTowards(moveTarget, runSpeed);
+        }
+
+        private void TryStartChaseStaminaPause()
+        {
+            ScheduleNextChaseStaminaRoll();
+            if (Random.value > chaseStaminaPauseChance)
+                return;
+
+            chaseStaminaPauseUntil = Time.time + Random.Range(chaseStaminaPauseMin, chaseStaminaPauseMax);
+        }
+
+        private void ScheduleNextChaseStaminaRoll()
+        {
+            nextChaseStaminaRollTime = Time.time + Random.Range(chaseStaminaRollIntervalMin, chaseStaminaRollIntervalMax);
         }
 
         private void UpdateAttack()
         {
-            Transform target = senses.GetSensedTarget();
+            if (!combat.HasLivingTarget())
+            {
+                if (playerTarget != null)
+                    combat.SetTarget(playerTarget);
+                return;
+            }
+
+            Transform target = combat.CurrentTarget;
             if (target == null)
                 return;
 
@@ -307,6 +371,68 @@ namespace Project.AI
 
             FaceTowards(target.position);
             combat.TryAttack();
+        }
+
+        private bool IsTargetingLivingPioneer()
+        {
+            Transform current = combat.CurrentTarget;
+            if (current == null)
+                return false;
+
+            if (current.GetComponent<CompanionHealth>() is { IsDead: false })
+                return true;
+
+            return current.GetComponent<PioneerCompanionAgent>() != null && combat.HasLivingTarget();
+        }
+
+        private void TryRetargetToNearbyPioneer()
+        {
+            if (playerTarget == null)
+                return;
+
+            if (Time.time < nextPioneerRetargetRollTime)
+                return;
+
+            nextPioneerRetargetRollTime = Time.time + Random.Range(pioneerRetargetRollIntervalMin, pioneerRetargetRollIntervalMax);
+
+            float chance = Random.Range(pioneerRetargetChanceMin, pioneerRetargetChanceMax);
+            if (Random.value > chance)
+                return;
+
+            Transform pioneer = PickRandomNearbyPioneer();
+            if (pioneer != null)
+                combat.SetTarget(pioneer);
+        }
+
+        private Transform PickRandomNearbyPioneer()
+        {
+            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            if (bridge == null)
+                return null;
+
+            IReadOnlyList<PioneerCompanionAgent> companions = bridge.ActiveCompanions;
+            if (companions == null || companions.Count == 0)
+                return null;
+
+            int startIndex = Random.Range(0, companions.Count);
+            for (int i = 0; i < companions.Count; i++)
+            {
+                PioneerCompanionAgent agent = companions[(startIndex + i) % companions.Count];
+                if (agent == null)
+                    continue;
+
+                CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                if (health != null && health.IsDead)
+                    continue;
+
+                float distance = HorizontalDistance(transform.position, agent.transform.position);
+                if (distance > pioneerRetargetRadius)
+                    continue;
+
+                return agent.transform;
+            }
+
+            return null;
         }
 
         private void GiveUpChaseAndReturnHome()
@@ -405,6 +531,8 @@ namespace Project.AI
                     break;
                 case AiState.Chase:
                     moveTarget = lastKnownPlayerPosition;
+                    chaseStaminaPauseUntil = 0f;
+                    ScheduleNextChaseStaminaRoll();
                     break;
                 case AiState.Attack:
                     break;

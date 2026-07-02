@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Data;
 using Project.Inventory;
+using Project.Progression;
 using Project.Quests;
 using UnityEngine;
 
@@ -102,6 +103,12 @@ namespace Project.Crafting
             if (!discoveredRecipeIds.Add(recipe.ResolvedId))
                 return;
 
+            ProgressionRewardGranter.GrantXp(
+                ProgressionXpDefaults.RecipeLearnXp,
+                XpSource.Craft,
+                $"recipe-learn:{recipe.ResolvedId}",
+                "Recipe");
+
             OnRecipesChanged?.Invoke();
         }
 
@@ -162,6 +169,10 @@ namespace Project.Crafting
             if (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value)
                 return false;
 
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            if (!LevelUnlockUtility.CanAccess(progression, recipe.requiredPlayerLevel))
+                return false;
+
             if (!HasIngredients(recipe, inventory))
                 return false;
 
@@ -201,6 +212,9 @@ namespace Project.Crafting
             }
 
             OnCrafted?.Invoke(recipe);
+
+            int craftXp = Mathf.Max(5, 8 + recipe.recipeTier * 4);
+            ProgressionRewardGranter.GrantXp(craftXp, XpSource.Craft, $"craft:{recipe.ResolvedId}", "Craft");
 
             QuestManager questManager = QuestManager.Instance ?? FindAnyObjectByType<QuestManager>();
             questManager?.NotifyItemCrafted(recipe.outputItem, recipe.outputAmount);

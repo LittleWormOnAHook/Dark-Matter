@@ -1,6 +1,5 @@
 using UnityEngine;
 using Project.Data;
-using Project.Map;
 using Project.UI;
 
 namespace Project.Interaction
@@ -12,24 +11,6 @@ namespace Project.Interaction
         public int maxHits = 3;
 
         private int currentHits = 0;
-        private MapMarker mapMarker;
-
-        private void Start()
-        {
-            SyncMapMarker();
-        }
-
-        private void SyncMapMarker()
-        {
-            if (resourceItem == null)
-                return;
-
-            mapMarker = GetComponent<MapMarker>();
-            if (mapMarker == null)
-                mapMarker = gameObject.AddComponent<MapMarker>();
-
-            mapMarker.ConfigureForResource(resourceItem);
-        }
 
         public void Gather(ResourceGatherer gatherer)
         {

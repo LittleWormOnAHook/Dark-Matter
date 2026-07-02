@@ -282,6 +282,7 @@ GameObject:
   - component: {fileID: 2301233705491424516}
   - component: {fileID: 3171104478608388507}
   - component: {fileID: 4244647163430639239}
+  - component: {fileID: -4669752311540542210}
   m_Layer: 0
   m_Name: Red Lilly_World
   m_TagString: Untagged
@@ -371,3 +372,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-4669752311540542210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7022529065963280668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
+  itemData: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
+  amount: 5
+  promptText: Press E to use
+  canRespawn: 1
+  minRespawnTime: 20
+  maxRespawnTime: 90

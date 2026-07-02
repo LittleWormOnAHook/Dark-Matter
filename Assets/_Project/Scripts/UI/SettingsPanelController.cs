@@ -14,7 +14,7 @@ namespace Project.UI
         private Slider musicSlider;
         private Slider sfxSlider;
         private Toggle postProcessingToggle;
-        private Toggle mapSystemToggle;
+        private Toggle minimapToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
         private Dropdown qualityDropdown;
@@ -70,7 +70,7 @@ namespace Project.UI
             postProcessingToggle = MenuUiBuilder.CreateToggleRow(window.transform, "Post Processing", GameSettings.PostProcessingEnabled);
 
             CreateSectionTitle(window.transform, "Gameplay");
-            mapSystemToggle = MenuUiBuilder.CreateToggleRow(window.transform, "Map System", GameSettings.MapSystemEnabled);
+            minimapToggle = MenuUiBuilder.CreateCircleToggleRow(window.transform, "Minimap", GameSettings.MinimapEnabled);
 
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             buttonRow.transform.SetParent(window.transform, false);
@@ -115,10 +115,10 @@ namespace Project.UI
                 GameSettings.SetPostProcessingEnabled(value);
                 PostProcessingController.Instance?.ApplyFromSettings();
             });
-            mapSystemToggle.onValueChanged.AddListener(value =>
+            minimapToggle.onValueChanged.AddListener(value =>
             {
-                GameSettings.SetMapSystemEnabled(value);
-                MapUI.ApplyMapSystemEnabled(value);
+                GameSettings.SetMinimapEnabled(value);
+                MapUI.ApplyMinimapEnabled(value);
             });
             fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
             vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
@@ -160,7 +160,7 @@ namespace Project.UI
             musicSlider.SetValueWithoutNotify(GameSettings.MusicVolume);
             sfxSlider.SetValueWithoutNotify(GameSettings.SfxVolume);
             postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
-            mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
+            minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
             qualityDropdown.SetValueWithoutNotify(QualitySettings.GetQualityLevel());

@@ -230,7 +230,7 @@ namespace Project.UI
                     objectiveText.lineSpacing = -12f;
                     objectiveText.paragraphSpacing = -6f;
                     objectiveText.margin = Vector4.zero;
-                    objectiveText.color = SurvivalPioneerUiPalette.RichFuchsia;
+                    objectiveText.color = SurvivalPioneerUiPalette.BodyText;
 
                     LayoutElement objectiveLayout = objectiveText.gameObject.AddComponent<LayoutElement>();
                     objectiveLayout.minHeight = 0f;
@@ -251,7 +251,7 @@ namespace Project.UI
                 statusLine.alignment = TextAlignmentOptions.TopRight;
                 statusLine.lineSpacing = -10f;
                 statusLine.margin = new Vector4(0f, 1f, 0f, 0f);
-                statusLine.color = SurvivalPioneerUiPalette.RichFuchsia;
+                statusLine.color = SurvivalPioneerUiPalette.Gold;
             }
         }
 

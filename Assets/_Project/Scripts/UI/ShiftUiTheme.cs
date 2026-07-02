@@ -32,11 +32,17 @@ namespace Project.UI
         }
 
         public static bool IsReady => Current != null;
-        public static Color PrimaryColor => Current != null ? Current.primaryColor : new Color(0.3882353f, 0.7764706f, 1f, 1f);
+        public static Color PrimaryColor => Current != null ? Current.primaryColor : SurvivalPioneerUiPalette.RichFuchsia;
         public static Color SlotBackgroundTint => Current != null
             ? Current.slotBackgroundTint
-            : new Color(0.16f, 0.17f, 0.21f, 0.82f);
-        public static Color NegativeColor => Current != null ? Current.negativeColor : new Color(1f, 0.43137255f, 0.39215687f, 1f);
+            : SurvivalPioneerUiPalette.SlotBackground;
+        public static Color NegativeColor => Current != null ? Current.negativeColor : SurvivalPioneerUiPalette.DangerRed;
+        public static Color AccentColor => Current != null ? Current.accentColor : SurvivalPioneerUiPalette.RichFuchsia;
+        public static Color HighlightColor => Current != null ? Current.highlightColor : SurvivalPioneerUiPalette.Gold;
+        public static Color MutedTextColor => Current != null ? Current.mutedTextColor : SurvivalPioneerUiPalette.MutedText;
+        public static Color BodyTextColor => Current != null ? Current.bodyTextColor : SurvivalPioneerUiPalette.BodyText;
+        public static Color PanelHeaderColor => Current != null ? Current.panelHeaderColor : SurvivalPioneerUiPalette.PanelHeader;
+        public static Sprite ConnectedStatusSprite => Current?.connectedStatusSprite;
         public static TMP_FontAsset RegularFont => Current?.regularFont;
         public static TMP_FontAsset SemiBoldFont => Current?.semiBoldFont ?? Current?.regularFont;
         public static TMP_FontAsset BoldFont => Current?.boldFont ?? Current?.semiBoldFont ?? Current?.regularFont;
@@ -54,12 +60,20 @@ namespace Project.UI
         }
 
         [Header("Colors")]
-        public Color primaryColor = new Color(0.3882353f, 0.7764706f, 1f, 1f);
-        public Color backgroundColor = new Color(0.09803922f, 0.09803922f, 0.09803922f, 0.94f);
-        public Color negativeColor = new Color(1f, 0.43137255f, 0.39215687f, 1f);
-        public Color secondaryTextColor = new Color(0.75f, 0.82f, 0.9f, 0.9f);
-        public Color slotBackgroundTint = new Color(0.16f, 0.17f, 0.21f, 0.82f);
-        public Color selectionGlowColor = new Color(0.3882353f, 0.7764706f, 1f, 0.85f);
+        public Color primaryColor = SurvivalPioneerUiPalette.RichFuchsia;
+        public Color backgroundColor = SurvivalPioneerUiPalette.PanelBackground;
+        public Color negativeColor = SurvivalPioneerUiPalette.DangerRed;
+        public Color secondaryTextColor = SurvivalPioneerUiPalette.BodyText;
+        public Color slotBackgroundTint = SurvivalPioneerUiPalette.SlotBackground;
+        public Color selectionGlowColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.85f);
+        public Color accentColor = SurvivalPioneerUiPalette.RichFuchsia;
+        public Color highlightColor = SurvivalPioneerUiPalette.Gold;
+        public Color mutedTextColor = SurvivalPioneerUiPalette.MutedText;
+        public Color bodyTextColor = SurvivalPioneerUiPalette.BodyText;
+        public Color panelHeaderColor = SurvivalPioneerUiPalette.PanelHeader;
+
+        [Header("Status Icons")]
+        public Sprite connectedStatusSprite;
 
         [Header("Fonts")]
         public TMP_FontAsset regularFont;

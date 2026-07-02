@@ -99,8 +99,12 @@ MonoBehaviour:
   obstructionLayers:
     serializedVersion: 2
     m_Bits: 1
-  movementSlideIterations: 3
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  movementSlideIterations: 4
   collisionSkin: 0.03
+  maxHeightAboveTerrain: 0.35
 --- !u!114 &3329959511412560056
 MonoBehaviour:
   m_ObjectHideFlags: 0

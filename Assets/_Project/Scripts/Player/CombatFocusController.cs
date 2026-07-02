@@ -47,6 +47,8 @@ namespace Project.Player
         private EnemyHealth[] _cachedEnemies = System.Array.Empty<EnemyHealth>();
 
         public bool IsLocked => _lockedTarget != null;
+        public EnemyHealth LockedTarget => _lockedTarget;
+        public float FocusRange => focusRange;
 
         private void Awake()
         {
@@ -61,6 +63,12 @@ namespace Project.Player
         {
             if (_player == null || _character == null)
                 return;
+
+            if (_melee != null && _melee.IsBlocking)
+            {
+                ReleaseLock();
+                return;
+            }
 
             if (_player.BlocksCombatInput || _player.IsGameplayPaused || (_survival != null && _survival.IsDead))
             {
@@ -196,6 +204,9 @@ namespace Project.Player
                 return;
 
             TrackLookAwayBreak();
+
+            if (_melee != null && _melee.IsBlocking)
+                return;
 
             if (_lookAwayAccum >= breakLookAwayDegrees || IsMovingAwayFromEnemy(_lockedTarget))
             {

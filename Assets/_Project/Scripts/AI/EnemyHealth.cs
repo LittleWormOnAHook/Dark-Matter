@@ -1,5 +1,6 @@
 using System;
 using Project.Interaction;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -38,6 +39,8 @@ namespace Project.AI
         private void Awake()
         {
             CaptureSpawnPoint();
+            if (GetComponent<EnemyProgressionXp>() == null)
+                gameObject.AddComponent<EnemyProgressionXp>();
         }
 
         private void OnEnable()

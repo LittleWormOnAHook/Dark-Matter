@@ -50,6 +50,14 @@ namespace Project.Inventory
         public int SelectedSlotIndex => inventory != null ? inventory.inventorySize + selectedHotbarSlot : -1;
         public bool IsWeaponDrawn { get; private set; } = true;
 
+        public bool HasActiveMeleeWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsMeleeWeaponItem(SelectedHotbarItem);
+        }
+
         public ItemData EquippedItem => GetHotbarItem(ActiveWeaponHotbarSlot);
 
         public ItemData SelectedHotbarItem => GetHotbarItem(selectedHotbarSlot);
@@ -171,7 +179,7 @@ namespace Project.Inventory
             ClearToolbarSelection();
             activeWeaponSlot = (activeWeaponSlot + 1) % WeaponSlotCount;
             selectedHotbarSlot = ActiveWeaponHotbarSlot;
-            IsWeaponDrawn = HasEquippableInHotbarSlot(ActiveWeaponHotbarSlot);
+            SyncWeaponDrawnState();
             NotifySelectionChanged();
         }
 
@@ -182,18 +190,15 @@ namespace Project.Inventory
 
             ClearToolbarSelection();
 
-            if (activeWeaponSlot == weaponSlotIndex)
-            {
-                if (HasEquippableInHotbarSlot(hotbarIndex))
-                    IsWeaponDrawn = !IsWeaponDrawn;
-            }
+            if (activeWeaponSlot == weaponSlotIndex && selectedHotbarSlot == hotbarIndex)
+                IsWeaponDrawn = !IsWeaponDrawn;
             else
             {
                 activeWeaponSlot = weaponSlotIndex;
+                selectedHotbarSlot = hotbarIndex;
                 IsWeaponDrawn = HasEquippableInHotbarSlot(hotbarIndex);
             }
 
-            selectedHotbarSlot = hotbarIndex;
             NotifySelectionChanged();
         }
 
@@ -212,6 +217,7 @@ namespace Project.Inventory
 
             ClearToolbarSelection();
             selectedHotbarSlot = clamped;
+            SyncWeaponDrawnState();
             NotifySelectionChanged();
         }
 
@@ -395,9 +401,7 @@ namespace Project.Inventory
             if (selectedToolbarSlot >= 0 && GetToolbarItem(selectedToolbarSlot) == null)
                 selectedToolbarSlot = -1;
 
-            if (!HasEquippableInHotbarSlot(ActiveWeaponHotbarSlot))
-                IsWeaponDrawn = false;
-
+            SyncWeaponDrawnState();
             NotifySelectionChanged();
         }
 
@@ -407,6 +411,12 @@ namespace Project.Inventory
             return item != null && item.IsEquippable;
         }
 
+        private void SyncWeaponDrawnState()
+        {
+            if (!IsWeaponHotbarSlot(selectedHotbarSlot))
+                IsWeaponDrawn = false;
+        }
+
         public void ApplySaveState(int hotbarSlot, int weaponSlot, bool drawn, int toolbarSlot = -1)
         {
             if (inventory == null)
@@ -414,10 +424,14 @@ namespace Project.Inventory
 
             selectedHotbarSlot = Mathf.Clamp(hotbarSlot, 0, Mathf.Max(0, inventory.hotbarSize - 1));
             activeWeaponSlot = Mathf.Clamp(weaponSlot, 0, WeaponSlotCount - 1);
-            IsWeaponDrawn = drawn;
             selectedToolbarSlot = toolbarSlot >= 0 && GetToolbarItem(toolbarSlot) != null
                 ? Mathf.Clamp(toolbarSlot, 0, inventory.toolbarSize - 1)
                 : -1;
+
+            if (IsWeaponHotbarSlot(selectedHotbarSlot))
+                IsWeaponDrawn = drawn && HasEquippableInHotbarSlot(selectedHotbarSlot);
+            else
+                SyncWeaponDrawnState();
 
             NotifySelectionChanged();
         }
@@ -444,8 +458,6 @@ namespace Project.Inventory
                 inventory.MoveOrMergeSlots(absoluteSlotIndex, targetAbsolute);
 
             SelectHotbarSlot(targetHotbar);
-            IsWeaponDrawn = HasEquippableInHotbarSlot(targetHotbar);
-            NotifySelectionChanged();
             return true;
         }
 
@@ -464,11 +476,7 @@ namespace Project.Inventory
             inventory.SwapSlots(absoluteSlotIndex, emptyInventorySlot);
 
             if (inventory.IsHotbarIndex(absoluteSlotIndex))
-            {
-                int hotbarIndex = absoluteSlotIndex - inventory.inventorySize;
-                if (hotbarIndex == ActiveWeaponHotbarSlot)
-                    IsWeaponDrawn = false;
-            }
+                SyncWeaponDrawnState();
             else if (inventory.IsToolbarIndex(absoluteSlotIndex) &&
                      inventory.ToToolbarSlotIndex(absoluteSlotIndex) == selectedToolbarSlot)
             {

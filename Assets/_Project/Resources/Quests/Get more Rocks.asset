@@ -29,3 +29,4 @@ MonoBehaviour:
     amount: 1
     item: {fileID: 0}
     statUpgradeId: 
+  xpReward: 100

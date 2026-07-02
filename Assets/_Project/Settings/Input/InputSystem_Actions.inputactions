@@ -178,6 +178,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Character",
+                    "type": "Button",
+                    "id": "a1a1a1a1-b1b1-4c1c-8d1d-111111111006",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Echoes",
                     "type": "Button",
                     "id": "a1a1a1a1-b1b1-4c1c-8d1d-111111111005",
@@ -680,6 +689,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Skills",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222006",
+                    "path": "<Keyboard>/u",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Character",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

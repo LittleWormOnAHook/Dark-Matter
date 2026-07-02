@@ -324,6 +324,9 @@ namespace Project.UI
             Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
             Transform canvasRoot = canvas != null ? canvas.transform : transform;
             toolbar.EnsureBuilt(canvasRoot, slotPrefab, hotbarParent);
+
+            if (hotbarParent is RectTransform hotbar)
+                toolbar.RepositionRelativeToHotbar(hotbar);
         }
 
         private void CreateSlots()
@@ -630,7 +633,7 @@ namespace Project.UI
             keyLabel.fontSize = HudLayoutMetrics.ScaledInt(14f);
             keyLabel.fontStyle = FontStyles.Bold;
             keyLabel.alignment = TextAlignmentOptions.TopLeft;
-            keyLabel.color = ShiftUiTheme.PrimaryColor;
+            keyLabel.color = SurvivalPioneerUiPalette.HotbarLabelText;
         }
 
         public void RefreshUI()

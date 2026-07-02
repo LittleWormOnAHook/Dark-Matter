@@ -64,7 +64,7 @@ namespace Project.UI
             overlayRoot = MenuUiBuilder.CreateFullScreenPanel(
                 transform,
                 "EchoRevealOverlay",
-                new Color(0.08f, 0.02f, 0.14f, 0.92f),
+                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.92f),
                 blockRaycasts: true);
 
             RectTransform contentArea;
@@ -74,7 +74,7 @@ namespace Project.UI
 
             Image shellBg = shell.GetComponent<Image>();
             if (shellBg != null)
-                shellBg.color = new Color(0.06f, 0.04f, 0.12f, 0.98f);
+                shellBg.color = SurvivalPioneerUiPalette.PanelBackground;
 
             VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(32, 32, 28, 28);
@@ -91,13 +91,13 @@ namespace Project.UI
             iconLayout.preferredHeight = 120f;
             Image iconImage = iconBlock.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(iconImage);
-            iconImage.color = new Color(0.42f, 0.18f, 0.72f, 0.85f);
+            iconImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
 
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
             titleLabel = CreateText(contentArea, "RESONANCE IMPRINT STABILIZED", theme, 26f, FontStyles.Bold);
             titleLabel.alignment = TextAlignmentOptions.Center;
-            titleLabel.color = new Color(0.78f, 0.55f, 1f, 1f);
+            titleLabel.color = SurvivalPioneerUiPalette.RichFuchsia;
 
             echoNameLabel = CreateText(contentArea, "Echo Name", theme, 34f, FontStyles.Bold);
             echoNameLabel.alignment = TextAlignmentOptions.Center;
@@ -166,7 +166,7 @@ namespace Project.UI
             text.text = value;
             text.fontSize = size;
             text.fontStyle = style;
-            text.color = theme != null ? theme.secondaryTextColor : Color.white;
+            text.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
             text.raycastTarget = false;
             return text;
         }

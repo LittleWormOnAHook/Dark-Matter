@@ -1,4 +1,5 @@
 using Project.Pioneers;
+using Project.Player;
 using UnityEngine;
 
 namespace Project.Companions
@@ -67,7 +68,7 @@ namespace Project.Companions
                 return;
 
             CompanionModelSanitizer.StripPlayerComponents(gameObject);
-            EnsurePioneerAnimator();
+            EnsurePioneerGkcAnimation();
 
             pioneerRecordId = record.id;
             displayName = record.displayName;
@@ -115,21 +116,40 @@ namespace Project.Companions
             combatController.RefreshLoadoutWeapon(record.weaponItemId);
         }
 
-        private void EnsurePioneerAnimator()
+        private void EnsurePioneerGkcAnimation()
         {
-            Animator animator = GetComponentInChildren<Animator>(true);
+            Transform model = transform.Find("ProjectUnityCharacter");
+            if (model == null)
+                model = transform;
+
+            Animator animator = model.GetComponent<Animator>();
+            if (animator == null)
+                animator = model.GetComponentInChildren<Animator>(true);
             if (animator == null)
                 return;
 
-            RuntimeAnimatorController pioneerController = PioneerCompanionDefaults.LoadPioneerAnimatorController();
-            if (pioneerController == null)
-                return;
+            CompanionGkcAnimationAssets assets = PioneerCompanionDefaults.LoadGkcAnimationAssets();
+            RuntimeAnimatorController controller = assets != null && assets.animatorController != null
+                ? assets.animatorController
+                : PioneerCompanionDefaults.LoadGkcAnimatorController();
 
-            if (animator.runtimeAnimatorController != pioneerController)
+            if (controller != null)
             {
-                animator.runtimeAnimatorController = pioneerController;
+                animator.runtimeAnimatorController = controller;
                 animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             }
+
+            PlayerGkcAnimatorDriver gkcDriver = model.GetComponent<PlayerGkcAnimatorDriver>();
+            if (gkcDriver == null)
+                gkcDriver = model.GetComponentInChildren<PlayerGkcAnimatorDriver>(true);
+            if (gkcDriver == null)
+                gkcDriver = model.gameObject.AddComponent<PlayerGkcAnimatorDriver>();
+
+            gkcDriver.ConfigureForCompanion(followController, equipmentVisual, assets?.actionCatalog);
+
+            if (animationDriver != null)
+                animationDriver.enabled = false;
         }
 
         public void SetCommand(CompanionCommand command)

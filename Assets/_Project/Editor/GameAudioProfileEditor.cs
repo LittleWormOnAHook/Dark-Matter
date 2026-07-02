@@ -29,6 +29,7 @@ namespace Project.Audio.Editor
             DrawPreviewButton("Preview Critical Hit", profile.weaponCriticalHitClips);
             DrawPreviewButton("Preview Button Click", profile.buttonClickClips);
             DrawPreviewButton("Preview Item Use", profile.itemUseClips);
+            DrawPreviewButton("Preview Achievement Unlock", profile.achievementUnlockClips);
 
             EditorGUILayout.Space(8f);
             if (GUILayout.Button("Select Resources Profile Copy"))

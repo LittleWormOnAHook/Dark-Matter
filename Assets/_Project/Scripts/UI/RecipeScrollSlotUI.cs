@@ -9,8 +9,8 @@ namespace Project.UI
 {
     public class RecipeScrollSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        private static readonly Color ScrollSlotTint = new Color(0.16f, 0.18f, 0.22f, 0.95f);
-        private static readonly Color ScrollSlotHoverTint = new Color(0.26f, 0.36f, 0.46f, 0.95f);
+        private static readonly Color ScrollSlotTint = SurvivalPioneerUiPalette.SlotBackground;
+        private static readonly Color ScrollSlotHoverTint = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.42f);
         private static float SlotSize => HudLayoutMetrics.InventorySlotSize(64f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;
 

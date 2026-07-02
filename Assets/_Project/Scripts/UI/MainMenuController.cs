@@ -19,7 +19,7 @@ namespace Project.UI
     public class MainMenuController : MonoBehaviour
     {
         private const float MenuScale = 1f;
-        private static readonly Color MenuBackgroundColor = new Color(0.039f, 0.055f, 0.078f, 1f);
+        private static readonly Color MenuBackgroundColor = SurvivalPioneerUiPalette.DarkNavy;
 
         [SerializeField] private bool buildOnAwake = true;
 
@@ -222,7 +222,7 @@ namespace Project.UI
 
             TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(titleBlock.transform, "IO // JUPITER SYSTEM", 16f * MenuScale);
             subtitle.alignment = TextAlignmentOptions.TopLeft;
-            subtitle.color = new Color(0.62f, 0.72f, 0.82f, 0.95f);
+            subtitle.color = SurvivalPioneerUiPalette.MutedText;
         }
 
         private void BuildButtonColumn(Transform parent)
@@ -276,7 +276,7 @@ namespace Project.UI
             TextMeshProUGUI label = messageObject.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(label);
             label.fontSize = 16f * MenuScale;
-            label.color = new Color(0.85f, 0.68f, 0.18f, 1f);
+            label.color = SurvivalPioneerUiPalette.Gold;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.gameObject.SetActive(false);
             return label;
@@ -297,7 +297,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = "v0.1";
             label.fontSize = 14f;
-            label.color = new Color(0.55f, 0.62f, 0.72f, 0.85f);
+            label.color = SurvivalPioneerUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.BottomLeft;
         }
 
@@ -441,6 +441,16 @@ namespace Project.UI
 
             pauseOverlayActive = false;
 
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            roster?.PrepareNewGameSession();
+
+            if (roster != null && roster.StarterPioneerSelected)
+            {
+                GameSession.SetPhase(GamePhase.StartPopup);
+                ResolveStartPopup()?.ShowPopup();
+                return;
+            }
+
             StarterPioneerSelectUI starterUi = StarterPioneerSelectUI.EnsureExists();
             if (starterUi != null)
             {
@@ -452,7 +462,6 @@ namespace Project.UI
                 return;
             }
 
-            PioneerRosterManager.EnsureExists()?.PrepareNewGameSession();
             GameSession.SetPhase(GamePhase.StartPopup);
             ResolveStartPopup()?.ShowPopup();
         }

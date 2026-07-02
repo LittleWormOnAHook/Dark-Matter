@@ -1,8 +1,11 @@
 using Project.Audio;
 using Project.Data;
 using Project.Inventory;
+using Project.Player;
+using Project.Progression;
 using Project.Quests;
 using Project.UI;
+using ECM2;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -152,6 +155,8 @@ namespace Project.Interaction
             {
                 QuestManager questManager = QuestManager.EnsureExists();
                 questManager?.NotifyItemCollected(itemData, added);
+                Project.Achievements.AchievementManager.EnsureExists()
+                    ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, itemData.name, added);
             }
 
             if (added >= amount)
@@ -166,7 +171,18 @@ namespace Project.Interaction
                     uiManager.HideInteractionPrompt();
                 }
 
+                if (itemData.grantsXp && itemData.xpAmount > 0)
+                {
+                    ProgressionRewardGranter.GrantXp(
+                        itemData.xpAmount,
+                        itemData.xpSource,
+                        $"special-item:{itemData.name}");
+                }
+
                 PickupToastUI.Show($"+{amount} {itemData.itemName}");
+
+                if (showPlayerPrompt)
+                    TryPlayLootAnimation(inventory);
 
                 isPickedUp = true;
                 PickupProximityDotUI.NotifyCollected(this);
@@ -191,6 +207,25 @@ namespace Project.Interaction
             }
 
             return false;
+        }
+
+        private static void TryPlayLootAnimation(InventorySystem inventory)
+        {
+            if (inventory == null)
+                return;
+
+            PlayerLootAnimationController lootAnimation = inventory.GetComponentInChildren<PlayerLootAnimationController>();
+            if (lootAnimation == null)
+            {
+                ECM2.Character character = inventory.GetComponent<Character>();
+                Animator animator = character != null ? character.GetAnimator() : null;
+                if (animator == null)
+                    return;
+
+                lootAnimation = animator.gameObject.AddComponent<PlayerLootAnimationController>();
+            }
+
+            lootAnimation.BeginLoot();
         }
 
         private bool IsCollectibleWorldPickup()

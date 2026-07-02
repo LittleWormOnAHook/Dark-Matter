@@ -22,6 +22,7 @@ namespace Project.Companions
         [SerializeField] private float attackWindupDelay = 0.18f;
 
         private CompanionAnimationDriver animationDriver;
+        private PlayerGkcAnimatorDriver gkcAnimatorDriver;
         private CompanionEquipmentVisual equipmentVisual;
         private CompanionFollowController followController;
         private CompanionThreatSensor threatSensor;
@@ -33,14 +34,23 @@ namespace Project.Companions
         private float personalAttackBias = 0.72f;
         private float personalIntervalMultiplier = 1f;
         private bool attackPending;
+        private bool damageApplied;
         private bool wasEngaged;
+        private int comboIndex;
+        private float lastComboAttackTime;
+        private float attackFinishTime;
+        private EnemyHealth pendingDamageTarget;
+        private const int ComboLength = 4;
+        private const float ComboResetWindow = 1.2f;
         private PioneerBehaviorProfile behaviorProfile = new PioneerBehaviorProfile();
         private SkilledPioneerClass pioneerClass = SkilledPioneerClass.CombatTactician;
         private float preferredCombatDistance = 2.4f;
         private float selfTargetPriority = 0.35f;
 
         public string PioneerSeed => pioneerSeed;
+        public SkilledPioneerClass PioneerClass => pioneerClass;
         public EnemyHealth CurrentTarget => currentTarget;
+        public float AttackRange => attackRange;
 
         private void Awake()
         {
@@ -100,7 +110,13 @@ namespace Project.Companions
             ResolveTarget();
             UpdateCombatDrawState();
 
-            if (attackPending && Time.time >= pendingAttackReleaseTime)
+            if (attackPending && !damageApplied && Time.time >= pendingAttackReleaseTime)
+            {
+                ApplyWeaponDamage(pendingDamageTarget);
+                damageApplied = true;
+            }
+
+            if (attackPending && Time.time >= attackFinishTime)
                 FinishAttack();
 
             if (currentTarget == null)
@@ -115,38 +131,135 @@ namespace Project.Companions
             MaintainCombatSpacing(currentTarget.transform.position, distance);
 
             if (distance > attackRange)
+            {
+                if (ShouldForceAggressiveAttack())
+                    followController?.RequestCombatChase(currentTarget.transform.position, attackRange * 0.92f, 0.35f);
                 return;
+            }
 
             CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
             if (coordinator == null)
                 return;
 
-            if (Random.value > coordinator.RollAttackChance(this))
+            bool forceAttack = ShouldForceAggressiveAttack();
+            if (!forceAttack && Random.value > coordinator.RollAttackChance(this))
             {
                 nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this) * 0.35f;
                 return;
             }
 
-            if (!coordinator.TryBeginAttack(this))
+            if (!coordinator.TryBeginAttack(this, forceAttack))
             {
-                nextAttackTime = Time.time + 0.3f;
+                nextAttackTime = Time.time + (forceAttack ? 0.12f : 0.3f);
                 return;
             }
 
             attackPending = true;
-            pendingAttackReleaseTime = Time.time + attackWindupDelay;
-            nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this);
-
+            damageApplied = false;
+            pendingDamageTarget = currentTarget;
             equipmentVisual?.SetDrawn(true);
-            animationDriver?.TriggerAttack();
-            ApplyWeaponDamage(currentTarget);
-            followController?.RequestCombatStepBack(currentTarget.transform.position, stepBackDistance, stepBackDuration);
+
+            ItemData weapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+            float attackSpeed = weapon != null ? weapon.ResolveAttackAnimationSpeed() : 0.95f;
+            ResolveGkcAnimatorDriver();
+
+            if (Time.time - lastComboAttackTime > ComboResetWindow)
+                comboIndex = 0;
+
+            GkcCombatAction action = ResolveComboAction(weapon, comboIndex);
+            float swingDuration = attackWindupDelay;
+            bool animationStarted = false;
+
+            if (gkcAnimatorDriver != null)
+            {
+                swingDuration = gkcAnimatorDriver.ResolveActionDuration(action, attackSpeed);
+                animationStarted = gkcAnimatorDriver.RequestAction(action, attackSpeed: attackSpeed);
+            }
+
+            if (!animationStarted)
+                animationDriver?.TriggerAttack();
+
+            pendingAttackReleaseTime = Time.time + swingDuration * 0.42f;
+            attackFinishTime = Time.time + swingDuration + 0.12f;
+            nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this);
+            comboIndex = (comboIndex + 1) % ComboLength;
+            lastComboAttackTime = Time.time;
+
+            if (!forceAttack)
+                followController?.RequestCombatStepBack(currentTarget.transform.position, stepBackDistance, stepBackDuration);
         }
 
         private void FinishAttack()
         {
             attackPending = false;
+            damageApplied = false;
+            pendingDamageTarget = null;
             CompanionCombatCoordinator.Instance?.EndAttack(this);
+        }
+
+        private void ResolveGkcAnimatorDriver()
+        {
+            if (gkcAnimatorDriver != null)
+                return;
+
+            gkcAnimatorDriver = GetComponentInChildren<PlayerGkcAnimatorDriver>(true);
+        }
+
+        private static GkcCombatAction ResolveComboAction(ItemData item, int index)
+        {
+            int slot = Mathf.Clamp(index, 0, ComboLength - 1);
+            if (item == null)
+            {
+                return slot switch
+                {
+                    0 => GkcCombatAction.Punch1,
+                    1 => GkcCombatAction.Punch2,
+                    2 => GkcCombatAction.Punch3,
+                    _ => GkcCombatAction.Punch4
+                };
+            }
+
+            return item.ResolveGkcWeaponKind() switch
+            {
+                GkcWeaponKind.TwoHand => slot switch
+                {
+                    0 => GkcCombatAction.Sword2HCombo1,
+                    1 => GkcCombatAction.Sword2HCombo2,
+                    2 => GkcCombatAction.Sword2HCombo3,
+                    _ => GkcCombatAction.Sword2HCombo4
+                },
+                GkcWeaponKind.OneHandAxe => slot switch
+                {
+                    0 => GkcCombatAction.Axe1HCombo1,
+                    1 => GkcCombatAction.Axe1HCombo2,
+                    2 => GkcCombatAction.Axe1HCombo3,
+                    _ => GkcCombatAction.Axe1HCombo4
+                },
+                _ => slot switch
+                {
+                    0 => GkcCombatAction.Sword1HCombo1,
+                    1 => GkcCombatAction.Sword1HCombo2,
+                    2 => GkcCombatAction.Sword1HCombo3,
+                    _ => GkcCombatAction.Sword1HCombo4
+                }
+            };
+        }
+
+        private bool ShouldForceAggressiveAttack()
+        {
+            return pioneerClass == SkilledPioneerClass.CombatTactician && IsTargetWithinSenseRange();
+        }
+
+        private bool IsTargetWithinSenseRange()
+        {
+            if (currentTarget == null || currentTarget.IsDead)
+                return false;
+
+            float maxRange = threatSensor != null && playerFocus != null
+                ? threatSensor.EffectiveDetectRange(playerFocus)
+                : attackRange;
+
+            return HorizontalDistance(transform.position, currentTarget.transform.position) <= maxRange;
         }
 
         private void ResolveTarget()

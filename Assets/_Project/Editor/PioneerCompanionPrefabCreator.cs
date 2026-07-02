@@ -50,7 +50,7 @@ namespace Project.EditorTools
                 if (controller == null)
                 {
                     controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
-                        PlayerLocomotionAnimatorUtility.BaseControllerResourcePath);
+                        PlayerAnimatorControllerPaths.GkcControllerPath);
                 }
                 if (animator != null && controller != null)
                 {

@@ -226,12 +226,40 @@ namespace Project.Pioneers
             colonistInjuredCount = 0;
             colonistShelteredCount = 0;
             colonistAssignedCount = 0;
-            starterPioneerSelected = false;
+            starterPioneerSelected = true;
             aetherCredits = StarterPioneerCatalog.StarterAcGrant;
             EnsureWalletBootstrapped();
+            GrantAllCatalogPioneersToSkilledRoster();
             ImportWalletPioneersToSkilledRoster();
+            EnsureDefaultTrioIfNeeded();
             PushCurrencyToUi();
             NotifyRosterChanged();
+        }
+
+        private void GrantAllCatalogPioneersToSkilledRoster()
+        {
+            IReadOnlyList<NamedPioneerDefinition> definitions = NamedPioneerCatalog.GetAllDefinitions();
+            for (int i = 0; i < definitions.Count; i++)
+            {
+                NamedPioneerDefinition definition = definitions[i];
+                if (definition == null)
+                    continue;
+
+                if (HasSkilledPioneerById(definition.ResolvedId) || HasSkilledPioneerByName(definition.displayName))
+                    continue;
+
+                if (skilledPioneers.Count >= MaxSkilledPioneers)
+                    break;
+
+                SkilledPioneerRecord record = SkilledPioneerRecord.CreateFromCatalog(definition, applyLoadoutDefaults: false);
+                if (record != null)
+                    skilledPioneers.Add(record);
+            }
+        }
+
+        private bool HasSkilledPioneerById(string pioneerId)
+        {
+            return FindSkilledById(pioneerId) != null;
         }
 
         public bool CanJoinTrio(SkilledPioneerRecord record)

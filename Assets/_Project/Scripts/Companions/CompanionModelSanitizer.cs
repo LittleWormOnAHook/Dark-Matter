@@ -22,7 +22,6 @@ namespace Project.Companions
                 model = companionRoot.transform;
 
             DestroyIfPresent<PlayerController>(model.gameObject);
-            DestroyIfPresent<PlayerAnimationController>(model.gameObject);
             DestroyIfPresent<Character>(model.gameObject);
             DestroyIfPresent<CharacterMovement>(model.gameObject);
             DestroyIfPresent<MeleeCombatController>(model.gameObject);

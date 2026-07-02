@@ -14,6 +14,8 @@ namespace Project.EditorTools
         public const string Quests = Root + "Quests/";
         public const string Combat = Root + "Combat/";
         public const string CombatAnimations = Combat + "Animations/";
+        public const string AddWeaponHitboxToSelectedPrefab = Combat + "Add Weapon Hitbox To Selected Prefab";
+        public const string RefreshAllWeaponHitboxes = Combat + "Refresh All Weapon Hitboxes";
         public const string Equipment = Root + "Equipment/";
         public const string Ui = Root + "UI/";
         public const string Scene = Root + "Scene/";

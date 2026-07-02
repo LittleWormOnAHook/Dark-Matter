@@ -26,6 +26,8 @@ public class WeaponPrefabCreatorWindow : EditorWindow
     private bool registerInItemRegistry = true;
     private bool copyGripFromTemplate = true;
     private bool autoGenerateIcon = true;
+    private bool addMeleeHitbox = true;
+    private bool addHitboxToWorldPrefab = false;
 
     private float meleeDamage = 18f;
     private float meleeDamageRandomRange = 8f;
@@ -113,6 +115,16 @@ public class WeaponPrefabCreatorWindow : EditorWindow
         }
 
         autoGenerateIcon = EditorGUILayout.Toggle("Auto-generate Icon", autoGenerateIcon);
+
+        EditorGUILayout.Space(8f);
+        EditorGUILayout.LabelField("Melee Hitbox", EditorStyles.boldLabel);
+        addMeleeHitbox = EditorGUILayout.Toggle("Add To Held Prefab", addMeleeHitbox);
+        using (new EditorGUI.DisabledScope(!createHeldPrefab))
+            addHitboxToWorldPrefab = EditorGUILayout.Toggle("Add To World Prefab", addHitboxToWorldPrefab);
+        EditorGUILayout.HelpBox(
+            "Adds WeaponHitbox + a child capsule collider fit to the blade. " +
+            "Tune strikeEndBias and hitboxLocalOffset on the prefab after creation.",
+            MessageType.None);
 
         EditorGUILayout.Space(16f);
         using (new EditorGUI.DisabledScope(!CanCreate()))
@@ -242,12 +254,18 @@ public class WeaponPrefabCreatorWindow : EditorWindow
                 safeName,
                 worldPath,
                 itemData,
-                pickupOptions);
+                pickupOptions,
+                configureHitbox: addHitboxToWorldPrefab && addMeleeHitbox);
         }
 
         if (createHeldPrefab)
         {
-            heldPrefab = WeaponPrefabBuilder.CreateHeldPrefab(meshSource, safeName + "_Held", heldPath);
+            heldPrefab = WeaponPrefabBuilder.CreateHeldPrefab(
+                meshSource,
+                safeName + "_Held",
+                heldPath,
+                itemData,
+                configureHitbox: addMeleeHitbox);
         }
 
         if (itemData != null)
@@ -277,7 +295,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
         EditorUtility.DisplayDialog(
             "Weapon Prefab Creator",
-            BuildSummary(safeName, dataPath, worldPath, heldPath, itemData != null),
+            BuildSummary(safeName, dataPath, worldPath, heldPath, itemData != null, addMeleeHitbox),
             "OK");
     }
 
@@ -288,7 +306,13 @@ public class WeaponPrefabCreatorWindow : EditorWindow
                AssetDatabase.LoadAssetAtPath<Object>(heldPath) != null;
     }
 
-    private static string BuildSummary(string safeName, string dataPath, string worldPath, string heldPath, bool createdItemData)
+    private static string BuildSummary(
+        string safeName,
+        string dataPath,
+        string worldPath,
+        string heldPath,
+        bool createdItemData,
+        bool configuredMeleeHitbox)
     {
         string summary = $"Created weapon '{safeName}'.\n\n";
         if (AssetDatabase.LoadAssetAtPath<Object>(worldPath) != null)
@@ -299,6 +323,8 @@ public class WeaponPrefabCreatorWindow : EditorWindow
             summary += $"ItemData: {dataPath}\n";
 
         summary += "\nTune grip in Play mode, then bake with Tools/Project grip bakers.";
+        if (configuredMeleeHitbox)
+            summary += "\nHeld hitbox baked on prefab; use Tools > Survival Pioneer > Combat > Refresh All Weapon Hitboxes to update existing weapons.";
         return summary;
     }
 }

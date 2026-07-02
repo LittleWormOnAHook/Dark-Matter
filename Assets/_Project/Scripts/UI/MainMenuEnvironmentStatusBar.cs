@@ -30,7 +30,7 @@ namespace Project.UI
 
             Image barBg = bar.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barBg);
-            barBg.color = new Color(0.06f, 0.08f, 0.12f, 0.88f);
+            barBg.color = SurvivalPioneerUiPalette.PanelBackground;
 
             HorizontalLayoutGroup layout = bar.GetComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(16, 16, 8, 8);
@@ -64,8 +64,8 @@ namespace Project.UI
             tempLabel.text = $"{zone.temperatureC:0}°C";
             conditionLabel.text = zone.surfaceCondition;
             conditionLabel.color = zone.surfaceCondition == "SAFE"
-                ? new Color(0.45f, 0.85f, 0.55f, 1f)
-                : new Color(0.95f, 0.45f, 0.35f, 1f);
+                ? SurvivalPioneerUiPalette.PositiveGreen
+                : SurvivalPioneerUiPalette.DangerRed;
             hazardsLabel.text = zone.hazardsText;
         }
 
@@ -80,7 +80,7 @@ namespace Project.UI
                 theme.ApplyFont(label, semiBold: true);
             label.text = text;
             label.fontSize = fontSize;
-            label.color = new Color(0.82f, 0.88f, 0.94f, 0.95f);
+            label.color = SurvivalPioneerUiPalette.BodyText;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
             LayoutElement layout = labelObj.AddComponent<LayoutElement>();

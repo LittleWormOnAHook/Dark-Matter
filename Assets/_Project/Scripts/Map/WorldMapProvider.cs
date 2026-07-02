@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using Project.Core;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -62,20 +61,11 @@ namespace Project.Map
             if (mapTextureOverride == null)
                 mapTextureOverride = LoadFakeMapTexture();
 
-            if (!GameSettings.MapSystemEnabled)
-            {
-                enabled = false;
-                return;
-            }
-
             InitializeMapTexture();
         }
 
         private void Start()
         {
-            if (!GameSettings.MapSystemEnabled)
-                return;
-
             EnsureTerrainReference();
             ResolveBounds();
 

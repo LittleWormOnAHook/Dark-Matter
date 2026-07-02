@@ -75,3 +75,4 @@ MonoBehaviour:
   lootItemPool: []
   lootRespawnDelay: 20
   lootInteractRange: 2.75
+  xpReward: 25

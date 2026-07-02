@@ -78,14 +78,14 @@ namespace Project.Pioneers
             return record;
         }
 
-        public static SkilledPioneerRecord CreateFromCatalog(NamedPioneerDefinition definition)
+        public static SkilledPioneerRecord CreateFromCatalog(NamedPioneerDefinition definition, bool applyLoadoutDefaults = true)
         {
             if (definition == null)
                 return null;
 
             var record = new SkilledPioneerRecord
             {
-                id = Guid.NewGuid().ToString("N"),
+                id = definition.ResolvedId,
                 displayName = definition.displayName,
                 pioneerClass = definition.pioneerClass,
                 level = definition.startLevel,
@@ -105,7 +105,9 @@ namespace Project.Pioneers
             if (definition.overrideDefaultFollowMode)
                 record.followMode = (int)definition.behavior.followMode;
 
-            PioneerLoadoutDefaults.EnsureDefaults(record);
+            if (applyLoadoutDefaults)
+                PioneerLoadoutDefaults.EnsureDefaults(record);
+
             return record;
         }
 

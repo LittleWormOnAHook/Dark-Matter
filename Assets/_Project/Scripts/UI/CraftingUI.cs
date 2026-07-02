@@ -335,12 +335,12 @@ namespace Project.UI
             if (panelBackground != null)
                 panelBackground.color = embedded
                     ? new Color(0f, 0f, 0f, 0f)
-                    : new Color(0f, 0f, 0f, 0.82f);
+                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.82f);
 
             if (recipeScrollBackground != null)
                 recipeScrollBackground.color = embedded
-                    ? new Color(0.08f, 0.08f, 0.1f, 0.35f)
-                    : new Color(0.08f, 0.08f, 0.1f, 0.95f);
+                    ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.35f)
+                    : SurvivalPioneerUiPalette.ScrollBackground;
 
             if (headerObject != null)
                 headerObject.SetActive(!embedded);
@@ -422,7 +422,7 @@ namespace Project.UI
             else
             {
                 MenuUiBuilder.ApplyUiSprite(windowBg);
-                windowBg.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
+                windowBg.color = SurvivalPioneerUiPalette.PanelBackground;
             }
 
             VerticalLayoutGroup windowLayout = standaloneWindowRoot.AddComponent<VerticalLayoutGroup>();
@@ -485,7 +485,7 @@ namespace Project.UI
             panelRt.anchoredPosition = Vector2.zero;
 
             panelBackground = craftPanel.AddComponent<Image>();
-            panelBackground.color = new Color(0f, 0f, 0f, 0.82f);
+            panelBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.82f);
 
             VerticalLayoutGroup panelLayoutGroup = craftPanel.AddComponent<VerticalLayoutGroup>();
             panelLayout = panelLayoutGroup;
@@ -502,7 +502,7 @@ namespace Project.UI
             CreateText(headerObject.transform, "Crafting", S(24f), FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
 
             statusText = CreateText(craftPanel.transform, "Use a cooking pot or workbench to craft.", S(13f), FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
-            statusText.color = new Color(0.85f, 0.85f, 0.85f, 1f);
+            statusText.color = SurvivalPioneerUiPalette.BodyText;
 
             scrollSectionLabel = CreateText(craftPanel.transform, "Recipe Scrolls", S(15f), FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
 
@@ -560,7 +560,7 @@ namespace Project.UI
             recipeScrollSlotsParent = slotsContent.transform;
 
             scrollHintText = CreateText(craftPanel.transform, "Right-click a scroll to learn the recipe.", S(11f), FontStyles.Italic, TextAlignmentOptions.MidlineLeft);
-            scrollHintText.color = new Color(0.75f, 0.82f, 0.9f, 0.95f);
+            scrollHintText.color = SurvivalPioneerUiPalette.MutedText;
 
             GameObject scrollObj = new GameObject("RecipeScrollView", typeof(RectTransform));
             scrollObj.transform.SetParent(craftPanel.transform, false);
@@ -569,7 +569,7 @@ namespace Project.UI
             recipeScrollLayoutElement.minHeight = S(180f);
 
             recipeScrollBackground = scrollObj.AddComponent<Image>();
-            recipeScrollBackground.color = new Color(0.08f, 0.08f, 0.1f, 0.95f);
+            recipeScrollBackground.color = SurvivalPioneerUiPalette.ScrollBackground;
 
             ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
             scroll.horizontal = false;
@@ -620,7 +620,7 @@ namespace Project.UI
             text.text = value;
             text.fontSize = fontSize;
             text.fontStyle = style;
-            text.color = Color.white;
+            text.color = SurvivalPioneerUiPalette.BodyText;
             text.alignment = alignment;
             text.textWrappingMode = TextWrappingModes.Normal;
             return text;

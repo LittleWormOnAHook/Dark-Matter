@@ -19,6 +19,7 @@ namespace Project.UI
         private Toggle _wanderToggle;
         private Toggle _fetchToggle;
         private Button _callButton;
+        private Image _portraitImage;
 
         public void SetFont(TMP_FontAsset font)
         {
@@ -64,6 +65,8 @@ namespace Project.UI
         public void Bind(PetController pet)
         {
             _pet = pet;
+            PetEntryDragHandler drag = GetComponentInChildren<PetEntryDragHandler>();
+            drag?.Configure(pet);
             RefreshFromPet();
             HookEvents(true);
         }
@@ -101,7 +104,25 @@ namespace Project.UI
                 _fetchToggle.isOn = _pet.FetchEnabled;
 
             UpdateStatusText();
+            ApplyPortraitIcon();
             _suppressEvents = false;
+        }
+
+        private void ApplyPortraitIcon()
+        {
+            if (_portraitImage == null || _pet == null)
+                return;
+
+            if (_pet.InventoryIcon != null)
+            {
+                _portraitImage.sprite = _pet.InventoryIcon;
+                _portraitImage.color = Color.white;
+            }
+            else
+            {
+                _portraitImage.sprite = null;
+                _portraitImage.color = new Color(0.24f, 0.25f, 0.28f, 1f);
+            }
         }
 
         private void CreatePortraitColumn()
@@ -114,6 +135,8 @@ namespace Project.UI
 
             Image portrait = column.AddComponent<Image>();
             portrait.color = new Color(0.24f, 0.25f, 0.28f, 1f);
+            _portraitImage = portrait;
+            column.AddComponent<PetEntryDragHandler>();
         }
 
         private void CreateDetailsColumn()
@@ -306,6 +329,16 @@ namespace Project.UI
             input.textViewport = textAreaRt;
             input.textComponent = text;
             input.placeholder = placeholderText;
+            input.shouldHideSoftKeyboard = true;
+            input.lineType = TMP_InputField.LineType.SingleLine;
+
+            Canvas canvas = parent.GetComponentInParent<Canvas>();
+            if (canvas != null
+                && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                && canvas.worldCamera == null)
+            {
+                canvas.worldCamera = Camera.main;
+            }
 
             LayoutElement layout = obj.AddComponent<LayoutElement>();
             layout.minHeight = S(34f);

@@ -9,7 +9,22 @@ namespace Project.Companions
         public const string CharacterModelPrefabPath = "Assets/_Project/Prefabs/Players/ProjectUnityCharacter.prefab";
         public const string PioneerControllerAssetPath = "Assets/_Project/Animations/PioneerController.controller";
         public const string PioneerControllerResourcesPath = "Animations/PioneerController";
+        public const string GkcAnimationAssetsResourcesPath = "Companions/CompanionGkcAnimationAssets";
         public const string DefaultAttackStateName = "AttackCombo1";
+
+        public static CompanionGkcAnimationAssets LoadGkcAnimationAssets()
+        {
+            return Resources.Load<CompanionGkcAnimationAssets>(GkcAnimationAssetsResourcesPath);
+        }
+
+        public static RuntimeAnimatorController LoadGkcAnimatorController()
+        {
+            CompanionGkcAnimationAssets assets = LoadGkcAnimationAssets();
+            if (assets != null && assets.animatorController != null)
+                return assets.animatorController;
+
+            return LoadPioneerAnimatorController();
+        }
 
         public static PioneerCompanionAgent LoadDefaultAgentPrefab()
         {

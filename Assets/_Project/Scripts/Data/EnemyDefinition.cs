@@ -41,6 +41,9 @@ namespace Project.AI
         public float destroyDelay = 3f;
         public float respawnTime;
 
+        [Header("Progression")]
+        public int xpReward = 25;
+
         [Header("Health Bar")]
         public bool showFloatingHealthBar = true;
         public bool hideHealthBarUntilDamaged = true;

@@ -252,7 +252,7 @@ namespace Project.UI
             leftDescriptionText.textWrappingMode = TextWrappingModes.Normal;
             leftObjectivesText = CreateText(leftPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             leftObjectivesText.textWrappingMode = TextWrappingModes.Normal;
-            leftObjectivesText.color = QuestUiPalette.InProgressText;
+            leftObjectivesText.color = SurvivalPioneerUiPalette.BodyText;
 
             GameObject rightPanel = CreatePanel(splitRow.transform, "QuestProgressPanel", flexibleWidth: 1f);
             rightStatusText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);

@@ -19,6 +19,7 @@ public static class JournalInputSetupUtility
     private const string RecipesActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111002";
     private const string PioneersActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111003";
     private const string SkillsActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111004";
+    private const string CharacterActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111006";
     private const string EchoesActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111005";
 
     [MenuItem(SurvivalPioneerEditorMenus.Scene + "Journal Input Shortcuts", false, 1)]
@@ -71,6 +72,8 @@ public static class JournalInputSetupUtility
                 changes++;
             if (WireActionEvent(actionEvents, SkillsActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleSkills"))
                 changes++;
+            if (WireActionEvent(actionEvents, CharacterActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleCharacter"))
+                changes++;
             if (WireActionEvent(actionEvents, EchoesActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleEchoes"))
                 changes++;
         }
@@ -86,7 +89,7 @@ public static class JournalInputSetupUtility
 
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log(changes > 0
-            ? $"Journal input wired ({changes} change(s)). Keys: J Journal, I Inventory, M Map, K Pet, P Pioneers, C Craft, R Recipes, T Skills, L Echoes."
+            ? $"Journal input wired ({changes} change(s)). Keys: J Journal, I Inventory, M Map, U Character, P Pioneers, C Craft, R Recipes, T Skills, L Echoes."
             : "Journal input already wired.");
     }
 

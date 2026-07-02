@@ -2,6 +2,7 @@ using System;
 using Project.Data;
 using Project.EditorTools;
 using Project.Interaction;
+using Project.Player;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
@@ -13,8 +14,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class TwoHandedCombatSetupUtility
 {
-    private const string AnimatorControllerPath =
-        "Assets/_Project/Animations/ProjectUnityCharacterController.controller";
+    private const string AnimatorControllerPath = PlayerAnimatorControllerPaths.GkcControllerPath;
 
     private const string TwoHandAnimFolder =
         "Assets/Animations/Human Animations Melee/Human Animations/Animations/Male/Combat/2H";
@@ -30,7 +30,7 @@ public static class TwoHandedCombatSetupUtility
     private const float AttackExitTime = 0.88f;
     private const float AttackTransitionDuration = 0.12f;
 
-    [MenuItem(SurvivalPioneerEditorMenus.CombatAnimations + "Two-Handed Combat Animations", false, 0)]
+    [MenuItem(SurvivalPioneerEditorMenus.CombatAnimations + "Two-Handed Combat Animations", false, 10)]
     private static void SetupTwoHandedCombatAnimations()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerPath);
@@ -296,6 +296,8 @@ public static class TwoHandedCombatSetupUtility
         instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
         instance.transform.localScale = Vector3.one;
         StripHeldComponents(instance);
+        ItemData template = AssetDatabase.LoadAssetAtPath<ItemData>(ItemDataPath);
+        WeaponPrefabBuilder.ConfigureWeaponHitbox(instance, template);
         return instance;
     }
 

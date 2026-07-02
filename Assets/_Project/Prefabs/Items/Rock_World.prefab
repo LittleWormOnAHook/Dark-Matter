@@ -70,7 +70,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1a15edf1f62610e40ae2547192469b68, type: 2}
+  - {fileID: 2100000, guid: 274a221ab2ce454449ba603552e4d58b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -166,3 +166,6 @@ MonoBehaviour:
   itemData: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
   amount: 1
   promptText: Press E to pick up
+  canRespawn: 1
+  minRespawnTime: 20
+  maxRespawnTime: 90

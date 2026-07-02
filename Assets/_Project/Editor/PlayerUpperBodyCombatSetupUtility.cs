@@ -1,5 +1,6 @@
 using System;
 using Project.EditorTools;
+using Project.Player;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -9,16 +10,14 @@ namespace Project.EditorTools.Combat
     /// <summary>
     /// Adds an upper-body combat layer so attack clips play on arms/torso while the base layer keeps walk/run/jump.
     /// </summary>
-    [InitializeOnLoad]
     public static class PlayerUpperBodyCombatSetupUtility
     {
-        private const string ControllerPath =
-            "Assets/_Project/Animations/ProjectUnityCharacterController.controller";
+        private const string ControllerPath = PlayerAnimatorControllerPaths.GkcControllerPath;
 
         private const string UpperBodyMaskPath =
             "Assets/Animations/Human Animations Melee/Human Animations/Models/Avatar Masks/Human Body Upper Mask.mask";
 
-        private const string CombatLayerName = "Upper Body Combat";
+        private const string CombatLayerName = GkcAnimatorConstants.UpperBodyCombatLayer;
         private const float AttackExitTime = 0.88f;
         private const float AttackTransitionDuration = 0.22f;
 
@@ -36,15 +35,6 @@ namespace Project.EditorTools.Combat
             "TwoHandPowerHit",
             "PowerHitCharge"
         };
-
-        static PlayerUpperBodyCombatSetupUtility()
-        {
-            EditorApplication.delayCall += () =>
-            {
-                TryEnsureUpperBodyCombatLayer();
-                TuneUpperBodyLayerBlending(showDialog: false);
-            };
-        }
 
         [MenuItem(SurvivalPioneerEditorMenus.CombatAnimations + "Tune Upper Body Combat Blending", false, 7)]
         public static void TuneUpperBodyCombatBlendingMenu()

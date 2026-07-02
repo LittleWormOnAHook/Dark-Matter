@@ -284,8 +284,6 @@ namespace Project.EditorTools
 
                 pickup.amount = 1;
 
-
-
                 string prefabPath = $"{CraftingEditorUtility.ItemPrefabsFolder}/{safeName}_World.prefab";
 
                 PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);

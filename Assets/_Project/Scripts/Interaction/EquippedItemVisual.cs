@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Project.Interaction
 {
     /// <summary>
-    /// Spawns equipped item visuals on the hand (drawn) or back (sheathed).
+    /// Spawns equipped melee visuals in hand when drawn; sheathes on the back when holstered (press weapon key again).
     /// </summary>
     [RequireComponent(typeof(EquipmentController))]
     public class EquippedItemVisual : MonoBehaviour
@@ -237,7 +237,7 @@ namespace Project.Interaction
             GameObject instance = Instantiate(item.heldPrefab, socket);
             StripForHeld(instance, isHand);
             if (isHand)
-                EnsureWeaponHitbox(instance);
+                EnsureWeaponHitbox(instance, item);
 
             Transform t = instance.transform;
             if (isHand)
@@ -371,7 +371,7 @@ namespace Project.Interaction
                 SetLayerRecursively(root.GetChild(i).gameObject, layer);
         }
 
-        private void EnsureWeaponHitbox(GameObject instance)
+        private void EnsureWeaponHitbox(GameObject instance, ItemData item = null)
         {
             if (instance == null)
                 return;
@@ -380,7 +380,7 @@ namespace Project.Interaction
             if (hitbox == null)
                 hitbox = instance.AddComponent<WeaponHitbox>();
 
-            hitbox.Configure(transform);
+            hitbox.Configure(transform, item);
         }
 
         public void PlaySwing(float duration)

@@ -1,3 +1,6 @@
+using Project.Companions;
+using Project.Echoes;
+using Project.Pioneers;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -8,6 +11,8 @@ namespace Project.EditorTools
     {
         private const string CrisisMenuPath = "Tools/Survival Pioneer/Debug/Toggle Sulfur Crisis HUD";
         private const string EchoMenuPath = "Tools/Survival Pioneer/Debug/Show Echo Rescue Reveal (Test)";
+        private const string SpawnEchoMenuPath = "Tools/Survival Pioneer/Debug/Spawn Test Echo Signal";
+        private const string RefreshTrioMenuPath = "Tools/Survival Pioneer/Debug/Refresh Expedition Trio Companions";
 
         [MenuItem(CrisisMenuPath)]
         public static void ToggleSulfurCrisisHud()
@@ -51,5 +56,60 @@ namespace Project.EditorTools
 
         [MenuItem(EchoMenuPath, true)]
         private static bool ShowEchoRescueRevealTestValidate() => Application.isPlaying;
+
+        [MenuItem(SpawnEchoMenuPath)]
+        public static void SpawnTestEchoSignal()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[PeakScreensDebug] Enter Play mode to spawn a test echo signal.");
+                return;
+            }
+
+            EchoSignalSpawner spawner = Object.FindAnyObjectByType<EchoSignalSpawner>();
+            if (spawner == null)
+            {
+                GameObject host = new GameObject("EchoSignalSpawner");
+                spawner = host.AddComponent<EchoSignalSpawner>();
+            }
+
+            EchoWorldEntity entity = spawner.SpawnTestSignalNearPlayer();
+            if (entity == null)
+            {
+                Debug.LogWarning("[PeakScreensDebug] Failed to spawn test echo signal.");
+                return;
+            }
+
+            Debug.Log($"[PeakScreensDebug] Spawned echo signal: {entity.SignalRecord.displayName}");
+        }
+
+        [MenuItem(SpawnEchoMenuPath, true)]
+        private static bool SpawnTestEchoSignalValidate() => Application.isPlaying;
+
+        [MenuItem(RefreshTrioMenuPath)]
+        public static void RefreshExpeditionTrioCompanions()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[PeakScreensDebug] Enter Play mode to refresh expedition trio companions.");
+                return;
+            }
+
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            roster.EnsureDefaultTrioIfNeededPublic();
+
+            CompanionRosterBridge bridge = Object.FindAnyObjectByType<CompanionRosterBridge>();
+            if (bridge == null)
+            {
+                GameObject host = new GameObject("CompanionRosterBridge");
+                bridge = host.AddComponent<CompanionRosterBridge>();
+            }
+
+            bridge.RefreshCompanions();
+            Debug.Log($"[PeakScreensDebug] Refreshed {bridge.ActiveCompanions.Count} expedition companions.");
+        }
+
+        [MenuItem(RefreshTrioMenuPath, true)]
+        private static bool RefreshExpeditionTrioCompanionsValidate() => Application.isPlaying;
     }
 }

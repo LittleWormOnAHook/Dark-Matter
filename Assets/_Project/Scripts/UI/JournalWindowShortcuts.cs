@@ -12,12 +12,14 @@ namespace Project.UI
                 case JournalWindowId.JournalQuest: return 'J';
                 case JournalWindowId.Inventory: return 'I';
                 case JournalWindowId.Map: return 'M';
-                case JournalWindowId.Pet: return 'K';
+                case JournalWindowId.Pet: return 'F';
                 case JournalWindowId.Pioneers: return 'P';
+                case JournalWindowId.Character: return 'U';
                 case JournalWindowId.Craft: return 'C';
                 case JournalWindowId.Recipes: return 'R';
                 case JournalWindowId.Skills: return 'T';
                 case JournalWindowId.Echoes: return 'L';
+                case JournalWindowId.Achievements: return 'A';
                 default: return null;
             }
         }

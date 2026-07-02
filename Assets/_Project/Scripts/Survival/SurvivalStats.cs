@@ -91,6 +91,15 @@ namespace Project.Survival
             StartCoroutine(RefreshUiAfterLoad());
         }
 
+        public void ClampCurrentToMax(float health, float energy, float stamina, float oxygen)
+        {
+            CurrentHealth = Mathf.Clamp(health, 0f, maxHealth);
+            CurrentEnergy = Mathf.Clamp(energy, 0f, maxEnergy);
+            CurrentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
+            CurrentOxygen = Mathf.Clamp(oxygen, 0f, maxOxygen);
+            NotifyStatsChanged();
+        }
+
         public void SetSimulationPaused(bool paused)
         {
             simulationPaused = paused;

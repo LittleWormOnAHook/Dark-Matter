@@ -145,6 +145,123 @@ namespace Project.UI
         {
             pioneerRosterPanelUi?.Unembed();
         }
+
+        public override void Refresh()
+        {
+            pioneerRosterPanelUi?.Refresh();
+        }
+    }
+
+    public sealed class CharacterFullscreenWindow : FullscreenUiWindow
+    {
+        private CharacterPanelUI characterPanelUi;
+
+        public void Configure(CharacterPanelUI panel)
+        {
+            characterPanelUi = panel;
+        }
+
+        public override void OnShow()
+        {
+            if (characterPanelUi == null)
+                characterPanelUi = FindAnyObjectByType<CharacterPanelUI>();
+
+            characterPanelUi?.EmbedIn(contentArea);
+        }
+
+        public override void OnHide()
+        {
+            characterPanelUi?.Unembed();
+        }
+
+        public override void Refresh()
+        {
+            characterPanelUi?.Refresh();
+        }
+    }
+
+    public sealed class SkillsFullscreenWindow : FullscreenUiWindow
+    {
+        private SkillsPanelUI skillsPanelUi;
+
+        public void Configure(SkillsPanelUI panel)
+        {
+            skillsPanelUi = panel;
+        }
+
+        public override void OnShow()
+        {
+            if (skillsPanelUi == null)
+                skillsPanelUi = FindAnyObjectByType<SkillsPanelUI>();
+
+            skillsPanelUi?.EmbedIn(contentArea);
+        }
+
+        public override void OnHide()
+        {
+            skillsPanelUi?.Unembed();
+        }
+
+        public override void Refresh()
+        {
+            skillsPanelUi?.Refresh();
+        }
+    }
+
+    public sealed class EchoesFullscreenWindow : FullscreenUiWindow
+    {
+        private EchoesPanelUI echoesPanelUi;
+
+        public void Configure(EchoesPanelUI panel)
+        {
+            echoesPanelUi = panel;
+        }
+
+        public override void OnShow()
+        {
+            if (echoesPanelUi == null)
+                echoesPanelUi = FindAnyObjectByType<EchoesPanelUI>();
+
+            echoesPanelUi?.EmbedIn(contentArea);
+        }
+
+        public override void OnHide()
+        {
+            echoesPanelUi?.Unembed();
+        }
+
+        public override void Refresh()
+        {
+            echoesPanelUi?.Refresh();
+        }
+    }
+
+    public sealed class AchievementsFullscreenWindow : FullscreenUiWindow
+    {
+        private AchievementsPanelUI achievementsPanelUi;
+
+        public void Configure(AchievementsPanelUI panel)
+        {
+            achievementsPanelUi = panel;
+        }
+
+        public override void OnShow()
+        {
+            if (achievementsPanelUi == null)
+                achievementsPanelUi = FindAnyObjectByType<AchievementsPanelUI>();
+
+            achievementsPanelUi?.EmbedIn(contentArea);
+        }
+
+        public override void OnHide()
+        {
+            achievementsPanelUi?.Unembed();
+        }
+
+        public override void Refresh()
+        {
+            achievementsPanelUi?.Refresh();
+        }
     }
 
     public sealed class MapFullscreenWindow : FullscreenUiWindow
@@ -207,7 +324,7 @@ namespace Project.UI
             iconBlock.transform.SetParent(contentArea, false);
             Image iconImage = iconBlock.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(iconImage);
-            iconImage.color = new Color(0.18f, 0.42f, 0.62f, 0.85f);
+            iconImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.55f);
             LayoutElement iconLayout = iconBlock.AddComponent<LayoutElement>();
             iconLayout.minHeight = 96f;
             iconLayout.preferredHeight = 96f;
@@ -215,7 +332,7 @@ namespace Project.UI
             iconLayout.preferredWidth = 96f;
 
             TextMeshProUGUI heading = CreateStubText(contentArea, stubHeading ?? "Coming Soon", 32f, FontStyles.Bold, TextAlignmentOptions.TopLeft, theme);
-            heading.color = Color.white;
+            heading.color = SurvivalPioneerUiPalette.BodyText;
 
             TextMeshProUGUI body = CreateStubText(
                 contentArea,
@@ -225,7 +342,7 @@ namespace Project.UI
                 TextAlignmentOptions.Center,
                 theme);
             body.textWrappingMode = TextWrappingModes.Normal;
-            body.color = theme != null ? theme.secondaryTextColor : new Color(0.78f, 0.84f, 0.92f, 0.95f);
+            body.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
 
             if (featureBullets != null && featureBullets.Length > 0)
             {
@@ -252,7 +369,7 @@ namespace Project.UI
                         FontStyles.Normal,
                         TextAlignmentOptions.TopLeft,
                         theme);
-                    bullet.color = theme != null ? theme.secondaryTextColor : new Color(0.72f, 0.8f, 0.9f, 0.92f);
+                    bullet.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.MutedText;
                 }
             }
 
@@ -263,7 +380,7 @@ namespace Project.UI
                 FontStyles.Italic,
                 TextAlignmentOptions.Center,
                 theme);
-            footer.color = new Color(0.62f, 0.68f, 0.76f, 0.85f);
+            footer.color = SurvivalPioneerUiPalette.MutedText;
         }
 
         private static TextMeshProUGUI CreateStubText(

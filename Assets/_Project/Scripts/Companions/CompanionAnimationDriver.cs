@@ -1,3 +1,4 @@
+using Project.Companions;
 using Project.Player;
 using Project.Pioneers;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace Project.Companions
         private static readonly int Forward = Animator.StringToHash("Forward");
         private static readonly int Turn = Animator.StringToHash("Turn");
         private static readonly int Ground = Animator.StringToHash("OnGround");
-        private static readonly int AttackStateHash = Animator.StringToHash(PioneerCompanionDefaults.DefaultAttackStateName);
+        private static readonly int LocomotionAnimSpeed = Animator.StringToHash("LocomotionAnimSpeed");
 
         [SerializeField] private float locomotionSmoothTime = 0.18f;
         [SerializeField] private float leanBlendSmoothTime = 0.24f;
@@ -75,8 +76,8 @@ namespace Project.Companions
                 || controllerSpeed > followSpeedThreshold
                 || measuredSpeed > moveSpeedThreshold * 0.25f);
 
-            if (!PlayerCombatAnimationLayer.IsUpperBodyAttackPlaying(animator))
-                PlayerCombatAnimationLayer.EnsureBaseLocomotionState(animator, true);
+            if (!IsCompanionAttackPlaying())
+                EnsureGroundedState();
 
             float forwardAmount = 0f;
             float turnAmount = 0f;
@@ -145,7 +146,7 @@ namespace Project.Companions
                 }
 
                 animator.SetFloat(
-                    PlayerLocomotionAnimatorUtility.LocomotionAnimSpeed,
+                    LocomotionAnimSpeed,
                     animSpeed,
                     animSpeedSmoothTime,
                     deltaTime);
@@ -230,19 +231,25 @@ namespace Project.Companions
             if (animator == null)
                 return;
 
-            int combatLayer = PlayerCombatAnimationLayer.ResolveUpperBodyCombatLayer(animator);
-            int layer = combatLayer >= 0 && animator.HasState(combatLayer, AttackStateHash)
-                ? combatLayer
-                : 0;
+            const string attackState = "Sword Attack 1 Hand Full Body 1";
+            int attackHash = Animator.StringToHash(attackState);
+            int layer = 0;
+            for (int i = 0; i < animator.layerCount; i++)
+            {
+                if (animator.GetLayerName(i) == GkcAnimatorConstants.UpperBodyCombatLayer && animator.HasState(i, attackHash))
+                {
+                    layer = i;
+                    break;
+                }
+            }
 
-            if (!animator.HasState(layer, AttackStateHash))
+            if (!animator.HasState(layer, attackHash))
                 return;
 
-            animator.SetFloat(PlayerCombatAnimationLayer.AttackAnimSpeed, 0.95f);
-            if (layer == combatLayer)
-                PlayerCombatAnimationLayer.BeginUpperBodyAttack(animator, combatLayer);
+            if (HasFloatParameter(animator, LocomotionAnimSpeed))
+                animator.SetFloat(LocomotionAnimSpeed, 0.95f);
 
-            animator.CrossFadeInFixedTime(PioneerCompanionDefaults.DefaultAttackStateName, attackBlendTime, layer, 0f);
+            animator.CrossFadeInFixedTime(attackState, attackBlendTime, layer, 0f);
         }
 
         public void ApplyBehaviorProfile(PioneerBehaviorProfile profile)
@@ -261,10 +268,54 @@ namespace Project.Companions
             if (capabilitiesCached && animator.runtimeAnimatorController != null)
                 return;
 
-            locomotionAnimSpeedAvailable = PlayerLocomotionAnimatorUtility.HasFloatParameter(
-                animator,
-                PlayerLocomotionAnimatorUtility.LocomotionAnimSpeed);
+            locomotionAnimSpeedAvailable = HasFloatParameter(animator, LocomotionAnimSpeed);
             capabilitiesCached = true;
+        }
+
+        private static bool HasFloatParameter(Animator target, int parameterHash)
+        {
+            if (target == null)
+                return false;
+
+            AnimatorControllerParameter[] parameters = target.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].type == AnimatorControllerParameterType.Float
+                    && parameters[i].nameHash == parameterHash)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsCompanionAttackPlaying()
+        {
+            if (animator == null)
+                return false;
+
+            for (int layer = 0; layer < animator.layerCount; layer++)
+            {
+                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(layer);
+                if (info.normalizedTime < 0.95f && info.tagHash != 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void EnsureGroundedState()
+        {
+            if (animator == null)
+                return;
+
+            const string grounded = "Grounded";
+            int hash = Animator.StringToHash(grounded);
+            if (!animator.HasState(0, hash))
+                return;
+
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
+            if (!current.IsName(grounded))
+                animator.CrossFadeInFixedTime(grounded, 0.15f, 0, 0f);
         }
     }
 }

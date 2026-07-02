@@ -1,3 +1,4 @@
+using Project.Companions;
 using Project.Player;
 using Project.Survival;
 using UnityEngine;
@@ -14,17 +15,34 @@ namespace Project.AI
 
         private Transform target;
         private SurvivalStats targetStats;
+        private CompanionHealth targetCompanionHealth;
         private float nextAttackTime;
         private float windupEndTime;
         private bool attackPending;
 
         public float AttackRange => attackRange;
         public bool IsAttacking => attackPending;
+        public Transform CurrentTarget => target;
 
         public void SetTarget(Transform newTarget)
         {
             target = newTarget;
             targetStats = newTarget != null ? newTarget.GetComponent<SurvivalStats>() : null;
+            targetCompanionHealth = newTarget != null ? newTarget.GetComponent<CompanionHealth>() : null;
+        }
+
+        public bool HasLivingTarget()
+        {
+            if (target == null)
+                return false;
+
+            if (targetStats != null)
+                return !targetStats.IsDead;
+
+            if (targetCompanionHealth != null)
+                return !targetCompanionHealth.IsDead;
+
+            return true;
         }
 
         public bool IsTargetInRange()
@@ -37,7 +55,7 @@ namespace Project.AI
 
         public void TryAttack()
         {
-            if (target == null || targetStats == null || targetStats.IsDead)
+            if (!HasLivingTarget())
                 return;
 
             if (!IsTargetInRange())
@@ -61,13 +79,25 @@ namespace Project.AI
 
             attackPending = false;
 
-            if (target == null || targetStats == null || targetStats.IsDead)
+            if (!HasLivingTarget())
                 return;
 
             if (!IsTargetInRange())
                 return;
 
-            targetStats.ApplyDamage(attackDamage);
+            ApplyDamageToTarget(attackDamage);
+        }
+
+        private void ApplyDamageToTarget(float damage)
+        {
+            if (targetStats != null && !targetStats.IsDead)
+            {
+                targetStats.ApplyDamage(damage);
+                return;
+            }
+
+            if (targetCompanionHealth != null && !targetCompanionHealth.IsDead)
+                targetCompanionHealth.ApplyDamage(damage);
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)

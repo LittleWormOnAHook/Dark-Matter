@@ -438,6 +438,78 @@ namespace Project.UI
             return toggle;
         }
 
+        /// <summary>Filled circle when on, outline circle when off.</summary>
+        public static Toggle CreateCircleToggleRow(Transform parent, string label, bool initialValue)
+        {
+            GameObject row = new GameObject(label + "CircleToggleRow", typeof(RectTransform));
+            row.transform.SetParent(parent, false);
+
+            HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.spacing = 12;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+
+            GameObject toggleObject = new GameObject("Toggle", typeof(RectTransform), typeof(Toggle));
+            toggleObject.transform.SetParent(row.transform, false);
+            Toggle toggle = toggleObject.GetComponent<Toggle>();
+            toggle.isOn = initialValue;
+
+            LayoutElement toggleLayout = toggleObject.AddComponent<LayoutElement>();
+            toggleLayout.minWidth = 28f;
+            toggleLayout.minHeight = 28f;
+
+            GameObject outlineObject = new GameObject("Outline", typeof(RectTransform), typeof(Image));
+            outlineObject.transform.SetParent(toggleObject.transform, false);
+            Image outlineImage = outlineObject.GetComponent<Image>();
+            Sprite outlineSprite = ShiftUiTheme.CircleOutline ?? ShiftUiTheme.CircleFilled;
+            if (outlineSprite != null)
+            {
+                outlineImage.sprite = outlineSprite;
+                outlineImage.type = Image.Type.Simple;
+            }
+            else
+            {
+                ApplyUiSprite(outlineImage);
+            }
+
+            outlineImage.color = SurvivalPioneerUiPalette.BodyText;
+            RectTransform outlineRect = outlineObject.GetComponent<RectTransform>();
+            outlineRect.anchorMin = Vector2.zero;
+            outlineRect.anchorMax = Vector2.one;
+            outlineRect.offsetMin = Vector2.zero;
+            outlineRect.offsetMax = Vector2.zero;
+
+            GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fillObject.transform.SetParent(toggleObject.transform, false);
+            Image fillImage = fillObject.GetComponent<Image>();
+            Sprite fillSprite = ShiftUiTheme.CircleFilled ?? ShiftUiTheme.CircleOutline;
+            if (fillSprite != null)
+            {
+                fillImage.sprite = fillSprite;
+                fillImage.type = Image.Type.Simple;
+            }
+            else
+            {
+                ApplyUiSprite(fillImage);
+            }
+
+            fillImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            RectTransform fillRect = fillObject.GetComponent<RectTransform>();
+            fillRect.anchorMin = new Vector2(0.12f, 0.12f);
+            fillRect.anchorMax = new Vector2(0.88f, 0.88f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+
+            toggle.graphic = fillImage;
+            toggle.targetGraphic = outlineImage;
+
+            CreateRowLabel(row.transform, label, 18, TextAlignmentOptions.MidlineLeft);
+            LayoutElement rowLayout = row.AddComponent<LayoutElement>();
+            rowLayout.minHeight = 36f;
+            return toggle;
+        }
+
         public static Dropdown CreateDropdownRow(Transform parent, string label)
         {
             GameObject row = new GameObject(label + "DropdownRow", typeof(RectTransform));

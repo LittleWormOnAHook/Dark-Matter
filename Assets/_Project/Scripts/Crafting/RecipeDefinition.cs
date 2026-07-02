@@ -25,6 +25,12 @@ namespace Project.Crafting
         public ItemData outputItem;
         public int outputAmount = 1;
 
+        [Header("Progression")]
+        [Tooltip("Minimum player level required to craft this recipe.")]
+        public int requiredPlayerLevel = 1;
+        [Tooltip("Used for XP scaling and UI tier badges.")]
+        public int recipeTier = 1;
+
         public string ResolvedId => string.IsNullOrEmpty(recipeId) ? name : recipeId;
 
         public Sprite DisplayIcon => icon != null ? icon : (outputItem != null ? outputItem.icon : null);

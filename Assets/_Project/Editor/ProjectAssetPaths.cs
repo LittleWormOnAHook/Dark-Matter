@@ -36,6 +36,7 @@ namespace Project.EditorTools
         public const string PrefabsItemsWorld = PrefabsItems + "/World";
         public const string PrefabsNpcs = Prefabs + "/NPCs";
         public const string PrefabsPlayers = Prefabs + "/Players";
+        public const string PrefabsCompanions = Prefabs + "/Companions";
         public const string PrefabsUi = Prefabs + "/UI";
         public const string PrefabsWorld = Prefabs + "/World";
 
@@ -58,6 +59,8 @@ namespace Project.EditorTools
         public const string EditorDevTools = Editor + "/DevTools";
 
         public const string PlayerPrefab = PrefabsPlayers + "/Player.prefab";
+        public const string PioneerCompanionPrefab = PrefabsCompanions + "/PioneerCompanion.prefab";
+        public const string ProjectUnityCharacterPrefab = PrefabsPlayers + "/ProjectUnityCharacter.prefab";
         public const string QuestGiverPrefab = PrefabsNpcs + "/QuestGiver_PioneerGuide.prefab";
         public const string EnemyPrefab = PrefabsCombat + "/Enemy.prefab";
         public const string InventorySlotPrefab = PrefabsUi + "/InventorySlot.prefab";

@@ -2,6 +2,7 @@ using Project.Data;
 using Project.Inventory;
 using Project.Pioneers;
 using Project.Managers;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -39,7 +40,14 @@ namespace Project.Quests
                     break;
 
                 case QuestRewardType.StatUpgrade:
-                    Debug.Log($"[QuestReward] Stat upgrade placeholder: {reward.statUpgradeId} (+{reward.amount}) — not implemented yet.");
+                    ProgressionRewardGranter.GrantXp(
+                        reward.amount > 0 ? reward.amount : 25,
+                        XpSource.Quest,
+                        $"quest-stat:{source}:{reward.statUpgradeId}");
+                    break;
+
+                case QuestRewardType.Xp:
+                    ProgressionRewardGranter.GrantXp(reward.amount, XpSource.Quest, $"quest-xp:{source}:{reward.amount}");
                     break;
             }
         }

@@ -96,8 +96,8 @@ namespace Project.Inventory
 
             int hotbarIndex = slotIndex - inventory.inventorySize;
             return !equipment.IsWeaponHotbarSlot(hotbarIndex) ||
-                   hotbarIndex != equipment.ActiveWeaponHotbarSlot ||
-                   !equipment.IsWeaponDrawn;
+                   hotbarIndex != equipment.SelectedHotbarSlot ||
+                   !equipment.HasActiveMeleeWeapon();
         }
 
         public bool CanUnequip(int slotIndex)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Project.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,19 +33,21 @@ namespace Project.UI
             new TabDef("Map", JournalWindowId.Map),
             new TabDef("Pet", JournalWindowId.Pet),
             new TabDef("Pioneers", JournalWindowId.Pioneers),
+            new TabDef("Character", JournalWindowId.Character),
             new TabDef("Craft", JournalWindowId.Craft),
             new TabDef("Recipes", JournalWindowId.Recipes),
             new TabDef("Skills", JournalWindowId.Skills),
-            new TabDef("Echoes", JournalWindowId.Echoes)
+            new TabDef("Echoes", JournalWindowId.Echoes),
+            new TabDef("Achievements", JournalWindowId.Achievements)
         };
 
         private readonly Dictionary<JournalWindowId, Image> tabBackgrounds = new Dictionary<JournalWindowId, Image>();
         private readonly Dictionary<JournalWindowId, TextMeshProUGUI> tabLabels = new Dictionary<JournalWindowId, TextMeshProUGUI>();
 
-        private static readonly Color ActiveTabColor = new Color(0.14f, 0.22f, 0.32f, 0.98f);
-        private static readonly Color InactiveTabColor = new Color(0.07f, 0.08f, 0.11f, 0.94f);
-        private static readonly Color ActiveLabelColor = new Color(0.55f, 0.88f, 1f, 1f);
-        private static readonly Color InactiveLabelColor = new Color(0.72f, 0.78f, 0.86f, 0.88f);
+        private static readonly Color ActiveTabColor = SurvivalPioneerUiPalette.ActiveTabBackground;
+        private static readonly Color InactiveTabColor = SurvivalPioneerUiPalette.InactiveTabBackground;
+        private static readonly Color ActiveLabelColor = SurvivalPioneerUiPalette.Gold;
+        private static readonly Color InactiveLabelColor = SurvivalPioneerUiPalette.BodyText;
 
         public void Build(Transform parent, float uiScale, Action<JournalWindowId> onTabClicked)
         {
@@ -63,8 +64,9 @@ namespace Project.UI
             if (railBg == null)
                 railBg = gameObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(railBg);
-            railBg.color = new Color(0.04f, 0.05f, 0.08f, 0.96f);
+            railBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
             railBg.raycastTarget = true;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(2f, -2f));
 
             GameObject tabColumn = new GameObject("TabColumn", typeof(RectTransform), typeof(VerticalLayoutGroup));
             tabColumn.transform.SetParent(transform, false);
@@ -89,9 +91,6 @@ namespace Project.UI
             for (int i = 0; i < Tabs.Length; i++)
             {
                 TabDef tab = Tabs[i];
-                if (tab.WindowId == JournalWindowId.Map && !GameSettings.MapSystemEnabled)
-                    continue;
-
                 CreateTabButton(tabColumn.transform, tab, theme, uiScale, onTabClicked);
             }
 
@@ -107,11 +106,17 @@ namespace Project.UI
                     continue;
 
                 bool active = windowId.HasValue && pair.Key == windowId.Value;
-                if (!bg.TryGetComponent(out Button button))
+                bg.color = active ? ActiveTabColor : InactiveTabColor;
+            }
+
+            foreach (KeyValuePair<JournalWindowId, TextMeshProUGUI> pair in tabLabels)
+            {
+                TextMeshProUGUI label = pair.Value;
+                if (label == null)
                     continue;
 
-                ColorBlock colors = button.colors;
-                bg.color = active ? colors.pressedColor : colors.normalColor;
+                bool active = windowId.HasValue && pair.Key == windowId.Value;
+                label.color = active ? ActiveLabelColor : InactiveLabelColor;
             }
         }
 
@@ -133,12 +138,13 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(bg);
             bg.color = InactiveTabColor;
             tabBackgrounds[tab.WindowId] = bg;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(tabObject);
 
             Button button = tabObject.GetComponent<Button>();
             button.targetGraphic = bg;
             ColorBlock colors = button.colors;
             colors.normalColor = InactiveTabColor;
-            colors.highlightedColor = new Color(0.12f, 0.16f, 0.22f, 1f);
+            colors.highlightedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.18f);
             colors.pressedColor = ActiveTabColor;
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;

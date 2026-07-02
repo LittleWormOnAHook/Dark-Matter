@@ -13,6 +13,9 @@ namespace Project.Pioneers
         public float combatSynergy;
         public string backstory;
         public string abilitySummary;
+        public string[] traitIds;
+        public string[] passiveAbilityIds;
+        public string[] learnedSkills;
     }
 
     public static class StarterPioneerCatalog
@@ -33,7 +36,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = 0.48f,
                 combatSynergy = 0.74f,
                 backstory = "Recovered imprint from a failed caldera survey team.",
-                abilitySummary = "Aggro Pulse · Tremor Sense"
+                abilitySummary = "Aggro Pulse · Tremor Sense",
+                traitIds = new[] { "aggro_pulse" },
+                passiveAbilityIds = new[] { "tremor_sense" },
+                learnedSkills = new[] { "haul" }
             },
             new StarterPioneerOffer
             {
@@ -45,7 +51,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = 0.71f,
                 combatSynergy = 0.52f,
                 backstory = "Signal trace found near a collapsed sulfur vent route.",
-                abilitySummary = "Vent Burst · Echo Reverb"
+                abilitySummary = "Vent Burst · Echo Reverb",
+                traitIds = new[] { "vent_burst" },
+                passiveAbilityIds = new[] { "echo_reverb" },
+                learnedSkills = new[] { "forage" }
             },
             new StarterPioneerOffer
             {
@@ -57,7 +66,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = 0.64f,
                 combatSynergy = 0.46f,
                 backstory = "Archive fragment linked to an early isotope research crew.",
-                abilitySummary = "Scan Boost · Rad Hardening"
+                abilitySummary = "Scan Boost · Rad Hardening",
+                traitIds = new[] { "purification_field" },
+                passiveAbilityIds = new[] { "rad_hardening" },
+                learnedSkills = new[] { "sanitize" }
             },
             new StarterPioneerOffer
             {
@@ -69,7 +81,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = 0.58f,
                 combatSynergy = 0.6f,
                 backstory = "Imprint recovered from a ruined hab shell near lava tubes.",
-                abilitySummary = "Purification Field · Shield Drone"
+                abilitySummary = "Purification Field · Shield Drone",
+                traitIds = new[] { "shield_drone" },
+                passiveAbilityIds = new[] { "harvest_boost" },
+                learnedSkills = new[] { "patchwork" }
             }
         };
     }

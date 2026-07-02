@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &403633226738867544
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 100278, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_Name
+      value: Ricky
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400276, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9500000, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: b8d4e2f13a9c5670fedcba9876543210, type: 2}
+    - target: {fileID: 9500000, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100278, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9030489476319144552}
+    - targetCorrespondingSourceObject: {fileID: 100278, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1429449569259658627}
+    - targetCorrespondingSourceObject: {fileID: 100278, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2361613268403501083}
+  m_SourcePrefab: {fileID: 100100000, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+--- !u!1 &403633226738899694 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100278, guid: 42b16888dccfed94fb39302aa553204d, type: 3}
+  m_PrefabInstance: {fileID: 403633226738867544}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &9030489476319144552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403633226738899694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2198db3f8aa6874db181fec83210cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pet.PetController
+  definition: {fileID: 11400000, guid: 49b18fd385041334f893c1f6fc179320, type: 2}
+  petId: ricky
+  displayName: Ricky
+  description: Ricky the Racoon, and troublesome pet but a loyal companion that gathers
+    nearby items.
+  inventoryIcon: {fileID: 21300000, guid: 2daad5b0bf702bd4baccf8cf1d056d5d, type: 3}
+  owner: {fileID: 0}
+  followOffset: {x: -1.2, y: 0, z: -1.5}
+  isOwned: 0
+  companionActive: 0
+  followEnabled: 1
+  wanderEnabled: 1
+  fetchEnabled: 1
+  walkSpeed: 2.2
+  runSpeed: 4.5
+  turnSpeed: 8
+  stopDistance: 0.35
+  maxFollowDistance: 12
+  groundOffset: 0
+  groundProbeHeight: 40
+  groundProbeDistance: 80
+  wanderRadius: 4
+  wanderDuration: 3
+  idleBeforeWanderMin: 4
+  idleBeforeWanderMax: 10
+  wanderChance: 0.35
+  fetchSearchRadius: 18
+  fetchPickupDistance: 1.25
+  fetchCheckInterval: 8
+  fetchAttemptChance: 0.45
+  fetchCooldown: 15
+--- !u!114 &1429449569259658627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403633226738899694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8808c5036596d894088686f5c8523fc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pet.PetAnimationController
+  petAnimatorController: {fileID: 9100000, guid: b8d4e2f13a9c5670fedcba9876543210, type: 2}
+  idleState: Idle
+  walkState: Walk
+  runState: Run
+  walkSpeedThreshold: 0.05
+  runSpeedThreshold: 2.5
+  crossFadeDuration: 0.1
+--- !u!136 &2361613268403501083
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403633226738899694}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.35
+  m_Height: 1.2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.55, z: 0}

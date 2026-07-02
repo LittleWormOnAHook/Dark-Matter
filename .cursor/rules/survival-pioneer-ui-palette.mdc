@@ -1,0 +1,31 @@
+---
+description: Survival Pioneer UI color palette for panels, HUD, menus, and gameplay UI
+alwaysApply: true
+---
+
+# Survival Pioneer UI Palette
+
+Use `SurvivalPioneerUiPalette` and `ShiftUiTheme` for all UI color decisions.
+
+| Name | Hex | Usage |
+|------|-----|--------|
+| Deep Magenta | `#8F1E5E` | Button normal, borders, secondary accents |
+| Rich Fuchsia | `#C02E7A` | Primary accent, highlights, selection, links |
+| Charcoal Gray | `#2F2F2F` | Panel headers, deep UI chrome |
+| Slate Gray | `#4A4A5A` | Panel borders, slot backgrounds, disabled UI |
+| Warm Off-White | `#EDE9E4` | Primary body text |
+| Dark Navy | `#1C2A38` | Panel backgrounds, modal shells |
+| Soft Beige-Gray | `#8C7F75` | Muted/secondary text, captions |
+| Gold | `#D4A017` | XP, skill points, rewards, key highlights |
+
+## Rules
+
+- Prefer `SurvivalPioneerUiPalette` constants over hardcoded RGB values in UI code.
+- Panel backgrounds: Dark Navy; borders: Slate Gray; headers: Charcoal Gray.
+- Interactive buttons: Deep Magenta normal, Rich Fuchsia hover/selected, Gold for premium actions or points.
+- Body text: Warm Off-White; helper text: Soft Beige-Gray.
+- Gold for Press E interaction prompts and hotbar key labels (`InteractionPromptText`, `HotbarLabelText`).
+- Deep Magenta for danger/warning states (EXTREME, sulfur storm banners) — not legacy red/orange sci-fi accents.
+- Keep positive/success greens unchanged (`PositiveGreen`, `ConnectedGreen`, craft-ready slot tints).
+- Do not reintroduce the old cyan/blue sci-fi accent (`#63C6FF`) unless explicitly requested.
+- Main menu connected status uses the `119 Eye` sprite tinted green when connected.

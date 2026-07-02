@@ -12,8 +12,11 @@ namespace Project.Player
     public class PlayerController : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float walkSpeed = 5.8f;
-        [SerializeField] private float sprintSpeed = 9.5f;
+        [SerializeField] private float walkSpeed = 4.4f;
+        [SerializeField] private float sprintSpeed = 7.2f;
+
+        [Header("Locomotion Animations")]
+        [SerializeField] private PlayerLocomotionAnimationSettings locomotionAnimations = new();
 
         [Header("Third Person Camera")]
         [SerializeField] private Transform cameraFollowTarget;
@@ -59,7 +62,10 @@ namespace Project.Player
         private float _currentFollowDistance;
         private float _followDistanceSmoothVelocity;
         private float _inputRecoveryCheckTimer;
+        private float _locomotionRotationIdleSince = float.NegativeInfinity;
         private CombatFocusController _combatFocus;
+
+        private const float LocomotionRotationIdleDelay = 0.12f;
 
         public bool IsInventoryOpen => _inventoryOpen;
         public bool IsJournalOpen => _journalOpen;
@@ -68,6 +74,8 @@ namespace Project.Player
         public bool IsLootDialogOpen => _lootDialogOpen;
         public bool IsBuildingControlOpen => _buildingControlOpen;
         public bool IsOpticsOpen => _opticsOpen;
+        public bool IsSprinting =>
+            _sprintInput && _moveInput.sqrMagnitude > 0.01f && _character != null && !_character.IsCrouched();
         public bool BlocksCombatInput =>
             _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || IsGameplayPaused;
         public bool IsGameplayPaused => _gameplayPaused || !GameSession.HasStarted;
@@ -77,6 +85,7 @@ namespace Project.Player
         public float OpticsZoomFov => _opticsCurrentFov;
         public float OpticsTargetFov => _opticsTargetFov;
         public Camera GameplayCamera => _character != null ? _character.camera : null;
+        public PlayerLocomotionAnimationSettings LocomotionAnimations => locomotionAnimations;
 
         public Vector3 OpticsEyeWorldPosition
         {
@@ -111,6 +120,9 @@ namespace Project.Player
 
         private void Start()
         {
+            if (_character != null)
+                _character.rotationMode = Character.RotationMode.OrientRotationToMovement;
+
             if (GameSession.HasStarted)
                 GameplayInputRecovery.ReleaseAllInputCapture();
             else
@@ -471,6 +483,28 @@ namespace Project.Player
                 movementDirection = movementDirection.relativeTo(_character.cameraTransform);
 
             _character.SetMovementDirection(movementDirection);
+            UpdateLocomotionRotationMode(isMoving);
+        }
+
+        private void UpdateLocomotionRotationMode(bool isMoving)
+        {
+            if (_character == null || (_combatFocus != null && _combatFocus.IsLocked))
+                return;
+
+            if (isMoving)
+            {
+                _locomotionRotationIdleSince = float.NegativeInfinity;
+                _character.rotationMode = Character.RotationMode.OrientRotationToViewDirection;
+                return;
+            }
+
+            if (_locomotionRotationIdleSince < 0f)
+                _locomotionRotationIdleSince = Time.time;
+
+            if (Time.time - _locomotionRotationIdleSince < LocomotionRotationIdleDelay)
+                return;
+
+            _character.rotationMode = Character.RotationMode.OrientRotationToMovement;
         }
 
         private void HandleJump()

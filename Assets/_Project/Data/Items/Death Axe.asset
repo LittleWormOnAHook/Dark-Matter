@@ -17,6 +17,10 @@ MonoBehaviour:
   worldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   maxStack: 1
   itemType: 2
+  weaponGrip: 0
+  gkcWeaponKind: 3
+  gkcRightArmId: -1
+  gkcLeftArmId: -1
   heldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   equipSocketName: RightHand
   heldLocalPosition: {x: 0.092, y: 0.045, z: -0.009}

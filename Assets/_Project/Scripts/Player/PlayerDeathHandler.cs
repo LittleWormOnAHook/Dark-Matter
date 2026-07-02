@@ -18,6 +18,7 @@ namespace Project.Player
         private SurvivalStats survivalStats;
         private PlayerController playerController;
         private Character character;
+        private PlayerGkcAnimatorDriver animatorDriver;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private bool spawnCaptured;
@@ -27,6 +28,7 @@ namespace Project.Player
             survivalStats = GetComponent<SurvivalStats>();
             playerController = GetComponent<PlayerController>();
             character = GetComponent<Character>();
+            animatorDriver = GetComponentInChildren<PlayerGkcAnimatorDriver>();
             CaptureSpawnPoint();
         }
 
@@ -57,6 +59,7 @@ namespace Project.Player
             survivalStats.SetSimulationPaused(false);
 
             ResetPlayerSystems();
+            ResetDeathAnimation();
             GameplayAudioUtility.EnsureListenerOnCamera(playerController != null ? playerController.GameplayCamera : null);
 
             UIManager ui = FindAnyObjectByType<UIManager>();
@@ -71,6 +74,25 @@ namespace Project.Player
         {
             CleanupDeathState();
             survivalStats?.SetSimulationPaused(true);
+            PlayDeathAnimation();
+        }
+
+        private void PlayDeathAnimation()
+        {
+            if (animatorDriver == null)
+                return;
+
+            animatorDriver.EndActiveAction();
+            animatorDriver.RequestAction(GkcCombatAction.Death, 4f);
+        }
+
+        private void ResetDeathAnimation()
+        {
+            if (animatorDriver == null)
+                return;
+
+            animatorDriver.EndActiveAction();
+            animatorDriver.RequestAction(GkcCombatAction.GetUp, 1.5f);
         }
 
         private void CleanupDeathState()

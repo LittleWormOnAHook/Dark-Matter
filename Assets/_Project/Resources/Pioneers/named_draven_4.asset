@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7693b9365b31d6b4fa098be012daeff6, type: 3}
+  m_Name: named_draven_4
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
+  pioneerId: named_draven_4
+  displayName: Void-Glitched Draven-4
+  pioneerClass: 2
+  startLevel: 1
+  radiationResistance: 0.6
+  expeditionEfficiency: 0.5
+  combatSynergy: 0.72
+  saturation: 0.22
+  backstory: Hostile imprint stabilized after sync.
+  traitIds:
+  - decoy_beacon
+  passiveAbilityIds:
+  - tremor_sense
+  learnedSkills:
+  - haul

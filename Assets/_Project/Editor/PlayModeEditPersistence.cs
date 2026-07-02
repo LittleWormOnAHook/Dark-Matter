@@ -166,6 +166,9 @@ namespace Project.EditorTools
                     if (iterator.propertyPath == "m_Script")
                         continue;
 
+                    if (ShouldSkipPlayModeProperty(component, iterator))
+                        continue;
+
                     if (!TryExportProperty(iterator, out string value))
                         continue;
 
@@ -187,6 +190,18 @@ namespace Project.EditorTools
             }
 
             return captured.Count > 0 ? captured.ToArray() : Array.Empty<ComponentPropertySnapshot>();
+        }
+
+        private static bool ShouldSkipPlayModeProperty(Component component, SerializedProperty property)
+        {
+            if (component is not Animator || property.propertyPath != "m_Controller")
+                return false;
+
+            UnityEngine.Object reference = property.objectReferenceValue;
+            if (reference == null)
+                return true;
+
+            return string.IsNullOrEmpty(AssetDatabase.GetAssetPath(reference));
         }
 
         private static void ApplyCapturedSnapshots()

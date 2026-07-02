@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Pioneers;
 using UnityEngine;
 
 namespace Project.Companions
@@ -17,7 +18,7 @@ namespace Project.Companions
     {
         public static CompanionCombatCoordinator Instance { get; private set; }
 
-        [SerializeField] private float baseAttackInterval = 1.6f;
+        [SerializeField] private float baseAttackInterval = 1.1f;
         [SerializeField] private float pairedOverlapWindow = 0.35f;
         [SerializeField] private int attackModeSeed = 92831;
 
@@ -105,7 +106,11 @@ namespace Project.Companions
         {
             int count = Mathf.Max(1, registered.Count);
             float personal = requester != null ? requester.GetPersonalIntervalMultiplier() : 1f;
-            return baseAttackInterval * count * personal;
+            float interval = baseAttackInterval * count * personal;
+            if (requester != null && requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+                interval *= 0.5f;
+
+            return interval;
         }
 
         public float RollAttackChance(CompanionCombatController requester)
@@ -113,16 +118,28 @@ namespace Project.Companions
             if (requester == null)
                 return 0.5f;
 
+            if (requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+                return 1f;
+
             int count = Mathf.Max(1, registered.Count);
             float soloBias = requester.GetPersonalAttackBias();
             float countScale = 1f / count;
             return Mathf.Clamp01(soloBias * countScale + 0.12f);
         }
 
-        public bool TryBeginAttack(CompanionCombatController requester)
+        public bool TryBeginAttack(CompanionCombatController requester, bool forceAggressive = false)
         {
             if (requester == null || registered.Count == 0)
                 return false;
+
+            if (forceAggressive && requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+            {
+                if (activeAttackers.Contains(requester))
+                    return false;
+
+                activeAttackers.Add(requester);
+                return true;
+            }
 
             int maxSimultaneous = attackMode switch
             {

@@ -34,7 +34,7 @@ public static class HeldGripPlacementUtility
         {
             EditorUtility.DisplayDialog(
                 "Sheathed Grip Baker",
-                "Enter Play mode first.\n\n1. Put the weapon on your hotbar (wood axe in slot 1 or 2)\n2. Sheathe it (press 1 or 2 again so it holsters on your back)\n3. Pause the editor\n4. Move the weapon root under Spine in the Hierarchy\n5. Run this bake again",
+                "Enter Play mode first.\n\n1. Put the weapon on a weapon hotbar slot (1–4)\n2. Sheathe it (press the same weapon key again so it holsters on your back)\n3. Pause the editor\n4. Adjust the weapon under Spine if needed\n5. Run this bake again",
                 "OK");
             return;
         }
@@ -267,7 +267,7 @@ public static class HeldGripPlacementUtility
         {
             EditorUtility.DisplayDialog(
                 "Sheathed Grip Baker",
-                "Could not find Player/Spine. Enter Play mode, sheathe the sword (press 1 twice), pause, position it on the back, then run this again.",
+                "Could not find Player/Spine. Enter Play mode, select a non-weapon hotbar slot so the weapon sheathes on your back, pause, reposition it, then run this again.",
                 "OK");
             return false;
         }
@@ -277,7 +277,7 @@ public static class HeldGripPlacementUtility
         {
             EditorUtility.DisplayDialog(
                 "Sheathed Grip Baker",
-                "No sheathed weapon found under Spine. Sheathe the weapon first, pause, reposition the weapon root on the back, then rebake.",
+                "No sheathed weapon found under Spine. Select a non-weapon hotbar slot (or another weapon slot) so the weapon moves to your back, pause, reposition it, then rebake.",
                 "OK");
             return false;
         }
@@ -296,7 +296,7 @@ public static class HeldGripPlacementUtility
 
         EditorUtility.DisplayDialog(
             "Sheathed Grip Baker",
-            "No holstered weapon found.\n\nEnter Play mode, put the weapon on the hotbar, sheathe it (press 1 or 2 again), pause, reposition it on the back, or select its ItemData asset in the Project window.",
+            "No sheathed weapon found.\n\nEnter Play mode, put the weapon on a weapon hotbar slot, select a non-weapon hotbar slot so it sheathes on your back, pause, reposition it, or select its ItemData asset in the Project window.",
             "OK");
         return null;
     }
@@ -323,20 +323,25 @@ public static class HeldGripPlacementUtility
         if (equipment == null)
             return null;
 
-        if (equipment.IsWeaponDrawn)
+        int activeHotbar = equipment.ActiveWeaponHotbarSlot;
+        bool activeWeaponSelected = equipment.IsWeaponHotbarSlot(equipment.SelectedHotbarSlot);
+        ItemData backCandidate = null;
+
+        equipment.ForEachWeaponHotbarSlot(hotbarIndex =>
         {
-            ItemData inactiveWeapon = equipment.SecondaryWeaponItem;
-            if (inactiveWeapon != null && inactiveWeapon.IsEquippable)
-                return inactiveWeapon;
-        }
+            if (backCandidate != null)
+                return;
 
-        ItemData primary = equipment.GetHotbarItem(equipment.PrimaryWeaponHotbarSlot);
-        if (primary != null && primary.IsEquippable)
-            return primary;
+            if (equipment.IsWeaponDrawn && activeWeaponSelected && hotbarIndex == activeHotbar)
+                return;
 
-        ItemData secondary = equipment.GetHotbarItem(equipment.SecondaryWeaponHotbarSlot);
-        if (secondary != null && secondary.IsEquippable)
-            return secondary;
+            ItemData weapon = equipment.GetHotbarItem(hotbarIndex);
+            if (weapon != null && weapon.IsEquippable)
+                backCandidate = weapon;
+        });
+
+        if (backCandidate != null)
+            return backCandidate;
 
         if (spine != null)
         {
@@ -359,7 +364,7 @@ public static class HeldGripPlacementUtility
 
         EditorUtility.DisplayDialog(
             "Grip Baker",
-            "No equipped weapon found.\n\nEnter Play mode with a weapon drawn on the hotbar, or select an ItemData asset in the Project window.",
+            "No equipped weapon found.\n\nEnter Play mode with a weapon hotbar slot selected (weapon in hand), or select an ItemData asset in the Project window.",
             "OK");
         return null;
     }
@@ -374,7 +379,7 @@ public static class HeldGripPlacementUtility
             return null;
 
         EquipmentController equipment = player.GetComponent<EquipmentController>();
-        return equipment != null && equipment.IsWeaponDrawn ? equipment.EquippedItem : null;
+        return equipment != null && equipment.HasActiveMeleeWeapon() ? equipment.SelectedHotbarItem : null;
     }
 
     private static Transform ResolveHeldTransformForBake(Transform socket, ItemData item)

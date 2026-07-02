@@ -1,0 +1,339 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 283cdbe2c679df341ae36e985bd70dce, type: 3}
+  m_Name: GkcActionCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.GkcActionCatalog
+  entries:
+  - combatAction: 6
+    actionId: 4100
+    stateName: Sword Attack 1 Hand Full Body 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 1
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 7
+    actionId: 4101
+    stateName: Sword Attack 1 Hand 2
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 1
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 8
+    actionId: 4102
+    stateName: Sword Attack 1 Hand 3
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 1
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 9
+    actionId: 4104
+    stateName: Sword Attack 1 Hand 4
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 1
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 10
+    actionId: 4108
+    stateName: Sword Attack 1 Hand Special 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 1
+    defaultDuration: 1.45
+    crossFadeDuration: 0.1
+  - combatAction: 16
+    actionId: 4200
+    stateName: Sword Attack 2 Hands Body 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 2
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 17
+    actionId: 4201
+    stateName: Sword Attack 2 Hands Body 2
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 2
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 18
+    actionId: 4202
+    stateName: Sword Attack 2 Hands Body 3
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 2
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 19
+    actionId: 4203
+    stateName: Sword Attack 2 Hands Body 4
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 2
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 20
+    actionId: 4204
+    stateName: Sword Attack 2 Hands Special 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 2
+    defaultDuration: 1.45
+    crossFadeDuration: 0.1
+  - combatAction: 11
+    actionId: 700
+    stateName: Axe Attack 1 Hand 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 3
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 12
+    actionId: 710
+    stateName: Axe Attack 1 Hand 2
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 3
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 13
+    actionId: 720
+    stateName: Axe Attack 1 Hand 3
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 3
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 14
+    actionId: 770
+    stateName: Axe Attack 1 Hand 4
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 3
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 15
+    actionId: 780
+    stateName: Axe Attack 1 Hand Special 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 3
+    defaultDuration: 1.45
+    crossFadeDuration: 0.1
+  - combatAction: 21
+    actionId: 1000
+    stateName: Block With Sword 2 Hands
+    layerName: Upper Body With Movement
+    requiresActionActive: 0
+    useActionActiveUpperBody: 1
+    requiresStrafeMode: 1
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: -1
+    defaultDuration: 8
+    crossFadeDuration: 0.1
+  - combatAction: 22
+    actionId: 0
+    stateName: Keep Sword 1 Hand
+    layerName: Upper Body
+    requiresActionActive: 0
+    useActionActiveUpperBody: 1
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 0
+    useDirectCrossFade: 1
+    weaponFilter: 1
+    defaultDuration: 1.45
+    crossFadeDuration: 0.12
+  - combatAction: 23
+    actionId: 0
+    stateName: Keep Sword 2 Hands
+    layerName: Upper Body
+    requiresActionActive: 0
+    useActionActiveUpperBody: 1
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 0
+    useDirectCrossFade: 1
+    weaponFilter: 2
+    defaultDuration: 1.45
+    crossFadeDuration: 0.12
+  - combatAction: 24
+    actionId: 0
+    stateName: Keep Axe
+    layerName: Upper Body
+    requiresActionActive: 0
+    useActionActiveUpperBody: 1
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 0
+    useDirectCrossFade: 1
+    weaponFilter: 3
+    defaultDuration: 1.45
+    crossFadeDuration: 0.12
+  - combatAction: 25
+    actionId: 0
+    stateName: Hit Reaction.Hit Damage Reflection.Hit Damage Reflection
+    layerName: Base Layer
+    requiresActionActive: 0
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 0
+    useDirectCrossFade: 1
+    weaponFilter: 0
+    defaultDuration: 0.65
+    crossFadeDuration: 0.08
+  - combatAction: 26
+    actionId: 0
+    stateName: Hit Reaction.Melee Weapon Hit Reaction.Melee Weapon Hit Reaction
+    layerName: Base Layer
+    requiresActionActive: 0
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 0
+    useDirectCrossFade: 1
+    weaponFilter: -1
+    defaultDuration: 0.65
+    crossFadeDuration: 0.08
+  - combatAction: 27
+    actionId: 1535
+    stateName: Dead 2
+    layerName: Death
+    requiresActionActive: 0
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: -1
+    defaultDuration: 4
+    crossFadeDuration: 0.1
+  - combatAction: 1
+    actionId: 4100
+    stateName: Punch 1
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 0
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 2
+    actionId: 4101
+    stateName: Punch 2
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 0
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 3
+    actionId: 4102
+    stateName: Punch 3
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 0
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 4
+    actionId: 4104
+    stateName: Punch 4
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 0
+    defaultDuration: 1.05
+    crossFadeDuration: 0.1
+  - combatAction: 5
+    actionId: 4105
+    stateName: Punch 5
+    layerName: Base Layer
+    requiresActionActive: 1
+    useActionActiveUpperBody: 0
+    requiresStrafeMode: 0
+    clearActionIdAfterTrigger: 1
+    useDirectCrossFade: 0
+    weaponFilter: 0
+    defaultDuration: 1.45
+    crossFadeDuration: 0.1

@@ -31,7 +31,7 @@
       "dependencies": {}
     },
     "com.unity.ai.assistant": {
-      "version": "2.13.0-pre.1",
+      "version": "2.13.0-pre.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -274,6 +274,16 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.postprocessing": {
+      "version": "3.5.4",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.physics": "1.0.0"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.probuilder": {

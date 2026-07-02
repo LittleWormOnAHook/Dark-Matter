@@ -618,6 +618,8 @@ public class EquipmentItemCreatorWindow : EditorWindow
         if (stripPickupComponents)
         {
             RemoveAllColliders(instance);
+            if (itemData != null && itemData.itemType == ItemType.MeleeWeapon)
+                WeaponPrefabBuilder.ConfigureWeaponHitbox(instance, itemData);
             return instance;
         }
 
@@ -688,6 +690,8 @@ public class EquipmentItemCreatorWindow : EditorWindow
 
         foreach (ResourceNode node in root.GetComponentsInChildren<ResourceNode>(true))
             DestroyImmediate(node);
+
+        MapMarkerEditorUtility.RemoveMapMarkers(root);
     }
 
     private static void RemoveAllColliders(GameObject root)

@@ -52,6 +52,8 @@ namespace Project.Interaction
             {
                 QuestManager questManager = QuestManager.EnsureExists();
                 questManager?.NotifyItemCollected(item, added);
+                Project.Achievements.AchievementManager.EnsureExists()
+                    ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, item.name, added);
             }
 
             if (added >= amount)

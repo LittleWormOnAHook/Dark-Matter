@@ -32,7 +32,7 @@ namespace Project.UI
             new Color(0.92f, 0.18f, 0.14f, 1f),
             new Color(0.91f, 0.63f, 0.27f, 1f),
             new Color(0.71f, 0.88f, 0.40f, 1f),
-            new Color(0.43f, 0.76f, 1f, 1f)
+            SurvivalPioneerUiPalette.RichFuchsia
         };
 
         private bool layoutApplied;
@@ -225,7 +225,7 @@ namespace Project.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 6f;
             label.fontSizeMax = BarHeight * 0.85f;
-            label.color = new Color(0.95f, 0.98f, 1f, 0.95f);
+            label.color = SurvivalPioneerUiPalette.BodyText;
             label.raycastTarget = false;
             label.overflowMode = TextOverflowModes.Overflow;
         }

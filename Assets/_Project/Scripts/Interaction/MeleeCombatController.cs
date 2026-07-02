@@ -15,6 +15,7 @@ using UnityEngine.InputSystem;
 namespace Project.Interaction
 {
     [RequireComponent(typeof(EquipmentController))]
+    [DefaultExecutionOrder(100)]
     public class MeleeCombatController : MonoBehaviour
     {
         [Header("Hit Detection")]
@@ -24,53 +25,21 @@ namespace Project.Interaction
         [SerializeField] private float attackOriginHeight = 1.25f;
         [SerializeField] private float swingHitWindow = 0.45f;
 
-        [Header("Power Hit")]
-        [Tooltip("Hold attack at least this long before release to trigger a critical power hit.")]
-        public float powerHitMinHoldTime = 2f;
-        [Tooltip("Hold this long before the charge wind-up animation begins. Quick taps stay on normal combo attacks.")]
-        [SerializeField] private float powerHitChargeStartDelay = 1.5f;
-        [Tooltip("Fallback critical multiplier when the weapon criticalDamageMultiplier is 0.")]
-        public float criticalDamageMultiplier = 2f;
-        [SerializeField] private string powerHitStateName = "AttackCombo5";
-        [SerializeField] private string powerHitChargeStateName = "PowerHitCharge";
-        [SerializeField] private int powerHitChargeLayerIndex = 1;
-        [SerializeField] private float powerHitChargeBlendTime = 0.2f;
-        [SerializeField] private float powerHitCooldownMultiplier = 1.5f;
-        [SerializeField] private float upperBodyAttackBlendTime = 0.22f;
+        [Header("Melee Timing")]
+        [SerializeField] private float twoHandedCooldownMultiplier = 1.35f;
 
-        private static readonly int PowerHitCharge = Animator.StringToHash("PowerHitCharge");
-        private static readonly int Block = Animator.StringToHash("Block");
-
-        [Header("Block")]
-        [SerializeField] private string blockStateName = "Block";
-        [SerializeField] private int blockLayerIndex = 1;
-        [SerializeField] private float blockBlendTime = 0.18f;
+        [Header("Unarmed")]
+        [SerializeField] private float unarmedFallbackCooldown = 0.65f;
+        [SerializeField] private float unarmedFallbackRange = 1.6f;
+        [SerializeField] private int unarmedFallbackDamage = 8;
 
         public bool IsBlocking { get; private set; }
         public bool IsAttackInputActive => attackInputHeld;
         public float LastAttackTime => lastComboAttackTime;
 
-        [Header("Combo")]
-        [SerializeField] private float comboResetWindow = 1.35f;
-        [SerializeField] private string[] comboStateNames =
-        {
-            "AttackCombo1",
-            "AttackCombo2",
-            "AttackCombo3",
-            "AttackCombo4",
-            "AttackCombo5"
-        };
-
-        [Header("Two-Handed Attacks")]
-        [SerializeField] private string[] twoHandedAttackStateNames =
-        {
-            "TwoHandAttack1",
-            "TwoHandAttack2",
-            "TwoHandAttack3",
-            "TwoHandAttack4"
-        };
-        [SerializeField] private string twoHandedPowerHitStateName = "TwoHandPowerHit";
-        [SerializeField] private float twoHandedCooldownMultiplier = 1.35f;
+        [SerializeField] private float comboResetWindow = 0.85f;
+        [SerializeField] private float comboChainCooldown = 0.28f;
+        private const int ComboLength = 4;
 
         private EquipmentController equipment;
         private EquippedItemVisual heldVisual;
@@ -78,16 +47,14 @@ namespace Project.Interaction
         private PlayerController playerController;
         private SurvivalStats survivalStats;
         private UIManager uiManager;
-        private Animator animator;
+        private PlayerGkcAnimatorDriver animatorDriver;
+        private Character character;
+
         private float nextAttackTime;
         private int comboIndex;
         private float lastComboAttackTime = float.NegativeInfinity;
-        private float attackHoldStartTime;
         private bool attackInputHeld;
-        private bool chargePoseStarted;
         private bool combatBlockedByUiPointer;
-        private int upperBodyCombatLayerIndex = -1;
-        private Character character;
 
         private void Awake()
         {
@@ -97,23 +64,28 @@ namespace Project.Interaction
             playerController = GetComponent<PlayerController>();
             survivalStats = GetComponent<SurvivalStats>();
             uiManager = FindAnyObjectByType<UIManager>();
+            character = GetComponent<Character>();
+            ResolveAnimatorDriver();
+        }
 
-            Character character = GetComponent<Character>();
-            this.character = character;
-            animator = character != null ? character.GetAnimator() : null;
-            if (animator == null)
-                animator = GetComponentInChildren<Animator>();
+        private void ResolveAnimatorDriver()
+        {
+            if (animatorDriver != null)
+                return;
 
-            upperBodyCombatLayerIndex = PlayerCombatAnimationLayer.ResolveUpperBodyCombatLayer(animator);
-
-            if (animator != null && animator.layerCount > powerHitChargeLayerIndex)
-                animator.SetLayerWeight(powerHitChargeLayerIndex, 0f);
+            animatorDriver = GetComponentInChildren<PlayerGkcAnimatorDriver>(true);
         }
 
         public void OnBlock(InputAction.CallbackContext context)
         {
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
+
+            if (context.canceled)
+            {
+                EndBlock();
+                return;
+            }
 
             if (IsCombatInputBlocked())
                 return;
@@ -124,8 +96,6 @@ namespace Project.Interaction
 
             if (context.started)
                 BeginBlock();
-            else if (context.canceled)
-                EndBlock();
         }
 
         public void OnSwitchWeapon(InputAction.CallbackContext context)
@@ -149,20 +119,17 @@ namespace Project.Interaction
                 return;
 
             if (IsBlocking)
-                return;
+                EndBlock();
 
             if (IsCombatInputBlocked())
             {
                 attackInputHeld = false;
-                chargePoseStarted = false;
                 return;
             }
 
             if (context.started)
             {
                 attackInputHeld = true;
-                chargePoseStarted = false;
-                attackHoldStartTime = Time.time;
                 return;
             }
 
@@ -170,79 +137,33 @@ namespace Project.Interaction
                 return;
 
             attackInputHeld = false;
-            float holdDuration = Time.time - attackHoldStartTime;
-
-            if (holdDuration >= powerHitMinHoldTime)
-                TryPowerHit();
-            else
-            {
-                EndPowerHitChargeAnimation();
-                heldVisual?.CancelPowerHitCharge();
-                TryAttack();
-            }
-
-            chargePoseStarted = false;
+            TryAttack();
         }
 
         private void Update()
         {
             RefreshCombatUiPointerBlock();
-            PlayerCombatAnimationLayer.UpdateUpperBodyLayerWeight(animator, upperBodyCombatLayerIndex);
+            UpdateBlockRelease();
+        }
 
-            if (IsBlocking)
+        private void LateUpdate()
+        {
+            animatorDriver?.TickActions();
+        }
+
+        private void UpdateBlockRelease()
+        {
+            if (!IsBlocking)
                 return;
 
-            if (!attackInputHeld || chargePoseStarted || !CanBeginMeleeInput())
-                return;
-
-            float chargeDelay = Mathf.Clamp(
-                powerHitChargeStartDelay,
-                0.05f,
-                Mathf.Max(0.1f, powerHitMinHoldTime - 0.05f));
-
-            if (Time.time - attackHoldStartTime < chargeDelay)
-                return;
-
-            chargePoseStarted = true;
-            if (!BeginPowerHitChargeAnimation())
+            if (Mouse.current != null && !Mouse.current.rightButton.isPressed)
             {
-                ItemData item = equipment != null ? equipment.EquippedItem : null;
-                if (item == null || !item.IsTwoHanded)
-                    heldVisual?.BeginPowerHitCharge();
-            }
-        }
-
-        private bool BeginPowerHitChargeAnimation()
-        {
-            if (animator == null)
-                return false;
-
-            if (animator.layerCount <= powerHitChargeLayerIndex)
-                return false;
-
-            string stateName = !string.IsNullOrWhiteSpace(powerHitChargeStateName)
-                ? powerHitChargeStateName
-                : "PowerHitCharge";
-
-            animator.SetLayerWeight(powerHitChargeLayerIndex, 1f);
-            animator.SetBool(PowerHitCharge, true);
-            animator.CrossFadeInFixedTime(
-                stateName,
-                powerHitChargeBlendTime,
-                powerHitChargeLayerIndex,
-                0f);
-            return true;
-        }
-
-        private void EndPowerHitChargeAnimation()
-        {
-            if (animator == null)
+                EndBlock();
                 return;
+            }
 
-            animator.SetBool(PowerHitCharge, false);
-
-            if (animator.layerCount > powerHitChargeLayerIndex && !IsBlocking)
-                PlayerCombatAnimationLayer.SetUpperBodyLayerWeight(animator, powerHitChargeLayerIndex, 0f, Time.deltaTime);
+            if (!CanBlock())
+                EndBlock();
         }
 
         private void BeginBlock()
@@ -251,18 +172,19 @@ namespace Project.Interaction
                 return;
 
             attackInputHeld = false;
-            chargePoseStarted = false;
-            EndPowerHitChargeAnimation();
-            heldVisual?.CancelPowerHitChargeImmediate();
 
-            if (animator == null || animator.layerCount <= blockLayerIndex)
+            PlayerLootAnimationController lootAnimation = GetComponentInChildren<PlayerLootAnimationController>();
+            lootAnimation?.CancelForCombat();
+
+            ResolveAnimatorDriver();
+            if (animatorDriver == null)
                 return;
 
+            if (animatorDriver.IsActionBlockingLocomotion)
+                animatorDriver.EndActiveAction();
+
             IsBlocking = true;
-            animator.SetBool(PowerHitCharge, false);
-            animator.SetLayerWeight(blockLayerIndex, 1f);
-            animator.SetBool(Block, true);
-            animator.CrossFadeInFixedTime(blockStateName, blockBlendTime, blockLayerIndex, 0f);
+            animatorDriver.RequestAction(GkcCombatAction.Block, GkcAnimatorConstants.DefaultBlockActionDuration);
         }
 
         private void EndBlock()
@@ -271,14 +193,7 @@ namespace Project.Interaction
                 return;
 
             IsBlocking = false;
-
-            if (animator == null)
-                return;
-
-            animator.SetBool(Block, false);
-
-            if (animator.layerCount > blockLayerIndex && !animator.GetBool(PowerHitCharge))
-                PlayerCombatAnimationLayer.SetUpperBodyLayerWeight(animator, blockLayerIndex, 0f, Time.deltaTime);
+            animatorDriver?.CancelBlock();
         }
 
         private void RefreshCombatUiPointerBlock()
@@ -314,23 +229,13 @@ namespace Project.Interaction
             if (survivalStats != null && survivalStats.IsDead)
                 return false;
 
-            ItemData item = equipment != null ? equipment.EquippedItem : null;
-            if (item == null || item.itemType != ItemType.MeleeWeapon)
-                return false;
-
-            if (item.IsTwoHanded)
-                return false;
-
-            return equipment == null || equipment.IsWeaponDrawn;
+            return equipment != null && equipment.HasActiveMeleeWeapon();
         }
 
         private void OnDisable()
         {
             attackInputHeld = false;
-            chargePoseStarted = false;
-            EndPowerHitChargeAnimation();
             EndBlock();
-            heldVisual?.CancelPowerHitChargeImmediate();
         }
 
         private bool CanBeginMeleeInput()
@@ -341,11 +246,25 @@ namespace Project.Interaction
             if (survivalStats != null && survivalStats.IsDead)
                 return false;
 
-            ItemData item = equipment != null ? equipment.EquippedItem : null;
-            if (item == null || item.itemType != ItemType.MeleeWeapon)
-                return false;
+            return TryResolveMeleeItem(out _, showPrompts: false);
+        }
 
-            return equipment == null || equipment.IsWeaponDrawn;
+        private bool TryResolveMeleeItem(out ItemData item, bool showPrompts)
+        {
+            if (equipment == null)
+            {
+                item = null;
+                return true;
+            }
+
+            if (equipment.HasActiveMeleeWeapon())
+            {
+                item = equipment.SelectedHotbarItem;
+                return true;
+            }
+
+            item = null;
+            return true;
         }
 
         private bool TryGetMeleeWeapon(out ItemData item)
@@ -358,91 +277,118 @@ namespace Project.Interaction
             if (survivalStats != null && survivalStats.IsDead)
                 return false;
 
-            item = equipment != null ? equipment.EquippedItem : null;
-            if (item == null || item.itemType != ItemType.MeleeWeapon)
-            {
-                ShowTemporaryPrompt("Equip a melee weapon in the hotbar first.");
-                return false;
-            }
-
-            if (equipment != null && !equipment.IsWeaponDrawn)
-            {
-                ShowTemporaryPrompt("Press the hotbar key again to draw your weapon.");
-                return false;
-            }
-
-            return true;
+            return TryResolveMeleeItem(out item, showPrompts: true);
         }
+
+        private static bool IsUnarmedAttack(ItemData item) => item == null;
 
         private void TryAttack()
         {
-            if (!TryGetMeleeWeapon(out ItemData item))
+            EndBlock();
+
+            if (!CanBeginMeleeInput() || !TryGetMeleeWeapon(out ItemData item))
                 return;
 
-            float cooldown = Mathf.Max(0.05f, item.meleeCooldown > 0 ? item.meleeCooldown : fallbackCooldown);
-            if (item.IsTwoHanded)
-                cooldown *= twoHandedCooldownMultiplier;
+            float fullCooldown = IsUnarmedAttack(item)
+                ? unarmedFallbackCooldown
+                : Mathf.Max(0.05f, item.meleeCooldown > 0 ? item.meleeCooldown : fallbackCooldown);
+            if (!IsUnarmedAttack(item) && item.IsTwoHanded)
+                fullCooldown *= twoHandedCooldownMultiplier;
+
+            bool continuingCombo = Time.time - lastComboAttackTime <= comboResetWindow;
+            float attackCooldown = continuingCombo ? comboChainCooldown : fullCooldown;
 
             if (Time.time < nextAttackTime)
-            {
-                EndPowerHitChargeAnimation();
-                heldVisual?.CancelPowerHitCharge();
                 return;
-            }
 
-            EndPowerHitChargeAnimation();
-            nextAttackTime = Time.time + cooldown;
-            bool bodyAnimationPlayed = item.IsTwoHanded
-                ? PlayRandomTwoHandedAttackAnimation()
-                : PlayComboAttackAnimation();
-            if (!bodyAnimationPlayed && heldVisual != null)
-                heldVisual.PlaySwing(cooldown);
-
-            GameAudioManager.Instance?.PlayWeaponSwing(transform.position + Vector3.up * attackOriginHeight);
-            EnemyNoiseEvents.RaiseNoise(transform.position, 6f, gameObject);
-            BeginWeaponSwing(item, isCritical: false, cooldown);
-        }
-
-        private void TryPowerHit()
-        {
-            if (!TryGetMeleeWeapon(out ItemData item))
-            {
-                EndPowerHitChargeAnimation();
-                heldVisual?.CancelPowerHitCharge();
+            if (!RequestComboAttack(item, out float swingDuration))
                 return;
-            }
 
-            float baseCooldown = item.meleeCooldown > 0 ? item.meleeCooldown : fallbackCooldown;
-            float cooldown = Mathf.Max(0.05f, baseCooldown * powerHitCooldownMultiplier);
-            if (item.IsTwoHanded)
-                cooldown *= twoHandedCooldownMultiplier;
-            if (Time.time < nextAttackTime)
-            {
-                EndPowerHitChargeAnimation();
-                heldVisual?.CancelPowerHitCharge();
-                return;
-            }
+            nextAttackTime = Time.time + attackCooldown;
 
-            EndPowerHitChargeAnimation();
-            nextAttackTime = Time.time + cooldown;
-            if (item.IsTwoHanded)
-                PlayTwoHandedPowerHitAnimation();
+            if (heldVisual != null)
+                heldVisual.PlaySwing(attackCooldown);
+
+            Vector3 swingOrigin = transform.position + Vector3.up * attackOriginHeight;
+            if (IsUnarmedAttack(item))
+                GameAudioManager.Instance?.PlayPunchSwing(swingOrigin);
             else
-                PlayPowerHitAnimation();
-
-            if (!item.IsTwoHanded)
-                heldVisual?.ReleasePowerHitCharge(cooldown);
-
-            GameAudioManager.Instance?.PlayWeaponSwing(transform.position + Vector3.up * attackOriginHeight);
-            EnemyNoiseEvents.RaiseNoise(transform.position, 8f, gameObject);
-            BeginWeaponSwing(item, isCritical: true, cooldown);
+                GameAudioManager.Instance?.PlayWeaponSwing(swingOrigin);
+            EnemyNoiseEvents.RaiseNoise(transform.position, 6f, gameObject);
+            BeginWeaponSwing(item, isCritical: false, swingDuration);
         }
 
-        private void BeginWeaponSwing(ItemData item, bool isCritical, float cooldown)
+        private bool RequestComboAttack(ItemData item, out float swingDuration)
         {
-            float hitWindow = Mathf.Clamp(swingHitWindow, 0.15f, cooldown);
+            swingDuration = swingHitWindow;
+            ResolveAnimatorDriver();
+            if (animatorDriver == null)
+                return false;
+
+            if (Time.time - lastComboAttackTime > comboResetWindow)
+                comboIndex = 0;
+
+            GkcCombatAction action = ResolveComboAction(item, comboIndex);
+            float attackSpeed = item != null ? item.ResolveAttackAnimationSpeed() : 0.95f;
+            swingDuration = animatorDriver.ResolveActionDuration(action, attackSpeed);
+            if (!animatorDriver.RequestAction(action, attackSpeed: attackSpeed))
+                return false;
+
+            comboIndex = (comboIndex + 1) % ComboLength;
+            lastComboAttackTime = Time.time;
+            return true;
+        }
+
+        private bool RequestComboAttack(ItemData item)
+        {
+            return RequestComboAttack(item, out _);
+        }
+
+        private static GkcCombatAction ResolveComboAction(ItemData item, int index)
+        {
+            int slot = Mathf.Clamp(index, 0, ComboLength - 1);
+            if (item == null)
+            {
+                return slot switch
+                {
+                    0 => GkcCombatAction.Punch1,
+                    1 => GkcCombatAction.Punch2,
+                    2 => GkcCombatAction.Punch3,
+                    _ => GkcCombatAction.Punch4
+                };
+            }
+
+            return item.ResolveGkcWeaponKind() switch
+            {
+                GkcWeaponKind.TwoHand => slot switch
+                {
+                    0 => GkcCombatAction.Sword2HCombo1,
+                    1 => GkcCombatAction.Sword2HCombo2,
+                    2 => GkcCombatAction.Sword2HCombo3,
+                    _ => GkcCombatAction.Sword2HCombo4
+                },
+                GkcWeaponKind.OneHandAxe => slot switch
+                {
+                    0 => GkcCombatAction.Axe1HCombo1,
+                    1 => GkcCombatAction.Axe1HCombo2,
+                    2 => GkcCombatAction.Axe1HCombo3,
+                    _ => GkcCombatAction.Axe1HCombo4
+                },
+                _ => slot switch
+                {
+                    0 => GkcCombatAction.Sword1HCombo1,
+                    1 => GkcCombatAction.Sword1HCombo2,
+                    2 => GkcCombatAction.Sword1HCombo3,
+                    _ => GkcCombatAction.Sword1HCombo4
+                }
+            };
+        }
+
+        private void BeginWeaponSwing(ItemData item, bool isCritical, float duration)
+        {
+            float hitWindow = Mathf.Max(swingHitWindow, duration);
             WeaponHitbox hitbox = heldVisual != null ? heldVisual.ActiveHandHitbox : null;
-            if (hitbox != null)
+            if (hitbox != null && !IsUnarmedAttack(item))
             {
                 hitbox.BeginSwing(this, item, isCritical, hitLayers, hitWindow);
                 return;
@@ -453,8 +399,14 @@ namespace Project.Interaction
 
         public void ProcessWeaponHit(Collider hitCollider, ItemData item, bool isCritical)
         {
-            if (hitCollider == null || item == null)
+            if (hitCollider == null)
                 return;
+
+            if (item == null)
+            {
+                ProcessUnarmedHit(hitCollider, isCritical);
+                return;
+            }
 
             float damage = RollDamage(item, isCritical);
             Vector3 attackOrigin = transform.position + Vector3.up * attackOriginHeight;
@@ -486,71 +438,9 @@ namespace Project.Interaction
                 ShowDamageNumber(damage, hitCollider, isCritical);
         }
 
-        private bool PlayComboAttackAnimation()
-        {
-            if (animator == null || comboStateNames == null || comboStateNames.Length == 0)
-                return false;
-
-            if (Time.time - lastComboAttackTime > comboResetWindow)
-                comboIndex = 0;
-
-            string stateName = comboStateNames[Mathf.Clamp(comboIndex, 0, comboStateNames.Length - 1)];
-            comboIndex = (comboIndex + 1) % comboStateNames.Length;
-            return PlayAttackState(stateName, upperBodyAttackBlendTime);
-        }
-
-        private bool PlayRandomTwoHandedAttackAnimation()
-        {
-            if (animator == null || twoHandedAttackStateNames == null || twoHandedAttackStateNames.Length == 0)
-                return false;
-
-            string stateName = twoHandedAttackStateNames[Random.Range(0, twoHandedAttackStateNames.Length)];
-            return PlayAttackState(stateName);
-        }
-
-        private bool PlayTwoHandedPowerHitAnimation()
-        {
-            if (string.IsNullOrWhiteSpace(twoHandedPowerHitStateName))
-                return PlayRandomTwoHandedAttackAnimation();
-
-            return PlayAttackState(twoHandedPowerHitStateName);
-        }
-
-        private bool PlayAttackState(string stateName, float blendTime = 0.1f)
-        {
-            if (animator == null || string.IsNullOrWhiteSpace(stateName))
-                return false;
-
-            bool grounded = character == null || character.IsGrounded();
-            PlayerCombatAnimationLayer.EnsureBaseLocomotionState(animator, grounded);
-
-            int stateHash = Animator.StringToHash(stateName);
-            int layer = upperBodyCombatLayerIndex >= 0 && animator.HasState(upperBodyCombatLayerIndex, stateHash)
-                ? upperBodyCombatLayerIndex
-                : 0;
-
-            if (!animator.HasState(layer, stateHash))
-                return false;
-
-            if (layer == upperBodyCombatLayerIndex)
-                PlayerCombatAnimationLayer.BeginUpperBodyAttack(animator, upperBodyCombatLayerIndex);
-
-            animator.CrossFadeInFixedTime(stateName, blendTime, layer, 0f);
-            lastComboAttackTime = Time.time;
-            return true;
-        }
-
-        private bool PlayPowerHitAnimation()
-        {
-            if (animator == null || string.IsNullOrWhiteSpace(powerHitStateName))
-                return false;
-
-            return PlayAttackState(powerHitStateName, upperBodyAttackBlendTime);
-        }
-
         private void PerformFallbackHit(ItemData item, bool isCritical)
         {
-            float range = item.meleeRange > 0 ? item.meleeRange : fallbackRange;
+            float range = item != null && item.meleeRange > 0 ? item.meleeRange : IsUnarmedAttack(item) ? unarmedFallbackRange : fallbackRange;
             Vector3 origin = transform.position + Vector3.up * attackOriginHeight;
             Vector3 forward = transform.forward;
             forward.y = 0f;
@@ -580,6 +470,29 @@ namespace Project.Interaction
                 return;
 
             ProcessWeaponHit(best, item, isCritical);
+        }
+
+        private void ProcessUnarmedHit(Collider hitCollider, bool isCritical)
+        {
+            float damage = isCritical ? unarmedFallbackDamage * 2 : unarmedFallbackDamage;
+            Vector3 attackOrigin = transform.position + Vector3.up * attackOriginHeight;
+            Vector3 hitPoint = ResolveHitPoint(hitCollider, attackOrigin);
+            Vector3 hitNormal = hitPoint - attackOrigin;
+            if (hitNormal.sqrMagnitude < 0.0001f)
+                hitNormal = transform.forward;
+            hitNormal.Normalize();
+
+            IDamageable damageable = DamageableUtility.GetDamageable(hitCollider);
+            if (damageable == null)
+                return;
+
+            damageable.TakeDamage(damage, gameObject, isCritical);
+            EnemyNoiseEvents.RaiseNoise(transform.position, 8f, gameObject);
+            GameAudioManager.Instance?.PlayPunchHit(hitPoint, isCritical);
+            CombatHitVfx.SpawnBloodSplatter(hitPoint, hitPoint - transform.position, hitNormal, damage);
+
+            if (damageable is not TrainingDummy)
+                ShowDamageNumber(damage, hitCollider, isCritical);
         }
 
         private static Vector3 ResolveHitPoint(Collider collider, Vector3 fromPosition)
@@ -614,12 +527,6 @@ namespace Project.Interaction
 
         private float RollDamage(ItemData item, bool isCritical)
         {
-            if (isCritical && item.criticalDamageMultiplier <= 0f)
-            {
-                float baseDamage = item.RollMeleeDamage();
-                return baseDamage * Mathf.Max(1f, criticalDamageMultiplier);
-            }
-
             return item.RollMeleeDamage(isCritical);
         }
 
