@@ -33,25 +33,37 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.Project + "Refresh Folder Colors", "Reapply _Project folder tints"),
             });
 
+            DrawSection("Prefab Creator", new[]
+            {
+                (SurvivalPioneerEditorMenus.ItemDataCreator, "Gatherables: ItemData + ResourceNode world prefab"),
+                (SurvivalPioneerEditorMenus.CraftingItemCreator, "Consumables/resources: ItemData + ItemPickup world prefab"),
+                (SurvivalPioneerEditorMenus.EquipmentItemCreator, "Weapons and tools with held + pickup prefabs"),
+                (SurvivalPioneerEditorMenus.EquipmentItemCreatorFromSelection, "Equipment creator pre-filled from selection"),
+                (SurvivalPioneerEditorMenus.WeaponPrefabCreator, "Weapon held/world prefabs with optional melee hitbox"),
+                (SurvivalPioneerEditorMenus.WeaponPrefabCreatorFromSelection, "Weapon creator pre-filled from selection"),
+                (SurvivalPioneerEditorMenus.EnemyPrefabCreator, "Enemy prefabs with AI, animation, and loot"),
+                (SurvivalPioneerEditorMenus.TwoHandedWeaponFromScene, "Bake a two-handed weapon prefab from scene selection"),
+                (SurvivalPioneerEditorMenus.PetPrefabCreator, "Pet prefabs, definitions, and icons"),
+                (SurvivalPioneerEditorMenus.PetPrefabCreatorFromSelection, "Pet creator pre-filled from selection"),
+                (SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, "Fox cub pet prefab, definition, and icon"),
+                (SurvivalPioneerEditorMenus.PioneerCompanionPrefabDemo, "Pioneer companion prefab for expedition trio"),
+                (SurvivalPioneerEditorMenus.ProjectUnityCharacterPrefab, "Project UnityCharacter with animator scripts"),
+                (SurvivalPioneerEditorMenus.InventorySlotPrefab, "Inventory slot UI prefab"),
+            });
+
             DrawSection("Content", new[]
             {
-                (SurvivalPioneerEditorMenus.Content + "Item Data Creator", "Create gatherable items and world prefabs"),
                 (SurvivalPioneerEditorMenus.Content + "Create Starting ItemData Assets", "Seed starter items"),
-                (SurvivalPioneerEditorMenus.Content + "Equipment Item Creator", "Create weapons, tools, and pickup prefabs"),
                 (SurvivalPioneerEditorMenus.Content + "Add Building Control Panel to Selected", "Add building panel component to selection"),
                 (SurvivalPioneerEditorMenus.Content + "Create Progression Curve", "XP required per player level"),
                 (SurvivalPioneerEditorMenus.Content + "Create Starter Skills + Registry", "Seed skill definitions and SkillRegistry"),
                 (SurvivalPioneerEditorMenus.Content + "Create Starter Achievements", "Seed achievement definitions and AchievementRegistry"),
                 (SurvivalPioneerEditorMenus.Content + "Create Enemy Registry", "Seed enemy definitions into EnemyRegistry"),
                 (SurvivalPioneerEditorMenus.Content + "Create Named Pioneer Catalog", "Seed 12 named pioneer ScriptableObjects"),
-                (SurvivalPioneerEditorMenus.Content + "Create Pioneer Companion Prefab (Demo)", "Player model + animator prefab for expedition trio"),
-                (SurvivalPioneerEditorMenus.Content + "Pet Prefab Creator", "Create multiple pet prefabs, definitions, and icons"),
-                (SurvivalPioneerEditorMenus.Content + "Create Pet Prefab (Fox Cub Demo)", "Fox pet prefab, definition, and inventory icon"),
             });
 
             DrawSection("Crafting", new[]
             {
-                (SurvivalPioneerEditorMenus.Crafting + "Crafting Item Creator", "Create consumables and resources for recipes"),
                 (SurvivalPioneerEditorMenus.Crafting + "Craftable Equipment Recipe Creator", "Add a recipe for an existing weapon or tool"),
                 (SurvivalPioneerEditorMenus.Crafting + "Recipe Creator", "Author, edit, and register recipes"),
                 (SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Icons From Output", "Copy output item icons onto recipe assets"),
@@ -68,19 +80,15 @@ namespace Project.EditorTools
 
             DrawSection("Combat", new (string menuPath, string description)[]
             {
-                (SurvivalPioneerEditorMenus.Combat + "Enemy Prefab Creator", "Create enemy prefabs with AI and loot"),
                 (SurvivalPioneerEditorMenus.Combat + "Place Test Enemy", "Place a test enemy in the scene"),
                 (SurvivalPioneerEditorMenus.Combat + "Combat Test Dummy", "Place combat training dummy"),
                 (SurvivalPioneerEditorMenus.Combat + "Update All Enemy Prefabs And Scene", "Apply loot and disintegration to enemies"),
-                (SurvivalPioneerEditorMenus.Combat + "Weapon Prefab Creator", "Author weapon prefabs with optional melee hitbox"),
                 (SurvivalPioneerEditorMenus.AddWeaponHitboxToSelectedPrefab, "Add WeaponHitbox + capsule collider to selected weapon prefab(s)"),
                 (SurvivalPioneerEditorMenus.RefreshAllWeaponHitboxes, "Rebuild hitboxes on all held + melee world prefabs"),
-                (SurvivalPioneerEditorMenus.Combat + "Create Two-Handed Weapon From Scene", "Bake two-handed weapon from selection"),
             });
 
             DrawSection("Combat Animations", new[]
             {
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Create Project Unity Character Prefab", "Project-owned UnityCharacter with animator + animation scripts"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Repair Player Animator Setup", "Fix Player prefab animator controller references"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Rebuild Grounded Blend Tree", "Turn x Forward locomotion; Human Melee diagonals on soft lean, Basic Motions on hard lean"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Remove Legacy Turn Lean Layer", "Delete the old additive Turn Lean layer if it still exists"),
@@ -93,6 +101,18 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Tune Upper Body Combat Blending", "Longer attack blend transitions"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Setup Enemy Strafe Locomotion", "Mixamo strafe blend trees on enemies"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Rebuild Gongo Controller", "Rebuild GongoController with Mixamo clips"),
+            });
+
+            DrawSection("Ranged Weapon Setup", new[]
+            {
+                (SurvivalPioneerEditorMenus.Equipment + "Auto-Bake All Ranged Grips", "Compute held + holster grips from prefab GripPoint anchors (no Play mode)"),
+                (SurvivalPioneerEditorMenus.Equipment + "Auto-Bake Selected Ranged Weapon", "Auto-bake grips for the selected ranged ItemData"),
+                (SurvivalPioneerEditorMenus.Equipment + "Validate Ranged Muzzle Alignment", "Log barrel deviation vs character forward per weapon"),
+                (SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Hip Grip From Player Hand", "Manual override: capture hip grip while drawn, paused"),
+                (SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Aim Grip From Player Hand", "Manual override: capture ADS grip while aiming, paused"),
+                (SurvivalPioneerEditorMenus.Equipment + "Bake Holstered Ranged Weapon From Player Back", "Manual override: capture holster grip while holstered, paused"),
+                (SurvivalPioneerEditorMenus.Equipment + "Reset Ranged Weapon Baked Grips", "Restore rifle/pistol held, holster, and aim defaults"),
+                (SurvivalPioneerEditorMenus.CombatAnimations + "Wire Protofactor Ranged Animsets", "Wire hold + aim clip sets into Fire Weapons trees"),
             });
 
             DrawSection("Equipment", new[]
@@ -109,7 +129,6 @@ namespace Project.EditorTools
             {
                 (SurvivalPioneerEditorMenus.Ui + "Full UI Canvas + Inventory", "Bootstrap main canvas and inventory grid"),
                 (SurvivalPioneerEditorMenus.Ui + "Inventory Panel", "Create inventory panel shell"),
-                (SurvivalPioneerEditorMenus.Ui + "Inventory Slot Prefab", "Generate slot prefab"),
                 (SurvivalPioneerEditorMenus.Ui + "UI Studio", "Browse panels, preview sandbox, edit layout profiles"),
                 (SurvivalPioneerEditorMenus.Ui + "Create / Open UI Preview Scene", "Sandbox scene for UI Studio"),
                 (SurvivalPioneerEditorMenus.Ui + "Fix Inventory Grid Layout", "Repair inventory grid spacing"),

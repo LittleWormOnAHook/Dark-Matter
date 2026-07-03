@@ -54,6 +54,9 @@ GameObject:
   - component: {fileID: 7711223344556677889}
   - component: {fileID: 8811223344556677990}
   - component: {fileID: 2380792200864785160}
+  - component: {fileID: 1518091013223832184}
+  - component: {fileID: 5859589975042529652}
+  - component: {fileID: 8136517690873547588}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -176,15 +179,12 @@ MonoBehaviour:
   fallbackCooldown: 0.8
   attackOriginHeight: 1.25
   swingHitWindow: 0.45
-  powerHitMinHoldTime: 0.5
-  powerHitChargeStartDelay: 1.5
-  criticalDamageMultiplier: 2
-  powerHitCooldownMultiplier: 1.5
   twoHandedCooldownMultiplier: 1.35
   unarmedFallbackCooldown: 0.65
   unarmedFallbackRange: 1.6
   unarmedFallbackDamage: 8
   comboResetWindow: 1.35
+  comboChainCooldown: 0.28
 --- !u!114 &4625264497379261899
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -257,6 +257,9 @@ MonoBehaviour:
   terrainClearance: 0.35
   opticsZoomLerpSpeed: 28
   opticsEyeOffset: {x: 0, y: 0.08, z: 0.12}
+  aimShoulderOffset: 0.55
+  aimFollowDistance: 4.2
+  aimCameraLerpSpeed: 10
 --- !u!54 &1600269875384876523
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -426,8 +429,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4e5f6a7b8c9488990abcdef1234567b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerHitReactionController
-  hitReactionBlendTime: 0.12
   hitReactionCooldown: 0.55
+  minDamageToReact: 1
 --- !u!114 &2380792200864785160
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,6 +480,18 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 9001001001001001002}
         m_TargetAssemblyTypeName: Project.Interaction.MeleeCombatController, Assembly-CSharp
+        m_MethodName: OnAttack
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 5859589975042529652}
+        m_TargetAssemblyTypeName: Project.Interaction.RangedCombatController, Assembly-CSharp
         m_MethodName: OnAttack
         m_Mode: 0
         m_Arguments:
@@ -585,6 +600,18 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 9001001001001001002}
         m_TargetAssemblyTypeName: Project.Interaction.MeleeCombatController, Assembly-CSharp
+        m_MethodName: OnBlock
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 5859589975042529652}
+        m_TargetAssemblyTypeName: Project.Interaction.RangedCombatController, Assembly-CSharp
         m_MethodName: OnBlock
         m_Mode: 0
         m_Arguments:
@@ -774,6 +801,53 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: 0
   m_Camera: {fileID: 0}
+--- !u!114 &1518091013223832184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5475128175764280780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2680b66eb074e94d9f27589232090cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Inventory.WeaponAmmoState
+--- !u!114 &5859589975042529652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5475128175764280780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b09f04c9acc150946afb8ec60ae183d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.RangedCombatController
+  aimLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  aimOriginHeight: 1.35
+  adsSpreadMultiplier: 0.35
+--- !u!114 &8136517690873547588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5475128175764280780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f822430a4b36bb4b9518caed9413304, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.UI.RangedCombatHud
+  showCrosshair: 1
+  showAmmoCounter: 1
+  crosshairColor: {r: 1, g: 1, b: 1, a: 0.82}
+  crosshairSize: 14
+  crosshairGap: 5
+  crosshairThickness: 2
 --- !u!1001 &1390246625630062606
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
-using Project.Data;
+using Project.Combat;
+using Project.Player;
 using Project.Progression;
 using UnityEngine;
 
@@ -9,8 +10,18 @@ namespace Project.Data
         Consumable,
         Resource,
         MeleeWeapon,
+        RangedWeapon,
+        Ammo,
         Tool,
         Quest
+    }
+
+    public enum ComponentCategory
+    {
+        None,
+        MetalScrap,
+        ElectronicScrap,
+        Unique
     }
 
     public enum ToolType
@@ -36,7 +47,9 @@ namespace Project.Data
         Unarmed = 0,
         OneHandSword = 1,
         TwoHand = 2,
-        OneHandAxe = 3
+        OneHandAxe = 3,
+        Rifle = 4,
+        Pistol = 5
     }
 
     [CreateAssetMenu(menuName = "Project/Survival/Item Data")]
@@ -89,6 +102,39 @@ namespace Project.Data
         public int gatherPower = 1;
         public string attackTrigger = "Attack";
 
+        [Header("Ranged")]
+        public float rangedDamage = 14f;
+        public float rangedDamageRandomRange = 4f;
+        public float rangedRange = 45f;
+        public float projectileSpeed = 85f;
+        public float projectileSpreadDegrees = 1.5f;
+        public float fireRate = 4f;
+        public int magazineSize = 30;
+        public AmmoType defaultAmmoType = AmmoType.Gunpowder;
+        public AmmoType[] compatibleAmmoTypes = { AmmoType.Gunpowder };
+        public GameObject projectilePrefab;
+        public string muzzleSocketName = "Muzzle";
+        public float aimFovMultiplier = 0.78f;
+        [Tooltip("Hip fire: max angle (degrees) the shot may deviate from barrel forward toward the crosshair. 0 uses default 15.")]
+        public float hipFireMaxDeviationDegrees = 15f;
+        [Tooltip("Hip fire spread multiplier applied on top of projectileSpreadDegrees.")]
+        public float hipFireSpreadMultiplier = 1f;
+        [Tooltip("Optional ADS grip override baked from Play mode while aiming.")]
+        public bool useAimHeldGrip;
+        public Vector3 aimHeldLocalPosition;
+        public Vector3 aimHeldLocalEuler;
+        public bool useAimHeldLocalRotation;
+        public Quaternion aimHeldLocalRotation = Quaternion.identity;
+        public Vector3 aimHeldLocalScale = Vector3.one;
+
+        [Header("Ammo")]
+        public AmmoType ammoType = AmmoType.Gunpowder;
+        public int ammoPerPickup = 20;
+        public float ammoPickupGrant = 20f;
+
+        [Header("Craft Components")]
+        public ComponentCategory componentCategory = ComponentCategory.None;
+
         [Header("Tools")]
         public ToolType toolType = ToolType.None;
         public float toolRange = 8f;
@@ -136,7 +182,25 @@ namespace Project.Data
             (healthRestore > 0 || energyRestore > 0 || staminaRestore > 0 || oxygenRestore > 0);
 
         public bool IsEquippable =>
-            itemType == ItemType.MeleeWeapon || itemType == ItemType.Tool;
+            itemType == ItemType.MeleeWeapon || itemType == ItemType.RangedWeapon || itemType == ItemType.Tool;
+
+        public bool IsRangedWeapon => itemType == ItemType.RangedWeapon;
+
+        public bool IsAmmo => itemType == ItemType.Ammo;
+
+        /// <summary>
+        /// Fallback for mis-typed ammo assets (e.g. created as Consumable via Crafting Item Creator).
+        /// </summary>
+        public bool CountsAsAmmo =>
+            IsAmmo
+            || (projectilePrefab != null
+                && ammoPerPickup > 0
+                && itemType != ItemType.MeleeWeapon
+                && itemType != ItemType.RangedWeapon
+                && itemType != ItemType.Tool);
+
+        public bool IsWeapon =>
+            itemType == ItemType.MeleeWeapon || itemType == ItemType.RangedWeapon;
 
         public bool IsTwoHanded =>
             itemType == ItemType.MeleeWeapon && weaponGrip == WeaponGrip.TwoHanded;
@@ -146,6 +210,14 @@ namespace Project.Data
 
         public GkcWeaponKind ResolveGkcWeaponKind()
         {
+            if (itemType == ItemType.RangedWeapon)
+            {
+                if (gkcWeaponKind != GkcWeaponKind.Infer)
+                    return gkcWeaponKind;
+
+                return weaponGrip == WeaponGrip.TwoHanded ? GkcWeaponKind.Rifle : GkcWeaponKind.Pistol;
+            }
+
             if (itemType != ItemType.MeleeWeapon)
                 return GkcWeaponKind.Unarmed;
 
@@ -161,15 +233,55 @@ namespace Project.Data
             return GkcWeaponKind.OneHandSword;
         }
 
-        public float ResolveGkcWeaponId() =>
-            (float)ResolveGkcWeaponKind();
+        /// <summary>
+        /// GKC Fire Weapons blend-tree Weapon ID. Ranged kinds use slots 1 = pistol, 2 = rifle.
+        /// </summary>
+        public float ResolveGkcWeaponId()
+        {
+            return ResolveGkcWeaponKind() switch
+            {
+                GkcWeaponKind.Rifle => GkcAnimatorConstants.WeaponIdRifle,
+                GkcWeaponKind.Pistol => GkcAnimatorConstants.WeaponIdPistol,
+                _ => (float)ResolveGkcWeaponKind()
+            };
+        }
+
+        /// <summary>
+        /// Fire Weapons blend-tree Weapon ID for hip-hold (non-aim) locomotion.
+        /// Hip slots use 11 = pistol, 12 = rifle; non-ranged kinds fall back to the aim ID.
+        /// </summary>
+        public float ResolveGkcHipWeaponId()
+        {
+            return ResolveGkcWeaponKind() switch
+            {
+                GkcWeaponKind.Rifle => GkcAnimatorConstants.WeaponIdRifleHip,
+                GkcWeaponKind.Pistol => GkcAnimatorConstants.WeaponIdPistolHip,
+                _ => ResolveGkcWeaponId()
+            };
+        }
+
+        /// <summary>
+        /// GKC Idle Tree Strafe ID slot. Ranged aim idle uses 4 = rifle, 5 = pistol.
+        /// </summary>
+        public float ResolveGkcStrafeId()
+        {
+            return ResolveGkcWeaponKind() switch
+            {
+                GkcWeaponKind.Rifle => GkcAnimatorConstants.StrafeIdRifle,
+                GkcWeaponKind.Pistol => GkcAnimatorConstants.StrafeIdPistol,
+                GkcWeaponKind.TwoHand => GkcAnimatorConstants.StrafeIdMeleeTwoHand,
+                GkcWeaponKind.OneHandSword => GkcAnimatorConstants.StrafeIdMeleeOneHand,
+                GkcWeaponKind.OneHandAxe => GkcAnimatorConstants.StrafeIdMeleeOneHand,
+                _ => 0f
+            };
+        }
 
         public int ResolveGkcRightArmId()
         {
             if (gkcRightArmId >= 0)
                 return gkcRightArmId;
 
-            if (itemType != ItemType.MeleeWeapon)
+            if (itemType != ItemType.MeleeWeapon && itemType != ItemType.RangedWeapon)
                 return 0;
 
             return 0;
@@ -225,6 +337,17 @@ namespace Project.Data
             return (minDamage + maxDamage) * 0.5f;
         }
 
+        public float GetAverageRangedDamage()
+        {
+            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float minDamage = Mathf.Max(1f, rangedDamage + bonus);
+            if (rangedDamageRandomRange <= 0f)
+                return minDamage;
+
+            float maxDamage = Mathf.Max(minDamage, rangedDamage + rangedDamageRandomRange + bonus);
+            return (minDamage + maxDamage) * 0.5f;
+        }
+
         public float RollMeleeDamage(bool isCritical = false)
         {
             float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
@@ -237,6 +360,37 @@ namespace Project.Data
                 rolledDamage *= criticalDamageMultiplier;
 
             return rolledDamage;
+        }
+
+        public float RollRangedDamage(bool isCritical = false)
+        {
+            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float minDamage = Mathf.Max(1f, rangedDamage + bonus);
+            float rolledDamage = rangedDamageRandomRange <= 0f
+                ? minDamage
+                : Random.Range(minDamage, Mathf.Max(minDamage, rangedDamage + rangedDamageRandomRange + bonus));
+
+            if (isCritical && criticalDamageMultiplier > 0f)
+                rolledDamage *= criticalDamageMultiplier;
+
+            return rolledDamage;
+        }
+
+        public bool AcceptsAmmoType(AmmoType type)
+        {
+            if (itemType != ItemType.RangedWeapon)
+                return false;
+
+            if (compatibleAmmoTypes == null || compatibleAmmoTypes.Length == 0)
+                return type == defaultAmmoType;
+
+            for (int i = 0; i < compatibleAmmoTypes.Length; i++)
+            {
+                if (compatibleAmmoTypes[i] == type)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

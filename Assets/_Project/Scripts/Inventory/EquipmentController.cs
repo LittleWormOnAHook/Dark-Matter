@@ -55,12 +55,43 @@ namespace Project.Inventory
             if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
                 return false;
 
-            return IsMeleeWeaponItem(SelectedHotbarItem);
+            return IsMeleeWeaponItem(DrawnWeaponItem);
+        }
+
+        public bool HasActiveRangedWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsRangedWeaponItem(DrawnWeaponItem);
+        }
+
+        public bool HasActiveWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsWeaponItem(DrawnWeaponItem);
         }
 
         public ItemData EquippedItem => GetHotbarItem(ActiveWeaponHotbarSlot);
 
         public ItemData SelectedHotbarItem => GetHotbarItem(selectedHotbarSlot);
+
+        /// <summary>
+        /// Weapon physically in hand when drawn. Uses active weapon slot, not UI selection alone.
+        /// </summary>
+        public ItemData DrawnWeaponItem
+        {
+            get
+            {
+                if (!IsWeaponDrawn)
+                    return null;
+
+                ItemData item = EquippedItem;
+                return item != null && IsWeaponItem(item) ? item : null;
+            }
+        }
 
         public ItemData ActiveToolItem => GetToolbarItem(selectedToolbarSlot);
 
@@ -160,6 +191,7 @@ namespace Project.Inventory
         private void Start()
         {
             RelocateMisplacedHotbarWeapons();
+            RelocateMisplacedHotbarTools();
         }
 
         private void OnEnable()
@@ -199,6 +231,7 @@ namespace Project.Inventory
                 IsWeaponDrawn = HasEquippableInHotbarSlot(hotbarIndex);
             }
 
+            SyncActiveWeaponSelection();
             NotifySelectionChanged();
         }
 
@@ -322,15 +355,33 @@ namespace Project.Inventory
             return item != null && item.itemType == ItemType.MeleeWeapon;
         }
 
+        public static bool IsRangedWeaponItem(ItemData item)
+        {
+            return item != null && item.itemType == ItemType.RangedWeapon;
+        }
+
+        public static bool IsWeaponItem(ItemData item)
+        {
+            return IsMeleeWeaponItem(item) || IsRangedWeaponItem(item);
+        }
+
+        public static bool IsAmmoItem(ItemData item)
+        {
+            return item != null && item.CountsAsAmmo;
+        }
+
         public bool CanPlaceItemInHotbarSlot(int hotbarSlot, ItemData item)
         {
             if (inventory == null || item == null || hotbarSlot < 0 || hotbarSlot >= inventory.hotbarSize)
                 return false;
 
-            if (IsWeaponHotbarSlot(hotbarSlot))
-                return IsMeleeWeaponItem(item);
+            if (item.itemType == ItemType.Tool)
+                return false;
 
-            return !IsMeleeWeaponItem(item);
+            if (IsWeaponHotbarSlot(hotbarSlot))
+                return IsWeaponItem(item);
+
+            return !IsWeaponItem(item);
         }
 
         public bool CanPlaceItemAt(int absoluteSlotIndex, ItemData item)
@@ -402,6 +453,8 @@ namespace Project.Inventory
                 selectedToolbarSlot = -1;
 
             SyncWeaponDrawnState();
+            if (IsWeaponDrawn)
+                SyncActiveWeaponSelection();
             NotifySelectionChanged();
         }
 
@@ -415,6 +468,16 @@ namespace Project.Inventory
         {
             if (!IsWeaponHotbarSlot(selectedHotbarSlot))
                 IsWeaponDrawn = false;
+        }
+
+        private void SyncActiveWeaponSelection()
+        {
+            if (!IsWeaponDrawn)
+                return;
+
+            int activeHotbar = ActiveWeaponHotbarSlot;
+            if (!IsWeaponHotbarSlot(selectedHotbarSlot) || selectedHotbarSlot != activeHotbar)
+                selectedHotbarSlot = activeHotbar;
         }
 
         public void ApplySaveState(int hotbarSlot, int weaponSlot, bool drawn, int toolbarSlot = -1)
@@ -432,6 +495,9 @@ namespace Project.Inventory
                 IsWeaponDrawn = drawn && HasEquippableInHotbarSlot(selectedHotbarSlot);
             else
                 SyncWeaponDrawnState();
+
+            if (IsWeaponDrawn)
+                SyncActiveWeaponSelection();
 
             NotifySelectionChanged();
         }
@@ -578,11 +644,41 @@ namespace Project.Inventory
 
                 int absoluteIndex = hotbarStart + hotbarIndex;
                 InventorySystem.InventorySlot slot = inventory.slots[absoluteIndex];
-                if (slot.IsEmpty || !IsMeleeWeaponItem(slot.item))
+                if (slot.IsEmpty || !IsWeaponItem(slot.item))
                     continue;
 
                 int targetHotbar = ResolveEquipHotbarSlot(absoluteIndex);
                 int targetAbsolute = hotbarStart + targetHotbar;
+                if (targetAbsolute == absoluteIndex)
+                    continue;
+
+                if (inventory.slots[targetAbsolute].IsEmpty)
+                {
+                    inventory.SwapSlots(absoluteIndex, targetAbsolute);
+                    continue;
+                }
+
+                int emptyMainSlot = FindFirstEmptyMainInventorySlot();
+                if (emptyMainSlot >= 0)
+                    inventory.SwapSlots(absoluteIndex, emptyMainSlot);
+            }
+        }
+
+        private void RelocateMisplacedHotbarTools()
+        {
+            if (inventory == null)
+                return;
+
+            int hotbarStart = inventory.inventorySize;
+            for (int hotbarIndex = 0; hotbarIndex < inventory.hotbarSize; hotbarIndex++)
+            {
+                int absoluteIndex = hotbarStart + hotbarIndex;
+                InventorySystem.InventorySlot slot = inventory.slots[absoluteIndex];
+                if (slot.IsEmpty || slot.item == null || slot.item.itemType != ItemType.Tool)
+                    continue;
+
+                int targetToolbarSlot = ResolveEquipToolbarSlot(slot.item, absoluteIndex);
+                int targetAbsolute = inventory.ToolbarStartIndex + targetToolbarSlot;
                 if (targetAbsolute == absoluteIndex)
                     continue;
 

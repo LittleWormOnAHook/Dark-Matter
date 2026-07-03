@@ -30,18 +30,30 @@ namespace Project.Interaction
         private readonly List<ItemData> currentBackItems = new List<ItemData>(4);
         private readonly List<ItemData> pendingBackItems = new List<ItemData>(4);
         private GameObject handInstance;
+        private RangedCombatController rangedCombat;
         private readonly List<GameObject> backInstances = new List<GameObject>(4);
         private Quaternion handRestRotation = Quaternion.identity;
         private Vector3 handRestLocalPosition = Vector3.zero;
+        private Vector3 handRestLocalScale = Vector3.one;
         private Vector3 swingEuler = new Vector3(-120f, 0f, 0f);
         private Coroutine swingRoutine;
         private Coroutine poseRoutine;
         private bool isPowerCharging;
+        private RangedWeaponPoseMode currentPoseMode = RangedWeaponPoseMode.Holstered;
+        private Transform cachedMuzzle;
+
+        public RangedWeaponPoseMode CurrentPoseMode => currentPoseMode;
 
         private void Awake()
         {
             equipment = GetComponent<EquipmentController>();
             inventory = GetComponent<InventorySystem>();
+            rangedCombat = GetComponent<RangedCombatController>();
+        }
+
+        private void LateUpdate()
+        {
+            UpdateRangedPoseMode();
         }
 
         private void OnEnable()
@@ -77,6 +89,73 @@ namespace Project.Interaction
         }
 
         public WeaponHitbox ActiveHandHitbox => activeHandHitbox;
+
+        public Transform GetMuzzleTransform()
+        {
+            if (handInstance == null)
+                return null;
+
+            if (cachedMuzzle != null)
+                return cachedMuzzle;
+
+            ItemData item = currentHandItem;
+            string socketName = item != null && !string.IsNullOrWhiteSpace(item.muzzleSocketName)
+                ? item.muzzleSocketName
+                : "Muzzle";
+
+            Transform muzzle = FindDeepChild(handInstance.transform, socketName);
+            cachedMuzzle = muzzle;
+            return muzzle != null ? muzzle : handInstance.transform;
+        }
+
+        private RangedWeaponPoseMode ResolvePoseMode()
+        {
+            if (handInstance == null || currentHandItem == null || !currentHandItem.IsRangedWeapon)
+                return RangedWeaponPoseMode.Holstered;
+
+            bool aiming = rangedCombat != null && rangedCombat.IsAiming;
+            return aiming ? RangedWeaponPoseMode.Aiming : RangedWeaponPoseMode.HipReady;
+        }
+
+        private void UpdateRangedPoseMode()
+        {
+            RangedWeaponPoseMode mode = ResolvePoseMode();
+            if (mode == currentPoseMode)
+                return;
+
+#if UNITY_EDITOR
+            // Leave the live transform alone while paused so grip edits can be baked.
+            if (UnityEditor.EditorApplication.isPaused)
+                return;
+#endif
+
+            currentPoseMode = mode;
+            ApplyPose(mode);
+        }
+
+        private void ApplyPose(RangedWeaponPoseMode mode)
+        {
+            if (handInstance == null || currentHandItem == null)
+                return;
+
+            Transform t = handInstance.transform;
+            if (mode == RangedWeaponPoseMode.Aiming && currentHandItem.useAimHeldGrip)
+            {
+                Vector3 scale = currentHandItem.aimHeldLocalScale == Vector3.zero
+                    ? handRestLocalScale
+                    : currentHandItem.aimHeldLocalScale;
+                t.localPosition = currentHandItem.aimHeldLocalPosition;
+                t.localRotation = currentHandItem.useAimHeldLocalRotation
+                    ? currentHandItem.aimHeldLocalRotation
+                    : Quaternion.Euler(currentHandItem.aimHeldLocalEuler);
+                t.localScale = scale;
+                return;
+            }
+
+            t.localPosition = handRestLocalPosition;
+            t.localRotation = handRestRotation;
+            t.localScale = handRestLocalScale;
+        }
 
         public void ForceRefresh()
         {
@@ -173,7 +252,7 @@ namespace Project.Interaction
             if (!equipment.IsWeaponHotbarSlot(equipment.SelectedHotbarSlot))
                 return null;
 
-            ItemData item = equipment.EquippedItem;
+            ItemData item = equipment.DrawnWeaponItem;
             return item != null && item.IsEquippable ? item : null;
         }
 
@@ -235,8 +314,8 @@ namespace Project.Interaction
             }
 
             GameObject instance = Instantiate(item.heldPrefab, socket);
-            StripForHeld(instance, isHand);
-            if (isHand)
+            StripForHeld(instance, isHand, item);
+            if (isHand && item.itemType == ItemType.MeleeWeapon)
                 EnsureWeaponHitbox(instance, item);
 
             Transform t = instance.transform;
@@ -250,7 +329,15 @@ namespace Project.Interaction
                 t.localScale = scale;
                 handRestLocalPosition = t.localPosition;
                 handRestRotation = t.localRotation;
+                handRestLocalScale = t.localScale;
                 swingEuler = item.swingEulerAngles == Vector3.zero ? new Vector3(-120f, 0f, 0f) : item.swingEulerAngles;
+
+                if (item.itemType == ItemType.RangedWeapon)
+                {
+                    EnsureMuzzleSocket(instance, item);
+                    cachedMuzzle = null;
+                    currentPoseMode = RangedWeaponPoseMode.HipReady;
+                }
             }
             else
             {
@@ -274,6 +361,8 @@ namespace Project.Interaction
             StopHandPoseCoroutines();
             isPowerCharging = false;
             activeHandHitbox = null;
+            cachedMuzzle = null;
+            currentPoseMode = RangedWeaponPoseMode.Holstered;
 
             if (handInstance != null)
             {
@@ -326,10 +415,13 @@ namespace Project.Interaction
             return null;
         }
 
-        private static void StripForHeld(GameObject instance, bool isHand)
+        private static void StripForHeld(GameObject instance, bool isHand, ItemData item)
         {
-            if (instance.GetComponent<EquippedVisualMarker>() == null)
-                instance.AddComponent<EquippedVisualMarker>();
+            EquippedVisualMarker marker = instance.GetComponent<EquippedVisualMarker>();
+            if (marker == null)
+                marker = instance.AddComponent<EquippedVisualMarker>();
+
+            marker.BindItem(item);
 
             SetLayerRecursively(instance, 0);
 
@@ -369,6 +461,120 @@ namespace Project.Interaction
             Transform root = obj.transform;
             for (int i = 0; i < root.childCount; i++)
                 SetLayerRecursively(root.GetChild(i).gameObject, layer);
+        }
+
+        private void AlignMuzzleToBarrelTip(GameObject instance, ItemData item)
+        {
+            if (instance == null)
+                return;
+
+            string socketName = item != null && !string.IsNullOrWhiteSpace(item.muzzleSocketName)
+                ? item.muzzleSocketName
+                : "Muzzle";
+
+            Transform muzzle = FindDeepChild(instance.transform, socketName);
+            if (muzzle == null)
+            {
+                GameObject muzzleObject = new GameObject(socketName);
+                muzzleObject.transform.SetParent(instance.transform, false);
+                muzzle = muzzleObject.transform;
+            }
+
+            muzzle.localPosition = ComputeBarrelTipLocalPosition(instance);
+            muzzle.localRotation = Quaternion.identity;
+        }
+
+        private static Vector3 ComputeBarrelTipLocalPosition(GameObject instance)
+        {
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+                return new Vector3(0f, 0.05f, 0.35f);
+
+            Transform root = instance.transform;
+            float maxForward = float.NegativeInfinity;
+            const float forwardPlaneTolerance = 0.03f;
+            float sumX = 0f;
+            float sumY = 0f;
+            int forwardCount = 0;
+
+            for (int r = 0; r < renderers.Length; r++)
+            {
+                Renderer renderer = renderers[r];
+                if (renderer == null)
+                    continue;
+
+                Bounds bounds = renderer.bounds;
+                Vector3 center = bounds.center;
+                Vector3 extents = bounds.extents;
+
+                for (int xi = -1; xi <= 1; xi += 2)
+                {
+                    for (int yi = -1; yi <= 1; yi += 2)
+                    {
+                        for (int zi = -1; zi <= 1; zi += 2)
+                        {
+                            Vector3 cornerWorld = center + Vector3.Scale(extents, new Vector3(xi, yi, zi));
+                            float localZ = root.InverseTransformPoint(cornerWorld).z;
+                            maxForward = Mathf.Max(maxForward, localZ);
+                        }
+                    }
+                }
+            }
+
+            if (maxForward <= float.NegativeInfinity)
+                return new Vector3(0f, 0.05f, 0.35f);
+
+            for (int r = 0; r < renderers.Length; r++)
+            {
+                Renderer renderer = renderers[r];
+                if (renderer == null)
+                    continue;
+
+                Bounds bounds = renderer.bounds;
+                Vector3 center = bounds.center;
+                Vector3 extents = bounds.extents;
+
+                for (int xi = -1; xi <= 1; xi += 2)
+                {
+                    for (int yi = -1; yi <= 1; yi += 2)
+                    {
+                        for (int zi = -1; zi <= 1; zi += 2)
+                        {
+                            Vector3 cornerWorld = center + Vector3.Scale(extents, new Vector3(xi, yi, zi));
+                            Vector3 cornerLocal = root.InverseTransformPoint(cornerWorld);
+                            if (cornerLocal.z < maxForward - forwardPlaneTolerance)
+                                continue;
+
+                            sumX += cornerLocal.x;
+                            sumY += cornerLocal.y;
+                            forwardCount++;
+                        }
+                    }
+                }
+            }
+
+            if (forwardCount <= 0)
+                return new Vector3(0f, 0.05f, maxForward + 0.02f);
+
+            return new Vector3(sumX / forwardCount, sumY / forwardCount, maxForward + 0.02f);
+        }
+
+        private void EnsureMuzzleSocket(GameObject instance, ItemData item)
+        {
+            if (instance == null)
+                return;
+
+            string socketName = item != null && !string.IsNullOrWhiteSpace(item.muzzleSocketName)
+                ? item.muzzleSocketName
+                : "Muzzle";
+
+            // Authored prefab socket is authoritative; only fall back to the
+            // renderer-bounds heuristic for prefabs that were never set up.
+            Transform authored = FindDeepChild(instance.transform, socketName);
+            if (authored != null)
+                return;
+
+            AlignMuzzleToBarrelTip(instance, item);
         }
 
         private void EnsureWeaponHitbox(GameObject instance, ItemData item = null)

@@ -27,6 +27,8 @@ namespace Project.Player
         Charge1H,
         Charge2H,
         ChargeAxe,
+        RifleFire,
+        PistolFire,
         HitReactionUnarmed,
         HitReactionArmed,
         Death,

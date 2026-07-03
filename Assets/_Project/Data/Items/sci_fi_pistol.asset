@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: sci_fi_pistol
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: Sci-Fi Pistol
+  icon: {fileID: 21300000, guid: 5c26b9424f5e78c43916d37cd1298bc1, type: 3}
+  worldPrefab: {fileID: 7456544933812286296, guid: 31a656c5900a7274dadfb0b09219e95a, type: 3}
+  maxStack: 1
+  itemType: 3
+  weaponGrip: 0
+  gkcWeaponKind: 5
+  gkcRightArmId: -1
+  gkcLeftArmId: -1
+  heldPrefab: {fileID: 8948557008729901400, guid: a8568fdb9141e6c4ea85991f2179fc12, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0.02, y: 0.02, z: 0.06}
+  heldLocalEuler: {x: 11.068209, y: 356.68353, z: 1.0077542}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: 0.09614088, y: -0.029649356, z: 0.011540135, w: 0.9948599}
+  heldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.08, y: 0.12, z: -0.19497345}
+  sheathedLocalEuler: {x: 70, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 12
+  rangedDamageRandomRange: 4
+  rangedRange: 32
+  projectileSpeed: 85
+  projectileSpreadDegrees: 2.2
+  fireRate: 3.8
+  magazineSize: 12
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  projectilePrefab: {fileID: 7710815887958215002, guid: 0a1488f76ed312642bda138af5c9f5f7, type: 3}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.84
+  hipFireMaxDeviationDegrees: 20
+  hipFireSpreadMultiplier: 1.15
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0.02, y: 0.02, z: 0.06}
+  aimHeldLocalEuler: {x: -12, y: 90, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
+  ammoType: 0
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isPiInfused: 0
+  piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  tooltipDescription: One-handed sci-fi pistol. Hold RMB to aim, LMB to fire.

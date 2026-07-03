@@ -66,5 +66,23 @@ namespace Project.Player
 
         public const float StrafeIdMeleeOneHand = 6f;
         public const float StrafeIdMeleeTwoHand = 10f;
+
+        /// <summary>Idle Tree Strafe ID blend-tree slot for rifle aim idle.</summary>
+        public const float StrafeIdRifle = 4f;
+
+        /// <summary>Idle Tree Strafe ID blend-tree slot for pistol aim idle.</summary>
+        public const float StrafeIdPistol = 5f;
+
+        /// <summary>GKC Fire Weapons blend-tree Weapon ID for pistol aim/locomotion.</summary>
+        public const float WeaponIdPistol = 1f;
+
+        /// <summary>GKC Fire Weapons blend-tree Weapon ID for rifle aim/locomotion.</summary>
+        public const float WeaponIdRifle = 2f;
+
+        /// <summary>Fire Weapons blend-tree Weapon ID for pistol hip-hold locomotion (non-aim clips).</summary>
+        public const float WeaponIdPistolHip = 11f;
+
+        /// <summary>Fire Weapons blend-tree Weapon ID for rifle hip-hold locomotion (non-aim clips).</summary>
+        public const float WeaponIdRifleHip = 12f;
     }
 }

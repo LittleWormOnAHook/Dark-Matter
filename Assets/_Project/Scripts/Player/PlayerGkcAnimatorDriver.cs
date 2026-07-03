@@ -44,6 +44,7 @@ namespace Project.Player
         private bool _actionUsedUpperBodyActive;
 
         private float _hitReactionOverlayEndTime;
+        private bool _rangedAimActive;
 
         private const float ActionEndBufferSeconds = 0.2f;
         private const float ActionTimeoutExtensionSeconds = 0.35f;
@@ -370,6 +371,40 @@ namespace Project.Player
             return entry.defaultDuration / Mathf.Max(0.1f, attackSpeed);
         }
 
+        public void SetRangedAimActive(bool active)
+        {
+            _rangedAimActive = active;
+            if (!active)
+            {
+                SetBool(GkcAnimatorConstants.AimingModeActive, false);
+                SetFloat(GkcAnimatorConstants.StrafeId, 0f);
+                return;
+            }
+
+            ItemData weapon = ResolveActiveWeaponItem();
+            if (weapon == null)
+                return;
+
+            SetFloat(GkcAnimatorConstants.WeaponId, weapon.ResolveGkcWeaponId());
+            SetBool(GkcAnimatorConstants.CarryingWeapon, true);
+            SetBool(GkcAnimatorConstants.StrafeModeActive, true);
+            SetBool(GkcAnimatorConstants.AimingModeActive, true);
+            SetFloat(GkcAnimatorConstants.StrafeId, weapon.ResolveGkcStrafeId());
+        }
+
+        public void RequestRangedFire(ItemData weapon)
+        {
+            if (weapon == null || !weapon.IsRangedWeapon)
+                return;
+
+            GkcCombatAction action = weapon.ResolveGkcWeaponKind() == GkcWeaponKind.Pistol
+                ? GkcCombatAction.PistolFire
+                : GkcCombatAction.RifleFire;
+
+            float interval = weapon.fireRate > 0.01f ? 1f / weapon.fireRate : 0.25f;
+            RequestAction(action, durationOverride: interval);
+        }
+
         private bool IsBaseLayerAttackPlaying()
         {
             if (_animator == null)
@@ -523,8 +558,9 @@ namespace Project.Player
             bool isMoving = _character.GetSpeed() > GkcAnimatorConstants.MovingSpeedThreshold;
             bool isSprinting = _playerController != null && _playerController.IsSprinting;
             bool hasActiveMelee = _equipment != null && _equipment.HasActiveMeleeWeapon();
-            ItemData equippedItem = hasActiveMelee ? _equipment.SelectedHotbarItem : null;
-            bool useArmedLocomotion = hasActiveMelee;
+            bool hasActiveRanged = _equipment != null && _equipment.HasActiveRangedWeapon();
+            ItemData equippedItem = hasActiveMelee || hasActiveRanged ? _equipment.DrawnWeaponItem : null;
+            bool useArmedLocomotion = hasActiveMelee || hasActiveRanged;
 
             ResolveLocomotionBlend(
                 locomotion,
@@ -542,9 +578,13 @@ namespace Project.Player
 
             if (_movingBoolAvailable && !freezeLocomotion)
             {
-                SetBool(
-                    GkcAnimatorConstants.Moving,
-                    isMoving || _character.GetSpeed() > GkcAnimatorConstants.MovingSpeedThreshold);
+                bool rangedAimControlsMoving = hasActiveRanged && ResolveRangedAimActive();
+                if (!rangedAimControlsMoving)
+                {
+                    SetBool(
+                        GkcAnimatorConstants.Moving,
+                        isMoving || _character.GetSpeed() > GkcAnimatorConstants.MovingSpeedThreshold);
+                }
             }
 
             bool unarmedCombatEngaged = IsUnarmedCombatEngaged();
@@ -686,12 +726,13 @@ namespace Project.Player
 
             GkcWeaponKind weaponKind = equippedItem.ResolveGkcWeaponKind();
             bool isTwoHanded = weaponKind == GkcWeaponKind.TwoHand;
+            bool isRangedWeapon = weaponKind is GkcWeaponKind.Rifle or GkcWeaponKind.Pistol;
 
             PlayerLocomotionAnimationSettings locomotion = _playerController != null
                 ? _playerController.LocomotionAnimations
                 : null;
             float strafeCutoff = locomotion != null ? locomotion.strafeForwardCutoff : 0.12f;
-            bool driveOneHandStrafe = !isTwoHanded
+            bool driveOneHandStrafe = !isTwoHanded && !isRangedWeapon
                 && ShouldDriveOneHandStrafeParams(moveInput, strafeCutoff);
             bool driveArmedStrafe = ShouldDriveArmedStrafeParams(moveInput, strafeCutoff, isMoving);
             bool driveTwoHandForward = isTwoHanded
@@ -700,7 +741,24 @@ namespace Project.Player
                 && !driveArmedStrafe;
             bool useTwoHandStrafeContext = isTwoHanded && (driveArmedStrafe || driveTwoHandForward);
 
-            if (isTwoHanded)
+            if (isRangedWeapon)
+            {
+                UpdateRangedArmedLocomotion(
+                    equippedItem,
+                    weaponKind,
+                    isMoving,
+                    isSprinting,
+                    moveInput,
+                    forwardAmount,
+                    turnAmount,
+                    forwardSmoothTime,
+                    leanSmoothTime,
+                    strafeCutoff,
+                    driveArmedStrafe,
+                    deltaTime);
+                return;
+            }
+            else if (isTwoHanded)
             {
                 SetBool(GkcAnimatorConstants.StrafeModeActive, useTwoHandStrafeContext);
                 SetBool(GkcAnimatorConstants.AimingModeActive, false);
@@ -775,6 +833,225 @@ namespace Project.Player
                 || Mathf.Abs(snapshot.Turn) > 0.01f;
             SetBool(GkcAnimatorConstants.MovementInputActive, hasLocomotionInput);
             SetBool(GkcAnimatorConstants.MovementRelativeToCamera, true);
+        }
+
+        private void UpdateRangedArmedLocomotion(
+            ItemData equippedItem,
+            GkcWeaponKind weaponKind,
+            bool isMoving,
+            bool isSprinting,
+            Vector2 moveInput,
+            float forwardAmount,
+            float turnAmount,
+            float forwardSmoothTime,
+            float leanSmoothTime,
+            float strafeCutoff,
+            bool driveArmedStrafe,
+            float deltaTime)
+        {
+            // Ranged animator contract (see plan: Ranged System Rework):
+            //   Pose      AimingModeActive  StrafeId  WeaponId        Fire Weapons clips
+            //   Hip idle  false             0         hip (11/12)     IdleHold*
+            //   Hip move  false             0         hip (11/12)     WalkForward*/RunForward* (non-aim)
+            //   ADS idle  true              4/5       aim (1/2)       IdleAim*
+            //   ADS move  true              4/5       aim (1/2)       *Aiming* locomotion
+            bool aimActive = ResolveRangedAimActive();
+            bool hasMoveIntent = HasRangedMoveIntent(isMoving, moveInput);
+            bool hipFireMoving = !aimActive && hasMoveIntent;
+            bool useFireWeaponLocomotion = hipFireMoving || driveArmedStrafe;
+            bool useStrafeContext = aimActive || useFireWeaponLocomotion;
+            // Hip WeaponId (11/12) only exists inside the Fire Weapons trees;
+            // elsewhere it would clamp to the rifle slot, so fall back to the aim ID.
+            float weaponId = !aimActive && useFireWeaponLocomotion
+                ? equippedItem.ResolveGkcHipWeaponId()
+                : equippedItem.ResolveGkcWeaponId();
+
+            SetFloat(GkcAnimatorConstants.WeaponId, weaponId);
+            SetBool(GkcAnimatorConstants.CarryingWeapon, true);
+            SetInteger(GkcAnimatorConstants.RightArmId, equippedItem.ResolveGkcRightArmId());
+            SetInteger(GkcAnimatorConstants.LeftArmId, equippedItem.ResolveGkcLeftArmId());
+            SetFloat(GkcAnimatorConstants.PlayerStatusId, ResolvePlayerStatusId());
+            SetFloat(GkcAnimatorConstants.IdleId, GkcAnimatorConstants.IdleIdDefault);
+            SetFloat(GkcAnimatorConstants.MovementId, 0f);
+            SetBool(GkcAnimatorConstants.StrafeModeActive, useStrafeContext);
+            SetBool(GkcAnimatorConstants.AimingModeActive, aimActive);
+            SetFloat(
+                GkcAnimatorConstants.StrafeId,
+                aimActive ? equippedItem.ResolveGkcStrafeId() : 0f);
+
+            if (weaponKind == GkcWeaponKind.Rifle)
+            {
+                UpdateTwoHandArmedLocomotion(
+                    isMoving,
+                    isSprinting,
+                    moveInput,
+                    forwardAmount,
+                    turnAmount,
+                    forwardSmoothTime,
+                    leanSmoothTime,
+                    strafeCutoff,
+                    useStrafeContext,
+                    driveForwardLocomotion: isMoving && (
+                        (!aimActive && hasMoveIntent)
+                        || (aimActive && hasMoveIntent && moveInput.y > strafeCutoff)),
+                    deltaTime);
+            }
+            else
+            {
+                PlayerGkcLocomotionSnapshot snapshot = ResolveLocomotionSnapshot(
+                    isMoving,
+                    unarmedCombatEngaged: false,
+                    forwardAmount,
+                    turnAmount,
+                    moveInput);
+
+                if (useStrafeContext)
+                {
+                    SetFloat(GkcAnimatorConstants.PlayerModeId, GkcAnimatorConstants.PlayerModeFreeMovement);
+
+                    bool driveStrafeBlend = aimActive
+                        ? hasMoveIntent
+                        : ShouldDriveArmedStrafeParams(moveInput, strafeCutoff, isMoving);
+
+                    if (driveStrafeBlend)
+                    {
+                        ApplyArmedStrafeParams(
+                            isMoving,
+                            isSprinting,
+                            moveInput,
+                            forwardSmoothTime,
+                            leanSmoothTime,
+                            deltaTime,
+                            out forwardAmount,
+                            out turnAmount);
+                    }
+                    else if (hipFireMoving)
+                    {
+                        _animator.SetFloat(GkcAnimatorConstants.Forward, snapshot.Forward, forwardSmoothTime, deltaTime);
+                        _animator.SetFloat(GkcAnimatorConstants.Turn, snapshot.Turn, leanSmoothTime, deltaTime);
+                        SetFloat(GkcAnimatorConstants.Horizontal, 0f);
+                        SetFloat(GkcAnimatorConstants.Vertical, 0f);
+                        SetFloat(GkcAnimatorConstants.HorizontalStrafe, 0f);
+                        SetFloat(GkcAnimatorConstants.VerticalStrafe, 0f);
+                    }
+                    else if (!aimActive)
+                    {
+                        SetFloat(GkcAnimatorConstants.Horizontal, 0f);
+                        SetFloat(GkcAnimatorConstants.Vertical, 0f);
+                        SetFloat(GkcAnimatorConstants.HorizontalStrafe, 0f);
+                        SetFloat(GkcAnimatorConstants.VerticalStrafe, 0f);
+                        _animator.SetFloat(GkcAnimatorConstants.Forward, snapshot.Forward, forwardSmoothTime, deltaTime);
+                        _animator.SetFloat(GkcAnimatorConstants.Turn, snapshot.Turn, leanSmoothTime, deltaTime);
+                    }
+                }
+                else
+                {
+                    SetFloat(GkcAnimatorConstants.PlayerModeId, snapshot.PlayerModeId);
+                    SetFloat(GkcAnimatorConstants.Horizontal, 0f);
+                    SetFloat(GkcAnimatorConstants.Vertical, 0f);
+                    SetFloat(GkcAnimatorConstants.HorizontalStrafe, 0f);
+                    SetFloat(GkcAnimatorConstants.VerticalStrafe, 0f);
+                    _animator.SetFloat(GkcAnimatorConstants.Forward, snapshot.Forward, forwardSmoothTime, deltaTime);
+                    _animator.SetFloat(GkcAnimatorConstants.Turn, snapshot.Turn, leanSmoothTime, deltaTime);
+                }
+
+                if (!aimActive)
+                {
+                    bool hasLocomotionInput = isMoving
+                        || Mathf.Abs(snapshot.Forward) > 0.01f
+                        || Mathf.Abs(snapshot.Turn) > 0.01f
+                        || moveInput.sqrMagnitude > 0.01f;
+                    SetBool(GkcAnimatorConstants.MovementInputActive, hasLocomotionInput);
+                    SetBool(GkcAnimatorConstants.MovementRelativeToCamera, true);
+                }
+            }
+
+            if (aimActive && hasMoveIntent)
+                ApplyRangedAimMovingParams(
+                    equippedItem,
+                    isMoving,
+                    moveInput,
+                    forwardAmount,
+                    turnAmount,
+                    forwardSmoothTime,
+                    leanSmoothTime,
+                    deltaTime);
+            else if (aimActive && !hasMoveIntent)
+                ApplyRangedAimIdleParams(equippedItem);
+            else if (aimActive && _movingBoolAvailable)
+                SetBool(GkcAnimatorConstants.Moving, hasMoveIntent);
+            else if (!aimActive && _movingBoolAvailable)
+            {
+                SetBool(
+                    GkcAnimatorConstants.Moving,
+                    isMoving || _character.GetSpeed() > GkcAnimatorConstants.MovingSpeedThreshold);
+            }
+        }
+
+        private bool ResolveRangedAimActive()
+        {
+            if (_playerController != null && _playerController.IsRangedAimActive)
+                return true;
+
+            return _rangedAimActive;
+        }
+
+        private static bool HasRangedMoveIntent(bool isMoving, Vector2 moveInput)
+        {
+            return moveInput.sqrMagnitude > 0.01f || isMoving;
+        }
+
+        private void ApplyRangedAimIdleParams(ItemData equippedItem)
+        {
+            SetFloat(GkcAnimatorConstants.PlayerModeId, GkcAnimatorConstants.PlayerModeFreeMovement);
+            SetBool(GkcAnimatorConstants.StrafeModeActive, true);
+            SetBool(GkcAnimatorConstants.AimingModeActive, true);
+            SetBool(GkcAnimatorConstants.CarryingWeapon, true);
+            SetFloat(GkcAnimatorConstants.WeaponId, equippedItem.ResolveGkcWeaponId());
+            SetFloat(GkcAnimatorConstants.StrafeId, equippedItem.ResolveGkcStrafeId());
+            SetFloat(GkcAnimatorConstants.Forward, 0f);
+            SetFloat(GkcAnimatorConstants.Turn, 0f);
+            SetFloat(GkcAnimatorConstants.Horizontal, 0f);
+            SetFloat(GkcAnimatorConstants.Vertical, 0f);
+            SetFloat(GkcAnimatorConstants.HorizontalStrafe, 0f);
+            SetFloat(GkcAnimatorConstants.VerticalStrafe, 0f);
+            SetBool(GkcAnimatorConstants.MovementInputActive, false);
+            SetBool(GkcAnimatorConstants.MovementRelativeToCamera, true);
+
+            if (_movingBoolAvailable)
+                SetBool(GkcAnimatorConstants.Moving, false);
+        }
+
+        private void ApplyRangedAimMovingParams(
+            ItemData equippedItem,
+            bool isMoving,
+            Vector2 moveInput,
+            float forwardAmount,
+            float turnAmount,
+            float forwardSmoothTime,
+            float leanSmoothTime,
+            float deltaTime)
+        {
+            PlayerGkcLocomotionSnapshot snapshot = ResolveLocomotionSnapshot(
+                isMoving,
+                unarmedCombatEngaged: false,
+                forwardAmount,
+                turnAmount,
+                moveInput);
+
+            SetFloat(GkcAnimatorConstants.PlayerModeId, GkcAnimatorConstants.PlayerModeFreeMovement);
+            SetBool(GkcAnimatorConstants.StrafeModeActive, true);
+            SetBool(GkcAnimatorConstants.AimingModeActive, true);
+            SetBool(GkcAnimatorConstants.CarryingWeapon, true);
+            SetFloat(GkcAnimatorConstants.WeaponId, equippedItem.ResolveGkcWeaponId());
+            SetFloat(GkcAnimatorConstants.StrafeId, equippedItem.ResolveGkcStrafeId());
+            _animator.SetFloat(GkcAnimatorConstants.Forward, snapshot.Forward, forwardSmoothTime, deltaTime);
+            _animator.SetFloat(GkcAnimatorConstants.Turn, snapshot.Turn, leanSmoothTime, deltaTime);
+            SetBool(GkcAnimatorConstants.MovementInputActive, true);
+            SetBool(GkcAnimatorConstants.MovementRelativeToCamera, true);
+
+            if (_movingBoolAvailable)
+                SetBool(GkcAnimatorConstants.Moving, true);
         }
 
         private void UpdateTwoHandArmedLocomotion(
@@ -966,10 +1243,13 @@ namespace Project.Player
             MaintainUnarmedCombatContext(forAttack: true);
         }
 
-        private ItemData ResolveActiveMeleeItem()
+        private ItemData ResolveActiveWeaponItem()
         {
-            if (_equipment != null && _equipment.HasActiveMeleeWeapon())
-                return _equipment.SelectedHotbarItem;
+            if (_equipment != null
+                && (_equipment.HasActiveMeleeWeapon() || _equipment.HasActiveRangedWeapon()))
+            {
+                return _equipment.DrawnWeaponItem;
+            }
 
             if (_companionEquipment == null || _companionEquipment.EquippedWeapon == null)
                 return null;
@@ -977,6 +1257,20 @@ namespace Project.Player
             bool engaged = CompanionCombatCoordinator.Instance != null
                 && CompanionCombatCoordinator.Instance.IsCombatEngaged;
             return engaged ? _companionEquipment.EquippedWeapon : null;
+        }
+
+        private ItemData ResolveActiveMeleeItem()
+        {
+            if (_equipment != null && _equipment.HasActiveMeleeWeapon())
+                return _equipment.DrawnWeaponItem;
+
+            if (_companionEquipment == null || _companionEquipment.EquippedWeapon == null)
+                return null;
+
+            bool engaged = CompanionCombatCoordinator.Instance != null
+                && CompanionCombatCoordinator.Instance.IsCombatEngaged;
+            ItemData weapon = engaged ? _companionEquipment.EquippedWeapon : null;
+            return weapon != null && weapon.itemType == ItemType.MeleeWeapon ? weapon : null;
         }
 
         private void MaintainBlockHoldContext()
@@ -1356,7 +1650,9 @@ namespace Project.Player
 
         private void ApplyCombatContext(GkcWeaponKind weaponKind, GkcActionCatalogEntry entry)
         {
-            ItemData equippedItem = ResolveActiveMeleeItem();
+            ItemData equippedItem = weaponKind is GkcWeaponKind.Rifle or GkcWeaponKind.Pistol
+                ? ResolveActiveWeaponItem()
+                : ResolveActiveMeleeItem();
             if (weaponKind != GkcWeaponKind.Unarmed && equippedItem != null)
             {
                 SetFloat(GkcAnimatorConstants.WeaponId, equippedItem.ResolveGkcWeaponId());
@@ -1408,19 +1704,29 @@ namespace Project.Player
             if (layer < 0)
                 layer = 0;
 
-            if (TryCrossFadeState(entry.stateName, entry.crossFadeDuration, layer))
+            if (TryCrossFadeEntryState(entry, layer))
                 return;
 
-            int lastDot = entry.stateName.LastIndexOf('.');
-            if (lastDot >= 0
-                && TryCrossFadeState(entry.stateName[(lastDot + 1)..], entry.crossFadeDuration, layer))
+            if (entry.layerName != GkcAnimatorConstants.UpperBodyLayer)
             {
-                return;
+                int upperBodyLayer = ResolveLayer(GkcAnimatorConstants.UpperBodyLayer);
+                if (upperBodyLayer >= 0 && TryCrossFadeEntryState(entry, upperBodyLayer))
+                    return;
             }
 
             Debug.LogWarning(
                 $"[PlayerGkcAnimatorDriver] Animator state '{entry.stateName}' was not found on layer '{entry.layerName}'.",
                 this);
+        }
+
+        private bool TryCrossFadeEntryState(GkcActionCatalogEntry entry, int layer)
+        {
+            if (TryCrossFadeState(entry.stateName, entry.crossFadeDuration, layer))
+                return true;
+
+            int lastDot = entry.stateName.LastIndexOf('.');
+            return lastDot >= 0
+                && TryCrossFadeState(entry.stateName[(lastDot + 1)..], entry.crossFadeDuration, layer);
         }
 
         private bool TryCrossFadeState(string stateName, float crossFadeDuration, int layer)
@@ -1523,7 +1829,7 @@ namespace Project.Player
 
         private GkcWeaponKind ResolveCurrentWeaponKind()
         {
-            ItemData item = ResolveActiveMeleeItem();
+            ItemData item = ResolveActiveWeaponItem();
             return item != null ? item.ResolveGkcWeaponKind() : GkcWeaponKind.Unarmed;
         }
 

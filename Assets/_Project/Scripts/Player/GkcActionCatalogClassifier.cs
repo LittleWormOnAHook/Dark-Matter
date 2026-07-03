@@ -64,6 +64,8 @@ namespace Project.Player
                 GkcCombatAction.Sword2HCombo1 or GkcCombatAction.Sword2HCombo2 or GkcCombatAction.Sword2HCombo3
                     or GkcCombatAction.Sword2HCombo4 or GkcCombatAction.Sword2HPower or GkcCombatAction.Charge2H
                     => GkcWeaponKind.TwoHand,
+                GkcCombatAction.RifleFire => GkcWeaponKind.Rifle,
+                GkcCombatAction.PistolFire => GkcWeaponKind.Pistol,
                 _ => GkcWeaponKind.Infer
             };
         }
@@ -120,6 +122,9 @@ namespace Project.Player
                 MeleeEntry(GkcCombatAction.Punch3, 4102, "Punch 3", GkcWeaponKind.Unarmed),
                 MeleeEntry(GkcCombatAction.Punch4, 4104, "Punch 4", GkcWeaponKind.Unarmed),
                 MeleeEntry(GkcCombatAction.Punch5, 4105, "Punch 5", GkcWeaponKind.Unarmed, GkcAnimatorConstants.DefaultPowerActionDuration),
+
+                RangedFireEntry(GkcCombatAction.RifleFire, GkcWeaponKind.Rifle, 0.22f),
+                RangedFireEntry(GkcCombatAction.PistolFire, GkcWeaponKind.Pistol, 0.18f),
             };
         }
 
@@ -274,6 +279,26 @@ namespace Project.Player
                 weaponFilter = weapon,
                 defaultDuration = GkcAnimatorConstants.DefaultPowerActionDuration,
                 crossFadeDuration = 0.12f
+            };
+
+        private static GkcActionCatalogEntry RangedFireEntry(
+            GkcCombatAction action,
+            GkcWeaponKind weapon,
+            float duration) =>
+            new()
+            {
+                combatAction = action,
+                stateName = weapon == GkcWeaponKind.Pistol
+                    ? "Drawk-Keep Fire Weapons.Shoot Primary Pistol"
+                    : "Drawk-Keep Fire Weapons.Shoot Primary Rifle",
+                layerName = GkcAnimatorConstants.UpperBodyLayer,
+                useDirectCrossFade = true,
+                requiresStrafeMode = true,
+                useActionActiveUpperBody = true,
+                clearActionIdAfterTrigger = false,
+                weaponFilter = weapon,
+                defaultDuration = duration,
+                crossFadeDuration = 0.05f
             };
 
         private static GkcActionCatalogEntry Entry(

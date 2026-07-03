@@ -27,6 +27,32 @@ public static class HeldGripPlacementUtility
             AssetDatabase.SaveAssets();
     }
 
+    [MenuItem(SurvivalPioneerEditorMenus.Equipment + "Bake Holstered Ranged Weapon From Player Back")]
+    private static void BakeHolsteredRangedFromPlayerBackMenu()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            EditorUtility.DisplayDialog(
+                "Holstered Ranged Weapon Baker",
+                "Enter Play mode first.\n\n1. Put a rifle or pistol on a weapon hotbar slot\n2. Sheathe it (press the same weapon key again)\n3. Pause the editor\n4. Adjust the weapon under Spine\n5. Run this bake again",
+                "OK");
+            return;
+        }
+
+        ItemData item = ResolveTargetItemDataForHolsteredRanged();
+        if (item == null)
+            return;
+
+        string assetPath = AssetDatabase.GetAssetPath(item);
+        if (TryBakeFromPlayerBack(assetPath, "Spine", item))
+        {
+            EditorUtility.DisplayDialog(
+                "Holstered Ranged Weapon Baker",
+                $"Saved holstered grip to {item.name}.\n\nValues persist after exiting Play mode.",
+                "OK");
+        }
+    }
+
     [MenuItem(SurvivalPioneerEditorMenus.Equipment + "Bake Sheathed Grip From Player Back")]
     private static void BakeFromPlayerBackMenu()
     {
@@ -146,6 +172,70 @@ public static class HeldGripPlacementUtility
         }
     }
 
+    [MenuItem(SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Hip Grip From Player Hand")]
+    private static void BakeRangedHipGripFromPlayerHandMenu()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Hip Grip Baker",
+                "Enter Play mode first.\n\n1. Draw a rifle or pistol (do not aim)\n2. Pause the editor\n3. Adjust the weapon under RightHand\n4. Run this bake again",
+                "OK");
+            return;
+        }
+
+        ItemData item = GetDrawnRangedWeaponInPlayMode();
+        if (item == null)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Hip Grip Baker",
+                "Draw a ranged weapon on a weapon hotbar slot before baking the hip/hold grip.\n\nThis saves heldLocalPosition — use Bake Ranged Aim Grip while aiming for ADS offsets.",
+                "OK");
+            return;
+        }
+
+        string assetPath = AssetDatabase.GetAssetPath(item);
+        if (TryBakeFromPlayerHand(assetPath, "RightHand", item))
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Hip Grip Baker",
+                $"Saved hip/hold grip to {item.name}.\n\nValues persist after exiting Play mode.",
+                "OK");
+        }
+    }
+
+    [MenuItem(SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Aim Grip From Player Hand")]
+    private static void BakeRangedAimGripFromPlayerHandMenu()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Aim Grip Baker",
+                "Enter Play mode first.\n\n1. Draw a rifle or pistol\n2. Hold RMB to aim\n3. Pause the editor\n4. Adjust the weapon under RightHand\n5. Run this bake again",
+                "OK");
+            return;
+        }
+
+        ItemData item = ResolveTargetItemData();
+        if (item == null || !item.IsRangedWeapon)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Aim Grip Baker",
+                "Draw a ranged weapon on the weapon hotbar before baking the ADS grip.",
+                "OK");
+            return;
+        }
+
+        string assetPath = AssetDatabase.GetAssetPath(item);
+        if (TryBakeRangedAimGripFromPlayerHand(assetPath, "RightHand", item))
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Aim Grip Baker",
+                $"Saved aim grip to {item.name}.\n\nValues persist after exiting Play mode.",
+                "OK");
+        }
+    }
+
     [MenuItem(SurvivalPioneerEditorMenus.Equipment + "Bake Held Grip From Selected Transform")]
     private static void BakeFromSelectedMenu()
     {
@@ -252,6 +342,40 @@ public static class HeldGripPlacementUtility
         return TryBakeLocalTransformToItem(assetPath, hand, held, socketName);
     }
 
+    private static bool TryBakeRangedAimGripFromPlayerHand(string assetPath, string socketName, ItemData item)
+    {
+        if (item == null)
+            item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
+
+        if (item == null)
+        {
+            Debug.LogWarning($"HeldGripPlacementUtility: could not load ItemData at {assetPath}");
+            return false;
+        }
+
+        Transform hand = FindSceneHandSocket(socketName);
+        if (hand == null)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Aim Grip Baker",
+                "Could not find Player/RightHand. Enter Play mode, aim with the weapon, pause, reposition it, then run this again.",
+                "OK");
+            return false;
+        }
+
+        Transform held = ResolveHeldTransformForBake(hand, item);
+        if (held == null)
+        {
+            EditorUtility.DisplayDialog(
+                "Ranged Aim Grip Baker",
+                "No equipped weapon found under RightHand while aiming.",
+                "OK");
+            return false;
+        }
+
+        return TryBakeLocalTransformToAimItem(assetPath, hand, held, socketName);
+    }
+
     private static bool TryBakeFromPlayerBack(string assetPath, string socketName, ItemData item)
     {
         if (item == null)
@@ -285,6 +409,22 @@ public static class HeldGripPlacementUtility
         return TryBakeSheathedTransformToItem(assetPath, spine, sheathed, socketName);
     }
 
+    private static ItemData ResolveTargetItemDataForHolsteredRanged()
+    {
+        if (Selection.activeObject is ItemData selectedItem && selectedItem.IsRangedWeapon)
+            return selectedItem;
+
+        ItemData holstered = GetHolsteredItemInPlayMode(rangedOnly: true);
+        if (holstered != null)
+            return holstered;
+
+        EditorUtility.DisplayDialog(
+            "Holstered Ranged Weapon Baker",
+            "No holstered ranged weapon found.\n\nEnter Play mode, holster a rifle or pistol on your back (press the same weapon key again), pause, reposition it under Spine, select the weapon in the Hierarchy, or select its ItemData asset in the Project window.",
+            "OK");
+        return null;
+    }
+
     private static ItemData ResolveTargetItemDataForSheathed()
     {
         if (Selection.activeObject is ItemData selectedItem)
@@ -301,7 +441,7 @@ public static class HeldGripPlacementUtility
         return null;
     }
 
-    private static ItemData GetHolsteredItemInPlayMode()
+    private static ItemData GetHolsteredItemInPlayMode(bool rangedOnly = false)
     {
         if (!EditorApplication.isPlaying)
             return null;
@@ -309,6 +449,89 @@ public static class HeldGripPlacementUtility
         Transform spine = FindSceneHandSocket("Spine");
         Transform selected = Selection.activeTransform;
         if (selected != null && spine != null && IsDescendantOf(selected, spine))
+        {
+            ItemData fromSelection = ResolveItemDataForTransform(selected);
+            if (fromSelection != null && (!rangedOnly || fromSelection.IsRangedWeapon))
+                return fromSelection;
+        }
+
+        if (spine != null)
+        {
+            ItemData fromSpineVisual = ResolveHolsteredItemFromSpine(spine, rangedOnly);
+            if (fromSpineVisual != null)
+                return fromSpineVisual;
+        }
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+            return null;
+
+        EquipmentController equipment = player.GetComponent<EquipmentController>();
+        if (equipment == null)
+            return null;
+
+        ItemData drawnWeapon = equipment.IsWeaponDrawn ? equipment.DrawnWeaponItem : null;
+        ItemData backCandidate = null;
+
+        equipment.ForEachWeaponHotbarSlot(hotbarIndex =>
+        {
+            if (backCandidate != null)
+                return;
+
+            ItemData weapon = equipment.GetHotbarItem(hotbarIndex);
+            if (weapon == null || !weapon.IsEquippable)
+                return;
+
+            if (drawnWeapon != null && weapon == drawnWeapon)
+                return;
+
+            if (rangedOnly && !weapon.IsRangedWeapon)
+                return;
+
+            backCandidate = weapon;
+        });
+
+        return backCandidate;
+    }
+
+    private static ItemData ResolveHolsteredItemFromSpine(Transform spine, bool rangedOnly)
+    {
+        if (spine == null)
+            return null;
+
+        for (int i = 0; i < spine.childCount; i++)
+        {
+            Transform child = spine.GetChild(i);
+            if (IsFingerBone(child.name) || !HasRendererHierarchy(child))
+                continue;
+
+            ItemData item = ResolveItemDataForTransform(child, allowDefaultFallback: false);
+            if (item == null)
+                continue;
+
+            if (rangedOnly && !item.IsRangedWeapon)
+                continue;
+
+            return item;
+        }
+
+        return null;
+    }
+
+    private static ItemData GetDrawnRangedWeaponInPlayMode()
+    {
+        ItemData drawn = GetDrawnWeaponInPlayMode();
+        return drawn != null && drawn.IsRangedWeapon ? drawn : null;
+    }
+
+    private static ItemData GetDrawnWeaponInPlayMode()
+    {
+        if (!EditorApplication.isPlaying)
+            return null;
+
+        Transform hand = FindSceneHandSocket("RightHand");
+        Transform selected = Selection.activeTransform;
+        if (selected != null && hand != null && IsDescendantOf(selected, hand))
         {
             ItemData fromSelection = ResolveItemDataForTransform(selected);
             if (fromSelection != null)
@@ -320,42 +543,15 @@ public static class HeldGripPlacementUtility
             return null;
 
         EquipmentController equipment = player.GetComponent<EquipmentController>();
-        if (equipment == null)
+        if (equipment == null || !equipment.IsWeaponDrawn)
             return null;
 
-        int activeHotbar = equipment.ActiveWeaponHotbarSlot;
-        bool activeWeaponSelected = equipment.IsWeaponHotbarSlot(equipment.SelectedHotbarSlot);
-        ItemData backCandidate = null;
-
-        equipment.ForEachWeaponHotbarSlot(hotbarIndex =>
-        {
-            if (backCandidate != null)
-                return;
-
-            if (equipment.IsWeaponDrawn && activeWeaponSelected && hotbarIndex == activeHotbar)
-                return;
-
-            ItemData weapon = equipment.GetHotbarItem(hotbarIndex);
-            if (weapon != null && weapon.IsEquippable)
-                backCandidate = weapon;
-        });
-
-        if (backCandidate != null)
-            return backCandidate;
-
-        if (spine != null)
-        {
-            Transform visual = FindHeldWeaponRootUnderSocket(spine, null);
-            if (visual != null)
-                return ResolveItemDataForTransform(visual, allowDefaultFallback: false);
-        }
-
-        return null;
+        return equipment.DrawnWeaponItem;
     }
 
     private static ItemData ResolveTargetItemData()
     {
-        ItemData equipped = GetEquippedItemInPlayMode();
+        ItemData equipped = GetDrawnWeaponInPlayMode();
         if (equipped != null)
             return equipped;
 
@@ -364,22 +560,9 @@ public static class HeldGripPlacementUtility
 
         EditorUtility.DisplayDialog(
             "Grip Baker",
-            "No equipped weapon found.\n\nEnter Play mode with a weapon hotbar slot selected (weapon in hand), or select an ItemData asset in the Project window.",
+            "No equipped weapon found.\n\nEnter Play mode with a weapon drawn in hand, select the weapon under RightHand, or select an ItemData asset in the Project window.",
             "OK");
         return null;
-    }
-
-    private static ItemData GetEquippedItemInPlayMode()
-    {
-        if (!EditorApplication.isPlaying)
-            return null;
-
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
-            return null;
-
-        EquipmentController equipment = player.GetComponent<EquipmentController>();
-        return equipment != null && equipment.HasActiveMeleeWeapon() ? equipment.SelectedHotbarItem : null;
     }
 
     private static Transform ResolveHeldTransformForBake(Transform socket, ItemData item)
@@ -511,6 +694,36 @@ public static class HeldGripPlacementUtility
         return true;
     }
 
+    private static bool TryBakeLocalTransformToAimItem(
+        string assetPath,
+        Transform hand,
+        Transform held,
+        string socketName)
+    {
+        ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
+        if (item == null)
+            return false;
+
+        if (held.parent != hand)
+            Debug.LogWarning("HeldGripPlacementUtility: baking aim weapon root transform relative to hand socket.");
+
+        Vector3 localPosition = hand.InverseTransformPoint(held.position);
+        Quaternion localRotation = Quaternion.Inverse(hand.rotation) * held.rotation;
+        Vector3 localScale = held.lossyScale;
+        if (held.parent == hand)
+        {
+            localPosition = held.localPosition;
+            localRotation = held.localRotation;
+            localScale = held.localScale;
+        }
+
+        ApplyAimGripToItem(item, localPosition, localRotation, localScale, socketName);
+        Debug.Log(
+            $"HeldGripPlacementUtility: baked {item.name} aim grip from live transform — " +
+            $"pos {localPosition}, rot {localRotation.eulerAngles}, scale {localScale}");
+        return true;
+    }
+
     private static bool TryBakeWorldPlacementToItem(string assetPath, WorldPlacement placement, string socketName)
     {
         ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
@@ -604,6 +817,24 @@ public static class HeldGripPlacementUtility
         PersistItemData(item);
     }
 
+    private static void ApplyAimGripToItem(
+        ItemData item,
+        Vector3 localPosition,
+        Quaternion localRotation,
+        Vector3 localScale,
+        string socketName)
+    {
+        Undo.RecordObject(item, "Bake Ranged Aim Grip");
+        item.useAimHeldGrip = true;
+        item.aimHeldLocalPosition = localPosition;
+        item.aimHeldLocalRotation = localRotation;
+        item.useAimHeldLocalRotation = true;
+        item.aimHeldLocalEuler = localRotation.eulerAngles;
+        item.equipSocketName = socketName;
+        item.aimHeldLocalScale = localScale == Vector3.zero ? Vector3.one : localScale;
+        PersistItemData(item);
+    }
+
     private static void PersistItemData(ItemData item)
     {
         if (item == null)
@@ -674,19 +905,50 @@ public static class HeldGripPlacementUtility
 
     private static ItemData ResolveItemDataForTransform(Transform held, bool allowDefaultFallback = true)
     {
+        EquippedVisualMarker marker = held.GetComponentInParent<EquippedVisualMarker>();
+        if (marker != null && marker.SourceItem != null)
+            return marker.SourceItem;
+
         string objectName = held.name.Replace("(Clone)", string.Empty).Trim();
         string[] guids = AssetDatabase.FindAssets($"{objectName} t:ItemData");
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
-            if (item != null && item.itemName == objectName)
+            if (item != null && MatchesHeldTransformName(item, objectName))
+                return item;
+        }
+
+        guids = AssetDatabase.FindAssets("t:ItemData");
+        foreach (string guid in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
+            if (item != null && MatchesHeldTransformName(item, objectName))
                 return item;
         }
 
         return allowDefaultFallback
             ? AssetDatabase.LoadAssetAtPath<ItemData>(DefaultSwordAssetPath)
             : null;
+    }
+
+    private static bool MatchesHeldTransformName(ItemData item, string objectName)
+    {
+        if (item == null || string.IsNullOrWhiteSpace(objectName))
+            return false;
+
+        if (string.Equals(item.name, objectName, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (string.Equals(item.itemName, objectName, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (item.heldPrefab != null &&
+            string.Equals(item.heldPrefab.name, objectName, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
     }
 
     private static Transform FindAncestorNamed(Transform transform, string name)
