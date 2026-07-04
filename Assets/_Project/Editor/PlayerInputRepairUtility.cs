@@ -13,14 +13,16 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class PlayerInputRepairUtility
 {
-    private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player.prefab";
+    private const string LegacyPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player.prefab";
+    private const string InvectorPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player_Invector.prefab";
     private const string InputActionsPath = "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions";
     private const string PlayerActionMapName = "Player";
 
     [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput Action Events", false, 15)]
     public static void RepairPlayerInputMenu()
     {
-        int prefabChanges = RepairPlayerPrefab(resyncPlayerMap: false);
+        int prefabChanges = RepairPlayerPrefab(LegacyPlayerPrefabPath, resyncPlayerMap: false);
+        prefabChanges += RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: false);
         int sceneChanges = RepairActiveScene(resyncPlayerMap: false);
 
         string summary = BuildSummary(prefabChanges, sceneChanges);
@@ -33,7 +35,8 @@ public static class PlayerInputRepairUtility
     [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput + Sync Player Map", false, 16)]
     public static void RepairAndSyncPlayerMapMenu()
     {
-        int prefabChanges = RepairPlayerPrefab(resyncPlayerMap: true);
+        int prefabChanges = RepairPlayerPrefab(LegacyPlayerPrefabPath, resyncPlayerMap: true);
+        prefabChanges += RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: true);
         int sceneChanges = RepairActiveScene(resyncPlayerMap: true);
 
         string summary = BuildSummary(prefabChanges, sceneChanges);
@@ -53,23 +56,23 @@ public static class PlayerInputRepairUtility
         return builder.ToString();
     }
 
-    private static int RepairPlayerPrefab(bool resyncPlayerMap)
+    private static int RepairPlayerPrefab(string prefabPath, bool resyncPlayerMap)
     {
-        GameObject prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+        GameObject prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (prefabRoot == null)
         {
-            Debug.LogWarning($"PlayerInput repair: prefab not found at {PlayerPrefabPath}.");
+            Debug.LogWarning($"PlayerInput repair: prefab not found at {prefabPath}.");
             return 0;
         }
 
         PlayerInput playerInput = prefabRoot.GetComponent<PlayerInput>();
         if (playerInput == null)
         {
-            Debug.LogWarning("PlayerInput repair: Player prefab has no PlayerInput component.");
+            Debug.LogWarning($"PlayerInput repair: no PlayerInput on {prefabPath}.");
             return 0;
         }
 
-        int changes = RepairPlayerInput(playerInput, resyncPlayerMap, "Player prefab");
+        int changes = RepairPlayerInput(playerInput, resyncPlayerMap, prefabPath);
         if (changes > 0)
         {
             PrefabUtility.SavePrefabAsset(prefabRoot);

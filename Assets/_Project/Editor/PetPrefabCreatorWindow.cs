@@ -16,14 +16,14 @@ public class PetPrefabCreatorWindow : EditorWindow
     private Color bellyColor = new Color(0.98f, 0.82f, 0.62f, 1f);
     private Color accentColor = new Color(0.12f, 0.1f, 0.1f, 1f);
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Pet Prefab Creator", false, 25)]
+    [MenuItem(SurvivalPioneerEditorMenus.PetPrefabCreator, false, 20)]
     public static void ShowWindow()
     {
         PetPrefabCreatorWindow window = GetWindow<PetPrefabCreatorWindow>("Pet Prefabs");
         window.minSize = new Vector2(420, 560);
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Pet Prefab Creator From Selection", false, 26)]
+    [MenuItem(SurvivalPioneerEditorMenus.PetPrefabCreatorFromSelection, false, 21)]
     private static void OpenFromSelection()
     {
         PetPrefabCreatorWindow window = GetWindow<PetPrefabCreatorWindow>("Pet Prefabs");

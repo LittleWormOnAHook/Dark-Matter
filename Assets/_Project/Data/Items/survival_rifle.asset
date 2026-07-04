@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Survival Rifle
   icon: {fileID: 21300000, guid: 9baee211bd60651469d72603acf60f9e, type: 3}
   worldPrefab: {fileID: 9115999198717219269, guid: 1687c103af3d73b4f9728aee53ed763f, type: 3}
-  maxStack: 1
+  maxStack: 10
   itemType: 3
   weaponGrip: 1
   gkcWeaponKind: 4
@@ -29,12 +29,14 @@ MonoBehaviour:
   heldLocalRotation: {x: -0.48746446, y: 0.3852179, z: -0.4953865, w: 0.6071063}
   heldLocalScale: {x: 0.85, y: 0.85, z: 0.85}
   swingEulerAngles: {x: -120, y: 0, z: 0}
-  sheatheSocketName: Spine
+  sheatheSocketName: Spine2
   sheathedLocalPosition: {x: 0.04, y: 0.18, z: -0.25593913}
   sheathedLocalEuler: {x: 75, y: 90, z: 90}
   useSheathedLocalRotation: 0
   sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 1804537267582261728, guid: 6eb49b8498aebf14da0f67ba3cc0dddd, type: 3}
+  invectorWeaponId: vAssaultRifle
   meleeDamage: 10
   meleeDamageRandomRange: 3
   criticalDamageMultiplier: 2

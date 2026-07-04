@@ -47,8 +47,26 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.PetPrefabCreatorFromSelection, "Pet creator pre-filled from selection"),
                 (SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, "Fox cub pet prefab, definition, and icon"),
                 (SurvivalPioneerEditorMenus.PioneerCompanionPrefabDemo, "Pioneer companion prefab for expedition trio"),
-                (SurvivalPioneerEditorMenus.ProjectUnityCharacterPrefab, "Project UnityCharacter with animator scripts"),
                 (SurvivalPioneerEditorMenus.InventorySlotPrefab, "Inventory slot UI prefab"),
+            });
+
+            DrawSection("Invector Player", new[]
+            {
+                (SurvivalPioneerEditorMenus.Combat + "Build Player_Invector Prefab", "Hybrid Invector shooter + Pioneer systems"),
+                (SurvivalPioneerEditorMenus.Combat + "Wire ItemData Invector Weapon Prefabs", "Assign default pistol/rifle Invector prefabs"),
+                (SurvivalPioneerEditorMenus.Combat + "Add Invector Damage Receivers To Enemies", "Add PioneerInvectorDamageReceiver to enemy colliders"),
+                (SurvivalPioneerEditorMenus.Combat + "Swap Pioneer Scene Player To Invector", "Build prefab, wire items, swap Pioneer.unity player"),
+                (SurvivalPioneerEditorMenus.Combat + "Refresh Player_Invector Ranged Slots", "Create Drawn_/Holstered_ pistol and rifle slots"),
+                (SurvivalPioneerEditorMenus.OpenInvectorWeaponGripWindow, "Bake drawn/holstered weapon grips for Player_Invector"),
+                (SurvivalPioneerEditorMenus.BakeInvectorDrawnGrip, "Capture drawn hand offsets from live player (Play mode)"),
+                (SurvivalPioneerEditorMenus.BakeInvectorHolsteredGrip, "Capture holstered back offsets from live player (Play mode)"),
+            });
+
+            DrawSection("Equipment", new[]
+            {
+                (SurvivalPioneerEditorMenus.PreviewInvectorHolsteredWeapon, "Attach selected weapon to holster socket for tuning"),
+                (SurvivalPioneerEditorMenus.EndInvectorHolsterPreview, "Return to normal drawn/holster weapon flow"),
+                (SurvivalPioneerEditorMenus.ResetInvectorWeaponGrips, "Reset held/sheathed offsets on selected ItemData"),
             });
 
             DrawSection("Content", new[]
@@ -87,42 +105,10 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.RefreshAllWeaponHitboxes, "Rebuild hitboxes on all held + melee world prefabs"),
             });
 
-            DrawSection("Combat Animations", new[]
+            DrawSection("Enemy Animations", new[]
             {
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Repair Player Animator Setup", "Fix Player prefab animator controller references"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Rebuild Grounded Blend Tree", "Turn x Forward locomotion; Human Melee diagonals on soft lean, Basic Motions on hard lean"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Remove Legacy Turn Lean Layer", "Delete the old additive Turn Lean layer if it still exists"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Setup Combat Animation Speed + Block", "AttackAnimSpeed + parry block clips"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Setup Player Loot Animations", "BasicMotions Loot Start/Loop/End on player controller"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Apply Basic Motions Locomotion To Player", "Optional clip overrides via locomotion override controller"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Tune Locomotion Layer Blending", "Sync swapped clips and smooth base/combat/charge layer transitions"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Two-Handed Combat Animations", "Animator setup for two-handed weapons"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Setup Upper Body Combat Layer", "Upper-body attack layer on player animator"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Tune Upper Body Combat Blending", "Longer attack blend transitions"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Setup Enemy Strafe Locomotion", "Mixamo strafe blend trees on enemies"),
                 (SurvivalPioneerEditorMenus.CombatAnimations + "Rebuild Gongo Controller", "Rebuild GongoController with Mixamo clips"),
-            });
-
-            DrawSection("Ranged Weapon Setup", new[]
-            {
-                (SurvivalPioneerEditorMenus.Equipment + "Auto-Bake All Ranged Grips", "Compute held + holster grips from prefab GripPoint anchors (no Play mode)"),
-                (SurvivalPioneerEditorMenus.Equipment + "Auto-Bake Selected Ranged Weapon", "Auto-bake grips for the selected ranged ItemData"),
-                (SurvivalPioneerEditorMenus.Equipment + "Validate Ranged Muzzle Alignment", "Log barrel deviation vs character forward per weapon"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Hip Grip From Player Hand", "Manual override: capture hip grip while drawn, paused"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Ranged Aim Grip From Player Hand", "Manual override: capture ADS grip while aiming, paused"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Holstered Ranged Weapon From Player Back", "Manual override: capture holster grip while holstered, paused"),
-                (SurvivalPioneerEditorMenus.Equipment + "Reset Ranged Weapon Baked Grips", "Restore rifle/pistol held, holster, and aim defaults"),
-                (SurvivalPioneerEditorMenus.CombatAnimations + "Wire Protofactor Ranged Animsets", "Wire hold + aim clip sets into Fire Weapons trees"),
-            });
-
-            DrawSection("Equipment", new[]
-            {
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Sheathed Grip From Player Back", "Capture holstered grip from player back"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Sheathed Grip From Selected Transform", "Capture holstered grip from Spine child"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Sheathed Grip From Clipboard JSON", "Paste holstered offsets from clipboard"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Held Grip From Player Hand", "Capture held grip from player"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Held Grip From Selected Transform", "Capture grip from transform"),
-                (SurvivalPioneerEditorMenus.Equipment + "Bake Held Grip From Clipboard JSON", "Paste grip offsets from clipboard"),
             });
 
             DrawSection("UI", new[]
@@ -166,8 +152,8 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.Maintenance + "Reset Editor Layout", "Reset Unity editor window layout"),
                 (SurvivalPioneerEditorMenus.Maintenance + "Fix AI Toolkit Import Loop", "Clear AI Toolkit temp GLBs and close Unity AI windows"),
                 (SurvivalPioneerEditorMenus.Maintenance + "Clear AI Toolkit Temp Folder", "Delete AI Toolkit temp import files only"),
-                (SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput Action Events", "Remove stale UI/orphan action events from Player prefab and scene"),
-                (SurvivalPioneerEditorMenus.Maintenance + "Repair Animator Controller Graph", "Rebuild upper-body combat layer and remove broken/orphan graph edges"),
+                (SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput Action Events", "Remove stale UI/orphan action events from Player prefabs and scene"),
+                (SurvivalPioneerEditorMenus.Maintenance + "Restore Player Animators After Play", "Restore missing legacy Player animator controllers"),
             });
 
             EditorGUILayout.EndScrollView();

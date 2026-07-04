@@ -64,14 +64,14 @@ public class EquipmentItemCreatorWindow : EditorWindow
     private float toolRange = 8f;
     private float scanRange = 24f;
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Equipment Item Creator")]
+    [MenuItem(SurvivalPioneerEditorMenus.EquipmentItemCreator, false, 2)]
     public static void ShowWindow()
     {
         var window = GetWindow<EquipmentItemCreatorWindow>("Equipment Creator");
         window.minSize = new Vector2(460, 720);
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Equipment Item Creator From Selection")]
+    [MenuItem(SurvivalPioneerEditorMenus.EquipmentItemCreatorFromSelection, false, 3)]
     private static void OpenFromSelection()
     {
         var window = GetWindow<EquipmentItemCreatorWindow>("Equipment Creator");

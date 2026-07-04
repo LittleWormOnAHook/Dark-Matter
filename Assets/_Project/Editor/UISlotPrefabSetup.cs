@@ -7,7 +7,7 @@ using Project.UI;
 
 public class UISlotPrefabSetup : EditorWindow
 {
-    [MenuItem(SurvivalPioneerEditorMenus.Ui + "Inventory Slot Prefab", false, 20)]
+    [MenuItem(SurvivalPioneerEditorMenus.InventorySlotPrefab, false, 30)]
     public static void CreateSlotPrefab()
     {
         // Create the Slot GameObject

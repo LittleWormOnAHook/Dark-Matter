@@ -1633,6 +1633,7 @@ GameObject:
   - component: {fileID: 7123456789012345679}
   - component: {fileID: 6296094059926941886}
   - component: {fileID: 6852445488520919925}
+  - component: {fileID: 4143802326818875421}
   m_Layer: 0
   m_Name: The_Evil_One
   m_TagString: Untagged
@@ -1867,8 +1868,16 @@ MonoBehaviour:
   piCoinsMin: 2
   piCoinsMax: 8
   randomLootCountMin: 0
-  randomLootCountMax: 2
-  lootItemPool: []
+  randomLootCountMax: 5
+  lootItemPool:
+  - {fileID: 11400000, guid: 8f6322eb175469543be98506988edb59, type: 2}
+  - {fileID: 11400000, guid: 5ae16f172839405b6c7d8e9f01234567, type: 2}
+  - {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+  - {fileID: 11400000, guid: 17fb7a508038b574f94dfda43a5eedd5, type: 2}
+  - {fileID: 11400000, guid: 8e7a10ae2399b0e4a8d0519742119e0d, type: 2}
+  - {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
+  - {fileID: 11400000, guid: c4d5e6f708192a3b4c5d6e7f8091a2b3, type: 2}
+  - {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
   lootUnlootedLifetime: 20
   lootedBagDissolveDelay: 2
   lootInteractRange: 2.75
@@ -1917,6 +1926,19 @@ MonoBehaviour:
   iconSprite: {fileID: 21300000, guid: 1e3b0a949ff691c4782fe566fe74e657, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
+--- !u!114 &4143802326818875421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818667370058463670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1dd19998d005714381def0389ff7d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.PioneerInvectorDamageReceiver
+  applyToChildren: 1
 --- !u!1 &9020768278938481343
 GameObject:
   m_ObjectHideFlags: 0

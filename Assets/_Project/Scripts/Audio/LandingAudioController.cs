@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Project.Audio
 {
-    [RequireComponent(typeof(Character))]
     public class LandingAudioController : MonoBehaviour
     {
         [SerializeField] private float groundCheckDistance = 1.4f;

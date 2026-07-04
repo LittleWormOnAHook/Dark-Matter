@@ -1,5 +1,6 @@
 using Project.EditorTools.Player;
 using Project.Player;
+using Project.Player.Invector;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,7 +37,7 @@ namespace Project.EditorTools
             for (int i = 0; i < players.Length; i++)
             {
                 PlayerController player = players[i];
-                if (player == null)
+                if (player == null || PioneerInvectorBootstrap.IsInvectorPlayer(player))
                     continue;
 
                 Animator animator = player.GetComponentInChildren<Animator>(true);

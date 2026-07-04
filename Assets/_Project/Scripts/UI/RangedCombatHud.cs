@@ -1,6 +1,7 @@
 using Project.Data;
 using Project.Inventory;
 using Project.Interaction;
+using Project.Player.Invector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,6 +27,7 @@ namespace Project.UI
         private WeaponAmmoState ammoState;
         private InventorySystem inventory;
         private RangedCombatController rangedCombat;
+        private PioneerInvectorInputBridge invectorInput;
         private TextMeshProUGUI ammoLabel;
         private RectTransform ammoRect;
 
@@ -35,6 +37,7 @@ namespace Project.UI
             ammoState = GetComponent<WeaponAmmoState>();
             inventory = GetComponent<InventorySystem>();
             rangedCombat = GetComponent<RangedCombatController>();
+            invectorInput = GetComponent<PioneerInvectorInputBridge>();
         }
 
         private void OnEnable()
@@ -104,7 +107,7 @@ namespace Project.UI
 
             float centerX = Screen.width * 0.5f;
             float centerY = Screen.height * 0.5f;
-            float spreadScale = rangedCombat != null && rangedCombat.IsAiming ? 0.75f : 1f;
+            float spreadScale = IsAimingForHud() ? 0.75f : 1f;
             float size = crosshairSize * spreadScale;
             float gap = crosshairGap * spreadScale;
 
@@ -122,6 +125,14 @@ namespace Project.UI
 
             weapon = equipment.DrawnWeaponItem;
             return weapon != null && weapon.IsRangedWeapon;
+        }
+
+        private bool IsAimingForHud()
+        {
+            if (invectorInput != null && PioneerInvectorBootstrap.IsInvectorPlayer(invectorInput))
+                return invectorInput.IsAiming;
+
+            return rangedCombat != null && rangedCombat.IsAiming;
         }
 
         private void DrawCrosshairLine(Rect rect)

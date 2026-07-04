@@ -39,6 +39,12 @@ namespace Project.EditorTools
             RepairCursorMcpConnection(showDialog: true);
         }
 
+        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair Cursor MCP Connection (Silent)", false, 1)]
+        public static void RepairCursorMcpConnectionSilentMenu()
+        {
+            RepairCursorMcpConnection(showDialog: false);
+        }
+
         public static void RepairCursorMcpConnection(bool showDialog)
         {
             IMcpClientConfigurator cursorConfigurator = FindCursorConfigurator();

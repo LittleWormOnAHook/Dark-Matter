@@ -11,7 +11,7 @@ namespace Project.EditorTools
         private const string OutputPrefabPath = PioneerCompanionDefaults.DefaultPrefabAssetPath;
         private const string ResourcesPrefabPath = "Assets/_Project/Resources/Companions/PioneerCompanion.prefab";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Content + "Create Pioneer Companion Prefab (Demo)", false, 25)]
+        [MenuItem(SurvivalPioneerEditorMenus.PioneerCompanionPrefabDemo, false, 23)]
         public static void CreateDemoPioneerCompanionPrefab()
         {
             EnsureFolder("Assets/_Project/Prefabs/Companions");

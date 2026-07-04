@@ -38,14 +38,14 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
     private WeaponPrefabBuilder.PickupOptions pickupOptions = WeaponPrefabBuilder.DefaultPickupOptions;
 
-    [MenuItem(SurvivalPioneerEditorMenus.Combat + "Weapon Prefab Creator")]
+    [MenuItem(SurvivalPioneerEditorMenus.WeaponPrefabCreator, false, 10)]
     public static void ShowWindow()
     {
         WeaponPrefabCreatorWindow window = GetWindow<WeaponPrefabCreatorWindow>("Weapon Prefabs");
         window.minSize = new Vector2(420, 620);
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.Combat + "Weapon Prefab Creator From Selection")]
+    [MenuItem(SurvivalPioneerEditorMenus.WeaponPrefabCreatorFromSelection, false, 11)]
     private static void OpenFromSelection()
     {
         WeaponPrefabCreatorWindow window = GetWindow<WeaponPrefabCreatorWindow>("Weapon Prefabs");

@@ -50,7 +50,7 @@ namespace Project.EditorTools
 
 
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Crafting Item Creator")]
+        [MenuItem(SurvivalPioneerEditorMenus.CraftingItemCreator, false, 1)]
 
         public static void Open()
 

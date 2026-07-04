@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Sci-Fi Pistol
   icon: {fileID: 21300000, guid: 5c26b9424f5e78c43916d37cd1298bc1, type: 3}
   worldPrefab: {fileID: 7456544933812286296, guid: 31a656c5900a7274dadfb0b09219e95a, type: 3}
-  maxStack: 1
+  maxStack: 10
   itemType: 3
   weaponGrip: 0
   gkcWeaponKind: 5
@@ -29,12 +29,14 @@ MonoBehaviour:
   heldLocalRotation: {x: 0.09614088, y: -0.029649356, z: 0.011540135, w: 0.9948599}
   heldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
   swingEulerAngles: {x: -120, y: 0, z: 0}
-  sheatheSocketName: Spine
+  sheatheSocketName: Spine2
   sheathedLocalPosition: {x: 0.08, y: 0.12, z: -0.19497345}
   sheathedLocalEuler: {x: 70, y: 90, z: 90}
   useSheathedLocalRotation: 0
   sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 4881589711078705830, guid: bf8e7b32b76156341ac90d8a8b08c28c, type: 3}
+  invectorWeaponId: vHandgun
   meleeDamage: 10
   meleeDamageRandomRange: 3
   criticalDamageMultiplier: 2
@@ -52,7 +54,7 @@ MonoBehaviour:
   magazineSize: 12
   defaultAmmoType: 0
   compatibleAmmoTypes: 00000000
-  projectilePrefab: {fileID: 7710815887958215002, guid: 0a1488f76ed312642bda138af5c9f5f7, type: 3}
+  projectilePrefab: {fileID: 100000, guid: 25621447fd20a4e44841cc32dd2c0de4, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.84
   hipFireMaxDeviationDegrees: 20

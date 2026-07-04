@@ -1,6 +1,7 @@
 using Project.Core;
 using Project.Interaction;
 using Project.Player;
+using Project.Player.Invector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,12 +25,48 @@ namespace Project.UI
 
             PlayerInput playerInput = Object.FindAnyObjectByType<PlayerInput>();
             if (playerInput != null)
+            {
                 playerInput.enabled = true;
+                playerInput.ActivateInput();
+            }
 
             PlayerController player = PlayerLocator.FindPlayerController();
             player?.EnsureGameplayInputReady();
 
+            // Fallback for startup order: if the player was not found this frame, still put
+            // the cursor into gameplay mode once no blocking UI is open.
+            if (player == null && !HasVisibleUiBlockingInput())
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
+            RefreshInvectorInputLocks();
+
             GameplayHudVisibility.RefreshGameplayHud();
+        }
+
+        private static bool HasVisibleUiBlockingInput()
+        {
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return true;
+
+            return EnemyLootDialogUI.IsDialogOpen ||
+                   QuestGiverDialogUI.IsDialogOpen ||
+                   BuildingControlPanelUI.IsOpen;
+        }
+
+        private static void RefreshInvectorInputLocks()
+        {
+            GameObject playerObject = PlayerLocator.FindPlayerObject();
+            if (playerObject == null)
+                return;
+
+            PioneerInvectorInputBridge bridge = playerObject.GetComponent<PioneerInvectorInputBridge>();
+            PioneerShooterMeleeInput shooterInput = playerObject.GetComponent<PioneerShooterMeleeInput>();
+            if (bridge != null && shooterInput != null)
+                bridge.ApplyInputLocks(shooterInput);
         }
 
         private static void CloseAllGameplayUi()

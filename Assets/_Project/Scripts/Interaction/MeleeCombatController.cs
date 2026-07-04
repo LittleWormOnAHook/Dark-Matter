@@ -6,6 +6,7 @@ using Project.Data;
 using Project.Inventory;
 using Project.Player;
 using Project.Survival;
+using Project.Player.Invector;
 using Project.UI;
 using ECM2;
 using UnityEngine;
@@ -81,6 +82,17 @@ namespace Project.Interaction
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
 
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+            {
+                OpticsController invectorOptics = GetComponent<OpticsController>();
+                if (invectorOptics != null)
+                    invectorOptics.TryHandleBlockInput(context);
+                return;
+            }
+
+            if (HasActiveRangedWeapon())
+                return;
+
             if (context.canceled)
             {
                 EndBlock();
@@ -115,8 +127,17 @@ namespace Project.Interaction
 
         public void OnAttack(InputAction.CallbackContext context)
         {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
+
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
+
+            if (HasActiveRangedWeapon())
+            {
+                attackInputHeld = false;
+                return;
+            }
 
             if (IsBlocking)
                 EndBlock();
@@ -142,6 +163,9 @@ namespace Project.Interaction
 
         private void Update()
         {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
+
             RefreshCombatUiPointerBlock();
             UpdateBlockRelease();
         }
@@ -223,6 +247,9 @@ namespace Project.Interaction
 
         private bool CanBlock()
         {
+            if (HasActiveRangedWeapon())
+                return false;
+
             if (IsCombatInputBlocked())
                 return false;
 
@@ -231,6 +258,9 @@ namespace Project.Interaction
 
             return equipment != null && equipment.HasActiveMeleeWeapon();
         }
+
+        private bool HasActiveRangedWeapon() =>
+            equipment != null && equipment.HasActiveRangedWeapon();
 
         private void OnDisable()
         {
@@ -259,7 +289,7 @@ namespace Project.Interaction
 
             if (equipment.HasActiveMeleeWeapon())
             {
-                item = equipment.SelectedHotbarItem;
+                item = equipment.DrawnWeaponItem;
                 return true;
             }
 

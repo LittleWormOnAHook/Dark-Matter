@@ -1,14 +1,17 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Project.Data;
 using ECM2;
 using Project.Core;
 using Project.Interaction;
+using Project.Player.Invector;
 using Project.Survival;
 using Project.UI;
 
 namespace Project.Player
 {
-    [RequireComponent(typeof(Character))]
+    // Legacy Player.prefab includes ECM2 Character manually. Invector player uses PioneerInvectorBootstrap instead.
     public class PlayerController : MonoBehaviour
     {
         [Header("Movement")]
@@ -37,8 +40,12 @@ namespace Project.Player
         [Header("Optics")]
         [SerializeField] private float opticsZoomLerpSpeed = 28f;
         [SerializeField] private Vector3 opticsEyeOffset = new Vector3(0f, 0.08f, 0.12f);
+        [SerializeField] private float opticsFallbackHeadHeight = 1.65f;
+        [SerializeField] private float opticsBodyTurnSpeed = 18f;
 
         private Character _character;
+        private PioneerInvectorBootstrap _invectorBootstrap;
+        private PioneerInvectorInputBridge _invectorInput;
         private SurvivalStats _survivalStats;
         private WorldUseController _worldUse;
 
@@ -54,7 +61,9 @@ namespace Project.Player
         private bool _lootDialogOpen;
         private bool _buildingControlOpen;
         private bool _opticsOpen;
+        private bool _teleportPhaseLocked;
         private bool _gameplayPaused;
+        private Coroutine _teleportPhaseRoutine;
         private float _opticsTargetFov = 40f;
         private float _opticsCurrentFov = 40f;
         private float _cameraYaw;
@@ -64,9 +73,21 @@ namespace Project.Player
         private float _inputRecoveryCheckTimer;
         private float _locomotionRotationIdleSince = float.NegativeInfinity;
         private CombatFocusController _combatFocus;
+        private Animator _animator;
+        private bool _rangedAimActive;
+        private float _baseFollowDistance;
+        private float _aimFollowDistance;
+        private float _aimFovTarget = 45f;
+        private float _defaultFov = 60f;
 
+        [Header("Ranged Aim Camera")]
+        [SerializeField] private float aimShoulderOffset = 0.55f;
+        [SerializeField] private float aimFollowDistance = 4.2f;
+        [SerializeField] private float aimCameraLerpSpeed = 10f;
+        [SerializeField] private float aimBodyYawLambda = 18f;
         private const float LocomotionRotationIdleDelay = 0.12f;
 
+        public bool IsRangedAimActive => _rangedAimActive;
         public bool IsInventoryOpen => _inventoryOpen;
         public bool IsJournalOpen => _journalOpen;
         public bool IsMapOpen => _mapOpen;
@@ -74,29 +95,73 @@ namespace Project.Player
         public bool IsLootDialogOpen => _lootDialogOpen;
         public bool IsBuildingControlOpen => _buildingControlOpen;
         public bool IsOpticsOpen => _opticsOpen;
+        public bool IsTeleportPhaseLocked => _teleportPhaseLocked;
         public bool IsSprinting =>
-            _sprintInput && _moveInput.sqrMagnitude > 0.01f && _character != null && !_character.IsCrouched();
+            UsesInvectorMotor()
+                ? _invectorBootstrap.ThirdPersonController != null
+                  && _invectorBootstrap.ThirdPersonController.isSprinting
+                  && _invectorBootstrap.ThirdPersonController.input.sqrMagnitude > 0.01f
+                : _sprintInput && _moveInput.sqrMagnitude > 0.01f && _character != null && !_character.IsCrouched();
         public bool BlocksCombatInput =>
-            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || IsGameplayPaused;
+            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked || IsGameplayPaused;
         public bool IsGameplayPaused => _gameplayPaused || !GameSession.HasStarted;
         public float CameraYaw => _cameraYaw;
         public float LastLookYawDelta { get; private set; }
         public Vector2 MoveInput => _moveInput;
         public float OpticsZoomFov => _opticsCurrentFov;
         public float OpticsTargetFov => _opticsTargetFov;
-        public Camera GameplayCamera => _character != null ? _character.camera : null;
+        public Camera GameplayCamera
+        {
+            get
+            {
+                if (UsesInvectorMotor())
+                {
+                    PioneerShooterMeleeInput shooterInput = _invectorBootstrap != null
+                        ? _invectorBootstrap.ShooterInput
+                        : null;
+
+                    if (shooterInput != null && shooterInput.tpCamera != null && shooterInput.tpCamera.targetCamera != null)
+                        return shooterInput.tpCamera.targetCamera;
+
+                    Camera main = Camera.main;
+                    if (main != null)
+                        return main;
+
+                    return GetComponentInChildren<Camera>(true);
+                }
+
+                return _character != null ? _character.camera : null;
+            }
+        }
         public PlayerLocomotionAnimationSettings LocomotionAnimations => locomotionAnimations;
 
         public Vector3 OpticsEyeWorldPosition
         {
             get
             {
-                Transform pivot = cameraFollowTarget != null ? cameraFollowTarget : transform;
-                return pivot.position + pivot.TransformDirection(opticsEyeOffset);
+                Quaternion lookRotation = OpticsLookRotation;
+                Vector3 basePosition = transform.position + Vector3.up * opticsFallbackHeadHeight;
+
+                if (_animator == null)
+                    _animator = GetComponentInChildren<Animator>();
+
+                Transform head = _animator != null ? _animator.GetBoneTransform(HumanBodyBones.Head) : null;
+                if (head != null)
+                    basePosition = head.position;
+                else if (cameraFollowTarget != null)
+                    basePosition = cameraFollowTarget.position;
+
+                return basePosition
+                       + transform.right * opticsEyeOffset.x
+                       + transform.up * opticsEyeOffset.y
+                       + (lookRotation * Vector3.forward) * opticsEyeOffset.z;
             }
         }
 
         public Quaternion OpticsLookRotation =>
+            UsesInvectorMotor() && GameplayCamera != null
+                ? GameplayCamera.transform.rotation
+                :
             _character?.cameraTransform != null
                 ? _character.cameraTransform.rotation
                 : Quaternion.Euler(_cameraPitch, _cameraYaw, 0f);
@@ -104,10 +169,13 @@ namespace Project.Player
         private void Awake()
         {
             _character = GetComponent<Character>();
+            _invectorBootstrap = GetComponent<PioneerInvectorBootstrap>();
+            _invectorInput = GetComponent<PioneerInvectorInputBridge>();
             _survivalStats = GetComponent<SurvivalStats>();
             _worldUse = GetComponent<WorldUseController>();
             _combatFocus = GetComponent<CombatFocusController>();
-            if (_combatFocus == null)
+            _animator = GetComponentInChildren<Animator>();
+            if (_combatFocus == null && (_invectorBootstrap == null || !_invectorBootstrap.IsActive))
                 _combatFocus = gameObject.AddComponent<CombatFocusController>();
 
             if (cameraFollowTarget == null)
@@ -118,8 +186,39 @@ namespace Project.Player
             }
         }
 
+        private void OnEnable()
+        {
+            GameSession.GameStarted += HandleGameStarted;
+        }
+
+        private void OnDisable()
+        {
+            GameSession.GameStarted -= HandleGameStarted;
+        }
+
+        private void HandleGameStarted()
+        {
+            EnsureGameplayInputReady();
+        }
+
         private void Start()
         {
+            if (UsesInvectorMotor())
+            {
+                if (GameSession.HasStarted)
+                    GameplayInputRecovery.ReleaseAllInputCapture();
+                else
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+
+                Camera gameplayCamera = GameplayCamera;
+                if (gameplayCamera != null)
+                    GameplayAudioUtility.EnsureListenerOnCamera(gameplayCamera);
+                return;
+            }
+
             if (_character != null)
                 _character.rotationMode = Character.RotationMode.OrientRotationToMovement;
 
@@ -130,6 +229,9 @@ namespace Project.Player
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
+
+            if (_character == null)
+                return;
 
             if (_character.camera == null && Camera.main != null)
                 _character.camera = Camera.main;
@@ -147,6 +249,17 @@ namespace Project.Player
             GameplayAudioUtility.EnsureListenerOnCamera(_character.camera);
         }
 
+        private bool UsesInvectorMotor() =>
+            _invectorBootstrap != null && _invectorBootstrap.IsActive;
+
+        private void StopPlayerMovement()
+        {
+            if (UsesInvectorMotor())
+                _invectorInput?.ClearMovement();
+            else if (_character != null)
+                _character.SetMovementDirection(Vector3.zero);
+        }
+
         public void SetInventoryOpen(bool open)
         {
             _inventoryOpen = open;
@@ -158,8 +271,8 @@ namespace Project.Player
             _journalOpen = open;
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetMapOpen(bool open)
@@ -167,8 +280,8 @@ namespace Project.Player
             _mapOpen = open;
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetQuestDialogOpen(bool open)
@@ -176,8 +289,8 @@ namespace Project.Player
             _questDialogOpen = open;
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetLootDialogOpen(bool open)
@@ -185,8 +298,8 @@ namespace Project.Player
             _lootDialogOpen = open;
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetBuildingControlOpen(bool open)
@@ -194,8 +307,8 @@ namespace Project.Player
             _buildingControlOpen = open;
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetOpticsOpen(bool open, float zoomFov = 40f)
@@ -209,8 +322,8 @@ namespace Project.Player
 
             ApplyCursorState();
 
-            if (open && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (open)
+                StopPlayerMovement();
         }
 
         public void SetOpticsZoomFov(float zoomFov)
@@ -242,8 +355,37 @@ namespace Project.Player
             _gameplayPaused = paused;
             ApplyCursorState();
 
-            if (paused && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if (paused)
+                StopPlayerMovement();
+        }
+
+        public void BeginTeleportPhaseLock(float duration)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_teleportPhaseRoutine != null)
+                StopCoroutine(_teleportPhaseRoutine);
+
+            _teleportPhaseRoutine = StartCoroutine(TeleportPhaseLockRoutine(Mathf.Max(0f, duration)));
+        }
+
+        private IEnumerator TeleportPhaseLockRoutine(float duration)
+        {
+            _teleportPhaseLocked = true;
+            StopPlayerMovement();
+            ApplyCursorState();
+
+            float endTime = Time.time + duration;
+            while (Time.time < endTime)
+            {
+                StopPlayerMovement();
+                yield return null;
+            }
+
+            _teleportPhaseLocked = false;
+            _teleportPhaseRoutine = null;
+            ApplyCursorState();
         }
 
         /// <summary>
@@ -272,8 +414,8 @@ namespace Project.Player
 
             if (_opticsOpen)
             {
-                Cursor.lockState = CursorLockMode.Confined;
-                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
             else if (cursorFree)
             {
@@ -286,8 +428,8 @@ namespace Project.Player
                 Cursor.visible = false;
             }
 
-            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen) && _character != null)
-                _character.SetMovementDirection(Vector3.zero);
+            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen))
+                StopPlayerMovement();
         }
 
         public void OnMove(InputAction.CallbackContext context)
@@ -346,7 +488,7 @@ namespace Project.Player
             if (_survivalStats != null && _survivalStats.IsDead)
                 return;
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked)
                 return;
 
             if (_worldUse == null)
@@ -362,19 +504,26 @@ namespace Project.Player
 
         private void Update()
         {
+            if (UsesInvectorMotor())
+            {
+                UpdateInvectorCompanionSystems();
+                TryRecoverStaleInputBlockers();
+                return;
+            }
+
             if (_character == null) return;
 
             PollLookInput();
 
             if (_survivalStats != null && _survivalStats.IsDead)
             {
-                _character.SetMovementDirection(Vector3.zero);
+                StopPlayerMovement();
                 return;
             }
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _teleportPhaseLocked || IsGameplayPaused)
             {
-                _character.SetMovementDirection(Vector3.zero);
+                StopPlayerMovement();
                 return;
             }
 
@@ -414,17 +563,30 @@ namespace Project.Player
             if (EnemyLootDialogUI.IsDialogOpen)
                 return true;
 
-            return false;
+            if (QuestGiverDialogUI.IsDialogOpen)
+                return true;
+
+            return BuildingControlPanelUI.IsOpen;
+        }
+
+        private void UpdateInvectorCompanionSystems()
+        {
+            if (_survivalStats != null && _survivalStats.IsDead)
+                StopPlayerMovement();
         }
 
         private void LateUpdate()
         {
+            if (UsesInvectorMotor())
+                return;
+
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
                 return;
 
             ApplyLookInput();
             _combatFocus?.UpdateFocus();
             UpdateCamera();
+            ApplyRangedAimBodyRotation();
 
             if (_opticsOpen)
             {
@@ -450,7 +612,7 @@ namespace Project.Player
 
         private void HandleCrouchInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _teleportPhaseLocked || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
                 return;
 
             bool wantCrouch = _crouchInput;
@@ -491,6 +653,13 @@ namespace Project.Player
             if (_character == null || (_combatFocus != null && _combatFocus.IsLocked))
                 return;
 
+            if (_rangedAimActive)
+            {
+                _locomotionRotationIdleSince = float.NegativeInfinity;
+                _character.rotationMode = Character.RotationMode.None;
+                return;
+            }
+
             if (isMoving)
             {
                 _locomotionRotationIdleSince = float.NegativeInfinity;
@@ -524,10 +693,30 @@ namespace Project.Player
             return Quaternion.Euler(0f, _cameraYaw, 0f) * Vector3.forward;
         }
 
+        public void AlignPlayerToOpticsLook()
+        {
+            if (!_opticsOpen)
+                return;
+
+            Vector3 forward = OpticsLookRotation * Vector3.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+                return;
+
+            Quaternion targetRotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                Time.deltaTime * opticsBodyTurnSpeed);
+        }
+
         public Vector3 GetCameraRelativeMoveDirection()
         {
             Vector3 movementDirection = Vector3.right * _moveInput.x + Vector3.forward * _moveInput.y;
-            if (_character != null && _character.cameraTransform != null)
+            Camera camera = GameplayCamera;
+            if (camera != null)
+                movementDirection = movementDirection.relativeTo(camera.transform);
+            else if (_character != null && _character.cameraTransform != null)
                 movementDirection = movementDirection.relativeTo(_character.cameraTransform);
 
             movementDirection.y = 0f;
@@ -538,6 +727,20 @@ namespace Project.Player
         {
             _cameraYaw = MathLib.Damp(_cameraYaw, targetYawDegrees, smoothLambda, Time.deltaTime);
             _cameraYaw = MathLib.ClampAngle(_cameraYaw, -180f, 180f);
+        }
+
+        private void ApplyRangedAimBodyRotation()
+        {
+            if (!_rangedAimActive || _character == null)
+                return;
+
+            if (_combatFocus != null && _combatFocus.IsLocked)
+                return;
+
+            float currentYaw = _character.rotation.eulerAngles.y;
+            float blend = 1f - Mathf.Exp(-aimBodyYawLambda * Time.deltaTime);
+            float smoothedYaw = Mathf.LerpAngle(currentYaw, _cameraYaw, blend);
+            _character.SetYaw(smoothedYaw);
         }
 
         private void ApplyLookInput()
@@ -580,18 +783,54 @@ namespace Project.Player
 
             cameraTransform.rotation = Quaternion.Euler(_cameraPitch, _cameraYaw, 0f);
 
-            float followTarget = followDistance;
+            float followTarget = _rangedAimActive ? _aimFollowDistance : followDistance;
             _currentFollowDistance = Mathf.SmoothDamp(
                 _currentFollowDistance,
                 followTarget,
                 ref _followDistanceSmoothVelocity,
-                0.1f);
+                _rangedAimActive ? 1f / Mathf.Max(aimCameraLerpSpeed, 0.01f) : 0.1f);
 
             Transform followTargetTransform = cameraFollowTarget != null ? cameraFollowTarget : transform;
             Vector3 pivot = followTargetTransform.position;
+            if (_rangedAimActive)
+                pivot += cameraTransform.right * aimShoulderOffset;
+
             Vector3 desiredPosition = pivot - cameraTransform.forward * _currentFollowDistance;
             desiredPosition = ResolveCameraCollision(pivot, desiredPosition);
             cameraTransform.position = desiredPosition;
+
+            if (_character.camera != null)
+            {
+                float targetFov = _rangedAimActive ? _aimFovTarget : _defaultFov;
+                _character.camera.fieldOfView = Mathf.Lerp(
+                    _character.camera.fieldOfView,
+                    targetFov,
+                    Time.deltaTime * aimCameraLerpSpeed);
+            }
+        }
+
+        public void SetRangedAimActive(bool active, ItemData rangedWeapon)
+        {
+            _rangedAimActive = active;
+            if (active)
+            {
+                _baseFollowDistance = followDistance;
+                _aimFollowDistance = aimFollowDistance;
+                if (rangedWeapon != null && rangedWeapon.aimFovMultiplier > 0.01f && _character?.camera != null)
+                {
+                    if (_defaultFov <= 0.01f)
+                        _defaultFov = _character.camera.fieldOfView;
+
+                    _aimFovTarget = _defaultFov * rangedWeapon.aimFovMultiplier;
+                }
+            }
+            else if (_character?.camera != null && _defaultFov > 0.01f)
+            {
+                _character.camera.fieldOfView = Mathf.Lerp(
+                    _character.camera.fieldOfView,
+                    _defaultFov,
+                    Time.deltaTime * aimCameraLerpSpeed);
+            }
         }
 
         private Vector3 ResolveCameraCollision(Vector3 pivot, Vector3 desiredPosition)

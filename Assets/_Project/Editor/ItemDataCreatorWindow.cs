@@ -20,7 +20,7 @@ public class ItemDataCreatorWindow : EditorWindow
     private bool addCraftingComponent = false;
     private GameObject gatherVFXPrefab;
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Item Data Creator")]
+    [MenuItem(SurvivalPioneerEditorMenus.ItemDataCreator, false, 0)]
     public static void ShowWindow()
     {
         GetWindow<ItemDataCreatorWindow>("Item Data Creator").minSize = new Vector2(450, 620);

@@ -690,6 +690,13 @@ namespace Project.UI
             interactionPrompt.transform.SetAsLastSibling();
         }
 
+        public void ShowTimedInteractionPrompt(string message, float durationSeconds = 2.5f)
+        {
+            ShowInteractionPrompt(message);
+            CancelInvoke(nameof(HideInteractionPrompt));
+            Invoke(nameof(HideInteractionPrompt), durationSeconds);
+        }
+
         public void ShowPetFetchMessage(string itemName)
         {
             ShowInteractionPrompt($"Your fox found: {itemName}!");

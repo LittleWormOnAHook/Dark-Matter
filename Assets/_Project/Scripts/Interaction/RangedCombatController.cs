@@ -4,7 +4,7 @@ using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Player;
-using Project.UI;
+using Project.Player.Invector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -48,6 +48,9 @@ namespace Project.Interaction
 
         private void Update()
         {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
+
             RefreshCombatUiPointerBlock();
             PollAimToggleInput();
             UpdateAimState();
@@ -65,6 +68,9 @@ namespace Project.Interaction
 
         public void OnAttack(InputAction.CallbackContext context)
         {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
+
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
 
@@ -92,6 +98,9 @@ namespace Project.Interaction
 
         public void OnBlock(InputAction.CallbackContext context)
         {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
+
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
 

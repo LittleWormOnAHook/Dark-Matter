@@ -3763,6 +3763,7 @@ GameObject:
   - component: {fileID: 3550735545316714089}
   - component: {fileID: 7123456789012345678}
   - component: {fileID: 2211491220593077997}
+  - component: {fileID: 9081455211968260735}
   m_Layer: 0
   m_Name: Gongo
   m_TagString: Untagged
@@ -3902,6 +3903,16 @@ MonoBehaviour:
   investigateArriveDistance: 1.2
   searchDuration: 6
   searchRadius: 4
+  chaseStaminaPauseMin: 0.35
+  chaseStaminaPauseMax: 1.15
+  chaseStaminaRollIntervalMin: 2.4
+  chaseStaminaRollIntervalMax: 5.2
+  chaseStaminaPauseChance: 0.38
+  pioneerRetargetChanceMin: 0.1
+  pioneerRetargetChanceMax: 0.2
+  pioneerRetargetRadius: 4
+  pioneerRetargetRollIntervalMin: 0.75
+  pioneerRetargetRollIntervalMax: 1.35
 --- !u!114 &3844979759326882066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3955,6 +3966,7 @@ MonoBehaviour:
   - Idle01
   walkStateName: Walk
   runStateName: Run
+  locomotionBlendStateName: Locomotion
   attackStateNames:
   - Attack01
   - Attack02
@@ -3965,6 +3977,7 @@ MonoBehaviour:
   crossFadeDuration: 0.12
   walkSpeedThreshold: 0.05
   runSpeedThreshold: 3.94
+  locomotionSmoothTime: 0.12
   idleSwapMin: 4
   idleSwapMax: 8
   lockVisualRootPosition: 0
@@ -4019,6 +4032,19 @@ MonoBehaviour:
   smokeColor: {r: 0.62, g: 0.64, b: 0.68, a: 0.48}
   enableVolumetricSmoke: 1
   volumetricSmokeLinger: 2.4
+--- !u!114 &9081455211968260735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9094783349695686508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1dd19998d005714381def0389ff7d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.PioneerInvectorDamageReceiver
+  applyToChildren: 1
 --- !u!1 &9110796174222701895
 GameObject:
   m_ObjectHideFlags: 0

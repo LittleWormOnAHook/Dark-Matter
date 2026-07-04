@@ -1,4 +1,5 @@
 using Project.Audio;
+using Project.Combat;
 using Project.Data;
 using Project.Inventory;
 using Project.Player;
@@ -51,7 +52,15 @@ namespace Project.Interaction
             uiManager = FindAnyObjectByType<UIManager>();
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            StripMisplacedProjectileBehaviour();
             EnsurePickupTriggerCollider();
+        }
+
+        private void StripMisplacedProjectileBehaviour()
+        {
+            CombatProjectile projectile = GetComponent<CombatProjectile>();
+            if (projectile != null)
+                Destroy(projectile);
         }
 
         public float GetUsePriority(WorldUseContext context)
@@ -203,7 +212,7 @@ namespace Project.Interaction
             if (showPlayerPrompt && added == 0)
             {
                 if (uiManager != null)
-                    uiManager.ShowInteractionPrompt("Inventory is full!");
+                    uiManager.ShowTimedInteractionPrompt("Inventory is full!");
             }
 
             return false;

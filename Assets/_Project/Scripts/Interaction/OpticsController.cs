@@ -4,6 +4,7 @@ using Project.Data;
 using Project.Inventory;
 using Project.Map;
 using Project.Player;
+using Project.Player.Invector;
 using Project.Survival;
 using Project.UI;
 using UnityEngine;
@@ -329,7 +330,7 @@ namespace Project.Interaction
                 worldHighlight?.Clear();
             }
 
-            equippedVisual?.ForceRefresh();
+            RefreshEquippedVisualIfLegacy();
             return true;
         }
 
@@ -360,7 +361,7 @@ namespace Project.Interaction
             overlayUi?.SetVisible(false, ToolType.None);
             worldHighlight?.SetActive(false);
             worldHighlight?.Clear();
-            equippedVisual?.ForceRefresh();
+            RefreshEquippedVisualIfLegacy();
             playerController?.RefreshCameraFollow();
 
             worldCamera = playerController != null ? playerController.GameplayCamera : Camera.main;
@@ -386,7 +387,7 @@ namespace Project.Interaction
         {
             if (!isActive)
             {
-                equippedVisual?.ForceRefresh();
+                RefreshEquippedVisualIfLegacy();
                 return;
             }
 
@@ -407,6 +408,14 @@ namespace Project.Interaction
                 overlayUi?.ClearScannerMarkers();
                 worldHighlight?.Clear();
             }
+
+            RefreshEquippedVisualIfLegacy();
+        }
+
+        private void RefreshEquippedVisualIfLegacy()
+        {
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return;
 
             equippedVisual?.ForceRefresh();
         }

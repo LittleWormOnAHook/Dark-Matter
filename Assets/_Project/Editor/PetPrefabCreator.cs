@@ -6,7 +6,7 @@ namespace Project.EditorTools
 {
     public static class PetPrefabCreator
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Content + "Create Pet Prefab (Fox Cub Demo)", false, 27)]
+        [MenuItem(SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, false, 22)]
         public static void CreateFoxCubPetPrefab()
         {
             PetPrefabBuildSettings settings = PetPrefabBuilder.CreateFoxCubPreset();

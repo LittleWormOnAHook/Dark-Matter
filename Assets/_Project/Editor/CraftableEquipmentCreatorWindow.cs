@@ -43,7 +43,7 @@ namespace Project.EditorTools
             EditorGUILayout.LabelField("Craftable Equipment Recipe Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Attach a crafting recipe to an existing weapon or tool ItemData. " +
-                "Create the equipment first with Content > Equipment Item Creator if needed.",
+                "Create the equipment first with Prefab Creator > Equipment Item Creator if needed.",
                 MessageType.Info);
 
             EditorGUILayout.Space(8f);
@@ -56,7 +56,7 @@ namespace Project.EditorTools
             if (GUILayout.Button("Use Selected ItemData", GUILayout.Width(170f)))
                 UseSelectedItemData();
             if (GUILayout.Button("Open Equipment Item Creator", GUILayout.Width(210f)))
-                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.Content + "Equipment Item Creator");
+                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.EquipmentItemCreator);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(8f);

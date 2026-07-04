@@ -1,4 +1,5 @@
 using Project.AI;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Player;
@@ -130,10 +131,13 @@ namespace Project.Companions
             float distance = HorizontalDistance(transform.position, currentTarget.transform.position);
             MaintainCombatSpacing(currentTarget.transform.position, distance);
 
-            if (distance > attackRange)
+            ItemData equippedWeapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+            float effectiveRange = ResolveEffectiveAttackRange(equippedWeapon);
+
+            if (distance > effectiveRange)
             {
                 if (ShouldForceAggressiveAttack())
-                    followController?.RequestCombatChase(currentTarget.transform.position, attackRange * 0.92f, 0.35f);
+                    followController?.RequestCombatChase(currentTarget.transform.position, effectiveRange * 0.92f, 0.35f);
                 return;
             }
 
@@ -170,7 +174,16 @@ namespace Project.Companions
             float swingDuration = attackWindupDelay;
             bool animationStarted = false;
 
-            if (gkcAnimatorDriver != null)
+            if (weapon != null && weapon.IsRangedWeapon)
+            {
+                swingDuration = weapon.fireRate > 0.01f ? 1f / weapon.fireRate : 0.25f;
+                if (gkcAnimatorDriver != null)
+                {
+                    gkcAnimatorDriver.RequestRangedFire(weapon);
+                    animationStarted = true;
+                }
+            }
+            else if (gkcAnimatorDriver != null)
             {
                 swingDuration = gkcAnimatorDriver.ResolveActionDuration(action, attackSpeed);
                 animationStarted = gkcAnimatorDriver.RequestAction(action, attackSpeed: attackSpeed);
@@ -221,6 +234,8 @@ namespace Project.Companions
 
             return item.ResolveGkcWeaponKind() switch
             {
+                GkcWeaponKind.Rifle => GkcCombatAction.RifleFire,
+                GkcWeaponKind.Pistol => GkcCombatAction.PistolFire,
                 GkcWeaponKind.TwoHand => slot switch
                 {
                     0 => GkcCombatAction.Sword2HCombo1,
@@ -378,9 +393,48 @@ namespace Project.Companions
                 return;
 
             ItemData weapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+            if (weapon != null && weapon.IsRangedWeapon)
+            {
+                TryFireRangedProjectile(target, weapon);
+                return;
+            }
+
             float damage = weapon != null ? weapon.RollMeleeDamage() : 8f;
             damage *= DamageMultiplier;
             target.TakeDamage(damage, gameObject, isCritical: false);
+        }
+
+        private void TryFireRangedProjectile(EnemyHealth target, ItemData weapon)
+        {
+            if (target == null || weapon == null)
+                return;
+
+            Vector3 origin = transform.position + Vector3.up * 1.25f;
+            Vector3 direction = target.transform.position - origin;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+                direction = transform.forward;
+
+            direction.Normalize();
+
+            GameObject muzzleProxy = new GameObject("CompanionMuzzleProxy");
+            muzzleProxy.transform.SetPositionAndRotation(origin, Quaternion.LookRotation(direction, Vector3.up));
+            CombatProjectileSpawner.Spawn(
+                gameObject,
+                muzzleProxy.transform,
+                weapon,
+                null,
+                direction,
+                weapon.projectileSpreadDegrees * 1.35f);
+            Destroy(muzzleProxy);
+        }
+
+        private float ResolveEffectiveAttackRange(ItemData weapon)
+        {
+            if (weapon != null && weapon.IsRangedWeapon)
+                return Mathf.Max(attackRange, weapon.rangedRange * 0.82f);
+
+            return attackRange;
         }
 
         private void FaceTarget(Vector3 worldPosition)

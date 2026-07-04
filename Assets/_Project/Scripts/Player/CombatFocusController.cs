@@ -8,7 +8,6 @@ namespace Project.Player
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerController))]
-    [RequireComponent(typeof(Character))]
     [RequireComponent(typeof(MeleeCombatController))]
     [RequireComponent(typeof(SurvivalStats))]
     public class CombatFocusController : MonoBehaviour
@@ -36,6 +35,7 @@ namespace Project.Player
         private PlayerController _player;
         private Character _character;
         private MeleeCombatController _melee;
+        private RangedCombatController _ranged;
         private SurvivalStats _survival;
 
         private EnemyHealth _lockedTarget;
@@ -55,6 +55,7 @@ namespace Project.Player
             _player = GetComponent<PlayerController>();
             _character = GetComponent<Character>();
             _melee = GetComponent<MeleeCombatController>();
+            _ranged = GetComponent<RangedCombatController>();
             _survival = GetComponent<SurvivalStats>();
             _variationSeed = Random.Range(0f, 1000f);
         }
@@ -95,8 +96,39 @@ namespace Project.Player
             }
         }
 
+        public bool TryGetAimDirection(Vector3 origin, out Vector3 direction)
+        {
+            direction = Vector3.zero;
+
+            if (_lockedTarget != null && !_lockedTarget.IsDead)
+            {
+                Vector3 toTarget = _lockedTarget.transform.position - origin;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude > 0.0001f)
+                {
+                    direction = toTarget.normalized;
+                    return true;
+                }
+            }
+
+            Camera camera = _player != null ? _player.GameplayCamera : Camera.main;
+            if (camera == null)
+                return false;
+
+            direction = camera.transform.forward;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+                return false;
+
+            direction.Normalize();
+            return true;
+        }
+
         private bool HasCombatContext()
         {
+            if (_ranged != null && (_ranged.IsAiming || _ranged.WantsAimInputHeld))
+                return true;
+
             if (_melee != null && _melee.IsAttackInputActive)
                 return true;
 

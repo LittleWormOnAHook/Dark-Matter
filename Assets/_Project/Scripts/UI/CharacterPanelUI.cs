@@ -32,6 +32,7 @@ namespace Project.UI
         private PlayerProgressionManager progression;
         private SurvivalStats survivalStats;
         private EquipmentController equipment;
+        private WeaponAmmoState ammoState;
         private PioneerRosterManager roster;
 
         public void EmbedIn(Transform parent)
@@ -43,6 +44,7 @@ namespace Project.UI
             progression = PlayerProgressionManager.EnsureExists();
             survivalStats = FindAnyObjectByType<SurvivalStats>();
             equipment = FindAnyObjectByType<EquipmentController>();
+            ammoState = equipment != null ? equipment.GetComponent<WeaponAmmoState>() : null;
             roster = PioneerRosterManager.EnsureExists();
             EnsureBuilt(parent);
             SubscribeRefreshEvents();
@@ -59,6 +61,9 @@ namespace Project.UI
 
             if (equipment != null)
                 equipment.OnSelectedHotbarChanged += HandleEquipmentChanged;
+
+            if (ammoState != null)
+                ammoState.OnAmmoChanged += Refresh;
 
             EnsureSurvivalStatsSubscription();
         }
@@ -93,6 +98,9 @@ namespace Project.UI
             if (equipment != null)
                 equipment.OnSelectedHotbarChanged -= HandleEquipmentChanged;
 
+            if (ammoState != null)
+                ammoState.OnAmmoChanged -= Refresh;
+
             if (survivalStats != null)
                 survivalStats.OnStatsChanged -= Refresh;
 
@@ -117,6 +125,8 @@ namespace Project.UI
             progression ??= PlayerProgressionManager.EnsureExists();
             survivalStats ??= FindAnyObjectByType<SurvivalStats>();
             equipment ??= FindAnyObjectByType<EquipmentController>();
+            if (equipment != null && (ammoState == null || ammoState.gameObject != equipment.gameObject))
+                ammoState = equipment.GetComponent<WeaponAmmoState>();
             roster ??= PioneerRosterManager.EnsureExists();
             EnsureSurvivalStatsSubscription();
 
@@ -135,7 +145,7 @@ namespace Project.UI
 
             RefreshStatBars(survivalStats, equipment);
 
-            loadoutLabel.text = BuildLoadoutText(equipment);
+            loadoutLabel.text = BuildLoadoutText(equipment, ammoState);
 
             float ac = roster != null ? roster.AetherCredits : 0f;
             float pi = roster != null ? roster.PiWalletBalance : 0f;
@@ -176,7 +186,16 @@ namespace Project.UI
                 meleeBar.SetUnavailable("Melee Damage");
             }
 
-            rangedBar.SetUnavailable("Ranged Damage");
+            bool hasRanged = weapon != null && weapon.IsRangedWeapon;
+            if (hasRanged)
+            {
+                float damage = weapon.GetAverageRangedDamage();
+                rangedBar.SetValues(damage, CombatDamageReference, FormatStatValue(damage));
+            }
+            else
+            {
+                rangedBar.SetUnavailable("Ranged Damage");
+            }
         }
 
         private static string FormatStatValue(float value)
@@ -186,18 +205,26 @@ namespace Project.UI
                 : value.ToString("0.#");
         }
 
-        private static string BuildLoadoutText(EquipmentController equip)
+        private static string BuildLoadoutText(EquipmentController equip, WeaponAmmoState ammo)
         {
             if (equip == null)
                 return "Loadout unavailable.";
 
-            string activeWeapon = FormatItem(equip.EquippedItem);
+            ItemData activeItem = equip.EquippedItem;
+            string activeWeapon = FormatItem(activeItem);
             string secondary = FormatItem(equip.SecondaryWeaponItem);
             string tool = FormatItem(equip.ActiveToolItem);
+            string ammoLine = string.Empty;
+            if (activeItem != null && activeItem.IsRangedWeapon && ammo != null)
+            {
+                int loaded = ammo.GetActiveLoadedAmmo();
+                ammoLine = $"\nLoaded ammo: {loaded}/{Mathf.Max(1, activeItem.magazineSize)}";
+            }
+
             return
                 $"Active weapon: {activeWeapon}\n" +
                 $"Secondary weapon: {secondary}\n" +
-                $"Active tool: {tool}\n" +
+                $"Active tool: {tool}{ammoLine}\n" +
                 $"Suit: None equipped (upgrades coming soon)";
         }
 

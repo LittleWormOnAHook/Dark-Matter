@@ -1,3 +1,5 @@
+using System;
+
 namespace Project.Core
 {
     public enum GamePhase
@@ -16,6 +18,8 @@ namespace Project.Core
 
         public static bool IsInMainMenu => Phase == GamePhase.MainMenu;
 
+        public static event Action GameStarted;
+
         public static void SetPhase(GamePhase phase)
         {
             Phase = phase;
@@ -23,7 +27,11 @@ namespace Project.Core
 
         public static void MarkStarted()
         {
+            if (HasStarted)
+                return;
+
             Phase = GamePhase.Playing;
+            GameStarted?.Invoke();
         }
 
         public static void ResetSession()

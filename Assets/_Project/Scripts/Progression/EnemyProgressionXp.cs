@@ -47,7 +47,9 @@ namespace Project.AI
             if (xpReward <= 0)
                 return;
 
-            ProgressionRewardGranter.GrantXp(xpReward, XpSource.Combat, $"combat:{enemyXpKey}", "Combat");
+            // Respawnable enemies should reward every kill. Passing a one-time key here
+            // caused only the first life of each enemy instance to grant XP.
+            ProgressionRewardGranter.GrantXp(xpReward, XpSource.Combat, oneTimeKey: null, "Combat");
         }
 
         private string ResolveEnemyTypeId()

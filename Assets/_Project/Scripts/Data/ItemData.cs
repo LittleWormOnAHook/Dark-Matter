@@ -74,7 +74,9 @@ namespace Project.Data
         public int gkcLeftArmId = -1;
         public GameObject heldPrefab;
         public string equipSocketName = "RightHand";
+        [Tooltip("Local position on the Invector handler socket (meleeHandler / defaultHandler).")]
         public Vector3 heldLocalPosition = Vector3.zero;
+        [Tooltip("Local euler rotation on the Invector handler socket.")]
         public Vector3 heldLocalEuler = Vector3.zero;
         public bool useHeldLocalRotation;
         public Quaternion heldLocalRotation = Quaternion.identity;
@@ -88,6 +90,12 @@ namespace Project.Data
         public bool useSheathedLocalRotation;
         public Quaternion sheathedLocalRotation = Quaternion.identity;
         public Vector3 sheathedLocalScale = Vector3.one;
+
+        [Header("Invector")]
+        [Tooltip("Invector vShooterWeapon or vMeleeWeapon prefab (No Inventory variants).")]
+        public GameObject invectorWeaponPrefab;
+        [Tooltip("Optional stable id for save/sync when prefab references change.")]
+        public string invectorWeaponId;
 
         [Header("Melee")]
         public float meleeDamage = 10f;

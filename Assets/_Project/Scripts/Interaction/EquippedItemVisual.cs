@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Project.Data;
 using Project.Inventory;
+using Project.Player.Invector;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -44,6 +45,8 @@ namespace Project.Interaction
 
         public RangedWeaponPoseMode CurrentPoseMode => currentPoseMode;
 
+        private bool UsesInvectorWeaponBridge => PioneerInvectorBootstrap.IsInvectorPlayer(this);
+
         private void Awake()
         {
             equipment = GetComponent<EquipmentController>();
@@ -53,11 +56,17 @@ namespace Project.Interaction
 
         private void LateUpdate()
         {
+            if (UsesInvectorWeaponBridge)
+                return;
+
             UpdateRangedPoseMode();
         }
 
         private void OnEnable()
         {
+            if (UsesInvectorWeaponBridge)
+                return;
+
             if (equipment != null)
             {
                 equipment.OnSelectedHotbarChanged += HandleSelectionChanged;
@@ -159,6 +168,9 @@ namespace Project.Interaction
 
         public void ForceRefresh()
         {
+            if (UsesInvectorWeaponBridge)
+                return;
+
             RefreshHeldItem(force: true);
         }
 
@@ -207,6 +219,9 @@ namespace Project.Interaction
 
         private void RefreshHeldItem(bool force = false)
         {
+            if (UsesInvectorWeaponBridge)
+                return;
+
             ItemData handItem = ResolveHandItem();
             pendingBackItems.Clear();
             CollectBackItems(pendingBackItems);
