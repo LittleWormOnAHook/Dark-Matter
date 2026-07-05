@@ -13,6 +13,7 @@ namespace Project.Companions.Invector
         private const float MoveSpeedThreshold = 0.08f;
 
         private CompanionFollowController _followController;
+        private CompanionCombatController _combatController;
         private vThirdPersonController _controller;
         private Rigidbody _body;
         private bool _initialized;
@@ -57,6 +58,19 @@ namespace Project.Companions.Invector
 
         private void ApplyFollowLocomotion()
         {
+            if (ShouldSuppressLocomotionAnimator())
+            {
+                if (_controller != null)
+                {
+                    _controller.moveDirection = Vector3.zero;
+                    _controller.input = Vector3.zero;
+                    _controller.isSprinting = false;
+                    _controller.isGrounded = true;
+                }
+
+                return;
+            }
+
             float speed = _followController.CurrentSpeed;
             Vector3 worldDirection = _followController.CurrentMoveDirection;
             worldDirection.y = 0f;
@@ -84,6 +98,18 @@ namespace Project.Companions.Invector
                 : _controller.freeSpeed;
             _controller.SetAnimatorMoveSpeed(moveSpeed);
             _controller.UpdateAnimator();
+        }
+
+        private bool ShouldSuppressLocomotionAnimator()
+        {
+            if (_combatController == null)
+                _combatController = GetComponent<CompanionCombatController>();
+
+            if (_combatController != null && _combatController.IsAttackPending)
+                return true;
+
+            CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
+            return coordinator != null && coordinator.IsAttacking(_combatController);
         }
     }
 }

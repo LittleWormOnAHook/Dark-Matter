@@ -185,6 +185,8 @@ namespace Project.Companions
                 return false;
             }
 
+            AdvanceTurnPastIdleFighters();
+
             CompanionCombatController current = registered[turnIndex % registered.Count];
             if (current != requester)
                 return false;
@@ -192,6 +194,21 @@ namespace Project.Companions
             activeAttackers.Add(requester);
             turnIndex = (turnIndex + 1) % registered.Count;
             return true;
+        }
+
+        private void AdvanceTurnPastIdleFighters()
+        {
+            if (registered.Count <= 1)
+                return;
+
+            for (int i = 0; i < registered.Count; i++)
+            {
+                CompanionCombatController current = registered[turnIndex % registered.Count];
+                if (current != null && current.IsEngagedInCombat)
+                    return;
+
+                turnIndex = (turnIndex + 1) % registered.Count;
+            }
         }
 
         public void EndAttack(CompanionCombatController requester)

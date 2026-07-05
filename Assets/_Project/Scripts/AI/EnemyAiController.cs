@@ -83,6 +83,11 @@ namespace Project.AI
         [Tooltip("Unprovoked players closer than this are treated as a melee threat. Visible players beyond this are ignored.")]
         [SerializeField] private float playerThreatRange = 3f;
 
+        [Header("Combat Spacing")]
+        [Tooltip("Minimum horizontal gap kept between this enemy and its melee target — prevents body-shoving the player or pioneers.")]
+        [SerializeField] private float minCombatSeparation = 1.15f;
+        [SerializeField] [Range(0.55f, 0.95f)] private float attackStandoffFraction = 0.72f;
+
         private EnemySenses senses;
         private EnemyHealth health;
         private EnemyCombat combat;
@@ -598,10 +603,9 @@ namespace Project.AI
 
             moveTarget = chasePosition;
 
-            // Stop at striking distance and let the Attack state land the hit —
-            // running to point-blank body-shoves the target's rigidbody around.
+            // Stop at striking distance — never body-shove into the target's capsule.
             float standoff = combat.HasLivingTarget()
-                ? Mathf.Max(stopDistance, combat.AttackRange * 0.85f)
+                ? ResolveCombatStandoff()
                 : stopDistance;
 
             if (!TryMoveWithNavMesh(moveTarget, runSpeed, standoff))
@@ -679,14 +683,90 @@ namespace Project.AI
                 return;
             }
 
-            if (!combat.IsTargetInRange() && chasePlayer && CanChaseTarget(target.position))
+            float distanceToTarget = HorizontalDistance(transform.position, target.position);
+            float standoff = ResolveCombatStandoff();
+            float attackRange = combat.AttackRange;
+
+            // Too close — back off instead of clipping through / pushing the target.
+            if (distanceToTarget < standoff * 0.96f)
             {
-                EnterState(AiState.Chase);
+                MoveTowardsCombatRing(target, walkSpeed * 0.75f, standoff);
+                FaceTowards(target.position);
                 return;
+            }
+
+            if (distanceToTarget > attackRange)
+            {
+                // Close the gap only to standoff ring distance, never to point-blank.
+                if (distanceToTarget <= attackRange * 1.55f)
+                {
+                    MoveTowardsCombatRing(target, walkSpeed * 0.65f, standoff);
+                    FaceTowards(target.position);
+                    return;
+                }
+
+                if (chasePlayer && CanChaseTarget(target.position))
+                {
+                    EnterState(AiState.Chase);
+                    return;
+                }
             }
 
             FaceTowards(target.position);
             combat.TryAttack();
+        }
+
+        private float ResolveCombatStandoff()
+        {
+            if (combat == null)
+                return minCombatSeparation;
+
+            return Mathf.Max(minCombatSeparation, combat.AttackRange * attackStandoffFraction);
+        }
+
+        /// <summary>
+        /// Move toward a ring point at <paramref name="ringDistance"/> from the target,
+        /// preserving a personal-space buffer instead of walking into the target root.
+        /// </summary>
+        private void MoveTowardsCombatRing(Transform target, float speed, float ringDistance)
+        {
+            if (target == null)
+                return;
+
+            Vector3 targetPos = target.position;
+            Vector3 toSelf = transform.position - targetPos;
+            toSelf.y = 0f;
+            if (toSelf.sqrMagnitude < 0.01f)
+                toSelf = -transform.forward;
+            else
+                toSelf.Normalize();
+
+            Vector3 ringPoint = targetPos + toSelf * ringDistance;
+            MoveTowards(ringPoint, speed, 0.18f);
+        }
+
+        /// <summary>
+        /// Blocks chase/attack steps that would shrink distance below the combat buffer.
+        /// </summary>
+        private Vector3 ClampCombatStepTowardTarget(Vector3 step)
+        {
+            if (step.sqrMagnitude < 0.000001f || combat == null || !combat.HasLivingTarget())
+                return step;
+
+            if (state != AiState.Attack && state != AiState.Chase)
+                return step;
+
+            Transform liveTarget = combat.CurrentTarget;
+            if (liveTarget == null)
+                return step;
+
+            float minSep = ResolveCombatStandoff();
+            float currentDist = HorizontalDistance(transform.position, liveTarget.position);
+            float distAfter = HorizontalDistance(transform.position + step, liveTarget.position);
+            if (distAfter < minSep * 0.98f && distAfter < currentDist - 0.001f)
+                return Vector3.zero;
+
+            return step;
         }
 
         private void UpdateAggroCombat()
@@ -1344,6 +1424,8 @@ namespace Project.AI
                 float maxStep = distance - arriveDistance;
                 if (step.magnitude > maxStep)
                     step = toTarget.normalized * maxStep;
+
+                step = ClampCombatStepTowardTarget(step);
 
                 transform.position += step;
                 currentLocomotionSpeed = speed;

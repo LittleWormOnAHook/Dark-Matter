@@ -185,6 +185,8 @@ namespace Project.Companions
         private float trailRecoveryUntil;
         private Transform combatEngageTarget;
         private float combatEngagePreferredDistance = 2.4f;
+        private float combatEngageMaxStrikeRange = 2.4f;
+        private bool combatEngageIsRanged;
         private float combatOrbitSign;
         private int consecutiveStuckCount;
         private int trailAttemptsThisEpisode;
@@ -282,15 +284,18 @@ namespace Project.Companions
         /// player's formation slot, holding a comfort ring around it (TLOU/DA:I buddy-AI pattern).
         /// The combat tether leash back to the player is the only thing that overrides it.
         /// </summary>
-        public void SetCombatEngagement(Transform target, float preferredDistance)
+        public void SetCombatEngagement(Transform target, float preferredDistance, float maxStrikeRange, bool isRangedEngagement)
         {
             combatEngageTarget = target;
             combatEngagePreferredDistance = Mathf.Max(1f, preferredDistance);
+            combatEngageMaxStrikeRange = Mathf.Max(combatEngagePreferredDistance, maxStrikeRange);
+            combatEngageIsRanged = isRangedEngagement;
         }
 
         public void ClearCombatEngagement()
         {
             combatEngageTarget = null;
+            combatEngageIsRanged = false;
         }
 
         public void RequestCombatChase(Vector3 targetWorld, float preferredDistance, float duration)
@@ -617,10 +622,62 @@ namespace Project.Companions
             Vector3 enemyPos = combatEngageTarget.position;
             float distance = HorizontalDistance(transform.position, enemyPos);
             float preferred = combatEngagePreferredDistance;
+            float strikeRange = Mathf.Max(preferred, combatEngageMaxStrikeRange);
 
-            // Tight outer band so melee companions close to contact instead of standing
-            // just outside swing reach. Inner band still prevents body-shoving.
-            if (distance > preferred * 1.12f)
+            if (combatEngageIsRanged)
+                return TryUpdateRangedCombatEngagement(enemyPos, distance, preferred, strikeRange);
+
+            return TryUpdateMeleeCombatEngagement(enemyPos, distance, preferred, strikeRange);
+        }
+
+        private bool TryUpdateRangedCombatEngagement(Vector3 enemyPos, float distance, float preferred, float strikeRange)
+        {
+            float loseFireRange = strikeRange * 0.88f;
+            float comfortOuter = preferred * 1.18f;
+            float comfortInner = preferred * 0.82f;
+
+            // Enemy fled beyond effective fire range — run the standoff ring back into band.
+            if (distance > loseFireRange)
+            {
+                Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
+                float speed = distance > preferred * 1.75f ? runSpeed * 1.08f : runSpeed;
+                MoveTowards(ringPoint, speed, allowIdleRest: false, faceMovement: false);
+                FaceCombatTarget(enemyPos);
+                return true;
+            }
+
+            // Still in range but drifting too far for reliable shots — walk back to preferred standoff.
+            if (distance > comfortOuter)
+            {
+                Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
+                MoveTowards(ringPoint, walkSpeed * 1.12f, allowIdleRest: false, faceMovement: false);
+                FaceCombatTarget(enemyPos);
+                return true;
+            }
+
+            if (distance < comfortInner)
+            {
+                Vector3 away = transform.position - enemyPos;
+                away.y = 0f;
+                if (away.sqrMagnitude < 0.01f)
+                    away = -transform.forward;
+
+                Vector3 backPoint = enemyPos + away.normalized * preferred;
+                backPoint.y = SampleTerrainHeight(backPoint);
+                MoveTowards(backPoint, walkSpeed * 0.95f, allowIdleRest: false, faceMovement: false);
+                FaceCombatTarget(enemyPos);
+                return true;
+            }
+
+            HoldCombatFacing(enemyPos);
+            return true;
+        }
+
+        private bool TryUpdateMeleeCombatEngagement(Vector3 enemyPos, float distance, float preferred, float strikeRange)
+        {
+            float minSeparation = preferred * 0.72f;
+
+            if (distance > strikeRange * 0.98f)
             {
                 Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
                 float speed = distance > preferred * 2.5f ? runSpeed : walkSpeed * 1.05f;
@@ -629,7 +686,7 @@ namespace Project.Companions
                 return true;
             }
 
-            if (distance < preferred * 0.5f)
+            if (distance < minSeparation)
             {
                 Vector3 away = transform.position - enemyPos;
                 away.y = 0f;
@@ -643,13 +700,17 @@ namespace Project.Companions
                 return true;
             }
 
-            // Inside the comfort ring: stand ground and face the enemy only.
+            HoldCombatFacing(enemyPos);
+            return true;
+        }
+
+        private void HoldCombatFacing(Vector3 enemyPos)
+        {
             currentSpeed = 0f;
             currentMoveDirection = Vector3.zero;
             catchUpActive = false;
             isWandering = false;
             FaceCombatTarget(enemyPos);
-            return true;
         }
 
         private Vector3 ComputeCombatRingPoint(Vector3 enemyPos, float preferred)
