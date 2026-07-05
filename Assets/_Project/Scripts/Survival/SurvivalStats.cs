@@ -44,15 +44,28 @@ namespace Project.Survival
         public bool IsDead { get; private set; }
 
         public event System.Action PlayerDied;
+        public event System.Action PlayerRevived;
         public event System.Action OnStatsChanged;
         public event System.Action<float> OnDamaged;
 
         public float LastDamageTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// Brief window after respawn where enemies ignore the player for chase/attack.
+        /// </summary>
+        public bool HasEnemyCombatImmunity => Time.time < enemyCombatImmunityUntil;
+
+        public void GrantEnemyCombatImmunity(float durationSeconds)
+        {
+            enemyCombatImmunityUntil = Time.time + Mathf.Max(0f, durationSeconds);
+        }
+
         private float lastHealthReductionTime = float.NegativeInfinity;
+        private float enemyCombatImmunityUntil;
         private bool hasAppliedSaveState;
         private bool simulationPaused;
         private bool isSprinting;
+        private string lastDamageSource = "unknown";
 
         private void OnValidate()
         {
@@ -69,11 +82,22 @@ namespace Project.Survival
         {
             IsDead = false;
             LastDamageTime = float.NegativeInfinity;
+            enemyCombatImmunityUntil = 0f;
+            lastDamageSource = "unknown";
             CurrentHealth = maxHealth;
             CurrentEnergy = maxEnergy;
             CurrentStamina = maxStamina;
             CurrentOxygen = maxOxygen;
             OnStatsChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Called by PlayerDeathHandler after a death-popup respawn.
+        /// </summary>
+        public void NotifyRevivedAfterRespawn(float immunitySeconds = 3f)
+        {
+            GrantEnemyCombatImmunity(immunitySeconds);
+            PlayerRevived?.Invoke();
         }
 
         public void ApplySaveState(float health, float energy, float stamina, float oxygen)
@@ -219,11 +243,12 @@ namespace Project.Survival
             return GetOxygenNormalized() * 100f <= OxygenCriticalPercent;
         }
 
-        public void ApplyDamage(float damage)
+        public void ApplyDamage(float damage, string sourceName = null)
         {
-            if (damage <= 0f || IsDead)
+            if (damage <= 0f || IsDead || HasEnemyCombatImmunity)
                 return;
 
+            lastDamageSource = string.IsNullOrWhiteSpace(sourceName) ? "unknown" : sourceName;
             CurrentHealth = Mathf.Max(0f, CurrentHealth - damage);
             lastHealthReductionTime = Time.time;
             LastDamageTime = Time.time;
@@ -255,7 +280,7 @@ namespace Project.Survival
             CurrentHealth = 0f;
             SetSimulationPaused(true);
 
-            Debug.Log("Player has died!");
+            Debug.Log($"Player has died! (killed by {lastDamageSource}, last hit left health at 0)");
 
             PlayerDied?.Invoke();
 

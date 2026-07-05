@@ -57,6 +57,7 @@ namespace Project.Player
 
             survivalStats.ResetStats();
             survivalStats.SetSimulationPaused(false);
+            survivalStats.NotifyRevivedAfterRespawn(5f);
 
             ResetPlayerSystems();
             ResetDeathAnimation();

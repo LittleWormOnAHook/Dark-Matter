@@ -1,3 +1,4 @@
+using Project.Companions.Invector;
 using Project.AI;
 using Project.Combat;
 using Project.Core;
@@ -14,17 +15,23 @@ namespace Project.Companions
     public class CompanionCombatController : MonoBehaviour
     {
         private const float DamageMultiplier = 0.25f;
+        private const float RangedAimAlignDegrees = 14f;
+        private const float MeleeAimAlignDegrees = 35f;
+        private const float RangedMinAttackInterval = 2.8f;
+        private const float MeleeContactMin = 1.1f;
+        private const float MeleeContactMax = 1.65f;
+        private const float UnarmedContactRange = 1.25f;
 
         [SerializeField] private float attackRange = 2.5f;
         [SerializeField] private float proximityAggroRange = 3.75f;
-        [SerializeField] private float faceTurnSpeed = 10f;
-        [SerializeField] private float stepBackDistance = 0.85f;
-        [SerializeField] private float stepBackDuration = 0.55f;
+        [SerializeField] private float faceTurnSpeed = 12f;
         [SerializeField] private float attackWindupDelay = 0.18f;
 
         private CompanionAnimationDriver animationDriver;
         private PlayerGkcAnimatorDriver gkcAnimatorDriver;
         private CompanionEquipmentVisual equipmentVisual;
+        private CompanionInvectorLoadoutBridge invectorLoadout;
+        private CompanionInvectorCombatBridge invectorCombat;
         private CompanionFollowController followController;
         private CompanionThreatSensor threatSensor;
         private CombatFocusController playerFocus;
@@ -36,6 +43,7 @@ namespace Project.Companions
         private float personalIntervalMultiplier = 1f;
         private bool attackPending;
         private bool damageApplied;
+        private bool skipManualDamage;
         private bool wasEngaged;
         private int comboIndex;
         private float lastComboAttackTime;
@@ -57,6 +65,8 @@ namespace Project.Companions
         {
             animationDriver = GetComponent<CompanionAnimationDriver>();
             equipmentVisual = GetComponent<CompanionEquipmentVisual>();
+            invectorLoadout = GetComponent<CompanionInvectorLoadoutBridge>();
+            invectorCombat = GetComponent<CompanionInvectorCombatBridge>();
             followController = GetComponent<CompanionFollowController>();
             threatSensor = GetComponent<CompanionThreatSensor>();
         }
@@ -76,6 +86,8 @@ namespace Project.Companions
                 if (wasEngaged)
                     coordinator.NotifyEngagementChanged(false);
             }
+
+            followController?.ClearCombatEngagement();
         }
 
         public void Initialize(string pioneerId)
@@ -92,7 +104,10 @@ namespace Project.Companions
             behaviorProfile = profile != null ? profile.Clone() : new PioneerBehaviorProfile();
             preferredCombatDistance = behaviorProfile.ResolvePreferredCombatDistance(pioneerClass);
             selfTargetPriority = behaviorProfile.followMode == PioneerFollowMode.FollowSelf ? 0.68f : 0.35f;
-            attackRange = Mathf.Max(attackRange, preferredCombatDistance * 0.82f);
+            // Ranged standoff may widen detect/fire range. Melee contact is owned by
+            // ResolveMeleeContactRange — never stretch it to preferred spacing.
+            if (behaviorProfile.PrefersRangedSpacing(pioneerClass))
+                attackRange = Mathf.Max(attackRange, preferredCombatDistance * 0.82f);
         }
 
         public float GetPersonalAttackBias() => personalAttackBias;
@@ -101,8 +116,31 @@ namespace Project.Companions
 
         public void RefreshLoadoutWeapon(string weaponItemId)
         {
-            equipmentVisual?.ApplyWeapon(weaponItemId, drawn: CompanionCombatCoordinator.Instance != null
-                && CompanionCombatCoordinator.Instance.IsCombatEngaged);
+            if (invectorLoadout != null)
+            {
+                invectorLoadout.ApplyWeapon(weaponItemId, false);
+                return;
+            }
+
+            bool drawn = CompanionCombatCoordinator.Instance != null &&
+                         CompanionCombatCoordinator.Instance.IsCombatEngaged;
+            equipmentVisual?.ApplyWeapon(weaponItemId, drawn);
+        }
+
+        private ItemData ResolveEquippedWeapon()
+        {
+            if (invectorLoadout != null)
+                return invectorLoadout.ActiveItem;
+
+            return equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+        }
+
+        private void SetWeaponDrawn(bool drawn)
+        {
+            if (invectorLoadout != null)
+                invectorLoadout.SetDrawn(drawn);
+            else
+                equipmentVisual?.SetDrawn(drawn);
         }
 
         private void Update()
@@ -111,7 +149,7 @@ namespace Project.Companions
             ResolveTarget();
             UpdateCombatDrawState();
 
-            if (attackPending && !damageApplied && Time.time >= pendingAttackReleaseTime)
+            if (attackPending && !damageApplied && !skipManualDamage && Time.time >= pendingAttackReleaseTime)
             {
                 ApplyWeaponDamage(pendingDamageTarget);
                 damageApplied = true;
@@ -129,17 +167,19 @@ namespace Project.Companions
                 return;
 
             float distance = HorizontalDistance(transform.position, currentTarget.transform.position);
-            MaintainCombatSpacing(currentTarget.transform.position, distance);
 
-            ItemData equippedWeapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+            ItemData equippedWeapon = ResolveEquippedWeapon();
             float effectiveRange = ResolveEffectiveAttackRange(equippedWeapon);
+            bool isRanged = equippedWeapon != null && equippedWeapon.IsRangedWeapon;
 
+            // Attack contact is part of the brain: melee only swings inside hit range.
+            // Positioning is owned by the follow controller's combat-engagement ring.
             if (distance > effectiveRange)
-            {
-                if (ShouldForceAggressiveAttack())
-                    followController?.RequestCombatChase(currentTarget.transform.position, effectiveRange * 0.92f, 0.35f);
                 return;
-            }
+
+            float alignDegrees = isRanged ? RangedAimAlignDegrees : MeleeAimAlignDegrees;
+            if (!IsFacingTarget(currentTarget.transform.position, alignDegrees))
+                return;
 
             CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
             if (coordinator == null)
@@ -148,64 +188,108 @@ namespace Project.Companions
             bool forceAttack = ShouldForceAggressiveAttack();
             if (!forceAttack && Random.value > coordinator.RollAttackChance(this))
             {
-                nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this) * 0.35f;
+                nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this) * 0.55f;
                 return;
             }
 
             if (!coordinator.TryBeginAttack(this, forceAttack))
             {
-                nextAttackTime = Time.time + (forceAttack ? 0.12f : 0.3f);
+                nextAttackTime = Time.time + (forceAttack ? 0.25f : 0.55f);
                 return;
             }
 
             attackPending = true;
             damageApplied = false;
+            skipManualDamage = false;
             pendingDamageTarget = currentTarget;
-            equipmentVisual?.SetDrawn(true);
+            SetWeaponDrawn(true);
 
-            ItemData weapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
-            float attackSpeed = weapon != null ? weapon.ResolveAttackAnimationSpeed() : 0.95f;
-            ResolveGkcAnimatorDriver();
-
-            if (Time.time - lastComboAttackTime > ComboResetWindow)
-                comboIndex = 0;
-
-            GkcCombatAction action = ResolveComboAction(weapon, comboIndex);
+            ItemData weapon = ResolveEquippedWeapon();
             float swingDuration = attackWindupDelay;
             bool animationStarted = false;
 
-            if (weapon != null && weapon.IsRangedWeapon)
+            if (UsesInvectorCombatPath())
             {
-                swingDuration = weapon.fireRate > 0.01f ? 1f / weapon.fireRate : 0.25f;
-                if (gkcAnimatorDriver != null)
+                // Invector companions must never fall back to the legacy manual-damage /
+                // CombatProjectile path — running both stacks double-fires (phantom bullets,
+                // VFX spam) and mixes legacy damage with Invector damage.
+                skipManualDamage = true;
+                damageApplied = true;
+
+                if (invectorCombat.TryBeginAttack(currentTarget.transform, weapon, out swingDuration))
                 {
-                    gkcAnimatorDriver.RequestRangedFire(weapon);
                     animationStarted = true;
                 }
+                else
+                {
+                    // Attack couldn't start (weapon not ready / animator busy) — abort cleanly
+                    // and retry shortly instead of ghost-swinging.
+                    attackPending = false;
+                    pendingDamageTarget = null;
+                    CompanionCombatCoordinator.Instance?.EndAttack(this);
+                    nextAttackTime = Time.time + 0.35f;
+                    return;
+                }
             }
-            else if (gkcAnimatorDriver != null)
+            else
             {
-                swingDuration = gkcAnimatorDriver.ResolveActionDuration(action, attackSpeed);
-                animationStarted = gkcAnimatorDriver.RequestAction(action, attackSpeed: attackSpeed);
+                float attackSpeed = weapon != null ? weapon.ResolveAttackAnimationSpeed() : 0.95f;
+                ResolveGkcAnimatorDriver();
+
+                if (Time.time - lastComboAttackTime > ComboResetWindow)
+                    comboIndex = 0;
+
+                GkcCombatAction action = ResolveComboAction(weapon, comboIndex);
+
+                if (weapon != null && weapon.IsRangedWeapon)
+                {
+                    swingDuration = weapon.fireRate > 0.01f ? 1f / weapon.fireRate : 0.25f;
+                    if (gkcAnimatorDriver != null)
+                    {
+                        gkcAnimatorDriver.RequestRangedFire(weapon);
+                        animationStarted = true;
+                    }
+                }
+                else if (gkcAnimatorDriver != null)
+                {
+                    swingDuration = gkcAnimatorDriver.ResolveActionDuration(action, attackSpeed);
+                    animationStarted = gkcAnimatorDriver.RequestAction(action, attackSpeed: attackSpeed);
+                }
+
+                if (animationStarted)
+                {
+                    comboIndex = (comboIndex + 1) % ComboLength;
+                    lastComboAttackTime = Time.time;
+                }
             }
 
-            if (!animationStarted)
+            if (!animationStarted && !UsesInvectorCombatPath())
                 animationDriver?.TriggerAttack();
 
-            pendingAttackReleaseTime = Time.time + swingDuration * 0.42f;
+            pendingAttackReleaseTime = Time.time + swingDuration * (skipManualDamage ? 1f : 0.42f);
             attackFinishTime = Time.time + swingDuration + 0.12f;
-            nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this);
-            comboIndex = (comboIndex + 1) % ComboLength;
-            lastComboAttackTime = Time.time;
+            nextAttackTime = Time.time + ResolveAttackCooldown(weapon, coordinator);
+        }
 
-            if (!forceAttack)
-                followController?.RequestCombatStepBack(currentTarget.transform.position, stepBackDistance, stepBackDuration);
+        private float ResolveAttackCooldown(ItemData weapon, CompanionCombatCoordinator coordinator)
+        {
+            float interval = coordinator.GetScaledAttackInterval(this);
+            if (weapon != null && weapon.IsRangedWeapon)
+                interval = Mathf.Max(interval * 1.6f, RangedMinAttackInterval);
+
+            return interval;
+        }
+
+        private bool UsesInvectorCombatPath()
+        {
+            return invectorCombat != null && invectorLoadout != null;
         }
 
         private void FinishAttack()
         {
             attackPending = false;
             damageApplied = false;
+            skipManualDamage = false;
             pendingDamageTarget = null;
             CompanionCombatCoordinator.Instance?.EndAttack(this);
         }
@@ -302,29 +386,6 @@ namespace Project.Companions
             currentTarget = FindNearestEnemyInRange();
         }
 
-        private void MaintainCombatSpacing(Vector3 enemyPosition, float distance)
-        {
-            if (followController == null || behaviorProfile == null)
-                return;
-
-            if (!behaviorProfile.PrefersRangedSpacing(pioneerClass))
-                return;
-
-            if (distance < preferredCombatDistance * 0.72f)
-            {
-                followController.RequestCombatStepBack(enemyPosition, stepBackDistance * 1.15f, stepBackDuration);
-                return;
-            }
-
-            if (distance > preferredCombatDistance * 1.2f)
-            {
-                followController.RequestCombatMaintainDistance(
-                    enemyPosition,
-                    preferredCombatDistance,
-                    stepBackDuration * 1.35f);
-            }
-        }
-
         private void UpdateCombatDrawState()
         {
             bool engaged = currentTarget != null && !currentTarget.IsDead;
@@ -334,7 +395,29 @@ namespace Project.Companions
                 wasEngaged = engaged;
             }
 
-            equipmentVisual?.SetDrawn(engaged);
+            if (followController != null)
+            {
+                if (engaged)
+                    followController.SetCombatEngagement(currentTarget.transform, ResolveEngagementRingDistance());
+                else
+                    followController.ClearCombatEngagement();
+            }
+
+            SetWeaponDrawn(engaged);
+        }
+
+        /// <summary>
+        /// Distance of the combat comfort ring: melee closes to contact range so swings
+        /// connect; ranged classes hold their preferred standoff distance.
+        /// </summary>
+        private float ResolveEngagementRingDistance()
+        {
+            ItemData weapon = ResolveEquippedWeapon();
+            if (weapon != null && weapon.IsRangedWeapon)
+                return Mathf.Max(preferredCombatDistance, weapon.rangedRange * 0.6f);
+
+            // Sit inside contact so the stand-ground deadband never leaves them out of reach.
+            return ResolveMeleeContactRange(weapon) * 0.9f;
         }
 
         private EnemyHealth FindNearestEnemyInRange()
@@ -392,7 +475,7 @@ namespace Project.Companions
             if (target == null || target.IsDead)
                 return;
 
-            ItemData weapon = equipmentVisual != null ? equipmentVisual.EquippedWeapon : null;
+            ItemData weapon = ResolveEquippedWeapon();
             if (weapon != null && weapon.IsRangedWeapon)
             {
                 TryFireRangedProjectile(target, weapon);
@@ -434,7 +517,22 @@ namespace Project.Companions
             if (weapon != null && weapon.IsRangedWeapon)
                 return Mathf.Max(attackRange, weapon.rangedRange * 0.82f);
 
-            return attackRange;
+            return ResolveMeleeContactRange(weapon);
+        }
+
+        /// <summary>
+        /// Horizontal distance at which a melee swing is allowed to start. Item meleeRange
+        /// values are generous for player feel; companion hitboxes only connect closer in.
+        /// </summary>
+        private static float ResolveMeleeContactRange(ItemData weapon)
+        {
+            if (weapon == null || weapon.itemType != ItemType.MeleeWeapon)
+                return UnarmedContactRange;
+
+            float contact = weapon.meleeRange > 0.1f
+                ? weapon.meleeRange * 0.65f
+                : UnarmedContactRange;
+            return Mathf.Clamp(contact, MeleeContactMin, MeleeContactMax);
         }
 
         private void FaceTarget(Vector3 worldPosition)
@@ -446,6 +544,17 @@ namespace Project.Companions
 
             Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
             transform.rotation = Quaternion.Slerp(transform.rotation, look, faceTurnSpeed * Time.deltaTime);
+        }
+
+        private bool IsFacingTarget(Vector3 worldPosition, float maxAngleDegrees)
+        {
+            Vector3 toTarget = worldPosition - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.01f)
+                return true;
+
+            float angle = Vector3.Angle(transform.forward, toTarget.normalized);
+            return angle <= maxAngleDegrees;
         }
 
         private void ResolvePlayerFocus()

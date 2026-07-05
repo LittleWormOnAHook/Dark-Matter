@@ -1,5 +1,7 @@
 using ECM2;
+using Invector.vCharacterController;
 using Project.AI;
+using Project.Companions.Invector;
 using Project.Crafting;
 using Project.Interaction;
 using Project.Pet;
@@ -60,6 +62,18 @@ namespace Project.Companions
         [Tooltip("Formation/idle slots use travel direction, not owner body yaw (avoids orbiting when the player turns camera).")]
         [SerializeField] private float formationHeadingSmoothTime = 0.45f;
         [SerializeField] private float minOwnerSpeedForHeadingUpdate = 0.3f;
+
+        [Header("Loose Follow")]
+        [Tooltip("Start walking toward the player only when farther than this (hysteresis with stop).")]
+        [SerializeField] private float looseLeashStart = 5.5f;
+        [Tooltip("Stop following once within this distance — ignore further player motion until leash breaks.")]
+        [SerializeField] private float looseLeashStop = 3.2f;
+        [SerializeField] private float looseFollowBackDistance = 3.5f;
+        [SerializeField] private float looseSlotSpacing = 2.2f;
+        [SerializeField] private float looseTargetSmoothTime = 1.5f;
+        [Tooltip("Only update travel heading when the player is translating at least this fast (ignores spin-in-place).")]
+        [SerializeField] private float travelHeadingMinSpeed = 1.15f;
+        [SerializeField] private float travelHeadingSmoothTime = 2.0f;
 
         [Header("Follow Delay")]
         [Tooltip("Seconds pioneers wait after the player starts moving before they begin following.")]
@@ -169,8 +183,15 @@ namespace Project.Companions
         private int stuckSidestepSign = 1;
         private Vector3 trailRecoveryTarget;
         private float trailRecoveryUntil;
+        private Transform combatEngageTarget;
+        private float combatEngagePreferredDistance = 2.4f;
+        private float combatOrbitSign;
         private int consecutiveStuckCount;
         private int trailAttemptsThisEpisode;
+        private bool looseFollowActive;
+        private Vector3 looseFollowSmoothedTarget;
+        private Vector3 looseFollowVelocity;
+        private Vector3 travelForward = Vector3.forward;
 #if UNITY_EDITOR
         [SerializeField] private bool drawTrailRecoveryGizmos;
 #endif
@@ -178,6 +199,8 @@ namespace Project.Companions
         private static int resourceLayer = -1;
 
         public float CurrentSpeed => currentSpeed;
+        public float WalkSpeed => walkSpeed;
+        public float RunSpeed => runSpeed;
         public int FormationSlot => formationSlot;
         public Vector3 CurrentMoveDirection => currentMoveDirection;
         public bool IsNearFormation => isNearFormation;
@@ -201,6 +224,15 @@ namespace Project.Companions
             pioneerSeed = string.IsNullOrEmpty(pioneerId) ? name : pioneerId;
             combatController = GetComponent<CompanionCombatController>();
             formationHeadingYaw = followTarget != null ? followTarget.eulerAngles.y : 0f;
+            if (followTarget != null)
+            {
+                Vector3 fwd = followTarget.forward;
+                fwd.y = 0f;
+                travelForward = fwd.sqrMagnitude > 0.01f ? fwd.normalized : Vector3.forward;
+            }
+
+            looseFollowActive = false;
+            looseFollowSmoothedTarget = followTarget != null ? followTarget.position : Vector3.zero;
             SyncLocomotionLimitsFromOwner();
 
             int hash = pioneerSeed.GetHashCode();
@@ -243,6 +275,22 @@ namespace Project.Companions
             followMode = mode;
             if (activeProfile != null)
                 activeProfile.followMode = mode;
+        }
+
+        /// <summary>
+        /// Enters break-away combat mode: the companion anchors to the enemy instead of the
+        /// player's formation slot, holding a comfort ring around it (TLOU/DA:I buddy-AI pattern).
+        /// The combat tether leash back to the player is the only thing that overrides it.
+        /// </summary>
+        public void SetCombatEngagement(Transform target, float preferredDistance)
+        {
+            combatEngageTarget = target;
+            combatEngagePreferredDistance = Mathf.Max(1f, preferredDistance);
+        }
+
+        public void ClearCombatEngagement()
+        {
+            combatEngageTarget = null;
         }
 
         public void RequestCombatChase(Vector3 targetWorld, float preferredDistance, float duration)
@@ -392,93 +440,18 @@ namespace Project.Companions
             if (TryCombatTetherReturn())
                 return;
 
+            if (TryUpdateCombatEngagement())
+                return;
+
             if (!taskQueue.ShouldFollow)
             {
                 currentSpeed = 0f;
                 return;
             }
 
-            UpdateOwnerMotionSpeed();
-            UpdateFormationHeading();
-            bool ownerStationary = IsOwnerStationary();
-
-            if (ownerStationary && wasOwnerMoving)
-            {
-                RepickIdlePositionRoutine();
-                BeginIdlePhase();
-                ClearFollowMovementDelay();
-            }
-
-            if (!ownerStationary && !wasOwnerMoving)
-                ScheduleFollowMovementDelay();
-
-            wasOwnerMoving = !ownerStationary;
-
-            if (ownerStationary)
-            {
-                UpdateIdleAnchorBehavior();
-                return;
-            }
-
-            if (IsFollowMovementDelayed())
-            {
-                ApplyFollowMovementDelayHold();
-                return;
-            }
-
-            if (!ownerStationary)
-            {
-                formationDriftAngle += formationDriftDegreesPerSecond * Time.deltaTime * GetDriftSign();
-                if (formationDriftAngle > 360f)
-                    formationDriftAngle -= 360f;
-                else if (formationDriftAngle < 0f)
-                    formationDriftAngle += 360f;
-            }
-
-            float driftForFormation = formationDriftAngle;
-            Vector3 target = ResolveFollowTarget(driftForFormation);
-            float distanceToTarget = HorizontalDistance(transform.position, target);
-            float distanceToOwner = HorizontalDistance(transform.position, owner.position);
-
-            if (TryTeleportCatchUp(distanceToOwner, distanceToTarget))
-                return;
-
-            catchUpActive = distanceToOwner > catchUpDistance || distanceToTarget > catchUpDistance;
-            isNearFormation = distanceToTarget <= stopDistance + 0.2f;
-
-            if (catchUpActive)
-            {
-                smoothedWanderOffset = Vector3.SmoothDamp(
-                    smoothedWanderOffset,
-                    Vector3.zero,
-                    ref wanderVelocity,
-                    wanderSmoothTime * 0.25f);
-
-                if (distanceToOwner > catchUpDistance * 1.35f && followMode != PioneerFollowMode.FollowSelf)
-                {
-                    if (IsDirectPathBlocked(transform.position, owner.position))
-                        target = ResolveTrailAwareTarget(owner.position);
-                    else
-                        target = owner.position;
-                }
-            }
-            else if (isNearFormation && distanceToOwner <= maxFollowDistance * 0.55f)
-            {
-                UpdateWanderOffset();
-                target += smoothedWanderOffset;
-                isWandering = smoothedWanderOffset.sqrMagnitude > 0.08f;
-            }
-            else
-            {
-                smoothedWanderOffset = Vector3.SmoothDamp(
-                    smoothedWanderOffset,
-                    Vector3.zero,
-                    ref wanderVelocity,
-                    wanderSmoothTime * 0.5f);
-            }
-
-            float speed = ResolveFollowSpeed(distanceToOwner, distanceToTarget, isNearFormation, isWandering);
-            MoveTowards(target, speed, allowIdleRest: isNearFormation && !isWandering && !catchUpActive);
+            // Loose leash: pioneers only move when the player pulls the leash.
+            // Player spin / small circles do not rotate a formation frame around them.
+            UpdateLooseFollow();
         }
 
         private void SyncHoldFromTaskQueue()
@@ -519,8 +492,191 @@ namespace Project.Companions
             transform.rotation = Quaternion.Slerp(transform.rotation, holdRotation, restFacingSpeed * Time.deltaTime);
         }
 
+        /// <summary>
+        /// Soft leash follow: only walk when the player is far enough, toward a lagging point
+        /// behind their travel direction. Player body yaw and spin-in-place are ignored.
+        /// </summary>
+        private void UpdateLooseFollow()
+        {
+            UpdateOwnerMotionSpeed();
+            UpdateTravelHeadingSlow();
+
+            float distanceToOwner = HorizontalDistance(transform.position, owner.position);
+
+            if (TryTeleportCatchUp(distanceToOwner, distanceToOwner))
+                return;
+
+            if (distanceToOwner > maxFollowDistance)
+            {
+                looseFollowActive = true;
+                catchUpActive = true;
+                Vector3 catchPoint = ComputeLooseFollowPoint();
+                looseFollowSmoothedTarget = catchPoint;
+                MoveTowards(catchPoint, runSpeed, allowIdleRest: false, faceMovement: true);
+                return;
+            }
+
+            if (looseFollowActive)
+            {
+                if (distanceToOwner <= looseLeashStop)
+                {
+                    looseFollowActive = false;
+                    catchUpActive = false;
+                    currentSpeed = 0f;
+                    currentMoveDirection = Vector3.zero;
+                    isNearFormation = true;
+                    return;
+                }
+            }
+            else if (distanceToOwner >= looseLeashStart)
+            {
+                looseFollowActive = true;
+                Vector3 seed = ComputeLooseFollowPoint();
+                if (looseFollowSmoothedTarget.sqrMagnitude < 0.01f)
+                    looseFollowSmoothedTarget = seed;
+            }
+
+            if (!looseFollowActive)
+            {
+                // Inside the leash: stand still. Do not orbit or mirror player turns.
+                catchUpActive = false;
+                isNearFormation = true;
+                isWandering = false;
+                currentSpeed = 0f;
+                currentMoveDirection = Vector3.zero;
+                return;
+            }
+
+            catchUpActive = distanceToOwner > catchUpDistance;
+            Vector3 desired = ComputeLooseFollowPoint();
+            looseFollowSmoothedTarget = Vector3.SmoothDamp(
+                looseFollowSmoothedTarget,
+                desired,
+                ref looseFollowVelocity,
+                looseTargetSmoothTime);
+            looseFollowSmoothedTarget.y = SampleTerrainHeight(looseFollowSmoothedTarget);
+
+            float speed = distanceToOwner > catchUpDistance ? runSpeed : walkSpeed * 0.8f;
+            MoveTowards(looseFollowSmoothedTarget, speed, allowIdleRest: false, faceMovement: true);
+        }
+
+        private Vector3 ComputeLooseFollowPoint()
+        {
+            Vector3 forward = travelForward.sqrMagnitude > 0.01f ? travelForward.normalized : Vector3.forward;
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            if (right.sqrMagnitude < 0.01f)
+                right = Vector3.right;
+            else
+                right.Normalize();
+
+            float lateral = (formationSlot - 1) * looseSlotSpacing;
+            Vector3 point = owner.position - forward * looseFollowBackDistance + right * lateral;
+            point.y = SampleTerrainHeight(point);
+            return point;
+        }
+
+        private void UpdateTravelHeadingSlow()
+        {
+            if (ownerMotionSpeed < travelHeadingMinSpeed)
+                return;
+
+            if (ownerTravelDelta.sqrMagnitude < 0.0001f)
+                return;
+
+            Vector3 dir = ownerTravelDelta.normalized;
+            float smooth = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.15f, travelHeadingSmoothTime));
+            travelForward = Vector3.Slerp(travelForward, dir, smooth);
+            travelForward.y = 0f;
+            if (travelForward.sqrMagnitude > 0.0001f)
+                travelForward.Normalize();
+        }
+
+        private void FaceCombatTarget(Vector3 enemyPos)
+        {
+            Vector3 toEnemy = enemyPos - transform.position;
+            toEnemy.y = 0f;
+            if (toEnemy.sqrMagnitude < 0.01f)
+                return;
+
+            Quaternion look = Quaternion.LookRotation(toEnemy.normalized, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * 1.6f * Time.deltaTime);
+        }
+
+        /// <summary>
+        /// Break-away combat movement: hold a comfort ring around the enemy with a wide
+        /// deadband so the companion stands its ground instead of oscillating between the
+        /// enemy and the moving formation slot (the source of the side-to-side jitter).
+        /// Facing is always toward the enemy — never toward movement or the player.
+        /// </summary>
+        private bool TryUpdateCombatEngagement()
+        {
+            if (combatEngageTarget == null || !combatEngageTarget.gameObject.activeInHierarchy)
+                return false;
+
+            looseFollowActive = false;
+            Vector3 enemyPos = combatEngageTarget.position;
+            float distance = HorizontalDistance(transform.position, enemyPos);
+            float preferred = combatEngagePreferredDistance;
+
+            // Tight outer band so melee companions close to contact instead of standing
+            // just outside swing reach. Inner band still prevents body-shoving.
+            if (distance > preferred * 1.12f)
+            {
+                Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
+                float speed = distance > preferred * 2.5f ? runSpeed : walkSpeed * 1.05f;
+                MoveTowards(ringPoint, speed, allowIdleRest: false, faceMovement: false);
+                FaceCombatTarget(enemyPos);
+                return true;
+            }
+
+            if (distance < preferred * 0.5f)
+            {
+                Vector3 away = transform.position - enemyPos;
+                away.y = 0f;
+                if (away.sqrMagnitude < 0.01f)
+                    away = -transform.forward;
+
+                Vector3 backPoint = enemyPos + away.normalized * preferred;
+                backPoint.y = SampleTerrainHeight(backPoint);
+                MoveTowards(backPoint, walkSpeed * 0.9f, allowIdleRest: false, faceMovement: false);
+                FaceCombatTarget(enemyPos);
+                return true;
+            }
+
+            // Inside the comfort ring: stand ground and face the enemy only.
+            currentSpeed = 0f;
+            currentMoveDirection = Vector3.zero;
+            catchUpActive = false;
+            isWandering = false;
+            FaceCombatTarget(enemyPos);
+            return true;
+        }
+
+        private Vector3 ComputeCombatRingPoint(Vector3 enemyPos, float preferred)
+        {
+            Vector3 fromEnemy = transform.position - enemyPos;
+            fromEnemy.y = 0f;
+            if (fromEnemy.sqrMagnitude < 0.01f)
+                fromEnemy = -transform.forward;
+
+            fromEnemy.Normalize();
+
+            // Small per-pioneer lateral bias so multiple companions fan out around the target.
+            if (combatOrbitSign == 0f)
+                combatOrbitSign = (pioneerSeed.GetHashCode() & 1) == 0 ? 1f : -1f;
+
+            Vector3 lateral = Vector3.Cross(Vector3.up, fromEnemy) * (combatOrbitSign * (formationSlot * 0.55f));
+            Vector3 point = enemyPos + (fromEnemy * preferred) + lateral;
+            point.y = SampleTerrainHeight(point);
+            return point;
+        }
+
         private bool TryCombatTetherReturn()
         {
+            // Fully independent while engaged with an enemy — never yank back to the player.
+            if (combatEngageTarget != null)
+                return false;
+
             CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
             if (coordinator == null || !coordinator.IsCombatEngaged || activeProfile == null)
                 return false;
@@ -533,7 +689,7 @@ namespace Project.Companions
             if (distanceFromAnchor <= activeProfile.combatTetherRadius)
                 return false;
 
-            MoveTowards(anchor, catchUpSpeed * 0.9f, allowIdleRest: false);
+            MoveTowards(anchor, catchUpSpeed * 0.9f, allowIdleRest: false, faceMovement: true);
             return true;
         }
 
@@ -542,10 +698,8 @@ namespace Project.Companions
             if (taskQueue != null && taskQueue.ShouldHold && taskQueue.HasHoldPoint)
                 return taskQueue.HoldPosition;
 
-            if (followMode == PioneerFollowMode.DefendPlayer)
-                return ResolveDefendPosition();
-
-            return GetFormationPosition();
+            // Player position only — not a rotating formation slot.
+            return owner != null ? owner.position : transform.position;
         }
 
         private Vector3 ResolveFollowTarget(float driftForFormation)
@@ -650,6 +804,7 @@ namespace Project.Companions
             formation.y = SampleTerrainHeight(formation);
             transform.position = formation;
             Depenetrate();
+            SyncInvectorRigidbody();
             currentSpeed = 0f;
             currentMoveDirection = Vector3.zero;
             catchUpActive = false;
@@ -895,7 +1050,7 @@ namespace Project.Companions
                 wanderSmoothTime);
         }
 
-        private void MoveTowards(Vector3 target, float speed, bool allowIdleRest)
+        private void MoveTowards(Vector3 target, float speed, bool allowIdleRest, bool faceMovement = true)
         {
             if (useTrailWhenPathBlocked && trailRecoveryUntil <= 0f && Time.time >= stepBackUntil)
                 target = ResolveTrailAwareTarget(target);
@@ -922,6 +1077,7 @@ namespace Project.Companions
                 step = ResolveMovement(step);
                 transform.position += step;
                 Depenetrate();
+                SyncInvectorRigidbody();
                 currentSpeed = speed;
             }
             else
@@ -941,6 +1097,9 @@ namespace Project.Companions
             }
             else if (toTarget.sqrMagnitude > 0.01f)
                 currentMoveDirection = toTarget.normalized;
+
+            if (!faceMovement)
+                return;
 
             if (toTarget.sqrMagnitude > 0.01f && currentSpeed > 0.05f)
             {
@@ -1017,6 +1176,23 @@ namespace Project.Companions
         private void EnsureBodyCollider()
         {
             bodyCollider = GetComponent<CapsuleCollider>();
+            if (UsesInvectorMotor())
+            {
+                if (bodyCollider == null)
+                    bodyCollider = gameObject.AddComponent<CapsuleCollider>();
+
+                Rigidbody existingBody = GetComponent<Rigidbody>();
+                if (existingBody != null)
+                {
+                    existingBody.isKinematic = true;
+                    existingBody.useGravity = false;
+                    existingBody.constraints = RigidbodyConstraints.FreezeRotation;
+                }
+
+                FollowerCollisionUtility.Register(bodyCollider);
+                return;
+            }
+
             if (bodyCollider == null)
                 bodyCollider = gameObject.AddComponent<CapsuleCollider>();
 
@@ -1024,11 +1200,34 @@ namespace Project.Companions
             bodyCollider.height = bodyHeight;
             bodyCollider.center = new Vector3(0f, bodyHeight * 0.5f, 0f);
 
-            Rigidbody existingBody = GetComponent<Rigidbody>();
-            if (existingBody != null)
-                Object.Destroy(existingBody);
+            Rigidbody legacyBody = GetComponent<Rigidbody>();
+            if (legacyBody != null)
+                Object.Destroy(legacyBody);
 
             FollowerCollisionUtility.Register(bodyCollider);
+        }
+
+        private static bool UsesInvectorMotor(Component component)
+        {
+            return CompanionInvectorBootstrap.HasInvectorStack(component);
+        }
+
+        private bool UsesInvectorMotor()
+        {
+            return UsesInvectorMotor(this);
+        }
+
+        private void SyncInvectorRigidbody()
+        {
+            if (!UsesInvectorMotor())
+                return;
+
+            Rigidbody body = GetComponent<Rigidbody>();
+            if (body == null || !body.isKinematic)
+                return;
+
+            body.MovePosition(transform.position);
+            body.MoveRotation(transform.rotation);
         }
 
         private void GetCapsulePoints(Vector3 worldPosition, out Vector3 bottom, out Vector3 top)
@@ -1042,6 +1241,16 @@ namespace Project.Companions
 
         private void SyncLocomotionLimitsFromOwner()
         {
+            if (owner == null)
+                return;
+
+            vThirdPersonController ownerMotor = owner.GetComponent<vThirdPersonController>();
+            if (ownerMotor != null)
+            {
+                stepOffset = Mathf.Max(stepOffset, ownerMotor.stepOffsetMaxHeight + stepOffsetBonus);
+                return;
+            }
+
             if (ownerCharacter == null)
                 return;
 
@@ -1520,6 +1729,7 @@ namespace Project.Companions
 
             transform.position = pos;
             Depenetrate();
+            SyncInvectorRigidbody();
         }
 
         private bool IsOnInteriorWalkableSurface(Vector3 worldPosition, float surfaceY)

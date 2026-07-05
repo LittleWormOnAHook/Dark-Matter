@@ -13,7 +13,7 @@ namespace Project.Player.Invector
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PioneerInvectorBootstrap))]
-    public class PioneerInvectorDamageBridge : MonoBehaviour
+    public class PioneerInvectorDamageBridge : MonoBehaviour, IInvectorOutgoingDamageSource
     {
         private PioneerInvectorWeaponBridge _weaponBridge;
 

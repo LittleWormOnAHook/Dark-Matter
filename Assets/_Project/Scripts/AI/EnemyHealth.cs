@@ -25,6 +25,7 @@ namespace Project.AI
 
         public event Action<float, float> HealthChanged;
         public event Action<float, bool> Damaged;
+        public event Action<GameObject> DamagedBy;
         public event Action Died;
         public event Action Respawned;
 
@@ -63,6 +64,8 @@ namespace Project.AI
             currentHealth = Mathf.Max(0f, currentHealth - damage);
             NotifyHealthChanged();
             Damaged?.Invoke(damage, isCritical);
+            if (source != null)
+                DamagedBy?.Invoke(source);
 
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
             CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);

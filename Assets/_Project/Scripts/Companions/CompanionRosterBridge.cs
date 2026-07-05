@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Project.Core;
 using Project.Pioneers;
@@ -16,6 +17,8 @@ namespace Project.Companions
         private readonly List<PioneerCompanionAgent> activeCompanions = new List<PioneerCompanionAgent>(PioneerRosterManager.ExpeditionTrioSize);
         private PioneerRosterManager roster;
         private Transform playerTransform;
+
+        public event Action ActiveCompanionsChanged;
 
         public IReadOnlyList<PioneerCompanionAgent> ActiveCompanions => activeCompanions;
 
@@ -77,6 +80,8 @@ namespace Project.Companions
                 if (agent != null)
                     activeCompanions.Add(agent);
             }
+
+            NotifyActiveCompanionsChanged();
         }
 
         private void HandleTrioChanged()
@@ -99,6 +104,8 @@ namespace Project.Companions
                 if (record != null)
                     agent.RefreshLoadout(record);
             }
+
+            NotifyActiveCompanionsChanged();
         }
 
         private PioneerCompanionAgent SpawnCompanion(SkilledPioneerRecord record, int slotIndex)
@@ -111,8 +118,22 @@ namespace Project.Companions
 
         private void EnsureDefaultPrefab()
         {
+            PioneerCompanionAgent preferred = PioneerCompanionDefaults.LoadDefaultAgentPrefab();
+            if (preferred == null)
+                return;
+
             if (companionPrefab == null)
-                companionPrefab = PioneerCompanionDefaults.LoadDefaultAgentPrefab();
+            {
+                companionPrefab = preferred;
+                return;
+            }
+
+            if (PioneerCompanionDefaults.UseInvectorStackPref &&
+                PioneerCompanionDefaults.IsInvectorPrefab(preferred) &&
+                !PioneerCompanionDefaults.IsInvectorPrefab(companionPrefab))
+            {
+                companionPrefab = preferred;
+            }
         }
 
         private Transform GetSpawnRoot()
@@ -141,6 +162,12 @@ namespace Project.Companions
             }
 
             activeCompanions.Clear();
+            NotifyActiveCompanionsChanged();
+        }
+
+        private void NotifyActiveCompanionsChanged()
+        {
+            ActiveCompanionsChanged?.Invoke();
         }
 
         private void ResolvePlayer()

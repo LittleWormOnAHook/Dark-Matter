@@ -203,6 +203,19 @@ namespace Project.EditorTools.Invector
             }
         }
 
+        /// <summary>
+        /// Configures default weapon bridge references and all preloaded melee/ranged slots on any Invector character root.
+        /// </summary>
+        public static void RefreshPreloadedWeaponSlotsOn(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            ConfigureWeaponBridge(root);
+            ConfigurePreloadedMeleeWeaponSlots(root);
+            ConfigurePreloadedRangedWeaponSlots(root);
+        }
+
         private static void ReplaceShooterInput(GameObject root)
         {
             vShooterMeleeInput legacyInput = root.GetComponent<vShooterMeleeInput>();
@@ -314,6 +327,8 @@ namespace Project.EditorTools.Invector
                 root.AddComponent<PioneerInvectorWeaponBridge>();
             if (root.GetComponent<PioneerInvectorDamageBridge>() == null)
                 root.AddComponent<PioneerInvectorDamageBridge>();
+            if (root.GetComponent<PioneerInvectorIncomingDamageBridge>() == null)
+                root.AddComponent<PioneerInvectorIncomingDamageBridge>();
             if (root.GetComponent<PioneerInvectorAmmoBridge>() == null)
                 root.AddComponent<PioneerInvectorAmmoBridge>();
             if (root.GetComponent<PioneerPlayerInputBinder>() == null)

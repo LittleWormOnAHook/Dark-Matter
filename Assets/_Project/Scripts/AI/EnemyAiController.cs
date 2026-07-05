@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Serialization;
 using Project.Companions;
+using Project.Survival;
 
 namespace Project.AI
 {
@@ -41,6 +43,12 @@ namespace Project.AI
         [SerializeField] private float groundProbeHeight = 40f;
         [SerializeField] private float groundProbeDistance = 80f;
 
+        [Header("NavMesh")]
+        [Tooltip("Use NavMeshAgent for Wander and Chase only. Other states keep transform movement.")]
+        [SerializeField] private bool useNavMeshForChaseAndWander = true;
+        [SerializeField] private float navMeshSampleRadius = 2.5f;
+        [SerializeField] private float navDestinationRepathThreshold = 0.5f;
+
         [Header("Wander")]
         [SerializeField] private float wanderRadius = 8f;
         [SerializeField] private float wanderPauseMin = 2f;
@@ -71,6 +79,10 @@ namespace Project.AI
         [SerializeField] private float pioneerRetargetRollIntervalMin = 0.75f;
         [SerializeField] private float pioneerRetargetRollIntervalMax = 1.35f;
 
+        [Header("Player Threat")]
+        [Tooltip("Unprovoked players closer than this are treated as a melee threat. Visible players beyond this are ignored.")]
+        [SerializeField] private float playerThreatRange = 3f;
+
         private EnemySenses senses;
         private EnemyHealth health;
         private EnemyCombat combat;
@@ -90,6 +102,13 @@ namespace Project.AI
         private float nextChaseStaminaRollTime;
         private float nextPioneerRetargetRollTime;
         private Transform playerTarget;
+        private Transform aggroTarget;
+        private float aggroUntil;
+        private SurvivalStats playerSurvivalStats;
+        private NavMeshAgent navAgent;
+        private bool navMeshReady;
+        private Vector3 lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        private const float AggroDuration = 12f;
 
         public float CurrentLocomotionSpeed => currentLocomotionSpeed;
         public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
@@ -108,6 +127,7 @@ namespace Project.AI
             health = GetComponent<EnemyHealth>();
             combat = GetComponent<EnemyCombat>();
             hasPatrolRoute = patrolPoints != null && patrolPoints.Length > 0;
+            EnsureNavMeshAgent();
         }
 
         private void OnEnable()
@@ -117,20 +137,220 @@ namespace Project.AI
             currentLocalMoveDirection = Vector3.zero;
 
             if (health != null)
+            {
                 health.Died += HandleDeath;
+                health.DamagedBy += HandleDamagedBy;
+            }
+
+            EnsureNavMeshAgent();
+            if (navMeshReady && TrySampleNavMesh(transform.position, out Vector3 navHome))
+                homePosition = navHome;
 
             EnterCalmState();
+            TrySubscribePlayerEvents();
         }
 
         private void OnDisable()
         {
             if (health != null)
+            {
                 health.Died -= HandleDeath;
+                health.DamagedBy -= HandleDamagedBy;
+            }
+
+            UnsubscribePlayerEvents();
+        }
+
+        private void TrySubscribePlayerEvents()
+        {
+            if (playerSurvivalStats != null)
+                return;
+
+            GameObject playerObject = GameObject.FindWithTag("Player");
+            if (playerObject == null)
+                return;
+
+            playerSurvivalStats = playerObject.GetComponent<SurvivalStats>();
+            if (playerSurvivalStats == null)
+                return;
+
+            playerSurvivalStats.PlayerDied += HandlePlayerDied;
+            playerSurvivalStats.PlayerRevived += HandlePlayerRevived;
+        }
+
+        private void UnsubscribePlayerEvents()
+        {
+            if (playerSurvivalStats == null)
+                return;
+
+            playerSurvivalStats.PlayerDied -= HandlePlayerDied;
+            playerSurvivalStats.PlayerRevived -= HandlePlayerRevived;
+            playerSurvivalStats = null;
+        }
+
+        private void HandlePlayerDied()
+        {
+            ClearPlayerThreat();
+        }
+
+        private void HandlePlayerRevived()
+        {
+            ClearPlayerThreat();
+        }
+
+        /// <summary>
+        /// Drop the player as a combat target on death/respawn so enemies do not keep pounding
+        /// a corpse or instantly re-aggro a freshly respawned player.
+        /// </summary>
+        private void ClearPlayerThreat()
+        {
+            if (IsCombatTargetPlayer(combat.CurrentTarget))
+                combat.SetTarget(null);
+
+            if (aggroTarget != null && !IsPioneer(aggroTarget))
+            {
+                aggroTarget = null;
+                aggroUntil = 0f;
+            }
+
+            playerTarget = null;
+
+            if ((state == AiState.Chase || state == AiState.Attack) && !HasActiveAggroTarget() && !IsTargetingLivingPioneer())
+                GiveUpChaseAndReturnHome();
+        }
+
+        /// <summary>
+        /// Aggro on whoever hurt us — companions are otherwise invisible to EnemySenses
+        /// (it only tracks the Player), so an enemy attacked by pioneers would never fight back.
+        /// </summary>
+        private void HandleDamagedBy(GameObject source)
+        {
+            if (source == null || health == null || health.IsDead)
+                return;
+
+            Transform attacker = ResolveThreatRoot(source);
+            if (attacker == null)
+                return;
+
+            aggroTarget = attacker;
+            aggroUntil = Time.time + AggroDuration;
+            lastKnownPlayerPosition = attacker.position;
+
+            Debug.Log($"[EnemyAggro] {name} aggro -> {attacker.name} (source={source.name})");
+
+            // Always snap combat onto whoever just hurt us — do not keep swinging at the
+            // player after a pioneer lands a hit.
+            combat.SetTarget(attacker);
+
+            if (state != AiState.Attack && state != AiState.Chase)
+                EnterState(combat.IsTargetInRange() ? AiState.Attack : AiState.Chase);
+        }
+
+        private static Transform ResolveThreatRoot(GameObject source)
+        {
+            if (source == null)
+                return null;
+
+            // Companions must win over the player — shared Invector prefab bones can otherwise
+            // mis-attribute pioneer hits to the nearby player root.
+            CompanionHealth companionHealth = source.GetComponentInParent<CompanionHealth>();
+            if (companionHealth != null)
+                return companionHealth.transform;
+
+            PioneerCompanionAgent companion = source.GetComponentInParent<PioneerCompanionAgent>();
+            if (companion != null)
+                return companion.transform;
+
+            SurvivalStats player = source.GetComponentInParent<SurvivalStats>();
+            return player != null ? player.transform : null;
+        }
+
+        /// <summary>
+        /// Central gate for whether this enemy is allowed to acquire or keep the player as
+        /// a melee target. Blocks bystanders while pioneers are actively fighting nearby.
+        /// </summary>
+        public bool AllowsCombatTarget(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            if (!IsCombatTargetPlayer(candidate))
+                return true;
+
+            SurvivalStats stats = candidate.GetComponent<SurvivalStats>();
+            if (stats != null && (stats.IsDead || stats.HasEnemyCombatImmunity))
+                return false;
+
+            // Pioneer holds aggro — player is never a legal target until that window expires.
+            if (HasActiveAggroTarget() && IsPioneer(aggroTarget))
+                return false;
+
+            // Player who personally provoked us may be struck even with pioneers nearby.
+            if (HasActivePlayerAggro() && aggroTarget == candidate)
+                return true;
+
+            // Pioneers are the front line. A bystander player in the melee scrum is not
+            // fair game — that was the "death by unknown" pattern (enemy aggro on pioneer,
+            // but still pounding the player standing next to them).
+            if (HasNearbyLivingPioneer(pioneerRetargetRadius * 1.75f))
+                return false;
+
+            // Hostile on sight: a visible lone player within threat/vision range is fair game.
+            if (HorizontalDistance(transform.position, candidate.position) <= playerThreatRange)
+                return true;
+
+            return senses.CanSeeThreat(candidate);
+        }
+
+        private bool HasActivePlayerAggro()
+        {
+            return HasActiveAggroTarget() && !IsPioneer(aggroTarget);
+        }
+
+        /// <summary>
+        /// Picks the closest visible threat this enemy is allowed to engage — pioneers by
+        /// sight (they used to be invisible to senses), the player only when legal.
+        /// </summary>
+        private bool TryPickVisibleThreat(Transform visiblePlayer, out Transform threat)
+        {
+            Transform visiblePioneer = senses.GetVisiblePioneerTarget();
+            bool playerAllowed = visiblePlayer != null && AllowsCombatTarget(visiblePlayer);
+
+            if (visiblePioneer != null && playerAllowed)
+            {
+                threat = HorizontalDistance(transform.position, visiblePioneer.position) <=
+                         HorizontalDistance(transform.position, visiblePlayer.position)
+                    ? visiblePioneer
+                    : visiblePlayer;
+                return true;
+            }
+
+            threat = visiblePioneer != null ? visiblePioneer : (playerAllowed ? visiblePlayer : null);
+            return threat != null;
+        }
+
+        private bool HasNearbyLivingPioneer(float maxRange)
+        {
+            return PickClosestNearbyPioneerWithin(maxRange) != null;
+        }
+
+        private void TryCorrectIllegalPlayerTarget()
+        {
+            Transform current = combat.CurrentTarget;
+            if (!IsCombatTargetPlayer(current) || AllowsCombatTarget(current))
+                return;
+
+            Transform pioneer = PickClosestNearbyPioneerWithin(pioneerRetargetRadius * 1.75f);
+            combat.SetTarget(pioneer);
         }
 
         private void LateUpdate()
         {
             if (IsStationary)
+                return;
+
+            // NavMeshAgent owns vertical placement while active on the mesh.
+            if (navMeshReady && navAgent != null && navAgent.enabled)
                 return;
 
             SnapToGround();
@@ -144,22 +364,32 @@ namespace Project.AI
             if (health != null && health.IsDead)
                 return;
 
-            Transform sensedTarget = senses.GetSensedTarget();
-            if (sensedTarget != null)
+            TrySubscribePlayerEvents();
+
+            Transform visiblePlayer = senses.GetVisiblePlayerTarget();
+            if (visiblePlayer != null)
+                lastKnownPlayerPosition = visiblePlayer.position;
+
+            if (HasActiveAggroTarget())
             {
-                playerTarget = sensedTarget;
-                lastKnownPlayerPosition = sensedTarget.position;
+                playerTarget = null;
+                UpdateAggroCombat();
+            }
+            else if (TryPickVisibleThreat(visiblePlayer, out Transform visibleThreat))
+            {
+                bool threatIsPlayer = IsCombatTargetPlayer(visibleThreat);
+                playerTarget = threatIsPlayer ? visibleThreat : null;
                 lostTargetTimer = 0f;
 
-                if (!IsTargetingLivingPioneer())
-                    combat.SetTarget(sensedTarget);
+                if (!threatIsPlayer || !IsTargetingLivingPioneer())
+                    combat.SetTarget(visibleThreat);
 
                 if (combat.IsTargetInRange())
                 {
                     if (state != AiState.Attack)
                         EnterState(AiState.Attack);
                 }
-                else if (chasePlayer && CanChaseTarget(sensedTarget.position))
+                else if (chasePlayer && CanChaseTarget(visibleThreat.position))
                 {
                     if (state != AiState.Chase)
                         EnterState(AiState.Chase);
@@ -172,8 +402,9 @@ namespace Project.AI
             else
             {
                 playerTarget = null;
+                TryCorrectIllegalPlayerTarget();
 
-                if (!IsTargetingLivingPioneer())
+                if (IsCombatTargetPlayer(combat.CurrentTarget))
                     combat.SetTarget(null);
 
                 if (state == AiState.Chase || state == AiState.Attack)
@@ -185,7 +416,7 @@ namespace Project.AI
             }
 
             if (state == AiState.Attack || state == AiState.Chase)
-                TryRetargetToNearbyPioneer();
+                TryCorrectIllegalPlayerTarget();
 
             switch (state)
             {
@@ -242,10 +473,15 @@ namespace Project.AI
                 return;
             }
 
-            MoveTowards(moveTarget, walkSpeed);
+            float arriveDistance = stopDistance + 0.5f;
+            bool usingNav = TryMoveWithNavMesh(moveTarget, walkSpeed, arriveDistance);
+            if (!usingNav)
+                MoveTowards(moveTarget, walkSpeed);
 
-            if (HorizontalDistance(transform.position, moveTarget) > stopDistance + 0.5f)
+            if (!HasArrived(moveTarget, arriveDistance, usingNav))
                 return;
+
+            StopNavMeshMovement();
 
             stateTimer -= Time.deltaTime;
             if (stateTimer > 0f)
@@ -313,7 +549,7 @@ namespace Project.AI
         private void UpdateChase()
         {
             Transform chaseTarget = combat.CurrentTarget;
-            Vector3 chasePosition = chaseTarget != null ? chaseTarget.position : lastKnownPlayerPosition;
+            Vector3 chasePosition = ResolveChasePosition(chaseTarget);
 
             if (!CanContinueChase(chasePosition))
             {
@@ -323,6 +559,7 @@ namespace Project.AI
 
             if (Time.time < chaseStaminaPauseUntil)
             {
+                StopNavMeshMovement();
                 currentLocomotionSpeed = 0f;
                 currentLocalMoveDirection = Vector3.zero;
                 FaceTowards(chasePosition);
@@ -332,8 +569,66 @@ namespace Project.AI
             if (Time.time >= nextChaseStaminaRollTime)
                 TryStartChaseStaminaPause();
 
+            // Arrived at the last-known player spot with nobody there — give up quickly
+            // instead of camping the stale position for the rest of the aggro window.
+            // Also covers a null combat target (target was disallowed mid-chase).
+            float giveUpDistance = stopDistance + 0.75f;
+            bool atLastKnown = HasArrived(chasePosition, giveUpDistance, navMeshReady);
+            if ((chaseTarget == null || !IsPioneer(chaseTarget)) && !senses.CanSeePlayer() && atLastKnown)
+            {
+                lostTargetTimer += Time.deltaTime;
+                if (lostTargetTimer >= loseTargetDelay)
+                {
+                    // Clear aggro too — otherwise the next frame's dispatch sees the aggro
+                    // window still open and immediately re-enters Chase, undoing the give-up.
+                    if (aggroTarget == chaseTarget)
+                    {
+                        aggroTarget = null;
+                        aggroUntil = 0f;
+                    }
+
+                    GiveUpChaseAndReturnHome();
+                    return;
+                }
+            }
+            else
+            {
+                lostTargetTimer = 0f;
+            }
+
             moveTarget = chasePosition;
-            MoveTowards(moveTarget, runSpeed);
+
+            // Stop at striking distance and let the Attack state land the hit —
+            // running to point-blank body-shoves the target's rigidbody around.
+            float standoff = combat.HasLivingTarget()
+                ? Mathf.Max(stopDistance, combat.AttackRange * 0.85f)
+                : stopDistance;
+
+            if (!TryMoveWithNavMesh(moveTarget, runSpeed, standoff))
+                MoveTowards(moveTarget, runSpeed, standoff);
+        }
+
+        /// <summary>
+        /// Companions are treated as engaged brawlers (live tracking expected). The player,
+        /// once provoked, is only "known" at the position they were last actually sensed —
+        /// otherwise the enemy would chase a perfectly up-to-date position through walls and
+        /// across the map for the whole aggro window, making retreat impossible.
+        /// </summary>
+        private Vector3 ResolveChasePosition(Transform chaseTarget)
+        {
+            if (chaseTarget == null)
+                return lastKnownPlayerPosition;
+
+            if (IsPioneer(chaseTarget))
+                return chaseTarget.position;
+
+            if (senses.CanSeePlayer())
+            {
+                lastKnownPlayerPosition = chaseTarget.position;
+                return chaseTarget.position;
+            }
+
+            return lastKnownPlayerPosition;
         }
 
         private void TryStartChaseStaminaPause()
@@ -352,9 +647,23 @@ namespace Project.AI
 
         private void UpdateAttack()
         {
+            // Active aggro is sticky: never peel off a pioneer mid-swing to slap the player.
+            if (HasActiveAggroTarget())
+            {
+                combat.SetTarget(aggroTarget);
+            }
+            else
+            {
+                Transform closestThreat = PickClosestLivingThreat(combat.AttackRange);
+                if (closestThreat != null && AllowsCombatTarget(closestThreat))
+                    combat.SetTarget(closestThreat);
+            }
+
             if (!combat.HasLivingTarget())
             {
-                if (playerTarget != null)
+                if (HasActiveAggroTarget())
+                    combat.SetTarget(aggroTarget);
+                else if (playerTarget != null && AllowsCombatTarget(playerTarget))
                     combat.SetTarget(playerTarget);
                 return;
             }
@@ -362,6 +671,13 @@ namespace Project.AI
             Transform target = combat.CurrentTarget;
             if (target == null)
                 return;
+
+            if (!AllowsCombatTarget(target))
+            {
+                Transform pioneer = PickClosestNearbyPioneerWithin(pioneerRetargetRadius * 1.75f);
+                combat.SetTarget(pioneer != null ? pioneer : null);
+                return;
+            }
 
             if (!combat.IsTargetInRange() && chasePlayer && CanChaseTarget(target.position))
             {
@@ -371,6 +687,87 @@ namespace Project.AI
 
             FaceTowards(target.position);
             combat.TryAttack();
+        }
+
+        private void UpdateAggroCombat()
+        {
+            if (!HasActiveAggroTarget())
+                return;
+
+            // Never chase someone we're not allowed to strike — that produces the
+            // "enemy shoves the player around without attacking" failure mode.
+            if (!AllowsCombatTarget(aggroTarget))
+            {
+                aggroTarget = null;
+                aggroUntil = 0f;
+                if (state == AiState.Chase || state == AiState.Attack)
+                    GiveUpChaseAndReturnHome();
+                return;
+            }
+
+            if (!IsTargetingLivingPioneer() || aggroTarget != combat.CurrentTarget)
+                combat.SetTarget(aggroTarget);
+
+            // Pioneers are actively brawling, so contact is continuous — safe to keep alive.
+            // The player's lostTargetTimer is owned by UpdateChase's stale-position give-up
+            // check below; resetting it here would erase that "can't find them" countdown.
+            if (IsPioneer(aggroTarget))
+                lostTargetTimer = 0f;
+
+            if (combat.IsTargetInRange())
+            {
+                if (state != AiState.Attack)
+                    EnterState(AiState.Attack);
+            }
+            else if (state != AiState.Chase && CanChaseTarget(aggroTarget.position))
+            {
+                EnterState(AiState.Chase);
+            }
+        }
+
+        /// <summary>
+        /// Visible players are not auto-combat targets. Only engage if they damaged us,
+        /// are in melee threat range, or are not immune after respawn.
+        /// </summary>
+        private bool ShouldEngagePlayer(Transform player)
+        {
+            if (player == null)
+                return false;
+
+            SurvivalStats stats = player.GetComponent<SurvivalStats>();
+            if (stats != null && (stats.IsDead || stats.HasEnemyCombatImmunity))
+                return false;
+
+            if (HasActiveAggroTarget() && !IsPioneer(aggroTarget))
+                return true;
+
+            if (HasActiveAggroTarget() && IsPioneer(aggroTarget))
+                return false;
+
+            return HorizontalDistance(transform.position, player.position) <= playerThreatRange;
+        }
+
+        private static bool IsCombatTargetPlayer(Transform candidate)
+        {
+            return candidate != null && candidate.GetComponent<SurvivalStats>() != null;
+        }
+
+        private bool HasActiveAggroTarget()
+        {
+            if (aggroTarget == null || Time.time >= aggroUntil)
+                return false;
+
+            CompanionHealth companionHealth = aggroTarget.GetComponent<CompanionHealth>();
+            if (companionHealth != null)
+                return !companionHealth.IsDead;
+
+            SurvivalStats stats = aggroTarget.GetComponent<SurvivalStats>();
+            return stats == null || !stats.IsDead;
+        }
+
+        private static bool IsPioneer(Transform candidate)
+        {
+            return candidate != null && candidate.GetComponent<PioneerCompanionAgent>() != null;
         }
 
         private bool IsTargetingLivingPioneer()
@@ -390,6 +787,22 @@ namespace Project.AI
             if (playerTarget == null)
                 return;
 
+            Transform closestPioneer = PickClosestNearbyPioneer();
+            if (closestPioneer != null && combat.IsInAttackRange(closestPioneer))
+            {
+                Transform current = combat.CurrentTarget;
+                float pioneerDistance = HorizontalDistance(transform.position, closestPioneer.position);
+                float currentDistance = current != null
+                    ? HorizontalDistance(transform.position, current.position)
+                    : float.MaxValue;
+
+                if (pioneerDistance + 0.15f < currentDistance)
+                {
+                    combat.SetTarget(closestPioneer);
+                    return;
+                }
+            }
+
             if (Time.time < nextPioneerRetargetRollTime)
                 return;
 
@@ -402,6 +815,93 @@ namespace Project.AI
             Transform pioneer = PickRandomNearbyPioneer();
             if (pioneer != null)
                 combat.SetTarget(pioneer);
+        }
+
+        private Transform PickClosestNearbyPioneer()
+        {
+            return PickClosestNearbyPioneerWithin(pioneerRetargetRadius);
+        }
+
+        private Transform PickClosestNearbyPioneerWithin(float maxRange)
+        {
+            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            if (bridge == null)
+                return null;
+
+            IReadOnlyList<PioneerCompanionAgent> companions = bridge.ActiveCompanions;
+            if (companions == null || companions.Count == 0)
+                return null;
+
+            Transform closest = null;
+            float closestDistance = maxRange;
+
+            for (int i = 0; i < companions.Count; i++)
+            {
+                PioneerCompanionAgent agent = companions[i];
+                if (agent == null)
+                    continue;
+
+                CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                if (health != null && health.IsDead)
+                    continue;
+
+                float distance = HorizontalDistance(transform.position, agent.transform.position);
+                if (distance > maxRange || distance >= closestDistance)
+                    continue;
+
+                closest = agent.transform;
+                closestDistance = distance;
+            }
+
+            return closest;
+        }
+
+        private Transform PickClosestLivingThreat(float maxRange)
+        {
+            Transform closest = null;
+            float closestDistance = maxRange;
+
+            // The player only competes for attack priority when they actually provoked us;
+            // a bystanding player watching their pioneers fight is not the primary threat.
+            bool playerProvoked = HasActivePlayerAggro();
+            if (playerTarget != null && playerProvoked && AllowsCombatTarget(playerTarget))
+            {
+                SurvivalStats playerStats = playerTarget.GetComponent<SurvivalStats>();
+                if (playerStats == null || !playerStats.IsDead)
+                {
+                    float distance = HorizontalDistance(transform.position, playerTarget.position);
+                    if (distance <= closestDistance)
+                    {
+                        closest = playerTarget;
+                        closestDistance = distance;
+                    }
+                }
+            }
+
+            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            IReadOnlyList<PioneerCompanionAgent> companions = bridge != null ? bridge.ActiveCompanions : null;
+            if (companions != null)
+            {
+                for (int i = 0; i < companions.Count; i++)
+                {
+                    PioneerCompanionAgent agent = companions[i];
+                    if (agent == null)
+                        continue;
+
+                    CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                    if (health != null && health.IsDead)
+                        continue;
+
+                    float distance = HorizontalDistance(transform.position, agent.transform.position);
+                    if (distance > closestDistance)
+                        continue;
+
+                    closest = agent.transform;
+                    closestDistance = distance;
+                }
+            }
+
+            return closest;
         }
 
         private Transform PickRandomNearbyPioneer()
@@ -505,6 +1005,11 @@ namespace Project.AI
             if (IsStationary && IsRelocationState(newState))
                 return;
 
+            bool wasNavState = state == AiState.Wander || state == AiState.Chase;
+            bool willNavState = newState == AiState.Wander || newState == AiState.Chase;
+            if (wasNavState && !willNavState)
+                StopNavMeshMovement();
+
             state = newState;
 
             switch (newState)
@@ -515,6 +1020,7 @@ namespace Project.AI
                 case AiState.Wander:
                     moveTarget = PickRandomGroundPoint(homePosition, wanderRadius);
                     stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                     break;
                 case AiState.Patrol:
                     stateTimer = patrolWaitDuration;
@@ -533,8 +1039,10 @@ namespace Project.AI
                     moveTarget = lastKnownPlayerPosition;
                     chaseStaminaPauseUntil = 0f;
                     ScheduleNextChaseStaminaRoll();
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                     break;
                 case AiState.Attack:
+                    StopNavMeshMovement();
                     break;
                 case AiState.Search:
                     stateTimer = searchDuration;
@@ -588,8 +1096,22 @@ namespace Project.AI
 
         private Vector3 PickRandomGroundPoint(Vector3 origin, float radius)
         {
-            Vector2 offset = Random.insideUnitCircle * radius;
-            Vector3 target = origin + new Vector3(offset.x, 0f, offset.y);
+            if (navMeshReady)
+            {
+                for (int attempt = 0; attempt < 8; attempt++)
+                {
+                    Vector2 offset = Random.insideUnitCircle * radius;
+                    Vector3 candidate = origin + new Vector3(offset.x, 0f, offset.y);
+                    if (TrySampleNavMesh(candidate, out Vector3 navPoint))
+                        return navPoint;
+                }
+
+                if (TrySampleNavMesh(origin, out Vector3 originNav))
+                    return originNav;
+            }
+
+            Vector2 fallbackOffset = Random.insideUnitCircle * radius;
+            Vector3 target = origin + new Vector3(fallbackOffset.x, 0f, fallbackOffset.y);
             if (TrySampleGround(target, out float groundY))
                 target.y = groundY;
             return target;
@@ -597,10 +1119,202 @@ namespace Project.AI
 
         private void HandleDeath()
         {
+            StopNavMeshMovement();
+            if (navAgent != null)
+                navAgent.enabled = false;
+
             enabled = false;
         }
 
+        private void EnsureNavMeshAgent()
+        {
+            navMeshReady = false;
+            if (!useNavMeshForChaseAndWander)
+            {
+                DisableNavMeshAgent();
+                return;
+            }
+
+            // Place on the mesh *before* enabling the agent to avoid
+            // "Failed to create agent because it is not close enough to the NavMesh".
+            float spawnSampleRadius = Mathf.Max(navMeshSampleRadius, 10f);
+            if (!TrySampleNavMesh(transform.position, out Vector3 navPos, spawnSampleRadius))
+            {
+                DisableNavMeshAgent();
+                return;
+            }
+
+            transform.position = navPos;
+
+            navAgent = GetComponent<NavMeshAgent>();
+            if (navAgent == null)
+                navAgent = gameObject.AddComponent<NavMeshAgent>();
+
+            navAgent.enabled = false;
+            navAgent.speed = walkSpeed;
+            navAgent.angularSpeed = Mathf.Max(120f, turnSpeed * 45f);
+            navAgent.acceleration = 14f;
+            navAgent.stoppingDistance = stopDistance;
+            navAgent.autoBraking = true;
+            navAgent.updateRotation = true;
+            navAgent.updatePosition = true;
+            navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
+
+            navAgent.enabled = true;
+            if (!navAgent.isOnNavMesh)
+            {
+                if (!navAgent.Warp(navPos) || !navAgent.isOnNavMesh)
+                {
+                    DisableNavMeshAgent();
+                    return;
+                }
+            }
+
+            SafeStopAgent();
+            navMeshReady = true;
+            lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        }
+
+        private void DisableNavMeshAgent()
+        {
+            navMeshReady = false;
+            if (navAgent == null)
+                navAgent = GetComponent<NavMeshAgent>();
+
+            if (navAgent == null)
+                return;
+
+            SafeStopAgent();
+            navAgent.enabled = false;
+        }
+
+        private bool TrySampleNavMesh(Vector3 worldPosition, out Vector3 navPosition)
+        {
+            return TrySampleNavMesh(worldPosition, out navPosition, navMeshSampleRadius);
+        }
+
+        private static bool TrySampleNavMesh(Vector3 worldPosition, out Vector3 navPosition, float sampleRadius)
+        {
+            if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, sampleRadius, NavMesh.AllAreas))
+            {
+                navPosition = hit.position;
+                return true;
+            }
+
+            navPosition = worldPosition;
+            return false;
+        }
+
+        private bool IsAgentUsable()
+        {
+            return navMeshReady &&
+                   navAgent != null &&
+                   navAgent.enabled &&
+                   navAgent.isActiveAndEnabled &&
+                   navAgent.isOnNavMesh;
+        }
+
+        private bool TryMoveWithNavMesh(Vector3 target, float speed, float arriveDistance)
+        {
+            if (!navMeshReady || navAgent == null || !navAgent.enabled)
+                return false;
+
+            if (!navAgent.isOnNavMesh)
+            {
+                if (!TrySampleNavMesh(transform.position, out Vector3 recover, Mathf.Max(navMeshSampleRadius, 10f)) ||
+                    !navAgent.Warp(recover) ||
+                    !navAgent.isOnNavMesh)
+                {
+                    navMeshReady = false;
+                    return false;
+                }
+            }
+
+            if (IsStationary && state != AiState.Chase)
+                return false;
+
+            if (!TrySampleNavMesh(target, out Vector3 navTarget))
+                return false;
+
+            navAgent.speed = speed;
+            navAgent.stoppingDistance = Mathf.Max(0.05f, arriveDistance);
+
+            float repathThresholdSq = navDestinationRepathThreshold * navDestinationRepathThreshold;
+            bool needsRepath = (navTarget - lastNavDestination).sqrMagnitude > repathThresholdSq ||
+                               !navAgent.hasPath ||
+                               navAgent.pathStatus == NavMeshPathStatus.PathInvalid;
+
+            if (needsRepath)
+            {
+                if (!navAgent.SetDestination(navTarget))
+                    return false;
+
+                lastNavDestination = navTarget;
+            }
+
+            if (navAgent.isStopped)
+                navAgent.isStopped = false;
+
+            SyncLocomotionFromAgent();
+            return true;
+        }
+
+        private void StopNavMeshMovement()
+        {
+            SafeStopAgent();
+            lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            currentLocomotionSpeed = 0f;
+            currentLocalMoveDirection = Vector3.zero;
+        }
+
+        private void SafeStopAgent()
+        {
+            if (navAgent == null || !navAgent.enabled)
+                return;
+
+            if (!navAgent.isOnNavMesh)
+                return;
+
+            navAgent.isStopped = true;
+            if (navAgent.hasPath)
+                navAgent.ResetPath();
+            navAgent.velocity = Vector3.zero;
+        }
+
+        private void SyncLocomotionFromAgent()
+        {
+            if (!IsAgentUsable())
+                return;
+
+            Vector3 velocity = navAgent.velocity;
+            velocity.y = 0f;
+            float speed = velocity.magnitude;
+            currentLocomotionSpeed = speed;
+            currentLocalMoveDirection = speed > 0.05f
+                ? transform.InverseTransformDirection(velocity.normalized)
+                : Vector3.zero;
+        }
+
+        private bool HasArrived(Vector3 destination, float arriveDistance, bool preferNavMesh)
+        {
+            if (preferNavMesh && IsAgentUsable() && !navAgent.pathPending)
+            {
+                float remaining = navAgent.remainingDistance;
+                if (!float.IsInfinity(remaining) &&
+                    remaining <= arriveDistance &&
+                    (!navAgent.hasPath || navAgent.velocity.sqrMagnitude < 0.05f))
+                    return true;
+            }
+
+            return HorizontalDistance(transform.position, destination) <= arriveDistance;
+        }
+
         private void MoveTowards(Vector3 target, float speed)
+        {
+            MoveTowards(target, speed, stopDistance);
+        }
+
+        private void MoveTowards(Vector3 target, float speed, float arriveDistance)
         {
             if (!AllowsTranslation &&
                 state != AiState.Chase &&
@@ -624,11 +1338,12 @@ namespace Project.AI
             toTarget.y = 0f;
 
             float distance = toTarget.magnitude;
-            if (distance > stopDistance)
+            if (distance > arriveDistance)
             {
                 Vector3 step = toTarget.normalized * (speed * Time.deltaTime);
-                if (step.sqrMagnitude > distance * distance)
-                    step = toTarget;
+                float maxStep = distance - arriveDistance;
+                if (step.magnitude > maxStep)
+                    step = toTarget.normalized * maxStep;
 
                 transform.position += step;
                 currentLocomotionSpeed = speed;

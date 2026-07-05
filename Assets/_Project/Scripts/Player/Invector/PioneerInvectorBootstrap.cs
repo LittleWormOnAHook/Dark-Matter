@@ -60,7 +60,11 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerPlayerInputBinder>() == null)
                 gameObject.AddComponent<PioneerPlayerInputBinder>();
 
-            ResetInvectorHealthState();
+            if (GetComponent<PioneerInvectorIncomingDamageBridge>() == null)
+                gameObject.AddComponent<PioneerInvectorIncomingDamageBridge>();
+
+            if (GetComponent<PioneerTerrainRescue>() == null)
+                gameObject.AddComponent<PioneerTerrainRescue>();
 
             if (!disableLegacyCombatComponents)
                 return;
@@ -244,16 +248,5 @@ namespace Project.Player.Invector
                 Destroy(movement);
         }
 
-        private void ResetInvectorHealthState()
-        {
-            if (ThirdPersonController == null)
-                return;
-
-            if (ThirdPersonController is vHealthController healthController)
-            {
-                healthController.isDead = false;
-                healthController.ResetHealth();
-            }
-        }
     }
 }

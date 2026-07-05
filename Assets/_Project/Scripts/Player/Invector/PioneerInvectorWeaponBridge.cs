@@ -414,9 +414,9 @@ namespace Project.Player.Invector
             }
 
             if (slot.drawnInstance == null)
-                slot.drawnInstance = FindNamedSlotInstance("Drawn_", item);
+                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", item);
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance("Holstered_", item);
+                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", item);
 
             // Ranged weapons must have both authored slots. If either one is missing,
             // do not fall back to the old generated InvectorWeapon_* holster flow.
@@ -461,9 +461,9 @@ namespace Project.Player.Invector
             }
 
             if (slot.drawnInstance == null)
-                slot.drawnInstance = FindNamedSlotInstance("Drawn_", item);
+                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", item);
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance("Holstered_", item);
+                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", item);
 
             if (slot.drawnInstance == null && slot.holsteredInstance == null)
             {
@@ -490,25 +490,40 @@ namespace Project.Player.Invector
             return null;
         }
 
-        private GameObject FindNamedSlotInstance(string prefix, ItemData item)
+        private static GameObject FindNamedSlotInstance(Transform root, string prefix, ItemData item)
         {
             if (item == null || string.IsNullOrEmpty(prefix))
                 return null;
 
             string itemName = MakeSafeSlotName(item.itemName, item.name);
             string assetName = MakeSafeSlotName(item.name, item.itemName);
-            Transform match = FindChildTransformByName(transform, prefix + itemName);
+            Transform match = FindChildTransformByName(root, prefix + itemName);
             if (match == null && assetName != itemName)
-                match = FindChildTransformByName(transform, prefix + assetName);
+                match = FindChildTransformByName(root, prefix + assetName);
             if (match == null && !string.IsNullOrWhiteSpace(item.itemName))
-                match = FindChildTransformByName(transform, prefix + item.itemName);
+                match = FindChildTransformByName(root, prefix + item.itemName);
             if (match == null && !string.IsNullOrWhiteSpace(item.name))
-                match = FindChildTransformByName(transform, prefix + item.name);
+                match = FindChildTransformByName(root, prefix + item.name);
 
             return match != null ? match.gameObject : null;
         }
 
-        private static string MakeSafeSlotName(string preferred, string fallback)
+        public static void ApplyItemStatsToInstance(ItemData item, GameObject instance)
+        {
+            ApplyItemStats(item, instance);
+        }
+
+        public static GameObject FindPreloadedDrawnSlot(Transform root, ItemData item)
+        {
+            return FindNamedSlotInstance(root, "Drawn_", item);
+        }
+
+        public static GameObject FindPreloadedHolsteredSlot(Transform root, ItemData item)
+        {
+            return FindNamedSlotInstance(root, "Holstered_", item);
+        }
+
+        public static string MakeSafeSlotName(string preferred, string fallback)
         {
             string raw = string.IsNullOrWhiteSpace(preferred) ? fallback : preferred;
             if (string.IsNullOrWhiteSpace(raw))

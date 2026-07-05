@@ -34,20 +34,8 @@ namespace Project.Combat
 
             onStartReceiveDamage.Invoke(damage);
 
-            PioneerInvectorDamageBridge bridge = PioneerInvectorBootstrap.Instance != null
-                ? PioneerInvectorBootstrap.Instance.GetComponent<PioneerInvectorDamageBridge>()
-                : null;
-
-            float pioneerDamage;
-            bool critical;
             GameObject sender = damage.sender != null ? damage.sender.gameObject : null;
-            if (bridge != null)
-                pioneerDamage = bridge.ResolveOutgoingDamage(damage, sender, out critical);
-            else
-            {
-                critical = false;
-                pioneerDamage = damage.damageValue;
-            }
+            float pioneerDamage = PioneerInvectorDamageResolver.ResolveOutgoingDamage(damage, sender, out bool critical);
 
             GameObject source = sender != null
                 ? sender

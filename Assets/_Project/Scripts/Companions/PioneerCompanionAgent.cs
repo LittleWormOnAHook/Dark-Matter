@@ -1,3 +1,5 @@
+using Project.Companions.Abilities;
+using Project.Companions.Invector;
 using Project.Pioneers;
 using Project.Player;
 using UnityEngine;
@@ -55,11 +57,17 @@ namespace Project.Companions
             if (senseController == null)
                 senseController = gameObject.AddComponent<CompanionSenseController>();
 
-            equipmentVisual = GetComponent<CompanionEquipmentVisual>();
-            if (equipmentVisual == null)
-                equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
+            if (GetComponent<CompanionInvectorBootstrap>() == null)
+            {
+                equipmentVisual = GetComponent<CompanionEquipmentVisual>();
+                if (equipmentVisual == null)
+                    equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
+            }
 
             taskQueue = new CompanionTaskQueue();
+
+            if (CompanionInvectorBootstrap.HasInvectorStack(this) && animationDriver != null)
+                animationDriver.enabled = false;
         }
 
         public void BindRecord(SkilledPioneerRecord record, Transform owner, int formationSlot)
@@ -68,7 +76,10 @@ namespace Project.Companions
                 return;
 
             CompanionModelSanitizer.StripPlayerComponents(gameObject);
-            EnsurePioneerGkcAnimation();
+            if (CompanionInvectorBootstrap.HasInvectorStack(this))
+                EnsureCompanionInvectorSetup(record);
+            else
+                EnsurePioneerGkcAnimation();
 
             pioneerRecordId = record.id;
             displayName = record.displayName;
@@ -97,6 +108,11 @@ namespace Project.Companions
             CompanionHealth health = GetComponent<CompanionHealth>();
             health?.Initialize(record.id);
 
+            CompanionInvectorIncomingDamageBridge incomingDamage =
+                GetComponent<CompanionInvectorIncomingDamageBridge>();
+            if (incomingDamage != null && health != null)
+                incomingDamage.BindHealth(health);
+
             CompanionInjuryHandler injuryHandler = GetComponent<CompanionInjuryHandler>();
             injuryHandler?.Bind(record.id);
         }
@@ -111,9 +127,33 @@ namespace Project.Companions
 
         private void ApplyLoadout(SkilledPioneerRecord record)
         {
-            bool drawn = CompanionCombatCoordinator.Instance != null && CompanionCombatCoordinator.Instance.IsCombatEngaged;
+            bool drawn = false;
+
+            CompanionInvectorLoadoutBridge invectorLoadout = GetComponent<CompanionInvectorLoadoutBridge>();
+            if (invectorLoadout != null)
+            {
+                invectorLoadout.ApplyLoadout(record, drawn);
+                combatController.RefreshLoadoutWeapon(record.weaponItemId);
+                return;
+            }
+
             equipmentVisual.ApplyWeapon(record.weaponItemId, drawn);
             combatController.RefreshLoadoutWeapon(record.weaponItemId);
+        }
+
+        private void EnsureCompanionInvectorSetup(SkilledPioneerRecord record)
+        {
+            if (animationDriver != null)
+                animationDriver.enabled = false;
+
+            CompanionInvectorBootstrap bootstrap = GetComponent<CompanionInvectorBootstrap>();
+            bootstrap?.EnsureInvectorPhysicsReady();
+
+            CompanionAbilityController abilityController = GetComponent<CompanionAbilityController>();
+            abilityController?.Bind(record);
+
+            if (animationDriver != null)
+                animationDriver.enabled = false;
         }
 
         private void EnsurePioneerGkcAnimation()

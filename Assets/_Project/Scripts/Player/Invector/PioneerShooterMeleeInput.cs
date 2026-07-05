@@ -1,5 +1,6 @@
 using Invector.vCharacterController;
 using Project.Core;
+using Project.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -26,6 +27,7 @@ namespace Project.Player.Invector
         {
             base.Start();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
+            SyncPioneerCursorState();
         }
 
         protected override void Update()
@@ -34,6 +36,25 @@ namespace Project.Player.Invector
                 _inputBridge.ApplyInputLocks(this);
 
             base.Update();
+            SyncPioneerCursorState();
+        }
+
+        private void SyncPioneerCursorState()
+        {
+            GetComponent<PlayerController>()?.ApplyCursorState();
+        }
+
+        /// <summary>
+        /// Invector uses inverted semantics (LockCursor(false) = lock). Pioneer owns cursor when menus are open.
+        /// </summary>
+        public override void LockCursor(bool value)
+        {
+            SyncPioneerCursorState();
+        }
+
+        public override void ShowCursor(bool value)
+        {
+            SyncPioneerCursorState();
         }
 
         public bool IsAimingActive => isAimingByInput || IsAiming;

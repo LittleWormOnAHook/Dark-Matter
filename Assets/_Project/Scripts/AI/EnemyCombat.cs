@@ -16,6 +16,7 @@ namespace Project.AI
         private Transform target;
         private SurvivalStats targetStats;
         private CompanionHealth targetCompanionHealth;
+        private EnemyAiController aiController;
         private float nextAttackTime;
         private float windupEndTime;
         private bool attackPending;
@@ -24,8 +25,18 @@ namespace Project.AI
         public bool IsAttacking => attackPending;
         public Transform CurrentTarget => target;
 
+        private void Awake()
+        {
+            aiController = GetComponent<EnemyAiController>();
+        }
+
         public void SetTarget(Transform newTarget)
         {
+            if (newTarget != null && aiController != null && !aiController.AllowsCombatTarget(newTarget))
+                newTarget = null;
+            if (newTarget != target && attackPending)
+                attackPending = false;
+
             target = newTarget;
             targetStats = newTarget != null ? newTarget.GetComponent<SurvivalStats>() : null;
             targetCompanionHealth = newTarget != null ? newTarget.GetComponent<CompanionHealth>() : null;
@@ -47,10 +58,15 @@ namespace Project.AI
 
         public bool IsTargetInRange()
         {
+            return IsTargetWithin(attackRange);
+        }
+
+        private bool IsTargetWithin(float range)
+        {
             if (target == null)
                 return false;
 
-            return HorizontalDistance(transform.position, target.position) <= attackRange;
+            return HorizontalDistance(transform.position, target.position) <= range;
         }
 
         public void TryAttack()
@@ -60,6 +76,14 @@ namespace Project.AI
 
             if (!IsTargetInRange())
                 return;
+
+            // Re-check legality at swing start so a bystander player never gets a pending hit
+            // after aggro flips to a pioneer mid-fight.
+            if (aiController != null && !aiController.AllowsCombatTarget(target))
+            {
+                attackPending = false;
+                return;
+            }
 
             if (Time.time < nextAttackTime)
                 return;
@@ -82,22 +106,62 @@ namespace Project.AI
             if (!HasLivingTarget())
                 return;
 
-            if (!IsTargetInRange())
+            // Grace window on the post-windup range check: companions shuffle/step during
+            // the windup, and a strict re-check made nearly every enemy hit whiff.
+            if (!IsTargetWithin(attackRange * 1.5f))
+                return;
+
+            // Final gate: aggro may have flipped to a pioneer during windup.
+            if (aiController != null && !aiController.AllowsCombatTarget(target))
                 return;
 
             ApplyDamageToTarget(attackDamage);
         }
 
+        public bool IsInAttackRange(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            return HorizontalDistance(transform.position, candidate.position) <= attackRange;
+        }
+
         private void ApplyDamageToTarget(float damage)
         {
-            if (targetStats != null && !targetStats.IsDead)
+            // Snapshot everything before ApplyDamage. PlayerDied listeners call SetTarget(null)
+            // on this same enemy, which nulls target/targetStats and used to NRE the log.
+            Transform hitTarget = target;
+            if (hitTarget == null)
+                return;
+
+            string attackerName = name;
+            string victimName = hitTarget.name;
+            SurvivalStats stats = hitTarget.GetComponent<SurvivalStats>();
+            CompanionHealth companionHealth = hitTarget.GetComponent<CompanionHealth>();
+
+            if (stats != null)
             {
-                targetStats.ApplyDamage(damage);
+                if (stats.IsDead || stats.HasEnemyCombatImmunity)
+                    return;
+
+                float healthBefore = stats.CurrentHealth;
+                stats.ApplyDamage(damage, attackerName);
+                float healthAfter = stats != null ? stats.CurrentHealth : 0f;
+                Debug.Log(
+                    $"[EnemyDamage] {attackerName} hit Player for {damage:0.#} " +
+                    $"(health {healthBefore:0.#} → {healthAfter:0.#})");
                 return;
             }
 
-            if (targetCompanionHealth != null && !targetCompanionHealth.IsDead)
-                targetCompanionHealth.ApplyDamage(damage);
+            if (companionHealth == null || companionHealth.IsDead)
+                return;
+
+            float pioneerHealthBefore = companionHealth.CurrentHealth;
+            companionHealth.ApplyDamage(damage);
+            float pioneerHealthAfter = companionHealth != null ? companionHealth.CurrentHealth : 0f;
+            Debug.Log(
+                $"[EnemyDamage] {attackerName} hit Pioneer '{victimName}' for {damage:0.#} " +
+                $"(health {pioneerHealthBefore:0.#} → {pioneerHealthAfter:0.#})");
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)

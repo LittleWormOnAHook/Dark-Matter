@@ -1,9 +1,12 @@
+using System.Collections.Generic;
+using Project.Companions;
 using UnityEngine;
 
 namespace Project.AI
 {
     /// <summary>
     /// Sense-based target detection: proximity, vision (FOV + LOS), and hearing via noise events.
+    /// Threats include both the player and expedition pioneers.
     /// </summary>
     public class EnemySenses : MonoBehaviour
     {
@@ -19,8 +22,11 @@ namespace Project.AI
 
         [Header("Proximity")]
         [SerializeField] private float proximityRange = 2.5f;
+        [Tooltip("Must be this close to count as seen for combat without a clear line-of-sight.")]
+        [SerializeField] private float meleeTouchRange = 1.35f;
 
         private Transform player;
+        private CompanionRosterBridge companionBridge;
         private Vector3 lastNoisePosition;
         private float lastNoiseTime;
         private bool hasRecentNoise;
@@ -56,6 +62,121 @@ namespace Project.AI
                 return player;
 
             return null;
+        }
+
+        /// <summary>
+        /// Combat targeting only: requires FOV + line-of-sight (or direct melee touch).
+        /// Unlike <see cref="GetSensedTarget"/>, does NOT treat the player as seen through
+        /// walls inside the wide proximity bubble — that was causing enemies to chase and
+        /// hit bystanders who were "avoiding" combat nearby.
+        /// </summary>
+        public Transform GetVisiblePlayerTarget()
+        {
+            EnsurePlayer();
+            if (player == null)
+                return null;
+
+            Vector3 enemyPos = transform.position;
+            Vector3 playerPos = player.position;
+            float distance = HorizontalDistance(enemyPos, playerPos);
+
+            if (distance <= meleeTouchRange)
+                return player;
+
+            if (distance <= visionRange && IsWithinFov(playerPos) && HasLineOfSight(playerPos))
+                return player;
+
+            return null;
+        }
+
+        public bool CanSeePlayer()
+        {
+            return GetVisiblePlayerTarget() != null;
+        }
+
+        /// <summary>
+        /// Closest visible pioneer (FOV + LOS, or melee touch). Pioneers were previously
+        /// invisible to enemy senses — only damage aggro made enemies fight back.
+        /// </summary>
+        public Transform GetVisiblePioneerTarget()
+        {
+            IReadOnlyList<PioneerCompanionAgent> companions = GetActiveCompanions();
+            if (companions == null || companions.Count == 0)
+                return null;
+
+            Transform best = null;
+            float bestDistance = float.MaxValue;
+            Vector3 enemyPos = transform.position;
+
+            for (int i = 0; i < companions.Count; i++)
+            {
+                PioneerCompanionAgent agent = companions[i];
+                if (agent == null)
+                    continue;
+
+                CompanionHealth companionHealth = agent.GetComponent<CompanionHealth>();
+                if (companionHealth != null && companionHealth.IsDead)
+                    continue;
+
+                Transform candidate = agent.transform;
+                float distance = HorizontalDistance(enemyPos, candidate.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                if (!IsThreatVisible(candidate, distance))
+                    continue;
+
+                best = candidate;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Closest visible threat of any kind (pioneer or player).
+        /// </summary>
+        public Transform GetVisibleThreat()
+        {
+            Transform pioneer = GetVisiblePioneerTarget();
+            Transform visiblePlayer = GetVisiblePlayerTarget();
+
+            if (pioneer == null)
+                return visiblePlayer;
+            if (visiblePlayer == null)
+                return pioneer;
+
+            return HorizontalDistance(transform.position, pioneer.position) <=
+                   HorizontalDistance(transform.position, visiblePlayer.position)
+                ? pioneer
+                : visiblePlayer;
+        }
+
+        public bool CanSeeThreat(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            float distance = HorizontalDistance(transform.position, candidate.position);
+            return IsThreatVisible(candidate, distance);
+        }
+
+        private bool IsThreatVisible(Transform candidate, float distance)
+        {
+            if (distance <= meleeTouchRange)
+                return true;
+
+            return distance <= visionRange &&
+                   IsWithinFov(candidate.position) &&
+                   HasLineOfSightTo(candidate);
+        }
+
+        private IReadOnlyList<PioneerCompanionAgent> GetActiveCompanions()
+        {
+            if (companionBridge == null || !companionBridge.isActiveAndEnabled)
+                companionBridge = FindAnyObjectByType<CompanionRosterBridge>();
+
+            return companionBridge != null ? companionBridge.ActiveCompanions : null;
         }
 
         public bool TryGetHeardNoise(out Vector3 position)
@@ -102,6 +223,16 @@ namespace Project.AI
 
         private bool HasLineOfSight(Vector3 targetPosition)
         {
+            return HasLineOfSightInternal(targetPosition, player);
+        }
+
+        private bool HasLineOfSightTo(Transform candidate)
+        {
+            return candidate != null && HasLineOfSightInternal(candidate.position, candidate);
+        }
+
+        private bool HasLineOfSightInternal(Vector3 targetPosition, Transform expectedRoot)
+        {
             Vector3 origin = transform.position + Vector3.up * eyeHeight;
             Vector3 target = targetPosition + Vector3.up * eyeHeight;
             Vector3 direction = target - origin;
@@ -114,7 +245,10 @@ namespace Project.AI
             if (!Physics.Raycast(origin, direction, out RaycastHit hit, distance, obstructionMask, QueryTriggerInteraction.Ignore))
                 return true;
 
-            return hit.transform == player || hit.transform.IsChildOf(player);
+            if (expectedRoot == null)
+                return false;
+
+            return hit.transform == expectedRoot || hit.transform.IsChildOf(expectedRoot);
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)

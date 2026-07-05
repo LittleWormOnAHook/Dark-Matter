@@ -1,4 +1,5 @@
 using Project.Companions;
+using Project.Companions.Invector;
 using Project.Player;
 using Project.Pioneers;
 using UnityEngine;
@@ -54,6 +55,9 @@ namespace Project.Companions
 
         private void Update()
         {
+            if (CompanionInvectorBootstrap.HasInvectorStack(this))
+                return;
+
             if (animator == null || followController == null || !animator.isInitialized)
                 return;
 
