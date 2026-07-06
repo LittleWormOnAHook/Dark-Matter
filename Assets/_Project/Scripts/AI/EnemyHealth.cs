@@ -90,9 +90,12 @@ namespace Project.AI
             if (combat != null)
                 combat.enabled = false;
 
-            Collider collider = GetComponent<Collider>();
-            if (collider != null)
-                collider.enabled = false;
+            if (GetComponent<EnemyDeathSequence>() == null)
+            {
+                Collider collider = GetComponent<Collider>();
+                if (collider != null)
+                    collider.enabled = false;
+            }
 
             if (respawnTime > 0f && !respawnExternallyManaged)
             {

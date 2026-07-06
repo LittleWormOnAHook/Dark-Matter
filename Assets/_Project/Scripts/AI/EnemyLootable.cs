@@ -120,7 +120,7 @@ namespace Project.AI
             bagSpawned = false;
             pendingBagPosition = transform.position;
 
-            if (health != null)
+            if (health != null && GetComponent<EnemyDeathSequence>() == null)
                 health.SetRespawnExternallyManaged(true);
 
             EnemyDisintegrationEffect disintegration = GetComponent<EnemyDisintegrationEffect>();
@@ -220,7 +220,7 @@ namespace Project.AI
             bagSpawned = false;
             remainingLoot.Clear();
 
-            if (health != null && health.IsDead)
+            if (health != null && health.IsDead && !health.IsRespawnExternallyManaged)
                 health.FinishLootHoldAndRespawn();
         }
     }

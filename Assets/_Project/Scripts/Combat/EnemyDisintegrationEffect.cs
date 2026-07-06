@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.AI;
+using Project.AI.Invector;
 using Project.UI;
 using UnityEngine;
 
@@ -34,6 +36,8 @@ namespace Project.Combat
         [SerializeField] private float dissolveEdgeWidth = 0.045f;
         [SerializeField] private Color dissolveEdgeColor = new Color(1f, 0.45f, 0.1f, 1f);
         [SerializeField] private bool replaceDeathAnimation = true;
+        [Tooltip("When no EnemyDeathSequence is present, start lift/dissolve immediately on death.")]
+        [SerializeField] private bool autoStartOnDeathWithoutSequence = true;
 
         [Header("Smoke")]
         [SerializeField] private bool enableSmoke = false;
@@ -85,7 +89,7 @@ namespace Project.Combat
             if (health == null)
                 return;
 
-            health.Died += OnDied;
+            health.Died += OnDiedFallback;
             health.Respawned += OnRespawned;
         }
 
@@ -93,7 +97,7 @@ namespace Project.Combat
         {
             if (health != null)
             {
-                health.Died -= OnDied;
+                health.Died -= OnDiedFallback;
                 health.Respawned -= OnRespawned;
             }
 
@@ -192,11 +196,28 @@ namespace Project.Combat
             }
         }
 
-        private void OnDied()
+        private void OnDiedFallback()
+        {
+            if (GetComponent<EnemyDeathSequence>() != null)
+                return;
+
+            if (!autoStartOnDeathWithoutSequence)
+                return;
+
+            BeginPresentation();
+        }
+
+        /// <summary>
+        /// Starts lift + dissolve after death animation/ragdoll. Called by <see cref="EnemyDeathSequence"/>.
+        /// </summary>
+        public void BeginPresentation(Action onComplete = null)
         {
             ResolveDissolveTemplate();
             if (isDissolving || dissolveMaterialTemplate == null)
+            {
+                onComplete?.Invoke();
                 return;
+            }
 
             deathPosition = transform.position;
 
@@ -205,10 +226,14 @@ namespace Project.Combat
 
             HideHealthBar();
 
+            EnemyInvectorMotorBridge motorBridge = GetComponent<EnemyInvectorMotorBridge>();
+            if (motorBridge != null)
+                motorBridge.enabled = false;
+
             if (health != null && health.ShouldRespawn && !health.IsRespawnExternallyManaged)
                 health.DeferRespawnUntil(TotalDeathPresentationSeconds);
 
-            dissolveRoutine = StartCoroutine(DeathPresentationRoutine());
+            dissolveRoutine = StartCoroutine(DeathPresentationRoutine(onComplete));
         }
 
         private void OnRespawned()
@@ -235,6 +260,10 @@ namespace Project.Combat
                 if (animator != null)
                     animator.enabled = true;
             }
+
+            EnemyInvectorMotorBridge motorBridge = GetComponent<EnemyInvectorMotorBridge>();
+            if (motorBridge != null)
+                motorBridge.enabled = true;
         }
 
         private void DisableDeathAnimation()
@@ -256,7 +285,7 @@ namespace Project.Combat
             }
         }
 
-        private IEnumerator DeathPresentationRoutine()
+        private IEnumerator DeathPresentationRoutine(Action onComplete = null)
         {
             isDissolving = true;
             StartVolumetricSmoke();
@@ -331,6 +360,7 @@ namespace Project.Combat
             NotifyDeathPresentationComplete();
             ReleaseVolumetricSmoke();
             dissolveRoutine = null;
+            onComplete?.Invoke();
         }
 
         private void StartVolumetricSmoke()
