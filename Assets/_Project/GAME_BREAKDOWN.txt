@@ -1,7 +1,9 @@
 ================================================================================
   SURVIVAL PIONEER — GAME & FEATURE BREAKDOWN
-  Project: Pi Pioneer Survival
+  Project: Pioneer Survivors (Survival Pioneer)
   Document generated from codebase and scene assets (Assets/_Project/)
+  Note: Prefer GAME_DESIGN_DOCUMENT_4.0.txt Appendix B for current locks.
+  Economy lock: Aether Credits (AC) only. Platforms: PC + consoles.
 ================================================================================
 
 TABLE OF CONTENTS
@@ -17,7 +19,7 @@ TABLE OF CONTENTS
   9.  Resource Gathering
   10. Crafting & Recipes
   11. Quest System
-  12. Pi Currency
+  12. Aether Credits (AC)
   13. UI & Menus
   14. Map
   15. Pet Companion
@@ -33,20 +35,26 @@ TABLE OF CONTENTS
 1. OVERVIEW
 ================================================================================
 
-Survival Pioneer is a third-person survival action game built in Unity. The
-player is a "Pioneer" exploring a forest wilderness camp environment. Core
-gameplay loops:
+Pioneer Survivors (Survival Pioneer) is a third-person Io survival + light
+base-builder built in Unity (GDD 4.0). Year 2160 on Jupiter's moon Io: lead
+up to 25 pioneers (22 base + expedition trio of 3), rescue Neural Echoes,
+materialize and maintain base buildings, and survive O2 + biome pressures.
 
-  - Manage survival vitals (health, energy, stamina, oxygen)
-  - Gather resources from the world
-  - Craft items at cooking pots and workbenches
-  - Fight enemies with melee weapons
-  - Complete quests from an NPC guide
-  - Earn and spend Pi currency
-  - Explore the map and use scanner/binocular tools
+The playable prototype is still flat terrain (Io biomes not shipped). Do not
+treat placeholder scene art as forest / Earth wilderness camp fiction.
+
+Core gameplay loops (vision + prototype):
+
+  - Manage survival vitals (health, energy, stamina, oxygen) and exposure
+  - Gather resources; craft at stations; spend Aether Credits (AC)
+  - Build and expand the base (materialize structures + attachment modules)
+  - Fight enemies; complete quests; run expedition / roster systems
+  - Use Building Control Panels (E) for Overview | Pioneers | Production |
+    Craft | Changes on major structures
 
 Main playable scene: Assets/_Project/Scenes/Pioneer.unity
 Core project folder: Assets/_Project/
+Authority: Assets/_Project/GAME_DESIGN_DOCUMENT_4.0.txt
 
 Movement is powered by ECM2 (third-person character controller).
 UI uses a Shift sci-fi theme with a journal hub for most panels.
@@ -225,7 +233,7 @@ RESPAWN
 
 ENEMY LOOT (EnemyLootable.cs)
   - Enabled on enemy prefabs via EnemyDefinition loot settings
-  - On death: rolls Pi coins (min/max) and random items from loot pool
+  - On death: rolls AC coins (min/max) and random items from loot pool
   - Empty loot pool falls back to item registry (excluding quest items and
     melee weapons from random rolls)
   - Press E near corpse opens loot dialog (EnemyLootDialogUI.cs):
@@ -278,7 +286,7 @@ WORLD ITEM PICKUPS (ItemPickup.cs)
   - Physical items on ground (rocks, mushrooms, weapons, etc.)
   - Press E to collect into inventory
   - Optional respawn timer (20–90 seconds)
-  - Pi-infused items grant Pi currency on pickup (ItemData.isPiInfused)
+  - AC-infused items grant Aether Credits on pickup (legacy ItemData.isPiInfused)
 
 
 ================================================================================
@@ -304,7 +312,7 @@ RECIPE LEARNING FLOW
 
 CURRENT RECIPES
   grilled_mushroom   Cooking   — Grill mushrooms
-  forest_stew        Cooking   — Mushrooms + Red Lilly
+  forest_stew        Cooking   — Mushrooms + Red Lilly (recipe asset id only)
   stone_salve        Workbench — 3x Rock
   herbal_medpack     Workbench — Healing craft
   Pemican (Pimican)  Workbench — Red Lilly + Rock
@@ -315,12 +323,34 @@ CRAFTING UI
   - At-world stations: journal opens Craft tab; production executes at station when bound
   - Recipe hover tooltips show ingredients and station requirement
 
+BUILDING SYSTEM (GDD 4.0 — planned stack; prototype partial)
+-------------------------------------------------------------
+Canon flow: spend resources → building MATERIALIZES (scale-up + VFX) → craft /
+maintain over time. Major structures use Building Control Panels (below).
+
+Attachment modules (planned — player expands bases by attaching modules to
+core structures / grids). Module roles include:
+
+  Generators       Power generation for the base
+  Power grids      Distribute and route power between modules / buildings
+  Auto gather      Automated resource gathering nodes and harvesters
+  Logistics        Move materials between storage, craft queues, and modules
+  Communications   Comms / uplink / scan support (ties toward Probe Uplink)
+  Defense          Turrets, barriers, base defense modules
+  Mining           Mining drills / extractors (ties toward Geothermal Harvester)
+
+Key named buildings (GDD lock — grow via modules where it fits):
+  Command Center, Purification Hub, Geothermal Harvester, Echo Reclamation
+  Chamber, Resonance Beacon, Probe Uplink, Geothermal Stabilizer, Medical
+  Facility, Science Labs.
+
 BUILDING CONTROL PANELS (GDD 4.0 Appendix A7 — prototype shell)
-  Canon (GAME_DESIGN_DOCUMENT_4.0.txt Appendix A / Building Control Panels):
+  Canon:
     - Each major base building has an interactable Control Panel (E at terminal)
     - Opens Building Control UI overlay (NOT journal) with tabs:
         Overview | Pioneers | Production | Craft | Changes
-    - Assign base-22 pioneers, set production/craft queues, per-building settings
+    - Assign base-22 pioneers, set production/craft queues, per-building /
+      module settings
     - Queues run while player is on expedition; pause during sulfur storms
   Prototype today (Milestone C):
     - BuildingControlPanel.cs — world interactable on building terminals
@@ -330,7 +360,9 @@ BUILDING CONTROL PANELS (GDD 4.0 Appendix A7 — prototype shell)
     - Editor: Tools/Survival Pioneer/Content/Add Building Control Panel to Selected
   Still TODO:
     - Pioneer assignment slots, live production queues, sulfur-storm pause wiring
-    - Wire Science Labs + Medical Facility first; migrate journal Craft to library-only
+    - Materialize / placement / maintenance pipeline
+    - Attachment module graph (generators, power grid, logistics, defense, mining)
+    - Wire Science Labs + Medical Facility first; Journal Craft = recipe library only
 
 
 ================================================================================
@@ -349,9 +381,9 @@ OBJECTIVE TYPES
   - Custom         Manual/scripted hooks
 
 CURRENT QUESTS (Resources/Quests/)
-  gather_rocks       — Collect 3 Rocks → Pi reward
-  guide_supply_run   — Talk to Pioneer Guide, gather mushrooms for camp stew
-  Get more Rocks     — Collect 10 Rocks → item + Pi reward
+  gather_rocks       — Collect 3 Rocks → AC reward
+  guide_supply_run   — Talk to Pioneer Guide, gather mushrooms for stew recipe
+  Get more Rocks     — Collect 10 Rocks → item + AC reward
 
 QUEST GIVER
   - NPC: QuestGiver_PioneerGuide (QuestGiverNpc.cs)
@@ -366,25 +398,27 @@ QUEST HUD
 
 
 ================================================================================
-12. PI CURRENCY
+12. AETHER CREDITS (AC)
 ================================================================================
 
-Pi is the in-game reward currency (Pi Network theme).
+Aether Credits (AC) is the only in-game currency (GDD 4.0 lock).
+Starter grant on new game: 5000 AC → choose 1 starter Skilled Pioneer.
+Some code/assets may still use legacy "Pi" field names — prefer AC in UI.
 
 DISPLAY
-  - HUD balance: "Pi: {amount}" (UIManager.piBalance)
+  - HUD balance: AC amount (legacy UIManager.piBalance field may still exist)
 
 SOURCES
-  - Starting bonus on new game (+10 Pi)
+  - New-game starter grant (5000 AC for skilled pioneer choice)
   - Quest completion rewards
-  - Enemy loot rolls (Pi coins on corpses)
-  - Pi-infused item pickups in the world
+  - Enemy loot rolls (AC coins on corpses)
+  - Currency-infused item pickups in the world
 
 FEEDBACK
-  - Animated Pi reward popup (+N Pi) on gain (PiRewardPopup.cs)
+  - Animated reward popup on gain (legacy PiRewardPopup.cs naming)
 
 PERSISTENCE
-  - Saved in GameSaveData.piBalance across save slots
+  - Saved across save slots (legacy GameSaveData.piBalance may still exist)
 
 
 ================================================================================
@@ -431,7 +465,7 @@ PEAK SCREENS (GDD Phase E — prototype shells)
 HUD ELEMENTS
   - Survival stat bars (health, energy, stamina, oxygen)
   - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
-  - Pi balance text
+  - AC balance text
   - Hotbar (10 slots)
   - Toolbar (scanner / binoculars)
   - Interaction prompt (center/bottom)
@@ -451,7 +485,7 @@ INVENTORY UX
   - Item hover tooltips (ItemHoverTooltip.cs)
 
 SAVE SLOTS (SaveSlotsPanelController.cs)
-  - 5 save slots with timestamp, Pi, HP summary
+  - 5 save slots with timestamp, AC, HP summary
   - Slot screenshots (SaveSlotScreenshotUtility.cs)
 
 SETTINGS (SettingsPanelController.cs, GameSettings.cs)
@@ -529,7 +563,7 @@ SYSTEM (GameSaveSystem.cs)
 PERSISTED DATA
   - Survival stats (health, energy, stamina, oxygen)
   - Player position and rotation
-  - Pi balance
+  - AC balance
   - Full inventory (main, hotbar, toolbar slots)
   - Equipment state (drawn weapon, selected slots)
   - Quest progress per quest ID
@@ -570,13 +604,14 @@ THIRD-PARTY ASSETS (stay outside _Project — referenced by GUID)
   Scifi Melee Weapons, TooManyCrosshairs, Survival Flat Icons, etc.
 
 ENVIRONMENT
-  - Terrain, forest biome, swamp water, clouds, wind zone
-  - Forest ambience audio zone
-  - Reflection probes and lighting
+  - Flat terrain prototype (Io biomes not shipped — GDD 4.0 Appendix B)
+  - Placeholder third-party nature/town kits may still appear in the scene;
+    they are temporary art, NOT forest wilderness camp fiction
+  - Clouds, wind, reflection probes, lighting, ambient audio zones
 
 KEY PLACED OBJECTS
   - Player spawn
-  - QuestGiver_PioneerGuide (NPC)
+  - QuestGiver_PioneerGuide (NPC — replace toward Aether-9 / side givers)
   - TrainingDummy (combat practice)
   - Enemies container (Gongo, The Evil One, etc.)
   - Items container (world pickups)
@@ -585,6 +620,7 @@ KEY PLACED OBJECTS
   - Recipe pickup scrolls
   - MainCanvas (full HUD)
   - Game Manager (SimpleGameManager)
+  - Building Control Panel terminals (prototype shells on major structures)
 
 PREFAB FOLDERS (Assets/_Project/Prefabs/)
   Players/          Player.prefab
@@ -643,9 +679,16 @@ MAINTENANCE
 21. KNOWN LIMITS / NOT YET IMPLEMENTED
 ================================================================================
 
-  - Player ranged / projectile combat (melee only)
+  - Io biome world (prototype remains flat terrain)
+  - Full building materialization / placement / maintenance pipeline
+  - Attachment modules: generators, power grids, auto gather, logistics,
+    communications, defense, mining (see Building System above)
+  - Full Building Control production / pioneer assignment / sulfur-storm sim
+  - Aether-9 / Memory Cores / Resonance Events
+  - Console/gamepad ship parity (Input System present; cert not done)
+  - Some legacy currency field names remain in code — AC is gameplay truth
   - StatUpgrade quest reward type (logged as placeholder only)
-  - No dedicated in-project README (this document serves that role)
+  - No dedicated in-project README (this document + GDD 4.0 serve that role)
   - Some third-party asset packs provide art/animation only; custom logic lives
     under Assets/_Project/Scripts/
 

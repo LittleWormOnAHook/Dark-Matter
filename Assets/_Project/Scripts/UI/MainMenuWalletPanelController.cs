@@ -9,7 +9,8 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Main-menu Wallet: balances + Pi→AC swap, marketplace listings, and owned pioneer roster.
+    /// Main-menu Wallet: balances, listings shell, and owned pioneer roster.
+    /// AC is the gameplay currency; legacy swap UI may still exist in the panel.
     /// </summary>
     public class MainMenuWalletPanelController : MonoBehaviour
     {
@@ -220,9 +221,8 @@ namespace Project.UI
 
             TextMeshProUGUI body = MenuUiBuilder.CreateTitle(
                 root.transform,
-                "Pi Wallet connects to your external Pi Network wallet.\n" +
-                "Aether Credits (AC) are in-game survival currency.\n" +
-                "One-way mock swap: Pi → AC at 1:1 (prototype).",
+                "Aether Credits (AC) are the in-game survival currency.\n" +
+                "Legacy wallet swap UI below is prototype leftover — AC is gameplay truth.",
                 14f * MenuScale);
             body.alignment = TextAlignmentOptions.TopLeft;
             body.color = new Color(0.78f, 0.82f, 0.88f, 1f);

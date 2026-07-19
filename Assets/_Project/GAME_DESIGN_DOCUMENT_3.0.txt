@@ -1,10 +1,18 @@
 ================================================================================
   DARK MATTER STUDIOS presents
-  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD) 3.0 — ARCHIVE
+  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD) 3.0 — OBSOLETE ARCHIVE
 ================================================================================
 
+  *** DO NOT USE AS AUTHORITY ***
+  Superseded by Assets/_Project/GAME_DESIGN_DOCUMENT_4.0.txt (July 2026).
+  Product locks in GDD 4.0 (ignore any conflicting text below):
+    Platforms: PC primary + consoles (PS5 / Xbox) only. No mobile ship target.
+    Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Pioneer.
+  Historical drafts below may mention cancelled product ideas. Those are NOT
+  part of the living design — do not implement or treat as deferred roadmap.
+
   Studio:       Dark Matter Studios
-  Unity project: Survival Pioneer / Pi Pioneer Survivors (working title)
+  Unity project: Survival Pioneer / Pioneer Survivors (working title)
   Document:     ARCHIVED — superseded by GAME_DESIGN_DOCUMENT_4.0.txt
   Consolidated: June 26, 2026
   Superseded:   July 2026 — locks + progress live in GDD 4.0 Appendices A/B
@@ -14,10 +22,10 @@
   for historical detail only (pre-merge prose, older roadmap checkboxes).
 
 ================================================================================
-REVISION NOTES (changes from prior draft)
+REVISION NOTES (changes from prior draft) — HISTORICAL ONLY
 ================================================================================
 
-  + Branding: Dark Matter Studios; year 2160; Pi Pioneer Survivors naming
+  + Branding: Dark Matter Studios; year 2160; Pioneer Survivors naming
   + Setting status: flat terrain prototype (not Io, not forest camp label)
   + Pioneer classes renamed: Architect Engineer, Science Specialist, Combat
     Tactician, Infiltrator Scout (+ Io hybrids); player has combat/skills too
@@ -25,22 +33,19 @@ REVISION NOTES (changes from prior draft)
     expeditions on Io; rescue failure can lose Echo permanently
   + Environmental Suits added as standard trio gear (upgradeable)
   + Buildings: Medical Facility, Science Labs; craft + maintain buildings
-  + Economy: NFT minting on Pi Network; Pioneer Survivor External Exchange /
-    separate marketplace; Dark Matter earns listing Pi fees; HUD shows AC + Pi
+  + Economy (historical draft): external marketplace ideas — CANCELLED in GDD 4.0;
+    living lock is AC-only
   + Pillar 8 clarified: rescue primary; can also purchase/trade for Pioneers
   + Pet/AI follower FOLDED into Echo/trio companion system (no separate pet loop)
   + Starter AC: 5000 on new game (enough to choose 1 Skilled Pioneer)
   + Cold/Heat: single combined thermal stress meter (cold ↔ heat poles)
-  + NFT mint: on marketplace LIST only (not on rescue)
   + Controls: keyboard-mouse + controller schemes (PC / console)
   + Journal tabs expanded: Pet/Pioneers, Skills, Craft, Recipes, Echos
   + Aether-9 shares quest duty with small portion of side quest givers
   + Story: failed human/alien expeditions left tech and materials on Io
   + Section 16: Unity 6 + URP project rules (PC/consoles, combat/AI/engineering)
-  + Platforms LOCKED (GDD 4.0): PC primary + consoles; NO WebGL / browser;
-    no mobile ship target
-  + Pi Network DEFERRED: AC-only economy for now; optional later via in-game
-    Pi verification (no SDK/marketplace in current path)
+  + Platforms (GDD 4.0 lock): PC primary + consoles; no mobile ship target
+  + Economy (GDD 4.0 lock): AC-only; no external wallet/marketplace loop
 
 
 ================================================================================
@@ -54,18 +59,15 @@ Jupiter's moon Io. You lead up to 25 pioneers: up to 22 work at base while you
 take a trio of 3 on expeditions. You rescue procedurally generated Neural
 Echoes (named, upgraded specialists—thought to be imprints of previous failed
 expeditions), recover Memory Cores for the ancient probe Aether-9, materialize,
-craft, and maintain buildings from resources, survive harsh biomes, and
-optionally trade or sell trained Echoes for Pi on the Pioneer Survivor Exchange
-(minted as NFTs on the Pi Network).
+craft, and maintain buildings from resources, and survive harsh biomes.
+Roster progression is local save only.
 
-Pi is NOT earned from normal gameplay. Aether Credits (AC) are the in-game
-currency. Pi enters only via wallet, Pi-to-AC conversion, or selling Echoes on
-the external marketplace. AC can also be bought with a credit card (IAP).
+Aether Credits (AC) are the only in-game currency. Optional IAP later → AC only.
 
 TARGET PLATFORMS
 ----------------
 PC primary (keyboard + mouse, optional gamepad), then consoles (PS5 / Xbox).
-NO WebGL / browser build. No mobile as a ship target.
+No mobile as a ship target.
 Art: semi-low-poly, modular, not flat low-poly.
 
 EXAMPLE CORE LOOPS
@@ -78,34 +80,31 @@ EXAMPLE CORE LOOPS
               Events
 
   ECONOMY:    Earn AC in-game → spend on base, expeditions, pioneer upgrades,
-              and skills → optional Pi→AC swap → sell upgraded Named Pioneers
-              for Pi on separate marketplace / Exchange (NFT)
+              and skills
 
 CURRENT STATUS (PROTOTYPE)
 --------------------------
 Flat terrain setting (NOT Io yet). Working: movement, combat, inventory, hotbar
 + toolbar (scanner/binoculars), health/energy/stamina/oxygen, crafting, quests,
-Pi HUD (needs redesign to include AC), map, save/load, pet/AI follower system
-with small skills, enemy AI, loot container system, main menu, journal hub,
-editor tools (Unity).
+AC economy (some legacy currency field names remain), map, save/load, pet/AI
+follower system with small skills, enemy AI, loot container system, main menu,
+journal hub, editor tools (Unity).
 
 NOT BUILT YET: Io biomes, 25-pioneer roster, trio system, Aether-9 probe,
-memory cores, Resonance Events, procedural Echo generator, Pioneer Exchange /
-NFT minting, Aether Credits, Command Center and other sim systems, sulfur
-storm base logic, building materialization pipeline, four biome exposure meters
-beyond oxygen tuning.
+memory cores, Resonance Events, procedural Echo generator, Command Center and
+other sim systems, sulfur storm base logic, building materialization pipeline,
+four biome exposure meters beyond oxygen tuning.
 
 DESIGN WORKFLOW (AI / TEAM)
 ---------------------------
-Follow this GDD when building in Unity. If a request does not fit vision, ASK
-whether it is canon, prototype, or a new direction. Unrelated experiments are
-OK when explicitly labeled.
+Follow GDD 4.0 (not this archive) when building in Unity. If a request does not
+fit vision, ASK whether it is canon, prototype, or a new direction. Unrelated
+experiments are OK when explicitly labeled.
 
 LEGAL NOTE (ECONOMY)
 --------------------
-This document describes game-design intent only. Before launch: Pi Network app
-review, NFT/marketplace policies, IAP/store rules, and virtual-asset
-regulations for target regions and platforms.
+This archive is historical. Living product: AC-only economy; PC + consoles.
+IAP/store rules apply if optional AC purchase is ever enabled.
 
 
 ================================================================================
@@ -117,8 +116,7 @@ ONE-LINE PITCH
 Lead 25 pioneers on Io: trio expeditions face oxygen and biome/environment
 hazards; 22 base pioneer workers shelter during sulfur storms and resume if
 unharmed and/or healed; rescue procedural Echoes; slot Aether-9 memory cores
-for world-changing Resonance Events; trade or sell trained specialists for Pi
-(minted NFTs)—without earning Pi from routine play.
+for world-changing Resonance Events; spend Aether Credits on base and roster.
 
 CORE PILLARS
 ------------
@@ -129,8 +127,8 @@ CORE PILLARS
        Architect Engineer, Science Specialist, Combat Tactician,
        Infiltrator Scout, and more (+ Io hybrids)
 
-  3. Procedural Neural Echoes — unique names, stats, abilities, tradable NFT
-     cards on Pioneer Survivor Exchange
+  3. Procedural Neural Echoes — unique names, stats, abilities; local roster
+     progression only (no marketplace trading)
 
   4. Aether-9 + Memory Cores + Resonance Events — story + dynamic world
 
@@ -139,12 +137,11 @@ CORE PILLARS
 
   6. Dynamic risky structures (e.g. Geothermal Harvester depth vs tremors)
 
-  7. One-way Pi economy — no gameplay Pi drip; AC is the survival currency
+  7. AC-only economy — Aether Credits are the sole survival currency
 
-  8. Rescue and reintegrate — do not "hire from a shop menu"; players may
-     also purchase or trade for Pioneers via Pi marketplace (external)
+  8. Rescue primary — Echoes integrate as pioneers; can also recruit with AC
 
-  9. Semi-low-poly modular art — PC/console quality target (no WebGL size cap)
+  9. Semi-low-poly modular art — PC/console quality target
 
 
 ================================================================================
@@ -158,8 +155,7 @@ sulfur storms, cave networks, varying extreme temperatures.
 
 TONE
 ----
-Harsh survival + sci-fi mystery. Sci-fi HUD. Pi Network meta flavor in probe
-logs optional ("currency of pioneers").
+Harsh survival + sci-fi mystery. Sci-fi HUD.
 
 QUEST HUB: AETHER-9
 -------------------
@@ -241,7 +237,7 @@ SPLIT
     - SATURATION meter (radiation/sulfur narrative layer) — hallucinations,
       false intel, friendly fire risk; cleanse at Purification Hub
     - XP from expeditions, core recoveries, Resonance Events, tasks
-    - Leveling improves stats, abilities, Pi / NFT market value
+    - Leveling improves stats, abilities, and roster value
 
 EXPEDITION VS BASE (CRITICAL RULE)
 ----------------------------------
@@ -433,7 +429,6 @@ KEY BUILDINGS
   Geothermal Stabilizer    — hazard reduction radius; faster materialization
   Medical Facility         — heal, cure, medical research, medical crafting
   Science Labs             — crafting facilities, upgrading, supply-line production
-  Pi → AC Terminal         — one-way conversion station or UI
 
 DYNAMIC RISK
 ------------
@@ -445,8 +440,8 @@ DYNAMIC RISK
 SECTION 9 — ECONOMY & MONETIZATION
 ================================================================================
 
-AETHER CREDITS (AC) — IN-GAME CURRENCY
---------------------------------------
+AETHER CREDITS (AC) — SOLE CURRENCY
+-----------------------------------
   NEW GAME STARTER GRANT: 5000 AC
     Enough to purchase player's choice of 1 starter Skilled Pioneer (Echo)
     from the opening roster offer. Balance starter Skilled Pioneer prices to
@@ -459,60 +454,21 @@ AETHER CREDITS (AC) — IN-GAME CURRENCY
   SPEND ON:
     Workers, rushing materialization/crafting, supplies, building upgrades,
     player and pioneer upgrades/skills, healing injured base pioneers,
-    inoculations, environmental suit upgrades, optional listing prep fees, etc.
+    inoculations, environmental suit upgrades, etc.
 
-PI — PREMIUM / EXTERNAL LAYER
------------------------------
-  NOT EARNED FROM ROUTINE GAMEPLAY. No quest Pi. No loot Pi. No drip rewards.
-
-  PI ENTERS VIA:
-    External Pi wallet
-    Selling upgraded Named Pioneers on Pioneer Survivor Exchange (seller Pi)
-    No onboarding Pi grant (locked)
-
-  PI SPENT ON:
-    Buying skilled Pioneers on Pioneer Survivor External Exchange (buyer pays Pi;
-    NFT already minted at list time by seller)
-    Pi → Aether Credits conversion (ONE-WAY ONLY)
-    Optional cosmetics / attestation — TBD
-
-  NOT ALLOWED:
-    AC → Pi conversion
-    Gameplay loops that mint Pi
-
-REAL MONEY (IAP)
-----------------
+REAL MONEY (IAP) — OPTIONAL
+---------------------------
   Credit card purchase → Aether Credits (same sink as earned AC)
 
-PIONEER SURVIVOR EXCHANGE (NFT / MARKETPLACE)
----------------------------------------------
-  NFT MINT TIMING (LOCKED): Mint occurs when player LISTS a skilled Named
-  Pioneer for sale — NOT on rescue, NOT on roster add. Until listed, Pioneer
-  exists only in save data (no NFT).
+EXTERNAL WALLET / MARKETPLACE / NFT MINT
+----------------------------------------
+  CANCELLED — not used. Do not design or implement. Echo/roster progression
+  is local save only.
 
-  On list: mint Echo Card NFT on Pi Network → external marketplace listing.
-
-  Echo Card (NFT metadata) includes:
-    Portrait, name, class, rarity, stats, abilities, backstory, rescue origin,
-    level, suggested Pi ask price (player adjustable)
-
-  Sell flow:
-    List on marketplace → buyer pays Pi via Pi SDK → seller receives Pi →
-    Echo Pioneer REMOVED from seller persistent account → added to buyer account
-
-  Trade: Pi-based; avoid AC in Echo trades. Direct barter TBD.
-
-  Guardrails:
-    Only skilled / named tradable (not workers, not raw resources)
-    Pi SDK for settlements on external marketplace
-    Optional AC listing fee in-game; Dark Matter earns listing Pi fees on
-    marketplace
-    Legal review before launch
-
-WORKERS VS SKILLED MARKET
--------------------------
-  Workers: replace/recruit with AC; not Pi / NFT market
-  Skilled: full procedural depth; Pi market value scales with level/abilities
+WORKERS VS SKILLED
+------------------
+  Workers: replace/recruit with AC
+  Skilled: full procedural depth; local roster upgrades with AC / gameplay
 
 
 ================================================================================
@@ -532,12 +488,12 @@ JOURNAL TABS
   Note: legacy pet/AI follower UI folds into Pioneers/Echos tab — no separate
   pet progression track.
   Future:
-    Roster detail, Command Center status, Pioneer Exchange link / UI
+    Roster detail, Command Center status
 
 HUD
 ---
   O2 norm + four biome exposure indicators (compact); thermal = one cold/heat meter
-  AC and Pi balance (Pi = wallet / marketplace; AC = gameplay)
+  AC balance
   Base status widget (injured, sheltered, output)
   Hotbar + toolbar
 
@@ -550,8 +506,8 @@ BUILD TARGETS
 -------------
   PC (Windows) primary ship platform
   Consoles: PS5 / Xbox (parity pass after PC vertical slice)
-  No WebGL / browser; no mobile ship target
-  Semi-low-poly modular art (higher fidelity allowed vs former WebGL budget)
+  No mobile ship target
+  Semi-low-poly modular art for PC/console quality
 
 CHARACTER STRATEGY
 ------------------
@@ -577,7 +533,7 @@ DONE — REUSE & EXTEND
   [x] Inventory 24 + hotbar 10 + toolbar 2 (scanner, binoculars)
   [x] Crafting, recipes, scroll pickups, stations
   [x] Quest system + quest giver NPC (reflavor to Aether-9 + side givers)
-  [x] Pi HUD + save (REDESIGN → AC + external Pi wallet display)
+  [x] AC HUD + save (clean leftover legacy currency naming when touching UI)
   [x] Map, optics/scanner, pet/AI follower (MIGRATE → Echo/trio companion fold)
   [x] Save/load (5 slots, inventory, quests, equipment)
   [x] Enemy AI, loot container system, disintegration + smoke VFX, respawn hold
@@ -596,10 +552,9 @@ NOT STARTED — VISION SYSTEMS
   [ ] Aether-9 probe + memory cores + Resonance Events
   [ ] Building materialization + maintenance pipeline
   [ ] Medical Facility, Science Labs gameplay
-  [ ] Aether Credits economy (strip gameplay Pi; Pi Network deferred)
-  [ ] (Deferred) Pioneer Exchange + NFT + Pi verification
+  [ ] Aether Credits economy polish (AC-only UI/save)
   [ ] Saturation, Strain, Purification Hub gameplay
-  [ ] Remove gameplay Pi rewards from quests/loot
+  [ ] Strip leftover legacy currency naming from quests/loot/HUD
   [ ] Starter 5000 AC + opening Skilled Pioneer choice shop
   [ ] Single thermal (cold/heat) exposure meter
   [ ] Fold pet/AI follower into Echo/trio companion system
@@ -652,10 +607,10 @@ PHASE 6 — BUILDINGS, CRAFT & MAINTENANCE (2–3 weeks)
   [ ] Worker job assignments → output
   [ ] Maintenance costs over time
 
-PHASE 7 — ECONOMY (AC FIRST; PI DEFERRED)
-  [ ] Aether Credits (replace gameplay Pi drip / hide Pi wallet UI)
+PHASE 7 — ECONOMY (AC ONLY)
+  [ ] Aether Credits UI/save polish (starter 5000 AC path)
   [ ] Starter 5000 AC + opening Skilled Pioneer choice
-  [ ] (DEFERRED) Pi verification / Pi→AC / NFT mint / Exchange — post-1.0 optional
+  [ ] Strip leftover legacy currency naming from player-facing HUD
 
 PHASE 8 — IO WORLD & SHIP (4+ weeks)
   [ ] Biome zones, 8–12 core arc, balance pass
@@ -667,51 +622,42 @@ IMMEDIATE NEXT STEPS
   2. Command Center + 22 sim
   3. Roster cap + trio picker with new class names
   4. Echo name/stats tables (data only)
-  5. AC currency pass: starter 5000 AC, remove gameplay Pi drip
+  5. AC currency pass: starter 5000 AC; clean legacy currency naming from HUD
 
 
 ================================================================================
 SECTION 14 — LOCKED DECISIONS & OPEN QUESTIONS
 ================================================================================
 
-LOCKED DECISIONS (June 26, 2026; platforms + Pi updated with GDD 4.0)
+LOCKED DECISIONS (superseded by GDD 4.0 — do not implement archive conflicts)
 --------------------------------
-  [x] Platforms: PC primary + consoles (PS5 / Xbox); NO WebGL / browser;
-      no mobile ship target
-  [x] Economy now: Aether Credits only (gameplay). Starter 5000 AC.
-  [x] Pi Network / NFT Exchange: DEFERRED. May return later via optional
-      in-game verification to Pi Network — do not build SDK/marketplace now.
-  [x] Starter spend: enough to choose 1 starter Skilled Pioneer (~5000 AC tier)
+  [x] Platforms: PC primary + consoles (PS5 / Xbox); no mobile ship target
+  [x] Economy: Aether Credits only. Starter 5000 AC → 1 Skilled Pioneer
+  [x] External wallet / marketplace mint / Exchange: CANCELLED — not used
   [x] Pet/AI follower: FOLD into Echo/trio companion system (not separate pet)
   [x] Cold/Heat: one combined thermal stress meter (cold ↔ heat poles)
-  [x] (Historical) NFT mint-on-LIST rule — only if/when Exchange returns
-  [x] No onboarding Pi grant for new players (N/A while Pi deferred)
+  [x] Echo/roster progression: local save only (no marketplace trading)
 
 STILL OPEN
 ----------
   [ ] Flat terrain → Io: incremental retexture vs new scene?
   [ ] Science Specialist ability kit — define before Phase 3?
   [ ] Exact starter Skilled Pioneer roster (which classes offered at new game)?
-  [ ] Future Pi verification UX (if re-enabled) — account link vs soft verify?
-  [ ] (Deferred) Exchange trade rules / listing fees — only if Pi returns
 
 
 ================================================================================
 SECTION 15 — GLOSSARY
 ================================================================================
 
-  AC                  Aether Credits — sole gameplay currency (current path)
+  AC                  Aether Credits — sole gameplay currency
   Echo                Procedurally generated rescued pioneer (skilled/Special)
-  NFT / Echo Card     DEFERRED with Pi Exchange; local roster only for now
+  Echo Card           Local roster / save identity for a skilled Echo (no mint)
   Thermal meter       Single cold/heat exposure bar (biome pressure #2)
   Starter grant       5000 AC on new game for 1 starter Skilled Pioneer choice
   Resonance Event     Temporary world change after slotting a memory core
   Saturation          Skilled pioneer mental/rad/sulfur stress (hallucinations)
   Strain              Worker collective overwork meter
   Norm                Oxygen — always tracked baseline survival pressure
-  Pi Network          DEFERRED optional meta; future in-game verification possible
-  Pioneer Survivor    DEFERRED external marketplace (only if Pi returns)
-  Exchange
 
 
 ================================================================================
@@ -723,16 +669,15 @@ tactical RPG for PC and consoles (PS5 / Xbox). Core features include survival
 lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/
 tension), moral choices, low to med poly Io mechanics, companion systems/
 animations/AI with formations and behavior, building materialization and
-destruction by elements and attacks, ranged combat (projectiles + inventory
-hotbar + mouse-aimed), and Pi Network integration (external marketplace /
-wallet — not a browser build).
+destruction by elements and attacks, and ranged combat (projectiles + inventory
+hotbar + mouse-aimed). Economy is Aether Credits (AC) only.
 
 CORE PRINCIPLES
 ---------------
   - Target PC first, then console parity: solid frame pacing, Input System
     (KBM + gamepad), scalable UI, profile on target hardware.
   - Prefer efficient patterns (pooling, events over busy Update loops,
-    lightweight AI) for polish and console stability — not WebGL limits.
+    lightweight AI) for polish and console stability.
   - Modular component-based architecture: MonoBehaviours for runtime behavior,
     ScriptableObjects for data/config (behaviors, items, recipes, combat stats,
     moral alignments, formations, etc.).
@@ -741,8 +686,8 @@ CORE PRINCIPLES
     prefabs/variants.
   - Tactical light combat: responsive parry/combo windows, resource management
     (stamina/tension), positioning/flanking awareness.
-  - Cross-platform: Unity Input System, async Pi wallet/marketplace flows,
-    responsive/scalable UI for 16:9+ and TV safe areas.
+  - Cross-platform: Unity Input System, responsive/scalable UI for 16:9+ and
+    TV safe areas.
   - Reference existing repo files with @filename or relative paths for context.
 
 KEY SYSTEMS TO ALIGN WITH
@@ -755,7 +700,7 @@ KEY SYSTEMS TO ALIGN WITH
   - Enemy AI (basic chase/attack/guard with light tactical positioning)
   - Ranged projectile system with prefab projectiles and line tracers
   - Building materialization / placement / destruction
-  - Aether Credits economy (Pi Network = deferred optional meta)
+  - Aether Credits economy (AC only)
 
 ENEMY & COMPANION AI GUIDELINES
 -------------------------------
@@ -781,7 +726,7 @@ DO'S
 
 DON'TS
 ------
-  - Do not target or optimize for WebGL / browser builds.
+  - Ship targets are PC and consoles only.
   - Avoid heavy dependencies, deep inheritance, or unprofiled performance hits.
   - Do not invent unrelated systems unless asked by the user.
   - Minimize polling; prefer events.

@@ -4,7 +4,6 @@ namespace Project.Core
 {
     /// <summary>
     /// PC / console graphics defaults and humanoid performance budgets.
-    /// WebGL / browser is out of scope — do not reintroduce platform forks for it.
     /// </summary>
     public static class PlatformGraphicsProfile
     {

@@ -6,7 +6,6 @@ namespace Project.EditorTools
 {
     /// <summary>
     /// Wires PC / console quality tiers to the correct URP assets and platform defaults.
-    /// WebGL / browser builds are out of scope.
     /// </summary>
     public static class PlatformQualitySetupUtility
     {
@@ -56,7 +55,7 @@ namespace Project.EditorTools
                 $"Configured quality tiers (PC / console):\n\n" +
                 $"- Index {lowIndex} ({tierNames[lowIndex]}): lighter URP, LOD cap 1\n" +
                 $"- Index {pcIndex} ({tierNames[pcIndex]}): PC URP, full LOD\n\n" +
-                "WebGL / browser is out of scope. Review Project Settings > Quality for per-platform defaults.",
+                "Review Project Settings > Quality for per-platform defaults.",
                 "OK");
         }
 

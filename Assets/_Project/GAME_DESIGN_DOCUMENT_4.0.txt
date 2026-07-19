@@ -25,9 +25,8 @@ Assets/_Project). GAME_DESIGN_DOCUMENT_3.0.txt is retained as a historical
 archive only — do not treat it as competing authority.
 
 LOCKED (do not contradict without an explicit design change)
-  Platforms: PC primary + consoles (PS5 / Xbox). NO WebGL / browser. No mobile ship.
-  Economy: Aether Credits (AC) only for gameplay. Starter 5000 AC → 1 Skilled Pioneer.
-  Pi Network / NFT Exchange: DEFERRED (optional later via in-game verification).
+  Platforms: PC primary + consoles (PS5 / Xbox) only. No mobile ship target.
+  Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Pioneer.
   Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
   Building Control Panels: in-world E terminal → Overview | Pioneers | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
@@ -460,34 +459,22 @@ TARGET PLATFORMS
 ----------------
   Primary:  PC (keyboard + mouse, optional gamepad)
   Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
+  Not a ship target: mobile
 
-OUT OF SCOPE
-------------
-  WebGL / browser builds
-  Mobile as a ship target
-
-Art and systems may still use efficient modular approaches, but build size and
-API choices are no longer constrained by a 50-100 MB WebGL budget.
+Art and systems use efficient modular approaches for polish and console
+stability (pooling, LODs, Addressables as needed).
 
 
 ================================================================================
 Economy (Current Lock)
 ================================================================================
 
-CURRENT SHIP TARGET
+AETHER CREDITS ONLY
 -------------------
-  Aether Credits (AC) is the only player-facing currency for gameplay.
+  Aether Credits (AC) is the only player-facing currency.
   Starter grant: 5000 AC on new game for 1 starter Skilled Pioneer choice.
-
-DEFERRED — PI NETWORK
----------------------
-  Pi wallet, Pi-to-AC terminal, NFT minting, and Pioneer Survivor Exchange are
-  OUT OF SCOPE for the current production path.
-
-  They may return later as an optional meta layer using in-game verification
-  to the Pi Network (player links/verifies identity; trading remains external).
-  Do not implement Pi SDK or marketplace flows until that initiative is
-  explicitly re-opened.
+  Optional IAP later → AC only (if ever enabled).
+  No external wallet, marketplace mint, or third-party crypto loop.
 
 
 ================================================================================
@@ -509,7 +496,7 @@ Next production-facing chapters (planned — not yet written as full chapters):
 Until those chapters ship, Appendix A (Interim Mechanics Lock) is authoritative
 for concrete systems. Appendix B tracks what is actually playable in the Unity
 prototype versus still planned. Do not invent features that contradict locks or
-that are listed as NOT STARTED / DEFERRED.
+that are listed as NOT STARTED.
 
 
 ================================================================================
@@ -533,7 +520,7 @@ A1. Platforms, art & tech
 -------------------------
   Primary:  PC (keyboard + mouse, optional gamepad)
   Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
-  OUT OF SCOPE: WebGL / browser; mobile as ship target
+  Not a ship target: mobile
   Art: semi-low-poly modular; 2–3 base meshes + attachments + material swaps
   Tech: Unity 6 + URP; Addressables/LODs as needed; aggregate base sim (no
         per-NPC pathfinding at 22 scale)
@@ -584,7 +571,7 @@ A5. Neural Echoes & procedural generation
   Failure can lose Echo permanently.
   Procedural: name format [Io Prefix] [Core Name] [Designation], class, stats,
   abilities, backstory fragment, material tint + modular attachments.
-  NFT / marketplace trading: DEFERRED with Pi (local roster progression only).
+  Progression is local roster / save only — no marketplace trading of Echoes.
 
 
 A6. Aether-9, Memory Cores & Resonance Events
@@ -601,12 +588,17 @@ A7. Buildings, craft & Building Control Panels
   Key buildings: Command Center, Purification Hub, Geothermal Harvester,
   Echo Reclamation Chamber, Resonance Beacon, Probe Uplink, Geothermal
   Stabilizer, Medical Facility, Science Labs.
-  Pi→AC Terminal: DEFERRED while Pi is deferred.
+
+  ATTACHMENT MODULES (planned stack — expand cores with attachable modules):
+    Generators, power grids, automated resource gathering, logistics,
+    communications, defense, mining. Modules feed Building Control
+    Production / Changes tabs and sulfur-storm pause rules same as buildings.
 
   BUILDING CONTROL PANELS (locked UX):
     Each major structure has an in-world terminal (E) → Building Control UI
     (NOT Journal) with tabs: Overview | Pioneers | Production | Craft | Changes.
-    Assign base-22 pioneers, set production/craft queues, per-building settings.
+    Assign base-22 pioneers, set production/craft queues, per-building /
+    module settings.
     Queues run while player is on expedition; PAUSE during sulfur storms.
     Journal Craft = recipe library / scroll learning only — not primary
     production UI.
@@ -618,15 +610,10 @@ A8. Economy (current lock)
     New game starter: 5000 AC → choose 1 starter Skilled Pioneer.
     Earn: resources, quests, expeditions, Resonance bonuses, base output, loot.
     Spend: workers, rush craft, supplies, upgrades, heals, inoculations, suits.
-
-  PI NETWORK — DEFERRED
-    No wallet/SDK requirement for v1 loop. No NFT mint. No Pioneer Survivor
-    Exchange in current path. May return later via optional in-game verification
-    linking to Pi Network. Historical mint-on-LIST rule only if Exchange returns.
-    Strip/hide leftover gameplay Pi drip when touching economy systems.
     Optional IAP later → AC only.
-
-  Workers: AC recruit/replace. Skilled market/NFT: deferred.
+  Workers: AC recruit/replace. Skilled pioneers: local roster progression only.
+  When touching economy code: prefer AC for all UI/save; remove leftover legacy
+  currency naming from player-facing HUD.
 
 
 A9. Controls & UI (target)
@@ -640,20 +627,18 @@ A9. Controls & UI (target)
 
 A10. Locked decisions checklist
 -------------------------------
-  [x] PC + consoles; NO WebGL / browser; no mobile ship target
-  [x] AC-only gameplay economy; starter 5000 AC → 1 Skilled Pioneer
-  [x] Pi / NFT / Exchange DEFERRED
+  [x] PC + consoles only; no mobile ship target
+  [x] AC-only economy; starter 5000 AC → 1 Skilled Pioneer
   [x] Single thermal (cold/heat) meter
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
   [x] Base 22: sulfur shelter; injury never death from building damage
   [x] Building Control Panels tab model as above
-  [x] NFT mint-on-LIST only if/when Exchange returns
+  [x] Echo/roster progression is local save only (no marketplace trading)
 
 OPEN (examples)
   Flat terrain → Io scene strategy
   Exact starter Skilled Pioneer offer list
   Science Specialist ability kit polish
-  Future Pi verification UX (if re-enabled)
 
 
 ================================================================================
@@ -661,15 +646,15 @@ APPENDIX B — Current Implementation / Progress (July 2026)
 ================================================================================
 
 Survey basis: Assets/_Project C# + recent branch work including commit
-e0d491de (WebGL dropped; Pioneer custom recoil; hovercraft Follow zoom /
-holster-on-enter). Flat terrain prototype — Io biomes not shipped.
+e0d491de (Pioneer custom recoil; hovercraft Follow zoom / holster-on-enter).
+Flat terrain prototype — Io biomes not shipped.
 GAME_BREAKDOWN.txt may lag; prefer this appendix over stale breakdown notes.
 
 
 B1. DONE — playable prototype core
 ----------------------------------
-  [x] Platforms: WebGL/browser explicitly out of scope in code/comments;
-      PC quality bootstrap (PlatformGraphicsBootstrap / PlatformGraphicsProfile)
+  [x] Platforms: PC quality bootstrap (PlatformGraphicsBootstrap /
+      PlatformGraphicsProfile); console parity still in progress
   [x] Player: Invector-bridged third-person move/combat; Pioneer custom recoil
       (PioneerInvectorRecoilUtility / PioneerShooterManager — suppresses Invector
       arcade camera/anim kick; subtle custom camera nudge)
@@ -695,15 +680,17 @@ B1. DONE — playable prototype core
 
 B2. PARTIAL — present but incomplete vs lock
 --------------------------------------------
-  [~] Pi wallet / Pi→AC swap UI leftovers (CharacterPanel, main menu wallet) —
-      DEFERRED meta; hide/strip when touching economy (AC is gameplay truth)
+  [~] Legacy wallet / currency-swap UI leftovers (CharacterPanel, main menu) —
+      AC is gameplay truth; strip player-facing legacy currency when touching
+      economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
   [~] Sulfur "crisis" can pause facility queues via HUD/debug path — not a live
       world sulfur storm + Command Center room sim
   [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
       Echo/trio not finished
   [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
-  [~] Quest/loot rewards display as AC; some legacy Pi naming in enums/assets
+  [~] Quest/loot rewards display as AC; some legacy currency naming in
+      enums/assets
 
 
 B3. NOT STARTED — vision systems still planned
@@ -716,12 +703,11 @@ B3. NOT STARTED — vision systems still planned
   [ ] Medical Facility / Science Labs as full production buildings
   [ ] Aether-9 probe quest hub + Memory Core arc + Resonance Events
   [ ] Purification Hub Saturation/Strain gameplay depth
-  [ ] (DEFERRED) Pi verification, Pi→AC terminal, NFT mint, Exchange
 
 
 B4. Near-term roadmap priority (order of value)
 -----------------------------------------------
-  1. Keep AC-only path clean; remove/hide Pi drip & wallet from gameplay HUD
+  1. Keep AC-only path clean; remove leftover legacy currency from gameplay HUD
   2. Exposure + sulfur storm vertical slice for player/trio (then base 22)
   3. Command Center aggregate sim + injury/heal loop
   4. Fold pet into Echo/trio companion presentation

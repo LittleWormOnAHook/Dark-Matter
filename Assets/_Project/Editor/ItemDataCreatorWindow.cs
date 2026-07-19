@@ -41,7 +41,7 @@ public class ItemDataCreatorWindow : EditorWindow
         oxygenRestore = EditorGUILayout.FloatField("Oxygen Restore (display sec)", oxygenRestore);
 
         GUILayout.Space(10);
-        GUILayout.Label("Pi Network", EditorStyles.boldLabel);
+        GUILayout.Label("Currency (legacy fields)", EditorStyles.boldLabel);
         isPiInfused = EditorGUILayout.Toggle("Is Pi Infused", isPiInfused);
         if (isPiInfused)
             piValue = EditorGUILayout.IntField("Pi Value", piValue);
