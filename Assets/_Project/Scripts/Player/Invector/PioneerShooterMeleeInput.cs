@@ -1,5 +1,8 @@
 using Invector.vCharacterController;
+using Invector.vShooter;
 using Project.Core;
+using Project.Data;
+using Project.Inventory;
 using Project.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,6 +13,7 @@ namespace Project.Player.Invector
     /// Invector shooter/melee input with Pioneer UI lock integration.
     /// Reads keyboard/mouse via the Input System because legacy Input.GetAxis is unreliable in this project.
     /// </summary>
+    [DefaultExecutionOrder(500)]
     [DisallowMultipleComponent]
     public class PioneerShooterMeleeInput : vShooterMeleeInput
     {
@@ -22,11 +26,13 @@ namespace Project.Player.Invector
         [SerializeField] private float runtimeMaxCameraDistance = 10f;
 
         private PioneerInvectorInputBridge _inputBridge;
+        private EquipmentController _equipment;
 
         protected override void Start()
         {
             base.Start();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
+            _equipment = GetComponent<EquipmentController>();
             SyncPioneerCursorState();
         }
 
@@ -35,7 +41,45 @@ namespace Project.Player.Invector
             if (_inputBridge != null)
                 _inputBridge.ApplyInputLocks(this);
 
+            TryDrawWeaponOnAimPress();
+
             base.Update();
+            SyncPioneerCursorState();
+        }
+
+        /// <summary>
+        /// Right mouse with a sheathed weapon arms it. Ranged weapons additionally begin aiming so the
+        /// same press doubles as ready-to-aim; melee weapons are only drawn. When a weapon is already
+        /// drawn, right mouse falls through to the base shooter/melee aim handling unchanged.
+        /// </summary>
+        private void TryDrawWeaponOnAimPress()
+        {
+            if (_equipment == null || _equipment.IsWeaponDrawn)
+                return;
+
+            if (Mouse.current == null || !Mouse.current.rightButton.wasPressedThisFrame)
+                return;
+
+            if (!GameSession.HasStarted || Time.timeScale <= 0f)
+                return;
+
+            if (_inputBridge != null && _inputBridge.ShouldLockGameplayInput())
+                return;
+
+            ItemData weapon = _equipment.EquippedItem;
+            if (!EquipmentController.IsWeaponItem(weapon))
+                return;
+
+            if (!_equipment.DrawWeapon())
+                return;
+
+            if (EquipmentController.IsRangedWeaponItem(weapon))
+                isAimingByInput = true;
+        }
+
+        protected override void LateUpdate()
+        {
+            base.LateUpdate();
             SyncPioneerCursorState();
         }
 
@@ -174,6 +218,40 @@ namespace Project.Player.Invector
                 return false;
 
             return true;
+        }
+
+        public override void DoShots()
+        {
+            if (shooterManager is PioneerShooterManager pioneerShooter)
+                pioneerShooter.SuppressNativeRecoil();
+            else
+                PioneerInvectorRecoilUtility.SuppressInvectorNativeRecoil(shooterManager);
+
+            base.DoShots();
+        }
+
+        protected override void UpdateShooterAnimations()
+        {
+            base.UpdateShooterAnimations();
+
+            if (shooterManager == null || shotLayer < 0 || CurrentActiveWeapon == null)
+                return;
+
+            bool isRifle = _equipment != null &&
+                           EquipmentController.IsRangedWeaponItem(_equipment.DrawnWeaponItem) &&
+                           _equipment.DrawnWeaponItem.weaponGrip == WeaponGrip.TwoHanded;
+
+            float weight;
+            if (IsAiming && isUsingScopeView)
+                weight = isRifle
+                    ? PioneerInvectorRecoilUtility.RifleScopeShotLayerWeight
+                    : PioneerInvectorRecoilUtility.ScopeShotLayerWeight;
+            else
+                weight = isRifle
+                    ? PioneerInvectorRecoilUtility.RifleShotLayerWeight
+                    : PioneerInvectorRecoilUtility.ShotLayerWeight;
+
+            animator.SetLayerWeight(shotLayer, weight);
         }
 
         private static Vector2 ReadMoveVector()

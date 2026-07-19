@@ -1,10 +1,14 @@
 using Project.Data;
-using Project.Interaction;
-using Project.UI;
 using UnityEngine;
 
 namespace Project.Combat
 {
+    /// <summary>
+    /// Physical flying projectile shared by the player, companions, and enemies. Sweeps for hits
+    /// every frame (kinematic, not Rigidbody-driven, so it stays lightweight),
+    /// optionally arcs under gravity, and resolves damage/splash/status-effects/VFX through
+    /// CombatHitResolver so every ammo type behaves consistently regardless of who fired it.
+    /// </summary>
     public class CombatProjectile : MonoBehaviour
     {
         [SerializeField] private float speed = 85f;
@@ -14,32 +18,108 @@ namespace Project.Combat
 
         private GameObject owner;
         private AmmoType ammoType;
+        private ItemData ammoItem;
+        private ItemData weapon;
         private float damage;
         private bool isCritical;
+        private float gravityScale;
         private Vector3 velocity;
         private Vector3 previousPosition;
         private float spawnTime;
         private bool hasHit;
         private bool launched;
+        private GameObject tracerInstance;
+        private AudioSource travelAudioSource;
 
         public void Launch(
             GameObject ownerRoot,
             Vector3 direction,
             float damageAmount,
             AmmoType type,
+            ItemData ammoItemData = null,
             float speedOverride = 0f,
-            bool critical = false)
+            bool critical = false,
+            ItemData weaponItemData = null)
         {
             owner = ownerRoot;
             ammoType = type;
+            ammoItem = ammoItemData;
+            weapon = weaponItemData;
             damage = damageAmount;
             isCritical = critical;
+            gravityScale = ammoItemData != null ? ammoItemData.projectileGravityScale : 0f;
             speed = speedOverride > 0f ? speedOverride : speed;
             velocity = direction.sqrMagnitude > 0.0001f ? direction.normalized * speed : Vector3.forward * speed;
             previousPosition = transform.position;
             spawnTime = Time.time;
             hasHit = false;
             launched = true;
+
+            SpawnTracer();
+            SpawnTravelAudio();
+            EnsureProjectileVisible();
+        }
+
+        private void SpawnTracer()
+        {
+            GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
+            if (tracerPrefab == null)
+                return;
+
+            tracerInstance = Instantiate(tracerPrefab, transform.position, transform.rotation, transform);
+            CombatVfxUtility.PlayParticleSystemsRecursive(tracerInstance);
+        }
+
+        private void EnsureProjectileVisible()
+        {
+            if (tracerInstance != null)
+            {
+                Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Renderer renderer = renderers[i];
+                    if (renderer == null || renderer.transform.IsChildOf(tracerInstance.transform))
+                        continue;
+
+                    renderer.enabled = false;
+                }
+
+                return;
+            }
+
+            Transform visual = transform.Find("Visual");
+            if (visual != null && visual.localScale.sqrMagnitude < 0.05f)
+                visual.localScale = Vector3.one * 0.35f;
+        }
+
+        /// <summary>
+        /// Looping sound that rides along with the flying projectile (parented to it, so it moves
+        /// in step) and stops the instant the projectile hits or expires.
+        /// </summary>
+        private void SpawnTravelAudio()
+        {
+            AudioClip clip = ammoItem != null ? ammoItem.projectileTravelSound : null;
+            if (clip == null)
+                return;
+
+            GameObject audioObject = new GameObject("TravelAudio");
+            audioObject.transform.SetParent(transform, false);
+
+            travelAudioSource = audioObject.AddComponent<AudioSource>();
+            travelAudioSource.clip = clip;
+            travelAudioSource.loop = true;
+            travelAudioSource.playOnAwake = false;
+            travelAudioSource.spatialBlend = 1f;
+            travelAudioSource.Play();
+        }
+
+        private void StopTravelAudio()
+        {
+            if (travelAudioSource == null)
+                return;
+
+            travelAudioSource.Stop();
+            travelAudioSource.enabled = false;
         }
 
         private void Update()
@@ -49,12 +129,20 @@ namespace Project.Combat
 
             if (Time.time - spawnTime > maxLifetime)
             {
+                StopTravelAudio();
                 Destroy(gameObject);
                 return;
             }
 
             previousPosition = transform.position;
+
+            if (gravityScale > 0f)
+                velocity += Physics.gravity * gravityScale * Time.deltaTime;
+
             transform.position += velocity * Time.deltaTime;
+            if (velocity.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
+
             SweepForHit();
         }
 
@@ -74,24 +162,17 @@ namespace Project.Combat
                     hitLayers,
                     QueryTriggerInteraction.Ignore))
             {
-                if (IsOwnerCollider(hit.collider))
+                if (CombatHitResolver.IsOwnerCollider(owner, hit.collider))
                     return;
 
-                ResolveHit(hit.collider, hit.point);
+                ResolveHit(hit.collider, hit.point, hit.normal);
             }
         }
 
-        private bool IsOwnerCollider(Collider collider)
-        {
-            if (collider == null || owner == null)
-                return false;
-
-            return collider.transform.IsChildOf(owner.transform) || collider.gameObject == owner;
-        }
-
-        private void ResolveHit(Collider collider, Vector3 hitPoint)
+        private void ResolveHit(Collider collider, Vector3 hitPoint, Vector3 surfaceNormal)
         {
             hasHit = true;
+            StopTravelAudio();
 
             float appliedDamage = damage;
             if (ammoType == AmmoType.ResonanceStabilizer)
@@ -101,16 +182,28 @@ namespace Project.Combat
                     appliedDamage = Mathf.Max(1f, damage * 0.15f);
             }
 
-            IDamageable damageable = DamageableUtility.GetDamageable(collider);
-            if (damageable != null)
+            CombatHitResolver.ApplyDirectHit(collider, hitPoint, velocity, appliedDamage, isCritical, owner);
+
+            if (ammoItem != null && ammoItem.HasSplashDamage)
+                CombatHitResolver.ApplySplash(ammoItem, hitPoint, appliedDamage, owner, collider);
+
+            // Use the actual surface normal from the sphere-cast hit, not the bullet's reversed
+            // travel direction — otherwise impact decals orient toward wherever the shot came from
+            // (often roughly facing the player) instead of lying flat against the surface they hit.
+            Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal : -velocity.normalized;
+            CombatHitResolver.SpawnImpactVfx(ammoItem, weapon, hitPoint, impactNormal);
+
+            if (ammoItem != null)
+                CombatStatusEffect.Apply(ammoItem, collider.gameObject, owner);
+            else
+                CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
+
+            if (tracerInstance != null)
             {
-                damageable.TakeDamage(appliedDamage, owner != null ? owner : gameObject, isCritical);
-                Vector3 normal = (transform.position - previousPosition).normalized;
-                CombatHitVfx.SpawnBloodSplatter(hitPoint, velocity, normal, appliedDamage);
-                CombatUiSpawner.ShowDamage(appliedDamage, hitPoint, isCritical);
+                tracerInstance.transform.SetParent(null, true);
+                Destroy(tracerInstance, 2f);
             }
 
-            CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
             Destroy(gameObject);
         }
     }

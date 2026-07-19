@@ -6,6 +6,8 @@ using Invector.vMelee;
 using Invector.vShooter;
 using Project.Audio;
 using Project.Core;
+using Project.Data;
+using Project.AI.Invector;
 using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
@@ -46,13 +48,23 @@ namespace Project.Player.Invector
         private void Awake()
         {
             Instance = this;
+            PlayerReference.Register(transform, GetComponentInChildren<Camera>());
             ThirdPersonController = GetComponent<vThirdPersonController>();
             ShooterInput = GetComponent<PioneerShooterMeleeInput>();
             ShooterManager = GetComponent<vShooterManager>();
+            if (ShooterManager is PioneerShooterManager pioneerShooter)
+                pioneerShooter.SuppressNativeRecoil();
             MeleeManager = GetComponent<vMeleeManager>();
 
             if (ShooterManager != null)
+            {
                 ShooterManager.useAmmoDisplay = false;
+                PioneerInvectorRecoilUtility.ApplyShooterManagerDefaults(ShooterManager);
+                PioneerInvectorShooterLayers.ApplyToShooterManager(ShooterManager);
+                ShooterManager.onEquipWeapon.AddListener(HandleShooterWeaponEquipped);
+            }
+
+            SnapWeaponContainersToLocalBones();
 
             DisableInvectorStandaloneUi();
             EnsureNullAimCanvasStub();
@@ -60,18 +72,23 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerPlayerInputBinder>() == null)
                 gameObject.AddComponent<PioneerPlayerInputBinder>();
 
-            if (GetComponent<PioneerInvectorIncomingDamageBridge>() == null)
-                gameObject.AddComponent<PioneerInvectorIncomingDamageBridge>();
+            if (GetComponent<PioneerInvectorSurvivalBridge>() == null)
+                gameObject.AddComponent<PioneerInvectorSurvivalBridge>();
+
+            if (GetComponent<PioneerInvectorDeathRagdoll>() == null)
+                gameObject.AddComponent<PioneerInvectorDeathRagdoll>();
 
             if (GetComponent<PioneerTerrainRescue>() == null)
                 gameObject.AddComponent<PioneerTerrainRescue>();
+
+            if (GetComponent<PioneerInvectorProjectileBridge>() == null)
+                gameObject.AddComponent<PioneerInvectorProjectileBridge>();
 
             if (!disableLegacyCombatComponents)
                 return;
 
             StripLegacyEcm2Motor();
             _kinematicGuardFrames = 8;
-            DisableIfPresent<PlayerGkcAnimatorDriver>();
             DisableIfPresent<EquippedItemVisual>();
             DisableIfPresent<vLockOnShooter>();
             DisableIfPresent<CombatFocusController>();
@@ -96,8 +113,44 @@ namespace Project.Player.Invector
 
         private void OnDestroy()
         {
+            if (ShooterManager != null)
+                ShooterManager.onEquipWeapon.RemoveListener(HandleShooterWeaponEquipped);
+
             if (Instance == this)
+            {
+                PlayerReference.Unregister(transform);
                 Instance = null;
+            }
+        }
+
+        private void HandleShooterWeaponEquipped(vShooterWeapon weapon, bool isLeftWeapon)
+        {
+            if (weapon == null || ShooterManager == null)
+                return;
+
+            weapon.hitLayer = ShooterManager.damageLayer;
+
+            PioneerInvectorWeaponBridge weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
+            ItemData equippedItem = weaponBridge != null ? weaponBridge.ActiveEquippedItem : null;
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, equippedItem);
+
+            weapon.onFinishReload.RemoveListener(HandleWeaponReloadFinished);
+            weapon.onFinishReload.AddListener(HandleWeaponReloadFinished);
+        }
+
+        private void HandleWeaponReloadFinished()
+        {
+            if (ShooterManager is PioneerShooterManager pioneerShooter)
+                pioneerShooter.SuppressNativeRecoil();
+            else
+                PioneerInvectorRecoilUtility.SuppressInvectorNativeRecoil(ShooterManager);
+
+            PioneerInvectorWeaponBridge weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
+            ItemData equippedItem = weaponBridge != null ? weaponBridge.ActiveEquippedItem : null;
+            GameObject weaponRoot = ShooterManager != null && ShooterManager.CurrentWeapon != null
+                ? ShooterManager.CurrentWeapon.gameObject
+                : null;
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, equippedItem);
         }
 
         private void HandleGameStarted()
@@ -192,6 +245,22 @@ namespace Project.Player.Invector
             T behaviour = GetComponent<T>();
             if (behaviour != null)
                 behaviour.enabled = false;
+        }
+
+        /// <summary>
+        /// vSnapToBody.Start resolves bodySnap via transform.root and can reparent holster/draw
+        /// containers onto the wrong skeleton, leaving preloaded weapons at prefab-root offsets.
+        /// Snap to this character's bones in Awake (before vSnapToBody.Start) and remove the components.
+        /// </summary>
+        private void SnapWeaponContainersToLocalBones()
+        {
+            vBodySnappingControl bodySnap = GetComponentInChildren<vBodySnappingControl>(true);
+            if (bodySnap == null)
+                return;
+
+            bodySnap.LoadBones();
+            EnemyInvectorBodySnapSetup.WireSnapComponents(gameObject, bodySnap);
+            EnemyInvectorBodySnapSetup.SnapWeaponContainersToLocalBones(gameObject, bodySnap);
         }
 
         private void DisableInvectorStandaloneUi()

@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efcf1585a4e27f34ca05098e235d7672, type: 3}
+  m_Name: HovercraftProfile_Default
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Vehicles.HovercraftProfile
+  enterRange: 5
+  enterPrompt: Press E to board hovercraft
+  exitPrompt: Press E to exit hovercraft
+  hoverHeight: 2
+  minAltitudeAboveGround: 2
+  maxAltitudeAboveGround: 10
+  parkedAltitudeAboveGround: 0.35
+  verticalAdjustSpeed: 3.5
+  springStrength: 50000
+  springDamping: 8000
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  rayLength: 16
+  forwardThrust: 8500
+  reverseThrust: 4200
+  strafeThrust: 6200
+  yawTorque: 6400
+  maxForwardSpeed: 40
+  maxReverseSpeed: 25
+  maxStrafeSpeed: 14
+  forwardSteerThreshold: 0.15
+  boosterMultiplier: 3
+  linearDrag: 1.2
+  angularDrag: 2.5
+  turbulenceBaseAmplitude: 0.015
+  turbulenceMaxMultiplier: 1.5
+  turbulenceFrequency: 2.4
+  visualTurbulenceRotation: 0.35
+  drivePitchMax: -2
+  driveRollMax: 16
+  maxTotalBank: 32
+  drivePitchSettleSeconds: 2.5
+  driveTiltSmooth: 6
+  yawRollFactor: 12
+  followDistanceDefault: 14
+  followDistanceMin: 5
+  followDistanceMax: 36
+  followHeight: 4.5
+  followLookAhead: 6
+  scrollDistanceStep: 2
+  turretArcDegrees: 35
+  turretSensitivity: {x: 0.06, y: 0.05}
+  reticleSmoothSpeed: 8
+  turretFireCooldown: 0.18
+  turretFireClip: {fileID: 8300000, guid: 221503a992e5bc64f88e43a08127f346, type: 3}
+  turretFireClip2: {fileID: 0}
+  engineRunningClip: {fileID: 8300000, guid: 0ade537f9dc4fc448a78c3ff254867c5, type: 3}
+  engineVolume: 0.38
+  enginePitchRange: {x: 0.85, y: 1.35}
+  boardClip: {fileID: 0}
+  boardVolume: 0.75
+  exitClip: {fileID: 0}
+  exitVolume: 0.75
+  boostAudioClip: {fileID: 0}
+  boostVolume: 0.85
+  weaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
+  ammoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}

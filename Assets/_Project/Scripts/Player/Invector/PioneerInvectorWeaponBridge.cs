@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Invector;
 using Invector.vCharacterController;
@@ -65,7 +66,17 @@ namespace Project.Player.Invector
         private readonly Dictionary<ItemData, GameObject> _spawnedInstances = new();
         private readonly Dictionary<ItemData, MeleeWeaponSlot> _meleeSlotLookup = new();
         private readonly Dictionary<ItemData, RangedWeaponSlot> _rangedSlotLookup = new();
+        private readonly Dictionary<GameObject, AuthoredSlotTransform> _authoredSlotTransforms = new();
         private ItemData _activeItem;
+        private bool _startupWeaponLayoutReady;
+
+        private struct AuthoredSlotTransform
+        {
+            public Transform Parent;
+            public Vector3 LocalPosition;
+            public Quaternion LocalRotation;
+            public Vector3 LocalScale;
+        }
 
         public ItemData ActiveEquippedItem => _activeItem;
 
@@ -212,6 +223,44 @@ namespace Project.Player.Invector
             BindPreloadedRangedSlots();
         }
 
+        public void PrepareForVehicleBoarding()
+        {
+            ForceAuthoredSlotCaptures();
+            ClearInvectorWeapons();
+            RestoreAuthoredWeaponSlotTransforms();
+            HideAllSpawnedWeapons();
+        }
+
+        public void ScheduleRestoreAfterVehicleExit()
+        {
+            StopCoroutine(nameof(RestoreAfterVehicleExitRoutine));
+            StartCoroutine(RestoreAfterVehicleExitRoutine());
+        }
+
+        private IEnumerator RestoreAfterVehicleExitRoutine()
+        {
+            yield return null;
+            RestoreAfterVehicleExit();
+        }
+
+        public void RestoreAfterVehicleExit()
+        {
+            ClearInvectorWeapons();
+            RefreshEquippedWeapon();
+        }
+
+        public void EnsureAuthoredSlotCaptures()
+        {
+            CaptureAuthoredSlots(meleeWeaponSlots);
+            CaptureAuthoredSlots(rangedWeaponSlots);
+        }
+
+        private void ForceAuthoredSlotCaptures()
+        {
+            ForceCaptureAuthoredSlots(meleeWeaponSlots);
+            ForceCaptureAuthoredSlots(rangedWeaponSlots);
+        }
+
         private void OnEnable()
         {
             if (_equipment != null)
@@ -232,12 +281,33 @@ namespace Project.Player.Invector
 
         private void Start()
         {
-            HandleEquipmentChanged(_equipment != null ? _equipment.SelectedHotbarSlot : 0);
+            StartCoroutine(FinalizeStartupWeaponLayoutRoutine());
+        }
+
+        private IEnumerator FinalizeStartupWeaponLayoutRoutine()
+        {
+            // vSnapToBody / vShooterManager Start run at default order 0, after this bridge's Start.
+            // Refreshing equipped visuals before they run leaves weapons on unstaged handlers.
+            yield return null;
+            yield return null;
+            FinalizeStartupWeaponLayout();
+        }
+
+        private void FinalizeStartupWeaponLayout()
+        {
+            if (_startupWeaponLayoutReady || !_bootstrap.IsActive)
+                return;
+
+            _startupWeaponLayoutReady = true;
+            HideAllSpawnedWeapons();
+            ClearInvectorWeapons();
+            ForceAuthoredSlotCaptures();
+            RefreshEquippedWeapon();
         }
 
         private void HandleEquipmentChanged(int _)
         {
-            if (!_bootstrap.IsActive)
+            if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
                 return;
 
             RefreshEquippedWeapon();
@@ -245,7 +315,7 @@ namespace Project.Player.Invector
 
         private void HandleInventoryChanged()
         {
-            if (!_bootstrap.IsActive)
+            if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
                 return;
 
             RefreshEquippedWeapon();
@@ -256,7 +326,10 @@ namespace Project.Player.Invector
             if (!_bootstrap.IsActive)
                 return;
 
-            RefreshEquippedWeapon();
+            if (!_startupWeaponLayoutReady)
+                FinalizeStartupWeaponLayout();
+            else
+                RefreshEquippedWeapon();
         }
 
         public void RefreshEquippedWeapon()
@@ -342,8 +415,7 @@ namespace Project.Player.Invector
             ClearInvectorWeapons();
             GameObject instance = slot.drawnInstance;
 
-            // Pre-authored slot: position/rotation/parent come straight from the prefab.
-            StripEquippedWeaponPhysics(instance);
+            PrepareDrawnMeleeSlot(instance, item);
             instance.SetActive(true);
             EquipMelee(instance);
             ApplyItemStats(item, instance);
@@ -359,7 +431,6 @@ namespace Project.Player.Invector
 
             GameObject instance = slot.holsteredInstance;
 
-            // Pre-authored slot: position/rotation/parent come straight from the prefab.
             PrepareHolsteredVisualSlot(instance, item);
             instance.SetActive(true);
         }
@@ -375,7 +446,6 @@ namespace Project.Player.Invector
             ClearInvectorWeapons();
             GameObject instance = slot.drawnInstance;
 
-            // Pre-authored slot: position/rotation/parent come straight from the prefab.
             PrepareDrawnRangedSlot(instance, item);
             instance.SetActive(true);
             EquipRanged(instance);
@@ -552,6 +622,7 @@ namespace Project.Player.Invector
                     continue;
 
                 _meleeSlotLookup[slot.item] = slot;
+                ResolveMeleeSlotInstances(slot);
                 if (slot.drawnInstance != null)
                 {
                     PrepareDrawnMeleeSlot(slot.drawnInstance, slot.item);
@@ -579,6 +650,7 @@ namespace Project.Player.Invector
                     continue;
 
                 _rangedSlotLookup[slot.item] = slot;
+                ResolveRangedSlotInstances(slot);
                 if (slot.drawnInstance != null)
                 {
                     PrepareDrawnRangedSlot(slot.drawnInstance, slot.item);
@@ -591,6 +663,149 @@ namespace Project.Player.Invector
                     slot.holsteredInstance.SetActive(false);
                 }
             }
+        }
+
+        private void ResolveMeleeSlotInstances(MeleeWeaponSlot slot)
+        {
+            if (slot?.item == null)
+                return;
+
+            if (slot.drawnInstance == null)
+                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", slot.item);
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", slot.item);
+        }
+
+        private void ResolveRangedSlotInstances(RangedWeaponSlot slot)
+        {
+            if (slot?.item == null)
+                return;
+
+            if (slot.drawnInstance == null)
+                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", slot.item);
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", slot.item);
+        }
+
+        private void CaptureAuthoredSlots<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        ResolveMeleeSlotInstances(meleeSlot);
+                        CaptureAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        CaptureAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        ResolveRangedSlotInstances(rangedSlot);
+                        CaptureAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        CaptureAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void CaptureAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null || _authoredSlotTransforms.ContainsKey(instance))
+                return;
+
+            StoreAuthoredSlotTransform(instance);
+        }
+
+        private void ForceCaptureAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            StoreAuthoredSlotTransform(instance);
+        }
+
+        private void StoreAuthoredSlotTransform(GameObject instance)
+        {
+            Transform slotTransform = instance.transform;
+            _authoredSlotTransforms[instance] = new AuthoredSlotTransform
+            {
+                Parent = slotTransform.parent,
+                LocalPosition = slotTransform.localPosition,
+                LocalRotation = slotTransform.localRotation,
+                LocalScale = slotTransform.localScale
+            };
+        }
+
+        private void ForceCaptureAuthoredSlots<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        ResolveMeleeSlotInstances(meleeSlot);
+                        ForceCaptureAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        ForceCaptureAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        ResolveRangedSlotInstances(rangedSlot);
+                        ForceCaptureAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        ForceCaptureAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void RestoreAuthoredWeaponSlotTransforms()
+        {
+            RestorePreloadedSlotTransforms(meleeWeaponSlots);
+            RestorePreloadedSlotTransforms(rangedWeaponSlots);
+        }
+
+        private void RestorePreloadedSlotTransforms<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        RestoreAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        RestoreAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        RestoreAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        RestoreAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void RestoreAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            if (!_authoredSlotTransforms.TryGetValue(instance, out AuthoredSlotTransform authored))
+                return;
+
+            Transform slotTransform = instance.transform;
+            if (authored.Parent != null)
+                slotTransform.SetParent(authored.Parent, false);
+
+            slotTransform.localPosition = authored.LocalPosition;
+            slotTransform.localRotation = authored.LocalRotation;
+            slotTransform.localScale = authored.LocalScale;
         }
 
         private GameObject ResolveWeaponPrefab(ItemData item)
@@ -915,8 +1130,45 @@ namespace Project.Player.Invector
                 _meleeManager.SetLeftWeapon((GameObject)null);
             }
 
+            PrepareUnifiedProjectileWeapon(instance, _activeItem);
+
             if (_shooterManager != null)
                 _shooterManager.SetRightWeapon(instance);
+        }
+
+        /// <summary>
+        /// Fully hands ranged shot-effects ownership to our own ammo-driven pipeline. Invector's
+        /// vShooterWeaponBase.ShotEffect() independently spawns its own physical bullet+trail
+        /// (projectile), plays its own bundled gunshot (fireClip), fires its own muzzle-flash
+        /// particle emitters (emittShurykenParticle), and flashes its own light (lightOnShot) — all
+        /// on top of whatever CombatProjectileSpawner/CombatHitResolver do for the equipped ammo.
+        /// Clearing all of them here (at equip time, mirroring CompanionInvectorLoadoutBridge) means
+        /// every visual/audio effect comes from our own ammoItem-driven system. isInfinityAmmo stays
+        /// true so Invector's own (unfed) native ammo/reload reserve system can never gate or
+        /// interfere; dontUseReload stays false so Invector's reload animation/timing is still
+        /// available — PioneerInvectorAmmoBridge decides when a round is available and when a
+        /// reload should start, purely from WeaponAmmoState. weapon.ammo is left for
+        /// PioneerInvectorAmmoBridge.SyncMagazineFromPioneer to set correctly on the next sync tick,
+        /// rather than being force-filled here.
+        /// </summary>
+        private static void PrepareUnifiedProjectileWeapon(GameObject instance, ItemData weaponItem)
+        {
+            if (instance == null)
+                return;
+
+            foreach (vShooterWeapon weapon in instance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (weapon == null)
+                    continue;
+
+                weapon.projectile = null;
+                weapon.fireClip = null;
+                weapon.emittShurykenParticle = null;
+                weapon.lightOnShot = null;
+                weapon.isInfinityAmmo = true;
+                weapon.dontUseReload = false;
+                PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem);
+            }
         }
 
         private void EquipMelee(GameObject instance)

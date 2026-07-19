@@ -6,7 +6,13 @@ using UnityEngine;
 namespace Project.Player.Invector
 {
     /// <summary>
-    /// Keeps Pioneer WeaponAmmoState authoritative while syncing magazine counts to Invector weapons.
+    /// Keeps Pioneer WeaponAmmoState authoritative while syncing magazine counts to Invector weapons,
+    /// and drives the actual reload cycle. Invector's own native ammo/reload bookkeeping
+    /// (vAmmoManager/extraAmmo/WeaponHasUnloadedAmmo) is never fed by us — weapons are kept
+    /// isInfinityAmmo so that system can never gate or interfere. Instead we decide, from
+    /// WeaponAmmoState alone, when a shot is allowed and when a reload should start; we still ride
+    /// Invector's own reload ANIMATION/timing (vShooterManager.ReloadWeapon/AddAmmoToWeapon/
+    /// onFinishReloadWeapon) since isInfinityAmmo makes its internal reserve-gating a no-op.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PioneerInvectorBootstrap))]
@@ -35,8 +41,8 @@ namespace Project.Player.Invector
 
             if (_shooterManager != null)
             {
-                _shooterManager.onShot.AddListener(HandleShot);
                 _shooterManager.onFinishReloadWeapon.AddListener(HandleReloadFinished);
+                _shooterManager.onStartReloadWeapon.AddListener(HandleReloadStarted);
             }
         }
 
@@ -47,8 +53,8 @@ namespace Project.Player.Invector
 
             if (_shooterManager != null)
             {
-                _shooterManager.onShot.RemoveListener(HandleShot);
                 _shooterManager.onFinishReloadWeapon.RemoveListener(HandleReloadFinished);
+                _shooterManager.onStartReloadWeapon.RemoveListener(HandleReloadStarted);
             }
         }
 
@@ -70,12 +76,59 @@ namespace Project.Player.Invector
             SyncMagazineFromPioneer();
         }
 
-        private void HandleShot(vShooterWeapon _)
+        /// <summary>
+        /// Single authoritative "is this trigger pull actually allowed to fire a round" decision.
+        /// Called synchronously and directly by PioneerInvectorProjectileBridge.HandleShot before it
+        /// decides whether to spawn a projectile — deliberately NOT wired as its own onShot listener,
+        /// so there's no ordering ambiguity between the two bridges reacting to the same event.
+        /// Blocks fire entirely while a reload is already in progress (pauses shooting), consumes a
+        /// round from the current magazine only (no silent mid-shot refill), keeps Invector's native
+        /// ammo counter in sync for animator/UI purposes, and starts Invector's own reload animation
+        /// the moment the magazine is empty and more reserve of the same ammo type is available.
+        /// </summary>
+        public bool TryProcessShotAmmo()
         {
-            if (_ammoState != null)
-                _ammoState.TryConsumeActiveRound();
+            if (_ammoState == null || _shooterManager == null || _equipment == null)
+                return true; // Fail open rather than silently break fire if wiring is missing.
 
+            if (_shooterManager.isReloadingWeapon)
+                return false;
+
+            bool consumed = _ammoState.TryConsumeActiveRound();
             SyncMagazineFromPioneer();
+
+            if (!consumed)
+            {
+                // Tried to fire on an already-empty magazine — start a reload now if we can, rather
+                // than leaving the weapon permanently dry until the player happens to try again.
+                TryStartReloadIfEmpty();
+                return false;
+            }
+
+            if (_ammoState.GetActiveLoadedAmmo() <= 0)
+                TryStartReloadIfEmpty(); // This shot just emptied the magazine — reload immediately.
+
+            return true;
+        }
+
+        private void TryStartReloadIfEmpty()
+        {
+            int slot = _equipment.ActiveWeaponHotbarSlot;
+            if (_ammoState.GetActiveLoadedAmmo() > 0)
+                return;
+
+            if (_ammoState.IsInfiniteAmmoForSlot(slot))
+                return;
+
+            if (_ammoState.GetReserveAmmoCount(slot) <= 0)
+                return;
+
+            _shooterManager.ReloadWeapon();
+        }
+
+        private void HandleReloadStarted(vShooterWeapon weapon)
+        {
+            SuppressRecoilState();
         }
 
         private void HandleReloadFinished(vShooterWeapon weapon)
@@ -89,6 +142,21 @@ namespace Project.Player.Invector
 
             _ammoState.EnsureWeaponInitialized(_equipment.ActiveWeaponHotbarSlot, item);
             SyncMagazineFromPioneer();
+            SuppressRecoilState();
+        }
+
+        private void SuppressRecoilState()
+        {
+            if (_shooterManager is PioneerShooterManager pioneerShooter)
+                pioneerShooter.SuppressNativeRecoil();
+            else
+                PioneerInvectorRecoilUtility.SuppressInvectorNativeRecoil(_shooterManager);
+
+            ItemData item = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            GameObject weaponRoot = _shooterManager != null && _shooterManager.CurrentWeapon != null
+                ? _shooterManager.CurrentWeapon.gameObject
+                : null;
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, item);
         }
 
         private void SyncMagazineFromPioneer()
