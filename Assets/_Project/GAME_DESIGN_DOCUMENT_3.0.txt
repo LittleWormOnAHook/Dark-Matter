@@ -1,12 +1,17 @@
 ================================================================================
   DARK MATTER STUDIOS presents
-  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD)
+  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD) 3.0 — ARCHIVE
 ================================================================================
 
   Studio:       Dark Matter Studios
   Unity project: Survival Pioneer / Pi Pioneer Survivors (working title)
-  Document:     DRAFT — subject to user revision
+  Document:     ARCHIVED — superseded by GAME_DESIGN_DOCUMENT_4.0.txt
   Consolidated: June 26, 2026
+  Superseded:   July 2026 — locks + progress live in GDD 4.0 Appendices A/B
+
+  DO NOT use this file as competing authority. Agents and humans should read
+  Assets/_Project/GAME_DESIGN_DOCUMENT_4.0.txt first. This 3.0 draft is kept
+  for historical detail only (pre-merge prose, older roadmap checkboxes).
 
 ================================================================================
 REVISION NOTES (changes from prior draft)
@@ -27,10 +32,15 @@ REVISION NOTES (changes from prior draft)
   + Starter AC: 5000 on new game (enough to choose 1 Skilled Pioneer)
   + Cold/Heat: single combined thermal stress meter (cold ↔ heat poles)
   + NFT mint: on marketplace LIST only (not on rescue)
-  + Controls: keyboard-mouse, mobile, controller schemes
+  + Controls: keyboard-mouse + controller schemes (PC / console)
   + Journal tabs expanded: Pet/Pioneers, Skills, Craft, Recipes, Echos
   + Aether-9 shares quest duty with small portion of side quest givers
   + Story: failed human/alien expeditions left tech and materials on Io
+  + Section 16: Unity 6 + URP project rules (PC/consoles, combat/AI/engineering)
+  + Platforms LOCKED (GDD 4.0): PC primary + consoles; NO WebGL / browser;
+    no mobile ship target
+  + Pi Network DEFERRED: AC-only economy for now; optional later via in-game
+    Pi verification (no SDK/marketplace in current path)
 
 
 ================================================================================
@@ -54,7 +64,8 @@ the external marketplace. AC can also be bought with a credit card (IAP).
 
 TARGET PLATFORMS
 ----------------
-WebGL first (50–100 MB total build budget), then PC, later PS5 / Xbox.
+PC primary (keyboard + mouse, optional gamepad), then consoles (PS5 / Xbox).
+NO WebGL / browser build. No mobile as a ship target.
 Art: semi-low-poly, modular, not flat low-poly.
 
 EXAMPLE CORE LOOPS
@@ -133,7 +144,7 @@ CORE PILLARS
   8. Rescue and reintegrate — do not "hire from a shop menu"; players may
      also purchase or trade for Pioneers via Pi marketplace (external)
 
-  9. Semi-low-poly modular art — 50–100 MB WebGL target
+  9. Semi-low-poly modular art — PC/console quality target (no WebGL size cap)
 
 
 ================================================================================
@@ -325,7 +336,7 @@ ECHO VARIANTS (EXAMPLES)
 PROCEDURAL GENERATION (AT INTEGRATION)
 --------------------------------------
   Seeded by: rescue location + core count + random seed
-  Lightweight: ScriptableObjects + tables (WebGL friendly)
+  Lightweight: ScriptableObjects + tables (data-driven, scalable)
 
   UNIQUE NAME FORMAT: [Io Prefix] [Core Name] [Designation]
 
@@ -510,9 +521,8 @@ SECTION 10 — CONTROLS & UI (TARGET)
 
 INPUT SCHEMES
 -------------
-  Keyboard + mouse (primary PC / WebGL)
-  Mobile touch controls
-  Controller schemes (gamepad — PC and console targets)
+  Keyboard + mouse (primary PC)
+  Controller schemes (gamepad — PC and console targets; required for consoles)
 
 JOURNAL TABS
 ------------
@@ -536,10 +546,12 @@ HUD
 SECTION 11 — PLATFORMS, ART & TECH
 ================================================================================
 
-BUILD BUDGET
-------------
-  WebGL: 50–100 MB total
-  Semi-low-poly modular art
+BUILD TARGETS
+-------------
+  PC (Windows) primary ship platform
+  Consoles: PS5 / Xbox (parity pass after PC vertical slice)
+  No WebGL / browser; no mobile ship target
+  Semi-low-poly modular art (higher fidelity allowed vs former WebGL budget)
 
 CHARACTER STRATEGY
 ------------------
@@ -548,8 +560,9 @@ CHARACTER STRATEGY
 
 OPTIMIZATION
 ------------
-  Addressables, 512px textures, URP, LODs, compression
+  Addressables, URP, LODs, compression; texture budgets fit PC/console
   Aggregate sim for base pioneers (no per-NPC pathfinding required at scale)
+  Profile for stable frame pacing on mid-range PC and console certification
 
 
 ================================================================================
@@ -583,15 +596,14 @@ NOT STARTED — VISION SYSTEMS
   [ ] Aether-9 probe + memory cores + Resonance Events
   [ ] Building materialization + maintenance pipeline
   [ ] Medical Facility, Science Labs gameplay
-  [ ] Aether Credits economy + IAP
-  [ ] Pioneer Exchange + NFT mint + Pi SDK external marketplace
+  [ ] Aether Credits economy (strip gameplay Pi; Pi Network deferred)
+  [ ] (Deferred) Pioneer Exchange + NFT + Pi verification
   [ ] Saturation, Strain, Purification Hub gameplay
   [ ] Remove gameplay Pi rewards from quests/loot
   [ ] Starter 5000 AC + opening Skilled Pioneer choice shop
   [ ] Single thermal (cold/heat) exposure meter
   [ ] Fold pet/AI follower into Echo/trio companion system
-  [ ] NFT mint on list only (Phase 7)
-  [ ] Mobile + controller input schemes
+  [ ] Controller / gamepad input schemes (PC + console)
 
 
 ================================================================================
@@ -640,17 +652,15 @@ PHASE 6 — BUILDINGS, CRAFT & MAINTENANCE (2–3 weeks)
   [ ] Worker job assignments → output
   [ ] Maintenance costs over time
 
-PHASE 7 — ECONOMY & EXCHANGE (2–3 weeks)
-  [ ] Aether Credits (replace gameplay Pi)
-  [ ] Pi → AC terminal; IAP for AC
-  [ ] Echo Card UI → NFT mint → Pi SDK external marketplace
-  [ ] Sell trained Named Pioneer (persistent account transfer)
-  [ ] Dark Matter listing Pi fee flow
+PHASE 7 — ECONOMY (AC FIRST; PI DEFERRED)
+  [ ] Aether Credits (replace gameplay Pi drip / hide Pi wallet UI)
+  [ ] Starter 5000 AC + opening Skilled Pioneer choice
+  [ ] (DEFERRED) Pi verification / Pi→AC / NFT mint / Exchange — post-1.0 optional
 
 PHASE 8 — IO WORLD & SHIP (4+ weeks)
   [ ] Biome zones, 8–12 core arc, balance pass
-  [ ] Mobile + controller polish
-  [ ] WebGL size audit; PC build; console prep later
+  [ ] PC build polish + gamepad UI/controls
+  [ ] Console prep (PS5 / Xbox) — certification checklist later
 
 IMMEDIATE NEXT STEPS
   1. Exposure zones + sulfur storm prototype (player/trio)
@@ -664,40 +674,123 @@ IMMEDIATE NEXT STEPS
 SECTION 14 — LOCKED DECISIONS & OPEN QUESTIONS
 ================================================================================
 
-LOCKED DECISIONS (June 26, 2026)
+LOCKED DECISIONS (June 26, 2026; platforms + Pi updated with GDD 4.0)
 --------------------------------
-  [x] Starter AC on new game: 5000 AC
+  [x] Platforms: PC primary + consoles (PS5 / Xbox); NO WebGL / browser;
+      no mobile ship target
+  [x] Economy now: Aether Credits only (gameplay). Starter 5000 AC.
+  [x] Pi Network / NFT Exchange: DEFERRED. May return later via optional
+      in-game verification to Pi Network — do not build SDK/marketplace now.
   [x] Starter spend: enough to choose 1 starter Skilled Pioneer (~5000 AC tier)
   [x] Pet/AI follower: FOLD into Echo/trio companion system (not separate pet)
   [x] Cold/Heat: one combined thermal stress meter (cold ↔ heat poles)
-  [x] NFT mint: on marketplace LIST only (not on rescue or roster add)
-  [x] No onboarding Pi grant for new players
+  [x] (Historical) NFT mint-on-LIST rule — only if/when Exchange returns
+  [x] No onboarding Pi grant for new players (N/A while Pi deferred)
 
 STILL OPEN
 ----------
   [ ] Flat terrain → Io: incremental retexture vs new scene?
-  [ ] Exchange trade — Pi-only listings or barter two Echoes?
   [ ] Science Specialist ability kit — define before Phase 3?
   [ ] Exact starter Skilled Pioneer roster (which classes offered at new game)?
-  [ ] Dark Matter listing Pi fee percentage / structure
+  [ ] Future Pi verification UX (if re-enabled) — account link vs soft verify?
+  [ ] (Deferred) Exchange trade rules / listing fees — only if Pi returns
 
 
 ================================================================================
 SECTION 15 — GLOSSARY
 ================================================================================
 
-  AC                  Aether Credits — in-game currency from gameplay
+  AC                  Aether Credits — sole gameplay currency (current path)
   Echo                Procedurally generated rescued pioneer (skilled/Special)
-  NFT / Echo Card     Minted on LIST only; tradable skilled Pioneer on Pi Network
+  NFT / Echo Card     DEFERRED with Pi Exchange; local roster only for now
   Thermal meter       Single cold/heat exposure bar (biome pressure #2)
   Starter grant       5000 AC on new game for 1 starter Skilled Pioneer choice
   Resonance Event     Temporary world change after slotting a memory core
   Saturation          Skilled pioneer mental/rad/sulfur stress (hallucinations)
   Strain              Worker collective overwork meter
   Norm                Oxygen — always tracked baseline survival pressure
-  One-way Pi          No gameplay Pi earn; no AC→Pi; Pi→AC and Exchange only
-  Pioneer Survivor    External Pi Network marketplace for NFT Echo trading
+  Pi Network          DEFERRED optional meta; future in-game verification possible
+  Pioneer Survivor    DEFERRED external marketplace (only if Pi returns)
   Exchange
+
+
+================================================================================
+SECTION 16 — UNITY 6 + URP PROJECT RULES
+================================================================================
+
+You are an expert Unity 6 + URP C# developer building Pioneer Survivor, a light
+tactical RPG for PC and consoles (PS5 / Xbox). Core features include survival
+lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/
+tension), moral choices, low to med poly Io mechanics, companion systems/
+animations/AI with formations and behavior, building materialization and
+destruction by elements and attacks, ranged combat (projectiles + inventory
+hotbar + mouse-aimed), and Pi Network integration (external marketplace /
+wallet — not a browser build).
+
+CORE PRINCIPLES
+---------------
+  - Target PC first, then console parity: solid frame pacing, Input System
+    (KBM + gamepad), scalable UI, profile on target hardware.
+  - Prefer efficient patterns (pooling, events over busy Update loops,
+    lightweight AI) for polish and console stability — not WebGL limits.
+  - Modular component-based architecture: MonoBehaviours for runtime behavior,
+    ScriptableObjects for data/config (behaviors, items, recipes, combat stats,
+    moral alignments, formations, etc.).
+  - Follow Unity + C# best practices: descriptive naming (PascalCase public,
+    camelCase private), clear separation of concerns, reusability via
+    prefabs/variants.
+  - Tactical light combat: responsive parry/combo windows, resource management
+    (stamina/tension), positioning/flanking awareness.
+  - Cross-platform: Unity Input System, async Pi wallet/marketplace flows,
+    responsive/scalable UI for 16:9+ and TV safe areas.
+  - Reference existing repo files with @filename or relative paths for context.
+
+KEY SYSTEMS TO ALIGN WITH
+-------------------------
+  - Central Stamina/Tension manager
+  - Inventory + hotbar system
+  - Melee state machine / Animator-driven combos + parry
+  - Moral choice event system
+  - Companion AI (formations, group behaviors, low-poly animations)
+  - Enemy AI (basic chase/attack/guard with light tactical positioning)
+  - Ranged projectile system with prefab projectiles and line tracers
+  - Building materialization / placement / destruction
+  - Aether Credits economy (Pi Network = deferred optional meta)
+
+ENEMY & COMPANION AI GUIDELINES
+-------------------------------
+  Enemies:
+    Simple FSM for chase → attack. Light tactical elements (flanking, optimal
+    range, aggro). Use NavMesh lightly or custom steering.
+
+  Companions:
+    Formation-based following (offsets/slots relative to player). Support roles
+    in combat/exploration. ScriptableObject behaviors for variety.
+
+  Shared:
+    Efficient detection, events for interactions (e.g., player parry →
+    companion opportunity), object pooling.
+
+DO'S
+----
+  - Use Unity built-in features wherever possible.
+  - Make behaviors configurable via ScriptableObjects.
+  - Add Gizmo/debug visuals for AI states, detection, and formations.
+  - Design for PC (KBM) and gamepad; keep TV/console UI readability in mind.
+  - Preserve and build on existing repo patterns.
+
+DON'TS
+------
+  - Do not target or optimize for WebGL / browser builds.
+  - Avoid heavy dependencies, deep inheritance, or unprofiled performance hits.
+  - Do not invent unrelated systems unless asked by the user.
+  - Minimize polling; prefer events.
+
+OUTPUT STYLE
+------------
+  - Clean, well-commented code with performance/tactical notes.
+  - Include Editor setup, prefab instructions, and test suggestions.
+  - Maintain consistency with the project's architecture.
 
 
 ================================================================================

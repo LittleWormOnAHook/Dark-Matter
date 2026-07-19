@@ -1,0 +1,735 @@
+Dark Matter Studios
+Pioneer Survivors
+Studio Master Game Design Document
+Version 4.0
+Status: Production Bible — SINGLE AUTHORITATIVE GDD
+
+Audience
+
+Game Designer
+Gameplay Programmer
+Technical Artist
+Environment Artist
+Narrative Designer
+UI Designer
+Audio Designer
+AI Agents
+Future Team Members
+
+Authority
+---------
+This file is the primary GDD on git. Chapters 1-5 define vision and production
+philosophy. Appendix A folds locked mechanics formerly split across GDD 3.0.
+Appendix B records Current Implementation / Progress (surveyed July 2026 against
+Assets/_Project). GAME_DESIGN_DOCUMENT_3.0.txt is retained as a historical
+archive only — do not treat it as competing authority.
+
+LOCKED (do not contradict without an explicit design change)
+  Platforms: PC primary + consoles (PS5 / Xbox). NO WebGL / browser. No mobile ship.
+  Economy: Aether Credits (AC) only for gameplay. Starter 5000 AC → 1 Skilled Pioneer.
+  Pi Network / NFT Exchange: DEFERRED (optional later via in-game verification).
+  Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
+  Building Control Panels: in-world E terminal → Overview | Pioneers | Production |
+    Craft | Changes. Journal Craft = recipe library / scroll learning only.
+
+
+================================================================================
+Chapter 1 - Executive Vision
+================================================================================
+
+The Mission
+-----------
+Pioneer Survivors is a premium single-player science-fiction survival colony
+simulator designed to deliver the emotional depth, visual quality, and systemic
+complexity associated with modern AAA games while remaining achievable for a
+solo developer through disciplined engineering, procedural systems, and
+AI-assisted production.
+
+The game is not about surviving on Io.
+
+It is about proving that humanity deserves a future there.
+
+Every expedition, discovery, structure, rescued Pioneer, and scientific
+breakthrough contributes toward rebuilding civilization on one of the most
+dangerous worlds in the Solar System.
+
+Survival is the foundation.
+
+Discovery is the reward.
+
+Leadership is the challenge.
+
+Legacy is the destination.
+
+
+Vision Statement
+----------------
+Pioneer Survivors exists to create an experience where players genuinely believe
+they are leading humanity's first successful colony on Io.
+
+Unlike traditional survival games that focus on short-term needs, Pioneer
+Survivors gradually transforms the player from survivor into explorer, from
+explorer into commander, and finally into the founder of a new civilization.
+
+The colony is not simply a base.
+
+It is humanity's future.
+
+
+The North Star
+--------------
+Every design decision must support one simple statement:
+
+The player should always feel that their decisions shape the future of humanity.
+
+If a mechanic doesn't reinforce that feeling, it doesn't belong in Pioneer
+Survivors.
+
+
+Design Philosophy
+-----------------
+Every mechanic exists for one of four reasons.
+
+Wonder
+  Players should constantly discover things they have never seen before.
+  Hidden caves. Ancient precursor structures. Volcanic phenomena. Neural Echoes.
+  Environmental storytelling.
+
+Responsibility
+  Nothing happens in isolation.
+  Building decisions affect research.
+  Research affects expeditions.
+  Expeditions affect colony growth.
+  Colony growth affects the story.
+
+Mastery
+  Players should become more knowledgeable instead of simply becoming stronger.
+  Knowledge is progression.
+  Learning Io is progression.
+  Understanding Resonance is progression.
+  Managing a colony is progression.
+
+Hope
+  Although Io is dangerous, the game should never become hopeless.
+  Each success should feel like another step toward creating humanity's first
+  permanent home beyond Earth.
+  Hope is the game's emotional currency.
+
+
+Solo AAA Philosophy
+-------------------
+This project is built around a philosophy that differs fundamentally from
+traditional AAA development.
+
+AAA studios scale through people.
+
+Dark Matter Studios scales through systems.
+
+Our goal is not to imitate a 500-person studio.
+
+Our goal is to produce a game that players believe could have been made by one.
+
+Every feature must satisfy these principles:
+
+  Reusable before bespoke.
+  Procedural before repetitive.
+  Data-driven before hard-coded.
+  Polish before expansion.
+  Finished before replaced.
+
+
+AI Development Philosophy
+-------------------------
+Artificial intelligence is not a gameplay feature.
+
+It is a production multiplier.
+
+AI assists with:
+
+  C# implementation
+  Editor tooling
+  Documentation
+  Refactoring
+  Testing
+  Placeholder assets
+  Content generation
+  Design iteration
+
+Creative ownership remains with the developer.
+
+Every AI-generated contribution is reviewed, refined, and integrated
+intentionally.
+
+
+Success Metrics
+---------------
+Pioneer Survivors succeeds if players consistently describe it as:
+
+  Immersive.
+  Atmospheric.
+  Intelligent.
+  Rewarding.
+  Memorable.
+  Highly replayable.
+
+Not "large."
+
+Not "feature rich."
+
+Those qualities emerge naturally from strong design.
+
+
+================================================================================
+Chapter 2 - Player Experience
+================================================================================
+
+Player Fantasy
+--------------
+The player is not a hero sent to save the world.
+
+The player is humanity's first successful colony director.
+
+Every system should reinforce that identity.
+
+Players are responsible for:
+
+  protecting lives,
+  making scientific discoveries,
+  building infrastructure,
+  expanding civilization,
+  deciding humanity's future.
+
+
+Emotional Progression
+---------------------
+Phase One
+  "I don't think we'll survive."
+
+Phase Two
+  "We might actually do this."
+
+Phase Three
+  "These people depend on me."
+
+Phase Four
+  "We've built something incredible."
+
+Phase Five
+  "What legacy will I leave?"
+
+Every chapter of gameplay should move the player naturally through these
+emotional states.
+
+
+Core Gameplay Loop
+------------------
+Prepare -> Plan -> Explore -> Discover -> Recover -> Return -> Analyze -> Build ->
+Expand -> Repeat
+
+
+Design Rule
+-----------
+The player should never feel forced into one activity.
+
+Exploration should naturally inspire research.
+
+Research should inspire construction.
+
+Construction should inspire larger expeditions.
+
+The systems create momentum instead of relying on artificial objectives.
+
+
+================================================================================
+Chapter 3 - The World of Io
+================================================================================
+
+Design Goal
+-----------
+Io is not merely the setting.
+
+Io is the game's primary antagonist, greatest mystery, and most important
+character.
+
+The player should gradually develop a relationship with the moon itself.
+
+At first it feels hostile.
+
+Later it becomes understandable.
+
+Eventually it becomes almost alive.
+
+
+Environmental Identity
+----------------------
+Io should communicate constant instability.
+
+Nothing feels permanent.
+
+Mountains collapse.
+
+New lava rivers emerge.
+
+Sulfur storms reshape traversal.
+
+Ancient structures awaken.
+
+Every expedition should feel different because the world itself evolves.
+
+
+The Living Planet Philosophy
+----------------------------
+Rather than using scripted events, Io is governed by interconnected systems.
+
+  Geological activity.
+  Weather.
+  Resonance.
+  Wildlife.
+  Ancient technology.
+
+These systems influence one another continuously.
+
+
+Biome Philosophy
+----------------
+Every biome must satisfy five requirements:
+
+  Unique visual identity.
+  Unique survival challenge.
+  Unique resource economy.
+  Unique environmental storytelling.
+  Unique gameplay opportunities.
+
+A biome should never exist solely because it looks different.
+
+
+Environmental Storytelling
+--------------------------
+The player should regularly encounter evidence of previous expeditions.
+
+  Collapsed habitats.
+  Destroyed mining rigs.
+  Abandoned laboratories.
+  Emergency broadcasts.
+  Personal belongings.
+
+These moments tell the story without requiring long cutscenes.
+
+
+================================================================================
+Chapter 4 - Core Gameplay Pillars
+================================================================================
+
+Pillar One - Explore the Unknown
+--------------------------------
+Exploration drives every progression system.
+
+Without exploration there is no research.
+
+Without research there is no advancement.
+
+
+Pillar Two - Build a Living Colony
+----------------------------------
+The colony is the heart of the game.
+
+Players should care about the people they rescue and the structures they create.
+
+
+Pillar Three - Scientific Discovery
+-----------------------------------
+Knowledge is the primary resource.
+
+The player should constantly ask:
+
+"What happens if I investigate this?"
+
+
+Pillar Four - Meaningful Leadership
+-----------------------------------
+Leadership is expressed through decisions rather than dialogue.
+
+  Resource allocation.
+  Research priorities.
+  Expedition planning.
+  Risk management.
+  Ethical choices involving Echoes.
+
+
+Pillar Five - Emergent Stories
+------------------------------
+The best stories come from systems interacting.
+
+Not scripted sequences.
+
+Players should remember:
+
+"The storm hit while my rescue team was halfway home."
+
+Not:
+
+"I completed Mission 14."
+
+
+================================================================================
+Chapter 5 - The Solo Developer Production Strategy
+================================================================================
+
+This chapter is unique. Most GDDs don't include it.
+
+Ours must.
+
+Because it is one of the project's greatest strengths.
+
+
+Production Mission
+------------------
+Every feature must provide the highest possible player value for the lowest
+possible development cost.
+
+This is not about cutting corners.
+
+It is about maximizing impact.
+
+
+The 80/20 Rule
+--------------
+Twenty percent of the work should create eighty percent of the player's
+experience.
+
+Examples include:
+
+  Dynamic weather instead of hundreds of scripted events.
+  Procedural Echo generation instead of hundreds of handcrafted NPCs.
+  Modular building pieces instead of unique architecture for every structure.
+  Layered audio and lighting to create atmosphere instead of expensive
+  cinematics.
+
+
+Reusable System Hierarchy
+-------------------------
+Whenever possible, build one framework that supports many features.
+
+Examples:
+
+  One interaction system for every terminal.
+  One inventory system shared by players, containers, drones, and buildings.
+  One status effect system used for weather, combat, hazards, and buffs.
+  One quest framework for story missions, side missions, and procedural
+  expeditions.
+
+
+AI-First Development
+--------------------
+Every major gameplay system should be designed with AI-assisted implementation
+in mind.
+
+That means:
+
+  Clear interfaces.
+  Small, testable classes.
+  Data-driven configuration.
+  Strong documentation.
+  Editor tools that reduce repetitive work.
+
+The goal is to make future coding sessions with AI agents faster, more
+consistent, and easier to review.
+
+
+The "Fun Per Month" Rule
+------------------------
+This will be our final filter before committing to any feature.
+
+For every proposed mechanic, we'll ask:
+
+How much player enjoyment does this create for every month of development it
+requires?
+
+If a feature takes six months to build but only adds a few minutes of meaningful
+gameplay, it doesn't belong in Version 1.0.
+
+That doesn't mean we discard good ideas - it means we build them when the
+project can support them.
+
+
+================================================================================
+Platforms (Locked)
+================================================================================
+
+TARGET PLATFORMS
+----------------
+  Primary:  PC (keyboard + mouse, optional gamepad)
+  Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
+
+OUT OF SCOPE
+------------
+  WebGL / browser builds
+  Mobile as a ship target
+
+Art and systems may still use efficient modular approaches, but build size and
+API choices are no longer constrained by a 50-100 MB WebGL budget.
+
+
+================================================================================
+Economy (Current Lock)
+================================================================================
+
+CURRENT SHIP TARGET
+-------------------
+  Aether Credits (AC) is the only player-facing currency for gameplay.
+  Starter grant: 5000 AC on new game for 1 starter Skilled Pioneer choice.
+
+DEFERRED — PI NETWORK
+---------------------
+  Pi wallet, Pi-to-AC terminal, NFT minting, and Pioneer Survivor Exchange are
+  OUT OF SCOPE for the current production path.
+
+  They may return later as an optional meta layer using in-game verification
+  to the Pi Network (player links/verifies identity; trading remains external).
+  Do not implement Pi SDK or marketplace flows until that initiative is
+  explicitly re-opened.
+
+
+================================================================================
+Document Status
+================================================================================
+
+Chapters 1-5 establish the foundation. They deliberately avoid deep
+implementation detail and instead define the philosophy that every future
+gameplay system, art asset, AI behavior, and line of code should follow.
+
+Next production-facing chapters (planned — not yet written as full chapters):
+
+  Chapter 6: Core Gameplay Loops (player, colony, expedition, research)
+  Chapter 7: Colony Simulation & Pioneer AI
+  Chapter 8: World Systems (weather, geology, Resonance, ecology)
+  Chapter 9: Exploration & Expeditions
+  Chapter 10: Survival Systems
+
+Until those chapters ship, Appendix A (Interim Mechanics Lock) is authoritative
+for concrete systems. Appendix B tracks what is actually playable in the Unity
+prototype versus still planned. Do not invent features that contradict locks or
+that are listed as NOT STARTED / DEFERRED.
+
+
+================================================================================
+APPENDIX A — Interim Mechanics Lock (folded from GDD 3.0)
+================================================================================
+
+Identity recap
+--------------
+Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
+pioneers: up to 22 at base, trio of 3 on expeditions. Rescue procedural Neural
+Echoes; recover Memory Cores for Aether-9 → Resonance Events; materialize,
+craft, and maintain buildings; survive O2 norm + four biome pressures.
+
+Classes (locked names)
+----------------------
+  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout
+  (+ Io hybrids). Player has combat/skills too.
+
+
+A1. Platforms, art & tech
+-------------------------
+  Primary:  PC (keyboard + mouse, optional gamepad)
+  Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
+  OUT OF SCOPE: WebGL / browser; mobile as ship target
+  Art: semi-low-poly modular; 2–3 base meshes + attachments + material swaps
+  Tech: Unity 6 + URP; Addressables/LODs as needed; aggregate base sim (no
+        per-NPC pathfinding at 22 scale)
+
+
+A2. Survival — O2 norm & biome pressures
+----------------------------------------
+  ALWAYS ON: Oxygen (tanks, deprivation FX, health drain when empty)
+
+  FOUR PRESSURES:
+    1. Radiation
+    2. Cold / Heat — SINGLE thermal stress meter (cold pole ↔ heat pole)
+    3. Volcanos (lava, eruptions, tremors)
+    4. Sulfur storms (corrosive weather; base shelter trigger)
+
+  Offsets (design target): shelter, caves, inoculations, portable habitat
+  (Architect Engineer), environmental suits (upgradeable trio gear).
+
+
+A3. Pioneer roster (25 cap)
+---------------------------
+  ~12–13 workers (labor pool; collective Strain meter)
+  ~12–13 skilled Echoes / Special pioneers (named, upgradable)
+  TRIO (3 skilled) on surface — full O2 + all four pressures
+  BASE (up to 22) — sealed base loop (see A4)
+  Skilled: Saturation meter; cleanse at Purification Hub
+  Pet/AI follower: DESIGN TARGET = fold into Echo/trio (no separate pet loop)
+
+
+A4. Base 22 & Command Center
+----------------------------
+  Base pioneers impervious to routine rad / thermal / volcano / surface O2.
+  NOT impervious to: sulfur storms, Command Center building damage, Strain.
+
+  Sulfur storm flow:
+    1. All base work PAUSES
+    2. Evacuate to Command Center rooms
+    3. Storm ends → healthy pioneers resume jobs
+
+  Building damage: injures / incapacitates — NEVER kills base pioneers.
+  Heal/restore required before they contribute again.
+
+
+A5. Neural Echoes & procedural generation
+-----------------------------------------
+  Rescue and reintegrate — do not hire from a shop menu as primary path.
+  Echoes are imprints of failed Io expeditions / prior inhabitants.
+  Failure can lose Echo permanently.
+  Procedural: name format [Io Prefix] [Core Name] [Designation], class, stats,
+  abilities, backstory fragment, material tint + modular attachments.
+  NFT / marketplace trading: DEFERRED with Pi (local roster progression only).
+
+
+A6. Aether-9, Memory Cores & Resonance Events
+---------------------------------------------
+  Find core → recovery setpiece → slot into Aether-9 → Resonance Event
+  (10–15 min world change) + story + unlocks.
+  May spike storms, damage Command Center, injure base pioneers, spawn Echo
+  opportunities.
+
+
+A7. Buildings, craft & Building Control Panels
+----------------------------------------------
+  Spend resources → building MATERIALIZES (scale-up + VFX); maintenance over time.
+  Key buildings: Command Center, Purification Hub, Geothermal Harvester,
+  Echo Reclamation Chamber, Resonance Beacon, Probe Uplink, Geothermal
+  Stabilizer, Medical Facility, Science Labs.
+  Pi→AC Terminal: DEFERRED while Pi is deferred.
+
+  BUILDING CONTROL PANELS (locked UX):
+    Each major structure has an in-world terminal (E) → Building Control UI
+    (NOT Journal) with tabs: Overview | Pioneers | Production | Craft | Changes.
+    Assign base-22 pioneers, set production/craft queues, per-building settings.
+    Queues run while player is on expedition; PAUSE during sulfur storms.
+    Journal Craft = recipe library / scroll learning only — not primary
+    production UI.
+
+
+A8. Economy (current lock)
+--------------------------
+  AC — sole gameplay currency.
+    New game starter: 5000 AC → choose 1 starter Skilled Pioneer.
+    Earn: resources, quests, expeditions, Resonance bonuses, base output, loot.
+    Spend: workers, rush craft, supplies, upgrades, heals, inoculations, suits.
+
+  PI NETWORK — DEFERRED
+    No wallet/SDK requirement for v1 loop. No NFT mint. No Pioneer Survivor
+    Exchange in current path. May return later via optional in-game verification
+    linking to Pi Network. Historical mint-on-LIST rule only if Exchange returns.
+    Strip/hide leftover gameplay Pi drip when touching economy systems.
+    Optional IAP later → AC only.
+
+  Workers: AC recruit/replace. Skilled market/NFT: deferred.
+
+
+A9. Controls & UI (target)
+--------------------------
+  KBM primary on PC; gamepad required for consoles / optional on PC.
+  Journal: Inventory, Map, Pioneers/Echos (trios + roster), Skills, Craft,
+  Recipes — pet UI folds into Pioneers/Echos when migration completes.
+  HUD: O2 + four exposure indicators; thermal = one cold/heat meter; AC balance;
+  base status; hotbar + toolbar.
+
+
+A10. Locked decisions checklist
+-------------------------------
+  [x] PC + consoles; NO WebGL / browser; no mobile ship target
+  [x] AC-only gameplay economy; starter 5000 AC → 1 Skilled Pioneer
+  [x] Pi / NFT / Exchange DEFERRED
+  [x] Single thermal (cold/heat) meter
+  [x] Pet fold into Echo/trio (design); separate pet still prototype debt
+  [x] Base 22: sulfur shelter; injury never death from building damage
+  [x] Building Control Panels tab model as above
+  [x] NFT mint-on-LIST only if/when Exchange returns
+
+OPEN (examples)
+  Flat terrain → Io scene strategy
+  Exact starter Skilled Pioneer offer list
+  Science Specialist ability kit polish
+  Future Pi verification UX (if re-enabled)
+
+
+================================================================================
+APPENDIX B — Current Implementation / Progress (July 2026)
+================================================================================
+
+Survey basis: Assets/_Project C# + recent branch work including commit
+e0d491de (WebGL dropped; Pioneer custom recoil; hovercraft Follow zoom /
+holster-on-enter). Flat terrain prototype — Io biomes not shipped.
+GAME_BREAKDOWN.txt may lag; prefer this appendix over stale breakdown notes.
+
+
+B1. DONE — playable prototype core
+----------------------------------
+  [x] Platforms: WebGL/browser explicitly out of scope in code/comments;
+      PC quality bootstrap (PlatformGraphicsBootstrap / PlatformGraphicsProfile)
+  [x] Player: Invector-bridged third-person move/combat; Pioneer custom recoil
+      (PioneerInvectorRecoilUtility / PioneerShooterManager — suppresses Invector
+      arcade camera/anim kick; subtle custom camera nudge)
+  [x] Combat: melee + ranged CombatProjectile pipeline; enemy AI, death,
+      ragdoll, disintegration/loot, respawn hooks
+  [x] SurvivalStats: health, energy, stamina, oxygen
+  [x] Exposure: zone kinds (radiation, thermal cold/heat, sulfur, volcano) +
+      HUD gauges including single bipolar thermal meter
+  [x] Inventory 24 + hotbar + toolbar (scanner / binoculars); crafting + stations
+  [x] Journal hub + map + quests (QuestManager); save/load
+  [x] Economy: Aether Credits on roster/UI/save; starter 5000 AC;
+      StarterPioneerSelectUI (1 Skilled Pioneer choice)
+  [x] Roster + expedition trio UI (PioneerRosterManager / PioneerRosterPanelUI)
+  [x] Companions: follow, combat, class abilities, Invector bridges
+  [x] Echoes: world entities + procedural EchoGenerator / rescue path (local)
+  [x] Hovercraft: board/exit, fuel, health, turret; Follow camera + scroll zoom;
+      holster weapon on enter (HovercraftOccupancy / HovercraftCameraRig)
+  [x] Building Control Panels: in-world terminal + 5-tab UI shell; pioneer
+      assignment + production queue tick (BuildingOperationRegistry) — not full
+      base-22 storm factory sim
+  [x] Main menu, Shift UI theme, editor tooling under Assets/_Project/Editor
+
+
+B2. PARTIAL — present but incomplete vs lock
+--------------------------------------------
+  [~] Pi wallet / Pi→AC swap UI leftovers (CharacterPanel, main menu wallet) —
+      DEFERRED meta; hide/strip when touching economy (AC is gameplay truth)
+  [~] Building Control Craft/Changes tabs lighter than full GDD automation
+  [~] Sulfur "crisis" can pause facility queues via HUD/debug path — not a live
+      world sulfur storm + Command Center room sim
+  [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
+      Echo/trio not finished
+  [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
+  [~] Quest/loot rewards display as AC; some legacy Pi naming in enums/assets
+
+
+B3. NOT STARTED — vision systems still planned
+----------------------------------------------
+  [ ] Full Io biome world (prototype remains flat terrain)
+  [ ] Equippable environmental suit gear loop
+  [ ] Command Center rooms + aggregate 22 pioneer shelter/injury sim
+  [ ] Live sulfur storm scheduler driving base pause + room fill
+  [ ] Building materialization / placement / maintenance pipeline
+  [ ] Medical Facility / Science Labs as full production buildings
+  [ ] Aether-9 probe quest hub + Memory Core arc + Resonance Events
+  [ ] Purification Hub Saturation/Strain gameplay depth
+  [ ] (DEFERRED) Pi verification, Pi→AC terminal, NFT mint, Exchange
+
+
+B4. Near-term roadmap priority (order of value)
+-----------------------------------------------
+  1. Keep AC-only path clean; remove/hide Pi drip & wallet from gameplay HUD
+  2. Exposure + sulfur storm vertical slice for player/trio (then base 22)
+  3. Command Center aggregate sim + injury/heal loop
+  4. Fold pet into Echo/trio companion presentation
+  5. Materialization pipeline + wire Building Control to real facilities
+  6. Aether-9 / cores / first Resonance Events
+  7. Io biome pass + console polish
+
+
+================================================================================
+END OF GDD 4.0 — DARK MATTER STUDIOS — PIONEER SURVIVORS
+================================================================================

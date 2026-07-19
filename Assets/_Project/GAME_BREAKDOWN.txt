@@ -315,8 +315,8 @@ CRAFTING UI
   - At-world stations: journal opens Craft tab; production executes at station when bound
   - Recipe hover tooltips show ingredients and station requirement
 
-BUILDING CONTROL PANELS (GDD Section 8 — prototype shell)
-  Canon (GAME_DESIGN_DOCUMENT.txt Section 8):
+BUILDING CONTROL PANELS (GDD 4.0 Appendix A7 — prototype shell)
+  Canon (GAME_DESIGN_DOCUMENT_4.0.txt Appendix A / Building Control Panels):
     - Each major base building has an interactable Control Panel (E at terminal)
     - Opens Building Control UI overlay (NOT journal) with tabs:
         Overview | Pioneers | Production | Craft | Changes
