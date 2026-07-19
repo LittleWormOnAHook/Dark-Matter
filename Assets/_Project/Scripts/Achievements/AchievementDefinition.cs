@@ -10,6 +10,8 @@ namespace Project.Achievements
         public string title;
         [TextArea(2, 4)]
         public string description;
+        [Tooltip("Icon shown in the achievement's square slot in the Journal. Falls back to a category-tinted placeholder when unset.")]
+        public Sprite icon;
 
         [Header("Classification")]
         public AchievementCategory category = AchievementCategory.General;

@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Project.Core
 {
@@ -19,6 +20,12 @@ namespace Project.Core
         public static bool IsInMainMenu => Phase == GamePhase.MainMenu;
 
         public static event Action GameStarted;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSessionOnPlay()
+        {
+            Phase = GamePhase.MainMenu;
+        }
 
         public static void SetPhase(GamePhase phase)
         {

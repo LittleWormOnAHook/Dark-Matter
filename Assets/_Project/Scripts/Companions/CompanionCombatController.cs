@@ -5,6 +5,7 @@ using Project.Core;
 using Project.Data;
 using Project.Player;
 using Project.Pioneers;
+using Project.Survival;
 using UnityEngine;
 
 namespace Project.Companions
@@ -17,15 +18,29 @@ namespace Project.Companions
         private const float DamageMultiplier = 0.25f;
         private const float RangedAimAlignDegrees = 14f;
         private const float MeleeAimAlignDegrees = 35f;
-        private const float RangedMinAttackInterval = 2.8f;
+        private const float RangedMinAttackInterval = 1.6f;
         private const float MeleeContactMin = 1.1f;
         private const float MeleeContactMax = 1.65f;
         private const float UnarmedContactRange = 1.25f;
+        private const float LegacyRangedStandoffRangeFactor = 0.6f;
+        private const float RifleStandoffScale = 0.5f;
+
+        // ResolveTarget()/FindEnemyThreateningPlayer() each do a full-scene FindObjectsByType<EnemyHealth>()
+        // scan; with several companions doing this every single Update() frame the cost multiplies
+        // fast. Throttling to ~7Hz (matching EnemySenses' vision-refresh cadence) is imperceptible for
+        // target acquisition/handoff but cuts the scan cost by roughly 85% at 60fps.
+        private const float TargetScanInterval = 0.15f;
 
         [SerializeField] private float attackRange = 2.5f;
         [SerializeField] private float proximityAggroRange = 3.75f;
         [SerializeField] private float faceTurnSpeed = 12f;
         [SerializeField] private float attackWindupDelay = 0.18f;
+
+        [Header("Player Assist")]
+        [Tooltip("If the player or another companion is attacked by an enemy within this range, this companion engages it even if outside normal aggro/sense range, distance to the ally under attack, or visual line of sight. Sized generously since squadmates can be spread across the follow leash.")]
+        [SerializeField] private float assistAlertRange = 22f;
+        [Tooltip("How long the companion keeps chasing the assist target before it can expire if it never comes into normal range.")]
+        [SerializeField] private float assistWindowSeconds = 6f;
 
         private CompanionEquipmentVisual equipmentVisual;
         private CompanionInvectorLoadoutBridge invectorLoadout;
@@ -39,12 +54,16 @@ namespace Project.Companions
         private string pioneerSeed = string.Empty;
         private float personalAttackBias = 0.72f;
         private float personalIntervalMultiplier = 1f;
+        private float personalStandoffBias = 1f;
         private bool attackPending;
         private bool damageApplied;
         private bool skipManualDamage;
         private bool wasEngaged;
         private float attackFinishTime;
         private EnemyHealth pendingDamageTarget;
+        private EnemyHealth assistTarget;
+        private float assistTargetExpireTime;
+        private float nextTargetScanTime;
         private PioneerBehaviorProfile behaviorProfile = new PioneerBehaviorProfile();
         private SkilledPioneerClass pioneerClass = SkilledPioneerClass.CombatTactician;
         private float preferredCombatDistance = 2.4f;
@@ -56,6 +75,18 @@ namespace Project.Companions
         public float AttackRange => attackRange;
         public bool IsEngagedInCombat => currentTarget != null && !currentTarget.IsDead;
         public bool IsAttackPending => attackPending;
+        public ItemData EquippedWeapon => ResolveEquippedWeapon();
+
+        /// <summary>
+        /// Preferred horizontal combat spacing for the equipped weapon (melee contact or ranged standoff).
+        /// </summary>
+        public float ResolveEngagementDistance(ItemData weapon)
+        {
+            if (weapon != null && weapon.IsRangedWeapon)
+                return ResolveRangedStandoffDistance(weapon);
+
+            return ResolveMeleeContactRange(weapon) * 0.88f;
+        }
 
         private void Awake()
         {
@@ -70,10 +101,15 @@ namespace Project.Companions
         {
             CompanionCombatCoordinator.EnsureExists(this)?.Register(this);
             ResolvePlayerFocus();
+            PlayerCombatEvents.OnPlayerAttackedBy += HandleAllyAttacked;
+            PlayerCombatEvents.OnCompanionAttackedBy += HandleAllyAttacked;
         }
 
         private void OnDisable()
         {
+            PlayerCombatEvents.OnPlayerAttackedBy -= HandleAllyAttacked;
+            PlayerCombatEvents.OnCompanionAttackedBy -= HandleAllyAttacked;
+
             CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
             if (coordinator != null)
             {
@@ -85,12 +121,103 @@ namespace Project.Companions
             followController?.ClearCombatEngagement();
         }
 
+        /// <summary>
+        /// Reacts to the player or another companion taking damage from a nearby enemy by
+        /// adopting it as an assist target, so this companion fights back even when the attacker
+        /// is outside its own proximity aggro/threat-cone range (e.g. an enemy flanking or
+        /// attacking from behind, or attacking a squadmate this companion can't see/isn't near).
+        /// </summary>
+        private void HandleAllyAttacked(EnemyHealth attacker)
+        {
+            if (attacker == null || attacker.IsDead)
+                return;
+
+            if (HorizontalDistance(transform.position, attacker.transform.position) > assistAlertRange)
+                return;
+
+            assistTarget = attacker;
+            assistTargetExpireTime = Time.time + assistWindowSeconds;
+        }
+
+        private EnemyHealth ResolveActiveAssistTarget()
+        {
+            if (assistTarget == null || assistTarget.IsDead || Time.time >= assistTargetExpireTime)
+            {
+                assistTarget = null;
+                return null;
+            }
+
+            return assistTarget;
+        }
+
+        /// <summary>
+        /// Engage when an enemy is actively attacking/chasing the player even if no damage event
+        /// fired yet (missed shots, windup, or the companion is outside its own proximity cone).
+        /// </summary>
+        private EnemyHealth FindEnemyThreateningPlayer()
+        {
+            GameObject playerObject = PlayerLocator.FindPlayerObject();
+            if (playerObject == null)
+                return null;
+
+            Transform playerRoot = playerObject.transform;
+            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>();
+            EnemyHealth best = null;
+            float bestDistance = assistAlertRange;
+
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                EnemyHealth enemy = enemies[i];
+                if (enemy == null || enemy.IsDead)
+                    continue;
+
+                float distance = HorizontalDistance(transform.position, enemy.transform.position);
+                if (distance > assistAlertRange || (best != null && distance >= bestDistance))
+                    continue;
+
+                EnemyCombat combat = enemy.GetComponent<EnemyCombat>();
+                if (combat == null || !combat.HasLivingTarget())
+                    continue;
+
+                Transform target = combat.CurrentTarget;
+                if (target == null || !IsPlayerCombatRoot(target, playerRoot))
+                    continue;
+
+                EnemyAiController ai = enemy.GetComponent<EnemyAiController>();
+                if (ai != null && !ai.IsEngagedWithTarget)
+                    continue;
+
+                best = enemy;
+                bestDistance = distance;
+            }
+
+            if (best != null)
+            {
+                assistTarget = best;
+                assistTargetExpireTime = Time.time + assistWindowSeconds;
+            }
+
+            return best;
+        }
+
+        private static bool IsPlayerCombatRoot(Transform candidate, Transform playerRoot)
+        {
+            if (candidate == null || playerRoot == null)
+                return false;
+
+            if (candidate == playerRoot || candidate.IsChildOf(playerRoot))
+                return true;
+
+            return candidate.GetComponentInParent<SurvivalStats>() != null;
+        }
+
         public void Initialize(string pioneerId)
         {
             pioneerSeed = string.IsNullOrEmpty(pioneerId) ? name : pioneerId;
             int hash = pioneerSeed.GetHashCode();
             personalAttackBias = 0.55f + (Mathf.Abs(hash) % 1000) / 1000f * 0.35f;
             personalIntervalMultiplier = 0.85f + (Mathf.Abs(hash >> 8) % 1000) / 1000f * 0.3f;
+            personalStandoffBias = 0.9f + (Mathf.Abs(hash >> 4) % 1000) / 1000f * 0.2f;
         }
 
         public void ApplyBehaviorProfile(PioneerBehaviorProfile profile, SkilledPioneerClass skilledClass)
@@ -164,7 +291,7 @@ namespace Project.Companions
             float distance = HorizontalDistance(transform.position, currentTarget.transform.position);
 
             ItemData equippedWeapon = ResolveEquippedWeapon();
-            float effectiveRange = ResolveEffectiveAttackRange(equippedWeapon);
+            float effectiveRange = ResolveAttackEligibilityRange(equippedWeapon);
             bool isRanged = equippedWeapon != null && equippedWeapon.IsRangedWeapon;
 
             // Attack contact is part of the brain: melee only swings inside hit range.
@@ -183,13 +310,13 @@ namespace Project.Companions
             bool forceAttack = ShouldForceAggressiveAttack();
             if (!forceAttack && Random.value > coordinator.RollAttackChance(this))
             {
-                nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this) * 0.55f;
+                nextAttackTime = Time.time + coordinator.GetScaledAttackInterval(this) * 0.35f;
                 return;
             }
 
             if (!coordinator.TryBeginAttack(this, forceAttack))
             {
-                nextAttackTime = Time.time + (forceAttack ? 0.25f : 0.55f);
+                nextAttackTime = Time.time + (forceAttack ? 0.15f : 0.2f);
                 return;
             }
 
@@ -270,20 +397,35 @@ namespace Project.Companions
 
         private void ResolveTarget()
         {
+            // Keep chasing/attacking whatever we've already locked onto every frame (cheap), but
+            // only re-run the expensive full-scene scans on the throttled cadence — unless we have
+            // no target at all, in which case rescan immediately so acquisition doesn't feel laggy.
+            bool haveLiveTarget = currentTarget != null && !currentTarget.IsDead;
+            if (haveLiveTarget && Time.time < nextTargetScanTime)
+                return;
+
+            nextTargetScanTime = Time.time + TargetScanInterval;
+
             EnemyHealth selfTarget = null;
             if (behaviorProfile != null && behaviorProfile.followMode == PioneerFollowMode.FollowSelf)
                 selfTarget = FindNearestEnemyWithin(proximityAggroRange * 1.35f, requireThreatCone: false);
 
             EnemyHealth locked = playerFocus != null ? playerFocus.LockedTarget : null;
-            if (selfTarget != null && (locked == null || locked.IsDead || Random.value < selfTargetPriority))
+            // Assisting the player against whoever just hit them takes priority over an idle
+            // fallback, but the player's own locked target (if any) still wins so companions
+            // don't yank away from the enemy the player is actively fighting.
+            EnemyHealth assist = ResolveActiveAssistTarget() ?? FindEnemyThreateningPlayer();
+            EnemyHealth priorityTarget = (locked != null && !locked.IsDead) ? locked : assist;
+
+            if (selfTarget != null && (priorityTarget == null || Random.value < selfTargetPriority))
             {
                 currentTarget = selfTarget;
                 return;
             }
 
-            if (locked != null && !locked.IsDead)
+            if (priorityTarget != null)
             {
-                currentTarget = locked;
+                currentTarget = priorityTarget;
                 return;
             }
 
@@ -316,7 +458,10 @@ namespace Project.Companions
                         isRanged);
 
                     if (!wasEngaged)
+                    {
                         EnemyNoiseEvents.RaiseNoise(transform.position, 8f, gameObject);
+                        NotifyEnemyAggro(currentTarget);
+                    }
                 }
                 else
                     followController.ClearCombatEngagement();
@@ -332,10 +477,56 @@ namespace Project.Companions
         private float ResolveEngagementRingDistance(ItemData weapon, float strikeRange)
         {
             if (weapon != null && weapon.IsRangedWeapon)
-                return Mathf.Max(preferredCombatDistance, weapon.rangedRange * 0.6f);
+                return ResolveRangedStandoffDistance(weapon);
 
             // Hold slightly inside strike range so the follow deadband never exceeds swing reach.
-            return strikeRange * 0.88f;
+            return strikeRange * 0.92f * personalStandoffBias;
+        }
+
+        /// <summary>
+        /// Attack gate: ranged pioneers may fire from engagement ring distance, not only raw weapon max range.
+        /// </summary>
+        private float ResolveAttackEligibilityRange(ItemData weapon)
+        {
+            float strikeRange = ResolveEffectiveAttackRange(weapon);
+            if (weapon == null || !weapon.IsRangedWeapon)
+                return strikeRange;
+
+            float ringDistance = ResolveEngagementRingDistance(weapon, strikeRange);
+            return Mathf.Max(strikeRange, ringDistance * 0.95f);
+        }
+
+        /// <summary>
+        /// Rifles hold at half the legacy standoff; pistols at half rifle distance on the same weapon curve.
+        /// Per-pioneer and per-weapon jitter keeps spacing from feeling identical.
+        /// </summary>
+        private float ResolveRangedStandoffDistance(ItemData weapon)
+        {
+            float legacyFromWeapon = Mathf.Max(
+                preferredCombatDistance,
+                weapon.rangedRange * LegacyRangedStandoffRangeFactor);
+
+            float gripScale = weapon.weaponGrip == WeaponGrip.OneHanded
+                ? RifleStandoffScale * 0.5f
+                : RifleStandoffScale;
+
+            return legacyFromWeapon * gripScale * personalStandoffBias * ResolveWeaponStandoffJitter(weapon);
+        }
+
+        private float ResolveWeaponStandoffJitter(ItemData weapon)
+        {
+            string key = weapon != null ? weapon.itemName : string.Empty;
+            int jitterHash = (pioneerSeed + key).GetHashCode();
+            return 0.92f + (Mathf.Abs(jitterHash) % 1000) / 1000f * 0.16f;
+        }
+
+        private void NotifyEnemyAggro(EnemyHealth enemy)
+        {
+            if (enemy == null)
+                return;
+
+            EnemyAiController ai = enemy.GetComponent<EnemyAiController>();
+            ai?.NotifyAggroFromThreat(transform);
         }
 
         private EnemyHealth FindNearestEnemyInRange()
@@ -402,6 +593,12 @@ namespace Project.Companions
 
             float damage = weapon != null ? weapon.RollMeleeDamage() : 8f;
             damage *= DamageMultiplier;
+
+            // Squad-wide combat synergy from the active trio's data-asset buffs (see
+            // CompanionGroupBuffService) — every companion in the field hits a little harder when
+            // any of them carries a combat-synergy buff, not just the buff's owner.
+            damage *= 1f + CompanionGroupBuffService.Current.CombatSynergyBonus;
+
             target.TakeDamage(damage, gameObject, isCritical: false);
         }
 

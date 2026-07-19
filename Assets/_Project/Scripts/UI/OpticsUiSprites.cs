@@ -14,19 +14,41 @@ namespace Project.UI
         private static Sprite scannerHolographicGlow;
         private static Sprite scannerRectMask;
 
+        public static OpticsCrosshairLibrary Current
+        {
+            get
+            {
+                EnsureLoaded();
+                return library;
+            }
+        }
+
         public static Sprite BinocularScopeFull => GetOrCreate(ref binocularScopeFull, Library?.binocularScopeFull);
         public static Sprite BinocularScopeInnerGlow => GetOrCreate(ref binocularScopeInnerGlow, Library?.binocularScopeInnerGlow);
         public static Sprite BinocularScopeOuter => GetOrCreate(ref binocularScopeOuter, Library?.binocularScopeOuter);
         public static Sprite ScannerHolographic => GetOrCreate(ref scannerHolographic, Library?.scannerHolographic);
         public static Sprite ScannerHolographicGlow => GetOrCreate(ref scannerHolographicGlow, Library?.scannerHolographicGlow);
-        public static Sprite ScannerRectMask => GetOrCreate(ref scannerRectMask, Library?.scannerRectMask);
+
+        public static Sprite ScannerRectMask
+        {
+            get
+            {
+                if (Library != null && Library.scannerMaskFrameSprite != null)
+                    return Library.scannerMaskFrameSprite;
+
+                return GetOrCreate(ref scannerRectMask, Library?.scannerRectMask);
+            }
+        }
+
+        public static Sprite ViewportBackground => Library != null ? Library.viewportBackgroundSprite : null;
+
+        public static Material ViewportMaterialTemplate => Library != null ? Library.ResolveViewportMaterial() : null;
 
         private static OpticsCrosshairLibrary Library
         {
             get
             {
-                if (library == null)
-                    library = Resources.Load<OpticsCrosshairLibrary>(LibraryResourcePath);
+                EnsureLoaded();
                 return library;
             }
         }
@@ -40,6 +62,14 @@ namespace Project.UI
             DestroySprite(ref scannerHolographic);
             DestroySprite(ref scannerHolographicGlow);
             DestroySprite(ref scannerRectMask);
+        }
+
+        private static void EnsureLoaded()
+        {
+            if (library != null)
+                return;
+
+            library = Resources.Load<OpticsCrosshairLibrary>(LibraryResourcePath);
         }
 
         private static Sprite GetOrCreate(ref Sprite cache, Texture2D texture)

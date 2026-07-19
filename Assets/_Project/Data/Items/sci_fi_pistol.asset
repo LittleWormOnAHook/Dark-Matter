@@ -18,23 +18,20 @@ MonoBehaviour:
   maxStack: 10
   itemType: 3
   weaponGrip: 0
-  gkcWeaponKind: 5
-  gkcRightArmId: -1
-  gkcLeftArmId: -1
   heldPrefab: {fileID: 8948557008729901400, guid: a8568fdb9141e6c4ea85991f2179fc12, type: 3}
   equipSocketName: RightHand
   heldLocalPosition: {x: 0.02, y: 0.02, z: 0.06}
-  heldLocalEuler: {x: 11.068209, y: 356.68353, z: 1.0077542}
+  heldLocalEuler: {x: 11.06821, y: 356.6835, z: 1.007754}
   useHeldLocalRotation: 1
   heldLocalRotation: {x: 0.09614088, y: -0.029649356, z: 0.011540135, w: 0.9948599}
   heldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
   swingEulerAngles: {x: -120, y: 0, z: 0}
-  sheatheSocketName: Spine2
-  sheathedLocalPosition: {x: 0.08, y: 0.12, z: -0.19497345}
-  sheathedLocalEuler: {x: 70, y: 90, z: 90}
-  useSheathedLocalRotation: 0
-  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  sheatheSocketName: RightUpLeg
+  sheathedLocalPosition: {x: -9.703704, y: 5.835446, z: 0.095209695}
+  sheathedLocalEuler: {x: 90, y: 0, z: 0}
+  useSheathedLocalRotation: 1
+  sheathedLocalRotation: {x: -0.0042743664, y: -0.71199715, z: -0.70215636, w: -0.0042731008}
+  sheathedLocalScale: {x: 136.03012, y: 136.10681, z: 136.1097}
   invectorWeaponPrefab: {fileID: 4881589711078705830, guid: bf8e7b32b76156341ac90d8a8b08c28c, type: 3}
   invectorWeaponId: vHandgun
   meleeDamage: 10
@@ -53,7 +50,17 @@ MonoBehaviour:
   fireRate: 3.8
   magazineSize: 12
   defaultAmmoType: 0
-  compatibleAmmoTypes: 00000000
+  compatibleAmmoTypes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  defaultAmmoItem: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 3}
   projectilePrefab: {fileID: 100000, guid: 25621447fd20a4e44841cc32dd2c0de4, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.84
@@ -68,6 +75,21 @@ MonoBehaviour:
   ammoType: 0
   ammoPerPickup: 20
   ammoPickupGrant: 20
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  muzzleFlashPrefab: {fileID: 6860369545257256212, guid: 96a04ef4f3cb949dea720b29daad2af2, type: 3}
+  tracerPrefab: {fileID: 1878987882032996, guid: 2f30ce685381cf141a1c05b1ee359db2, type: 3}
+  impactVfxPrefab: {fileID: 4116169888191998485, guid: b151f19f5eaf34864986b0e3490431d1, type: 3}
+  beamVfxPrefab: {fileID: 0}
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
   toolRange: 8

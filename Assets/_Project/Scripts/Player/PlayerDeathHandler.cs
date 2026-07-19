@@ -1,6 +1,7 @@
 using ECM2;
 using Project.Core;
 using Project.Interaction;
+using Project.Player.Invector;
 using Project.Survival;
 using Project.UI;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace Project.Player
         private SurvivalStats survivalStats;
         private PlayerController playerController;
         private Character character;
-        private PlayerGkcAnimatorDriver animatorDriver;
+        private PioneerInvectorDeathRagdoll invectorDeathRagdoll;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private bool spawnCaptured;
@@ -28,7 +29,7 @@ namespace Project.Player
             survivalStats = GetComponent<SurvivalStats>();
             playerController = GetComponent<PlayerController>();
             character = GetComponent<Character>();
-            animatorDriver = GetComponentInChildren<PlayerGkcAnimatorDriver>();
+            invectorDeathRagdoll = GetComponent<PioneerInvectorDeathRagdoll>();
             CaptureSpawnPoint();
         }
 
@@ -50,6 +51,7 @@ namespace Project.Player
                 return;
 
             CleanupDeathState();
+            ResolveInvectorDeathRagdoll()?.ResetForRespawn();
 
             transform.SetPositionAndRotation(spawnPosition, spawnRotation);
             if (character != null)
@@ -58,9 +60,9 @@ namespace Project.Player
             survivalStats.ResetStats();
             survivalStats.SetSimulationPaused(false);
             survivalStats.NotifyRevivedAfterRespawn(5f);
+            GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
 
             ResetPlayerSystems();
-            ResetDeathAnimation();
             GameplayAudioUtility.EnsureListenerOnCamera(playerController != null ? playerController.GameplayCamera : null);
 
             UIManager ui = FindAnyObjectByType<UIManager>();
@@ -75,25 +77,24 @@ namespace Project.Player
         {
             CleanupDeathState();
             survivalStats?.SetSimulationPaused(true);
-            PlayDeathAnimation();
+            GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
+            ResolveInvectorDeathRagdoll()?.ActivateDeathRagdoll();
         }
 
-        private void PlayDeathAnimation()
+        private PioneerInvectorDeathRagdoll ResolveInvectorDeathRagdoll()
         {
-            if (animatorDriver == null)
-                return;
+            if (invectorDeathRagdoll == null)
+                invectorDeathRagdoll = GetComponent<PioneerInvectorDeathRagdoll>();
 
-            animatorDriver.EndActiveAction();
-            animatorDriver.RequestAction(GkcCombatAction.Death, 4f);
-        }
+            if (invectorDeathRagdoll != null || !PioneerInvectorBootstrap.IsInvectorPlayer(this))
+                return invectorDeathRagdoll;
 
-        private void ResetDeathAnimation()
-        {
-            if (animatorDriver == null)
-                return;
+            PioneerInvectorBootstrap bootstrap = GetComponent<PioneerInvectorBootstrap>();
+            if (bootstrap == null)
+                bootstrap = gameObject.AddComponent<PioneerInvectorBootstrap>();
 
-            animatorDriver.EndActiveAction();
-            animatorDriver.RequestAction(GkcCombatAction.GetUp, 1.5f);
+            invectorDeathRagdoll = GetComponent<PioneerInvectorDeathRagdoll>();
+            return invectorDeathRagdoll;
         }
 
         private void CleanupDeathState()

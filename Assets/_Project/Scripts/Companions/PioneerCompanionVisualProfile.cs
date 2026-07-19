@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.Companions
 {
     /// <summary>
-    /// Applies per-pioneer tinting to the shared ProjectUnityCharacter body mesh.
+    /// Applies per-pioneer tinting to companion body renderers (Invector mesh or child skinned meshes).
     /// </summary>
     public class PioneerCompanionVisualProfile : MonoBehaviour
     {
@@ -47,10 +47,7 @@ namespace Project.Companions
 
         private void CacheBodyRenderers()
         {
-            Transform body = transform.Find("ProjectUnityCharacter/Body");
-            if (body == null)
-                body = transform.Find("Body");
-
+            Transform body = transform.Find("Body");
             if (body != null)
             {
                 bodyRenderers = body.GetComponentsInChildren<Renderer>(true);

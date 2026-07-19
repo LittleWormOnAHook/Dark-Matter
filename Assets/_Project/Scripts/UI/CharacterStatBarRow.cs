@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,7 +6,10 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Thin stat row: small icon, name/value header, and a slim progress bar (reference panel style).
+    /// Thin stat row: small icon, name/value header, and a slim progress bar (reference panel style,
+    /// based on the "Ship Status HUD" mockup — badge glyph, name + bar + numeric readout per stat).
+    /// Optionally flashes once whenever its value is topped up (refuel/repair/regen) rather than
+    /// drained, so the player gets a clear "resource replenished" cue.
     /// </summary>
     internal sealed class CharacterStatBarRow
     {
@@ -14,14 +18,29 @@ namespace Project.UI
         private const float BarHeight = 7f;
         private const float RowSpacing = 14f;
 
+        // A single-frame rise smaller than this fraction of max is treated as ordinary passive
+        // regen drift, not a "reload" event — only a real top-up (refuel/repair) triggers the flash.
+        private const float LoadFlashThresholdFraction = 0.015f;
+        private const float LoadFlashDuration = 0.5f;
+
         private readonly RectTransform fillRect;
         private readonly TextMeshProUGUI nameLabel;
         private readonly TextMeshProUGUI valueLabel;
+        private readonly Image fillImage;
+        private readonly Image iconBackgroundImage;
+        private readonly Color baseFillColor;
+        private readonly Color baseIconColor;
+        private readonly MonoBehaviour flashCoroutineHost;
+
+        private float lastCurrentValue = float.NaN;
+        private Coroutine flashRoutine;
 
         public static float PreferredRowHeight => Mathf.Max(IconSize, BarHeight + 18f) + RowSpacing * 0.35f;
 
-        public CharacterStatBarRow(Transform parent, string iconGlyph, string statName, Color fillColor)
+        public CharacterStatBarRow(Transform parent, string iconGlyph, string statName, Color fillColor, MonoBehaviour flashCoroutineHost = null)
         {
+            this.flashCoroutineHost = flashCoroutineHost;
+
             GameObject rowObject = new GameObject($"Stat_{statName}", typeof(RectTransform), typeof(LayoutElement));
             rowObject.transform.SetParent(parent, false);
 
@@ -41,8 +60,12 @@ namespace Project.UI
             rowGroup.childForceExpandHeight = false;
             rowGroup.padding = new RectOffset(0, 0, 2, 2);
 
-            CreateIcon(rowObject.transform, iconGlyph);
+            CreateIcon(rowObject.transform, iconGlyph, out iconBackgroundImage);
             CreateContent(rowObject.transform, statName, fillColor, out fillRect, out nameLabel, out valueLabel);
+
+            fillImage = fillRect.GetComponent<Image>();
+            baseFillColor = fillColor;
+            baseIconColor = iconBackgroundImage != null ? iconBackgroundImage.color : Color.white;
         }
 
         public void SetValues(float current, float max, string valueOverride = null)
@@ -58,6 +81,11 @@ namespace Project.UI
                 : max > 0f
                     ? FormatStatValue(current)
                     : FormatStatValue(current);
+
+            if (max > 0f && !float.IsNaN(lastCurrentValue) && current - lastCurrentValue > max * LoadFlashThresholdFraction)
+                TriggerLoadFlash();
+
+            lastCurrentValue = current;
         }
 
         public void SetUnavailable(string statName)
@@ -65,6 +93,48 @@ namespace Project.UI
             fillRect.anchorMax = new Vector2(0f, 1f);
             nameLabel.text = statName;
             valueLabel.text = "—";
+            lastCurrentValue = float.NaN;
+        }
+
+        /// <summary>
+        /// Brief white pop on the icon badge + fill bar, signalling the stat was just topped up
+        /// (refuel, repair, or a shield/hull regen tick large enough to not be passive drift).
+        /// </summary>
+        private void TriggerLoadFlash()
+        {
+            if (flashCoroutineHost == null || !flashCoroutineHost.isActiveAndEnabled)
+                return;
+
+            if (flashRoutine != null)
+                flashCoroutineHost.StopCoroutine(flashRoutine);
+
+            flashRoutine = flashCoroutineHost.StartCoroutine(LoadFlashRoutine());
+        }
+
+        private IEnumerator LoadFlashRoutine()
+        {
+            float t = 0f;
+            while (t < LoadFlashDuration)
+            {
+                t += Time.deltaTime;
+                float pop = Mathf.Sin(Mathf.Clamp01(t / LoadFlashDuration) * Mathf.PI);
+
+                if (fillImage != null)
+                    fillImage.color = Color.Lerp(baseFillColor, Color.white, pop);
+
+                if (iconBackgroundImage != null)
+                    iconBackgroundImage.color = Color.Lerp(baseIconColor, Color.white, pop);
+
+                yield return null;
+            }
+
+            if (fillImage != null)
+                fillImage.color = baseFillColor;
+
+            if (iconBackgroundImage != null)
+                iconBackgroundImage.color = baseIconColor;
+
+            flashRoutine = null;
         }
 
         private static string FormatStatValue(float value)
@@ -74,7 +144,7 @@ namespace Project.UI
                 : value.ToString("0.#");
         }
 
-        private static void CreateIcon(Transform parent, string glyph)
+        private static void CreateIcon(Transform parent, string glyph, out Image iconBackgroundOut)
         {
             GameObject iconObject = new GameObject("Icon", typeof(RectTransform), typeof(LayoutElement), typeof(Image));
             iconObject.transform.SetParent(parent, false);
@@ -89,6 +159,7 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(iconBg);
             iconBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
             SurvivalPioneerUiPalette.ApplyFuchsiaTrim(iconObject, new Vector2(1f, -1f));
+            iconBackgroundOut = iconBg;
 
             GameObject glyphObject = new GameObject("Glyph", typeof(RectTransform));
             glyphObject.transform.SetParent(iconObject.transform, false);

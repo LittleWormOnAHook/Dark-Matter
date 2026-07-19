@@ -88,10 +88,21 @@ namespace Project.AI.Invector
             SetField(senses, "hearingRange", definition.hearingRange);
             SetField(senses, "proximityRange", definition.proximityRange);
 
-            SetField(combat, "attackRange", definition.attackRange);
-            SetField(combat, "attackDamage", definition.attackDamage);
+            SetField(combat, "attackRange",    definition.attackRange);
+            SetField(combat, "attackDamage",   definition.attackDamage);
             SetField(combat, "attackCooldown", definition.attackCooldown);
-            SetField(combat, "attackWindup", definition.attackWindup);
+            SetField(combat, "attackWindup",   definition.attackWindup);
+
+            EnemyInvectorCombatBridge bridge = root.GetComponent<EnemyInvectorCombatBridge>();
+            if (bridge != null)
+            {
+                SetField(bridge, "defaultMeleeDuration",   definition.meleeDuration);
+                SetField(bridge, "defaultUnarmedDuration", definition.unarmedDuration);
+                SetField(bridge, "defaultRangedDuration",  definition.rangedDuration);
+                SetField(bridge, "rangedEngageRange",      definition.rangedEngageRange);
+                SetField(bridge, "aimHoldDuration",        definition.aimHoldDuration);
+                SetField(bridge, "missRate",               definition.missRate);
+            }
 
             SetField(ai, "movementMode", (int)definition.movementMode);
             SetField(ai, "patrolMode", (int)definition.patrolMode);
@@ -104,6 +115,8 @@ namespace Project.AI.Invector
             SetField(ai, "wanderPauseMax", definition.wanderPauseMax);
             SetField(ai, "walkSpeed", definition.walkSpeed);
             SetField(ai, "runSpeed", definition.runSpeed);
+            SetField(ai, "chaseSpeed", definition.chaseSpeed);
+            SetField(ai, "chaseSpeedMultiplier", definition.chaseSpeedMultiplier);
             SetField(ai, "turnSpeed", definition.turnSpeed);
             SetField(ai, "loseTargetDelay", definition.loseTargetDelay);
             SetField(ai, "searchDuration", definition.searchDuration);

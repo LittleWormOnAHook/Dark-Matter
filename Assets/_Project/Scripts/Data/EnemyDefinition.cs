@@ -27,6 +27,12 @@ namespace Project.AI
         Ambush
     }
 
+    public enum EnemyArchetype
+    {
+        LegacyCreature,
+        HumanoidInvector
+    }
+
     [CreateAssetMenu(fileName = "EnemyDefinition", menuName = "Survival Pioneer/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
@@ -34,6 +40,12 @@ namespace Project.AI
         public string enemyId = "new_enemy";
         public string displayName = "New Enemy";
         public string prefabFileName = "NewEnemy";
+        public EnemyArchetype archetype = EnemyArchetype.LegacyCreature;
+
+        [Header("Humanoid Invector")]
+        public ItemData meleeWeaponItem;
+        public ItemData rangedWeaponItem;
+        public bool preferRangedWeapon;
 
         [Header("Health")]
         public float maxHealth = 60f;
@@ -56,11 +68,28 @@ namespace Project.AI
         public float hearingRange = 18f;
         public float proximityRange = 2.5f;
 
-        [Header("Combat")]
+        [Header("Melee Combat")]
         public float attackRange = 1.8f;
         public float attackDamage = 12f;
         public float attackCooldown = 1.4f;
         public float attackWindup = 0.35f;
+        [Tooltip("Duration the melee attack animation occupies before the next action is allowed.")]
+        public float meleeDuration = 0.85f;
+        [Tooltip("Duration of the unarmed (no weapon) melee attack.")]
+        public float unarmedDuration = 0.55f;
+
+        [Header("Ranged Combat")]
+        [Tooltip("Distance at which the enemy stops chasing and starts shooting.")]
+        public float rangedEngageRange = 12f;
+        [Tooltip("Cooldown between ranged shots.")]
+        public float rangedAttackCooldown = 1.2f;
+        [Tooltip("Duration the shoot animation occupies before the next action is allowed.")]
+        public float rangedDuration = 0.35f;
+        [Tooltip("Seconds the aim pose is held after leaving a ranged engagement before returning to idle.")]
+        public float aimHoldDuration = 1.5f;
+        [Tooltip("0 = perfect aim, 1 = always misses. Adds a random world-space offset to each shot.")]
+        [Range(0f, 1f)]
+        public float missRate = 0.25f;
 
         [Header("Movement Mode")]
         public EnemyMovementMode movementMode = EnemyMovementMode.Wander;
@@ -86,6 +115,11 @@ namespace Project.AI
         public EnemyBehaviorPreset behaviorPreset = EnemyBehaviorPreset.AggressiveHunter;
         public float walkSpeed = 2.4f;
         public float runSpeed = 4.8f;
+        [Tooltip("Chase speed when pursuing player/companion. 0 = use runSpeed * chaseSpeedMultiplier.")]
+        public float chaseSpeed;
+        [Tooltip("Applied when chaseSpeed is 0.")]
+        [Range(0.5f, 1.25f)]
+        public float chaseSpeedMultiplier = 0.88f;
         public float turnSpeed = 8f;
         public float loseTargetDelay = 4f;
         public float searchDuration = 6f;
@@ -151,6 +185,11 @@ namespace Project.AI
                     loseTargetDelay = 5f;
                     attackDamage = 12f;
                     attackCooldown = 1.2f;
+                    meleeDuration = 0.85f;
+                    rangedEngageRange = 12f;
+                    rangedAttackCooldown = 1.2f;
+                    rangedDuration = 0.35f;
+                    aimHoldDuration = 1.5f;
                     break;
 
                 case EnemyBehaviorPreset.Guard:
@@ -168,6 +207,11 @@ namespace Project.AI
                     loseTargetDelay = 2.5f;
                     attackDamage = 10f;
                     attackCooldown = 1.5f;
+                    meleeDuration = 0.9f;
+                    rangedEngageRange = 14f;
+                    rangedAttackCooldown = 1.4f;
+                    rangedDuration = 0.4f;
+                    aimHoldDuration = 2f;
                     break;
 
                 case EnemyBehaviorPreset.PatrolInvestigator:
@@ -188,6 +232,11 @@ namespace Project.AI
                     searchDuration = 8f;
                     attackDamage = 8f;
                     attackCooldown = 1.6f;
+                    meleeDuration = 1f;
+                    rangedEngageRange = 16f;
+                    rangedAttackCooldown = 1.6f;
+                    rangedDuration = 0.4f;
+                    aimHoldDuration = 2f;
                     break;
 
                 case EnemyBehaviorPreset.Ambush:
@@ -206,6 +255,11 @@ namespace Project.AI
                     attackDamage = 18f;
                     attackCooldown = 2f;
                     attackWindup = 0.5f;
+                    meleeDuration = 1.1f;
+                    rangedEngageRange = 10f;
+                    rangedAttackCooldown = 1.8f;
+                    rangedDuration = 0.5f;
+                    aimHoldDuration = 1f;
                     break;
             }
         }

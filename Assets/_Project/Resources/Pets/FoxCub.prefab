@@ -30,15 +30,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -16.51
+      value: 13.222168
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.169
+      value: -2.369506
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.17
+      value: -11.717092
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -46,15 +46,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4593516604695486236, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -68,6 +68,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5373115882641748638, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
+      propertyPath: runState
+      value: Run
+      objectReference: {fileID: 0}
+    - target: {fileID: 5373115882641748638, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
+      propertyPath: idleState
+      value: Idle
+      objectReference: {fileID: 0}
+    - target: {fileID: 5373115882641748638, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
+      propertyPath: walkState
+      value: Walk
+      objectReference: {fileID: 0}
+    - target: {fileID: 5373115882641748638, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
+      propertyPath: petAnimatorController
+      value: 
+      objectReference: {fileID: 9100000, guid: c4e8a1b23f5678901234abcdef678901, type: 2}
     - target: {fileID: 8271544066003997067, guid: a9ad576da3a394545bfeacb69621ad0b, type: 3}
       propertyPath: definition
       value: 
@@ -112,7 +128,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.35
+  m_Radius: 2.23
   m_Height: 1.2
   m_Direction: 1
   m_Center: {x: 0, y: 0.55, z: 0}

@@ -1,5 +1,7 @@
 using Invector;
 using Invector.vCharacterController;
+using Project.AI;
+using Project.Combat;
 using Project.Companions;
 using UnityEngine;
 
@@ -67,6 +69,8 @@ namespace Project.Companions.Invector
                 return;
 
             _companionHealth.ApplyDamage(damage.damageValue);
+            CombatHitVfx.SpawnIncomingEnemyHit(damage, transform);
+            PlayerCombatEvents.RaiseCompanionAttackedBySender(damage.sender);
         }
     }
 }

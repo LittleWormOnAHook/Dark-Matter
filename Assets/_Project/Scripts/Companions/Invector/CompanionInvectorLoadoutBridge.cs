@@ -382,6 +382,13 @@ namespace Project.Companions.Invector
                 _activeHolsteredInstance = holstered;
             }
 
+            // Reparent to ItemData sheathe socket (HandgunHolder under VBOT_:RightUpLeg) and
+            // apply sheathed TRS so Echo/companion prefabs with scale~1 still match player.
+            Transform socket = PioneerInvectorWeaponBridge.FindHolsterSocket(transform, item);
+            if (socket != null)
+                holstered.transform.SetParent(socket, false);
+
+            PioneerInvectorWeaponBridge.ApplySheathedTransformToInstance(item, holstered);
             PioneerInvectorWeaponBridge.PrepareHolsteredVisualSlot(holstered, item);
             holstered.SetActive(true);
         }
@@ -609,6 +616,7 @@ namespace Project.Companions.Invector
             else
             {
                 PioneerInvectorWeaponBridge.PrepareHolsteredVisualSlot(cache, item);
+                PioneerInvectorWeaponBridge.ApplySheathedTransformToInstance(item, cache);
             }
 
             cache.SetActive(false);
@@ -631,13 +639,17 @@ namespace Project.Companions.Invector
 
         private Transform ResolveFallbackSocket(ItemData item, bool drawn)
         {
-            Transform modelRoot = transform.Find("ProjectUnityCharacter");
-            if (modelRoot == null)
-                modelRoot = transform;
+            Transform modelRoot = transform;
 
-            string socketName = drawn
-                ? (string.IsNullOrWhiteSpace(item.equipSocketName) ? "RightHand" : item.equipSocketName)
-                : PioneerInvectorWeaponBridge.ResolveHolsterSocketName(item);
+            if (!drawn)
+            {
+                Transform holsterSocket = PioneerInvectorWeaponBridge.FindHolsterSocket(modelRoot, item);
+                return holsterSocket != null ? holsterSocket : modelRoot;
+            }
+
+            string socketName = string.IsNullOrWhiteSpace(item.equipSocketName)
+                ? "RightHand"
+                : item.equipSocketName;
 
             Transform socket = FindDeepChild(modelRoot, socketName);
             return socket != null ? socket : modelRoot;

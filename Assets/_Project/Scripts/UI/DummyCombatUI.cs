@@ -21,6 +21,7 @@ namespace Project.UI
         private Slider healthSlider;
         private TextMeshProUGUI healthText;
         private RectTransform healthBarRect;
+        private Camera worldCamera;
 
         public void Initialize(TrainingDummy owner)
         {
@@ -55,9 +56,12 @@ namespace Project.UI
                 return;
 
             healthBarRect.position = dummy.HealthBarAnchor.position + healthBarLocalOffset;
-            Camera cam = Camera.main;
-            if (cam != null)
-                healthBarRect.rotation = Quaternion.LookRotation(healthBarRect.position - cam.transform.position);
+
+            if (worldCamera == null)
+                worldCamera = Camera.main;
+
+            if (worldCamera != null)
+                healthBarRect.rotation = Quaternion.LookRotation(healthBarRect.position - worldCamera.transform.position);
         }
 
         private void BuildHealthBar()

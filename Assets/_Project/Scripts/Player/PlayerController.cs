@@ -8,6 +8,7 @@ using Project.Interaction;
 using Project.Player.Invector;
 using Project.Survival;
 using Project.UI;
+using Project.Vehicles;
 
 namespace Project.Player
 {
@@ -189,11 +190,13 @@ namespace Project.Player
         private void OnEnable()
         {
             GameSession.GameStarted += HandleGameStarted;
+            PlayerReference.Register(transform, GameplayCamera);
         }
 
         private void OnDisable()
         {
             GameSession.GameStarted -= HandleGameStarted;
+            PlayerReference.Unregister(transform);
         }
 
         private void HandleGameStarted()
@@ -408,9 +411,14 @@ namespace Project.Player
             ApplyCursorState();
         }
 
-        private void ApplyCursorState()
+        /// <summary>
+        /// Applies locked/free cursor based on UI, menu, pause, and optics state.
+        /// Public so Invector input can re-sync after vendor Start() locks the cursor.
+        /// </summary>
+        public void ApplyCursorState()
         {
-            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _gameplayPaused || !GameSession.HasStarted;
+            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
+                              _buildingControlOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f;
 
             if (_opticsOpen)
             {
@@ -491,6 +499,12 @@ namespace Project.Player
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked)
                 return;
 
+            if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+            {
+                PlayerVehicleState.ActiveCraft.TryExit(this);
+                return;
+            }
+
             if (_worldUse == null)
                 _worldUse = GetComponent<WorldUseController>();
 
@@ -566,11 +580,16 @@ namespace Project.Player
             if (QuestGiverDialogUI.IsDialogOpen)
                 return true;
 
+            if (HovercraftInteractMenuUI.IsOpen)
+                return true;
+
             return BuildingControlPanelUI.IsOpen;
         }
 
         private void UpdateInvectorCompanionSystems()
         {
+            ApplyCursorState();
+
             if (_survivalStats != null && _survivalStats.IsDead)
                 StopPlayerMovement();
         }
@@ -578,7 +597,10 @@ namespace Project.Player
         private void LateUpdate()
         {
             if (UsesInvectorMotor())
+            {
+                ApplyCursorState();
                 return;
+            }
 
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
                 return;
@@ -763,7 +785,7 @@ namespace Project.Player
 
         private void HandleZoom()
         {
-            if (_opticsOpen || Mouse.current == null)
+            if (_opticsOpen || PlayerVehicleState.IsMounted || Mouse.current == null)
                 return;
 
             float scroll = Mouse.current.scroll.ReadValue().y;

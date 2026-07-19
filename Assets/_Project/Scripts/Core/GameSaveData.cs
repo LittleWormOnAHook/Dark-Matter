@@ -10,13 +10,17 @@ namespace Project.Core
     [Serializable]
     public class GameSaveData
     {
-        public int version = 14;
+        public int version = 17;
         public int slotIndex;
         public long savedAtUtcTicks;
         public float health;
         public float energy;
         public float stamina;
         public float oxygen;
+        public float thermalStress;
+        public float radiation;
+        public float sulfur;
+        public float volcano;
         public float hunger;
         public float thirst;
         public float piBalance;
@@ -55,6 +59,36 @@ namespace Project.Core
         public string toolbarPetId;
         public AchievementProgress[] achievementProgress;
         public PetTamingProgressSaveEntry[] petTamingProgress;
+        public VehicleSaveEntry[] vehicles;
+        public PowerGeneratorSaveEntry[] powerGenerators;
+    }
+
+    /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it
+    /// round-trips independently of the vehicle/pioneer save sections.</summary>
+    [Serializable]
+    public class PowerGeneratorSaveEntry
+    {
+        public string buildingId;
+        public float currentFuel;
+    }
+
+    /// <summary>
+    /// Per-hovercraft persistence, keyed by the GameObject name (e.g. "Hovercraft_Pioneer") so a scene
+    /// with more than one vehicle still round-trips correctly. Without this, a hovercraft's position,
+    /// remaining fuel, and shield/health reset to defaults every time the game reloads.
+    /// </summary>
+    [Serializable]
+    public class VehicleSaveEntry
+    {
+        public string vehicleId;
+        public float posX;
+        public float posY;
+        public float posZ;
+        public float rotY;
+        public float currentFuel;
+        public float currentShield;
+        public float currentHealth;
+        public bool isDestroyed;
     }
 
     [Serializable]

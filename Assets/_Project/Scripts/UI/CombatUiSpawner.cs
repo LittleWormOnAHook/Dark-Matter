@@ -89,8 +89,7 @@ namespace Project.UI
 
         private static Transform GetCanvasRoot()
         {
-            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-            return canvas != null ? canvas.transform : null;
+            return MainMenuController.ResolveCombatHudRoot();
         }
     }
 }

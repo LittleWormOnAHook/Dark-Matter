@@ -22,6 +22,9 @@ namespace Project.UI
     private TextMeshProUGUI questDetailTitle;
     private TextMeshProUGUI questDetailBody;
     private Transform objectiveListParent;
+    private Button abandonQuestButton;
+    private TextMeshProUGUI abandonQuestButtonLabel;
+    private bool abandonConfirmPending;
 
     private string selectedQuestId;
     private bool uiBuilt;
@@ -265,6 +268,7 @@ namespace Project.UI
       PioneerRosterContextMenu.HideAny();
       PetContextMenu.HideAny();
       PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
     }
 
     public void EnsureUiBuiltForLayoutEditor()
@@ -427,12 +431,7 @@ namespace Project.UI
         character.Configure(characterPanelUi ?? GetComponent<CharacterPanelUI>() ?? gameObject.AddComponent<CharacterPanelUI>());
       });
 
-      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Recipes, "Recipes", stub => stub.Configure(
-        "Recipe Library",
-        "Browse learned recipes and scroll slots. Production runs at in-world crafting stations and future building control panels.",
-        "Collect and learn recipe scrolls",
-        "View ingredients and station requirements",
-        "Plan crafts before visiting a station"));
+      RegisterWindow<RecipeLibraryFullscreenWindow>(JournalWindowId.Recipes, "Recipes", recipes => { });
 
       RegisterWindow<SkillsFullscreenWindow>(JournalWindowId.Skills, "Skills", skills =>
       {
@@ -553,6 +552,7 @@ namespace Project.UI
         PioneerRosterContextMenu.HideAny();
       PetContextMenu.HideAny();
       PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
       }
       else
       {
@@ -565,6 +565,7 @@ namespace Project.UI
         PioneerRosterContextMenu.HideAny();
       PetContextMenu.HideAny();
       PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
         if (craftingManager == null)
           craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
         if (craftingManager != null)
@@ -730,6 +731,38 @@ namespace Project.UI
       objectiveHostLayout.flexibleHeight = 1f;
       objectiveHostLayout.minHeight = Sc(120f);
       objectiveListParent = objectiveHost.transform;
+
+      GameObject abandonButtonObject = new GameObject("AbandonQuestButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+      abandonButtonObject.transform.SetParent(parent, false);
+      LayoutElement abandonLayout = abandonButtonObject.GetComponent<LayoutElement>();
+      abandonLayout.minHeight = Sc(40f);
+      abandonLayout.preferredHeight = Sc(40f);
+
+      Image abandonImage = abandonButtonObject.GetComponent<Image>();
+      MenuUiBuilder.ApplyUiSprite(abandonImage);
+      abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+
+      abandonQuestButton = abandonButtonObject.GetComponent<Button>();
+      abandonQuestButton.targetGraphic = abandonImage;
+      UiSoundHelper.BindButton(abandonQuestButton);
+      abandonQuestButton.onClick.AddListener(HandleAbandonQuestClicked);
+
+      GameObject abandonLabelObject = new GameObject("Label", typeof(RectTransform));
+      abandonLabelObject.transform.SetParent(abandonButtonObject.transform, false);
+      abandonQuestButtonLabel = abandonLabelObject.AddComponent<TextMeshProUGUI>();
+      ApplyFont(abandonQuestButtonLabel, theme, semiBold: true);
+      abandonQuestButtonLabel.text = "Abandon Quest";
+      abandonQuestButtonLabel.fontSize = Sc(18f);
+      abandonQuestButtonLabel.alignment = TextAlignmentOptions.Center;
+      abandonQuestButtonLabel.color = SurvivalPioneerUiPalette.BodyText;
+      abandonQuestButtonLabel.raycastTarget = false;
+      RectTransform abandonLabelRect = abandonLabelObject.GetComponent<RectTransform>();
+      abandonLabelRect.anchorMin = Vector2.zero;
+      abandonLabelRect.anchorMax = Vector2.one;
+      abandonLabelRect.offsetMin = Vector2.zero;
+      abandonLabelRect.offsetMax = Vector2.zero;
+
+      abandonQuestButton.gameObject.SetActive(false);
     }
 
     public void RefreshQuestList()
@@ -840,6 +873,7 @@ namespace Project.UI
           detailBody.text = "Accept and complete quests with NPCs.";
         if (includeObjectives)
           ClearObjectiveRows();
+        UpdateAbandonQuestButton(null);
         return;
       }
 
@@ -855,6 +889,47 @@ namespace Project.UI
 
       if (includeObjectives)
         RefreshObjectiveRows(definition, progress);
+
+      UpdateAbandonQuestButton(progress);
+    }
+
+    private void UpdateAbandonQuestButton(QuestProgress progress)
+    {
+      if (abandonQuestButton == null)
+        return;
+
+      bool canAbandon = progress != null && progress.status == QuestStatus.Active;
+      abandonQuestButton.gameObject.SetActive(canAbandon);
+      abandonQuestButton.interactable = canAbandon;
+      abandonConfirmPending = false;
+      if (abandonQuestButtonLabel != null)
+        abandonQuestButtonLabel.text = "Abandon Quest";
+    }
+
+    private void HandleAbandonQuestClicked()
+    {
+      if (questManager == null || string.IsNullOrEmpty(selectedQuestId))
+        return;
+
+      QuestProgress progress = questManager.GetProgress(selectedQuestId);
+      if (progress == null || progress.status != QuestStatus.Active)
+        return;
+
+      if (!abandonConfirmPending)
+      {
+        abandonConfirmPending = true;
+        if (abandonQuestButtonLabel != null)
+          abandonQuestButtonLabel.text = "Confirm Abandon?";
+        return;
+      }
+
+      if (!questManager.AbandonQuest(selectedQuestId))
+        return;
+
+      abandonConfirmPending = false;
+      selectedQuestId = null;
+      RefreshQuestList();
+      FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
     }
 
     private void HandleQuestUpdated(QuestProgress progress)

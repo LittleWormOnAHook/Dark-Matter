@@ -10,6 +10,7 @@ namespace Project.Progression
     public class PlayerProgressionManager : MonoBehaviour
     {
         public const float StatBonusPerLevel = 0.05f;
+        public const float WeaponDamageBonusPerLevel = 0.03f;
 
         public static PlayerProgressionManager Instance { get; private set; }
 
@@ -77,6 +78,9 @@ namespace Project.Progression
         }
 
         public float GetLevelStatMultiplier() => 1f + (level - 1) * StatBonusPerLevel;
+
+        /// <summary>Linear +3% weapon damage per level above 1 (level 1 = 1x, matching GetLevelStatMultiplier's convention).</summary>
+        public float GetLevelWeaponDamageMultiplier() => 1f + (level - 1) * WeaponDamageBonusPerLevel;
 
         public int GetXpRequiredForNextLevel() =>
             curve != null ? curve.GetXpRequiredForLevel(level + 1) : 100 + level * 25;

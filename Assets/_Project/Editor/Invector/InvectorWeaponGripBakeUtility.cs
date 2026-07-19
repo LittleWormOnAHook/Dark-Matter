@@ -175,7 +175,7 @@ namespace Project.EditorTools.Invector
             ApplySocketName(item, socket, drawn: false);
             EditorUtility.SetDirty(item);
             AssetDatabase.SaveAssets();
-            bridge.ApplySheathedTransformToInstance(item, instance);
+            PioneerInvectorWeaponBridge.ApplySheathedTransformToInstance(item, instance);
 
             string summary =
                 $"Baked holstered grip for '{item.name}' on socket '{socket?.name}' — " +

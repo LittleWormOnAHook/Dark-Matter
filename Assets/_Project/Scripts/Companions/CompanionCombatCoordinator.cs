@@ -18,7 +18,7 @@ namespace Project.Companions
     {
         public static CompanionCombatCoordinator Instance { get; private set; }
 
-        [SerializeField] private float baseAttackInterval = 2.2f;
+        [SerializeField] private float baseAttackInterval = 0.675f;
         [SerializeField] private float pairedOverlapWindow = 0.35f;
         [SerializeField] private int attackModeSeed = 92831;
 
@@ -119,7 +119,7 @@ namespace Project.Companions
         {
             // Personal bias keeps cadence uneven so the trio doesn't volley in lockstep.
             float bias = requester != null ? requester.GetPersonalAttackBias() : 0.7f;
-            return Mathf.Clamp01(0.35f + bias * 0.35f);
+            return Mathf.Clamp01(0.55f + bias * 0.70f);
         }
 
         public bool TryBeginAttack(CompanionCombatController requester, bool forceAggressive = false)
@@ -128,6 +128,16 @@ namespace Project.Companions
                 return false;
 
             if (forceAggressive && requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+            {
+                if (activeAttackers.Contains(requester))
+                    return false;
+
+                activeAttackers.Add(requester);
+                return true;
+            }
+
+            // Sole engaged fighter should not wait on turn order.
+            if (CountEngagedFighters() <= 1 && requester.IsEngagedInCombat)
             {
                 if (activeAttackers.Contains(requester))
                     return false;
@@ -227,6 +237,18 @@ namespace Project.Companions
         private bool ShouldStaggerDoubleBurst()
         {
             return (attackModeSeed & 3) != 0;
+        }
+
+        private int CountEngagedFighters()
+        {
+            int count = 0;
+            for (int i = 0; i < registered.Count; i++)
+            {
+                if (registered[i] != null && registered[i].IsEngagedInCombat)
+                    count++;
+            }
+
+            return count;
         }
 
         private void RecomputeAttackMode()

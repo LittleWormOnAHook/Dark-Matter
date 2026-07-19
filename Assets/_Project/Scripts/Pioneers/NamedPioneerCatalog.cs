@@ -58,7 +58,14 @@ namespace Project.Pioneers
                 return;
 
             cacheLoaded = true;
-            cachedDefinitions = Resources.LoadAll<NamedPioneerDefinition>("Pioneers");
+
+            // Companion data assets live under Assets/_Project/Data/Companions (not a Resources
+            // folder). The registry asset itself is the only thing that needs to be in Resources
+            // so it can be found at runtime — mirrors Project.Data.ItemRegistry's pattern.
+            CompanionCatalogRegistry registry = Resources.Load<CompanionCatalogRegistry>("CompanionCatalogRegistry");
+            cachedDefinitions = registry != null
+                ? registry.Companions
+                : System.Array.Empty<NamedPioneerDefinition>();
         }
 
         public static void ReloadCache()

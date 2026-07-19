@@ -269,7 +269,7 @@ namespace Project.UI
             if (scrollHintText != null)
             {
                 scrollHintText.text = pending.Count > 0
-                    ? "Right-click a scroll to learn the recipe."
+                    ? "Right-click a scroll, then click Learn to confirm."
                     : "Collect recipe scrolls in the world to fill these slots.";
             }
 

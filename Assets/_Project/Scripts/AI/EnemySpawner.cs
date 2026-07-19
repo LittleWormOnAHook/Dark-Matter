@@ -57,6 +57,12 @@ namespace Project.AI
         public float RespawnDelay => respawnDelay;
 
         private readonly List<SpawnSlot> _slots = new List<SpawnSlot>();
+        private CombatZoneController _combatZone;
+
+        public void BindCombatZone(CombatZoneController zone)
+        {
+            _combatZone = zone;
+        }
 
         private sealed class SpawnSlot
         {
@@ -137,6 +143,9 @@ namespace Project.AI
 
         private GameObject SpawnTrackedInstance(GameObject prefab, Vector3 position, Quaternion rotation)
         {
+            if (!CanSpawnAt(position))
+                return null;
+
             position = EnemyGroundUtility.SnapPositionToGround(position);
 
             SpawnSlot slot = new SpawnSlot
@@ -147,9 +156,34 @@ namespace Project.AI
             };
 
             slot.Instance = SpawnInstance(prefab, position, rotation);
+            if (slot.Instance == null)
+                return null;
+
+            ResolveCombatZone()?.TryRegisterHumanoid(slot.Instance);
             _slots.Add(slot);
             TrackInstance(slot);
             return slot.Instance;
+        }
+
+        private bool CanSpawnAt(Vector3 position)
+        {
+            CombatZoneController zone = ResolveCombatZone();
+            if (zone == null)
+                return true;
+
+            if (!zone.CanSpawnMore())
+                return false;
+
+            return zone.IsSpawnAllowedByDistance(position);
+        }
+
+        private CombatZoneController ResolveCombatZone()
+        {
+            if (_combatZone != null)
+                return _combatZone;
+
+            _combatZone = GetComponentInParent<CombatZoneController>();
+            return _combatZone;
         }
 
         private GameObject SpawnInstance(GameObject prefab, Vector3 position, Quaternion rotation)
@@ -241,7 +275,30 @@ namespace Project.AI
             if (!isActiveAndEnabled || slot.Prefab == null)
                 yield break;
 
+            if (!CanSpawnAt(slot.Position))
+            {
+                slot.RespawnRoutine = StartCoroutine(RetryRespawnWhenAllowed(slot));
+                yield break;
+            }
+
             slot.Instance = SpawnInstance(slot.Prefab, slot.Position, slot.Rotation);
+            if (slot.Instance != null)
+                ResolveCombatZone()?.TryRegisterHumanoid(slot.Instance);
+            TrackInstance(slot);
+        }
+
+        private IEnumerator RetryRespawnWhenAllowed(SpawnSlot slot)
+        {
+            while (isActiveAndEnabled && slot.Prefab != null && !CanSpawnAt(slot.Position))
+                yield return new WaitForSeconds(1f);
+
+            slot.RespawnRoutine = null;
+            if (!isActiveAndEnabled || slot.Prefab == null)
+                yield break;
+
+            slot.Instance = SpawnInstance(slot.Prefab, slot.Position, slot.Rotation);
+            if (slot.Instance != null)
+                ResolveCombatZone()?.TryRegisterHumanoid(slot.Instance);
             TrackInstance(slot);
         }
 

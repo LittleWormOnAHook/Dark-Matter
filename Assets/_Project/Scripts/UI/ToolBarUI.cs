@@ -121,6 +121,18 @@ namespace Project.UI
 
             pioneerHud.EnsureBuilt(layoutParent, toolbarRoot.anchoredPosition.y);
 
+            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
+            if (gaugeCluster == null)
+                gaugeCluster = gameObject.AddComponent<HotbarExposureGaugeCluster>();
+
+            gaugeCluster.EnsureBuilt(layoutParent, toolbarRoot.anchoredPosition.y);
+
+            HovercraftStatusHudUI hovercraftHud = GetComponent<HovercraftStatusHudUI>();
+            if (hovercraftHud == null)
+                hovercraftHud = gameObject.AddComponent<HovercraftStatusHudUI>();
+
+            hovercraftHud.EnsureBuilt(canvasRoot);
+
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged += RefreshUI;
 
@@ -137,17 +149,94 @@ namespace Project.UI
 
         public void SetGameplayVisible(bool visible)
         {
+            if (MainMenuController.BlocksGameplayHud)
+                visible = false;
+
             if (toolbarRoot != null)
                 toolbarRoot.gameObject.SetActive(visible);
 
-            FindAnyObjectByType<PetToolbarUI>()?.SetGameplayVisible(visible);
-            GetComponent<ExpeditionPioneerHudUI>()?.SetGameplayVisible(visible);
+            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
+            if (petToolbar == null)
+                petToolbar = FindAnyObjectByType<PetToolbarUI>();
+            petToolbar?.SetGameplayVisible(visible);
+
+            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
+            if (gaugeCluster == null)
+                gaugeCluster = FindAnyObjectByType<HotbarExposureGaugeCluster>();
+            gaugeCluster?.SetGameplayVisible(visible);
+
+            ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+            if (pioneerHud == null)
+                pioneerHud = FindAnyObjectByType<ExpeditionPioneerHudUI>();
+            pioneerHud?.SetGameplayVisible(visible);
+
+            HovercraftStatusHudUI hovercraftHud = GetComponent<HovercraftStatusHudUI>();
+            if (hovercraftHud == null)
+                hovercraftHud = FindAnyObjectByType<HovercraftStatusHudUI>();
+            hovercraftHud?.SetGameplayVisible(visible);
+
+            if (!visible)
+                return;
+
+            InventoryUI inventory = FindAnyObjectByType<InventoryUI>();
+            if (inventory != null && inventory.hotbarParent is RectTransform hotbarRect)
+            {
+                Canvas canvas = inventory.GetComponent<Canvas>() ?? inventory.GetComponentInParent<Canvas>();
+                Transform canvasRoot = canvas != null ? canvas.transform : null;
+                if (canvasRoot != null)
+                {
+                    EnsureRaisedToFrontLayer(canvasRoot);
+                    RepositionRelativeToHotbar(hotbarRect);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Hides the pet slot, quick-access tool bar, hotbar, and companion/pioneer bar while the
+        /// player is driving a vehicle (called from HovercraftStatusHudUI on a mount/dismount edge,
+        /// and re-applied by GameplayHudVisibility.SetGameplayHudVisible whenever some unrelated menu
+        /// close tries to restore the normal HUD while still mounted). Deliberately leaves the
+        /// Temperature/Hazards cluster and the hovercraft status HUD itself untouched — unlike
+        /// <see cref="SetGameplayVisible"/>, which toggles that whole group together for menu/session
+        /// state. On dismount this hands control back to <see cref="GameplayHudVisibility"/> so the
+        /// normal HUD rules (journal open, building panel open, etc.) are re-evaluated correctly
+        /// instead of blindly forcing everything back on.
+        /// </summary>
+        public void SetVehicleModeHudSuppressed(bool suppressed)
+        {
+            if (suppressed)
+            {
+                if (toolbarRoot != null)
+                    toolbarRoot.gameObject.SetActive(false);
+
+                PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
+                if (petToolbar == null)
+                    petToolbar = FindAnyObjectByType<PetToolbarUI>();
+                petToolbar?.SetGameplayVisible(false);
+
+                ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+                if (pioneerHud == null)
+                    pioneerHud = FindAnyObjectByType<ExpeditionPioneerHudUI>();
+                pioneerHud?.SetGameplayVisible(false);
+
+                InventoryUI inventory = FindAnyObjectByType<InventoryUI>();
+                if (inventory != null && inventory.hotbarParent != null)
+                    inventory.hotbarParent.gameObject.SetActive(false);
+            }
+            else
+            {
+                GameplayHudVisibility.RefreshGameplayHud();
+            }
         }
 
         public static void ApplyGameplayVisibility()
         {
             ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
-            toolbar?.SetGameplayVisible(false);
+            if (toolbar == null)
+                return;
+
+            bool visible = GameSession.HasStarted && !MainMenuController.BlocksGameplayHud;
+            toolbar.SetGameplayVisible(visible);
         }
 
         public void RepositionRelativeToHotbar(Transform hotbarAnchor)
@@ -171,6 +260,7 @@ namespace Project.UI
 
             PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
             ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
+            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
             float pioneerWidth = pioneerHud != null && pioneerHud.IsBuilt ? pioneerHud.GetClusterWidth() : 0f;
             float pioneerGap = pioneerWidth > 0f ? ExpeditionPioneerHudUI.ClusterGap : 0f;
             float petWidth = petToolbar != null && petToolbar.IsBuilt ? petToolbar.GetPetClusterWidth() : 0f;
@@ -181,9 +271,9 @@ namespace Project.UI
             float totalWidth = petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap + pioneerWidth;
             float clusterStartX = -totalWidth * 0.5f;
             float petRight = clusterStartX + petWidth;
-            float toolbarRight = clusterStartX + petWidth + petGap + toolbarWidth;
-            float hotbarCenterX = clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth * 0.5f;
-            float pioneerLeft = clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap;
+            float toolbarRight = petRight + petGap + toolbarWidth;
+            float hotbarCenterX = toolbarRight + HotbarGap + hotbarWidth * 0.5f;
+            float pioneerLeft = toolbarRight + HotbarGap + hotbarWidth + pioneerGap;
 
             hotbarRect.anchorMin = new Vector2(0.5f, 0f);
             hotbarRect.anchorMax = new Vector2(0.5f, 0f);
@@ -199,8 +289,13 @@ namespace Project.UI
             if (petToolbar != null && petToolbar.IsBuilt)
                 petToolbar.AlignLeftOfToolbarCluster(petRight, anchoredY);
 
+            if (gaugeCluster != null && gaugeCluster.IsBuilt)
+                gaugeCluster.AlignToScreenBottomLeft();
+
             if (pioneerHud != null && pioneerHud.IsBuilt)
                 pioneerHud.AlignRightOfHotbar(pioneerLeft, anchoredY);
+
+            FindAnyObjectByType<InventoryUI>()?.EnsureSurvivalStatsHudVisible();
         }
 
         public void RaiseToFrontLayer(Transform canvasRoot)
@@ -213,6 +308,7 @@ namespace Project.UI
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             raisedToFrontLayer = true;
             GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
+            GetComponent<HotbarExposureGaugeCluster>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void EnsureRaisedToFrontLayer(Transform canvasRoot)
@@ -228,6 +324,7 @@ namespace Project.UI
 
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
+            GetComponent<HotbarExposureGaugeCluster>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void RestoreFromFrontLayer(Transform hotbarAnchor)
@@ -243,23 +340,25 @@ namespace Project.UI
             {
                 RepositionRelativeToHotbar(hotbarRect);
                 float pioneerLeft = ComputePioneerLeftEdge(hotbarRect);
-                GetComponent<ExpeditionPioneerHudUI>()?.RestoreFromFrontLayer(pioneerLeft, hotbarRect.anchoredPosition.y);
+                float anchoredY = hotbarRect.anchoredPosition.y;
+                GetComponent<HotbarExposureGaugeCluster>()?.RestoreFromFrontLayer();
+                GetComponent<ExpeditionPioneerHudUI>()?.RestoreFromFrontLayer(pioneerLeft, anchoredY);
             }
         }
 
         private float ComputePioneerLeftEdge(RectTransform hotbarRect)
         {
             ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
-            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
             float pioneerWidth = pioneerHud != null && pioneerHud.IsBuilt ? pioneerHud.GetClusterWidth() : 0f;
             float pioneerGap = pioneerWidth > 0f ? ExpeditionPioneerHudUI.ClusterGap : 0f;
-            float petWidth = petToolbar != null && petToolbar.IsBuilt ? petToolbar.GetPetClusterWidth() : 0f;
+            float petWidth = GetComponent<PetToolbarUI>() is { IsBuilt: true } petToolbar ? petToolbar.GetPetClusterWidth() : 0f;
             float petGap = petWidth > 0f ? PetToolbarUI.PetClusterGap : 0f;
             float toolbarWidth = GetToolbarWidth();
             float hotbarWidth = hotbarRect.sizeDelta.x;
             float totalWidth = petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap + pioneerWidth;
             float clusterStartX = -totalWidth * 0.5f;
-            return clusterStartX + petWidth + petGap + toolbarWidth + HotbarGap + hotbarWidth + pioneerGap;
+            float toolbarRight = clusterStartX + petWidth + petGap + toolbarWidth;
+            return toolbarRight + HotbarGap + hotbarWidth + pioneerGap;
         }
 
         private void PositionLeftOfHotbar(Transform hotbarAnchor)
@@ -279,7 +378,7 @@ namespace Project.UI
             toolbarRoot.anchorMin = new Vector2(0.5f, 0f);
             toolbarRoot.anchorMax = new Vector2(0.5f, 0f);
             toolbarRoot.pivot = new Vector2(0.5f, 0f);
-            toolbarRoot.anchoredPosition = new Vector2(-toolbarWidth * 0.5f, 24f);
+            toolbarRoot.anchoredPosition = new Vector2(-toolbarWidth * 0.5f, HudLayoutMetrics.BottomHudInset);
             toolbarRoot.sizeDelta = new Vector2(toolbarWidth, toolbarHeight);
         }
 

@@ -32,7 +32,11 @@ namespace Project.UI
             }
         }
 
-        public static float BottomHudInset => HalfInchPixels;
+        /// <summary>
+        /// Bottom margin for hotbar / toolbar cluster — matches Temperature &amp; Hazards
+        /// (<see cref="HotbarExposureGaugeCluster.ScreenEdgeGap"/>).
+        /// </summary>
+        public static float BottomHudInset => HotbarExposureGaugeCluster.ScreenEdgeGap;
 
         public static float RightHudInset => HalfInchPixels;
 

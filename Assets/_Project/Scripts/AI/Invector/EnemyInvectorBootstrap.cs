@@ -52,8 +52,10 @@ namespace Project.AI.Invector
             if (enemyLayer >= 0)
                 SetLayerRecursive(transform, enemyLayer);
 
+            EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
+
             EnemyInvectorComponentStripper.StripRuntime(gameObject);
-            EnemyInvectorBodySnapSetup.ApplyRuntime(gameObject);
+            DestroyFootstepTriggersIfPresent(gameObject);
             EnemyInvectorGameplaySetup.Ensure(gameObject, enemyDefinition);
             EnemyInvectorTargetLayers.Apply(gameObject);
             DisableInvectorHealthDeath();
@@ -65,7 +67,12 @@ namespace Project.AI.Invector
                 hitCapsuleCenter);
             EnsureInvectorInitialized();
             EnemyInvectorHitSetup.Apply(gameObject, hitCapsuleRadius, hitCapsuleHeight, hitCapsuleCenter);
+            if (GetComponent<EnemyInvectorPhysicsCache>() == null)
+                gameObject.AddComponent<EnemyInvectorPhysicsCache>();
             EnsureInvectorPhysicsReady();
+            EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
+            EnemyInvectorRagdollSetup.EnsurePresent(gameObject);
+            EnemyInvectorBodySnapSetup.ApplyRuntime(gameObject);
 
             if (GetComponent<EnemyInvectorLoadoutBridge>() == null)
                 gameObject.AddComponent<EnemyInvectorLoadoutBridge>();
@@ -75,12 +82,18 @@ namespace Project.AI.Invector
                 gameObject.AddComponent<EnemyInvectorCombatBridge>();
             if (GetComponent<EnemyInvectorOutgoingDamageBridge>() == null)
                 gameObject.AddComponent<EnemyInvectorOutgoingDamageBridge>();
+            if (GetComponent<EnemyInvectorProjectileBridge>() == null)
+                gameObject.AddComponent<EnemyInvectorProjectileBridge>();
             if (GetComponent<EnemyTerrainRescue>() == null)
                 gameObject.AddComponent<EnemyTerrainRescue>();
+            if (GetComponent<EnemyInvectorRagdollBridge>() == null)
+                gameObject.AddComponent<EnemyInvectorRagdollBridge>();
             if (GetComponent<EnemyInvectorDeathPresenter>() == null)
                 gameObject.AddComponent<EnemyInvectorDeathPresenter>();
             if (GetComponent<EnemyDeathSequence>() == null)
                 gameObject.AddComponent<EnemyDeathSequence>();
+            if (GetComponent<HumanoidPerformanceController>() == null)
+                gameObject.AddComponent<HumanoidPerformanceController>();
 
             EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
             if (loadout != null && enemyDefinition != null)
@@ -100,17 +113,11 @@ namespace Project.AI.Invector
             EnsureInvectorInitialized();
             EnemyInvectorHitSetup.Apply(gameObject, hitCapsuleRadius, hitCapsuleHeight, hitCapsuleCenter);
             EnsureInvectorPhysicsReady();
+            EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
 
             EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
+            EnemyInvectorBodySnapSetup.ApplyRuntime(gameObject);
             loadout?.EquipStartingWeapon();
-        }
-
-        private void FixedUpdate()
-        {
-            if (ThirdPersonController != null && ThirdPersonController.isDead)
-                return;
-
-            EnemyInvectorHitSetup.StabilizeRigidbodies(gameObject);
         }
 
         private void OnDestroy()
@@ -147,14 +154,25 @@ namespace Project.AI.Invector
 
         public void EnsureInvectorPhysicsReady()
         {
-            if (ThirdPersonController != null &&
-                (ThirdPersonController.isDead || ThirdPersonController.ragdolled))
-            {
-                DisableInvectorHealthDeath();
-            }
-
             EnsureInvectorInitialized();
-            EnemyInvectorHitSetup.StabilizeRigidbodies(gameObject);
+
+            bool isCorpse = ThirdPersonController != null &&
+                            (ThirdPersonController.isDead || ThirdPersonController.ragdolled);
+            EnemyHealth health = GetComponent<EnemyHealth>();
+            if (health != null && health.IsDead)
+                isCorpse = true;
+
+            EnemyInvectorRagdollBridge ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
+            if (ragdollBridge != null && (ragdollBridge.IsHitStaggerActive || ragdollBridge.HasActiveRagdoll))
+                isCorpse = true;
+
+            if (!isCorpse)
+            {
+                EnemyInvectorPhysicsCache cache = GetComponent<EnemyInvectorPhysicsCache>();
+                if (cache == null)
+                    cache = gameObject.AddComponent<EnemyInvectorPhysicsCache>();
+                cache.StabilizeBonesIfNeeded();
+            }
 
             CapsuleCollider capsule = GetComponent<CapsuleCollider>();
             if (capsule != null)
@@ -168,7 +186,7 @@ namespace Project.AI.Invector
             {
                 animator.enabled = true;
                 animator.updateMode = AnimatorUpdateMode.Normal;
-                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
                 animator.applyRootMotion = false;
             }
 
@@ -223,6 +241,16 @@ namespace Project.AI.Invector
             root.gameObject.layer = layer;
             for (int i = 0; i < root.childCount; i++)
                 SetLayerRecursive(root.GetChild(i), layer);
+        }
+
+        private static void DestroyFootstepTriggersIfPresent(GameObject root)
+        {
+            vFootStepTrigger[] triggers = root.GetComponentsInChildren<vFootStepTrigger>(true);
+            for (int i = 0; i < triggers.Length; i++)
+            {
+                if (triggers[i] != null)
+                    UnityEngine.Object.Destroy(triggers[i]);
+            }
         }
     }
 }

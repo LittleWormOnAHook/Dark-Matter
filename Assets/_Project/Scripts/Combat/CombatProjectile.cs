@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Data;
 using UnityEngine;
 
@@ -8,8 +9,11 @@ namespace Project.Combat
     /// every frame (kinematic, not Rigidbody-driven, so it stays lightweight),
     /// optionally arcs under gravity, and resolves damage/splash/status-effects/VFX through
     /// CombatHitResolver so every ammo type behaves consistently regardless of who fired it.
+    /// Pooled via PoolManager (see CombatProjectileSpawner) instead of Instantiate/Destroy — Launch()
+    /// performs the full per-shot state reset, and OnReturnedToPool()/DetachAndDestroyTracer() make
+    /// sure nothing (tracer child, travel audio) leaks or duplicates across reuse cycles.
     /// </summary>
-    public class CombatProjectile : MonoBehaviour
+    public class CombatProjectile : MonoBehaviour, IPoolable
     {
         [SerializeField] private float speed = 85f;
         [SerializeField] private float maxLifetime = 3f;
@@ -62,6 +66,11 @@ namespace Project.Combat
 
         private void SpawnTracer()
         {
+            // Reuse pooling can call Launch() again before OnReturnedToPool() ever ran (e.g. Launch
+            // called directly without going through PoolManager) — guard against stacking a second
+            // tracer child on top of a still-attached one.
+            DetachAndDestroyTracer();
+
             GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
             if (tracerPrefab == null)
                 return;
@@ -70,11 +79,34 @@ namespace Project.Combat
             CombatVfxUtility.PlayParticleSystemsRecursive(tracerInstance);
         }
 
+        /// <summary>Detaches the tracer (so it can finish playing independently) and schedules its
+        /// destruction. Safe to call multiple times / when there is no tracer.</summary>
+        private void DetachAndDestroyTracer()
+        {
+            if (tracerInstance == null)
+                return;
+
+            tracerInstance.transform.SetParent(null, true);
+            Destroy(tracerInstance, 2f);
+            tracerInstance = null;
+        }
+
         private void EnsureProjectileVisible()
         {
+            // A pooled instance can be reused across launches where whether a tracer is present
+            // varies (same projectile prefab shared by ammo types with/without a tracerPrefab) — so
+            // always re-enable body renderers first instead of assuming they're still in whatever
+            // state a previous launch left them in.
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null)
+                    renderer.enabled = true;
+            }
+
             if (tracerInstance != null)
             {
-                Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
                 for (int i = 0; i < renderers.Length; i++)
                 {
                     Renderer renderer = renderers[i];
@@ -102,14 +134,22 @@ namespace Project.Combat
             if (clip == null)
                 return;
 
-            GameObject audioObject = new GameObject("TravelAudio");
-            audioObject.transform.SetParent(transform, false);
+            // Reuse the same child AudioSource across pooled reuse cycles instead of creating a new
+            // "TravelAudio" GameObject every Launch() — otherwise disabled leftovers pile up as
+            // children on a pooled instance that gets launched many times over its lifetime.
+            if (travelAudioSource == null)
+            {
+                GameObject audioObject = new GameObject("TravelAudio");
+                audioObject.transform.SetParent(transform, false);
 
-            travelAudioSource = audioObject.AddComponent<AudioSource>();
+                travelAudioSource = audioObject.AddComponent<AudioSource>();
+                travelAudioSource.loop = true;
+                travelAudioSource.playOnAwake = false;
+                travelAudioSource.spatialBlend = 1f;
+            }
+
+            travelAudioSource.enabled = true;
             travelAudioSource.clip = clip;
-            travelAudioSource.loop = true;
-            travelAudioSource.playOnAwake = false;
-            travelAudioSource.spatialBlend = 1f;
             travelAudioSource.Play();
         }
 
@@ -130,7 +170,8 @@ namespace Project.Combat
             if (Time.time - spawnTime > maxLifetime)
             {
                 StopTravelAudio();
-                Destroy(gameObject);
+                DetachAndDestroyTracer();
+                PoolManager.Release(gameObject);
                 return;
             }
 
@@ -198,13 +239,24 @@ namespace Project.Combat
             else
                 CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
 
-            if (tracerInstance != null)
-            {
-                tracerInstance.transform.SetParent(null, true);
-                Destroy(tracerInstance, 2f);
-            }
+            DetachAndDestroyTracer();
+            PoolManager.Release(gameObject);
+        }
 
-            Destroy(gameObject);
+        /// <summary>IPoolable — Launch() performs the real per-shot reset; this is just a safety net.</summary>
+        public void OnSpawnedFromPool()
+        {
+            hasHit = false;
+        }
+
+        /// <summary>IPoolable — runs whenever the pool takes this instance back, including on the
+        /// normal hit/expiry paths above (which already clean up before releasing) and on any
+        /// future forced-release path that might skip that cleanup.</summary>
+        public void OnReturnedToPool()
+        {
+            launched = false;
+            StopTravelAudio();
+            DetachAndDestroyTracer();
         }
     }
 }

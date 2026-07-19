@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Project.Building;
 using Project.Data;
 using Project.Inventory;
@@ -14,6 +13,7 @@ using Project.Achievements;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.Core
@@ -24,8 +24,6 @@ namespace Project.Core
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
-
-        public static bool HasSaveFile => HasAnySaveFile;
 
         public static bool HasAnySaveFile
         {
@@ -116,13 +114,17 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 14,
+                version = 17,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,
                 energy = stats.CurrentEnergy,
                 stamina = stats.CurrentStamina,
                 oxygen = stats.CurrentOxygen,
+                thermalStress = stats.CurrentThermalStress,
+                radiation = stats.CurrentRadiation,
+                sulfur = stats.CurrentSulfur,
+                volcano = stats.CurrentVolcano,
                 piBalance = 0f,
                 aetherCredits = roster != null ? roster.AetherCredits : (ui != null ? ui.GetAetherCredits() : 0f),
                 piWalletBalance = roster != null ? roster.PiWalletBalance : (ui != null ? ui.GetPiWalletBalance() : 0f),
@@ -151,7 +153,9 @@ namespace Project.Core
                 slots = BuildInventorySave(inventory),
                 questProgress = questManager != null ? questManager.BuildSaveProgress().ToArray() : null,
                 discoveredRecipeIds = craftingManager != null ? craftingManager.BuildSave() : null,
-                pendingRecipeScrollIds = craftingManager != null ? craftingManager.BuildPendingSave() : null
+                pendingRecipeScrollIds = craftingManager != null ? craftingManager.BuildPendingSave() : null,
+                vehicles = BuildVehicleSave(),
+                powerGenerators = BuildPowerGeneratorSave()
             };
 
             if (progressionManager != null)
@@ -219,7 +223,23 @@ namespace Project.Core
             if (stats != null)
             {
                 ResolveSurvivalValues(stats, data, out float health, out float energy, out float stamina, out float oxygen);
-                stats.ApplySaveState(health, energy, stamina, oxygen);
+                if (data.version >= 15)
+                {
+                    stats.ApplySaveState(
+                        health,
+                        energy,
+                        stamina,
+                        oxygen,
+                        data.thermalStress,
+                        data.radiation,
+                        data.sulfur,
+                        data.volcano);
+                }
+                else
+                {
+                    stats.ApplySaveState(health, energy, stamina, oxygen);
+                }
+
                 stats.SetSimulationPaused(false);
             }
 
@@ -249,6 +269,8 @@ namespace Project.Core
             ApplyRosterSave(data, ui);
             ApplyPetSave(data);
             ApplyAchievementSave(data);
+            ApplyVehicleSave(data);
+            ApplyPowerGeneratorSave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
@@ -352,6 +374,126 @@ namespace Project.Core
             AchievementManager manager = AchievementManager.EnsureExists();
             manager?.ApplySave(data.achievementProgress);
             DynamicAchievementGenerator.EnsureSessionGoals();
+        }
+
+        /// <summary>Snapshots every hovercraft in the scene (position/rotation, fuel, shield/health) so
+        /// it round-trips across a save/load instead of resetting to spawn defaults.</summary>
+        private static VehicleSaveEntry[] BuildVehicleSave()
+        {
+            HovercraftController[] crafts = UnityEngine.Object.FindObjectsByType<HovercraftController>(FindObjectsInactive.Include);
+            if (crafts == null || crafts.Length == 0)
+                return null;
+
+            VehicleSaveEntry[] entries = new VehicleSaveEntry[crafts.Length];
+            for (int i = 0; i < crafts.Length; i++)
+            {
+                HovercraftController craft = crafts[i];
+                HovercraftFuelSystem fuel = craft.GetComponent<HovercraftFuelSystem>();
+                HovercraftHealth health = craft.GetComponent<HovercraftHealth>();
+
+                entries[i] = new VehicleSaveEntry
+                {
+                    vehicleId = craft.gameObject.name,
+                    posX = craft.transform.position.x,
+                    posY = craft.transform.position.y,
+                    posZ = craft.transform.position.z,
+                    rotY = craft.transform.eulerAngles.y,
+                    currentFuel = fuel != null ? fuel.CurrentFuel : 0f,
+                    currentShield = health != null ? health.CurrentShield : 0f,
+                    currentHealth = health != null ? health.CurrentHealth : 0f,
+                    isDestroyed = health != null && health.IsDestroyed
+                };
+            }
+
+            return entries;
+        }
+
+        /// <summary>Restores hovercraft transforms/fuel/shield/health from a save file. No-ops on saves
+        /// older than version 16 or when a craft in the scene has no matching saved entry (new vehicle).</summary>
+        private static void ApplyVehicleSave(GameSaveData data)
+        {
+            if (data.version < 16 || data.vehicles == null || data.vehicles.Length == 0)
+                return;
+
+            HovercraftController[] crafts = UnityEngine.Object.FindObjectsByType<HovercraftController>(FindObjectsInactive.Include);
+            for (int i = 0; i < crafts.Length; i++)
+            {
+                HovercraftController craft = crafts[i];
+                VehicleSaveEntry entry = FindVehicleEntry(data.vehicles, craft.gameObject.name);
+                if (entry == null)
+                    continue;
+
+                craft.transform.SetPositionAndRotation(
+                    new Vector3(entry.posX, entry.posY, entry.posZ),
+                    Quaternion.Euler(0f, entry.rotY, 0f));
+
+                HovercraftFuelSystem fuel = craft.GetComponent<HovercraftFuelSystem>();
+                fuel?.SetFuel(entry.currentFuel);
+
+                HovercraftHealth health = craft.GetComponent<HovercraftHealth>();
+                health?.SetState(entry.currentShield, entry.currentHealth, entry.isDestroyed);
+            }
+        }
+
+        private static VehicleSaveEntry FindVehicleEntry(VehicleSaveEntry[] entries, string vehicleId)
+        {
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] != null && entries[i].vehicleId == vehicleId)
+                    return entries[i];
+            }
+
+            return null;
+        }
+
+        /// <summary>Snapshots every per-building PowerGenerator's fuel tank, keyed by BuildingId, so
+        /// Command Center / Science Lab (and any future powered building) keep their fuel across a
+        /// save/load instead of resetting to their starting amount.</summary>
+        private static PowerGeneratorSaveEntry[] BuildPowerGeneratorSave()
+        {
+            PowerGenerator[] generators = UnityEngine.Object.FindObjectsByType<PowerGenerator>(FindObjectsInactive.Include);
+            if (generators == null || generators.Length == 0)
+                return null;
+
+            PowerGeneratorSaveEntry[] entries = new PowerGeneratorSaveEntry[generators.Length];
+            for (int i = 0; i < generators.Length; i++)
+            {
+                entries[i] = new PowerGeneratorSaveEntry
+                {
+                    buildingId = generators[i].BuildingId,
+                    currentFuel = generators[i].CurrentFuel
+                };
+            }
+
+            return entries;
+        }
+
+        private static void ApplyPowerGeneratorSave(GameSaveData data)
+        {
+            if (data.version < 17 || data.powerGenerators == null || data.powerGenerators.Length == 0)
+                return;
+
+            PowerGenerator[] generators = UnityEngine.Object.FindObjectsByType<PowerGenerator>(FindObjectsInactive.Include);
+            for (int i = 0; i < generators.Length; i++)
+            {
+                PowerGenerator generator = generators[i];
+                PowerGeneratorSaveEntry entry = FindPowerGeneratorEntry(data.powerGenerators, generator.BuildingId);
+                if (entry == null)
+                    continue;
+
+                generator.SetFuel(entry.currentFuel);
+            }
+        }
+
+        private static PowerGeneratorSaveEntry FindPowerGeneratorEntry(PowerGeneratorSaveEntry[] entries, string buildingId)
+        {
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] != null && entries[i].buildingId == buildingId)
+                    return entries[i];
+            }
+
+            return null;
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

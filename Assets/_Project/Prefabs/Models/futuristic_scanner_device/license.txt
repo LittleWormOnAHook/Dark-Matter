@@ -1,0 +1,11 @@
+Model Information:
+* title:	Futuristic Scanner Device
+* source:	https://sketchfab.com/3d-models/futuristic-scanner-device-e75dc6d56daa4a799bdd25104e41a9c1
+* author:	calduty (https://sketchfab.com/calduty2)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Futuristic Scanner Device" (https://sketchfab.com/3d-models/futuristic-scanner-device-e75dc6d56daa4a799bdd25104e41a9c1) by calduty (https://sketchfab.com/calduty2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

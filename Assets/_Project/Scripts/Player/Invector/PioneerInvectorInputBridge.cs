@@ -3,6 +3,7 @@ using Project.Core;
 using Project.Interaction;
 using Project.Survival;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -75,6 +76,9 @@ namespace Project.Player.Invector
             if (_survivalStats != null && _survivalStats.IsDead)
                 return true;
 
+            if (PlayerVehicleState.IsMounted)
+                return true;
+
             return false;
         }
 
@@ -108,6 +112,9 @@ namespace Project.Player.Invector
             if (_survivalStats != null && _survivalStats.IsDead)
                 return true;
 
+            if (PlayerVehicleState.IsMounted)
+                return true;
+
             return false;
         }
 
@@ -122,6 +129,12 @@ namespace Project.Player.Invector
             if (!Application.isPlaying || !GameSession.HasStarted || !_bootstrap.IsActive)
                 return;
 
+            if (_playerController != null && _playerController.IsOpticsOpen)
+                return;
+
+            if (_optics != null && _optics.IsActive)
+                return;
+
             if (ShouldLockGameplayInput())
                 return;
         }
@@ -131,10 +144,11 @@ namespace Project.Player.Invector
             if (!Application.isPlaying || !GameSession.HasStarted || !_bootstrap.IsActive)
                 return;
 
-            if (ShouldLockGameplayInput())
+            // RMB close must work even while optics have combat input locked.
+            if (_optics != null && _optics.TryHandleBlockInput(context))
                 return;
 
-            if (_optics != null && _optics.TryHandleBlockInput(context))
+            if (ShouldLockGameplayInput())
                 return;
         }
 

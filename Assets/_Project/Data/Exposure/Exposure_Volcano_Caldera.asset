@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc7af865c9044b4a8a64fec37a7d9e0, type: 3}
+  m_Name: Exposure_Volcano_Caldera
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
+  displayName: Volcano Caldera
+  zoneKind: 5
+  designerNotes: 
+  effectIntensity: 0.159
+  radiationPerSecond: 0
+  thermalColdPerSecond: 0
+  thermalHeatPerSecond: 4
+  sulfurPerSecond: 0
+  volcanoPerSecond: 6
+  oxygenDrainMultiplier: 1
+  exposureRecoveryPerSecond: 1
+  thermalRecoveryPerSecond: -1
+  healthDrainAtMaxExposure: 5
+  healthDrainAtMaxThermal: 2.5
+  pulse:
+    enabled: 1
+    activeDurationSeconds: 2
+    inactiveDurationSeconds: 5
+    activeIntensityMultiplier: 3
+    timingJitter: 0.251
+  mitigationRules:
+  - pressureType: 4
+    source: 0
+    requiredClass: 3
+    secondaryClass: 0
+    requiredAbilityId: 
+    exposureReduction: 0.25
+    activeLabel: Tactician hazard routing
+  - pressureType: 4
+    source: 1
+    requiredClass: 3
+    secondaryClass: 0
+    requiredAbilityId: 
+    exposureReduction: 0.15
+    activeLabel: Scout pathfinding bonus
+  playerDebuffs:
+    moveSpeedPenalty: 0.63
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  companionDebuffs:
+    moveSpeedPenalty: 0.868
+    staminaRegenPenalty: 0.35
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  gizmoColor: {r: 0.92, g: 0.22, b: 0.08, a: 0.45}
+  ambientVfxPrefab: {fileID: 0}
+  ambientLoopClip: {fileID: 8300000, guid: ed55e095bc3b83c46bb117a221965f81, type: 3}

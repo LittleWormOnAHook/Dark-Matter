@@ -85,13 +85,37 @@ namespace Project.UI
             }
 
             ammoLabel.gameObject.SetActive(true);
+
+            int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
             int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
-            int reserve = ammoState != null ? ammoState.GetReserveAmmoCount(weapon) : 0;
             int magazineSize = Mathf.Max(1, weapon.magazineSize);
-            ammoLabel.text = reserve > 0
-                ? $"AMMO {loaded}/{magazineSize}  (+{reserve})"
-                : $"AMMO {loaded}/{magazineSize}";
+            string ammoLabelName = ResolveAmmoLabelName(weaponHotbarSlot);
+            bool infiniteReserve = ammoState != null && ammoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
+
+            if (infiniteReserve)
+            {
+                ammoLabel.text = $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";
+            }
+            else
+            {
+                int reserve = ammoState != null ? ammoState.GetReserveAmmoCount(weaponHotbarSlot) : 0;
+                ammoLabel.text = reserve > 0
+                    ? $"{ammoLabelName} {loaded}/{magazineSize}  (+{reserve})"
+                    : $"{ammoLabelName} {loaded}/{magazineSize}";
+            }
             LayoutAboveHotbar();
+        }
+
+        private string ResolveAmmoLabelName(int weaponHotbarSlot)
+        {
+            if (ammoState == null)
+                return "AMMO";
+
+            ItemData loadedAmmoItem = ammoState.GetLoadedAmmoItem(weaponHotbarSlot);
+            if (loadedAmmoItem != null && !string.IsNullOrWhiteSpace(loadedAmmoItem.itemName))
+                return loadedAmmoItem.itemName.ToUpperInvariant();
+
+            return ammoState.GetLoadedAmmoType(weaponHotbarSlot).ToString().ToUpperInvariant();
         }
 
         private void LateUpdate()
@@ -158,11 +182,11 @@ namespace Project.UI
             ammoRect.anchorMin = new Vector2(0.5f, 0f);
             ammoRect.anchorMax = new Vector2(0.5f, 0f);
             ammoRect.pivot = new Vector2(0.5f, 0f);
-            ammoRect.sizeDelta = new Vector2(180f, 28f);
+            ammoRect.sizeDelta = new Vector2(180f, 60f);
 
             ammoLabel = labelObject.AddComponent<TextMeshProUGUI>();
             ammoLabel.alignment = TextAlignmentOptions.Center;
-            ammoLabel.fontSize = 17f * HudLayoutMetrics.HudScale;
+            ammoLabel.fontSize = 15f;
             ammoLabel.color = new Color(0.95f, 0.95f, 0.95f, 0.95f);
             ammoLabel.text = string.Empty;
 

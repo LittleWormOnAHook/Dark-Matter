@@ -13,6 +13,7 @@ using Project.Pet;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -1063,6 +1064,14 @@ namespace Project.Interaction
 
         private static string BuildWorldInteractionPrompt(WorldUseContext context)
         {
+            string vehicleExitPrompt = HovercraftUsable.TryGetExitPrompt();
+            if (!string.IsNullOrEmpty(vehicleExitPrompt))
+                return vehicleExitPrompt;
+
+            string vehicleBoardPrompt = HovercraftUsable.TryGetBoardPrompt(context);
+            if (!string.IsNullOrEmpty(vehicleBoardPrompt))
+                return vehicleBoardPrompt;
+
             if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
                 && itemInRange
                 && itemPickup != null

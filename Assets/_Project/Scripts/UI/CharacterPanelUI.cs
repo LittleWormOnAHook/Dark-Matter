@@ -1,3 +1,4 @@
+using Project.Survival.Exposure;
 using Project.Data;
 using Project.Inventory;
 using Project.Pioneers;
@@ -11,7 +12,7 @@ namespace Project.UI
 {
     public class CharacterPanelUI : MonoBehaviour
     {
-        private const float StatsPanelWidthFraction = 0.30f;
+        private const float StatsPanelWidthFraction = 0.44f;
         private const float CombatDamageReference = 100f;
 
         private Transform embeddedParent;
@@ -28,6 +29,7 @@ namespace Project.UI
         private CharacterStatBarRow oxygenBar;
         private CharacterStatBarRow meleeBar;
         private CharacterStatBarRow rangedBar;
+        private CharacterEnvironmentSection environmentSection;
 
         private PlayerProgressionManager progression;
         private SurvivalStats survivalStats;
@@ -66,6 +68,22 @@ namespace Project.UI
                 ammoState.OnAmmoChanged += Refresh;
 
             EnsureSurvivalStatsSubscription();
+            EnsureExposureStatusSubscription();
+        }
+
+        private void EnsureExposureStatusSubscription()
+        {
+            ExposureStatusService service = ExposureStatusService.Instance;
+            if (service == null)
+                return;
+
+            service.OnSnapshotChanged -= HandleExposureSnapshotChanged;
+            service.OnSnapshotChanged += HandleExposureSnapshotChanged;
+        }
+
+        private void HandleExposureSnapshotChanged(ExposureStatusSnapshot snapshot)
+        {
+            Refresh();
         }
 
         private void EnsureSurvivalStatsSubscription()
@@ -104,6 +122,13 @@ namespace Project.UI
             if (survivalStats != null)
                 survivalStats.OnStatsChanged -= Refresh;
 
+            ExposureStatusService service = ExposureStatusService.Instance;
+            if (service != null)
+                service.OnSnapshotChanged -= HandleExposureSnapshotChanged;
+
+            if (environmentSection != null)
+                environmentSection.Unembed();
+
             if (panelRoot != null)
                 Destroy(panelRoot);
 
@@ -115,6 +140,7 @@ namespace Project.UI
             oxygenBar = null;
             meleeBar = null;
             rangedBar = null;
+            environmentSection = null;
         }
 
         public void Refresh()
@@ -144,6 +170,7 @@ namespace Project.UI
                 xpFillImage.fillAmount = progression != null ? progression.GetXpProgressNormalized() : 0f;
 
             RefreshStatBars(survivalStats, equipment);
+            environmentSection?.RefreshFromStats(survivalStats);
 
             loadoutLabel.text = BuildLoadoutText(equipment, ammoState);
 
@@ -254,14 +281,44 @@ namespace Project.UI
             GameObject infoColumn = CreateColumn(panelRoot.transform, flexibleWidth: 1f - StatsPanelWidthFraction);
             levelHeaderLabel = CreateSectionLabel(infoColumn.transform, 18);
             CreateXpBar(infoColumn.transform);
+            BuildVitalsSection(infoColumn.transform);
             loadoutLabel = CreateSectionLabel(infoColumn.transform, 16);
             creditsLabel = CreateSectionLabel(infoColumn.transform, 16);
             unlocksLabel = CreateSectionLabel(infoColumn.transform, 14);
 
-            BuildStatsPanel(panelRoot.transform);
+            BuildSurvivorPanel(panelRoot.transform);
         }
 
-        private void BuildStatsPanel(Transform parent)
+        private void BuildVitalsSection(Transform parent)
+        {
+            TextMeshProUGUI vitalsHeading = CreateSectionLabel(parent, 15);
+            vitalsHeading.text = "Vitals";
+            vitalsHeading.fontStyle = FontStyles.Bold;
+            vitalsHeading.color = SurvivalPioneerUiPalette.RichFuchsia;
+            vitalsHeading.alignment = TextAlignmentOptions.TopLeft;
+
+            GameObject listHost = new GameObject("VitalsList", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
+            listHost.transform.SetParent(parent, false);
+            LayoutElement listLayout = listHost.GetComponent<LayoutElement>();
+            // 6 rows now that Melee/Ranged damage live here alongside Health/Energy/Stamina/Oxygen.
+            listLayout.minHeight = HudLayoutMetrics.Scaled(180f);
+
+            VerticalLayoutGroup rowsGroup = listHost.GetComponent<VerticalLayoutGroup>();
+            rowsGroup.spacing = 6f;
+            rowsGroup.childControlWidth = true;
+            rowsGroup.childControlHeight = true;
+            rowsGroup.childForceExpandWidth = true;
+            rowsGroup.childForceExpandHeight = false;
+
+            healthBar = new CharacterStatBarRow(listHost.transform, "+", "Health", SurvivalPioneerUiPalette.RichFuchsia);
+            energyBar = new CharacterStatBarRow(listHost.transform, "E", "Energy", SurvivalPioneerUiPalette.RichFuchsia);
+            staminaBar = new CharacterStatBarRow(listHost.transform, "S", "Stamina", SurvivalPioneerUiPalette.RichFuchsia);
+            oxygenBar = new CharacterStatBarRow(listHost.transform, "O", "Oxygen", SurvivalPioneerUiPalette.RichFuchsia);
+            meleeBar = new CharacterStatBarRow(listHost.transform, "M", "Melee Damage", SurvivalPioneerUiPalette.RichFuchsia);
+            rangedBar = new CharacterStatBarRow(listHost.transform, "R", "Ranged Damage", SurvivalPioneerUiPalette.RichFuchsia);
+        }
+
+        private void BuildSurvivorPanel(Transform parent)
         {
             GameObject panel = new GameObject("CharacterStatsPanel", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             panel.transform.SetParent(parent, false);
@@ -273,7 +330,9 @@ namespace Project.UI
             LayoutElement panelLayout = panel.GetComponent<LayoutElement>();
             panelLayout.flexibleWidth = StatsPanelWidthFraction;
             panelLayout.flexibleHeight = 1f;
-            panelLayout.minWidth = 320f;
+            // Wide enough for the now full-size (non-compact) temp + hazard gauges reused from the
+            // player's own hotbar HUD, plus section/panel padding.
+            panelLayout.minWidth = 420f;
 
             VerticalLayoutGroup panelGroup = panel.GetComponent<VerticalLayoutGroup>();
             panelGroup.padding = new RectOffset(16, 16, 14, 16);
@@ -301,47 +360,13 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(dividerImage);
             dividerImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.45f);
 
-            GameObject listHost = new GameObject("StatList", typeof(RectTransform), typeof(LayoutElement));
-            listHost.transform.SetParent(panel.transform, false);
-            LayoutElement listLayout = listHost.GetComponent<LayoutElement>();
-            listLayout.flexibleHeight = 1f;
-            listLayout.flexibleWidth = 1f;
-
-            GameObject iconRail = new GameObject("IconRail", typeof(RectTransform), typeof(Image));
-            iconRail.transform.SetParent(listHost.transform, false);
-            RectTransform railRect = iconRail.GetComponent<RectTransform>();
-            railRect.anchorMin = new Vector2(0f, 0f);
-            railRect.anchorMax = new Vector2(0f, 1f);
-            railRect.pivot = new Vector2(0.5f, 0.5f);
-            railRect.anchoredPosition = new Vector2(10f, 0f);
-            railRect.sizeDelta = new Vector2(2f, 0f);
-            Image railImage = iconRail.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(railImage);
-            railImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.55f);
-            railImage.raycastTarget = false;
-
-            GameObject rowsHost = new GameObject("Rows", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
-            rowsHost.transform.SetParent(listHost.transform, false);
-            LayoutElement rowsLayout = rowsHost.GetComponent<LayoutElement>();
-            rowsLayout.flexibleHeight = 1f;
-            rowsLayout.flexibleWidth = 1f;
-            RectTransform rowsRect = rowsHost.GetComponent<RectTransform>();
-            MenuUiBuilder.StretchRectToFill(rowsRect);
-
-            VerticalLayoutGroup rowsGroup = rowsHost.GetComponent<VerticalLayoutGroup>();
-            rowsGroup.spacing = 6f;
-            rowsGroup.childControlWidth = true;
-            rowsGroup.childControlHeight = true;
-            rowsGroup.childForceExpandWidth = true;
-            rowsGroup.childForceExpandHeight = false;
-            rowsGroup.padding = new RectOffset(0, 0, 4, 4);
-
-            healthBar = new CharacterStatBarRow(rowsHost.transform, "+", "Health", SurvivalPioneerUiPalette.RichFuchsia);
-            energyBar = new CharacterStatBarRow(rowsHost.transform, "E", "Energy", SurvivalPioneerUiPalette.RichFuchsia);
-            staminaBar = new CharacterStatBarRow(rowsHost.transform, "S", "Stamina", SurvivalPioneerUiPalette.RichFuchsia);
-            oxygenBar = new CharacterStatBarRow(rowsHost.transform, "O", "Oxygen", SurvivalPioneerUiPalette.RichFuchsia);
-            meleeBar = new CharacterStatBarRow(rowsHost.transform, "M", "Melee Damage", SurvivalPioneerUiPalette.RichFuchsia);
-            rangedBar = new CharacterStatBarRow(rowsHost.transform, "R", "Ranged Damage", SurvivalPioneerUiPalette.RichFuchsia);
+            GameObject environmentHost = new GameObject("CharacterEnvironmentSection", typeof(RectTransform), typeof(CharacterEnvironmentSection), typeof(LayoutElement));
+            environmentHost.transform.SetParent(panel.transform, false);
+            LayoutElement environmentLayout = environmentHost.GetComponent<LayoutElement>();
+            environmentLayout.flexibleHeight = 1f;
+            environmentLayout.minHeight = HudLayoutMetrics.Scaled(560f);
+            environmentSection = environmentHost.GetComponent<CharacterEnvironmentSection>();
+            environmentSection.Initialize();
         }
 
         private static GameObject CreateColumn(Transform parent, float flexibleWidth)

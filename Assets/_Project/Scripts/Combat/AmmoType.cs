@@ -6,6 +6,10 @@ namespace Project.Combat
         Plasma = 1,
         Ice = 2,
         Electricity = 3,
-        ResonanceStabilizer = 4
+        ResonanceStabilizer = 4,
+        Laser = 5,
+        Ion = 6,
+        Fire = 7,
+        Explosive = 8
     }
 }

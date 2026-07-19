@@ -216,7 +216,10 @@ namespace Project.AI
                 return;
 
             float speed = ai != null ? ai.CurrentLocomotionSpeed : 0f;
-            if (speed >= runSpeedThreshold && !string.IsNullOrEmpty(runStateName))
+            bool walkOnly = ai != null && ai.IsWalkOnlyLocomotion;
+            float effectiveRunThreshold = walkOnly ? float.MaxValue : runSpeedThreshold;
+
+            if (speed >= effectiveRunThreshold && !string.IsNullOrEmpty(runStateName))
             {
                 PlayLocomotionState(runStateName);
                 return;
@@ -337,7 +340,10 @@ namespace Project.AI
         private void PlayLocomotionOrIdle()
         {
             float speed = ai != null ? ai.CurrentLocomotionSpeed : 0f;
-            if (speed >= runSpeedThreshold && !string.IsNullOrEmpty(runStateName))
+            bool walkOnly = ai != null && ai.IsWalkOnlyLocomotion;
+            float effectiveRunThreshold = walkOnly ? float.MaxValue : runSpeedThreshold;
+
+            if (speed >= effectiveRunThreshold && !string.IsNullOrEmpty(runStateName))
                 PlayLocomotionState(runStateName);
             else if (speed >= walkSpeedThreshold && !string.IsNullOrEmpty(walkStateName))
                 PlayLocomotionState(walkStateName);

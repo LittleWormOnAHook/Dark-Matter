@@ -84,14 +84,12 @@ namespace Project.UI
                 "Apply",
                 new Vector2(MenuUiBuilder.ScaledSize(160f), MenuUiBuilder.ScaledSize(48f)),
                 MenuUiBuilder.ScaledSize(24f));
-            Button backButton = MenuUiBuilder.CreateButton(
-                buttonRow.transform,
-                "Back",
-                new Vector2(MenuUiBuilder.ScaledSize(160f), MenuUiBuilder.ScaledSize(48f)),
-                MenuUiBuilder.ScaledSize(24f));
 
             applyButton.onClick.AddListener(ApplySettings);
-            backButton.onClick.AddListener(Close);
+
+            // Pinned to the panel's own root (not buttonRow/window) so it stays fixed top-right
+            // regardless of the VerticalLayoutGroup content above it.
+            MenuUiBuilder.CreateTopRightBackButton(panelRoot.transform, Close);
 
             masterSlider.onValueChanged.AddListener(value =>
             {

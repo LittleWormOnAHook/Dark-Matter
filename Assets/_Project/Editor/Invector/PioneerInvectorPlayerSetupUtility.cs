@@ -22,7 +22,6 @@ namespace Project.EditorTools.Invector
         private const string InvectorPlayerPrefabPath =
             "Assets/Invector-3rdPersonController/Shooter/Prefabs/Player/vShooterMelee_NoInventory.prefab";
 
-        private const string LegacyPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player.prefab";
         private const string OutputPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player_Invector.prefab";
 
         private const string DefaultPistolPath =
@@ -50,7 +49,14 @@ namespace Project.EditorTools.Invector
                 : InvectorPlayerPrefabPath;
 
             GameObject invectorRoot = PrefabUtility.LoadPrefabContents(sourcePath);
-            GameObject legacyRoot = PrefabUtility.LoadPrefabContents(LegacyPlayerPrefabPath);
+            GameObject pioneerSourceRoot = null;
+            bool loadedPioneerSource = false;
+
+            if (sourcePath == InvectorPlayerPrefabPath && File.Exists(OutputPlayerPrefabPath))
+            {
+                pioneerSourceRoot = PrefabUtility.LoadPrefabContents(OutputPlayerPrefabPath);
+                loadedPioneerSource = true;
+            }
 
             try
             {
@@ -58,9 +64,11 @@ namespace Project.EditorTools.Invector
                 invectorRoot.tag = "Player";
 
                 ReplaceShooterInput(invectorRoot);
-                CopyPioneerComponents(legacyRoot, invectorRoot);
+                if (pioneerSourceRoot != null)
+                    CopyPioneerComponents(pioneerSourceRoot, invectorRoot);
                 DisableLegacyMotorComponents(invectorRoot);
                 DisableInvectorStandaloneUi(invectorRoot);
+                StripLegacyPlayerComponents(invectorRoot);
                 ResetInvectorHealth(invectorRoot);
                 EnsureBridgeComponents(invectorRoot);
                 ConfigureWeaponBridge(invectorRoot);
@@ -76,7 +84,8 @@ namespace Project.EditorTools.Invector
             finally
             {
                 PrefabUtility.UnloadPrefabContents(invectorRoot);
-                PrefabUtility.UnloadPrefabContents(legacyRoot);
+                if (loadedPioneerSource && pioneerSourceRoot != null)
+                    PrefabUtility.UnloadPrefabContents(pioneerSourceRoot);
             }
         }
 
@@ -89,47 +98,12 @@ namespace Project.EditorTools.Invector
             Debug.Log("Wired sci_fi_pistol and survival_rifle Invector weapon prefabs.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Add Invector Damage Receivers To Enemies", false, 122)]
-        public static void AddDamageReceiversToEnemies()
-        {
-            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project/Prefabs/Combat" });
-            int added = 0;
-            foreach (string guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
-                try
-                {
-                    if (prefabRoot.GetComponentInChildren<PioneerInvectorDamageReceiver>(true) == null)
-                    {
-                        foreach (Collider collider in prefabRoot.GetComponentsInChildren<Collider>(true))
-                        {
-                            if (collider.isTrigger)
-                                continue;
-
-                            if (collider.GetComponent<PioneerInvectorDamageReceiver>() == null)
-                                collider.gameObject.AddComponent<PioneerInvectorDamageReceiver>();
-                        }
-
-                        PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
-                        added++;
-                    }
-                }
-                finally
-                {
-                    PrefabUtility.UnloadPrefabContents(prefabRoot);
-                }
-            }
-
-            Debug.Log($"Updated {added} enemy prefab(s) with PioneerInvectorDamageReceiver.");
-        }
-
         [MenuItem(SurvivalPioneerEditorMenus.Combat + "Swap Pioneer Scene Player To Invector", false, 123)]
         public static void SwapScenePlayerToInvector()
         {
             BuildPlayerInvectorPrefab();
             WireDefaultItemWeaponPrefabs();
-            AddDamageReceiversToEnemies();
+            EnemyInvectorSetupUtility.RepairAllHumanoidCombatPrefabs();
 
             GameObject outputPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(OutputPlayerPrefabPath);
             if (outputPrefab == null)
@@ -216,6 +190,43 @@ namespace Project.EditorTools.Invector
             ConfigurePreloadedRangedWeaponSlots(root);
         }
 
+        public static void ResetWeaponSlotTransformsFromItemData(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            PioneerInvectorWeaponBridge bridge = root.GetComponent<PioneerInvectorWeaponBridge>();
+            if (bridge == null)
+                return;
+
+            SerializedObject serialized = new SerializedObject(bridge);
+            ResetWeaponSlotArrayTransforms(serialized.FindProperty("meleeWeaponSlots"));
+            ResetWeaponSlotArrayTransforms(serialized.FindProperty("rangedWeaponSlots"));
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ResetWeaponSlotArrayTransforms(SerializedProperty slots)
+        {
+            if (slots == null || !slots.isArray)
+                return;
+
+            for (int i = 0; i < slots.arraySize; i++)
+            {
+                SerializedProperty slot = slots.GetArrayElementAtIndex(i);
+                ItemData item = slot.FindPropertyRelative("item")?.objectReferenceValue as ItemData;
+                if (item == null)
+                    continue;
+
+                GameObject drawn = slot.FindPropertyRelative("drawnInstance")?.objectReferenceValue as GameObject;
+                if (drawn != null)
+                    ApplyHeldTransform(drawn.transform, item);
+
+                GameObject holstered = slot.FindPropertyRelative("holsteredInstance")?.objectReferenceValue as GameObject;
+                if (holstered != null)
+                    ApplySheathedTransform(holstered.transform, item);
+            }
+        }
+
         private static void ReplaceShooterInput(GameObject root)
         {
             vShooterMeleeInput legacyInput = root.GetComponent<vShooterMeleeInput>();
@@ -253,6 +264,12 @@ namespace Project.EditorTools.Invector
             SerializedProperty useAmmoDisplay = shooterSerialized.FindProperty("useAmmoDisplay");
             if (useAmmoDisplay != null)
                 useAmmoDisplay.boolValue = false;
+
+            LayerMask damageLayers = PioneerInvectorShooterLayers.ResolveShooterDamageLayers(shooterManager.damageLayer);
+            SerializedProperty damageLayer = shooterSerialized.FindProperty("damageLayer");
+            if (damageLayer != null)
+                damageLayer.intValue = damageLayers.value;
+
             shooterSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -261,6 +278,25 @@ namespace Project.EditorTools.Invector
             T component = root.GetComponent<T>();
             if (component != null)
                 UnityEngine.Object.DestroyImmediate(component, true);
+        }
+
+        private static void StripLegacyPlayerComponents(GameObject root)
+        {
+            RemoveMissingScriptsRecursive(root);
+        }
+
+        private static void RemoveMissingScriptsRecursive(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(root);
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (children[i] != null)
+                    GameObjectUtility.RemoveMonoBehavioursWithMissingScript(children[i].gameObject);
+            }
         }
 
         private static void ResetInvectorHealth(GameObject root)
@@ -327,12 +363,14 @@ namespace Project.EditorTools.Invector
                 root.AddComponent<PioneerInvectorWeaponBridge>();
             if (root.GetComponent<PioneerInvectorDamageBridge>() == null)
                 root.AddComponent<PioneerInvectorDamageBridge>();
-            if (root.GetComponent<PioneerInvectorIncomingDamageBridge>() == null)
-                root.AddComponent<PioneerInvectorIncomingDamageBridge>();
+            if (root.GetComponent<PioneerInvectorSurvivalBridge>() == null)
+                root.AddComponent<PioneerInvectorSurvivalBridge>();
             if (root.GetComponent<PioneerInvectorAmmoBridge>() == null)
                 root.AddComponent<PioneerInvectorAmmoBridge>();
             if (root.GetComponent<PioneerPlayerInputBinder>() == null)
                 root.AddComponent<PioneerPlayerInputBinder>();
+            if (root.GetComponent<PioneerInvectorDeathRagdoll>() == null)
+                root.AddComponent<PioneerInvectorDeathRagdoll>();
         }
 
         private static void ConfigureWeaponBridge(GameObject root)

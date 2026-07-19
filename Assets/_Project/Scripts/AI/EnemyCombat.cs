@@ -1,4 +1,6 @@
+using Project.AI.Invector;
 using Project.Companions;
+using Project.Combat;
 using Project.Player;
 using Project.Survival;
 using UnityEngine;
@@ -12,34 +14,48 @@ namespace Project.AI
         [SerializeField] private float attackDamage = 12f;
         [SerializeField] private float attackCooldown = 1.4f;
         [SerializeField] private float attackWindup = 0.35f;
+        [Tooltip("Extra reach tolerance when the target is a pioneer (they shuffle during windup).")]
+        [SerializeField] private float pioneerRangeGraceMultiplier = 1.3f;
 
         private Transform target;
         private SurvivalStats targetStats;
         private CompanionHealth targetCompanionHealth;
         private EnemyAiController aiController;
+        private EnemyInvectorCombatBridge invectorCombat;
         private float nextAttackTime;
         private float windupEndTime;
         private bool attackPending;
 
         public float AttackRange => attackRange;
+        public float AttackDamage => attackDamage;
         public bool IsAttacking => attackPending;
         public Transform CurrentTarget => target;
+        public bool IsTargetingPioneer => targetCompanionHealth != null;
+
+        private bool pendingInvectorAttack;
 
         private void Awake()
         {
             aiController = GetComponent<EnemyAiController>();
+            invectorCombat = GetComponent<EnemyInvectorCombatBridge>();
         }
 
         public void SetTarget(Transform newTarget)
         {
+            newTarget = ResolveCombatTargetRoot(newTarget);
+
             if (newTarget != null && aiController != null && !aiController.AllowsCombatTarget(newTarget))
                 newTarget = null;
+
             if (newTarget != target && attackPending)
+            {
                 attackPending = false;
+                pendingInvectorAttack = false;
+            }
 
             target = newTarget;
-            targetStats = newTarget != null ? newTarget.GetComponent<SurvivalStats>() : null;
-            targetCompanionHealth = newTarget != null ? newTarget.GetComponent<CompanionHealth>() : null;
+            targetStats = newTarget != null ? newTarget.GetComponentInParent<SurvivalStats>() : null;
+            targetCompanionHealth = newTarget != null ? newTarget.GetComponentInParent<CompanionHealth>() : null;
         }
 
         public bool HasLivingTarget()
@@ -53,12 +69,25 @@ namespace Project.AI
             if (targetCompanionHealth != null)
                 return !targetCompanionHealth.IsDead;
 
-            return true;
+            return false;
         }
 
         public bool IsTargetInRange()
         {
-            return IsTargetWithin(attackRange);
+            return IsTargetWithin(ResolveEffectiveAttackRange());
+        }
+
+        public bool IsTargetInEffectiveRange()
+        {
+            if (target == null)
+                return false;
+
+            if (IsTargetInRange())
+                return true;
+
+            return invectorCombat != null
+                && invectorCombat.IsArmedRangedPreferred()
+                && HorizontalDistance(transform.position, target.position) <= invectorCombat.RangedEngageRange;
         }
 
         private bool IsTargetWithin(float range)
@@ -74,11 +103,9 @@ namespace Project.AI
             if (!HasLivingTarget())
                 return;
 
-            if (!IsTargetInRange())
+            if (!IsTargetInEffectiveRange())
                 return;
 
-            // Re-check legality at swing start so a bystander player never gets a pending hit
-            // after aggro flips to a pioneer mid-fight.
             if (aiController != null && !aiController.AllowsCombatTarget(target))
             {
                 attackPending = false;
@@ -89,6 +116,16 @@ namespace Project.AI
                 return;
 
             nextAttackTime = Time.time + attackCooldown;
+
+            if (invectorCombat != null && invectorCombat.TryBeginAttack(target, out float invectorDuration))
+            {
+                attackPending = true;
+                pendingInvectorAttack = true;
+                windupEndTime = Time.time + invectorDuration;
+                return;
+            }
+
+            pendingInvectorAttack = false;
             attackPending = true;
             windupEndTime = Time.time + attackWindup;
         }
@@ -103,15 +140,21 @@ namespace Project.AI
 
             attackPending = false;
 
+            if (pendingInvectorAttack && invectorCombat != null && invectorCombat.UsesInvectorDamageApplication)
+            {
+                pendingInvectorAttack = false;
+                return;
+            }
+
+            pendingInvectorAttack = false;
+
             if (!HasLivingTarget())
                 return;
 
-            // Grace window on the post-windup range check: companions shuffle/step during
-            // the windup, and a strict re-check made nearly every enemy hit whiff.
-            if (!IsTargetWithin(attackRange * 1.5f))
+            float releaseRange = ResolveEffectiveAttackRange() * 1.15f;
+            if (!IsTargetWithin(releaseRange))
                 return;
 
-            // Final gate: aggro may have flipped to a pioneer during windup.
             if (aiController != null && !aiController.AllowsCombatTarget(target))
                 return;
 
@@ -123,21 +166,35 @@ namespace Project.AI
             if (candidate == null)
                 return false;
 
-            return HorizontalDistance(transform.position, candidate.position) <= attackRange;
+            candidate = ResolveCombatTargetRoot(candidate);
+            return HorizontalDistance(transform.position, candidate.position) <= ResolveEffectiveAttackRange(candidate);
+        }
+
+        public float ResolveEffectiveAttackRange(Transform candidate)
+        {
+            if (candidate == null)
+                return attackRange;
+
+            return candidate.GetComponentInParent<CompanionHealth>() != null
+                ? attackRange * pioneerRangeGraceMultiplier
+                : attackRange;
+        }
+
+        private float ResolveEffectiveAttackRange()
+        {
+            return ResolveEffectiveAttackRange(target);
         }
 
         private void ApplyDamageToTarget(float damage)
         {
-            // Snapshot everything before ApplyDamage. PlayerDied listeners call SetTarget(null)
-            // on this same enemy, which nulls target/targetStats and used to NRE the log.
             Transform hitTarget = target;
             if (hitTarget == null)
                 return;
 
             string attackerName = name;
             string victimName = hitTarget.name;
-            SurvivalStats stats = hitTarget.GetComponent<SurvivalStats>();
-            CompanionHealth companionHealth = hitTarget.GetComponent<CompanionHealth>();
+            SurvivalStats stats = hitTarget.GetComponentInParent<SurvivalStats>();
+            CompanionHealth companionHealth = hitTarget.GetComponentInParent<CompanionHealth>();
 
             if (stats != null)
             {
@@ -146,22 +203,50 @@ namespace Project.AI
 
                 float healthBefore = stats.CurrentHealth;
                 stats.ApplyDamage(damage, attackerName);
-                float healthAfter = stats != null ? stats.CurrentHealth : 0f;
+                CombatHitVfx.SpawnIncomingEnemyHit(transform, stats.transform, damage);
+#if UNITY_EDITOR
+                float healthAfter = stats.CurrentHealth;
                 Debug.Log(
                     $"[EnemyDamage] {attackerName} hit Player for {damage:0.#} " +
                     $"(health {healthBefore:0.#} → {healthAfter:0.#})");
+#endif
                 return;
             }
 
             if (companionHealth == null || companionHealth.IsDead)
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning(
+                    $"[EnemyDamage] {attackerName} swing at '{victimName}' had no CompanionHealth receiver.");
+#endif
                 return;
+            }
 
             float pioneerHealthBefore = companionHealth.CurrentHealth;
             companionHealth.ApplyDamage(damage);
-            float pioneerHealthAfter = companionHealth != null ? companionHealth.CurrentHealth : 0f;
+            CombatHitVfx.SpawnIncomingEnemyHit(transform, companionHealth.transform, damage);
+#if UNITY_EDITOR
+            float pioneerHealthAfter = companionHealth.CurrentHealth;
             Debug.Log(
                 $"[EnemyDamage] {attackerName} hit Pioneer '{victimName}' for {damage:0.#} " +
                 $"(health {pioneerHealthBefore:0.#} → {pioneerHealthAfter:0.#})");
+#endif
+        }
+
+        private static Transform ResolveCombatTargetRoot(Transform candidate)
+        {
+            if (candidate == null)
+                return null;
+
+            CompanionHealth companionHealth = candidate.GetComponentInParent<CompanionHealth>();
+            if (companionHealth != null)
+                return companionHealth.transform;
+
+            SurvivalStats stats = candidate.GetComponentInParent<SurvivalStats>();
+            if (stats != null)
+                return stats.transform;
+
+            return candidate;
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)

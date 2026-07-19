@@ -68,6 +68,12 @@ namespace Project.Pioneers
                 target.preferredCombatDistance = source.preferredCombatDistance;
             if (source.rangedPreferredDistance > 0.1f)
                 target.rangedPreferredDistance = source.rangedPreferredDistance;
+
+            if (definition.overrideDefaultWorldAmbientMode)
+                target.worldAmbientMode = source.worldAmbientMode;
+
+            if (source.worldIdleJob != PioneerWorldIdleJob.None)
+                target.worldIdleJob = source.worldIdleJob;
         }
 
         public static PioneerBehaviorProfile ResolveForRecord(SkilledPioneerRecord record)

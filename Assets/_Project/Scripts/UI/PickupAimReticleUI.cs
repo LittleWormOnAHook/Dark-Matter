@@ -2,6 +2,7 @@ using Project.Core;
 using Project.Interaction;
 using Project.Player;
 using Project.Survival;
+using Project.Vehicles;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -81,6 +82,9 @@ namespace Project.UI
         private bool ShouldShow()
         {
             if (!GameSession.HasStarted)
+                return false;
+
+            if (PlayerVehicleState.IsMounted)
                 return false;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();

@@ -92,20 +92,42 @@ namespace Project.AI
                 _sequenceRoutine = null;
             }
 
+            EnemyInvectorBootstrap bootstrap = GetComponent<EnemyInvectorBootstrap>();
+            if (bootstrap != null)
+                bootstrap.enabled = true;
+
+            if (_motorBridge != null)
+                _motorBridge.enabled = true;
+
+            EnemyInvectorCombatBridge combatBridge = GetComponent<EnemyInvectorCombatBridge>();
+            if (combatBridge != null)
+                combatBridge.enabled = true;
+
+            if (_terrainRescue != null)
+                _terrainRescue.enabled = true;
+
             _invectorDeathPresenter?.ResetForRespawn();
         }
 
         private IEnumerator RunDeathSequence()
         {
+            if (_health != null)
+                _health.SetRespawnExternallyManaged(true);
+
             BeginDeathPresentation();
 
             if (preDisintegrationDelay > 0f)
                 yield return new WaitForSeconds(preDisintegrationDelay);
 
+            Vector3 corpseLiftOrigin = _invectorDeathPresenter != null
+                ? _invectorDeathPresenter.FinalizeCorpseForDisintegration()
+                : transform.position + Vector3.up;
+
             EndDeathPresentation();
 
             if (_disintegration != null)
             {
+                _disintegration.SetCorpseLiftOrigin(corpseLiftOrigin);
                 bool presentationDone = false;
                 _disintegration.BeginPresentation(() => presentationDone = true);
 
@@ -133,11 +155,19 @@ namespace Project.AI
 
         private void BeginDeathPresentation()
         {
+            EnemyInvectorCombatBridge combatBridge = GetComponent<EnemyInvectorCombatBridge>();
+            if (combatBridge != null)
+                combatBridge.enabled = false;
+
             if (_motorBridge != null)
                 _motorBridge.enabled = false;
 
             if (_terrainRescue != null)
                 _terrainRescue.enabled = false;
+
+            EnemyInvectorBootstrap bootstrap = GetComponent<EnemyInvectorBootstrap>();
+            if (bootstrap != null)
+                bootstrap.enabled = false;
 
             if (_invectorDeathPresenter != null)
             {
@@ -157,10 +187,6 @@ namespace Project.AI
 
             if (_animationController != null)
                 _animationController.enabled = false;
-
-            Animator animator = GetComponentInChildren<Animator>();
-            if (animator != null)
-                animator.enabled = false;
         }
     }
 }

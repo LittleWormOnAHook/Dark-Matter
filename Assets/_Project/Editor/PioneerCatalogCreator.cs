@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.EditorTools.Companions;
 using Project.Pioneers;
 using UnityEditor;
 using UnityEngine;
@@ -7,12 +8,16 @@ namespace Project.EditorTools
 {
     public static class PioneerCatalogCreator
     {
-        private const string OutputFolder = "Assets/_Project/Resources/Pioneers";
+        // Companion data assets live under Data/Companions (not a Resources folder) — only the
+        // CompanionCatalogRegistry itself needs to be in Resources. See CompanionCatalogRegistryUtility.
+        private const string OutputFolder = CompanionCatalogRegistryUtility.DataFolder;
 
-        [MenuItem("Tools/Survival Pioneer/Content/Create Named Pioneer Catalog")]
+        // Folded into the Companion Prefab Tool window (Tools/Survival Pioneer/Companion Prefab
+        // Tool) rather than exposed as its own top-level menu item — this method stays public/static
+        // so the window (and any other editor code) can still call it directly.
         public static void CreateNamedPioneerCatalog()
         {
-            EnsureFolder(OutputFolder);
+            CompanionCatalogRegistryUtility.EnsureFolder(OutputFolder);
 
             CatalogSeed[] seeds = BuildSeeds();
             int created = 0;
@@ -36,8 +41,10 @@ namespace Project.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            NamedPioneerCatalog.ReloadCache();
-            Debug.Log($"Named pioneer catalog updated. Created {created} new assets in {OutputFolder}.");
+            int added = CompanionCatalogRegistryUtility.SyncRegistryWithDataFolder();
+            Debug.Log(
+                $"Named pioneer catalog updated. Created {created} new assets in {OutputFolder}, " +
+                $"registered {added} new entries in CompanionCatalogRegistry.");
         }
 
         private static void ApplySeed(NamedPioneerDefinition definition, CatalogSeed seed)
@@ -56,6 +63,11 @@ namespace Project.EditorTools
             definition.learnedSkills = seed.learnedSkills;
         }
 
+        // Note: Kael-9, Lira Prime, Calder Sol, and Ryn Vale below share display names with the four
+        // hand-authored starter companion assets (Kael-9.asset etc., pioneerId starter_*) also under
+        // Data/Companions. That's intentional overlap, not a bug — PioneerRosterManager dedupes by
+        // display name when granting catalog pioneers, so running this seeder never produces two
+        // live roster entries for the same character even if both assets end up in the registry.
         private static CatalogSeed[] BuildSeeds()
         {
             return new[]

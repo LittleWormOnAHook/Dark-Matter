@@ -44,6 +44,7 @@ namespace Project.Core
             ApplyAudio();
             ApplyDisplay();
             SetResolutionIndex(GetCurrentResolutionIndex());
+            PlatformGraphicsBootstrap.ApplyAfterSettingsLoad();
         }
 
         public static void Save()
@@ -104,6 +105,7 @@ namespace Project.Core
         {
             level = Mathf.Clamp(level, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
             QualitySettings.SetQualityLevel(level, applyExpensiveChanges: true);
+            PlatformGraphicsBootstrap.ApplyTierOverrides(level);
         }
 
         public static void SetResolutionIndex(int index)

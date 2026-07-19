@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
@@ -27,17 +28,15 @@ namespace Project.UI
         private GameObject menuBackground;
         private SettingsPanelController settingsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
-        private MainMenuWalletPanelController walletPanel;
         private MainMenuWalletPreviewWidget walletPreview;
-        private MainMenuEnvironmentStatusBar environmentStatusBar;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
 
         private Button newGameButton;
         private Button resumeButton;
-        private Button saveLoadButton;
-        private Button walletButton;
+        private Button saveButton;
+        private Button loadButton;
         private Button settingsButton;
         private Button exitButton;
         private TextMeshProUGUI menuMessageLabel;
@@ -61,28 +60,33 @@ namespace Project.UI
             playerInput = FindAnyObjectByType<PlayerInput>();
             BuildMainMenu();
             UiSoundHelper.BindButtonsInHierarchy(transform);
-            ShowMainMenu();
         }
 
         private void Update()
         {
-            if (!GameSession.HasStarted || Keyboard.current == null)
+            if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame)
                 return;
 
-            if (!Keyboard.current.escapeKey.wasPressedThisFrame)
-                return;
-
+            // Back out one menu layer at a time. These sub-panel checks run regardless of whether a
+            // game session has started, so Esc can close Settings/Save/Load from the true main menu
+            // too, not just from the in-game pause menu.
             if (settingsPanel != null && settingsPanel.IsOpen)
+            {
+                settingsPanel.Close();
                 return;
+            }
 
             if (saveSlotsPanel != null && saveSlotsPanel.IsOpen)
+            {
+                saveSlotsPanel.Close();
                 return;
-
-            if (walletPanel != null && walletPanel.IsSwapPanelOpen)
-                return;
+            }
 
             FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
             if (navigator != null && navigator.IsAnyOpen)
+                return;
+
+            if (!GameSession.HasStarted)
                 return;
 
             if (pauseOverlayActive)
@@ -105,7 +109,8 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
-            if (FindAnyObjectByType<MainMenuController>() != null)
+            MainMenuController existing = FindAnyObjectByType<MainMenuController>();
+            if (existing != null)
                 return;
 
             Canvas canvas = ResolveMainCanvas();
@@ -129,7 +134,7 @@ namespace Project.UI
             if (popup != null && popup.popupPanel != null)
             {
                 Canvas popupCanvas = popup.popupPanel.GetComponentInParent<Canvas>();
-                if (popupCanvas != null)
+                if (popupCanvas != null && !IsOpticsOverlayCanvas(popupCanvas))
                     return popupCanvas;
             }
 
@@ -137,7 +142,30 @@ namespace Project.UI
             if (mainCanvasObject != null && mainCanvasObject.TryGetComponent(out Canvas mainCanvas))
                 return mainCanvas;
 
-            return FindAnyObjectByType<Canvas>();
+            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas != null && !IsOpticsOverlayCanvas(canvas))
+                    return canvas;
+            }
+
+            return null;
+        }
+
+        public static Transform ResolveCombatHudRoot()
+        {
+            Canvas canvas = ResolveMainCanvas();
+            if (canvas == null)
+                return null;
+
+            UIManager uiManager = canvas.GetComponent<UIManager>();
+            return uiManager != null ? uiManager.transform : canvas.transform;
+        }
+
+        private static bool IsOpticsOverlayCanvas(Canvas canvas)
+        {
+            return canvas != null && canvas.gameObject.name == "OpticsOverlayCanvas";
         }
 
         private static void EnsureEventSystem()
@@ -182,14 +210,8 @@ namespace Project.UI
             BuildButtonColumn(menuPanel.transform);
             BuildVersionLabel(menuPanel.transform);
 
-            walletPanel = gameObject.AddComponent<MainMenuWalletPanelController>();
-            walletPanel.Build(canvasRoot);
-
             walletPreview = menuPanel.AddComponent<MainMenuWalletPreviewWidget>();
             walletPreview.Build(menuPanel.transform);
-
-            environmentStatusBar = menuPanel.AddComponent<MainMenuEnvironmentStatusBar>();
-            environmentStatusBar.Build(menuPanel.transform);
 
             menuMessageLabel = CreateAnchoredMessageLabel(menuPanel.transform);
 
@@ -247,15 +269,15 @@ namespace Project.UI
 
             resumeButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Continue", buttonSize, buttonFontSize);
             newGameButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "New Expedition", buttonSize, buttonFontSize);
-            walletButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Wallet", buttonSize, buttonFontSize);
-            saveLoadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save / Load", buttonSize, buttonFontSize);
+            loadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Load", buttonSize, buttonFontSize);
+            saveButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save", buttonSize, buttonFontSize);
             settingsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Settings", buttonSize, buttonFontSize);
             exitButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Quit", buttonSize, buttonFontSize);
 
             resumeButton.onClick.AddListener(ResumeFromPause);
             newGameButton.onClick.AddListener(StartNewGame);
-            walletButton.onClick.AddListener(OpenWallet);
-            saveLoadButton.onClick.AddListener(OpenSaveLoad);
+            loadButton.onClick.AddListener(OpenLoad);
+            saveButton.onClick.AddListener(OpenSave);
             settingsButton.onClick.AddListener(OpenSettings);
             exitButton.onClick.AddListener(ExitGame);
 
@@ -305,6 +327,12 @@ namespace Project.UI
         {
             pauseOverlayActive = false;
             GameSession.SetPhase(GamePhase.MainMenu);
+
+            if (menuPanel == null && buildOnAwake)
+                BuildMainMenu();
+
+            MainCanvasFlow.SanitizeCanvasHost(GetComponent<Canvas>() ?? MainMenuController.ResolveMainCanvas());
+
             HideGameplayUi();
 
             if (menuBackground != null)
@@ -312,19 +340,46 @@ namespace Project.UI
             if (menuPanel != null)
                 menuPanel.SetActive(true);
 
+            DestroyLegacyEnvironmentStatusBar();
+
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
-            walletPanel?.CloseSwapPanel();
             ClearMenuMessage();
 
             ResolveStartPopup()?.HidePopup();
 
             walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
+            HideHotbars();
 
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
+        }
+
+        private void Start()
+        {
+            if (GameSession.HasStarted)
+                return;
+
+            StartCoroutine(RefreshAfterUiBootstrap());
+        }
+
+        private IEnumerator RefreshAfterUiBootstrap()
+        {
+            // InventoryUI.Start performs the primary refresh after hotbar/toolbar exist.
+            yield return null;
+
+            if (!GameSession.HasStarted)
+                MainCanvasFlow.Refresh();
+        }
+
+        public void HideMenuChrome()
+        {
+            if (menuBackground != null)
+                menuBackground.SetActive(false);
+            if (menuPanel != null)
+                menuPanel.SetActive(false);
         }
 
         private GameStartPopup ResolveStartPopup()
@@ -343,15 +398,61 @@ namespace Project.UI
             if (menuPanel != null)
                 menuPanel.SetActive(true);
 
+            DestroyLegacyEnvironmentStatusBar();
+
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
-            walletPanel?.CloseSwapPanel();
             ClearMenuMessage();
             walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
+            HideGameplayChromeForMenu();
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
+        }
+
+        /// <summary>
+        /// True while the main menu or in-game pause overlay should suppress bottom gameplay HUD.
+        /// </summary>
+        public static bool BlocksGameplayHud
+        {
+            get
+            {
+                if (!GameSession.HasStarted)
+                    return true;
+
+                MainMenuController menu = FindAnyObjectByType<MainMenuController>();
+                return menu != null && menu.pauseOverlayActive;
+            }
+        }
+
+        /// <summary>
+        /// Hides the item/tool hotbars. Called whenever the main menu, pause menu, or any of their
+        /// sub-panels (Settings, Save/Load) are open — ShowMainMenu() already sweeps the hotbar away
+        /// as part of HideGameplayUi(), but ShowPauseMenu() previously left it fully visible/interactable
+        /// behind the pause overlay, and re-opening a sub-panel didn't re-assert it either.
+        /// </summary>
+        private static void HideHotbars()
+        {
+            HideGameplayChromeForMenu();
+        }
+
+        private static void HideGameplayChromeForMenu()
+        {
+            GameplayHudVisibility.SetGameplayHudVisible(false);
+
+            ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
+            toolbar?.SetGameplayVisible(false);
+        }
+
+        private void DestroyLegacyEnvironmentStatusBar()
+        {
+            if (menuPanel == null)
+                return;
+
+            Transform legacyBar = menuPanel.transform.Find("EnvironmentStatusBar");
+            if (legacyBar != null)
+                Destroy(legacyBar.gameObject);
         }
 
         private void BringMenuToFront()
@@ -368,8 +469,10 @@ namespace Project.UI
                 newGameButton.gameObject.SetActive(!pauseOverlayActive);
             if (resumeButton != null)
                 resumeButton.gameObject.SetActive(pauseOverlayActive);
-            if (saveLoadButton != null)
-                saveLoadButton.interactable = pauseOverlayActive || GameSaveSystem.HasAnySaveFile;
+            if (saveButton != null)
+                saveButton.interactable = GameSession.HasStarted;
+            if (loadButton != null)
+                loadButton.interactable = GameSaveSystem.HasAnySaveFile;
         }
 
         public void SaveToSlot(int slotIndex)
@@ -417,19 +520,16 @@ namespace Project.UI
             saveSlotsPanel?.Close();
             pauseOverlayActive = false;
 
-            if (menuBackground != null)
-                menuBackground.SetActive(false);
-            if (menuPanel != null)
-                menuPanel.SetActive(false);
+            HideMenuChrome();
 
             GameSession.MarkStarted();
-            RestoreGameplayUi();
             SetGameWorldPaused(false);
             ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
             UnityEngine.Object.FindAnyObjectByType<UIManager>()?.RefreshSurvivalDisplay();
             RefreshMenuButtonStates();
+            MainCanvasFlow.Refresh();
         }
 
         private void StartNewGame()
@@ -471,13 +571,11 @@ namespace Project.UI
             pauseOverlayActive = false;
             ClearMenuMessage();
 
-            if (menuBackground != null)
-                menuBackground.SetActive(false);
-            if (menuPanel != null)
-                menuPanel.SetActive(false);
+            HideMenuChrome();
 
             SetGameWorldPaused(false);
             ReleaseGameplayInputCapture();
+            MainCanvasFlow.Refresh();
             RefreshMenuButtonStates();
         }
 
@@ -488,29 +586,32 @@ namespace Project.UI
 
         private void OpenSettings()
         {
+            HideHotbars();
             settingsPanel?.Open();
         }
 
-        private void OpenWallet()
+        private void OpenLoad()
         {
-            walletPanel?.OpenWalletPanel();
-        }
-
-        private void OpenSaveLoad()
-        {
-            if (pauseOverlayActive && GameSession.HasStarted)
-            {
-                StartCoroutine(OpenSaveSlotsWithScreenshot());
-                return;
-            }
-
             if (!GameSaveSystem.HasAnySaveFile)
             {
                 ShowMenuMessage("No save files found.");
                 return;
             }
 
+            HideHotbars();
             saveSlotsPanel?.Open(SaveSlotsPanelController.Mode.Load);
+        }
+
+        private void OpenSave()
+        {
+            if (!GameSession.HasStarted)
+            {
+                ShowMenuMessage("Start a game before saving.");
+                return;
+            }
+
+            HideHotbars();
+            StartCoroutine(OpenSaveSlotsWithScreenshot());
         }
 
         private IEnumerator OpenSaveSlotsWithScreenshot()
@@ -562,7 +663,6 @@ namespace Project.UI
 
         private void HideGameplayUi()
         {
-            hiddenCanvasRoots.Clear();
             Transform canvasRoot = transform;
 
             for (int i = 0; i < canvasRoot.childCount; i++)
@@ -571,22 +671,24 @@ namespace Project.UI
                 if (IsMenuProtectedElement(child))
                     continue;
 
-                if (!child.activeSelf)
-                    continue;
-
                 if (ShouldStayClosedAfterRestore(child))
                 {
                     child.SetActive(false);
                     continue;
                 }
 
-                hiddenCanvasRoots.Add(child);
+                if (!child.activeSelf)
+                    continue;
+
+                if (!hiddenCanvasRoots.Contains(child))
+                    hiddenCanvasRoots.Add(child);
+
                 child.SetActive(false);
             }
 
             PetUI petUi = FindAnyObjectByType<PetUI>();
             petUi?.HideForStartScreen();
-            ToolBarUI.ApplyGameplayVisibility();
+            HideGameplayChromeForMenu();
         }
 
         private static bool ShouldStayClosedAfterRestore(GameObject candidate)
@@ -619,11 +721,13 @@ namespace Project.UI
         {
             return candidate == menuPanel ||
                    candidate == menuBackground ||
+                   candidate.name == "MainMenuPanel" ||
+                   candidate.name == "MainMenuBackground" ||
                    candidate.name == "SettingsPanel" ||
                    candidate.name == "SaveSlotsPanel" ||
-                   candidate.name == "WalletSwapPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
+                   candidate.name == "ExposureZoneEntryBanner" ||
                    candidate.name == "PetPanel";
         }
 

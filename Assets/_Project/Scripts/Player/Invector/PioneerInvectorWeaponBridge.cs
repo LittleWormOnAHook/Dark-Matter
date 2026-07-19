@@ -109,9 +109,41 @@ namespace Project.Player.Invector
 
         public Transform FindHolsterSocket(ItemData item)
         {
-            string socketName = ResolveHolsterSocketName(item);
+            return FindHolsterSocket(transform, item);
+        }
 
-            return FindChildTransformByName(transform, socketName);
+        /// <summary>
+        /// Resolves the transform that should own a holstered weapon instance.
+        /// Prefers HandgunHolder/RifleHolder under the skinned VBOT_ bone when present —
+        /// BodySnaps/RightUpLeg holders use ~0.01 scale and break ItemData sheathed TRS.
+        /// </summary>
+        public static Transform FindHolsterSocket(Transform root, ItemData item)
+        {
+            if (root == null)
+                return null;
+
+            string socketName = ResolveHolsterSocketName(item);
+            Transform bone = FindPreferredSheatheBone(root, socketName);
+            string holderName = ResolveHolsterHolderName(item);
+
+            if (bone != null && !string.IsNullOrEmpty(holderName))
+            {
+                Transform holder = FindChildTransformByName(bone, holderName);
+                if (holder != null)
+                    return holder;
+            }
+
+            if (bone != null)
+                return bone;
+
+            if (!string.IsNullOrEmpty(holderName))
+            {
+                Transform holder = FindPreferredHolsterHolder(root, holderName);
+                if (holder != null)
+                    return holder;
+            }
+
+            return FindChildTransformByName(root, socketName);
         }
 
         public static string ResolveHolsterSocketName(ItemData item)
@@ -119,20 +151,107 @@ namespace Project.Player.Invector
             if (item == null)
                 return "Spine2";
 
+            // Explicit Spine2 on one-handed pistols is legacy — prefer hip holster.
             if (!string.IsNullOrWhiteSpace(item.sheatheSocketName) &&
-                !item.sheatheSocketName.Equals("Spine", StringComparison.OrdinalIgnoreCase))
+                !item.sheatheSocketName.Equals("Spine", StringComparison.OrdinalIgnoreCase) &&
+                !item.sheatheSocketName.Equals("Spine2", StringComparison.OrdinalIgnoreCase))
             {
                 return item.sheatheSocketName;
             }
 
-            return ResolveDefaultMeleeHolsterSocketName(item);
+            return ResolveDefaultHolsterSocketName(item);
+        }
+
+        /// <summary>
+        /// Invector holder under the sheathe bone. One-handed hip → HandgunHolder; two-handed → RifleHolder.
+        /// </summary>
+        public static string ResolveHolsterHolderName(ItemData item)
+        {
+            if (item == null)
+                return null;
+
+            if (item.weaponGrip == WeaponGrip.TwoHanded || item.IsTwoHanded)
+                return "RifleHolder";
+
+            string socketName = ResolveHolsterSocketName(item);
+            if (socketName.Equals("RightUpLeg", StringComparison.OrdinalIgnoreCase) ||
+                socketName.Equals("LeftUpLeg", StringComparison.OrdinalIgnoreCase))
+                return "HandgunHolder";
+
+            return item.IsRangedWeapon ? "HandgunHolder" : null;
+        }
+
+        private static Transform FindPreferredSheatheBone(Transform root, string socketName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(socketName))
+                return null;
+
+            // Skinned armature bones are named VBOT_:RightUpLeg; BodySnaps/RightUpLeg is the Invector proxy.
+            Transform vbot = FindChildTransformByName(root, "VBOT_:" + socketName);
+            if (vbot != null)
+                return vbot;
+
+            return FindChildTransformByName(root, socketName);
+        }
+
+        private static Transform FindPreferredHolsterHolder(Transform root, string holderName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(holderName))
+                return null;
+
+            Transform best = null;
+            FindPreferredHolsterHolderRecursive(root, holderName, ref best);
+            return best;
+        }
+
+        private static void FindPreferredHolsterHolderRecursive(Transform current, string holderName, ref Transform best)
+        {
+            if (current == null)
+                return;
+
+            if (current.name.Equals(holderName, StringComparison.OrdinalIgnoreCase))
+            {
+                // Prefer holders under VBOT_ bones (local scale ~1) over BodySnaps (~0.01).
+                bool underVbot = IsUnderVbotBone(current);
+                if (best == null || (underVbot && !IsUnderVbotBone(best)))
+                    best = current;
+            }
+
+            for (int i = 0; i < current.childCount; i++)
+                FindPreferredHolsterHolderRecursive(current.GetChild(i), holderName, ref best);
+        }
+
+        private static bool IsUnderVbotBone(Transform t)
+        {
+            for (Transform c = t; c != null; c = c.parent)
+            {
+                if (c.name.StartsWith("VBOT_:", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         public static string ResolveDefaultMeleeHolsterSocketName(ItemData item)
         {
-            return item != null && item.itemType == ItemType.MeleeWeapon && !item.IsTwoHanded
-                ? "RightUpLeg"
-                : "Spine2";
+            return ResolveDefaultHolsterSocketName(item);
+        }
+
+        /// <summary>
+        /// One-handed pistols / melee hip holster on RightUpLeg; two-handed / other on Spine2.
+        /// </summary>
+        public static string ResolveDefaultHolsterSocketName(ItemData item)
+        {
+            if (item == null)
+                return "Spine2";
+
+            if (item.itemType == ItemType.MeleeWeapon && !item.IsTwoHanded)
+                return "RightUpLeg";
+
+            if (item.IsRangedWeapon && item.weaponGrip != WeaponGrip.TwoHanded)
+                return "RightUpLeg";
+
+            return "Spine2";
         }
 
         public void BeginHolsterPreview(ItemData item)
@@ -193,7 +312,7 @@ namespace Project.Player.Invector
             RefreshEquippedWeapon();
         }
 
-        public void ApplySheathedTransformToInstance(ItemData item, GameObject instance)
+        public static void ApplySheathedTransformToInstance(ItemData item, GameObject instance)
         {
             ApplySheathedTransform(instance, item);
         }
@@ -1144,10 +1263,12 @@ namespace Project.Player.Invector
         /// on top of whatever CombatProjectileSpawner/CombatHitResolver do for the equipped ammo.
         /// Clearing all of them here (at equip time, mirroring CompanionInvectorLoadoutBridge) means
         /// every visual/audio effect comes from our own ammoItem-driven system. isInfinityAmmo stays
-        /// true so Invector's own (unfed) native ammo/reload reserve system can never gate or
-        /// interfere; dontUseReload stays false so Invector's reload animation/timing is still
-        /// available — PioneerInvectorAmmoBridge decides when a round is available and when a
-        /// reload should start, purely from WeaponAmmoState. weapon.ammo is left for
+        /// true so Invector's native reserve never gates the player — finite ammo is enforced only
+        /// by WeaponAmmoState (Standard/Gunpowder are no longer treated as infinite for the player).
+        /// Companions/enemies keep true infinite fire via their own loadout bridges. dontUseReload
+        /// stays false so Invector's reload animation/timing is still available —
+        /// PioneerInvectorAmmoBridge decides when a round is available and when a reload should
+        /// start, purely from WeaponAmmoState. weapon.ammo is left for
         /// PioneerInvectorAmmoBridge.SyncMagazineFromPioneer to set correctly on the next sync tick,
         /// rather than being force-filled here.
         /// </summary>

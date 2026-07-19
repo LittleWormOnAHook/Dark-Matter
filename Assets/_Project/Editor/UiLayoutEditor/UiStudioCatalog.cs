@@ -47,6 +47,14 @@ namespace Project.EditorTools.UiLayout
             },
             new UiStudioScriptableEntry
             {
+                Label = "Hazard HUD Icon Set",
+                Category = "HUD",
+                AssetPath = "Assets/_Project/Resources/HazardHudIconSet.asset",
+                AssetType = typeof(HazardHudIconSet),
+                Description = "Optional sprites/glyphs for cold, heat, radiation, and bio hazard icons on the hotbar cluster."
+            },
+            new UiStudioScriptableEntry
+            {
                 Label = "Optics Crosshair Library",
                 Category = "HUD",
                 AssetPath = "Assets/_Project/Resources/Optics/OpticsCrosshairLibrary.asset",

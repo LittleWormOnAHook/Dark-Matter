@@ -28,6 +28,48 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Survival Stats", Category = "HUD", PanelId = UiPanelIds.SurvivalStats, SearchNames = new[] { "SurvivalStatsPanel", "CondensedSurvivalStatsHud" }, ComponentType = typeof(CondensedSurvivalStatsHud) },
             new UiPanelDefinition { Label = "Hotbar", Category = "HUD", PanelId = UiPanelIds.Hotbar, SearchNames = new[] { "Hotbar" } },
             new UiPanelDefinition { Label = "Toolbar", Category = "HUD", SearchNames = new[] { "ToolBar" }, ComponentType = typeof(ToolBarUI), PlayModeOnly = true },
+            new UiPanelDefinition
+            {
+                Label = "Exposure Gauge Cluster",
+                Category = "HUD",
+                PanelId = UiPanelIds.ExposureGaugeCluster,
+                SearchNames = new[] { "ExposureGaugeCluster" },
+                ComponentType = typeof(HotbarExposureGaugeCluster),
+                PlayModeOnly = true,
+                Description = "Bottom-left TEMP + HAZARDS cluster (10px screen inset). Built by ToolBarUI at runtime."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Thermal Gauge",
+                Category = "HUD",
+                PanelId = UiPanelIds.ExposureThermalGauge,
+                ParentSearchName = "ExposureGaugeCluster",
+                SearchNames = new[] { "ThermalGauge" },
+                ComponentType = typeof(VerticalThermalNeedleGauge),
+                PlayModeOnly = true,
+                Description = "EVA temperature needle gauge (-190°F to 200°F)."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Hazard Gauge",
+                Category = "HUD",
+                PanelId = UiPanelIds.ExposureHazardGauge,
+                ParentSearchName = "ExposureGaugeCluster",
+                SearchNames = new[] { "HazardGauge" },
+                ComponentType = typeof(VerticalHazardExposureGauge),
+                PlayModeOnly = true,
+                Description = "Cold/heat/radiation/sulfur hazard icon grid with configurable HazardHudIconSet."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Exposure Zone Banner",
+                Category = "HUD",
+                PanelId = UiPanelIds.ExposureZoneBanner,
+                SearchNames = new[] { "ExposureZoneEntryBanner" },
+                ComponentType = typeof(ExposureZoneEntryBannerUI),
+                PlayModeOnly = true,
+                Description = "Center-screen zone entry popup (3s hold + fade)."
+            },
             new UiPanelDefinition { Label = "Pickup Aim Reticle", Category = "HUD", SearchNames = new[] { "PickupAimReticle" }, ComponentType = typeof(PickupAimReticleUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pi Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
@@ -211,6 +253,16 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Pioneer Roster Panel", Category = "Panels", SearchNames = new[] { "PioneerRosterPanelUI" }, ComponentType = typeof(PioneerRosterPanelUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Toast", Category = "Panels", SearchNames = new[] { "PickupToastUI" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pet Panel", Category = "Panels", PanelId = UiPanelIds.PetPanel, SearchNames = new[] { "PetPanel" }, ComponentType = typeof(PetUI), PlayModeOnly = true },
+            new UiPanelDefinition
+            {
+                Label = "Character Panel",
+                Category = "Panels",
+                PanelId = UiPanelIds.CharacterPanel,
+                SearchNames = new[] { "CharacterPanel", "CharacterPanelUI" },
+                ComponentType = typeof(CharacterPanelUI),
+                PlayModeOnly = true,
+                Description = "Journal Character tab: vitals left, environment + combat right."
+            },
             new UiPanelDefinition { Label = "Main Menu", Category = "Panels", PanelId = UiPanelIds.MainMenu, SearchNames = new[] { "MainMenuPanel", "MainMenuBackground" }, ComponentType = typeof(MainMenuController), PlayModeOnly = true, Description = "Runtime-built main menu (MenuUiBuilder)." },
             new UiPanelDefinition { Label = "Building Control", Category = "Panels", PanelId = UiPanelIds.BuildingControl, SearchNames = new[] { "BuildingControlOverlay", "BuildingControlPanelUI" }, ComponentType = typeof(BuildingControlPanelUI), PlayModeOnly = true },
 

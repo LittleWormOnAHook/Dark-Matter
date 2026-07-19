@@ -1,5 +1,4 @@
 using Project.Combat;
-using Project.Player;
 using Project.Progression;
 using UnityEngine;
 
@@ -13,7 +12,8 @@ namespace Project.Data
         RangedWeapon,
         Ammo,
         Tool,
-        Quest
+        Quest,
+        Vehicle
     }
 
     public enum ComponentCategory
@@ -38,20 +38,6 @@ namespace Project.Data
         TwoHanded
     }
 
-    /// <summary>
-    /// GKC animator Weapon ID blend-tree selector. Infer resolves from grip/name.
-    /// </summary>
-    public enum GkcWeaponKind
-    {
-        Infer = -1,
-        Unarmed = 0,
-        OneHandSword = 1,
-        TwoHand = 2,
-        OneHandAxe = 3,
-        Rifle = 4,
-        Pistol = 5
-    }
-
     [CreateAssetMenu(menuName = "Project/Survival/Item Data")]
     public class ItemData : ScriptableObject
     {
@@ -64,14 +50,14 @@ namespace Project.Data
         [Header("Use Type")]
         public ItemType itemType = ItemType.Consumable;
 
+        [Header("Deployable / Vehicle")]
+        [Tooltip("Prefab spawned into the world when this item is 'Deployed' from the inventory (e.g. a stored hovercraft). Only relevant for ItemType.Vehicle.")]
+        public GameObject deployedPrefab;
+
+        public bool IsVehicle => itemType == ItemType.Vehicle;
+
         [Header("Equipment")]
         public WeaponGrip weaponGrip = WeaponGrip.OneHanded;
-        [Tooltip("GKC Weapon ID for locomotion/attacks. Infer: two-hand=2, axe name=3, else 1H sword.")]
-        public GkcWeaponKind gkcWeaponKind = GkcWeaponKind.Infer;
-        [Tooltip("Optional GKC Right Arm ID while drawn. -1 keeps bridge defaults.")]
-        public int gkcRightArmId = -1;
-        [Tooltip("Optional GKC Left Arm ID while drawn. -1 keeps bridge defaults.")]
-        public int gkcLeftArmId = -1;
         public GameObject heldPrefab;
         public string equipSocketName = "RightHand";
         [Tooltip("Local position on the Invector handler socket (meleeHandler / defaultHandler).")]
@@ -120,6 +106,8 @@ namespace Project.Data
         public int magazineSize = 30;
         public AmmoType defaultAmmoType = AmmoType.Gunpowder;
         public AmmoType[] compatibleAmmoTypes = { AmmoType.Gunpowder };
+        [Tooltip("Ammo ItemData this weapon starts loaded with before the player ever explicitly equips or picks up ammo. Keeps 'default ammo' fire going through the exact same ammoItem-driven projectile/VFX/audio path as any other ammo, instead of falling back to this weapon's own (easy to forget) VFX fields.")]
+        public ItemData defaultAmmoItem;
         public GameObject projectilePrefab;
         public string muzzleSocketName = "Muzzle";
         public float aimFovMultiplier = 0.78f;
@@ -139,6 +127,53 @@ namespace Project.Data
         public AmmoType ammoType = AmmoType.Gunpowder;
         public int ammoPerPickup = 20;
         public float ammoPickupGrant = 20f;
+
+        [Header("Projectile Behavior")]
+        [Tooltip("Straight-line hitscan beam resolved instantly on fire (e.g. lasers) instead of a traveling physical projectile.")]
+        public bool isHitscanBeam;
+        [Tooltip("Downward acceleration applied to the physical projectile in flight (0 = perfectly straight, sci-fi energy weapons typically stay at 0).")]
+        public float projectileGravityScale;
+        [Tooltip("Splash/AoE damage radius on impact. 0 = single-target only.")]
+        public float splashRadius;
+        [Tooltip("Damage multiplier applied at the edge of the splash radius; damage falls off linearly from 1x at the impact point to this value at splashRadius.")]
+        [Range(0f, 1f)]
+        public float splashDamageFalloff = 0.25f;
+
+        [Header("Projectile VFX")]
+        [Tooltip("Spawned at the firing socket every shot (muzzle flash particle/light burst). Auto-destroyed shortly after.")]
+        public GameObject muzzleFlashPrefab;
+        [Tooltip("Optional prefab with a TrailRenderer/LineRenderer/particle system attached to the flying projectile for its travel trail. Leave empty for no trail.")]
+        public GameObject tracerPrefab;
+        [Tooltip("Spawned at the impact point on hit (sparks, splatter, elemental burst). Auto-destroyed shortly after.")]
+        public GameObject impactVfxPrefab;
+        [Tooltip("Optional prefab used to render an instant hitscan beam between muzzle and hit point when isHitscanBeam is set. Needs a LineRenderer.")]
+        public GameObject beamVfxPrefab;
+
+        [Header("Projectile Audio")]
+        [Tooltip("Played once at the muzzle the instant this ammo is fired.")]
+        public AudioClip fireSound;
+        [Tooltip("Looping sound that travels with the physical projectile in flight and stops the instant it hits (or expires). Not used by hitscan beam ammo.")]
+        public AudioClip projectileTravelSound;
+
+        [Header("Elemental Effect")]
+        [Tooltip("Status effect applied on hit. None uses the ammo type's sensible default (Fire->Burning, Ice->Frozen, Electricity->Shocked, Plasma->Corroded).")]
+        public StatusEffectType statusEffectOverride = StatusEffectType.None;
+        [Tooltip("Damage dealt per tick while the status effect is active. 0 disables damage-over-time (effect can still be used for pure crowd control later).")]
+        public float statusEffectDamagePerTick = 0f;
+        [Tooltip("Seconds between damage-over-time ticks.")]
+        public float statusEffectTickInterval = 1f;
+        [Tooltip("Total seconds the status effect lasts once applied. Re-applying refreshes the duration rather than stacking.")]
+        public float statusEffectDuration = 0f;
+        [Tooltip("Optional looping VFX (fire licking the model, electric arcs, frost, etc.) attached to the target for as long as the status effect is active.")]
+        public GameObject statusEffectVfxPrefab;
+
+        /// <summary>Resolves the actual status effect this ammo applies, falling back to the ammo type's default.</summary>
+        public StatusEffectType ResolveStatusEffect() =>
+            statusEffectOverride != StatusEffectType.None ? statusEffectOverride : ammoType.DefaultStatusEffectFor();
+
+        public bool HasStatusEffect => statusEffectDuration > 0f && ResolveStatusEffect() != StatusEffectType.None;
+
+        public bool HasSplashDamage => splashRadius > 0.05f;
 
         [Header("Craft Components")]
         public ComponentCategory componentCategory = ComponentCategory.None;
@@ -214,94 +249,7 @@ namespace Project.Data
             itemType == ItemType.MeleeWeapon && weaponGrip == WeaponGrip.TwoHanded;
 
         public bool IsOneHandedAxe =>
-            itemType == ItemType.MeleeWeapon && !IsTwoHanded && ResolveGkcWeaponKind() == GkcWeaponKind.OneHandAxe;
-
-        public GkcWeaponKind ResolveGkcWeaponKind()
-        {
-            if (itemType == ItemType.RangedWeapon)
-            {
-                if (gkcWeaponKind != GkcWeaponKind.Infer)
-                    return gkcWeaponKind;
-
-                return weaponGrip == WeaponGrip.TwoHanded ? GkcWeaponKind.Rifle : GkcWeaponKind.Pistol;
-            }
-
-            if (itemType != ItemType.MeleeWeapon)
-                return GkcWeaponKind.Unarmed;
-
-            if (gkcWeaponKind != GkcWeaponKind.Infer)
-                return gkcWeaponKind;
-
-            if (IsTwoHanded)
-                return GkcWeaponKind.TwoHand;
-
-            if (InfersAsOneHandAxe())
-                return GkcWeaponKind.OneHandAxe;
-
-            return GkcWeaponKind.OneHandSword;
-        }
-
-        /// <summary>
-        /// GKC Fire Weapons blend-tree Weapon ID. Ranged kinds use slots 1 = pistol, 2 = rifle.
-        /// </summary>
-        public float ResolveGkcWeaponId()
-        {
-            return ResolveGkcWeaponKind() switch
-            {
-                GkcWeaponKind.Rifle => GkcAnimatorConstants.WeaponIdRifle,
-                GkcWeaponKind.Pistol => GkcAnimatorConstants.WeaponIdPistol,
-                _ => (float)ResolveGkcWeaponKind()
-            };
-        }
-
-        /// <summary>
-        /// Fire Weapons blend-tree Weapon ID for hip-hold (non-aim) locomotion.
-        /// Hip slots use 11 = pistol, 12 = rifle; non-ranged kinds fall back to the aim ID.
-        /// </summary>
-        public float ResolveGkcHipWeaponId()
-        {
-            return ResolveGkcWeaponKind() switch
-            {
-                GkcWeaponKind.Rifle => GkcAnimatorConstants.WeaponIdRifleHip,
-                GkcWeaponKind.Pistol => GkcAnimatorConstants.WeaponIdPistolHip,
-                _ => ResolveGkcWeaponId()
-            };
-        }
-
-        /// <summary>
-        /// GKC Idle Tree Strafe ID slot. Ranged aim idle uses 4 = rifle, 5 = pistol.
-        /// </summary>
-        public float ResolveGkcStrafeId()
-        {
-            return ResolveGkcWeaponKind() switch
-            {
-                GkcWeaponKind.Rifle => GkcAnimatorConstants.StrafeIdRifle,
-                GkcWeaponKind.Pistol => GkcAnimatorConstants.StrafeIdPistol,
-                GkcWeaponKind.TwoHand => GkcAnimatorConstants.StrafeIdMeleeTwoHand,
-                GkcWeaponKind.OneHandSword => GkcAnimatorConstants.StrafeIdMeleeOneHand,
-                GkcWeaponKind.OneHandAxe => GkcAnimatorConstants.StrafeIdMeleeOneHand,
-                _ => 0f
-            };
-        }
-
-        public int ResolveGkcRightArmId()
-        {
-            if (gkcRightArmId >= 0)
-                return gkcRightArmId;
-
-            if (itemType != ItemType.MeleeWeapon && itemType != ItemType.RangedWeapon)
-                return 0;
-
-            return 0;
-        }
-
-        public int ResolveGkcLeftArmId()
-        {
-            if (gkcLeftArmId >= 0)
-                return gkcLeftArmId;
-
-            return 0;
-        }
+            itemType == ItemType.MeleeWeapon && !IsTwoHanded && InfersAsOneHandAxe();
 
         private bool InfersAsOneHandAxe()
         {
@@ -325,7 +273,7 @@ namespace Project.Data
                 return attackAnimationSpeed;
 
             float gripSpeed = IsTwoHanded ? 0.72f : 0.9f;
-            if (ResolveGkcWeaponKind() == GkcWeaponKind.OneHandAxe)
+            if (IsOneHandedAxe)
                 gripSpeed *= 1.25f;
 
             float scaleFactor = heldLocalScale.magnitude / 1.7320508f;
@@ -338,22 +286,36 @@ namespace Project.Data
         {
             float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
             float minDamage = Mathf.Max(1f, meleeDamage + bonus);
+            float average;
             if (meleeDamageRandomRange <= 0f)
-                return minDamage;
+            {
+                average = minDamage;
+            }
+            else
+            {
+                float maxDamage = Mathf.Max(minDamage, meleeDamage + meleeDamageRandomRange + bonus);
+                average = (minDamage + maxDamage) * 0.5f;
+            }
 
-            float maxDamage = Mathf.Max(minDamage, meleeDamage + meleeDamageRandomRange + bonus);
-            return (minDamage + maxDamage) * 0.5f;
+            return average * PlayerSkillAllocator.GetLevelWeaponDamageMultiplier();
         }
 
         public float GetAverageRangedDamage()
         {
             float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
             float minDamage = Mathf.Max(1f, rangedDamage + bonus);
+            float average;
             if (rangedDamageRandomRange <= 0f)
-                return minDamage;
+            {
+                average = minDamage;
+            }
+            else
+            {
+                float maxDamage = Mathf.Max(minDamage, rangedDamage + rangedDamageRandomRange + bonus);
+                average = (minDamage + maxDamage) * 0.5f;
+            }
 
-            float maxDamage = Mathf.Max(minDamage, rangedDamage + rangedDamageRandomRange + bonus);
-            return (minDamage + maxDamage) * 0.5f;
+            return average * PlayerSkillAllocator.GetLevelWeaponDamageMultiplier();
         }
 
         public float RollMeleeDamage(bool isCritical = false)
@@ -367,7 +329,7 @@ namespace Project.Data
             if (isCritical && criticalDamageMultiplier > 0f)
                 rolledDamage *= criticalDamageMultiplier;
 
-            return rolledDamage;
+            return rolledDamage * PlayerSkillAllocator.GetLevelWeaponDamageMultiplier();
         }
 
         public float RollRangedDamage(bool isCritical = false)
@@ -381,7 +343,7 @@ namespace Project.Data
             if (isCritical && criticalDamageMultiplier > 0f)
                 rolledDamage *= criticalDamageMultiplier;
 
-            return rolledDamage;
+            return rolledDamage * PlayerSkillAllocator.GetLevelWeaponDamageMultiplier();
         }
 
         public bool AcceptsAmmoType(AmmoType type)

@@ -2,6 +2,7 @@ using System.Text;
 using Project.Crafting;
 using Project.Data;
 using Project.Inventory;
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.UI
@@ -29,6 +30,7 @@ namespace Project.UI
             AppendConsumableLines(text, item);
             AppendWeaponLines(text, item);
             AppendToolLines(text, item);
+            AppendVehicleLines(text, item);
             AppendAcLine(text, item);
             AppendCraftedItemLine(text, item);
 
@@ -50,6 +52,7 @@ namespace Project.UI
                 ItemType.MeleeWeapon => "Melee Weapon",
                 ItemType.Tool => "Tool",
                 ItemType.Quest => "Quest Item",
+                ItemType.Vehicle => "Vehicle",
                 _ => item.itemType.ToString()
             };
 
@@ -60,6 +63,7 @@ namespace Project.UI
                 ItemType.Consumable => "#7DDA7D",
                 ItemType.Resource => "#C8A2FF",
                 ItemType.Quest => "#FF9F6E",
+                ItemType.Vehicle => "#6EE7B7",
                 _ => "#D0D4DC"
             };
 
@@ -134,6 +138,18 @@ namespace Project.UI
                 text.AppendLine($"  Toolbar: {keyHint} Use tool  |  [RMB] Toggle optics");
                 text.AppendLine("  [Scroll] Zoom while optics are open");
             }
+        }
+
+        private static void AppendVehicleLines(StringBuilder text, ItemData item)
+        {
+            if (!item.IsVehicle)
+                return;
+
+            text.AppendLine("<color=#A0A8B8>Vehicle:</color>");
+            text.AppendLine("  Type: Hovercraft");
+            text.AppendLine($"  Fuel Capacity: {Mathf.RoundToInt(HovercraftStorageState.DefaultMaxFuel)}");
+            text.AppendLine($"  Fuel Remaining: {Mathf.RoundToInt(HovercraftStorageState.StoredFuel)}");
+            text.AppendLine("<color=#8890A0><i>Right-click to Refuel or Deploy.</i></color>");
         }
 
         private static void AppendAcLine(StringBuilder text, ItemData item)

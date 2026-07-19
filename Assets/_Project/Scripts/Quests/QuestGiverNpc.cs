@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Core;
 using Project.Interaction;
+using Project.Map;
 using Project.Progression;
 using Project.UI;
 using UnityEngine;
@@ -51,6 +52,17 @@ namespace Project.Quests
 
             if (interactCollider != null)
                 interactCollider.isTrigger = true;
+
+            EnsureMapMarker();
+        }
+
+        private void EnsureMapMarker()
+        {
+            MapMarker marker = GetComponent<MapMarker>();
+            if (marker == null)
+                marker = gameObject.AddComponent<MapMarker>();
+
+            marker.ConfigureQuestGiver(displayName);
         }
 
         private void Update()
@@ -357,7 +369,9 @@ namespace Project.Quests
                                 XpReward = GetQuestXpReward(offer.quest),
                                 ActionLabel = "In Progress",
                                 Status = QuestStatus.Active,
-                                CanSelect = false
+                                CanSelect = false,
+                                CanAbandon = true,
+                                OnAbandon = () => AbandonQuest(offer)
                             });
                         }
                         break;
@@ -422,6 +436,18 @@ namespace Project.Quests
             questManager.ClaimRewards(offer.QuestId);
             ShowDialogue(offer.GetRewardDialogue(), () => TryInteract());
             FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+        }
+
+        private void AbandonQuest(QuestGiverOffer offer)
+        {
+            if (questManager == null || offer == null)
+                return;
+
+            if (!questManager.AbandonQuest(offer.QuestId))
+                return;
+
+            FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+            ShowDialogue($"Abandoned: {offer.quest.title}", () => TryInteract());
         }
 
         private void EnsureOffersAvailable()
@@ -662,5 +688,7 @@ namespace Project.Quests
         public QuestStatus Status;
         public bool CanSelect;
         public Action OnSelected;
+        public bool CanAbandon;
+        public Action OnAbandon;
     }
 }

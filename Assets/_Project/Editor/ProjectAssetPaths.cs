@@ -58,10 +58,8 @@ namespace Project.EditorTools
         public const string Editor = Root + "/Editor";
         public const string EditorDevTools = Editor + "/DevTools";
 
-        public const string PlayerPrefab = PrefabsPlayers + "/Player.prefab";
         public const string PlayerInvectorPrefab = PrefabsPlayers + "/Player_Invector.prefab";
-        public const string PioneerCompanionPrefab = PrefabsCompanions + "/PioneerCompanion.prefab";
-        public const string ProjectUnityCharacterPrefab = PrefabsPlayers + "/ProjectUnityCharacter.prefab";
+        public const string PioneerCompanionInvectorPrefab = PrefabsCompanions + "/PioneerCompanion_Invector.prefab";
         public const string QuestGiverPrefab = PrefabsNpcs + "/QuestGiver_PioneerGuide.prefab";
         public const string EnemyPrefab = PrefabsCombat + "/Enemy.prefab";
         public const string InventorySlotPrefab = PrefabsUi + "/InventorySlot.prefab";

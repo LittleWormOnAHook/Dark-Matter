@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4658323134714811345}
   m_Layer: 0
   m_Name: RecipePickup_forest_stew
-  m_TagString: Untagged
+  m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -69,8 +69,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
   recipeId: forest_stew
   promptText: Press E to learn recipe
-  interactRange: 2.5
-  learnedMessage: Recipe learned!
+  interactRange: 4
+  collectedMessage: Recipe scroll collected!
 --- !u!1001 &6984723041980898421
 PrefabInstance:
   m_ObjectHideFlags: 0

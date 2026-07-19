@@ -20,6 +20,8 @@ namespace Project.Achievements
         public event Action<AchievementProgress, AchievementDefinition> OnAchievementUnlocked;
         public event Action<AchievementProgress, AchievementDefinition> OnProgressUpdated;
 
+        private bool catalogInitialized;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -34,6 +36,26 @@ namespace Project.Achievements
 
         private void Start()
         {
+            EnsureCatalogInitialized();
+        }
+
+        /// <summary>
+        /// Registers the starter catalog and tops up session dynamic goals if that hasn't happened yet.
+        /// Normally this runs from Start(), but Unity defers a freshly-AddComponent'd MonoBehaviour's
+        /// Start() until its next scheduled update pass — it does NOT run synchronously inside
+        /// AddComponent the way Awake() does. Any caller that gets a manager via EnsureExists() and then
+        /// immediately reads achievement data in the same call (e.g. AchievementsPanelUI.Refresh() right
+        /// after EmbedIn() creates the manager on demand) could otherwise see an empty registry and never
+        /// get another chance to refresh, since nothing else would fire OnProgressUpdated/OnAchievementUnlocked
+        /// to prompt a retry. Calling this from EnsureExists() as well makes initialization synchronous
+        /// and idempotent regardless of Start() timing.
+        /// </summary>
+        private void EnsureCatalogInitialized()
+        {
+            if (catalogInitialized)
+                return;
+
+            catalogInitialized = true;
             AchievementStarterCatalog.RegisterIfEmpty();
             DynamicAchievementGenerator.EnsureSessionGoals();
         }
@@ -45,6 +67,13 @@ namespace Project.Achievements
         }
 
         public static AchievementManager EnsureExists()
+        {
+            AchievementManager manager = ResolveInstance();
+            manager?.EnsureCatalogInitialized();
+            return manager;
+        }
+
+        private static AchievementManager ResolveInstance()
         {
             if (Instance != null)
                 return Instance;

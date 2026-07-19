@@ -20,6 +20,8 @@ namespace Project.UI
         private int slotIndex;
         private RecipeDefinition recipe;
         private Action<int> onLearnRequested;
+        private GameObject learnConfirmPanel;
+        private Button learnButton;
 
         public void Setup(int index, string id, RecipeDefinition recipeDefinition, Action<int> learnHandler)
         {
@@ -35,10 +37,89 @@ namespace Project.UI
             iconImage.color = icon != null ? Color.white : new Color(1f, 1f, 1f, 0.35f);
         }
 
+        /// <summary>
+        /// Two-step confirm: right-click toggles a small "Learn" button on the slot instead of
+        /// learning the recipe immediately, so a stray right-click can't accidentally burn a scroll.
+        /// The recipe is only actually learned when the player explicitly clicks that button.
+        /// </summary>
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.button == PointerEventData.InputButton.Right)
-                onLearnRequested?.Invoke(slotIndex);
+            {
+                ToggleLearnConfirm();
+                return;
+            }
+
+            if (eventData.button == PointerEventData.InputButton.Left)
+                HideLearnConfirm();
+        }
+
+        private void ToggleLearnConfirm()
+        {
+            EnsureLearnConfirmBuilt();
+            learnConfirmPanel.SetActive(!learnConfirmPanel.activeSelf);
+        }
+
+        private void HideLearnConfirm()
+        {
+            if (learnConfirmPanel != null)
+                learnConfirmPanel.SetActive(false);
+        }
+
+        private void HandleLearnButtonClicked()
+        {
+            HideLearnConfirm();
+            onLearnRequested?.Invoke(slotIndex);
+        }
+
+        private void EnsureLearnConfirmBuilt()
+        {
+            if (learnConfirmPanel != null)
+                return;
+
+            learnConfirmPanel = new GameObject("LearnConfirm", typeof(RectTransform));
+            learnConfirmPanel.transform.SetParent(transform, false);
+
+            RectTransform panelRect = learnConfirmPanel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 1f);
+            panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            panelRect.anchoredPosition = new Vector2(0f, 4f);
+            panelRect.sizeDelta = new Vector2(88f, 30f);
+
+            Image panelBackground = learnConfirmPanel.AddComponent<Image>();
+            panelBackground.color = SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.88f);
+
+            GameObject buttonObject = new GameObject("LearnButton", typeof(RectTransform));
+            buttonObject.transform.SetParent(learnConfirmPanel.transform, false);
+            RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+            buttonRect.anchorMin = Vector2.zero;
+            buttonRect.anchorMax = Vector2.one;
+            buttonRect.offsetMin = new Vector2(2f, 2f);
+            buttonRect.offsetMax = new Vector2(-2f, -2f);
+
+            Image buttonImage = buttonObject.AddComponent<Image>();
+            buttonImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            learnButton = buttonObject.AddComponent<Button>();
+            learnButton.targetGraphic = buttonImage;
+            learnButton.onClick.AddListener(HandleLearnButtonClicked);
+
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform));
+            labelObject.transform.SetParent(buttonObject.transform, false);
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI learnLabel = labelObject.AddComponent<TextMeshProUGUI>();
+            learnLabel.text = "Learn";
+            learnLabel.fontSize = 14f;
+            learnLabel.alignment = TextAlignmentOptions.Center;
+            learnLabel.color = Color.white;
+            learnLabel.raycastTarget = false;
+
+            learnConfirmPanel.SetActive(false);
         }
 
         public void OnPointerEnter(PointerEventData eventData)

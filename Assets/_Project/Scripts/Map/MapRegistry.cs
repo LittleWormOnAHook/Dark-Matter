@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Project.Map
@@ -8,12 +9,16 @@ namespace Project.Map
 
         public static IReadOnlyList<MapMarker> ActiveMarkers => Markers;
 
+        public static event Action<MapMarker> MarkerRegistered;
+        public static event Action<MapMarker> MarkerUnregistered;
+
         internal static void Register(MapMarker marker)
         {
             if (marker == null || Markers.Contains(marker))
                 return;
 
             Markers.Add(marker);
+            MarkerRegistered?.Invoke(marker);
         }
 
         internal static void Unregister(MapMarker marker)
@@ -21,7 +26,10 @@ namespace Project.Map
             if (marker == null)
                 return;
 
-            Markers.Remove(marker);
+            if (!Markers.Remove(marker))
+                return;
+
+            MarkerUnregistered?.Invoke(marker);
         }
 
         internal static void Clear()

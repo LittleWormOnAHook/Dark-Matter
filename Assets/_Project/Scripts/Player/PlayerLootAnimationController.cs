@@ -1,4 +1,4 @@
-using ECM2;
+using Invector.vCharacterController;
 using Project.Interaction;
 using Project.Survival;
 using UnityEngine;
@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.Player
 {
     /// <summary>
-    /// Plays BasicMotions loot Start → Loop → End on item pickup. Cancels into End on movement or combat input.
+    /// Plays loot pickup animations when present on the Invector animator. Cancels on movement or combat input.
     /// </summary>
     [DefaultExecutionOrder(-20)]
     public class PlayerLootAnimationController : MonoBehaviour
@@ -30,25 +30,27 @@ namespace Project.Player
             End
         }
 
-        private Character _character;
         private PlayerController _playerController;
         private SurvivalStats _survivalStats;
         private MeleeCombatController _melee;
+        private vThirdPersonController _invectorController;
         private Animator _animator;
         private LootPhase _phase = LootPhase.None;
         private int _loopCyclesCompleted;
         private float _savedAnimatorSpeed = 1f;
+        private Vector3 _lastPosition;
 
         public bool IsLooting => _phase != LootPhase.None;
         public bool IsLootingActive => _phase == LootPhase.Start || _phase == LootPhase.Loop;
 
         private void Awake()
         {
-            _character = GetComponentInParent<Character>();
             _playerController = GetComponentInParent<PlayerController>();
             _survivalStats = GetComponentInParent<SurvivalStats>();
             _melee = GetComponentInParent<MeleeCombatController>();
-            _animator = _character != null ? _character.GetAnimator() : GetComponent<Animator>();
+            _invectorController = GetComponentInParent<vThirdPersonController>();
+            _animator = _invectorController != null ? _invectorController.animator : GetComponentInChildren<Animator>(true);
+            _lastPosition = transform.position;
         }
 
         public void BeginLoot()
@@ -66,9 +68,6 @@ namespace Project.Player
             CrossFadeState(LootStartStateName);
         }
 
-        /// <summary>
-        /// Immediately returns the base layer to locomotion. Used when block/attack would overlap loot poses.
-        /// </summary>
         public void CancelForCombat()
         {
             if (_animator == null)
@@ -164,7 +163,6 @@ namespace Project.Player
             _phase = LootPhase.None;
             if (_animator != null)
                 _animator.speed = _savedAnimatorSpeed;
-            CrossFadeState(GkcAnimatorConstants.GroundedState);
         }
 
         private bool ShouldCancelLoot()
@@ -184,10 +182,14 @@ namespace Project.Player
                     return true;
             }
 
-            if (_character != null && _character.GetSpeed() > cancelMoveSpeedThreshold)
+            Vector3 delta = transform.position - _lastPosition;
+            _lastPosition = transform.position;
+            delta.y = 0f;
+            float measuredSpeed = Time.deltaTime > 0.0001f ? delta.magnitude / Time.deltaTime : 0f;
+            if (measuredSpeed > cancelMoveSpeedThreshold)
                 return true;
 
-            if (_character != null && !_character.IsGrounded())
+            if (_invectorController != null && !_invectorController.isGrounded)
                 return true;
 
             return IsCombatInterrupt();
@@ -195,11 +197,7 @@ namespace Project.Player
 
         private bool IsCombatInterrupt()
         {
-            if (_melee != null && (_melee.IsBlocking || _melee.IsAttackInputActive))
-                return true;
-
-            PlayerGkcAnimatorDriver driver = GetComponentInParent<PlayerGkcAnimatorDriver>();
-            return driver != null && driver.IsActionBlockingLocomotion;
+            return _melee != null && (_melee.IsBlocking || _melee.IsAttackInputActive);
         }
 
         private bool IsInLootStateOnBaseLayer()

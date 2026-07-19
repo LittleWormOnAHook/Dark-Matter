@@ -1,6 +1,8 @@
 using Project.AI;
 using Project.Data;
+using Project.EditorTools.Invector;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Project.EditorTools
@@ -15,6 +17,7 @@ namespace Project.EditorTools
         private VisualSourceMode visualSourceMode = VisualSourceMode.SelectedHierarchyObject;
         private GameObject selectedVisualSource;
         private GameObject existingPrefabSource;
+        private GameObject humanoidMeshSource;
         private bool placeInSceneAfterCreate = true;
         private string definitionAssetFileName = "new_enemy";
 
@@ -65,8 +68,9 @@ namespace Project.EditorTools
 
             EditorGUILayout.LabelField("Enemy Prefab Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Build enemy prefabs from any model: select a Hierarchy object, drag in a prefab, or use a placeholder capsule. " +
-                "Configure senses, combat, health bar, movement (stationary, wander, patrol), and optional animation.",
+                "Single pipeline for humanoid Invector enemies and generic capsule/animation enemies. " +
+                "Humanoid create/rebuild runs the full gameplay stack (AI, loadout, ragdoll, damage receivers). " +
+                "Use Repair All Humanoid Combat Prefabs to batch-fix existing prefabs.",
                 MessageType.Info);
             EditorGUILayout.Space(6f);
 
@@ -116,12 +120,20 @@ namespace Project.EditorTools
             EditorGUILayout.Space(8f);
             DrawMovementModeSection();
             EditorGUILayout.Space(8f);
-            DrawAnimationSection();
+            if (workingDefinition.archetype != EnemyArchetype.HumanoidInvector)
+                DrawAnimationSection();
+            else
+                EditorGUILayout.HelpBox(
+                    "Humanoid Invector enemies use the Player_Invector animator and weapon stack. " +
+                    "Assign melee/ranged ItemData and an optional model FBX; Create/Rebuild bakes the full stack.",
+                    MessageType.Info);
             EditorGUILayout.Space(8f);
             DrawLootSection();
             EditorGUILayout.Space(8f);
             DrawDefinitionFields();
             EditorGUILayout.Space(12f);
+            DrawSpawnReadyStatus();
+            EditorGUILayout.Space(8f);
             DrawActionButtons();
 
             EditorGUILayout.EndScrollView();
@@ -133,6 +145,24 @@ namespace Project.EditorTools
             workingDefinition.enemyId = EditorGUILayout.TextField("Enemy Id", workingDefinition.enemyId);
             workingDefinition.displayName = EditorGUILayout.TextField("Display Name", workingDefinition.displayName);
             workingDefinition.prefabFileName = EditorGUILayout.TextField("Prefab File Name", workingDefinition.prefabFileName);
+            workingDefinition.archetype = (EnemyArchetype)EditorGUILayout.EnumPopup("Archetype", workingDefinition.archetype);
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+            {
+                workingDefinition.meleeWeaponItem = (ItemData)EditorGUILayout.ObjectField(
+                    "Melee Weapon Item",
+                    workingDefinition.meleeWeaponItem,
+                    typeof(ItemData),
+                    false);
+                workingDefinition.rangedWeaponItem = (ItemData)EditorGUILayout.ObjectField(
+                    "Ranged Weapon Item",
+                    workingDefinition.rangedWeaponItem,
+                    typeof(ItemData),
+                    false);
+                workingDefinition.preferRangedWeapon = EditorGUILayout.Toggle(
+                    "Prefer Ranged",
+                    workingDefinition.preferRangedWeapon);
+            }
+
             definitionAssetFileName = EditorGUILayout.TextField("Definition Asset Name", definitionAssetFileName);
         }
 
@@ -177,7 +207,50 @@ namespace Project.EditorTools
             }
             EditorGUILayout.EndHorizontal();
 
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+            {
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Humanoid Mesh", EditorStyles.boldLabel);
+                humanoidMeshSource = (GameObject)EditorGUILayout.ObjectField(
+                    "Model FBX / Prefab",
+                    humanoidMeshSource,
+                    typeof(GameObject),
+                    false);
+                if (humanoidMeshSource != null && string.IsNullOrWhiteSpace(workingDefinition.visualChildName))
+                    workingDefinition.visualChildName =
+                        EnemyInvectorSetupUtility.SuggestVisualChildName(humanoidMeshSource);
+
+                workingDefinition.visualChildName = EditorGUILayout.TextField(
+                    "Visual Child Name",
+                    workingDefinition.visualChildName);
+
+                if (GUILayout.Button("Rebuild With Model", GUILayout.Height(24f)))
+                    RebuildHumanoidPrefabWithModel();
+            }
+
             placeInSceneAfterCreate = EditorGUILayout.Toggle("Place In Open Scene After Create", placeInSceneAfterCreate);
+        }
+
+        private void RebuildHumanoidPrefabWithModel()
+        {
+            GameObject mesh = humanoidMeshSource != null ? humanoidMeshSource : ResolveVisualSource(out _);
+            if (mesh == null)
+            {
+                EditorUtility.DisplayDialog("Enemy Prefab Creator", "Assign a model FBX/prefab to rebuild.", "OK");
+                return;
+            }
+
+            string prefabPath =
+                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+
+            if (!EnemyInvectorSetupUtility.RebuildHumanoidEnemyAtPath(prefabPath, workingDefinition, mesh))
+            {
+                EditorUtility.DisplayDialog("Enemy Prefab Creator", $"Could not rebuild {prefabPath}.", "OK");
+                return;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"Rebuilt humanoid enemy at {prefabPath}");
         }
 
         private void DrawBehaviorPresetSection()
@@ -356,11 +429,21 @@ namespace Project.EditorTools
             workingDefinition.proximityRange = EditorGUILayout.FloatField("Proximity Range", workingDefinition.proximityRange);
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Combat", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Melee Combat", EditorStyles.boldLabel);
             workingDefinition.attackRange = EditorGUILayout.FloatField("Attack Range", workingDefinition.attackRange);
             workingDefinition.attackDamage = EditorGUILayout.FloatField("Attack Damage", workingDefinition.attackDamage);
             workingDefinition.attackCooldown = EditorGUILayout.FloatField("Attack Cooldown", workingDefinition.attackCooldown);
             workingDefinition.attackWindup = EditorGUILayout.FloatField("Attack Windup", workingDefinition.attackWindup);
+            workingDefinition.meleeDuration = EditorGUILayout.FloatField("Melee Duration", workingDefinition.meleeDuration);
+            workingDefinition.unarmedDuration = EditorGUILayout.FloatField("Unarmed Duration", workingDefinition.unarmedDuration);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Ranged Combat", EditorStyles.boldLabel);
+            workingDefinition.rangedEngageRange = EditorGUILayout.FloatField("Engage Range", workingDefinition.rangedEngageRange);
+            workingDefinition.rangedAttackCooldown = EditorGUILayout.FloatField("Shot Cooldown", workingDefinition.rangedAttackCooldown);
+            workingDefinition.rangedDuration = EditorGUILayout.FloatField("Shot Duration", workingDefinition.rangedDuration);
+            workingDefinition.aimHoldDuration = EditorGUILayout.FloatField("Aim Hold Duration", workingDefinition.aimHoldDuration);
+            workingDefinition.missRate = EditorGUILayout.Slider("Miss Rate", workingDefinition.missRate, 0f, 1f);
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("AI Timing", EditorStyles.boldLabel);
@@ -518,6 +601,52 @@ namespace Project.EditorTools
             if (GUILayout.Button("Clear All Clips", GUILayout.Height(28f)))
                 ClearAnimationClips();
             EditorGUILayout.EndHorizontal();
+
+            // Rebuild from ShooterMelee base — upgrades any existing controller.
+            EditorGUILayout.Space(4f);
+            AnimatorController existingCtrl = ResolveExistingController();
+            GUI.enabled = existingCtrl != null;
+            if (GUILayout.Button("Rebuild Controller from ShooterMelee Base", GUILayout.Height(28f)))
+                RebuildFromShooterMeleeBase(existingCtrl);
+            GUI.enabled = true;
+        }
+
+        private AnimatorController ResolveExistingController()
+        {
+            if (workingDefinition == null) return null;
+
+            RuntimeAnimatorController rtc = workingDefinition.animatorController;
+            if (rtc is AnimatorController ac) return ac;
+
+            string fileName = EnemyPrefabBuilder.SanitizeFileName(
+                string.IsNullOrWhiteSpace(workingDefinition.animatorControllerFileName)
+                    ? workingDefinition.prefabFileName + "Controller"
+                    : workingDefinition.animatorControllerFileName,
+                workingDefinition.displayName + "Controller");
+            string path = $"{ProjectAssetPaths.AnimationsEnemies}/{fileName}.controller";
+            return AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+        }
+
+        private void RebuildFromShooterMeleeBase(AnimatorController target)
+        {
+            if (target == null) return;
+
+            bool confirmed = EditorUtility.DisplayDialog(
+                "Rebuild from ShooterMelee Base",
+                $"Replace '{target.name}' with a full copy of Invector@ShooterMelee, " +
+                "restoring its existing Base Layer states (Idle, Walk, Run, Attack, Hit, Death).\n\n" +
+                "UpperBody, Shot, and OnlyArms layers will be replaced with ShooterMelee versions.\n\nContinue?",
+                "Rebuild", "Cancel");
+
+            if (!confirmed) return;
+
+            string path = AssetDatabase.GetAssetPath(target);
+            AnimatorController result = EnemyShooterControllerBuilder.RebuildFromShooterMeleeBase(path);
+            EditorUtility.DisplayDialog("Rebuild from ShooterMelee Base",
+                result != null
+                    ? $"Done — '{result.name}' now uses ShooterMelee as its full base."
+                    : "Failed — check the Console.",
+                "OK");
         }
 
         private void RebuildAnimationTree()
@@ -591,6 +720,21 @@ namespace Project.EditorTools
             switch (visualSourceMode)
             {
                 case VisualSourceMode.PlaceholderCapsule:
+                    if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+                    {
+                        source = humanoidMeshSource;
+                        sourceMode = EnemyPrefabBuilder.VisualSourceMode.SelectedHierarchyObject;
+                        if (source == null)
+                        {
+                            EditorUtility.DisplayDialog(
+                                "Enemy Prefab Creator",
+                                "Humanoid enemies need a model FBX/prefab — assign Humanoid Mesh or select a hierarchy object.",
+                                "OK");
+                            return false;
+                        }
+                        return true;
+                    }
+
                     sourceMode = EnemyPrefabBuilder.VisualSourceMode.PlaceholderCapsule;
                     return true;
 
@@ -606,7 +750,15 @@ namespace Project.EditorTools
 
                 default:
                     sourceMode = EnemyPrefabBuilder.VisualSourceMode.SelectedHierarchyObject;
-                    source = ResolveVisualSource(out bool missing);
+                    bool missing = false;
+                    if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector && humanoidMeshSource != null)
+                        source = humanoidMeshSource;
+                    else
+                        source = ResolveVisualSource(out missing);
+
+                    if (source == null)
+                        missing = true;
+
                     if (missing)
                     {
                         EditorUtility.DisplayDialog(
@@ -673,17 +825,45 @@ namespace Project.EditorTools
             workingDefinition.deathClips = System.Array.Empty<AnimationClip>();
         }
 
+        private void DrawSpawnReadyStatus()
+        {
+            if (workingDefinition.archetype != EnemyArchetype.HumanoidInvector)
+                return;
+
+            string prefabPath =
+                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                EditorGUILayout.HelpBox("Prefab not created yet.", MessageType.None);
+                return;
+            }
+
+            bool ready = EnemyPrefabResolver.IsSpawnReady(prefab);
+            EditorGUILayout.HelpBox(
+                ready
+                    ? $"Spawn-ready: {prefab.name} has baked gameplay components."
+                    : $"Prefab exists at {prefabPath} but needs a full rebuild.",
+                ready ? MessageType.Info : MessageType.Warning);
+        }
+
         private void DrawActionButtons()
         {
+            string prefabPath =
+                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+            string buildLabel = prefabExists ? "Rebuild Prefab" : "Create Prefab";
+            string buildAndPlaceLabel = prefabExists ? "Rebuild + Place In Scene" : "Create Prefab + Place In Scene";
+
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Save Definition Asset", GUILayout.Height(30f)))
                 SaveDefinitionAsset();
 
-            if (GUILayout.Button("Create Prefab", GUILayout.Height(30f)))
+            if (GUILayout.Button(buildLabel, GUILayout.Height(30f)))
                 CreateEnemyPrefab(false);
             EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("Create Prefab + Place In Scene", GUILayout.Height(32f)))
+            if (GUILayout.Button(buildAndPlaceLabel, GUILayout.Height(32f)))
                 CreateEnemyPrefab(true);
         }
 
@@ -694,6 +874,8 @@ namespace Project.EditorTools
             workingDefinition.enemyId = "new_enemy";
             workingDefinition.displayName = "New Enemy";
             workingDefinition.prefabFileName = "NewEnemy";
+            workingDefinition.archetype = EnemyArchetype.HumanoidInvector;
+            workingDefinition.visualChildName = "Visual";
             workingDefinition.ApplyBehaviorPreset(EnemyBehaviorPreset.AggressiveHunter);
             definitionAssetFileName = "new_enemy";
         }
@@ -746,6 +928,10 @@ namespace Project.EditorTools
                 return;
 
             EnemyDefinition definitionCopy = Instantiate(workingDefinition);
+            string expectedPrefabPath =
+                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(definitionCopy.prefabFileName, definitionCopy.displayName)}.prefab";
+            bool existedBefore = AssetDatabase.LoadAssetAtPath<GameObject>(expectedPrefabPath) != null;
+
             GameObject prefab = EnemyPrefabBuilder.BuildEnemy(definitionCopy, builderSourceMode, source, out string prefabPath);
             if (prefab == null)
             {
@@ -768,7 +954,7 @@ namespace Project.EditorTools
             EditorGUIUtility.PingObject(prefab);
             AssetDatabase.SaveAssets();
             RefreshDefinitionList();
-            Debug.Log($"Created enemy prefab at {prefabPath}");
+            Debug.Log($"{(existedBefore ? "Rebuilt" : "Created")} enemy prefab at {prefabPath}");
         }
     }
 }

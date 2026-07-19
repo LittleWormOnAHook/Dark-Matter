@@ -13,7 +13,6 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class PlayerInputRepairUtility
 {
-    private const string LegacyPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player.prefab";
     private const string InvectorPlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player_Invector.prefab";
     private const string InputActionsPath = "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions";
     private const string PlayerActionMapName = "Player";
@@ -21,8 +20,7 @@ public static class PlayerInputRepairUtility
     [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput Action Events", false, 15)]
     public static void RepairPlayerInputMenu()
     {
-        int prefabChanges = RepairPlayerPrefab(LegacyPlayerPrefabPath, resyncPlayerMap: false);
-        prefabChanges += RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: false);
+        int prefabChanges = RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: false);
         int sceneChanges = RepairActiveScene(resyncPlayerMap: false);
 
         string summary = BuildSummary(prefabChanges, sceneChanges);
@@ -35,8 +33,7 @@ public static class PlayerInputRepairUtility
     [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair PlayerInput + Sync Player Map", false, 16)]
     public static void RepairAndSyncPlayerMapMenu()
     {
-        int prefabChanges = RepairPlayerPrefab(LegacyPlayerPrefabPath, resyncPlayerMap: true);
-        prefabChanges += RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: true);
+        int prefabChanges = RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: true);
         int sceneChanges = RepairActiveScene(resyncPlayerMap: true);
 
         string summary = BuildSummary(prefabChanges, sceneChanges);

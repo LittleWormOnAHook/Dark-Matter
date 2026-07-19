@@ -20,15 +20,20 @@ namespace Project.UI
             if (instance != null)
                 return instance;
 
-            Canvas canvas = FindAnyObjectByType<Canvas>();
-            if (canvas == null)
+            Transform canvasRoot = MainMenuController.ResolveCombatHudRoot();
+            if (canvasRoot == null)
                 return null;
 
             GameObject host = new GameObject("PetTamingProgressUI", typeof(RectTransform));
-            host.transform.SetParent(canvas.transform, false);
+            host.transform.SetParent(canvasRoot, false);
             instance = host.AddComponent<PetTamingProgressUI>();
             instance.Build();
             return instance;
+        }
+
+        internal static void ResetRuntimeState()
+        {
+            instance = null;
         }
 
         public static void Show(Transform target, float progress01, string message)

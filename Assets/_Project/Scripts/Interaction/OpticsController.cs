@@ -34,9 +34,13 @@ namespace Project.Interaction
         private OpticsOverlayUI overlayUi;
         private OpticsCameraRig cameraRig;
         private ScannerWorldHighlight worldHighlight;
+        private ScannerSweepController scannerSweep;
         private Camera worldCamera;
+        internal static readonly Collider[] ScanHitBuffer = new Collider[128];
         private readonly List<OpticsScanTarget> scanResults = new List<OpticsScanTarget>(24);
         private readonly HashSet<int> scanResultKeys = new HashSet<int>();
+        private readonly HashSet<OutlineController> highlightedOutlines = new HashSet<OutlineController>();
+        private readonly List<OutlineController> outlineScratch = new List<OutlineController>(24);
         private float nextScanTime;
         private float scrollMomentum;
         private int activeSinceFrame = -1;
@@ -59,6 +63,10 @@ namespace Project.Interaction
             worldHighlight = GetComponent<ScannerWorldHighlight>();
             if (worldHighlight == null)
                 worldHighlight = gameObject.AddComponent<ScannerWorldHighlight>();
+
+            scannerSweep = GetComponent<ScannerSweepController>();
+            if (scannerSweep == null)
+                scannerSweep = gameObject.AddComponent<ScannerSweepController>();
         }
 
         private void OnEnable()
@@ -123,6 +131,7 @@ namespace Project.Interaction
             if (isActive && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 ForceDeactivate();
+                equipment?.ClearToolbarSelectionPublic();
                 return;
             }
 
@@ -141,6 +150,9 @@ namespace Project.Interaction
                 nextScanTime = Time.unscaledTime + scanRefreshInterval;
                 RefreshScannerTargets(tool);
             }
+
+            if (tool.toolType == ToolType.Scanner)
+                scannerSweep?.TickScannerInput(true, worldCamera);
 
             if (Mouse.current != null)
                 HandleOpticsScrollZoom(tool);
@@ -216,15 +228,24 @@ namespace Project.Interaction
             if (UiInputGuard.ShouldBlockOpticsActivation)
                 return false;
 
+            // Always allow RMB/Block to close an open optic view.
+            if (isActive)
+            {
+                ForceDeactivate();
+                // Drop toolbar selection so the next mouse click returns to weapon aim/fire.
+                equipment.ClearToolbarSelectionPublic();
+                return true;
+            }
+
+            // Opening optics via Block is only for tool-only mode.
+            // If a weapon is drawn, leave mouse buttons to aim/fire — use N/B to open optics.
+            if (equipment.IsWeaponDrawn)
+                return false;
+
             if (!equipment.HasOpticsToolSelected())
                 return false;
 
-            if (isActive)
-                ForceDeactivate();
-            else
-                TryActivate();
-
-            return true;
+            return TryActivate();
         }
 
         public void Toggle()
@@ -265,6 +286,9 @@ namespace Project.Interaction
             if (!equipment.TryEnsureToolbarTool(toolType, out _))
                 return;
 
+            // Optics take mouse focus — holster any drawn weapon so aim/fire can't fight the optic.
+            equipment.HolsterWeapon();
+
             ItemData tool = equipment.ActiveToolItem;
             if (tool == null || !tool.IsOpticsTool)
                 return;
@@ -283,6 +307,8 @@ namespace Project.Interaction
 
             if (!EnsureOverlayUi())
                 return false;
+
+            SyncScannerViewportFromLibrary();
 
             worldCamera = playerController.GameplayCamera != null ? playerController.GameplayCamera : Camera.main;
             if (worldCamera == null)
@@ -328,6 +354,7 @@ namespace Project.Interaction
             {
                 overlayUi.ClearScannerMarkers();
                 worldHighlight?.Clear();
+                ClearOutlineHighlights();
             }
 
             RefreshEquippedVisualIfLegacy();
@@ -361,6 +388,7 @@ namespace Project.Interaction
             overlayUi?.SetVisible(false, ToolType.None);
             worldHighlight?.SetActive(false);
             worldHighlight?.Clear();
+            ClearOutlineHighlights();
             RefreshEquippedVisualIfLegacy();
             playerController?.RefreshCameraFollow();
 
@@ -407,6 +435,7 @@ namespace Project.Interaction
             {
                 overlayUi?.ClearScannerMarkers();
                 worldHighlight?.Clear();
+                ClearOutlineHighlights();
             }
 
             RefreshEquippedVisualIfLegacy();
@@ -424,6 +453,8 @@ namespace Project.Interaction
         {
             if (overlayUi == null)
                 return;
+
+            SyncScannerViewportFromLibrary();
 
             if (worldCamera == null && cameraRig != null && cameraRig.IsActive)
                 worldCamera = cameraRig.OpticsCamera;
@@ -445,10 +476,118 @@ namespace Project.Interaction
 
             overlayUi.UpdateScannerMarkers(
                 worldCamera,
-                scanResults,
+                BuildCombinedScanTargets(),
                 scannerViewportHalfWidthPixels,
                 scannerViewportHalfHeightPixels);
-            worldHighlight?.UpdateHighlights(scanResults, worldCamera);
+            SyncOutlineHighlights(origin, scanRange);
+        }
+
+        internal void NotifyPostScanUpdated()
+        {
+            if (overlayUi == null || worldCamera == null)
+                return;
+
+            overlayUi.UpdateScannerMarkers(
+                worldCamera,
+                BuildCombinedScanTargets(),
+                scannerViewportHalfWidthPixels,
+                scannerViewportHalfHeightPixels);
+        }
+
+        private List<OpticsScanTarget> BuildCombinedScanTargets()
+        {
+            var combined = new List<OpticsScanTarget>(scanResults.Count + 24);
+            combined.AddRange(scanResults);
+
+            if (scannerSweep != null)
+            {
+                IReadOnlyList<OpticsScanTarget> postScan = scannerSweep.PostScanResults;
+                for (int i = 0; i < postScan.Count; i++)
+                {
+                    OpticsScanTarget postTarget = postScan[i];
+                    bool duplicate = false;
+                    for (int j = 0; j < combined.Count; j++)
+                    {
+                        if (combined[j].Outline != null && combined[j].Outline == postTarget.Outline)
+                        {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!duplicate)
+                        combined.Add(postTarget);
+                }
+            }
+
+            if (combined.Count > 24)
+                combined.RemoveRange(24, combined.Count - 24);
+
+            return combined;
+        }
+
+        private void SyncOutlineHighlights(Vector3 origin, float outlineScanRange)
+        {
+            outlineScratch.Clear();
+
+            // Drive every OutlineDM in range — not limited to the 24 HUD marker slots.
+            OutlineController[] outlines = FindObjectsByType<OutlineController>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < outlines.Length; i++)
+            {
+                OutlineController outline = outlines[i];
+                if (outline == null || outline.transform.IsChildOf(transform))
+                    continue;
+
+                Vector3 point = outline.transform.position;
+                Renderer outlineRenderer = outline.GetComponentInChildren<Renderer>();
+                if (outlineRenderer != null)
+                    point = outlineRenderer.bounds.center;
+
+                float distance = Vector3.Distance(origin, point);
+                if (distance > outlineScanRange)
+                    continue;
+
+                if (!HasLineOfSight(origin, point, outline.transform))
+                    continue;
+
+                float intensity = outline.GetScannerIntensityForDistance(distance);
+                if (intensity <= 0.01f)
+                    continue;
+
+                outline.SetScannerHighlight(true, intensity);
+                outlineScratch.Add(outline);
+                highlightedOutlines.Add(outline);
+            }
+
+            if (highlightedOutlines.Count == 0)
+                return;
+
+            highlightedOutlines.RemoveWhere(outline =>
+            {
+                if (outline == null)
+                    return true;
+
+                for (int i = 0; i < outlineScratch.Count; i++)
+                {
+                    if (outlineScratch[i] == outline)
+                        return false;
+                }
+
+                outline.ClearScannerHighlight();
+                return true;
+            });
+        }
+
+        private void ClearOutlineHighlights()
+        {
+            foreach (OutlineController outline in highlightedOutlines)
+            {
+                if (outline != null)
+                    outline.ClearScannerHighlight();
+            }
+
+            highlightedOutlines.Clear();
+            outlineScratch.Clear();
         }
 
         private void ScanPhysicsTargets(Vector3 origin, float scanRange)
@@ -464,7 +603,8 @@ namespace Project.Interaction
                 if (!TryBuildScanTarget(hit, out OpticsScanTarget target))
                     continue;
 
-                if (!HasLineOfSight(origin, target.WorldPosition))
+                Transform losRoot = target.Outline != null ? target.Outline.transform : hit.transform;
+                if (!HasLineOfSight(origin, target.WorldPosition, losRoot))
                     continue;
 
                 TryAddScanResult(target);
@@ -487,7 +627,7 @@ namespace Project.Interaction
                 if (!HasLineOfSight(origin, marker.WorldPosition))
                     continue;
 
-                TryAddScanResult(new OpticsScanTarget(marker.WorldPosition, marker.Label, marker.Color));
+                TryAddScanResult(new OpticsScanTarget(marker.WorldPosition, marker.Label, marker.Color, ResolveOutline(marker.transform)));
             }
         }
 
@@ -507,7 +647,11 @@ namespace Project.Interaction
                 if (scannable.RequiresLineOfSight && !HasLineOfSight(origin, scannable.ScanPosition))
                     continue;
 
-                TryAddScanResult(new OpticsScanTarget(scannable.ScanPosition, scannable.ScanLabel, scannable.ScanColor));
+                TryAddScanResult(new OpticsScanTarget(
+                    scannable.ScanPosition,
+                    scannable.ScanLabel,
+                    scannable.ScanColor,
+                    ResolveOutline(scannable.transform)));
             }
         }
 
@@ -540,7 +684,11 @@ namespace Project.Interaction
             ScannableTarget scannable = collider.GetComponentInParent<ScannableTarget>();
             if (scannable != null)
             {
-                target = new OpticsScanTarget(scannable.ScanPosition, scannable.ScanLabel, scannable.ScanColor);
+                target = new OpticsScanTarget(
+                    scannable.ScanPosition,
+                    scannable.ScanLabel,
+                    scannable.ScanColor,
+                    ResolveOutline(scannable.transform));
                 return true;
             }
 
@@ -551,14 +699,19 @@ namespace Project.Interaction
                 target = new OpticsScanTarget(
                     resourceNode.transform.position,
                     item.itemName,
-                    MapUiSprites.GetResourceColor(item.itemType));
+                    MapUiSprites.GetResourceColor(item.itemType),
+                    ResolveOutline(resourceNode.transform));
                 return true;
             }
 
             MapMarker mapMarker = collider.GetComponentInParent<MapMarker>();
             if (mapMarker != null)
             {
-                target = new OpticsScanTarget(mapMarker.WorldPosition, mapMarker.Label, mapMarker.Color);
+                target = new OpticsScanTarget(
+                    mapMarker.WorldPosition,
+                    mapMarker.Label,
+                    mapMarker.Color,
+                    ResolveOutline(mapMarker.transform));
                 return true;
             }
 
@@ -566,21 +719,69 @@ namespace Project.Interaction
             if (pickup != null && !pickup.IsPickedUp)
             {
                 string label = pickup.itemData != null ? pickup.itemData.itemName : "Pickup";
-                target = new OpticsScanTarget(pickup.transform.position, label, new Color(0.95f, 0.85f, 0.35f, 1f));
+                target = new OpticsScanTarget(
+                    pickup.transform.position,
+                    label,
+                    new Color(0.95f, 0.85f, 0.35f, 1f),
+                    ResolveOutline(pickup.transform));
+                return true;
+            }
+
+            // Prefabs with OutlineDM only — still register as a scan hit so the outline can light up.
+            OutlineController outlineOnly = ResolveOutline(collider.transform);
+            if (outlineOnly != null)
+            {
+                target = new OpticsScanTarget(
+                    outlineOnly.transform.position,
+                    outlineOnly.gameObject.name,
+                    outlineOnly.outlineColor,
+                    outlineOnly);
                 return true;
             }
 
             return false;
         }
 
-        private bool HasLineOfSight(Vector3 origin, Vector3 targetPosition)
+        internal static OutlineController ResolveOutlinePublic(Transform root) => ResolveOutline(root);
+
+        internal bool HasLineOfSightPublic(Vector3 origin, Vector3 targetPosition, Transform ignoreRoot = null)
+            => HasLineOfSight(origin, targetPosition, ignoreRoot);
+
+        internal static int BuildScanKeyPublic(Vector3 position, string label) => BuildScanKey(position, label);
+
+        private static OutlineController ResolveOutline(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            OutlineController outline = root.GetComponent<OutlineController>();
+            if (outline != null)
+                return outline;
+
+            outline = root.GetComponentInParent<OutlineController>();
+            if (outline != null)
+                return outline;
+
+            return root.GetComponentInChildren<OutlineController>(true);
+        }
+
+        private bool HasLineOfSight(Vector3 origin, Vector3 targetPosition, Transform ignoreRoot = null)
         {
             Vector3 direction = targetPosition - origin;
             float distance = direction.magnitude;
             if (distance <= 0.05f)
                 return true;
 
-            return !Physics.Raycast(origin, direction / distance, distance, scanLayers, QueryTriggerInteraction.Ignore);
+            Vector3 rayDirection = direction / distance;
+            if (!Physics.Raycast(origin, rayDirection, out RaycastHit hit, distance, scanLayers, QueryTriggerInteraction.Ignore))
+                return true;
+
+            if (ignoreRoot != null &&
+                (hit.transform == ignoreRoot || hit.transform.IsChildOf(ignoreRoot) || ignoreRoot.IsChildOf(hit.transform)))
+                return true;
+
+            // Hitting the near surface of the intended target still counts as visible.
+            return Vector3.Distance(hit.point, targetPosition) <= 0.5f;
         }
 
         private bool CanOperate()
@@ -594,27 +795,18 @@ namespace Project.Interaction
 
         private bool EnsureOverlayUi()
         {
-            if (overlayUi != null && overlayUi.IsBuilt)
-                return true;
+            overlayUi = OpticsOverlayUI.EnsureExists();
+            return overlayUi != null && overlayUi.IsBuilt;
+        }
 
-            Canvas canvas = MainMenuController.ResolveMainCanvas();
-            if (canvas == null)
-                canvas = FindAnyObjectByType<Canvas>();
+        private void SyncScannerViewportFromLibrary()
+        {
+            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+            if (library == null || library.viewport == null)
+                return;
 
-            if (canvas == null)
-                return false;
-
-            if (canvas.transform.localScale.sqrMagnitude < 0.001f)
-                canvas.transform.localScale = Vector3.one;
-
-            UIManager uiManager = canvas.GetComponent<UIManager>();
-            Transform canvasRoot = uiManager != null ? uiManager.transform : canvas.transform;
-            overlayUi = canvasRoot.GetComponent<OpticsOverlayUI>();
-            if (overlayUi == null)
-                overlayUi = canvasRoot.gameObject.AddComponent<OpticsOverlayUI>();
-
-            overlayUi.EnsureBuilt(canvasRoot);
-            return overlayUi.IsBuilt;
+            scannerViewportHalfWidthPixels = library.viewport.scannerHalfWidthPixels;
+            scannerViewportHalfHeightPixels = library.viewport.scannerHalfHeightPixels;
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Companions;
 using Project.Pioneers;
+using Project.Survival.Exposure;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,6 +41,8 @@ namespace Project.UI
         private CompanionRosterBridge rosterBridge;
         private bool uiBuilt;
         private bool subscribedToRoster;
+        private bool subscribedToCompanionBridge;
+        private bool subscribedToExposure;
         private bool raisedToFrontLayer;
         private int lastCompanionCount = -1;
 
@@ -49,7 +52,7 @@ namespace Project.UI
             SlotCount * SlotDiameter + Mathf.Max(0, SlotCount - 1) * SlotSpacing;
 
         public float GetClusterHeight() =>
-            TitleHeight + SlotDiameter + ArcPadding * 2f + HudLayoutMetrics.Scaled(4f);
+            TitleHeight + SlotDiameter + ArcPadding * 2f + HudLayoutMetrics.Scaled(18f);
 
         public void EnsureBuilt(Transform layoutParent, float anchoredY)
         {
@@ -58,13 +61,20 @@ namespace Project.UI
 
             BuildCluster(layoutParent, anchoredY);
             SubscribeToRoster();
+            SubscribeToCompanionBridge();
+            CompanionHealth.AnyHealthChanged += HandleAnyCompanionHealthChanged;
+            SubscribeToExposureService();
             uiBuilt = true;
             SetGameplayVisible(false);
             Refresh();
+            ApplyExposureModifiers(ExposureStatusService.Current);
         }
 
         public void SetGameplayVisible(bool visible)
         {
+            if (MainMenuController.BlocksGameplayHud)
+                visible = false;
+
             if (clusterRoot != null)
                 clusterRoot.gameObject.SetActive(visible);
         }
@@ -124,17 +134,57 @@ namespace Project.UI
             }
         }
 
+        /// <summary>
+        /// Called when a spawned companion's health component is ready so slot arcs bind immediately.
+        /// </summary>
+        public static void NotifyCompanionHealthReady(CompanionHealth health)
+        {
+            if (health == null)
+                return;
+
+            ExpeditionPioneerHudUI hud = FindAnyObjectByType<ExpeditionPioneerHudUI>();
+            hud?.BindCompanionHealth(health);
+        }
+
+        public void BindCompanionHealth(CompanionHealth health)
+        {
+            if (!uiBuilt || health == null || string.IsNullOrEmpty(health.PioneerRecordId))
+                return;
+
+            roster ??= PioneerRosterManager.EnsureExists();
+
+            for (int i = 0; i < SlotCount; i++)
+            {
+                SkilledPioneerRecord record = roster.GetExpeditionTrioRecordAtSlot(i);
+                if (record == null || record.id != health.PioneerRecordId)
+                    continue;
+
+                BindSlotHealth(i, slots[i], health);
+                return;
+            }
+        }
+
         private void Update()
         {
-            if (!uiBuilt || rosterBridge == null)
+            if (!uiBuilt)
                 return;
+
+            SubscribeToCompanionBridge();
+
+            if (rosterBridge == null)
+                return;
+
+            SubscribeToExposureService();
 
             int count = rosterBridge.ActiveCompanions.Count;
-            if (count == lastCompanionCount)
+            if (count != lastCompanionCount)
+            {
+                lastCompanionCount = count;
+                Refresh();
                 return;
+            }
 
-            lastCompanionCount = count;
-            Refresh();
+            TryRebindMissingHealthListeners();
         }
 
         private void BuildCluster(Transform layoutParent, float anchoredY)
@@ -188,7 +238,8 @@ namespace Project.UI
 
         private SlotView CreateSlot(Transform parent, int slotIndex)
         {
-            float slotHeight = SlotDiameter + HudLayoutMetrics.Scaled(2f);
+            float stripHeight = HudLayoutMetrics.Scaled(14f);
+            float slotHeight = SlotDiameter + stripHeight + HudLayoutMetrics.Scaled(4f);
             GameObject slotRoot = new GameObject($"PioneerSlot_{slotIndex + 1}", typeof(RectTransform));
             slotRoot.transform.SetParent(parent, false);
             RectTransform slotRect = slotRoot.GetComponent<RectTransform>();
@@ -254,13 +305,80 @@ namespace Project.UI
             initialsLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             initialsLabel.raycastTarget = false;
 
+            GameObject stripObject = new GameObject("ModifierStrip", typeof(RectTransform), typeof(ExposureModifierMicroStrip));
+            stripObject.transform.SetParent(slotRoot.transform, false);
+            RectTransform stripRect = stripObject.GetComponent<RectTransform>();
+            stripRect.anchorMin = new Vector2(0.5f, 0f);
+            stripRect.anchorMax = new Vector2(0.5f, 0f);
+            stripRect.pivot = new Vector2(0.5f, 0f);
+            stripRect.anchoredPosition = Vector2.zero;
+            stripRect.sizeDelta = new Vector2(SlotDiameter, stripHeight);
+            ExposureModifierMicroStrip modifierStrip = stripObject.GetComponent<ExposureModifierMicroStrip>();
+
             return new SlotView
             {
                 PortraitImage = portraitImage,
                 InitialsLabel = initialsLabel,
                 HealthTrack = healthTrack,
-                HealthFill = healthFill
+                HealthFill = healthFill,
+                ModifierStrip = modifierStrip
             };
+        }
+
+        private void SubscribeToExposureService()
+        {
+            if (subscribedToExposure)
+                return;
+
+            ExposureStatusService service = ExposureStatusService.Instance;
+            if (service == null)
+                return;
+
+            service.OnSnapshotChanged += HandleExposureSnapshotChanged;
+            subscribedToExposure = true;
+        }
+
+        private void HandleExposureSnapshotChanged(ExposureStatusSnapshot snapshot)
+        {
+            ApplyExposureModifiers(snapshot);
+        }
+
+        private void ApplyExposureModifiers(ExposureStatusSnapshot snapshot)
+        {
+            if (!uiBuilt)
+                return;
+
+            CompanionExposureModifierSlot[] companionSlots = snapshot?.ExpeditionCompanionSlots;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                SlotView slot = slots[i];
+                if (slot?.ModifierStrip == null)
+                    continue;
+
+                CompanionExposureModifierSlot modSlot = companionSlots != null && i < companionSlots.Length
+                    ? companionSlots[i]
+                    : null;
+
+                if (modSlot == null)
+                {
+                    slot.ModifierStrip.SetTicks(null, null);
+                    continue;
+                }
+
+                slot.ModifierStrip.SetTicks(modSlot.BuffTicks, modSlot.DebuffTicks);
+            }
+        }
+
+        private void UnsubscribeFromExposureService()
+        {
+            if (!subscribedToExposure)
+                return;
+
+            ExposureStatusService service = ExposureStatusService.Instance;
+            if (service != null)
+                service.OnSnapshotChanged -= HandleExposureSnapshotChanged;
+
+            subscribedToExposure = false;
         }
 
         private static HalfCircleHealthBarGraphic CreateArcGraphic(
@@ -308,16 +426,53 @@ namespace Project.UI
             CompanionHealth health = FindCompanionHealth(record.id);
             if (health != null)
             {
-                subscribedHealth[slotIndex] = health;
-                int capturedSlot = slotIndex;
-                healthHandlers[slotIndex] = (current, max) => ApplyHealthFill(slots[capturedSlot], current, max);
-                health.HealthChanged += healthHandlers[slotIndex];
-                ApplyHealthFill(slot, health.CurrentHealth, health.MaxHealth);
+                BindSlotHealth(slotIndex, slot, health);
                 return;
             }
 
             bool injured = record.WorkState == PioneerWorkState.Injured;
             ApplyHealthFill(slot, injured ? 0.25f : 1f, 1f);
+        }
+
+        private void TryRebindMissingHealthListeners()
+        {
+            roster ??= PioneerRosterManager.EnsureExists();
+
+            for (int i = 0; i < SlotCount; i++)
+            {
+                if (subscribedHealth[i] != null)
+                    continue;
+
+                SkilledPioneerRecord record = roster.GetExpeditionTrioRecordAtSlot(i);
+                if (record == null)
+                    continue;
+
+                CompanionHealth health = FindCompanionHealth(record.id);
+                if (health == null)
+                    continue;
+
+                BindSlotHealth(i, slots[i], health);
+            }
+        }
+
+        private void BindSlotHealth(int slotIndex, SlotView slot, CompanionHealth health)
+        {
+            if (slot == null || health == null)
+                return;
+
+            if (subscribedHealth[slotIndex] == health)
+                return;
+
+            if (subscribedHealth[slotIndex] != null && healthHandlers[slotIndex] != null)
+                subscribedHealth[slotIndex].HealthChanged -= healthHandlers[slotIndex];
+
+            subscribedHealth[slotIndex] = health;
+            int capturedSlot = slotIndex;
+            healthHandlers[slotIndex] = (current, max) => ApplyHealthFill(slots[capturedSlot], current, max);
+            health.HealthChanged += healthHandlers[slotIndex];
+            slot.HealthTrack.gameObject.SetActive(true);
+            slot.HealthFill.gameObject.SetActive(true);
+            ApplyHealthFill(slot, health.CurrentHealth, health.MaxHealth);
         }
 
         private static void ApplyHealthFill(SlotView slot, float current, float max)
@@ -344,10 +499,33 @@ namespace Project.UI
                 if (agent == null || agent.PioneerRecordId != pioneerRecordId)
                     continue;
 
-                return agent.GetComponent<CompanionHealth>();
+                return agent.GetComponent<CompanionHealth>() ?? agent.GetComponentInChildren<CompanionHealth>(true);
             }
 
             return null;
+        }
+
+        private void SubscribeToCompanionBridge()
+        {
+            if (subscribedToCompanionBridge)
+                return;
+
+            rosterBridge = FindAnyObjectByType<CompanionRosterBridge>();
+            if (rosterBridge == null)
+                return;
+
+            rosterBridge.ActiveCompanionsChanged += Refresh;
+            subscribedToCompanionBridge = true;
+            Refresh();
+        }
+
+        private void UnsubscribeFromCompanionBridge()
+        {
+            if (!subscribedToCompanionBridge || rosterBridge == null)
+                return;
+
+            rosterBridge.ActiveCompanionsChanged -= Refresh;
+            subscribedToCompanionBridge = false;
         }
 
         private void SubscribeToRoster()
@@ -407,8 +585,30 @@ namespace Project.UI
                 : char.ToUpperInvariant(trimmed[0]).ToString();
         }
 
+        private void HandleAnyCompanionHealthChanged(CompanionHealth health, float current, float max)
+        {
+            if (!uiBuilt || health == null)
+                return;
+
+            BindCompanionHealth(health);
+
+            roster ??= PioneerRosterManager.EnsureExists();
+            for (int i = 0; i < SlotCount; i++)
+            {
+                if (subscribedHealth[i] != health)
+                    continue;
+
+                ApplyHealthFill(slots[i], current, max);
+                return;
+            }
+        }
+
         private void OnDestroy()
         {
+            CompanionHealth.AnyHealthChanged -= HandleAnyCompanionHealthChanged;
+            UnsubscribeFromExposureService();
+            UnsubscribeHealthListeners();
+            UnsubscribeFromCompanionBridge();
             if (subscribedToRoster && roster != null)
             {
                 roster.OnTrioChanged -= Refresh;
@@ -422,6 +622,7 @@ namespace Project.UI
             public TextMeshProUGUI InitialsLabel;
             public HalfCircleHealthBarGraphic HealthTrack;
             public HalfCircleHealthBarGraphic HealthFill;
+            public ExposureModifierMicroStrip ModifierStrip;
         }
     }
 }

@@ -155,6 +155,19 @@ namespace Project.Quests
             return true;
         }
 
+        public bool AbandonQuest(string questId)
+        {
+            QuestDefinition definition = QuestRegistry.Resolve(questId);
+            QuestProgress progress = GetProgress(questId);
+            if (definition == null || progress == null || progress.status != QuestStatus.Active)
+                return false;
+
+            progress.status = QuestStatus.Available;
+            ResetObjectiveProgress(progress);
+            NotifyUpdated(progress);
+            return true;
+        }
+
         public bool ClaimRewards(string questId)
         {
             QuestDefinition definition = QuestRegistry.Resolve(questId);
@@ -699,6 +712,15 @@ namespace Project.Quests
         private void NotifyUpdated(QuestProgress progress)
         {
             OnQuestUpdated?.Invoke(progress);
+        }
+
+        private static void ResetObjectiveProgress(QuestProgress progress)
+        {
+            if (progress?.objectiveProgress == null)
+                return;
+
+            for (int i = 0; i < progress.objectiveProgress.Length; i++)
+                progress.objectiveProgress[i] = 0;
         }
     }
 }

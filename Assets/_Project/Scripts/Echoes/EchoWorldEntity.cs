@@ -247,6 +247,9 @@ namespace Project.Echoes
                 traitIds = source.traitIds,
                 passiveAbilityIds = source.passiveAbilityIds,
                 learnedSkills = source.learnedSkills,
+                buffs = source.buffs,
+                weaponItemId = source.weaponItemId,
+                toolItemId = source.toolItemId,
                 isInExpeditionTrio = false,
                 workState = source.workState
             };

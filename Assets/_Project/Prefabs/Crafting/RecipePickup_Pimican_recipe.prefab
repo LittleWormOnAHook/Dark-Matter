@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6350625746836952749}
   m_Layer: 0
   m_Name: RecipePickup_Pimican_recipe
-  m_TagString: Untagged
+  m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
   recipeId: Pimican_recipe
   promptText: Press E to learn recipe
-  interactRange: 2.5
+  interactRange: 4
   collectedMessage: Recipe learned!
 --- !u!1001 &6652371964182323227
 PrefabInstance:

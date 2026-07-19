@@ -18,6 +18,8 @@ namespace Project.Companions
         private static readonly int Ground = Animator.StringToHash("OnGround");
         private static readonly int LocomotionAnimSpeed = Animator.StringToHash("LocomotionAnimSpeed");
 
+        private const string UpperBodyCombatLayer = "Upper Body Combat";
+
         [SerializeField] private float locomotionSmoothTime = 0.18f;
         [SerializeField] private float leanBlendSmoothTime = 0.24f;
         [SerializeField] private float animSpeedSmoothTime = 0.12f;
@@ -240,7 +242,7 @@ namespace Project.Companions
             int layer = 0;
             for (int i = 0; i < animator.layerCount; i++)
             {
-                if (animator.GetLayerName(i) == GkcAnimatorConstants.UpperBodyCombatLayer && animator.HasState(i, attackHash))
+                if (animator.GetLayerName(i) == UpperBodyCombatLayer && animator.HasState(i, attackHash))
                 {
                     layer = i;
                     break;

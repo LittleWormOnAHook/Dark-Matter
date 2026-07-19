@@ -74,12 +74,9 @@ namespace Project.UI
             for (int i = 0; i < GameSaveSystem.SlotCount; i++)
                 CreateSlotRow(window.transform, i);
 
-            Button backButton = MenuUiBuilder.CreateButton(
-                window.transform,
-                "Back",
-                new Vector2(MenuUiBuilder.ScaledSize(200f), MenuUiBuilder.ScaledSize(48f)),
-                MenuUiBuilder.ScaledSize(22f));
-            backButton.onClick.AddListener(OnBackClicked);
+            // Pinned to the panel's own root (not window) so it stays fixed top-right regardless of
+            // the VerticalLayoutGroup content above it.
+            MenuUiBuilder.CreateTopRightBackButton(panelRoot.transform, OnBackClicked);
 
             panelRoot.SetActive(false);
         }

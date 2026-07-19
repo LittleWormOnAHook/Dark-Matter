@@ -238,23 +238,59 @@ namespace Project.Pioneers
 
         private void GrantAllCatalogPioneersToSkilledRoster()
         {
+            // Only Echo and Expedition-origin companions are present from the start. Support Ship
+            // companions join later via GrantSupportShipCompanion (a story/quest trigger), and Other-
+            // origin unique characters (aliens/AI bots/hybrids) are met and recruited directly out in
+            // the world via UniqueRecruitEntity — neither should be handed to the player for free.
             IReadOnlyList<NamedPioneerDefinition> definitions = NamedPioneerCatalog.GetAllDefinitions();
             for (int i = 0; i < definitions.Count; i++)
             {
                 NamedPioneerDefinition definition = definitions[i];
-                if (definition == null)
+                if (definition == null
+                    || definition.origin == CompanionOrigin.SupportShip
+                    || definition.origin == CompanionOrigin.Other)
                     continue;
 
-                if (HasSkilledPioneerById(definition.ResolvedId) || HasSkilledPioneerByName(definition.displayName))
-                    continue;
-
-                if (skilledPioneers.Count >= MaxSkilledPioneers)
-                    break;
-
-                SkilledPioneerRecord record = SkilledPioneerRecord.CreateFromCatalog(definition, applyLoadoutDefaults: false);
-                if (record != null)
-                    skilledPioneers.Add(record);
+                TryGrantCatalogPioneer(definition);
             }
+        }
+
+        /// <summary>
+        /// Grants a single Support Ship-origin companion to the roster — call this from a quest/story
+        /// trigger when that delivery event happens (e.g. a supply ship arriving mid-campaign).
+        /// Returns false if the pioneerId isn't found, isn't Support Ship-origin, or is already on
+        /// the roster.
+        /// </summary>
+        public bool GrantSupportShipCompanion(string pioneerId)
+        {
+            NamedPioneerDefinition definition = NamedPioneerCatalog.FindById(pioneerId);
+            if (definition == null || definition.origin != CompanionOrigin.SupportShip)
+                return false;
+
+            bool granted = TryGrantCatalogPioneer(definition);
+            if (granted)
+                NotifyRosterChanged();
+
+            return granted;
+        }
+
+        private bool TryGrantCatalogPioneer(NamedPioneerDefinition definition)
+        {
+            if (definition == null)
+                return false;
+
+            if (HasSkilledPioneerById(definition.ResolvedId) || HasSkilledPioneerByName(definition.displayName))
+                return false;
+
+            if (skilledPioneers.Count >= MaxSkilledPioneers)
+                return false;
+
+            SkilledPioneerRecord record = SkilledPioneerRecord.CreateFromCatalog(definition, applyLoadoutDefaults: false);
+            if (record == null)
+                return false;
+
+            skilledPioneers.Add(record);
+            return true;
         }
 
         private bool HasSkilledPioneerById(string pioneerId)
@@ -331,6 +367,27 @@ namespace Project.Pioneers
             return count;
         }
 
+        /// <summary>Raises level on active expedition trio members only (not benched/camp pioneers).</summary>
+        public void IncrementExpeditionTrioLevels(int levelsGained)
+        {
+            if (levelsGained <= 0)
+                return;
+
+            bool changed = false;
+            for (int i = 0; i < ExpeditionTrioSize; i++)
+            {
+                SkilledPioneerRecord record = GetExpeditionTrioRecordAtSlot(i);
+                if (record == null)
+                    continue;
+
+                record.level += levelsGained;
+                changed = true;
+            }
+
+            if (changed)
+                NotifyRosterChanged();
+        }
+
         public bool TrySetExpeditionTrio(IReadOnlyList<string> skilledIds, out string error)
         {
             error = string.Empty;
@@ -379,6 +436,10 @@ namespace Project.Pioneers
                 SkilledPioneerRecord record = FindSkilledById(id);
                 if (record != null)
                     record.isInExpeditionTrio = true;
+
+                // Joining the expedition trio means leaving whatever building job they were
+                // stationed at — can't work a facility and be out in the field at the same time.
+                BuildingOperationRegistry.UnassignPioneerFromAllBuildings(id);
             }
 
             NotifyTrioChanged();
@@ -490,6 +551,73 @@ namespace Project.Pioneers
             return true;
         }
 
+        /// <summary>
+        /// Adds a pioneer from a world conversation or echo rescue. Fills the first open expedition
+        /// trio slot when available; otherwise they remain on the camp roster (Pioneers tab).
+        /// </summary>
+        public bool TryRecruitFromWorld(
+            SkilledPioneerRecord record,
+            out string message,
+            out bool joinedExpeditionTrio)
+        {
+            joinedExpeditionTrio = false;
+            message = string.Empty;
+
+            if (record == null)
+            {
+                message = "Invalid pioneer record.";
+                return false;
+            }
+
+            string recruitName = record.displayName;
+            if (!TryAddSkilledPioneer(record, out message))
+                return false;
+
+            SkilledPioneerRecord rosterRecord = FindSkilledByName(recruitName);
+            if (rosterRecord == null)
+                rosterRecord = skilledPioneers[skilledPioneers.Count - 1];
+
+            int emptySlot = FindFirstEmptyTrioSlotIndex();
+            if (emptySlot >= 0 && CanJoinTrio(rosterRecord))
+            {
+                if (TryAssignTrioSlot(emptySlot, rosterRecord.id, out _))
+                {
+                    joinedExpeditionTrio = true;
+                    message = $"{rosterRecord.displayName} joined your expedition trio.";
+                    return true;
+                }
+            }
+
+            message = $"{rosterRecord.displayName} joined the camp roster. Assign them in the Pioneers tab.";
+            return true;
+        }
+
+        private int FindFirstEmptyTrioSlotIndex()
+        {
+            EnsureTrioSlotsSized();
+            for (int i = 0; i < ExpeditionTrioSize; i++)
+            {
+                if (string.IsNullOrWhiteSpace(expeditionTrioIds[i]))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private SkilledPioneerRecord FindSkilledByName(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+                return null;
+
+            for (int i = 0; i < skilledPioneers.Count; i++)
+            {
+                if (skilledPioneers[i].displayName == displayName)
+                    return skilledPioneers[i];
+            }
+
+            return null;
+        }
+
         public bool TryAddRescuedEcho(SkilledPioneerRecord record, out string message)
         {
             if (record != null)
@@ -499,9 +627,13 @@ namespace Project.Pioneers
                     record.Disposition = EchoDisposition.Synced;
             }
 
-            bool added = TryAddSkilledPioneer(record, out message);
+            bool added = TryRecruitFromWorld(record, out message, out _);
             if (added && record != null)
-                AppendEchoChronicle(EchoChronicleEntry.CreateSuccess(record));
+            {
+                SkilledPioneerRecord rosterRecord = FindSkilledById(record.id) ?? FindSkilledByName(record.displayName);
+                AppendEchoChronicle(EchoChronicleEntry.CreateSuccess(rosterRecord ?? record));
+            }
+
             return added;
         }
 
@@ -867,6 +999,7 @@ namespace Project.Pioneers
                 workState = source.workState,
                 injuryRecoveryRemaining = source.injuryRecoveryRemaining,
                 followMode = source.followMode,
+                worldIdleJob = source.worldIdleJob,
                 behavior = source.behavior != null ? source.behavior.Clone() : null
             };
         }

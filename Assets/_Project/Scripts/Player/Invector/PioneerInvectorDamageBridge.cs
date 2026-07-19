@@ -30,7 +30,15 @@ namespace Project.Player.Invector
                 return damage != null ? damage.damageValue : 0f;
 
             if (item.IsRangedWeapon)
-                return item.RollRangedDamage(isCritical);
+            {
+                // Ranged damage is now dealt exclusively by the unified CombatProjectile spawned
+                // from PioneerInvectorProjectileBridge on the same onShot event (shared with
+                // companion/enemy fire so tracers, elemental status effects, and ammo types behave
+                // identically everywhere). Invector's own hit detection must not also apply damage
+                // here or a single shot would double-hit.
+                isCritical = false;
+                return 0f;
+            }
 
             if (item.itemType == ItemType.MeleeWeapon)
                 return item.RollMeleeDamage(isCritical);

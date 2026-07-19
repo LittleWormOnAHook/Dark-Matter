@@ -2,6 +2,7 @@ using Project.Core;
 using Project.Interaction;
 using Project.Player;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -72,10 +73,16 @@ namespace Project.Player.Invector
             switch (context.action.name)
             {
                 case "Move":
-                    _playerController?.OnMove(context);
+                    if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+                        PlayerVehicleState.ActiveCraft.OnMove(context);
+                    else
+                        _playerController?.OnMove(context);
                     break;
                 case "Look":
-                    _playerController?.OnLook(context);
+                    if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+                        PlayerVehicleState.ActiveCraft.OnLook(context);
+                    else
+                        _playerController?.OnLook(context);
                     break;
                 case "Use":
                     if (context.performed)
@@ -85,16 +92,25 @@ namespace Project.Player.Invector
                     _playerController?.OnJump(context);
                     break;
                 case "Sprint":
-                    _playerController?.OnSprint(context);
+                    if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+                        PlayerVehicleState.ActiveCraft.OnSprint(context);
+                    else
+                        _playerController?.OnSprint(context);
                     break;
                 case "Crouch":
                     _playerController?.OnCrouch(context);
                     break;
                 case "Attack":
-                    if (context.performed)
+                    if (context.performed &&
+                        (_playerController == null || !_playerController.IsOpticsOpen))
                     {
-                        _melee?.OnAttack(context);
-                        _ranged?.OnAttack(context);
+                        if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+                            PlayerVehicleState.ActiveCraft.OnAttack();
+                        else
+                        {
+                            _melee?.OnAttack(context);
+                            _ranged?.OnAttack(context);
+                        }
                     }
                     break;
                 case "Block":

@@ -70,11 +70,10 @@ namespace Project.Player.Invector
 
             // Invector plays its own bundled fireClip on every shot (source.PlayOneShot) on top of
             // whatever ammoItem/weapon fire sound we resolve below — clear it so only one gunshot
-            // sound plays. isInfinityAmmo stays true so Invector's own (unfed) native ammo/reload
-            // reserve system (vAmmoManager/extraAmmo) can never gate or interfere; dontUseReload
-            // stays false so Invector's reload ANIMATION/timing is still available — WeaponAmmoState
-            // is the sole authority on whether a round is actually available, and
-            // PioneerInvectorAmmoBridge is the sole authority on when a reload should start.
+            // isInfinityAmmo stays true so Invector's unfed native reserve (vAmmoManager) never
+            // gates shots — WeaponAmmoState is the sole authority for finite player magazines.
+            // Companions/enemies also set isInfinityAmmo, but they intentionally never consume
+            // Pioneer inventory ammo. dontUseReload stays false so reload animation still runs.
             invectorWeapon.fireClip = null;
             invectorWeapon.emittShurykenParticle = null;
             invectorWeapon.lightOnShot = null;

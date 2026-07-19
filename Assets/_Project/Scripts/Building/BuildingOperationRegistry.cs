@@ -158,6 +158,11 @@ namespace Project.Building
             if (string.IsNullOrWhiteSpace(pioneerId))
                 return false;
 
+            // A pioneer can only be stationed at one building at a time — moving them here pulls
+            // them off whatever other building they were previously working, instead of duplicating
+            // the assignment.
+            UnassignPioneerFromAllBuildings(pioneerId);
+
             BuildingOperationState state = GetOrCreate(buildingId);
             EnsureAssignedSlots(state);
 
@@ -193,11 +198,76 @@ namespace Project.Building
 
             int nextIndex = (currentIndex + 1) % cycleOptions.Count;
             string next = cycleOptions[nextIndex];
+
+            // Same single-station rule as AssignPioneerById — clear any other building's slot holding
+            // this pioneer before placing them here.
+            if (!string.IsNullOrEmpty(next))
+                UnassignPioneerFromAllBuildings(next, exceptBuildingId: buildingId);
+
             state.AssignedPioneerIds[slotIndex] = next;
             SyncLegacyAssignedNames(state, availableIds, availableNames);
             PioneerRosterManager roster = PioneerRosterManager.Instance;
             roster?.SyncColonistAssignedCount(CountAllAssignedPioneers());
             return next;
+        }
+
+        /// <summary>Which building (if any) a given pioneer is currently stationed/working at.</summary>
+        public static string FindAssignedBuildingId(string pioneerId)
+        {
+            if (string.IsNullOrWhiteSpace(pioneerId))
+                return string.Empty;
+
+            foreach (KeyValuePair<string, BuildingOperationState> pair in Registry)
+            {
+                BuildingOperationState state = pair.Value;
+                if (state == null)
+                    continue;
+
+                for (int i = 0; i < state.AssignedPioneerIds.Count; i++)
+                {
+                    if (state.AssignedPioneerIds[i] == pioneerId)
+                        return state.BuildingId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Clears this pioneer out of every building work slot they're currently occupying (optionally
+        /// skipping one building). Called whenever a pioneer joins the expedition trio (they can't be
+        /// out adventuring and working a job at the same time) or moves to a different building.
+        /// </summary>
+        public static void UnassignPioneerFromAllBuildings(string pioneerId, string exceptBuildingId = null)
+        {
+            if (string.IsNullOrWhiteSpace(pioneerId))
+                return;
+
+            string exceptKey = string.IsNullOrEmpty(exceptBuildingId) ? null : NormalizeBuildingId(exceptBuildingId);
+            bool anyChanged = false;
+
+            foreach (KeyValuePair<string, BuildingOperationState> pair in Registry)
+            {
+                BuildingOperationState state = pair.Value;
+                if (state == null || (exceptKey != null && pair.Key == exceptKey))
+                    continue;
+
+                for (int i = 0; i < state.AssignedPioneerIds.Count; i++)
+                {
+                    if (state.AssignedPioneerIds[i] != pioneerId)
+                        continue;
+
+                    state.AssignedPioneerIds[i] = string.Empty;
+                    SyncLegacyAssignedNames(state);
+                    anyChanged = true;
+                }
+            }
+
+            if (anyChanged)
+            {
+                PioneerRosterManager roster = PioneerRosterManager.Instance;
+                roster?.SyncColonistAssignedCount(CountAllAssignedPioneers());
+            }
         }
 
         public static int CountAllAssignedPioneers()

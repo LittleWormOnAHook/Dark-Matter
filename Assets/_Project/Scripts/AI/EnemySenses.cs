@@ -15,6 +15,8 @@ namespace Project.AI
         [SerializeField] private float visionFov = 110f;
         [SerializeField] private float eyeHeight = 1.4f;
         [SerializeField] private LayerMask obstructionMask = ~0;
+        [Tooltip("Seconds between full vision recomputes for this enemy.")]
+        [SerializeField] private float visionRefreshInterval = 0.12f;
 
         [Header("Hearing")]
         [SerializeField] private float hearingRange = 18f;
@@ -30,10 +32,27 @@ namespace Project.AI
         private Vector3 lastNoisePosition;
         private float lastNoiseTime;
         private bool hasRecentNoise;
+        private int visionTickPhase;
+        private float nextVisionRefreshTime;
+        private Transform cachedVisiblePlayer;
+        private Transform cachedVisiblePioneer;
+        private Transform cachedVisibleThreat;
 
         public Vector3 LastNoisePosition => lastNoisePosition;
         public bool HasRecentNoise => hasRecentNoise && Time.time - lastNoiseTime <= noiseMemoryDuration;
         public float NoiseAge => HasRecentNoise ? Time.time - lastNoiseTime : float.MaxValue;
+
+        private void Awake()
+        {
+            visionTickPhase = Mathf.Abs(gameObject.GetEntityId().GetHashCode()) % 3;
+        }
+
+        private void Start()
+        {
+            EnsurePlayer();
+            if (companionBridge == null)
+                companionBridge = FindAnyObjectByType<CompanionRosterBridge>();
+        }
 
         private void OnEnable()
         {
@@ -66,11 +85,57 @@ namespace Project.AI
 
         /// <summary>
         /// Combat targeting only: requires FOV + line-of-sight (or direct melee touch).
-        /// Unlike <see cref="GetSensedTarget"/>, does NOT treat the player as seen through
-        /// walls inside the wide proximity bubble — that was causing enemies to chase and
-        /// hit bystanders who were "avoiding" combat nearby.
         /// </summary>
         public Transform GetVisiblePlayerTarget()
+        {
+            RefreshVisionCacheIfNeeded();
+            return cachedVisiblePlayer;
+        }
+
+        public bool CanSeePlayer()
+        {
+            return GetVisiblePlayerTarget() != null;
+        }
+
+        public Transform GetVisiblePioneerTarget()
+        {
+            RefreshVisionCacheIfNeeded();
+            return cachedVisiblePioneer;
+        }
+
+        /// <summary>
+        /// Closest visible threat of any kind (pioneer or player).
+        /// </summary>
+        public Transform GetVisibleThreat()
+        {
+            RefreshVisionCacheIfNeeded();
+            return cachedVisibleThreat;
+        }
+
+        public bool CanSeeThreat(Transform candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            float distance = HorizontalDistance(transform.position, candidate.position);
+            return IsThreatVisible(candidate, distance);
+        }
+
+        private void RefreshVisionCacheIfNeeded()
+        {
+            if (Time.time < nextVisionRefreshTime)
+                return;
+
+            if (((Time.frameCount + visionTickPhase) % 3) != 0)
+                return;
+
+            nextVisionRefreshTime = Time.time + visionRefreshInterval;
+            cachedVisiblePlayer = EvaluateVisiblePlayer();
+            cachedVisiblePioneer = EvaluateVisiblePioneer();
+            cachedVisibleThreat = PickClosestVisibleThreat(cachedVisiblePioneer, cachedVisiblePlayer);
+        }
+
+        private Transform EvaluateVisiblePlayer()
         {
             EnsurePlayer();
             if (player == null)
@@ -89,16 +154,7 @@ namespace Project.AI
             return null;
         }
 
-        public bool CanSeePlayer()
-        {
-            return GetVisiblePlayerTarget() != null;
-        }
-
-        /// <summary>
-        /// Closest visible pioneer (FOV + LOS, or melee touch). Pioneers were previously
-        /// invisible to enemy senses — only damage aggro made enemies fight back.
-        /// </summary>
-        public Transform GetVisiblePioneerTarget()
+        private Transform EvaluateVisiblePioneer()
         {
             IReadOnlyList<PioneerCompanionAgent> companions = GetActiveCompanions();
             if (companions == null || companions.Count == 0)
@@ -133,14 +189,8 @@ namespace Project.AI
             return best;
         }
 
-        /// <summary>
-        /// Closest visible threat of any kind (pioneer or player).
-        /// </summary>
-        public Transform GetVisibleThreat()
+        private Transform PickClosestVisibleThreat(Transform pioneer, Transform visiblePlayer)
         {
-            Transform pioneer = GetVisiblePioneerTarget();
-            Transform visiblePlayer = GetVisiblePlayerTarget();
-
             if (pioneer == null)
                 return visiblePlayer;
             if (visiblePlayer == null)
@@ -150,15 +200,6 @@ namespace Project.AI
                    HorizontalDistance(transform.position, visiblePlayer.position)
                 ? pioneer
                 : visiblePlayer;
-        }
-
-        public bool CanSeeThreat(Transform candidate)
-        {
-            if (candidate == null)
-                return false;
-
-            float distance = HorizontalDistance(transform.position, candidate.position);
-            return IsThreatVisible(candidate, distance);
         }
 
         private bool IsThreatVisible(Transform candidate, float distance)

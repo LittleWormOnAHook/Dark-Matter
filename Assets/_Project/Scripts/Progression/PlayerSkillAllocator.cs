@@ -87,5 +87,12 @@ namespace Project.Progression
 
         public static float GetMeleeDamageFlatBonus() =>
             GetTotalBonusPercent(SkillModifierType.MeleeDamageFlat);
+
+        /// <summary>Level-based weapon damage multiplier (+3%/level), applied on top of the flat skill bonus.</summary>
+        public static float GetLevelWeaponDamageMultiplier()
+        {
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            return progression != null ? progression.GetLevelWeaponDamageMultiplier() : 1f;
+        }
     }
 }

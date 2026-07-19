@@ -148,6 +148,32 @@ namespace Project.UI
             return button;
         }
 
+        /// <summary>
+        /// Standard top-right "Back" button for main-menu sub-panels (Settings, Save/Load, etc). Parent
+        /// this to the sub-panel's own root — NOT the VerticalLayoutGroup-driven window content inside
+        /// it — so it stays pinned to the corner regardless of what's laid out below it.
+        /// </summary>
+        public static Button CreateTopRightBackButton(Transform panelRoot, UnityAction onClick)
+        {
+            Button button = CreateButton(
+                panelRoot,
+                "Back",
+                new Vector2(ScaledSize(120f), ScaledSize(44f)),
+                ScaledSize(18f));
+
+            RectTransform rect = button.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-ScaledSize(20f), -ScaledSize(20f));
+
+            if (onClick != null)
+                button.onClick.AddListener(onClick);
+
+            button.transform.SetAsLastSibling();
+            return button;
+        }
+
         /// <summary>Minimal close control — text X only, no circle frame.</summary>
         public static Button CreateTextCloseButton(Transform parent, float fontSize, UnityAction onClick = null)
         {

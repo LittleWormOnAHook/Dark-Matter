@@ -1,3 +1,4 @@
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.Player.Invector
@@ -26,6 +27,9 @@ namespace Project.Player.Invector
 
         private void LateUpdate()
         {
+            if (PlayerVehicleState.IsMounted)
+                return;
+
             if (Time.time < nextCheckTime)
                 return;
 

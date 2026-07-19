@@ -132,6 +132,7 @@ namespace Project.AI.Invector
             DestroyAll<vHeadTrack>(root, destroyComponent);
             // vRagdoll kept for enemy death presentation.
             DestroyAll<vFootStep>(root, destroyComponent);
+            DestroyAll<vFootStepTrigger>(root, destroyComponent);
             DestroyAll<vGenericAction>(root, destroyComponent);
             DestroyAll<vLadderAction>(root, destroyComponent);
             DestroyAll<vCollectShooterMeleeControl>(root, destroyComponent);

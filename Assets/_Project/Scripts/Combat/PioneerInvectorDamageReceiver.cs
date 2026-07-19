@@ -1,5 +1,6 @@
 using Invector;
 using Project.AI;
+using Project.AI.Invector;
 using Project.Player.Invector;
 using UnityEngine;
 
@@ -22,7 +23,8 @@ namespace Project.Combat
         private void Awake()
         {
             // Invector melee only damages colliders whose tag is in vMeleeManager.hitProperties
-            // .hitDamageTags ("Enemy"). Guarantee anything meant to receive damage carries it.
+            // .hitDamageTags ("Enemy"). Ranged hits use physics layers (vShooterManager.damageLayer),
+            // not tags — this tag assignment is for melee only.
             if (gameObject.CompareTag("Untagged"))
                 gameObject.tag = "Enemy";
         }
@@ -31,6 +33,19 @@ namespace Project.Combat
         {
             if (damage == null)
                 return;
+
+            // Humanoid enemies are transform-driven — strip knockback so shots do not launch the body.
+            EnemyHealth enemyHealth = GetComponentInParent<EnemyHealth>();
+            bool wantsHitStagger = damage.activeRagdoll;
+            float staggerSeconds = damage.senselessTime;
+            vDamage staggerSnapshot = new vDamage(damage);
+
+            if (enemyHealth != null)
+            {
+                damage.force = Vector3.zero;
+                damage.activeRagdoll = false;
+                damage.hitReaction = false;
+            }
 
             onStartReceiveDamage.Invoke(damage);
 
@@ -43,20 +58,38 @@ namespace Project.Combat
 
             // Invector stamps the weapon hitbox's world position at the moment of impact.
             Vector3? hitPoint = damage.hitPosition != Vector3.zero ? damage.hitPosition : (Vector3?)null;
-            ApplyToPioneerHealth(pioneerDamage, source, critical, hitPoint);
+            ApplyToPioneerHealth(pioneerDamage, source, critical, hitPoint, enemyHealth, staggerSnapshot, wantsHitStagger, staggerSeconds);
 
             onReceiveDamage.Invoke(damage);
         }
 
-        private void ApplyToPioneerHealth(float damage, GameObject source, bool isCritical, Vector3? hitPoint)
+        private void ApplyToPioneerHealth(
+            float damage,
+            GameObject source,
+            bool isCritical,
+            Vector3? hitPoint,
+            EnemyHealth enemyHealth,
+            vDamage staggerSnapshot,
+            bool wantsHitStagger,
+            float staggerSeconds)
         {
             if (applyToChildren)
             {
-                EnemyHealth enemyHealth = GetComponentInParent<EnemyHealth>();
+                if (enemyHealth == null)
+                    enemyHealth = GetComponentInParent<EnemyHealth>();
+
                 if (enemyHealth != null)
                 {
                     enemyHealth.TakeDamage(damage, source, isCritical);
                     SpawnHitVfx(damage, source, hitPoint);
+
+                    EnemyInvectorRagdollBridge ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
+                    ragdollBridge?.TryHitStagger(
+                        staggerSnapshot,
+                        damage,
+                        isCritical,
+                        wantsHitStagger,
+                        staggerSeconds);
                     return;
                 }
             }

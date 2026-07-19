@@ -153,7 +153,6 @@ namespace Project.UI
             GameSession.MarkStarted();
 
             RestoreHiddenCanvasUi();
-            MainMenuController.RestoreGameplayUiFromMenu();
             HideRuntimeStartScreenUi();
             Time.timeScale = 1f;
             SetGameplayPaused(false);
@@ -177,7 +176,7 @@ namespace Project.UI
                 screenOverlay.SetActive(false);
 
             GameSaveSystem.TrySave(0, out _);
-            GameplayHudVisibility.SetGameplayHudVisible(true);
+            MainCanvasFlow.Refresh();
         }
 
         private IEnumerator RefreshStartScreenUiNextFrame()
@@ -280,6 +279,12 @@ namespace Project.UI
 
         private void HideRuntimeStartScreenUi()
         {
+            if (GameSession.HasStarted)
+            {
+                GameplayHudVisibility.RefreshGameplayHud();
+                return;
+            }
+
             PetUI petUi = FindAnyObjectByType<PetUI>();
             if (petUi != null)
                 petUi.HideForStartScreen();

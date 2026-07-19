@@ -1,5 +1,6 @@
 using System;
 using Project.Data;
+using Project.Interaction;
 using UnityEngine;
 
 namespace Project.Inventory
@@ -217,6 +218,9 @@ namespace Project.Inventory
 
         public void SelectWeaponSlot(int weaponSlotIndex)
         {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
             weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
             int hotbarIndex = GetWeaponHotbarSlot(weaponSlotIndex);
 
@@ -237,6 +241,9 @@ namespace Project.Inventory
 
         public void SelectHotbarSlot(int hotbarSlot)
         {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
             if (inventory == null || inventory.hotbarSize <= 0)
                 return;
 
@@ -256,6 +263,9 @@ namespace Project.Inventory
 
         public void SelectToolbarSlot(int toolbarSlot, bool allowToggleOff = true)
         {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
             if (inventory == null || inventory.toolbarSize <= 0)
                 return;
 
@@ -694,12 +704,54 @@ namespace Project.Inventory
             }
         }
 
+        public void ClearToolbarSelectionPublic()
+        {
+            ClearToolbarSelection();
+            NotifySelectionChanged();
+        }
+
+        public void HolsterWeapon()
+        {
+            if (!IsWeaponDrawn)
+                return;
+
+            IsWeaponDrawn = false;
+            NotifySelectionChanged();
+        }
+
+        /// <summary>
+        /// Arms (draws) the currently selected weapon slot, falling back to the active weapon slot.
+        /// Returns false when there is no equippable weapon to draw.
+        /// </summary>
+        public bool DrawWeapon()
+        {
+            if (IsWeaponDrawn)
+                return true;
+
+            int hotbarSlot = IsWeaponHotbarSlot(selectedHotbarSlot) ? selectedHotbarSlot : ActiveWeaponHotbarSlot;
+            if (!IsWeaponHotbarSlot(hotbarSlot) || !HasEquippableInHotbarSlot(hotbarSlot))
+                return false;
+
+            ClearToolbarSelection();
+            selectedHotbarSlot = hotbarSlot;
+            IsWeaponDrawn = true;
+            SyncActiveWeaponSelection();
+            NotifySelectionChanged();
+            return true;
+        }
+
         private void ClearToolbarSelection()
         {
             if (selectedToolbarSlot < 0)
                 return;
 
             selectedToolbarSlot = -1;
+        }
+
+        private bool ShouldSuppressSelectionDuringOptics()
+        {
+            OpticsController optics = GetComponent<OpticsController>();
+            return optics != null && optics.IsActive;
         }
 
         private void NotifySelectionChanged()

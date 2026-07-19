@@ -159,6 +159,17 @@ namespace Project.Vehicles
             _rigidbody.linearVelocity = velocity;
         }
 
+        /// <summary>Current craft height above sampled ground, or -1 when ground cannot be resolved.</summary>
+        public float GetAltitudeAboveGround()
+        {
+            if (!TrySampleGroundHeight(out float groundY))
+                return -1f;
+
+            return transform.position.y - groundY;
+        }
+
+        public float TargetAltitudeAboveGround => _targetAltitudeAboveGround;
+
         private void ApplyProfileSettings()
         {
             if (_rigidbody == null)

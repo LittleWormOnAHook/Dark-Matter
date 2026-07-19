@@ -1,3 +1,4 @@
+using System.Collections;
 using Project.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -41,9 +42,12 @@ namespace Project.Vehicles
         private bool _boosterInput;
         private bool _wasBoosterInput;
         private PlayerController _mountedPlayer;
+        private bool _isExiting;
+        private Coroutine _exitRoutine;
 
         public HovercraftProfile Profile => profile;
         public bool IsOccupied => occupancy != null && occupancy.IsOccupied;
+        public bool IsExiting => _isExiting;
         public HovercraftTurretController Turret => turret;
         public HoverPhysicsDriver PhysicsDriver => physicsDriver;
         public HovercraftUsable Usable => usable;
@@ -112,6 +116,14 @@ namespace Project.Vehicles
             if (!IsOccupied)
                 return;
 
+            // Freeze drive while descending for exit.
+            if (_isExiting)
+            {
+                if (physicsDriver != null)
+                    physicsDriver.SetDriveInput(Vector2.zero, 0f, false);
+                return;
+            }
+
             PollMountedDriveInput();
             HandleBoostAudio();
 
@@ -134,7 +146,7 @@ namespace Project.Vehicles
 
         public bool TryEnter(PlayerController player)
         {
-            if (player == null || occupancy == null)
+            if (player == null || occupancy == null || _isExiting)
                 return false;
 
             if (!occupancy.TryEnter(player))
@@ -151,24 +163,57 @@ namespace Project.Vehicles
 
         public bool TryExit(PlayerController player)
         {
-            if (player == null || occupancy == null)
+            if (player == null || occupancy == null || _isExiting)
                 return false;
 
-            cameraRig?.Deactivate();
-            turret?.Deactivate();
-
-            if (!occupancy.TryExit(player))
+            if (!IsOccupied || _mountedPlayer != player)
                 return false;
 
-            physicsDriver?.SetOccupied(false);
-            vehicleAudio?.PlayExit();
+            if (_exitRoutine != null)
+                StopCoroutine(_exitRoutine);
+            _exitRoutine = StartCoroutine(ExitAfterDescentRoutine(player));
+            return true;
+        }
+
+        private IEnumerator ExitAfterDescentRoutine(PlayerController player)
+        {
+            _isExiting = true;
             _moveInput = Vector2.zero;
             _ascendInput = false;
             _descendInput = false;
             _boosterInput = false;
             _wasBoosterInput = false;
+
+            // Begin descent while the player is still mounted.
+            physicsDriver?.SetOccupied(false);
+            if (physicsDriver != null)
+                physicsDriver.SetDriveInput(Vector2.zero, 0f, false);
+
+            float parkedAltitude = profile != null ? profile.parkedAltitudeAboveGround : 0.35f;
+            float tolerance = profile != null ? profile.exitAltitudeTolerance : 0.15f;
+            float timeout = profile != null ? profile.exitDescentTimeout : 4f;
+            float elapsed = 0f;
+
+            while (elapsed < timeout)
+            {
+                float altitude = physicsDriver != null ? physicsDriver.GetAltitudeAboveGround() : -1f;
+                if (altitude >= 0f && altitude <= parkedAltitude + tolerance)
+                    break;
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            cameraRig?.Deactivate();
+            turret?.Deactivate();
+
+            if (occupancy != null && occupancy.IsOccupied)
+                occupancy.TryExit(player);
+
+            vehicleAudio?.PlayExit();
             _mountedPlayer = null;
-            return true;
+            _exitRoutine = null;
+            _isExiting = false;
         }
 
         private void HandleBoostAudio()
@@ -235,7 +280,7 @@ namespace Project.Vehicles
 
         public void OnLook(InputAction.CallbackContext context)
         {
-            if (!IsOccupied || turret == null || _mountedPlayer == null || _mountedPlayer.BlocksCombatInput)
+            if (!IsOccupied || _isExiting || turret == null || _mountedPlayer == null || _mountedPlayer.BlocksCombatInput)
                 return;
 
             turret.ApplyLookInput(context.ReadValue<Vector2>());
@@ -243,7 +288,7 @@ namespace Project.Vehicles
 
         public void OnSprint(InputAction.CallbackContext context)
         {
-            if (!IsOccupied || _mountedPlayer == null || _mountedPlayer.BlocksCombatInput)
+            if (!IsOccupied || _isExiting || _mountedPlayer == null || _mountedPlayer.BlocksCombatInput)
             {
                 _boosterInput = false;
                 return;
@@ -254,7 +299,7 @@ namespace Project.Vehicles
 
         public void OnAttack()
         {
-            if (!IsOccupied || turret == null)
+            if (!IsOccupied || _isExiting || turret == null)
                 return;
 
             turret.TryFire();

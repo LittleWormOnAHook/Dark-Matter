@@ -16,7 +16,7 @@ namespace Project.EditorTools
         private const string ItemsFolder = ProjectAssetPaths.ItemsData;
         private const string ResourcesFolder = ProjectAssetPaths.ResourcesCrafting;
         private const string RegistryPath = ProjectAssetPaths.RecipeRegistry;
-        private const string PlayerPrefabPath = ProjectAssetPaths.PlayerPrefab;
+        private const string PlayerPrefabPath = ProjectAssetPaths.PlayerInvectorPrefab;
 
         private static readonly (string id, string file, CraftingStationType station, string name, string desc, (string item, int amount)[] ingredients, string output, int outputAmount)[] RecipeSpecs =
         {

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.Interaction
 {
     /// <summary>
-    /// World-space glow billboards for scanner POI highlights.
+    /// Legacy world-space glow billboards. Scanner highlights now use OutlineController directly.
     /// </summary>
     public class ScannerWorldHighlight : MonoBehaviour
     {
@@ -28,37 +28,8 @@ namespace Project.Interaction
 
         public void UpdateHighlights(IReadOnlyList<OpticsScanTarget> targets, Camera viewCamera)
         {
-            EnsurePool();
-            if (poolRoot == null || !poolRoot.gameObject.activeSelf)
-                return;
-
-            int count = Mathf.Min(targets.Count, MaxHighlights);
-            EnsurePoolSize(count);
-
-            for (int i = 0; i < pool.Count; i++)
-            {
-                GlowEntry entry = pool[i];
-                if (i >= count)
-                {
-                    entry.Root.gameObject.SetActive(false);
-                    continue;
-                }
-
-                OpticsScanTarget target = targets[i];
-                entry.Root.gameObject.SetActive(true);
-                entry.Root.position = target.WorldPosition + Vector3.up * 0.35f;
-
-                if (viewCamera != null)
-                    entry.Root.rotation = Quaternion.LookRotation(entry.Root.position - viewCamera.transform.position);
-
-                float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 3.5f + i * 0.4f);
-                Color glow = target.MarkerColor * pulse;
-                glow.a = 0.55f + 0.25f * pulse;
-                entry.Renderer.material.color = glow;
-
-                float scale = 0.55f + 0.12f * pulse;
-                entry.Root.localScale = new Vector3(scale, scale, scale);
-            }
+            // Outlines are driven by OutlineController; keep pool dormant.
+            Clear();
         }
 
         public void Clear()

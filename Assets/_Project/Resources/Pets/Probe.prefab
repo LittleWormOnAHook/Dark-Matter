@@ -12,17 +12,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Probe
       objectReference: {fileID: 0}
+    - target: {fileID: 1559113662988582, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
+      propertyPath: m_TagString
+      value: Animal
+      objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 16.689241
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -1.952
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -8.97876
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalRotation.w
@@ -30,15 +34,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4703510533658948, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -65,6 +69,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1559113662988582, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6667773625967241998}
+    - targetCorrespondingSourceObject: {fileID: 1559113662988582, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7691061992921748882}
   m_SourcePrefab: {fileID: 100100000, guid: c771dc487345feb4aa9946a24d7d7713, type: 3}
 --- !u!1 &5554153027907146988 stripped
 GameObject:
@@ -100,7 +107,7 @@ MonoBehaviour:
   turnSpeed: 8
   stopDistance: 0.35
   maxFollowDistance: 12
-  groundOffset: 0.22
+  groundOffset: 2
   groundProbeHeight: 40
   groundProbeDistance: 80
   wanderRadius: 4
@@ -108,6 +115,11 @@ MonoBehaviour:
   idleBeforeWanderMin: 4
   idleBeforeWanderMax: 10
   wanderChance: 0.35
+  wildHomeRadius: 3.5
+  wildWanderDurationMin: 1.4
+  wildWanderDurationMax: 3.2
+  wildPauseMin: 2.2
+  wildPauseMax: 5.5
   fetchSearchRadius: 18
   fetchPickupDistance: 1.25
   fetchCheckInterval: 8
@@ -125,9 +137,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8808c5036596d894088686f5c8523fc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pet.PetAnimationController
-  petAnimatorController: {fileID: 0}
+  petAnimatorController: {fileID: 9100000, guid: 926a6f368facdb44f9129c73afdc5bb9, type: 2}
+  idleState: Idle
+  walkState: Walk
+  runState: Run
   walkSpeedThreshold: 0.05
   runSpeedThreshold: 2.5
+  runExitHysteresis: 0.35
+  crossFadeDuration: 0.1
+  motionRootBoneName: CG
+  stripRootMotion: 1
 --- !u!136 &6667773625967241998
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -147,7 +166,30 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.35
+  m_Radius: 1.39
   m_Height: 1.2
   m_Direction: 1
   m_Center: {x: 0, y: 0.55, z: 0}
+--- !u!136 &7691061992921748882
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5554153027907146988}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.22
+  m_Height: 0.29509434
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.14754717, z: 0}

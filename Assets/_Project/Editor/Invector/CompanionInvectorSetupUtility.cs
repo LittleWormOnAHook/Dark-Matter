@@ -7,6 +7,7 @@ using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
+using Project.Survival.Exposure;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -81,23 +82,47 @@ namespace Project.EditorTools.Invector
             RemoveIfPresent<InventorySystem>(root);
             RemoveIfPresent<WeaponAmmoState>(root);
             RemoveIfPresent<PlayerDeathHandler>(root);
-            RemoveIfPresent<PlayerHitReactionController>(root);
             RemoveIfPresent<CombatFocusController>(root);
             RemoveIfPresent<PlayerController>(root);
-            RemoveIfPresent<PlayerGkcAnimatorDriver>(root);
             RemoveIfPresent<ResourceGatherer>(root);
+
+            // Companions never render their own view — only the player's camera does. Player_Invector
+            // carries its own camera rig (a "Camera" child with Camera/AudioListener plus Invector's
+            // vThirdPersonCamera driver script); leaving those on every spawned companion means one
+            // extra idle Camera and AudioListener per squadmate (Unity warns loudly about multiple
+            // AudioListeners) for no benefit.
+            RemoveIfPresent<global::Invector.vCamera.vThirdPersonCamera>(root);
+            RemoveIfPresent<AudioListener>(root);
+            RemoveIfPresent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>(root);
+            RemoveIfPresent<Camera>(root);
         }
 
+        /// <summary>
+        /// Full up-to-date companion feature set. PioneerCompanionAgent.Awake() self-heals most of
+        /// these at runtime if missing, but baking them into the prefab keeps the asset inspectable
+        /// and avoids relying purely on runtime AddComponent fallbacks — this is "the Echo chassis"
+        /// every synced/rescued companion (Project.Echoes.EchoWorldEntity) is ultimately spawned on.
+        /// </summary>
         private static void EnsureCompanionComponents(GameObject root)
         {
             if (root.GetComponent<PioneerCompanionAgent>() == null)
                 root.AddComponent<PioneerCompanionAgent>();
             if (root.GetComponent<CompanionFollowController>() == null)
                 root.AddComponent<CompanionFollowController>();
+            if (root.GetComponent<CompanionAnimationDriver>() == null)
+                root.AddComponent<CompanionAnimationDriver>();
             if (root.GetComponent<CompanionCombatController>() == null)
                 root.AddComponent<CompanionCombatController>();
             if (root.GetComponent<CompanionSenseController>() == null)
                 root.AddComponent<CompanionSenseController>();
+            if (root.GetComponent<CompanionThreatSensor>() == null)
+                root.AddComponent<CompanionThreatSensor>();
+            if (root.GetComponent<CompanionHealth>() == null)
+                root.AddComponent<CompanionHealth>();
+            if (root.GetComponent<CompanionInjuryHandler>() == null)
+                root.AddComponent<CompanionInjuryHandler>();
+            if (root.GetComponent<CompanionExposureResponder>() == null)
+                root.AddComponent<CompanionExposureResponder>();
             if (root.GetComponent<PioneerCompanionVisualProfile>() == null)
                 root.AddComponent<PioneerCompanionVisualProfile>();
             if (root.GetComponent<CompanionAbilityController>() == null)

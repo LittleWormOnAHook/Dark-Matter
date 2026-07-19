@@ -119,6 +119,9 @@ namespace Project.UI
             EnsureInventoryClosed();
             GameplayHudVisibility.RefreshGameplayHud();
             HideLegacyPanelTitleLabels();
+
+            if (!GameSession.HasStarted)
+                MainCanvasFlow.Refresh();
         }
 
         private void ApplyShiftPanelVisuals()
@@ -211,6 +214,59 @@ namespace Project.UI
             toolbar?.SetGameplayVisible(true);
             toolbar?.EnsureRaisedToFrontLayer(canvasRoot);
             toolbar?.RepositionRelativeToHotbar(hotbarParent);
+
+            EnsureSurvivalStatsHudVisible();
+        }
+
+        /// <summary>
+        /// Shows survival vitals during normal gameplay (paired with the hotbar/toolbar/pet bar).
+        /// </summary>
+        public void EnsureSurvivalStatsHudVisible()
+        {
+            if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)
+            {
+                SetSurvivalStatsHudVisible(false);
+                return;
+            }
+
+            Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
+            Transform canvasRoot = canvas != null ? canvas.transform : null;
+            SetSurvivalStatsHudVisible(true, canvasRoot);
+        }
+
+        /// <summary>
+        /// Explicit hide, independent of session/menu-blocked state — used whenever the hotbar
+        /// itself is hidden (Journal tabs other than Inventory, building panel, etc.) so vitals
+        /// only ever show alongside the hotbar/toolbar/pet bar, never on their own.
+        /// </summary>
+        public void HideSurvivalStatsHud()
+        {
+            SetSurvivalStatsHudVisible(false);
+        }
+
+        private void SetSurvivalStatsHudVisible(bool visible, Transform canvasRoot = null)
+        {
+            CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>();
+            if (statsHud == null)
+                return;
+
+            Transform statsTransform = statsHud.transform;
+            statsTransform.gameObject.SetActive(visible);
+            if (!visible)
+                return;
+
+            canvasRoot ??= GetComponent<Canvas>()?.transform ?? GetComponentInParent<Canvas>()?.transform;
+            if (canvasRoot == null)
+                return;
+
+            if (statsPanelOriginalParent == null)
+            {
+                statsPanelOriginalParent = statsTransform.parent;
+                statsPanelOriginalSiblingIndex = statsTransform.GetSiblingIndex();
+            }
+
+            UiFrontLayer.ReparentToFront(statsTransform, canvasRoot);
+            statsHud.RefreshLayout();
         }
 
         private void HideLegacyPanelTitleLabels()
@@ -327,6 +383,8 @@ namespace Project.UI
 
             if (hotbarParent is RectTransform hotbar)
                 toolbar.RepositionRelativeToHotbar(hotbar);
+
+            ToolBarUI.ApplyGameplayVisibility();
         }
 
         private void CreateSlots()
@@ -732,6 +790,9 @@ namespace Project.UI
         private void SelectOrUseHotbarSlot(int slotIndex)
         {
             if (equipmentController == null || inventorySystem == null)
+                return;
+
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
                 return;
 
             ItemData item = inventorySystem.GetItemAt(slotIndex);

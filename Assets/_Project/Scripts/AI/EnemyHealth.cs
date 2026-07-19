@@ -26,6 +26,7 @@ namespace Project.AI
         public event Action<float, float> HealthChanged;
         public event Action<float, bool> Damaged;
         public event Action<GameObject> DamagedBy;
+        public event Action<float, GameObject, bool> DamagedWithSource;
         public event Action Died;
         public event Action Respawned;
 
@@ -67,6 +68,8 @@ namespace Project.AI
             if (source != null)
                 DamagedBy?.Invoke(source);
 
+            DamagedWithSource?.Invoke(damage, source, isCritical);
+
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
             CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);
 
@@ -90,12 +93,16 @@ namespace Project.AI
             if (combat != null)
                 combat.enabled = false;
 
-            if (GetComponent<EnemyDeathSequence>() == null)
+            EnemyDeathSequence deathSequence = GetComponent<EnemyDeathSequence>();
+            if (deathSequence != null)
             {
-                Collider collider = GetComponent<Collider>();
-                if (collider != null)
-                    collider.enabled = false;
+                SetRespawnExternallyManaged(true);
+                return;
             }
+
+            Collider collider = GetComponent<Collider>();
+            if (collider != null)
+                collider.enabled = false;
 
             if (respawnTime > 0f && !respawnExternallyManaged)
             {

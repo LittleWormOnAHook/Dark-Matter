@@ -75,6 +75,32 @@ namespace Project.EditorTools
             if (definition == null || !EnemyAnimationBuilder.HasClipAssignments(definition))
                 return default;
 
+            string fileName = EnemyPrefabBuilder.SanitizeFileName(
+                string.IsNullOrWhiteSpace(definition.animatorControllerFileName)
+                    ? definition.prefabFileName + "Controller"
+                    : definition.animatorControllerFileName,
+                definition.displayName + "Controller");
+            string destPath = $"{ProjectAssetPaths.AnimationsEnemies}/{fileName}.controller";
+
+            // All enemies use ShooterMelee as the full base so every layer and blend tree is
+            // available for future features. Enemy-specific clips are added to the Base Layer.
+            AnimatorController ctrl = EnemyShooterControllerBuilder.Build(definition, destPath);
+            if (ctrl != null)
+            {
+                definition.animatorController = ctrl;
+                return new EnemyAnimationBuilder.BuiltAnimationSet
+                {
+                    Controller       = ctrl,
+                    IdleStateNames   = EnemyAnimationBuilder.BuildStateNamesPublic("Idle",   definition.idleClips),
+                    WalkStateName    = EnemyAnimationBuilder.HasClips(definition.walkClips) ? "Walk"  : string.Empty,
+                    RunStateName     = EnemyAnimationBuilder.HasClips(definition.runClips)  ? "Run"   : string.Empty,
+                    AttackStateNames = EnemyAnimationBuilder.BuildStateNamesPublic("Attack", definition.attackClips),
+                    HitStateNames    = EnemyAnimationBuilder.BuildStateNamesPublic("Hit",    definition.hitClips),
+                    DeathStateName   = EnemyAnimationBuilder.HasClips(definition.deathClips) ? "Death" : string.Empty,
+                };
+            }
+
+            // Fallback: simple single-layer controller (no ShooterMelee available).
             EnemyAnimationBuilder.BuiltAnimationSet builtSet = EnemyAnimationBuilder.BuildController(definition);
             if (builtSet.Controller != null)
                 definition.animatorController = builtSet.Controller;

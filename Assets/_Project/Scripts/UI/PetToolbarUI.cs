@@ -98,10 +98,17 @@ namespace Project.UI
 
         public void SetGameplayVisible(bool visible)
         {
-            if (slotRect != null)
-                slotRect.gameObject.SetActive(visible);
-            else if (petRoot != null)
+            if (MainMenuController.BlocksGameplayHud)
+                visible = false;
+
+            // Standalone cluster mode (used by the bottom-left toolbar layout) parents the slot
+            // under petRoot, which also owns the "PET" title label + backdrop — toggling only
+            // slotRect left that title/backdrop stuck on screen (e.g. while driving the hovercraft).
+            // Toolbar-row-embedded mode never creates petRoot, so slotRect is the right target there.
+            if (petRoot != null)
                 petRoot.gameObject.SetActive(visible);
+            else if (slotRect != null)
+                slotRect.gameObject.SetActive(visible);
         }
 
         public void RepositionLeftOfToolbar(RectTransform toolbarRect, float anchoredY)

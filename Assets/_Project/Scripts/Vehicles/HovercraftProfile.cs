@@ -19,6 +19,10 @@ namespace Project.Vehicles
         public float maxAltitudeAboveGround = 10f;
         [Tooltip("Altitude above ground when unoccupied so the player can board again.")]
         public float parkedAltitudeAboveGround = 0.35f;
+        [Tooltip("How close to parked altitude before the player is released on exit.")]
+        public float exitAltitudeTolerance = 0.15f;
+        [Tooltip("Max seconds to wait for descent before forcing dismount.")]
+        public float exitDescentTimeout = 4f;
         public float verticalAdjustSpeed = 3.5f;
         public float springStrength = 50000f;
         public float springDamping = 8000f;

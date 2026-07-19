@@ -4,6 +4,7 @@ using Invector.vCharacterController;
 using Invector.vMelee;
 using Invector.vShooter;
 using Project.Companions.Abilities;
+using Project.AI;
 using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
@@ -48,9 +49,19 @@ namespace Project.Companions.Invector
             MeleeManager = GetComponent<vMeleeManager>();
 
             if (ShooterManager != null)
+            {
                 ShooterManager.useAmmoDisplay = false;
+                PioneerInvectorShooterLayers.ApplyToShooterManager(ShooterManager);
+                ShooterManager.onEquipWeapon.AddListener(HandleShooterWeaponEquipped);
+            }
+
+            gameObject.tag = "CompanionAI";
+            int companionLayer = LayerMask.NameToLayer("CompanionAI");
+            if (companionLayer >= 0)
+                gameObject.layer = companionLayer;
 
             StripPlayerOnlyComponents();
+            DestroyFootstepTriggers();
             SnapBodyContainersToLocalBones();
             DisableInvectorStandaloneUi();
             DisableInvectorHealthDeath();
@@ -71,6 +82,8 @@ namespace Project.Companions.Invector
                 gameObject.AddComponent<CompanionInvectorCombatBridge>();
             if (GetComponent<PioneerTerrainRescue>() == null)
                 gameObject.AddComponent<PioneerTerrainRescue>();
+            if (GetComponent<HumanoidPerformanceController>() == null)
+                gameObject.AddComponent<HumanoidPerformanceController>();
         }
 
         private void Start()
@@ -188,8 +201,19 @@ namespace Project.Companions.Invector
             DestroyIfPresent<MeleeCombatController>();
             DestroyIfPresent<RangedCombatController>();
             DestroyIfPresent<CombatFocusController>();
-            DestroyIfPresent<PlayerGkcAnimatorDriver>();
             DestroyIfPresent<vLockOnShooter>();
+            DestroyIfPresent<vFootStep>();
+            DestroyFootstepTriggers();
+        }
+
+        private void DestroyFootstepTriggers()
+        {
+            vFootStepTrigger[] triggers = GetComponentsInChildren<vFootStepTrigger>(true);
+            for (int i = 0; i < triggers.Length; i++)
+            {
+                if (triggers[i] != null)
+                    Destroy(triggers[i]);
+            }
         }
 
         /// <summary>
@@ -247,6 +271,20 @@ namespace Project.Companions.Invector
                 healthController.ResetHealth();
                 healthController.isImmortal = true;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (ShooterManager != null)
+                ShooterManager.onEquipWeapon.RemoveListener(HandleShooterWeaponEquipped);
+        }
+
+        private void HandleShooterWeaponEquipped(vShooterWeapon weapon, bool isLeftWeapon)
+        {
+            if (weapon == null || ShooterManager == null)
+                return;
+
+            weapon.hitLayer = ShooterManager.damageLayer;
         }
 
         private void DestroyIfPresent<T>() where T : Component

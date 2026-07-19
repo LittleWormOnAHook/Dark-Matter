@@ -1,6 +1,10 @@
 using Project.Building;
 using Project.Companions;
+using Project.Core;
 using Project.Pet;
+using Project.Pioneers;
+using Project.Survival;
+using Project.Survival.Exposure;
 using UnityEngine;
 
 namespace Project.Managers
@@ -38,7 +42,20 @@ namespace Project.Managers
             if (Object.FindAnyObjectByType<PioneerExpeditionCommandInput>() == null)
                 host.gameObject.AddComponent<PioneerExpeditionCommandInput>();
 
+            if (Object.FindAnyObjectByType<PioneerExpeditionProgressionBridge>() == null)
+            {
+                PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+                if (roster != null)
+                    roster.gameObject.AddComponent<PioneerExpeditionProgressionBridge>();
+                else
+                    host.gameObject.AddComponent<PioneerExpeditionProgressionBridge>();
+            }
+
             PetManager.Instance?.ApplyToolbarVisibility();
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player != null && player.GetComponent<PlayerExposureBootstrap>() == null)
+                player.AddComponent<PlayerExposureBootstrap>();
         }
     }
 }
