@@ -18,7 +18,7 @@ namespace Project.EditorTools
 
         private static readonly string[] DeletePaths =
         {
-            "Assets/_Project/Scripts/Player/Survival Pioneer.code-workspace",
+            "Assets/_Project/Scripts/Player/Dark Matter Genesis.code-workspace",
             "Assets/_Project/Resources/InventorySlot.prefab",
         };
 

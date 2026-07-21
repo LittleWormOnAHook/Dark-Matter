@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Project.Core;
 using Project.Data;
+using Project.Interaction;
+using Project.Survival.Exposure;
 using Project.UI;
 
 namespace Project.Survival
 {
-    public class SurvivalStats : MonoBehaviour
+    public class SurvivalStats : MonoBehaviour, IDamageable
     {
         public const float OxygenCriticalPercent = 15f;
 
@@ -36,23 +39,58 @@ namespace Project.Survival
         public float healthRegenPerSecond = 1f;
         public float healthRegenDelayAfterDamage = 5f;
 
+        [Header("Exposure")]
+        [Tooltip("Maximum thermal magnitude in each direction (cold negative, heat positive).")]
+        public float maxThermalStress = 100f;
+
+        public float maxRadiation = 100f;
+        public float maxSulfur = 100f;
+        public float maxVolcano = 100f;
+
+        [Tooltip("Exposure decay per second when outside hazard zones.")]
+        public float exposureRecoveryPerSecond = 8f;
+
+        [Tooltip("Thermal drift toward neutral per second when outside hazard zones.")]
+        public float thermalRecoveryPerSecond = 12f;
+
         public float CurrentHealth { get; private set; }
         public float CurrentEnergy { get; private set; }
         public float CurrentStamina { get; private set; }
         public float CurrentOxygen { get; private set; }
+        public float CurrentThermalStress { get; private set; }
+        public float CurrentRadiation { get; private set; }
+        public float CurrentSulfur { get; private set; }
+        public float CurrentVolcano { get; private set; }
 
         public bool IsDead { get; private set; }
 
         public event System.Action PlayerDied;
+        public event System.Action PlayerRevived;
         public event System.Action OnStatsChanged;
         public event System.Action<float> OnDamaged;
 
         public float LastDamageTime { get; private set; } = float.NegativeInfinity;
 
+        /// <summary>
+        /// Brief window after respawn where enemies ignore the player for chase/attack.
+        /// </summary>
+        public bool HasEnemyCombatImmunity => Time.time < enemyCombatImmunityUntil;
+
+        public void GrantEnemyCombatImmunity(float durationSeconds)
+        {
+            enemyCombatImmunityUntil = Time.time + Mathf.Max(0f, durationSeconds);
+        }
+
         private float lastHealthReductionTime = float.NegativeInfinity;
+        private float enemyCombatImmunityUntil;
         private bool hasAppliedSaveState;
         private bool simulationPaused;
         private bool isSprinting;
+        private string lastDamageSource = "unknown";
+        private float externalOxygenDrainMultiplier = 1f;
+        private float externalExposureHealthDrain;
+        private float externalThermalHealthDrain;
+        private bool insideExposureZone;
 
         private void OnValidate()
         {
@@ -69,14 +107,38 @@ namespace Project.Survival
         {
             IsDead = false;
             LastDamageTime = float.NegativeInfinity;
+            enemyCombatImmunityUntil = 0f;
+            lastDamageSource = "unknown";
             CurrentHealth = maxHealth;
             CurrentEnergy = maxEnergy;
             CurrentStamina = maxStamina;
             CurrentOxygen = maxOxygen;
+            CurrentThermalStress = 0f;
+            CurrentRadiation = 0f;
+            CurrentSulfur = 0f;
+            CurrentVolcano = 0f;
+            ClearExternalExposureModifiers();
             OnStatsChanged?.Invoke();
         }
 
-        public void ApplySaveState(float health, float energy, float stamina, float oxygen)
+        /// <summary>
+        /// Called by PlayerDeathHandler after a death-popup respawn.
+        /// </summary>
+        public void NotifyRevivedAfterRespawn(float immunitySeconds = 3f)
+        {
+            GrantEnemyCombatImmunity(immunitySeconds);
+            PlayerRevived?.Invoke();
+        }
+
+        public void ApplySaveState(
+            float health,
+            float energy,
+            float stamina,
+            float oxygen,
+            float thermalStress = 0f,
+            float radiation = 0f,
+            float sulfur = 0f,
+            float volcano = 0f)
         {
             hasAppliedSaveState = true;
             enabled = true;
@@ -87,8 +149,39 @@ namespace Project.Survival
             CurrentEnergy = Mathf.Clamp(energy, 0f, maxEnergy);
             CurrentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
             CurrentOxygen = Mathf.Clamp(oxygen, 0f, maxOxygen);
+            CurrentThermalStress = Mathf.Clamp(thermalStress, -maxThermalStress, maxThermalStress);
+            CurrentRadiation = Mathf.Clamp(radiation, 0f, maxRadiation);
+            CurrentSulfur = Mathf.Clamp(sulfur, 0f, maxSulfur);
+            CurrentVolcano = Mathf.Clamp(volcano, 0f, maxVolcano);
+            ClearExternalExposureModifiers();
             NotifyStatsChanged();
             StartCoroutine(RefreshUiAfterLoad());
+        }
+
+        public void ApplyLegacySaveState(float health, float energy, float stamina, float oxygen)
+        {
+            ApplySaveState(health, energy, stamina, oxygen);
+        }
+
+        public void ClampCurrentToMax(
+            float health,
+            float energy,
+            float stamina,
+            float oxygen,
+            float thermalStress = 0f,
+            float radiation = 0f,
+            float sulfur = 0f,
+            float volcano = 0f)
+        {
+            CurrentHealth = Mathf.Clamp(health, 0f, maxHealth);
+            CurrentEnergy = Mathf.Clamp(energy, 0f, maxEnergy);
+            CurrentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
+            CurrentOxygen = Mathf.Clamp(oxygen, 0f, maxOxygen);
+            CurrentThermalStress = Mathf.Clamp(thermalStress, -maxThermalStress, maxThermalStress);
+            CurrentRadiation = Mathf.Clamp(radiation, 0f, maxRadiation);
+            CurrentSulfur = Mathf.Clamp(sulfur, 0f, maxSulfur);
+            CurrentVolcano = Mathf.Clamp(volcano, 0f, maxVolcano);
+            NotifyStatsChanged();
         }
 
         public void SetSimulationPaused(bool paused)
@@ -138,10 +231,19 @@ namespace Project.Survival
                 return;
 
             CurrentEnergy = Mathf.Clamp(CurrentEnergy - Time.deltaTime * energyDrain, 0f, maxEnergy);
-            CurrentOxygen = Mathf.Clamp(CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond, 0f, maxOxygen);
+            CurrentOxygen = Mathf.Clamp(
+                CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond * externalOxygenDrainMultiplier,
+                0f,
+                maxOxygen);
 
             if (!isSprinting)
-                CurrentStamina = Mathf.Clamp(CurrentStamina + Time.deltaTime * staminaRegenPerSecond, 0f, maxStamina);
+                CurrentStamina = Mathf.Clamp(
+                    CurrentStamina + Time.deltaTime * staminaRegenPerSecond * GetStaminaRegenMultiplier(),
+                    0f,
+                    maxStamina);
+
+            if (!insideExposureZone)
+                RecoverExposure(Time.deltaTime);
 
             float previousHealth = CurrentHealth;
             float healthLossRate = 0f;
@@ -151,6 +253,8 @@ namespace Project.Survival
 
             if (CurrentOxygen <= 0f)
                 healthLossRate += healthDrain * oxygenDepletedHealthDrainMultiplier;
+
+            healthLossRate += externalExposureHealthDrain + externalThermalHealthDrain;
 
             if (healthLossRate > 0f)
                 CurrentHealth = Mathf.Max(0f, CurrentHealth - Time.deltaTime * healthLossRate);
@@ -210,11 +314,160 @@ namespace Project.Survival
             return GetOxygenNormalized() * 100f <= OxygenCriticalPercent;
         }
 
-        public void ApplyDamage(float damage)
+        public float GetThermalNormalizedSigned()
         {
-            if (damage <= 0f || IsDead)
+            if (maxThermalStress <= 0f)
+                return 0f;
+
+            return CurrentThermalStress / maxThermalStress;
+        }
+
+        public float GetThermalHudFill()
+        {
+            return Mathf.InverseLerp(-maxThermalStress, maxThermalStress, CurrentThermalStress);
+        }
+
+        public float GetRadiationNormalized()
+        {
+            return maxRadiation <= 0f ? 0f : CurrentRadiation / maxRadiation;
+        }
+
+        public float GetSulfurNormalized()
+        {
+            return maxSulfur <= 0f ? 0f : CurrentSulfur / maxSulfur;
+        }
+
+        public float GetVolcanoNormalized()
+        {
+            return maxVolcano <= 0f ? 0f : CurrentVolcano / maxVolcano;
+        }
+
+        public float GetCombinedExposureLevel()
+        {
+            float rad = GetRadiationNormalized();
+            float sulfur = GetSulfurNormalized();
+            float volcano = GetVolcanoNormalized();
+            float thermal = Mathf.Abs(GetThermalNormalizedSigned());
+            return (rad + sulfur + volcano + thermal) * 0.25f;
+        }
+
+        public float GetDisplayTemperatureFahrenheit()
+        {
+            return ExposureTemperatureDisplay.StressToFahrenheit(CurrentThermalStress, maxThermalStress);
+        }
+
+        public float GetDisplayTemperatureGaugeNormalized()
+        {
+            return ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(GetDisplayTemperatureFahrenheit());
+        }
+
+        public string GetThermalStatusLabel()
+        {
+            return ExposureTemperatureDisplay.GetStatusLabel(CurrentThermalStress, maxThermalStress);
+        }
+
+        public ExposureHazardState GetDominantHazardState(ExposureReceiver receiver)
+        {
+            IReadOnlyList<ExposureZoneVolume> zones = receiver != null ? receiver.ActiveZones : null;
+            return ExposureHazardEvaluator.EvaluateDominant(this, zones);
+        }
+
+        public void ClearExternalExposureModifiers()
+        {
+            externalOxygenDrainMultiplier = 1f;
+            externalExposureHealthDrain = 0f;
+            externalThermalHealthDrain = 0f;
+            insideExposureZone = false;
+        }
+
+        public void ApplyExternalExposure(
+            ExposureSample sample,
+            ExposureMitigationService.MitigationResult mitigation,
+            float deltaTime)
+        {
+            float radiationRate = sample.radiationPerSecond;
+            float sulfurRate = sample.sulfurPerSecond;
+            float volcanoRate = sample.volcanoPerSecond;
+            float coldRate = sample.thermalColdPerSecond;
+            float heatRate = sample.thermalHeatPerSecond;
+
+            insideExposureZone = radiationRate > 0f
+                || sulfurRate > 0f
+                || volcanoRate > 0f
+                || coldRate > 0f
+                || heatRate > 0f;
+
+            // Ceilings default to 1 (uncapped) when no active zone drives that channel, so this
+            // matches prior behavior unless a zone's effectIntensity explicitly caps it lower.
+            float radiationCap = Mathf.Clamp01(sample.radiationCeiling01) * maxRadiation;
+            float sulfurCap = Mathf.Clamp01(sample.sulfurCeiling01) * maxSulfur;
+            float volcanoCap = Mathf.Clamp01(sample.volcanoCeiling01) * maxVolcano;
+            float thermalCapMagnitude = Mathf.Clamp01(sample.thermalCeiling01) * maxThermalStress;
+
+            // Each channel climbs to its effectIntensity cap and holds there — it does NOT
+            // auto-drain. The only ways it goes back down are leaving the zone (RecoverExposure
+            // decay below) or a mitigation source (companion buff, and later food/inoculation)
+            // reducing the incoming rate or applying a direct reduction.
+            CurrentRadiation = Mathf.Clamp(CurrentRadiation + radiationRate * deltaTime, 0f, radiationCap);
+            CurrentSulfur = Mathf.Clamp(CurrentSulfur + sulfurRate * deltaTime, 0f, sulfurCap);
+            CurrentVolcano = Mathf.Clamp(CurrentVolcano + volcanoRate * deltaTime, 0f, volcanoCap);
+
+            float thermalDelta = (heatRate - coldRate) * deltaTime;
+            CurrentThermalStress = Mathf.Clamp(
+                CurrentThermalStress + thermalDelta,
+                -thermalCapMagnitude,
+                thermalCapMagnitude);
+
+            externalOxygenDrainMultiplier = sample.oxygenDrainMultiplier * mitigation.oxygenDrainMultiplier;
+
+            float exposureLevel = GetCombinedExposureLevel();
+            externalExposureHealthDrain = exposureLevel * sample.healthDrainAtMaxExposure;
+            externalThermalHealthDrain = Mathf.Abs(GetThermalNormalizedSigned()) * sample.healthDrainAtMaxThermal;
+
+            if (sample.exposureRecoveryPerSecond > 0f)
+                exposureRecoveryPerSecond = sample.exposureRecoveryPerSecond;
+
+            if (sample.thermalRecoveryPerSecond > 0f)
+                thermalRecoveryPerSecond = sample.thermalRecoveryPerSecond;
+
+            if (!insideExposureZone && (sample.exposureRecoveryPerSecond > 0f || sample.thermalRecoveryPerSecond > 0f))
+                RecoverExposure(deltaTime * 2f);
+        }
+
+        private void RecoverExposure(float deltaTime)
+        {
+            CurrentRadiation = Mathf.Max(0f, CurrentRadiation - exposureRecoveryPerSecond * deltaTime);
+            CurrentSulfur = Mathf.Max(0f, CurrentSulfur - exposureRecoveryPerSecond * deltaTime);
+            CurrentVolcano = Mathf.Max(0f, CurrentVolcano - exposureRecoveryPerSecond * deltaTime);
+
+            if (Mathf.Abs(CurrentThermalStress) <= 0.01f)
+                CurrentThermalStress = 0f;
+            else if (CurrentThermalStress > 0f)
+                CurrentThermalStress = Mathf.Max(0f, CurrentThermalStress - thermalRecoveryPerSecond * deltaTime);
+            else
+                CurrentThermalStress = Mathf.Min(0f, CurrentThermalStress + thermalRecoveryPerSecond * deltaTime);
+        }
+
+        private float GetStaminaRegenMultiplier()
+        {
+            ExposureController controller = GetComponent<ExposureController>();
+            if (controller == null)
+                return 1f;
+
+            return 1f - controller.CurrentStaminaRegenPenalty;
+        }
+
+        void IDamageable.TakeDamage(float damage, GameObject source, bool isCritical)
+        {
+            ApplyDamage(damage, source != null ? source.name : null);
+        }
+
+        public void ApplyDamage(float damage, string sourceName = null)
+        {
+            if (damage <= 0f || IsDead || HasEnemyCombatImmunity)
                 return;
 
+            lastDamageSource = string.IsNullOrWhiteSpace(sourceName) ? "unknown" : sourceName;
             CurrentHealth = Mathf.Max(0f, CurrentHealth - damage);
             lastHealthReductionTime = Time.time;
             LastDamageTime = Time.time;
@@ -246,7 +499,7 @@ namespace Project.Survival
             CurrentHealth = 0f;
             SetSimulationPaused(true);
 
-            Debug.Log("Player has died!");
+            Debug.Log($"Player has died! (killed by {lastDamageSource}, last hit left health at 0)");
 
             PlayerDied?.Invoke();
 

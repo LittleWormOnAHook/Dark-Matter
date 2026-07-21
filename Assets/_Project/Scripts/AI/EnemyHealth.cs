@@ -1,5 +1,6 @@
 using System;
 using Project.Interaction;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -24,6 +25,8 @@ namespace Project.AI
 
         public event Action<float, float> HealthChanged;
         public event Action<float, bool> Damaged;
+        public event Action<GameObject> DamagedBy;
+        public event Action<float, GameObject, bool> DamagedWithSource;
         public event Action Died;
         public event Action Respawned;
 
@@ -38,6 +41,8 @@ namespace Project.AI
         private void Awake()
         {
             CaptureSpawnPoint();
+            if (GetComponent<EnemyProgressionXp>() == null)
+                gameObject.AddComponent<EnemyProgressionXp>();
         }
 
         private void OnEnable()
@@ -60,6 +65,10 @@ namespace Project.AI
             currentHealth = Mathf.Max(0f, currentHealth - damage);
             NotifyHealthChanged();
             Damaged?.Invoke(damage, isCritical);
+            if (source != null)
+                DamagedBy?.Invoke(source);
+
+            DamagedWithSource?.Invoke(damage, source, isCritical);
 
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
             CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);
@@ -83,6 +92,13 @@ namespace Project.AI
             EnemyCombat combat = GetComponent<EnemyCombat>();
             if (combat != null)
                 combat.enabled = false;
+
+            EnemyDeathSequence deathSequence = GetComponent<EnemyDeathSequence>();
+            if (deathSequence != null)
+            {
+                SetRespawnExternallyManaged(true);
+                return;
+            }
 
             Collider collider = GetComponent<Collider>();
             if (collider != null)

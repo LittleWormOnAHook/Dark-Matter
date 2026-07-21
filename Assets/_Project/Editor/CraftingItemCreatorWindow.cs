@@ -50,7 +50,7 @@ namespace Project.EditorTools
 
 
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Crafting Item Creator")]
+        [MenuItem(SurvivalPioneerEditorMenus.CraftingItemCreator, false, 1)]
 
         public static void Open()
 
@@ -283,8 +283,6 @@ namespace Project.EditorTools
                 pickup.itemData = item;
 
                 pickup.amount = 1;
-
-
 
                 string prefabPath = $"{CraftingEditorUtility.ItemPrefabsFolder}/{safeName}_World.prefab";
 

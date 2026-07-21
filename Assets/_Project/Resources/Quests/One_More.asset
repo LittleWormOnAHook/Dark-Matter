@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8d9e0f1a2b3c4d5e6f708192a3b4c5, type: 3}
+  m_Name: One_More
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Quests.QuestDefinition
+  questId: One more
+  title: Just one more.
+  description: Need to get 1 more rock and Lilly somewhere
+  objectives:
+  - type: 0
+    targetId: Rock
+    requiredCount: 1
+    description: Collect the last rock
+  - type: 0
+    targetId: Red Lilly
+    requiredCount: 1
+    description: Then grab a lilly
+  rewards:
+  - type: 3
+    amount: 1000
+    item: {fileID: 0}
+    statUpgradeId: 
+  - type: 2
+    amount: 10
+    item: {fileID: 0}
+    statUpgradeId: Health
+  xpReward: 1000

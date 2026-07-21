@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.Audio;
 using Project.Inventory;
 using UnityEngine;
@@ -12,10 +13,13 @@ namespace Project.UI
 
         private GameObject menuRoot;
         private GameObject menuPanel;
+        private GameObject ammoSubmenuPanel;
+        private Transform ammoSubmenuContent;
         private InventoryItemActions itemActions;
         private Transform canvasRoot;
         private int activeSlotIndex = -1;
         private int openedOnFrame = -1;
+        private readonly List<GameObject> ammoSubmenuButtons = new List<GameObject>();
 
         public static InventoryContextMenu Instance => instance;
 
@@ -86,10 +90,107 @@ namespace Project.UI
             CreateMenuButton("Use", () => Execute(itemActions?.TryUse(activeSlotIndex) ?? false));
             CreateMenuButton("Equip", () => Execute(itemActions?.TryEquip(activeSlotIndex) ?? false));
             CreateMenuButton("Unequip", () => Execute(itemActions?.TryUnequip(activeSlotIndex) ?? false));
+            CreateAmmoSubmenuButton();
+            CreateMenuButton("Refuel", () => Execute(itemActions?.TryRefuelVehicle(activeSlotIndex) ?? false));
+            CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeployVehicle(activeSlotIndex) ?? false));
             CreateMenuButton("Split", () => Execute(itemActions?.TrySplit(activeSlotIndex) ?? false));
             CreateMenuButton("Drop", () => Execute(itemActions?.TryDrop(activeSlotIndex) ?? false));
 
+            BuildAmmoSubmenuPanel();
+
             menuRoot.SetActive(false);
+        }
+
+        /// <summary>
+        /// "Equip Ammo ▸" row: hovering (not clicking) reveals the weapon flyout, matching the
+        /// right-click-then-hover submenu behavior requested for ammo equip.
+        /// </summary>
+        private void CreateAmmoSubmenuButton()
+        {
+            Button button = MenuUiBuilder.CreateButton(menuPanel.transform, "Equip Ammo >", new Vector2(164f, 34f), 18f);
+            button.name = "EquipAmmoContextButton";
+
+            EventTrigger trigger = button.gameObject.AddComponent<EventTrigger>();
+            EventTrigger.Entry enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enterEntry.callback.AddListener(_ => ShowAmmoSubmenu());
+            trigger.triggers.Add(enterEntry);
+        }
+
+        private void BuildAmmoSubmenuPanel()
+        {
+            ammoSubmenuPanel = new GameObject("AmmoSubmenuPanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            ammoSubmenuPanel.transform.SetParent(menuRoot.transform, false);
+
+            Image panelImage = ammoSubmenuPanel.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(panelImage);
+            panelImage.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
+            panelImage.raycastTarget = true;
+
+            RectTransform panelRect = ammoSubmenuPanel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0f, 1f);
+            panelRect.sizeDelta = new Vector2(200f, 0f);
+
+            VerticalLayoutGroup layout = ammoSubmenuPanel.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(8, 8, 8, 8);
+            layout.spacing = 4;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            ContentSizeFitter fitter = ammoSubmenuPanel.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ammoSubmenuContent = ammoSubmenuPanel.transform;
+            ammoSubmenuPanel.SetActive(false);
+        }
+
+        private void ShowAmmoSubmenu()
+        {
+            if (itemActions == null || ammoSubmenuPanel == null)
+                return;
+
+            List<InventoryItemActions.AmmoEquipOption> options = itemActions.GetAmmoEquipOptions(activeSlotIndex);
+            if (options.Count == 0)
+            {
+                ammoSubmenuPanel.SetActive(false);
+                return;
+            }
+
+            for (int i = 0; i < ammoSubmenuButtons.Count; i++)
+            {
+                if (ammoSubmenuButtons[i] != null)
+                    Destroy(ammoSubmenuButtons[i]);
+            }
+            ammoSubmenuButtons.Clear();
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                InventoryItemActions.AmmoEquipOption option = options[i];
+                Button optionButton = MenuUiBuilder.CreateButton(ammoSubmenuContent, option.WeaponLabel, new Vector2(184f, 34f), 16f);
+                optionButton.name = "AmmoOption_" + option.WeaponHotbarSlot;
+                optionButton.onClick.AddListener(() =>
+                {
+                    Execute(itemActions?.TryEquipAmmoToWeapon(activeSlotIndex, option.WeaponHotbarSlot) ?? false);
+                    Hide();
+                });
+                ammoSubmenuButtons.Add(optionButton.gameObject);
+            }
+
+            ammoSubmenuPanel.SetActive(true);
+            ammoSubmenuPanel.transform.SetAsLastSibling();
+
+            RectTransform mainRect = menuPanel.GetComponent<RectTransform>();
+            RectTransform submenuRect = ammoSubmenuPanel.GetComponent<RectTransform>();
+            submenuRect.position = mainRect.position + new Vector3(mainRect.rect.width, 0f, 0f);
+            ClampToScreen(submenuRect);
+        }
+
+        private void HideAmmoSubmenu()
+        {
+            if (ammoSubmenuPanel != null)
+                ammoSubmenuPanel.SetActive(false);
         }
 
         private void CreateMenuButton(string label, System.Action action)
@@ -117,6 +218,7 @@ namespace Project.UI
                 return;
 
             activeSlotIndex = slotIndex;
+            HideAmmoSubmenu();
             UpdateButtonVisibility();
 
             if (!HasAnyVisibleOption())
@@ -145,6 +247,7 @@ namespace Project.UI
         public void Hide()
         {
             activeSlotIndex = -1;
+            HideAmmoSubmenu();
             if (menuRoot != null)
                 menuRoot.SetActive(false);
 
@@ -167,6 +270,9 @@ namespace Project.UI
             SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
+            SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));
+            SetButtonVisible("Refuel", itemActions.CanRefuelVehicle(activeSlotIndex));
+            SetButtonVisible("Deploy", itemActions.CanDeployVehicle(activeSlotIndex));
             SetButtonVisible("Split", itemActions.CanSplit(activeSlotIndex));
             SetButtonVisible("Drop", itemActions.CanDrop(activeSlotIndex));
         }

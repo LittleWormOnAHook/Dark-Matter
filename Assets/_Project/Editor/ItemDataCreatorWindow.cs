@@ -11,8 +11,8 @@ public class ItemDataCreatorWindow : EditorWindow
     private float energyRestore = 0f;
     private float staminaRestore = 0f;
     private float oxygenRestore = 0f;
-    private bool isPiInfused = false;
-    private int piValue = 0;
+    private bool isAcInfused = false;
+    private int acValue = 0;
 
     private GameObject worldPrefabTemplate;
 
@@ -20,7 +20,7 @@ public class ItemDataCreatorWindow : EditorWindow
     private bool addCraftingComponent = false;
     private GameObject gatherVFXPrefab;
 
-    [MenuItem(SurvivalPioneerEditorMenus.Content + "Item Data Creator")]
+    [MenuItem(SurvivalPioneerEditorMenus.ItemDataCreator, false, 0)]
     public static void ShowWindow()
     {
         GetWindow<ItemDataCreatorWindow>("Item Data Creator").minSize = new Vector2(450, 620);
@@ -41,10 +41,10 @@ public class ItemDataCreatorWindow : EditorWindow
         oxygenRestore = EditorGUILayout.FloatField("Oxygen Restore (display sec)", oxygenRestore);
 
         GUILayout.Space(10);
-        GUILayout.Label("Pi Network", EditorStyles.boldLabel);
-        isPiInfused = EditorGUILayout.Toggle("Is Pi Infused", isPiInfused);
-        if (isPiInfused)
-            piValue = EditorGUILayout.IntField("Pi Value", piValue);
+        GUILayout.Label("Currency (legacy fields)", EditorStyles.boldLabel);
+        isAcInfused = EditorGUILayout.Toggle("Grants AC On Pickup", isAcInfused);
+        if (isAcInfused)
+            acValue = EditorGUILayout.IntField("AC Value", acValue);
 
         GUILayout.Space(15);
         GUILayout.Label("World Prefab", EditorStyles.boldLabel);
@@ -80,8 +80,8 @@ public class ItemDataCreatorWindow : EditorWindow
         newItem.energyRestore = energyRestore;
         newItem.staminaRestore = staminaRestore;
         newItem.oxygenRestore = oxygenRestore;
-        newItem.isPiInfused = isPiInfused;
-        newItem.piValue = piValue;
+        newItem.isAcInfused = isAcInfused;
+        newItem.acValue = acValue;
 
         string dataPath = $"Assets/_Project/Data/Items/{itemName}.asset";
         AssetDatabase.CreateAsset(newItem, dataPath);

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7693b9365b31d6b4fa098be012daeff6, type: 3}
+  m_Name: Ryn-Vale
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
+  pioneerId: starter_ryn
+  displayName: Pyroclast Ryn Vale
+  pioneerClass: 0
+  startLevel: 1
+  radiationResistance: 0.5
+  expeditionEfficiency: 0.58
+  combatSynergy: 0.6
+  saturation: 0.15
+  backstory: Imprint recovered from a ruined hab shell near lava tubes.
+  traitIds:
+  - shield_drone
+  passiveAbilityIds:
+  - harvest_boost
+  learnedSkills:
+  - patchwork
+  buffs:
+  - label: Shield Drone
+    description: A tethered drone absorbs incoming hazard pressure before it reaches the wearer.
+    radiationResistanceBonus: 0
+    expeditionEfficiencyBonus: 0
+    combatSynergyBonus: 0.04
+    moveSpeedBonus: 0
+    debuffResistance: 0.15
+  preferredWeaponItemId:
+  preferredToolItemId:
+  overrideDefaultFollowMode: 0
+  behavior:
+    followMode: 0
+    wanderPaceScale: 0
+    walkSpeed: 0
+    runSpeed: 0
+    catchUpSpeed: 0
+    catchUpDistance: 0
+    maxFollowDistance: 0
+    stopDistance: 0
+    formationHeadingSmoothTime: 0
+    walkAnimationSpeed: 0
+    runAnimationSpeed: 0
+    walkSpeedReference: 0
+    runSpeedReference: 0
+    combatTetherRadius: 0
+    preferredCombatDistance: 0
+    rangedPreferredDistance: 0
+    losSearchRadius: 0
+    formationDriftDegreesPerSecond: 0

@@ -1,0 +1,59 @@
+---
+description: Dark Matter: Genesis Unity 6 + URP engineering rules for Assets/_Project
+globs: Assets/_Project/**/*
+alwaysApply: true
+---
+
+# Dark Matter: Genesis — Unity 6 + URP Project Rules
+
+You are an expert Unity 6 + URP C# developer building **Dark Matter: Genesis**, a light tactical RPG for **PC and consoles** (PS5 / Xbox). Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **Aether Credits (AC) only**.
+
+## Core Principles
+
+- Target **PC first**, then console parity: solid frame pacing, Input System (KBM + gamepad), scalable UI, profile on target hardware.
+- Prefer efficient patterns (pooling, events over busy Update loops, lightweight AI) for polish and console stability.
+- Modular component-based architecture: MonoBehaviours for runtime behavior, ScriptableObjects for data/config (behaviors, items, recipes, combat stats, moral alignments, formations, etc.).
+- Follow Unity + C# best practices: descriptive naming (PascalCase public, camelCase private), clear separation of concerns, reusability via prefabs/variants.
+- Tactical light combat: responsive parry/combo windows, resource management (stamina/tension), positioning/flanking awareness.
+- Cross-platform: Unity Input System, responsive/scalable UI for 16:9+ and TV safe areas.
+- Reference existing repo files with @filename or relative paths for context.
+
+## Key Systems to Align With
+
+- Central Stamina/Tension manager
+- Inventory + hotbar system
+- Melee state machine / Animator-driven combos + parry
+- Moral choice event system
+- Companion AI (formations, group behaviors, low-poly animations)
+- Enemy AI (basic chase/attack/guard with light tactical positioning)
+- Ranged projectile system with prefab projectiles and line tracers
+- Building materialization / placement / destruction + attachment modules
+  (generators, power grids, auto gather, logistics, communications, defense, mining)
+- Aether Credits economy (AC only)
+
+## Enemy & Companion AI Guidelines
+
+- **Enemies:** Simple FSM for chase → attack. Light tactical elements (flanking, optimal range, aggro). Use NavMesh lightly or custom steering.
+- **Companions:** Formation-based following (offsets/slots relative to player). Support roles in combat/exploration. ScriptableObject behaviors for variety.
+- **Shared:** Efficient detection, events for interactions (e.g., player parry → companion opportunity), object pooling.
+
+## Do's
+
+- Use Unity built-in features wherever possible.
+- Make behaviors configurable via ScriptableObjects.
+- Add Gizmo/debug visuals for AI states, detection, and formations.
+- Design for **PC (KBM) and gamepad**; keep TV/console UI readability in mind.
+- Preserve and build on existing repo patterns.
+
+## Don'ts
+
+- Ship targets are **PC and consoles only**.
+- Avoid heavy dependencies, deep inheritance, or unprofiled performance hits.
+- Do not invent unrelated systems unless asked by the user.
+- Minimize polling; prefer events.
+
+## Output Style
+
+- Clean, well-commented code with performance/tactical notes.
+- Include Editor setup, prefab instructions, and test suggestions.
+- Maintain consistency with the project's architecture.

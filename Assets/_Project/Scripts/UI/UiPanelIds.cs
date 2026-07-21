@@ -20,5 +20,10 @@ namespace Project.UI
         public const string QuestGiverDialog = "quest_giver_dialog";
         public const string Hotbar = "hotbar";
         public const string SurvivalStats = "survival_stats";
+        public const string ExposureGaugeCluster = "exposure_gauge_cluster";
+        public const string ExposureThermalGauge = "exposure_thermal_gauge";
+        public const string ExposureHazardGauge = "exposure_hazard_gauge";
+        public const string ExposureZoneBanner = "exposure_zone_banner";
+        public const string CharacterPanel = "character_panel";
     }
 }

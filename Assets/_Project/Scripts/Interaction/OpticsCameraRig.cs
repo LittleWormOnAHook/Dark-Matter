@@ -107,6 +107,7 @@ namespace Project.Interaction
             opticsCamera.transform.SetPositionAndRotation(
                 playerController.OpticsEyeWorldPosition,
                 playerController.OpticsLookRotation);
+            playerController.AlignPlayerToOpticsLook();
 
             float targetFov = playerController.OpticsTargetFov;
             if (immediate)

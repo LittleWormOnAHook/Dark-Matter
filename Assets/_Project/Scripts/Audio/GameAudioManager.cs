@@ -130,6 +130,30 @@ namespace Project.Audio
             PlayCombatClip(PickClip(clips), position, isCritical ? 1f : 0.85f);
         }
 
+        public void PlayPunchHit(Vector3 position, bool isCritical)
+        {
+            AudioClip[] clips = isCritical ? profile?.punchCriticalHitClips : profile?.punchHitClips;
+            if (clips == null || clips.Length == 0)
+            {
+                PlayWeaponHit(position, isCritical);
+                return;
+            }
+
+            PlayCombatClip(PickClip(clips), position, isCritical ? 1f : 0.9f);
+        }
+
+        public void PlayPunchSwing(Vector3 position)
+        {
+            AudioClip[] clips = profile?.punchSwingClips;
+            if (clips == null || clips.Length == 0)
+            {
+                PlayWeaponSwing(position);
+                return;
+            }
+
+            PlayCombatClip(PickClip(clips), position, 0.58f);
+        }
+
         public void PlayResourceHit(Vector3 position)
         {
             PlayCombatClip(PickClip(profile?.resourceHitClips), position, 0.75f);
@@ -142,7 +166,7 @@ namespace Project.Audio
 
         public void PlayInventoryItemClick()
         {
-            PlayUiClip(PickClip(profile?.inventoryItemClickClips), profile != null ? profile.uiVolume * 0.9f : 0.75f);
+            PlayUiClip(PickClip(profile?.buttonClickClips), profile != null ? profile.uiVolume * 0.9f : 0.75f);
         }
 
         public void PlayItemUse()
@@ -173,6 +197,11 @@ namespace Project.Audio
         public void PlayItemPickup()
         {
             PlayUiClip(PickClip(profile?.itemPickupClips), profile != null ? profile.uiVolume * 0.95f : 0.8f);
+        }
+
+        public void PlayAchievementUnlock()
+        {
+            PlayUiClip(PickClip(profile?.achievementUnlockClips), profile != null ? profile.uiVolume * 1.05f : 0.9f);
         }
 
         private void PlayUiClip(AudioClip clip, float volumeScale)

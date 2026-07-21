@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -10,6 +11,7 @@ using Project.Player;
 using Project.Quests;
 using Project.Progression;
 using Project.Survival;
+using Project.Survival.Exposure;
 
 namespace Project.UI
 {
@@ -17,11 +19,13 @@ namespace Project.UI
     {
         [Header("Survival Stats UI")]
         public Slider healthSlider;
+        public Slider thermalSlider;
         public Slider energySlider;
         public Slider staminaSlider;
         public Slider oxygenSlider;
 
         public TextMeshProUGUI healthText;
+        public TextMeshProUGUI thermalText;
         public TextMeshProUGUI energyText;
         public TextMeshProUGUI staminaText;
         public TextMeshProUGUI oxygenText;
@@ -55,6 +59,9 @@ namespace Project.UI
 
         private void Awake()
         {
+            GameSession.ResetSession();
+            MainCanvasFlow.SanitizeCanvasHost(GetComponent<Canvas>());
+
             ResolveSurvivalUiReferences();
             BindSurvivalStats();
             EnsureSurvivalPanelBinder();
@@ -78,6 +85,30 @@ namespace Project.UI
                 SetAetherCredits(roster.AetherCredits);
                 SetPiWalletBalance(roster.PiWalletBalance);
             }
+
+            if (!GameSession.HasStarted)
+                MainMenuController.EnsureExists();
+        }
+
+        private void OnEnable()
+        {
+            GameSession.GameStarted += HandleGameStarted;
+        }
+
+        private void OnDisable()
+        {
+            GameSession.GameStarted -= HandleGameStarted;
+        }
+
+        private void HandleGameStarted()
+        {
+            StartCoroutine(RefreshGameplayHudNextFrame());
+        }
+
+        private IEnumerator RefreshGameplayHudNextFrame()
+        {
+            yield return null;
+            MainCanvasFlow.Refresh();
         }
 
         private void EnsureJournalPanelUi()
@@ -220,6 +251,9 @@ namespace Project.UI
         {
             if (GetComponent<PickupAimReticleUI>() == null)
                 gameObject.AddComponent<PickupAimReticleUI>();
+
+            if (GetComponent<HovercraftTurretReticleUI>() == null)
+                gameObject.AddComponent<HovercraftTurretReticleUI>();
         }
 
         private void EnsureShiftHudBootstrap()
@@ -240,7 +274,7 @@ namespace Project.UI
                 gameObject.AddComponent<ToolBarUI>();
         }
 
-        private void Start()
+        private IEnumerator Start()
         {
             ResolveSurvivalUiReferences();
             BindSurvivalStats();
@@ -253,6 +287,11 @@ namespace Project.UI
             EnsureProgressionLevelUpFeedback();
             worldCamera = Camera.main;
             EnsureCombatUiReady();
+
+            yield return null;
+
+            if (!GameSession.HasStarted)
+                MainCanvasFlow.Refresh();
         }
 
         private void EnsureGameplayUiHelpers()
@@ -457,12 +496,26 @@ namespace Project.UI
             if (survivalStats == null) return;
 
             SetSliderValue(healthSlider, survivalStats.CurrentHealth / survivalStats.maxHealth);
+            if (thermalSlider != null && thermalSlider.gameObject.activeInHierarchy)
+                SetSliderValue(thermalSlider, survivalStats.GetDisplayTemperatureGaugeNormalized());
             SetSliderValue(energySlider, survivalStats.CurrentEnergy / survivalStats.maxEnergy);
             SetSliderValue(staminaSlider, survivalStats.CurrentStamina / survivalStats.maxStamina);
             SetSliderValue(oxygenSlider, survivalStats.GetOxygenNormalized());
 
             if (healthText != null)
                 healthText.text = FormatStatValue(survivalStats.CurrentHealth, "Health");
+            if (thermalText != null)
+            {
+                ExposureStatusSnapshot snapshot = ExposureStatusService.Current;
+                if (snapshot != null && !ReferenceEquals(snapshot, ExposureStatusSnapshot.Empty))
+                {
+                    thermalText.text = $"{snapshot.TemperatureText}  {snapshot.ThermalStatusLabel}";
+                }
+                else
+                {
+                    thermalText.text = $"{ExposureTemperatureDisplay.FormatFahrenheit(survivalStats.GetDisplayTemperatureFahrenheit())}  {survivalStats.GetThermalStatusLabel()}";
+                }
+            }
             if (energyText != null)
                 energyText.text = FormatStatValue(survivalStats.CurrentEnergy, "Energy");
             if (staminaText != null)
@@ -483,11 +536,13 @@ namespace Project.UI
                 return;
 
             healthSlider ??= FindRowSlider(panel, "HealthRow");
+            thermalSlider ??= FindRowSlider(panel, "ThermalRow");
             energySlider ??= FindRowSlider(panel, "EnergyRow");
             staminaSlider ??= FindRowSlider(panel, "StaminaRow");
             oxygenSlider ??= FindRowSlider(panel, "OxygenRow");
 
             healthText ??= FindRowLabel(panel, "HealthRow");
+            thermalText ??= FindRowLabel(panel, "ThermalRow");
             energyText ??= FindRowLabel(panel, "EnergyRow");
             staminaText ??= FindRowLabel(panel, "StaminaRow");
             oxygenText ??= FindRowLabel(panel, "OxygenRow");
@@ -688,6 +743,13 @@ namespace Project.UI
             interactionPrompt.text = message;
             interactionPrompt.gameObject.SetActive(true);
             interactionPrompt.transform.SetAsLastSibling();
+        }
+
+        public void ShowTimedInteractionPrompt(string message, float durationSeconds = 2.5f)
+        {
+            ShowInteractionPrompt(message);
+            CancelInvoke(nameof(HideInteractionPrompt));
+            Invoke(nameof(HideInteractionPrompt), durationSeconds);
         }
 
         public void ShowPetFetchMessage(string itemName)

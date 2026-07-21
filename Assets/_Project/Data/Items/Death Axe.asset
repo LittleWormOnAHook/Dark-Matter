@@ -17,6 +17,7 @@ MonoBehaviour:
   worldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   maxStack: 1
   itemType: 2
+  weaponGrip: 0
   heldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   equipSocketName: RightHand
   heldLocalPosition: {x: 0.092, y: 0.045, z: -0.009}
@@ -25,25 +26,61 @@ MonoBehaviour:
   heldLocalRotation: {x: -0.07821211, y: 0.6904465, z: 0.13039702, w: -0.70722204}
   heldLocalScale: {x: 1, y: 1, z: 1}
   swingEulerAngles: {x: -90, y: 0, z: 0}
-  sheatheSocketName: Spine
+  sheatheSocketName: RightUpLeg
   sheathedLocalPosition: {x: -0.59448534, y: -0.12776479, z: -0.18241131}
-  sheathedLocalEuler: {x: 344.41852, y: 164.03569, z: 0.11844179}
+  sheathedLocalEuler: {x: 344.4185, y: 164.0357, z: 0.1184418}
   useSheathedLocalRotation: 1
   sheathedLocalRotation: {x: 0.017809708, y: -0.98118955, z: -0.13438417, w: -0.13744411}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
   meleeDamage: 15
   meleeDamageRandomRange: 6
   criticalDamageMultiplier: 2.25
   meleeRange: 2.4
   meleeCooldown: 0.6
+  attackAnimationSpeed: 0
   gatherPower: 1
   attackTrigger: Attack
+  rangedDamage: 14
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 85
+  projectileSpreadDegrees: 1.5
+  fireRate: 4
+  magazineSize: 30
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  componentCategory: 0
   toolType: 0
   toolRange: 8
   scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
   healthRestore: 0
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  tooltipDescription: 

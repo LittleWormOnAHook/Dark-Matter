@@ -92,9 +92,20 @@ namespace Project.Inventory
         }
 
         /// <returns>Number of items successfully added.</returns>
-        public int AddItem(ItemData item, int amount = 1)
+        public int AddItem(ItemData item, int amount = 1, bool autoCreditAmmoToWeapons = true)
         {
             if (item == null || amount <= 0) return 0;
+
+            if (autoCreditAmmoToWeapons && EquipmentController.IsAmmoItem(item))
+            {
+                WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+                if (ammoState != null)
+                {
+                    ammoState.CreditAmmoPickup(item, amount);
+                    OnInventoryChanged?.Invoke();
+                    return amount;
+                }
+            }
 
             int remaining = amount;
 
@@ -135,7 +146,7 @@ namespace Project.Inventory
             if (equipment == null || remaining <= 0 || item == null)
                 return remaining;
 
-            if (EquipmentController.IsMeleeWeaponItem(item))
+            if (EquipmentController.IsWeaponItem(item))
             {
                 while (remaining > 0)
                 {
@@ -281,6 +292,15 @@ namespace Project.Inventory
                 OnInventoryChanged?.Invoke();
 
             return added;
+        }
+
+        public bool TryConsumeItemById(string itemId, int amount = 1)
+        {
+            if (string.IsNullOrEmpty(itemId) || amount <= 0)
+                return false;
+
+            ItemData item = ItemRegistry.Resolve(itemId);
+            return item != null && RemoveItem(item, amount);
         }
 
         public bool RemoveItem(ItemData item, int amount = 1)

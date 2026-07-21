@@ -1,8 +1,12 @@
 using Project.Audio;
+using Project.Combat;
 using Project.Data;
 using Project.Inventory;
+using Project.Player;
+using Project.Progression;
 using Project.Quests;
 using Project.UI;
+using ECM2;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -48,7 +52,15 @@ namespace Project.Interaction
             uiManager = FindAnyObjectByType<UIManager>();
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            StripMisplacedProjectileBehaviour();
             EnsurePickupTriggerCollider();
+        }
+
+        private void StripMisplacedProjectileBehaviour()
+        {
+            CombatProjectile projectile = GetComponent<CombatProjectile>();
+            if (projectile != null)
+                Destroy(projectile);
         }
 
         public float GetUsePriority(WorldUseContext context)
@@ -152,6 +164,8 @@ namespace Project.Interaction
             {
                 QuestManager questManager = QuestManager.EnsureExists();
                 questManager?.NotifyItemCollected(itemData, added);
+                Project.Achievements.AchievementManager.EnsureExists()
+                    ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, itemData.name, added);
             }
 
             if (added >= amount)
@@ -166,7 +180,18 @@ namespace Project.Interaction
                     uiManager.HideInteractionPrompt();
                 }
 
+                if (itemData.grantsXp && itemData.xpAmount > 0)
+                {
+                    ProgressionRewardGranter.GrantXp(
+                        itemData.xpAmount,
+                        itemData.xpSource,
+                        $"special-item:{itemData.name}");
+                }
+
                 PickupToastUI.Show($"+{amount} {itemData.itemName}");
+
+                if (showPlayerPrompt)
+                    TryPlayLootAnimation(inventory);
 
                 isPickedUp = true;
                 PickupProximityDotUI.NotifyCollected(this);
@@ -187,10 +212,29 @@ namespace Project.Interaction
             if (showPlayerPrompt && added == 0)
             {
                 if (uiManager != null)
-                    uiManager.ShowInteractionPrompt("Inventory is full!");
+                    uiManager.ShowTimedInteractionPrompt("Inventory is full!");
             }
 
             return false;
+        }
+
+        private static void TryPlayLootAnimation(InventorySystem inventory)
+        {
+            if (inventory == null)
+                return;
+
+            PlayerLootAnimationController lootAnimation = inventory.GetComponentInChildren<PlayerLootAnimationController>();
+            if (lootAnimation == null)
+            {
+                ECM2.Character character = inventory.GetComponent<Character>();
+                Animator animator = character != null ? character.GetAnimator() : null;
+                if (animator == null)
+                    return;
+
+                lootAnimation = animator.gameObject.AddComponent<PlayerLootAnimationController>();
+            }
+
+            lootAnimation.BeginLoot();
         }
 
         private bool IsCollectibleWorldPickup()

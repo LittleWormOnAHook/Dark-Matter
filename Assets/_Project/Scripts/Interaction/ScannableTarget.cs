@@ -10,10 +10,14 @@ namespace Project.Interaction
         [SerializeField] private string scanLabel = "Point of Interest";
         [SerializeField] private Color scanColor = new Color(1f, 0.85f, 0.2f, 1f);
         [SerializeField] private bool requiresLineOfSight = true;
+        [SerializeField] private bool useCategoryOverride;
+        [SerializeField] private ScannerTargetCategory scanCategory = ScannerTargetCategory.Generic;
 
         public string ScanLabel => string.IsNullOrWhiteSpace(scanLabel) ? name : scanLabel;
         public Color ScanColor => scanColor;
         public bool RequiresLineOfSight => requiresLineOfSight;
+        public bool HasCategoryOverride => useCategoryOverride;
+        public ScannerTargetCategory ScanCategory => scanCategory;
         public Vector3 ScanPosition => transform.position;
     }
 }

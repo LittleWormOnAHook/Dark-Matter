@@ -1,19 +1,37 @@
+using System.Collections.Generic;
 using Project.Audio;
+using Project.Core;
 using Project.Data;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.Inventory
 {
     public class InventoryItemActions : MonoBehaviour
     {
+        /// <summary>One weapon a right-clicked ammo stack can be equipped to, for the "Equip Ammo To" flyout.</summary>
+        public readonly struct AmmoEquipOption
+        {
+            public readonly int WeaponHotbarSlot;
+            public readonly string WeaponLabel;
+
+            public AmmoEquipOption(int weaponHotbarSlot, string weaponLabel)
+            {
+                WeaponHotbarSlot = weaponHotbarSlot;
+                WeaponLabel = weaponLabel;
+            }
+        }
+
         private InventorySystem inventory;
         private EquipmentController equipment;
+        private WeaponAmmoState ammoState;
 
         private void Awake()
         {
             inventory = GetComponent<InventorySystem>();
             equipment = GetComponent<EquipmentController>();
+            ammoState = GetComponent<WeaponAmmoState>();
         }
 
         public bool TryUse(int slotIndex)
@@ -73,6 +91,62 @@ namespace Project.Inventory
             return true;
         }
 
+        /// <summary>Consumes one Plasma Fuel to top up a stored (not-yet-deployed) vehicle item's
+        /// remembered fuel level. Right-click action for the Hovercraft inventory item.</summary>
+        public bool TryRefuelVehicle(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.IsVehicle)
+                return false;
+
+            ItemData plasmaFuel = ItemRegistry.Resolve("Plasma Fuel");
+            if (plasmaFuel == null || inventory.CountItem(plasmaFuel) <= 0)
+                return false;
+
+            inventory.RemoveItem(plasmaFuel, 1);
+            HovercraftStorageState.AddStoredFuel(HovercraftStorageState.FuelPerPlasmaCell, HovercraftStorageState.DefaultMaxFuel);
+            GameAudioManager.Instance?.PlayItemUse();
+            return true;
+        }
+
+        public bool CanRefuelVehicle(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.IsVehicle)
+                return false;
+
+            if (HovercraftStorageState.StoredFuel >= HovercraftStorageState.DefaultMaxFuel - 0.01f)
+                return false;
+
+            ItemData plasmaFuel = ItemRegistry.Resolve("Plasma Fuel");
+            return plasmaFuel != null && inventory.CountItem(plasmaFuel) > 0;
+        }
+
+        /// <summary>Spawns the stored vehicle near the player and removes the item from the inventory.
+        /// Right-click action for the Hovercraft inventory item.</summary>
+        public bool TryDeployVehicle(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.IsVehicle)
+                return false;
+
+            Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
+            bool deployed = HovercraftDeploymentUtility.TryDeploy(inventory, item, playerTransform, out string message);
+            if (!string.IsNullOrEmpty(message))
+                PickupToastUI.Show(message);
+
+            if (deployed)
+                GameAudioManager.Instance?.PlayItemEquip();
+
+            return deployed;
+        }
+
+        public bool CanDeployVehicle(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            return item != null && item.IsVehicle && item.deployedPrefab != null;
+        }
+
         public bool CanUse(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
@@ -96,8 +170,8 @@ namespace Project.Inventory
 
             int hotbarIndex = slotIndex - inventory.inventorySize;
             return !equipment.IsWeaponHotbarSlot(hotbarIndex) ||
-                   hotbarIndex != equipment.ActiveWeaponHotbarSlot ||
-                   !equipment.IsWeaponDrawn;
+                   hotbarIndex != equipment.SelectedHotbarSlot ||
+                   !equipment.HasActiveMeleeWeapon();
         }
 
         public bool CanUnequip(int slotIndex)
@@ -123,6 +197,41 @@ namespace Project.Inventory
         public bool CanDrop(int slotIndex)
         {
             return inventory != null && inventory.GetItemAt(slotIndex) != null;
+        }
+
+        public bool CanEquipAmmo(int slotIndex)
+        {
+            return GetAmmoEquipOptions(slotIndex).Count > 0;
+        }
+
+        /// <summary>Eligible ranged weapons (currently in a hotbar slot) this ammo stack could be loaded into.</summary>
+        public List<AmmoEquipOption> GetAmmoEquipOptions(int slotIndex)
+        {
+            List<AmmoEquipOption> options = new List<AmmoEquipOption>();
+
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.CountsAsAmmo || ammoState == null || equipment == null)
+                return options;
+
+            List<int> hotbarSlots = ammoState.GetEligibleWeaponHotbarSlots(item);
+            for (int i = 0; i < hotbarSlots.Count; i++)
+            {
+                int hotbarSlot = hotbarSlots[i];
+                ItemData weapon = equipment.GetHotbarItem(hotbarSlot);
+                string label = weapon != null ? weapon.itemName : $"Slot {hotbarSlot + 1}";
+                options.Add(new AmmoEquipOption(hotbarSlot, label));
+            }
+
+            return options;
+        }
+
+        public bool TryEquipAmmoToWeapon(int ammoSlotIndex, int weaponHotbarSlot)
+        {
+            if (ammoState == null || !ammoState.TryEquipAmmoToWeaponSlot(weaponHotbarSlot, ammoSlotIndex))
+                return false;
+
+            GameAudioManager.Instance?.PlayItemEquip();
+            return true;
         }
 
         private bool HasEmptyMainInventorySlot()

@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Project.Audio
 {
-    [RequireComponent(typeof(Character))]
     public class FootstepController : MonoBehaviour
     {
         [SerializeField] private float runSpeedThreshold = 7f;

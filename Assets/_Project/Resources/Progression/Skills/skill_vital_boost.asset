@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33f4772fb7e54c649aee61c03b8d9f75, type: 3}
+  m_Name: skill_vital_boost
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
+  skillId: skill_vital_boost
+  displayName: Vital Boost
+  description: Increase max health.
+  requiredPlayerLevel: 1
+  costPerRank: 1
+  maxRank: 3
+  modifierType: 0
+  bonusPercentPerRank: 5
+  prerequisiteSkillIds: []

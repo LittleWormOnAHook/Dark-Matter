@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc7af865c9044b4a8a64fec37a7d9e0, type: 3}
+  m_Name: Exposure_Mixed_Hazard
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
+  displayName: Mixed Hazard
+  zoneKind: 6
+  designerNotes: 
+  effectIntensity: 0.14
+  radiationPerSecond: 3
+  thermalColdPerSecond: 0
+  thermalHeatPerSecond: 3
+  sulfurPerSecond: 3
+  volcanoPerSecond: 0
+  oxygenDrainMultiplier: 1
+  exposureRecoveryPerSecond: -1
+  thermalRecoveryPerSecond: -1
+  healthDrainAtMaxExposure: 2.5
+  healthDrainAtMaxThermal: 1.5
+  pulse:
+    enabled: 1
+    activeDurationSeconds: 8
+    inactiveDurationSeconds: 4
+    activeIntensityMultiplier: 1.5
+    timingJitter: 0.15
+  mitigationRules: []
+  playerDebuffs:
+    moveSpeedPenalty: 0.582
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  companionDebuffs:
+    moveSpeedPenalty: 0.15
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  gizmoColor: {r: 0.55, g: 0.2, b: 0.65, a: 0.4}
+  ambientVfxPrefab: {fileID: 0}
+  ambientLoopClip: {fileID: 0}

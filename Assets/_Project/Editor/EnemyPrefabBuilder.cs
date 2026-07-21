@@ -2,6 +2,7 @@ using System.IO;
 using Project.AI;
 using Project.Combat;
 using Project.Data;
+using Project.EditorTools.Invector;
 using UnityEditor;
 using UnityEngine;
 
@@ -29,6 +30,23 @@ namespace Project.EditorTools
             string fileName = SanitizeFileName(definition.prefabFileName, definition.displayName);
             prefabPath = $"{ProjectAssetPaths.PrefabsCombat}/{fileName}.prefab";
 
+            if (definition.archetype == EnemyArchetype.HumanoidInvector)
+            {
+                GameObject visual = ResolveVisualSourceForBuild(sourceMode, sourceObject);
+                if (File.Exists(prefabPath))
+                {
+                    if (!EnemyInvectorSetupUtility.RebuildHumanoidEnemyAtPath(prefabPath, definition, visual))
+                        return null;
+
+                    return AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                }
+
+                return EnemyInvectorSetupUtility.BuildHumanoidEnemyPrefab(
+                    definition,
+                    visual,
+                    prefabPath);
+            }
+
             GameObject root = CreateVisualRoot(definition, sourceMode, sourceObject);
             ApplyGameplayComponents(root, definition);
 
@@ -38,6 +56,19 @@ namespace Project.EditorTools
             EditorLayoutGuard.ScheduleInspectorRecovery();
 
             return prefab;
+        }
+
+        private static GameObject ResolveVisualSourceForBuild(VisualSourceMode sourceMode, GameObject sourceObject)
+        {
+            switch (sourceMode)
+            {
+                case VisualSourceMode.SelectedHierarchyObject:
+                    return sourceObject;
+                case VisualSourceMode.ExistingPrefab:
+                    return sourceObject;
+                default:
+                    return null;
+            }
         }
 
         public static GameObject PlacePrefabInScene(GameObject prefab, string instanceName, Vector3 position)
@@ -161,9 +192,11 @@ namespace Project.EditorTools
 
             ConfigurePatrolPoints(root, ai, definition);
             ConfigureHealthBar(root, definition);
-            ConfigureAnimation(root, definition);
+            if (definition.archetype != EnemyArchetype.HumanoidInvector)
+                ConfigureAnimation(root, definition);
             ConfigureLoot(root, definition);
             GetOrAdd<EnemyDisintegrationEffect>(root);
+            GetOrAdd<EnemyDeathSequence>(root);
         }
 
         public static void ApplyLootToPrefab(GameObject root, EnemyDefinition definition)
@@ -181,8 +214,8 @@ namespace Project.EditorTools
             EnemyLootable lootable = GetOrAdd<EnemyLootable>(root);
             SetSerializedField(lootable, "enableLoot", definition.enableLoot);
             SetSerializedField(lootable, "lootDisplayName", definition.displayName);
-            SetSerializedField(lootable, "piCoinsMin", definition.piCoinsMin);
-            SetSerializedField(lootable, "piCoinsMax", definition.piCoinsMax);
+            SetSerializedField(lootable, "acDropMin", definition.acDropMin);
+            SetSerializedField(lootable, "acDropMax", definition.acDropMax);
             SetSerializedField(lootable, "randomLootCountMin", definition.randomLootCountMin);
             SetSerializedField(lootable, "randomLootCountMax", definition.randomLootCountMax);
             SetSerializedField(lootable, "lootItemPool", definition.lootItemPool);
@@ -281,7 +314,7 @@ namespace Project.EditorTools
             float verticalScale = Mathf.Max(Mathf.Abs(lossyScale.y), 0.001f);
 
             Vector3 localCenter = root.transform.InverseTransformPoint(bounds.center);
-            capsule.center = localCenter;
+            capsule.center = new Vector3(0f, localCenter.y, 0f);
             capsule.height = Mathf.Max(0.5f / verticalScale, bounds.size.y / verticalScale);
             capsule.radius = Mathf.Max(0.2f / horizontalScale, Mathf.Max(bounds.size.x, bounds.size.z) * 0.2f / horizontalScale);
             return true;

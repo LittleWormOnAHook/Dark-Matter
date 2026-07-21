@@ -121,7 +121,10 @@ namespace Project.EditorTools
             state.motion = clips[0];
         }
 
-        private static string[] BuildStateNames(string prefix, AnimationClip[] clips)
+        private static string[] BuildStateNames(string prefix, AnimationClip[] clips) =>
+            BuildStateNamesPublic(prefix, clips);
+
+        public static string[] BuildStateNamesPublic(string prefix, AnimationClip[] clips)
         {
             if (!HasClips(clips))
                 return System.Array.Empty<string>();
@@ -136,7 +139,7 @@ namespace Project.EditorTools
             return names;
         }
 
-        private static bool HasClips(AnimationClip[] clips)
+        public static bool HasClips(AnimationClip[] clips)
         {
             if (clips == null || clips.Length == 0)
                 return false;

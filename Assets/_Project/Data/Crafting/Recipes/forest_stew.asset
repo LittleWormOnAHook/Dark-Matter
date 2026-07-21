@@ -24,3 +24,5 @@ MonoBehaviour:
     amount: 1
   outputItem: {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
   outputAmount: 1
+  requiredPlayerLevel: 2
+  recipeTier: 2

@@ -1,12 +1,24 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Serialization;
+using Project.AI.Invector;
+using Project.Companions;
+using Project.Survival;
 
 namespace Project.AI
 {
+    // Core: fields/config, the enum + threat-ledger struct, lifecycle (Awake/OnEnable/OnDisable),
+    // the main Update()/LateUpdate() dispatch loop, and state-transition bookkeeping (EnterState/
+    // EnterCalmState). Split across partials by responsibility — see EnemyAiController.Threat.cs
+    // (aggro/threat-ledger/player-target-legality), .States.cs (the per-AiState Update* behaviors),
+    // .CombatPositioning.cs (combat ring/standoff/enemy-separation math + pioneer retarget scans),
+    // .Movement.cs (NavMeshAgent plumbing + raw transform locomotion). Purely a mechanical
+    // reorganization (partial class split) — no behavior changed by the split.
     [RequireComponent(typeof(EnemySenses))]
     [RequireComponent(typeof(EnemyHealth))]
     [RequireComponent(typeof(EnemyCombat))]
-    public class EnemyAiController : MonoBehaviour
+    public partial class EnemyAiController : MonoBehaviour
     {
         private enum AiState
         {
@@ -16,6 +28,7 @@ namespace Project.AI
             Investigate,
             ReturnHome,
             Chase,
+            Defensive,
             Attack,
             Search
         }
@@ -33,11 +46,20 @@ namespace Project.AI
         [Header("Movement")]
         [SerializeField] private float walkSpeed = 2.4f;
         [SerializeField] private float runSpeed = 4.8f;
+        [Tooltip("Patrol-only walk speed. Defaults to walkSpeed when zero.")]
+        [SerializeField] private float patrolWalkSpeed;
+        [Tooltip("Explicit chase speed. 0 = runSpeed * chaseSpeedMultiplier.")]
+        [SerializeField] private float chaseSpeed;
+        [SerializeField] [Range(0.5f, 1.25f)] private float chaseSpeedMultiplier = 0.88f;
         [SerializeField] private float turnSpeed = 8f;
         [SerializeField] private float stopDistance = 0.35f;
         [SerializeField] private float groundOffset = 0f;
-        [SerializeField] private float groundProbeHeight = 40f;
-        [SerializeField] private float groundProbeDistance = 80f;
+
+        [Header("NavMesh")]
+        [Tooltip("Use NavMeshAgent for Wander and Chase only. Other states keep transform movement.")]
+        [SerializeField] private bool useNavMeshForChaseAndWander = false;
+        [SerializeField] private float navMeshSampleRadius = 2.5f;
+        [SerializeField] private float navDestinationRepathThreshold = 0.5f;
 
         [Header("Wander")]
         [SerializeField] private float wanderRadius = 8f;
@@ -50,14 +72,69 @@ namespace Project.AI
         [SerializeField] private float idleDuration = 3f;
 
         [Header("Behavior")]
-        [SerializeField] private float loseTargetDelay = 4f;
+        [SerializeField] private float loseTargetDelay = 2.5f;
+        [SerializeField] private float maxChaseDuration = 6f;
         [SerializeField] private float investigateArriveDistance = 1.2f;
         [SerializeField] private float searchDuration = 6f;
         [SerializeField] private float searchRadius = 4f;
 
+        [Header("Chase Stamina")]
+        [SerializeField] private float chaseStaminaPauseMin = 0.5f;
+        [SerializeField] private float chaseStaminaPauseMax = 0.9f;
+        [SerializeField] private float chaseStaminaRollIntervalMin = 2.4f;
+        [SerializeField] private float chaseStaminaRollIntervalMax = 5.2f;
+        [SerializeField] [Range(0f, 1f)] private float chaseStaminaPauseChance = 0.38f;
+
+        [Header("Pioneer Retarget")]
+        [SerializeField] private float pioneerRetargetChanceMin = 0.10f;
+        [SerializeField] private float pioneerRetargetChanceMax = 0.20f;
+        [SerializeField] private float pioneerRetargetRadius = 4f;
+        [SerializeField] private float pioneerRetargetRollIntervalMin = 0.75f;
+        [SerializeField] private float pioneerRetargetRollIntervalMax = 1.35f;
+
+        [Header("Player Threat")]
+        [Tooltip("Unprovoked players closer than this are treated as a melee threat. Visible players beyond this are ignored.")]
+        [SerializeField] private float playerThreatRange = 3f;
+
+        [Header("Combat Spacing")]
+        [Tooltip("Minimum horizontal gap kept between this enemy and its melee target — prevents body-shoving the player or pioneers.")]
+        [SerializeField] private float minCombatSeparation = 1.55f;
+        [SerializeField] [Range(0.55f, 0.95f)] private float attackStandoffFraction = 0.82f;
+        [SerializeField] private float playerStandoffBonus = 0.5f;
+        [SerializeField] private float pioneerChaseRangeMultiplier = 1.45f;
+
+        [Header("Defensive Engage")]
+        [SerializeField] private float defensivePauseMin = 0.35f;
+        [SerializeField] private float defensivePauseMax = 0.75f;
+        [SerializeField] private float defensiveBlockDuration = 1.2f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveAttackWeight = 0.55f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveBlockWeight = 0.25f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveRollWeight = 0.20f;
+
+        [Header("Threat Ledger")]
+        [SerializeField] [Range(0f, 1f)] private float threatSwitchLeadFraction = 0.15f;
+        [SerializeField] private bool debugAggro;
+
+        [Header("Crowd")]
+        [Tooltip("Keep a small buffer between nearby enemies while chasing or brawling.")]
+        [SerializeField] private float enemyAvoidanceRadius = 1.45f;
+        [SerializeField] private float enemyAvoidanceStrength = 0.85f;
+        [Tooltip("Spreads enemies around the combat ring so they do not stack on one slot.")]
+        [SerializeField] private float combatRingSlotSpread = 42f;
+
+        private struct ThreatEntry
+        {
+            public Transform Root;
+            public float TotalDamage;
+            public float LastHitTime;
+        }
+
+        private readonly Dictionary<Transform, ThreatEntry> threatLedger = new Dictionary<Transform, ThreatEntry>();
+
         private EnemySenses senses;
         private EnemyHealth health;
         private EnemyCombat combat;
+        private EnemyInvectorCombatBridge combatBridge;
 
         private AiState state = AiState.Idle;
         private Vector3 homePosition;
@@ -70,12 +147,78 @@ namespace Project.AI
         private bool hasPatrolRoute;
         private float currentLocomotionSpeed;
         private Vector3 currentLocalMoveDirection;
+        private float chaseStaminaPauseUntil;
+        private float nextChaseStaminaRollTime;
+        private float nextPioneerRetargetRollTime;
+        private Transform playerTarget;
+        private Transform aggroTarget;
+        private Transform firstBloodTarget;
+        private float aggroUntil;
+        private float chaseStartedTime;
+        private float defensiveActionUntil;
+        private bool defensiveActionPending;
+        private SurvivalStats playerSurvivalStats;
+        private NavMeshAgent navAgent;
+        private bool navMeshReady;
+        private Vector3 lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        private float chaseSpeedMultiplierJitter = 1f;
+        private float combatRingSlotAngle;
+        private int perfPhase;
+        private Vector3 cachedSeparationOffset;
+        private static readonly Collider[] AvoidanceHits = new Collider[12];
+        private const float AggroDuration = 8f;
+        private bool locomotionPaused;
 
         public float CurrentLocomotionSpeed => currentLocomotionSpeed;
         public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
+        public float RunSpeed => runSpeed;
+        public bool IsWalkOnlyLocomotion => state == AiState.Patrol;
+        public bool IsDefensiveActionActive => defensiveActionPending || Time.time < defensiveActionUntil;
+
+        public float ResolveChaseSpeed()
+        {
+            float speed;
+            if (chaseSpeed > 0f)
+                speed = chaseSpeed;
+            else
+                speed = runSpeed * Mathf.Max(0.5f, chaseSpeedMultiplier);
+
+            return speed * chaseSpeedMultiplierJitter;
+        }
 
         public bool IsEngagedWithTarget =>
-            state == AiState.Attack || state == AiState.Chase;
+            state == AiState.Attack || state == AiState.Chase || state == AiState.Defensive;
+
+        /// <summary>
+        /// True when the enemy is in Attack state with a ranged weapon and the target is within
+        /// ranged engage range. Used by the combat bridge to drive the aim stance every frame.
+        /// </summary>
+        public bool IsInRangedEngagement
+        {
+            get
+            {
+                if (state != AiState.Attack) return false;
+                if (combatBridge == null || !combatBridge.IsArmedRangedPreferred()) return false;
+                Transform t = combat?.CurrentTarget;
+                if (t == null) return false;
+                return HorizontalDistance(transform.position, t.position) <= combatBridge.RangedEngageRange;
+            }
+        }
+
+        public void SetLocomotionPaused(bool paused)
+        {
+            locomotionPaused = paused;
+            if (paused)
+            {
+                ClearLocomotion();
+                if (navAgent != null && navAgent.enabled)
+                    navAgent.isStopped = true;
+                return;
+            }
+
+            if (navAgent != null && navAgent.enabled)
+                navAgent.isStopped = false;
+        }
 
         private bool IsStationary => movementMode == EnemyMovementMode.Stationary;
 
@@ -87,7 +230,18 @@ namespace Project.AI
             senses = GetComponent<EnemySenses>();
             health = GetComponent<EnemyHealth>();
             combat = GetComponent<EnemyCombat>();
+            combatBridge = GetComponent<EnemyInvectorCombatBridge>();
             hasPatrolRoute = patrolPoints != null && patrolPoints.Length > 0;
+            ConfigureNavMeshAgent();
+            InitializeCrowdProfile();
+        }
+
+        private void InitializeCrowdProfile()
+        {
+            int hash = Mathf.Abs(gameObject.GetEntityId().GetHashCode());
+            chaseSpeedMultiplierJitter = 0.88f + (hash % 1000) / 1000f * 0.22f;
+            combatRingSlotAngle = ((hash % 360) - 180f) / 180f * combatRingSlotSpread;
+            perfPhase = hash % 3;
         }
 
         private void OnEnable()
@@ -97,20 +251,40 @@ namespace Project.AI
             currentLocalMoveDirection = Vector3.zero;
 
             if (health != null)
+            {
                 health.Died += HandleDeath;
+                health.DamagedWithSource += HandleDamagedWithSource;
+            }
+
+            ClearThreatLedger();
+
+            ConfigureNavMeshAgent();
 
             EnterCalmState();
+            TrySubscribePlayerEvents();
         }
 
         private void OnDisable()
         {
             if (health != null)
+            {
                 health.Died -= HandleDeath;
+                health.DamagedWithSource -= HandleDamagedWithSource;
+            }
+
+            UnsubscribePlayerEvents();
         }
 
         private void LateUpdate()
         {
             if (IsStationary)
+                return;
+
+            // NavMeshAgent owns vertical placement while active on the mesh.
+            if (navMeshReady && navAgent != null && navAgent.enabled)
+                return;
+
+            if (((Time.frameCount + perfPhase) & 1) != 0)
                 return;
 
             SnapToGround();
@@ -124,19 +298,38 @@ namespace Project.AI
             if (health != null && health.IsDead)
                 return;
 
-            Transform sensedTarget = senses.GetSensedTarget();
-            if (sensedTarget != null)
-            {
-                lastKnownPlayerPosition = sensedTarget.position;
-                lostTargetTimer = 0f;
-                combat.SetTarget(sensedTarget);
+            if (locomotionPaused)
+                return;
 
-                if (combat.IsTargetInRange())
+            TrySubscribePlayerEvents();
+
+            Transform visiblePlayer = senses.GetVisiblePlayerTarget();
+            if (visiblePlayer != null)
+                lastKnownPlayerPosition = visiblePlayer.position;
+
+            if (HasActiveAggroTarget())
+            {
+                playerTarget = null;
+                UpdateAggroCombat();
+            }
+            else if (TryPickVisibleThreat(visiblePlayer, out Transform visibleThreat))
+            {
+                bool threatIsPlayer = IsCombatTargetPlayer(visibleThreat);
+                playerTarget = threatIsPlayer ? visibleThreat : null;
+                lostTargetTimer = 0f;
+
+                if (!threatIsPlayer || !IsTargetingLivingPioneer())
+                    combat.SetTarget(visibleThreat);
+
+                if (combat.IsTargetInEffectiveRange())
                 {
-                    if (state != AiState.Attack)
-                        EnterState(AiState.Attack);
+                    if (state != AiState.Defensive && state != AiState.Attack)
+                    {
+                        float dist = HorizontalDistance(transform.position, visibleThreat.position);
+                        EnterState(ResolveAttackEntryState(visibleThreat, dist));
+                    }
                 }
-                else if (chasePlayer && CanChaseTarget(sensedTarget.position))
+                else if (chasePlayer && CanChaseTarget(visibleThreat.position))
                 {
                     if (state != AiState.Chase)
                         EnterState(AiState.Chase);
@@ -148,7 +341,11 @@ namespace Project.AI
             }
             else
             {
-                combat.SetTarget(null);
+                playerTarget = null;
+                TryCorrectIllegalPlayerTarget();
+
+                if (IsCombatTargetPlayer(combat.CurrentTarget))
+                    combat.SetTarget(null);
 
                 if (state == AiState.Chase || state == AiState.Attack)
                 {
@@ -157,6 +354,9 @@ namespace Project.AI
                         GiveUpChaseAndReturnHome();
                 }
             }
+
+            if (state == AiState.Attack || state == AiState.Chase)
+                TryCorrectIllegalPlayerTarget();
 
             switch (state)
             {
@@ -178,182 +378,15 @@ namespace Project.AI
                 case AiState.Chase:
                     UpdateChase();
                     break;
+                case AiState.Defensive:
+                    UpdateDefensive();
+                    break;
                 case AiState.Attack:
                     UpdateAttack();
                     break;
                 case AiState.Search:
                     UpdateSearch();
                     break;
-            }
-        }
-
-        private void UpdateIdle()
-        {
-            if (ShouldInvestigateNoise())
-            {
-                EnterState(AiState.Investigate);
-                return;
-            }
-
-            if (movementMode == EnemyMovementMode.Stationary)
-                return;
-
-            stateTimer -= Time.deltaTime;
-            if (stateTimer > 0f)
-                return;
-
-            EnterCalmState();
-        }
-
-        private void UpdateWander()
-        {
-            if (ShouldInvestigateNoise())
-            {
-                EnterState(AiState.Investigate);
-                return;
-            }
-
-            MoveTowards(moveTarget, walkSpeed);
-
-            if (HorizontalDistance(transform.position, moveTarget) > stopDistance + 0.5f)
-                return;
-
-            stateTimer -= Time.deltaTime;
-            if (stateTimer > 0f)
-                return;
-
-            moveTarget = PickRandomGroundPoint(homePosition, wanderRadius);
-            stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
-        }
-
-        private void UpdatePatrol()
-        {
-            if (ShouldInvestigateNoise())
-            {
-                EnterState(AiState.Investigate);
-                return;
-            }
-
-            if (!hasPatrolRoute)
-            {
-                EnterCalmState();
-                return;
-            }
-
-            Transform point = patrolPoints[patrolIndex];
-            if (point == null)
-            {
-                AdvancePatrolIndex();
-                return;
-            }
-
-            moveTarget = point.position;
-            MoveTowards(moveTarget, walkSpeed);
-
-            if (HorizontalDistance(transform.position, moveTarget) <= stopDistance + 0.5f)
-            {
-                stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0f)
-                {
-                    AdvancePatrolIndex();
-                    stateTimer = patrolWaitDuration;
-                }
-            }
-        }
-
-        private void UpdateInvestigate()
-        {
-            if (senses.TryGetHeardNoise(out Vector3 noisePosition))
-                moveTarget = noisePosition;
-
-            MoveTowards(moveTarget, walkSpeed);
-
-            if (HorizontalDistance(transform.position, moveTarget) <= investigateArriveDistance)
-                EnterState(AiState.Search);
-        }
-
-        private void UpdateReturnHome()
-        {
-            moveTarget = homePosition;
-            MoveTowards(moveTarget, walkSpeed);
-
-            if (HorizontalDistance(transform.position, homePosition) <= stopDistance + 0.5f)
-                EnterCalmState();
-        }
-
-        private void UpdateChase()
-        {
-            if (!CanContinueChase(lastKnownPlayerPosition))
-            {
-                GiveUpChaseAndReturnHome();
-                return;
-            }
-
-            moveTarget = lastKnownPlayerPosition;
-            MoveTowards(moveTarget, runSpeed);
-        }
-
-        private void UpdateAttack()
-        {
-            Transform target = senses.GetSensedTarget();
-            if (target == null)
-                return;
-
-            if (!combat.IsTargetInRange() && chasePlayer && CanChaseTarget(target.position))
-            {
-                EnterState(AiState.Chase);
-                return;
-            }
-
-            FaceTowards(target.position);
-            combat.TryAttack();
-        }
-
-        private void GiveUpChaseAndReturnHome()
-        {
-            lostTargetTimer = 0f;
-            combat.SetTarget(null);
-
-            if (IsStationary || !returnToHomeAfterSearch)
-            {
-                EnterCalmState();
-                return;
-            }
-
-            EnterState(AiState.ReturnHome);
-        }
-
-        private bool CanChaseTarget(Vector3 targetPosition)
-        {
-            if (chaseRadius <= 0f)
-                return true;
-
-            return HorizontalDistance(homePosition, targetPosition) <= chaseRadius;
-        }
-
-        private bool CanContinueChase(Vector3 targetPosition)
-        {
-            if (chaseRadius <= 0f)
-                return true;
-
-            return HorizontalDistance(homePosition, transform.position) <= chaseRadius &&
-                   HorizontalDistance(homePosition, targetPosition) <= chaseRadius;
-        }
-
-        private void UpdateSearch()
-        {
-            stateTimer -= Time.deltaTime;
-            MoveTowards(moveTarget, walkSpeed * 0.85f);
-
-            if (HorizontalDistance(transform.position, moveTarget) <= stopDistance + 0.4f)
-                moveTarget = lastKnownPlayerPosition + Random.insideUnitSphere * searchRadius;
-
-            if (stateTimer <= 0f)
-            {
-                if (returnToHomeAfterSearch)
-                    EnterState(AiState.ReturnHome);
-                else
-                    EnterCalmState();
             }
         }
 
@@ -379,6 +412,11 @@ namespace Project.AI
             if (IsStationary && IsRelocationState(newState))
                 return;
 
+            bool wasNavState = state == AiState.Wander || state == AiState.Chase;
+            bool willNavState = newState == AiState.Wander || newState == AiState.Chase;
+            if (wasNavState && !willNavState)
+                StopNavMeshMovement();
+
             state = newState;
 
             switch (newState)
@@ -389,6 +427,7 @@ namespace Project.AI
                 case AiState.Wander:
                     moveTarget = PickRandomGroundPoint(homePosition, wanderRadius);
                     stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                     break;
                 case AiState.Patrol:
                     stateTimer = patrolWaitDuration;
@@ -405,8 +444,19 @@ namespace Project.AI
                     break;
                 case AiState.Chase:
                     moveTarget = lastKnownPlayerPosition;
+                    chaseStartedTime = Time.time;
+                    chaseStaminaPauseUntil = 0f;
+                    ScheduleNextChaseStaminaRoll();
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                    break;
+                case AiState.Defensive:
+                    StopNavMeshMovement();
+                    defensiveActionPending = false;
+                    defensiveActionUntil = 0f;
+                    stateTimer = Random.Range(defensivePauseMin, defensivePauseMax);
                     break;
                 case AiState.Attack:
+                    StopNavMeshMovement();
                     break;
                 case AiState.Search:
                     stateTimer = searchDuration;
@@ -418,11 +468,6 @@ namespace Project.AI
             }
         }
 
-        private bool ShouldInvestigateNoise()
-        {
-            return !IsStationary && investigateNoise && senses.HasRecentNoise && senses.NoiseAge < 1f;
-        }
-
         private static bool IsRelocationState(AiState aiState)
         {
             return aiState == AiState.Wander ||
@@ -430,141 +475,19 @@ namespace Project.AI
                    aiState == AiState.Investigate ||
                    aiState == AiState.ReturnHome ||
                    aiState == AiState.Chase ||
+                   aiState == AiState.Defensive ||
                    aiState == AiState.Search;
-        }
-
-        private void AdvancePatrolIndex()
-        {
-            if (patrolPoints == null || patrolPoints.Length == 0)
-                return;
-
-            if (patrolMode == EnemyPatrolMode.PingPong && patrolPoints.Length > 1)
-            {
-                patrolIndex += patrolDirection;
-                if (patrolIndex >= patrolPoints.Length)
-                {
-                    patrolIndex = patrolPoints.Length - 2;
-                    patrolDirection = -1;
-                }
-                else if (patrolIndex < 0)
-                {
-                    patrolIndex = 1;
-                    patrolDirection = 1;
-                }
-            }
-            else
-            {
-                patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
-            }
-        }
-
-        private Vector3 PickRandomGroundPoint(Vector3 origin, float radius)
-        {
-            Vector2 offset = Random.insideUnitCircle * radius;
-            Vector3 target = origin + new Vector3(offset.x, 0f, offset.y);
-            if (TrySampleGround(target, out float groundY))
-                target.y = groundY;
-            return target;
         }
 
         private void HandleDeath()
         {
+            ClearThreatLedger();
+            ClearLocomotion();
+            StopNavMeshMovement();
+            if (navAgent != null)
+                navAgent.enabled = false;
+
             enabled = false;
-        }
-
-        private void MoveTowards(Vector3 target, float speed)
-        {
-            if (!AllowsTranslation &&
-                state != AiState.Chase &&
-                state != AiState.Investigate &&
-                state != AiState.ReturnHome &&
-                state != AiState.Search)
-            {
-                return;
-            }
-
-            if (IsStationary)
-                return;
-
-            Vector3 flatTarget = target;
-            if (TrySampleGround(flatTarget, out float groundY))
-                flatTarget.y = groundY;
-            else
-                flatTarget.y = transform.position.y;
-
-            Vector3 toTarget = flatTarget - transform.position;
-            toTarget.y = 0f;
-
-            float distance = toTarget.magnitude;
-            if (distance > stopDistance)
-            {
-                Vector3 step = toTarget.normalized * (speed * Time.deltaTime);
-                if (step.sqrMagnitude > distance * distance)
-                    step = toTarget;
-
-                transform.position += step;
-                currentLocomotionSpeed = speed;
-                currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
-            }
-            else
-            {
-                currentLocomotionSpeed = 0f;
-                currentLocalMoveDirection = Vector3.zero;
-            }
-
-            if (toTarget.sqrMagnitude > 0.01f)
-                FaceTowards(flatTarget);
-        }
-
-        private void FaceTowards(Vector3 worldPosition)
-        {
-            Vector3 toTarget = worldPosition - transform.position;
-            toTarget.y = 0f;
-            if (toTarget.sqrMagnitude <= 0.01f)
-                return;
-
-            Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * Time.deltaTime);
-        }
-
-        private void SnapToGround()
-        {
-            if (TrySampleGround(transform.position, out float groundY))
-            {
-                Vector3 pos = transform.position;
-                pos.y = groundY;
-                transform.position = pos;
-            }
-        }
-
-        private bool TrySampleGround(Vector3 worldPosition, out float groundY)
-        {
-            groundY = worldPosition.y;
-
-            Vector3 origin = new Vector3(worldPosition.x, worldPosition.y + groundProbeHeight, worldPosition.z);
-            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, groundProbeDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            foreach (RaycastHit hit in hits)
-            {
-                if (hit.collider == null)
-                    continue;
-
-                if (hit.transform == transform || hit.transform.IsChildOf(transform))
-                    continue;
-
-                groundY = hit.point.y + groundOffset;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static float HorizontalDistance(Vector3 a, Vector3 b)
-        {
-            a.y = 0f;
-            b.y = 0f;
-            return Vector3.Distance(a, b);
         }
 
         private void OnDrawGizmosSelected()

@@ -31,7 +31,7 @@ namespace Project.EditorTools
 
         static EditorTagUtility()
         {
-            EditorApplication.delayCall += SanitizeTagManager;
+            EditorApplication.delayCall += () => SanitizeTagManager();
         }
 
         [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix Tag Manager", false, 10)]

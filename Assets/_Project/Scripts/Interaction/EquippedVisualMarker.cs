@@ -1,3 +1,4 @@
+using Project.Data;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -7,5 +8,13 @@ namespace Project.Interaction
     /// </summary>
     public sealed class EquippedVisualMarker : MonoBehaviour
     {
+        [SerializeField] private ItemData sourceItem;
+
+        public ItemData SourceItem => sourceItem;
+
+        public void BindItem(ItemData item)
+        {
+            sourceItem = item;
+        }
     }
 }

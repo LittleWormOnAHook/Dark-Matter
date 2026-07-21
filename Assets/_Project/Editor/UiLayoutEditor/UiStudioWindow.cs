@@ -1059,7 +1059,7 @@ namespace Project.EditorTools.UiLayout
             {
                 EditorUtility.DisplayDialog(
                     "UI Layout Editor",
-                    "MapUI was not found on the canvas. Add MapUI to MainCanvas first (Tools > Survival Pioneer > Scene > Map System).",
+                    "MapUI was not found on the canvas. Add MapUI to MainCanvas first (Tools > Dark Matter Genesis > Scene > Map System).",
                     "OK");
                 return;
             }

@@ -52,6 +52,8 @@ namespace Project.Interaction
             {
                 QuestManager questManager = QuestManager.EnsureExists();
                 questManager?.NotifyItemCollected(item, added);
+                Project.Achievements.AchievementManager.EnsureExists()
+                    ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, item.name, added);
             }
 
             if (added >= amount)
@@ -66,7 +68,7 @@ namespace Project.Interaction
         private void ShowInventoryFullFeedback()
         {
             if (uiManager != null)
-                uiManager.ShowInteractionPrompt("Inventory is full!");
+                uiManager.ShowTimedInteractionPrompt("Inventory is full!");
             else
                 Debug.Log("Inventory is full!");
         }

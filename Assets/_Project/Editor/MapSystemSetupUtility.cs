@@ -1,5 +1,6 @@
 using Project.Map;
 using Project.EditorTools;
+using Project.EditorTools.Map;
 using Project.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -30,10 +31,11 @@ public static class MapSystemSetupUtility
         changes += EnsureWorldMapProvider();
         changes += EnsureMapUi() ? 1 : 0;
         changes += WirePlayerInput();
+        MapTerrainSyncUtility.SyncActiveSceneMapToTerrain();
 
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log(changes > 0
-            ? $"Map system setup complete ({changes} change(s)). Minimap: top-right. Full map: M. Journal tabs: Survival Pioneer > Scene > Journal Input Shortcuts."
+            ? $"Map system setup complete ({changes} change(s)). Minimap: top-right. Full map: M. Journal tabs: Dark Matter Genesis > Scene > Journal Input Shortcuts."
             : "Map system already set up.");
     }
 

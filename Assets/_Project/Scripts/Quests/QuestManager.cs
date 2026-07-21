@@ -4,6 +4,7 @@ using Project.Core;
 using Project.Crafting;
 using Project.Data;
 using Project.Inventory;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 
@@ -154,6 +155,19 @@ namespace Project.Quests
             return true;
         }
 
+        public bool AbandonQuest(string questId)
+        {
+            QuestDefinition definition = QuestRegistry.Resolve(questId);
+            QuestProgress progress = GetProgress(questId);
+            if (definition == null || progress == null || progress.status != QuestStatus.Active)
+                return false;
+
+            progress.status = QuestStatus.Available;
+            ResetObjectiveProgress(progress);
+            NotifyUpdated(progress);
+            return true;
+        }
+
         public bool ClaimRewards(string questId)
         {
             QuestDefinition definition = QuestRegistry.Resolve(questId);
@@ -165,6 +179,12 @@ namespace Project.Quests
                 return false;
 
             QuestRewardGranter.GrantRewards(definition);
+
+            if (definition.xpReward > 0)
+                ProgressionRewardGranter.GrantXp(definition.xpReward, XpSource.Quest, $"quest-turnin:{questId}", "Quest");
+            else
+                ProgressionRewardGranter.GrantXp(ProgressionXpDefaults.QuestCompleteXp, XpSource.Quest, $"quest-turnin-default:{questId}", "Quest");
+
             progress.status = QuestStatus.TurnedIn;
             NotifyUpdated(progress);
             return true;
@@ -692,6 +712,15 @@ namespace Project.Quests
         private void NotifyUpdated(QuestProgress progress)
         {
             OnQuestUpdated?.Invoke(progress);
+        }
+
+        private static void ResetObjectiveProgress(QuestProgress progress)
+        {
+            if (progress?.objectiveProgress == null)
+                return;
+
+            for (int i = 0; i < progress.objectiveProgress.Length; i++)
+                progress.objectiveProgress[i] = 0;
         }
     }
 }

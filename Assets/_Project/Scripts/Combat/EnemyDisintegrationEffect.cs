@@ -1,14 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.AI;
+using Project.AI.Invector;
 using Project.UI;
 using UnityEngine;
 
 namespace Project.Combat
 {
     /// <summary>
-    /// Lifts the enemy, then dissolves visuals on death using Project/EnemyDisintegrate.
+    /// Dissolves enemy visuals on death using Project/EnemyDisintegrate.
     /// Skinned meshes are baked to static meshes; smoke shells follow the same silhouette.
+    /// Optional lift can be enabled per-prefab; default is dissolve-in-place after ragdoll linger.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
@@ -23,8 +26,8 @@ namespace Project.Combat
         private static readonly int RiseOffsetId = Shader.PropertyToID("_RiseOffset");
         private static readonly int SmokeColorId = Shader.PropertyToID("_BaseColor");
 
-        [Header("Lift")]
-        [SerializeField] private bool enableDeathLift = true;
+        [Header("Lift (optional)")]
+        [SerializeField] private bool enableDeathLift = false;
         [SerializeField] private float liftDuration = 2f;
         [SerializeField] private float liftHeight = 2f;
 
@@ -34,6 +37,8 @@ namespace Project.Combat
         [SerializeField] private float dissolveEdgeWidth = 0.045f;
         [SerializeField] private Color dissolveEdgeColor = new Color(1f, 0.45f, 0.1f, 1f);
         [SerializeField] private bool replaceDeathAnimation = true;
+        [Tooltip("When no EnemyDeathSequence is present, start lift/dissolve immediately on death.")]
+        [SerializeField] private bool autoStartOnDeathWithoutSequence = true;
 
         [Header("Smoke")]
         [SerializeField] private bool enableSmoke = false;
@@ -61,9 +66,20 @@ namespace Project.Combat
         private Coroutine dissolveRoutine;
         private bool isDissolving;
         private Vector3 deathPosition;
+        private Transform liftAnchor;
+        private bool hasCorpseLiftOrigin;
 
         public float TotalDeathPresentationSeconds =>
             (enableDeathLift ? liftDuration : 0f) + dissolveDuration;
+
+        /// <summary>
+        /// World position the corpse lift/dissolve should start from (usually torso center after ragdoll).
+        /// </summary>
+        public void SetCorpseLiftOrigin(Vector3 worldPosition)
+        {
+            deathPosition = worldPosition;
+            hasCorpseLiftOrigin = true;
+        }
 
         private struct RendererState
         {
@@ -85,7 +101,7 @@ namespace Project.Combat
             if (health == null)
                 return;
 
-            health.Died += OnDied;
+            health.Died += OnDiedFallback;
             health.Respawned += OnRespawned;
         }
 
@@ -93,7 +109,7 @@ namespace Project.Combat
         {
             if (health != null)
             {
-                health.Died -= OnDied;
+                health.Died -= OnDiedFallback;
                 health.Respawned -= OnRespawned;
             }
 
@@ -171,16 +187,39 @@ namespace Project.Combat
         private void CacheRendererStates()
         {
             rendererStates.Clear();
+            CollectDissolveRenderers(GetComponentsInChildren<Renderer>(true));
 
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            if (!ContainsSkinnedRenderer())
+            {
+                Animator characterAnimator = animator != null ? animator : GetComponentInChildren<Animator>(true);
+                if (characterAnimator != null)
+                    CollectDissolveRenderers(characterAnimator.GetComponentsInChildren<Renderer>(true));
+            }
+        }
+
+        private void CollectDissolveRenderers(Renderer[] renderers)
+        {
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer == null)
+                if (renderer == null || !ShouldDissolveRenderer(renderer))
                     continue;
 
                 Material[] originals = renderer.sharedMaterials;
                 if (originals == null || originals.Length == 0)
+                    continue;
+
+                bool alreadyCached = false;
+                for (int s = 0; s < rendererStates.Count; s++)
+                {
+                    if (rendererStates[s].Renderer == renderer)
+                    {
+                        alreadyCached = true;
+                        break;
+                    }
+                }
+
+                if (alreadyCached)
                     continue;
 
                 rendererStates.Add(new RendererState
@@ -192,28 +231,84 @@ namespace Project.Combat
             }
         }
 
-        private void OnDied()
+        private bool ContainsSkinnedRenderer()
+        {
+            for (int i = 0; i < rendererStates.Count; i++)
+            {
+                if (rendererStates[i].Renderer is SkinnedMeshRenderer)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ShouldDissolveRenderer(Renderer renderer)
+        {
+            if (renderer == null)
+                return false;
+
+            Transform node = renderer.transform;
+            while (node != null)
+            {
+                string nodeName = node.name;
+                if (nodeName.StartsWith("Drawn_", StringComparison.Ordinal) ||
+                    nodeName.StartsWith("Holstered_", StringComparison.Ordinal))
+                    return false;
+
+                if (node.CompareTag("Weapon") || node.CompareTag("Ignore Ragdoll"))
+                    return false;
+
+                node = node.parent;
+            }
+
+            return renderer is SkinnedMeshRenderer;
+        }
+
+        private void OnDiedFallback()
+        {
+            if (GetComponent<EnemyDeathSequence>() != null)
+                return;
+
+            if (!autoStartOnDeathWithoutSequence)
+                return;
+
+            BeginPresentation();
+        }
+
+        /// <summary>
+        /// Starts lift + dissolve after death animation/ragdoll. Called by <see cref="EnemyDeathSequence"/>.
+        /// </summary>
+        public void BeginPresentation(Action onComplete = null)
         {
             ResolveDissolveTemplate();
             if (isDissolving || dissolveMaterialTemplate == null)
+            {
+                onComplete?.Invoke();
                 return;
+            }
 
-            deathPosition = transform.position;
-
-            if (replaceDeathAnimation)
-                DisableDeathAnimation();
+            if (!hasCorpseLiftOrigin)
+                deathPosition = ResolveCorpseLiftOrigin();
+            hasCorpseLiftOrigin = false;
+            deathPosition = Project.AI.EnemyGroundUtility.SnapPositionToGround(deathPosition);
 
             HideHealthBar();
+            CacheRendererStates();
+
+            EnemyInvectorMotorBridge motorBridge = GetComponent<EnemyInvectorMotorBridge>();
+            if (motorBridge != null)
+                motorBridge.enabled = false;
 
             if (health != null && health.ShouldRespawn && !health.IsRespawnExternallyManaged)
                 health.DeferRespawnUntil(TotalDeathPresentationSeconds);
 
-            dissolveRoutine = StartCoroutine(DeathPresentationRoutine());
+            dissolveRoutine = StartCoroutine(DeathPresentationRoutine(onComplete));
         }
 
         private void OnRespawned()
         {
             isDissolving = false;
+            hasCorpseLiftOrigin = false;
 
             if (dissolveRoutine != null)
             {
@@ -223,6 +318,7 @@ namespace Project.Combat
 
             CleanupDissolveObjects();
             CleanupSmokeObjects();
+            CleanupLiftAnchor();
             DestroyRuntimeMaterials();
             RestoreRenderers();
             ReleaseVolumetricSmoke();
@@ -235,6 +331,10 @@ namespace Project.Combat
                 if (animator != null)
                     animator.enabled = true;
             }
+
+            EnemyInvectorMotorBridge motorBridge = GetComponent<EnemyInvectorMotorBridge>();
+            if (motorBridge != null)
+                motorBridge.enabled = true;
         }
 
         private void DisableDeathAnimation()
@@ -256,7 +356,7 @@ namespace Project.Combat
             }
         }
 
-        private IEnumerator DeathPresentationRoutine()
+        private IEnumerator DeathPresentationRoutine(Action onComplete = null)
         {
             isDissolving = true;
             StartVolumetricSmoke();
@@ -265,7 +365,21 @@ namespace Project.Combat
             DestroyRuntimeMaterials();
 
             List<Material> animatedMaterials = new List<Material>();
+            EnsureLiftAnchor();
             BuildDissolveMeshes(animatedMaterials);
+            IncludeDroppedWeaponDissolve(animatedMaterials);
+
+            if (replaceDeathAnimation)
+                DisableDeathAnimation();
+
+            if (dissolveObjects.Count == 0)
+            {
+                for (int i = 0; i < rendererStates.Count; i++)
+                {
+                    if (rendererStates[i].Renderer != null)
+                        rendererStates[i].Renderer.enabled = rendererStates[i].WasEnabled;
+                }
+            }
 
             if (enableDeathLift && liftDuration > 0f && liftHeight > 0f)
             {
@@ -275,7 +389,9 @@ namespace Project.Combat
                     liftElapsed += Time.deltaTime;
                     float t = Mathf.Clamp01(liftElapsed / liftDuration);
                     float eased = Mathf.SmoothStep(0f, 1f, t);
-                    transform.position = deathPosition + Vector3.up * (liftHeight * eased);
+                    Vector3 liftedPosition = deathPosition + Vector3.up * (liftHeight * eased);
+                    if (liftAnchor != null)
+                        liftAnchor.position = liftedPosition;
 
                     if (enableSmoke)
                         UpdateSmokeShells(Mathf.Clamp01(liftElapsed / Mathf.Max(0.35f, liftDuration * 0.85f)), smokeRiseHeight * eased * 0.35f);
@@ -283,7 +399,8 @@ namespace Project.Combat
                     yield return null;
                 }
 
-                transform.position = deathPosition + Vector3.up * liftHeight;
+                if (liftAnchor != null)
+                    liftAnchor.position = deathPosition + Vector3.up * liftHeight;
             }
 
             float dissolveElapsed = 0f;
@@ -329,8 +446,41 @@ namespace Project.Combat
             }
 
             NotifyDeathPresentationComplete();
+            CleanupDroppedWeapon();
             ReleaseVolumetricSmoke();
             dissolveRoutine = null;
+            onComplete?.Invoke();
+        }
+
+        private void IncludeDroppedWeaponDissolve(List<Material> animatedMaterials)
+        {
+            EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
+            if (loadout == null || loadout.LastDroppedWeapon == null)
+                return;
+
+            loadout.FreezeDroppedWeaponForDissolve();
+            GameObject weapon = loadout.LastDroppedWeapon;
+            Material smokeTemplate = enableSmoke ? ResolveSmokeTemplate() : null;
+
+            MeshRenderer[] renderers = weapon.GetComponentsInChildren<MeshRenderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                MeshRenderer meshRenderer = renderers[i];
+                if (meshRenderer == null)
+                    continue;
+
+                ApplyDissolveMaterials(meshRenderer, meshRenderer.sharedMaterials, animatedMaterials);
+                dissolveObjects.Add(meshRenderer.gameObject);
+
+                if (smokeTemplate != null)
+                    CreateSmokeFromMesh(meshRenderer, smokeTemplate);
+            }
+        }
+
+        private void CleanupDroppedWeapon()
+        {
+            EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
+            loadout?.DestroyDroppedWeapon();
         }
 
         private void StartVolumetricSmoke()
@@ -481,12 +631,24 @@ namespace Project.Combat
             bakedMesh.name = skinnedMeshRenderer.gameObject.name + "_DissolveBake";
             skinnedMeshRenderer.BakeMesh(bakedMesh);
 
+            if (bakedMesh.vertexCount <= 0)
+            {
+                Destroy(bakedMesh);
+                return;
+            }
+
+            Transform parent = liftAnchor != null ? liftAnchor : transform;
             GameObject dissolveObject = CreateMeshObject(
                 skinnedMeshRenderer.gameObject.name + "_Dissolve",
-                skinnedMeshRenderer.transform,
+                parent,
                 bakedMesh,
                 skinnedMeshRenderer.shadowCastingMode,
                 skinnedMeshRenderer.receiveShadows);
+
+            dissolveObject.transform.SetPositionAndRotation(
+                skinnedMeshRenderer.bounds.center,
+                skinnedMeshRenderer.transform.rotation);
+            dissolveObject.transform.localScale = skinnedMeshRenderer.transform.lossyScale;
 
             MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
             ApplyDissolveMaterials(meshRenderer, skinnedMeshRenderer.sharedMaterials, animatedMaterials);
@@ -494,7 +656,65 @@ namespace Project.Combat
             dissolveObjects.Add(dissolveObject);
 
             if (smokeTemplate != null)
-                CreateSmokeFromBakedMesh(skinnedMeshRenderer.transform, bakedMesh, smokeTemplate, dissolveObject.transform);
+                CreateSmokeFromBakedMesh(parent, bakedMesh, smokeTemplate, dissolveObject.transform);
+        }
+
+        private void EnsureLiftAnchor()
+        {
+            if (liftAnchor == null)
+            {
+                GameObject anchorObject = new GameObject("EnemyDissolveLiftAnchor");
+                liftAnchor = anchorObject.transform;
+            }
+
+            liftAnchor.SetParent(null, true);
+            liftAnchor.position = deathPosition;
+        }
+
+        private void CleanupLiftAnchor()
+        {
+            if (liftAnchor == null)
+                return;
+
+            Destroy(liftAnchor.gameObject);
+            liftAnchor = null;
+        }
+
+        private Vector3 ResolveCorpseLiftOrigin()
+        {
+            SkinnedMeshRenderer[] skinnedMeshes = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Bounds bounds = default;
+            bool hasBounds = false;
+
+            for (int i = 0; i < skinnedMeshes.Length; i++)
+            {
+                SkinnedMeshRenderer mesh = skinnedMeshes[i];
+                if (mesh == null || !ShouldDissolveRenderer(mesh))
+                    continue;
+
+                if (!hasBounds)
+                {
+                    bounds = mesh.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(mesh.bounds);
+                }
+            }
+
+            if (hasBounds)
+                return Project.AI.EnemyGroundUtility.SnapPositionToGround(bounds.center);
+
+            Animator corpseAnimator = animator != null ? animator : GetComponentInChildren<Animator>();
+            if (corpseAnimator != null)
+            {
+                Transform hips = corpseAnimator.GetBoneTransform(HumanBodyBones.Hips);
+                if (hips != null)
+                    return Project.AI.EnemyGroundUtility.SnapPositionToGround(hips.position);
+            }
+
+            return Project.AI.EnemyGroundUtility.SnapPositionToGround(transform.position + Vector3.up);
         }
 
         private void CreateSmokeFromMesh(MeshRenderer sourceRenderer, Material smokeTemplate)

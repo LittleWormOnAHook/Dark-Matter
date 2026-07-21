@@ -1,4 +1,5 @@
 using System;
+using Project.Companions;
 using UnityEngine;
 
 namespace Project.Pioneers
@@ -8,6 +9,15 @@ namespace Project.Pioneers
     {
         [Header("Behavior")]
         public PioneerFollowMode followMode = PioneerFollowMode.FollowPlayer;
+
+        [Tooltip("Expedition trio locomotion. World encounters use worldAmbientMode until recruited.")]
+        public CompanionFollowBehaviorMode followBehaviorMode = CompanionFollowBehaviorMode.Follow;
+
+        [Tooltip("Default for pre-recruitment Echo/recruit world entities.")]
+        public CompanionFollowBehaviorMode worldAmbientMode = CompanionFollowBehaviorMode.PingPong;
+
+        [Tooltip("Future hook: bench work, crafting, machine repair animations in the world.")]
+        public PioneerWorldIdleJob worldIdleJob = PioneerWorldIdleJob.None;
 
         [Header("Locomotion")]
         [Range(0.1f, 1f)] public float wanderPaceScale = 0.3f;

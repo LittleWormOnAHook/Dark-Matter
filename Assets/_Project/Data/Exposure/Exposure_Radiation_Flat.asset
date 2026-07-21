@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc7af865c9044b4a8a64fec37a7d9e0, type: 3}
+  m_Name: Exposure_Radiation_Flat
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
+  displayName: Radiation Flat
+  zoneKind: 1
+  designerNotes: 
+  effectIntensity: 0.644
+  radiationPerSecond: 6
+  thermalColdPerSecond: 0
+  thermalHeatPerSecond: 0
+  sulfurPerSecond: 0
+  volcanoPerSecond: 0
+  oxygenDrainMultiplier: 1
+  exposureRecoveryPerSecond: -1
+  thermalRecoveryPerSecond: -1
+  healthDrainAtMaxExposure: 2.5
+  healthDrainAtMaxThermal: 1.5
+  pulse:
+    enabled: 0
+    activeDurationSeconds: 8
+    inactiveDurationSeconds: 4
+    activeIntensityMultiplier: 1.5
+    timingJitter: 0.15
+  mitigationRules:
+  - pressureType: 0
+    source: 0
+    requiredClass: 1
+    secondaryClass: 0
+    requiredAbilityId: 
+    exposureReduction: 0.35
+    activeLabel: Science shielding active
+  - pressureType: 0
+    source: 2
+    requiredClass: 1
+    secondaryClass: 0
+    requiredAbilityId: rad_hardening
+    exposureReduction: 0.25
+    activeLabel: Rad hardening active
+  playerDebuffs:
+    moveSpeedPenalty: 0.15
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  companionDebuffs:
+    moveSpeedPenalty: 0.15
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  gizmoColor: {r: 0.85, g: 0.78, b: 0.15, a: 0.4}
+  ambientVfxPrefab: {fileID: 0}
+  ambientLoopClip: {fileID: 8300000, guid: 8ca2015459adb2a4fbe439b8163921ae, type: 3}

@@ -15,10 +15,15 @@ MonoBehaviour:
   enemyId: the_evil_one
   displayName: The Evil One
   prefabFileName: The_Evil_One
-  maxHealth: 60
+  archetype: 1
+  meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
+  rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
+  preferRangedWeapon: 1
+  maxHealth: 100
   destroyOnDeath: 1
   destroyDelay: 1
   respawnTime: 2
+  xpReward: 25
   showFloatingHealthBar: 1
   hideHealthBarUntilDamaged: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
@@ -31,6 +36,13 @@ MonoBehaviour:
   attackDamage: 12
   attackCooldown: 1.4
   attackWindup: 0.35
+  meleeDuration: 0.85
+  unarmedDuration: 0.55
+  rangedEngageRange: 12
+  rangedAttackCooldown: 1.2
+  rangedDuration: 0.35
+  aimHoldDuration: 1.5
+  missRate: 0.65
   movementMode: 2
   patrolMode: 0
   investigateNoise: 1
@@ -46,6 +58,8 @@ MonoBehaviour:
   behaviorPreset: 1
   walkSpeed: 2.4
   runSpeed: 4.8
+  chaseSpeed: 0
+  chaseSpeedMultiplier: 0.88
   turnSpeed: 8
   loseTargetDelay: 4
   searchDuration: 6

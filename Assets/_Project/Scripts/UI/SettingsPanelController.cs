@@ -14,7 +14,7 @@ namespace Project.UI
         private Slider musicSlider;
         private Slider sfxSlider;
         private Toggle postProcessingToggle;
-        private Toggle mapSystemToggle;
+        private Toggle minimapToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
         private Dropdown qualityDropdown;
@@ -70,7 +70,7 @@ namespace Project.UI
             postProcessingToggle = MenuUiBuilder.CreateToggleRow(window.transform, "Post Processing", GameSettings.PostProcessingEnabled);
 
             CreateSectionTitle(window.transform, "Gameplay");
-            mapSystemToggle = MenuUiBuilder.CreateToggleRow(window.transform, "Map System", GameSettings.MapSystemEnabled);
+            minimapToggle = MenuUiBuilder.CreateCircleToggleRow(window.transform, "Minimap", GameSettings.MinimapEnabled);
 
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             buttonRow.transform.SetParent(window.transform, false);
@@ -84,14 +84,12 @@ namespace Project.UI
                 "Apply",
                 new Vector2(MenuUiBuilder.ScaledSize(160f), MenuUiBuilder.ScaledSize(48f)),
                 MenuUiBuilder.ScaledSize(24f));
-            Button backButton = MenuUiBuilder.CreateButton(
-                buttonRow.transform,
-                "Back",
-                new Vector2(MenuUiBuilder.ScaledSize(160f), MenuUiBuilder.ScaledSize(48f)),
-                MenuUiBuilder.ScaledSize(24f));
 
             applyButton.onClick.AddListener(ApplySettings);
-            backButton.onClick.AddListener(Close);
+
+            // Pinned to the panel's own root (not buttonRow/window) so it stays fixed top-right
+            // regardless of the VerticalLayoutGroup content above it.
+            MenuUiBuilder.CreateTopRightBackButton(panelRoot.transform, Close);
 
             masterSlider.onValueChanged.AddListener(value =>
             {
@@ -115,10 +113,10 @@ namespace Project.UI
                 GameSettings.SetPostProcessingEnabled(value);
                 PostProcessingController.Instance?.ApplyFromSettings();
             });
-            mapSystemToggle.onValueChanged.AddListener(value =>
+            minimapToggle.onValueChanged.AddListener(value =>
             {
-                GameSettings.SetMapSystemEnabled(value);
-                MapUI.ApplyMapSystemEnabled(value);
+                GameSettings.SetMinimapEnabled(value);
+                MapUI.ApplyMinimapEnabled(value);
             });
             fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
             vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
@@ -160,7 +158,7 @@ namespace Project.UI
             musicSlider.SetValueWithoutNotify(GameSettings.MusicVolume);
             sfxSlider.SetValueWithoutNotify(GameSettings.SfxVolume);
             postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
-            mapSystemToggle.SetIsOnWithoutNotify(GameSettings.MapSystemEnabled);
+            minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
             qualityDropdown.SetValueWithoutNotify(QualitySettings.GetQualityLevel());

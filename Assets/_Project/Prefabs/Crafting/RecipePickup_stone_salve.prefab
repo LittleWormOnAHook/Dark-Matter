@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 782753757157972933}
   m_Layer: 0
   m_Name: RecipePickup_stone_salve
-  m_TagString: Untagged
+  m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -70,7 +70,7 @@ MonoBehaviour:
   recipeId: stone_salve
   promptText: Press E to learn recipe
   interactRange: 2.5
-  learnedMessage: Recipe learned!
+  collectedMessage: Recipe scroll collected!
 --- !u!1001 &5950464740171160766
 PrefabInstance:
   m_ObjectHideFlags: 0

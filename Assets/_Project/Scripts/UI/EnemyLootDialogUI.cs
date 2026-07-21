@@ -317,7 +317,7 @@ namespace Project.UI
             text.fontSize = size;
             text.fontStyle = style;
             text.alignment = TextAlignmentOptions.TopLeft;
-            text.color = theme != null ? theme.secondaryTextColor : Color.white;
+            text.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
             text.raycastTarget = false;
             return text;
         }
@@ -333,11 +333,12 @@ namespace Project.UI
 
             Image image = buttonObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = new Color(0.14f, 0.16f, 0.2f, 0.95f);
+            image.color = SurvivalPioneerUiPalette.ButtonNormal;
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(buttonObject);
             image.raycastTarget = true;
 
             Button button = buttonObject.AddComponent<Button>();
-            button.targetGraphic = image;
+            SurvivalPioneerUiPalette.StylePrimaryButton(button, image);
             UiSoundHelper.BindButton(button);
 
             GameObject textObject = new GameObject("Text", typeof(RectTransform));
@@ -350,6 +351,7 @@ namespace Project.UI
             labelText.text = label;
             labelText.fontSize = 22f;
             labelText.alignment = TextAlignmentOptions.Center;
+            labelText.color = SurvivalPioneerUiPalette.BodyText;
             labelText.raycastTarget = false;
             RectTransform textRect = textObject.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;

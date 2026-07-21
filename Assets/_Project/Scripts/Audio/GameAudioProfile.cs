@@ -26,6 +26,9 @@ namespace Project.Audio
         public AudioClip[] weaponSwingClips;
         public AudioClip[] weaponHitClips;
         public AudioClip[] weaponCriticalHitClips;
+        public AudioClip[] punchSwingClips;
+        public AudioClip[] punchHitClips;
+        public AudioClip[] punchCriticalHitClips;
         public AudioClip[] resourceHitClips;
         [Range(0f, 1f)] public float combatVolume = 1f;
 
@@ -38,6 +41,7 @@ namespace Project.Audio
         public AudioClip[] itemSplitClips;
         public AudioClip[] itemDropClips;
         public AudioClip[] itemPickupClips;
+        public AudioClip[] achievementUnlockClips;
         [Range(0f, 1f)] public float uiVolume = 0.85f;
 
         [Header("3D Playback")]

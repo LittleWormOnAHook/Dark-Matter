@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Project.Effects;
+using UnityEngine;
 
 namespace ECM2.Examples.Teleport
 {
@@ -32,6 +33,8 @@ namespace ECM2.Examples.Teleport
                 // Teleport character
 
                 character.TeleportPosition(destination.transform.position);
+                TeleportPhaseEffect settings = destination.GetComponent<TeleportPhaseEffect>() ?? GetComponent<TeleportPhaseEffect>();
+                TeleportPhaseEffect.PlayAt(character.transform, destination.transform.position, settings);
                 
                 // Disable destination teleporter until teleported character left it,
                 // otherwise will be teleported back in an infinite loop!

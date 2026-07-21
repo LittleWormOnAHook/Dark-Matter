@@ -35,6 +35,7 @@ namespace Project.Managers
                 ItemRegistry.RegisterRuntimeItems(startingItems);
 
             PioneerRosterManager.EnsureExists();
+            CompanionSystemsBootstrap.EnsureGameplaySystems(this);
         }
 
         private void Start()

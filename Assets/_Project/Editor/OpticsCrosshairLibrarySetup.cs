@@ -15,18 +15,32 @@ public static class OpticsCrosshairLibrarySetup
         EnsureFolder("Assets/_Project/Resources/Optics");
 
         OpticsCrosshairLibrary library = AssetDatabase.LoadAssetAtPath<OpticsCrosshairLibrary>(AssetPath);
+        if (library == null && System.IO.File.Exists(AssetPath))
+        {
+            Debug.LogWarning($"Optics crosshair library at {AssetPath} could not be loaded. Recreating asset.");
+            AssetDatabase.DeleteAsset(AssetPath);
+        }
+
         if (library == null)
         {
             library = ScriptableObject.CreateInstance<OpticsCrosshairLibrary>();
             AssetDatabase.CreateAsset(library, AssetPath);
         }
 
-        library.binocularScopeFull = LoadTexture($"{CrosshairRoot}/Scopes/UnknownsMarksmanFull2048.png");
-        library.binocularScopeInnerGlow = LoadTexture($"{CrosshairRoot}/Scopes/UnknownsMarksmanInnerGlow2048.png");
-        library.binocularScopeOuter = LoadTexture($"{CrosshairRoot}/Scopes/UnknownsMarksmanOuter2048.png");
-        library.scannerHolographic = LoadTexture($"{CrosshairRoot}/Sights/UnknownsHolographic2048.png");
-        library.scannerHolographicGlow = LoadTexture($"{CrosshairRoot}/Sights/UnknownsHolographicGlow2048.png");
-        library.scannerRectMask = LoadTexture($"{CrosshairRoot}/Masks/MaskHolographic.png");
+        library.binocularScopeFull = LoadTexture("Assets/TooManyCrosshairs/128px/Base/Triangle/Triangle3Split128.png");
+        library.binocularScopeInnerGlow = LoadTexture("Assets/TooManyCrosshairs/Unknown's Crosshairs/Scopes/UnknownsMarksmanInnerGlow2048.png");
+        library.binocularScopeOuter = LoadTexture("Assets/TooManyCrosshairs/Unknown's Crosshairs/Scopes/Unknowns6xFull2048.png");
+        library.scannerHolographic = LoadTexture("Assets/TooManyCrosshairs/2048px/Optics/WW2Tank2048.png");
+        library.scannerHolographicGlow = LoadTexture("Assets/TooManyCrosshairs/128px/BaseDot/xhairDot/xHairHexDot128.png");
+        library.scannerRectMask = LoadTexture("Assets/Shift - Complete Sci-Fi UI/Textures/Border/Square/Outline - Stroke 24x.png");
+        library.scannerMaskFrameSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+            "Assets/Shift - Complete Sci-Fi UI/Textures/Border/Square/Outline - Stroke 24x.png");
+        library.viewportBackgroundSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+            "Assets/UGUIKit Flat/Content/Source/Icons/160 Desktop.png");
+        library.viewportMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+            "Assets/_Project/Misc Tools and Shaders/ScanlinesPostProcess.mat");
+
+        library.ResetPresentationDefaults();
 
         EditorUtility.SetDirty(library);
         AssetDatabase.SaveAssets();

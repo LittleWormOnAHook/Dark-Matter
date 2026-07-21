@@ -19,8 +19,8 @@ public class ItemDataCreator : EditorWindow
         CreateItem("Wood", 64, 0, 5, 0, false, 0);
         CreateItem("Stone", 64, 0, 0, 0, false, 0);
         CreateItem("Berry", 32, 25, 5, 0, false, 0);
-        CreateItem("Pi Crystal", 16, 16, 20, 0, true, 5);
-        CreateItem("Pi Shard", 64, 0, 10, 0, true, 1);
+        CreateItem("AC Crystal", 16, 16, 20, 0, true, 5);
+        CreateItem("AC Shard", 64, 0, 10, 0, true, 1);
         CreateItem("Log", 32, 0, 15, 0, false, 0);
         CreateItem("Leaf", 64, 13, 8, 0, false, 0);
 
@@ -28,7 +28,14 @@ public class ItemDataCreator : EditorWindow
         Debug.Log("✅ 7 ItemData assets created successfully in: " + folderPath);
     }
 
-    private static void CreateItem(string itemName, int maxStack, float energy, float stamina, float oxygen, bool isPiInfused, int piValue)
+    private static void CreateItem(
+        string itemName,
+        int maxStack,
+        float energy,
+        float stamina,
+        float oxygen,
+        bool isAcInfused,
+        int acValue)
     {
         ItemData item = ScriptableObject.CreateInstance<ItemData>();
         
@@ -37,8 +44,8 @@ public class ItemDataCreator : EditorWindow
         item.energyRestore = energy;
         item.staminaRestore = stamina;
         item.oxygenRestore = oxygen;
-        item.isPiInfused = isPiInfused;
-        item.piValue = piValue;
+        item.isAcInfused = isAcInfused;
+        item.acValue = acValue;
 
         string path = $"Assets/_Project/Data/Items/{itemName}.asset";
         AssetDatabase.CreateAsset(item, path);

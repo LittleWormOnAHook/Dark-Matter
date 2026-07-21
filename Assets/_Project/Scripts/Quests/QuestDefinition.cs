@@ -18,6 +18,9 @@ namespace Project.Quests
         [Header("Rewards")]
         public List<QuestRewardDefinition> rewards = new List<QuestRewardDefinition>();
 
+        [Tooltip("Bonus XP granted when the quest is turned in (in addition to Xp reward entries).")]
+        public int xpReward;
+
         public string ResolvedId => string.IsNullOrEmpty(questId) ? name : questId;
     }
 }

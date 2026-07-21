@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Pioneers;
 using UnityEngine;
 
 namespace Project.Companions
@@ -17,7 +18,7 @@ namespace Project.Companions
     {
         public static CompanionCombatCoordinator Instance { get; private set; }
 
-        [SerializeField] private float baseAttackInterval = 1.6f;
+        [SerializeField] private float baseAttackInterval = 0.675f;
         [SerializeField] private float pairedOverlapWindow = 0.35f;
         [SerializeField] private int attackModeSeed = 92831;
 
@@ -105,24 +106,45 @@ namespace Project.Companions
         {
             int count = Mathf.Max(1, registered.Count);
             float personal = requester != null ? requester.GetPersonalIntervalMultiplier() : 1f;
-            return baseAttackInterval * count * personal;
+            // Scale gently with trio size so one pioneer isn't a machine gun, but three
+            // don't wait forever either.
+            float interval = baseAttackInterval * (0.65f + 0.2f * count) * personal;
+            if (requester != null && requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+                interval *= 0.8f;
+
+            return interval;
         }
 
         public float RollAttackChance(CompanionCombatController requester)
         {
-            if (requester == null)
-                return 0.5f;
-
-            int count = Mathf.Max(1, registered.Count);
-            float soloBias = requester.GetPersonalAttackBias();
-            float countScale = 1f / count;
-            return Mathf.Clamp01(soloBias * countScale + 0.12f);
+            // Personal bias keeps cadence uneven so the trio doesn't volley in lockstep.
+            float bias = requester != null ? requester.GetPersonalAttackBias() : 0.7f;
+            return Mathf.Clamp01(0.55f + bias * 0.70f);
         }
 
-        public bool TryBeginAttack(CompanionCombatController requester)
+        public bool TryBeginAttack(CompanionCombatController requester, bool forceAggressive = false)
         {
             if (requester == null || registered.Count == 0)
                 return false;
+
+            if (forceAggressive && requester.PioneerClass == SkilledPioneerClass.CombatTactician)
+            {
+                if (activeAttackers.Contains(requester))
+                    return false;
+
+                activeAttackers.Add(requester);
+                return true;
+            }
+
+            // Sole engaged fighter should not wait on turn order.
+            if (CountEngagedFighters() <= 1 && requester.IsEngagedInCombat)
+            {
+                if (activeAttackers.Contains(requester))
+                    return false;
+
+                activeAttackers.Add(requester);
+                return true;
+            }
 
             int maxSimultaneous = attackMode switch
             {
@@ -173,6 +195,8 @@ namespace Project.Companions
                 return false;
             }
 
+            AdvanceTurnPastIdleFighters();
+
             CompanionCombatController current = registered[turnIndex % registered.Count];
             if (current != requester)
                 return false;
@@ -180,6 +204,21 @@ namespace Project.Companions
             activeAttackers.Add(requester);
             turnIndex = (turnIndex + 1) % registered.Count;
             return true;
+        }
+
+        private void AdvanceTurnPastIdleFighters()
+        {
+            if (registered.Count <= 1)
+                return;
+
+            for (int i = 0; i < registered.Count; i++)
+            {
+                CompanionCombatController current = registered[turnIndex % registered.Count];
+                if (current != null && current.IsEngagedInCombat)
+                    return;
+
+                turnIndex = (turnIndex + 1) % registered.Count;
+            }
         }
 
         public void EndAttack(CompanionCombatController requester)
@@ -198,6 +237,18 @@ namespace Project.Companions
         private bool ShouldStaggerDoubleBurst()
         {
             return (attackModeSeed & 3) != 0;
+        }
+
+        private int CountEngagedFighters()
+        {
+            int count = 0;
+            for (int i = 0; i < registered.Count; i++)
+            {
+                if (registered[i] != null && registered[i].IsEngagedInCombat)
+                    count++;
+            }
+
+            return count;
         }
 
         private void RecomputeAttackMode()

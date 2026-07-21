@@ -1,0 +1,10 @@
+{
+  "plugins": {
+    "linear": {
+      "enabled": true
+    },
+    "netlify-skills": {
+      "enabled": true
+    }
+  }
+}

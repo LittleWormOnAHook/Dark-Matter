@@ -1,7 +1,9 @@
 ================================================================================
-  SURVIVAL PIONEER — GAME & FEATURE BREAKDOWN
-  Project: Pi Pioneer Survival
+  DARK MATTER: GENESIS — GAME & FEATURE BREAKDOWN
+  Project: Dark Matter: Genesis
   Document generated from codebase and scene assets (Assets/_Project/)
+  Note: Prefer GAME_DESIGN_DOCUMENT_5.0.txt Appendix B for current locks.
+  Economy lock: Aether Credits (AC) only. Platforms: PC + consoles.
 ================================================================================
 
 TABLE OF CONTENTS
@@ -17,7 +19,7 @@ TABLE OF CONTENTS
   9.  Resource Gathering
   10. Crafting & Recipes
   11. Quest System
-  12. Pi Currency
+  12. Aether Credits (AC)
   13. UI & Menus
   14. Map
   15. Pet Companion
@@ -33,20 +35,30 @@ TABLE OF CONTENTS
 1. OVERVIEW
 ================================================================================
 
-Survival Pioneer is a third-person survival action game built in Unity. The
-player is a "Pioneer" exploring a forest wilderness camp environment. Core
-gameplay loops:
+Dark Matter: Genesis is a third-person Io survival + light base-builder built in
+Unity (GDD 5.0). Year 2160 on Jupiter's moon Io: lead up to 25 companions
+(22 base camp + switchable expedition trio of 3), rescue Neural Echoes,
+expand your colony camp via the Lite Building system, and survive O₂ plus
+radiation, thermal, volcanism, sulfur storms, alien life forms, and AI androids.
 
-  - Manage survival vitals (health, energy, stamina, oxygen)
-  - Gather resources from the world
-  - Craft items at cooking pots and workbenches
-  - Fight enemies with melee weapons
-  - Complete quests from an NPC guide
-  - Earn and spend Pi currency
-  - Explore the map and use scanner/binocular tools
+The playable prototype is still flat terrain (Io biomes not shipped). Do not
+treat placeholder scene art as forest / Earth wilderness camp fiction.
+
+Core gameplay loops (vision + prototype):
+
+  - Manage survival vitals (health, energy, stamina, oxygen) and exposure
+  - Gather resources; craft at stations; spend Aether Credits (AC) at vendors
+  - Lite Building + Building Control Panels — expand colony camp and modules
+  - Fight enemies (including alien life + android threats); complete quests
+  - Switch expedition trio companions; run roster / Echo rescue systems
+  - Use Building Control Panels (E) for Overview | Companions | Production |
+    Craft | Changes on major structures
+
+Runtime: Dark Matter: Genesis on The World Engine (WoOS) — see GDD 5.0 PRODUCT IDENTITY
 
 Main playable scene: Assets/_Project/Scenes/Pioneer.unity
 Core project folder: Assets/_Project/
+Authority: Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt
 
 Movement is powered by ECM2 (third-person character controller).
 UI uses a Shift sci-fi theme with a journal hub for most panels.
@@ -63,7 +75,7 @@ UI uses a Shift sci-fi theme with a journal hub for most panels.
   Shift         Sprint (uses stamina)
   Ctrl          Crouch
 
-  E             Interact (pickups, stations, NPCs, enemy loot, recipes)
+  E             Interact (pickups, stations, companions, enemy loot, recipes)
   I             Open inventory tab (journal)
   J             Toggle journal hub
   M             Toggle world map
@@ -225,7 +237,7 @@ RESPAWN
 
 ENEMY LOOT (EnemyLootable.cs)
   - Enabled on enemy prefabs via EnemyDefinition loot settings
-  - On death: rolls Pi coins (min/max) and random items from loot pool
+  - On death: rolls AC coins (min/max) and random items from loot pool
   - Empty loot pool falls back to item registry (excluding quest items and
     melee weapons from random rolls)
   - Press E near corpse opens loot dialog (EnemyLootDialogUI.cs):
@@ -235,7 +247,7 @@ ENEMY LOOT (EnemyLootable.cs)
   - Respawn resumes after all loot taken or loot delay expires
 
 EDITOR
-  - Enemy Prefab Creator (Tools > Survival Pioneer > Combat)
+  - Enemy Prefab Creator (Tools > Dark Matter: Genesis > Combat)
   - Update All Enemy Prefabs And Scene (EnemyLootSetupUtility.cs)
 
 
@@ -278,7 +290,7 @@ WORLD ITEM PICKUPS (ItemPickup.cs)
   - Physical items on ground (rocks, mushrooms, weapons, etc.)
   - Press E to collect into inventory
   - Optional respawn timer (20–90 seconds)
-  - Pi-infused items grant Pi currency on pickup (ItemData.isPiInfused)
+  - AC-infused items grant Aether Credits on pickup (legacy ItemData.isPiInfused)
 
 
 ================================================================================
@@ -304,7 +316,7 @@ RECIPE LEARNING FLOW
 
 CURRENT RECIPES
   grilled_mushroom   Cooking   — Grill mushrooms
-  forest_stew        Cooking   — Mushrooms + Red Lilly
+  forest_stew        Cooking   — Mushrooms + Red Lilly (recipe asset id only)
   stone_salve        Workbench — 3x Rock
   herbal_medpack     Workbench — Healing craft
   Pemican (Pimican)  Workbench — Red Lilly + Rock
@@ -315,22 +327,46 @@ CRAFTING UI
   - At-world stations: journal opens Craft tab; production executes at station when bound
   - Recipe hover tooltips show ingredients and station requirement
 
-BUILDING CONTROL PANELS (GDD Section 8 — prototype shell)
-  Canon (GAME_DESIGN_DOCUMENT.txt Section 8):
+BUILDING SYSTEM (GDD 5.0 — planned stack; prototype partial)
+-------------------------------------------------------------
+Canon flow: spend resources → building MATERIALIZES (scale-up + VFX) → craft /
+maintain over time. Major structures use Building Control Panels (below).
+
+Attachment modules (planned — player expands bases by attaching modules to
+core structures / grids). Module roles include:
+
+  Generators       Power generation for the base
+  Power grids      Distribute and route power between modules / buildings
+  Auto gather      Automated resource gathering nodes and harvesters
+  Logistics        Move materials between storage, craft queues, and modules
+  Communications   Comms / uplink / scan support (ties toward Probe Uplink)
+  Defense          Turrets, barriers, base defense modules
+  Mining           Mining drills / extractors (ties toward Geothermal Harvester)
+
+Key named buildings (GDD lock — grow via modules where it fits):
+  Command Center, Purification Hub, Geothermal Harvester, Echo Reclamation
+  Chamber, Resonance Beacon, Probe Uplink, Geothermal Stabilizer, Medical
+  Facility, Science Labs.
+
+BUILDING CONTROL PANELS (GDD 5.0 Appendix A7 — prototype shell)
+  Canon:
     - Each major base building has an interactable Control Panel (E at terminal)
     - Opens Building Control UI overlay (NOT journal) with tabs:
-        Overview | Pioneers | Production | Craft | Changes
-    - Assign base-22 pioneers, set production/craft queues, per-building settings
+        Overview | Companions | Production | Craft | Changes
+    - Assign base-22 companions, set production/craft queues, per-building /
+      module settings
     - Queues run while player is on expedition; pause during sulfur storms
   Prototype today (Milestone C):
     - BuildingControlPanel.cs — world interactable on building terminals
     - BuildingControlPanelUI.cs — fullscreen shell over dim overlay (MenuUiBuilder)
     - Tab placeholders + optional Craft tab embeds CraftingUI when station type bound
     - PlayerController.SetBuildingControlOpen pauses movement/camera while open
-    - Editor: Tools/Survival Pioneer/Content/Add Building Control Panel to Selected
+    - Editor: Tools/Dark Matter: Genesis/Content/Add Building Control Panel to Selected
   Still TODO:
-    - Pioneer assignment slots, live production queues, sulfur-storm pause wiring
-    - Wire Science Labs + Medical Facility first; migrate journal Craft to library-only
+    - Companion assignment slots, live production queues, sulfur-storm pause wiring
+    - Materialize / placement / maintenance pipeline
+    - Attachment module graph (generators, power grid, logistics, defense, mining)
+    - Wire Science Labs + Medical Facility first; Journal Craft = recipe library only
 
 
 ================================================================================
@@ -349,12 +385,12 @@ OBJECTIVE TYPES
   - Custom         Manual/scripted hooks
 
 CURRENT QUESTS (Resources/Quests/)
-  gather_rocks       — Collect 3 Rocks → Pi reward
-  guide_supply_run   — Talk to Pioneer Guide, gather mushrooms for camp stew
-  Get more Rocks     — Collect 10 Rocks → item + Pi reward
+  gather_rocks       — Collect 3 Rocks → AC reward
+  guide_supply_run   — Talk to Companion Guide, gather mushrooms for stew recipe
+  Get more Rocks     — Collect 10 Rocks → item + AC reward
 
 QUEST GIVER
-  - NPC: QuestGiver_PioneerGuide (QuestGiverNpc.cs)
+  - Companion: QuestGiver_PioneerGuide (QuestGiverNpc.cs)
   - Prefab: Prefabs/NPCs/QuestGiver_PioneerGuide.prefab
   - Press E to open quest board dialog (QuestGiverDialogUI.cs)
   - Accept, track, and turn in quests from the board
@@ -366,25 +402,27 @@ QUEST HUD
 
 
 ================================================================================
-12. PI CURRENCY
+12. AETHER CREDITS (AC)
 ================================================================================
 
-Pi is the in-game reward currency (Pi Network theme).
+Aether Credits (AC) is the only in-game currency (GDD 5.0 lock).
+Starter grant on new game: 5000 AC → choose 1 starter Skilled Companion.
+Legacy save JSON fields (piBalance, piWalletBalance) migrate into AC on load only.
 
 DISPLAY
-  - HUD balance: "Pi: {amount}" (UIManager.piBalance)
+  - HUD balance: `UIManager.currencyHudText` → "AC: {amount}"
 
 SOURCES
-  - Starting bonus on new game (+10 Pi)
+  - New-game starter grant (5000 AC for skilled companion choice)
   - Quest completion rewards
-  - Enemy loot rolls (Pi coins on corpses)
-  - Pi-infused item pickups in the world
+  - Enemy loot rolls (AC drop range on corpses)
+  - AC-infused item pickups in the world (`ItemData.isAcInfused` / `acValue`)
 
 FEEDBACK
-  - Animated Pi reward popup (+N Pi) on gain (PiRewardPopup.cs)
+  - Animated reward popup on gain (`AcRewardPopup` prefab)
 
 PERSISTENCE
-  - Saved in GameSaveData.piBalance across save slots
+  - `GameSaveData.aetherCredits` (primary); legacy pi* fields folded on load
 
 
 ================================================================================
@@ -401,37 +439,37 @@ GAME START POPUP (GameStartPopup.cs)
 
 JOURNAL HUB (JournalPanelUI.cs) — key J
   Fullscreen hub + child windows (Milestone A/B UI) with left tab rail (GDD Phase C):
-    Tab rail   Quest Preview, Journal, Inventory, Map, Pioneers, Craft, Recipes, Skills, Echoes
+    Tab rail   Quest Preview, Journal, Inventory, Map, Companions, Craft, Recipes, Skills, Echoes
     Quest Preview  Launch tiles + active quest preview (default J screen)
     Journal    Quest log / notes (fullscreen child window)
     Inventory  Full inventory grid + hotbar (also key I)
     Map        World map overlay (also key M from journal)
     Craft      Fullscreen recipe library + scroll learning (GDD: not primary production UI)
-    Pioneers   Base roster management
+    Companions   Base roster management (switchable expedition trio)
     Recipes    Placeholder — station crafting preview (future)
-    Skills     Placeholder — pioneer skill trees (future)
+    Skills     Placeholder — companion skill trees (future)
     Echoes     Placeholder — neural echo memories (future)
   Navigator stack: FullscreenUiNavigator pushes/pops child windows with header + close.
 
 BUILDING CONTROL UI (BuildingControlPanelUI.cs) — in-world terminals only (Milestone C)
   - Opened from BuildingControlPanel interactables (E); NOT from journal
   - Fullscreen shell (MenuUiBuilder.CreateFullscreenShell) over dim overlay
-  - Tabs: Overview | Pioneers | Production | Craft | Changes (placeholder copy per GDD)
+  - Tabs: Overview | Companions | Production | Craft | Changes (placeholder copy per GDD)
   - Craft tab embeds CraftingUI when panel has CraftingStationType bound
   - Esc or header close dismisses; SetBuildingControlOpen on PlayerController
   - Sulfur storm PAUSED stub on Overview tab
 
 PEAK SCREENS (GDD Phase E — prototype shells)
   EnvironmentalCrisisHudMode.cs — sulfur storm HUD retraction + PAUSED banner
-    Debug: Tools → Survival Pioneer → Debug → Toggle Sulfur Crisis HUD (Play mode)
+    Debug: Tools → Dark Matter: Genesis → Debug → Toggle Sulfur Crisis HUD (Play mode)
   EchoRescueRevealUI.cs — fullscreen Neural Echo rescue reveal
-    Debug: Tools → Survival Pioneer → Debug → Show Echo Rescue Reveal (Test)
-  MainMenuWalletPanelController — wallet overlay (Balances / Marketplace / Pioneers)
+    Debug: Tools → Dark Matter: Genesis → Debug → Show Echo Rescue Reveal (Test)
+  MainMenuWalletPanelController — wallet overlay (Balances / Marketplace / Companions)
 
 HUD ELEMENTS
   - Survival stat bars (health, energy, stamina, oxygen)
   - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
-  - Pi balance text
+  - AC balance text
   - Hotbar (10 slots)
   - Toolbar (scanner / binoculars)
   - Interaction prompt (center/bottom)
@@ -440,9 +478,9 @@ HUD ELEMENTS
   - Pickup toast messages (+Item name)
 
 DIALOGS (fullscreen shells — Milestone B)
-  - QuestGiverDialogUI.cs  — NPC quest board / conversation (fullscreen over dim overlay)
+  - QuestGiverDialogUI.cs  — companion quest board / conversation (fullscreen over dim overlay)
   - EnemyLootDialogUI.cs   — Corpse loot menu (fullscreen over dim overlay)
-  - StarterPioneerSelectUI — New-game starter pioneer recruit (required screen; header close hidden)
+  - StarterPioneerSelectUI — New-game starter companion recruit (required screen; header close hidden)
 
 INVENTORY UX
   - Drag/drop (UIDragHandler.cs)
@@ -451,7 +489,7 @@ INVENTORY UX
   - Item hover tooltips (ItemHoverTooltip.cs)
 
 SAVE SLOTS (SaveSlotsPanelController.cs)
-  - 5 save slots with timestamp, Pi, HP summary
+  - 5 save slots with timestamp, AC, HP summary
   - Slot screenshots (SaveSlotScreenshotUtility.cs)
 
 SETTINGS (SettingsPanelController.cs, GameSettings.cs)
@@ -473,7 +511,7 @@ THEME
   - Player position marker
   - Resource location markers (MapMarker.cs)
   - Can be disabled in settings (GameSettings.MapSystemEnabled)
-  - Editor setup: Tools > Survival Pioneer > Scene > Map System
+  - Editor setup: Tools > Dark Matter: Genesis > Scene > Map System
 
 
 ================================================================================
@@ -529,7 +567,7 @@ SYSTEM (GameSaveSystem.cs)
 PERSISTED DATA
   - Survival stats (health, energy, stamina, oxygen)
   - Player position and rotation
-  - Pi balance
+  - AC balance
   - Full inventory (main, hotbar, toolbar slots)
   - Equipment state (drawn weapon, selected slots)
   - Quest progress per quest ID
@@ -550,11 +588,11 @@ INPUT: Assets/_Project/Settings/Input/ (InputSystem_Actions, input settings)
 BAKED LIGHTING: Assets/_Project/Scenes/Pioneer/
 
 PROJECT ROOT LAYOUT (Assets/_Project/)
-  Animations/     Controllers for player, enemies, pets, NPCs
+  Animations/     Controllers for player, enemies, pets, companions
   Art/            Icons, logos, concept art (Conceptual UI art/)
   Audio/          Game audio clips and profiles (not terrain layers)
   Data/           ScriptableObjects (Items, Enemies, Recipes)
-  Editor/         All Survival Pioneer editor tools (+ DevTools/)
+  Editor/         All Dark Matter: Genesis editor tools (+ DevTools/)
   Materials/      Game materials
   Prefabs/        Combat, items, players, UI, world, crafting
   Resources/      Runtime-loaded assets (Combat, Crafting, UI, Optics, Quests)
@@ -570,13 +608,17 @@ THIRD-PARTY ASSETS (stay outside _Project — referenced by GUID)
   Scifi Melee Weapons, TooManyCrosshairs, Survival Flat Icons, etc.
 
 ENVIRONMENT
-  - Terrain, forest biome, swamp water, clouds, wind zone
-  - Forest ambience audio zone
-  - Reflection probes and lighting
+  - Flat terrain prototype (Io biomes not shipped — GDD 5.0 Appendix B)
+  - Placeholder third-party nature/town kits may still appear in the scene;
+    they are temporary art, NOT forest wilderness camp fiction
+  - Clouds, wind, reflection probes, lighting, ambient audio zones
 
 KEY PLACED OBJECTS
   - Player spawn
-  - QuestGiver_PioneerGuide (NPC)
+  - QuestGiver_PioneerGuide (temporary companion — replace with idle Aether-9 machine
+    as main mystery / prologue hub; keep side quest givers separate)
+  - Target (not built): Aether-9 dormant machine (idle interactable) → repair
+    quest (3 objects) → awaken → Memory Core slots → Resonance Events
   - TrainingDummy (combat practice)
   - Enemies container (Gongo, The Evil One, etc.)
   - Items container (world pickups)
@@ -585,10 +627,11 @@ KEY PLACED OBJECTS
   - Recipe pickup scrolls
   - MainCanvas (full HUD)
   - Game Manager (SimpleGameManager)
+  - Building Control Panel terminals (prototype shells on major structures)
 
 PREFAB FOLDERS (Assets/_Project/Prefabs/)
   Players/          Player.prefab
-  NPCs/             Quest giver
+  NPCs/             Quest giver companion prefabs
   Combat/           Enemies, training dummy
   Crafting/         Recipe scroll pickups
   Crafting/Stations/ Cooking, workbench
@@ -601,7 +644,7 @@ PREFAB FOLDERS (Assets/_Project/Prefabs/)
 20. EDITOR TOOLS (DEVELOPMENT)
 ================================================================================
 
-Menu root: Tools > Survival Pioneer/
+Menu root: Tools > Dark Matter: Genesis/
 
 TOOLS WINDOW
   - SurvivalPioneerToolsWindow.cs — hub for common setup actions
@@ -615,7 +658,7 @@ CRAFTING
   - Wire Scene Stations, Seed Starter Recipes, Sync Recipe Registry
 
 QUESTS
-  - Quest Creator, Quest Giver Setup, Quest Giver NPC Editor
+  - Quest Creator, Quest Giver Setup, Quest Giver Companion Editor
 
 COMBAT
   - Enemy Prefab Creator (AI, animation, loot, collider setup)
@@ -643,9 +686,19 @@ MAINTENANCE
 21. KNOWN LIMITS / NOT YET IMPLEMENTED
 ================================================================================
 
-  - Player ranged / projectile combat (melee only)
+  - Io biome world (prototype remains flat terrain)
+  - Full building materialization / placement / maintenance pipeline
+  - Attachment modules: generators, power grids, auto gather, logistics,
+    communications, defense, mining (see Building System above)
+  - Full Building Control production / companion assignment / sulfur-storm sim
+  - Aether-9 prologue idle machine (dormant interact / awaken dialogue)
+  - Aether-9 3-object repair quest + Memory Core attach UX
+  - Resonance Event runtime (world change + story unlocks)
+  - Trust-gated Aether-9 advisory radio (Colony Ops handles queries until awake)
+  - Console/gamepad ship parity (Input System present; cert not done)
+  - Some legacy currency field names remain in code — AC is gameplay truth
   - StatUpgrade quest reward type (logged as placeholder only)
-  - No dedicated in-project README (this document serves that role)
+  - No dedicated in-project README (this document + GDD 5.0 serve that role)
   - Some third-party asset packs provide art/animation only; custom logic lives
     under Assets/_Project/Scripts/
 

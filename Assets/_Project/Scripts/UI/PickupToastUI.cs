@@ -62,12 +62,12 @@ namespace Project.UI
             if (theme != null)
             {
                 theme.ApplyFont(label, semiBold: true);
-                label.color = theme.primaryColor;
+                label.color = SurvivalPioneerUiPalette.Gold;
             }
             else
             {
                 TmpUiHelper.ApplyDefaultFont(label);
-                label.color = Color.white;
+                label.color = SurvivalPioneerUiPalette.Gold;
             }
 
             label.fontSize = 24f;

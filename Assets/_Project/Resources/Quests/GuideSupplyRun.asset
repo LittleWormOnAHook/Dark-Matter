@@ -34,3 +34,4 @@ MonoBehaviour:
     amount: 1
     item: {fileID: 11400000, guid: a9618f10f8cb43842bdd8f8bbf4ba058, type: 2}
     statUpgradeId: 
+  xpReward: 100

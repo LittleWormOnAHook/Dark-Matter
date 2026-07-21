@@ -27,7 +27,7 @@ namespace Project.UI
 
         [TextArea(3, 10)]
         public string messageText =
-            "Welcome, Pioneer!\n\nSurvival is key. Gather resources, watch your stats, and earn Aether Credits (AC) from quests and loot.\n\nManage Pi Wallet and AC on the main menu. Pick your starter specialist before deploying.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-4] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
+            "Welcome!\n\nSurvival is key. Gather resources, watch your stats, and earn Aether Credits (AC) from quests and loot.\n\nManage AC and your companion roster on the main menu. Pick your starter specialist before deploying.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-4] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
 
         public Sprite imageSprite;
         public bool showOnStart = false;
@@ -153,7 +153,6 @@ namespace Project.UI
             GameSession.MarkStarted();
 
             RestoreHiddenCanvasUi();
-            MainMenuController.RestoreGameplayUiFromMenu();
             HideRuntimeStartScreenUi();
             Time.timeScale = 1f;
             SetGameplayPaused(false);
@@ -177,7 +176,7 @@ namespace Project.UI
                 screenOverlay.SetActive(false);
 
             GameSaveSystem.TrySave(0, out _);
-            GameplayHudVisibility.SetGameplayHudVisible(true);
+            MainCanvasFlow.Refresh();
         }
 
         private IEnumerator RefreshStartScreenUiNextFrame()
@@ -280,6 +279,12 @@ namespace Project.UI
 
         private void HideRuntimeStartScreenUi()
         {
+            if (GameSession.HasStarted)
+            {
+                GameplayHudVisibility.RefreshGameplayHud();
+                return;
+            }
+
             PetUI petUi = FindAnyObjectByType<PetUI>();
             if (petUi != null)
                 petUi.HideForStartScreen();

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using Project.Core;
+using Project.Map;
 using Project.Pioneers;
 using UnityEngine;
 
@@ -14,10 +16,58 @@ namespace Project.Companions
         [SerializeField] private Transform companionRoot;
 
         private readonly List<PioneerCompanionAgent> activeCompanions = new List<PioneerCompanionAgent>(PioneerRosterManager.ExpeditionTrioSize);
+        private readonly List<PioneerCompanionAgent> vehicleHiddenCompanions = new List<PioneerCompanionAgent>(PioneerRosterManager.ExpeditionTrioSize);
         private PioneerRosterManager roster;
         private Transform playerTransform;
+        private bool companionsHiddenForVehicle;
+
+        public event Action ActiveCompanionsChanged;
 
         public IReadOnlyList<PioneerCompanionAgent> ActiveCompanions => activeCompanions;
+
+        /// <summary>
+        /// Hides active expedition companions while the player is aboard a vehicle.
+        /// </summary>
+        public void SetCompanionsHiddenForVehicle(bool hidden)
+        {
+            if (hidden == companionsHiddenForVehicle)
+                return;
+
+            companionsHiddenForVehicle = hidden;
+
+            if (hidden)
+            {
+                vehicleHiddenCompanions.Clear();
+                for (int i = 0; i < activeCompanions.Count; i++)
+                {
+                    PioneerCompanionAgent agent = activeCompanions[i];
+                    if (agent == null || !agent.gameObject.activeSelf)
+                        continue;
+
+                    vehicleHiddenCompanions.Add(agent);
+                    MapMarker mapMarker = agent.GetComponent<MapMarker>();
+                    if (mapMarker != null)
+                        mapMarker.SetKeepRegisteredWhenDisabled(true);
+                    agent.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            for (int i = 0; i < vehicleHiddenCompanions.Count; i++)
+            {
+                PioneerCompanionAgent agent = vehicleHiddenCompanions[i];
+                if (agent != null)
+                {
+                    MapMarker mapMarker = agent.GetComponent<MapMarker>();
+                    if (mapMarker != null)
+                        mapMarker.SetKeepRegisteredWhenDisabled(false);
+                    agent.gameObject.SetActive(true);
+                }
+            }
+
+            vehicleHiddenCompanions.Clear();
+        }
 
         private void Awake()
         {
@@ -77,6 +127,8 @@ namespace Project.Companions
                 if (agent != null)
                     activeCompanions.Add(agent);
             }
+
+            NotifyActiveCompanionsChanged();
         }
 
         private void HandleTrioChanged()
@@ -99,6 +151,8 @@ namespace Project.Companions
                 if (record != null)
                     agent.RefreshLoadout(record);
             }
+
+            NotifyActiveCompanionsChanged();
         }
 
         private PioneerCompanionAgent SpawnCompanion(SkilledPioneerRecord record, int slotIndex)
@@ -111,8 +165,21 @@ namespace Project.Companions
 
         private void EnsureDefaultPrefab()
         {
+            PioneerCompanionAgent preferred = PioneerCompanionDefaults.LoadDefaultAgentPrefab();
+            if (preferred == null)
+                return;
+
             if (companionPrefab == null)
-                companionPrefab = PioneerCompanionDefaults.LoadDefaultAgentPrefab();
+            {
+                companionPrefab = preferred;
+                return;
+            }
+
+            if (PioneerCompanionDefaults.IsInvectorPrefab(preferred) &&
+                !PioneerCompanionDefaults.IsInvectorPrefab(companionPrefab))
+            {
+                companionPrefab = preferred;
+            }
         }
 
         private Transform GetSpawnRoot()
@@ -141,6 +208,16 @@ namespace Project.Companions
             }
 
             activeCompanions.Clear();
+            NotifyActiveCompanionsChanged();
+        }
+
+        private void NotifyActiveCompanionsChanged()
+        {
+            // Single choke point for every spawn/despawn/loadout-refresh — keeps the shared group
+            // buff snapshot (hazard mitigation, combat synergy) in sync with whichever companions
+            // are actually in the field right now.
+            CompanionGroupBuffService.Recompute(activeCompanions);
+            ActiveCompanionsChanged?.Invoke();
         }
 
         private void ResolvePlayer()

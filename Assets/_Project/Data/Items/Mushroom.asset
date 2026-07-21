@@ -15,9 +15,12 @@ MonoBehaviour:
   itemName: Mushroom
   icon: {fileID: 21300000, guid: 01f306e51ae729b4dbc6cd5279f0e6e7, type: 3}
   worldPrefab: {fileID: 4131714642898419157, guid: 8440a364416e8de41987b0616e833268, type: 3}
-  maxStack: 64
+  maxStack: 100
   itemType: 0
   weaponGrip: 0
+  gkcWeaponKind: -1
+  gkcRightArmId: -1
+  gkcLeftArmId: -1
   heldPrefab: {fileID: 0}
   equipSocketName: RightHand
   heldLocalPosition: {x: 0, y: 0, z: 0}
@@ -32,13 +35,40 @@ MonoBehaviour:
   useSheathedLocalRotation: 0
   sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
   meleeDamage: 10
   meleeDamageRandomRange: 3
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
+  attackAnimationSpeed: 0
   gatherPower: 5
   attackTrigger: Attack
+  rangedDamage: 14
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 85
+  projectileSpreadDegrees: 1.5
+  fireRate: 4
+  magazineSize: 30
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  componentCategory: 0
   toolType: 0
   toolRange: 8
   scanRange: 24
@@ -46,10 +76,14 @@ MonoBehaviour:
   opticsMinZoomFov: 18
   opticsMaxZoomFov: 55
   healthRestore: 0
-  healthRestore: 0
   energyRestore: 0
   staminaRestore: 20
   oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
   tooltipDescription: Food of the Gods

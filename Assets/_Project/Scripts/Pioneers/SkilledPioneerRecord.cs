@@ -28,7 +28,9 @@ namespace Project.Pioneers
         public int workState;
         public float injuryRecoveryRemaining;
         public int followMode = -1;
+        public int worldIdleJob;
         public PioneerBehaviorProfile behavior;
+        public CompanionBuffModifier[] buffs;
 
         public PioneerKind Kind
         {
@@ -40,6 +42,12 @@ namespace Project.Pioneers
         {
             get => (EchoDisposition)Mathf.Clamp(disposition, 0, 3);
             set => disposition = (int)value;
+        }
+
+        public PioneerWorldIdleJob WorldIdleJob
+        {
+            get => (PioneerWorldIdleJob)Mathf.Clamp(worldIdleJob, 0, 4);
+            set => worldIdleJob = (int)value;
         }
 
         public PioneerWorkState WorkState
@@ -78,14 +86,14 @@ namespace Project.Pioneers
             return record;
         }
 
-        public static SkilledPioneerRecord CreateFromCatalog(NamedPioneerDefinition definition)
+        public static SkilledPioneerRecord CreateFromCatalog(NamedPioneerDefinition definition, bool applyLoadoutDefaults = true)
         {
             if (definition == null)
                 return null;
 
             var record = new SkilledPioneerRecord
             {
-                id = Guid.NewGuid().ToString("N"),
+                id = definition.ResolvedId,
                 displayName = definition.displayName,
                 pioneerClass = definition.pioneerClass,
                 level = definition.startLevel,
@@ -99,13 +107,22 @@ namespace Project.Pioneers
                 traitIds = definition.traitIds,
                 passiveAbilityIds = definition.passiveAbilityIds,
                 learnedSkills = definition.learnedSkills,
+                buffs = definition.buffs,
                 WorkState = PioneerWorkState.Idle
             };
 
             if (definition.overrideDefaultFollowMode)
                 record.followMode = (int)definition.behavior.followMode;
 
-            PioneerLoadoutDefaults.EnsureDefaults(record);
+            if (!string.IsNullOrWhiteSpace(definition.preferredWeaponItemId))
+                record.weaponItemId = definition.preferredWeaponItemId;
+
+            if (!string.IsNullOrWhiteSpace(definition.preferredToolItemId))
+                record.toolItemId = definition.preferredToolItemId;
+
+            if (applyLoadoutDefaults)
+                PioneerLoadoutDefaults.EnsureDefaults(record);
+
             return record;
         }
 
@@ -140,6 +157,8 @@ namespace Project.Pioneers
         public int workState;
         public float injuryRecoveryRemaining;
         public int followMode = -1;
+        public int worldIdleJob;
+        public CompanionBuffModifier[] buffs;
 
         public static SkilledPioneerSaveRecord FromRuntime(SkilledPioneerRecord record)
         {
@@ -169,7 +188,9 @@ namespace Project.Pioneers
                 isInExpeditionTrio = record.isInExpeditionTrio,
                 workState = record.workState,
                 injuryRecoveryRemaining = record.injuryRecoveryRemaining,
-                followMode = record.followMode
+                followMode = record.followMode,
+                worldIdleJob = record.worldIdleJob,
+                buffs = record.buffs
             };
         }
 
@@ -199,7 +220,9 @@ namespace Project.Pioneers
                 isInExpeditionTrio = isInExpeditionTrio,
                 workState = workState,
                 injuryRecoveryRemaining = injuryRecoveryRemaining,
-                followMode = followMode
+                followMode = followMode,
+                worldIdleJob = worldIdleJob,
+                buffs = buffs
             };
 
             PioneerLoadoutDefaults.EnsureDefaults(runtime);

@@ -95,8 +95,7 @@ namespace Project.Companions
 
         private Transform ResolveModelRoot()
         {
-            Transform model = transform.Find("ProjectUnityCharacter");
-            return model != null ? model : transform;
+            return transform;
         }
 
         private void ClearVisuals()

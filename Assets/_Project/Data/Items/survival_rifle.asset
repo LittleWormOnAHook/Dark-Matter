@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: survival_rifle
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: Survival Rifle
+  icon: {fileID: 21300000, guid: 9baee211bd60651469d72603acf60f9e, type: 3}
+  worldPrefab: {fileID: 9115999198717219269, guid: 1687c103af3d73b4f9728aee53ed763f, type: 3}
+  maxStack: 10
+  itemType: 3
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 1
+  heldPrefab: {fileID: 4360140755710403421, guid: a250905f5f5766f4783a204596727a95, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0.109000005, y: 0.019000005, z: 0.008999993}
+  heldLocalEuler: {x: 347.8646, y: 76.51551, z: 271.9896}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: -0.48746446, y: 0.3852179, z: -0.4953865, w: 0.6071063}
+  heldLocalScale: {x: 0.85, y: 0.85, z: 0.85}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine2
+  sheathedLocalPosition: {x: 0.04, y: 0.18, z: -0.25593913}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 1804537267582261728, guid: 6eb49b8498aebf14da0f67ba3cc0dddd, type: 3}
+  invectorWeaponId: vAssaultRifle
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 16
+  rangedDamageRandomRange: 4
+  rangedRange: 55
+  projectileSpeed: 85
+  projectileSpreadDegrees: 1.2
+  fireRate: 5.5
+  magazineSize: 30
+  defaultAmmoType: 1
+  compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
+  defaultAmmoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 3}
+  projectilePrefab: {fileID: 43210292418809407, guid: 677c96554679d064ab9d4df997baff2c, type: 3}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.76
+  hipFireMaxDeviationDegrees: 14
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 1
+  aimHeldLocalPosition: {x: 0.112, y: 0.017, z: 0.005}
+  aimHeldLocalEuler: {x: 291.5461, y: 65.67742, z: 299.0568}
+  useAimHeldLocalRotation: 1
+  aimHeldLocalRotation: {x: -0.6346855, y: 0.14677942, z: -0.08939872, w: 0.75341755}
+  aimHeldLocalScale: {x: 0.85, y: 0.85, z: 0.85}
+  ammoType: 1
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  muzzleFlashPrefab: {fileID: 6860369545257256212, guid: 96a04ef4f3cb949dea720b29daad2af2, type: 3}
+  tracerPrefab: {fileID: 1878987882032996, guid: 2f30ce685381cf141a1c05b1ee359db2, type: 3}
+  impactVfxPrefab: {fileID: 4116169888191998485, guid: b151f19f5eaf34864986b0e3490431d1, type: 3}
+  beamVfxPrefab: {fileID: 0}
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isPiInfused: 0
+  piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  tooltipDescription: Two-handed survival rifle. Hold RMB to aim, LMB to fire.

@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7693b9365b31d6b4fa098be012daeff6, type: 3}
+  m_Name: named_mira_storm
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
+  pioneerId: named_mira_storm
+  displayName: Crystalized Mira Storm
+  origin: 0
+  pioneerClass: 3
+  startLevel: 1
+  radiationResistance: 0.54
+  expeditionEfficiency: 0.73
+  combatSynergy: 0.51
+  saturation: 0.22
+  backstory: Crystal vent scout imprint.
+  traitIds:
+  - vent_burst
+  passiveAbilityIds:
+  - synergy_link
+  learnedSkills:
+  - forage
+  buffs: []
+  preferredWeaponItemId: 
+  preferredToolItemId: 
+  overrideDefaultFollowMode: 0
+  behavior:
+    followMode: 0
+    wanderPaceScale: 0.3
+    walkSpeed: 4.4
+    runSpeed: 8.5
+    catchUpSpeed: 8.5
+    catchUpDistance: 5.5
+    maxFollowDistance: 14
+    stopDistance: 0.45
+    formationHeadingSmoothTime: 0.45
+    walkAnimationSpeed: 0.7
+    runAnimationSpeed: 0.9
+    walkSpeedReference: 4.4
+    runSpeedReference: 8.5
+    combatTetherRadius: 6.5
+    preferredCombatDistance: 2.4
+    rangedPreferredDistance: 7
+    losSearchRadius: 1.5
+    formationDriftDegreesPerSecond: 2.8

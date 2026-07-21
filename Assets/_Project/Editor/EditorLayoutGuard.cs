@@ -6,50 +6,36 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     /// <summary>
-    /// Closes broken editor windows after play mode and offers layout recovery.
+    /// Manual recovery tools for broken Inspector windows and stale selection after Play Mode.
+    /// Auto hooks are intentionally minimal to avoid editor instability.
     /// </summary>
-    [InitializeOnLoad]
     public static class EditorLayoutGuard
     {
-        private static bool inspectorRecoveryScheduled;
+        private static bool deferredRecoveryScheduled;
 
-        static EditorLayoutGuard()
+        [InitializeOnLoadMethod]
+        private static void RegisterPlayModeRecovery()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            Selection.selectionChanged += OnSelectionChanged;
-            EditorApplication.delayCall += OnEditorStartup;
-        }
-
-        private static void OnSelectionChanged()
-        {
-            if (HasStaleInspectorTargets())
-                RecoverStaleInspectorState(silent: true, aggressive: false);
-        }
-
-        private static void OnEditorStartup()
-        {
-            int closed = CloseFailedEditorWindows();
-            ScheduleInspectorRecovery();
-            if (closed > 0)
-                Debug.Log($"Closed {closed} broken editor window(s) on startup.");
         }
 
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            switch (state)
-            {
-                case PlayModeStateChange.ExitingPlayMode:
-                case PlayModeStateChange.EnteredEditMode:
-                    // Must run synchronously — delayCall is too late and GameObjectInspector.OnEnable
-                    // will throw on destroyed play-mode Selection targets.
-                    ClearSelectionAndRebuildInspectors();
-                    ScheduleInspectorRecovery();
-                    break;
-                case PlayModeStateChange.ExitingEditMode:
-                case PlayModeStateChange.EnteredPlayMode:
-                    ScheduleInspectorRecovery();
-                    break;
-            }
+            if (state != PlayModeStateChange.ExitingPlayMode)
+                return;
+
+            ScheduleInspectorRecovery();
+        }
+
+        private static void RunDeferredInspectorRecovery()
+        {
+            deferredRecoveryScheduled = false;
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            if (HasStaleInspectorTargets())
+                ClearSelectionOnly();
         }
 
         [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix Failed Editor Windows", false, 0)]
@@ -83,14 +69,19 @@ namespace Project.EditorTools
             RecoverStaleInspectorState(silent: true, aggressive: true);
         }
 
-        /// <summary>
-        /// Clears Selection and rebuilds inspectors immediately. Safe to call during play-mode transitions.
-        /// </summary>
-        public static void ClearSelectionAndRebuildInspectors()
+        public static void ClearSelectionOnly()
         {
             Selection.activeObject = null;
             Selection.activeGameObject = null;
             Selection.objects = System.Array.Empty<Object>();
+        }
+
+        /// <summary>
+        /// Clears Selection and rebuilds inspectors. Use from menu actions only.
+        /// </summary>
+        public static void ClearSelectionAndRebuildInspectors()
+        {
+            ClearSelectionOnly();
             ActiveEditorTracker.sharedTracker.isLocked = false;
             DestroyBrokenActiveEditors();
             ActiveEditorTracker.sharedTracker.ForceRebuild();
@@ -104,27 +95,16 @@ namespace Project.EditorTools
             if (!SelectionReferencesHierarchy(root))
                 return;
 
-            ClearSelectionAndRebuildInspectors();
+            ClearSelectionOnly();
         }
 
         public static void ScheduleInspectorRecovery()
         {
-            if (inspectorRecoveryScheduled)
+            if (deferredRecoveryScheduled)
                 return;
 
-            inspectorRecoveryScheduled = true;
-            EditorApplication.delayCall += RunScheduledInspectorRecovery;
-        }
-
-        private static void RunScheduledInspectorRecovery()
-        {
-            inspectorRecoveryScheduled = false;
-
-            if (HasStaleInspectorTargets())
-                ClearSelectionAndRebuildInspectors();
-
-            CloseFailedEditorWindows();
-            RecoverStaleInspectorState(silent: true, aggressive: true);
+            deferredRecoveryScheduled = true;
+            EditorApplication.delayCall += RunDeferredInspectorRecovery;
         }
 
         public static bool HasStaleInspectorTargets()
@@ -186,9 +166,7 @@ namespace Project.EditorTools
             {
                 if (aggressive || staleTargets)
                 {
-                    Selection.activeObject = null;
-                    Selection.activeGameObject = null;
-                    Selection.objects = System.Array.Empty<Object>();
+                    ClearSelectionOnly();
                     changed = true;
                 }
 
@@ -210,7 +188,6 @@ namespace Project.EditorTools
 
             try
             {
-                // Unity fake-null for destroyed scene objects.
                 if (obj is GameObject gameObject)
                     return gameObject != null;
 
@@ -219,8 +196,7 @@ namespace Project.EditorTools
                     if (component == null)
                         return false;
 
-                    GameObject owner = component.gameObject;
-                    return owner != null;
+                    return component.gameObject != null;
                 }
             }
             catch (MissingReferenceException)

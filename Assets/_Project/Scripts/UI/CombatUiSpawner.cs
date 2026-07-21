@@ -1,5 +1,6 @@
 using Project.AI;
 using Project.Combat;
+using Project.Companions;
 using UnityEngine;
 
 namespace Project.UI
@@ -59,6 +60,24 @@ namespace Project.UI
             return bar;
         }
 
+        public static FloatingTargetHealthBar SpawnHealthBar(CompanionHealth health, Vector3 worldOffset)
+        {
+            EnsurePrefabsLoaded();
+            Transform canvasRoot = GetCanvasRoot();
+            if (healthBarPrefab == null || canvasRoot == null || health == null)
+            {
+                Debug.LogWarning("CombatUiSpawner: could not spawn companion health bar (missing prefab or canvas).");
+                return null;
+            }
+
+            GameObject instance = Object.Instantiate(healthBarPrefab, canvasRoot);
+            instance.transform.SetAsLastSibling();
+
+            FloatingTargetHealthBar bar = instance.GetComponent<FloatingTargetHealthBar>();
+            bar?.Bind(health, worldOffset);
+            return bar;
+        }
+
         private static void EnsurePrefabsLoaded()
         {
             if (damagePrefab == null)
@@ -70,8 +89,7 @@ namespace Project.UI
 
         private static Transform GetCanvasRoot()
         {
-            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-            return canvas != null ? canvas.transform : null;
+            return MainMenuController.ResolveCombatHudRoot();
         }
     }
 }

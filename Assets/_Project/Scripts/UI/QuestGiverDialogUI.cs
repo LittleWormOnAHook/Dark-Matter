@@ -33,6 +33,9 @@ namespace Project.UI
         private TextMeshProUGUI primaryButtonLabel;
         private Button questActionButton;
         private TextMeshProUGUI questActionButtonLabel;
+        private Button abandonQuestButton;
+        private TextMeshProUGUI abandonQuestButtonLabel;
+        private bool abandonConfirmPending;
         private Action onClosed;
         private bool built;
         private IList<QuestBoardEntry> currentEntries;
@@ -50,7 +53,7 @@ namespace Project.UI
 
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
-            if (instance != null && instance.built && instance.questListScroll == null)
+            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null))
             {
                 instance.TeardownInternal();
                 instance = null;
@@ -125,6 +128,9 @@ namespace Project.UI
             primaryButtonLabel = null;
             questActionButton = null;
             questActionButtonLabel = null;
+            abandonQuestButton = null;
+            abandonQuestButtonLabel = null;
+            abandonConfirmPending = false;
             currentEntries = null;
             selectedEntryIndex = -1;
 
@@ -252,7 +258,7 @@ namespace Project.UI
             leftDescriptionText.textWrappingMode = TextWrappingModes.Normal;
             leftObjectivesText = CreateText(leftPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             leftObjectivesText.textWrappingMode = TextWrappingModes.Normal;
-            leftObjectivesText.color = QuestUiPalette.InProgressText;
+            leftObjectivesText.color = SurvivalPioneerUiPalette.BodyText;
 
             GameObject rightPanel = CreatePanel(splitRow.transform, "QuestProgressPanel", flexibleWidth: 1f);
             rightStatusText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
@@ -263,8 +269,27 @@ namespace Project.UI
             rightRewardsText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             rightRewardsText.textWrappingMode = TextWrappingModes.Normal;
 
-            questActionButton = CreateButton(boardContentRoot.transform, "Accept", theme, out questActionButtonLabel);
+            GameObject actionRow = new GameObject("ActionRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            actionRow.transform.SetParent(boardContentRoot.transform, false);
+            HorizontalLayoutGroup actionRowLayout = actionRow.GetComponent<HorizontalLayoutGroup>();
+            actionRowLayout.spacing = 10f;
+            actionRowLayout.childControlWidth = true;
+            actionRowLayout.childControlHeight = true;
+            actionRowLayout.childForceExpandWidth = true;
+            actionRowLayout.childForceExpandHeight = false;
+            LayoutElement actionRowElement = actionRow.GetComponent<LayoutElement>();
+            actionRowElement.minHeight = 48f;
+            actionRowElement.preferredHeight = 48f;
+
+            questActionButton = CreateButton(actionRow.transform, "Accept", theme, out questActionButtonLabel);
             questActionButton.onClick.AddListener(HandleQuestActionClicked);
+
+            abandonQuestButton = CreateButton(actionRow.transform, "Abandon Quest", theme, out abandonQuestButtonLabel);
+            abandonQuestButton.onClick.AddListener(HandleAbandonClicked);
+            Image abandonImage = abandonQuestButton.GetComponent<Image>();
+            if (abandonImage != null)
+                abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+            abandonQuestButton.gameObject.SetActive(false);
 
             boardContentRoot.SetActive(false);
         }
@@ -389,6 +414,7 @@ namespace Project.UI
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             currentEntries = entries;
             selectedEntryIndex = entries != null && entries.Count > 0 ? 0 : -1;
+            abandonConfirmPending = false;
 
             simpleContentRoot.SetActive(false);
             boardContentRoot.SetActive(true);
@@ -418,6 +444,8 @@ namespace Project.UI
                 rightRewardsText.text = string.Empty;
                 questActionButton.interactable = false;
                 questActionButtonLabel.text = "Close";
+                if (abandonQuestButton != null)
+                    abandonQuestButton.gameObject.SetActive(false);
             }
 
             RefreshQuestListLayout();
@@ -508,6 +536,15 @@ namespace Project.UI
             questActionButtonLabel.text = string.IsNullOrEmpty(entry.ActionLabel) ? "Continue" : entry.ActionLabel;
             questActionButton.interactable = entry.CanSelect && entry.OnSelected != null;
 
+            bool canAbandon = entry.CanAbandon && entry.OnAbandon != null;
+            if (abandonQuestButton != null)
+            {
+                abandonQuestButton.gameObject.SetActive(canAbandon);
+                abandonQuestButton.interactable = canAbandon;
+                abandonConfirmPending = false;
+                abandonQuestButtonLabel.text = "Abandon Quest";
+            }
+
             RefreshPickerHighlights();
         }
 
@@ -544,6 +581,28 @@ namespace Project.UI
             }
 
             Action callback = entry.OnSelected;
+            Close();
+            callback.Invoke();
+        }
+
+        private void HandleAbandonClicked()
+        {
+            if (currentEntries == null || selectedEntryIndex < 0 || selectedEntryIndex >= currentEntries.Count)
+                return;
+
+            QuestBoardEntry entry = currentEntries[selectedEntryIndex];
+            if (!entry.CanAbandon || entry.OnAbandon == null)
+                return;
+
+            if (!abandonConfirmPending)
+            {
+                abandonConfirmPending = true;
+                abandonQuestButtonLabel.text = "Confirm Abandon?";
+                return;
+            }
+
+            abandonConfirmPending = false;
+            Action callback = entry.OnAbandon;
             Close();
             callback.Invoke();
         }
@@ -607,6 +666,7 @@ namespace Project.UI
             ClearQuestPicker();
             currentEntries = null;
             selectedEntryIndex = -1;
+            abandonConfirmPending = false;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);

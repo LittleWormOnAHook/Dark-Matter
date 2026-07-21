@@ -32,7 +32,7 @@ namespace Project.UI
             new Color(0.92f, 0.18f, 0.14f, 1f),
             new Color(0.91f, 0.63f, 0.27f, 1f),
             new Color(0.71f, 0.88f, 0.40f, 1f),
-            new Color(0.43f, 0.76f, 1f, 1f)
+            SurvivalPioneerUiPalette.RichFuchsia
         };
 
         private bool layoutApplied;
@@ -63,12 +63,28 @@ namespace Project.UI
 
         private void Start()
         {
+            HideLegacyThermalRow();
+            DisableLegacyExposureStatusHud();
             DisableRadialBarsOnRows();
 
             if (applyRuntimeLayout)
                 RefreshLayout();
             else
                 SyncSurvivalBarValues();
+        }
+
+        private void HideLegacyThermalRow()
+        {
+            Transform thermalRow = transform.Find("ThermalRow");
+            if (thermalRow != null)
+                thermalRow.gameObject.SetActive(false);
+        }
+
+        private void DisableLegacyExposureStatusHud()
+        {
+            ExposureStatusHud legacyHud = GetComponent<ExposureStatusHud>();
+            if (legacyHud != null)
+                legacyHud.enabled = false;
         }
 
         public void RefreshLayout()
@@ -172,6 +188,12 @@ namespace Project.UI
 
         private void ConfigureSegment(Transform row, int segmentIndex, float segmentWidth, float gap)
         {
+            if (row.name == "ThermalRow")
+            {
+                row.gameObject.SetActive(false);
+                return;
+            }
+
             if (row is not RectTransform rowRect)
                 return;
 
@@ -201,9 +223,58 @@ namespace Project.UI
             {
                 if (row.name == "OxygenRow")
                     ConfigureOxygenLabel(label, iconWidth + IconGap, barWidth);
+                else if (row.name == "ThermalRow")
+                    ConfigureThermalLabel(label, iconWidth + IconGap, barWidth);
                 else
                     label.gameObject.SetActive(false);
             }
+
+            if (row.name == "ThermalRow")
+            {
+                ThermalStressBarView thermalView = row.GetComponent<ThermalStressBarView>();
+                if (thermalView == null)
+                    thermalView = row.gameObject.AddComponent<ThermalStressBarView>();
+                thermalView.Refresh();
+            }
+        }
+
+        private static void ConfigureThermalLabel(TextMeshProUGUI label, float barLeftInset, float barWidth)
+        {
+            label.gameObject.SetActive(true);
+
+            if (label.rectTransform is not RectTransform rect)
+                return;
+
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(barLeftInset + barWidth * 0.5f, BarHeight * 0.5f);
+            rect.sizeDelta = new Vector2(barWidth, BarHeight);
+            rect.SetAsLastSibling();
+
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = Mathf.Max(8f, BarHeight * 0.72f);
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 6f;
+            label.fontSizeMax = BarHeight * 0.85f;
+            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.raycastTarget = false;
+            label.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        private void EnsureThermalRow()
+        {
+            Transform existing = transform.Find("ThermalRow");
+            if (existing != null)
+                return;
+
+            Transform oxygenRow = transform.Find("OxygenRow");
+            if (oxygenRow == null)
+                return;
+
+            GameObject clone = Instantiate(oxygenRow.gameObject, transform);
+            clone.name = "ThermalRow";
+            clone.transform.SetSiblingIndex(1);
         }
 
         private static void ConfigureOxygenLabel(TextMeshProUGUI label, float barLeftInset, float barWidth)
@@ -225,7 +296,7 @@ namespace Project.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 6f;
             label.fontSizeMax = BarHeight * 0.85f;
-            label.color = new Color(0.95f, 0.98f, 1f, 0.95f);
+            label.color = SurvivalPioneerUiPalette.BodyText;
             label.raycastTarget = false;
             label.overflowMode = TextOverflowModes.Overflow;
         }

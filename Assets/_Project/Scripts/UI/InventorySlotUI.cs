@@ -36,7 +36,7 @@ namespace Project.UI
         private InventoryItemActions itemActions;
         private GameObject dragGhost;
         private Image selectionGlowImage;
-        private Color defaultBackgroundColor = new Color(0.16f, 0.17f, 0.21f, 0.82f);
+        private Color defaultBackgroundColor = SurvivalPioneerUiPalette.SlotBackground;
         private bool wasDragged;
         private bool isSelected;
         private bool suppressAmountOutline;
@@ -248,6 +248,9 @@ namespace Project.UI
 
             if (eventData.button == PointerEventData.InputButton.Left)
             {
+                if (UiInputGuard.BlocksGameplayEquipmentInput)
+                    return;
+
                 GameAudioManager.Instance?.PlayInventoryItemClick();
 
                 if (equipmentController != null &&
@@ -364,23 +367,41 @@ namespace Project.UI
             if (source == null || source.slot == null || source.slot.IsEmpty || source.inventory == null)
                 return;
 
-            InventorySlotUI target = FindSlotUnderPointer(eventData);
-            if (target == null || target == source)
-                return;
+            InventorySlotUI target = FindSlotUnderPointer(eventData, out bool hitAnyUi);
+            if (target != null && target != source)
+            {
+                if (!source.inventory.CanAcceptItemAt(target.slotIndex, source.slot.item))
+                    return;
 
-            if (!source.inventory.CanAcceptItemAt(target.slotIndex, source.slot.item))
+                source.inventory.MoveOrMergeSlots(source.slotIndex, target.slotIndex);
                 return;
+            }
 
-            source.inventory.MoveOrMergeSlots(source.slotIndex, target.slotIndex);
+            // Dragged the item off the inventory panel entirely (no UI at all under the pointer,
+            // meaning the drop landed on the game world view) — drop it, same as the right-click
+            // "Drop" context menu action, for any item.
+            if (!hitAnyUi)
+                source.DropIntoWorld();
         }
 
-        private static InventorySlotUI FindSlotUnderPointer(PointerEventData eventData)
+        private void DropIntoWorld()
         {
+            if (itemActions != null)
+                itemActions.TryDrop(slotIndex);
+            else
+                inventory?.DropItemAt(slotIndex);
+        }
+
+        private static InventorySlotUI FindSlotUnderPointer(PointerEventData eventData, out bool hitAnyUi)
+        {
+            hitAnyUi = false;
             if (EventSystem.current == null)
                 return null;
 
             List<RaycastResult> results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(eventData, results);
+            hitAnyUi = results.Count > 0;
+
             for (int i = 0; i < results.Count; i++)
             {
                 InventorySlotUI slot = results[i].gameObject.GetComponentInParent<InventorySlotUI>();

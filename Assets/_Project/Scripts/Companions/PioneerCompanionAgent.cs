@@ -1,10 +1,12 @@
+using Project.Companions.Abilities;
+using Project.Companions.Invector;
 using Project.Pioneers;
 using UnityEngine;
 
 namespace Project.Companions
 {
     /// <summary>
-    /// Runtime expedition companion hosting follow, animation, combat, sense, and task state.
+    /// Runtime expedition companion hosting follow, combat, sense, and task state.
     /// </summary>
     public class PioneerCompanionAgent : MonoBehaviour
     {
@@ -22,6 +24,14 @@ namespace Project.Companions
         public string PioneerRecordId => pioneerRecordId;
         public string DisplayName => displayName;
         public SkilledPioneerClass PioneerClass => pioneerClass;
+
+        /// <summary>
+        /// The live roster record this agent was spawned from — its data-asset buffs and spec stats
+        /// (radiationResistance/expeditionEfficiency/combatSynergy) are read from here at runtime by
+        /// CompanionExposureResponder and CompanionGroupBuffService so a companion's authored data
+        /// file actually affects hazard response and squad buffs, not just the roster UI.
+        /// </summary>
+        public SkilledPioneerRecord BoundRecord { get; private set; }
         public CompanionTaskQueue TaskQueue => taskQueue;
         public PioneerFollowMode FollowMode => followController != null
             ? followController.FollowMode
@@ -54,11 +64,17 @@ namespace Project.Companions
             if (senseController == null)
                 senseController = gameObject.AddComponent<CompanionSenseController>();
 
-            equipmentVisual = GetComponent<CompanionEquipmentVisual>();
-            if (equipmentVisual == null)
-                equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
+            if (GetComponent<CompanionInvectorBootstrap>() == null)
+            {
+                equipmentVisual = GetComponent<CompanionEquipmentVisual>();
+                if (equipmentVisual == null)
+                    equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
+            }
 
             taskQueue = new CompanionTaskQueue();
+
+            if (CompanionInvectorBootstrap.HasInvectorStack(this) && animationDriver != null)
+                animationDriver.enabled = false;
         }
 
         public void BindRecord(SkilledPioneerRecord record, Transform owner, int formationSlot)
@@ -67,19 +83,30 @@ namespace Project.Companions
                 return;
 
             CompanionModelSanitizer.StripPlayerComponents(gameObject);
-            EnsurePioneerAnimator();
+            if (!CompanionInvectorBootstrap.HasInvectorStack(this))
+            {
+                Debug.LogError(
+                    $"[{name}] PioneerCompanionAgent requires CompanionInvectorBootstrap. " +
+                    "Use PioneerCompanion_Invector prefab.");
+                return;
+            }
+
+            EnsureCompanionInvectorSetup(record);
 
             pioneerRecordId = record.id;
             displayName = record.displayName;
             pioneerClass = record.pioneerClass;
+            BoundRecord = record;
             gameObject.name = $"Companion_{displayName}";
 
             PioneerLoadoutDefaults.EnsureDefaults(record);
             PioneerBehaviorProfile profile = PioneerBehaviorDefaults.ResolveForRecord(record);
             profile.followMode = record.ResolvedFollowMode;
+            ApplyBuffMoveSpeed(profile, record);
 
             followController.Initialize(owner, taskQueue, formationSlot, record.id);
             followController.ApplyBehaviorProfile(profile, record.pioneerClass);
+            followController.SetBehaviorMode(CompanionFollowBehaviorMode.Follow);
             animationDriver.ApplyBehaviorProfile(profile);
             combatController.Initialize(record.id);
             combatController.ApplyBehaviorProfile(profile, record.pioneerClass);
@@ -96,6 +123,11 @@ namespace Project.Companions
             CompanionHealth health = GetComponent<CompanionHealth>();
             health?.Initialize(record.id);
 
+            CompanionInvectorIncomingDamageBridge incomingDamage =
+                GetComponent<CompanionInvectorIncomingDamageBridge>();
+            if (incomingDamage != null && health != null)
+                incomingDamage.BindHealth(health);
+
             CompanionInjuryHandler injuryHandler = GetComponent<CompanionInjuryHandler>();
             injuryHandler?.Bind(record.id);
         }
@@ -105,31 +137,59 @@ namespace Project.Companions
             if (record == null || record.id != pioneerRecordId)
                 return;
 
+            BoundRecord = record;
             ApplyLoadout(record);
+        }
+
+        /// <summary>
+        /// Data-asset buffs (CompanionBuffModifier.moveSpeedBonus) are a per-companion personal
+        /// perk — folded directly into this agent's own follow speed rather than the shared group
+        /// buff aggregate (which only covers hazard mitigation + combat synergy).
+        /// </summary>
+        private static void ApplyBuffMoveSpeed(PioneerBehaviorProfile profile, SkilledPioneerRecord record)
+        {
+            if (profile == null || record?.buffs == null)
+                return;
+
+            float bonus = 0f;
+            for (int i = 0; i < record.buffs.Length; i++)
+            {
+                if (record.buffs[i] != null)
+                    bonus += record.buffs[i].moveSpeedBonus;
+            }
+
+            if (bonus == 0f)
+                return;
+
+            profile.walkSpeed += bonus;
+            profile.runSpeed += bonus;
+            profile.catchUpSpeed += bonus;
         }
 
         private void ApplyLoadout(SkilledPioneerRecord record)
         {
-            bool drawn = CompanionCombatCoordinator.Instance != null && CompanionCombatCoordinator.Instance.IsCombatEngaged;
-            equipmentVisual.ApplyWeapon(record.weaponItemId, drawn);
+            CompanionInvectorLoadoutBridge invectorLoadout = GetComponent<CompanionInvectorLoadoutBridge>();
+            if (invectorLoadout != null)
+            {
+                invectorLoadout.ApplyLoadout(record, false);
+                combatController.RefreshLoadoutWeapon(record.weaponItemId);
+                return;
+            }
+
+            equipmentVisual?.ApplyWeapon(record.weaponItemId, false);
             combatController.RefreshLoadoutWeapon(record.weaponItemId);
         }
 
-        private void EnsurePioneerAnimator()
+        private void EnsureCompanionInvectorSetup(SkilledPioneerRecord record)
         {
-            Animator animator = GetComponentInChildren<Animator>(true);
-            if (animator == null)
-                return;
+            if (animationDriver != null)
+                animationDriver.enabled = false;
 
-            RuntimeAnimatorController pioneerController = PioneerCompanionDefaults.LoadPioneerAnimatorController();
-            if (pioneerController == null)
-                return;
+            CompanionInvectorBootstrap bootstrap = GetComponent<CompanionInvectorBootstrap>();
+            bootstrap?.EnsureInvectorPhysicsReady();
 
-            if (animator.runtimeAnimatorController != pioneerController)
-            {
-                animator.runtimeAnimatorController = pioneerController;
-                animator.applyRootMotion = false;
-            }
+            CompanionAbilityController abilityController = GetComponent<CompanionAbilityController>();
+            abilityController?.Bind(record);
         }
 
         public void SetCommand(CompanionCommand command)
@@ -140,7 +200,15 @@ namespace Project.Companions
         public void SetFollowMode(PioneerFollowMode mode)
         {
             followController?.SetFollowMode(mode);
+            followController?.SetBehaviorMode(CompanionFollowBehaviorMode.Follow);
             taskQueue?.SetFollow();
+        }
+
+        public void SetBehaviorMode(CompanionFollowBehaviorMode mode)
+        {
+            followController?.SetBehaviorMode(mode);
+            if (mode == CompanionFollowBehaviorMode.Follow)
+                taskQueue?.SetFollow();
         }
 
         public void SetHold(Vector3 worldPosition, float facingYaw)

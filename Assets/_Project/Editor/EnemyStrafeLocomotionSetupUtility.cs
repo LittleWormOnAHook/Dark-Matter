@@ -9,7 +9,6 @@ namespace Project.EditorTools.Combat
     /// <summary>
     /// Adds a directional Locomotion blend tree to enemy animator controllers using Mixamo strafe clips.
     /// </summary>
-    [InitializeOnLoad]
     public static class EnemyStrafeLocomotionSetupUtility
     {
         private const string LocomotionStateName = "Locomotion";
@@ -34,11 +33,6 @@ namespace Project.EditorTools.Combat
             (new Vector2(0.5f, 1f), $"{StrafeRoot}/Run/Run Forward.fbx"),
             (new Vector2(-0.5f, 1f), $"{StrafeRoot}/Run/Run Left.fbx")
         };
-
-        static EnemyStrafeLocomotionSetupUtility()
-        {
-            EditorApplication.delayCall += TryApplyEnemyStrafeLocomotion;
-        }
 
         [MenuItem(SurvivalPioneerEditorMenus.CombatAnimations + "Setup Enemy Strafe Locomotion", false, 8)]
         public static void SetupEnemyStrafeLocomotion()

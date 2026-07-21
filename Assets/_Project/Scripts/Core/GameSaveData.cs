@@ -10,17 +10,23 @@ namespace Project.Core
     [Serializable]
     public class GameSaveData
     {
-        public int version = 14;
+        public int version = 17;
         public int slotIndex;
         public long savedAtUtcTicks;
         public float health;
         public float energy;
         public float stamina;
         public float oxygen;
+        public float thermalStress;
+        public float radiation;
+        public float sulfur;
+        public float volcano;
         public float hunger;
         public float thirst;
+        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piBalance;
         public float aetherCredits;
+        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piWalletBalance;
         public bool starterPioneerSelected;
         public int workerCount;
@@ -55,6 +61,36 @@ namespace Project.Core
         public string toolbarPetId;
         public AchievementProgress[] achievementProgress;
         public PetTamingProgressSaveEntry[] petTamingProgress;
+        public VehicleSaveEntry[] vehicles;
+        public PowerGeneratorSaveEntry[] powerGenerators;
+    }
+
+    /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it
+    /// round-trips independently of the vehicle/pioneer save sections.</summary>
+    [Serializable]
+    public class PowerGeneratorSaveEntry
+    {
+        public string buildingId;
+        public float currentFuel;
+    }
+
+    /// <summary>
+    /// Per-hovercraft persistence, keyed by the GameObject name (e.g. "Hovercraft_Pioneer") so a scene
+    /// with more than one vehicle still round-trips correctly. Without this, a hovercraft's position,
+    /// remaining fuel, and shield/health reset to defaults every time the game reloads.
+    /// </summary>
+    [Serializable]
+    public class VehicleSaveEntry
+    {
+        public string vehicleId;
+        public float posX;
+        public float posY;
+        public float posZ;
+        public float rotY;
+        public float currentFuel;
+        public float currentShield;
+        public float currentHealth;
+        public bool isDestroyed;
     }
 
     [Serializable]
@@ -90,7 +126,6 @@ namespace Project.Core
         public long SavedAtUtcTicks;
         public float Health;
         public float AetherCredits;
-        public float PiBalance;
         public int PlayerLevel;
 
         public string GetSummaryLine()
@@ -99,9 +134,8 @@ namespace Project.Core
                 return "Empty";
 
             DateTime savedAt = new DateTime(SavedAtUtcTicks, DateTimeKind.Utc).ToLocalTime();
-            float credits = AetherCredits > 0f ? AetherCredits : PiBalance;
             int level = PlayerLevel > 0 ? PlayerLevel : 1;
-            return $"Lv {level} | AC: {Mathf.RoundToInt(credits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
+            return $"Lv {level} | AC: {Mathf.RoundToInt(AetherCredits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
         }
     }
 }

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a8c2e1b9d0437fa6e5d834c12b5678, type: 3}
+  m_Name: Plasma_Ammo
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeDefinition
+  recipeId: Plasma_Ammo
+  displayName: Plasma T
+  description: Plasma T ammo, standard Plasma ammo used by the UEA (United Earth
+    Alliance)
+  icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
+  stationType: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: c4d5e6f708192a3b4c5d6e7f8091a2b3, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+    amount: 10
+  outputItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}
+  outputAmount: 2
+  requiredPlayerLevel: 1
+  recipeTier: 1

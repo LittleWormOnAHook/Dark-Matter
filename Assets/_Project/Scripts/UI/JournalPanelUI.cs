@@ -22,6 +22,9 @@ namespace Project.UI
     private TextMeshProUGUI questDetailTitle;
     private TextMeshProUGUI questDetailBody;
     private Transform objectiveListParent;
+    private Button abandonQuestButton;
+    private TextMeshProUGUI abandonQuestButtonLabel;
+    private bool abandonConfirmPending;
 
     private string selectedQuestId;
     private bool uiBuilt;
@@ -29,6 +32,10 @@ namespace Project.UI
 
     private InventoryUI inventoryUi;
     private PioneerRosterPanelUI pioneerRosterPanelUi;
+    private CharacterPanelUI characterPanelUi;
+    private SkillsPanelUI skillsPanelUi;
+    private EchoesPanelUI echoesPanelUi;
+    private AchievementsPanelUI achievementsPanelUi;
     private CraftingUI craftingUi;
     private MapUI mapUi;
     private PetUI petUi;
@@ -46,6 +53,18 @@ namespace Project.UI
       pioneerRosterPanelUi = GetComponent<PioneerRosterPanelUI>();
       if (pioneerRosterPanelUi == null)
         pioneerRosterPanelUi = gameObject.AddComponent<PioneerRosterPanelUI>();
+      characterPanelUi = GetComponent<CharacterPanelUI>();
+      if (characterPanelUi == null)
+        characterPanelUi = gameObject.AddComponent<CharacterPanelUI>();
+      skillsPanelUi = GetComponent<SkillsPanelUI>();
+      if (skillsPanelUi == null)
+        skillsPanelUi = gameObject.AddComponent<SkillsPanelUI>();
+      echoesPanelUi = GetComponent<EchoesPanelUI>();
+      if (echoesPanelUi == null)
+        echoesPanelUi = gameObject.AddComponent<EchoesPanelUI>();
+      achievementsPanelUi = GetComponent<AchievementsPanelUI>();
+      if (achievementsPanelUi == null)
+        achievementsPanelUi = gameObject.AddComponent<AchievementsPanelUI>();
       craftingUi = FindAnyObjectByType<CraftingUI>();
       mapUi = FindAnyObjectByType<MapUI>();
       petUi = FindAnyObjectByType<PetUI>();
@@ -143,9 +162,6 @@ namespace Project.UI
       if (!GameSession.HasStarted)
         return false;
 
-      if (windowId == JournalWindowId.Map && !GameSettings.MapSystemEnabled)
-        return false;
-
       if (Time.frameCount == lastToggleFrame)
         return false;
 
@@ -191,11 +207,15 @@ namespace Project.UI
 
     public void OpenToPioneersTab() => TryToggleTab(JournalWindowId.Pioneers);
 
+    public void OpenToCharacterTab() => TryToggleTab(JournalWindowId.Character);
+
     public void OpenToRecipesTab() => TryToggleTab(JournalWindowId.Recipes);
 
     public void OpenToSkillsTab() => TryToggleTab(JournalWindowId.Skills);
 
     public void OpenToEchoesTab() => TryToggleTab(JournalWindowId.Echoes);
+
+    public void OpenToAchievementsTab() => TryToggleTab(JournalWindowId.Achievements);
 
     public void OpenToCraftTab(CraftingStationType? station)
     {
@@ -245,6 +265,10 @@ namespace Project.UI
       // Inventory is journal-only; InventoryFullscreenWindow OnShow/OnHide owns embed lifecycle.
       MapUI.CloseAnyOpenMap();
       PetUI.CloseAnyOpenPet();
+      PioneerRosterContextMenu.HideAny();
+      PetContextMenu.HideAny();
+      PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
     }
 
     public void EnsureUiBuiltForLayoutEditor()
@@ -387,7 +411,9 @@ namespace Project.UI
 
       RegisterWindow<PetFullscreenWindow>(JournalWindowId.Pet, "Pet", pet =>
       {
-        pet.Configure(petUi ?? FindAnyObjectByType<PetUI>());
+        if (petUi == null)
+          petUi = FindAnyObjectByType<PetUI>() ?? gameObject.AddComponent<PetUI>();
+        pet.Configure(petUi);
       });
 
       RegisterWindow<CraftFullscreenWindow>(JournalWindowId.Craft, "Craft", craft =>
@@ -395,31 +421,32 @@ namespace Project.UI
         craft.Configure(craftingUi ?? FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>());
       });
 
-      RegisterWindow<PioneersFullscreenWindow>(JournalWindowId.Pioneers, "Pioneers", pioneers =>
+      RegisterWindow<PioneersFullscreenWindow>(JournalWindowId.Pioneers, "Companions", pioneers =>
       {
         pioneers.Configure(pioneerRosterPanelUi ?? GetComponent<PioneerRosterPanelUI>() ?? gameObject.AddComponent<PioneerRosterPanelUI>());
       });
 
-      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Recipes, "Recipes", stub => stub.Configure(
-        "Recipe Library",
-        "Browse learned recipes and scroll slots. Production runs at in-world crafting stations and future building control panels.",
-        "Collect and learn recipe scrolls",
-        "View ingredients and station requirements",
-        "Plan crafts before visiting a station"));
+      RegisterWindow<CharacterFullscreenWindow>(JournalWindowId.Character, "Character", character =>
+      {
+        character.Configure(characterPanelUi ?? GetComponent<CharacterPanelUI>() ?? gameObject.AddComponent<CharacterPanelUI>());
+      });
 
-      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Skills, "Skills", stub => stub.Configure(
-        "Pioneer Skill Trees",
-        "Specialize your base pioneers and expedition trio with class-focused skill branches.",
-        "Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout paths",
-        "Hybrid pioneer builds",
-        "Resonance-linked skill unlocks"));
+      RegisterWindow<RecipeLibraryFullscreenWindow>(JournalWindowId.Recipes, "Recipes", recipes => { });
 
-      RegisterWindow<StubFullscreenWindow>(JournalWindowId.Echoes, "Echoes", stub => stub.Configure(
-        "Neural Echo Memories",
-        "Rescued Neural Echoes become pioneers whose memories fuel Resonance Events across Io.",
-        "Echo rescue chronicle",
-        "Aether-9 memory core archive",
-        "Marketplace listing preparation"));
+      RegisterWindow<SkillsFullscreenWindow>(JournalWindowId.Skills, "Skills", skills =>
+      {
+        skills.Configure(skillsPanelUi ?? GetComponent<SkillsPanelUI>() ?? gameObject.AddComponent<SkillsPanelUI>());
+      });
+
+      RegisterWindow<EchoesFullscreenWindow>(JournalWindowId.Echoes, "Echoes", echoes =>
+      {
+        echoes.Configure(echoesPanelUi ?? GetComponent<EchoesPanelUI>() ?? gameObject.AddComponent<EchoesPanelUI>());
+      });
+
+      RegisterWindow<AchievementsFullscreenWindow>(JournalWindowId.Achievements, "Achievements", achievements =>
+      {
+        achievements.Configure(achievementsPanelUi ?? GetComponent<AchievementsPanelUI>() ?? gameObject.AddComponent<AchievementsPanelUI>());
+      });
     }
 
     private void RegisterWindow<T>(JournalWindowId id, string title, System.Action<T> configure)
@@ -431,7 +458,7 @@ namespace Project.UI
 
       T window = host.AddComponent<T>();
       configure?.Invoke(window);
-      window.Initialize(navigator, id, title, new Color(0.05f, 0.06f, 0.09f, 0.98f));
+      window.Initialize(navigator, id, title, SurvivalPioneerUiPalette.PanelBackground);
       navigator.RegisterWindow(window);
     }
 
@@ -492,7 +519,7 @@ namespace Project.UI
         }
 
         if (tabRail.TryGetComponent(out Image railImage) && railImage.color.a < 0.05f)
-          railImage.color = new Color(0.04f, 0.05f, 0.08f, 0.96f);
+          railImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
       }
 
       if (overlayRoot != null && overlayRoot.TryGetComponent(out Image overlayImage))
@@ -522,6 +549,10 @@ namespace Project.UI
         ItemHoverTooltip.HideAny();
         RecipeHoverTooltip.HideAny();
         InventoryContextMenu.Instance?.Hide();
+        PioneerRosterContextMenu.HideAny();
+      PetContextMenu.HideAny();
+      PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
       }
       else
       {
@@ -531,6 +562,10 @@ namespace Project.UI
           windowHostRect.gameObject.SetActive(false);
 
         GameplayHudVisibility.RefreshGameplayHud();
+        PioneerRosterContextMenu.HideAny();
+      PetContextMenu.HideAny();
+      PetHoverTooltip.HideAny();
+      PioneerHoverTooltip.HideAny();
         if (craftingManager == null)
           craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
         if (craftingManager != null)
@@ -561,9 +596,6 @@ namespace Project.UI
 
     private void HandleTabSelected(JournalWindowId windowId)
     {
-      if (windowId == JournalWindowId.Map && !GameSettings.MapSystemEnabled)
-        return;
-
       if (!EnsureNavigatorReady())
         return;
 
@@ -625,7 +657,8 @@ namespace Project.UI
       scrollLayout.flexibleHeight = 1f;
 
       Image scrollBg = scrollObj.AddComponent<Image>();
-      scrollBg.color = new Color(0.08f, 0.09f, 0.12f, 0.92f);
+      MenuUiBuilder.ApplyUiSprite(scrollBg);
+      scrollBg.color = SurvivalPioneerUiPalette.ScrollBackground;
       scrollBg.raycastTarget = true;
 
       ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
@@ -684,7 +717,7 @@ namespace Project.UI
 
       questDetailBody = CreateText(parent, "", theme, Sc(16f), TextAlignmentOptions.TopLeft);
       questDetailBody.textWrappingMode = TextWrappingModes.Normal;
-      questDetailBody.color = theme != null ? theme.secondaryTextColor : new Color(0.82f, 0.88f, 0.94f, 0.95f);
+      questDetailBody.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
 
       GameObject objectiveHost = new GameObject("ObjectiveList", typeof(RectTransform));
       objectiveHost.transform.SetParent(parent, false);
@@ -698,6 +731,38 @@ namespace Project.UI
       objectiveHostLayout.flexibleHeight = 1f;
       objectiveHostLayout.minHeight = Sc(120f);
       objectiveListParent = objectiveHost.transform;
+
+      GameObject abandonButtonObject = new GameObject("AbandonQuestButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+      abandonButtonObject.transform.SetParent(parent, false);
+      LayoutElement abandonLayout = abandonButtonObject.GetComponent<LayoutElement>();
+      abandonLayout.minHeight = Sc(40f);
+      abandonLayout.preferredHeight = Sc(40f);
+
+      Image abandonImage = abandonButtonObject.GetComponent<Image>();
+      MenuUiBuilder.ApplyUiSprite(abandonImage);
+      abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+
+      abandonQuestButton = abandonButtonObject.GetComponent<Button>();
+      abandonQuestButton.targetGraphic = abandonImage;
+      UiSoundHelper.BindButton(abandonQuestButton);
+      abandonQuestButton.onClick.AddListener(HandleAbandonQuestClicked);
+
+      GameObject abandonLabelObject = new GameObject("Label", typeof(RectTransform));
+      abandonLabelObject.transform.SetParent(abandonButtonObject.transform, false);
+      abandonQuestButtonLabel = abandonLabelObject.AddComponent<TextMeshProUGUI>();
+      ApplyFont(abandonQuestButtonLabel, theme, semiBold: true);
+      abandonQuestButtonLabel.text = "Abandon Quest";
+      abandonQuestButtonLabel.fontSize = Sc(18f);
+      abandonQuestButtonLabel.alignment = TextAlignmentOptions.Center;
+      abandonQuestButtonLabel.color = SurvivalPioneerUiPalette.BodyText;
+      abandonQuestButtonLabel.raycastTarget = false;
+      RectTransform abandonLabelRect = abandonLabelObject.GetComponent<RectTransform>();
+      abandonLabelRect.anchorMin = Vector2.zero;
+      abandonLabelRect.anchorMax = Vector2.one;
+      abandonLabelRect.offsetMin = Vector2.zero;
+      abandonLabelRect.offsetMax = Vector2.zero;
+
+      abandonQuestButton.gameObject.SetActive(false);
     }
 
     public void RefreshQuestList()
@@ -805,9 +870,10 @@ namespace Project.UI
       {
         detailTitle.text = "No active quests";
         if (detailBody != null)
-          detailBody.text = "Accept and complete quests with NPCs.";
+          detailBody.text = "Accept and complete quests with companions.";
         if (includeObjectives)
           ClearObjectiveRows();
+        UpdateAbandonQuestButton(null);
         return;
       }
 
@@ -823,6 +889,47 @@ namespace Project.UI
 
       if (includeObjectives)
         RefreshObjectiveRows(definition, progress);
+
+      UpdateAbandonQuestButton(progress);
+    }
+
+    private void UpdateAbandonQuestButton(QuestProgress progress)
+    {
+      if (abandonQuestButton == null)
+        return;
+
+      bool canAbandon = progress != null && progress.status == QuestStatus.Active;
+      abandonQuestButton.gameObject.SetActive(canAbandon);
+      abandonQuestButton.interactable = canAbandon;
+      abandonConfirmPending = false;
+      if (abandonQuestButtonLabel != null)
+        abandonQuestButtonLabel.text = "Abandon Quest";
+    }
+
+    private void HandleAbandonQuestClicked()
+    {
+      if (questManager == null || string.IsNullOrEmpty(selectedQuestId))
+        return;
+
+      QuestProgress progress = questManager.GetProgress(selectedQuestId);
+      if (progress == null || progress.status != QuestStatus.Active)
+        return;
+
+      if (!abandonConfirmPending)
+      {
+        abandonConfirmPending = true;
+        if (abandonQuestButtonLabel != null)
+          abandonQuestButtonLabel.text = "Confirm Abandon?";
+        return;
+      }
+
+      if (!questManager.AbandonQuest(selectedQuestId))
+        return;
+
+      abandonConfirmPending = false;
+      selectedQuestId = null;
+      RefreshQuestList();
+      FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
     }
 
     private void HandleQuestUpdated(QuestProgress progress)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Project.Companions;
 using Project.Interaction;
 using Project.Inventory;
 using Project.UI;
@@ -19,14 +20,18 @@ namespace Project.Pet
         }
 
         [Header("Profile")]
+        [SerializeField] private PetDefinition definition;
+        [SerializeField] private string petId = "fox_cub";
         [SerializeField] private string displayName = "Fox Cub";
         [SerializeField] private string description = "A loyal companion that gathers nearby items.";
+        [SerializeField] private Sprite inventoryIcon;
 
         [Header("Owner")]
         [SerializeField] private Transform owner;
         [SerializeField] private Vector3 followOffset = new Vector3(-1.2f, 0f, -1.5f);
 
         [Header("Behavior")]
+        [SerializeField] private bool isOwned;
         [SerializeField] private bool companionActive = true;
         [SerializeField] private bool followEnabled = true;
         [SerializeField] private bool wanderEnabled = true;
@@ -49,6 +54,13 @@ namespace Project.Pet
         [SerializeField] private float idleBeforeWanderMax = 10f;
         [SerializeField] private float wanderChance = 0.35f;
 
+        [Header("Wild Wander")]
+        [SerializeField] private float wildHomeRadius = 3.5f;
+        [SerializeField] private float wildWanderDurationMin = 1.4f;
+        [SerializeField] private float wildWanderDurationMax = 3.2f;
+        [SerializeField] private float wildPauseMin = 2.2f;
+        [SerializeField] private float wildPauseMax = 5.5f;
+
         [Header("Fetch")]
         [SerializeField] private float fetchSearchRadius = 18f;
         [SerializeField] private float fetchPickupDistance = 1.25f;
@@ -63,6 +75,7 @@ namespace Project.Pet
         private PetAnimationController _animationController;
 
         private Vector3 _wanderTarget;
+        private Vector3 _wildHomePosition;
         private float _wanderTimer;
         private float _idleTimer;
         private float _nextWanderRollTime;
@@ -71,6 +84,10 @@ namespace Project.Pet
         private float _currentSpeed;
 
         public float CurrentSpeed => _currentSpeed;
+        public string PetId => string.IsNullOrWhiteSpace(petId) ? name : petId;
+        public PetDefinition Definition => definition;
+        public Sprite InventoryIcon => inventoryIcon;
+        public bool IsOwned => isOwned;
         public string DefaultDisplayName => displayName;
         public string Description => description;
 
@@ -155,7 +172,10 @@ namespace Project.Pet
 
         private void Awake()
         {
-            if (owner == null)
+            ApplyDefinition();
+            EnsureAdoptableComponent();
+
+            if (owner == null && isOwned)
             {
                 GameObject player = GameObject.FindWithTag("Player");
                 if (player != null)
@@ -163,15 +183,101 @@ namespace Project.Pet
             }
 
             _animationController = GetComponent<PetAnimationController>();
+            ConfigureNonBlockingColliders();
+        }
+
+        private void ConfigureNonBlockingColliders()
+        {
+            FollowerCollisionUtility.RegisterHierarchyColliders(gameObject);
+
+            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                if (bodies[i] != null)
+                    Destroy(bodies[i]);
+            }
+        }
+
+        private void EnsureAdoptableComponent()
+        {
+            if (isOwned || GetComponent<PetWorldAdoptable>() != null)
+                return;
+
+            gameObject.AddComponent<PetWorldAdoptable>();
+        }
+
+        public void ApplyDefinition(PetDefinition source = null)
+        {
+            if (source != null)
+                definition = source;
+
+            if (definition == null && !string.IsNullOrWhiteSpace(petId))
+                definition = PetCatalog.Resolve(petId);
+
+            if (definition == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(definition.petId))
+                petId = definition.petId;
+            if (!string.IsNullOrWhiteSpace(definition.displayName))
+                displayName = definition.displayName;
+            if (!string.IsNullOrWhiteSpace(definition.description))
+                description = definition.description;
+            if (definition.inventoryIcon != null)
+                inventoryIcon = definition.inventoryIcon;
+        }
+
+        public void BindOwner(Transform playerTransform)
+        {
+            owner = playerTransform;
+            _ownerInventory = playerTransform != null
+                ? playerTransform.GetComponent<InventorySystem>()
+                : null;
+        }
+
+        public void SummonToOwner()
+        {
+            if (owner == null)
+                return;
+
+            transform.position = GetFollowPosition();
+            SnapToGround();
+            _state = followEnabled ? PetState.Following : PetState.Idle;
+            _currentSpeed = 0f;
+            _fetchTarget = null;
+        }
+
+        public void SetOwned(bool owned)
+        {
+            isOwned = owned;
+            if (owned)
+            {
+                companionActive = false;
+            }
+            else
+            {
+                companionActive = true;
+                followEnabled = false;
+            }
+
+            ApplyCompanionVisibility();
+            PetManager.Instance?.NotifyPetChanged();
+        }
+
+        public void RefreshCompanionVisibility()
+        {
+            ApplyCompanionVisibility();
         }
 
         private void OnEnable()
         {
             PetManager.Instance?.Register(this);
+            ApplyCompanionVisibility();
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
+            FollowerCollisionUtility.UnregisterHierarchyColliders(gameObject);
             PetManager.Instance?.Unregister(this);
         }
 
@@ -183,6 +289,18 @@ namespace Project.Pet
             _uiManager = FindAnyObjectByType<UIManager>();
             _nextWanderRollTime = Time.time + Random.Range(idleBeforeWanderMin, idleBeforeWanderMax);
             _nextFetchCheckTime = Time.time + fetchCheckInterval * 0.5f;
+
+            if (!isOwned)
+            {
+                _wildHomePosition = transform.position;
+                owner = null;
+                followEnabled = false;
+                fetchEnabled = false;
+                companionActive = true;
+                _state = PetState.Idle;
+                _nextWanderRollTime = Time.time + Random.Range(wildPauseMin, wildPauseMax);
+            }
+
             ApplyCompanionVisibility();
             SnapToGround();
         }
@@ -200,6 +318,12 @@ namespace Project.Pet
             if (!companionActive)
             {
                 _currentSpeed = 0f;
+                return;
+            }
+
+            if (!isOwned)
+            {
+                UpdateWildBehavior();
                 return;
             }
 
@@ -240,8 +364,7 @@ namespace Project.Pet
             if (!companionActive || owner == null)
                 return;
 
-            transform.position = GetFollowPosition();
-            SnapToGround();
+            SummonToOwner();
             SetState(followEnabled ? PetState.Following : PetState.Idle);
         }
 
@@ -267,7 +390,7 @@ namespace Project.Pet
 
         private void UpdateWandering()
         {
-            if (!wanderEnabled)
+            if (!wanderEnabled && isOwned)
             {
                 SetState(PetState.Following);
                 return;
@@ -277,7 +400,40 @@ namespace Project.Pet
             MoveTowards(_wanderTarget, walkSpeed * 0.75f);
 
             if (HorizontalDistance(transform.position, _wanderTarget) <= stopDistance + 0.2f || _wanderTimer <= 0f)
+            {
+                if (!isOwned)
+                {
+                    _currentSpeed = 0f;
+                    _state = PetState.Idle;
+                    _nextWanderRollTime = Time.time + Random.Range(wildPauseMin, wildPauseMax);
+                    return;
+                }
+
                 SetState(followEnabled ? PetState.Following : PetState.Idle);
+            }
+        }
+
+        private void UpdateWildBehavior()
+        {
+            if (Time.time < _nextWanderRollTime)
+            {
+                _currentSpeed = 0f;
+                return;
+            }
+
+            if (_state == PetState.Wandering)
+            {
+                UpdateWandering();
+                return;
+            }
+
+            _wanderTarget = _wildHomePosition + Random.insideUnitSphere * wildHomeRadius;
+            _wanderTarget.y = _wildHomePosition.y;
+            if (TrySampleGround(_wanderTarget, out float wanderGroundY))
+                _wanderTarget.y = wanderGroundY;
+
+            _wanderTimer = Random.Range(wildWanderDurationMin, wildWanderDurationMax);
+            _state = PetState.Wandering;
         }
 
         private void UpdateFetching()
@@ -323,7 +479,8 @@ namespace Project.Pet
             if (Random.value > wanderChance)
                 return;
 
-            _wanderTarget = owner.position + Random.insideUnitSphere * wanderRadius;
+            float companionWanderRadius = Mathf.Min(wanderRadius, 4f);
+            _wanderTarget = owner.position + Random.insideUnitSphere * companionWanderRadius;
             _wanderTarget.y = owner.position.y;
             if (TrySampleGround(_wanderTarget, out float wanderGroundY))
                 _wanderTarget.y = wanderGroundY;
@@ -454,8 +611,47 @@ namespace Project.Pet
         {
             groundY = worldPosition.y;
 
-            Vector3 origin = new Vector3(worldPosition.x, worldPosition.y + groundProbeHeight, worldPosition.z);
-            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, groundProbeDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            if (TryRaycastGround(worldPosition, out float rayGroundY))
+            {
+                groundY = rayGroundY;
+                return true;
+            }
+
+            if (TrySampleTerrain(worldPosition, out float terrainGroundY))
+            {
+                groundY = terrainGroundY;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TrySampleTerrain(Vector3 worldPosition, out float groundY)
+        {
+            groundY = worldPosition.y;
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain == null)
+                return false;
+
+            groundY = terrain.SampleHeight(worldPosition) + terrain.transform.position.y + groundOffset;
+            return true;
+        }
+
+        private bool TryRaycastGround(Vector3 worldPosition, out float groundY)
+        {
+            groundY = worldPosition.y;
+
+            float originY = worldPosition.y + groundProbeHeight;
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain != null)
+            {
+                float terrainY = terrain.SampleHeight(worldPosition) + terrain.transform.position.y;
+                originY = Mathf.Max(originY, terrainY + groundProbeHeight);
+            }
+
+            Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
+            float rayLength = (originY - worldPosition.y) + groundProbeDistance;
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             foreach (RaycastHit hit in hits)
@@ -486,11 +682,12 @@ namespace Project.Pet
             if (_animationController == null)
                 _animationController = GetComponent<PetAnimationController>();
 
+            bool visible = companionActive && gameObject.activeSelf;
             if (_animationController != null)
-                _animationController.enabled = companionActive;
+                _animationController.enabled = visible;
 
             foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
-                renderer.enabled = companionActive;
+                renderer.enabled = visible;
         }
 
         private void ResetMotion()

@@ -17,12 +17,9 @@ namespace Project.Companions
             if (companionRoot == null)
                 return;
 
-            Transform model = companionRoot.transform.Find("ProjectUnityCharacter");
-            if (model == null)
-                model = companionRoot.transform;
+            Transform model = companionRoot.transform;
 
             DestroyIfPresent<PlayerController>(model.gameObject);
-            DestroyIfPresent<PlayerAnimationController>(model.gameObject);
             DestroyIfPresent<Character>(model.gameObject);
             DestroyIfPresent<CharacterMovement>(model.gameObject);
             DestroyIfPresent<MeleeCombatController>(model.gameObject);

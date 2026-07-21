@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Core Survival Pioneer UI palette. Use these colors for panels, borders, buttons, and text.
+    /// Core Dark Matter Genesis UI palette. Use these colors for panels, borders, buttons, and text.
     /// </summary>
     public static class SurvivalPioneerUiPalette
     {

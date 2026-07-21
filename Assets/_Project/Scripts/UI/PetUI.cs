@@ -1,18 +1,21 @@
 using System.Collections.Generic;
+using Project.Pet;
+using Project.Player;
+using Project.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
-using Project.Pet;
-using Project.Player;
-using Project.Core;
 
 namespace Project.UI
 {
     public class PetUI : MonoBehaviour
     {
+        public const int PetInventorySlots = PetSlotUI.InventorySlotCount;
+
         private const float PanelScale = 1.5f;
         private const float EmbeddedPanelScale = 0.72f;
+        private const int GridColumns = 5;
 
         private static float S(float value, float scale) => value * scale;
         private static int Si(float value, float scale) => Mathf.RoundToInt(value * scale);
@@ -24,7 +27,7 @@ namespace Project.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private TMP_FontAsset panelFont;
 
-        private readonly List<PetEntryUI> _entries = new List<PetEntryUI>();
+        private readonly List<PetSlotUI> _slots = new List<PetSlotUI>();
         private bool _isBuilt;
 
         private Transform _petPanelOriginalParent;
@@ -119,6 +122,8 @@ namespace Project.UI
             if (petPanel == null || container == null)
                 return;
 
+            EnsureCanvasCamera(container);
+
             _petPanelOriginalParent = petPanel.transform.parent;
             petPanel.transform.SetParent(container, false);
             StretchToParent(petPanel.GetComponent<RectTransform>());
@@ -200,43 +205,61 @@ namespace Project.UI
             if (!_isBuilt || petListParent == null)
                 return;
 
-            foreach (PetEntryUI entry in _entries)
-            {
-                if (entry != null)
-                    Destroy(entry.gameObject);
-            }
-            _entries.Clear();
+            EnsureSlotGridBuilt();
 
             IReadOnlyList<PetController> pets = PetManager.Instance != null
-                ? PetManager.Instance.Pets
-                : FindObjectsByType<PetController>();
+                ? PetManager.Instance.GetOwnedPets()
+                : System.Array.Empty<PetController>();
 
-            foreach (PetController pet in pets)
+            for (int i = 0; i < _slots.Count; i++)
             {
-                GameObject rowObj = new GameObject($"PetEntry_{pet.DisplayName}", typeof(RectTransform));
-                rowObj.transform.SetParent(petListParent, false);
-
-                PetEntryUI entry = rowObj.AddComponent<PetEntryUI>();
-                entry.SetScale(CurrentScale);
-                entry.SetCompact(_petPanelEmbedded);
-                entry.SetFont(panelFont);
-                entry.Build();
-                entry.Bind(pet);
-                _entries.Add(entry);
+                PetController pet = i < pets.Count ? pets[i] : null;
+                _slots[i].Bind(pet);
             }
 
             if (summaryText != null)
             {
-                int activeCount = 0;
-                foreach (PetController pet in pets)
-                {
-                    if (pet.CompanionActive)
-                        activeCount++;
-                }
-
+                PetController toolbarPet = PetManager.Instance != null ? PetManager.Instance.ToolbarPet : null;
+                string activeName = toolbarPet != null ? toolbarPet.DisplayName : "none";
                 summaryText.text = pets.Count == 0
-                    ? "No pets found. Add a companion to the scene to manage it here."
-                    : $"{activeCount} active / {pets.Count} total companions";
+                    ? "No pets befriended yet. Press E to Adopt near a wild pet."
+                    : $"{pets.Count}/{PetInventorySlots} owned  ·  Active: {activeName}  ·  Right-click slot to assign";
+            }
+        }
+
+        private void EnsureSlotGridBuilt()
+        {
+            if (_slots.Count == PetInventorySlots)
+                return;
+
+            foreach (PetSlotUI slot in _slots)
+            {
+                if (slot != null)
+                    Destroy(slot.gameObject);
+            }
+            _slots.Clear();
+
+            float slotScale = _petPanelEmbedded ? EmbeddedPanelScale : PanelScale;
+            for (int i = 0; i < PetInventorySlots; i++)
+            {
+                GameObject slotObj = new GameObject($"PetSlot_{i + 1}", typeof(RectTransform));
+                slotObj.transform.SetParent(petListParent, false);
+
+                PetSlotUI slot = slotObj.AddComponent<PetSlotUI>();
+                slot.Build(slotScale);
+                slot.Bind(null);
+                _slots.Add(slot);
+            }
+        }
+
+        private static void EnsureCanvasCamera(Transform container)
+        {
+            Canvas canvas = container.GetComponentInParent<Canvas>();
+            if (canvas != null
+                && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                && canvas.worldCamera == null)
+            {
+                canvas.worldCamera = Camera.main;
             }
         }
 
@@ -285,7 +308,7 @@ namespace Project.UI
             _panelLayout.childForceExpandHeight = false;
 
             CreateHeaderRow();
-            CreateScrollArea();
+            CreateSlotGrid();
             CreateFooterRow();
             petPanel.SetActive(false);
         }
@@ -311,7 +334,7 @@ namespace Project.UI
             titleObj.transform.SetParent(_headerRow.transform, false);
             TextMeshProUGUI title = titleObj.AddComponent<TextMeshProUGUI>();
             ApplyFont(title);
-            title.text = "Pet Management";
+            title.text = "Pet Journal";
             title.fontSize = S(34f, PanelScale);
             title.fontStyle = FontStyles.Bold;
             title.color = Color.white;
@@ -328,58 +351,28 @@ namespace Project.UI
             closeLayout.preferredHeight = S(42f, PanelScale);
         }
 
-        private void CreateScrollArea()
+        private void CreateSlotGrid()
         {
-            GameObject scrollObj = new GameObject("PetScrollView", typeof(RectTransform));
-            scrollObj.transform.SetParent(petPanel.transform, false);
+            GameObject gridObj = new GameObject("PetSlotGrid", typeof(RectTransform));
+            gridObj.transform.SetParent(petPanel.transform, false);
 
-            _scrollLayoutElement = scrollObj.AddComponent<LayoutElement>();
+            _scrollLayoutElement = gridObj.AddComponent<LayoutElement>();
             _scrollLayoutElement.flexibleHeight = 1;
-            _scrollLayoutElement.minHeight = S(420f, PanelScale);
+            _scrollLayoutElement.minHeight = S(220f, PanelScale);
 
-            Image scrollBg = scrollObj.AddComponent<Image>();
-            scrollBg.color = new Color(0.08f, 0.08f, 0.1f, 0.95f);
+            Image gridBg = gridObj.AddComponent<Image>();
+            gridBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PanelBackground, 0.55f);
 
-            ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
+            GridLayoutGroup grid = gridObj.AddComponent<GridLayoutGroup>();
+            float slotSize = S(72f, PanelScale);
+            grid.cellSize = new Vector2(slotSize, slotSize);
+            grid.spacing = new Vector2(S(10f, PanelScale), S(10f, PanelScale));
+            grid.padding = new RectOffset(Si(12f, PanelScale), Si(12f, PanelScale), Si(12f, PanelScale), Si(12f, PanelScale));
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = GridColumns;
+            grid.childAlignment = TextAnchor.UpperCenter;
 
-            GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
-            viewport.transform.SetParent(scrollObj.transform, false);
-            RectTransform viewportRt = viewport.GetComponent<RectTransform>();
-            viewportRt.anchorMin = Vector2.zero;
-            viewportRt.anchorMax = Vector2.one;
-            viewportRt.offsetMin = new Vector2(S(8f, PanelScale), S(8f, PanelScale));
-            viewportRt.offsetMax = new Vector2(S(-8f, PanelScale), S(-8f, PanelScale));
-            viewport.AddComponent<RectMask2D>();
-            Image viewportImage = viewport.AddComponent<Image>();
-            viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
-
-            GameObject content = new GameObject("Content", typeof(RectTransform));
-            content.transform.SetParent(viewport.transform, false);
-            RectTransform contentRt = content.GetComponent<RectTransform>();
-            contentRt.anchorMin = new Vector2(0f, 1f);
-            contentRt.anchorMax = new Vector2(1f, 1f);
-            contentRt.pivot = new Vector2(0.5f, 1f);
-            contentRt.anchoredPosition = Vector2.zero;
-            contentRt.sizeDelta = new Vector2(0f, 0f);
-
-            VerticalLayoutGroup contentLayout = content.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = Si(10f, PanelScale);
-            contentLayout.padding = new RectOffset(Si(8f, PanelScale), Si(8f, PanelScale), Si(8f, PanelScale), Si(8f, PanelScale));
-            contentLayout.childAlignment = TextAnchor.UpperCenter;
-            contentLayout.childControlWidth = true;
-            contentLayout.childControlHeight = true;
-            contentLayout.childForceExpandWidth = true;
-            contentLayout.childForceExpandHeight = false;
-
-            ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            scroll.viewport = viewportRt;
-            scroll.content = contentRt;
-            petListParent = content.transform;
+            petListParent = gridObj.transform;
         }
 
         private void CreateFooterRow()
@@ -389,7 +382,7 @@ namespace Project.UI
 
             summaryText = footer.AddComponent<TextMeshProUGUI>();
             ApplyFont(summaryText);
-            summaryText.text = "Manage companion behavior, names, and activity.";
+            summaryText.text = "Right-click a pet slot to assign your active companion.";
             summaryText.fontSize = S(16f, PanelScale);
             summaryText.color = new Color(0.85f, 0.85f, 0.85f, 1f);
             summaryText.alignment = TextAlignmentOptions.MidlineLeft;

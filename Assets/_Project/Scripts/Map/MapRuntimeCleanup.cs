@@ -12,6 +12,17 @@ namespace Project.Map
             MapUiSprites.ResetCache();
             OpticsUiSprites.ResetCache();
             WorldMapProvider.ResetStaticState();
+            OpticsOverlayUI.ResetRuntimeState();
+            PetTamingProgressUI.ResetRuntimeState();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void CleanupStaleRuntimeCanvases()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            OpticsOverlayUI.CleanupStaleRuntimeObjects();
         }
     }
 }

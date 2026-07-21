@@ -15,9 +15,12 @@ MonoBehaviour:
   itemName: Pimican
   icon: {fileID: 21300000, guid: 46c9e222084fcb8479b61a014526b5c0, type: 3}
   worldPrefab: {fileID: 6593471414594757965, guid: a28746ace5aa6724db9ad0406fc5b64f, type: 3}
-  maxStack: 64
+  maxStack: 100
   itemType: 0
   weaponGrip: 0
+  gkcWeaponKind: -1
+  gkcRightArmId: -1
+  gkcLeftArmId: -1
   heldPrefab: {fileID: 0}
   equipSocketName: RightHand
   heldLocalPosition: {x: 0, y: 0, z: 0}
@@ -32,13 +35,40 @@ MonoBehaviour:
   useSheathedLocalRotation: 0
   sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
   meleeDamage: 10
   meleeDamageRandomRange: 3
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
+  attackAnimationSpeed: 0
   gatherPower: 1
   attackTrigger: Attack
+  rangedDamage: 14
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 85
+  projectileSpreadDegrees: 1.5
+  fireRate: 4
+  magazineSize: 30
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  componentCategory: 0
   toolType: 0
   toolRange: 8
   scanRange: 24
@@ -51,4 +81,9 @@ MonoBehaviour:
   oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
   tooltipDescription: 

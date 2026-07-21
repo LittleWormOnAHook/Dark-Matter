@@ -5,7 +5,7 @@ namespace Project.UI
 {
     public static class QuestUiPalette
     {
-        public static readonly Color InProgressText = SurvivalPioneerUiPalette.RichFuchsia;
+        public static readonly Color InProgressText = SurvivalPioneerUiPalette.Gold;
         public static readonly Color InProgressBackground = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.92f);
 
         public static readonly Color ReadyToTurnInText = SurvivalPioneerUiPalette.Gold;
@@ -67,7 +67,7 @@ namespace Project.UI
             if (complete)
                 return TurnedInText;
 
-            return InProgressText;
+            return SurvivalPioneerUiPalette.BodyText;
         }
 
         public static string GetStatusLabel(QuestStatus status)

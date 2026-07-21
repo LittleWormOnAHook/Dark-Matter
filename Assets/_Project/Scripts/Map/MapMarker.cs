@@ -15,13 +15,17 @@ namespace Project.Map
         [SerializeField] private Sprite iconSprite;
         [SerializeField] private bool showOnMinimap = true;
         [SerializeField] private bool showOnFullMap = true;
+        [SerializeField] private bool keepRegisteredWhenDisabled;
+
+        private Vector3 cachedWorldPosition;
 
         public string Label => label;
         public Color Color => color;
         public Sprite IconSprite => iconSprite;
         public bool ShowOnMinimap => showOnMinimap;
         public bool ShowOnFullMap => showOnFullMap;
-        public Vector3 WorldPosition => transform.position;
+        public Vector3 WorldPosition =>
+            isActiveAndEnabled ? transform.position : cachedWorldPosition;
 
         public bool IsResourceMarker
         {
@@ -64,7 +68,30 @@ namespace Project.Map
             showOnFullMap = true;
         }
 
-        private void OnEnable() => MapRegistry.Register(this);
-        private void OnDisable() => MapRegistry.Unregister(this);
+        public void ConfigureQuestGiver(string npcDisplayName)
+        {
+            label = string.IsNullOrWhiteSpace(npcDisplayName) ? "Quest Giver" : npcDisplayName;
+            color = SurvivalPioneerUiPalette.Gold;
+            showOnMinimap = true;
+            showOnFullMap = true;
+        }
+
+        public void SetKeepRegisteredWhenDisabled(bool keepRegistered)
+        {
+            keepRegisteredWhenDisabled = keepRegistered;
+        }
+
+        private void OnEnable()
+        {
+            cachedWorldPosition = transform.position;
+            MapRegistry.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            cachedWorldPosition = transform.position;
+            if (!keepRegisteredWhenDisabled)
+                MapRegistry.Unregister(this);
+        }
     }
 }

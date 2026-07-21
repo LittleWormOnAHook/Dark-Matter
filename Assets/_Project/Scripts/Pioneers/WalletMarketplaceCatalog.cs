@@ -17,7 +17,7 @@ namespace Project.Pioneers
     }
 
     /// <summary>
-    /// Mock Pioneer Survivor Exchange listings (AC-priced, in-game currency).
+    /// Mock Dark Matter : Genesis Exchange listings (AC-priced, in-game currency).
     /// </summary>
     public static class WalletMarketplaceCatalog
     {
@@ -105,7 +105,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = offer.expeditionEfficiency,
                 combatSynergy = offer.combatSynergy,
                 backstory = offer.listingNote,
-                isStarterPick = false
+                isStarterPick = false,
+                kind = (int)PioneerKind.NamedCatalog,
+                disposition = (int)EchoDisposition.Synced,
+                saturation = 0.25f
             };
         }
 
@@ -121,7 +124,10 @@ namespace Project.Pioneers
                 expeditionEfficiency = 0.6f,
                 combatSynergy = 0.58f,
                 backstory = "Mock wallet roster pioneer (prototype).",
-                isStarterPick = false
+                isStarterPick = false,
+                kind = (int)PioneerKind.NamedCatalog,
+                disposition = (int)EchoDisposition.Synced,
+                saturation = 0.2f
             };
         }
     }

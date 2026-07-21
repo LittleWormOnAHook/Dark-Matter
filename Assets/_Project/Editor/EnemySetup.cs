@@ -6,7 +6,7 @@ namespace Project.EditorTools
 {
     public static class EnemySetup
     {
-        private const string PrefabPath = ProjectAssetPaths.EnemyPrefab;
+        private const string PrefabPath = ProjectAssetPaths.PrefabsCombat + "/HumanoidEnemy_Invector.prefab";
         private const string SceneEnemyName = "Enemy_Test";
 
         [MenuItem(SurvivalPioneerEditorMenus.Combat + "Place Test Enemy", false, 10)]
@@ -27,19 +27,10 @@ namespace Project.EditorTools
             if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
                 return false;
 
-            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
-            definition.displayName = "Enemy";
-            definition.prefabFileName = "Enemy";
-            definition.ApplyBehaviorPreset(EnemyBehaviorPreset.AggressiveHunter);
-
-            EnemyPrefabBuilder.BuildEnemy(
-                definition,
-                EnemyPrefabBuilder.VisualSourceMode.PlaceholderCapsule,
-                null,
-                out _);
-
-            Object.DestroyImmediate(definition);
-            return true;
+            Debug.LogWarning(
+                $"Missing {PrefabPath}. Run Tools → Dark Matter Genesis → Combat → Repair All Humanoid Combat Prefabs " +
+                "or create the prefab in Enemy Prefab Creator.");
+            return false;
         }
 
         public static void PlaceTestEnemyInOpenScene()

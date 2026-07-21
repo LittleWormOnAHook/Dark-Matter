@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Project.Data;
+using Project.EditorTools;
 using Project.Interaction;
 using UnityEditor;
 using UnityEngine;
@@ -26,6 +27,37 @@ public static class WeaponPrefabBuilder
         PromptText = "Press E to pick up"
     };
 
+    public static GameObject CreateHeldPrefab(
+        GameObject source,
+        string prefabName,
+        string savePath,
+        ItemData itemData = null,
+        bool configureHitbox = true)
+    {
+        EnsureFolder(Path.GetDirectoryName(savePath)?.Replace('\\', '/'));
+
+        GameObject instance = BuildHeldInstance(source, prefabName, itemData, configureHitbox);
+        GameObject prefab = SavePrefab(instance, savePath);
+        UnityEngine.Object.DestroyImmediate(instance);
+        return prefab;
+    }
+
+    public static GameObject CreateWorldPickupPrefab(
+        GameObject source,
+        string prefabName,
+        string savePath,
+        ItemData itemData,
+        PickupOptions options,
+        bool configureHitbox = false)
+    {
+        EnsureFolder(Path.GetDirectoryName(savePath)?.Replace('\\', '/'));
+
+        GameObject instance = BuildWorldInstance(source, prefabName, itemData, options, configureHitbox);
+        GameObject prefab = SavePrefab(instance, savePath);
+        UnityEngine.Object.DestroyImmediate(instance);
+        return prefab;
+    }
+
     public static GameObject CreateWorldPickupPrefab(
         GameObject source,
         string prefabName,
@@ -33,29 +65,15 @@ public static class WeaponPrefabBuilder
         ItemData itemData,
         PickupOptions options)
     {
-        EnsureFolder(Path.GetDirectoryName(savePath)?.Replace('\\', '/'));
-
-        GameObject instance = BuildWorldInstance(source, prefabName, itemData, options);
-        GameObject prefab = SavePrefab(instance, savePath);
-        UnityEngine.Object.DestroyImmediate(instance);
-        return prefab;
-    }
-
-    public static GameObject CreateHeldPrefab(GameObject source, string prefabName, string savePath)
-    {
-        EnsureFolder(Path.GetDirectoryName(savePath)?.Replace('\\', '/'));
-
-        GameObject instance = BuildHeldInstance(source, prefabName);
-        GameObject prefab = SavePrefab(instance, savePath);
-        UnityEngine.Object.DestroyImmediate(instance);
-        return prefab;
+        return CreateWorldPickupPrefab(source, prefabName, savePath, itemData, options, configureHitbox: false);
     }
 
     public static GameObject BuildWorldInstance(
         GameObject source,
         string instanceName,
         ItemData itemData,
-        PickupOptions options)
+        PickupOptions options,
+        bool configureHitbox = false)
     {
         GameObject instance = InstantiateSource(source);
         instance.name = instanceName;
@@ -63,10 +81,18 @@ public static class WeaponPrefabBuilder
 
         RemoveExistingPickupComponents(instance);
         ConfigurePickupComponents(instance, itemData, options);
+
+        if (configureHitbox && ShouldConfigureMeleeHitbox(itemData))
+            ConfigureWeaponHitbox(instance, itemData);
+
         return instance;
     }
 
-    public static GameObject BuildHeldInstance(GameObject source, string instanceName)
+    public static GameObject BuildHeldInstance(
+        GameObject source,
+        string instanceName,
+        ItemData itemData = null,
+        bool configureHitbox = true)
     {
         GameObject instance = InstantiateSource(source);
         instance.name = instanceName;
@@ -74,7 +100,116 @@ public static class WeaponPrefabBuilder
 
         RemoveExistingPickupComponents(instance);
         StripForHeld(instance);
+
+        if (configureHitbox)
+            ConfigureWeaponHitbox(instance, itemData);
+
         return instance;
+    }
+
+    public static void ConfigureWeaponHitbox(GameObject root, ItemData itemData = null)
+    {
+        if (root == null)
+            return;
+
+        WeaponHitbox.SetupPrefabRoot(root, itemData);
+    }
+
+    public static bool ShouldConfigureMeleeHitbox(ItemData itemData)
+    {
+        if (itemData == null)
+            return true;
+
+        return itemData.itemType == ItemType.MeleeWeapon;
+    }
+
+    public static ItemData FindItemDataForPrefab(GameObject prefab)
+    {
+        if (prefab == null)
+            return null;
+
+        string[] guids = AssetDatabase.FindAssets("t:ItemData", new[] { "Assets/_Project/Data/Items" });
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+            ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
+            if (item == null)
+                continue;
+
+            if (item.heldPrefab == prefab || item.worldPrefab == prefab)
+                return item;
+        }
+
+        return null;
+    }
+
+    public static int RefreshWeaponHitboxesInFolder(string folderPath, bool includeWorldPrefabs = false)
+    {
+        if (string.IsNullOrWhiteSpace(folderPath) || !AssetDatabase.IsValidFolder(folderPath))
+            return 0;
+
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { folderPath });
+        int updated = 0;
+
+        for (int i = 0; i < prefabGuids.Length; i++)
+        {
+            string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefabAsset == null)
+                continue;
+
+            ItemData itemData = FindItemDataForPrefab(prefabAsset);
+            bool isHeldPrefab = prefabPath.Contains("/Held/", StringComparison.OrdinalIgnoreCase);
+
+            if (isHeldPrefab)
+            {
+                if (itemData != null && !ShouldConfigureMeleeHitbox(itemData))
+                    continue;
+            }
+            else if (!includeWorldPrefabs)
+            {
+                continue;
+            }
+            else if (itemData == null || !ShouldConfigureMeleeHitbox(itemData))
+            {
+                continue;
+            }
+
+            if (prefabAsset.GetComponentInChildren<Renderer>(true) == null)
+                continue;
+
+            if (RefreshWeaponHitboxPrefabAtPath(prefabPath, itemData))
+                updated++;
+        }
+
+        return updated;
+    }
+
+    public static bool RefreshWeaponHitboxPrefabAtPath(string prefabPath, ItemData itemData = null)
+    {
+        if (string.IsNullOrWhiteSpace(prefabPath))
+            return false;
+
+        GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+        if (prefabRoot == null)
+            return false;
+
+        try
+        {
+            if (itemData == null)
+            {
+                GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                itemData = FindItemDataForPrefab(prefabAsset);
+            }
+
+            ConfigureWeaponHitbox(prefabRoot, itemData);
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            return true;
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+        }
     }
 
     public static void WirePickupItemData(string prefabPath, ItemData itemData)
@@ -303,5 +438,95 @@ public static class WeaponPrefabBuilder
 
         foreach (ResourceNode node in root.GetComponentsInChildren<ResourceNode>(true))
             UnityEngine.Object.DestroyImmediate(node);
+
+        MapMarkerEditorUtility.RemoveMapMarkers(root);
+    }
+
+    [MenuItem(SurvivalPioneerEditorMenus.AddWeaponHitboxToSelectedPrefab, false, 14)]
+    public static void AddHitboxToSelectedPrefab()
+    {
+        UnityEngine.Object[] selected = Selection.objects;
+        if (selected == null || selected.Length == 0)
+        {
+            EditorUtility.DisplayDialog(
+                "Weapon Hitbox",
+                "Select one or more weapon prefabs in the Project window.",
+                "OK");
+            return;
+        }
+
+        int updated = 0;
+        for (int i = 0; i < selected.Length; i++)
+        {
+            GameObject selectedObject = selected[i] as GameObject;
+            if (selectedObject == null)
+                continue;
+
+            string path = AssetDatabase.GetAssetPath(selectedObject);
+            if (string.IsNullOrWhiteSpace(path) || !path.EndsWith(".prefab"))
+                continue;
+
+            ItemData itemData = FindItemDataForPrefab(selectedObject);
+            if (RefreshWeaponHitboxPrefabAtPath(path, itemData))
+                updated++;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        EditorUtility.DisplayDialog(
+            "Weapon Hitbox",
+            updated > 0
+                ? $"Updated hitbox setup on {updated} prefab(s)."
+                : "No prefab assets were updated. Select .prefab assets in the Project window.",
+            "OK");
+    }
+
+    [MenuItem(SurvivalPioneerEditorMenus.AddWeaponHitboxToSelectedPrefab, true)]
+    private static bool ValidateAddHitboxToSelectedPrefab()
+    {
+        UnityEngine.Object[] selected = Selection.objects;
+        if (selected == null || selected.Length == 0)
+            return false;
+
+        for (int i = 0; i < selected.Length; i++)
+        {
+            GameObject selectedObject = selected[i] as GameObject;
+            if (selectedObject == null)
+                continue;
+
+            string path = AssetDatabase.GetAssetPath(selectedObject);
+            if (!string.IsNullOrWhiteSpace(path) && path.EndsWith(".prefab"))
+                return true;
+        }
+
+        return false;
+    }
+
+    [MenuItem(SurvivalPioneerEditorMenus.RefreshAllWeaponHitboxes, false, 15)]
+    public static void RefreshAllWeaponHitboxes()
+    {
+        if (!EditorUtility.DisplayDialog(
+                "Weapon Hitbox",
+                "Rebuild WeaponHitbox components and capsule colliders on all held weapon prefabs " +
+                "and melee world prefabs referenced by ItemData?",
+                "Refresh",
+                "Cancel"))
+        {
+            return;
+        }
+
+        const string itemsPrefabFolder = "Assets/_Project/Prefabs/Items";
+        const string heldPrefabFolder = "Assets/_Project/Prefabs/Items/Held";
+
+        int heldUpdated = RefreshWeaponHitboxesInFolder(heldPrefabFolder);
+        int itemsUpdated = RefreshWeaponHitboxesInFolder(itemsPrefabFolder, includeWorldPrefabs: true);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        EditorUtility.DisplayDialog(
+            "Weapon Hitbox",
+            $"Updated {heldUpdated} held prefab(s) and {itemsUpdated} item prefab(s).",
+            "OK");
     }
 }

@@ -64,15 +64,30 @@ MonoBehaviour:
   weaponCriticalHitClips:
   - {fileID: 8300000, guid: f28d6679d37bc6146aabb27bdb29ac51, type: 3}
   - {fileID: 8300000, guid: 3b8d76e7fede964498fbc410796f12e2, type: 3}
+  punchSwingClips:
+  - {fileID: 8300000, guid: 8c1f9edb0258fb14c87b0987c33c1a55, type: 3}
+  - {fileID: 8300000, guid: ab4777bc6c78f8b4a8f8de79569c5729, type: 3}
+  - {fileID: 8300000, guid: 85cde20b056c53642814edc3b024b976, type: 3}
+  - {fileID: 8300000, guid: c183b1e175e7e5f4ebb4e99faf6b7e92, type: 3}
+  punchHitClips:
+  - {fileID: 8300000, guid: bfd0d772e16cf30488ae1a7e3684511d, type: 3}
+  - {fileID: 8300000, guid: 5bb88e64e16601f4ca4f5e1ea8bec12b, type: 3}
+  - {fileID: 8300000, guid: ee422647e307ed2498ce0b07d19c133b, type: 3}
+  - {fileID: 8300000, guid: fe581ba2e87d46646a627e34bc185fcf, type: 3}
+  - {fileID: 8300000, guid: 5e3bcf8a9302d3e44986c289c6134879, type: 3}
+  punchCriticalHitClips:
+  - {fileID: 8300000, guid: 2f8aa9117f180f842a1860b1bd805406, type: 3}
+  - {fileID: 8300000, guid: 3f9f12180ced468488d0198fd9c17e0c, type: 3}
+  - {fileID: 8300000, guid: 2ee852565107cad4db9654ef644f2e7e, type: 3}
   resourceHitClips:
   - {fileID: 8300000, guid: 58ef54b136c581f4c8eb37980845a613, type: 3}
   - {fileID: 8300000, guid: cb3a9b2db1dcfdf468639834e6699a42, type: 3}
   - {fileID: 8300000, guid: 45586ddf42b72ec418095966c5b1afef, type: 3}
   combatVolume: 1
   buttonClickClips:
-  - {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
+  - {fileID: 8300000, guid: d78b095272451ff42b18c9db66c3483a, type: 3}
   inventoryItemClickClips:
-  - {fileID: 8300000, guid: 9b4cd807dc33f2f4c9cdb967f95c97ee, type: 3}
+  - {fileID: 8300000, guid: d78b095272451ff42b18c9db66c3483a, type: 3}
   itemUseClips:
   - {fileID: 8300000, guid: a1f4a9bc44a8ff142af53c665b675c07, type: 3}
   itemEquipClips:
@@ -85,6 +100,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 898540c4acf1e13498298019981ff6f9, type: 3}
   itemPickupClips:
   - {fileID: 8300000, guid: 7075ea4e7af71e84aa83e2d3a30c24f4, type: 3}
+  achievementUnlockClips:
+  - {fileID: 8300000, guid: 6ada37007453d944283930793beaa223, type: 3}
   uiVolume: 0.85
   sfxSpatialBlend: 1
   sfxMinDistance: 1

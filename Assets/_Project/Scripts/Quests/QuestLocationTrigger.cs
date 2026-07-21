@@ -1,3 +1,4 @@
+using Project.Progression;
 using UnityEngine;
 
 namespace Project.Quests
@@ -28,8 +29,15 @@ namespace Project.Quests
             if (questManager == null || string.IsNullOrEmpty(locationId))
                 return;
 
-            if (questManager.NotifyLocationReached(locationId))
-                hasTriggered = true;
+            if (!questManager.NotifyLocationReached(locationId))
+                return;
+
+            ProgressionRewardGranter.GrantXp(
+                ProgressionXpDefaults.DiscoveryXp,
+                XpSource.Exploration,
+                $"location:{locationId}",
+                "Location");
+            hasTriggered = true;
         }
     }
 }

@@ -1,4 +1,7 @@
 using System;
+using Project.AI;
+using Project.Interaction;
+using Project.Survival.Exposure;
 using Project.UI;
 using UnityEngine;
 
@@ -7,7 +10,7 @@ namespace Project.Companions
     /// <summary>
     /// Lightweight health for expedition pioneers so enemies can damage them without full survival simulation.
     /// </summary>
-    public class CompanionHealth : MonoBehaviour
+    public class CompanionHealth : MonoBehaviour, IDamageable
     {
         [SerializeField] private float maxHealth = 80f;
         [SerializeField] private Transform healthBarAnchor;
@@ -19,6 +22,9 @@ namespace Project.Companions
         public event Action<float, float> HealthChanged;
         public event Action<float, bool> Damaged;
         public event Action Died;
+
+        /// <summary>Global fan-out so expedition slot arcs bind even if they miss the first HealthChanged.</summary>
+        public static event Action<CompanionHealth, float, float> AnyHealthChanged;
 
         public float MaxHealth => maxHealth;
         public float CurrentHealth { get; private set; }
@@ -37,6 +43,7 @@ namespace Project.Companions
             pioneerRecordId = recordId;
             deathHandled = false;
             ResetHealth();
+            ExpeditionPioneerHudUI.NotifyCompanionHealthReady(this);
         }
 
         public void ResetHealth()
@@ -51,6 +58,10 @@ namespace Project.Companions
             if (damage <= 0f || IsDead)
                 return;
 
+            CompanionExposureResponder exposure = GetComponent<CompanionExposureResponder>();
+            if (exposure != null)
+                damage *= exposure.DamageTakenMultiplier;
+
             CurrentHealth = Mathf.Max(0f, CurrentHealth - damage);
             NotifyHealthChanged();
             Damaged?.Invoke(damage, isCritical);
@@ -60,6 +71,21 @@ namespace Project.Companions
 
             if (CurrentHealth <= 0f)
                 HandleDeath();
+        }
+
+        /// <summary>
+        /// IDamageable entry point so the shared CombatProjectile (unified player/companion/enemy
+        /// projectile pipeline) can hit and damage companions directly, not just the Invector
+        /// onReceiveDamage path. Also raises the group-alert event so squadmates react to whoever
+        /// fired, matching the existing Invector damage bridge behavior.
+        /// </summary>
+        void IDamageable.TakeDamage(float damage, GameObject source, bool isCritical)
+        {
+            ApplyDamage(damage, isCritical);
+
+            EnemyHealth attacker = source != null ? source.GetComponentInParent<EnemyHealth>() : null;
+            if (attacker != null)
+                PlayerCombatEvents.RaiseCompanionAttackedBy(attacker);
         }
 
         private void HandleDeath()
@@ -74,6 +100,7 @@ namespace Project.Companions
         private void NotifyHealthChanged()
         {
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
+            AnyHealthChanged?.Invoke(this, CurrentHealth, maxHealth);
         }
     }
 }

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Monocular Free
+* source:	https://sketchfab.com/3d-models/monocular-free-5d50251e045b4a568342dcb858da9591
+* author:	Xorshift (https://sketchfab.com/Xorshift)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Monocular Free" (https://sketchfab.com/3d-models/monocular-free-5d50251e045b4a568342dcb858da9591) by Xorshift (https://sketchfab.com/Xorshift) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

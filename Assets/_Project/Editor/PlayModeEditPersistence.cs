@@ -10,20 +10,69 @@ namespace Project.EditorTools
 {
     /// <summary>
     /// Optional workflow: capture scene hierarchy edits made during Play Mode and reapply them after exit.
-    /// Toggle via Tools → Survival Pioneer → Maintenance → Persist Play Mode Edits.
+    /// Toggle via Tools → Dark Matter Genesis → Maintenance → Persist Play Mode Edits.
     /// </summary>
     [InitializeOnLoad]
     public static class PlayModeEditPersistence
     {
         private const string EnabledPrefKey = "SurvivalPioneer.PlayModeEditPersistence.Enabled";
+        private const string ForcedDisableMigrationKey = "SurvivalPioneer.PlayModeEditPersistence.ForcedOff.v1";
         private const string SnapshotFileName = "play-mode-snapshot.json";
         private const string MenuPath = SurvivalPioneerEditorMenus.Maintenance + "Persist Play Mode Edits";
+        private static readonly string[] PriorityAssetScanRoots =
+        {
+            "Assets/_Project/Data",
+            "Assets/_Project/Resources",
+            "Assets/_Project/Prefabs",
+        };
+
+        private static readonly string[] ProjectAssetScanRoots = { "Assets/_Project" };
+
+        private static readonly string[] AbsoluteAssetFilters =
+        {
+            "t:ScriptableObject",
+            "t:Material",
+            "t:Font",
+            "t:TMP_FontAsset",
+            "t:TextAsset",
+            "t:AnimatorController",
+            "t:AnimatorOverrideController",
+            "t:AvatarMask",
+            "t:PhysicMaterial",
+        };
+
+        private static readonly string[] AlwaysCaptureAssetPaths =
+        {
+        };
+
+        private static readonly string[] ExcludedProjectAssetPaths =
+        {
+            "Assets/_Project/Resources/Optics/OpticsCrosshairLibrary.asset",
+        };
 
         private static bool pendingApply;
+        private static Dictionary<string, string> playModeAssetBaselines;
+        private static Dictionary<string, UnityEngine.Object> loadedAssetLookup;
 
         static PlayModeEditPersistence()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EnsureFeatureDisabledByDefault();
+        }
+
+        /// <summary>
+        /// One-time migration: turn off auto-capture and discard any pending snapshot.
+        /// Re-enable via Tools → Dark Matter Genesis → Maintenance → Persist Play Mode Edits.
+        /// </summary>
+        private static void EnsureFeatureDisabledByDefault()
+        {
+            if (EditorPrefs.GetBool(ForcedDisableMigrationKey, false))
+                return;
+
+            Enabled = false;
+            DeleteSnapshotFile();
+            pendingApply = false;
+            EditorPrefs.SetBool(ForcedDisableMigrationKey, true);
         }
 
         public static bool Enabled
@@ -32,10 +81,96 @@ namespace Project.EditorTools
             set => EditorPrefs.SetBool(EnabledPrefKey, value);
         }
 
+        public enum PlayModeSaveScope
+        {
+            AllOpenScenes,
+            SelectedObjectsOnly,
+            SelectedHierarchy
+        }
+
+        public struct PlayModeSaveSummary
+        {
+            public int objectCount;
+            public int sceneCount;
+            public int scriptableObjectCount;
+            public int projectAssetCount;
+            public int prefabAssetCount;
+            public string capturedUtc;
+        }
+
+        public static int LastPrefabAssetCount => LastSaveSummary.prefabAssetCount;
+
+        public static int LastProjectAssetCount => LastSaveSummary.projectAssetCount > 0
+            ? LastSaveSummary.projectAssetCount
+            : LastSaveSummary.scriptableObjectCount;
+
+        public static bool HasPendingSnapshot => File.Exists(SnapshotPath);
+
+        public static void ClearPendingSnapshot()
+        {
+            DeleteSnapshotFile();
+        }
+
+        public static PlayModeSaveSummary LastSaveSummary { get; private set; }
+
+        public static bool SaveNow(PlayModeSaveScope scope = PlayModeSaveScope.AllOpenScenes)
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                EditorUtility.DisplayDialog(
+                    "Play Mode Saver",
+                    "Enter Play Mode, make your edits, then click Save Now.",
+                    "OK");
+                return false;
+            }
+
+            try
+            {
+                LastSaveSummary = CaptureOpenScenes(scope);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+                loadedAssetLookup = null;
+            }
+
+            pendingApply = LastSaveSummary.objectCount > 0
+                || LastProjectAssetCount > 0
+                || LastPrefabAssetCount > 0;
+
+            if (!pendingApply)
+            {
+                EditorUtility.DisplayDialog(
+                    "Play Mode Saver",
+                    "Nothing was captured. Check Save Scope and your selection, then try again.",
+                    "OK");
+                return false;
+            }
+
+            Debug.Log(
+                $"[Play Mode Saver] Captured {LastSaveSummary.objectCount} object(s), " +
+                $"{LastProjectAssetCount} data/material/text asset(s), {LastPrefabAssetCount} prefab(s) across " +
+                $"{LastSaveSummary.sceneCount} scene(s). Edits apply when Play Mode exits.");
+
+            return true;
+        }
+
+        public static void SaveAndExitPlayMode(PlayModeSaveScope scope = PlayModeSaveScope.AllOpenScenes)
+        {
+            if (SaveNow(scope))
+                EditorApplication.isPlaying = false;
+        }
+
         [MenuItem(MenuPath, false, 3)]
         public static void Toggle()
         {
             Enabled = !Enabled;
+            if (!Enabled)
+            {
+                DeleteSnapshotFile();
+                pendingApply = false;
+            }
+
             Debug.Log(Enabled
                 ? "[Play Mode Edits] Enabled. Edits made while playing will be kept when Play Mode stops."
                 : "[Play Mode Edits] Disabled. Unity will revert Play Mode scene changes as usual.");
@@ -50,14 +185,31 @@ namespace Project.EditorTools
 
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            if (!Enabled)
-                return;
-
             switch (state)
             {
+                case PlayModeStateChange.EnteredPlayMode:
+                    if (!Enabled)
+                        break;
+
+                    playModeAssetBaselines = null;
+                    EditorApplication.delayCall += CapturePlayModeBaselines;
+                    break;
                 case PlayModeStateChange.ExitingPlayMode:
-                    CaptureOpenScenes();
-                    pendingApply = true;
+                    if (Enabled && !HasPendingSnapshot)
+                    {
+                        try
+                        {
+                            CaptureOpenScenes(PlayModeSaveScope.AllOpenScenes);
+                        }
+                        finally
+                        {
+                            EditorUtility.ClearProgressBar();
+                            loadedAssetLookup = null;
+                        }
+                    }
+
+                    pendingApply = HasPendingSnapshot;
+                    playModeAssetBaselines = null;
                     break;
                 case PlayModeStateChange.EnteredEditMode:
                     if (!pendingApply)
@@ -67,6 +219,48 @@ namespace Project.EditorTools
                     EditorApplication.delayCall += ApplyCapturedSnapshots;
                     break;
             }
+        }
+
+        private static void CapturePlayModeBaselines()
+        {
+            if (!EditorApplication.isPlaying)
+                return;
+
+            HashSet<string> baselinePaths = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < AlwaysCaptureAssetPaths.Length; i++)
+                baselinePaths.Add(AlwaysCaptureAssetPaths[i]);
+
+            for (int f = 0; f < AbsoluteAssetFilters.Length; f++)
+            {
+                for (int r = 0; r < PriorityAssetScanRoots.Length; r++)
+                    AddAssetPaths(baselinePaths, AbsoluteAssetFilters[f], new[] { PriorityAssetScanRoots[r] });
+            }
+
+            loadedAssetLookup = BuildLoadedAssetLookup();
+            playModeAssetBaselines = new Dictionary<string, string>(baselinePaths.Count, StringComparer.Ordinal);
+
+            int index = 0;
+            int total = baselinePaths.Count;
+            foreach (string assetPath in baselinePaths)
+            {
+                index++;
+                if (EditorUtility.DisplayCancelableProgressBar(
+                        "Play Mode Saver",
+                        $"Recording play-mode baselines ({index}/{total})",
+                        total <= 0 ? 1f : index / (float)total))
+                {
+                    playModeAssetBaselines = null;
+                    EditorUtility.ClearProgressBar();
+                    loadedAssetLookup = null;
+                    Debug.LogWarning("[Play Mode Saver] Baseline capture cancelled.");
+                    return;
+                }
+
+                playModeAssetBaselines[assetPath] = ComputeAssetFingerprint(assetPath);
+            }
+
+            EditorUtility.ClearProgressBar();
+            loadedAssetLookup = null;
         }
 
         private static string SnapshotPath => Path.Combine(SnapshotDirectory, SnapshotFileName);
@@ -82,25 +276,43 @@ namespace Project.EditorTools
             }
         }
 
-        private static void CaptureOpenScenes()
+        private static PlayModeSaveSummary CaptureOpenScenes(PlayModeSaveScope scope)
         {
+            loadedAssetLookup = BuildLoadedAssetLookup();
+
             PlayModeSnapshot snapshot = new PlayModeSnapshot
             {
                 capturedUtc = DateTime.UtcNow.ToString("o"),
-                scenes = Array.Empty<SceneSnapshot>()
+                scenes = Array.Empty<SceneSnapshot>(),
+                projectAssets = Array.Empty<ProjectAssetSnapshot>(),
+                prefabAssets = Array.Empty<PrefabAssetSnapshot>()
             };
 
             List<SceneSnapshot> sceneList = new List<SceneSnapshot>();
+            HashSet<string> allowedPaths = BuildAllowedHierarchyPaths(scope);
+            bool captureAll = scope == PlayModeSaveScope.AllOpenScenes;
+
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
                 if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrEmpty(scene.path))
                     continue;
 
+                if (EditorUtility.DisplayCancelableProgressBar(
+                        "Play Mode Saver",
+                        $"Capturing scene '{scene.name}'",
+                        (i + 1f) / Mathf.Max(1, SceneManager.sceneCount)))
+                {
+                    EditorUtility.ClearProgressBar();
+                    loadedAssetLookup = null;
+                    Debug.LogWarning("[Play Mode Saver] Scene capture cancelled.");
+                    return new PlayModeSaveSummary();
+                }
+
                 List<GameObjectSnapshot> objectList = new List<GameObjectSnapshot>();
                 GameObject[] roots = scene.GetRootGameObjects();
                 for (int r = 0; r < roots.Length; r++)
-                    CaptureHierarchy(roots[r].transform, objectList);
+                    CaptureHierarchy(roots[r].transform, objectList, captureAll, allowedPaths);
 
                 if (objectList.Count == 0)
                     continue;
@@ -112,36 +324,126 @@ namespace Project.EditorTools
                 });
             }
 
-            if (sceneList.Count == 0)
+            snapshot.scenes = sceneList.ToArray();
+            BuildChangedAndReferencedAssetPaths(
+                sceneList,
+                scope,
+                out HashSet<string> projectAssetPaths,
+                out HashSet<string> prefabAssetPaths);
+
+            snapshot.projectAssets = CaptureProjectAssetSnapshots(projectAssetPaths);
+            snapshot.prefabAssets = CapturePrefabAssetSnapshots(prefabAssetPaths);
+
+            int objectCount = 0;
+            for (int i = 0; i < sceneList.Count; i++)
+                objectCount += sceneList[i].objects?.Length ?? 0;
+
+            int assetCount = snapshot.projectAssets?.Length ?? 0;
+            int prefabCount = snapshot.prefabAssets?.Length ?? 0;
+            PlayModeSaveSummary summary = new PlayModeSaveSummary
+            {
+                objectCount = objectCount,
+                sceneCount = sceneList.Count,
+                scriptableObjectCount = assetCount,
+                projectAssetCount = assetCount,
+                prefabAssetCount = prefabCount,
+                capturedUtc = snapshot.capturedUtc
+            };
+
+            if (objectCount == 0 && assetCount == 0 && prefabCount == 0)
             {
                 DeleteSnapshotFile();
-                return;
+                LastSaveSummary = summary;
+                return summary;
             }
 
-            snapshot.scenes = sceneList.ToArray();
             string json = JsonUtility.ToJson(snapshot, prettyPrint: true);
             File.WriteAllText(SnapshotPath, json);
+            LastSaveSummary = summary;
+            return summary;
         }
 
-        private static void CaptureHierarchy(Transform transform, List<GameObjectSnapshot> output)
+        private static HashSet<string> BuildAllowedHierarchyPaths(PlayModeSaveScope scope)
+        {
+            HashSet<string> paths = new HashSet<string>();
+            if (scope == PlayModeSaveScope.AllOpenScenes)
+                return paths;
+
+            GameObject[] selectedObjects = Selection.gameObjects;
+            for (int i = 0; i < selectedObjects.Length; i++)
+            {
+                GameObject selectedObject = selectedObjects[i];
+                if (selectedObject == null)
+                    continue;
+
+                Transform selectedTransform = selectedObject.transform;
+                paths.Add(GetHierarchyPath(selectedTransform));
+
+                if (scope == PlayModeSaveScope.SelectedHierarchy)
+                    AddDescendantHierarchyPaths(selectedTransform, paths);
+            }
+
+            return paths;
+        }
+
+        private static void AddDescendantHierarchyPaths(Transform root, HashSet<string> paths)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                paths.Add(GetHierarchyPath(child));
+                AddDescendantHierarchyPaths(child, paths);
+            }
+        }
+
+        private static void CaptureHierarchy(
+            Transform transform,
+            List<GameObjectSnapshot> output,
+            bool captureAll,
+            HashSet<string> allowedPaths)
         {
             if (transform == null)
                 return;
 
-            GameObjectSnapshot entry = new GameObjectSnapshot
+            if (PlayModeEditPlayerExclusions.ShouldSkipCaptureChildren(transform))
+                return;
+
+            string hierarchyPath = GetHierarchyPath(transform);
+            bool include = !PlayModeEditPlayerExclusions.ShouldSkipCapture(transform)
+                && (captureAll || (allowedPaths != null && allowedPaths.Contains(hierarchyPath)));
+            if (include)
             {
-                hierarchyPath = GetHierarchyPath(transform),
-                activeSelf = transform.gameObject.activeSelf,
-                hasRectTransform = transform is RectTransform,
-                localPosition = transform.localPosition,
-                localRotation = transform.localRotation,
-                localScale = transform.localScale,
-                componentProperties = CaptureComponentProperties(transform.gameObject)
-            };
-            output.Add(entry);
+                GameObjectSnapshot entry = new GameObjectSnapshot
+                {
+                    hierarchyPath = hierarchyPath,
+                    activeSelf = transform.gameObject.activeSelf,
+                    tag = transform.gameObject.tag,
+                    layer = transform.gameObject.layer,
+                    isStatic = transform.gameObject.isStatic,
+                    hasRectTransform = transform is RectTransform,
+                    localPosition = transform.localPosition,
+                    localRotation = transform.localRotation,
+                    localScale = transform.localScale,
+                    componentProperties = CaptureComponentProperties(transform.gameObject)
+                };
+
+                if (transform is RectTransform rectTransform)
+                {
+                    entry.anchorMin = rectTransform.anchorMin;
+                    entry.anchorMax = rectTransform.anchorMax;
+                    entry.pivot = rectTransform.pivot;
+                    entry.anchoredPosition = rectTransform.anchoredPosition;
+                    entry.anchoredPosition3D = rectTransform.anchoredPosition3D;
+                    entry.sizeDelta = rectTransform.sizeDelta;
+                    entry.offsetMin = rectTransform.offsetMin;
+                    entry.offsetMax = rectTransform.offsetMax;
+                }
+
+                output.Add(entry);
+            }
 
             for (int i = 0; i < transform.childCount; i++)
-                CaptureHierarchy(transform.GetChild(i), output);
+                CaptureHierarchy(transform.GetChild(i), output, captureAll, allowedPaths);
         }
 
         private static ComponentPropertySnapshot[] CaptureComponentProperties(GameObject gameObject)
@@ -156,37 +458,498 @@ namespace Project.EditorTools
                     continue;
 
                 SerializedObject serializedObject = new SerializedObject(component);
-                SerializedProperty iterator = serializedObject.GetIterator();
-                bool enterChildren = true;
-                List<PropertySnapshot> properties = new List<PropertySnapshot>();
-
-                while (iterator.NextVisible(enterChildren))
-                {
-                    enterChildren = false;
-                    if (iterator.propertyPath == "m_Script")
-                        continue;
-
-                    if (!TryExportProperty(iterator, out string value))
-                        continue;
-
-                    properties.Add(new PropertySnapshot
-                    {
-                        propertyPath = iterator.propertyPath,
-                        value = value
-                    });
-                }
-
-                if (properties.Count == 0)
+                PropertySnapshot[] properties = CaptureProperties(serializedObject, component);
+                if (properties.Length == 0)
                     continue;
 
                 captured.Add(new ComponentPropertySnapshot
                 {
                     componentType = component.GetType().AssemblyQualifiedName,
-                    properties = properties.ToArray()
+                    properties = properties
                 });
             }
 
             return captured.Count > 0 ? captured.ToArray() : Array.Empty<ComponentPropertySnapshot>();
+        }
+
+        private static void BuildChangedAndReferencedAssetPaths(
+            List<SceneSnapshot> scenes,
+            PlayModeSaveScope scope,
+            out HashSet<string> projectAssetPaths,
+            out HashSet<string> prefabAssetPaths)
+        {
+            projectAssetPaths = new HashSet<string>(StringComparer.Ordinal);
+            prefabAssetPaths = new HashSet<string>(StringComparer.Ordinal);
+
+            for (int i = 0; i < AlwaysCaptureAssetPaths.Length; i++)
+                AddAssetPathByKind(AlwaysCaptureAssetPaths[i], projectAssetPaths, prefabAssetPaths);
+
+            for (int i = 0; i < Selection.objects.Length; i++)
+            {
+                string selectedPath = AssetDatabase.GetAssetPath(Selection.objects[i]);
+                if (IsProjectAssetPath(selectedPath))
+                    AddAssetPathByKind(selectedPath, projectAssetPaths, prefabAssetPaths);
+            }
+
+            for (int s = 0; s < scenes.Count; s++)
+            {
+                SceneSnapshot sceneSnapshot = scenes[s];
+                if (sceneSnapshot?.objects == null)
+                    continue;
+
+                for (int o = 0; o < sceneSnapshot.objects.Length; o++)
+                    CollectAssetPathsFromComponentSnapshots(
+                        sceneSnapshot.objects[o].componentProperties,
+                        projectAssetPaths);
+            }
+
+            CollectPrefabPathsFromOpenScenes(prefabAssetPaths);
+
+            if (playModeAssetBaselines != null)
+            {
+                foreach (KeyValuePair<string, string> baseline in playModeAssetBaselines)
+                {
+                    if (ComputeAssetFingerprint(baseline.Key) == baseline.Value)
+                        continue;
+
+                    AddAssetPathByKind(baseline.Key, projectAssetPaths, prefabAssetPaths);
+                }
+            }
+            else if (scope == PlayModeSaveScope.AllOpenScenes)
+            {
+                AddChangedAssetsFromFolderFallback(projectAssetPaths, prefabAssetPaths);
+            }
+        }
+
+        private static void AddAssetPathByKind(
+            string assetPath,
+            HashSet<string> projectAssetPaths,
+            HashSet<string> prefabAssetPaths)
+        {
+            if (!IsProjectAssetPath(assetPath))
+                return;
+
+            if (IsPrefabAssetPath(assetPath))
+                prefabAssetPaths.Add(assetPath);
+            else
+                projectAssetPaths.Add(assetPath);
+        }
+
+        private static void AddChangedAssetsFromFolderFallback(
+            HashSet<string> projectAssetPaths,
+            HashSet<string> prefabAssetPaths)
+        {
+            HashSet<string> fallbackPaths = new HashSet<string>(StringComparer.Ordinal);
+            for (int f = 0; f < AbsoluteAssetFilters.Length; f++)
+            {
+                for (int r = 0; r < PriorityAssetScanRoots.Length; r++)
+                    AddAssetPaths(fallbackPaths, AbsoluteAssetFilters[f], new[] { PriorityAssetScanRoots[r] });
+            }
+
+            foreach (string assetPath in fallbackPaths)
+            {
+                if (EditorUtility.IsDirty(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath)))
+                    AddAssetPathByKind(assetPath, projectAssetPaths, prefabAssetPaths);
+            }
+        }
+
+        private static void CollectPrefabPathsFromOpenScenes(HashSet<string> prefabAssetPaths)
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int r = 0; r < roots.Length; r++)
+                    CollectPrefabPathsFromTransform(roots[r].transform, prefabAssetPaths);
+            }
+        }
+
+        private static void CollectPrefabPathsFromTransform(Transform transform, HashSet<string> prefabAssetPaths)
+        {
+            if (transform == null)
+                return;
+
+            if (PrefabUtility.IsPartOfPrefabInstance(transform.gameObject))
+            {
+                string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(transform.gameObject);
+                if (IsProjectAssetPath(prefabPath))
+                    prefabAssetPaths.Add(prefabPath);
+            }
+
+            for (int i = 0; i < transform.childCount; i++)
+                CollectPrefabPathsFromTransform(transform.GetChild(i), prefabAssetPaths);
+        }
+
+        private static Dictionary<string, UnityEngine.Object> BuildLoadedAssetLookup()
+        {
+            Dictionary<string, UnityEngine.Object> lookup = new Dictionary<string, UnityEngine.Object>(StringComparer.Ordinal);
+            if (!EditorApplication.isPlaying)
+                return lookup;
+
+            UnityEngine.Object[] loadedAssets = Resources.FindObjectsOfTypeAll<UnityEngine.Object>();
+            for (int i = 0; i < loadedAssets.Length; i++)
+            {
+                UnityEngine.Object loadedAsset = loadedAssets[i];
+                if (loadedAsset == null)
+                    continue;
+
+                string assetPath = AssetDatabase.GetAssetPath(loadedAsset);
+                if (!IsProjectAssetPath(assetPath) || lookup.ContainsKey(assetPath))
+                    continue;
+
+                lookup[assetPath] = loadedAsset;
+            }
+
+            return lookup;
+        }
+
+        private static string ComputeAssetFingerprint(string assetPath)
+        {
+            UnityEngine.Object asset = LoadAssetForCapture(assetPath);
+            if (asset == null)
+                return string.Empty;
+
+            PropertySnapshot[] properties = CaptureProperties(new SerializedObject(asset));
+            if (properties.Length == 0)
+                return string.Empty;
+
+            unchecked
+            {
+                int hash = 17;
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    hash = (hash * 31) + (properties[i].propertyPath?.GetHashCode(StringComparison.Ordinal) ?? 0);
+                    hash = (hash * 31) + (properties[i].value?.GetHashCode(StringComparison.Ordinal) ?? 0);
+                }
+
+                return hash.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+        }
+
+        private static ProjectAssetSnapshot[] CaptureProjectAssetSnapshots(HashSet<string> assetPaths)
+        {
+            List<ProjectAssetSnapshot> captured = new List<ProjectAssetSnapshot>();
+            int index = 0;
+            int total = assetPaths.Count;
+
+            foreach (string assetPath in assetPaths)
+            {
+                index++;
+                if (EditorUtility.DisplayCancelableProgressBar(
+                        "Play Mode Saver",
+                        $"Capturing asset {index}/{total}",
+                        total <= 0 ? 1f : index / (float)total))
+                {
+                    Debug.LogWarning("[Play Mode Saver] Asset capture cancelled.");
+                    break;
+                }
+
+                if (IsPrefabAssetPath(assetPath))
+                    continue;
+
+                UnityEngine.Object asset = LoadAssetForCapture(assetPath);
+                if (asset == null)
+                    continue;
+
+                PropertySnapshot[] properties = CaptureProperties(new SerializedObject(asset));
+                if (properties.Length == 0)
+                    continue;
+
+                captured.Add(new ProjectAssetSnapshot
+                {
+                    assetPath = assetPath,
+                    assetType = asset.GetType().AssemblyQualifiedName,
+                    properties = properties
+                });
+            }
+
+            return captured.Count > 0 ? captured.ToArray() : Array.Empty<ProjectAssetSnapshot>();
+        }
+
+        private static PrefabAssetSnapshot[] CapturePrefabAssetSnapshots(HashSet<string> prefabAssetPaths)
+        {
+            List<PrefabAssetSnapshot> captured = new List<PrefabAssetSnapshot>();
+            int index = 0;
+            int total = prefabAssetPaths.Count;
+
+            foreach (string assetPath in prefabAssetPaths)
+            {
+                index++;
+                if (EditorUtility.DisplayCancelableProgressBar(
+                        "Play Mode Saver",
+                        $"Capturing prefab {index}/{total}",
+                        total <= 0 ? 1f : index / (float)total))
+                {
+                    Debug.LogWarning("[Play Mode Saver] Prefab capture cancelled.");
+                    break;
+                }
+
+                if (PlayModeEditPlayerExclusions.ShouldSkipPrefabAssetCapture(assetPath))
+                    continue;
+
+                if (!TryCapturePrefabHierarchy(assetPath, out GameObjectSnapshot[] objects) || objects.Length == 0)
+                    continue;
+
+                captured.Add(new PrefabAssetSnapshot
+                {
+                    assetPath = assetPath,
+                    objects = objects
+                });
+            }
+
+            return captured.Count > 0 ? captured.ToArray() : Array.Empty<PrefabAssetSnapshot>();
+        }
+
+        private static bool TryCapturePrefabHierarchy(string assetPath, out GameObjectSnapshot[] objects)
+        {
+            objects = Array.Empty<GameObjectSnapshot>();
+
+            if (EditorApplication.isPlaying)
+            {
+                GameObject instanceRoot = FindPrefabInstanceRootInOpenScenes(assetPath);
+                if (instanceRoot == null)
+                    return false;
+
+                List<GameObjectSnapshot> objectList = new List<GameObjectSnapshot>();
+                CaptureHierarchy(instanceRoot.transform, objectList, captureAll: true, allowedPaths: null);
+                objects = objectList.ToArray();
+                return objects.Length > 0;
+            }
+
+            bool loadedViaContents = TryLoadPrefabContents(assetPath, out GameObject prefabRoot);
+            if (prefabRoot == null)
+                return false;
+
+            try
+            {
+                List<GameObjectSnapshot> objectList = new List<GameObjectSnapshot>();
+                CaptureHierarchy(prefabRoot.transform, objectList, captureAll: true, allowedPaths: null);
+                objects = objectList.ToArray();
+                return objects.Length > 0;
+            }
+            finally
+            {
+                if (loadedViaContents)
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static GameObject FindPrefabInstanceRootInOpenScenes(string assetPath)
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int r = 0; r < roots.Length; r++)
+                {
+                    GameObject found = FindPrefabInstanceRootUnderTransform(roots[r].transform, assetPath);
+                    if (found != null)
+                        return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject FindPrefabInstanceRootUnderTransform(Transform transform, string assetPath)
+        {
+            if (transform == null)
+                return null;
+
+            if (PrefabUtility.IsPartOfPrefabInstance(transform.gameObject))
+            {
+                GameObject instanceRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(transform.gameObject);
+                if (instanceRoot != null
+                    && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(instanceRoot) == assetPath)
+                {
+                    return instanceRoot;
+                }
+            }
+
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                GameObject found = FindPrefabInstanceRootUnderTransform(transform.GetChild(i), assetPath);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
+
+        private static bool TryLoadPrefabContents(string assetPath, out GameObject prefabRoot)
+        {
+            try
+            {
+                prefabRoot = PrefabUtility.LoadPrefabContents(assetPath);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[Play Mode Saver] Could not load prefab contents for '{assetPath}': {exception.Message}");
+                prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                return false;
+            }
+        }
+
+        private static void AddAssetPaths(HashSet<string> assetPaths, string filter, string[] scanRoots = null)
+        {
+            scanRoots ??= ProjectAssetScanRoots;
+            for (int r = 0; r < scanRoots.Length; r++)
+            {
+                string[] guids = AssetDatabase.FindAssets(filter, new[] { scanRoots[r] });
+                for (int i = 0; i < guids.Length; i++)
+                {
+                    string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                    if (IsProjectAssetPath(assetPath))
+                        assetPaths.Add(assetPath);
+                }
+            }
+        }
+
+        private static bool IsPrefabAssetPath(string assetPath)
+        {
+            return !string.IsNullOrEmpty(assetPath)
+                && assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsProjectAssetPath(string assetPath)
+        {
+            return !string.IsNullOrEmpty(assetPath)
+                && assetPath.StartsWith("Assets/_Project", StringComparison.Ordinal)
+                && !ShouldSkipProjectAsset(assetPath);
+        }
+
+        private static bool ShouldSkipProjectAsset(string assetPath)
+        {
+            if (string.IsNullOrEmpty(assetPath))
+                return false;
+
+            for (int i = 0; i < ExcludedProjectAssetPaths.Length; i++)
+            {
+                if (assetPath.Equals(ExcludedProjectAssetPaths[i], StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static ProjectAssetSnapshot[] FilterExcludedProjectAssetSnapshots(ProjectAssetSnapshot[] snapshots)
+        {
+            if (snapshots == null || snapshots.Length == 0)
+                return snapshots;
+
+            List<ProjectAssetSnapshot> filtered = new List<ProjectAssetSnapshot>(snapshots.Length);
+            for (int i = 0; i < snapshots.Length; i++)
+            {
+                ProjectAssetSnapshot snapshot = snapshots[i];
+                if (snapshot == null || ShouldSkipProjectAsset(snapshot.assetPath))
+                    continue;
+
+                filtered.Add(snapshot);
+            }
+
+            return filtered.ToArray();
+        }
+
+        private static UnityEngine.Object LoadAssetForCapture(string assetPath)
+        {
+            if (loadedAssetLookup != null
+                && loadedAssetLookup.TryGetValue(assetPath, out UnityEngine.Object cachedAsset))
+            {
+                return cachedAsset;
+            }
+
+            return AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+        }
+
+        private static void CollectAssetPathsFromComponentSnapshots(
+            ComponentPropertySnapshot[] componentSnapshots,
+            HashSet<string> assetPaths)
+        {
+            if (componentSnapshots == null)
+                return;
+
+            for (int i = 0; i < componentSnapshots.Length; i++)
+            {
+                PropertySnapshot[] properties = componentSnapshots[i]?.properties;
+                if (properties == null)
+                    continue;
+
+                for (int p = 0; p < properties.Length; p++)
+                {
+                    string value = properties[p]?.value;
+                    if (string.IsNullOrEmpty(value) || !value.StartsWith("asset:", StringComparison.Ordinal))
+                        continue;
+
+                    string payload = value.Substring("asset:".Length);
+                    int typeSeparator = payload.LastIndexOf('|');
+                    if (typeSeparator <= 0)
+                        continue;
+
+                    string assetPath = payload.Substring(0, typeSeparator);
+                    if (!string.IsNullOrEmpty(assetPath))
+                        assetPaths.Add(assetPath);
+                }
+            }
+        }
+
+        private static PropertySnapshot[] CaptureProperties(
+            SerializedObject serializedObject,
+            Component sourceComponent = null)
+        {
+            PlayModeEditDeepSerializer.PropertySnapshot[] captured =
+                PlayModeEditDeepSerializer.CaptureAllProperties(serializedObject, sourceComponent);
+            return ConvertFromDeepProperties(captured);
+        }
+
+        private static bool ApplyProperties(SerializedObject serializedObject, PropertySnapshot[] properties)
+        {
+            PlayModeEditDeepSerializer.PropertySnapshot[] deepProperties = ConvertToDeepProperties(properties);
+            return PlayModeEditDeepSerializer.ApplyAllProperties(serializedObject, deepProperties, out bool changed) && changed;
+        }
+
+        private static PropertySnapshot[] ConvertFromDeepProperties(
+            PlayModeEditDeepSerializer.PropertySnapshot[] source)
+        {
+            if (source == null || source.Length == 0)
+                return Array.Empty<PropertySnapshot>();
+
+            PropertySnapshot[] converted = new PropertySnapshot[source.Length];
+            for (int i = 0; i < source.Length; i++)
+            {
+                converted[i] = new PropertySnapshot
+                {
+                    propertyPath = source[i].propertyPath,
+                    value = source[i].value
+                };
+            }
+
+            return converted;
+        }
+
+        private static PlayModeEditDeepSerializer.PropertySnapshot[] ConvertToDeepProperties(PropertySnapshot[] source)
+        {
+            if (source == null || source.Length == 0)
+                return Array.Empty<PlayModeEditDeepSerializer.PropertySnapshot>();
+
+            PlayModeEditDeepSerializer.PropertySnapshot[] converted =
+                new PlayModeEditDeepSerializer.PropertySnapshot[source.Length];
+            for (int i = 0; i < source.Length; i++)
+            {
+                converted[i] = new PlayModeEditDeepSerializer.PropertySnapshot
+                {
+                    propertyPath = source[i].propertyPath,
+                    value = source[i].value
+                };
+            }
+
+            return converted;
         }
 
         private static void ApplyCapturedSnapshots()
@@ -206,66 +969,337 @@ namespace Project.EditorTools
                 return;
             }
 
-            if (snapshot?.scenes == null || snapshot.scenes.Length == 0)
+            ProjectAssetSnapshot[] projectAssets = snapshot.projectAssets;
+            if (projectAssets == null || projectAssets.Length == 0)
+                projectAssets = ConvertLegacyScriptableObjectSnapshots(snapshot.scriptableObjects);
+
+            projectAssets = FilterExcludedProjectAssetSnapshots(projectAssets);
+
+            bool hasScenes = snapshot.scenes != null && snapshot.scenes.Length > 0;
+            bool hasAssets = projectAssets != null && projectAssets.Length > 0;
+            bool hasPrefabs = snapshot.prefabAssets != null && snapshot.prefabAssets.Length > 0;
+            if (!hasScenes && !hasAssets && !hasPrefabs)
             {
                 DeleteSnapshotFile();
                 return;
             }
 
             int appliedObjects = 0;
+            int createdObjects = 0;
             int savedScenes = 0;
+            int appliedProjectAssets = 0;
+            int appliedPrefabAssets = 0;
 
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName("Apply Play Mode Edits");
 
-            for (int i = 0; i < snapshot.scenes.Length; i++)
+            appliedProjectAssets = ApplyProjectAssetSnapshots(projectAssets);
+            appliedPrefabAssets = ApplyPrefabAssetSnapshots(snapshot.prefabAssets);
+            HashSet<string> appliedPrefabInstanceRoots = new HashSet<string>(StringComparer.Ordinal);
+
+            if (hasScenes)
             {
-                SceneSnapshot sceneSnapshot = snapshot.scenes[i];
-                if (sceneSnapshot == null || string.IsNullOrEmpty(sceneSnapshot.scenePath))
-                    continue;
-
-                Scene scene = EditorSceneManager.GetSceneByPath(sceneSnapshot.scenePath);
-                if (!scene.IsValid() || !scene.isLoaded)
-                    continue;
-
-                Dictionary<string, Transform> lookup = BuildHierarchyLookup(scene);
-                bool sceneChanged = false;
-
-                if (sceneSnapshot.objects == null)
-                    continue;
-
-                for (int o = 0; o < sceneSnapshot.objects.Length; o++)
+                for (int i = 0; i < snapshot.scenes.Length; i++)
                 {
-                    GameObjectSnapshot objectSnapshot = sceneSnapshot.objects[o];
-                    if (objectSnapshot == null || string.IsNullOrEmpty(objectSnapshot.hierarchyPath))
+                    SceneSnapshot sceneSnapshot = snapshot.scenes[i];
+                    if (sceneSnapshot == null || string.IsNullOrEmpty(sceneSnapshot.scenePath))
                         continue;
 
-                    if (!lookup.TryGetValue(objectSnapshot.hierarchyPath, out Transform targetTransform))
+                    Scene scene = EditorSceneManager.GetSceneByPath(sceneSnapshot.scenePath);
+                    if (!scene.IsValid() || !scene.isLoaded)
                         continue;
 
-                    if (ApplyGameObjectSnapshot(targetTransform.gameObject, objectSnapshot))
+                    Dictionary<string, Transform> lookup = BuildHierarchyLookup(scene);
+                    bool sceneChanged = false;
+
+                    if (sceneSnapshot.objects == null || sceneSnapshot.objects.Length == 0)
+                        continue;
+
+                    GameObjectSnapshot[] sortedObjects = SortSnapshotsByHierarchyDepth(sceneSnapshot.objects);
+                    for (int o = 0; o < sortedObjects.Length; o++)
                     {
-                        appliedObjects++;
-                        sceneChanged = true;
+                        GameObjectSnapshot objectSnapshot = sortedObjects[o];
+                        if (objectSnapshot == null || string.IsNullOrEmpty(objectSnapshot.hierarchyPath))
+                            continue;
+
+                        if (!lookup.TryGetValue(objectSnapshot.hierarchyPath, out Transform targetTransform))
+                        {
+                            targetTransform = CreateMissingTransform(scene, objectSnapshot, lookup);
+                            if (targetTransform == null)
+                                continue;
+
+                            createdObjects++;
+                            lookup[objectSnapshot.hierarchyPath] = targetTransform;
+                        }
+
+                        if (ApplyGameObjectSnapshot(targetTransform.gameObject, objectSnapshot, appliedPrefabInstanceRoots))
+                        {
+                            appliedObjects++;
+                            sceneChanged = true;
+                        }
                     }
+
+                    if (!sceneChanged)
+                        continue;
+
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    if (EditorSceneManager.SaveScene(scene))
+                        savedScenes++;
                 }
-
-                if (!sceneChanged)
-                    continue;
-
-                EditorSceneManager.MarkSceneDirty(scene);
-                if (EditorSceneManager.SaveScene(scene))
-                    savedScenes++;
             }
 
             Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
             DeleteSnapshotFile();
 
-            if (appliedObjects > 0)
+            if (appliedObjects > 0 || createdObjects > 0 || appliedProjectAssets > 0 || appliedPrefabAssets > 0)
             {
                 AssetDatabase.SaveAssets();
-                Debug.Log($"[Play Mode Edits] Applied {appliedObjects} object change(s) across {savedScenes} scene(s).");
+                Debug.Log(
+                    $"[Play Mode Saver] Applied {appliedObjects} object change(s), created {createdObjects} missing object(s), " +
+                    $"saved {savedScenes} scene(s), updated {appliedProjectAssets} data/material/text asset(s), " +
+                    $"and {appliedPrefabAssets} prefab asset(s).");
             }
+        }
+
+        private static int ApplyPrefabAssetSnapshots(PrefabAssetSnapshot[] prefabAssetSnapshots)
+        {
+            if (prefabAssetSnapshots == null || prefabAssetSnapshots.Length == 0)
+                return 0;
+
+            int applied = 0;
+            for (int i = 0; i < prefabAssetSnapshots.Length; i++)
+            {
+                PrefabAssetSnapshot prefabSnapshot = prefabAssetSnapshots[i];
+                if (prefabSnapshot == null || string.IsNullOrEmpty(prefabSnapshot.assetPath))
+                    continue;
+
+                if (PlayModeEditPlayerExclusions.ShouldSkipPrefabAssetCapture(prefabSnapshot.assetPath))
+                    continue;
+
+                GameObject prefabRoot;
+                try
+                {
+                    prefabRoot = PrefabUtility.LoadPrefabContents(prefabSnapshot.assetPath);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"[Play Mode Saver] Could not apply prefab snapshot for '{prefabSnapshot.assetPath}': {exception.Message}");
+                    continue;
+                }
+
+                if (prefabRoot == null)
+                    continue;
+
+                try
+                {
+                    Dictionary<string, Transform> lookup = BuildHierarchyLookupFromRoot(prefabRoot.transform);
+                    bool prefabChanged = false;
+
+                    GameObjectSnapshot[] sortedObjects = SortSnapshotsByHierarchyDepth(prefabSnapshot.objects);
+                    for (int o = 0; o < sortedObjects.Length; o++)
+                    {
+                        GameObjectSnapshot objectSnapshot = sortedObjects[o];
+                        if (objectSnapshot == null || string.IsNullOrEmpty(objectSnapshot.hierarchyPath))
+                            continue;
+
+                        if (!lookup.TryGetValue(objectSnapshot.hierarchyPath, out Transform targetTransform))
+                        {
+                            targetTransform = CreateMissingTransformInPrefab(prefabRoot, objectSnapshot, lookup);
+                            if (targetTransform == null)
+                                continue;
+
+                            lookup[objectSnapshot.hierarchyPath] = targetTransform;
+                        }
+
+                        if (ApplyGameObjectSnapshot(targetTransform.gameObject, objectSnapshot, null))
+                            prefabChanged = true;
+                    }
+
+                    if (!prefabChanged)
+                        continue;
+
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabSnapshot.assetPath);
+                    applied++;
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+                }
+            }
+
+            return applied;
+        }
+
+        private static Dictionary<string, Transform> BuildHierarchyLookupFromRoot(Transform root)
+        {
+            Dictionary<string, Transform> lookup = new Dictionary<string, Transform>();
+            IndexHierarchy(root, lookup);
+            return lookup;
+        }
+
+        private static Transform CreateMissingTransformInPrefab(
+            GameObject prefabRoot,
+            GameObjectSnapshot snapshot,
+            Dictionary<string, Transform> lookup)
+        {
+            string parentPath = GetParentHierarchyPath(snapshot.hierarchyPath);
+            Transform parent = null;
+            if (!string.IsNullOrEmpty(parentPath) && !lookup.TryGetValue(parentPath, out parent))
+                return null;
+
+            if (parent == null)
+                parent = prefabRoot.transform;
+
+            string objectName = GetLeafHierarchyName(snapshot.hierarchyPath);
+            GameObject gameObject = snapshot.hasRectTransform
+                ? new GameObject(objectName, typeof(RectTransform))
+                : new GameObject(objectName);
+
+            gameObject.transform.SetParent(parent, false);
+            EnsureComponentsExist(gameObject, snapshot.componentProperties);
+            return gameObject.transform;
+        }
+
+        private static ProjectAssetSnapshot[] ConvertLegacyScriptableObjectSnapshots(ScriptableObjectSnapshot[] legacySnapshots)
+        {
+            if (legacySnapshots == null || legacySnapshots.Length == 0)
+                return Array.Empty<ProjectAssetSnapshot>();
+
+            ProjectAssetSnapshot[] converted = new ProjectAssetSnapshot[legacySnapshots.Length];
+            for (int i = 0; i < legacySnapshots.Length; i++)
+            {
+                converted[i] = new ProjectAssetSnapshot
+                {
+                    assetPath = legacySnapshots[i].assetPath,
+                    assetType = legacySnapshots[i].assetType,
+                    properties = legacySnapshots[i].properties
+                };
+            }
+
+            return converted;
+        }
+
+        private static GameObjectSnapshot[] SortSnapshotsByHierarchyDepth(GameObjectSnapshot[] objects)
+        {
+            GameObjectSnapshot[] sorted = (GameObjectSnapshot[])objects.Clone();
+            Array.Sort(sorted, (left, right) =>
+                GetHierarchyDepth(left.hierarchyPath).CompareTo(GetHierarchyDepth(right.hierarchyPath)));
+            return sorted;
+        }
+
+        private static int GetHierarchyDepth(string hierarchyPath)
+        {
+            if (string.IsNullOrEmpty(hierarchyPath))
+                return 0;
+
+            int depth = 1;
+            for (int i = 0; i < hierarchyPath.Length; i++)
+            {
+                if (hierarchyPath[i] == '/')
+                    depth++;
+            }
+
+            return depth;
+        }
+
+        private static Transform CreateMissingTransform(
+            Scene scene,
+            GameObjectSnapshot snapshot,
+            Dictionary<string, Transform> lookup)
+        {
+            string parentPath = GetParentHierarchyPath(snapshot.hierarchyPath);
+            Transform parent = null;
+            if (!string.IsNullOrEmpty(parentPath) && !lookup.TryGetValue(parentPath, out parent))
+                return null;
+
+            string objectName = GetLeafHierarchyName(snapshot.hierarchyPath);
+            GameObject gameObject = snapshot.hasRectTransform
+                ? new GameObject(objectName, typeof(RectTransform))
+                : new GameObject(objectName);
+
+            Undo.RegisterCreatedObjectUndo(gameObject, "Create Play Mode Saved Object");
+
+            if (parent != null)
+                gameObject.transform.SetParent(parent, false);
+            else
+                SceneManager.MoveGameObjectToScene(gameObject, scene);
+
+            EnsureComponentsExist(gameObject, snapshot.componentProperties);
+            return gameObject.transform;
+        }
+
+        private static void EnsureComponentsExist(GameObject target, ComponentPropertySnapshot[] componentSnapshots)
+        {
+            if (componentSnapshots == null)
+                return;
+
+            for (int i = 0; i < componentSnapshots.Length; i++)
+            {
+                ComponentPropertySnapshot componentSnapshot = componentSnapshots[i];
+                if (componentSnapshot == null || string.IsNullOrEmpty(componentSnapshot.componentType))
+                    continue;
+
+                Type componentType = Type.GetType(componentSnapshot.componentType);
+                if (componentType == null || target.GetComponent(componentType) != null)
+                    continue;
+
+                Undo.AddComponent(target, componentType);
+            }
+        }
+
+        private static string GetParentHierarchyPath(string hierarchyPath)
+        {
+            if (string.IsNullOrEmpty(hierarchyPath))
+                return string.Empty;
+
+            int lastSlash = hierarchyPath.LastIndexOf('/');
+            return lastSlash <= 0 ? string.Empty : hierarchyPath.Substring(0, lastSlash);
+        }
+
+        private static string GetLeafHierarchyName(string hierarchyPath)
+        {
+            if (string.IsNullOrEmpty(hierarchyPath))
+                return "PlayModeSavedObject";
+
+            int lastSlash = hierarchyPath.LastIndexOf('/');
+            return lastSlash < 0 ? hierarchyPath : hierarchyPath.Substring(lastSlash + 1);
+        }
+
+        private static int ApplyProjectAssetSnapshots(ProjectAssetSnapshot[] projectAssetSnapshots)
+        {
+            if (projectAssetSnapshots == null || projectAssetSnapshots.Length == 0)
+                return 0;
+
+            int applied = 0;
+            for (int i = 0; i < projectAssetSnapshots.Length; i++)
+            {
+                ProjectAssetSnapshot snapshot = projectAssetSnapshots[i];
+                if (snapshot == null || string.IsNullOrEmpty(snapshot.assetPath))
+                    continue;
+
+                if (ShouldSkipProjectAsset(snapshot.assetPath))
+                    continue;
+
+                Type assetType = string.IsNullOrEmpty(snapshot.assetType)
+                    ? typeof(UnityEngine.Object)
+                    : Type.GetType(snapshot.assetType) ?? typeof(UnityEngine.Object);
+
+                UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath(snapshot.assetPath, assetType);
+                if (asset == null)
+                    continue;
+
+                SerializedObject serializedObject = new SerializedObject(asset);
+                Undo.RecordObject(asset, "Apply Play Mode Project Asset");
+
+                if (!ApplyProperties(serializedObject, snapshot.properties))
+                    continue;
+
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(asset);
+                applied++;
+            }
+
+            return applied;
         }
 
         private static Dictionary<string, Transform> BuildHierarchyLookup(Scene scene)
@@ -289,13 +1323,81 @@ namespace Project.EditorTools
                 IndexHierarchy(transform.GetChild(i), lookup);
         }
 
-        private static bool ApplyGameObjectSnapshot(GameObject target, GameObjectSnapshot snapshot)
+        private static bool ApplyGameObjectSnapshot(
+            GameObject target,
+            GameObjectSnapshot snapshot,
+            HashSet<string> appliedPrefabInstanceRoots)
         {
+            if (PlayModeEditPlayerExclusions.ShouldSkipApply(target.transform))
+                return false;
+
             bool changed = false;
             Transform transform = target.transform;
 
             Undo.RecordObject(transform, "Apply Play Mode Transform");
-            if (!snapshot.hasRectTransform)
+            if (snapshot.hasRectTransform && transform is RectTransform rectTransform)
+            {
+                if (rectTransform.anchorMin != snapshot.anchorMin)
+                {
+                    rectTransform.anchorMin = snapshot.anchorMin;
+                    changed = true;
+                }
+
+                if (rectTransform.anchorMax != snapshot.anchorMax)
+                {
+                    rectTransform.anchorMax = snapshot.anchorMax;
+                    changed = true;
+                }
+
+                if (rectTransform.pivot != snapshot.pivot)
+                {
+                    rectTransform.pivot = snapshot.pivot;
+                    changed = true;
+                }
+
+                if (rectTransform.anchoredPosition != snapshot.anchoredPosition)
+                {
+                    rectTransform.anchoredPosition = snapshot.anchoredPosition;
+                    changed = true;
+                }
+
+                if (rectTransform.anchoredPosition3D != snapshot.anchoredPosition3D)
+                {
+                    rectTransform.anchoredPosition3D = snapshot.anchoredPosition3D;
+                    changed = true;
+                }
+
+                if (rectTransform.sizeDelta != snapshot.sizeDelta)
+                {
+                    rectTransform.sizeDelta = snapshot.sizeDelta;
+                    changed = true;
+                }
+
+                if (rectTransform.offsetMin != snapshot.offsetMin)
+                {
+                    rectTransform.offsetMin = snapshot.offsetMin;
+                    changed = true;
+                }
+
+                if (rectTransform.offsetMax != snapshot.offsetMax)
+                {
+                    rectTransform.offsetMax = snapshot.offsetMax;
+                    changed = true;
+                }
+
+                if (rectTransform.localRotation != snapshot.localRotation)
+                {
+                    rectTransform.localRotation = snapshot.localRotation;
+                    changed = true;
+                }
+
+                if (rectTransform.localScale != snapshot.localScale)
+                {
+                    rectTransform.localScale = snapshot.localScale;
+                    changed = true;
+                }
+            }
+            else
             {
                 if (transform.localPosition != snapshot.localPosition)
                 {
@@ -315,11 +1417,6 @@ namespace Project.EditorTools
                     changed = true;
                 }
             }
-            else if (transform.localScale != snapshot.localScale)
-            {
-                transform.localScale = snapshot.localScale;
-                changed = true;
-            }
 
             if (target.activeSelf != snapshot.activeSelf)
             {
@@ -327,13 +1424,67 @@ namespace Project.EditorTools
                 changed = true;
             }
 
+            Undo.RecordObject(target, "Apply Play Mode GameObject");
+            if (!string.IsNullOrEmpty(snapshot.tag) && !string.Equals(target.tag, snapshot.tag, StringComparison.Ordinal))
+            {
+                try
+                {
+                    target.tag = snapshot.tag;
+                    changed = true;
+                }
+                catch (UnityException exception)
+                {
+                    Debug.LogWarning($"[Play Mode Saver] Could not apply tag '{snapshot.tag}' on '{target.name}': {exception.Message}");
+                }
+            }
+
+            if (target.layer != snapshot.layer)
+            {
+                target.layer = snapshot.layer;
+                changed = true;
+            }
+
+            if (target.isStatic != snapshot.isStatic)
+            {
+                target.isStatic = snapshot.isStatic;
+                changed = true;
+            }
+
             if (snapshot.componentProperties != null)
                 changed |= ApplyComponentProperties(target, snapshot.componentProperties);
+
+            changed |= TryApplyPrefabInstanceOverrides(target, appliedPrefabInstanceRoots);
 
             if (changed)
                 EditorUtility.SetDirty(target);
 
             return changed;
+        }
+
+        private static bool TryApplyPrefabInstanceOverrides(
+            GameObject target,
+            HashSet<string> appliedPrefabInstanceRoots)
+        {
+            if (appliedPrefabInstanceRoots == null || !PrefabUtility.IsPartOfPrefabInstance(target))
+                return false;
+
+            GameObject outermostRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(target);
+            if (outermostRoot == null)
+                return false;
+
+            string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(outermostRoot);
+            if (string.IsNullOrEmpty(prefabPath) || !IsProjectAssetPath(prefabPath))
+                return false;
+
+            if (appliedPrefabInstanceRoots.Contains(prefabPath))
+                return false;
+
+            if (!PrefabUtility.HasPrefabInstanceAnyOverrides(outermostRoot, false))
+                return false;
+
+            PrefabUtility.ApplyPrefabInstance(outermostRoot, InteractionMode.UserAction);
+            appliedPrefabInstanceRoots.Add(prefabPath);
+            return true;
         }
 
         private static bool ApplyComponentProperties(GameObject target, ComponentPropertySnapshot[] componentSnapshots)
@@ -352,28 +1503,15 @@ namespace Project.EditorTools
 
                 Component component = target.GetComponent(componentType);
                 if (component == null)
+                    component = Undo.AddComponent(target, componentType);
+
+                if (component == null)
                     continue;
 
                 SerializedObject serializedObject = new SerializedObject(component);
                 Undo.RecordObject(component, "Apply Play Mode Component");
 
-                bool componentChanged = false;
-                PropertySnapshot[] properties = componentSnapshot.properties;
-                for (int p = 0; p < properties.Length; p++)
-                {
-                    PropertySnapshot propertySnapshot = properties[p];
-                    if (propertySnapshot == null || string.IsNullOrEmpty(propertySnapshot.propertyPath))
-                        continue;
-
-                    SerializedProperty property = serializedObject.FindProperty(propertySnapshot.propertyPath);
-                    if (property == null)
-                        continue;
-
-                    if (TryImportProperty(property, propertySnapshot.value))
-                        componentChanged = true;
-                }
-
-                if (!componentChanged)
+                if (!ApplyProperties(serializedObject, componentSnapshot.properties))
                     continue;
 
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
@@ -398,280 +1536,6 @@ namespace Project.EditorTools
             return GetHierarchyPath(transform.parent) + "/" + transform.name;
         }
 
-        private static bool TryExportProperty(SerializedProperty property, out string value)
-        {
-            value = null;
-            if (property == null)
-                return false;
-
-            switch (property.propertyType)
-            {
-                case SerializedPropertyType.Integer:
-                    value = property.intValue.ToString();
-                    return true;
-                case SerializedPropertyType.Boolean:
-                    value = property.boolValue ? "1" : "0";
-                    return true;
-                case SerializedPropertyType.Float:
-                    value = property.floatValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    return true;
-                case SerializedPropertyType.String:
-                    value = property.stringValue ?? string.Empty;
-                    return true;
-                case SerializedPropertyType.Color:
-                    Color color = property.colorValue;
-                    value = $"{color.r},{color.g},{color.b},{color.a}";
-                    return true;
-                case SerializedPropertyType.Vector2:
-                    Vector2 v2 = property.vector2Value;
-                    value = $"{v2.x},{v2.y}";
-                    return true;
-                case SerializedPropertyType.Vector3:
-                    Vector3 v3 = property.vector3Value;
-                    value = $"{v3.x},{v3.y},{v3.z}";
-                    return true;
-                case SerializedPropertyType.Vector4:
-                    Vector4 v4 = property.vector4Value;
-                    value = $"{v4.x},{v4.y},{v4.z},{v4.w}";
-                    return true;
-                case SerializedPropertyType.Quaternion:
-                    Quaternion q = property.quaternionValue;
-                    value = $"{q.x},{q.y},{q.z},{q.w}";
-                    return true;
-                case SerializedPropertyType.Enum:
-                    value = property.enumValueIndex.ToString();
-                    return true;
-                case SerializedPropertyType.Vector2Int:
-                    Vector2Int v2i = property.vector2IntValue;
-                    value = $"{v2i.x},{v2i.y}";
-                    return true;
-                case SerializedPropertyType.Vector3Int:
-                    Vector3Int v3i = property.vector3IntValue;
-                    value = $"{v3i.x},{v3i.y},{v3i.z}";
-                    return true;
-                case SerializedPropertyType.Rect:
-                    Rect rect = property.rectValue;
-                    value = $"{rect.x},{rect.y},{rect.width},{rect.height}";
-                    return true;
-                case SerializedPropertyType.ObjectReference:
-                {
-                    UnityEngine.Object reference = property.objectReferenceValue;
-                    if (reference == null)
-                    {
-                        value = string.Empty;
-                        return true;
-                    }
-
-                    string assetPath = AssetDatabase.GetAssetPath(reference);
-                    if (!string.IsNullOrEmpty(assetPath))
-                    {
-                        value = "asset:" + assetPath + "|" + reference.GetType().AssemblyQualifiedName;
-                        return true;
-                    }
-
-                    return false;
-                }
-                case SerializedPropertyType.Bounds:
-                    Bounds bounds = property.boundsValue;
-                    value = $"{bounds.center.x},{bounds.center.y},{bounds.center.z}|{bounds.size.x},{bounds.size.y},{bounds.size.z}";
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private static bool TryImportProperty(SerializedProperty property, string value)
-        {
-            if (property == null || value == null)
-                return false;
-
-            switch (property.propertyType)
-            {
-                case SerializedPropertyType.Integer:
-                    if (!int.TryParse(value, out int intValue))
-                        return false;
-                    if (property.intValue == intValue)
-                        return false;
-                    property.intValue = intValue;
-                    return true;
-                case SerializedPropertyType.Boolean:
-                    bool boolValue = value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase);
-                    if (property.boolValue == boolValue)
-                        return false;
-                    property.boolValue = boolValue;
-                    return true;
-                case SerializedPropertyType.Float:
-                    if (!float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float floatValue))
-                        return false;
-                    if (Mathf.Approximately(property.floatValue, floatValue))
-                        return false;
-                    property.floatValue = floatValue;
-                    return true;
-                case SerializedPropertyType.String:
-                    if (property.stringValue == value)
-                        return false;
-                    property.stringValue = value;
-                    return true;
-                case SerializedPropertyType.Color:
-                    if (!TryParseFloatCsv(value, 4, out float[] colorParts))
-                        return false;
-                    Color color = new Color(colorParts[0], colorParts[1], colorParts[2], colorParts[3]);
-                    if (property.colorValue == color)
-                        return false;
-                    property.colorValue = color;
-                    return true;
-                case SerializedPropertyType.Vector2:
-                    if (!TryParseFloatCsv(value, 2, out float[] v2Parts))
-                        return false;
-                    Vector2 vector2 = new Vector2(v2Parts[0], v2Parts[1]);
-                    if (property.vector2Value == vector2)
-                        return false;
-                    property.vector2Value = vector2;
-                    return true;
-                case SerializedPropertyType.Vector3:
-                    if (!TryParseFloatCsv(value, 3, out float[] v3Parts))
-                        return false;
-                    Vector3 vector3 = new Vector3(v3Parts[0], v3Parts[1], v3Parts[2]);
-                    if (property.vector3Value == vector3)
-                        return false;
-                    property.vector3Value = vector3;
-                    return true;
-                case SerializedPropertyType.Vector4:
-                    if (!TryParseFloatCsv(value, 4, out float[] v4Parts))
-                        return false;
-                    Vector4 vector4 = new Vector4(v4Parts[0], v4Parts[1], v4Parts[2], v4Parts[3]);
-                    if (property.vector4Value == vector4)
-                        return false;
-                    property.vector4Value = vector4;
-                    return true;
-                case SerializedPropertyType.Quaternion:
-                    if (!TryParseFloatCsv(value, 4, out float[] qParts))
-                        return false;
-                    Quaternion quaternion = new Quaternion(qParts[0], qParts[1], qParts[2], qParts[3]);
-                    if (property.quaternionValue == quaternion)
-                        return false;
-                    property.quaternionValue = quaternion;
-                    return true;
-                case SerializedPropertyType.Enum:
-                    if (!int.TryParse(value, out int enumIndex))
-                        return false;
-                    if (property.enumValueIndex == enumIndex)
-                        return false;
-                    property.enumValueIndex = enumIndex;
-                    return true;
-                case SerializedPropertyType.Vector2Int:
-                    if (!TryParseIntCsv(value, 2, out int[] v2iParts))
-                        return false;
-                    Vector2Int vector2Int = new Vector2Int(v2iParts[0], v2iParts[1]);
-                    if (property.vector2IntValue == vector2Int)
-                        return false;
-                    property.vector2IntValue = vector2Int;
-                    return true;
-                case SerializedPropertyType.Vector3Int:
-                    if (!TryParseIntCsv(value, 3, out int[] v3iParts))
-                        return false;
-                    Vector3Int vector3Int = new Vector3Int(v3iParts[0], v3iParts[1], v3iParts[2]);
-                    if (property.vector3IntValue == vector3Int)
-                        return false;
-                    property.vector3IntValue = vector3Int;
-                    return true;
-                case SerializedPropertyType.Rect:
-                    if (!TryParseFloatCsv(value, 4, out float[] rectParts))
-                        return false;
-                    Rect rect = new Rect(rectParts[0], rectParts[1], rectParts[2], rectParts[3]);
-                    if (property.rectValue == rect)
-                        return false;
-                    property.rectValue = rect;
-                    return true;
-                case SerializedPropertyType.ObjectReference:
-                {
-                    if (string.IsNullOrEmpty(value))
-                    {
-                        if (property.objectReferenceValue == null)
-                            return false;
-                        property.objectReferenceValue = null;
-                        return true;
-                    }
-
-                    if (!value.StartsWith("asset:", StringComparison.Ordinal))
-                        return false;
-
-                    string payload = value.Substring("asset:".Length);
-                    int typeSeparator = payload.LastIndexOf('|');
-                    if (typeSeparator <= 0)
-                        return false;
-
-                    string assetPath = payload.Substring(0, typeSeparator);
-                    string typeName = payload.Substring(typeSeparator + 1);
-                    Type referenceType = Type.GetType(typeName) ?? typeof(UnityEngine.Object);
-                    UnityEngine.Object loaded = AssetDatabase.LoadAssetAtPath(assetPath, referenceType);
-                    if (loaded == null || property.objectReferenceValue == loaded)
-                        return false;
-
-                    property.objectReferenceValue = loaded;
-                    return true;
-                }
-                case SerializedPropertyType.Bounds:
-                {
-                    string[] boundsGroups = value.Split('|');
-                    if (boundsGroups.Length != 2
-                        || !TryParseFloatCsv(boundsGroups[0], 3, out float[] centerParts)
-                        || !TryParseFloatCsv(boundsGroups[1], 3, out float[] sizeParts))
-                        return false;
-
-                    Bounds bounds = new Bounds(
-                        new Vector3(centerParts[0], centerParts[1], centerParts[2]),
-                        new Vector3(sizeParts[0], sizeParts[1], sizeParts[2]));
-                    if (property.boundsValue.center == bounds.center && property.boundsValue.size == bounds.size)
-                        return false;
-                    property.boundsValue = bounds;
-                    return true;
-                }
-                default:
-                    return false;
-            }
-        }
-
-        private static bool TryParseFloatCsv(string value, int expectedCount, out float[] parts)
-        {
-            parts = null;
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            string[] tokens = value.Split(',');
-            if (tokens.Length != expectedCount)
-                return false;
-
-            parts = new float[expectedCount];
-            for (int i = 0; i < expectedCount; i++)
-            {
-                if (!float.TryParse(tokens[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out parts[i]))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryParseIntCsv(string value, int expectedCount, out int[] parts)
-        {
-            parts = null;
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            string[] tokens = value.Split(',');
-            if (tokens.Length != expectedCount)
-                return false;
-
-            parts = new int[expectedCount];
-            for (int i = 0; i < expectedCount; i++)
-            {
-                if (!int.TryParse(tokens[i], out parts[i]))
-                    return false;
-            }
-
-            return true;
-        }
-
         private static void DeleteSnapshotFile()
         {
             if (File.Exists(SnapshotPath))
@@ -683,6 +1547,16 @@ namespace Project.EditorTools
         {
             public string capturedUtc;
             public SceneSnapshot[] scenes;
+            public ProjectAssetSnapshot[] projectAssets;
+            public PrefabAssetSnapshot[] prefabAssets;
+            public ScriptableObjectSnapshot[] scriptableObjects;
+        }
+
+        [Serializable]
+        private class PrefabAssetSnapshot
+        {
+            public string assetPath;
+            public GameObjectSnapshot[] objects;
         }
 
         [Serializable]
@@ -697,11 +1571,38 @@ namespace Project.EditorTools
         {
             public string hierarchyPath;
             public bool activeSelf;
+            public string tag;
+            public int layer;
+            public bool isStatic;
             public bool hasRectTransform;
             public Vector3 localPosition;
             public Quaternion localRotation;
             public Vector3 localScale;
+            public Vector2 anchorMin;
+            public Vector2 anchorMax;
+            public Vector2 pivot;
+            public Vector2 anchoredPosition;
+            public Vector3 anchoredPosition3D;
+            public Vector2 sizeDelta;
+            public Vector2 offsetMin;
+            public Vector2 offsetMax;
             public ComponentPropertySnapshot[] componentProperties;
+        }
+
+        [Serializable]
+        private class ProjectAssetSnapshot
+        {
+            public string assetPath;
+            public string assetType;
+            public PropertySnapshot[] properties;
+        }
+
+        [Serializable]
+        private class ScriptableObjectSnapshot
+        {
+            public string assetPath;
+            public string assetType;
+            public PropertySnapshot[] properties;
         }
 
         [Serializable]

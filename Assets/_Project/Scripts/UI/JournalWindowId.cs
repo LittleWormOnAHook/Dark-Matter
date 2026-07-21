@@ -8,8 +8,10 @@ namespace Project.UI
         Pet,
         Craft,
         Pioneers,
+        Character,
         Recipes,
         Skills,
-        Echoes
+        Echoes,
+        Achievements
     }
 }

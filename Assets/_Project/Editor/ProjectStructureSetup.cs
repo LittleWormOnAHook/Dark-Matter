@@ -69,7 +69,7 @@ namespace Project.EditorTools
 
             AssetDatabase.Refresh();
             ProjectFolderColorizer.RefreshFolderColors();
-            Debug.Log("Survival Pioneer folder structure is ready under Assets/_Project.");
+            Debug.Log("Dark Matter Genesis folder structure is ready under Assets/_Project.");
         }
     }
 }

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Two-Handed Sword
   icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
   worldPrefab: {fileID: 139706, guid: c5c45979905c4564694752a3c6ef4466, type: 3}
-  maxStack: 1
+  maxStack: 10
   itemType: 2
   weaponGrip: 1
   heldPrefab: {fileID: 5512312539173088814, guid: 7f4e2a91c8d643b0a1e59f2d8c6b3e04, type: 3}
@@ -26,26 +26,61 @@ MonoBehaviour:
   heldLocalRotation: {x: -1.0000001, y: 0, z: 0, w: 0}
   heldLocalScale: {x: 1.5417, y: 0.99999964, z: 0.99999964}
   swingEulerAngles: {x: -90, y: 0, z: 0}
-  sheatheSocketName: Spine
+  sheatheSocketName: Spine2
   sheathedLocalPosition: {x: -0.59448534, y: -0.12776479, z: -0.18241131}
-  sheathedLocalEuler: {x: 344.41852, y: 164.03569, z: 0.11844179}
+  sheathedLocalEuler: {x: 344.4185, y: 164.0357, z: 0.1184418}
   useSheathedLocalRotation: 1
   sheathedLocalRotation: {x: 0.017809708, y: -0.98118955, z: -0.13438417, w: -0.13744411}
   sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
   meleeDamage: 28
   meleeDamageRandomRange: 12
   criticalDamageMultiplier: 3.5
   meleeRange: 3.4
   meleeCooldown: 0.85
+  attackAnimationSpeed: 0
   gatherPower: 2
   attackTrigger: Attack
+  rangedDamage: 14
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 85
+  projectileSpreadDegrees: 1.5
+  fireRate: 4
+  magazineSize: 30
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  componentCategory: 0
   toolType: 0
   toolRange: 8
   scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
   healthRestore: 0
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
   isPiInfused: 0
   piValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
   tooltipDescription: A heavy two-handed blade. Cannot block while equipped.

@@ -12,9 +12,142 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 345ce91541cd9cf4fb545764b185bbf8, type: 3}
   m_Name: OpticsCrosshairLibrary
   m_EditorClassIdentifier: Assembly-CSharp::Project.UI.OpticsCrosshairLibrary
-  binocularScopeFull: {fileID: 2800000, guid: 304a0e06e8f58e04fb144f71738e49ab, type: 3}
+  binocularScopeFull: {fileID: 2800000, guid: 0db1bc4cd22a6784594f72e2e4a7b484, type: 3}
   binocularScopeInnerGlow: {fileID: 2800000, guid: 739939cde7348b24aaec3d9bb4218868, type: 3}
   binocularScopeOuter: {fileID: 2800000, guid: 24bf4a983fbd0454490537e91cc19e92, type: 3}
   scannerHolographic: {fileID: 2800000, guid: 6c06e4ddf453e924c917466e28980a39, type: 3}
   scannerHolographicGlow: {fileID: 2800000, guid: a880b4ed4b31ef545ae5ed68589da1f2, type: 3}
-  scannerRectMask: {fileID: 10914, guid: 0000000000000000f000000000000000, type: 0}
+  scannerRectMask: {fileID: 2800000, guid: 334b444b05f081942be5affa577195c0, type: 3}
+  scannerMaskFrameSprite: {fileID: 21300000, guid: 334b444b05f081942be5affa577195c0, type: 3}
+  viewportBackgroundSprite: {fileID: 21300000, guid: 521a917cfbabe9b4387c40a7fb28101b, type: 3}
+  viewportMaterial: {fileID: 2100000, guid: 54dbc6b26aedffa41b86d27d5241311a, type: 2}
+  binocularScopeOuterLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 1, g: 1, b: 1, a: 0.55}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 420, y: 420}
+    preserveAspect: 1
+    imageType: 0
+    visible: 1
+  binocularScopeFullLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 1, g: 1, b: 1, a: 1}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 420, y: 420}
+    preserveAspect: 1
+    imageType: 0
+    visible: 0
+  binocularScopeInnerGlowLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 0.902, g: 0.949, b: 1, a: 0.922}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 680, y: 680}
+    preserveAspect: 1
+    imageType: 0
+    visible: 1
+  scannerMaskFrameLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 0.149, g: 0.949, b: 0.749, a: 0.18}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 420, y: 420}
+    preserveAspect: 0
+    imageType: 1
+    visible: 1
+  scannerFrameLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 0.349, g: 1, b: 0.82, a: 0.949}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 900, y: 900}
+    preserveAspect: 1
+    imageType: 0
+    visible: 1
+  scannerReticleLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 1, g: 0.184, b: 0, a: 1}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 420, y: 420}
+    preserveAspect: 1
+    imageType: 0
+    visible: 1
+  scannerTintOverlayLayer:
+    sprite: {fileID: 0}
+    material: {fileID: 0}
+    color: {r: 0.122, g: 0.902, b: 0.698, a: 0.051}
+    stretchToParent: 1
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    sizeDelta: {x: 420, y: 420}
+    preserveAspect: 1
+    imageType: 0
+    visible: 1
+  viewport:
+    backgroundColor: {r: 0, g: 0, b: 0, a: 1}
+    rawImageColor: {r: 1, g: 1, b: 1, a: 1}
+    materialOverride: {fileID: 0}
+    binocularRadius: 0.33
+    binocularEdgeSoftness: 0.014
+    binocularTint: {r: 0.95, g: 0.98, b: 1, a: 1}
+    scannerRectHalfWidth: 0.4
+    scannerRectHalfHeight: 0.24
+    scannerEdgeSoftness: 0.012
+    scannerFuzz: 0.035
+    scannerTint: {r: 0.82, g: 1, b: 0.9, a: 1}
+    scannerHalfWidthPixels: 420
+    scannerHalfHeightPixels: 250
+  modeLabel:
+    anchor: {x: 0.5, y: 0.9}
+    sizeDelta: {x: 640, y: 36}
+    fontSize: 22
+    scannerColor: {r: 0.549, g: 1, b: 0.82, a: 0.949}
+    binocularColor: {r: 0.85, g: 0.95, b: 1, a: 0.95}
+    scannerText: SCANNER MODE
+    binocularText: BINOCULARS
+  hintLabel:
+    anchor: {x: 0.5, y: 0.06}
+    sizeDelta: {x: 640, y: 36}
+    fontSize: 20
+    color: {r: 0.992, g: 0.71, b: 0.29, a: 1}
+    scannerHint: '[RMB] Close  |  [Scroll] Zoom  |  POI glow active'
+    binocularHint: '[RMB] Close  |  [Scroll] Zoom'
+  scannerMarkers:
+    markerSprite: {fileID: 21300000, guid: 95217abe94ca0724c8a39fa0c07cf390, type: 3}
+    markerMaterial: {fileID: 0}
+    markerSize: {x: 26, y: 26}
+    labelColor: {r: 0.55, g: 1, b: 0.85, a: 0.95}
+    labelFontSize: 14
+    labelOffset: {x: 12, y: 0}
+    labelSize: {x: 250, y: 60}
+    activePulseBase: 0.7
+    postScanPulseBase: 0.55

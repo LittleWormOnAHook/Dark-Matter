@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfc7af865c9044b4a8a64fec37a7d9e0, type: 3}
+  m_Name: Exposure_Shelter_Safe
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
+  displayName: Shelter Safe Zone
+  zoneKind: 7
+  designerNotes: 
+  radiationPerSecond: 0
+  thermalColdPerSecond: 0
+  thermalHeatPerSecond: 0
+  sulfurPerSecond: 0
+  volcanoPerSecond: 0
+  oxygenDrainMultiplier: 0.75
+  exposureRecoveryPerSecond: 18
+  thermalRecoveryPerSecond: 20
+  healthDrainAtMaxExposure: 2
+  healthDrainAtMaxThermal: 1.5
+  pulse:
+    enabled: 0
+    activeDurationSeconds: 8
+    inactiveDurationSeconds: 4
+    activeIntensityMultiplier: 1.5
+    timingJitter: 0.15
+  mitigationRules: []
+  playerDebuffs:
+    moveSpeedPenalty: 0.15
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  companionDebuffs:
+    moveSpeedPenalty: 0.15
+    staminaRegenPenalty: 0.2
+    accuracyPenalty: 0.1
+    damageTakenMultiplier: 1.15
+    debuffThreshold: 0.35
+  gizmoColor: {r: 0.35, g: 0.85, b: 0.45, a: 0.35}
+  ambientVfxPrefab: {fileID: 0}
+  ambientLoopClip: {fileID: 0}

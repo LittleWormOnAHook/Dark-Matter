@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Project.Player;
+using Project.Player.Invector;
 using ECM2;
 using Project.AI;
 using Project.Building;
@@ -8,10 +10,10 @@ using Project.Core;
 using Project.Crafting;
 using Project.Inventory;
 using Project.Pet;
-using Project.Player;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
+using Project.Vehicles;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -54,7 +56,6 @@ namespace Project.Interaction
         private Camera viewCamera;
         private float lastUseTime = -999f;
         private UIManager promptUiManager;
-        private bool worldPromptOwned;
 
         public static void Register(IWorldUsable usable)
         {
@@ -572,6 +573,13 @@ namespace Project.Interaction
             if (playerTransform == null)
                 return DefaultPickupAimHeight;
 
+            if (PioneerInvectorBootstrap.IsInvectorPlayer(playerTransform))
+            {
+                PioneerInvectorBootstrap bootstrap = playerTransform.GetComponent<PioneerInvectorBootstrap>();
+                if (bootstrap != null && bootstrap.ThirdPersonController != null)
+                    return bootstrap.ThirdPersonController.colliderHeight * 0.5f;
+            }
+
             Character character = playerTransform.GetComponent<Character>();
             if (character != null && character.height > 0.1f)
                 return character.height * 0.5f;
@@ -988,7 +996,6 @@ namespace Project.Interaction
                     promptUiManager = FindAnyObjectByType<UIManager>();
 
                 promptUiManager?.ShowInteractionPrompt(message);
-                worldPromptOwned = true;
                 return;
             }
 
@@ -1017,14 +1024,10 @@ namespace Project.Interaction
 
         private void ClearOwnedWorldPrompt()
         {
-            if (!worldPromptOwned)
-                return;
-
             if (promptUiManager == null)
                 promptUiManager = FindAnyObjectByType<UIManager>();
 
             promptUiManager?.HideInteractionPrompt();
-            worldPromptOwned = false;
         }
 
         private WorldUseContext BuildPromptContext()
@@ -1061,6 +1064,14 @@ namespace Project.Interaction
 
         private static string BuildWorldInteractionPrompt(WorldUseContext context)
         {
+            string vehicleExitPrompt = HovercraftUsable.TryGetExitPrompt();
+            if (!string.IsNullOrEmpty(vehicleExitPrompt))
+                return vehicleExitPrompt;
+
+            string vehicleBoardPrompt = HovercraftUsable.TryGetBoardPrompt(context);
+            if (!string.IsNullOrEmpty(vehicleBoardPrompt))
+                return vehicleBoardPrompt;
+
             if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
                 && itemInRange
                 && itemPickup != null

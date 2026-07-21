@@ -13,14 +13,14 @@ namespace Project.Core
         private const string VSyncKey = "settings.vsync";
         private const string QualityKey = "settings.quality";
         private const string ResolutionIndexKey = "settings.resolutionIndex";
-        private const string MapSystemEnabledKey = "settings.mapSystemEnabled";
+        private const string MinimapEnabledKey = "settings.mapSystemEnabled";
         private const string SaveExistsKey = "save.exists";
 
         public static float MasterVolume { get; private set; } = 1f;
         public static float MusicVolume { get; private set; } = 1f;
         public static float SfxVolume { get; private set; } = 1f;
         public static bool PostProcessingEnabled { get; private set; } = true;
-        public static bool MapSystemEnabled { get; private set; } = true;
+        public static bool MinimapEnabled { get; private set; } = true;
         public static bool Fullscreen { get; private set; } = true;
         public static bool VSync { get; private set; } = true;
 
@@ -32,7 +32,7 @@ namespace Project.Core
             MusicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.85f);
             SfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, 1f);
             PostProcessingEnabled = PlayerPrefs.GetInt(PostProcessingKey, 1) == 1;
-            MapSystemEnabled = PlayerPrefs.GetInt(MapSystemEnabledKey, 1) == 1;
+            MinimapEnabled = PlayerPrefs.GetInt(MinimapEnabledKey, 1) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             VSync = PlayerPrefs.GetInt(VSyncKey, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1;
 
@@ -44,6 +44,7 @@ namespace Project.Core
             ApplyAudio();
             ApplyDisplay();
             SetResolutionIndex(GetCurrentResolutionIndex());
+            PlatformGraphicsBootstrap.ApplyAfterSettingsLoad();
         }
 
         public static void Save()
@@ -52,7 +53,7 @@ namespace Project.Core
             PlayerPrefs.SetFloat(MusicVolumeKey, MusicVolume);
             PlayerPrefs.SetFloat(SfxVolumeKey, SfxVolume);
             PlayerPrefs.SetInt(PostProcessingKey, PostProcessingEnabled ? 1 : 0);
-            PlayerPrefs.SetInt(MapSystemEnabledKey, MapSystemEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(MinimapEnabledKey, MinimapEnabled ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
             PlayerPrefs.SetInt(VSyncKey, VSync ? 1 : 0);
             PlayerPrefs.SetInt(QualityKey, QualitySettings.GetQualityLevel());
@@ -83,9 +84,9 @@ namespace Project.Core
             PostProcessingEnabled = enabled;
         }
 
-        public static void SetMapSystemEnabled(bool enabled)
+        public static void SetMinimapEnabled(bool enabled)
         {
-            MapSystemEnabled = enabled;
+            MinimapEnabled = enabled;
         }
 
         public static void SetFullscreen(bool enabled)
@@ -104,6 +105,7 @@ namespace Project.Core
         {
             level = Mathf.Clamp(level, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
             QualitySettings.SetQualityLevel(level, applyExpensiveChanges: true);
+            PlatformGraphicsBootstrap.ApplyTierOverrides(level);
         }
 
         public static void SetResolutionIndex(int index)
