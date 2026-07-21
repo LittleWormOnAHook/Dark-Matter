@@ -1,5 +1,5 @@
 # Project Overview
-- Game Title: Survival Pioneer
+- Game Title: Dark Matter: Genesis
 - High-Level Concept: An immersive 3D survival game with advanced character movement, resource harvesting, and combat.
 - Players: Single-player.
 - Target Platform: PC (StandaloneWindows64).

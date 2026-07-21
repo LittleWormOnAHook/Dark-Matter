@@ -28,7 +28,7 @@ namespace Project.EditorTools
                 return false;
 
             Debug.LogWarning(
-                $"Missing {PrefabPath}. Run Tools → Survival Pioneer → Combat → Repair All Humanoid Combat Prefabs " +
+                $"Missing {PrefabPath}. Run Tools → Dark Matter Genesis → Combat → Repair All Humanoid Combat Prefabs " +
                 "or create the prefab in Enemy Prefab Creator.");
             return false;
         }

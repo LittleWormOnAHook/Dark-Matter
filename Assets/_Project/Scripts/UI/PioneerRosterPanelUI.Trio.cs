@@ -50,7 +50,7 @@ namespace Project.UI
         internal void BeginPendingTrioSlot(int slotIndex)
         {
             pendingTrioSlot = slotIndex;
-            trioStatusLabel.text = $"Select a roster pioneer for slot {slotIndex + 1}.";
+            trioStatusLabel.text = $"Select a roster companion for slot {slotIndex + 1}.";
             trioStatusLabel.color = SurvivalPioneerUiPalette.HighlightText;
             RefreshTrioPicker();
         }
@@ -159,7 +159,7 @@ namespace Project.UI
         {
             if (record == null || !roster.CanJoinTrio(record))
             {
-                trioStatusLabel.text = $"{record?.displayName ?? "Pioneer"} cannot join the expedition trio.";
+                trioStatusLabel.text = $"{record?.displayName ?? "Companion"} cannot join the expedition trio.";
                 trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
                 return;
             }
@@ -197,7 +197,7 @@ namespace Project.UI
             }
 
             pendingTrioSlot = slotIndex;
-            trioStatusLabel.text = $"Select a roster pioneer for slot {slotIndex + 1}, or click the slot again to cycle.";
+            trioStatusLabel.text = $"Select a roster companion for slot {slotIndex + 1}, or click the slot again to cycle.";
             trioStatusLabel.color = SurvivalPioneerUiPalette.HighlightText;
             RefreshTrioPicker();
         }
@@ -221,7 +221,7 @@ namespace Project.UI
             List<SkilledPioneerRecord> eligible = GetEligibleTrioPioneers();
             if (eligible.Count == 0)
             {
-                trioStatusLabel.text = "No eligible pioneers for expedition trio.";
+                trioStatusLabel.text = "No eligible companions for expedition trio.";
                 trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
                 return;
             }
@@ -278,8 +278,8 @@ namespace Project.UI
             {
                 int active = roster.GetActiveExpeditionTrioCount();
                 trioStatusLabel.text = active == 0
-                    ? "Drag or right-click pioneers into trio slots (1–3 active)."
-                    : $"{active} pioneer(s) active. Right-click slots to unslot or transmute.";
+                    ? "Drag or right-click companions into trio slots (1–3 active)."
+                    : $"{active} companion(s) active. Right-click slots to unslot or transmute.";
                 trioStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
             }
         }

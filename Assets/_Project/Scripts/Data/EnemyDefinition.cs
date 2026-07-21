@@ -33,7 +33,7 @@ namespace Project.AI
         HumanoidInvector
     }
 
-    [CreateAssetMenu(fileName = "EnemyDefinition", menuName = "Survival Pioneer/Enemy Definition")]
+    [CreateAssetMenu(fileName = "EnemyDefinition", menuName = "Dark Matter Genesis/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
         [Header("Identity")]
@@ -153,8 +153,10 @@ namespace Project.AI
 
         [Header("Loot AC")]
         [Tooltip("Aether Credits (AC) range dropped by this enemy.")]
-        public int piCoinsMin = 1;
-        public int piCoinsMax = 5;
+        [FormerlySerializedAs("piCoinsMin")]
+        public int acDropMin = 1;
+        [FormerlySerializedAs("piCoinsMax")]
+        public int acDropMax = 5;
         public int randomLootCountMin = 0;
         public int randomLootCountMax = 2;
         public ItemData[] lootItemPool = System.Array.Empty<ItemData>();

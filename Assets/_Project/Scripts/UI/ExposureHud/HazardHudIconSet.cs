@@ -15,10 +15,10 @@ namespace Project.UI
 
     /// <summary>
     /// Assignable hazard icons for hotbar / journal exposure gauges.
-    /// Create via Assets → Create → Survival Pioneer → UI → Hazard HUD Icon Set.
+    /// Create via Assets → Create → Dark Matter Genesis → UI → Hazard HUD Icon Set.
     /// Optional runtime default: Resources/HazardHudIconSet.asset
     /// </summary>
-    [CreateAssetMenu(fileName = "HazardHudIconSet", menuName = "Survival Pioneer/UI/Hazard HUD Icon Set")]
+    [CreateAssetMenu(fileName = "HazardHudIconSet", menuName = "Dark Matter Genesis/UI/Hazard HUD Icon Set")]
     public class HazardHudIconSet : ScriptableObject
     {
         public HazardHudIconEntry Cold;

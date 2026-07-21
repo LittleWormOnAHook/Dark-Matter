@@ -37,7 +37,7 @@ namespace Project.EditorTools
             EditorGUILayout.HelpBox(
                 allReady
                     ? $"Spawn-ready: {summary}. Press Play to spawn — no extra setup needed."
-                    : $"Some prefabs are missing baked gameplay components ({summary}). Run Tools → Survival Pioneer → Combat → Repair All Humanoid Combat Prefabs.",
+                    : $"Some prefabs are missing baked gameplay components ({summary}). Run Tools → Dark Matter Genesis → Combat → Repair All Humanoid Combat Prefabs.",
                 allReady ? MessageType.Info : MessageType.Warning);
         }
 

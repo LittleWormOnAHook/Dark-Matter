@@ -71,10 +71,20 @@ namespace Project.Core
             info.HasScreenshot = SaveSlotScreenshotUtility.HasScreenshot(slotIndex);
             info.SavedAtUtcTicks = data.savedAtUtcTicks;
             info.Health = data.health;
-            info.AetherCredits = data.version >= 9 ? data.aetherCredits : data.piBalance;
-            info.PiBalance = data.piBalance;
+            info.AetherCredits = ResolveSavedAetherCredits(data);
             info.PlayerLevel = data.version >= 10 ? data.playerLevel : 1;
             return info;
+        }
+
+        private static float ResolveSavedAetherCredits(GameSaveData data)
+        {
+            if (data == null)
+                return 0f;
+
+            if (data.version >= 9)
+                return Mathf.Max(0f, data.aetherCredits) + Mathf.Max(0f, data.piWalletBalance);
+
+            return Mathf.Max(0f, data.piBalance);
         }
 
         public static bool TrySave(int slotIndex, out string message)
@@ -127,7 +137,7 @@ namespace Project.Core
                 volcano = stats.CurrentVolcano,
                 piBalance = 0f,
                 aetherCredits = roster != null ? roster.AetherCredits : (ui != null ? ui.GetAetherCredits() : 0f),
-                piWalletBalance = roster != null ? roster.PiWalletBalance : (ui != null ? ui.GetPiWalletBalance() : 0f),
+                piWalletBalance = 0f,
                 starterPioneerSelected = roster != null && roster.StarterPioneerSelected,
                 workerCount = roster != null ? roster.WorkerCount : 0,
                 skilledPioneers = roster != null ? roster.BuildSaveRecords() : null,
@@ -328,6 +338,7 @@ namespace Project.Core
                     data.expeditionTrioIds,
                     data.colonistAggregate,
                     data.echoChronicle);
+                roster.ApplyLegacyPiBalanceMigration(data.piBalance);
                 BuildingOperationRegistry.ApplySaveSnapshot(data.buildingOperations);
                 return;
             }
@@ -340,6 +351,7 @@ namespace Project.Core
                     data.workerCount,
                     data.starterPioneerSelected,
                     data.skilledPioneers);
+                roster.ApplyLegacyPiBalanceMigration(data.piBalance);
                 roster.EnsureDefaultTrioIfNeededPublic();
                 return;
             }
@@ -348,10 +360,7 @@ namespace Project.Core
             roster.ApplyLegacyPiBalanceMigration(data.piBalance);
 
             if (ui != null)
-            {
                 ui.SetAetherCredits(roster.AetherCredits);
-                ui.SetPiWalletBalance(roster.PiWalletBalance);
-            }
         }
 
         private static void ApplyPetSave(GameSaveData data)

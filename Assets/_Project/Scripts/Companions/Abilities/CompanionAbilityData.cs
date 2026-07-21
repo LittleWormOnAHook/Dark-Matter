@@ -7,7 +7,7 @@ namespace Project.Companions.Abilities
     /// <summary>
     /// Defines a companion weapon, deployable, buff, or tool. Class restrictions and execution are configured per asset.
     /// </summary>
-    [CreateAssetMenu(fileName = "companion_ability", menuName = "Survival Pioneer/Companions/Companion Ability")]
+    [CreateAssetMenu(fileName = "companion_ability", menuName = "Dark Matter Genesis/Companions/Companion Ability")]
     public class CompanionAbilityData : ScriptableObject
     {
         [Header("Identity")]

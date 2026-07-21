@@ -21,7 +21,7 @@ namespace Project.EditorTools.Achievements
             {
                 CreateDefinition("first_pet", "First Companion", "Adopt your first pet.", AchievementCategory.Pets,
                     AchievementTriggerType.AdoptPet, 1, null, 75, false, 10),
-                CreateDefinition("trio_leader", "Trio Leader", "Assign a full three-pioneer expedition.", AchievementCategory.Pioneers,
+                CreateDefinition("trio_leader", "Trio Leader", "Assign a full three-colonist expedition.", AchievementCategory.Pioneers,
                     AchievementTriggerType.AssignTrio, 3, null, 100, false, 20),
                 CreateDefinition("artisan", "Artisan", "Craft five items.", AchievementCategory.Crafting,
                     AchievementTriggerType.CraftItem, 5, null, 80, false, 30),

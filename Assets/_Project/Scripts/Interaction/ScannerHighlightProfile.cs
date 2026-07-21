@@ -44,7 +44,7 @@ namespace Project.Interaction
         }
     }
 
-    [CreateAssetMenu(fileName = "ScannerHighlightProfile", menuName = "Survival Pioneer/Scanner Highlight Profile")]
+    [CreateAssetMenu(fileName = "ScannerHighlightProfile", menuName = "Dark Matter Genesis/Scanner Highlight Profile")]
     public class ScannerHighlightProfile : ScriptableObject
     {
         [Header("Sweep")]

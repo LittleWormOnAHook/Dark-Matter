@@ -11,8 +11,8 @@ public class ItemDataCreatorWindow : EditorWindow
     private float energyRestore = 0f;
     private float staminaRestore = 0f;
     private float oxygenRestore = 0f;
-    private bool isPiInfused = false;
-    private int piValue = 0;
+    private bool isAcInfused = false;
+    private int acValue = 0;
 
     private GameObject worldPrefabTemplate;
 
@@ -42,9 +42,9 @@ public class ItemDataCreatorWindow : EditorWindow
 
         GUILayout.Space(10);
         GUILayout.Label("Currency (legacy fields)", EditorStyles.boldLabel);
-        isPiInfused = EditorGUILayout.Toggle("Is Pi Infused", isPiInfused);
-        if (isPiInfused)
-            piValue = EditorGUILayout.IntField("Pi Value", piValue);
+        isAcInfused = EditorGUILayout.Toggle("Grants AC On Pickup", isAcInfused);
+        if (isAcInfused)
+            acValue = EditorGUILayout.IntField("AC Value", acValue);
 
         GUILayout.Space(15);
         GUILayout.Label("World Prefab", EditorStyles.boldLabel);
@@ -80,8 +80,8 @@ public class ItemDataCreatorWindow : EditorWindow
         newItem.energyRestore = energyRestore;
         newItem.staminaRestore = staminaRestore;
         newItem.oxygenRestore = oxygenRestore;
-        newItem.isPiInfused = isPiInfused;
-        newItem.piValue = piValue;
+        newItem.isAcInfused = isAcInfused;
+        newItem.acValue = acValue;
 
         string dataPath = $"Assets/_Project/Data/Items/{itemName}.asset";
         AssetDatabase.CreateAsset(newItem, dataPath);

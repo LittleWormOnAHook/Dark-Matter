@@ -8,7 +8,7 @@ namespace Project.Pioneers
     /// without requiring the data assets themselves to live inside a Resources folder — mirrors
     /// Project.Data.ItemRegistry's pattern for items.
     /// </summary>
-    [CreateAssetMenu(fileName = "CompanionCatalogRegistry", menuName = "Survival Pioneer/Companions/Companion Catalog Registry")]
+    [CreateAssetMenu(fileName = "CompanionCatalogRegistry", menuName = "Dark Matter Genesis/Companions/Companion Catalog Registry")]
     public class CompanionCatalogRegistry : ScriptableObject
     {
         [SerializeField] private NamedPioneerDefinition[] companions = System.Array.Empty<NamedPioneerDefinition>();

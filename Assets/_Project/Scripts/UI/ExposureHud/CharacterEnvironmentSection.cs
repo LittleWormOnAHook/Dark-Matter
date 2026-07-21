@@ -92,7 +92,7 @@ namespace Project.UI
                 {
                     row.NameLabel.text = slot != null && !string.IsNullOrWhiteSpace(slot.DisplayName)
                         ? slot.DisplayName
-                        : $"Pioneer slot {i + 1}";
+                        : $"Companion slot {i + 1}";
                 }
 
                 row.BuffGrid?.SetTicks(
@@ -215,7 +215,7 @@ namespace Project.UI
             cardGroup.childForceExpandWidth = true;
             cardGroup.childForceExpandHeight = false;
 
-            TextMeshProUGUI nameLabel = CreateBodyLabel(cardObject.transform, $"CompanionName_{slotIndex + 1}", $"Pioneer slot {slotIndex + 1}");
+            TextMeshProUGUI nameLabel = CreateBodyLabel(cardObject.transform, $"CompanionName_{slotIndex + 1}", $"Companion slot {slotIndex + 1}");
             nameLabel.fontStyle = FontStyles.Bold;
             nameLabel.color = SurvivalPioneerUiPalette.BodyText;
             nameLabel.alignment = TextAlignmentOptions.Top;

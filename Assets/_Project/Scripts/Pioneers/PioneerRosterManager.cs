@@ -14,14 +14,11 @@ namespace Project.Pioneers
         public const int MaxSkilledPioneers = 13;
         public const int MaxWorkerPioneers = 13;
         public const int ExpeditionTrioSize = 3;
-        public const float DefaultPiWalletBalance = 100f;
-        public const float PiToAcSwapRate = 1f;
         public const float InjuryRecoveryDuration = 60f;
 
         public static PioneerRosterManager Instance { get; private set; }
 
         [SerializeField] private float aetherCredits;
-        [SerializeField] private float piWalletBalance;
         [SerializeField] private int workerCount;
         [SerializeField] private bool starterPioneerSelected;
         [SerializeField] private bool walletBootstrapped;
@@ -40,7 +37,6 @@ namespace Project.Pioneers
         public event Action OnEchoChronicleChanged;
 
         public float AetherCredits => aetherCredits;
-        public float PiWalletBalance => piWalletBalance;
         public int WorkerCount => workerCount;
         public bool StarterPioneerSelected => starterPioneerSelected;
         public IReadOnlyList<SkilledPioneerRecord> SkilledPioneers => skilledPioneers;
@@ -202,8 +198,6 @@ namespace Project.Pioneers
                 return;
 
             walletBootstrapped = true;
-            if (piWalletBalance <= 0.01f)
-                piWalletBalance = DefaultPiWalletBalance;
 
             if (walletOwnedPioneers.Count == 0)
             {
@@ -523,6 +517,12 @@ namespace Project.Pioneers
             NotifyRosterChanged();
         }
 
+        public void AppendSimulationChronicle(string incidentId, float severity01, string debugReason = "")
+        {
+            AppendEchoChronicle(
+                EchoChronicleEntry.CreateSimulationIncident(incidentId, severity01, debugReason));
+        }
+
         public bool TryAddSkilledPioneer(SkilledPioneerRecord record, out string message)
         {
             message = string.Empty;
@@ -720,36 +720,6 @@ namespace Project.Pioneers
             ui?.ShowAcRewardPopup(Mathf.RoundToInt(amount), source);
         }
 
-        public void SetPiWalletBalance(float balance)
-        {
-            piWalletBalance = Mathf.Max(0f, balance);
-            PushCurrencyToUi();
-        }
-
-        public bool TrySwapPiForAetherCredits(int piAmount, out string message)
-        {
-            message = string.Empty;
-            if (piAmount <= 0)
-            {
-                message = "Enter a Pi amount greater than zero.";
-                return false;
-            }
-
-            if (piWalletBalance + 0.01f < piAmount)
-            {
-                message = "Not enough Pi in wallet.";
-                return false;
-            }
-
-            int acGain = Mathf.RoundToInt(piAmount * PiToAcSwapRate);
-            piWalletBalance -= piAmount;
-            aetherCredits += acGain;
-            PushCurrencyToUi();
-            NotifyRosterChanged();
-            message = $"Swapped {piAmount} Pi → {acGain} AC.";
-            return true;
-        }
-
         public bool TryPurchaseMarketplaceListing(string offerId, out string message)
         {
             message = string.Empty;
@@ -874,9 +844,7 @@ namespace Project.Pioneers
             EchoChronicleEntry[] savedChronicle)
         {
             aetherCredits = Mathf.Max(0f, savedAetherCredits);
-            piWalletBalance = savedPiWalletBalance > 0.01f
-                ? Mathf.Max(0f, savedPiWalletBalance)
-                : DefaultPiWalletBalance;
+            ApplyLegacyCurrencyMigration(savedPiWalletBalance);
             workerCount = Mathf.Clamp(savedWorkerCount, 0, MaxWorkerPioneers);
             starterPioneerSelected = savedStarterSelected;
             skilledPioneers.Clear();
@@ -1006,22 +974,22 @@ namespace Project.Pioneers
 
         public void ApplyLegacyPiBalanceMigration(float legacyPiBalance)
         {
-            if (legacyPiBalance <= 0f)
+            ApplyLegacyCurrencyMigration(legacyPiBalance);
+        }
+
+        private void ApplyLegacyCurrencyMigration(float legacyAmount)
+        {
+            if (legacyAmount <= 0.01f)
                 return;
 
-            aetherCredits = Mathf.Max(aetherCredits, legacyPiBalance);
+            aetherCredits += legacyAmount;
             PushCurrencyToUi();
         }
 
         private void PushCurrencyToUi()
         {
             UIManager ui = FindAnyObjectByType<UIManager>();
-            if (ui != null)
-            {
-                ui.SetAetherCredits(aetherCredits);
-                ui.SetPiWalletBalance(piWalletBalance);
-            }
-
+            ui?.SetAetherCredits(aetherCredits);
             OnCurrencyChanged?.Invoke();
         }
 

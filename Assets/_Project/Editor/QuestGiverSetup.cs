@@ -295,7 +295,7 @@ namespace Project.EditorTools
             }
 
             if (GUILayout.Button("Add Reward", GUILayout.Height(24f)))
-                rewards.Add(new QuestRewardDefinition { type = QuestRewardType.Pi, amount = 10 });
+                rewards.Add(new QuestRewardDefinition { type = QuestRewardType.AetherCredits, amount = 10 });
         }
     }
 
@@ -337,7 +337,7 @@ namespace Project.EditorTools
         {
             EditorGUILayout.LabelField("Quest Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Author quests with objectives (collect, craft, talk, location, custom activity) and rewards (Pi, items). " +
+                "Author quests with objectives (collect, craft, talk, location, custom activity) and rewards (AC, items). " +
                 "Assign saved quests to QuestGiverNpc quest offers in the Inspector.",
                 MessageType.Info);
             EditorGUILayout.Space(6f);
@@ -417,7 +417,7 @@ namespace Project.EditorTools
             questTitle = "New Quest";
             description = string.Empty;
             objectives = new List<QuestObjectiveDefinition>();
-            rewards = new List<QuestRewardDefinition> { new QuestRewardDefinition { type = QuestRewardType.Pi, amount = 25 } };
+            rewards = new List<QuestRewardDefinition> { new QuestRewardDefinition { type = QuestRewardType.AetherCredits, amount = 25 } };
             addToQuestRegistry = true;
             Repaint();
         }

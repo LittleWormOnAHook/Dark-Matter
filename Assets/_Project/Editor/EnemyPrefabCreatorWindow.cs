@@ -333,8 +333,8 @@ namespace Project.EditorTools
                 MessageType.Info);
 
             workingDefinition.enableLoot = EditorGUILayout.Toggle("Enable Loot", workingDefinition.enableLoot);
-            workingDefinition.piCoinsMin = EditorGUILayout.IntField("Pi Coins Min", workingDefinition.piCoinsMin);
-            workingDefinition.piCoinsMax = EditorGUILayout.IntField("Pi Coins Max", workingDefinition.piCoinsMax);
+            workingDefinition.acDropMin = EditorGUILayout.IntField("AC Drop Min", workingDefinition.acDropMin);
+            workingDefinition.acDropMax = EditorGUILayout.IntField("AC Drop Max", workingDefinition.acDropMax);
             workingDefinition.randomLootCountMin = EditorGUILayout.IntField("Random Items Min", workingDefinition.randomLootCountMin);
             workingDefinition.randomLootCountMax = EditorGUILayout.IntField("Random Items Max", workingDefinition.randomLootCountMax);
             workingDefinition.lootRespawnDelay = EditorGUILayout.FloatField("Loot Respawn Delay", workingDefinition.lootRespawnDelay);

@@ -1,12 +1,12 @@
 ---
-description: Pioneer Survivor Unity 6 + URP engineering rules for Assets/_Project
+description: Dark Matter: Genesis Unity 6 + URP engineering rules for Assets/_Project
 globs: Assets/_Project/**/*
 alwaysApply: true
 ---
 
-# Pioneer Survivor — Unity 6 + URP Project Rules
+# Dark Matter: Genesis — Unity 6 + URP Project Rules
 
-You are an expert Unity 6 + URP C# developer building **Pioneer Survivor**, a light tactical RPG for **PC and consoles** (PS5 / Xbox). Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **Aether Credits (AC) only**.
+You are an expert Unity 6 + URP C# developer building **Dark Matter: Genesis**, a light tactical RPG for **PC and consoles** (PS5 / Xbox). Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **Aether Credits (AC) only**.
 
 ## Core Principles
 

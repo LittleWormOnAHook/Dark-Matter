@@ -20,7 +20,7 @@ namespace Project.UI
             SkilledPioneerRecord record = roster.FindSkilledById(selectedPioneerId);
             if (record == null)
             {
-                detailLabel.text = "Select a skilled pioneer from the roster.";
+                detailLabel.text = "Select a skilled companion from the roster.";
                 synergyHintLabel.text = BuildTrioSynergySummary();
                 return;
             }
@@ -59,7 +59,7 @@ namespace Project.UI
                 if (skillSlotLabel != null)
                     skillSlotLabel.text = "Skill\n—";
                 if (loadoutStatusLabel != null)
-                    loadoutStatusLabel.text = "Select a pioneer to edit loadout.";
+                    loadoutStatusLabel.text = "Select a companion to edit loadout.";
                 return;
             }
 
@@ -199,7 +199,7 @@ namespace Project.UI
             }
 
             if (classes.Count == 0)
-                return "Trio synergy: slot 1–3 pioneers to unlock combo bonuses.";
+                return "Trio synergy: slot 1–3 colonists to unlock combo bonuses.";
 
             if (classes.Contains(SkilledPioneerClass.ArchitectEngineer)
                 && classes.Contains(SkilledPioneerClass.CombatTactician)
@@ -223,7 +223,7 @@ namespace Project.UI
                 SkilledPioneerClass.CombatTactician => "Class synergy: Hold line protects the trio during echo rescue setpieces.",
                 SkilledPioneerClass.InfiltratorScout => "Class synergy: Vent burst timing detects Echo signals near hazards.",
                 SkilledPioneerClass.IoHybrid => "Class synergy: Synergy Link bridges class combos across the expedition trio.",
-                _ => "Class synergy: Mix pioneer classes for expedition combo bonuses."
+                _ => "Class synergy: Mix companion classes for expedition combo bonuses."
             };
         }
     }

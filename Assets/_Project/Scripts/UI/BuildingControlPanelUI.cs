@@ -36,7 +36,7 @@ namespace Project.UI
         private static readonly string[] TabLabels =
         {
             "Overview",
-            "Pioneers",
+            "Companions",
             "Production",
             "Craft",
             "Changes",

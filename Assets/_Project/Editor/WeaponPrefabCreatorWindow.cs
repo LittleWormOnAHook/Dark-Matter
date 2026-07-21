@@ -324,7 +324,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
         summary += "\nTune grip in Play mode, then bake with Tools/Project grip bakers.";
         if (configuredMeleeHitbox)
-            summary += "\nHeld hitbox baked on prefab; use Tools > Survival Pioneer > Combat > Refresh All Weapon Hitboxes to update existing weapons.";
+            summary += "\nHeld hitbox baked on prefab; use Tools > Dark Matter Genesis > Combat > Refresh All Weapon Hitboxes to update existing weapons.";
         return summary;
     }
 }

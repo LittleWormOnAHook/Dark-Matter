@@ -72,7 +72,7 @@ namespace Project.UI
             }
 
             if (!anySkill)
-                CreateInfoLabel("No skills configured. Run Tools → Survival Pioneer → Content → Create Starter Skills.");
+                CreateInfoLabel("No skills configured. Run Tools → Dark Matter Genesis → Content → Create Starter Skills.");
         }
 
         private void CreateSkillRow(SkillDefinition skill)

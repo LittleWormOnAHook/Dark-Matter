@@ -8,7 +8,7 @@ namespace Project.EditorTools
     {
         private const string AssetPath = "Assets/_Project/Resources/Scanner/ScannerHighlightProfile.asset";
 
-        [MenuItem("Survival Pioneer/Scanner/Create Default Highlight Profile")]
+        [MenuItem("Dark Matter Genesis/Scanner/Create Default Highlight Profile")]
         public static void CreateDefaultProfile()
         {
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources/Scanner"))

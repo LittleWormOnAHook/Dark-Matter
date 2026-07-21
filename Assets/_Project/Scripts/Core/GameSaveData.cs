@@ -23,8 +23,10 @@ namespace Project.Core
         public float volcano;
         public float hunger;
         public float thirst;
+        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piBalance;
         public float aetherCredits;
+        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piWalletBalance;
         public bool starterPioneerSelected;
         public int workerCount;
@@ -124,7 +126,6 @@ namespace Project.Core
         public long SavedAtUtcTicks;
         public float Health;
         public float AetherCredits;
-        public float PiBalance;
         public int PlayerLevel;
 
         public string GetSummaryLine()
@@ -133,9 +134,8 @@ namespace Project.Core
                 return "Empty";
 
             DateTime savedAt = new DateTime(SavedAtUtcTicks, DateTimeKind.Utc).ToLocalTime();
-            float credits = AetherCredits > 0f ? AetherCredits : PiBalance;
             int level = PlayerLevel > 0 ? PlayerLevel : 1;
-            return $"Lv {level} | AC: {Mathf.RoundToInt(credits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
+            return $"Lv {level} | AC: {Mathf.RoundToInt(AetherCredits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
         }
     }
 }

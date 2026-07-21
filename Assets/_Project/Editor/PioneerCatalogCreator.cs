@@ -12,7 +12,7 @@ namespace Project.EditorTools
         // CompanionCatalogRegistry itself needs to be in Resources. See CompanionCatalogRegistryUtility.
         private const string OutputFolder = CompanionCatalogRegistryUtility.DataFolder;
 
-        // Folded into the Companion Prefab Tool window (Tools/Survival Pioneer/Companion Prefab
+        // Folded into the Companion Prefab Tool window (Tools/Dark Matter Genesis/Companion Prefab
         // Tool) rather than exposed as its own top-level menu item — this method stays public/static
         // so the window (and any other editor code) can still call it directly.
         public static void CreateNamedPioneerCatalog()

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Project.Pioneers
 {
-    [CreateAssetMenu(fileName = "NamedPioneer", menuName = "Survival Pioneer/Named Pioneer")]
+    [CreateAssetMenu(fileName = "NamedPioneer", menuName = "Dark Matter Genesis/Named Companion")]
     public class NamedPioneerDefinition : ScriptableObject
     {
         public string pioneerId;
@@ -35,7 +35,7 @@ namespace Project.Pioneers
         public string[] learnedSkills;
 
         [Header("Buffs")]
-        [Tooltip("Passive buffs this companion grants. Shown in the Journal Pioneers tab trio panel alongside live exposure buffs/debuffs, and available for gameplay systems to read.")]
+        [Tooltip("Passive buffs this companion grants. Shown in the Journal Colonists tab trio panel alongside live exposure buffs/debuffs, and available for gameplay systems to read.")]
         public CompanionBuffModifier[] buffs = System.Array.Empty<CompanionBuffModifier>();
 
         [Header("Loadout Override")]

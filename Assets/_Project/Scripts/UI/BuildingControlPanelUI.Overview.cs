@@ -84,6 +84,7 @@ namespace Project.UI
             BuildingOperationState state = BuildingOperationRegistry.GetOrCreate(activePanel.BuildingId);
             int assignedCount = BuildingOperationRegistry.CountAssignedPioneers(state);
             bool crisisActive = EnvironmentalCrisisHudMode.IsCrisisActive;
+            bool opsPaused = EnvironmentalCrisisHudMode.IsOperationsPaused;
 
             string buildingName = string.IsNullOrEmpty(activePanel.BuildingDisplayName)
                 ? "Building"
@@ -91,15 +92,19 @@ namespace Project.UI
 
             overviewBuildingNameText.text = $"Building: {buildingName}";
             overviewAssignedText.text =
-                $"Assigned pioneers: {assignedCount}/{BuildingOperationRegistry.MaxAssignedPioneers}";
+                $"Assigned companions: {assignedCount}/{BuildingOperationRegistry.MaxAssignedPioneers}";
             overviewQueueText.text = $"Production queue: {state.ProductionQueue.Count} entr" +
                 (state.ProductionQueue.Count == 1 ? "y" : "ies");
-            overviewStormText.text = crisisActive
+            overviewStormText.text = opsPaused
                 ? "Sulfur storm: PAUSED"
-                : "Sulfur storm: Running";
-            overviewStormText.color = crisisActive
+                : crisisActive
+                    ? "Sulfur storm: BUILDING"
+                    : "Sulfur storm: Running";
+            overviewStormText.color = opsPaused
                 ? SurvivalPioneerUiPalette.WarningText
-                : SurvivalPioneerUiPalette.PositiveGreen;
+                : crisisActive
+                    ? SurvivalPioneerUiPalette.Gold
+                    : SurvivalPioneerUiPalette.PositiveGreen;
 
             if (overviewMaintenanceText != null)
             {
@@ -111,7 +116,7 @@ namespace Project.UI
             if (overviewOutputText != null)
             {
                 float output = BuildingOperationRegistry.GetEffectiveOutputMultiplier(state);
-                overviewOutputText.text = crisisActive
+                overviewOutputText.text = opsPaused
                     ? "Output rate: paused"
                     : $"Output rate: {output:0.00}x";
             }
@@ -212,12 +217,12 @@ namespace Project.UI
                 return;
 
             BuildingOperationState state = BuildingOperationRegistry.GetOrCreate(activePanel.BuildingId);
-            bool crisisActive = EnvironmentalCrisisHudMode.IsCrisisActive;
+            bool opsPaused = EnvironmentalCrisisHudMode.IsOperationsPaused;
 
             if (productionPausedOverlay != null)
             {
-                productionPausedOverlay.gameObject.SetActive(crisisActive);
-                productionPausedOverlay.text = crisisActive
+                productionPausedOverlay.gameObject.SetActive(opsPaused);
+                productionPausedOverlay.text = opsPaused
                     ? "SULFUR STORM — PRODUCTION QUEUES PAUSED"
                     : string.Empty;
             }
@@ -235,7 +240,7 @@ namespace Project.UI
             for (int i = 0; i < state.ProductionQueue.Count; i++)
             {
                 ProductionQueueEntry entry = state.ProductionQueue[i];
-                bool entryPaused = crisisActive || entry.Paused;
+                bool entryPaused = opsPaused || entry.Paused;
                 CreateProductionQueueRow(theme, entry, entryPaused);
             }
         }
@@ -352,14 +357,14 @@ namespace Project.UI
                 CreateSettingToggle(
                     changesToggleHost,
                     theme,
-                    "Accept injured pioneer overflow",
+                    "Accept injured companion overflow",
                     () => settings.AcceptInjuredOverflow,
                     value => settings.AcceptInjuredOverflow = value);
 
                 CreateSettingToggle(
                     changesToggleHost,
                     theme,
-                    "Prioritize skilled pioneers for shelter",
+                    "Prioritize skilled companions for shelter",
                     () => settings.PrioritizeSkilledTriage,
                     value => settings.PrioritizeSkilledTriage = value);
             }
@@ -405,8 +410,8 @@ namespace Project.UI
             if (activePanel == null || activeTab != BuildingControlTab.Production)
                 return;
 
-            bool crisisActive = EnvironmentalCrisisHudMode.IsCrisisActive;
-            if (crisisActive)
+            bool opsPaused = EnvironmentalCrisisHudMode.IsOperationsPaused;
+            if (opsPaused)
                 return;
 
             BuildingOperationState state = BuildingOperationRegistry.GetOrCreate(activePanel.BuildingId);

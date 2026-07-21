@@ -1,9 +1,9 @@
 ---
-description: Survival Pioneer UI color palette for panels, HUD, menus, and gameplay UI
+description: Dark Matter: Genesis UI color palette for panels, HUD, menus, and gameplay UI
 alwaysApply: true
 ---
 
-# Survival Pioneer UI Palette
+# Dark Matter: Genesis UI Palette
 
 Use `SurvivalPioneerUiPalette` and `ShiftUiTheme` for all UI color decisions.
 

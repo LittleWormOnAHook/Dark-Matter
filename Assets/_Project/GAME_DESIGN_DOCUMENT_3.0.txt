@@ -1,51 +1,51 @@
 ================================================================================
   DARK MATTER STUDIOS presents
-  PIONEER SURVIVORS — GAME DESIGN DOCUMENT (GDD) 3.0 — OBSOLETE ARCHIVE
+  DARK MATTER: GENESIS — GAME DESIGN DOCUMENT (GDD) 3.0 — OBSOLETE ARCHIVE
 ================================================================================
 
   *** DO NOT USE AS AUTHORITY ***
-  Superseded by Assets/_Project/GAME_DESIGN_DOCUMENT_4.0.txt (July 2026).
-  Product locks in GDD 4.0 (ignore any conflicting text below):
+  Superseded by Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt (July 2026).
+  Product locks in GDD 5.0 (ignore any conflicting text below):
     Platforms: PC primary + consoles (PS5 / Xbox) only. No mobile ship target.
-    Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Pioneer.
+    Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Companion.
   Historical drafts below may mention cancelled product ideas. Those are NOT
   part of the living design — do not implement or treat as deferred roadmap.
 
   Studio:       Dark Matter Studios
-  Unity project: Survival Pioneer / Pioneer Survivors (working title)
-  Document:     ARCHIVED — superseded by GAME_DESIGN_DOCUMENT_4.0.txt
+  Unity project: Dark Matter: Genesis / Dark Matter: Genesis (working title)
+  Document:     ARCHIVED — superseded by GAME_DESIGN_DOCUMENT_5.0.txt
   Consolidated: June 26, 2026
-  Superseded:   July 2026 — locks + progress live in GDD 4.0 Appendices A/B
+  Superseded:   July 2026 — locks + progress live in GDD 5.0 Appendices A/B
 
   DO NOT use this file as competing authority. Agents and humans should read
-  Assets/_Project/GAME_DESIGN_DOCUMENT_4.0.txt first. This 3.0 draft is kept
+  Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt first. This 3.0 draft is kept
   for historical detail only (pre-merge prose, older roadmap checkboxes).
 
 ================================================================================
 REVISION NOTES (changes from prior draft) — HISTORICAL ONLY
 ================================================================================
 
-  + Branding: Dark Matter Studios; year 2160; Pioneer Survivors naming
+  + Branding: Dark Matter Studios; year 2160; Dark Matter: Genesis naming
   + Setting status: flat terrain prototype (not Io, not forest camp label)
-  + Pioneer classes renamed: Architect Engineer, Science Specialist, Combat
+  + Companion classes renamed: Architect Engineer, Science Specialist, Combat
     Tactician, Infiltrator Scout (+ Io hybrids); player has combat/skills too
-  + Echoes integrate as Pioneers (basic + Special); lore tied to failed past
+  + Echoes integrate as companions (basic + Special); lore tied to failed past
     expeditions on Io; rescue failure can lose Echo permanently
   + Environmental Suits added as standard trio gear (upgradeable)
   + Buildings: Medical Facility, Science Labs; craft + maintain buildings
-  + Economy (historical draft): external marketplace ideas — CANCELLED in GDD 4.0;
+  + Economy (historical draft): external marketplace ideas — CANCELLED in GDD 5.0;
     living lock is AC-only
-  + Pillar 8 clarified: rescue primary; can also purchase/trade for Pioneers
+  + Pillar 8 clarified: rescue primary; can also purchase/trade for companions
   + Pet/AI follower FOLDED into Echo/trio companion system (no separate pet loop)
-  + Starter AC: 5000 on new game (enough to choose 1 Skilled Pioneer)
+  + Starter AC: 5000 on new game (enough to choose 1 Skilled Companion)
   + Cold/Heat: single combined thermal stress meter (cold ↔ heat poles)
   + Controls: keyboard-mouse + controller schemes (PC / console)
-  + Journal tabs expanded: Pet/Pioneers, Skills, Craft, Recipes, Echos
+  + Journal tabs expanded: Pet/companions, Skills, Craft, Recipes, Echos
   + Aether-9 shares quest duty with small portion of side quest givers
   + Story: failed human/alien expeditions left tech and materials on Io
   + Section 16: Unity 6 + URP project rules (PC/consoles, combat/AI/engineering)
-  + Platforms (GDD 4.0 lock): PC primary + consoles; no mobile ship target
-  + Economy (GDD 4.0 lock): AC-only; no external wallet/marketplace loop
+  + Platforms (GDD 5.0 lock): PC primary + consoles; no mobile ship target
+  + Economy (GDD 5.0 lock): AC-only; no external wallet/marketplace loop
 
 
 ================================================================================
@@ -54,8 +54,8 @@ SECTION 0 — FULL RECAP
 
 WHAT THIS GAME IS
 -----------------
-Year 2160. Pioneer Survivors is a semi-low-poly survival + light base-builder on
-Jupiter's moon Io. You lead up to 25 pioneers: up to 22 work at base while you
+Year 2160. Dark Matter: Genesis is a semi-low-poly survival + light base-builder on
+Jupiter's moon Io. You lead up to 25 companions: up to 22 work at base while you
 take a trio of 3 on expeditions. You rescue procedurally generated Neural
 Echoes (named, upgraded specialists—thought to be imprints of previous failed
 expeditions), recover Memory Cores for the ancient probe Aether-9, materialize,
@@ -72,14 +72,14 @@ Art: semi-low-poly, modular, not flat low-poly.
 
 EXAMPLE CORE LOOPS
 ------------------
-  BASE:       Assign up to 22 pioneers → buildings produce → sulfur storm pauses
+  BASE:       Assign up to 22 companions → buildings produce → sulfur storm pauses
               work → Command Center shelter → heal injured → resume output
 
   EXPEDITION: Pick trio of 3 → face multiple biome/environment pressures →
               rescue Echo signals → recover Memory Cores → return for Resonance
               Events
 
-  ECONOMY:    Earn AC in-game → spend on base, expeditions, pioneer upgrades,
+  ECONOMY:    Earn AC in-game → spend on base, expeditions, companion upgrades,
               and skills
 
 CURRENT STATUS (PROTOTYPE)
@@ -90,14 +90,14 @@ AC economy (some legacy currency field names remain), map, save/load, pet/AI
 follower system with small skills, enemy AI, loot container system, main menu,
 journal hub, editor tools (Unity).
 
-NOT BUILT YET: Io biomes, 25-pioneer roster, trio system, Aether-9 probe,
+NOT BUILT YET: Io biomes, 25-companion roster, trio system, Aether-9 probe,
 memory cores, Resonance Events, procedural Echo generator, Command Center and
 other sim systems, sulfur storm base logic, building materialization pipeline,
 four biome exposure meters beyond oxygen tuning.
 
 DESIGN WORKFLOW (AI / TEAM)
 ---------------------------
-Follow GDD 4.0 (not this archive) when building in Unity. If a request does not
+Follow GDD 5.0 (not this archive) when building in Unity. If a request does not
 fit vision, ASK whether it is canon, prototype, or a new direction. Unrelated
 experiments are OK when explicitly labeled.
 
@@ -113,17 +113,17 @@ SECTION 1 — VISION & PILLARS
 
 ONE-LINE PITCH
 --------------
-Lead 25 pioneers on Io: trio expeditions face oxygen and biome/environment
-hazards; 22 base pioneer workers shelter during sulfur storms and resume if
+Lead 25 companions on Io: trio expeditions face oxygen and biome/environment
+hazards; 22 base companion workers shelter during sulfur storms and resume if
 unharmed and/or healed; rescue procedural Echoes; slot Aether-9 memory cores
 for world-changing Resonance Events; spend Aether Credits on base and roster.
 
 CORE PILLARS
 ------------
-  1. Max 25 pioneers — scarcity forces meaningful roster choices
+  1. Max 25 companions — scarcity forces meaningful roster choices
 
-  2. Trios of 3 skilled pioneers on expeditions — synergies matter
-     Typical named pioneer types include:
+  2. Trios of 3 skilled companions on expeditions — synergies matter
+     Typical named companion types include:
        Architect Engineer, Science Specialist, Combat Tactician,
        Infiltrator Scout, and more (+ Io hybrids)
 
@@ -139,7 +139,7 @@ CORE PILLARS
 
   7. AC-only economy — Aether Credits are the sole survival currency
 
-  8. Rescue primary — Echoes integrate as pioneers; can also recruit with AC
+  8. Rescue primary — Echoes integrate as companions; can also recruit with AC
 
   9. Semi-low-poly modular art — PC/console quality target
 
@@ -160,7 +160,7 @@ Harsh survival + sci-fi mystery. Sci-fi HUD.
 QUEST HUB: AETHER-9
 -------------------
 Ancient weathered probe from early colonization. Glitchy synth voice, short
-bursts. Not a human NPC (prototype currently uses Pioneer Guide — replace).
+bursts. Not a human companion (prototype currently uses Companion Guide — replace).
 Aether-9 handles main mystery arc; a small portion of side quests and tasks
 use other givers.
 
@@ -222,7 +222,7 @@ SECTION 4 — PIONEER ROSTER (25 CAP)
 
 SPLIT
 -----
-  Maximum 25 pioneers total under player command.
+  Maximum 25 companions total under player command.
 
   ~12–13 WORKERS
     - Anonymous or lightly named labor pool
@@ -231,7 +231,7 @@ SPLIT
     - Collective STRAIN meter — overwork → accidents, slowdowns
 
   ~12–13 SKILLED ECHOES / SPECIAL PIONEERS
-    - Named, unique, upgradable, tradable on Pioneer Survivor Exchange
+    - Named, unique, upgradable, tradable on Dark Matter: Genesis Exchange
     - Classes: Architect Engineer, Science Specialist, Combat Tactician,
       Infiltrator Scout, and more + Io hybrids
     - SATURATION meter (radiation/sulfur narrative layer) — hallucinations,
@@ -275,18 +275,18 @@ NOT IMPERVIOUS TO
 SULFUR STORM FLOW
 -----------------
   1. All base work PAUSES (harvesters, materialization, production, etc.)
-  2. All base pioneers evacuate to COMMAND CENTER
+  2. All base companions evacuate to COMMAND CENTER
   3. Random / weighted assignment to ROOMS (med, engineering, living, storage)
   4. Storm duration — work paused; trio on surface still faces full sulfur
-  5. Storm ends — healthy pioneers return to jobs
+  5. Storm ends — healthy companions return to jobs
 
 BUILDING DAMAGE
 ---------------
   Tremor, eruption debris, raid, Resonance Event hits Command Center:
-    - Pioneers inside take DAMAGE
+    - companions inside take DAMAGE
     - They DO NOT DIE — incapacitated / down state
     - Must HEAL or RESTORE (med bay, AC, resources, time) before resuming
-    - Injured pioneers cannot contribute until restored
+    - Injured companions cannot contribute until restored
 
 RANDOMNESS
 ----------
@@ -302,7 +302,7 @@ SECTION 6 — NEURAL ECHO RESCUE & PROCEDURAL GENERATION
 PHILOSOPHY
 ----------
   Do not hire from a menu. RESCUE and REINTEGRATE neural echoes from Io's
-  environment and probe archives. Echoes integrate into Pioneers—some basic,
+  environment and probe archives. Echoes integrate into companions—some basic,
   some Special. Echoes are thought to be imprints of previous inhabitants or
   members of failed expeditions on Io.
 
@@ -405,7 +405,7 @@ EXAMPLE CORES & EVENTS
 
 RESONANCE EVENTS & BASE
 -----------------------
-  May spike sulfur storms, damage Command Center rooms, injure base pioneers,
+  May spike sulfur storms, damage Command Center rooms, injure base companions,
   spawn Echo rescue opportunities, boost worker output or Strain.
 
 
@@ -443,8 +443,8 @@ SECTION 9 — ECONOMY & MONETIZATION
 AETHER CREDITS (AC) — SOLE CURRENCY
 -----------------------------------
   NEW GAME STARTER GRANT: 5000 AC
-    Enough to purchase player's choice of 1 starter Skilled Pioneer (Echo)
-    from the opening roster offer. Balance starter Skilled Pioneer prices to
+    Enough to purchase player's choice of 1 starter Skilled Companion (Echo)
+    from the opening roster offer. Balance starter Skilled Companion prices to
     fit this budget (target ~5000 AC per starter pick; tune in data).
 
   EARN FROM GAMEPLAY:
@@ -453,7 +453,7 @@ AETHER CREDITS (AC) — SOLE CURRENCY
 
   SPEND ON:
     Workers, rushing materialization/crafting, supplies, building upgrades,
-    player and pioneer upgrades/skills, healing injured base pioneers,
+    player and companion upgrades/skills, healing injured base companions,
     inoculations, environmental suit upgrades, etc.
 
 REAL MONEY (IAP) — OPTIONAL
@@ -483,9 +483,9 @@ INPUT SCHEMES
 JOURNAL TABS
 ------------
   Current / extend toward:
-    Journal, Inventory, Map, Pioneers/Echos (trios + roster), Skills, Craft,
+    Journal, Inventory, Map, companions/Echoes (trios + roster), Skills, Craft,
     Recipes, Echos
-  Note: legacy pet/AI follower UI folds into Pioneers/Echos tab — no separate
+  Note: legacy pet/AI follower UI folds into companions/Echoes tab — no separate
   pet progression track.
   Future:
     Roster detail, Command Center status
@@ -517,7 +517,7 @@ CHARACTER STRATEGY
 OPTIMIZATION
 ------------
   Addressables, URP, LODs, compression; texture budgets fit PC/console
-  Aggregate sim for base pioneers (no per-NPC pathfinding required at scale)
+  Aggregate sim for base companions (no per-companion pathfinding required at scale)
   Profile for stable frame pacing on mid-range PC and console certification
 
 
@@ -532,7 +532,7 @@ DONE — REUSE & EXTEND
   [x] Melee combat, weapon hitboxes, block, charge attack
   [x] Inventory 24 + hotbar 10 + toolbar 2 (scanner, binoculars)
   [x] Crafting, recipes, scroll pickups, stations
-  [x] Quest system + quest giver NPC (reflavor to Aether-9 + side givers)
+  [x] Quest system + quest giver companion (reflavor to Aether-9 + side givers)
   [x] AC HUD + save (clean leftover legacy currency naming when touching UI)
   [x] Map, optics/scanner, pet/AI follower (MIGRATE → Echo/trio companion fold)
   [x] Save/load (5 slots, inventory, quests, equipment)
@@ -546,7 +546,7 @@ NOT STARTED — VISION SYSTEMS
   [ ] Io environment / biome zones (prototype: flat terrain)
   [ ] Exposure system (radiation, cold/heat, volcano, sulfur)
   [ ] Environmental suits (upgradeable)
-  [ ] Command Center + 22 pioneer aggregate sim + sulfur shelter
+  [ ] Command Center + 22 companion aggregate sim + sulfur shelter
   [ ] 25 cap roster + trio selection
   [ ] Procedural Echo generator + rescue setpieces
   [ ] Aether-9 probe + memory cores + Resonance Events
@@ -555,7 +555,7 @@ NOT STARTED — VISION SYSTEMS
   [ ] Aether Credits economy polish (AC-only UI/save)
   [ ] Saturation, Strain, Purification Hub gameplay
   [ ] Strip leftover legacy currency naming from quests/loot/HUD
-  [ ] Starter 5000 AC + opening Skilled Pioneer choice shop
+  [ ] Starter 5000 AC + opening Skilled Companion choice shop
   [ ] Single thermal (cold/heat) exposure meter
   [ ] Fold pet/AI follower into Echo/trio companion system
   [ ] Controller / gamepad input schemes (PC + console)
@@ -578,7 +578,7 @@ PHASE 1 — SURVIVAL FOUNDATION (2–3 weeks)
 
 PHASE 2 — COMMAND CENTER & BASE 22 (2–3 weeks)
   [ ] Command Center prefab + rooms
-  [ ] Aggregate pioneer sim (working / sheltered / injured)
+  [ ] Aggregate companion sim (working / sheltered / injured)
   [ ] Sulfur storm pause + room fill + randomness
   [ ] Building damage → injury (no death) → heal to resume
 
@@ -609,7 +609,7 @@ PHASE 6 — BUILDINGS, CRAFT & MAINTENANCE (2–3 weeks)
 
 PHASE 7 — ECONOMY (AC ONLY)
   [ ] Aether Credits UI/save polish (starter 5000 AC path)
-  [ ] Starter 5000 AC + opening Skilled Pioneer choice
+  [ ] Starter 5000 AC + opening Skilled Companion choice
   [ ] Strip leftover legacy currency naming from player-facing HUD
 
 PHASE 8 — IO WORLD & SHIP (4+ weeks)
@@ -629,10 +629,10 @@ IMMEDIATE NEXT STEPS
 SECTION 14 — LOCKED DECISIONS & OPEN QUESTIONS
 ================================================================================
 
-LOCKED DECISIONS (superseded by GDD 4.0 — do not implement archive conflicts)
+LOCKED DECISIONS (superseded by GDD 5.0 — do not implement archive conflicts)
 --------------------------------
   [x] Platforms: PC primary + consoles (PS5 / Xbox); no mobile ship target
-  [x] Economy: Aether Credits only. Starter 5000 AC → 1 Skilled Pioneer
+  [x] Economy: Aether Credits only. Starter 5000 AC → 1 Skilled Companion
   [x] External wallet / marketplace mint / Exchange: CANCELLED — not used
   [x] Pet/AI follower: FOLD into Echo/trio companion system (not separate pet)
   [x] Cold/Heat: one combined thermal stress meter (cold ↔ heat poles)
@@ -642,7 +642,7 @@ STILL OPEN
 ----------
   [ ] Flat terrain → Io: incremental retexture vs new scene?
   [ ] Science Specialist ability kit — define before Phase 3?
-  [ ] Exact starter Skilled Pioneer roster (which classes offered at new game)?
+  [ ] Exact starter Skilled Companion roster (which classes offered at new game)?
 
 
 ================================================================================
@@ -650,12 +650,12 @@ SECTION 15 — GLOSSARY
 ================================================================================
 
   AC                  Aether Credits — sole gameplay currency
-  Echo                Procedurally generated rescued pioneer (skilled/Special)
+  Echo                Procedurally generated rescued companion (skilled/Special)
   Echo Card           Local roster / save identity for a skilled Echo (no mint)
   Thermal meter       Single cold/heat exposure bar (biome pressure #2)
-  Starter grant       5000 AC on new game for 1 starter Skilled Pioneer choice
+  Starter grant       5000 AC on new game for 1 starter Skilled Companion choice
   Resonance Event     Temporary world change after slotting a memory core
-  Saturation          Skilled pioneer mental/rad/sulfur stress (hallucinations)
+  Saturation          Skilled companion mental/rad/sulfur stress (hallucinations)
   Strain              Worker collective overwork meter
   Norm                Oxygen — always tracked baseline survival pressure
 
@@ -664,7 +664,7 @@ SECTION 15 — GLOSSARY
 SECTION 16 — UNITY 6 + URP PROJECT RULES
 ================================================================================
 
-You are an expert Unity 6 + URP C# developer building Pioneer Survivor, a light
+You are an expert Unity 6 + URP C# developer building Dark Matter: Genesis, a light
 tactical RPG for PC and consoles (PS5 / Xbox). Core features include survival
 lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/
 tension), moral choices, low to med poly Io mechanics, companion systems/
@@ -739,5 +739,5 @@ OUTPUT STYLE
 
 
 ================================================================================
-END OF GAME DESIGN DOCUMENT — DARK MATTER STUDIOS — PIONEER SURVIVORS
+END OF GAME DESIGN DOCUMENT — DARK MATTER STUDIOS — DARK MATTER: GENESIS
 ================================================================================

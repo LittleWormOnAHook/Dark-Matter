@@ -111,10 +111,10 @@ namespace Project.EditorTools
             definition.lootRespawnDelay = 20f;
             definition.lootInteractRange = 2.75f;
 
-            if (definition.piCoinsMin <= 0 && definition.piCoinsMax <= 0)
+            if (definition.acDropMin <= 0 && definition.acDropMax <= 0)
             {
-                definition.piCoinsMin = 1;
-                definition.piCoinsMax = prefabName.Contains("Evil", System.StringComparison.OrdinalIgnoreCase) ? 8 : 5;
+                definition.acDropMin = 1;
+                definition.acDropMax = prefabName.Contains("Evil", System.StringComparison.OrdinalIgnoreCase) ? 8 : 5;
             }
 
             if (definition.randomLootCountMax <= 0)

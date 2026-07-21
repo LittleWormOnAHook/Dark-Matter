@@ -71,10 +71,18 @@ namespace Project.EditorTools.UiLayout
                 Description = "Center-screen zone entry popup (3s hold + fade)."
             },
             new UiPanelDefinition { Label = "Pickup Aim Reticle", Category = "HUD", SearchNames = new[] { "PickupAimReticle" }, ComponentType = typeof(PickupAimReticleUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Pi Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText" } },
+            new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText", "CurrencyHudText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Player Level HUD", Category = "HUD", SearchNames = new[] { "PlayerLevelHud" }, PlayModeOnly = true, Description = "Lv/XP readout centered below the hotbar. Built by ActiveQuestHudUI.BuildProgressionHeader." },
             new UiPanelDefinition { Label = "Pickup Proximity Dots", Category = "HUD", SearchNames = new[] { "PickupProximityDots" }, PlayModeOnly = true },
+            new UiPanelDefinition { Label = "World Interaction Dots", Category = "HUD", SearchNames = new[] { "WorldInteractionDots" }, ComponentType = typeof(WorldInteractionDotUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Ranged Combat HUD", Category = "HUD", SearchNames = new[] { "RangedAmmoLabel" }, ComponentType = typeof(RangedCombatHud), PlayModeOnly = true, Description = "Crosshair + ammo readout shown while a ranged weapon is drawn." },
+            new UiPanelDefinition { Label = "Pet Toolbar", Category = "HUD", SearchNames = new[] { "PetToolbar" }, ComponentType = typeof(PetToolbarUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pet Taming Progress", Category = "HUD", SearchNames = new[] { "PetTamingProgressUI" }, ComponentType = typeof(PetTamingProgressUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Expedition Pioneer HUD", Category = "HUD", SearchNames = new[] { "ExpeditionPioneerHud" }, ComponentType = typeof(ExpeditionPioneerHudUI), PlayModeOnly = true, Description = "Bottom-HUD cluster of expedition-pioneer portraits with health arcs, right of the hotbar." },
+            new UiPanelDefinition { Label = "Hovercraft Status HUD", Category = "HUD", SearchNames = new[] { "HovercraftStatusHud" }, ComponentType = typeof(HovercraftStatusHudUI), PlayModeOnly = true, Description = "Shield/Hull/Fuel bars shown while mounted in the hovercraft." },
+            new UiPanelDefinition { Label = "Hovercraft Turret Reticle", Category = "HUD", SearchNames = new[] { "HovercraftTurretReticle" }, ComponentType = typeof(HovercraftTurretReticleUI), PlayModeOnly = true },
 
             new UiPanelDefinition
             {
@@ -106,6 +114,23 @@ namespace Project.EditorTools.UiLayout
                 ParentSearchName = "MinimapPanel",
                 RelativePath = "CircleAssembly/CircularViewport/MapContent/MapImage",
                 Description = "RawImage showing the baked terrain texture."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Compass HUD",
+                Category = "Map",
+                SearchNames = new[] { "CompassHud" },
+                ComponentType = typeof(CompassHudUI),
+                PlayModeOnly = true,
+                Description = "Horizontal scrolling compass strip anchored below the minimap. Built by MapUI.Compass.cs."
+            },
+            new UiPanelDefinition
+            {
+                Label = "Minimap Info Panel",
+                Category = "Map",
+                SearchNames = new[] { "InfoPanel" },
+                PlayModeOnly = true,
+                Description = "Range%/Scan status text stacked below the compass. Built by MapUI.Layout.cs's CreateMinimapInfoPanel."
             },
             new UiPanelDefinition
             {
@@ -243,6 +268,22 @@ namespace Project.EditorTools.UiLayout
                 SearchNames = new[] { "EchoesWindowHost" },
                 PlayModeOnly = true
             },
+            new UiPanelDefinition
+            {
+                Label = "Journal Character Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "CharacterWindowHost" },
+                PlayModeOnly = true
+            },
+            new UiPanelDefinition
+            {
+                Label = "Journal Achievements Window",
+                Category = "Journal",
+                ParentSearchName = "JournalWindowHost",
+                SearchNames = new[] { "AchievementsWindowHost" },
+                PlayModeOnly = true
+            },
 
             new UiPanelDefinition { Label = "Crafting Window", Category = "Panels", PanelId = UiPanelIds.CraftPanel, SearchNames = new[] { "CraftingWindow", "CraftPanel" }, ComponentType = typeof(CraftingUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Quest Giver Dialog", Category = "Panels", SearchNames = new[] { "DialogPanel", "QuestGiverDialogUI" }, ComponentType = typeof(QuestGiverDialogUI), PlayModeOnly = true },
@@ -265,6 +306,16 @@ namespace Project.EditorTools.UiLayout
             },
             new UiPanelDefinition { Label = "Main Menu", Category = "Panels", PanelId = UiPanelIds.MainMenu, SearchNames = new[] { "MainMenuPanel", "MainMenuBackground" }, ComponentType = typeof(MainMenuController), PlayModeOnly = true, Description = "Runtime-built main menu (MenuUiBuilder)." },
             new UiPanelDefinition { Label = "Building Control", Category = "Panels", PanelId = UiPanelIds.BuildingControl, SearchNames = new[] { "BuildingControlOverlay", "BuildingControlPanelUI" }, ComponentType = typeof(BuildingControlPanelUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Achievement Unlock Popup", Category = "Panels", SearchNames = new[] { "AchievementUnlockPopupUI" }, ComponentType = typeof(AchievementUnlockPopupUI), PlayModeOnly = true, Description = "Center-screen achievement-unlock popup card." },
+            new UiPanelDefinition { Label = "Achievements Panel", Category = "Panels", SearchNames = new[] { "AchievementsPanel" }, ComponentType = typeof(AchievementsPanelUI), PlayModeOnly = true, Description = "Scrollable grid content panel for the Journal Achievements tab." },
+            new UiPanelDefinition { Label = "Echoes Panel", Category = "Panels", SearchNames = new[] { "EchoesPanel" }, ComponentType = typeof(EchoesPanelUI), PlayModeOnly = true, Description = "Neural Echo chronicle content panel for the Journal Echoes tab." },
+            new UiPanelDefinition { Label = "Skills Panel", Category = "Panels", SearchNames = new[] { "SkillsPanel" }, ComponentType = typeof(SkillsPanelUI), PlayModeOnly = true, Description = "Skill-spend content panel for the Journal Skills tab." },
+            new UiPanelDefinition { Label = "XP Toast", Category = "Panels", SearchNames = new[] { "XpToastUI" }, ComponentType = typeof(XpToastUI), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Settings Panel", Category = "Panels", SearchNames = new[] { "SettingsWindow" }, ComponentType = typeof(SettingsPanelController), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Save/Load Slots Panel", Category = "Panels", SearchNames = new[] { "SaveSlotsWindow" }, ComponentType = typeof(SaveSlotsPanelController), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Main Menu Wallet Panel", Category = "Panels", SearchNames = new[] { "WalletWindow" }, ComponentType = typeof(MainMenuWalletPanelController), PlayModeOnly = true, Description = "Main-menu Wallet window: AC balance, marketplace shell, owned-pioneers tabs." },
+            new UiPanelDefinition { Label = "Main Menu Wallet Preview Widget", Category = "Panels", SearchNames = new[] { "WalletPreviewWidget" }, ComponentType = typeof(MainMenuWalletPreviewWidget), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Main Menu Environment Status Bar", Category = "Panels", SearchNames = new[] { "EnvironmentStatusBar" }, ComponentType = typeof(MainMenuEnvironmentStatusBar), PlayModeOnly = true },
 
             new UiPanelDefinition { Label = "Item Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "ItemHoverTooltip" }, PlayModeOnly = true, Description = "Runtime tooltip shown when hovering inventory slots." },
             new UiPanelDefinition { Label = "Inventory Context Menu", Category = "Mini Windows", SearchNames = new[] { "InventoryContextMenu", "MenuPanel" }, PlayModeOnly = true },
@@ -272,14 +323,29 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Optics Overlay", Category = "Mini Windows", SearchNames = new[] { "OpticsOverlay" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Death Popup", Category = "Mini Windows", SearchNames = new[] { "DeathPopupPanel" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Floating Damage", Category = "Mini Windows", SearchNames = new[] { "DamagePopup" }, PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Hovercraft Interact Menu", Category = "Mini Windows", SearchNames = new[] { "HovercraftInteractMenu" }, ComponentType = typeof(HovercraftInteractMenuUI), PlayModeOnly = true, Description = "Press-E popup for hovercraft Enter/Refuel/Repair/Store actions." },
+            new UiPanelDefinition { Label = "Pet Context Menu", Category = "Mini Windows", SearchNames = new[] { "PetContextMenu" }, ComponentType = typeof(PetContextMenu), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pioneer Roster Context Menu", Category = "Mini Windows", SearchNames = new[] { "PioneerRosterContextMenu" }, ComponentType = typeof(PioneerRosterContextMenu), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Science Lab Health Context Menu", Category = "Mini Windows", SearchNames = new[] { "ScienceLabHealthContextMenu" }, ComponentType = typeof(ScienceLabHealthContextMenu), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pet Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "PetHoverTooltip" }, ComponentType = typeof(PetHoverTooltip), PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Pioneer Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "PioneerHoverTooltip" }, ComponentType = typeof(PioneerHoverTooltip), PlayModeOnly = true },
 
             new UiPanelDefinition { Label = "UI Front Layer", Category = "Overlays", SearchNames = new[] { "UiFrontLayer" }, PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Environmental Crisis HUD Mode", Category = "Overlays", SearchNames = new[] { "EnvironmentalCrisisHudMode" }, ComponentType = typeof(EnvironmentalCrisisHudMode), PlayModeOnly = true, Description = "Sulfur-storm/crisis mode: hides non-critical HUD chrome, shows a PAUSED-style banner." },
             new UiPanelDefinition
             {
                 Label = "Inventory Slot Prefab",
                 Category = "Prefabs",
                 SearchNames = new[] { "InventorySlot", "InventorySlot_LayoutPreview" },
                 PrefabAssetPath = InventorySlotPrefabPath
+            },
+            new UiPanelDefinition
+            {
+                Label = "AC Reward Popup Prefab",
+                Category = "Prefabs",
+                ComponentType = typeof(AcRewardPopup),
+                PrefabAssetPath = "Assets/_Project/Prefabs/UI/AcRewardPopup.prefab",
+                Description = "Animated scale/fade-in AC reward popup, instantiated from a prefab."
             },
         };
 
@@ -421,7 +487,7 @@ namespace Project.EditorTools.UiLayout
                     return PrepareHotbarLayout();
                 case "Toolbar":
                     return PrepareToolbarLayout();
-                case "Pi Balance":
+                case "AC Balance":
                 case "Interaction Prompt":
                     return PrepareHudLabelLayout();
                 case "Active Quest HUD":

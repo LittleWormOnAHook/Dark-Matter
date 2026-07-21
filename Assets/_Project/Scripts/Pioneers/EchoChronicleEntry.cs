@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Project.Pioneers
 {
@@ -13,6 +14,7 @@ namespace Project.Pioneers
         public string classSummary;
         public string abilitySummary;
         public bool rescueFailed;
+        public bool simulationIncident;
 
         public EchoDisposition DispositionAtRescue =>
             (EchoDisposition)Math.Max(0, Math.Min(3, dispositionAtRescue));
@@ -53,6 +55,46 @@ namespace Project.Pioneers
                 abilitySummary = "Permanent imprint loss",
                 rescueFailed = true
             };
+        }
+
+        public static EchoChronicleEntry CreateSimulationIncident(
+            string incidentId,
+            float severity01,
+            string debugReason = "")
+        {
+            string id = incidentId ?? string.Empty;
+            return new EchoChronicleEntry
+            {
+                id = Guid.NewGuid().ToString("N"),
+                echoName = FormatSimulationIncidentTitle(id),
+                rescuedAtUtcTicks = DateTime.UtcNow.Ticks,
+                coreId = id,
+                dispositionAtRescue = 0,
+                classSummary = $"Severity {Mathf.RoundToInt(Mathf.Clamp01(severity01) * 100f)}%",
+                abilitySummary = string.IsNullOrWhiteSpace(debugReason)
+                    ? "Off-screen colony event"
+                    : debugReason,
+                rescueFailed = false,
+                simulationIncident = true
+            };
+        }
+
+        public static string FormatSimulationIncidentTitle(string incidentId)
+        {
+            if (string.IsNullOrWhiteSpace(incidentId))
+                return "Simulation Incident";
+
+            switch (incidentId)
+            {
+                case "sim_sulfur_strain":
+                    return "Sulfur Strain";
+                case "sim_threat_pressure":
+                    return "Threat Pressure";
+                case "sim_facility_strain":
+                    return "Facility Strain";
+                default:
+                    return incidentId.Replace('_', ' ');
+            }
         }
     }
 }

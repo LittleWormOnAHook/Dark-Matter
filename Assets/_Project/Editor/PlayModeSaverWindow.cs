@@ -57,7 +57,7 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.HelpBox(
                     "Play Mode Saver is disabled. Auto-capture on exit is off and pending snapshots were cleared. " +
-                    "Enable below or use Tools → Survival Pioneer → Maintenance → Persist Play Mode Edits.",
+                    "Enable below or use Tools → Dark Matter Genesis → Maintenance → Persist Play Mode Edits.",
                     MessageType.Warning);
             }
 

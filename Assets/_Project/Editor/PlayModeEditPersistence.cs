@@ -10,7 +10,7 @@ namespace Project.EditorTools
 {
     /// <summary>
     /// Optional workflow: capture scene hierarchy edits made during Play Mode and reapply them after exit.
-    /// Toggle via Tools → Survival Pioneer → Maintenance → Persist Play Mode Edits.
+    /// Toggle via Tools → Dark Matter Genesis → Maintenance → Persist Play Mode Edits.
     /// </summary>
     [InitializeOnLoad]
     public static class PlayModeEditPersistence
@@ -62,7 +62,7 @@ namespace Project.EditorTools
 
         /// <summary>
         /// One-time migration: turn off auto-capture and discard any pending snapshot.
-        /// Re-enable via Tools → Survival Pioneer → Maintenance → Persist Play Mode Edits.
+        /// Re-enable via Tools → Dark Matter Genesis → Maintenance → Persist Play Mode Edits.
         /// </summary>
         private static void EnsureFeatureDisabledByDefault()
         {

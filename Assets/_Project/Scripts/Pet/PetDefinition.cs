@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Project.Pet
 {
-    [CreateAssetMenu(menuName = "Survival Pioneer/Pet Definition", fileName = "PetDefinition")]
+    [CreateAssetMenu(menuName = "Dark Matter Genesis/Pet Definition", fileName = "PetDefinition")]
     public class PetDefinition : ScriptableObject
     {
         public string petId = "fox_cub";

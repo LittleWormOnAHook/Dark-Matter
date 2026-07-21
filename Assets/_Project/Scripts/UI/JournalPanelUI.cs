@@ -421,7 +421,7 @@ namespace Project.UI
         craft.Configure(craftingUi ?? FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>());
       });
 
-      RegisterWindow<PioneersFullscreenWindow>(JournalWindowId.Pioneers, "Pioneers", pioneers =>
+      RegisterWindow<PioneersFullscreenWindow>(JournalWindowId.Pioneers, "Companions", pioneers =>
       {
         pioneers.Configure(pioneerRosterPanelUi ?? GetComponent<PioneerRosterPanelUI>() ?? gameObject.AddComponent<PioneerRosterPanelUI>());
       });
@@ -870,7 +870,7 @@ namespace Project.UI
       {
         detailTitle.text = "No active quests";
         if (detailBody != null)
-          detailBody.text = "Accept and complete quests with NPCs.";
+          detailBody.text = "Accept and complete quests with companions.";
         if (includeObjectives)
           ClearObjectiveRows();
         UpdateAbandonQuestButton(null);

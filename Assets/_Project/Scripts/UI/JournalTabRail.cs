@@ -32,7 +32,7 @@ namespace Project.UI
             new TabDef("Inventory", JournalWindowId.Inventory),
             new TabDef("Map", JournalWindowId.Map),
             new TabDef("Pet", JournalWindowId.Pet),
-            new TabDef("Pioneers", JournalWindowId.Pioneers),
+            new TabDef("Companions", JournalWindowId.Pioneers),
             new TabDef("Character", JournalWindowId.Character),
             new TabDef("Craft", JournalWindowId.Craft),
             new TabDef("Recipes", JournalWindowId.Recipes),

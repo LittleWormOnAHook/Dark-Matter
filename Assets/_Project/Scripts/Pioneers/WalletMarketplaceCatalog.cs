@@ -17,7 +17,7 @@ namespace Project.Pioneers
     }
 
     /// <summary>
-    /// Mock Pioneer Survivor Exchange listings (AC-priced, in-game currency).
+    /// Mock Dark Matter : Genesis Exchange listings (AC-priced, in-game currency).
     /// </summary>
     public static class WalletMarketplaceCatalog
     {

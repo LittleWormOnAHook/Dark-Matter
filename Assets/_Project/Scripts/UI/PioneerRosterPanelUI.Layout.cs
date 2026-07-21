@@ -175,7 +175,7 @@ namespace Project.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            TextMeshProUGUI header = CreateLabel(parent, "Pioneer Detail", 18f, semiBold: true);
+            TextMeshProUGUI header = CreateLabel(parent, "Companion Detail", 18f, semiBold: true);
             header.color = SurvivalPioneerUiPalette.AccentText;
 
             Transform scrollContent = BuildScrollableContentArea(parent, flexibleHeight: 1f, minHeight: 320f);
@@ -198,7 +198,7 @@ namespace Project.UI
             detailHostFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             detailHostFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            detailLabel = CreateWrappingLabel(detailHost.transform, "Select a skilled pioneer from the roster.", 14f);
+            detailLabel = CreateWrappingLabel(detailHost.transform, "Select a skilled companion from the roster.", 14f);
             detailLabel.color = SurvivalPioneerUiPalette.BodyText;
 
             synergyHintLabel = CreateWrappingLabel(scrollContent, string.Empty, 12f);
@@ -220,7 +220,7 @@ namespace Project.UI
             toolSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "ToolSlot", "Tool\n—", CycleToolLoadout, out toolSlotLabel);
             skillSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "SkillSlot", "Skill\n—", CycleSkillLoadout, out skillSlotLabel);
 
-            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a pioneer to edit loadout.", 12f);
+            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a companion to edit loadout.", 12f);
             loadoutStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
 
             TextMeshProUGUI trioHeader = CreateSectionHeader(scrollContent, "Expedition Trio");

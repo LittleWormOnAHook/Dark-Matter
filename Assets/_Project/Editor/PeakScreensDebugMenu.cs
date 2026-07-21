@@ -9,10 +9,10 @@ namespace Project.EditorTools
 {
     public static class PeakScreensDebugMenu
     {
-        private const string CrisisMenuPath = "Tools/Survival Pioneer/Debug/Toggle Sulfur Crisis HUD";
-        private const string EchoMenuPath = "Tools/Survival Pioneer/Debug/Show Echo Rescue Reveal (Test)";
-        private const string SpawnEchoMenuPath = "Tools/Survival Pioneer/Debug/Spawn Test Echo Signal";
-        private const string RefreshTrioMenuPath = "Tools/Survival Pioneer/Debug/Refresh Expedition Trio Companions";
+        private const string CrisisMenuPath = "Tools/Dark Matter Genesis/Debug/Toggle Sulfur Crisis HUD";
+        private const string EchoMenuPath = "Tools/Dark Matter Genesis/Debug/Show Echo Rescue Reveal (Test)";
+        private const string SpawnEchoMenuPath = "Tools/Dark Matter Genesis/Debug/Spawn Test Echo Signal";
+        private const string RefreshTrioMenuPath = "Tools/Dark Matter Genesis/Debug/Refresh Expedition Trio Companions";
 
         [MenuItem(CrisisMenuPath)]
         public static void ToggleSulfurCrisisHud()

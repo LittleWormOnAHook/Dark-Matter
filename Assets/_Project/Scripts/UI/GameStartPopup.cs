@@ -27,7 +27,7 @@ namespace Project.UI
 
         [TextArea(3, 10)]
         public string messageText =
-            "Welcome, Pioneer!\n\nSurvival is key. Gather resources, watch your stats, and earn Aether Credits (AC) from quests and loot.\n\nManage Pi Wallet and AC on the main menu. Pick your starter specialist before deploying.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-4] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
+            "Welcome!\n\nSurvival is key. Gather resources, watch your stats, and earn Aether Credits (AC) from quests and loot.\n\nManage AC and your companion roster on the main menu. Pick your starter specialist before deploying.\n\n[WASD] Move  |  [E] Interact  |  [I] Inventory\n[1-4] Weapons  |  [N] Scanner  |  [B] Binoculars\n[RMB] Block / Optics  |  [LMB] Attack  |  [M] Map  |  [Scroll] Zoom";
 
         public Sprite imageSprite;
         public bool showOnStart = false;

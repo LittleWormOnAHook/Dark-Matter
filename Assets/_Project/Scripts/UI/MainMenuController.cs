@@ -239,7 +239,7 @@ namespace Project.UI
             layout.spacing = 4;
             layout.childAlignment = TextAnchor.UpperLeft;
 
-            TextMeshProUGUI title = MenuUiBuilder.CreateTitle(titleBlock.transform, "PIONEER SURVIVORS 2160", 34f * MenuScale);
+            TextMeshProUGUI title = MenuUiBuilder.CreateTitle(titleBlock.transform, "DARK MATTER : GENESIS 2160", 34f * MenuScale);
             title.alignment = TextAlignmentOptions.TopLeft;
 
             TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(titleBlock.transform, "IO // JUPITER SYSTEM", 16f * MenuScale);

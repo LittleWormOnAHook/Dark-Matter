@@ -234,7 +234,7 @@ namespace Project.UI
             List<AchievementEntry> entries = BuildSortedEntries();
             if (entries.Count == 0)
             {
-                ShowInfoState("No achievements configured. Run Tools → Survival Pioneer → Content → Create Starter Achievements.");
+                ShowInfoState("No achievements configured. Run Tools → Dark Matter Genesis → Content → Create Starter Achievements.");
                 return;
             }
 

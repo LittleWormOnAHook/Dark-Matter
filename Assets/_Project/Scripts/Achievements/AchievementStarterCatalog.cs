@@ -16,7 +16,7 @@ namespace Project.Achievements
             Register(manager, "first_pet", "First Companion", "Adopt your first pet.", AchievementCategory.Pets,
                 AchievementTriggerType.AdoptPet, 1, null, 75, hidden: false, sortOrder: 10);
 
-            Register(manager, "trio_leader", "Trio Leader", "Assign a full three-pioneer expedition.", AchievementCategory.Pioneers,
+            Register(manager, "trio_leader", "Trio Leader", "Assign a full three-colonist expedition.", AchievementCategory.Pioneers,
                 AchievementTriggerType.AssignTrio, 3, null, 100, hidden: false, sortOrder: 20);
 
             Register(manager, "artisan", "Artisan", "Craft five items.", AchievementCategory.Crafting,

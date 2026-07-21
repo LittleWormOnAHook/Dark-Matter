@@ -1,8 +1,8 @@
 Dark Matter Studios
-Pioneer Survivors
+Dark Matter: Genesis
 Studio Master Game Design Document
 Version 4.0
-Status: Production Bible — SINGLE AUTHORITATIVE GDD
+Status: ARCHIVED — superseded by GAME_DESIGN_DOCUMENT_5.0.txt (July 2026)
 
 Audience
 
@@ -18,17 +18,15 @@ Future Team Members
 
 Authority
 ---------
-This file is the primary GDD on git. Chapters 1-5 define vision and production
-philosophy. Appendix A folds locked mechanics formerly split across GDD 3.0.
-Appendix B records Current Implementation / Progress (surveyed July 2026 against
-Assets/_Project). GAME_DESIGN_DOCUMENT_3.0.txt is retained as a historical
-archive only — do not treat it as competing authority.
+SUPERSEDED. Use Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt (or latest
+GAME_DESIGN_DOCUMENT_*.txt revision). This 4.0 file is a historical archive only.
+GAME_DESIGN_DOCUMENT_3.0.txt is also archive-only.
 
 LOCKED (do not contradict without an explicit design change)
   Platforms: PC primary + consoles (PS5 / Xbox) only. No mobile ship target.
-  Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Pioneer.
+  Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Companion.
   Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
-  Building Control Panels: in-world E terminal → Overview | Pioneers | Production |
+  Building Control Panels: in-world E terminal → Overview | Companions | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
 
 
@@ -38,7 +36,7 @@ Chapter 1 - Executive Vision
 
 The Mission
 -----------
-Pioneer Survivors is a premium single-player science-fiction survival colony
+Dark Matter: Genesis is a premium single-player science-fiction survival colony
 simulator designed to deliver the emotional depth, visual quality, and systemic
 complexity associated with modern AAA games while remaining achievable for a
 solo developer through disciplined engineering, procedural systems, and
@@ -48,7 +46,7 @@ The game is not about surviving on Io.
 
 It is about proving that humanity deserves a future there.
 
-Every expedition, discovery, structure, rescued Pioneer, and scientific
+Every expedition, discovery, structure, rescued companion, and scientific
 breakthrough contributes toward rebuilding civilization on one of the most
 dangerous worlds in the Solar System.
 
@@ -63,11 +61,11 @@ Legacy is the destination.
 
 Vision Statement
 ----------------
-Pioneer Survivors exists to create an experience where players genuinely believe
+Dark Matter: Genesis exists to create an experience where players genuinely believe
 they are leading humanity's first successful colony on Io.
 
-Unlike traditional survival games that focus on short-term needs, Pioneer
-Survivors gradually transforms the player from survivor into explorer, from
+Unlike traditional survival games that focus on short-term needs, Dark Matter: Genesis
+gradually transforms the player from survivor into explorer, from
 explorer into commander, and finally into the founder of a new civilization.
 
 The colony is not simply a base.
@@ -81,8 +79,7 @@ Every design decision must support one simple statement:
 
 The player should always feel that their decisions shape the future of humanity.
 
-If a mechanic doesn't reinforce that feeling, it doesn't belong in Pioneer
-Survivors.
+If a mechanic doesn't reinforce that feeling, it doesn't belong in Dark Matter: Genesis.
 
 
 Design Philosophy
@@ -162,7 +159,7 @@ intentionally.
 
 Success Metrics
 ---------------
-Pioneer Survivors succeeds if players consistently describe it as:
+Dark Matter: Genesis succeeds if players consistently describe it as:
 
   Immersive.
   Atmospheric.
@@ -399,7 +396,7 @@ experience.
 Examples include:
 
   Dynamic weather instead of hundreds of scripted events.
-  Procedural Echo generation instead of hundreds of handcrafted NPCs.
+  Procedural Echo generation instead of hundreds of handcrafted companions.
   Modular building pieces instead of unique architecture for every structure.
   Layered audio and lighting to create atmosphere instead of expensive
   cinematics.
@@ -472,7 +469,7 @@ Economy (Current Lock)
 AETHER CREDITS ONLY
 -------------------
   Aether Credits (AC) is the only player-facing currency.
-  Starter grant: 5000 AC on new game for 1 starter Skilled Pioneer choice.
+  Starter grant: 5000 AC on new game for 1 starter Skilled Companion choice.
   Optional IAP later → AC only (if ever enabled).
   No external wallet, marketplace mint, or third-party crypto loop.
 
@@ -488,7 +485,7 @@ gameplay system, art asset, AI behavior, and line of code should follow.
 Next production-facing chapters (planned — not yet written as full chapters):
 
   Chapter 6: Core Gameplay Loops (player, colony, expedition, research)
-  Chapter 7: Colony Simulation & Pioneer AI
+  Chapter 7: Colony Simulation & Companion AI
   Chapter 8: World Systems (weather, geology, Resonance, ecology)
   Chapter 9: Exploration & Expeditions
   Chapter 10: Survival Systems
@@ -506,7 +503,7 @@ APPENDIX A — Interim Mechanics Lock (folded from GDD 3.0)
 Identity recap
 --------------
 Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
-pioneers: up to 22 at base, trio of 3 on expeditions. Rescue procedural Neural
+companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
 Echoes; recover Memory Cores for Aether-9 → Resonance Events; materialize,
 craft, and maintain buildings; survive O2 norm + four biome pressures.
 
@@ -523,44 +520,50 @@ A1. Platforms, art & tech
   Not a ship target: mobile
   Art: semi-low-poly modular; 2–3 base meshes + attachments + material swaps
   Tech: Unity 6 + URP; Addressables/LODs as needed; aggregate base sim (no
-        per-NPC pathfinding at 22 scale)
+        per-companion pathfinding at 22 scale)
 
 
 A2. Survival — O2 norm & biome pressures
 ----------------------------------------
   ALWAYS ON: Oxygen (tanks, deprivation FX, health drain when empty)
 
-  FOUR PRESSURES:
+  FOUR ENVIRONMENTAL PRESSURES:
     1. Radiation
     2. Cold / Heat — SINGLE thermal stress meter (cold pole ↔ heat pole)
     3. Volcanos (lava, eruptions, tremors)
     4. Sulfur storms (corrosive weather; base shelter trigger)
 
+  SURFACE THREATS (combat / exploration):
+    5. Alien life forms — native Io fauna; escalation by biome and Resonance
+    6. AI androids — hostile or corrupted machines left from prior expeditions
+
   Offsets (design target): shelter, caves, inoculations, portable habitat
   (Architect Engineer), environmental suits (upgradeable trio gear).
 
 
-A3. Pioneer roster (25 cap)
+A3. Companion roster (25 cap)
 ---------------------------
   ~12–13 workers (labor pool; collective Strain meter)
-  ~12–13 skilled Echoes / Special pioneers (named, upgradable)
-  TRIO (3 skilled) on surface — full O2 + all four pressures
-  BASE (up to 22) — sealed base loop (see A4)
+  ~12–13 skilled Echoes / Special companions (named, upgradable)
+  TRIO (3 skilled companions) on surface with player — player SWITCHES which
+  companions fill the three expedition slots; full O2 + all four environmental
+  pressures plus surface threats while deployed.
+  BASE (up to 22 companions) — sealed base loop (see A4)
   Skilled: Saturation meter; cleanse at Purification Hub
   Pet/AI follower: DESIGN TARGET = fold into Echo/trio (no separate pet loop)
 
 
 A4. Base 22 & Command Center
 ----------------------------
-  Base pioneers impervious to routine rad / thermal / volcano / surface O2.
+  Base companions impervious to routine rad / thermal / volcano / surface O2.
   NOT impervious to: sulfur storms, Command Center building damage, Strain.
 
   Sulfur storm flow:
     1. All base work PAUSES
     2. Evacuate to Command Center rooms
-    3. Storm ends → healthy pioneers resume jobs
+    3. Storm ends → healthy companions resume jobs
 
-  Building damage: injures / incapacitates — NEVER kills base pioneers.
+  Building damage: injures / incapacitates — NEVER kills base companions.
   Heal/restore required before they contribute again.
 
 
@@ -576,14 +579,48 @@ A5. Neural Echoes & procedural generation
 
 A6. Aether-9, Memory Cores & Resonance Events
 ---------------------------------------------
-  Find core → recovery setpiece → slot into Aether-9 → Resonance Event
-  (10–15 min world change) + story + unlocks.
-  May spike storms, damage Command Center, injure base pioneers, spawn Echo
-  opportunities.
+  Aether-9 is a SPECIAL prologue intelligence — not a generic mission-control bot and not
+  a human companion. He is an idle machine / probe shell containing an embedded
+  ancient alien Neural Echo who calls himself Aether-9.
+
+  PROLOGUE DISCOVERY
+    Player finds the dormant machine early (prologue). Interacting loads a repair
+    quest: recover 3 objects that restore the machine enough to awaken.
+
+  AWAKENING
+    Once repaired, Aether-9 comes online slightly hostile / angry. He recounts
+    that his group was killed by something sinister on Io; they had collected
+    Memory Cores once housed in this machine. Without those cores he cannot
+    function well or remember much of Io’s past.
+
+  MEMORY CORES → RESONANCE EVENTS
+    Find core → recovery setpiece → attach / slot into Aether-9 → Resonance Event
+    (10–15 min world change) + story fragment + unlocks.
+    May spike storms, damage Command Center, injure base companions, spawn Echo
+    opportunities. Repeat per core (design target: at least 3 primary cores).
+
+  TRUST LADDER (communications)
+    Angry / hostile → wary → advisor (mission tips, status help) → friend who
+    radios in unprompted and eventually relays chats with other companions.
+    Colony Ops / expedition crew handle radio queries until Aether-9 is awake
+    and advisory-unlocked. Personality-flavored Aether voice is a later comms
+    phase; do not treat him as day-one channel traffic.
+
+  RELATIONSHIP TO ECHOES
+    Aether-9 IS an Echo sealed in a machine — distinct from rescueable surface
+    Echoes that join the companion roster. He is the mystery hub for Memory Cores
+    and Resonance progression.
 
 
-A7. Buildings, craft & Building Control Panels
-----------------------------------------------
+A7. Buildings, Lite Building, craft & Building Control Panels
+-------------------------------------------------------------
+  LITE BUILDING (colony camp — shipped direction):
+    Lightweight placement and maintenance loop for colony camp structures
+    (shelters, utilities, camp modules) before full materialization pipeline.
+    Player spends gathered resources + AC at vendors where applicable; camp
+    expands outward from the Command Center anchor.
+
+  FULL MATERIALIZATION (planned):
   Spend resources → building MATERIALIZES (scale-up + VFX); maintenance over time.
   Key buildings: Command Center, Purification Hub, Geothermal Harvester,
   Echo Reclamation Chamber, Resonance Beacon, Probe Uplink, Geothermal
@@ -596,8 +633,8 @@ A7. Buildings, craft & Building Control Panels
 
   BUILDING CONTROL PANELS (locked UX):
     Each major structure has an in-world terminal (E) → Building Control UI
-    (NOT Journal) with tabs: Overview | Pioneers | Production | Craft | Changes.
-    Assign base-22 pioneers, set production/craft queues, per-building /
+    (NOT Journal) with tabs: Overview | Companions | Production | Craft | Changes.
+    Assign base-22 companions, set production/craft queues, per-building /
     module settings.
     Queues run while player is on expedition; PAUSE during sulfur storms.
     Journal Craft = recipe library / scroll learning only — not primary
@@ -607,11 +644,12 @@ A7. Buildings, craft & Building Control Panels
 A8. Economy (current lock)
 --------------------------
   AC — sole gameplay currency.
-    New game starter: 5000 AC → choose 1 starter Skilled Pioneer.
-    Earn: resources, quests, expeditions, Resonance bonuses, base output, loot.
-    Spend: workers, rush craft, supplies, upgrades, heals, inoculations, suits.
+    New game starter: 0 AC → load 1 starter Skilled Companion.
+    Earn: XP, Credits, resources, quests, expeditions, Resonance bonuses, base output, loot.
+    Spend: vendors (supplies, recruits, gear), workers, rush craft, upgrades,
+    heals, inoculations, suits, Lite Building camp modules.
     Optional IAP later → AC only.
-  Workers: AC recruit/replace. Skilled pioneers: local roster progression only.
+  Workers: AC recruit/replace. Skilled companions: local roster progression only.
   When touching economy code: prefer AC for all UI/save; remove leftover legacy
   currency naming from player-facing HUD.
 
@@ -619,25 +657,27 @@ A8. Economy (current lock)
 A9. Controls & UI (target)
 --------------------------
   KBM primary on PC; gamepad required for consoles / optional on PC.
-  Journal: Inventory, Map, Pioneers/Echos (trios + roster), Skills, Craft,
-  Recipes — pet UI folds into Pioneers/Echos when migration completes.
-  HUD: O2 + four exposure indicators; thermal = one cold/heat meter; AC balance;
-  base status; hotbar + toolbar.
+  Journal: Inventory, Map, Companions/Echoes (trios + roster), Skills, Craft,
+  Recipes — pet UI folds into Companions/Echoes when migration completes.
+  HUD: O2 + four exposure indicators + surface-threat awareness; thermal = one
+  cold/heat meter; AC balance; base status; hotbar + toolbar.
 
 
 A10. Locked decisions checklist
 -------------------------------
   [x] PC + consoles only; no mobile ship target
-  [x] AC-only economy; starter 5000 AC → 1 Skilled Pioneer
+  [x] AC-only economy; starter 5000 AC → 1 Skilled Companion
   [x] Single thermal (cold/heat) meter
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
   [x] Base 22: sulfur shelter; injury never death from building damage
-  [x] Building Control Panels tab model as above
+  [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
+  [x] Lite Building colony camp direction (prototype: placement shell / BCP queues)
+  [x] Surface threats: alien life + AI androids — design lock (combat AI partial)
   [x] Echo/roster progression is local save only (no marketplace trading)
 
 OPEN (examples)
   Flat terrain → Io scene strategy
-  Exact starter Skilled Pioneer offer list
+  Exact starter Skilled Companion offer list
   Science Specialist ability kit polish
 
 
@@ -666,13 +706,13 @@ B1. DONE — playable prototype core
   [x] Inventory 24 + hotbar + toolbar (scanner / binoculars); crafting + stations
   [x] Journal hub + map + quests (QuestManager); save/load
   [x] Economy: Aether Credits on roster/UI/save; starter 5000 AC;
-      StarterPioneerSelectUI (1 Skilled Pioneer choice)
+      StarterPioneerSelectUI (1 Skilled Companion choice)
   [x] Roster + expedition trio UI (PioneerRosterManager / PioneerRosterPanelUI)
   [x] Companions: follow, combat, class abilities, Invector bridges
   [x] Echoes: world entities + procedural EchoGenerator / rescue path (local)
   [x] Hovercraft: board/exit, fuel, health, turret; Follow camera + scroll zoom;
       holster weapon on enter (HovercraftOccupancy / HovercraftCameraRig)
-  [x] Building Control Panels: in-world terminal + 5-tab UI shell; pioneer
+  [x] Building Control Panels: in-world terminal + 5-tab UI shell; companion
       assignment + production queue tick (BuildingOperationRegistry) — not full
       base-22 storm factory sim
   [x] Main menu, Shift UI theme, editor tooling under Assets/_Project/Editor
@@ -684,8 +724,8 @@ B2. PARTIAL — present but incomplete vs lock
       AC is gameplay truth; strip player-facing legacy currency when touching
       economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
-  [~] Sulfur "crisis" can pause facility queues via HUD/debug path — not a live
-      world sulfur storm + Command Center room sim
+  [~] Sulfur storm scheduler + global player/trio exposure shipped (B4 #4) —
+      Command Center room fill / base-22 shelter sim still pending (B4 #5)
   [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
       Echo/trio not finished
   [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
@@ -697,25 +737,61 @@ B3. NOT STARTED — vision systems still planned
 ----------------------------------------------
   [ ] Full Io biome world (prototype remains flat terrain)
   [ ] Equippable environmental suit gear loop
-  [ ] Command Center rooms + aggregate 22 pioneer shelter/injury sim
-  [ ] Live sulfur storm scheduler driving base pause + room fill
+  [ ] Command Center rooms + aggregate 22 companion shelter/injury sim
+  [~] Live sulfur storm scheduler (B4 #4) — Command Center room fill still pending
   [ ] Building materialization / placement / maintenance pipeline
   [ ] Medical Facility / Science Labs as full production buildings
-  [ ] Aether-9 probe quest hub + Memory Core arc + Resonance Events
+  [ ] Aether-9 idle machine + 3-part repair quest + awaken / trust arc
+  [ ] Memory Core attach + Resonance Events (story + world change)
+  [ ] Trust-gated Aether-9 advisory radio (after awake; Ops until then)
   [ ] Purification Hub Saturation/Strain gameplay depth
 
 
 B4. Near-term roadmap priority (order of value)
 -----------------------------------------------
-  1. Keep AC-only path clean; remove leftover legacy currency from gameplay HUD
-  2. Exposure + sulfur storm vertical slice for player/trio (then base 22)
-  3. Command Center aggregate sim + injury/heal loop
-  4. Fold pet into Echo/trio companion presentation
-  5. Materialization pipeline + wire Building Control to real facilities
-  6. Aether-9 / cores / first Resonance Events
-  7. Io biome pass + console polish
+  1. [SHIPPED] Experience telemetry module + richer director stub logic (Features/Experience + ExperienceDirectorService)
+  2. [SHIPPED] Presentation vista adapter + Echo chronicle simulation incidents (WorldVistaPresenterUI + SimulationDirectorService)
+  3. [SHIPPED] Keep AC-only path clean; remove leftover legacy currency from gameplay HUD
+  4. [SHIPPED] Exposure + sulfur storm vertical slice for player/trio (WeatherDirectorService + storm exposure)
+  5. Command Center aggregate sim + injury/heal loop
+  6. Fold pet into Echo/trio companion presentation
+  7. Materialization pipeline + wire Building Control to real facilities
+  8. Aether-9 Intelligence service / cores / first Resonance Events
+  9. Io biome pass + console polish
+
+
+B5. SHIPPED — Dark Matter Framework 2.0 foundation (July 2026)
+----------------------------------------------------------------
+Architecture phases A–D complete. Survey: Assets/_Project/Features + Documentation/Architecture.
+
+  [x] HLA v1.0 ratified — Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md (frozen)
+  [x] TDB v1.0 + Framework_Folder_Mapping + subsystem audits Audit_01–08
+  [x] GameState read API — Features/GameState (immutable snapshots, provider adapters)
+  [x] Communications Presentation stack — Features/Communications Phases 0–8 (queue, HUD,
+      audio, ContextBuilder, rule-based + template dialogue)
+  [x] WorldState evolutionary read API (Phase B) — 7 providers, embeds GameState, F9 smoke
+  [x] Directors Intelligence stubs (Phase C) — locked eval order, command/intent interfaces,
+      F10 smoke; Communications intent adapter wired
+  [x] Bootstrap chain in CompanionSystemsBootstrap:
+      GameState → Experience → WorldState → Directors → Communications
+  [x] Phase D validation — cross-stack EditMode tests, smoke-key registry, this appendix section
+  [x] Experience telemetry + ExperienceDirectorService (B4 #1)
+  [x] WorldVistaPresenterUI + SimulationDirectorService + Echo chronicle simulation incidents (B4 #2)
+  [x] AC-only economy cleanup — legacy Pi field renames, HUD/editor copy, loot/tooltips (B4 #3)
+  [x] Live sulfur storm scheduler + global player/trio storm exposure (B4 #4)
+
+  [~] Director command adapters wired for Quest, Weather (crisis HUD), Simulation (chronicle + activity),
+      Presentation (vista banner), Communications intent
+  [~] `DirectorTriggerBridge` forwards quest/roster/session + storm/simulation command triggers
+  [~] WorldState fields not yet persisted into GameSaveData (runtime read model only)
+  [ ] Aether-9 Intelligence service, Memory Core Resonance Events, full director logic
+  [ ] LLM / cloud conversation (Communications Phase 9+)
+
+  Manual smoke (Play Mode):
+    F5–F8 Communications · F9 WorldState · F10 Directors · F11 weather · F12 experience · Shift+F5 vista (F13)
+  EditMode: Window → General → Test Runner → Features Validation + per-module tests.
 
 
 ================================================================================
-END OF GDD 4.0 — DARK MATTER STUDIOS — PIONEER SURVIVORS
+END OF GDD 4.0 — DARK MATTER STUDIOS — DARK MATTER: GENESIS
 ================================================================================

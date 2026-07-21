@@ -1,7 +1,7 @@
 namespace Project.EditorTools
 {
     /// <summary>
-    /// Canonical asset paths for Survival Pioneer. Update here when reorganizing folders.
+    /// Canonical asset paths for Dark Matter Genesis. Update here when reorganizing folders.
     /// </summary>
     public static class ProjectAssetPaths
     {
@@ -21,6 +21,18 @@ namespace Project.EditorTools
         public const string World = Root + "/World";
         public const string WorldTerrain = World + "/Terrain";
         public const string ConceptualUiArt = Root + "/Conceptual UI art";
+        public const string Documentation = Root + "/Documentation";
+        public const string DocumentationArchitecture = Documentation + "/Architecture";
+        public const string DocumentationAudits = DocumentationArchitecture + "/Audits";
+        public const string Features = Root + "/Features";
+        public const string FeaturesGameState = Features + "/GameState";
+        public const string FeaturesWorldState = Features + "/WorldState";
+        public const string FeaturesCommunications = Features + "/Communications";
+        public const string FeaturesDirectors = Features + "/Directors";
+        public const string FeaturesValidation = Features + "/Validation";
+        public const string Textures = Root + "/Textures";
+        public const string TexturesUi = Textures + "/UI";
+        public const string MiscToolsAndShaders = Root + "/Misc Tools and Shaders";
 
         public const string Data = Root + "/Data";
         public const string ItemsData = Data + "/Items";

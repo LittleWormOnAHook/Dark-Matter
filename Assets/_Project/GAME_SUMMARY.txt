@@ -1,0 +1,45 @@
+Dark Matter: Genesis — Game Summary (quick export)
+Dark Matter Studios
+
+Canonical copy lives in GDD 5.0 — PRODUCT IDENTITY (5.0 — canonical game summary):
+  Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt
+
+This file is a one-page export for sharing. When in doubt, read GDD 5.0 (or the
+highest GAME_DESIGN_DOCUMENT_*.txt revision under Assets/_Project/).
+
+================================================================================
+
+Dark Matter: Genesis is a premium sci-fi survival colony sim set on Jupiter's moon
+Io in 2160. You lead humanity's push to prove a future there—not just scrape by, but
+rebuild civilization under brutal conditions. You manage oxygen and environmental
+pressures (radiation, cold/heat, volcanism, sulfur storms, alien life forms, and AI
+androids), gather and craft, fight on the surface, and expand a base of up to
+twenty-two companions while a trio of three skilled companions can be switched and
+run expeditions with the player. You rescue procedural Neural Echoes, spend Aether
+Credits at vendors, and operate major structures through in-world Building Control
+Panels. A Lite Building system supports building your colony camp.
+
+Long-term progression ties to Aether-9—an ancient Echo sealed in a dormant machine—
+and Memory Cores that trigger Resonance Events: short world-changing story beats that
+unlock lore, systems, and colony growth. The emotional arc moves you from survivor
+to explorer, commander, and founder of humanity's first permanent home beyond Earth.
+
+Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating
+System (WoOS) stack built for Unity 6:
+
+  World → Simulation → Intelligence → Experience → Presentation → Player
+
+Gameplay systems (combat, inventory, roster, weather, building) feed read-only
+GameState and WorldState snapshots; Directors and Experience decide when storms
+spike, radio traffic fires, or narrative beats land; Presentation (Communications,
+HUD, audio) delivers what the world authorizes—without AI or UI reaching directly
+into managers. The design goal is a world that feels like it keeps running whether
+you're watching or not: sulfur storms pause base work and force shelter, expedition
+crews carry full exposure risk, and future Resonance Events will reshape Io while
+your colony simulates injury, healing, and production at scale.
+
+Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
+its first shipped game—the Io story, AC economy, Echo roster, Lite Building colony
+camp, and sulfur-storm companion fantasy layered on top.
+
+================================================================================

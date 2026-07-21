@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     /// <summary>
-    /// Central hub for Survival Pioneer editor utilities.
+    /// Central hub for Dark Matter Genesis editor utilities.
     /// </summary>
     public class SurvivalPioneerToolsWindow : EditorWindow
     {
@@ -13,16 +13,16 @@ namespace Project.EditorTools
         [MenuItem(SurvivalPioneerEditorMenus.ToolsWindow, false, 0)]
         public static void Open()
         {
-            GetWindow<SurvivalPioneerToolsWindow>("Survival Pioneer Tools");
+            GetWindow<SurvivalPioneerToolsWindow>("Dark Matter Genesis Tools");
         }
 
         private void OnGUI()
         {
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
-            EditorGUILayout.LabelField("Survival Pioneer", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Dark Matter Genesis", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Editor utilities grouped by category. Match the Tools → Survival Pioneer menu.",
+                "Editor utilities grouped by category. Match the Tools → Dark Matter Genesis menu.",
                 MessageType.None);
             EditorGUILayout.Space(8f);
 
@@ -170,10 +170,10 @@ namespace Project.EditorTools
 
             DrawSection("Debug (Play Mode)", new[]
             {
-                ("Tools/Survival Pioneer/Debug/Toggle Sulfur Crisis HUD", "Toggle environmental crisis HUD overlay"),
-                ("Tools/Survival Pioneer/Debug/Show Echo Rescue Reveal (Test)", "Preview echo rescue reveal popup"),
-                ("Tools/Survival Pioneer/Debug/Spawn Test Echo Signal", "Spawn a test echo signal in the world"),
-                ("Tools/Survival Pioneer/Debug/Refresh Expedition Trio Companions", "Refresh expedition trio companion spawns"),
+                ("Tools/Dark Matter Genesis/Debug/Toggle Sulfur Crisis HUD", "Toggle environmental crisis HUD overlay"),
+                ("Tools/Dark Matter Genesis/Debug/Show Echo Rescue Reveal (Test)", "Preview echo rescue reveal popup"),
+                ("Tools/Dark Matter Genesis/Debug/Spawn Test Echo Signal", "Spawn a test echo signal in the world"),
+                ("Tools/Dark Matter Genesis/Debug/Refresh Expedition Trio Companions", "Refresh expedition trio companion spawns"),
             });
 
             DrawSection("Play Mode Saver", new[]

@@ -6,7 +6,7 @@ namespace Project.Companions.Abilities
     /// <summary>
     /// Per-class loadout rules: allowed ability kinds, slot counts, and default ability ids.
     /// </summary>
-    [CreateAssetMenu(fileName = "companion_class_profile", menuName = "Survival Pioneer/Companions/Class Profile")]
+    [CreateAssetMenu(fileName = "companion_class_profile", menuName = "Dark Matter Genesis/Companions/Class Profile")]
     public class CompanionClassProfile : ScriptableObject
     {
         public SkilledPioneerClass pioneerClass;

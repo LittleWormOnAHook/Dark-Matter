@@ -214,8 +214,8 @@ namespace Project.EditorTools
             EnemyLootable lootable = GetOrAdd<EnemyLootable>(root);
             SetSerializedField(lootable, "enableLoot", definition.enableLoot);
             SetSerializedField(lootable, "lootDisplayName", definition.displayName);
-            SetSerializedField(lootable, "piCoinsMin", definition.piCoinsMin);
-            SetSerializedField(lootable, "piCoinsMax", definition.piCoinsMax);
+            SetSerializedField(lootable, "acDropMin", definition.acDropMin);
+            SetSerializedField(lootable, "acDropMax", definition.acDropMax);
             SetSerializedField(lootable, "randomLootCountMin", definition.randomLootCountMin);
             SetSerializedField(lootable, "randomLootCountMax", definition.randomLootCountMax);
             SetSerializedField(lootable, "lootItemPool", definition.lootItemPool);

@@ -1,11 +1,11 @@
 namespace Project.EditorTools
 {
     /// <summary>
-    /// Shared Unity menu paths for Survival Pioneer editor utilities.
+    /// Shared Unity menu paths for Dark Matter Genesis editor utilities.
     /// </summary>
     public static class SurvivalPioneerEditorMenus
     {
-        public const string Root = "Tools/Survival Pioneer/";
+        public const string Root = "Tools/Dark Matter Genesis/";
         public const string ToolsWindow = Root + "Tools Window";
 
         public const string PrefabCreator = Root + "Prefab Creator/";

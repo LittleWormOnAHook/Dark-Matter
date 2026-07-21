@@ -9,8 +9,7 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Main-menu Wallet: balances, listings shell, and owned pioneer roster.
-    /// AC is the gameplay currency; legacy swap UI may still exist in the panel.
+    /// Main-menu Wallet: AC balance, marketplace shell, and owned pioneer roster.
     /// </summary>
     public class MainMenuWalletPanelController : MonoBehaviour
     {
@@ -23,7 +22,6 @@ namespace Project.UI
 
         private const float MenuScale = 1f;
 
-        private TextMeshProUGUI piBalanceLabel;
         private TextMeshProUGUI acBalanceLabel;
         private GameObject walletOverlayRoot;
         private GameObject balancesTabRoot;
@@ -32,10 +30,7 @@ namespace Project.UI
         private Button balancesTabButton;
         private Button marketplaceTabButton;
         private Button pioneersTabButton;
-        private TextMeshProUGUI overlayPiLabel;
         private TextMeshProUGUI overlayAcLabel;
-        private TextMeshProUGUI swapStatusLabel;
-        private TMP_InputField swapAmountInput;
         private Transform marketplaceListParent;
         private Transform pioneersListParent;
         private PioneerRosterManager roster;
@@ -77,17 +72,10 @@ namespace Project.UI
             roster = PioneerRosterManager.EnsureExists();
             roster?.EnsureWalletBootstrapped();
 
-            float piWallet = roster != null ? roster.PiWalletBalance : 0f;
             float ac = roster != null ? roster.AetherCredits : 0f;
-
-            if (piBalanceLabel != null)
-                piBalanceLabel.text = $"Pi Wallet: {Mathf.RoundToInt(piWallet)}";
 
             if (acBalanceLabel != null)
                 acBalanceLabel.text = $"Aether Credits: {Mathf.RoundToInt(ac)}";
-
-            if (overlayPiLabel != null)
-                overlayPiLabel.text = $"Pi Wallet: {Mathf.RoundToInt(piWallet)}";
 
             if (overlayAcLabel != null)
                 overlayAcLabel.text = $"Aether Credits: {Mathf.RoundToInt(ac)}";
@@ -149,17 +137,7 @@ namespace Project.UI
 
             MenuUiBuilder.CreateTitle(window.transform, "Wallet", 28f * MenuScale);
 
-            GameObject balanceRow = new GameObject("BalanceRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            balanceRow.transform.SetParent(window.transform, false);
-            HorizontalLayoutGroup balanceLayout = balanceRow.GetComponent<HorizontalLayoutGroup>();
-            balanceLayout.spacing = 24f;
-            balanceLayout.childAlignment = TextAnchor.MiddleCenter;
-            balanceLayout.childControlWidth = true;
-            balanceLayout.childForceExpandWidth = true;
-
-            overlayPiLabel = MenuUiBuilder.CreateTitle(balanceRow.transform, "Pi Wallet: 0", 16f * MenuScale);
-            overlayPiLabel.alignment = TextAlignmentOptions.Center;
-            overlayAcLabel = MenuUiBuilder.CreateTitle(balanceRow.transform, "Aether Credits: 0", 16f * MenuScale);
+            overlayAcLabel = MenuUiBuilder.CreateTitle(window.transform, "Aether Credits: 0", 18f * MenuScale);
             overlayAcLabel.alignment = TextAlignmentOptions.Center;
 
             GameObject tabRow = new GameObject("TabRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
@@ -181,7 +159,7 @@ namespace Project.UI
                 16f * MenuScale);
             pioneersTabButton = MenuUiBuilder.CreateButton(
                 tabRow.transform,
-                "Pioneers Owned",
+                "Companions Owned",
                 new Vector2(180f * MenuScale, 36f * MenuScale),
                 16f * MenuScale);
             balancesTabButton.onClick.AddListener(() => ShowTab(WalletTab.Balances));
@@ -221,63 +199,15 @@ namespace Project.UI
 
             TextMeshProUGUI body = MenuUiBuilder.CreateTitle(
                 root.transform,
-                "Aether Credits (AC) are the in-game survival currency.\n" +
-                "Legacy wallet swap UI below is prototype leftover — AC is gameplay truth.",
+                "Aether Credits (AC) are the only in-game survival currency.\n" +
+                "Earn AC from quests, loot, and base operations. Spend AC on companions, craft, and upgrades.",
                 14f * MenuScale);
             body.alignment = TextAlignmentOptions.TopLeft;
             body.color = new Color(0.78f, 0.82f, 0.88f, 1f);
 
-            GameObject inputRow = new GameObject("SwapInputRow", typeof(RectTransform));
-            inputRow.transform.SetParent(root.transform, false);
-            LayoutElement inputRowLayout = inputRow.AddComponent<LayoutElement>();
-            inputRowLayout.minHeight = 40f;
-
-            GameObject inputObject = new GameObject("SwapAmountInput", typeof(RectTransform), typeof(Image));
-            inputObject.transform.SetParent(inputRow.transform, false);
-            RectTransform inputRect = inputObject.GetComponent<RectTransform>();
-            Stretch(inputRect);
-            Image inputBg = inputObject.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(inputBg);
-            inputBg.color = new Color(0.12f, 0.14f, 0.18f, 1f);
-
-            swapAmountInput = inputObject.AddComponent<TMP_InputField>();
-            swapAmountInput.contentType = TMP_InputField.ContentType.IntegerNumber;
-            swapAmountInput.text = "10";
-
-            GameObject textArea = new GameObject("Text Area", typeof(RectTransform));
-            textArea.transform.SetParent(inputObject.transform, false);
-            RectTransform textAreaRect = textArea.GetComponent<RectTransform>();
-            Stretch(textAreaRect);
-            textAreaRect.offsetMin = new Vector2(10f, 6f);
-            textAreaRect.offsetMax = new Vector2(-10f, -6f);
-
-            TextMeshProUGUI inputText = new GameObject("Text", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-            inputText.transform.SetParent(textArea.transform, false);
-            Stretch(inputText.rectTransform);
-            TmpUiHelper.ApplyDefaultFont(inputText);
-            inputText.fontSize = 16f;
-            inputText.color = Color.white;
-            swapAmountInput.textComponent = inputText;
-
-            TextMeshProUGUI placeholder = new GameObject("Placeholder", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-            placeholder.transform.SetParent(textArea.transform, false);
-            Stretch(placeholder.rectTransform);
-            TmpUiHelper.ApplyDefaultFont(placeholder);
-            placeholder.text = "Pi amount to swap";
-            placeholder.fontSize = 16f;
-            placeholder.color = new Color(0.55f, 0.6f, 0.66f, 0.9f);
-            swapAmountInput.placeholder = placeholder;
-
-            Button swapButton = MenuUiBuilder.CreateButton(
-                root.transform,
-                "Swap Pi → AC",
-                new Vector2(220f * MenuScale, 44f * MenuScale),
-                16f * MenuScale);
-            swapButton.onClick.AddListener(HandleSwap);
-
-            swapStatusLabel = MenuUiBuilder.CreateTitle(root.transform, string.Empty, 13f * MenuScale);
-            swapStatusLabel.alignment = TextAlignmentOptions.TopLeft;
-            swapStatusLabel.color = new Color(0.85f, 0.68f, 0.18f, 1f);
+            acBalanceLabel = MenuUiBuilder.CreateTitle(root.transform, "Aether Credits: 0", 20f * MenuScale);
+            acBalanceLabel.alignment = TextAlignmentOptions.TopLeft;
+            acBalanceLabel.color = SurvivalPioneerUiPalette.Gold;
 
             root.SetActive(false);
             return root;
@@ -298,7 +228,7 @@ namespace Project.UI
 
             TextMeshProUGUI intro = MenuUiBuilder.CreateTitle(
                 root.transform,
-                "Pioneer Survivor Exchange — mock AC listings (prototype).",
+                "Dark Matter : Genesis Exchange — mock AC listings (prototype).",
                 14f * MenuScale);
             intro.alignment = TextAlignmentOptions.TopLeft;
             intro.color = new Color(0.78f, 0.82f, 0.88f, 1f);
@@ -323,7 +253,7 @@ namespace Project.UI
 
             TextMeshProUGUI intro = MenuUiBuilder.CreateTitle(
                 root.transform,
-                "Account wallet roster — pioneers you own (NFT prototype).",
+                "Account wallet roster — companions you own (prototype).",
                 14f * MenuScale);
             intro.alignment = TextAlignmentOptions.TopLeft;
             intro.color = new Color(0.78f, 0.82f, 0.88f, 1f);
@@ -441,7 +371,7 @@ namespace Project.UI
             IReadOnlyList<SkilledPioneerRecord> wallet = roster.WalletOwnedPioneers;
             if (wallet.Count == 0)
             {
-                CreateInfoCard(pioneersListParent, "No pioneers on your base roster yet. Browse the Marketplace tab.");
+                CreateInfoCard(pioneersListParent, "No companions on your base roster yet. Browse the Marketplace tab.");
                 return;
             }
 
@@ -504,7 +434,7 @@ namespace Project.UI
                 textColumn,
                 $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}\n" +
                 FormatStats(record.radiationResistance, record.expeditionEfficiency, record.combatSynergy) + "\n" +
-                (string.IsNullOrEmpty(record.backstory) ? "Wallet pioneer." : record.backstory),
+                (string.IsNullOrEmpty(record.backstory) ? "Wallet companion." : record.backstory),
                 12f * MenuScale);
             detailLabel.alignment = TextAlignmentOptions.TopLeft;
             detailLabel.color = new Color(0.78f, 0.82f, 0.88f, 1f);
@@ -588,43 +518,13 @@ namespace Project.UI
             return card;
         }
 
-        private void HandleSwap()
-        {
-            if (swapStatusLabel == null)
-                return;
-
-            roster = PioneerRosterManager.EnsureExists();
-            if (roster == null)
-            {
-                swapStatusLabel.text = "Roster manager unavailable.";
-                return;
-            }
-
-            if (!int.TryParse(swapAmountInput != null ? swapAmountInput.text : string.Empty, out int amount) || amount <= 0)
-            {
-                swapStatusLabel.text = "Enter a valid Pi amount to swap.";
-                return;
-            }
-
-            if (roster.TrySwapPiForAetherCredits(amount, out string message))
-                swapStatusLabel.color = new Color(0.55f, 0.82f, 0.55f, 1f);
-            else
-                swapStatusLabel.color = new Color(0.92f, 0.45f, 0.4f, 1f);
-
-            swapStatusLabel.text = message;
-            Refresh();
-        }
-
         private void HandleMarketplacePurchase(string offerId)
         {
             roster = PioneerRosterManager.EnsureExists();
             if (roster == null)
                 return;
 
-            roster.TryPurchaseMarketplaceListing(offerId, out string message);
-            if (swapStatusLabel != null && activeTab == WalletTab.Balances)
-                swapStatusLabel.text = message;
-
+            roster.TryPurchaseMarketplaceListing(offerId, out _);
             Refresh();
         }
 

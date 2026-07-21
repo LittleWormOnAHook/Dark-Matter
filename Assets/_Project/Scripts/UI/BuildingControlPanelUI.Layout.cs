@@ -111,12 +111,12 @@ namespace Project.UI
         {
             GameObject panel = CreateOperationalScrollPanel(parent, "HealthPanel", out Transform content);
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
-            heading.text = "Injured Pioneers";
+            heading.text = "Injured Companions";
             heading.fontStyle = FontStyles.Bold;
             heading.color = SurvivalPioneerUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
-                "Pioneers sent here after falling in combat. Right-click a row and choose Reassign when recovery is complete.";
+                "Companions sent here after falling in combat. Right-click a row and choose Reassign when recovery is complete.";
 
             healthStatusLabel = CreateBodyText(content, theme, 18f);
             healthStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
@@ -179,7 +179,7 @@ namespace Project.UI
             CreateRefuelGeneratorButton(content, theme);
 
             CreateBodyText(content, theme, 18f).text =
-                "Assign pioneers and manage production queues from the other tabs.";
+                "Assign companions and manage production queues from the other tabs.";
 
             panel.SetActive(false);
             return panel;
@@ -226,12 +226,12 @@ namespace Project.UI
         {
             GameObject panel = CreateOperationalScrollPanel(parent, "PioneersPanel", out Transform content);
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
-            heading.text = "Pioneer Assignments";
+            heading.text = "Companion Assignments";
             heading.fontStyle = FontStyles.Bold;
             heading.color = SurvivalPioneerUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
-                "Click a slot to cycle through available base pioneers (up to four per building).";
+                "Click a slot to cycle through available base companions (up to four per building).";
 
             for (int i = 0; i < BuildingOperationRegistry.MaxAssignedPioneers; i++)
             {
