@@ -557,8 +557,8 @@ Implementations live in **Adapters** (Assembly-CSharp) during migration.
 | `Project.Features.Validation.Tests` | Validation + stack assemblies | EditMode cross-stack |
 | `Assembly-CSharp` | all above + legacy | Adapters, UI, gameplay |
 
-**Shipped asmdefs:** none under `Features/` yet (July 22, 2026 disk audit).  
-**Target asmdefs:** `Project.Features.GameState`, `WorldState`, `Directors`, `Validation`, `Communications` (+ Audio/Tests).
+**Shipped asmdefs (Run 1):** `Project.Features.GameState`, `WorldState`, `Directors`, `Validation` (+ `.Tests`).  
+**Still planned:** `Project.Features.Communications` (+ Audio/Tests).
 
 **Rule:** New Features assemblies must not reference `Scripts/` domains directly — adapters in Assembly-CSharp only.
 
