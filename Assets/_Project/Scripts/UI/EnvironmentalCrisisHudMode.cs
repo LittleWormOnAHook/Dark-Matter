@@ -34,22 +34,31 @@ namespace Project.UI
             return instance;
         }
 
-        public void SetCrisisActive(bool active, string bannerMessage = null)
+        /// <param name="active">Crisis on/off.</param>
+        /// <param name="bannerMessage">Optional banner copy; null keeps current text.</param>
+        /// <param name="retractHud">Hide non-essential HUD chrome while active.</param>
+        /// <param name="showOverlay">Show vignette + banner overlay while active.</param>
+        public void SetCrisisActive(
+            bool active,
+            string bannerMessage = null,
+            bool retractHud = true,
+            bool showOverlay = true)
         {
             EnsureBuilt(transform.parent != null ? transform.parent : transform);
             crisisActive = active;
 
+            bool showChrome = active && showOverlay;
             if (vignetteRoot != null)
-                vignetteRoot.SetActive(active);
+                vignetteRoot.SetActive(showChrome);
             if (bannerRoot != null)
-                bannerRoot.SetActive(active);
+                bannerRoot.SetActive(showChrome);
 
             if (bannerLabel != null && !string.IsNullOrWhiteSpace(bannerMessage))
                 bannerLabel.text = bannerMessage;
 
-            ApplyHudRetraction(active);
+            ApplyHudRetraction(active && retractHud);
 
-            if (active)
+            if (showChrome)
             {
                 vignetteRoot?.transform.SetAsLastSibling();
                 bannerRoot?.transform.SetAsLastSibling();

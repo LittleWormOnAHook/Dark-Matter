@@ -25,9 +25,14 @@ namespace Project.Features.Directors.Adapters
 
             EnvironmentalCrisisHudMode mode = EnvironmentalCrisisHudMode.Instance;
             if (mode != null)
-                mode.SetCrisisActive(crisis, banner);
+            {
+                // Signature: (active, bannerMessage, retractHud, showOverlay)
+                mode.SetCrisisActive(crisis, banner, retractHud: true, showOverlay: true);
+            }
             else if (crisis)
+            {
                 Debug.LogWarning("[Directors] WeatherCommand: crisis requested but HUD mode missing.");
+            }
 
             Debug.Log("[Directors] WeatherCommand SetStormPhase=" + phase);
         }
