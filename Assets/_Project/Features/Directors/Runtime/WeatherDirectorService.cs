@@ -3,7 +3,10 @@ using UnityEngine;
 
 namespace Project.Features.Directors
 {
-    /// <summary>Stub WeatherDirector — reads threat; writes only via IWeatherCommandService when wired.</summary>
+    /// <summary>
+    /// Stub WeatherDirector — reads threat; writes only via IWeatherCommandService when wired.
+    /// SYNC_MARKER: world-engine-782b-v3 — must define ResolveNextPhase (static).
+    /// </summary>
     public sealed class WeatherDirectorService : IDirector
     {
         private readonly IWeatherCommandService weatherCommands;
@@ -19,13 +22,13 @@ namespace Project.Features.Directors
         /// <summary>Idle → Warning → Active → Clearing → Idle (F11 smoke / scheduler helper).</summary>
         public static StormPhase ResolveNextPhase(StormPhase current)
         {
-            return current switch
-            {
-                StormPhase.Idle => StormPhase.Warning,
-                StormPhase.Warning => StormPhase.Active,
-                StormPhase.Active => StormPhase.Clearing,
-                _ => StormPhase.Idle
-            };
+            if (current == StormPhase.Idle)
+                return StormPhase.Warning;
+            if (current == StormPhase.Warning)
+                return StormPhase.Active;
+            if (current == StormPhase.Active)
+                return StormPhase.Clearing;
+            return StormPhase.Idle;
         }
 
         public void Evaluate(WorldStateSnapshot world, DirectorTrigger trigger)

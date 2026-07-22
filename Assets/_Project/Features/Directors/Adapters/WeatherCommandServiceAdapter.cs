@@ -4,7 +4,10 @@ using UnityEngine;
 
 namespace Project.Features.Directors.Adapters
 {
-    /// <summary>Maps WeatherDirector storm phases onto EnvironmentalCrisisHudMode.</summary>
+    /// <summary>
+    /// Maps WeatherDirector storm phases onto EnvironmentalCrisisHudMode.
+    /// SYNC_MARKER: world-engine-782b-v3 — if Unity errors on line 54 SetCrisisActive, this file was NOT synced from git.
+    /// </summary>
     public sealed class WeatherCommandServiceAdapter : IWeatherCommandService
     {
         public static StormPhase CurrentPhaseStatic { get; private set; } = StormPhase.Idle;
@@ -17,7 +20,6 @@ namespace Project.Features.Directors.Adapters
 
             bool crisis = phase == StormPhase.Active || phase == StormPhase.Warning;
             string bannerMessage = ResolveBanner(phase);
-
             ApplyCrisisHud(crisis, bannerMessage);
 
             Debug.Log("[Directors] WeatherCommand SetStormPhase=" + phase);
@@ -48,11 +50,8 @@ namespace Project.Features.Directors.Adapters
                 return;
             }
 
-            // Must match EnvironmentalCrisisHudMode.SetCrisisActive(bool, string, bool, bool)
-            // Positional args only — avoids named-arg mismatch with local HUD variants.
-            bool retractHud = true;
-            bool showOverlay = true;
-            mode.SetCrisisActive(crisis, bannerMessage, retractHud, showOverlay);
+            // Exact signature: SetCrisisActive(bool active, string bannerMessage, bool retractHud, bool showOverlay)
+            mode.SetCrisisActive(crisis, bannerMessage ?? string.Empty, true, true);
         }
     }
 }

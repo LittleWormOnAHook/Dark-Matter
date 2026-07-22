@@ -4,27 +4,28 @@ Unity enters **Safe Mode** when scripts fail to compile. After pulling this bran
 
 ## 0. Hard sync (do this first if Safe Mode returns after a fix)
 
-Local ChatGPT / half-applied edits often diverge from git. From the **project root** (`A:\Survival Pioneer` or your clone), with Unity **closed**:
+**If the console still reports `SetCrisisActive` at adapter line 54, or `ResolveNextPhase` at test lines 11–14, those files on disk are not the git tip.** On tip, adapter line 54 is the full 4-arg call and tests call `ResolveNextPhase` near lines 20–23.
+
+Close Unity. From the **same folder Unity opens as the project** (must contain both `Assets\` and `.git\`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\sync-world-engine-branch.ps1
+```
+
+Or manually:
 
 ```powershell
 git fetch origin
 git checkout cursor/world-engine-docs-honesty-782b
 git reset --hard origin/cursor/world-engine-docs-honesty-782b
-git checkout origin/cursor/world-engine-docs-honesty-782b -- `
-  "Assets/_Project/Features" `
-  "Assets/_Project/Scripts/UI/EnvironmentalCrisisHudMode.cs" `
-  "Assets/_Project/Scripts/Managers/CompanionSystemsBootstrap.cs"
 git clean -fd "Assets/_Project/Features"
+Select-String -Path "Assets\_Project\Features\Directors\Adapters\WeatherCommandServiceAdapter.cs" -Pattern "SYNC_MARKER"
+Select-String -Path "Assets\_Project\Features\Directors\Runtime\WeatherDirectorService.cs" -Pattern "ResolveNextPhase"
 ```
 
-Confirm tip commit includes the Safe Mode fix (look for `IsOperationsPaused` in HUD):
+You must see `SYNC_MARKER: world-engine-782b-v3`. Then reopen Unity.
 
-```powershell
-git log -1 --oneline
-Select-String -Path "Assets\_Project\Scripts\UI\EnvironmentalCrisisHudMode.cs" -Pattern "IsOperationsPaused"
-```
-
-Reopen Unity and let it recompile.
+If markers are present but Unity still shows the old line numbers, Unity is opening a **different project path** than the git folder you synced.
 
 ## 1. Prefer git Features over local ChatGPT stubs
 
