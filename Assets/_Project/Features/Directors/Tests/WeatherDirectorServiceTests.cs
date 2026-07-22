@@ -4,6 +4,7 @@ using Project.Features.WorldState;
 
 namespace Project.Features.Directors.Tests
 {
+    /// <summary>SYNC_MARKER: world-engine-782b-v3 — ResolveNextPhase asserts are near lines 20–23, not 11–14.</summary>
     public class WeatherDirectorServiceTests
     {
         [Test]
