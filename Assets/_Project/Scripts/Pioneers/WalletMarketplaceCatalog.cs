@@ -76,6 +76,19 @@ namespace Project.Pioneers
                 combatSynergy = 0.63f,
                 abilitySummary = "Purification Field · Shield Drone",
                 listingNote = "Habitat engineer imprint from ruined dome shell."
+            },
+            new WalletMarketplaceOffer
+            {
+                offerId = "market_nova",
+                displayName = "Storm-Suture Nova Hale",
+                pioneerClass = SkilledPioneerClass.MedTech,
+                acListPrice = 36,
+                level = 2,
+                radiationResistance = 0.54f,
+                expeditionEfficiency = 0.55f,
+                combatSynergy = 0.47f,
+                abilitySummary = "Field Triage · Injury Stabilize",
+                listingNote = "Triage medic imprint from a collapsed med bay shell."
             }
         };
 

@@ -222,6 +222,7 @@ namespace Project.UI
                 SkilledPioneerClass.ScienceSpecialist => "Class synergy: Analysis link amplifies Aether-9 scans and core archive gains.",
                 SkilledPioneerClass.CombatTactician => "Class synergy: Hold line protects the trio during echo rescue setpieces.",
                 SkilledPioneerClass.InfiltratorScout => "Class synergy: Vent burst timing detects Echo signals near hazards.",
+                SkilledPioneerClass.MedTech => "Class synergy: Field triage stabilizes injured companions after sulfur exposure.",
                 SkilledPioneerClass.IoHybrid => "Class synergy: Synergy Link bridges class combos across the expedition trio.",
                 _ => "Class synergy: Mix companion classes for expedition combo bonuses."
             };

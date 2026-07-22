@@ -559,8 +559,16 @@ pressures, alien life forms, and AI androids.
 
 Classes (locked names)
 ----------------------
-  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout
-  (+ Io hybrids). Player has combat/skills too.
+  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout,
+  Med Tech (+ Io hybrids). Player has combat/skills too.
+
+  ROLE ANCHORS (design lock — ability kits still prototyping):
+    Architect Engineer  — shields, drones, portable habitat
+    Science Specialist  — scans, inoculation support, lab tie-ins
+    Combat Tactician    — draws aggro; combat focus
+    Infiltrator Scout   — reveals terrain / Echo signals
+    Med Tech            — field triage, expedition heals, injury recovery;
+                          Medical Facility tie-ins
 
 
 A1. Platforms, art & tech
@@ -728,7 +736,7 @@ A10. Locked decisions checklist
 OPEN (examples)
   Flat terrain → Io scene strategy
   Exact starter Skilled Companion offer list
-  Science Specialist ability kit polish
+  Science Specialist and Med Tech ability kit polish
 
 
 ================================================================================

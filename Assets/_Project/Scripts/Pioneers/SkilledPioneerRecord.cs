@@ -196,7 +196,7 @@ namespace Project.Pioneers
 
         public SkilledPioneerRecord ToRuntime()
         {
-            int maxClass = (int)SkilledPioneerClass.IoHybrid;
+            int maxClass = (int)SkilledPioneerClass.MedTech;
             var runtime = new SkilledPioneerRecord
             {
                 id = id,

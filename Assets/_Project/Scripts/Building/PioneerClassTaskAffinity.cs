@@ -8,6 +8,7 @@ namespace Project.Building
         {
             string id = buildingId ?? string.Empty;
             bool isScience = id.Contains("science") || id.Contains("lab");
+            bool isMedical = id.Contains("medical") || id.Contains("med") || id.Contains("clinic");
             bool isCommand = id.Contains("command");
             bool isProduction = id.Contains("production") || id.Contains("fabrication");
 
@@ -15,6 +16,7 @@ namespace Project.Building
             {
                 SkilledPioneerClass.ArchitectEngineer when isCommand || isProduction => 0.08f,
                 SkilledPioneerClass.ScienceSpecialist when isScience => 0.1f,
+                SkilledPioneerClass.MedTech when isMedical || isScience => 0.1f,
                 SkilledPioneerClass.CombatTactician when isCommand => 0.05f,
                 SkilledPioneerClass.IoHybrid => 0.06f,
                 _ => 0.02f

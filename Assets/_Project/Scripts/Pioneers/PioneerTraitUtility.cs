@@ -12,7 +12,8 @@ namespace Project.Pioneers
             "shield_drone",
             "aggro_pulse",
             "decoy_beacon",
-            "phase_step"
+            "phase_step",
+            "field_triage"
         };
 
         public static readonly string[] PassiveAbilityIds =
@@ -21,7 +22,8 @@ namespace Project.Pioneers
             "rad_hardening",
             "tremor_sense",
             "harvest_boost",
-            "synergy_link"
+            "synergy_link",
+            "injury_stabilize"
         };
 
         public static readonly string[] MenialSkillIds =
@@ -42,11 +44,13 @@ namespace Project.Pioneers
             { "aggro_pulse", "Aggro Pulse" },
             { "decoy_beacon", "Decoy Beacon" },
             { "phase_step", "Phase Step" },
+            { "field_triage", "Field Triage" },
             { "echo_reverb", "Echo Reverb" },
             { "rad_hardening", "Rad Hardening" },
             { "tremor_sense", "Tremor Sense" },
             { "harvest_boost", "Harvest Boost" },
             { "synergy_link", "Synergy Link" },
+            { "injury_stabilize", "Injury Stabilize" },
             { "salvage", "Salvage" },
             { "forage", "Forage" },
             { "patchwork", "Patchwork" },

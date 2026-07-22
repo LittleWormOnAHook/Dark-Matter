@@ -40,6 +40,13 @@ namespace Project.Pioneers
                     profile.followMode = PioneerFollowMode.FollowSelf;
                     profile.combatTetherRadius = 7f;
                     break;
+
+                case SkilledPioneerClass.MedTech:
+                    profile.followMode = PioneerFollowMode.FollowPlayer;
+                    profile.combatTetherRadius = 6.5f;
+                    profile.preferredCombatDistance = 4.5f;
+                    profile.rangedPreferredDistance = 5.5f;
+                    break;
             }
 
             return profile;

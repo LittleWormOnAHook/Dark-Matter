@@ -104,6 +104,14 @@ namespace Project.Survival.Exposure
                         new ExposureMitigationRule
                         {
                             pressureType = ExposurePressureType.Sulfur,
+                            source = ExposureMitigationSource.CompanionClass,
+                            requiredClass = SkilledPioneerClass.MedTech,
+                            exposureReduction = 0.25f,
+                            activeLabel = "Med Tech sulfur respirator rig"
+                        },
+                        new ExposureMitigationRule
+                        {
+                            pressureType = ExposurePressureType.Sulfur,
                             source = ExposureMitigationSource.CompanionAbility,
                             requiredAbilityId = "sulfur_filter",
                             exposureReduction = 0.45f,
