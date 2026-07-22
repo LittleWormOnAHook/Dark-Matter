@@ -13,7 +13,9 @@ namespace Project.Pioneers
             "aggro_pulse",
             "decoy_beacon",
             "phase_step",
-            "field_triage"
+            "field_triage",
+            "supply_cache",
+            "field_salvage"
         };
 
         public static readonly string[] PassiveAbilityIds =
@@ -23,7 +25,9 @@ namespace Project.Pioneers
             "tremor_sense",
             "harvest_boost",
             "synergy_link",
-            "injury_stabilize"
+            "injury_stabilize",
+            "quartermaster_routes",
+            "upkeep_patch"
         };
 
         public static readonly string[] MenialSkillIds =
@@ -45,12 +49,16 @@ namespace Project.Pioneers
             { "decoy_beacon", "Decoy Beacon" },
             { "phase_step", "Phase Step" },
             { "field_triage", "Field Triage" },
+            { "supply_cache", "Supply Cache" },
+            { "field_salvage", "Field Salvage" },
             { "echo_reverb", "Echo Reverb" },
             { "rad_hardening", "Rad Hardening" },
             { "tremor_sense", "Tremor Sense" },
             { "harvest_boost", "Harvest Boost" },
             { "synergy_link", "Synergy Link" },
             { "injury_stabilize", "Injury Stabilize" },
+            { "quartermaster_routes", "Quartermaster Routes" },
+            { "upkeep_patch", "Upkeep Patch" },
             { "salvage", "Salvage" },
             { "forage", "Forage" },
             { "patchwork", "Patchwork" },

@@ -72,6 +72,8 @@ namespace Project.Companions
                 SkilledPioneerClass.InfiltratorScout => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.95f),
                 SkilledPioneerClass.IoHybrid => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.WarmOffWhite, 0.94f),
                 SkilledPioneerClass.MedTech => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PositiveGreen, 0.9f),
+                SkilledPioneerClass.LogisticsOfficer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.88f),
+                SkilledPioneerClass.SalvageEngineer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.92f),
                 _ => SurvivalPioneerUiPalette.BodyText
             };
 

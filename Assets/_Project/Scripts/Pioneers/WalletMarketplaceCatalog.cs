@@ -89,6 +89,32 @@ namespace Project.Pioneers
                 combatSynergy = 0.47f,
                 abilitySummary = "Field Triage · Injury Stabilize",
                 listingNote = "Triage medic imprint from a collapsed med bay shell."
+            },
+            new WalletMarketplaceOffer
+            {
+                offerId = "market_cass",
+                displayName = "Ledger-Saint Cass Orin",
+                pioneerClass = SkilledPioneerClass.LogisticsOfficer,
+                acListPrice = 34,
+                level = 3,
+                radiationResistance = 0.5f,
+                expeditionEfficiency = 0.62f,
+                combatSynergy = 0.44f,
+                abilitySummary = "Supply Cache · Quartermaster Routes",
+                listingNote = "Quartermaster imprint from a storm-scoured supply depot."
+            },
+            new WalletMarketplaceOffer
+            {
+                offerId = "market_pike",
+                displayName = "Rust-Bound Pike Sol",
+                pioneerClass = SkilledPioneerClass.SalvageEngineer,
+                acListPrice = 33,
+                level = 2,
+                radiationResistance = 0.53f,
+                expeditionEfficiency = 0.59f,
+                combatSynergy = 0.5f,
+                abilitySummary = "Field Salvage · Upkeep Patch",
+                listingNote = "Maintenance crew echo from a collapsed fabrication wing."
             }
         };
 

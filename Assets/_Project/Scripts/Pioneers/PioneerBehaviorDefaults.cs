@@ -47,6 +47,19 @@ namespace Project.Pioneers
                     profile.preferredCombatDistance = 4.5f;
                     profile.rangedPreferredDistance = 5.5f;
                     break;
+
+                case SkilledPioneerClass.LogisticsOfficer:
+                    profile.followMode = PioneerFollowMode.FollowPlayer;
+                    profile.combatTetherRadius = 7f;
+                    profile.preferredCombatDistance = 5f;
+                    profile.worldIdleJob = PioneerWorldIdleJob.None;
+                    break;
+
+                case SkilledPioneerClass.SalvageEngineer:
+                    profile.followMode = PioneerFollowMode.FollowSelf;
+                    profile.combatTetherRadius = 6.5f;
+                    profile.preferredCombatDistance = 3.5f;
+                    break;
             }
 
             return profile;

@@ -7,7 +7,9 @@ namespace Project.Pioneers
         CombatTactician = 2,
         InfiltratorScout = 3,
         IoHybrid = 4,
-        MedTech = 5
+        MedTech = 5,
+        LogisticsOfficer = 6,
+        SalvageEngineer = 7
     }
 
     public static class SkilledPioneerClassUtility
@@ -22,6 +24,8 @@ namespace Project.Pioneers
                 SkilledPioneerClass.InfiltratorScout => "Infiltrator Scout",
                 SkilledPioneerClass.IoHybrid => "I/O Hybrid",
                 SkilledPioneerClass.MedTech => "Med Tech",
+                SkilledPioneerClass.LogisticsOfficer => "Logistics Officer",
+                SkilledPioneerClass.SalvageEngineer => "Salvage Engineer",
                 _ => pioneerClass.ToString()
             };
         }
@@ -36,6 +40,8 @@ namespace Project.Pioneers
                 SkilledPioneerClass.InfiltratorScout => "Scout",
                 SkilledPioneerClass.IoHybrid => "Hybrid",
                 SkilledPioneerClass.MedTech => "Med Tech",
+                SkilledPioneerClass.LogisticsOfficer => "Logistics",
+                SkilledPioneerClass.SalvageEngineer => "Salvage",
                 _ => ToDisplayName(pioneerClass)
             };
         }

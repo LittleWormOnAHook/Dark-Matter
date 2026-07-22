@@ -66,12 +66,14 @@ namespace Project.Pioneers
         private static SkilledPioneerClass RollClass()
         {
             float roll = UnityEngine.Random.value;
-            if (roll < 0.04f) return SkilledPioneerClass.IoHybrid;
-            if (roll < 0.232f) return SkilledPioneerClass.ArchitectEngineer;
-            if (roll < 0.424f) return SkilledPioneerClass.ScienceSpecialist;
-            if (roll < 0.616f) return SkilledPioneerClass.CombatTactician;
-            if (roll < 0.808f) return SkilledPioneerClass.InfiltratorScout;
-            return SkilledPioneerClass.MedTech;
+            if (roll < 0.03f) return SkilledPioneerClass.IoHybrid;
+            if (roll < 0.1686f) return SkilledPioneerClass.ArchitectEngineer;
+            if (roll < 0.3071f) return SkilledPioneerClass.ScienceSpecialist;
+            if (roll < 0.4457f) return SkilledPioneerClass.CombatTactician;
+            if (roll < 0.5843f) return SkilledPioneerClass.InfiltratorScout;
+            if (roll < 0.7229f) return SkilledPioneerClass.MedTech;
+            if (roll < 0.8614f) return SkilledPioneerClass.LogisticsOfficer;
+            return SkilledPioneerClass.SalvageEngineer;
         }
 
         private static string BuildName(NonHumanKind kind)
@@ -152,7 +154,10 @@ namespace Project.Pioneers
             string[] pool = pioneerClass == SkilledPioneerClass.InfiltratorScout
                 || pioneerClass == SkilledPioneerClass.ScienceSpecialist
                 || pioneerClass == SkilledPioneerClass.MedTech
+                || pioneerClass == SkilledPioneerClass.LogisticsOfficer
                 ? new[] { "Sci-Fi Pistol", "Survival Rifle", "Spear of Fate" }
+                : pioneerClass == SkilledPioneerClass.SalvageEngineer
+                ? new[] { "Wood Axe", "Death Axe", "Spear of Fate" }
                 : new[] { "Sword of Fear", "Two-Handed Sword", "Death Axe", "2 Hander" };
 
             return Pick(pool);
