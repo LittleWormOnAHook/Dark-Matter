@@ -35,14 +35,10 @@ namespace Project.UI
         }
 
         /// <param name="active">Crisis on/off.</param>
-        /// <param name="bannerMessage">Optional banner copy; null keeps current text.</param>
+        /// <param name="bannerMessage">Banner copy; empty/null keeps current text.</param>
         /// <param name="retractHud">Hide non-essential HUD chrome while active.</param>
         /// <param name="showOverlay">Show vignette + banner overlay while active.</param>
-        public void SetCrisisActive(
-            bool active,
-            string bannerMessage = null,
-            bool retractHud = true,
-            bool showOverlay = true)
+        public void SetCrisisActive(bool active, string bannerMessage, bool retractHud, bool showOverlay)
         {
             EnsureBuilt(transform.parent != null ? transform.parent : transform);
             crisisActive = active;
@@ -63,6 +59,12 @@ namespace Project.UI
                 vignetteRoot?.transform.SetAsLastSibling();
                 bannerRoot?.transform.SetAsLastSibling();
             }
+        }
+
+        /// <summary>Convenience for debug menus — full retract + overlay.</summary>
+        public void SetCrisisActive(bool active)
+        {
+            SetCrisisActive(active, string.Empty, true, true);
         }
 
         private void Awake()
