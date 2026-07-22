@@ -60,6 +60,8 @@ Select-String -Path "Assets\_Project\Features\Directors\Adapters\WeatherCommandS
 
 Adapters under `Features/*/Adapters/` compile into **Assembly-CSharp** (no asmdef on Adapters folders).
 
+Directors EditMode tests are **opt-in** (`DM_WORLD_ENGINE_TESTS` define) so a stale test file cannot keep the Editor in Safe Mode. Add that scripting define when you want to run them.
+
 ## 3. Smoke (Play Mode, Pioneer scene)
 
 - **F9** — `[WorldState]` one-line summary  
