@@ -22,6 +22,12 @@ namespace Project.UI
 
         public static bool IsCrisisActive => instance != null && instance.crisisActive;
 
+        /// <summary>
+        /// GDD: sulfur storms pause building ops / craft queues.
+        /// Same gate as crisis for now — BuildingControlPanelUI.Overview reads this.
+        /// </summary>
+        public static bool IsOperationsPaused => IsCrisisActive;
+
         public static EnvironmentalCrisisHudMode EnsureExists(Transform canvasRoot)
         {
             if (instance != null)
