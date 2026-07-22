@@ -1,74 +1,61 @@
 # Phase D — Dark Matter Stack Validation
 
-**Status:** Not complete — checklist reserved for after World Engine Runs 1–2  
+**Status:** Run 1 checklist available — Communications / full Phase D still open  
 **Authority:** GDD 5.0 Appendix B5 · [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md) · TDB  
-**Disk audit:** July 22, 2026 — Features GameState / WorldState / Directors / Validation / Communications Runtime **absent**
-
-This document is the **target validation** for architecture phases A–D. It does **not** claim those phases are implemented on disk.
+**Disk:** Features GameState / WorldState / Directors / Validation **present** (July 22, 2026 Run 1)
 
 ---
 
-## Scope to validate (when runtime exists)
+## Scope to validate
 
 | Phase | Deliverable | Validation |
 |-------|-------------|------------|
 | A0 | HLA v1.0 ratified | Doc exists — **done** |
 | A | TDB + audits + folder mapping | Doc cross-links — **done** |
-| B | WorldState API + Communications bridge | EditMode + F9 — **blocked (no C#)** |
-| C | Directors stubs + command intents | EditMode + F10 — **blocked (no C#)** |
-| D | This checklist + stack tests + GDD B5 | EditMode `Validation.Tests` — **blocked (no C#)** |
+| B | WorldState API | EditMode + F9 — **Run 1 landed** |
+| C | Directors stubs + command intents | EditMode + F10/F11 — **Run 1 landed** |
+| D | Stack tests + GDD B5 | Validation.Tests — **partial** (Comms bridge still Run 2) |
 
 ---
 
-## Automated checklist (EditMode) — create with Run 1–2
+## Automated checklist (EditMode)
 
-Run all tests under **Window → General → Test Runner → EditMode** once assemblies exist.
+Run under **Window → General → Test Runner → EditMode**:
 
-- [ ] `DarkMatterStackValidationTests.BootstrapOrder_MatchesTdbLockedSequence`
-- [ ] `DarkMatterStackValidationTests.SmokeKeys_AreUniqueStrings`
-- [ ] `DarkMatterStackValidationTests.WorldStateToCommunicationsContext_MapsEvolutionaryFields`
-- [ ] `DarkMatterStackValidationTests.DirectorOrchestrator_ReadsWorldStateWithoutGameplayManagers`
-- [ ] `DarkMatterStackValidationTests.GameStateSnapshot_EmbeddedInWorldState_HasSameReferenceWhenEmpty`
+- [ ] `DarkMatterStackValidationTests.*` (`Project.Features.Validation.Tests`)
+- [ ] `GameStateServiceTests` (all)
 - [ ] `WorldStateServiceTests` (all)
-- [ ] `DirectorOrchestratorTests` (all)
-- [ ] `SimulationDirectorServiceTests` + `ExperienceDirectorServiceTests` (all)
-- [ ] `ContextBuilderTests` (all, incl. WorldState path)
-- [ ] `TransmissionQueueTests` + Communications dialogue tests
+- [ ] `DirectorOrchestratorTests` + Simulation/Experience director tests
 
-**Pass criteria:** zero failures in the Features test assemblies above (assemblies not created yet).
+**Pass criteria:** zero failures in the Features test assemblies above.
 
 ---
 
-## Manual checklist (Play Mode) — after Runtime lands
+## Manual checklist (Play Mode)
 
-Enter **Pioneer** scene with companion systems bootstrapped (`SimpleGameManager` → `CompanionSystemsBootstrap` + Features bootstraps).
+Enter **Pioneer** scene (`SimpleGameManager` → `CompanionSystemsBootstrap`).
 
-- [ ] **F5** — radio transmission enqueues (Communications)
-- [ ] **F7** — context log includes world fields
 - [ ] **F9** — `[WorldState]` one-line summary
-- [ ] **F10** — `[Directors]` eval smoke
-- [ ] **Shift+F5** — vista banner (optional presentation adapter)
+- [ ] **F10** — `[Directors] trigger=ManualDebug directors=7`
+- [ ] **F11** — storm phase cycle + crisis HUD
+- [ ] **F5–F8** — Communications (Run 2 — not yet)
 
 ---
 
-## Known gaps (current disk)
+## Known gaps
 
-- No `Features/GameState`, `WorldState`, `Directors`, `Validation`, `Experience`
-- No Communications Runtime / Radio HUD / ContextBuilder C#
-- WorldState not in `GameSaveData`; no world seed field
-- `EnvironmentalCrisisHudMode` exists without WeatherDirector scheduler
-- Echo chronicle + `EchoGenerator` exist in legacy Scripts (reuse in Run 3)
-- LLM / Phase 9+ and Phase 8.1 voice — **deferred**
+- Communications Runtime / Radio HUD / ContextBuilder — Run 2
+- World seed / WorldState persistence in `GameSaveData` — Run 3
+- Full WeatherDirector scheduler (F11 command adapter exists)
+- LLM / Phase 8.1 / Phase 9+ — deferred
+
+Safe Mode: [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md)
 
 ---
 
 ## Next engineering priorities (GDD B4)
 
-0. Doc honesty — **this pass**  
-1. World Engine spine (GameState → WorldState → Directors → Validation)  
 2. Internal Communications (rule-based)  
-3. Persistent generated world (seed + Generation + save fields)  
-4. Living-world slice (Weather / Simulation directors)  
-5. Command Center aggregate sim (B4 #5)
-
-See [Framework_Folder_Mapping.md](Framework_Folder_Mapping.md) and [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md).
+3. Persistent generated world  
+4. Living-world slice  
+5. Command Center aggregate sim

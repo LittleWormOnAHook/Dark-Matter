@@ -23,10 +23,10 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 | **Core** | §2.1 | `Scripts/Core/`, `Scripts/Managers/` | `Features/Core/` (future) | Shipped (legacy) |
 | **Generation** | §2.10 | `EchoGenerator`, spawners | `Features/Generation/` | Partial (legacy EchoGenerator only) |
 | **Editor** | §2.11 | `Assets/_Project/Editor/` | `Features/*/Editor/` per module | Strong |
-| **GameState (read model)** | §5 | — | `Features/GameState/` | **Designed — not on disk** |
-| **WorldState (read model)** | §7 | — | `Features/WorldState/` | **Designed — not on disk** |
-| **Directors (Intelligence)** | §8 | — | `Features/Directors/` | **Designed — not on disk** |
-| **Validation (stack)** | D | — | `Features/Validation/` | **Designed — not on disk** |
+| **GameState (read model)** | §5 | `Features/GameState/` | extend only | **Shipped (Run 1)** |
+| **WorldState (read model)** | §7 | `Features/WorldState/` | extend only | **Shipped (Run 1)** |
+| **Directors (Intelligence)** | §8 | `Features/Directors/` | orchestrator + stubs | **Shipped stubs (Run 1)** |
+| **Validation (stack)** | D | `Features/Validation/` | cross-stack tests | **Shipped (Run 1)** |
 
 ---
 
@@ -114,11 +114,11 @@ Assets/_Project/Features/<Name>/
 
 | HLA §6.3 step | On disk |
 |---------------|---------|
-| GameStateBootstrap | **No** |
-| WorldStateBootstrap | **No** |
-| DirectorsBootstrap | **No** |
-| CommunicationsBootstrap | **No** |
+| GameStateBootstrap | **Yes** (Run 1) |
+| WorldStateBootstrap | **Yes** (Run 1) |
+| DirectorsBootstrap | **Yes** (Run 1) |
+| CommunicationsBootstrap | **No** (Run 2) |
 | ExperienceBootstrap | **No** |
-| Legacy CompanionSystemsBootstrap | **Yes** (companions, pet, exposure, facilities) |
+| Legacy CompanionSystemsBootstrap | **Yes** (wires Features spine first, then companions/pet/exposure/facilities) |
 
 See TDB Bootstrap Registry and GDD B4 Runs 1–2.

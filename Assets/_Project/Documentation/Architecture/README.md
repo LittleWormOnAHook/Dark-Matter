@@ -12,4 +12,4 @@ Authoritative order (highest first):
 6. **[Audits/](Audits/)** — subsystem audit sheets (Audit_01–08)
 7. **[Dark_Matter_Framework_Engineering_Standard.md](../../Features/Communications/Documentation/Dark_Matter_Framework_Engineering_Standard.md)** — coding rules
 
-HLA v1.0 ratified July 2026 (design). Runtime Features modules (GameState, WorldState, Directors, Communications Runtime) are **not on disk yet** — see Disk Status. Do not edit HLA casually — use versioned revisions (1.1, 2.0).
+HLA v1.0 ratified July 2026 (design). **Run 1** landed Features GameState / WorldState / Directors / Validation. Communications Runtime is Run 2. Safe Mode help: [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md). Do not edit HLA casually — use versioned revisions (1.1, 2.0).

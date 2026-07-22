@@ -813,8 +813,8 @@ B4. Near-term roadmap priority (order of value)
   Track: internal Communications + The World Engine + persistent generated world.
   LLM / Communications Phase 9+ and Phase 8.1 voice LLM are DEFERRED.
 
-  0. [THIS PASS] Doc honesty — B4/B5 + Architecture status match disk
-  1. World Engine spine — Features/GameState + WorldState + Directors stubs + Validation
+  0. [DONE] Doc honesty — B4/B5 + Architecture status match disk
+  1. [DONE] World Engine spine — Features/GameState + WorldState + Directors stubs + Validation
   2. Internal Communications (rule-based) — queue, Radio HUD, ContextBuilder, templates
   3. Persistent generated world — world seed in GameSaveData; wrap EchoGenerator; save WorldState fields
   4. Living-world slice — WeatherDirector storm schedule; SimulationDirector incidents; facility pause
@@ -827,43 +827,44 @@ B4. Near-term roadmap priority (order of value)
   Legacy notes (partial, not World Engine):
   [~] AC economy path largely clean; strip remaining legacy currency UI when touched
   [x] Echo chronicle can record simulation incidents via PioneerRosterManager APIs
-  [x] Exposure system + EnvironmentalCrisisHudMode (manual/debug crisis, not director-driven)
+  [x] Exposure system + EnvironmentalCrisisHudMode (F11 WeatherCommand can drive crisis)
 
 
-B5. DESIGNED — The World Engine (Dark Matter Framework 2.0) — docs only on disk
+B5. PARTIAL — The World Engine (Dark Matter Framework 2.0) — Run 1 spine on disk
 --------------------------------------------------------------------------------
 Target: Dark Matter: Genesis on The World Engine (WoOS).
-HLA / TDB / audits / Communication Framework are ratified as **design**.
-Runtime Features modules claimed in earlier drafts are **NOT present as C#**
-(disk audit July 22, 2026: Features/ has Communications docs + empty Data/Audio only).
+HLA / TDB / audits / Communication Framework remain the design authority.
+Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Validation C#.
 
   [x] HLA v1.0 ratified — Documentation/Architecture (frozen design)
   [x] TDB + Framework_Folder_Mapping + Audits Audit_01–08 (design)
   [x] Engineering Standard + Communication Framework roadmap (design)
-  [ ] GameState read API — Features/GameState (planned Run 1)
-  [ ] WorldState evolutionary read API — Features/WorldState (planned Run 1)
-  [ ] Directors Intelligence stubs — Features/Directors (planned Run 1)
-  [ ] Validation / smoke registry — Features/Validation (planned Run 1)
-  [ ] Experience telemetry module — Features/Experience (after spine)
-  [ ] Communications Runtime Phases 0–8 — Features/Communications/Runtime|UI|Audio (planned Run 2)
-  [ ] Bootstrap chain GameState → WorldState → Directors → Communications
-  [ ] WorldState / world-seed fields persisted into GameSaveData (planned Run 3)
-  [ ] WeatherDirector live storm scheduler + director-driven crisis HUD
+  [x] GameState read API — Features/GameState (9 providers + bootstrap)
+  [x] WorldState evolutionary read API — Features/WorldState (7 providers + F9 smoke)
+  [x] Directors Intelligence stubs — Features/Directors (7 directors + F10/F11 smoke)
+  [x] Validation / smoke registry — Features/Validation + EditMode stack tests
+  [x] Bootstrap chain GameState → WorldState → Directors (Communications still pending)
+  [ ] Experience telemetry module — Features/Experience (after / with Run 2–4)
+  [ ] Communications Runtime Phases 0–8 — Features/Communications/Runtime|UI|Audio (Run 2)
+  [ ] WorldState / world-seed fields persisted into GameSaveData (Run 3)
+  [ ] WeatherDirector live schedule (F11 command adapter exists; full scheduler later)
   [ ] Aether-9 Intelligence service, Memory Core Resonance Events, full director logic
   [ ] LLM / cloud conversation (Communications Phase 9+) — DEFERRED
 
-  On-disk gameplay that feeds the future engine (reuse, do not rewrite):
+  On-disk gameplay that feeds the engine (reuse, do not rewrite):
   [x] Scripts/Survival/Exposure — zone pressures + ExposureStatusService
   [x] Scripts/Pioneers/EchoGenerator + EchoChronicleEntry + save round-trip
   [x] BuildingOperationRegistry + FacilityTaskRunner (pauses when crisis HUD active)
-  [x] CompanionSystemsBootstrap — companions, pet, exposure, facilities (no Features bootstraps yet)
+  [x] CompanionSystemsBootstrap — Features spine + companions, pet, exposure, facilities
   [x] GameSaveData v17 — roster, AC, chronicle, building ops, vehicles, power (no world seed yet)
 
-  Planned smoke (after Run 1–2 land):
-    F5–F8 Communications · F9 WorldState · F10 Directors · F11 weather · F12 experience
-  EditMode: Features Validation assemblies (not created yet).
+  Manual smoke (Play Mode):
+    F9 WorldState · F10 Directors · F11 weather phase cycle
+    (F5–F8 reserved for Communications Run 2)
+  EditMode: Window → General → Test Runner → Project.Features.*.Tests
 
   Status sheet: Documentation/Architecture/World_Engine_Disk_Status.md
+  Safe Mode help: Documentation/Architecture/Unity_Safe_Mode_Recovery.md
 
 
 ================================================================================

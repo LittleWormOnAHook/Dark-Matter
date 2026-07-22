@@ -678,6 +678,7 @@ Detailed per-domain findings:
 | 1.0 | July 2026 | Initial TDB implementing HLA v1.0. Specifies GameState, Communications, WorldState, Directors, Experience. |
 | 1.1 | July 2026 | Draft claimed Phase B–D shipped (out of sync with repo). |
 | 1.2 | July 22, 2026 | **Disk correction:** Features runtime absent; bootstrap/planned-module tables match GDD B4–B5 and World_Engine_Disk_Status.md. LLM deferred. |
+| 1.3 | July 22, 2026 | **Run 1:** GameState / WorldState / Directors / Validation C# + bootstrap + F9–F11 smoke. |
 
 ---
 
