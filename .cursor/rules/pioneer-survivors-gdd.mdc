@@ -33,7 +33,7 @@ alwaysApply: true
 - **Thermal:** single **cold/heat** meter (one bar, two poles)
 - **Pet:** fold legacy pet/AI follower into **Echo/trio** system — no separate pet loop (migration still outstanding in prototype)
 - **Base 22:** impervious to most pressures; **sulfur storms** → Command Center rooms; building damage **injures, never kills**
-- **Classes:** Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout, Med Tech, Logistics Officer, Salvage Engineer (+ hybrids)
+- **Classes:** Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout, Med Tech, Logistics Officer, Salvage Engineer, Communications Officer (+ hybrids)
 - **Building Control Panels:** each major structure has an in-world terminal (E) → **Building Control UI** with tabs **Overview | Companions | Production | Craft | Changes**. Assign base-22 companions, queues, and per-building / module settings here. Planned attachment modules: generators, power grids, automated gather/logistics, communications, defense, mining. **Journal Craft = recipe library / scroll learning only** — not primary production UI. Queues pause in sulfur storms.
 
 ## Before building off-design

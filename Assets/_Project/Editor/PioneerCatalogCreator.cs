@@ -86,6 +86,7 @@ namespace Project.EditorTools
                 Seed("named_nova_hale", "Ash-Bound Nova Hale", SkilledPioneerClass.MedTech, 0.54f, 0.55f, 0.48f, "Sulfur-storm triage crew medic imprint.", "field_triage", "injury_stabilize", "sanitize"),
                 Seed("named_cass_orin", "Ledger-Saint Cass Orin", SkilledPioneerClass.LogisticsOfficer, 0.5f, 0.62f, 0.44f, "Quartermaster echo from a supply depot cache.", "supply_cache", "quartermaster_routes", "haul"),
                 Seed("named_pike_sol", "Rust-Bound Pike Sol", SkilledPioneerClass.SalvageEngineer, 0.53f, 0.59f, 0.5f, "Fabrication wing upkeep crew imprint.", "field_salvage", "upkeep_patch", "salvage"),
+                Seed("named_rin_quill", "Static-Voice Rin Quill", SkilledPioneerClass.CommunicationsOfficer, 0.56f, 0.58f, 0.46f, "Probe uplink relay operator echo.", "signal_relay", "uplink_matrix", "sanitize"),
                 Seed("named_io_hybrid", "Rift-Touched I/O Hybrid Prime", SkilledPioneerClass.IoHybrid, 0.64f, 0.66f, 0.66f, "Rare symbiotic human-AI imprint.", "phase_step", "synergy_link", "salvage")
             };
         }

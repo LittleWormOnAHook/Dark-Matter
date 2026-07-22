@@ -67,13 +67,14 @@ namespace Project.Pioneers
         {
             float roll = UnityEngine.Random.value;
             if (roll < 0.03f) return SkilledPioneerClass.IoHybrid;
-            if (roll < 0.1686f) return SkilledPioneerClass.ArchitectEngineer;
-            if (roll < 0.3071f) return SkilledPioneerClass.ScienceSpecialist;
-            if (roll < 0.4457f) return SkilledPioneerClass.CombatTactician;
-            if (roll < 0.5843f) return SkilledPioneerClass.InfiltratorScout;
-            if (roll < 0.7229f) return SkilledPioneerClass.MedTech;
-            if (roll < 0.8614f) return SkilledPioneerClass.LogisticsOfficer;
-            return SkilledPioneerClass.SalvageEngineer;
+            if (roll < 0.1513f) return SkilledPioneerClass.ArchitectEngineer;
+            if (roll < 0.2725f) return SkilledPioneerClass.ScienceSpecialist;
+            if (roll < 0.3938f) return SkilledPioneerClass.CombatTactician;
+            if (roll < 0.515f) return SkilledPioneerClass.InfiltratorScout;
+            if (roll < 0.6363f) return SkilledPioneerClass.MedTech;
+            if (roll < 0.7575f) return SkilledPioneerClass.LogisticsOfficer;
+            if (roll < 0.8788f) return SkilledPioneerClass.SalvageEngineer;
+            return SkilledPioneerClass.CommunicationsOfficer;
         }
 
         private static string BuildName(NonHumanKind kind)
@@ -155,6 +156,7 @@ namespace Project.Pioneers
                 || pioneerClass == SkilledPioneerClass.ScienceSpecialist
                 || pioneerClass == SkilledPioneerClass.MedTech
                 || pioneerClass == SkilledPioneerClass.LogisticsOfficer
+                || pioneerClass == SkilledPioneerClass.CommunicationsOfficer
                 ? new[] { "Sci-Fi Pistol", "Survival Rifle", "Spear of Fate" }
                 : pioneerClass == SkilledPioneerClass.SalvageEngineer
                 ? new[] { "Wood Axe", "Death Axe", "Spear of Fate" }

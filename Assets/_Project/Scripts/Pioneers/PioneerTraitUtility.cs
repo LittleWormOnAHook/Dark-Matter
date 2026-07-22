@@ -15,7 +15,8 @@ namespace Project.Pioneers
             "phase_step",
             "field_triage",
             "supply_cache",
-            "field_salvage"
+            "field_salvage",
+            "signal_relay"
         };
 
         public static readonly string[] PassiveAbilityIds =
@@ -27,7 +28,8 @@ namespace Project.Pioneers
             "synergy_link",
             "injury_stabilize",
             "quartermaster_routes",
-            "upkeep_patch"
+            "upkeep_patch",
+            "uplink_matrix"
         };
 
         public static readonly string[] MenialSkillIds =
@@ -51,6 +53,7 @@ namespace Project.Pioneers
             { "field_triage", "Field Triage" },
             { "supply_cache", "Supply Cache" },
             { "field_salvage", "Field Salvage" },
+            { "signal_relay", "Signal Relay" },
             { "echo_reverb", "Echo Reverb" },
             { "rad_hardening", "Rad Hardening" },
             { "tremor_sense", "Tremor Sense" },
@@ -59,6 +62,7 @@ namespace Project.Pioneers
             { "injury_stabilize", "Injury Stabilize" },
             { "quartermaster_routes", "Quartermaster Routes" },
             { "upkeep_patch", "Upkeep Patch" },
+            { "uplink_matrix", "Uplink Matrix" },
             { "salvage", "Salvage" },
             { "forage", "Forage" },
             { "patchwork", "Patchwork" },

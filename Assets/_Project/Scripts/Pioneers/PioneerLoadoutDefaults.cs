@@ -31,6 +31,7 @@ namespace Project.Pioneers
                 SkilledPioneerClass.MedTech => "weap2_sword",
                 SkilledPioneerClass.LogisticsOfficer => "weap2_sword",
                 SkilledPioneerClass.SalvageEngineer => "Wood Axe",
+                SkilledPioneerClass.CommunicationsOfficer => "weap2_sword",
                 _ => "weap2_sword"
             };
         }
@@ -47,6 +48,7 @@ namespace Project.Pioneers
                 SkilledPioneerClass.MedTech => "Medpack",
                 SkilledPioneerClass.LogisticsOfficer => "Scanner B44",
                 SkilledPioneerClass.SalvageEngineer => "Wood Axe",
+                SkilledPioneerClass.CommunicationsOfficer => "Scanner B44",
                 _ => string.Empty
             };
         }

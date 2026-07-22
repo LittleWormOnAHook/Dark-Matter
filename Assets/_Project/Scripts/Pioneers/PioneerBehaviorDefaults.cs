@@ -60,6 +60,13 @@ namespace Project.Pioneers
                     profile.combatTetherRadius = 6.5f;
                     profile.preferredCombatDistance = 3.5f;
                     break;
+
+                case SkilledPioneerClass.CommunicationsOfficer:
+                    profile.followMode = PioneerFollowMode.FollowPlayer;
+                    profile.combatTetherRadius = 7.5f;
+                    profile.rangedPreferredDistance = 6f;
+                    profile.preferredCombatDistance = 5.5f;
+                    break;
             }
 
             return profile;

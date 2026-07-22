@@ -225,6 +225,7 @@ namespace Project.UI
                 SkilledPioneerClass.MedTech => "Class synergy: Field triage stabilizes injured companions after sulfur exposure.",
                 SkilledPioneerClass.LogisticsOfficer => "Base role: Quartermaster routes boost storage, logistics, and vendor throughput.",
                 SkilledPioneerClass.SalvageEngineer => "Base role: Upkeep patch speeds salvage, repairs, and building maintenance.",
+                SkilledPioneerClass.CommunicationsOfficer => "Base role: Uplink matrix boosts comms, probe uplink, and relay throughput.",
                 SkilledPioneerClass.IoHybrid => "Class synergy: Synergy Link bridges class combos across the expedition trio.",
                 _ => "Class synergy: Mix companion classes for expedition combo bonuses."
             };

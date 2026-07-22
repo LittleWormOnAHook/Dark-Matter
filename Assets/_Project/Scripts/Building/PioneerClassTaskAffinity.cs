@@ -18,10 +18,17 @@ namespace Project.Building
                     return 0.12f;
             }
 
-            bool isScience = buildingId.Contains("science") || buildingId.Contains("lab");
-            bool isMedical = buildingId.Contains("medical") || buildingId.Contains("med") || buildingId.Contains("clinic");
-            bool isCommand = buildingId.Contains("command");
-            bool isProduction = buildingId.Contains("production") || buildingId.Contains("fabrication");
+            if (MatchesCommunicationsBuilding(buildingId))
+            {
+                if (pioneerClass == SkilledPioneerClass.CommunicationsOfficer)
+                    return 0.12f;
+            }
+
+            string id = buildingId ?? string.Empty;
+            bool isScience = id.Contains("science") || id.Contains("lab");
+            bool isMedical = id.Contains("medical") || id.Contains("med") || id.Contains("clinic");
+            bool isCommand = id.Contains("command");
+            bool isProduction = id.Contains("production") || id.Contains("fabrication");
 
             return pioneerClass switch
             {
@@ -31,6 +38,7 @@ namespace Project.Building
                 SkilledPioneerClass.CombatTactician when isCommand => 0.05f,
                 SkilledPioneerClass.SalvageEngineer when isProduction => 0.06f,
                 SkilledPioneerClass.LogisticsOfficer when isCommand => 0.06f,
+                SkilledPioneerClass.CommunicationsOfficer when isCommand => 0.06f,
                 SkilledPioneerClass.IoHybrid => 0.06f,
                 _ => 0.02f
             };
@@ -55,6 +63,18 @@ namespace Project.Building
                 || id.Contains("repair")
                 || id.Contains("upkeep")
                 || id.Contains("fabrication");
+        }
+
+        public static bool MatchesCommunicationsBuilding(string buildingId)
+        {
+            string id = buildingId ?? string.Empty;
+            return id.Contains("communication")
+                || id.Contains("comms")
+                || id.Contains("uplink")
+                || id.Contains("probe")
+                || id.Contains("relay")
+                || id.Contains("beacon")
+                || id.Contains("resonance");
         }
     }
 }

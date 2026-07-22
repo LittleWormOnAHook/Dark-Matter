@@ -108,7 +108,34 @@ namespace Project.EditorTools.Companions
                 fieldSalvage.abilityId,
                 upkeepPatch.abilityId);
 
-            SaveAndClearCaches("Logistics Officer + Salvage Engineer base role");
+            CompanionAbilityData signalRelay = CreateOrUpdateAbility(
+                $"{AbilityFolder}/signal_relay.asset",
+                BaseRoleCompanionBonusService.SignalRelayAbilityId,
+                "Signal Relay",
+                CompanionAbilityKind.Tool,
+                new[] { SkilledPioneerClass.CommunicationsOfficer },
+                cooldownSeconds: 16f,
+                castDuration: 0.25f,
+                aiPriority: 72);
+
+            CompanionAbilityData uplinkMatrix = CreateOrUpdateAbility(
+                $"{AbilityFolder}/uplink_matrix.asset",
+                BaseRoleCompanionBonusService.UplinkMatrixAbilityId,
+                "Uplink Matrix",
+                CompanionAbilityKind.Buff,
+                new[] { SkilledPioneerClass.CommunicationsOfficer },
+                cooldownSeconds: 0f,
+                castDuration: 0f,
+                aiPriority: 58);
+
+            CreateOrUpdateClassProfile(
+                $"{ClassProfileFolder}/communications_officer_class_profile.asset",
+                SkilledPioneerClass.CommunicationsOfficer,
+                deployableSlots: 1,
+                signalRelay.abilityId,
+                uplinkMatrix.abilityId);
+
+            SaveAndClearCaches("Logistics Officer + Salvage Engineer + Communications Officer base roles");
         }
 
         private static void SaveAndClearCaches(string label)

@@ -115,6 +115,19 @@ namespace Project.Pioneers
                 combatSynergy = 0.5f,
                 abilitySummary = "Field Salvage · Upkeep Patch",
                 listingNote = "Maintenance crew echo from a collapsed fabrication wing."
+            },
+            new WalletMarketplaceOffer
+            {
+                offerId = "market_rin",
+                displayName = "Static-Voice Rin Quill",
+                pioneerClass = SkilledPioneerClass.CommunicationsOfficer,
+                acListPrice = 37,
+                level = 3,
+                radiationResistance = 0.56f,
+                expeditionEfficiency = 0.58f,
+                combatSynergy = 0.46f,
+                abilitySummary = "Signal Relay · Uplink Matrix",
+                listingNote = "Relay operator imprint from a storm-damaged probe uplink."
             }
         };
 

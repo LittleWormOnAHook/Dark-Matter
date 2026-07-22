@@ -11,6 +11,8 @@ namespace Project.Building
         public const string QuartermasterRoutesAbilityId = "quartermaster_routes";
         public const string FieldSalvageAbilityId = "field_salvage";
         public const string UpkeepPatchAbilityId = "upkeep_patch";
+        public const string SignalRelayAbilityId = "signal_relay";
+        public const string UplinkMatrixAbilityId = "uplink_matrix";
 
         private const float PassiveAssignmentBonus = 0.05f;
 
@@ -33,11 +35,19 @@ namespace Project.Building
                 return PassiveAssignmentBonus;
             }
 
+            if (record.pioneerClass == SkilledPioneerClass.CommunicationsOfficer
+                && PioneerTraitUtility.RecordHasAbility(record, UplinkMatrixAbilityId)
+                && PioneerClassTaskAffinity.MatchesCommunicationsBuilding(buildingId))
+            {
+                return PassiveAssignmentBonus;
+            }
+
             return 0f;
         }
 
         public static bool IsBaseRoleClass(SkilledPioneerClass pioneerClass) =>
             pioneerClass == SkilledPioneerClass.LogisticsOfficer
-            || pioneerClass == SkilledPioneerClass.SalvageEngineer;
+            || pioneerClass == SkilledPioneerClass.SalvageEngineer
+            || pioneerClass == SkilledPioneerClass.CommunicationsOfficer;
     }
 }

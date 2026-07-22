@@ -9,7 +9,8 @@ namespace Project.Pioneers
         IoHybrid = 4,
         MedTech = 5,
         LogisticsOfficer = 6,
-        SalvageEngineer = 7
+        SalvageEngineer = 7,
+        CommunicationsOfficer = 8
     }
 
     public static class SkilledPioneerClassUtility
@@ -26,6 +27,7 @@ namespace Project.Pioneers
                 SkilledPioneerClass.MedTech => "Med Tech",
                 SkilledPioneerClass.LogisticsOfficer => "Logistics Officer",
                 SkilledPioneerClass.SalvageEngineer => "Salvage Engineer",
+                SkilledPioneerClass.CommunicationsOfficer => "Communications Officer",
                 _ => pioneerClass.ToString()
             };
         }
@@ -42,6 +44,7 @@ namespace Project.Pioneers
                 SkilledPioneerClass.MedTech => "Med Tech",
                 SkilledPioneerClass.LogisticsOfficer => "Logistics",
                 SkilledPioneerClass.SalvageEngineer => "Salvage",
+                SkilledPioneerClass.CommunicationsOfficer => "Comms",
                 _ => ToDisplayName(pioneerClass)
             };
         }
