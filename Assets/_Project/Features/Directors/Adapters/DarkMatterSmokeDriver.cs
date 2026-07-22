@@ -60,13 +60,7 @@ namespace Project.Features.Directors.Adapters
                 return;
             }
 
-            StormPhase next = weather.CurrentPhase switch
-            {
-                StormPhase.Idle => StormPhase.Warning,
-                StormPhase.Warning => StormPhase.Active,
-                StormPhase.Active => StormPhase.Clearing,
-                _ => StormPhase.Idle
-            };
+            StormPhase next = WeatherDirectorService.ResolveNextPhase(weather.CurrentPhase);
             weather.SetStormPhase(next);
 
             DirectorOrchestrator.Instance?.Evaluate(DirectorTrigger.StormPhaseChanged);

@@ -16,6 +16,18 @@ namespace Project.Features.Directors
             this.weatherCommands = weatherCommands;
         }
 
+        /// <summary>Idle → Warning → Active → Clearing → Idle (F11 smoke / scheduler helper).</summary>
+        public static StormPhase ResolveNextPhase(StormPhase current)
+        {
+            return current switch
+            {
+                StormPhase.Idle => StormPhase.Warning,
+                StormPhase.Warning => StormPhase.Active,
+                StormPhase.Active => StormPhase.Clearing,
+                _ => StormPhase.Idle
+            };
+        }
+
         public void Evaluate(WorldStateSnapshot world, DirectorTrigger trigger)
         {
             EvaluationCount++;
