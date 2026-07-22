@@ -1,43 +1,45 @@
 # Framework Folder Mapping
 
-**Parent authority:** [Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md](Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md) (HLA v1.0, frozen)
+**Parent authority:** [Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md](Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md) (HLA v1.0, frozen)  
+**Disk truth:** [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md) (July 22, 2026)
 
 Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Features/` modules.
 
-**Rule:** No physical mass migration. New work uses `Features/`. Legacy `Scripts/` moves only when a domain is actively refactored.
+**Rule:** No physical mass migration. New work uses `Features/`. Legacy `Scripts/` moves only when a domain is actively refactored.  
+**Status rule:** “Shipped” means `.cs` present on disk — not “mentioned in a design doc.”
 
 ---
 
 ## WoOS layer → location
 
-| WoOS layer | HLA § | Current (legacy) | Planned Features module | Status |
-|------------|-------|------------------|-------------------------|--------|
-| **World** | §2.3 | `Scripts/Map/`, `Scripts/Survival/Exposure/` | `Features/World/` | Partial |
-| **Simulation** | §2.4 | `Scripts/Pioneers/`, `Scripts/Building/`, `FacilityTaskRunner` | `Features/Simulation/` | Partial |
-| **Intelligence** | §2.6, §8 | `Scripts/Quests/` (exec), `Features/Directors/` stubs | `Features/Directors/`, `Features/Aether9/` | Partial (Phase C stubs) |
-| **Experience** | §2.7 | `ExperienceWorldStateProvider` heuristic | `Features/Experience/` | Partial (stub) |
-| **Presentation** | §2.8 | `Features/Communications/`, `Scripts/UI/`, `Scripts/Audio/` | unify docs; keep paths | Partial |
-| **Gameplay** | §2.2 | `Scripts/{Player,Combat,Interaction,Inventory,Crafting,Vehicles}/` | migrate when touched | Shipped |
-| **Core** | §2.1 | `Scripts/Core/`, `Scripts/Managers/` | `Features/Core/` (future) | Shipped |
-| **Generation** | §2.10 | scattered (`EchoGenerator`, spawners) | `Features/Generation/` | Not started |
-| **Editor** | §2.11 | `Assets/_Project/Editor/` (106 `.cs`) | `Features/*/Editor/` per module | Strong |
-| **GameState (read model)** | §5 | `Features/GameState/` | extend only | **Shipped** |
-| **WorldState (read model)** | §7 | `Features/WorldState/` | extend only | **Shipped (Phase B)** |
-| **Directors (Intelligence)** | §8 | `Features/Directors/` | orchestrator + stubs | **Shipped (Phase C)** |
-| **Validation (stack)** | D | `Features/Validation/` | cross-stack tests | **Shipped (Phase D)** |
+| WoOS layer | HLA § | Current (legacy) | Planned Features module | Status (disk) |
+|------------|-------|------------------|-------------------------|---------------|
+| **World** | §2.3 | `Scripts/Map/`, `Scripts/Survival/Exposure/` | `Features/World/` | Partial (legacy Exposure) |
+| **Simulation** | §2.4 | `Scripts/Pioneers/`, `Scripts/Building/`, `FacilityTaskRunner` | `Features/Simulation/` | Partial (legacy) |
+| **Intelligence** | §2.6, §8 | `Scripts/Quests/` (exec) | `Features/Directors/`, `Features/Aether9/` | **Not started** (no Directors C#) |
+| **Experience** | §2.7 | — | `Features/Experience/` | **Not started** |
+| **Presentation** | §2.8 | `Scripts/UI/`, `Scripts/Audio/`; Communications **docs only** | `Features/Communications/` Runtime | Partial UI; Comms Runtime **absent** |
+| **Gameplay** | §2.2 | `Scripts/{Player,Combat,Interaction,Inventory,Crafting,Vehicles}/` | migrate when touched | Shipped (legacy) |
+| **Core** | §2.1 | `Scripts/Core/`, `Scripts/Managers/` | `Features/Core/` (future) | Shipped (legacy) |
+| **Generation** | §2.10 | `EchoGenerator`, spawners | `Features/Generation/` | Partial (legacy EchoGenerator only) |
+| **Editor** | §2.11 | `Assets/_Project/Editor/` | `Features/*/Editor/` per module | Strong |
+| **GameState (read model)** | §5 | — | `Features/GameState/` | **Designed — not on disk** |
+| **WorldState (read model)** | §7 | — | `Features/WorldState/` | **Designed — not on disk** |
+| **Directors (Intelligence)** | §8 | — | `Features/Directors/` | **Designed — not on disk** |
+| **Validation (stack)** | D | — | `Features/Validation/` | **Designed — not on disk** |
 
 ---
 
 ## Presentation layer breakdown
 
-| Component | Path | Namespace | Assembly |
-|-----------|------|-----------|----------|
-| Communications runtime | `Features/Communications/Runtime/` | `Project.Features.Communications` | `Project.Features.Communications` |
-| Communications UI | `Features/Communications/UI/` | `Project.Features.Communications.UI` | Assembly-CSharp |
-| Communications Audio | `Features/Communications/Audio/` | `Project.Features.Communications.Audio` | `Project.Features.Communications.Audio` |
-| Communications adapters | `Features/Communications/Adapters/` | `Project.Features.Communications.Adapters` | Assembly-CSharp |
-| HUD / Journal / Menus | `Scripts/UI/` | `Project.UI` | Assembly-CSharp |
-| Game audio | `Scripts/Audio/` | `Project.Audio` | Assembly-CSharp |
+| Component | Path | Namespace | Disk |
+|-----------|------|-----------|------|
+| Communications docs | `Features/Communications/Documentation/` | — | Present |
+| Communications Data/Audio placeholders | `Features/Communications/{Data,Audio}/README.md` | — | Present (no Runtime C#) |
+| Communications runtime (planned) | `Features/Communications/Runtime/` | `Project.Features.Communications` | **Absent** |
+| Communications UI (planned) | `Features/Communications/UI/` | `Project.Features.Communications.UI` | **Absent** |
+| HUD / Journal / Menus | `Scripts/UI/` | `Project.UI` | Present |
+| Game audio | `Scripts/Audio/` | `Project.Audio` | Present |
 
 ---
 
@@ -45,11 +47,11 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 
 | Component | Planned path | Notes |
 |-----------|--------------|-------|
-| DirectorOrchestrator | `Features/Directors/Runtime/` | Eval order HLA §8.2 |
+| DirectorOrchestrator | `Features/Directors/Runtime/` | Eval order HLA §8.2 — Run 1 |
 | StoryDirector adapter | `Features/Directors/Adapters/` | Reads WorldState; commands `IQuestCommandService` |
-| ExperienceDirector | `Features/Directors/Runtime/` | Silence, densities, player emotional estimates |
-| Aether-9 knowledge | `Features/Aether9/` | Cores, codex, unlocks — not Presentation |
-| Comms delivery | `Features/Communications/` | Presentation only |
+| ExperienceDirector | `Features/Directors/Runtime/` | Silence, densities — after spine |
+| Aether-9 knowledge | `Features/Aether9/` | Cores, codex — later |
+| Comms delivery | `Features/Communications/` | Presentation only — Run 2 |
 
 ---
 
@@ -57,16 +59,16 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 
 | Folder | Count (approx) | HLA owner | Migration priority |
 |--------|----------------|-----------|-------------------|
-| `Scripts/UI/` | 134 | Presentation | Low (works; huge) |
+| `Scripts/UI/` | 132 | Presentation | Low (works; huge) |
 | `Scripts/AI/` | 44 | Gameplay + World | Medium |
 | `Scripts/Companions/` | 36 | Gameplay + Simulation | Medium |
 | `Scripts/Player/` | 26 | Gameplay | Low |
-| `Scripts/Pioneers/` | 24 | Simulation | High (WorldState) |
+| `Scripts/Pioneers/` | 24 | Simulation | High (WorldState / Generation) |
 | `Scripts/Interaction/` | 22 | Gameplay | Low |
-| `Scripts/Survival/` | 20 | World + Gameplay | Medium |
-| `Scripts/Core/` | 15 | Core | Medium (save split) |
+| `Scripts/Survival/` | 20 | World + Gameplay | Medium (Exposure feeds WorldState) |
+| `Scripts/Core/` | 15 | Core | Medium (save + world seed) |
 | `Scripts/Progression/` | 15 | Gameplay | Low |
-| `Scripts/Quests/` | 13 | Story (data) + Intelligence (exec) | High |
+| `Scripts/Quests/` | 13 | Story + Intelligence | High |
 | `Scripts/Achievements/` | 10 | Core/Systems | Low |
 | `Scripts/Crafting/` | 8 | Gameplay | Low |
 | `Scripts/Pet/` | 8 | Simulation (fold to Echo) | Medium |
@@ -74,7 +76,7 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 | `Scripts/Echoes/` | 4 | Simulation + Story | Medium |
 | `Scripts/Combat/` | 17 | Gameplay | Low |
 | `Scripts/Vehicles/` | 16 | Gameplay | Low |
-| `Scripts/Managers/` | 2 | Core | High |
+| `Scripts/Managers/` | 2 | Core | High (bootstrap) |
 | `Scripts/Inventory/` | 4 | Gameplay | Low |
 | `Scripts/Map/` | 4 | World | Medium |
 
@@ -110,12 +112,13 @@ Assets/_Project/Features/<Name>/
 
 ## Target vs current bootstrap (gap)
 
-| HLA §6.3 step | Implemented |
-|---------------|-------------|
-| GameStateBootstrap | Yes |
-| WorldStateBootstrap | **Yes** |
-| CommunicationsBootstrap | Yes |
+| HLA §6.3 step | On disk |
+|---------------|---------|
+| GameStateBootstrap | **No** |
+| WorldStateBootstrap | **No** |
 | DirectorsBootstrap | **No** |
+| CommunicationsBootstrap | **No** |
 | ExperienceBootstrap | **No** |
+| Legacy CompanionSystemsBootstrap | **Yes** (companions, pet, exposure, facilities) |
 
-See TDB §6 Bootstrap Registry.
+See TDB Bootstrap Registry and GDD B4 Runs 1–2.

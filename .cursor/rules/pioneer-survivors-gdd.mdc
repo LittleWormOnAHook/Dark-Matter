@@ -14,7 +14,7 @@ alwaysApply: true
 
 - **Chapters 1–5** — Dark Matter Studios Production Bible (vision / pillars / solo AAA strategy)
 - **Appendix A** — Interim mechanics lock (roster, Echoes, thermal, Building Control Panels, economy, platforms)
-- **Appendix B** — Current Implementation / Progress (what is playable vs planned)
+- **Appendix B** — Current Implementation / Progress (disk-corrected July 22, 2026). Prefer `Documentation/Architecture/World_Engine_Disk_Status.md` over any “[SHIPPED] Features” claims in older drafts.
 
 **Engineering rules:** `.cursor/rules/pioneer-survivor-unity-urp.mdc` (Unity 6 + URP, PC/consoles, combat/AI systems).
 

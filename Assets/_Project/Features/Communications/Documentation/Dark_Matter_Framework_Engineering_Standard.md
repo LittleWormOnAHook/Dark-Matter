@@ -150,7 +150,9 @@ Game State API (Phase 1+): `Assets/_Project/Features/GameState/`.
 ## 17. What not to do
 
 - Do not invent unrelated systems unless requested.
-- Do not connect LLM / cloud APIs before Phases 0–7 foundations exist.
+- Do not connect LLM / cloud APIs before Phases 0–7 foundations exist on disk.
+- Do not mark Features modules “shipped” in docs without `.cs` under `Assets/_Project/Features/`.
+- Progress truth: `Documentation/Architecture/World_Engine_Disk_Status.md` + GDD 5.0 Appendix B.
 - Do not put communications logic in quest dialog UI or toast systems.
 - Do not commit vendor asset dumps or false `.meta` renames with feature work.
 

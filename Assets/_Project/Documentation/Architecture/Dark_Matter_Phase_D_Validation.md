@@ -1,27 +1,28 @@
 # Phase D — Dark Matter Stack Validation
 
-**Status:** Complete (July 2026)  
-**Authority:** GDD 5.0 Appendix B5 · TDB v1.0 §7 · §15
+**Status:** Not complete — checklist reserved for after World Engine Runs 1–2  
+**Authority:** GDD 5.0 Appendix B5 · [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md) · TDB  
+**Disk audit:** July 22, 2026 — Features GameState / WorldState / Directors / Validation / Communications Runtime **absent**
 
-Validates architecture phases **A–D** without replacing subsystem audits (Audit_01–08).
+This document is the **target validation** for architecture phases A–D. It does **not** claim those phases are implemented on disk.
 
 ---
 
-## Scope validated
+## Scope to validate (when runtime exists)
 
 | Phase | Deliverable | Validation |
 |-------|-------------|------------|
-| A0 | HLA v1.0 ratified | Doc exists; Engineering Standard cites it |
-| A | TDB + audits + folder mapping | Doc cross-links |
-| B | WorldState API + Communications bridge | EditMode + F9 |
-| C | Directors stubs + command intents | EditMode + F10 |
-| D | This checklist + stack tests + GDD B5 | EditMode `Validation.Tests` |
+| A0 | HLA v1.0 ratified | Doc exists — **done** |
+| A | TDB + audits + folder mapping | Doc cross-links — **done** |
+| B | WorldState API + Communications bridge | EditMode + F9 — **blocked (no C#)** |
+| C | Directors stubs + command intents | EditMode + F10 — **blocked (no C#)** |
+| D | This checklist + stack tests + GDD B5 | EditMode `Validation.Tests` — **blocked (no C#)** |
 
 ---
 
-## Automated checklist (EditMode)
+## Automated checklist (EditMode) — create with Run 1–2
 
-Run all tests under **Window → General → Test Runner → EditMode**.
+Run all tests under **Window → General → Test Runner → EditMode** once assemblies exist.
 
 - [ ] `DarkMatterStackValidationTests.BootstrapOrder_MatchesTdbLockedSequence`
 - [ ] `DarkMatterStackValidationTests.SmokeKeys_AreUniqueStrings`
@@ -34,55 +35,40 @@ Run all tests under **Window → General → Test Runner → EditMode**.
 - [ ] `ContextBuilderTests` (all, incl. WorldState path)
 - [ ] `TransmissionQueueTests` + Communications dialogue tests
 
-**Pass criteria:** zero failures in the five Features test assemblies above.
+**Pass criteria:** zero failures in the Features test assemblies above (assemblies not created yet).
 
 ---
 
-## Manual checklist (Play Mode)
+## Manual checklist (Play Mode) — after Runtime lands
 
-Enter **Pioneer** scene with companion systems bootstrapped (`SimpleGameManager` → `CompanionSystemsBootstrap`).
+Enter **Pioneer** scene with companion systems bootstrapped (`SimpleGameManager` → `CompanionSystemsBootstrap` + Features bootstraps).
 
 - [ ] **F5** — radio transmission enqueues (Communications)
-- [ ] **F7** — context log includes `chapter=` / colony / stress world fields
+- [ ] **F7** — context log includes world fields
 - [ ] **F9** — `[WorldState]` one-line summary
-- [ ] **F10** — `[Directors] trigger=ManualDebug directors=7`
-- [ ] **Shift+F5** (logical F13) — vista banner via presentation adapter
-- [ ] Or **Tools → Dark Matter → Smoke** menu while in Play Mode
-
-Optional: **F6/F8** audio/emergency smokes if audio pipeline enabled.
-Extended slots **F14–F24**: Shift+F6–F12 and Ctrl+Shift+F5–F8 (see `DarkMatterSmokeKeys.GetBindingLabel`).
+- [ ] **F10** — `[Directors]` eval smoke
+- [ ] **Shift+F5** — vista banner (optional presentation adapter)
 
 ---
 
-## Design pillars gate (TDB §13)
+## Known gaps (current disk)
 
-Dark Matter stack phases strengthen:
-
-| Pillar | How |
-|--------|-----|
-| **Believability** | WorldState + Directors read models; world continues off-screen |
-| **Meaningful Agency** | Command/intent write path (future gameplay wiring) |
-| **Memory** | Story/Aether-9 fields in WorldState → Communications context |
-| **Emergence** | Director orchestration order (stubs → logic later) |
-
----
-
-## Known gaps (not Phase D failures)
-
-- ~~`IWorldPresentationCommandService` vista adapter remains log/stub~~ **B4 #2 shipped:** `WorldVistaPresenterUI` + `WorldPresentationCommandServiceAdapter`
-- WorldState not persisted in `GameSaveData`
-- ~~Experience module (full telemetry) not shipped — ExperienceDirector stub only~~ **B4 #1 shipped:** `Features/Experience` telemetry + `ExperienceDirectorService`
-- Aether-9 Intelligence service not a separate Features module yet
-- ~~Simulation incidents do not yet append Echo chronicle entries~~ **B4 #2 shipped:** `SimulationDirectorService` + chronicle rows via `SimulationCommandServiceAdapter`
+- No `Features/GameState`, `WorldState`, `Directors`, `Validation`, `Experience`
+- No Communications Runtime / Radio HUD / ContextBuilder C#
+- WorldState not in `GameSaveData`; no world seed field
+- `EnvironmentalCrisisHudMode` exists without WeatherDirector scheduler
+- Echo chronicle + `EchoGenerator` exist in legacy Scripts (reuse in Run 3)
+- LLM / Phase 9+ and Phase 8.1 voice — **deferred**
 
 ---
 
 ## Next engineering priorities (GDD B4)
 
-1. ~~Experience telemetry module + richer director stub logic~~ **shipped (B4 #1)**
-2. ~~Presentation vista adapter + Echo chronicle simulation incidents~~ **shipped (B4 #2)**
-3. ~~AC-only cleanup pass~~ **shipped (B4 #3)**
-4. ~~Exposure + sulfur storm vertical slice~~ **shipped (B4 #4)** — live scheduler, global storm sulfur, facility pause on Active
-5. Gameplay vertical slices (base 22 shelter, materialization)
+0. Doc honesty — **this pass**  
+1. World Engine spine (GameState → WorldState → Directors → Validation)  
+2. Internal Communications (rule-based)  
+3. Persistent generated world (seed + Generation + save fields)  
+4. Living-world slice (Weather / Simulation directors)  
+5. Command Center aggregate sim (B4 #5)
 
-See [Framework_Folder_Mapping.md](Framework_Folder_Mapping.md) for module status.
+See [Framework_Folder_Mapping.md](Framework_Folder_Mapping.md) and [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md).

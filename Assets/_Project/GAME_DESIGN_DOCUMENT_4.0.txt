@@ -749,6 +749,10 @@ B3. NOT STARTED — vision systems still planned
 
 B4. Near-term roadmap priority (order of value)
 -----------------------------------------------
+  *** ARCHIVE NOTE (July 22, 2026): Do not use this Appendix B for progress.
+  Authoritative roadmap + disk truth: GAME_DESIGN_DOCUMENT_5.0.txt Appendix B
+  and Documentation/Architecture/World_Engine_Disk_Status.md. ***
+
   1. [SHIPPED] Experience telemetry module + richer director stub logic (Features/Experience + ExperienceDirectorService)
   2. [SHIPPED] Presentation vista adapter + Echo chronicle simulation incidents (WorldVistaPresenterUI + SimulationDirectorService)
   3. [SHIPPED] Keep AC-only path clean; remove leftover legacy currency from gameplay HUD
@@ -762,6 +766,8 @@ B4. Near-term roadmap priority (order of value)
 
 B5. SHIPPED — Dark Matter Framework 2.0 foundation (July 2026)
 ----------------------------------------------------------------
+  *** SUPERSEDED — shipping claims below are incorrect vs disk. See GDD 5.0 B5. ***
+
 Architecture phases A–D complete. Survey: Assets/_Project/Features + Documentation/Architecture.
 
   [x] HLA v1.0 ratified — Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md (frozen)

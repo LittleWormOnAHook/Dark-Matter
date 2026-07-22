@@ -5,10 +5,13 @@
 > Build the phone network before you teach anyone to talk.
 
 Primary GDD: `Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`  
-Architecture: [HLA v1.0](../../../Documentation/Architecture/Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md) · [TDB v1.0 §6 Presentation](../../../Documentation/Architecture/Dark_Matter_Technical_Design_Bible.md#6-presentation-layer-contracts)  
+Architecture: [HLA v1.0](../../../Documentation/Architecture/Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md) · [TDB](../../../Documentation/Architecture/Dark_Matter_Technical_Design_Bible.md) · [Disk Status](../../../Documentation/Architecture/World_Engine_Disk_Status.md)  
 Engineering contract: [Dark_Matter_Framework_Engineering_Standard.md](Dark_Matter_Framework_Engineering_Standard.md)
 
 **WoOS layer:** Communications is **Presentation** (HLA §2.8) — it delivers what Intelligence and Experience authorize. It is not the world's brain.
+
+**Disk status (July 22, 2026):** This folder contains **Documentation + Data/Audio READMEs only**. No Runtime / UI / Adapters / Tests `.cs`. Phases below are the **build target**. Phase 8.1 and Phase 9+ LLM are **deferred**; next Comms work is rule-based internal radio (GDD B4 Run 2) after World Engine spine (Run 1).
+
 
 ## Vision
 
@@ -180,6 +183,8 @@ Speech-to-text, push-to-talk, mic capture, procedural incoming voice, radio filt
 
 ### Phase 9 — LLM Integration
 
+**Status: deferred** (optional later). Build internal template radio first (Phases 3–7).
+
 ```
 IConversationProvider
   TemplateConversationProvider
@@ -187,7 +192,7 @@ IConversationProvider
   LocalLLMConversationProvider
 ```
 
-Same Game State + context; replaceable providers.
+Same Game State + context; replaceable providers. Not required for offline play.
 
 ### Phase 10 — Memory System
 
@@ -215,77 +220,48 @@ Memory + relationships + schedules + radio + context + optional LLM — crew fee
 
 ---
 
-## Session 1 scope (complete)
+## Session / phase delivery status (disk-corrected July 22, 2026)
 
-Phases **-1** and **0** only: standards docs + feature scaffold + interface stubs.
-
-## Phase 1 scope (complete)
-
-Game State API under `Assets/_Project/Features/GameState/` with adapters + bootstrap.
-
-## Phase 2 scope (complete)
-
-CrewMember ScriptableObjects + CrewDatabase bridge to pioneer ids.
-
-## Phase 3 scope (complete)
-
-CommunicationsManager + TransmissionQueue + F5 smoke enqueue.
-
-## Phase 4 scope (complete)
-
-`RadioHudUI` lower-third panel (portrait / callsign / subtitle / priority / duration fill) wired to manager events; F5/F6 smoke via bootstrap.
-
-## Phase 5 scope (complete)
-
-`ContextBuilder` + `CommunicationsContextPack` from `GameStateSnapshot` only; F7 context smoke log.
-
-## Phase 6 scope (complete)
-
-Rule-based Alt+1..7 queries → template replies on Radio HUD; Ops speaker until Aether-9 advisory unlock; GDD §A6 Aether-9 prologue canon expanded.
-
-## Phase 7 scope (complete)
-
-`DialogueGenerator` + `VoiceStyle` / `VoiceStyleResolver` — same facts, crew-flavored wording; WaryMachine for Aether-9 when advisory unlocked.
-
-## Phase 8 scope (complete)
-
-Adapter-based radio audio: procedural incoming voice, stub PTT STT, DSP chain, RX/TX HUD chrome, F8 smoke. LocalVoiceLLM TTS/STT modules deferred to Phase 8.1.
+| Scope | Status on disk |
+|-------|----------------|
+| Phase -1 Engineering Standard | **Present** (this Documentation folder) |
+| Phase 0 folder scaffold | **Partial** — Data/Audio READMEs only; no Runtime asmdef / interface stubs |
+| Phases 1–8 (GameState through procedural audio) | **Designed — not on disk** |
+| Phase 8.1 LocalVoiceLLM | **Deferred** |
+| Phase 9+ LLM | **Deferred** |
 
 ## Explicit non-goals until later
 
-- Game State providers / `GameStateService` (Phase 1 — done)
-- `CrewMember` assets (Phase 2 — done)
-- Live `CommunicationsManager` / queue playback (Phase 3 — done)
-- Radio HUD MVP (Phase 4 — done); waveform / static / PTT / voice audio (Phase 8 — done, procedural MVP)
-- Context pack (Phase 5 — done)
-- Rule-based template replies (Phase 6 — done)
-- Crew-flavored dialogue (Phase 7 — done)
-- Aether-9 idle machine / repair quest / cores / Resonance runtime (dedicated prologue track — **Aether-9 Intelligence layer**, not Communications)
-- LLM packages (Phase 9+)
-- WorldState context enrichment (Phase B — **done**; `ContextBuilder` reads `WorldStateSnapshot`)
-- ExperienceDirector silence / density scheduling (Phase C stub — full Experience module later)
-- Director command wiring beyond Communications intent adapter (Quest/Weather stubs)
+- LLM packages (Phase 9+) — deferred; template radio first
+- Phase 8.1 SimpleOffline STT/TTS
+- Aether-9 idle machine / repair quest / cores / Resonance runtime (Intelligence layer, not Communications)
+- ExperienceDirector silence / density scheduling (after World Engine spine)
+- Treating prior “Phase X complete” ChatGPT notes as repo truth
 
-## Architecture phases A–D (complete — GDD B5)
+## Architecture phases A–D (design complete; runtime blocked)
 
-| Phase | Module | Communications touchpoint |
-|-------|--------|---------------------------|
-| B | WorldState | `ContextWorldSummary` in context pack; F7 log enriched |
-| C | Directors | `CommunicationsIntentServiceAdapter` enqueues transmissions |
-| D | Validation | Cross-stack EditMode tests + smoke key registry |
+| Phase | Module | Status |
+|-------|--------|--------|
+| A0/A | HLA + TDB + audits | Docs present |
+| B | WorldState | Not on disk — GDD B4 Run 1 |
+| C | Directors | Not on disk — GDD B4 Run 1 |
+| D | Validation | Checklist only — see Phase_D_Validation.md |
 
-See [Dark_Matter_Phase_D_Validation.md](../../../Documentation/Architecture/Dark_Matter_Phase_D_Validation.md).
+Communications Runtime is GDD B4 **Run 2** (after Run 1 spine).
 
-## Post–Phase 8 integration (HLA v1.0)
+See [Dark_Matter_Phase_D_Validation.md](../../../Documentation/Architecture/Dark_Matter_Phase_D_Validation.md) · [World_Engine_Disk_Status.md](../../../Documentation/Architecture/World_Engine_Disk_Status.md).
+
+## Post–Phase 8 integration (HLA v1.0) — target
 
 | Upstream layer | Communications role |
 |----------------|---------------------|
 | **Intelligence** | Receives transmission intents from Story/Event/Aether-9 directors |
 | **Experience** | Schedules silence, radio density; may defer or request soft comms |
-| **WorldState** | `ContextBuilder` enriches from story chapter, storm, Aether-9 flags (Phase B) |
+| **WorldState** | `ContextBuilder` enriches from story chapter, storm, Aether-9 flags |
 | **Presentation** | Queue, HUD, audio — this feature |
 
 ## Manual test vision (Phase 7+ milestone)
 
-Press a key (e.g. F5 / T): radio pops up → Harper transmits one line → subtitle + portrait + static → done.  
+Press a key (e.g. F5 / T): radio pops up → Ops/crew transmits one line → subtitle + portrait + static → done.  
 That proves the network works **before** any LLM.
+

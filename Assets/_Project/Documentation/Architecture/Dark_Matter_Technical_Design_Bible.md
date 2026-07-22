@@ -54,7 +54,7 @@ World → Simulation → Intelligence → Experience → Presentation → Player
 | Experience | *(planned)* | `IExperienceService`, `ExperienceDirector` |
 | Presentation | Communications, UI, Audio | `ICommunicationsService`, HUD presenters |
 | Gameplay | Player, Combat, Inventory, … | MonoBehaviours on player/entities |
-| Read models | GameState shipped; WorldState planned | `IGameStateService`, `IWorldStateService` |
+| Read models | GameState / WorldState **designed** | Planned `IGameStateService`, `IWorldStateService` |
 
 **Data flow (read path):**
 
@@ -71,10 +71,11 @@ Gameplay mutation → Legacy managers → IGameStateProvider adapters
 
 ## 3. Read models: GameState & WorldState
 
-### 3.1 GameState (shipped)
+### 3.1 GameState (designed — not on disk)
 
-**Location:** `Assets/_Project/Features/GameState/`  
-**HLA:** §5.2
+**Location:** `Assets/_Project/Features/GameState/` (**absent on disk July 22, 2026**)  
+**HLA:** §5.2  
+**Build:** GDD B4 Run 1
 
 #### Interfaces
 
@@ -142,10 +143,11 @@ public sealed class GameStateSnapshot
 - Communications and future AI **must** use `IGameStateService` only.
 - Adapters may call managers; consumers may not.
 
-### 3.2 WorldState (planned — Phase B)
+### 3.2 WorldState (designed — Phase B / Run 1)
 
-**Location:** `Assets/_Project/Features/WorldState/` (not yet created)  
-**HLA:** §7
+**Location:** `Assets/_Project/Features/WorldState/` (**absent on disk July 22, 2026**)  
+**HLA:** §7  
+**Build:** GDD B4 Run 1
 
 #### Planned interfaces
 
@@ -405,7 +407,7 @@ public static class ContextBuilder
 
 **Phase B extension:** overload or enrich from `WorldStateSnapshot` (story chapter, storm, Aether-9, experience densities) — still no manager calls.
 
-### 6.3 Query pipeline (shipped)
+### 6.3 Query pipeline (planned — Run 2)
 
 ```
 Alt+1..7 → CommsQueryService.Ask(CommsQueryKind)
@@ -414,44 +416,46 @@ Alt+1..7 → CommsQueryService.Ask(CommsQueryKind)
   → ICommunicationsService.Enqueue(...)
 ```
 
-**Aether-9 flag:** `CommsQueryService.Aether9AdvisoryUnlocked` — migrate to WorldState in Phase B.
+**Aether-9 flag:** `CommsQueryService.Aether9AdvisoryUnlocked` — migrate to WorldState when Run 1 lands.
 
-### 6.4 Radio HUD (shipped)
+### 6.4 Radio HUD (planned — Run 2)
 
-**Type:** `RadioHudUI` — `Features/Communications/UI/` (Assembly-CSharp)  
+**Type:** `RadioHudUI` — `Features/Communications/UI/`  
 **Factory:** `RadioHudUI.EnsureExists(host)`  
 **Subscribes:** `CommunicationsManager.TransmissionStarted/Ended`  
 **Palette:** `SurvivalPioneerUiPalette`
 
-### 6.5 Audio pipeline (shipped)
+### 6.5 Audio pipeline (planned — Run 2; Phase 8.1 deferred)
 
-**Assembly:** `Project.Features.Communications.Audio`
+**Assembly:** `Project.Features.Communications.Audio` (not created yet)
 
 | Interface | Default impl |
 |-----------|--------------|
 | `IRadioVoiceSynthesizer` | `ProceduralRadioVoiceSynthesizer` |
 | `IRadioSpeechRecognizer` | `StubRadioSpeechRecognizer` |
 
-**Player:** `RadioTransmissionAudioPlayer` — binds to manager events  
-**PTT:** `RadioPttController` — hold V / gamepad L3
-
+**Player:** `RadioTransmissionAudioPlayer`  
+**PTT:** `RadioPttController` — hold V / gamepad L3  
+**Phase 8.1:** LocalVoiceLLM adapters — deferred
 ---
 
 ## 7. Bootstrap registry
 
 **HLA:** §6.3
 
-### 7.1 Companion-systems boot order (July 2026 — Phases B–D shipped)
+### 7.1 Companion-systems boot order (target — not wired on disk)
 
-| Order | Component | Trigger | File |
+| Order | Component | Trigger | File (planned) |
 |-------|-----------|---------|------|
 | 6 | `GameStateBootstrap.EnsureExists` | CompanionSystemsBootstrap | `Features/GameState/Adapters/GameStateBootstrap.cs` |
 | 6b | `WorldStateBootstrap.EnsureExists` | CompanionSystemsBootstrap | `Features/WorldState/Adapters/WorldStateBootstrap.cs` |
 | 7b | `DirectorsBootstrap.EnsureExists` | CompanionSystemsBootstrap | `Features/Directors/Adapters/DirectorsBootstrap.cs` |
 | 7 | `CommunicationsBootstrap.EnsureExists` | CompanionSystemsBootstrap | `Features/Communications/Adapters/CommunicationsBootstrap.cs` |
-| 8 | Legacy companion/pet/building bridges | CompanionSystemsBootstrap | `Scripts/Managers/CompanionSystemsBootstrap.cs` |
+| 8 | Legacy companion/pet/building bridges | CompanionSystemsBootstrap | `Scripts/Managers/CompanionSystemsBootstrap.cs` — **exists today** |
 
-**Locked sequence** (also in `DarkMatterBootstrapOrder.CompanionSystems`):
+**On disk today:** step 8 only (companions, pet, exposure, facilities). Features bootstraps **absent**.
+
+**Locked sequence** (also planned in `DarkMatterBootstrapOrder.CompanionSystems` once Validation lands):
 
 ```csharp
 GameStateBootstrap.EnsureExists(host);
@@ -460,7 +464,7 @@ DirectorsBootstrap.EnsureExists(host);
 CommunicationsBootstrap.EnsureExists(host);
 ```
 
-Earlier session boot (unchanged): `GameSession` → `PlatformGraphicsBootstrap` → MainMenu → `SimpleGameManager` → step 6 above.
+Earlier session boot (unchanged): `GameSession` → `PlatformGraphicsBootstrap` → MainMenu → `SimpleGameManager` → step 6 above (when implemented).
 
 ### 7.2 Planned additions
 
@@ -553,7 +557,8 @@ Implementations live in **Adapters** (Assembly-CSharp) during migration.
 | `Project.Features.Validation.Tests` | Validation + stack assemblies | EditMode cross-stack |
 | `Assembly-CSharp` | all above + legacy | Adapters, UI, gameplay |
 
-**Shipped asmdefs:** `Project.Features.WorldState`, `Project.Features.Directors`, `Project.Features.Validation`
+**Shipped asmdefs:** none under `Features/` yet (July 22, 2026 disk audit).  
+**Target asmdefs:** `Project.Features.GameState`, `WorldState`, `Directors`, `Validation`, `Communications` (+ Audio/Tests).
 
 **Rule:** New Features assemblies must not reference `Scripts/` domains directly — adapters in Assembly-CSharp only.
 
@@ -617,13 +622,14 @@ Exploration · Discovery · Survival · Colony · Memory · Consequence · Myste
 
 | Module | Phase | HLA | Key deliverables |
 |--------|-------|-----|------------------|
-| `WorldState` | B | §7 | Service, providers, bootstrap, tests — **shipped** |
-| `Directors` | C | §8 | Orchestrator, director stubs, command adapters — **shipped (stubs)** |
-| `Validation` | D | §15 | Stack tests, smoke registry, GDD B5 checklist — **shipped** |
-| `Experience` | C+ | §2.7 | Telemetry, ExperienceSnapshot builder |
+| `WorldState` | B / Run 1 | §7 | Service, providers, bootstrap, tests — **designed, not on disk** |
+| `Directors` | C / Run 1 | §8 | Orchestrator, director stubs, command adapters — **designed, not on disk** |
+| `Validation` | D / Run 1 | §15 | Stack tests, smoke registry — **designed, not on disk** |
+| `Communications` Runtime | Run 2 | §2.8 | Queue, HUD, ContextBuilder, templates — **docs only on disk** |
+| `Experience` | C+ | §2.7 | Telemetry, ExperienceSnapshot builder — **not started** |
+| `Generation` | Run 3 | §10 | Seed + generator interfaces; wrap `EchoGenerator` — **not started** |
 | `Aether9` | Later | §9 | Knowledge service, core tracking |
 | `Simulation` | Later | §11 | Incident model, off-screen tick |
-| `Generation` | Later | §10 | Seed + generator interfaces |
 | `Story` | Later | §2.5 | Quest service wrapper |
 
 ---
@@ -669,8 +675,9 @@ Detailed per-domain findings:
 
 | Version | Date | Notes |
 |---------|------|-------|
-| 1.0 | July 2026 | Initial TDB implementing HLA v1.0. Documents shipped GameState + Communications; specifies planned WorldState, Directors, Experience. |
-| 1.1 | July 2026 | Phase B–D shipped: WorldState, Directors stubs, Validation module, bootstrap + smoke keys, GDD B5. |
+| 1.0 | July 2026 | Initial TDB implementing HLA v1.0. Specifies GameState, Communications, WorldState, Directors, Experience. |
+| 1.1 | July 2026 | Draft claimed Phase B–D shipped (out of sync with repo). |
+| 1.2 | July 22, 2026 | **Disk correction:** Features runtime absent; bootstrap/planned-module tables match GDD B4–B5 and World_Engine_Disk_Status.md. LLM deferred. |
 
 ---
 
