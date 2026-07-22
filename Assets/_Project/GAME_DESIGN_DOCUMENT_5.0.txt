@@ -570,6 +570,10 @@ Classes (locked names)
     Med Tech            — field triage, expedition heals, injury recovery;
                           Medical Facility tie-ins
 
+  MED TECH KIT (prototype):
+    Field Triage (active) — heals low-health expedition allies in range; sulfur respirator boost
+    Injury Stabilize (passive) — faster lab recovery; shorter injury timer when Med Tech is on expedition
+
 
 A1. Platforms, art & tech
 -------------------------

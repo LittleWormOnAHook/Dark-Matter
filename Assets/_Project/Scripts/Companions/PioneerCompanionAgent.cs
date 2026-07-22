@@ -1,5 +1,7 @@
 using Project.Companions.Abilities;
 using Project.Companions.Invector;
+using Project.Companions;
+using Project.Companions.Abilities;
 using Project.Pioneers;
 using UnityEngine;
 
@@ -189,7 +191,17 @@ namespace Project.Companions
             bootstrap?.EnsureInvectorPhysicsReady();
 
             CompanionAbilityController abilityController = GetComponent<CompanionAbilityController>();
-            abilityController?.Bind(record);
+            if (abilityController == null)
+                abilityController = gameObject.AddComponent<CompanionAbilityController>();
+            abilityController.Bind(record);
+
+            if (record.pioneerClass == SkilledPioneerClass.MedTech)
+            {
+                MedTechCompanionAbilityController medTechController = GetComponent<MedTechCompanionAbilityController>();
+                if (medTechController == null)
+                    medTechController = gameObject.AddComponent<MedTechCompanionAbilityController>();
+                medTechController.Bind(this, record);
+            }
         }
 
         public void SetCommand(CompanionCommand command)

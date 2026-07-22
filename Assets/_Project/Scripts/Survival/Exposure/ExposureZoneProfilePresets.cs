@@ -1,3 +1,4 @@
+using Project.Companions.Abilities;
 using Project.Pioneers;
 using Project.Survival.Exposure;
 using UnityEngine;
@@ -101,6 +102,14 @@ namespace Project.Survival.Exposure
                     };
                     profile.mitigationRules = new[]
                     {
+                        new ExposureMitigationRule
+                        {
+                            pressureType = ExposurePressureType.Sulfur,
+                            source = ExposureMitigationSource.CompanionAbility,
+                            requiredAbilityId = MedTechCompanionAbilityController.FieldTriageAbilityId,
+                            exposureReduction = 0.15f,
+                            activeLabel = "Field triage respirator boost"
+                        },
                         new ExposureMitigationRule
                         {
                             pressureType = ExposurePressureType.Sulfur,

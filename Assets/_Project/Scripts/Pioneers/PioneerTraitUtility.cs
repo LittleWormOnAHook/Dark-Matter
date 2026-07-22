@@ -90,5 +90,30 @@ namespace Project.Pioneers
                 _ => "Neutral"
             };
         }
+
+        public static bool RecordHasAbility(SkilledPioneerRecord record, string abilityId)
+        {
+            if (record == null || string.IsNullOrWhiteSpace(abilityId))
+                return false;
+
+            return ContainsId(record.traitIds, abilityId)
+                || ContainsId(record.passiveAbilityIds, abilityId)
+                || ContainsId(record.assignedSkillIds, abilityId)
+                || ContainsId(record.learnedSkills, abilityId);
+        }
+
+        private static bool ContainsId(string[] ids, string abilityId)
+        {
+            if (ids == null || ids.Length == 0)
+                return false;
+
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (string.Equals(ids[i], abilityId, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

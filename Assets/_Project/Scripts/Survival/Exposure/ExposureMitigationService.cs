@@ -211,36 +211,8 @@ namespace Project.Survival.Exposure
             return false;
         }
 
-        private static bool RecordHasAbility(SkilledPioneerRecord record, string abilityId)
-        {
-            if (ContainsId(record.passiveAbilityIds, abilityId))
-                return true;
-
-            if (ContainsId(record.assignedSkillIds, abilityId))
-                return true;
-
-            if (ContainsId(record.learnedSkills, abilityId))
-                return true;
-
-            if (ContainsId(record.traitIds, abilityId))
-                return true;
-
-            return false;
-        }
-
-        private static bool ContainsId(string[] ids, string abilityId)
-        {
-            if (ids == null || ids.Length == 0)
-                return false;
-
-            for (int i = 0; i < ids.Length; i++)
-            {
-                if (string.Equals(ids[i], abilityId, System.StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-
-            return false;
-        }
+        private static bool RecordHasAbility(SkilledPioneerRecord record, string abilityId) =>
+            PioneerTraitUtility.RecordHasAbility(record, abilityId);
 
         /// <summary>
         /// Mitigation labels this companion personally contributes while inside the given zones.
@@ -313,7 +285,7 @@ namespace Project.Survival.Exposure
                 return false;
 
             SkilledPioneerRecord record = roster.FindSkilledById(companion.PioneerRecordId);
-            return record != null && RecordHasAbility(record, abilityId);
+            return record != null && PioneerTraitUtility.RecordHasAbility(record, abilityId);
         }
     }
 }
