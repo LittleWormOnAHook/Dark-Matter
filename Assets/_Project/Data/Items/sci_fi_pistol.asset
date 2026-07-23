@@ -79,9 +79,9 @@ MonoBehaviour:
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
-  muzzleFlashPrefab: {fileID: 6860369545257256212, guid: 96a04ef4f3cb949dea720b29daad2af2, type: 3}
+  muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
   tracerPrefab: {fileID: 1878987882032996, guid: 2f30ce685381cf141a1c05b1ee359db2, type: 3}
-  impactVfxPrefab: {fileID: 4116169888191998485, guid: b151f19f5eaf34864986b0e3490431d1, type: 3}
+  impactVfxPrefab: {fileID: 1065618375357958, guid: 6f8068e2c99ffb04b932ec74e5773db5, type: 3}
   beamVfxPrefab: {fileID: 0}
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
