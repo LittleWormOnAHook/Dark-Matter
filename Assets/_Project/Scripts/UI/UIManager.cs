@@ -83,7 +83,6 @@ namespace Project.UI
             if (roster != null)
             {
                 SetAetherCredits(roster.AetherCredits);
-                SetPiWalletBalance(roster.PiWalletBalance);
             }
 
             if (!GameSession.HasStarted)
@@ -715,8 +714,7 @@ namespace Project.UI
             if (piBalanceText == null || !piBalanceText.gameObject.activeSelf)
                 return;
 
-            piBalanceText.text =
-                $"Pi Wallet: {Mathf.RoundToInt(piWalletBalance)}  |  AC: {Mathf.RoundToInt(aetherCredits)}";
+            piBalanceText.text = $"AC: {Mathf.RoundToInt(aetherCredits)}";
         }
 
         private void ShowCurrencyPopup(string amountLine, string source)

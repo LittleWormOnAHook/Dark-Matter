@@ -1,6 +1,7 @@
 using Project.Combat;
 using Project.Progression;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Project.Data
 {
@@ -201,8 +202,10 @@ namespace Project.Data
 
         [Header("Aether Credits")]
         [Tooltip("World pickup grants AC when collected.")]
-        public bool isPiInfused = false;
-        public int piValue = 0;
+        [FormerlySerializedAs("isPiInfused")]
+        public bool isAcInfused = false;
+        [FormerlySerializedAs("piValue")]
+        public int acValue = 0;
 
         [Header("Progression")]
         [Tooltip("When true, collecting this item grants XP (shards, recipe scrolls, etc.). Normal pickups stay false.")]

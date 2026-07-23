@@ -19,8 +19,10 @@ namespace Project.AI
         [SerializeField] private string lootDisplayName = "Enemy";
         [Header("Loot AC")]
         [Tooltip("Aether Credits (AC) dropped by this enemy.")]
-        [SerializeField] private int piCoinsMin = 1;
-        [SerializeField] private int piCoinsMax = 5;
+        [UnityEngine.Serialization.FormerlySerializedAs("piCoinsMin")]
+        [SerializeField] private int acDropMin = 1;
+        [UnityEngine.Serialization.FormerlySerializedAs("piCoinsMax")]
+        [SerializeField] private int acDropMax = 5;
         [SerializeField] private int randomLootCountMin = 0;
         [SerializeField] private int randomLootCountMax = 2;
         [SerializeField] private ItemData[] lootItemPool = Array.Empty<ItemData>();
@@ -68,8 +70,8 @@ namespace Project.AI
             lootDisplayName = string.IsNullOrWhiteSpace(definition.displayName)
                 ? definition.enemyId
                 : definition.displayName;
-            piCoinsMin = definition.piCoinsMin;
-            piCoinsMax = definition.piCoinsMax;
+            acDropMin = definition.acDropMin;
+            acDropMax = definition.acDropMax;
             randomLootCountMin = definition.randomLootCountMin;
             randomLootCountMax = definition.randomLootCountMax;
             lootItemPool = definition.lootItemPool ?? Array.Empty<ItemData>();
@@ -170,8 +172,8 @@ namespace Project.AI
 
         private int RollAcAmount()
         {
-            int min = Mathf.Max(0, piCoinsMin);
-            int max = Mathf.Max(min, piCoinsMax);
+            int min = Mathf.Max(0, acDropMin);
+            int max = Mathf.Max(min, acDropMax);
             return UnityEngine.Random.Range(min, max + 1);
         }
 

@@ -174,8 +174,8 @@ namespace Project.Interaction
 
                 if (showPlayerPrompt && uiManager != null)
                 {
-                    if (itemData.isPiInfused)
-                        uiManager.ShowAcReward(itemData.piValue, "Pickup");
+                    if (itemData.isAcInfused)
+                        uiManager.ShowAcReward(itemData.acValue, "Pickup");
 
                     uiManager.HideInteractionPrompt();
                 }

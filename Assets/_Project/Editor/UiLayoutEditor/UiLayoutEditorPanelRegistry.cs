@@ -120,9 +120,8 @@ namespace Project.EditorTools.UiLayout
                 Label = "Compass HUD",
                 Category = "Map",
                 SearchNames = new[] { "CompassHud" },
-                ComponentType = typeof(CompassHudUI),
                 PlayModeOnly = true,
-                Description = "Horizontal scrolling compass strip anchored below the minimap. Built by MapUI.Compass.cs."
+                Description = "Horizontal scrolling compass strip anchored below the minimap. Built by MapUI at runtime."
             },
             new UiPanelDefinition
             {
@@ -343,7 +342,7 @@ namespace Project.EditorTools.UiLayout
             {
                 Label = "AC Reward Popup Prefab",
                 Category = "Prefabs",
-                ComponentType = typeof(AcRewardPopup),
+                ComponentType = typeof(PiRewardPopup),
                 PrefabAssetPath = "Assets/_Project/Prefabs/UI/AcRewardPopup.prefab",
                 Description = "Animated scale/fade-in AC reward popup, instantiated from a prefab."
             },

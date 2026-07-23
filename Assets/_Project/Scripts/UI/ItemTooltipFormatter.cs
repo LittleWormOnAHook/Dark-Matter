@@ -154,10 +154,10 @@ namespace Project.UI
 
         private static void AppendAcLine(StringBuilder text, ItemData item)
         {
-            if (!item.isPiInfused || item.piValue <= 0)
+            if (!item.isAcInfused || item.acValue <= 0)
                 return;
 
-            text.AppendLine($"<color=#FFD966>AC Value: {item.piValue}</color>");
+            text.AppendLine($"<color=#FFD966>AC Value: {item.acValue}</color>");
         }
 
         private static void AppendCraftedItemLine(StringBuilder text, ItemData item)

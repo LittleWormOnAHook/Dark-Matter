@@ -295,7 +295,7 @@ namespace Project.EditorTools
             }
 
             if (GUILayout.Button("Add Reward", GUILayout.Height(24f)))
-                rewards.Add(new QuestRewardDefinition { type = QuestRewardType.AetherCredits, amount = 10 });
+                rewards.Add(new QuestRewardDefinition { type = QuestRewardType.Pi, amount = 10 });
         }
     }
 
@@ -417,7 +417,7 @@ namespace Project.EditorTools
             questTitle = "New Quest";
             description = string.Empty;
             objectives = new List<QuestObjectiveDefinition>();
-            rewards = new List<QuestRewardDefinition> { new QuestRewardDefinition { type = QuestRewardType.AetherCredits, amount = 25 } };
+            rewards = new List<QuestRewardDefinition> { new QuestRewardDefinition { type = QuestRewardType.Pi, amount = 25 } };
             addToQuestRegistry = true;
             Repaint();
         }
