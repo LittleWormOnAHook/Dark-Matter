@@ -12,7 +12,11 @@ namespace Project.Pioneers
             "shield_drone",
             "aggro_pulse",
             "decoy_beacon",
-            "phase_step"
+            "phase_step",
+            "field_triage",
+            "supply_cache",
+            "field_salvage",
+            "signal_relay"
         };
 
         public static readonly string[] PassiveAbilityIds =
@@ -21,7 +25,11 @@ namespace Project.Pioneers
             "rad_hardening",
             "tremor_sense",
             "harvest_boost",
-            "synergy_link"
+            "synergy_link",
+            "injury_stabilize",
+            "quartermaster_routes",
+            "upkeep_patch",
+            "uplink_matrix"
         };
 
         public static readonly string[] MenialSkillIds =
@@ -42,11 +50,19 @@ namespace Project.Pioneers
             { "aggro_pulse", "Aggro Pulse" },
             { "decoy_beacon", "Decoy Beacon" },
             { "phase_step", "Phase Step" },
+            { "field_triage", "Field Triage" },
+            { "supply_cache", "Supply Cache" },
+            { "field_salvage", "Field Salvage" },
+            { "signal_relay", "Signal Relay" },
             { "echo_reverb", "Echo Reverb" },
             { "rad_hardening", "Rad Hardening" },
             { "tremor_sense", "Tremor Sense" },
             { "harvest_boost", "Harvest Boost" },
             { "synergy_link", "Synergy Link" },
+            { "injury_stabilize", "Injury Stabilize" },
+            { "quartermaster_routes", "Quartermaster Routes" },
+            { "upkeep_patch", "Upkeep Patch" },
+            { "uplink_matrix", "Uplink Matrix" },
             { "salvage", "Salvage" },
             { "forage", "Forage" },
             { "patchwork", "Patchwork" },
@@ -85,6 +101,31 @@ namespace Project.Pioneers
                 EchoDisposition.Synced => "Synced",
                 _ => "Neutral"
             };
+        }
+
+        public static bool RecordHasAbility(SkilledPioneerRecord record, string abilityId)
+        {
+            if (record == null || string.IsNullOrWhiteSpace(abilityId))
+                return false;
+
+            return ContainsId(record.traitIds, abilityId)
+                || ContainsId(record.passiveAbilityIds, abilityId)
+                || ContainsId(record.assignedSkillIds, abilityId)
+                || ContainsId(record.learnedSkills, abilityId);
+        }
+
+        private static bool ContainsId(string[] ids, string abilityId)
+        {
+            if (ids == null || ids.Length == 0)
+                return false;
+
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (string.Equals(ids[i], abilityId, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

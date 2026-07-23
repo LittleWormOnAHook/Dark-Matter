@@ -561,8 +561,38 @@ pressures, alien life forms, and AI androids.
 
 Classes (locked names)
 ----------------------
-  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout
-  (+ Io hybrids). Player has combat/skills too.
+  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout,
+  Med Tech, Logistics Officer, Salvage Engineer, Communications Officer (+ Io hybrids). Player has combat/skills too.
+
+  ROLE ANCHORS (design lock — ability kits still prototyping):
+    Architect Engineer      — shields, drones, portable habitat
+    Science Specialist      — scans, inoculation support, lab tie-ins
+    Combat Tactician        — draws aggro; combat focus
+    Infiltrator Scout       — reveals terrain / Echo signals
+    Med Tech                — field triage, expedition heals, injury recovery;
+                              Medical Facility tie-ins
+    Logistics Officer       — quartermaster, supply routes, storage/logistics throughput;
+                              vendor and camp resupply (base-primary)
+    Salvage Engineer        — building upkeep, salvage recovery, equipment repairs;
+                              reclamation and fabrication maintenance (base-primary)
+    Communications Officer  — probe uplink, relay traffic, Echo signal routing;
+                              comms module and Resonance forewarning (base-primary)
+
+  MED TECH KIT (prototype):
+    Field Triage (active) — heals low-health expedition allies in range; sulfur respirator boost
+    Injury Stabilize (passive) — faster lab recovery; shorter injury timer when Med Tech is on expedition
+
+  LOGISTICS OFFICER KIT (prototype):
+    Supply Cache (active) — expedition resupply cache; light gather support
+    Quartermaster Routes (passive) — bonus output when assigned to storage/logistics/vendor buildings
+
+  SALVAGE ENGINEER KIT (prototype):
+    Field Salvage (active) — improved wreck/loot recovery on expedition
+    Upkeep Patch (passive) — bonus output when assigned to salvage/repair/maintenance buildings
+
+  COMMUNICATIONS OFFICER KIT (prototype):
+    Signal Relay (active) — expedition Echo signal boost and scan relay support
+    Uplink Matrix (passive) — bonus output when assigned to comms/uplink/probe/relay buildings
 
 
 A1. Platforms, art & tech
@@ -730,7 +760,7 @@ A10. Locked decisions checklist
 OPEN (examples)
   Flat terrain → Io scene strategy
   Exact starter Skilled Companion offer list
-  Science Specialist ability kit polish
+  Science Specialist and Med Tech ability kit polish
 
 
 ================================================================================

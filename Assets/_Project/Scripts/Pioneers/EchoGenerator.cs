@@ -42,15 +42,23 @@ namespace Project.Pioneers
         private static SkilledPioneerClass RollClass()
         {
             float roll = UnityEngine.Random.value;
-            if (roll < 0.04f)
+            if (roll < 0.03f)
                 return SkilledPioneerClass.IoHybrid;
-            if (roll < 0.28f)
+            if (roll < 0.1513f)
                 return SkilledPioneerClass.ArchitectEngineer;
-            if (roll < 0.52f)
+            if (roll < 0.2725f)
                 return SkilledPioneerClass.ScienceSpecialist;
-            if (roll < 0.76f)
+            if (roll < 0.3938f)
                 return SkilledPioneerClass.CombatTactician;
-            return SkilledPioneerClass.InfiltratorScout;
+            if (roll < 0.515f)
+                return SkilledPioneerClass.InfiltratorScout;
+            if (roll < 0.6363f)
+                return SkilledPioneerClass.MedTech;
+            if (roll < 0.7575f)
+                return SkilledPioneerClass.LogisticsOfficer;
+            if (roll < 0.8788f)
+                return SkilledPioneerClass.SalvageEngineer;
+            return SkilledPioneerClass.CommunicationsOfficer;
         }
 
         private static string BuildEchoName(SkilledPioneerClass pioneerClass)

@@ -179,23 +179,68 @@ namespace Project.UI
             if (activePanel == null)
                 return;
 
+            string buildingId = activePanel.BuildingId ?? string.Empty;
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            BuildingControlAssignmentHints.BuildingAssignmentRole assignmentRole =
+                BuildingControlAssignmentHints.ResolveRole(buildingId);
+            bool specializedBuilding = assignmentRole != BuildingControlAssignmentHints.BuildingAssignmentRole.None;
+
+            if (pioneerAssignmentHintText != null)
+                pioneerAssignmentHintText.text = BuildingControlAssignmentHints.BuildAssignmentHint(buildingId, roster);
+
             BuildingOperationState state = BuildingOperationRegistry.GetOrCreate(activePanel.BuildingId);
             for (int i = 0; i < BuildingOperationRegistry.MaxAssignedPioneers; i++)
             {
                 if (pioneerSlotLabels[i] == null)
                     continue;
 
-                string assigned = i < state.AssignedPioneers.Count ? state.AssignedPioneers[i] : string.Empty;
-                pioneerSlotLabels[i].text = string.IsNullOrEmpty(assigned)
-                    ? $"Slot {i + 1}: Unassigned"
-                    : $"Slot {i + 1}: {assigned}";
+                string assignedName = i < state.AssignedPioneers.Count ? state.AssignedPioneers[i] : string.Empty;
+                string assignedId = i < state.AssignedPioneerIds.Count ? state.AssignedPioneerIds[i] : string.Empty;
+                SkilledPioneerRecord assignedRecord = roster != null && !string.IsNullOrEmpty(assignedId)
+                    ? roster.FindSkilledById(assignedId)
+                    : null;
+
+                if (string.IsNullOrEmpty(assignedName))
+                {
+                    pioneerSlotLabels[i].text = $"Slot {i + 1}: Unassigned";
+                }
+                else
+                {
+                    string classTag = assignedRecord != null
+                        ? $" ({SkilledPioneerClassUtility.ToHudLabel(assignedRecord.pioneerClass)})"
+                        : string.Empty;
+                    string fitTag = string.Empty;
+                    if (assignedRecord != null && specializedBuilding)
+                    {
+                        fitTag = BuildingControlAssignmentHints.IsIdealAssignment(assignedRecord, buildingId)
+                            ? "  ·  IDEAL FIT"
+                            : "  ·  SUBOPTIMAL";
+                    }
+
+                    pioneerSlotLabels[i].text = $"Slot {i + 1}: {assignedName}{classTag}{fitTag}";
+                }
 
                 if (pioneerSlotButtons[i] != null
                     && pioneerSlotButtons[i].TryGetComponent(out Image rowBackground))
                 {
-                    rowBackground.color = string.IsNullOrEmpty(assigned)
-                        ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f)
-                        : ActiveTabColor;
+                    if (string.IsNullOrEmpty(assignedName))
+                    {
+                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+                    }
+                    else if (assignedRecord != null
+                        && specializedBuilding
+                        && BuildingControlAssignmentHints.IsIdealAssignment(assignedRecord, buildingId))
+                    {
+                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.22f);
+                    }
+                    else if (assignedRecord != null && specializedBuilding)
+                    {
+                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.16f);
+                    }
+                    else
+                    {
+                        rowBackground.color = ActiveTabColor;
+                    }
                 }
             }
         }

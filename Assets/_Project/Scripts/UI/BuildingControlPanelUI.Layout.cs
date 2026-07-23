@@ -233,6 +233,10 @@ namespace Project.UI
             CreateBodyText(content, theme, 18f).text =
                 "Click a slot to cycle through available base companions (up to four per building).";
 
+            pioneerAssignmentHintText = CreateBodyText(content, theme, 17f);
+            pioneerAssignmentHintText.color = SurvivalPioneerUiPalette.MutedText;
+            pioneerAssignmentHintText.margin = new Vector4(0f, 4f, 0f, 10f);
+
             for (int i = 0; i < BuildingOperationRegistry.MaxAssignedPioneers; i++)
             {
                 int slotIndex = i;

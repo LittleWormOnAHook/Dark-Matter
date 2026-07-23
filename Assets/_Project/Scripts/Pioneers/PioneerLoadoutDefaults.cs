@@ -28,6 +28,10 @@ namespace Project.Pioneers
                 SkilledPioneerClass.CombatTactician => "Sword of Fear",
                 SkilledPioneerClass.InfiltratorScout => "Spear of Fate",
                 SkilledPioneerClass.IoHybrid => "weap2_sword",
+                SkilledPioneerClass.MedTech => "weap2_sword",
+                SkilledPioneerClass.LogisticsOfficer => "weap2_sword",
+                SkilledPioneerClass.SalvageEngineer => "Wood Axe",
+                SkilledPioneerClass.CommunicationsOfficer => "weap2_sword",
                 _ => "weap2_sword"
             };
         }
@@ -41,6 +45,10 @@ namespace Project.Pioneers
                 SkilledPioneerClass.CombatTactician => "Wood Axe",
                 SkilledPioneerClass.InfiltratorScout => "Binnos 250",
                 SkilledPioneerClass.IoHybrid => "Scanner B44",
+                SkilledPioneerClass.MedTech => "Medpack",
+                SkilledPioneerClass.LogisticsOfficer => "Scanner B44",
+                SkilledPioneerClass.SalvageEngineer => "Wood Axe",
+                SkilledPioneerClass.CommunicationsOfficer => "Scanner B44",
                 _ => string.Empty
             };
         }

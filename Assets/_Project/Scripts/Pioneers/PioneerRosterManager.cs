@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Building;
+using Project.Companions.Abilities;
 using Project.Core;
 using Project.Managers;
 using Project.UI;
@@ -120,7 +121,11 @@ namespace Project.Pioneers
 
             record.isInExpeditionTrio = false;
             record.WorkState = PioneerWorkState.Injured;
-            record.injuryRecoveryRemaining = InjuryRecoveryDuration;
+            float recoveryDuration = InjuryRecoveryDuration;
+            if (MedTechCompanionAbilityController.ExpeditionHasInjuryStabilize())
+                recoveryDuration *= MedTechCompanionAbilityController.InjuryRecoveryMultiplier;
+
+            record.injuryRecoveryRemaining = recoveryDuration;
             NotifyRosterChanged();
             NotifyTrioChanged();
             return true;
@@ -184,7 +189,11 @@ namespace Project.Pioneers
                 if (record.injuryRecoveryRemaining <= 0f)
                     continue;
 
-                record.injuryRecoveryRemaining = Mathf.Max(0f, record.injuryRecoveryRemaining - deltaTime);
+                float recoveryDelta = deltaTime;
+                if (MedTechCompanionAbilityController.RosterHasInjuryStabilize(this))
+                    recoveryDelta *= MedTechCompanionAbilityController.BaseInjuryRecoverySpeedBonus;
+
+                record.injuryRecoveryRemaining = Mathf.Max(0f, record.injuryRecoveryRemaining - recoveryDelta);
                 changed = true;
             }
 

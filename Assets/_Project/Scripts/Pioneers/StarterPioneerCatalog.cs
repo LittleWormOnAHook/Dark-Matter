@@ -85,6 +85,21 @@ namespace Project.Pioneers
                 traitIds = new[] { "shield_drone" },
                 passiveAbilityIds = new[] { "harvest_boost" },
                 learnedSkills = new[] { "patchwork" }
+            },
+            new StarterPioneerOffer
+            {
+                offerId = "starter_nova",
+                displayName = "Ash-Bound Nova Hale",
+                pioneerClass = SkilledPioneerClass.MedTech,
+                acCost = StarterAcGrant,
+                radiationResistance = 0.56f,
+                expeditionEfficiency = 0.54f,
+                combatSynergy = 0.49f,
+                backstory = "Field medic imprint from a sulfur-storm triage crew.",
+                abilitySummary = "Field Triage · Injury Stabilize",
+                traitIds = new[] { "field_triage" },
+                passiveAbilityIds = new[] { "injury_stabilize" },
+                learnedSkills = new[] { "sanitize" }
             }
         };
     }
