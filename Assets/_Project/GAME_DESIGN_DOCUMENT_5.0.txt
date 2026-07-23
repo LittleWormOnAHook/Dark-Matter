@@ -42,23 +42,27 @@ LOCKED (do not contradict without an explicit design change)
   Building Control Panels: in-world E terminal → Overview | Companions | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
   Runtime: Dark Matter: Genesis on The World Engine (WoOS) — Unity 6 + URP.
+  Player-facing identity: companion-driven survival RPG (primary pitch); story-driven
+    sci-fi RPG with a base camp (store / discovery). Prefer "base camp" over "colony"
+    or "colony camp" in player-facing copy.
 
 
 PRODUCT IDENTITY (5.0 — canonical game summary)
 -----------------------------------------------
-Dark Matter: Genesis is a premium sci-fi survival colony sim set on Jupiter's moon
-Io in 2160. You lead humanity's push to prove a future there—not just scrape by, but
-rebuild civilization under brutal conditions. You manage oxygen and environmental
-pressures (radiation, cold/heat, volcanism, sulfur storms, alien life forms, and AI
-androids), gather and craft, fight on the surface, and expand a base of up to
-twenty-two companions while a trio of three skilled companions can be switched and
-run expeditions with the player. You rescue procedural Neural Echoes, spend Aether
-Credits at vendors, and operate major structures through in-world Building Control
-Panels. A Lite Building system supports building your colony camp.
+Dark Matter: Genesis is a companion-driven survival RPG — a story-driven sci-fi RPG
+with a base camp on Jupiter's moon Io in 2160. You lead humanity's push to prove a
+future there—not just scrape by, but rebuild under brutal conditions. You manage
+oxygen and environmental pressures (radiation, cold/heat, volcanism, sulfur storms,
+alien life forms, and AI androids), gather and craft, fight on the surface, and
+grow a base camp of up to twenty-two companions while a trio of three skilled
+companions can be switched and run expeditions with the player. You rescue
+procedural Neural Echoes, spend Aether Credits at vendors, and operate major
+structures through in-world Building Control Panels. A Lite Building system
+supports expanding your base camp.
 
 Long-term progression ties to Aether-9—an ancient Echo sealed in a dormant machine—
 and Memory Cores that trigger Resonance Events: short world-changing story beats that
-unlock lore, systems, and colony growth. The emotional arc moves you from survivor
+unlock lore, systems, and base camp growth. The emotional arc moves you from survivor
 to explorer, commander, and founder of humanity's first permanent home beyond Earth.
 
 Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating
@@ -73,10 +77,10 @@ HUD, audio) delivers what the world authorizes—without AI or UI reaching direc
 into managers. The design goal is a world that feels like it keeps running whether
 you're watching or not: sulfur storms pause base work and force shelter, expedition
 crews carry full exposure risk, and future Resonance Events will reshape Io while
-your colony simulates injury, healing, and production at scale.
+your base camp simulates injury, healing, and production at scale.
 
 Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
-its first shipped game—the Io story, AC economy, Echo roster, Lite Building colony
+its first shipped game—the Io story, AC economy, Echo roster, Lite Building base
 camp, and sulfur-storm companion fantasy layered on top.
 
 Framework detail: Appendix B5 · Documentation/Architecture/
@@ -88,11 +92,11 @@ Chapter 1 - Executive Vision
 
 The Mission
 -----------
-Dark Matter: Genesis is a premium single-player science-fiction survival colony
-simulator designed to deliver the emotional depth, visual quality, and systemic
-complexity associated with modern AAA games while remaining achievable for a
-solo developer through disciplined engineering, procedural systems, and
-AI-assisted production.
+Dark Matter: Genesis is a premium single-player companion-driven survival RPG —
+a story-driven sci-fi RPG with a base camp — designed to deliver the emotional
+depth, visual quality, and systemic complexity associated with modern AAA games
+while remaining achievable for a solo developer through disciplined engineering,
+procedural systems, and AI-assisted production.
 
 The game is not about surviving on Io.
 
@@ -114,10 +118,11 @@ Legacy is the destination.
 Vision Statement
 ----------------
 Dark Matter: Genesis exists to create an experience where players genuinely believe
-they are leading humanity's first successful colony on Io. Player-facing pitch,
-emotional arc, and WoOS runtime summary: see PRODUCT IDENTITY (5.0) above.
+they are founding humanity's first foothold on Io — commander of a base camp and
+the companions who depend on them. Player-facing pitch, emotional arc, and WoOS
+runtime summary: see PRODUCT IDENTITY (5.0) above.
 
-The colony is not simply a base.
+The base camp is not simply a build menu.
 
 It is humanity's future.
 
@@ -144,15 +149,15 @@ Responsibility
   Nothing happens in isolation.
   Building decisions affect research.
   Research affects expeditions.
-  Expeditions affect colony growth.
-  Colony growth affects the story.
+  Expeditions affect base camp growth.
+  Base camp growth affects the story.
 
 Mastery
   Players should become more knowledgeable instead of simply becoming stronger.
   Knowledge is progression.
   Learning Io is progression.
   Understanding Resonance is progression.
-  Managing a colony is progression.
+  Growing and protecting your base camp is progression.
 
 Hope
   Although Io is dangerous, the game should never become hopeless.
@@ -232,7 +237,8 @@ Player Fantasy
 --------------
 The player is not a hero sent to save the world.
 
-The player is humanity's first successful colony director.
+The player is humanity's first commander on Io — founder of a base camp and
+leader of the companions who survive there.
 
 Every system should reinforce that identity.
 
@@ -374,9 +380,9 @@ Without exploration there is no research.
 Without research there is no advancement.
 
 
-Pillar Two - Build a Living Colony
-----------------------------------
-The colony is the heart of the game.
+Pillar Two - Build a Living Base Camp
+-------------------------------------
+The base camp is the heart of the game.
 
 Players should care about the people they rescue and the structures they create.
 
@@ -554,7 +560,7 @@ Identity recap
 Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
 Echoes; recover Memory Cores for Aether-9 → Resonance Events; Lite Building +
-materialization pipeline for colony camp; survive O2 norm, four environmental
+materialization pipeline for base camp; survive O2 norm, four environmental
 pressures, alien life forms, and AI androids.
 
 Classes (locked names)
@@ -664,8 +670,8 @@ A6. Aether-9, Memory Cores & Resonance Events
 
 A7. Buildings, Lite Building, craft & Building Control Panels
 -------------------------------------------------------------
-  LITE BUILDING (colony camp — shipped direction):
-    Lightweight placement and maintenance loop for colony camp structures
+  LITE BUILDING (base camp — shipped direction):
+    Lightweight placement and maintenance loop for base camp structures
     (shelters, utilities, camp modules) before full materialization pipeline.
     Player spends gathered resources + AC at vendors where applicable; camp
     expands outward from the Command Center anchor.
@@ -721,7 +727,7 @@ A10. Locked decisions checklist
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
   [x] Base 22: sulfur shelter; injury never death from building damage
   [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
-  [x] Lite Building colony camp direction (prototype: placement shell / BCP queues)
+  [x] Lite Building base camp direction (prototype: placement shell / BCP queues)
   [x] Surface threats: alien life + AI androids — design lock (combat AI partial)
   [x] Echo/roster progression is local save only (no marketplace trading)
 
