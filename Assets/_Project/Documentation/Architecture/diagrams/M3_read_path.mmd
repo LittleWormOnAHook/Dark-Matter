@@ -1,0 +1,55 @@
+flowchart LR
+    subgraph legacy [LEGACY managers]
+        PL[Player / SurvivalStats]
+        INV[InventorySystem]
+        QST[QuestManager]
+        EXP[ExposureStatusService]
+        ROSTER[PioneerRosterManager]
+        BUILD[BuildingOperationRegistry]
+        PWR[PowerGenerator scan]
+    end
+
+    subgraph gsProviders [SHIPPED GameState providers]
+        PGP[PlayerGameStateProvider]
+        IGP[InventoryGameStateProvider]
+        MGP[MissionGameStateProvider]
+        WGP[WeatherGameStateProvider]
+        PGP2[PowerGameStateProvider]
+        CGP[ColonyGameStateProvider]
+        RGP[ResearchGameStateProvider]
+        CRGP[CrewGameStateProvider]
+        BGP[BuildingGameStateProvider]
+    end
+
+    GSS[SHIPPED GameStateService]
+    WSP[SHIPPED WorldState providers x7]
+    WSS[SHIPPED WorldStateService]
+
+    PL --> PGP
+    INV --> IGP
+    QST --> MGP
+    EXP --> WGP
+    PWR --> PGP2
+    ROSTER --> CGP
+    ROSTER --> CRGP
+    BUILD --> BGP
+    RGP --> GSS
+
+    PGP --> GSS
+    IGP --> GSS
+    MGP --> GSS
+    WGP --> GSS
+    PGP2 --> GSS
+    CGP --> GSS
+    CRGP --> GSS
+    BGP --> GSS
+
+    GSS --> WSP --> WSS
+
+    classDef shipped fill:#1a4d2e,stroke:#2d8f52,color:#EDE9E4
+    classDef stub fill:#4a3f00,stroke:#D4A017,color:#EDE9E4
+    classDef legacy fill:#1C2A38,stroke:#C02E7A,color:#EDE9E4
+
+    class GSS,WSS shipped
+    class RGP stub
+    class PL,INV,QST,EXP,ROSTER,BUILD,PWR legacy

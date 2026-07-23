@@ -4,6 +4,7 @@
 **Repo path surveyed:** `Assets/_Project/`  
 **Authority for design:** HLA v1.0 + TDB  
 **Authority for progress:** this file + GDD 5.0 Appendix B  
+**Reasoning map (M3/M4):** [World_Engine_Reasoning_Map.md](World_Engine_Reasoning_Map.md)
 
 ---
 
