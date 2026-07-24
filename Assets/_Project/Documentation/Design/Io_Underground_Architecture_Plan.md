@@ -1,11 +1,20 @@
 # Io Underground Architecture — Investigation & Plan
 
-**Status:** Design investigation (July 2026)  
+**Status:** Design investigation — **full-scale main map integration locked July 2026**  
 **Authority:** Supports GDD 5.0 Chapter 3 (World of Io), Appendix A2 (pressures/offsets), A2b (weather).  
 **Companion docs:** `Io_Biome_Exploration_Gameplay_Plan.md` — surface biome verbs, activities, unlock flow  
 **Not yet locked** — review before promoting to GDD Appendix A2c.
 
 ---
+
+## 0. World placement (locked)
+
+Underground strata are **part of the full-scale main map**, not a separate world.
+
+- Breaches, skylights, and collapse sinks on the surface connect to Stratum 1–5 below.  
+- Player **walks, drives (where allowed), or rappels** from colony → surface region → tube → basin → vault on one continuous world graph.  
+- Large setpiece chambers (brood mother, vault puzzle) may use **additive interior cells** for performance; they remain entered from the main-map underground network.  
+- Journal map: surface layer + discovered underground layers on the **same world map**.
 
 ## 1. Design goal
 

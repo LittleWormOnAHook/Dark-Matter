@@ -378,9 +378,10 @@ unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
 
   Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
 
-**Locked (July 2026):** mostly instanced biomes; compact main map with 200–300 m
-mountains, shelter/resource pockets; vehicles (hovercraft + planned 6-wheel buggy)
-deploy from inventory only on path-tagged zones — no ambient world vehicles.
+**Locked (July 2026):** **Full-scale main map** with integrated surface regions (B1–B7) and
+connected underground strata (five layers). Optional additive interior cells for
+heavy setpieces. Mountains ~200–300 m on main map; vehicles deploy from inventory
+only on path-tagged zones.
 
 Promote to Appendix A2d after remaining open questions close.
 

@@ -78,71 +78,80 @@ Any trio can enter any biome; **synergy bonuses** reward matching comp to activi
 
 ### 2.5 World structure & vehicles (locked July 2026)
 
-#### Main map vs instances
+#### Full-scale main map + integrated underground
 
-| Space type | Role | Content |
-|------------|------|---------|
-| **Colony main map** | Persistent hub around Command Center | Small traversable mountains, shelter pockets, volatile pool seeps, mineral/ore nodes, instance gates |
-| **Biome instances** | Majority of exploration | B1–B7 expeditions, activities, nests, wrecks — loaded for mission |
-| **Subsurface instances** | Depth content | Lava tubes, volatile basins, vaults — separate or nested load from surface instance |
+| Layer | Role | Content |
+|-------|------|---------|
+| **Main map (full scale)** | One persistent Io world | Command Center colony, all surface biome **regions** (B1–B7), 200–300 m mountains, shelter pockets, volatile seeps, mineral/ore nodes, weather, wildlife |
+| **Integrated underground** | Same world, below surface | Stratum 1–5 lava tubes, volatile basins, pool chambers, vault mouths — connected via breaches on the main map |
+| **Interior cells** (optional additive load) | Performance / setpiece isolation | Deep brood mothers, large pool basins, Resonance vault interiors — entered through breaches on the main-map underground graph; not a separate “expedition teleport” |
 
-**Locked:** Most gameplay biomes are **instanced**, not one open-world Io. The main map is compact and purposeful — not a full moon surface.
+**Locked (July 2026):** The **main map is full-scale Io** — not a small hub. Surface biomes are **geographic regions** on that map. **Underground areas are part of the same world**, reachable by foot, vehicle (where allowed), and breach points. The player does not leave the main map to “enter Io”; they traverse and descend within it.
 
-#### Main-map terrain — small mountains
+**Earlier “instances” clarification:** Large or memory-heavy **interior chambers** may still load as additive scenes when breaching (tube nest, vault puzzle room). The **world frame** remains one continuous main map + connected subsurface.
 
-- Add **modest mountain areas** on the colony main map (not vast ranges).
-- Target height: **~200–300 m** — tall enough to read as highland, small enough to cross in a reasonable expedition.
-- Slopes must support **on-foot traversal** and **deployed vehicle play** (see buggy below).
-- Mountains provide: vista/wonder beats, scan unlocks, cave breach mouths, ore outcrops, weather shelter lee zones.
+#### World streaming (technical target)
 
-#### Resource pockets on main map
+- **Surface streaming** — biome regions, mountains, colony, POIs by distance.  
+- **Subsurface streaming** — strata activate when player crosses breach thresholds (vertical + tube graph).  
+- **Interior cell load** — optional pocket unload of surface above when deep in Stratum 4–5 or vault.  
+- **Map / Journal** — single world map with surface + discovered underground layers toggled.
 
-Small persistent nodes (regenerate on schedule, not infinite):
+#### Main-map terrain — small mountains (on full-scale map)
 
-- **Shelter** — shallow caves, overhangs, emergency habitat pads  
-- **Volatile seeps** — condensate / brine trickles (not full lakes)  
-- **Minerals & ore** — starter-tier gather before deep instances unlock  
+- **Mountain zones** embedded in the full map (not a separate level) — modest ranges, not planet-scale peaks.  
+- Target height: **~200–300 m** — readable highland, crossable on foot or with Io Buggy.  
+- Slopes support foot traversal and deployed vehicle play where path-tagged.  
+- Mountains provide: vistas, scan unlocks, cave breach mouths into Stratum 1–2, ore outcrops, weather lee zones.
 
-These teach verbs before the player commits to a full biome instance.
+#### Resource pockets (scattered on main map)
+
+Persistent nodes across surface and shallow underground (regenerate on schedule):
+
+- **Shelter** — shallow caves, overhangs, tube camps (Stratum 1)  
+- **Volatile seeps** — condensate / brine trickles; deeper pools in Stratum 2–3  
+- **Minerals & ore** — surface outcrops + underground veins  
+
+Early-game gathering happens on the **same main map** before pushing into distant regions or deep strata.
 
 #### Vehicles — deploy from inventory only
 
-**Locked:** No ambient hovercraft or buggy sitting in the world. All vehicles are **packed inventory items** that the player **unpacks** to deploy and **packs** back when done (prototype hovercraft already supports store-in-inventory via `HovercraftUsable`).
+**Locked:** No ambient hovercraft or buggy in the world. All vehicles are **packed inventory items** — unpack to deploy, pack when done (prototype hovercraft: `HovercraftUsable` store-in-inventory).
 
 | Vehicle | Status | Role |
 |---------|--------|------|
 | **Hovercraft** | Prototype shipped | Fast transit on **flat / path-tagged** surfaces; low environment resistance |
-| **Io Buggy** (6-wheel) | Planned | Environment-resistant; rough terrain, main-map mountains, instance path networks |
+| **Io Buggy** (6-wheel) | Planned | Environment-resistant; mountains, ash roads, highland paths on main map |
 
 **Deploy rules**
 
 1. Player must own packed vehicle in inventory / hotbar.  
-2. Unpack only in **Vehicle Deploy Zones** (flat pad, path surface, or flagged instance entry).  
-3. Some instances allow deploy **inside** on **path-like surfaces** (splines or wide navmesh lanes) — not every chamber.  
-4. Pack before extract if instance rules require (or leave deployed at main-map garage pad — design TBD per instance type).  
-5. **Ion lightning** still punishes exposed metal — vehicles are not immunity.  
+2. Unpack only in **Vehicle Deploy Zones** (flat pad, path surface, breach staging area).  
+3. Underground: deploy only on **path-tagged** tube floors or marked hauler lanes — not every chamber.  
+4. Pack at colony garage pad or before long descents (deep strata often foot-only).  
+5. **Ion lightning** still punishes exposed metal.
 
-**Biome / instance vehicle allowance**
+**Vehicle allowance by region (all on main map)**
 
-| Context | Hovercraft | Io Buggy (6-wheel) |
-|---------|------------|-------------------|
-| Main map flats & paths | Yes | Yes |
-| Main map mountains (200–300 m) | No / risky | Yes (primary design target) |
-| B1 Sulfur Plains instance | Path lanes only | Path lanes only |
+| Region / stratum | Hovercraft | Io Buggy (6-wheel) |
+|------------------|------------|-------------------|
+| Colony flats & paths | Yes | Yes |
+| Mountains (200–300 m) | No / risky | Yes (primary target) |
+| B1 Sulfur Plains | Path lanes only | Path lanes only |
 | B2 Geyser Fields | Rare flat pads | Limited — vent gaps |
 | B3 Ash Flats | Flat corridors | Yes on packed ash roads |
 | B4 Calderas | No | No (foot + heat routing) |
 | B5 Polar Flats | Flat ice crust lanes | Yes between cover points |
-| B6 Highlands instance | Path to breach | Yes — highland roads |
+| B6 Highlands | Path to breach | Yes — highland roads |
 | B7 Ruins | No | No (silent / puzzle routes) |
-| Underground Stratum 1–2 | No | No (except marked underground hauler path — optional late) |
+| Underground Stratum 1–2 | No | Optional hauler path only |
 | Underground Stratum 3+ | No | No |
 
-**Future:** packed **hover-skiff** module for flooded tube paths (see underground plan) — same deploy rules, water-path tag only.
+**Future:** packed **hover-skiff** on water-path tags in flooded tubes (inventory deploy).
 
 ---
 
-## 3. Surface biome roster (locked proposal — 7 biomes)
+## 3. Surface biome roster (locked proposal — 7 regions on main map)
 
 Each biome links to **dominant pressure**, **signature weather**, **primary verbs**, and **subsurface mouth**.
 
@@ -311,21 +320,21 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 ---
 
-## 5. Subsurface ↔ surface pairing
+## 5. Subsurface ↔ surface pairing (same main map)
 
-Surface biomes are **doors**; underground strata are **depth**. One biome can feed multiple strata.
+Surface regions are **geography on the full map**; underground strata are **depth below** that same map. One breach in B6 Highlands can drop into Stratum 2 without a loading screen (streaming) or with a short additive cell load for a large chamber.
 
-| Surface biome | Typical strata | Distinct underground gameplay |
+| Surface region | Typical strata | Distinct underground gameplay |
 |---------------|----------------|------------------------------|
-| B1 Sulfur Plains | 1 | Quick refuge caves; shallow harvest |
+| B1 Sulfur Plains | 1 | Quick refuge tubes; shallow harvest |
 | B2 Geyser Fields | 2 | Timed vent locks; steam navigation |
 | B3 Ash Flats | 1–2 | Ash-choked tubes; low vis navigation |
 | B4 Calderas | 3–4 | Brine basins; heat timer; Basin Mantis |
 | B5 Polar Flats | 2–3 | Condensate pools; rad creep; Void Kelp |
-| B6 Highlands | 1–3 | Hub dungeons; brood tunnels; mapping |
+| B6 Highlands | 1–3 | Hub tunnels; brood dungeons; mapping |
 | B7 Ruin Belt | 5 | Vault puzzles; Aether seeps; story locks |
 
-**Rule:** surface expedition picks **entry**; depth picks **risk/reward**. Deeper ≠ “harder reskin” — new verbs (wade, gas dome, film ambush).
+**Rule:** region picks **where** you enter; depth picks **risk/reward**. Deeper ≠ harder reskin — new verbs (wade, gas dome, film ambush).
 
 ---
 
@@ -370,8 +379,8 @@ Not a hard lock — **exposure without gear** should hurt enough to teach order 
 | Thermal gel / heat tier | B4 rim (not core) |
 | Rad inoculation | B5 relay runs |
 | Portable habitat | B4 eruption windows, B2 vent fields |
-| Packed hovercraft (inventory) | Fast flat/path transit on main map + allowed instances |
-| Io Buggy (6-wheel, inventory) | Main-map mountains, B3/B5/B6 path networks |
+| Packed hovercraft (inventory) | Fast flat/path transit on surface regions |
+| Io Buggy (6-wheel, inventory) | Mountains, B3/B5/B6 path networks on main map |
 | Drill / breach kit | Stratum 2+ reliably |
 | Resonance suit tier | B7, Stratum 5 |
 
@@ -436,10 +445,10 @@ Designed for **single-player commanding a trio**, not co-op.
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
-| **E0** | Biome data SO: pressure profile, verbs, weather weights, instance + vehicle tags | Exposure zones (shipped) |
-| **E1** | Main map blockout: colony hub + 200–300 m mountains + resource pockets | Io terrain blockout |
-| **E1b** | B6 Highlands **instance** + Route/Scan/Shelter verbs | E1 |
-| **E2** | B1 + B2 + activity templates (Recon, Harvest, Rescue) | WeatherDirector sulfur + geyser |
+| **E0** | Biome region data SO: pressure, verbs, weather weights, vehicle tags | Exposure zones (shipped) |
+| **E1** | **Full-scale main map** blockout: colony + B6 region + 200–300 m mountains | Io terrain / streaming plan |
+| **E1b** | Shallow underground (Stratum 1) connected to B6 breaches | E1 |
+| **E2** | B1 + B2 regions + activity templates | WeatherDirector sulfur + geyser |
 | **E3** | B3 + B4 + Timed verb polish | Thermal/volcano HUD |
 | **E4** | B5 + rad relay gameplay | Inoculation loop |
 | **E5** | Underground pairing (Stratum 1–3) | Underground architecture P0–P3 |
@@ -447,18 +456,18 @@ Designed for **single-player commanding a trio**, not co-op.
 | **E7** | Director activity weighting + biome unlock mask | WorldState persistence |
 | **E8** | Io Buggy (6-wheel) deploy/pack + env resistance profile | Vehicle deploy zones on E1/E1b |
 
-**Starts with Io biome pass (B4 #9)** — main map shell first, then instances.
+**Starts with Io biome pass (B4 #9)** — full main map + integrated underground streaming.
 
 ---
 
 ## 12. Open questions
 
-1. ~~**Open world vs instances**~~ — **Locked:** mostly instances; small persistent main-map pockets.  
-2. ~~**Hovercraft biomes**~~ — **Locked:** no ambient vehicles; deploy from inventory on path-tagged zones only.  
+1. ~~**World scale**~~ — **Locked:** full-scale main map with integrated underground; optional additive interior cells for heavy setpieces.  
+2. ~~**Vehicles**~~ — **Locked:** deploy from inventory only on path-tagged zones.  
 3. **Night cycle** — thermal swing meaningful on B3/B5 or static lighting per biome?  
 4. **Player branch** — B4 vs B5 first after mid-game: moral choice or gear-gated only?  
 5. **Echo signal density** — fixed per biome or director-driven scarcity?  
-6. **Pack-on-extract** — must vehicle repack to leave instance, or allow main-map garage staging?
+6. **Streaming budget** — max simultaneous strata depth visible (surface + underground)?
 
 ---
 
@@ -472,7 +481,7 @@ When approved, fold into **GDD Appendix A2d — Io Biome & Exploration Lock**:
 - Activity template grammar
 - Biome × weather × subsurface pairing table
 - Campaign discovery order + gear gates
-- **World structure lock:** main map + instances, 200–300 m mountains, deploy-only vehicles
+- **World structure lock:** full-scale main map + integrated underground, 200–300 m mountains, deploy-only vehicles
 
 ---
 
