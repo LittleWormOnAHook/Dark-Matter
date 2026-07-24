@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Invector
@@ -110,10 +110,17 @@ namespace Invector
 
             UpdateTerrainInfo(footStepObj.terrain);
 
+            if (terrainData == null || terrainCollider == null)
+            {
+                return new float[0];
+            }
+
             // calculate which splat map cell the worldPos falls within (ignoring y)
             var worldPos = footStepObj.sender.position;
             int mapX = (int)(((worldPos.x - terrainPos.x) / terrainData.size.x) * terrainData.alphamapWidth);
             int mapZ = (int)(((worldPos.z - terrainPos.z) / terrainData.size.z) * terrainData.alphamapHeight);
+            mapX = Mathf.Clamp(mapX, 0, Mathf.Max(0, terrainData.alphamapWidth - 1));
+            mapZ = Mathf.Clamp(mapZ, 0, Mathf.Max(0, terrainData.alphamapHeight - 1));
 
             // get the splat data for this cell as a 1x1xN 3d array (where N = number of textures)
             if (!terrainCollider.bounds.Contains(worldPos))
@@ -139,7 +146,7 @@ namespace Invector
             // on the main terrain at this world position.
             float[] mix = GetTextureMix(footStepObj);
 
-            if (mix == null)
+            if (mix == null || mix.Length == 0)
             {
                 return -1;
             }
@@ -197,7 +204,16 @@ namespace Invector
             if (surfaceIndex != -1)
             {
 #if UNITY_2018_3_OR_NEWER
-                var name = (terrainData != null && terrainData.terrainLayers.Length > 0) ? (terrainData.terrainLayers[surfaceIndex]).diffuseTexture.name : "";
+                var name = "";
+                if (terrainData != null &&
+                    terrainData.terrainLayers != null &&
+                    surfaceIndex >= 0 &&
+                    surfaceIndex < terrainData.terrainLayers.Length)
+                {
+                    TerrainLayer layer = terrainData.terrainLayers[surfaceIndex];
+                    if (layer != null && layer.diffuseTexture != null)
+                        name = layer.diffuseTexture.name;
+                }
 #else
                 var name = (terrainData != null && terrainData.splatPrototypes.Length > 0) ? (terrainData.splatPrototypes[surfaceIndex]).texture.name : "";
 #endif

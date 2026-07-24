@@ -1,0 +1,37 @@
+---
+description: Require explicit user approval before deleting Asset Store packs, third-party plugins, or large content folders under Assets/
+alwaysApply: true
+---
+
+# Asset Pack & Package Deletion — Approval Required
+
+**Never** delete, remove from disk, untrack, or `git rm` Asset Store / third-party packages, art packs, plugin folders under `Assets/`, or large content packs **without explicit user approval in the current conversation**.
+
+## What counts
+
+Examples (not exhaustive):
+
+- Synty / Polygon packs: `PolygonTown`, `PolygonNature`, `PolygonSciFiWorlds`, `PolygonMilitary`, etc.
+- Environment packs: `Toon Deserted Temples`, FlatKit, Distant Lands
+- VFX packs: `Hovl Studio` (AAA Projectiles), `WarFX` / JMO Assets
+- Weapon / prop packs under `Assets/` (Futuristic Weapons, ScifiWeaponSeries, etc.)
+- Unity/UPM packages removed via `Packages/manifest.json` or package cache wipe when they own project content
+- Any large third-party folder under `Assets/` that scenes, prefabs, or ScriptableObjects reference
+
+## Before proposing or performing deletion
+
+1. **Stop** — do not delete, `git rm`, or stage removals of these assets.
+2. **Ask the user** for explicit approval in chat.
+3. **Explain breakage risk**, including:
+   - Missing prefabs / pink materials in Pioneer (and other) scenes via broken GUID refs
+   - Broken `ItemData` / weapon projectile and VFX references
+   - Missing mesh, material, audio, or animation dependencies
+4. **Wait** for a clear yes before any delete / git-remove action.
+
+## Allowed without this gate
+
+- Deleting project-owned prototype files the user named for removal
+- Removing empty `.meta` orphans only when the user already approved the related asset cleanup
+- Normal code refactors that do not remove third-party pack folders
+
+If unsure whether a path is a third-party pack, **ask first**.
