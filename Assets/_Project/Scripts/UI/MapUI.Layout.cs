@@ -90,6 +90,7 @@ namespace Project.UI
             UpdateFullMapZoomLabel();
             EnsureMinimapChromeLayout();
             EnsureMinimapPlayerIconCentered();
+            EnsureCompassBuilt();
             EnsureFullMapChromeLayout();
             EnsureFullMapPanHandler();
             ApplySavedLayoutProfiles();
@@ -127,6 +128,12 @@ namespace Project.UI
             Transform existingOverlay = transform.Find("FullMapOverlay");
             if (existingOverlay != null)
                 DestroyUiObject(existingOverlay.gameObject);
+
+            DestroyCompassHud();
+
+            Transform existingInfoPanel = transform.Find("InfoPanel");
+            if (existingInfoPanel != null)
+                DestroyUiObject(existingInfoPanel.gameObject);
 
             ClearMarkerIcons(minimapMarkerIcons);
             ClearMarkerIcons(fullMapMarkerIcons);
@@ -473,16 +480,17 @@ namespace Project.UI
             return button;
         }
 
-        private static TextMeshProUGUI CreateMinimapInfoPanel(Transform minimapParent)
+        private TextMeshProUGUI CreateMinimapInfoPanel(Transform minimapParent)
         {
+            // Parent under MapUI root (not the minimap) so the compass can stack the panel below itself.
             GameObject infoPanel = new GameObject("InfoPanel", typeof(RectTransform));
-            infoPanel.transform.SetParent(minimapParent, false);
+            infoPanel.transform.SetParent(transform, false);
             RectTransform infoRect = infoPanel.GetComponent<RectTransform>();
-            infoRect.anchorMin = new Vector2(0f, 0f);
-            infoRect.anchorMax = new Vector2(1f, 0f);
-            infoRect.pivot = new Vector2(0.5f, 0f);
-            infoRect.sizeDelta = new Vector2(0f, MinimapInfoPanelHeight);
-            infoRect.anchoredPosition = Vector2.zero;
+            infoRect.anchorMin = new Vector2(1f, 1f);
+            infoRect.anchorMax = new Vector2(1f, 1f);
+            infoRect.pivot = new Vector2(1f, 1f);
+            infoRect.sizeDelta = new Vector2(GameplayHudLayout.CompassWidth, MinimapInfoPanelHeight);
+            infoRect.anchoredPosition = GameplayHudLayout.InfoPanelAnchoredPosition;
 
             Image infoBg = infoPanel.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(infoBg);

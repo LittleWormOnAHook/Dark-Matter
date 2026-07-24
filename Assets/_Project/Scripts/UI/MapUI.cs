@@ -185,6 +185,7 @@ namespace Project.UI
             {
                 nextMinimapRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
                 UpdateMinimap();
+                UpdateCompassHeading();
 
                 if (fullMapOpen)
                 {
@@ -200,6 +201,7 @@ namespace Project.UI
             {
                 nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
                 RefreshMarkerIcons();
+                UpdateCompassMarkers();
             }
         }
 
@@ -272,8 +274,11 @@ namespace Project.UI
         private void RefreshMapShellVisibility()
         {
             bool journalOpen = IsJournalOpen();
+            bool minimapVisible = GameSettings.MinimapEnabled && GameSession.HasStarted && !journalOpen;
             if (minimapRoot != null)
-                minimapRoot.SetActive(GameSettings.MinimapEnabled && GameSession.HasStarted && !journalOpen);
+                minimapRoot.SetActive(minimapVisible);
+
+            SetCompassVisible(minimapVisible);
 
             if (fullMapOverlay == null)
                 return;

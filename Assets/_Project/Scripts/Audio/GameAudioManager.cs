@@ -52,11 +52,18 @@ namespace Project.Audio
             sfxPool = new AudioSource[Mathf.Max(1, sfxPoolSize)];
             for (int i = 0; i < sfxPool.Length; i++)
             {
-                AudioSource source = gameObject.AddComponent<AudioSource>();
+                // Each pool entry needs its own transform so concurrent 3D clips can sit at
+                // different world positions. Sources on this manager GO all shared one transform
+                // and teleported the whole audio root — sounding camera/listener-relative.
+                GameObject child = new GameObject($"SfxPool_{i}");
+                child.transform.SetParent(transform, false);
+                AudioSource source = child.AddComponent<AudioSource>();
                 source.playOnAwake = false;
-                source.spatialBlend = profile != null ? profile.sfxSpatialBlend : 1f;
-                source.minDistance = profile != null ? profile.sfxMinDistance : 1f;
-                source.maxDistance = profile != null ? profile.sfxMaxDistance : 22f;
+                float minDist = profile != null ? profile.sfxMinDistance : 1f;
+                float maxDist = profile != null ? profile.sfxMaxDistance : 22f;
+                float blend = profile != null ? profile.sfxSpatialBlend : 1f;
+                GameplayAudioUtility.ConfigureWorldSpatialSource(source, minDist, maxDist);
+                source.spatialBlend = blend;
                 sfxPool[i] = source;
             }
         }
@@ -242,12 +249,16 @@ namespace Project.Audio
                 return;
 
             AudioSource source = GetNextSfxSource();
+            // Move only the pool child — never the GameAudioManager root (music/UI live here).
+            source.transform.SetParent(transform, true);
             source.transform.position = position;
             source.clip = clip;
             source.pitch = pitch;
-            source.spatialBlend = spatialBlendOverride ?? (profile != null ? profile.sfxSpatialBlend : 1f);
-            source.minDistance = profile != null ? profile.sfxMinDistance : 1f;
-            source.maxDistance = profile != null ? profile.sfxMaxDistance : 22f;
+            float blend = spatialBlendOverride ?? (profile != null ? profile.sfxSpatialBlend : 1f);
+            float minDist = profile != null ? profile.sfxMinDistance : 1f;
+            float maxDist = profile != null ? profile.sfxMaxDistance : 22f;
+            GameplayAudioUtility.ConfigureWorldSpatialSource(source, minDist, maxDist);
+            source.spatialBlend = blend;
             source.volume = GameSettings.SfxVolume * volumeScale;
             source.Play();
         }

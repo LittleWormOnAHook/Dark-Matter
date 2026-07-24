@@ -61,8 +61,17 @@ namespace Project.AI
         /// </summary>
         private void HandleDied()
         {
-            if (_culled)
-                SetCulled(false);
+            ForceVisibleForDeathPresentation();
+        }
+
+        /// <summary>
+        /// Un-cull immediately so death systems can bind humanoid bones for ragdoll.
+        /// Safe to call repeatedly; also used by <see cref="EnemyInvectorRagdollBridge"/> before
+        /// <c>LoadBodyPart</c> so distant/spawned enemies don't die with an empty bodyParts list.
+        /// </summary>
+        public void ForceVisibleForDeathPresentation()
+        {
+            SetCulled(false);
         }
 
         private void Update()

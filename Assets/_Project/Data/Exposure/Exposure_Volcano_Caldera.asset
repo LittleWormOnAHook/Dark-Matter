@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Volcano Caldera
   zoneKind: 5
   designerNotes: 
-  effectIntensity: 0.159
+  effectIntensity: 0.231
   radiationPerSecond: 0
   thermalColdPerSecond: 0
   thermalHeatPerSecond: 4
