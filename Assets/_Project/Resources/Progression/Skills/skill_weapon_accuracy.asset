@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33f4772fb7e54c649aee61c03b8d9f75, type: 3}
-  m_Name: skill_blade_training
+  m_Name: skill_weapon_accuracy
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
-  skillId: skill_blade_training
-  displayName: Blade Training
-  description: +2 melee damage per rank for all melee weapons.
-  requiredPlayerLevel: 2
+  skillId: skill_weapon_accuracy
+  displayName: Weapon Accuracy
+  description: +5% accuracy per rank for all ranged weapons.
+  requiredPlayerLevel: 1
   costPerRank: 1
-  maxRank: 3
-  modifierType: 3
-  bonusPercentPerRank: 2
+  maxRank: 5
+  modifierType: 6
+  bonusPercentPerRank: 5
   prerequisiteSkillIds: []

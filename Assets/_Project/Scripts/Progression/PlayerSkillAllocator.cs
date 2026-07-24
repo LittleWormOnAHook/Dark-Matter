@@ -88,6 +88,14 @@ namespace Project.Progression
         public static float GetMeleeDamageFlatBonus() =>
             GetTotalBonusPercent(SkillModifierType.MeleeDamageFlat);
 
+        /// <summary>Flat ranged damage from Marksman Training (all ranged weapons).</summary>
+        public static float GetRangedDamageFlatBonus() =>
+            GetTotalBonusPercent(SkillModifierType.RangedDamageFlat);
+
+        /// <summary>+% weapon accuracy from skill ranks (WeaponAccuracyPercent).</summary>
+        public static float GetWeaponAccuracyBonusPercent() =>
+            GetTotalBonusPercent(SkillModifierType.WeaponAccuracyPercent);
+
         /// <summary>Level-based weapon damage multiplier (+3%/level), applied on top of the flat skill bonus.</summary>
         public static float GetLevelWeaponDamageMultiplier()
         {

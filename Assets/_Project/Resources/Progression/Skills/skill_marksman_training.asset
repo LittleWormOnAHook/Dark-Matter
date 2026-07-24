@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33f4772fb7e54c649aee61c03b8d9f75, type: 3}
-  m_Name: skill_blade_training
+  m_Name: skill_marksman_training
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
-  skillId: skill_blade_training
-  displayName: Blade Training
-  description: +2 melee damage per rank for all melee weapons.
+  skillId: skill_marksman_training
+  displayName: Marksman Training
+  description: +2 ranged damage per rank for all ranged weapons.
   requiredPlayerLevel: 2
   costPerRank: 1
   maxRank: 3
-  modifierType: 3
+  modifierType: 7
   bonusPercentPerRank: 2
   prerequisiteSkillIds: []

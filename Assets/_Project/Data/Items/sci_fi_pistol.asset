@@ -36,19 +36,29 @@ MonoBehaviour:
   invectorWeaponId: vHandgun
   meleeDamage: 10
   meleeDamageRandomRange: 3
+  criticalChance: 0.08
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
-  rangedDamage: 12
+  rangedDamage: 14
   rangedDamageRandomRange: 4
   rangedRange: 32
-  projectileSpeed: 85
-  projectileSpreadDegrees: 2.2
+  projectileSpeed: 125
+  projectileSpreadDegrees: 1.8
+  weaponAccuracy: 70
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.22
+  recoilVertical: 2.75
+  recoilHorizontal: 0.8
+  recoilFireRateScale: 4.5
   fireRate: 3.8
   magazineSize: 12
+  reloadTimeSeconds: 1.6
   defaultAmmoType: 0
   compatibleAmmoTypes:
   - 0
@@ -109,3 +119,9 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: One-handed sci-fi pistol. Hold RMB to aim, LMB to fire.
+
+
+
+
+
+rangedDamage: 14

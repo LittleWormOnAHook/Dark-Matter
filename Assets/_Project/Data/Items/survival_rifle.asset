@@ -37,19 +37,29 @@ MonoBehaviour:
   invectorWeaponId: vAssaultRifle
   meleeDamage: 10
   meleeDamageRandomRange: 3
+  criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
-  rangedDamage: 16
+  rangedDamage: 18
   rangedDamageRandomRange: 4
   rangedRange: 55
-  projectileSpeed: 85
-  projectileSpreadDegrees: 1.2
+  projectileSpeed: 140
+  projectileSpreadDegrees: 0.9
+  weaponAccuracy: 82
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.15
+  recoilVertical: 0.65
+  recoilHorizontal: 0.2
+  recoilFireRateScale: 4.5
   fireRate: 5.5
   magazineSize: 30
+  reloadTimeSeconds: 2.2
   defaultAmmoType: 1
   compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
   defaultAmmoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 3}
@@ -101,3 +111,9 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: Two-handed survival rifle. Hold RMB to aim, LMB to fire.
+
+
+
+
+
+rangedDamage: 18

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 
@@ -376,7 +376,7 @@ namespace Invector.vShooter
         public virtual void ReloadEffect()
         {
 
-            if (reloadSource && reloadClip)
+            if (CanPlayReloadAudio() && reloadClip)
             {
                 reloadSource.Stop();
                 reloadSource.PlayOneShot(reloadClip);
@@ -386,12 +386,30 @@ namespace Invector.vShooter
 
         public virtual void FinishReloadEffect()
         {
-            if (reloadSource && finishReloadClip)
+            if (CanPlayReloadAudio() && finishReloadClip)
             {
                 reloadSource.Stop();
                 reloadSource.PlayOneShot(finishReloadClip);
             }
             onFinishReload.Invoke();
+        }
+
+        /// <summary>
+        /// PlayOneShot throws if the AudioSource component is disabled or its GameObject is inactive
+        /// (common when a holstered/preloaded weapon copy still receives reload callbacks).
+        /// </summary>
+        protected virtual bool CanPlayReloadAudio()
+        {
+            if (reloadSource == null)
+                return false;
+
+            if (!reloadSource.gameObject.activeInHierarchy)
+                return false;
+
+            if (!reloadSource.enabled)
+                reloadSource.enabled = true;
+
+            return true;
         }
 
         protected override float damageMultiplier

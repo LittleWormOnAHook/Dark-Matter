@@ -70,6 +70,9 @@ namespace Project.Interaction
             if (hitCollider == null)
                 return;
 
+            if (item != null && item.itemType == ItemType.MeleeWeapon)
+                isCritical = item.RollCriticalHit();
+
             float damage = item != null ? item.RollMeleeDamage(isCritical) : 8f;
             Vector3 weaponPoint = hitCollider.bounds.center;
             PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(

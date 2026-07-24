@@ -67,7 +67,8 @@ namespace Project.Combat
             if (damageOverride > 0f)
                 return damageOverride;
 
-            return ammoItem != null ? ammoItem.RollRangedDamage() : weapon.RollRangedDamage();
+            // Weapon owns the damage roll. Ammo contributes speed/spread/VFX/status only.
+            return weapon.RollRangedDamage();
         }
 
         private static void ResolveHitscanBeam(

@@ -29,11 +29,19 @@ namespace Project.Companions.Invector
 
             float rolled;
             if (item.IsRangedWeapon)
+            {
+                isCritical = item.RollCriticalHit();
                 rolled = item.RollRangedDamage(isCritical);
+            }
             else if (item.itemType == ItemType.MeleeWeapon)
+            {
+                isCritical = item.RollCriticalHit();
                 rolled = item.RollMeleeDamage(isCritical);
+            }
             else
+            {
                 rolled = ScaleRawDamage(damage);
+            }
 
             return rolled * CompanionDamageMultiplier;
         }

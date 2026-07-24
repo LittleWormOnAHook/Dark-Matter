@@ -50,6 +50,8 @@ namespace Project.UI
                 ItemType.Consumable => "Consumable",
                 ItemType.Resource => "Resource",
                 ItemType.MeleeWeapon => "Melee Weapon",
+                ItemType.RangedWeapon => "Ranged Weapon",
+                ItemType.Ammo => "Ammo",
                 ItemType.Tool => "Tool",
                 ItemType.Quest => "Quest Item",
                 ItemType.Vehicle => "Vehicle",
@@ -59,6 +61,8 @@ namespace Project.UI
             string color = item.itemType switch
             {
                 ItemType.MeleeWeapon => "#E8C547",
+                ItemType.RangedWeapon => "#C02E7A",
+                ItemType.Ammo => "#D4A017",
                 ItemType.Tool => "#6EC1FF",
                 ItemType.Consumable => "#7DDA7D",
                 ItemType.Resource => "#C8A2FF",
@@ -103,16 +107,55 @@ namespace Project.UI
 
         private static void AppendWeaponLines(StringBuilder text, ItemData item)
         {
-            if (item.itemType != ItemType.MeleeWeapon)
+            if (item.itemType == ItemType.MeleeWeapon)
+            {
+                AppendMeleeWeaponLines(text, item);
                 return;
+            }
 
-            text.AppendLine("<color=#A0A8B8>Combat:</color>");
+            if (item.IsRangedWeapon)
+                AppendRangedWeaponLines(text, item);
+        }
+
+        private static void AppendMeleeWeaponLines(StringBuilder text, ItemData item)
+        {
+            text.AppendLine("<color=#A0A8B8>Base Stats:</color>");
             text.AppendLine($"  Grip: {(item.IsTwoHanded ? "Two-Handed" : "One-Handed")}");
             text.AppendLine($"  Damage: {Mathf.RoundToInt(item.meleeDamage)}-{Mathf.RoundToInt(item.meleeDamage + item.meleeDamageRandomRange)}");
+            float effective = item.GetAverageMeleeDamage();
+            text.AppendLine($"  <color=#8C7F75>Effective: ~{Mathf.RoundToInt(effective)} (skills + level)</color>");
+            text.AppendLine($"  Crit Chance: {item.criticalChance * 100f:0.#}%");
             text.AppendLine($"  Crit Multiplier: x{item.criticalDamageMultiplier:0.#}");
             text.AppendLine($"  Range: {item.meleeRange:0.#}m");
             text.AppendLine($"  Cooldown: {item.meleeCooldown:0.##}s");
+            if (item.meleeStaminaCost > 0f)
+                text.AppendLine($"  Stamina Cost: {item.meleeStaminaCost:0.#}");
+            if (item.meleeKnockback > 0f)
+                text.AppendLine($"  Knockback: {item.meleeKnockback:0.#}");
             text.AppendLine($"  Gather Power: {item.gatherPower}");
+        }
+
+        private static void AppendRangedWeaponLines(StringBuilder text, ItemData item)
+        {
+            text.AppendLine("<color=#A0A8B8>Base Stats:</color>");
+            text.AppendLine($"  Grip: {(item.weaponGrip == WeaponGrip.TwoHanded ? "Two-Handed" : "One-Handed")}");
+            text.AppendLine($"  Damage: {Mathf.RoundToInt(item.rangedDamage)}-{Mathf.RoundToInt(item.rangedDamage + item.rangedDamageRandomRange)}");
+            float effective = item.GetAverageRangedDamage();
+            text.AppendLine($"  <color=#8C7F75>Effective: ~{Mathf.RoundToInt(effective)} (skills + level)</color>");
+            text.AppendLine($"  Accuracy: {item.weaponAccuracy:0.#}");
+            float effectiveAcc = item.GetEffectiveAccuracy();
+            if (!Mathf.Approximately(effectiveAcc, item.weaponAccuracy))
+                text.AppendLine($"  <color=#8C7F75>Effective Acc: {effectiveAcc:0.#}</color>");
+            text.AppendLine($"  Spread: {item.projectileSpreadDegrees:0.##}°");
+            text.AppendLine($"  Fire Rate: {item.fireRate:0.#}/s");
+            text.AppendLine($"  Range: {item.rangedRange:0.#}m");
+            text.AppendLine($"  Magazine: {item.magazineSize}");
+            if (item.reloadTimeSeconds > 0f)
+                text.AppendLine($"  Reload: {item.reloadTimeSeconds:0.##}s");
+            if (item.recoilVertical > 0.01f || item.recoilHorizontal > 0.01f)
+                text.AppendLine($"  Recoil: {item.recoilVertical:0.##}↑ / ±{item.recoilHorizontal:0.##}");
+            text.AppendLine($"  Projectile Speed: {item.projectileSpeed:0.#}");
+            text.AppendLine($"  <color=#8C7F75>Ammo modifies speed/spread/VFX/status — not base damage.</color>");
         }
 
         private static void AppendToolLines(StringBuilder text, ItemData item)

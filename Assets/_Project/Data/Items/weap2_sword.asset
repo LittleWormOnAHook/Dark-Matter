@@ -36,10 +36,13 @@ MonoBehaviour:
   invectorWeaponId: 
   meleeDamage: 18
   meleeDamageRandomRange: 10
+  criticalChance: 0.12
   criticalDamageMultiplier: 3.5
   meleeRange: 2.6
   meleeCooldown: 0.55
   attackAnimationSpeed: 0
+  meleeStaminaCost: 8
+  meleeKnockback: 1.5
   gatherPower: 1
   attackTrigger: Attack
   rangedDamage: 14
@@ -84,3 +87,7 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 
+
+
+
+meleeDamage: 18

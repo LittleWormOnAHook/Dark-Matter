@@ -27,7 +27,11 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
     private float rangedDamage = 14f;
     private float rangedDamageRandomRange = 4f;
     private float rangedRange = 45f;
-    private float projectileSpeed = 85f;
+    private float projectileSpeed = 120f;
+    private float projectileSpreadDegrees = 1.5f;
+    private float weaponAccuracy = 75f;
+    private float closeRangeFullAccuracyDistance = 12f;
+    private float closeRangeSpreadScale = 0.2f;
     private float projectileGravityScale;
     private float splashRadius;
     private float splashDamageFalloff = 0.25f;
@@ -96,11 +100,28 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         rangedRange = EditorGUILayout.FloatField("Range", rangedRange);
         using (new EditorGUI.DisabledScope(isHitscanBeam))
         {
-            projectileSpeed = EditorGUILayout.FloatField("Projectile Speed", projectileSpeed);
+            projectileSpeed = EditorGUILayout.FloatField(
+                new GUIContent("Projectile Speed", "Travel velocity (m/s). Primary speed knob for traveling ammo."),
+                projectileSpeed);
             projectileGravityScale = EditorGUILayout.FloatField(
                 new GUIContent("Gravity Scale", "0 = perfectly straight flight. Sci-fi energy ammo usually stays at 0."),
                 projectileGravityScale);
         }
+
+        GUILayout.Space(6);
+        GUILayout.Label("Accuracy / Spread", EditorStyles.boldLabel);
+        projectileSpreadDegrees = EditorGUILayout.FloatField(
+            new GUIContent("Spread Degrees", "Base cone before accuracy / close-range modifiers."),
+            projectileSpreadDegrees);
+        weaponAccuracy = EditorGUILayout.Slider(
+            new GUIContent("Weapon Accuracy", "0-100. Higher reduces effective cone spread. Skill bonuses add on top."),
+            weaponAccuracy, 0f, 100f);
+        closeRangeFullAccuracyDistance = EditorGUILayout.FloatField(
+            new GUIContent("Close Range Dist (m)", "Within this distance to aim point, spread scales toward Close Spread Scale."),
+            closeRangeFullAccuracyDistance);
+        closeRangeSpreadScale = EditorGUILayout.Slider(
+            new GUIContent("Close Spread Scale", "Point-blank spread multiplier (0 = perfect, 1 = full)."),
+            closeRangeSpreadScale, 0f, 1f);
 
         GUILayout.Space(10);
         GUILayout.Label("Splash / AoE", EditorStyles.boldLabel);
@@ -231,6 +252,10 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         ammoItem.rangedDamageRandomRange = rangedDamageRandomRange;
         ammoItem.rangedRange = rangedRange;
         ammoItem.projectileSpeed = projectileSpeed;
+        ammoItem.projectileSpreadDegrees = projectileSpreadDegrees;
+        ammoItem.weaponAccuracy = weaponAccuracy;
+        ammoItem.closeRangeFullAccuracyDistance = closeRangeFullAccuracyDistance;
+        ammoItem.closeRangeSpreadScale = closeRangeSpreadScale;
         ammoItem.projectileGravityScale = projectileGravityScale;
         ammoItem.isHitscanBeam = isHitscanBeam;
         ammoItem.splashRadius = splashRadius;
