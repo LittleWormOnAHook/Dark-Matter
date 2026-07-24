@@ -186,6 +186,9 @@ namespace Invector
         /// <param name="footStepObject"></param>
         public override void StepOnTerrain(FootStepObject footStepObject)
         {
+            if (footStepObject == null || footStepObject.sender == null)
+                return;
+
             if (currentStep != null && currentStep == footStepObject.sender && _useTriggerEnter)
             {
                 return;
@@ -197,7 +200,16 @@ namespace Invector
             if (surfaceIndex != -1)
             {
 #if UNITY_2018_3_OR_NEWER
-                var name = (terrainData != null && terrainData.terrainLayers.Length > 0) ? (terrainData.terrainLayers[surfaceIndex]).diffuseTexture.name : "";
+                var name = "";
+                if (terrainData != null &&
+                    terrainData.terrainLayers != null &&
+                    surfaceIndex >= 0 &&
+                    surfaceIndex < terrainData.terrainLayers.Length)
+                {
+                    TerrainLayer layer = terrainData.terrainLayers[surfaceIndex];
+                    if (layer != null && layer.diffuseTexture != null)
+                        name = layer.diffuseTexture.name;
+                }
 #else
                 var name = (terrainData != null && terrainData.splatPrototypes.Length > 0) ? (terrainData.splatPrototypes[surfaceIndex]).texture.name : "";
 #endif

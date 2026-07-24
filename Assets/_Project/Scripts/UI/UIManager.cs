@@ -722,12 +722,26 @@ namespace Project.UI
             if (piRewardPopupPrefab != null && popupParent != null)
             {
                 GameObject popup = Instantiate(piRewardPopupPrefab, popupParent);
+                RectTransform popupRect = popup.transform as RectTransform;
+                if (popupRect != null)
+                {
+                    popupRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    popupRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    popupRect.pivot = new Vector2(0.5f, 0.5f);
+                    popupRect.anchoredPosition = GameplayHudLayout.MessageToastAnchoredPosition;
+                }
+
                 TextMeshProUGUI txt = popup.GetComponentInChildren<TextMeshProUGUI>();
                 if (txt != null)
                     txt.text = $"{amountLine}\n{source}";
 
                 if (popup.GetComponent<PiRewardPopup>() == null)
                     StartCoroutine(FadeAndDestroyPopup(popup));
+            }
+            else
+            {
+                // Fallback when reward prefab is not wired — still surface center-screen feedback.
+                PickupToastUI.Show(string.IsNullOrWhiteSpace(source) ? amountLine : $"{amountLine}  ({source})");
             }
         }
 

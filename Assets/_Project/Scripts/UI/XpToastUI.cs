@@ -49,11 +49,7 @@ namespace Project.UI
             canvasRoot = canvasRootTransform;
 
             toastRect = transform as RectTransform;
-            toastRect.anchorMin = new Vector2(1f, 1f);
-            toastRect.anchorMax = new Vector2(1f, 1f);
-            toastRect.pivot = new Vector2(1f, 1f);
-            restAnchoredPosition = GameplayHudLayout.XpToastAnchoredPosition;
-            toastRect.anchoredPosition = restAnchoredPosition;
+            ApplyToastAnchor();
             toastRect.sizeDelta = new Vector2(GameplayHudLayout.ToastWidth, 42f);
 
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -75,7 +71,7 @@ namespace Project.UI
             }
 
             label.fontSize = 22f;
-            label.alignment = TextAlignmentOptions.TopRight;
+            label.alignment = TextAlignmentOptions.Center;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
         }
@@ -94,9 +90,9 @@ namespace Project.UI
         private void ApplyToastAnchor()
         {
             restAnchoredPosition = GameplayHudLayout.XpToastAnchoredPosition;
-            toastRect.anchorMin = new Vector2(1f, 1f);
-            toastRect.anchorMax = new Vector2(1f, 1f);
-            toastRect.pivot = new Vector2(1f, 1f);
+            toastRect.anchorMin = new Vector2(0.5f, 0.5f);
+            toastRect.anchorMax = new Vector2(0.5f, 0.5f);
+            toastRect.pivot = new Vector2(0.5f, 0.5f);
             toastRect.anchoredPosition = restAnchoredPosition;
         }
 
@@ -105,9 +101,9 @@ namespace Project.UI
             const float slideInDuration = 0.32f;
             const float holdDuration = 2.1f;
             const float fadeOutDuration = 0.32f;
-            const float slideDistance = 36f;
+            const float slideDistance = 28f;
 
-            Vector2 startPosition = restAnchoredPosition + new Vector2(slideDistance, 0f);
+            Vector2 startPosition = restAnchoredPosition + new Vector2(0f, -slideDistance);
             toastRect.anchoredPosition = startPosition;
             canvasGroup.alpha = 0f;
 
@@ -132,7 +128,7 @@ namespace Project.UI
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / fadeOutDuration);
                 canvasGroup.alpha = 1f - t;
-                toastRect.anchoredPosition = restAnchoredPosition + new Vector2(t * 12f, 0f);
+                toastRect.anchoredPosition = restAnchoredPosition + new Vector2(0f, t * 18f);
                 yield return null;
             }
 

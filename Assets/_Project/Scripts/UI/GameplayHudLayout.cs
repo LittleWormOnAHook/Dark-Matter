@@ -44,23 +44,21 @@ namespace Project.UI
                 CompassAnchoredPosition.x,
                 CompassAnchoredPosition.y - CompassTotalHeight - InfoPanelGapBelowCompass);
 
-        public static Vector2 PickupToastAnchoredPosition =>
-            new Vector2(
-                -MinimapEdgeInset,
-                -(MinimapEdgeInset + MinimapTotalHeight + CompassTotalHeight + InfoPanelGapBelowCompass + MinimapInfoPanelHeight + ToastGapBelowMinimap));
+        // --- Center-screen feedback toasts (pickup / XP / messages). ---
+        public const float CenterToastY = 36f;
+        public const float XpToastGapBelowPickup = 8f;
+        public const float AchievementToastGapBelowXp = 10f;
 
-        public const float XpToastGapBelowPickup = 6f;
+        public static Vector2 PickupToastAnchoredPosition =>
+            new Vector2(0f, CenterToastY);
 
         public static Vector2 XpToastAnchoredPosition =>
-            new Vector2(
-                PickupToastAnchoredPosition.x,
-                PickupToastAnchoredPosition.y - 48f - XpToastGapBelowPickup);
-
-        public const float AchievementToastGapBelowXp = 6f;
+            new Vector2(0f, CenterToastY - 48f - XpToastGapBelowPickup);
 
         public static Vector2 AchievementToastAnchoredPosition =>
-            new Vector2(
-                XpToastAnchoredPosition.x,
-                XpToastAnchoredPosition.y - 42f - AchievementToastGapBelowXp);
+            new Vector2(0f, CenterToastY - 48f - XpToastGapBelowPickup - 52f - AchievementToastGapBelowXp);
+
+        public static Vector2 MessageToastAnchoredPosition =>
+            PickupToastAnchoredPosition;
     }
 }

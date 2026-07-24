@@ -87,10 +87,10 @@ namespace Project.UI
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
             popupRect = transform as RectTransform;
-            popupRect.anchorMin = new Vector2(0.5f, 1f);
-            popupRect.anchorMax = new Vector2(0.5f, 1f);
-            popupRect.pivot = new Vector2(0.5f, 1f);
-            restAnchoredPosition = new Vector2(0f, -140f);
+            popupRect.anchorMin = new Vector2(0.5f, 0.5f);
+            popupRect.anchorMax = new Vector2(0.5f, 0.5f);
+            popupRect.pivot = new Vector2(0.5f, 0.5f);
+            restAnchoredPosition = GameplayHudLayout.AchievementToastAnchoredPosition;
             popupRect.anchoredPosition = restAnchoredPosition;
             popupRect.sizeDelta = new Vector2(520f, 0f);
 
@@ -102,9 +102,9 @@ namespace Project.UI
             GameObject card = new GameObject("Card", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(VerticalLayoutGroup));
             card.transform.SetParent(transform, false);
             RectTransform cardRect = card.GetComponent<RectTransform>();
-            cardRect.anchorMin = new Vector2(0.5f, 1f);
-            cardRect.anchorMax = new Vector2(0.5f, 1f);
-            cardRect.pivot = new Vector2(0.5f, 1f);
+            cardRect.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRect.pivot = new Vector2(0.5f, 0.5f);
             cardRect.anchoredPosition = Vector2.zero;
             cardRect.sizeDelta = new Vector2(520f, 0f);
 
@@ -254,7 +254,7 @@ namespace Project.UI
             const float fadeOutDuration = 0.36f;
             const float slideDistance = 48f;
 
-            Vector2 startPosition = restAnchoredPosition + new Vector2(0f, slideDistance);
+            Vector2 startPosition = restAnchoredPosition + new Vector2(0f, -slideDistance);
             popupRect.anchoredPosition = startPosition;
             canvasGroup.alpha = 0f;
 
