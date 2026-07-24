@@ -66,6 +66,14 @@ namespace Project.Vehicles
         public float followHeight = 4.5f;
         public float followLookAhead = 6f;
         public float scrollDistanceStep = 2f;
+        [Tooltip("How quickly the chase cam orbits when the craft yaws. Lower = subtler aircraft-style lag.")]
+        public float followHeadingSmooth = 2.2f;
+        [Tooltip("How quickly the chase cam position catches the desired orbit point.")]
+        public float followPositionSmooth = 3.5f;
+        [Tooltip("How quickly the chase cam look catches the look target. Keeps horizon level (no bank).")]
+        public float followLookSmooth = 4f;
+        [Tooltip("Scales lateral turbulence on the chase cam only (0 = none). Vertical still uses full sample.")]
+        [Range(0f, 1f)] public float followLateralTurbulenceScale = 0.12f;
 
         [Header("Turret")]
         [Tooltip("Max yaw/pitch offset from craft forward (degrees).")]

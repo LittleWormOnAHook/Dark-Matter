@@ -75,6 +75,7 @@ namespace Project.UI
 
         private readonly Button[] pioneerSlotButtons = new Button[BuildingOperationRegistry.MaxAssignedPioneers];
         private readonly TextMeshProUGUI[] pioneerSlotLabels = new TextMeshProUGUI[BuildingOperationRegistry.MaxAssignedPioneers];
+        private TextMeshProUGUI pioneerAssignmentHintText;
 
         private Transform productionListParent;
         private TextMeshProUGUI productionPausedOverlay;

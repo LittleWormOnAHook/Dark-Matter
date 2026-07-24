@@ -48,6 +48,8 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.PetPrefabCreatorFromSelection, "Pet creator pre-filled from selection"),
                 (SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, "Fox cub pet prefab, definition, and icon"),
                 (SurvivalPioneerEditorMenus.ExposureZonePrefabCreator, "Exposure zone profile + trigger prefab with hazards and mitigation"),
+                (SurvivalPioneerEditorMenus.CameraShakeEmitterCreator, "Camera shake emitters: explosion, continuous, pulse"),
+                (SurvivalPioneerEditorMenus.CameraShakeEmitterCreateAllPresets, "Batch-create all camera shake emitter prefabs"),
                 (SurvivalPioneerEditorMenus.RecipePrefabCreator, "World recipe scroll/book pickup prefabs for existing recipes"),
                 (SurvivalPioneerEditorMenus.InventorySlotPrefab, "Inventory slot UI prefab"),
             });

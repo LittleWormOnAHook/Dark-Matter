@@ -1,0 +1,44 @@
+flowchart TB
+    WSS[SHIPPED WorldStateSnapshot]
+
+    ORCH[SHIPPED DirectorOrchestrator]
+
+    SD[STUB StoryDirector]
+    SimD[STUB SimulationDirector partial]
+    MD[STUB MissionDirector]
+    WD[STUB WeatherDirector partial]
+    ED[STUB EconomyDirector]
+    XD[STUB ExperienceDirector]
+    EvD[STUB EventDirector]
+
+    WCA[SHIPPED WeatherCommandServiceAdapter]
+    SCA[SHIPPED SimulationCommandServiceAdapter]
+
+    HUD[LEGACY EnvironmentalCrisisHudMode]
+    ROSTER[LEGACY PioneerRosterManager]
+    FTR[LEGACY FacilityTaskRunner]
+
+    COMMS[PLANNED Communications Runtime]
+
+    WSS --> ORCH
+    ORCH --> SD --> SimD --> MD --> WD --> ED --> XD --> EvD
+
+    WD ==>|storm phase| WCA
+    SimD ==>|incident| SCA
+
+    WCA ==> HUD
+    SCA ==> ROSTER
+    HUD -.->|pause when crisis| FTR
+
+    XD -.->|silence/density intents| COMMS
+    SD -.->|quest intents| COMMS
+
+    classDef shipped fill:#1a4d2e,stroke:#2d8f52,color:#EDE9E4
+    classDef stub fill:#4a3f00,stroke:#D4A017,color:#EDE9E4
+    classDef planned fill:#2a2a3a,stroke:#4A4A5A,color:#8C7F75,stroke-dasharray:5 5
+    classDef legacy fill:#1C2A38,stroke:#C02E7A,color:#EDE9E4
+
+    class WSS,ORCH,WCA,SCA shipped
+    class SD,SimD,MD,WD,ED,XD,EvD stub
+    class COMMS planned
+    class HUD,ROSTER,FTR legacy

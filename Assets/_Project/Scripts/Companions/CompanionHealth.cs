@@ -73,6 +73,27 @@ namespace Project.Companions
                 HandleDeath();
         }
 
+        public void ApplyHeal(float amount)
+        {
+            if (amount <= 0f || IsDead)
+                return;
+
+            float previous = CurrentHealth;
+            CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
+            if (Mathf.Approximately(CurrentHealth, previous))
+                return;
+
+            NotifyHealthChanged();
+        }
+
+        public void ApplyHealPercent(float percent)
+        {
+            if (percent <= 0f || IsDead)
+                return;
+
+            ApplyHeal(maxHealth * Mathf.Clamp01(percent));
+        }
+
         /// <summary>
         /// IDamageable entry point so the shared CombatProjectile (unified player/companion/enemy
         /// projectile pipeline) can hit and damage companions directly, not just the Invector

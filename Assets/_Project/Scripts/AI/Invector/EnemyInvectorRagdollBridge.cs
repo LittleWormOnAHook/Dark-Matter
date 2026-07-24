@@ -85,6 +85,7 @@ namespace Project.AI.Invector
             AbortHitStaggerCoroutine();
             _isHitStaggerActive = false;
             PauseAiLocomotion(false);
+            PrepareAnimatorForBodyPartLoad();
             EnsureBodyPartsLoaded();
             if (_ragdoll != null)
             {
@@ -167,13 +168,42 @@ namespace Project.AI.Invector
             _ragdoll.keepRagdolled = true;
             _ragdoll.ignoreGetUpAnimation = true;
 
-            // Reload body parts immediately before activation. Guarantees the ragdoll has its bones
-            // even if the spawn-time load lost a timing race; warns if the rig has no usable ragdoll.
+            // Distance culling can leave Animator disabled (empty bodyParts). Un-cull and reload
+            // before ActivateRagdoll — otherwise setKinematic iterates nothing and the corpse freezes.
+            PrepareAnimatorForBodyPartLoad();
+            if (!EnsureBodyPartsLoaded())
+            {
+                StartCoroutine(ActivateCorpseRagdollWhenBodyPartsReady(damage));
+                return;
+            }
+
+            vDamage corpseDamage = BuildCorpseDamage(damage);
+            _ragdoll.ActivateRagdoll(corpseDamage);
+            StartCoroutine(SettleCorpseVelocities());
+        }
+
+        private IEnumerator ActivateCorpseRagdollWhenBodyPartsReady(vDamage damage)
+        {
+            PrepareAnimatorForBodyPartLoad();
+
+            int guard = 0;
+            while (!EnsureBodyPartsLoaded() && guard < 30)
+            {
+                guard++;
+                PrepareAnimatorForBodyPartLoad();
+                yield return null;
+            }
+
+            if (_ragdoll == null || _controller == null || IsCorpseRagdolled)
+                yield break;
+
             if (!EnsureBodyPartsLoaded())
             {
                 Debug.LogWarning(
-                    $"{name}: ragdoll body parts unavailable at death (humanoid avatar not bound or no ragdoll rig); corpse may not ragdoll.",
+                    $"{name}: ragdoll body parts unavailable at death after retry " +
+                    "(humanoid avatar not bound, animator culled, or no ragdoll rig); corpse may not ragdoll.",
                     this);
+                yield break;
             }
 
             vDamage corpseDamage = BuildCorpseDamage(damage);
@@ -323,10 +353,12 @@ namespace Project.AI.Invector
             // Retry until the humanoid avatar is bound so bodyParts is never left empty at spawn.
             // Without this, an enemy instantiated before its animator initialized would freeze on
             // death instead of ragdolling. Cap the retries so we never spin forever on a bad rig.
+            // Re-enable Animator each attempt if distance culling turned it off mid-window.
             int guard = 0;
             while (!EnsureBodyPartsLoaded() && guard < 120)
             {
                 guard++;
+                EnsureAnimatorEnabledForBodyPartLoad();
                 yield return null;
             }
         }
@@ -345,13 +377,54 @@ namespace Project.AI.Invector
 
             _ragdoll.LoadBodyPart();
             EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
-            return true;
+            return HasLoadedBodyParts();
+        }
+
+        private bool HasLoadedBodyParts()
+        {
+            if (_ragdoll == null)
+                return false;
+
+            // bodyParts is a private List on vRagdoll; count > 0 means LoadBodyPart succeeded.
+            System.Reflection.FieldInfo field = typeof(vRagdoll).GetField(
+                "bodyParts",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            if (field?.GetValue(_ragdoll) is ICollection collection)
+                return collection.Count > 0;
+
+            return AnimatorHipsReady();
+        }
+
+        /// <summary>
+        /// Distance-culled enemies keep Animator disabled; hips then fail isHuman/GetBoneTransform
+        /// checks and LoadBodyPart never fills bodyParts. Force visibility + animator on before load.
+        /// </summary>
+        private void PrepareAnimatorForBodyPartLoad()
+        {
+            HumanoidPerformanceController performance = GetComponent<HumanoidPerformanceController>();
+            performance?.ForceVisibleForDeathPresentation();
+            EnsureAnimatorEnabledForBodyPartLoad();
+        }
+
+        private void EnsureAnimatorEnabledForBodyPartLoad()
+        {
+            Animator animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
+            if (animator != null && !animator.enabled)
+                animator.enabled = true;
         }
 
         private bool AnimatorHipsReady()
         {
             Animator animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
-            return animator != null && animator.isHuman && animator.GetBoneTransform(HumanBodyBones.Hips) != null;
+            if (animator == null)
+                return false;
+
+            if (!animator.enabled)
+                animator.enabled = true;
+
+            return animator.isHuman && animator.GetBoneTransform(HumanBodyBones.Hips) != null;
         }
 
         /// <summary>
@@ -453,19 +526,27 @@ namespace Project.AI.Invector
 
         private IEnumerator SettleCorpseVelocities()
         {
-            for (int i = 0; i < 3; i++)
+            // Only clamp extreme bone speeds left after root-velocity inheritance — do not zero
+            // velocities (that freezes the corpse mid-air and looks like "no ragdoll").
+            for (int i = 0; i < 2; i++)
                 yield return new WaitForFixedUpdate();
 
+            const float maxBoneSpeed = 14f;
             Rigidbody rootBody = GetComponent<Rigidbody>();
             Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
             for (int i = 0; i < bodies.Length; i++)
             {
                 Rigidbody body = bodies[i];
-                if (body == null || body == rootBody)
+                if (body == null || body == rootBody || body.isKinematic)
                     continue;
 
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                Vector3 velocity = body.linearVelocity;
+                if (velocity.sqrMagnitude > maxBoneSpeed * maxBoneSpeed)
+                    body.linearVelocity = velocity.normalized * maxBoneSpeed;
+
+                Vector3 angular = body.angularVelocity;
+                if (angular.sqrMagnitude > 80f)
+                    body.angularVelocity = angular.normalized * Mathf.Sqrt(80f);
             }
         }
     }

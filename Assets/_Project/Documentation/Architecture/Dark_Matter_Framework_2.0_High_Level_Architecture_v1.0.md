@@ -348,7 +348,7 @@ Audio Framework (music, SFX, radio DSP, mix)
 **Dependencies:** Core, GameState/WorldState (read-only display)  
 **Future expansion:** Adaptive music from Experience estimated stress
 
-**Current state:** `Features/Communications/`, `Scripts/UI/`, `Scripts/Audio/`
+**Current state:** `Scripts/UI/`, `Scripts/Audio/`; Communications Documentation only (no Runtime C# yet).
 
 **Rule:** Communications is **not** Intelligence. It presents what Intelligence and Experience authorize.
 
@@ -430,7 +430,7 @@ Audio Framework (music, SFX, radio DSP, mix)
 
 **Dependencies:** Presentation (Communications), WorldState, Intelligence (AIDirector future)
 
-**Current state:** Communications Phases 6–8; Phase 9+ roadmap.
+**Current state:** Communications docs under `Features/Communications/`; Runtime Phases 0–8 **not on disk**. Phase 9+ LLM deferred.
 
 ---
 
@@ -849,22 +849,24 @@ Every feature — framework module, game system, editor tool, or content pipelin
 
 ---
 
-# Appendix A — Current implementation map (July 2026)
+# Appendix A — Current implementation map (July 2026; disk-corrected July 22)
 
-| HLA pillar / layer | Status | Location |
-|--------------------|--------|----------|
+| HLA pillar / layer | Status (disk) | Location |
+|--------------------|---------------|----------|
 | Core | Shipped (legacy) | `Scripts/Core/`, `Scripts/Managers/` |
 | Gameplay | Shipped (legacy) | `Scripts/{Player,Combat,...}/` |
-| World | Partial | `Scripts/Map/`, `Scripts/Survival/` |
+| World | Partial | `Scripts/Map/`, `Scripts/Survival/Exposure/` |
 | Simulation | Partial | Roster, facilities, queues |
-| Intelligence | Planned | `Features/Directors/` (stub) |
-| Experience | Planned | `Features/Experience/` (stub) |
-| Presentation | Partial | `Features/Communications/`, `Scripts/UI/`, `Scripts/Audio/` |
-| GameState API | **Shipped** | `Features/GameState/` |
-| WorldState | Planned | `Features/WorldState/` |
-| Aether-9 | Flag only | Comms advisory unlock |
-| Generation | Not started | Designed §10 |
+| Intelligence | Designed — not on disk | Planned `Features/Directors/` |
+| Experience | Designed — not on disk | Planned `Features/Experience/` |
+| Presentation | Partial | `Scripts/UI/`, `Scripts/Audio/`; Communications **docs only** |
+| GameState API | Designed — not on disk | Planned `Features/GameState/` |
+| WorldState | Designed — not on disk | Planned `Features/WorldState/` |
+| Aether-9 | Planned | Flag / story — no Features module yet |
+| Generation | Partial | Legacy `EchoGenerator` only; `Features/Generation/` not started |
 | Editor | Strong | `Assets/_Project/Editor/` |
+
+Progress truth: [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md) · GDD 5.0 Appendix B.
 
 ---
 
@@ -880,6 +882,7 @@ Every feature — framework module, game system, editor tool, or content pipelin
 **Changelog:**
 
 - **v1.0** — Initial ratification. Living World Architecture. WoOS stack: World → Simulation → Intelligence → Experience → Presentation → Player. Experience Framework with silence, density, player emotional estimation. Aether-9 positioned in Intelligence layer. Presentation layer (Communications + UI + Audio). Design Pillars including Believability and Meaningful Agency.
+- **Appendix A disk correction (July 22, 2026)** — Implementation map updated: GameState / Directors / Communications Runtime marked designed-not-on-disk. HLA body remains frozen; see World_Engine_Disk_Status.md.
 
 ---
 

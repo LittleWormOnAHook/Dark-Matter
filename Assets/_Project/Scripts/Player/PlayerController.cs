@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Project.Data;
 using ECM2;
+using Project.CameraFx;
 using Project.Core;
 using Project.Interaction;
 using Project.Player.Invector;
@@ -191,6 +192,7 @@ namespace Project.Player
         {
             GameSession.GameStarted += HandleGameStarted;
             PlayerReference.Register(transform, GameplayCamera);
+            EnsureCameraShakeReady();
         }
 
         private void OnDisable()
@@ -202,10 +204,13 @@ namespace Project.Player
         private void HandleGameStarted()
         {
             EnsureGameplayInputReady();
+            EnsureCameraShakeReady();
         }
 
         private void Start()
         {
+            EnsureCameraShakeReady();
+
             if (UsesInvectorMotor())
             {
                 if (GameSession.HasStarted)
@@ -409,6 +414,23 @@ namespace Project.Player
                 playerInput.enabled = true;
 
             ApplyCursorState();
+        }
+
+        /// <summary>
+        /// Boots the trauma shake hub and binds a listener to the active gameplay camera.
+        /// Retries when the Invector camera is not ready yet on first OnEnable.
+        /// </summary>
+        public void EnsureCameraShakeReady()
+        {
+            CameraShakeService.EnsureExists();
+            Camera cam = GameplayCamera;
+            if (cam == null)
+                cam = Camera.main;
+
+            if (cam == null)
+                return;
+
+            CameraShakeListener.EnsureOn(cam);
         }
 
         /// <summary>

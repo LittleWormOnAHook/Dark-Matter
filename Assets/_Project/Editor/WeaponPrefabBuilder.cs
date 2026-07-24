@@ -270,9 +270,12 @@ public static class WeaponPrefabBuilder
         {
             item.meleeDamage = 28f;
             item.meleeDamageRandomRange = 12f;
+            item.criticalChance = 0.14f;
             item.criticalDamageMultiplier = 3.5f;
             item.meleeRange = 3.4f;
             item.meleeCooldown = 0.85f;
+            item.meleeStaminaCost = 14f;
+            item.meleeKnockback = 4f;
             item.gatherPower = 2;
             item.swingEulerAngles = Vector3.zero;
             return;
@@ -280,9 +283,12 @@ public static class WeaponPrefabBuilder
 
         item.meleeDamage = 18f;
         item.meleeDamageRandomRange = 8f;
+        item.criticalChance = 0.12f;
         item.criticalDamageMultiplier = 2.5f;
         item.meleeRange = 2.6f;
         item.meleeCooldown = 0.55f;
+        item.meleeStaminaCost = 8f;
+        item.meleeKnockback = 1.5f;
         item.gatherPower = 1;
         item.swingEulerAngles = new Vector3(-90f, 0f, 0f);
     }

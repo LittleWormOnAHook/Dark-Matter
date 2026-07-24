@@ -14,6 +14,7 @@
 - **`EnemyRegistry`** — ScriptableObject catalog via Resources.
 - **`CompanionCombatCoordinator`** — trio attack scheduling (sequential/paired/staggered).
 - **Invector enemy bridges** — parallel to player pattern; reusable setup utilities in Editor.
+- **Weapon base stats** — see [`Combat_Weapon_Base_Stats.md`](../Combat_Weapon_Base_Stats.md) (melee/ranged bases, category skills, weapon-owned damage).
 
 ---
 

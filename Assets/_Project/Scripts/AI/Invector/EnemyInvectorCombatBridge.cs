@@ -370,17 +370,24 @@ namespace Project.AI.Invector
             Vector3 direction = aimPoint - muzzle.position;
             if (direction.sqrMagnitude < 0.0001f)
                 direction = muzzle.forward;
+            float aimDistance = direction.magnitude;
             direction.Normalize();
 
             ItemData ammoItem = ResolveEnemyAmmoItem(weapon);
             float damage = ResolveRangedProjectileDamage(weapon, ammoItem);
+            float spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+                weapon,
+                ammoItem,
+                isAiming: true,
+                aimDistance,
+                applyPlayerSkillBonus: false);
             CombatProjectileSpawner.Spawn(
                 gameObject,
                 muzzle,
                 weapon,
                 ammoItem,
                 direction,
-                weapon.projectileSpreadDegrees,
+                spread,
                 damage);
         }
 

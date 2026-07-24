@@ -8,6 +8,12 @@ Communications roadmap:
 
 `Assets/_Project/Features/Communications/Documentation/Dark_Matter_Communication_Framework.md`
 
+**Progress / disk truth (read before claiming Features are shipped):**
+
+`Assets/_Project/Documentation/Architecture/World_Engine_Disk_Status.md`
+
+GDD Appendix B4–B5: World Engine spine → internal Communications → persistent generated world. LLM Phase 9+ deferred.
+
 ## Imported Claude Cowork project instructions
 
 # Dark Matter: Genesis - Unity 6 + URP Project Rules

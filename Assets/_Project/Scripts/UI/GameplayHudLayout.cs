@@ -17,11 +17,37 @@ namespace Project.UI
         public static readonly Vector2 GameplayModalSize = new Vector2(480f, 360f);
         public static readonly Vector2 QuestGiverModalSize = new Vector2(900f, 520f);
 
+        /// <summary>
+        /// Circular ring only — Range%/Scan info stacks below the compass, not inside minimap chrome.
+        /// </summary>
         public static float MinimapTotalHeight =>
-            MinimapSize + MinimapTitleBarHeight + MinimapInfoPanelHeight;
+            MinimapSize + MinimapTitleBarHeight;
+
+        // --- Compass strip: top-right, directly below the minimap. ---
+        public const float CompassGapBelowMinimap = 10f;
+        public const float CompassWidth = 240f;
+        public const float CompassStripHeight = 40f;
+        public const float CompassPointerHeight = 10f;
+        public const float CompassHeadingLabelHeight = 18f;
+
+        public static float CompassTotalHeight =>
+            CompassStripHeight + CompassPointerHeight + CompassHeadingLabelHeight;
+
+        public static Vector2 CompassAnchoredPosition =>
+            new Vector2(-MinimapEdgeInset, -(MinimapEdgeInset + MinimapTotalHeight + CompassGapBelowMinimap));
+
+        // --- Range%/Scan info panel below the compass. ---
+        public const float InfoPanelGapBelowCompass = 5f;
+
+        public static Vector2 InfoPanelAnchoredPosition =>
+            new Vector2(
+                CompassAnchoredPosition.x,
+                CompassAnchoredPosition.y - CompassTotalHeight - InfoPanelGapBelowCompass);
 
         public static Vector2 PickupToastAnchoredPosition =>
-            new Vector2(-MinimapEdgeInset, -(MinimapEdgeInset + MinimapTotalHeight + ToastGapBelowMinimap));
+            new Vector2(
+                -MinimapEdgeInset,
+                -(MinimapEdgeInset + MinimapTotalHeight + CompassTotalHeight + InfoPanelGapBelowCompass + MinimapInfoPanelHeight + ToastGapBelowMinimap));
 
         public const float XpToastGapBelowPickup = 6f;
 

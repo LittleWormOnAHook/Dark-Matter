@@ -1,0 +1,17 @@
+{
+    "name": "Project.Features.Directors",
+    "rootNamespace": "Project.Features.Directors",
+    "references": [
+        "Project.Features.GameState",
+        "Project.Features.WorldState"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

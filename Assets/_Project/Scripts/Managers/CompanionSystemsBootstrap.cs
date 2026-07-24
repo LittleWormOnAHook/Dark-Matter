@@ -1,6 +1,9 @@
 using Project.Building;
 using Project.Companions;
 using Project.Core;
+using Project.Features.Directors.Adapters;
+using Project.Features.GameState.Adapters;
+using Project.Features.WorldState.Adapters;
 using Project.Pet;
 using Project.Pioneers;
 using Project.Survival;
@@ -10,7 +13,8 @@ using UnityEngine;
 namespace Project.Managers
 {
     /// <summary>
-    /// Ensures expedition companion and facility simulation systems exist at runtime.
+    /// Ensures expedition companion, World Engine Features, and facility simulation systems exist at runtime.
+    /// Bootstrap order (TDB): GameState → WorldState → Directors → (Communications later) → legacy bridges.
     /// </summary>
     public static class CompanionSystemsBootstrap
     {
@@ -18,6 +22,11 @@ namespace Project.Managers
         {
             if (host == null)
                 return;
+
+            // World Engine spine (GDD B4 Run 1)
+            GameStateBootstrap.EnsureExists(host);
+            WorldStateBootstrap.EnsureExists(host);
+            DirectorsBootstrap.EnsureExists(host);
 
             if (Object.FindAnyObjectByType<CompanionRosterBridge>() == null)
                 host.gameObject.AddComponent<CompanionRosterBridge>();

@@ -41,32 +41,36 @@ MonoBehaviour:
   turbulenceMaxMultiplier: 1.5
   turbulenceFrequency: 2.4
   visualTurbulenceRotation: 0.35
-  drivePitchMax: -2
-  driveRollMax: 16
+  drivePitchMax: 6
+  driveRollMax: 22
   maxTotalBank: 32
   drivePitchSettleSeconds: 2.5
-  driveTiltSmooth: 6
-  yawRollFactor: 12
+  driveTiltSmooth: 8
+  yawRollFactor: 14
   followDistanceDefault: 14
   followDistanceMin: 5
   followDistanceMax: 36
   followHeight: 4.5
   followLookAhead: 6
   scrollDistanceStep: 2
+  followHeadingSmooth: 2.2
+  followPositionSmooth: 3.5
+  followLookSmooth: 4
+  followLateralTurbulenceScale: 0.12
   turretArcDegrees: 35
   turretSensitivity: {x: 0.06, y: 0.05}
   reticleSmoothSpeed: 8
   turretFireCooldown: 0.18
   turretFireClip: {fileID: 8300000, guid: 221503a992e5bc64f88e43a08127f346, type: 3}
-  turretFireClip2: {fileID: 0}
+  turretFireClip2: {fileID: 8300000, guid: b8f88923a1641df43b9ada3b901debb7, type: 3}
   engineRunningClip: {fileID: 8300000, guid: 0ade537f9dc4fc448a78c3ff254867c5, type: 3}
   engineVolume: 0.38
   enginePitchRange: {x: 0.85, y: 1.35}
-  boardClip: {fileID: 0}
+  boardClip: {fileID: 8300000, guid: 1682d7c1d6179ed449cbab1b24e2830f, type: 3}
   boardVolume: 0.75
-  exitClip: {fileID: 0}
+  exitClip: {fileID: 8300000, guid: 99edd1ed765801d42a9485951d9e2c1f, type: 3}
   exitVolume: 0.75
-  boostAudioClip: {fileID: 0}
+  boostAudioClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
   boostVolume: 0.85
   weaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
   ammoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}

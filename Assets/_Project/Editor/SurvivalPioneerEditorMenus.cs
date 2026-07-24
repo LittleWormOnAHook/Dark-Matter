@@ -35,6 +35,8 @@ namespace Project.EditorTools
         public const string InventorySlotPrefab = PrefabCreator + "Inventory Slot Prefab";
         public const string ExposureZonePrefabCreator = PrefabCreator + "Exposure Zone Creator";
         public const string RecipePrefabCreator = PrefabCreator + "Recipe Prefab Creator";
+        public const string CameraShakeEmitterCreator = PrefabCreator + "Camera Shake Emitter Creator";
+        public const string CameraShakeEmitterCreateAllPresets = PrefabCreator + "Create All Camera Shake Emitter Prefabs";
 
         public const string Project = Root + "Project/";
         public const string Content = Root + "Content/";

@@ -38,7 +38,7 @@ TABLE OF CONTENTS
 Dark Matter: Genesis is a third-person Io survival + light base-builder built in
 Unity (GDD 5.0). Year 2160 on Jupiter's moon Io: lead up to 25 companions
 (22 base camp + switchable expedition trio of 3), rescue Neural Echoes,
-expand your colony camp via the Lite Building system, and survive O₂ plus
+expand your base camp via the Lite Building system, and survive O₂ plus
 radiation, thermal, volcanism, sulfur storms, alien life forms, and AI androids.
 
 The playable prototype is still flat terrain (Io biomes not shipped). Do not
@@ -48,7 +48,7 @@ Core gameplay loops (vision + prototype):
 
   - Manage survival vitals (health, energy, stamina, oxygen) and exposure
   - Gather resources; craft at stations; spend Aether Credits (AC) at vendors
-  - Lite Building + Building Control Panels — expand colony camp and modules
+  - Lite Building + Building Control Panels — expand base camp and modules
   - Fight enemies (including alien life + android threats); complete quests
   - Switch expedition trio companions; run roster / Echo rescue systems
   - Use Building Control Panels (E) for Overview | Companions | Production |
@@ -225,6 +225,13 @@ ENEMY AI (EnemyAiController.cs)
     Attack, Search for lost target
   - Senses: vision (range + FOV), hearing, proximity (EnemySenses.cs)
   - Responds to player noise from combat and movement
+
+SURFACE ENCOUNTERS (expeditions + full map)
+  - SurfaceEncounterZone: player-triggered or start-spawned threat zones
+  - SurfaceEncounterTable: weighted random pool (Alien | Lifeform | Android)
+  - SurfacePatrolRoute + SurfaceEncounterSpawnAnchor: patrol waypoints per spawn
+  - Respects CombatZoneController humanoid budget near player
+  - Editor: Tools > Dark Matter Genesis > Combat > Create Surface Encounter Zone
 
 ENEMY COMBAT
   - Melee attacks with windup, cooldown, and damage to player SurvivalStats

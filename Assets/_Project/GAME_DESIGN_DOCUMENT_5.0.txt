@@ -3,8 +3,9 @@ Dark Matter: Genesis
 Studio Master Game Design Document
 Version 5.0
 Status: Production Bible — SINGLE AUTHORITATIVE GDD
-Revision: July 2026 — Dark Matter: Genesis rebrand, companion roster, Lite Building,
-          surface threats, The World Engine (WoOS); consolidates GDD 4.0 + GAME_SUMMARY.txt
+Revision: July 22, 2026 — disk-status correction: World Engine / Communications
+          Features runtime not yet in repo; B4/B5 match on-disk truth. Design docs remain
+          the build target. LLM Phase 9+ deferred.
 
 Audience
 
@@ -26,7 +27,8 @@ This file is the primary GDD on git. When asked for "the GDD", use this file
 Chapters 1-5 define vision and production philosophy. Appendix A folds locked
 mechanics formerly split across GDD 3.0/4.0. Appendix B records Current
 Implementation / Progress (surveyed July 2026 against the Unity prototype).
-Sections B1–B3 gameplay status; B4 near-term roadmap; B5 The World Engine foundation.
+Sections B1–B3 gameplay status; B4 near-term roadmap; B5 The World Engine
+(design ratified; Features C# not on disk until Runs 1–2 — see World_Engine_Disk_Status.md).
 
 Archives only (do not treat as competing authority):
   GAME_DESIGN_DOCUMENT_4.0.txt
@@ -42,23 +44,28 @@ LOCKED (do not contradict without an explicit design change)
   Building Control Panels: in-world E terminal → Overview | Companions | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
   Runtime: Dark Matter: Genesis on The World Engine (WoOS) — Unity 6 + URP.
+  Player-facing identity: companion-driven survival RPG (primary pitch); story-driven
+    sci-fi RPG with a base camp (store / discovery). Prefer "base camp" over "colony"
+    or "colony camp" in player-facing copy.
 
 
 PRODUCT IDENTITY (5.0 — canonical game summary)
 -----------------------------------------------
-Dark Matter: Genesis is a premium sci-fi survival colony sim set on Jupiter's moon
-Io in 2160. You lead humanity's push to prove a future there—not just scrape by, but
-rebuild civilization under brutal conditions. You manage oxygen and environmental
-pressures (radiation, cold/heat, volcanism, sulfur storms, alien life forms, and AI
-androids), gather and craft, fight on the surface, and expand a base of up to
-twenty-two companions while a trio of three skilled companions can be switched and
-run expeditions with the player. You rescue procedural Neural Echoes, spend Aether
-Credits at vendors, and operate major structures through in-world Building Control
-Panels. A Lite Building system supports building your colony camp.
+Dark Matter: Genesis is a companion-driven survival RPG — a story-driven sci-fi RPG
+with a base camp on Jupiter's moon Io in 2160. You lead humanity's push to prove a
+future there—not just scrape by, but rebuild under brutal conditions. You manage
+oxygen and environmental pressures (radiation, cold/heat, volcanism) plus dynamic Io
+weather (sulfur storms, ion lightning, ash gales, dust spouts, lava flows, geyser
+surges, eruptions, tremors), alien life forms, and AI androids, gather and craft,
+fight on the surface, and grow a base camp of up to twenty-two companions while a
+trio of three skilled companions can be switched and run expeditions with the player.
+You rescue procedural Neural Echoes, spend Aether Credits at vendors, and operate
+major structures through in-world Building Control Panels. A Lite Building system
+supports expanding your base camp.
 
 Long-term progression ties to Aether-9—an ancient Echo sealed in a dormant machine—
 and Memory Cores that trigger Resonance Events: short world-changing story beats that
-unlock lore, systems, and colony growth. The emotional arc moves you from survivor
+unlock lore, systems, and base camp growth. The emotional arc moves you from survivor
 to explorer, commander, and founder of humanity's first permanent home beyond Earth.
 
 Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating
@@ -71,12 +78,13 @@ GameState and WorldState snapshots; Directors and Experience decide when storms
 spike, radio traffic fires, or narrative beats land; Presentation (Communications,
 HUD, audio) delivers what the world authorizes—without AI or UI reaching directly
 into managers. The design goal is a world that feels like it keeps running whether
-you're watching or not: sulfur storms pause base work and force shelter, expedition
-crews carry full exposure risk, and future Resonance Events will reshape Io while
-your colony simulates injury, healing, and production at scale.
+you're watching or not: sulfur storms and Resonance Supercells pause base work and
+force shelter; ash gales, lightning, lava surges, and geyser fields threaten
+expeditions; crews carry full exposure risk, and future Resonance Events will
+reshape Io while your base camp simulates injury, healing, and production at scale.
 
 Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
-its first shipped game—the Io story, AC economy, Echo roster, Lite Building colony
+its first shipped game—the Io story, AC economy, Echo roster, Lite Building base
 camp, and sulfur-storm companion fantasy layered on top.
 
 Framework detail: Appendix B5 · Documentation/Architecture/
@@ -88,11 +96,11 @@ Chapter 1 - Executive Vision
 
 The Mission
 -----------
-Dark Matter: Genesis is a premium single-player science-fiction survival colony
-simulator designed to deliver the emotional depth, visual quality, and systemic
-complexity associated with modern AAA games while remaining achievable for a
-solo developer through disciplined engineering, procedural systems, and
-AI-assisted production.
+Dark Matter: Genesis is a premium single-player companion-driven survival RPG —
+a story-driven sci-fi RPG with a base camp — designed to deliver the emotional
+depth, visual quality, and systemic complexity associated with modern AAA games
+while remaining achievable for a solo developer through disciplined engineering,
+procedural systems, and AI-assisted production.
 
 The game is not about surviving on Io.
 
@@ -114,10 +122,11 @@ Legacy is the destination.
 Vision Statement
 ----------------
 Dark Matter: Genesis exists to create an experience where players genuinely believe
-they are leading humanity's first successful colony on Io. Player-facing pitch,
-emotional arc, and WoOS runtime summary: see PRODUCT IDENTITY (5.0) above.
+they are founding humanity's first foothold on Io — commander of a base camp and
+the companions who depend on them. Player-facing pitch, emotional arc, and WoOS
+runtime summary: see PRODUCT IDENTITY (5.0) above.
 
-The colony is not simply a base.
+The base camp is not simply a build menu.
 
 It is humanity's future.
 
@@ -144,15 +153,15 @@ Responsibility
   Nothing happens in isolation.
   Building decisions affect research.
   Research affects expeditions.
-  Expeditions affect colony growth.
-  Colony growth affects the story.
+  Expeditions affect base camp growth.
+  Base camp growth affects the story.
 
 Mastery
   Players should become more knowledgeable instead of simply becoming stronger.
   Knowledge is progression.
   Learning Io is progression.
   Understanding Resonance is progression.
-  Managing a colony is progression.
+  Growing and protecting your base camp is progression.
 
 Hope
   Although Io is dangerous, the game should never become hopeless.
@@ -232,7 +241,8 @@ Player Fantasy
 --------------
 The player is not a hero sent to save the world.
 
-The player is humanity's first successful colony director.
+The player is humanity's first commander on Io — founder of a base camp and
+leader of the companions who survive there.
 
 Every system should reinforce that identity.
 
@@ -315,7 +325,7 @@ Mountains collapse.
 
 New lava rivers emerge.
 
-Sulfur storms reshape traversal.
+Sulfur storms, ion lightning, ash gales, and lava surges reshape traversal.
 
 Ancient structures awaken.
 
@@ -361,6 +371,32 @@ The player should regularly encounter evidence of previous expeditions.
 These moments tell the story without requiring long cutscenes.
 
 
+Subsurface investigation (July 2026 — not yet locked)
+------------------------------------------------------
+Cave networks and lava tubes are canon offsets (Appendix A2). Full underground
+architecture — five strata, volatile pools/lakes (not surface water), pool ecology,
+and production phasing — is documented in:
+
+  Assets/_Project/Documentation/Design/Io_Underground_Architecture_Plan.md
+
+Promote to Appendix A2c after design review.
+
+Biome exploration & gameplay (July 2026 — partial lock)
+-------------------------------------------------------
+Per-biome exploration verbs, activities, trio synergies, weather pairing, and
+unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
+
+  Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
+
+**Locked (July 2026):** Full-scale **surface** main map. **Most underground instanced**
+(10–20 m breach pack zone); **few walk-in** shallow tubes. Wade-only pools; weak
+underground rad unless Strong Rad Zone. No hover-skiff. Instance camps: rest, stash,
+NPC scrapper at far sites. Story branch **B5 Polar → B4 Calderas**. **Echo signals
+scheduled by ExperienceDirector** (biome weights, not fixed spawns).
+
+Promote to Appendix A2d — design lock complete (July 2026).
+
+
 ================================================================================
 Chapter 4 - Core Gameplay Pillars
 ================================================================================
@@ -374,9 +410,9 @@ Without exploration there is no research.
 Without research there is no advancement.
 
 
-Pillar Two - Build a Living Colony
-----------------------------------
-The colony is the heart of the game.
+Pillar Two - Build a Living Base Camp
+-------------------------------------
+The base camp is the heart of the game.
 
 Players should care about the people they rescue and the structures they create.
 
@@ -535,7 +571,7 @@ Next production-facing chapters (planned — not yet written as full chapters):
 
   Chapter 6: Core Gameplay Loops (player, colony, expedition, research)
   Chapter 7: Colony Simulation & Companion AI
-  Chapter 8: World Systems (weather, geology, Resonance, ecology)
+  Chapter 8: World Systems (weather lock A2b shipped in appendix, geology, Resonance, ecology)
   Chapter 9: Exploration & Expeditions
   Chapter 10: Survival Systems
 
@@ -554,13 +590,53 @@ Identity recap
 Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
 Echoes; recover Memory Cores for Aether-9 → Resonance Events; Lite Building +
-materialization pipeline for colony camp; survive O2 norm, four environmental
-pressures, alien life forms, and AI androids.
+materialization pipeline for base camp; survive O2 norm, four environmental
+pressures, dynamic Io weather (A2b), alien life forms, and AI androids.
 
 Classes (locked names)
 ----------------------
-  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout
-  (+ Io hybrids). Player has combat/skills too.
+  Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout,
+  Med Tech, Logistics Officer, Salvage Engineer, Communications Officer (+ Io hybrids). Player has combat/skills too.
+
+  ROLE ANCHORS (design lock — ability kits still prototyping):
+    Architect Engineer      — shields, drones, portable habitat
+    Science Specialist      — scans, inoculation support, lab tie-ins
+    Combat Tactician        — draws aggro; combat focus
+    Infiltrator Scout       — reveals terrain / Echo signals
+    Med Tech                — field triage, expedition heals, injury recovery;
+                              Medical Facility tie-ins
+    Logistics Officer       — quartermaster, supply routes, storage/logistics throughput;
+                              vendor and camp resupply (base-primary)
+    Salvage Engineer        — building upkeep, salvage recovery, equipment repairs;
+                              reclamation and fabrication maintenance (base-primary)
+    Communications Officer  — probe uplink, relay traffic, Echo signal routing;
+                              comms module and Resonance forewarning (base-primary)
+
+  MED TECH KIT (prototype):
+    Field Triage (active) — heals low-health expedition allies in range; sulfur respirator boost
+    Injury Stabilize (passive) — faster lab recovery; shorter injury timer when Med Tech is on expedition
+
+  LOGISTICS OFFICER KIT (prototype):
+    Supply Cache (active) — expedition resupply cache; light gather support
+    Quartermaster Routes (passive) — bonus output when assigned to storage/logistics/vendor buildings
+
+  SALVAGE ENGINEER KIT (prototype):
+    Field Salvage (active) — improved wreck/loot recovery on expedition
+    Upkeep Patch (passive) — bonus output when assigned to salvage/repair/maintenance buildings
+
+  COMMUNICATIONS OFFICER KIT (prototype):
+    Signal Relay (active) — expedition Echo signal boost and scan relay support
+    Uplink Matrix (passive) — bonus output when assigned to comms/uplink/probe/relay buildings
+
+Weapon base stats (prototype lock)
+----------------------------------
+  Each weapon ItemData owns base combat stats (melee: damage/crit/range/cooldown/
+  stamina/knockback; ranged: damage/accuracy/spread/recoil/fire rate/mag/reload).
+  Category skills apply to all weapons of that type (Blade Training = all melee;
+  Marksman Training + Weapon Accuracy = all ranged). Ammo modifies ballistic/VFX/
+  status only — weapon owns the damage roll. Per-weapon upgrade modules later
+  stack onto these bases. See Assets/_Project/Documentation/Architecture/
+  Combat_Weapon_Base_Stats.md.
 
 
 A1. Platforms, art & tech
@@ -577,18 +653,151 @@ A2. Survival — O2 norm & biome pressures
 ----------------------------------------
   ALWAYS ON: Oxygen (tanks, deprivation FX, health drain when empty)
 
-  FOUR ENVIRONMENTAL PRESSURES:
+  FOUR ENVIRONMENTAL PRESSURES (always-on zone meters — not the same as weather):
     1. Radiation
     2. Cold / Heat — SINGLE thermal stress meter (cold pole ↔ heat pole)
-    3. Volcanos (lava, eruptions, tremors)
-    4. Sulfur storms (corrosive weather; base shelter trigger)
+    3. Volcanos (lava exposure, eruption heat, tremor stress)
+    4. Sulfur (corrosive saturation in sulfur fields and during sulfur weather)
+
+  DYNAMIC IO WEATHER (director-scheduled events — see A2b):
+    Atmospheric: sulfur storms, ion lightning storms, ash gales (+ embedded dust spouts)
+    Geological: lava flow surges, geyser field surges, caldera eruption columns,
+                tremor swarms
+    Magnetospheric: Jovian radiation pulses (often paired with ion lightning)
 
   SURFACE THREATS (combat / exploration):
     5. Alien life forms — native Io fauna; escalation by biome and Resonance
     6. AI androids — hostile or corrupted machines left from prior expeditions
 
+  SURFACE ENCOUNTERS (expeditions + full map — locked):
+    Expeditions and the full map populate with weighted random surface threats
+    drawn from encounter tables (aliens, lifeforms, androids). Threats spawn at
+    zone anchors when the player enters expedition regions; many patrol linked
+    routes (loop / ping-pong) between waypoints. Combat zone budgets cap active
+    humanoids near the player. Categories: Alien | Lifeform | Android.
+    Prototype: SurfaceEncounterZone + SurfaceEncounterTable + SurfacePatrolRoute.
+
   Offsets (design target): shelter, caves, inoculations, portable habitat
   (Architect Engineer), environmental suits (upgradeable trio gear).
+
+
+A2b. Io Weather Lock (canonical — July 2026)
+------------------------------------------
+Io weather is NOT only sulfur storms. Weather is a director-driven layer on top of
+the four environmental pressures. One reusable status-effect + exposure pipeline
+handles weather, combat, hazards, and buffs.
+
+WEATHER VS PRESSURE
+  Pressures = what a zone IS (radiation field, cold shelf, sulfur basin).
+  Weather   = what the planet DOES right now (storm front, lava surge, tremor burst).
+  Weather modifies pressure rates, visibility, traversal, and base operations.
+  Multiple pressures may spike during one weather event (e.g. caldera eruption
+  spikes thermal + volcano + ash particulate).
+
+
+LOCKED PRIMARY WEATHER EVENTS (ship set)
+  ID  Event                    Category        Scope      Base impact
+  --  -----------------------  --------------  ---------  ---------------------------
+  01  Sulfur Storm             Atmospheric     Global     FULL PAUSE + shelter
+  02  Ion Lightning Storm      Atmospheric     Regional   Comms degrade; module chip
+  03  Ash Gale                 Atmospheric     Regional   Efficiency down; no pause
+  04  Dust Spout Cluster       Atmospheric     Local      Surface-only (see note)
+  05  Lava Flow Surge          Geological      Local      Perimeter threat if adjacent
+  06  Geyser Field Surge       Hydrothermal    Regional   Surface + exterior module risk
+  07  Caldera Eruption Column  Geological      Regional   Heat/ash dome; injury risk
+  08  Tremor Swarm             Geological      Local–Reg  Stagger; cave rockfall; stress
+  09  Jovian Radiation Pulse   Magnetospheric  Regional   Radiation pressure spike
+  10  Resonance Supercell      Composite       Global     FULL PAUSE (Resonance only)
+
+  Dust Spout note: may spawn as its own local event OR as embedded sub-phenomena
+  inside Ash Gale (2–4 wandering mini-tornadoes). Never a global base-pause trigger
+  on its own.
+
+  Engineering enum mirror: IoWeatherEventKind (Assets/_Project/Scripts/Survival/Weather/).
+
+
+EVENT BEHAVIOR SUMMARY
+  01 Sulfur Storm
+     Yellow-corrosive front; visibility collapse; sulfur saturation rise.
+     Base: all production/craft queues PAUSE; companions evacuate to Command Center
+     rooms. Trio on surface takes full sulfur exposure.
+     Phases: Building → Peak → Dissipating.
+
+  02 Ion Lightning Storm
+     Jupiter–Io flux arcs; strikes favor exposed metal, high ground, conductive suits.
+     Base: radio static, degraded comms templates; unshielded outdoor modules may take
+     light damage over time. NO full queue pause.
+     Trio: near-miss stagger; hovercraft/turret metal attracts arcs.
+
+  03 Ash Gale
+     High-velocity volcanic ash; aim sway; movement penalty; bronze sky.
+     Often spawns embedded Dust Spout Cluster (04). Base: reduced power/harvest
+     efficiency; exterior work slows. NO full pause.
+
+  04 Dust Spout Cluster
+     Small dirt/ash tornadoes — solo wanderer or 2–4 pack across a zone.
+     Brief lift, debris chip damage, throws loose loot. Surface-only.
+
+  05 Lava Flow Surge
+     Existing lava channel overtops; new flow fingers cut across roads; bridges and
+     camps at risk. Timed path denial. Passive lava rivers remain zone geography;
+     this event is the SURGE that moves the hazard.
+
+  06 Geyser Field Surge
+     Region-wide rhythmic venting: hiss telegraph → steam/sulfur blast → cooldown.
+     Marked vent nodes are lethal if stood on. Strong in geyser-field biomes.
+
+  07 Caldera Eruption Column
+     Ash plume, heat dome, and fallout in volcano biomes. Spikes thermal (heat pole)
+     and volcano pressure. May rain hot ash on expeditions leaving the caldera rim.
+
+  08 Tremor Swarm
+     Seismic bursts: camera shake, stagger, cave rockfalls, building stress ticks.
+     Short swarms or sustained medium quakes. Caves and lava-tube networks amplify.
+
+  09 Jovian Radiation Pulse
+     Fast radiation front from Jupiter shadow/magnetosphere. Often precedes or
+     overlaps Ion Lightning Storm (02). Shelter and rad offsets matter.
+
+  10 Resonance Supercell (Memory Core / Resonance Events only)
+     Composite: sulfur + ion lightning + tremor at elevated intensity.
+     Second event that may trigger FULL base pause. Used for Resonance aftermath —
+     not routine scheduler fodder.
+
+
+BASE OPERATIONS RULE (locked)
+  FULL PAUSE + Command Center shelter: Sulfur Storm (01), Resonance Supercell (10).
+  All other weather: may reduce efficiency, injure exposed exterior companions, or
+  threaten perimeter structures — but does NOT auto-pause every building queue.
+  Building Control Overview tab shows active weather + ops state (Running / Reduced /
+  PAUSED).
+
+
+STACKING & SCHEDULER RULES
+  One dominant weather event per region at a time.
+  Sub-phenomena allowed (dust spouts inside ash gale; tremor during eruption).
+  Global events (01, 10) override regional scheduling for base sim.
+  Pressures stack with weather — caldera eruption + sulfur storm = extreme zone.
+  ExperienceDirector modulates frequency and intensity; WeatherDirector owns phase
+  timing (Building → Peak → Dissipating).
+  Resonance Events may force or amplify any event; may spawn Supercell (10).
+
+
+BIOME WEATHER AFFINITY (design target)
+  Sulfur plains      — Sulfur Storm, Ash Gale
+  Geyser fields      — Geyser Field Surge, Sulfur Storm
+  Lava calderas      — Lava Flow Surge, Caldera Eruption, Tremor Swarm
+  Ash flats / ridges — Ash Gale, Dust Spout Cluster
+  Polar radiation    — Jovian Radiation Pulse, Ion Lightning Storm
+  Cave / lava tubes  — Tremor Swarm (localized)
+  Precursor ruins    — Any event + Resonance Supercell bias after cores
+
+
+PLAYER-FACING COMMS (Aether-9 / Colony Ops)
+  Weather warnings use plain names above (not internal IDs).
+  Example: "Ash gale building — dust spouts likely near Ridge 7."
+  Crisis banner copy for pause events: "SULFUR STORM — BASE OPERATIONS PAUSED" or
+  "RESONANCE SUPERCELL — BASE OPERATIONS PAUSED".
 
 
 A3. Companion roster (25 cap)
@@ -606,12 +815,18 @@ A3. Companion roster (25 cap)
 A4. Base 22 & Command Center
 ----------------------------
   Base companions impervious to routine rad / thermal / volcano / surface O2.
-  NOT impervious to: sulfur storms, Command Center building damage, Strain.
+  NOT impervious to: sulfur storms, Resonance Supercells, Command Center building
+  damage, Strain, or severe exterior weather (eruption fallout, lightning module
+  damage, geyser perimeter strikes).
 
-  Sulfur storm flow:
+  Weather crisis flow (Sulfur Storm or Resonance Supercell — full pause):
     1. All base work PAUSES
     2. Evacuate to Command Center rooms
-    3. Storm ends → healthy companions resume jobs
+    3. Event ends → healthy companions resume jobs
+
+  Reduced-ops weather (ash gale, radiation pulse, ion lightning, etc.):
+    Queues may continue at reduced rate; exterior companions at injury risk;
+    Building Control Overview shows REDUCED state.
 
   Building damage: injures / incapacitates — NEVER kills base companions.
   Heal/restore required before they contribute again.
@@ -664,8 +879,8 @@ A6. Aether-9, Memory Cores & Resonance Events
 
 A7. Buildings, Lite Building, craft & Building Control Panels
 -------------------------------------------------------------
-  LITE BUILDING (colony camp — shipped direction):
-    Lightweight placement and maintenance loop for colony camp structures
+  LITE BUILDING (base camp — shipped direction):
+    Lightweight placement and maintenance loop for base camp structures
     (shelters, utilities, camp modules) before full materialization pipeline.
     Player spends gathered resources + AC at vendors where applicable; camp
     expands outward from the Command Center anchor.
@@ -686,7 +901,8 @@ A7. Buildings, Lite Building, craft & Building Control Panels
     (NOT Journal) with tabs: Overview | Companions | Production | Craft | Changes.
     Assign base-22 companions, set production/craft queues, per-building /
     module settings.
-    Queues run while player is on expedition; PAUSE during sulfur storms.
+    Queues run while player is on expedition; PAUSE during sulfur storms and
+    Resonance Supercells (see A2b weather lock).
     Journal Craft = recipe library / scroll learning only — not primary
     production UI.
 
@@ -709,8 +925,9 @@ A9. Controls & UI (target)
   KBM primary on PC; gamepad required for consoles / optional on PC.
   Journal: Inventory, Map, Companions/Echoes (trios + roster), Skills, Craft,
   Recipes — pet UI folds into Companions/Echoes when migration completes.
-  HUD: O2 + four exposure indicators + surface-threat awareness; thermal = one
-  cold/heat meter; AC balance; base status; hotbar + toolbar.
+  HUD: O2 + four exposure indicators + active weather alert + surface-threat
+  awareness; thermal = one cold/heat meter; AC balance; base status; hotbar +
+  toolbar.
 
 
 A10. Locked decisions checklist
@@ -719,26 +936,35 @@ A10. Locked decisions checklist
   [x] AC-only economy; starter 5000 AC → 1 Skilled Companion
   [x] Single thermal (cold/heat) meter
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
-  [x] Base 22: sulfur shelter; injury never death from building damage
+  [x] Base 22: sulfur / Resonance Supercell shelter; injury never death from building damage
+  [x] Io weather lock — 10 events (A2b); sulfur + supercell = full base pause only
   [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
-  [x] Lite Building colony camp direction (prototype: placement shell / BCP queues)
+  [x] Lite Building base camp direction (prototype: placement shell / BCP queues)
   [x] Surface threats: alien life + AI androids — design lock (combat AI partial)
+  [x] Expedition/full-map random spawns + patrol routes — design lock
+      (SurfaceEncounterZone / SurfaceEncounterTable prototype)
   [x] Echo/roster progression is local save only (no marketplace trading)
 
 OPEN (examples)
   Flat terrain → Io scene strategy
   Exact starter Skilled Companion offer list
-  Science Specialist ability kit polish
+  Science Specialist and Med Tech ability kit polish
 
 
 ================================================================================
 APPENDIX B — Current Implementation / Progress (July 2026)
 ================================================================================
 
-Survey basis: Assets/_Project C# + recent branch work including commit
-e0d491de (Pioneer custom recoil; hovercraft Follow zoom / holster-on-enter).
+Survey basis: Assets/_Project on git main (disk audit July 22, 2026).
 Flat terrain prototype — Io biomes not shipped.
 GAME_BREAKDOWN.txt may lag; prefer this appendix over stale breakdown notes.
+
+DISK TRUTH RULE
+---------------
+Architecture docs and earlier ChatGPT drafts over-marked World Engine /
+Communications as shipped. Appendix B4–B5 below is corrected to match
+**files on disk**. Design docs under Documentation/Architecture remain the
+target design; Features/*.cs must exist before a checkbox is [x].
 
 
 B1. DONE — playable prototype core
@@ -774,8 +1000,11 @@ B2. PARTIAL — present but incomplete vs lock
       AC is gameplay truth; strip player-facing legacy currency when touching
       economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
-  [~] Sulfur storm scheduler + global player/trio exposure shipped (B4 #4) —
-      Command Center room fill / base-22 shelter sim still pending (B4 #5)
+  [~] Exposure zones + EnvironmentalCrisisHudMode exist; live WeatherDirector
+      storm scheduler on Features/Directors branch — Command Center room fill still pending (B4 #5)
+  [~] Surface encounter zones (SurfaceEncounterZone) — weighted random spawns +
+      patrol routes for aliens / lifeforms / androids on expeditions and full map;
+      biome tables and Experience danger-budget director still pending
   [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
       Echo/trio not finished
   [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
@@ -788,59 +1017,75 @@ B3. NOT STARTED — vision systems still planned
   [ ] Full Io biome world (prototype remains flat terrain)
   [ ] Equippable environmental suit gear loop
   [ ] Command Center rooms + aggregate 22 companion shelter/injury sim
-  [~] Live sulfur storm scheduler (B4 #4) — Command Center room fill still pending
+  [ ] Live sulfur storm scheduler (WeatherDirector) — crisis HUD exists without scheduler
   [ ] Building materialization / placement / maintenance pipeline
   [ ] Medical Facility / Science Labs as full production buildings
   [ ] Aether-9 idle machine + 3-part repair quest + awaken / trust arc
   [ ] Memory Core attach + Resonance Events (story + world change)
   [ ] Trust-gated Aether-9 advisory radio (after awake; Ops until then)
   [ ] Purification Hub Saturation/Strain gameplay depth
+  [ ] Features/GameState, WorldState, Directors, Validation, Experience (C# not in repo)
+  [ ] Features/Communications Runtime (queue, HUD, ContextBuilder, template dialogue)
+  [ ] Features/Generation + world-seed persistence for deterministic Echo / world rolls
 
 
 B4. Near-term roadmap priority (order of value)
 -----------------------------------------------
-  1. [SHIPPED] Experience telemetry module + richer director stub logic (Features/Experience + ExperienceDirectorService)
-  2. [SHIPPED] Presentation vista adapter + Echo chronicle simulation incidents (WorldVistaPresenterUI + SimulationDirectorService)
-  3. [SHIPPED] Keep AC-only path clean; remove leftover legacy currency from gameplay HUD
-  4. [SHIPPED] Exposure + sulfur storm vertical slice for player/trio (WeatherDirectorService + storm exposure)
+  Track: internal Communications + The World Engine + persistent generated world.
+  LLM / Communications Phase 9+ and Phase 8.1 voice LLM are DEFERRED.
+
+  0. [DONE] Doc honesty — B4/B5 + Architecture status match disk
+  1. [DONE] World Engine spine — Features/GameState + WorldState + Directors stubs + Validation
+  2. Internal Communications (rule-based) — queue, Radio HUD, ContextBuilder, templates
+  3. Persistent generated world — world seed in GameSaveData; wrap EchoGenerator; save WorldState fields
+  4. Living-world slice — WeatherDirector storm schedule; SimulationDirector incidents; facility pause
   5. Command Center aggregate sim + injury/heal loop
   6. Fold pet into Echo/trio companion presentation
   7. Materialization pipeline + wire Building Control to real facilities
   8. Aether-9 Intelligence service / cores / first Resonance Events
   9. Io biome pass + console polish
 
+  Legacy notes (partial, not World Engine):
+  [~] AC economy path largely clean; strip remaining legacy currency UI when touched
+  [x] Echo chronicle can record simulation incidents via PioneerRosterManager APIs
+  [x] Exposure system + EnvironmentalCrisisHudMode (F11 WeatherCommand can drive crisis)
 
-B5. SHIPPED — The World Engine (Dark Matter Framework 2.0) foundation (July 2026)
----------------------------------------------------------------------------------
-Dark Matter: Genesis runs on The World Engine (WoOS). Architecture phases A–D
-complete. Survey: Assets/_Project/Features + Documentation/Architecture.
 
-  [x] HLA v1.0 ratified — Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md (frozen)
-  [x] TDB v1.0 + Framework_Folder_Mapping + subsystem audits Audit_01–08
-  [x] GameState read API — Features/GameState (immutable snapshots, provider adapters)
-  [x] Communications Presentation stack — Features/Communications Phases 0–8 (queue, HUD,
-      audio, ContextBuilder, rule-based + template dialogue)
-  [x] WorldState evolutionary read API (Phase B) — 7 providers, embeds GameState, F9 smoke
-  [x] Directors Intelligence stubs (Phase C) — locked eval order, command/intent interfaces,
-      F10 smoke; Communications intent adapter wired
-  [x] Bootstrap chain in CompanionSystemsBootstrap:
-      GameState → Experience → WorldState → Directors → Communications
-  [x] Phase D validation — cross-stack EditMode tests, smoke-key registry, this appendix section
-  [x] Experience telemetry + ExperienceDirectorService (B4 #1)
-  [x] WorldVistaPresenterUI + SimulationDirectorService + Echo chronicle simulation incidents (B4 #2)
-  [x] AC-only economy cleanup — legacy Pi field renames, HUD/editor copy, loot/tooltips (B4 #3)
-  [x] Live sulfur storm scheduler + global player/trio storm exposure (B4 #4)
+B5. PARTIAL — The World Engine (Dark Matter Framework 2.0) — Run 1 spine on disk
+--------------------------------------------------------------------------------
+Target: Dark Matter: Genesis on The World Engine (WoOS).
+HLA / TDB / audits / Communication Framework remain the design authority.
+Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Validation C#.
 
-  [~] Director command adapters wired for Quest, Weather (crisis HUD), Simulation (chronicle + activity),
-      Presentation (vista banner), Communications intent
-  [~] `DirectorTriggerBridge` forwards quest/roster/session + storm/simulation command triggers
-  [~] WorldState fields not yet persisted into GameSaveData (runtime read model only)
+  [x] HLA v1.0 ratified — Documentation/Architecture (frozen design)
+  [x] TDB + Framework_Folder_Mapping + Audits Audit_01–08 (design)
+  [x] Engineering Standard + Communication Framework roadmap (design)
+  [x] GameState read API — Features/GameState (9 providers + bootstrap)
+  [x] WorldState evolutionary read API — Features/WorldState (7 providers + F9 smoke)
+  [x] Directors Intelligence stubs — Features/Directors (7 directors + F10/F11 smoke)
+  [x] Validation / smoke registry — Features/Validation + EditMode stack tests
+  [x] Bootstrap chain GameState → WorldState → Directors (Communications still pending)
+  [ ] Experience telemetry module — Features/Experience (after / with Run 2–4)
+  [ ] Communications Runtime Phases 0–8 — Features/Communications/Runtime|UI|Audio (Run 2)
+  [ ] WorldState / world-seed fields persisted into GameSaveData (Run 3)
+  [ ] WeatherDirector live schedule (F11 command adapter exists; full scheduler later)
   [ ] Aether-9 Intelligence service, Memory Core Resonance Events, full director logic
-  [ ] LLM / cloud conversation (Communications Phase 9+)
+  [ ] LLM / cloud conversation (Communications Phase 9+) — DEFERRED
+
+  On-disk gameplay that feeds the engine (reuse, do not rewrite):
+  [x] Scripts/Survival/Exposure — zone pressures + ExposureStatusService
+  [x] Scripts/Pioneers/EchoGenerator + EchoChronicleEntry + save round-trip
+  [x] BuildingOperationRegistry + FacilityTaskRunner (pauses when crisis HUD active)
+  [x] CompanionSystemsBootstrap — Features spine + companions, pet, exposure, facilities
+  [x] GameSaveData v17 — roster, AC, chronicle, building ops, vehicles, power (no world seed yet)
 
   Manual smoke (Play Mode):
-    F5–F8 Communications · F9 WorldState · F10 Directors · F11 weather · F12 experience · Shift+F5 vista (F13)
-  EditMode: Window → General → Test Runner → Features Validation + per-module tests.
+    F9 WorldState · F10 Directors · F11 weather phase cycle
+    (F5–F8 reserved for Communications Run 2)
+  EditMode: Window → General → Test Runner → Project.Features.*.Tests
+
+  Status sheet: Documentation/Architecture/World_Engine_Disk_Status.md
+  Safe Mode help: Documentation/Architecture/Unity_Safe_Mode_Recovery.md
 
 
 ================================================================================

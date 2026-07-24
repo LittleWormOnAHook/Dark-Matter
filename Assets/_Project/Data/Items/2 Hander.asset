@@ -36,10 +36,13 @@ MonoBehaviour:
   invectorWeaponId: 
   meleeDamage: 28
   meleeDamageRandomRange: 12
+  criticalChance: 0.14
   criticalDamageMultiplier: 3.5
   meleeRange: 3.4
   meleeCooldown: 0.85
   attackAnimationSpeed: 0
+  meleeStaminaCost: 14
+  meleeKnockback: 4
   gatherPower: 2
   attackTrigger: Attack
   rangedDamage: 14
@@ -84,3 +87,7 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 2 Hander of Mortal Death
+
+
+
+meleeDamage: 28

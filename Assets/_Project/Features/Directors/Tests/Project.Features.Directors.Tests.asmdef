@@ -1,0 +1,27 @@
+{
+    "name": "Project.Features.Directors.Tests",
+    "rootNamespace": "",
+    "references": [
+        "Project.Features.Directors",
+        "Project.Features.WorldState",
+        "Project.Features.GameState",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "DM_WORLD_ENGINE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

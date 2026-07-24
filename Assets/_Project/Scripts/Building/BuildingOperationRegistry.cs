@@ -138,6 +138,7 @@ namespace Project.Building
                 }
 
                 boost += PioneerClassTaskAffinity.GetFacilityBonus(record.pioneerClass, buildingId);
+                boost += BaseRoleCompanionBonusService.GetPassiveAssignmentBonus(record, buildingId);
             }
 
             return boost;
