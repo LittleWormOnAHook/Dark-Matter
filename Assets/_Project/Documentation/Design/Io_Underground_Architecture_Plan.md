@@ -91,7 +91,7 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 ### 4.2 Chamber modules (setpiece)
 
 - `Chamber_Pool_Small` — condensate pool + edge harvest nodes
-- `Chamber_Basin_Large` — “lake” scale; boat/hover-skiff fantasy (late expeditions)
+- `Chamber_Basin_Large` — “lake” scale; optional **packed hover-skiff** on path-tagged brine (late)
 - `Chamber_Grotto` — biolum ceiling; low combat; scan POIs
 - `Chamber_Brood` — nest arena; egg galleries; wave escalation
 - `Chamber_Expedition_Wreck` — environmental storytelling prop cluster
@@ -108,7 +108,7 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 
 - **Rappel** — upper breach entry
 - **Sealed door** — Science Specialist scan / Architect breach
-- **Flooded tube** — requires condensate-rated waders or hover-skiff module
+- **Flooded tube** — wade, or deploy **packed hover-skiff** module on water-path tag (inventory unpack)
 - **Heat lock** — thermal suit tier gate for Stratum 4
 
 ---
@@ -284,7 +284,7 @@ Can **greybox Stratum 1** earlier on flat terrain with a single test tube prefab
 
 1. **Swimming / wading** — full swim in brine or wade-only with stamina drain?
 2. **Radon creep** — separate meter or slow rad pressure increase?
-3. **Hover-skiff on lakes** — expedition vehicle fantasy or skip for scope?
+3. ~~**Hover-skiff on lakes**~~ — **Locked:** packed inventory deploy on water-path tags only (see biome plan §2.5).
 4. **Companion depth limits** — do all trio members enter deep strata or hold at camp?
 5. **Base building underground** — Stratum 1 camps only, or allow sealed modules at pool rims?
 
