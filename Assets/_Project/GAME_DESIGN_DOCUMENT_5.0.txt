@@ -378,10 +378,11 @@ unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
 
   Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
 
-**Locked (July 2026):** **Full-scale main map** with integrated surface regions (B1–B7) and
-connected underground strata (five layers). Optional additive interior cells for
-heavy setpieces. Mountains ~200–300 m on main map; vehicles deploy from inventory
-only on path-tagged zones.
+**Locked (July 2026):** **Full-scale surface main map** (B1–B7 regions, 200–300 m mountains).
+**Underground is instanced/teleport** on enter & exit at breaches. **Day/night cycle**
+shifts polar (B5) thermal — night intensifies cold. **B4/B5 foot only** with separate
+extreme heat vs cold+rad gear. Vehicles: manual unpack on surface; **auto-pack** near
+breach entry; manual unpack after exit.
 
 Promote to Appendix A2d after remaining open questions close.
 

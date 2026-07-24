@@ -1,6 +1,6 @@
 # Io Biome Exploration & Gameplay Plan
 
-**Status:** Design investigation — **world structure & vehicles locked July 2026**  
+**Status:** Design investigation — **world structure, vehicles, day/night locked July 2026**  
 **Authority:** GDD 5.0 Chapter 3 (Biome Philosophy), Appendix A2 (pressures), planned A2b (weather).  
 **Companion docs:**
 - `Io_Underground_Architecture_Plan.md` — subsurface strata & pools  
@@ -78,76 +78,101 @@ Any trio can enter any biome; **synergy bonuses** reward matching comp to activi
 
 ### 2.5 World structure & vehicles (locked July 2026)
 
-#### Full-scale main map + integrated underground
+#### Full-scale surface map + instanced underground
 
 | Layer | Role | Content |
 |-------|------|---------|
-| **Main map (full scale)** | One persistent Io world | Command Center colony, all surface biome **regions** (B1–B7), 200–300 m mountains, shelter pockets, volatile seeps, mineral/ore nodes, weather, wildlife |
-| **Integrated underground** | Same world, below surface | Stratum 1–5 lava tubes, volatile basins, pool chambers, vault mouths — connected via breaches on the main map |
-| **Interior cells** (optional additive load) | Performance / setpiece isolation | Deep brood mothers, large pool basins, Resonance vault interiors — entered through breaches on the main-map underground graph; not a separate “expedition teleport” |
+| **Main map (full scale)** | Persistent Io **surface** world | Colony, B1–B7 regions, 200–300 m mountains, shelter, seeps, ore, weather, wildlife, vehicles |
+| **Underground (instanced)** | Loaded on enter, unloaded on exit | Stratum 1–5 tubes, pools, broods, vaults — **separate scenes** reached by breach interact / teleport |
+| **Surface ↔ underground link** | Anchor points on main map | Each breach stores return position; exit prompt teleports player (and trio) back to surface map |
 
-**Locked (July 2026):** The **main map is full-scale Io** — not a small hub. Surface biomes are **geographic regions** on that map. **Underground areas are part of the same world**, reachable by foot, vehicle (where allowed), and breach points. The player does not leave the main map to “enter Io”; they traverse and descend within it.
+**Locked (July 2026):**
 
-**Earlier “instances” clarification:** Large or memory-heavy **interior chambers** may still load as additive scenes when breaching (tube nest, vault puzzle room). The **world frame** remains one continuous main map + connected subsurface.
+- The **surface is one full-scale main map** — geographic regions, not separate overworld levels.  
+- **Most underground is instanced** (or teleported): player **chooses to enter** at a breach → load underground scene → **choose to exit** at marked return breach → back to main map at entry anchor.  
+- Underground is **not** seamless open-world below the surface (no continuous streaming of the full subsurface). Optional **nested instance** within an underground run (brood mother chamber, vault core) is allowed.
 
-#### World streaming (technical target)
+#### Underground enter / exit flow
 
-- **Surface streaming** — biome regions, mountains, colony, POIs by distance.  
-- **Subsurface streaming** — strata activate when player crosses breach thresholds (vertical + tube graph).  
-- **Interior cell load** — optional pocket unload of surface above when deep in Stratum 4–5 or vault.  
-- **Map / Journal** — single world map with surface + discovered underground layers toggled.
+```
+Surface main map → approach breach → [auto-pack vehicle] → "Enter?" prompt
+    → load underground instance (stratum + biome variant)
+    → play subsurface content
+    → reach exit breach → "Return to surface?" prompt
+    → teleport to surface anchor → [manual unpack vehicle if desired]
+```
 
-#### Main-map terrain — small mountains (on full-scale map)
+- **Enter:** interact or volume trigger at breach mouth / skylight / collapse sink.  
+- **Exit:** paired exit node inside instance (may be same breach from below or one-way loop).  
+- **Journal map:** surface map shows breach icons; underground map fills per instance visit.
 
-- **Mountain zones** embedded in the full map (not a separate level) — modest ranges, not planet-scale peaks.  
-- Target height: **~200–300 m** — readable highland, crossable on foot or with Io Buggy.  
-- Slopes support foot traversal and deployed vehicle play where path-tagged.  
-- Mountains provide: vistas, scan unlocks, cave breach mouths into Stratum 1–2, ore outcrops, weather lee zones.
+#### Vehicles — inventory deploy + underground auto-pack
 
-#### Resource pockets (scattered on main map)
+**Locked:** No ambient vehicles. Packed in inventory; unpack manually on surface.
 
-Persistent nodes across surface and shallow underground (regenerate on schedule):
+| Action | Behavior |
+|--------|----------|
+| **Unpack (surface)** | Manual — player deploys from inventory in **Vehicle Deploy Zone** |
+| **Approach underground entry** | **Auto-pack** — within **entry pack radius** (~15–25 m, per-breach tunable), deployed vehicle packs to inventory automatically |
+| **Exit to surface** | **Manual unpack** — vehicle stays packed; player unpacks when ready on surface |
+| **Inside underground** | No vehicles (foot only); hover-skiff exception on tagged water paths if owned |
 
-- **Shelter** — shallow caves, overhangs, tube camps (Stratum 1)  
-- **Volatile seeps** — condensate / brine trickles; deeper pools in Stratum 2–3  
-- **Minerals & ore** — surface outcrops + underground veins  
-
-Early-game gathering happens on the **same main map** before pushing into distant regions or deep strata.
-
-#### Vehicles — deploy from inventory only
-
-**Locked:** No ambient hovercraft or buggy in the world. All vehicles are **packed inventory items** — unpack to deploy, pack when done (prototype hovercraft: `HovercraftUsable` store-in-inventory).
+**Rationale:** prevents vehicle exploits in tubes; smooth transition at breach; player control when returning to open map.
 
 | Vehicle | Status | Role |
 |---------|--------|------|
-| **Hovercraft** | Prototype shipped | Fast transit on **flat / path-tagged** surfaces; low environment resistance |
-| **Io Buggy** (6-wheel) | Planned | Environment-resistant; mountains, ash roads, highland paths on main map |
+| **Hovercraft** | Prototype shipped | Flat / path-tagged surface; low env resistance |
+| **Io Buggy** (6-wheel) | Planned | Mountains, B3/B6 paths; environment-resistant |
 
-**Deploy rules**
+**Vehicle allowance — surface regions only**
 
-1. Player must own packed vehicle in inventory / hotbar.  
-2. Unpack only in **Vehicle Deploy Zones** (flat pad, path surface, breach staging area).  
-3. Underground: deploy only on **path-tagged** tube floors or marked hauler lanes — not every chamber.  
-4. Pack at colony garage pad or before long descents (deep strata often foot-only).  
-5. **Ion lightning** still punishes exposed metal.
+| Region | Hovercraft | Io Buggy | Notes |
+|--------|------------|----------|-------|
+| Colony flats & paths | Yes | Yes | Manual unpack at pads |
+| Mountains (200–300 m) | No / risky | Yes | |
+| B1 Sulfur Plains | Path lanes | Path lanes | |
+| B2 Geyser Fields | Rare pads | Limited | |
+| B3 Ash Flats | Flat corridors | Ash roads | |
+| **B4 Lava Calderas** | **No** | **No** | **Foot only — extreme heat gear required** |
+| **B5 Polar Flats** | **No** | **No** | **Foot only — extreme cold + rad gear required** |
+| B6 Highlands | Path to breach | Highland roads | |
+| B7 Ruins | No | No | Foot — silent routes |
+| All underground | No | No | Auto-pack on entry |
 
-**Vehicle allowance by region (all on main map)**
+**Future:** packed **hover-skiff** — underground water-path tags only; still no surface deploy inside instances except skiff lanes.
 
-| Region / stratum | Hovercraft | Io Buggy (6-wheel) |
-|------------------|------------|-------------------|
-| Colony flats & paths | Yes | Yes |
-| Mountains (200–300 m) | No / risky | Yes (primary target) |
-| B1 Sulfur Plains | Path lanes only | Path lanes only |
-| B2 Geyser Fields | Rare flat pads | Limited — vent gaps |
-| B3 Ash Flats | Flat corridors | Yes on packed ash roads |
-| B4 Calderas | No | No (foot + heat routing) |
-| B5 Polar Flats | Flat ice crust lanes | Yes between cover points |
-| B6 Highlands | Path to breach | Yes — highland roads |
-| B7 Ruins | No | No (silent / puzzle routes) |
-| Underground Stratum 1–2 | No | Optional hauler path only |
-| Underground Stratum 3+ | No | No |
+#### Main-map terrain — mountains (200–300 m)
 
-**Future:** packed **hover-skiff** on water-path tags in flooded tubes (inventory deploy).
+Mountain zones on the full surface map — crossable on foot or Io Buggy where path-tagged. Breach mouths into underground instances at foothills and caldera/polar rims.
+
+#### Resource pockets
+
+Shelter, volatile seeps, minerals, and ore scattered on **surface main map** and in **shallow underground instances** (Stratum 1–2).
+
+---
+
+### 2.6 Day / night cycle & polar temperature (locked July 2026)
+
+**Locked:** Io runs a **day/night cycle**. **Polar regions (B5)** shift **thermal pressure** with the cycle:
+
+| Phase | B5 Polar thermal | Gameplay read |
+|-------|------------------|---------------|
+| **Day** | Cold pole — severe but manageable with gear | Longer relay windows between cover |
+| **Night** | Cold pole **intensifies** — pushes thermal meter toward cold extreme | Shorter exposure windows; inoculation drain faster |
+
+- Night lighting + Jupiter glow on horizon; aurora-like rad shimmer at poles.  
+- **B3 Ash Flats** may get minor thermal swing (optional polish); **B5 is the primary night-cycle teaching biome**.  
+- **B4 Calderas** stay **heat extreme** day and night; night only slightly cools **rim** zones — core/lava unchanged.  
+- Colony Ops / Aether-9 can radio **polar night warnings** when B5 expeditions are planned.
+
+**Gear gates (B4 & B5 — foot only):**
+
+| Region | Required kit (design target) | Without kit |
+|--------|------------------------------|-------------|
+| **B4 Calderas** | Heat-tier env suit, thermal gel, heat routing tools | Rapid heat pole; health drain near rim |
+| **B5 Polar Flats** | Cold-tier env suit, rad inoculation, polar cover gear | Cold pole spike at night; rad stacking |
+
+Different gear **loadouts** — not one suit for both. Player prepares at colony before long B4/B5 pushes.
 
 ---
 
@@ -239,7 +264,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | Requirement | Content |
 |-------------|---------|
 | **Visual** | Lava lakes, obsidian rim, eruption plumes, heat shimmer |
-| **Survival** | Extreme heat pole; lava instant-kill; tremor knockback |
+| **Survival** | Extreme heat pole; lava instant-kill; tremor knockback — **foot only, heat-tier suit required** |
 | **Resources** | Obsidian, heat cells, caldera salts, rare melt-lens shards |
 | **Story** | Aether-9 crew death site candidates; “something watched from the rim” |
 | **Gameplay** | **Route + Time** — heat-shadow paths; eruption windows for rare nodes |
@@ -248,7 +273,9 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 - **Rim survey** — tag eruption timing for colony Ops (unlocks caldera map layer).
 - **Lens crossing** — jump silicate melt lenses when crust is cooling (thermal read).
 - **Caldera Mantis hunt** — solo apex optional elite; drops shell armor material.
-- **Collapse dive** — enter Stratum 3–4 sink; extract-before-heat-returns timer.
+- **Collapse dive** — enter Stratum 3–4 **instance** via sink; extract-before-heat-returns timer.
+
+**Access:** **No vehicles.** Heat-tier environmental suit + thermal gel minimum; rim vs core tier gates.
 
 **Trio synergy:** Tactician draws mantis; Architect heat shelter on cooldown; Specialist thermal read.
 
@@ -261,7 +288,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | Requirement | Content |
 |-------------|---------|
 | **Visual** | Jupiter dome, frost SO₂ crust, aurora-like rad shimmer |
-| **Survival** | Radiation + cold pole thermal; exposure between cover |
+| **Survival** | Radiation + cold pole thermal (**night intensifies cold**); exposure between cover — **foot only, polar kit required** |
 | **Resources** | Rad-shield gel precursors, void kelp, magnetic ore |
 | **Story** | Early isotope rush camps; illegal core smuggling hints |
 | **Gameplay** | **Route + Shelter** — sprint between cover; rad pulse prediction |
@@ -270,6 +297,8 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 - **Cover-to-cover relay** — place portable beacons for companion path AI.
 - **Pulse ride** — enter cold trap tube as rad front passes (Infiltrator squeeze).
 - **Void kelp grove scan** — Science setpiece; wrong noise triggers Resonance echo.
+
+**Access:** **No vehicles.** Cold-tier suit + rad inoculation; plan around **polar night** windows.
 
 **Trio synergy:** Specialist inoculations; Architect rad baffle; Scout finds cover lanes.
 
@@ -287,7 +316,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | **Gameplay** | **Breach + Route** — hub biome linking others; cave camp staging |
 
 **Signature activities**
-- **Tube mapping** — first sustained subsurface expedition; map fog clear.
+- **Tube mapping** — first underground **instance** run via breach; map fog clear.
 - **Highland vista** — Experience Director “wonder” trigger; photo/chronicle hook.
 - **Multi-breach choice** — pick tube by pressure profile (rad vs sulfur vs heat).
 - **Brood tunnel discovery** — optional nest dungeon entrance.
@@ -320,21 +349,21 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 ---
 
-## 5. Subsurface ↔ surface pairing (same main map)
+## 5. Subsurface ↔ surface pairing (instances anchored on main map)
 
-Surface regions are **geography on the full map**; underground strata are **depth below** that same map. One breach in B6 Highlands can drop into Stratum 2 without a loading screen (streaming) or with a short additive cell load for a large chamber.
+Surface regions sit on the **full main map**. Each breach opens an **underground instance** (teleport/load) keyed to region + stratum. Exit returns to the **surface anchor** at that breach.
 
-| Surface region | Typical strata | Distinct underground gameplay |
-|---------------|----------------|------------------------------|
-| B1 Sulfur Plains | 1 | Quick refuge tubes; shallow harvest |
-| B2 Geyser Fields | 2 | Timed vent locks; steam navigation |
-| B3 Ash Flats | 1–2 | Ash-choked tubes; low vis navigation |
+| Surface region | Typical instance strata | Distinct underground gameplay |
+|---------------|-------------------------|------------------------------|
+| B1 Sulfur Plains | 1 | Shallow tubes; quick refuge |
+| B2 Geyser Fields | 2 | Vent locks; steam navigation |
+| B3 Ash Flats | 1–2 | Ash-choked tubes; low vis |
 | B4 Calderas | 3–4 | Brine basins; heat timer; Basin Mantis |
-| B5 Polar Flats | 2–3 | Condensate pools; rad creep; Void Kelp |
-| B6 Highlands | 1–3 | Hub tunnels; brood dungeons; mapping |
-| B7 Ruin Belt | 5 | Vault puzzles; Aether seeps; story locks |
+| B5 Polar Flats | 2–3 | Condensate pools; rad creep; **night cold spike** |
+| B6 Highlands | 1–3 | Hub instances; brood dungeons |
+| B7 Ruin Belt | 5 | Vault puzzles; Aether seeps |
 
-**Rule:** region picks **where** you enter; depth picks **risk/reward**. Deeper ≠ harder reskin — new verbs (wade, gas dome, film ambush).
+**Rule:** region picks **which instance** loads; stratum picks **risk/reward**. Vehicle **auto-packs** at entry; **manual unpack** on return.
 
 ---
 
@@ -376,11 +405,11 @@ Not a hard lock — **exposure without gear** should hurt enough to teach order 
 |------|------------------------|
 | Base env suits (tier 1) | B1, B6 surface |
 | Sulfur filters | B1 storm windows, B2 edges |
-| Thermal gel / heat tier | B4 rim (not core) |
-| Rad inoculation | B5 relay runs |
+| **Heat-tier suit + thermal gel** | **B4 calderas (foot only)** |
+| **Cold-tier suit + rad inoculation** | **B5 polar flats (foot only); critical at night** |
 | Portable habitat | B4 eruption windows, B2 vent fields |
-| Packed hovercraft (inventory) | Fast flat/path transit on surface regions |
-| Io Buggy (6-wheel, inventory) | Mountains, B3/B5/B6 path networks on main map |
+| Packed hovercraft (inventory) | Surface regions that allow vehicles; auto-packs at breaches |
+| Io Buggy (6-wheel, inventory) | Mountains, B3/B6 paths — not B4/B5 |
 | Drill / breach kit | Stratum 2+ reliably |
 | Resonance suit tier | B7, Stratum 5 |
 
@@ -447,7 +476,7 @@ Designed for **single-player commanding a trio**, not co-op.
 |-------|-------------|------------|
 | **E0** | Biome region data SO: pressure, verbs, weather weights, vehicle tags | Exposure zones (shipped) |
 | **E1** | **Full-scale main map** blockout: colony + B6 region + 200–300 m mountains | Io terrain / streaming plan |
-| **E1b** | Shallow underground (Stratum 1) connected to B6 breaches | E1 |
+| **E1b** | Underground instance pipeline: breach → load → exit teleport + vehicle auto-pack | E1 |
 | **E2** | B1 + B2 regions + activity templates | WeatherDirector sulfur + geyser |
 | **E3** | B3 + B4 + Timed verb polish | Thermal/volcano HUD |
 | **E4** | B5 + rad relay gameplay | Inoculation loop |
@@ -456,18 +485,18 @@ Designed for **single-player commanding a trio**, not co-op.
 | **E7** | Director activity weighting + biome unlock mask | WorldState persistence |
 | **E8** | Io Buggy (6-wheel) deploy/pack + env resistance profile | Vehicle deploy zones on E1/E1b |
 
-**Starts with Io biome pass (B4 #9)** — full main map + integrated underground streaming.
+**Starts with Io biome pass (B4 #9)** — full surface main map + underground instance/teleport pipeline.
 
 ---
 
 ## 12. Open questions
 
-1. ~~**World scale**~~ — **Locked:** full-scale main map with integrated underground; optional additive interior cells for heavy setpieces.  
-2. ~~**Vehicles**~~ — **Locked:** deploy from inventory only on path-tagged zones.  
-3. **Night cycle** — thermal swing meaningful on B3/B5 or static lighting per biome?  
+1. ~~**World scale**~~ — **Locked:** full-scale **surface** main map; **underground instanced/teleport** on enter & exit.  
+2. ~~**Vehicles**~~ — **Locked:** manual unpack on surface; **auto-pack** within entry radius; manual unpack after exit.  
+3. ~~**Night cycle**~~ — **Locked:** polar (B5) thermal shifts with day/night; night intensifies cold pole.  
 4. **Player branch** — B4 vs B5 first after mid-game: moral choice or gear-gated only?  
 5. **Echo signal density** — fixed per biome or director-driven scarcity?  
-6. **Streaming budget** — max simultaneous strata depth visible (surface + underground)?
+6. **Entry pack radius** — global 20 m or per-breach tunable?
 
 ---
 
@@ -481,7 +510,7 @@ When approved, fold into **GDD Appendix A2d — Io Biome & Exploration Lock**:
 - Activity template grammar
 - Biome × weather × subsurface pairing table
 - Campaign discovery order + gear gates
-- **World structure lock:** full-scale main map + integrated underground, 200–300 m mountains, deploy-only vehicles
+- **World structure lock:** full-scale surface map; instanced/teleport underground; day/night polar thermal; B4/B5 foot + extreme gear; vehicle auto-pack at breach
 
 ---
 

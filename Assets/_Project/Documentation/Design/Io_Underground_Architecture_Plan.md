@@ -7,14 +7,17 @@
 
 ---
 
-## 0. World placement (locked)
+## 0. World placement (locked July 2026)
 
-Underground strata are **part of the full-scale main map**, not a separate world.
+**Surface:** full-scale **main map** (B1–B7 regions, colony, mountains).  
+**Underground:** **instanced scenes** — player enters via breach prompt (teleport/load), exits via return breach back to **surface anchor**.
 
-- Breaches, skylights, and collapse sinks on the surface connect to Stratum 1–5 below.  
-- Player **walks, drives (where allowed), or rappels** from colony → surface region → tube → basin → vault on one continuous world graph.  
-- Large setpiece chambers (brood mother, vault puzzle) may use **additive interior cells** for performance; they remain entered from the main-map underground network.  
-- Journal map: surface layer + discovered underground layers on the **same world map**.
+- Breach mouths on the main map are **doors**, not seamless vertical streaming.  
+- Each breach stores a **return position** on the surface.  
+- **Vehicles auto-pack** to inventory within entry pack radius when approaching a breach; **manual unpack** after returning to surface.  
+- Foot-only inside all underground instances (hover-skiff exception on tagged water paths).  
+- Journal: surface map shows breach icons; per-instance maps discovered on visit.  
+- Nested instances allowed (brood mother chamber, vault core) loaded from within a parent underground scene.
 
 ## 1. Design goal
 
@@ -273,7 +276,7 @@ Economy remains **AC + gathered materials** — pools are not a second currency.
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
-| **P0** | Stratum 1 tube kit + breach entry + cave offset volumes | Io biome pass (B4 #9) |
+| **P0** | Stratum 1 tube kit + breach entry on full main map + cave offset volumes | Io biome pass (B4 #9) |
 | **P1** | Condensate pools + edge harvest + Tube Lace / skitters | Exposure system (shipped) |
 | **P2** | Mid galleries + flooded junction + Glass Kelp / glassfish | Navigation / map fog |
 | **P3** | Brimstone basins + Brine Hounds + Basin Mantis | Combat AI pack roles |
@@ -282,7 +285,7 @@ Economy remains **AC + gathered materials** — pools are not a second currency.
 
 **Start underground architecture after:**
 
-1. **Io biome pass** (B4 #9) — needs surface↔subsurface zone graph  
+1. **Io biome pass** (B4 #9) — full-scale surface main map + breach instance/teleport pipeline  
 2. **WeatherDirector** foundation (A2b) — tremor/flood coupling  
 
 Can **greybox Stratum 1** earlier on flat terrain with a single test tube prefab.
