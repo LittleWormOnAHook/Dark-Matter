@@ -33,6 +33,14 @@ namespace Project.AI
         HumanoidInvector
     }
 
+    public enum SurfaceThreatKind
+    {
+        Any,
+        Alien,
+        Lifeform,
+        Android
+    }
+
     [CreateAssetMenu(fileName = "EnemyDefinition", menuName = "Dark Matter Genesis/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
@@ -41,6 +49,8 @@ namespace Project.AI
         public string displayName = "New Enemy";
         public string prefabFileName = "NewEnemy";
         public EnemyArchetype archetype = EnemyArchetype.LegacyCreature;
+        [Tooltip("Surface threat category for expedition/map encounter tables.")]
+        public SurfaceThreatKind surfaceThreatKind = SurfaceThreatKind.Lifeform;
 
         [Header("Humanoid Invector")]
         public ItemData meleeWeaponItem;

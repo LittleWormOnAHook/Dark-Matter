@@ -633,6 +633,14 @@ A2. Survival — O2 norm & biome pressures
     5. Alien life forms — native Io fauna; escalation by biome and Resonance
     6. AI androids — hostile or corrupted machines left from prior expeditions
 
+  SURFACE ENCOUNTERS (expeditions + full map — locked):
+    Expeditions and the full map populate with weighted random surface threats
+    drawn from encounter tables (aliens, lifeforms, androids). Threats spawn at
+    zone anchors when the player enters expedition regions; many patrol linked
+    routes (loop / ping-pong) between waypoints. Combat zone budgets cap active
+    humanoids near the player. Categories: Alien | Lifeform | Android.
+    Prototype: SurfaceEncounterZone + SurfaceEncounterTable + SurfacePatrolRoute.
+
   Offsets (design target): shelter, caves, inoculations, portable habitat
   (Architect Engineer), environmental suits (upgradeable trio gear).
 
@@ -897,6 +905,8 @@ A10. Locked decisions checklist
   [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
   [x] Lite Building base camp direction (prototype: placement shell / BCP queues)
   [x] Surface threats: alien life + AI androids — design lock (combat AI partial)
+  [x] Expedition/full-map random spawns + patrol routes — design lock
+      (SurfaceEncounterZone / SurfaceEncounterTable prototype)
   [x] Echo/roster progression is local save only (no marketplace trading)
 
 OPEN (examples)
@@ -955,7 +965,10 @@ B2. PARTIAL — present but incomplete vs lock
       economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
   [~] Exposure zones + EnvironmentalCrisisHudMode exist; live WeatherDirector
-      storm scheduler NOT in repo — Command Center room fill still pending (B4 #5)
+      storm scheduler on Features/Directors branch — Command Center room fill still pending (B4 #5)
+  [~] Surface encounter zones (SurfaceEncounterZone) — weighted random spawns +
+      patrol routes for aliens / lifeforms / androids on expeditions and full map;
+      biome tables and Experience danger-budget director still pending
   [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
       Echo/trio not finished
   [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
