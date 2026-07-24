@@ -381,9 +381,10 @@ unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
 **Locked (July 2026):** Full-scale **surface** main map. **Most underground instanced**
 (10–20 m breach pack zone); **few walk-in** shallow tubes. Wade-only pools; weak
 underground rad unless Strong Rad Zone. No hover-skiff. Instance camps: rest, stash,
-NPC scrapper at far sites. Story branch **B5 Polar → B4 Calderas**.
+NPC scrapper at far sites. Story branch **B5 Polar → B4 Calderas**. **Echo signals
+scheduled by ExperienceDirector** (biome weights, not fixed spawns).
 
-Promote to Appendix A2d after remaining open questions close.
+Promote to Appendix A2d — design lock complete (July 2026).
 
 
 ================================================================================
