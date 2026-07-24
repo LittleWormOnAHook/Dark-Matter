@@ -14,7 +14,6 @@ namespace Project.UI
 
         private TextMeshProUGUI statusLabel;
         private TextMeshProUGUI acLabel;
-        private TextMeshProUGUI piLabel;
         private TextMeshProUGUI echoesLabel;
         private Image connectedIcon;
         private PioneerRosterManager roster;
@@ -73,7 +72,6 @@ namespace Project.UI
             statusLabel.color = SurvivalPioneerUiPalette.ConnectedGreen;
 
             acLabel = CreateLine(widget.transform, "AC —", 14f);
-            piLabel = CreateLine(widget.transform, "Pi —", 14f);
             echoesLabel = CreateLine(widget.transform, "Echoes —", 14f);
         }
 
@@ -104,15 +102,12 @@ namespace Project.UI
             roster?.EnsureWalletBootstrapped();
 
             float ac = roster != null ? roster.AetherCredits : 0f;
-            float pi = roster != null ? roster.PiWalletBalance : 0f;
             int echoes = 0;
             if (roster != null)
                 echoes = roster.SkilledPioneers.Count + roster.WalletOwnedPioneers.Count;
 
             if (acLabel != null)
                 acLabel.text = $"AC {Mathf.RoundToInt(ac)}";
-            if (piLabel != null)
-                piLabel.text = $"Pi {Mathf.RoundToInt(pi)}";
             if (echoesLabel != null)
                 echoesLabel.text = $"Echoes {echoes}";
 

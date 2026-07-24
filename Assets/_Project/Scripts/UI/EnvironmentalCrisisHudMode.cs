@@ -22,6 +22,12 @@ namespace Project.UI
 
         public static bool IsCrisisActive => instance != null && instance.crisisActive;
 
+        /// <summary>
+        /// GDD: sulfur storms pause building ops / craft queues.
+        /// Same gate as crisis for now — BuildingControlPanelUI.Overview reads this.
+        /// </summary>
+        public static bool IsOperationsPaused => IsCrisisActive;
+
         public static EnvironmentalCrisisHudMode EnsureExists(Transform canvasRoot)
         {
             if (instance != null)
@@ -34,26 +40,37 @@ namespace Project.UI
             return instance;
         }
 
-        public void SetCrisisActive(bool active, string bannerMessage = null)
+        /// <param name="active">Crisis on/off.</param>
+        /// <param name="bannerMessage">Banner copy; empty/null keeps current text.</param>
+        /// <param name="retractHud">Hide non-essential HUD chrome while active.</param>
+        /// <param name="showOverlay">Show vignette + banner overlay while active.</param>
+        public void SetCrisisActive(bool active, string bannerMessage, bool retractHud, bool showOverlay)
         {
             EnsureBuilt(transform.parent != null ? transform.parent : transform);
             crisisActive = active;
 
+            bool showChrome = active && showOverlay;
             if (vignetteRoot != null)
-                vignetteRoot.SetActive(active);
+                vignetteRoot.SetActive(showChrome);
             if (bannerRoot != null)
-                bannerRoot.SetActive(active);
+                bannerRoot.SetActive(showChrome);
 
             if (bannerLabel != null && !string.IsNullOrWhiteSpace(bannerMessage))
                 bannerLabel.text = bannerMessage;
 
-            ApplyHudRetraction(active);
+            ApplyHudRetraction(active && retractHud);
 
-            if (active)
+            if (showChrome)
             {
                 vignetteRoot?.transform.SetAsLastSibling();
                 bannerRoot?.transform.SetAsLastSibling();
             }
+        }
+
+        /// <summary>Convenience for debug menus — full retract + overlay.</summary>
+        public void SetCrisisActive(bool active)
+        {
+            SetCrisisActive(active, string.Empty, true, true);
         }
 
         private void Awake()
