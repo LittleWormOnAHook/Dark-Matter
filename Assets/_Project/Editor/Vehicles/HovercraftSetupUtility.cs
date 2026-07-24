@@ -588,6 +588,7 @@ namespace Project.EditorTools.Vehicles
                 "Assets/_Project/Materials/Vehicles/HovercraftThrusterParticle.mat");
             if (thrusterMat != null)
                 renderer.sharedMaterial = thrusterMat;
+        }
 
         private static AudioSource CreateFireAudioSource(Transform muzzle)
         {
