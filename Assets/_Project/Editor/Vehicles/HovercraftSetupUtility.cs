@@ -583,7 +583,11 @@ namespace Project.EditorTools.Vehicles
 
             ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
-        }
+
+            Material thrusterMat = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/_Project/Materials/Vehicles/HovercraftThrusterParticle.mat");
+            if (thrusterMat != null)
+                renderer.sharedMaterial = thrusterMat;
 
         private static AudioSource CreateFireAudioSource(Transform muzzle)
         {
