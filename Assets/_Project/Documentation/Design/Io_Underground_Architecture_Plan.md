@@ -10,14 +10,15 @@
 ## 0. World placement (locked July 2026)
 
 **Surface:** full-scale **main map** (B1–B7 regions, colony, mountains).  
-**Underground:** **instanced scenes** — player enters via breach prompt (teleport/load), exits via return breach back to **surface anchor**.
+**Underground:** **mostly instanced** — enter/exit via breach teleport with **10–20 m** vehicle auto-pack zone.  
+**Exceptions:** a **select few** shallow zones are **walk-in** on the main map (colony refuge tubes, B6 skylight tubes, shallow B1 seeps) — **no teleport**.
 
-- Breach mouths on the main map are **doors**, not seamless vertical streaming.  
-- Each breach stores a **return position** on the surface.  
-- **Vehicles auto-pack** to inventory within entry pack radius when approaching a breach; **manual unpack** after returning to surface.  
-- Foot-only inside all underground instances (hover-skiff exception on tagged water paths).  
-- Journal: surface map shows breach icons; per-instance maps discovered on visit.  
-- Nested instances allowed (brood mother chamber, vault core) loaded from within a parent underground scene.
+- Each instanced breach stores a **return anchor** on the surface.  
+- **Vehicles auto-pack** inside entry zone; **manual unpack** after return.  
+- **Foot only** underground — **no hover-skiff**, no vehicles.  
+- **Wade only** in pools/flooded tubes — slow, stamina drain, no swimming.  
+- **Radiation:** slow/weak by default; **Strong Rad Zones** only where authored.  
+- **Instance camps** (far reaches): recuperate, stash inventory, optional **NPC scrapper** — not full building.
 
 ## 1. Design goal
 
@@ -103,7 +104,7 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 ### 4.2 Chamber modules (setpiece)
 
 - `Chamber_Pool_Small` — condensate pool + edge harvest nodes
-- `Chamber_Basin_Large` — “lake” scale; optional **packed hover-skiff** on path-tagged brine (late)
+- `Chamber_Basin_Large` — “lake” scale; **wade-only** lanes (slow, stamina drain)
 - `Chamber_Grotto` — biolum ceiling; low combat; scan POIs
 - `Chamber_Brood` — nest arena; egg galleries; wave escalation
 - `Chamber_Expedition_Wreck` — environmental storytelling prop cluster
@@ -120,7 +121,7 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 
 - **Rappel** — upper breach entry
 - **Sealed door** — Science Specialist scan / Architect breach
-- **Flooded tube** — wade, or deploy **packed hover-skiff** module on water-path tag (inventory unpack)
+- **Flooded tube** — **wade-only** (slow, stamina drain); no swim, no skiff
 - **Heat lock** — thermal suit tier gate for Stratum 4
 
 ---
@@ -202,7 +203,7 @@ Extends GDD A2 four pressures — **caves are offsets, not safe rooms**.
 | Pressure | Underground modifier |
 |----------|----------------------|
 | **O₂** | Consumption **reduced** in sealed tubes; **increased** in gas domes / brood chambers |
-| **Radiation** | Surface rad **blocked**; **radon buildup** over time in deep galleries (new meter or rad creep) |
+| **Radiation** | **Slow, weak** vs surface (shielded); spikes only in **Strong Rad Zones** |
 | **Thermal** | Stable in Stratum 1–2; **heat pole** spikes near Stratum 4; cold pockets at condensate pools |
 | **Sulfur** | Lower than surface; **spikes** near brine falls and geyser back-pressure events |
 | **Weather (A2b)** | Surface storms **muted**; **Tremor Swarm amplified**; lava surge can **flood** lower tubes |
@@ -211,9 +212,10 @@ Extends GDD A2 four pressures — **caves are offsets, not safe rooms**.
 
 | Zone | O₂ | Rad | Thermal | Sulfur | Surface weather |
 |------|----|-----|---------|--------|-----------------|
-| Upper tube camp | slow | partial block | stable | partial | blocked |
-| Mid gallery | slow | creep | stable | low | blocked |
-| Pool edge | normal | creep | variable | medium | blocked |
+| Upper tube camp | slow | weak / slow | stable | partial | blocked |
+| Mid gallery | slow | weak / slow | stable | low | blocked |
+| Strong Rad Zone | normal | **high** (surface-like+) | variable | low | blocked |
+| Pool edge | normal | weak / slow | variable | medium | blocked |
 | Geothermal root | fast drain | high | extreme heat | low | blocked |
 | Resonance vault | scripted | scripted | scripted | scripted | blocked |
 
@@ -227,7 +229,7 @@ Pair with A2b scheduler — these fire **primarily underground** or **amplify in
 |-------|--------|
 | **Tremor Swarm** | Rockfall; brood wake; pool film breaks |
 | **Geyser back-pressure** | Floods Stratum 2–3 tubes; temporary lake expansion |
-| **Brine rise** | Basins connect; new swim routes; new ambush lanes |
+| **Brine rise** | Basins connect; new **wade** lanes; new ambush lanes |
 | **Gas belch** | O₂ drain bubble; clear with Architect vent tool |
 | **Aether pulse** | Stratum 5 only; Saturation + android patrol |
 
@@ -243,11 +245,12 @@ Pair with A2b scheduler — these fire **primarily underground** or **amplify in
 4. **Nest decision** — clear brood vs sneak for core resource.
 5. **Extract** — tremor or flood timer pressure on exit.
 
-### Colony loop (later)
+### Colony & instance camp loop
 
-- **Purification Hub** — brine condensate → clean O₂ supplement (not immunity).
-- **Science Labs** — chemo samples from pools unlock inoculations.
-- **Lite Building** — tube seals, camp nodes in Stratum 1 only (design lock candidate: **no full base in Stratum 3+**).
+- **Purification Hub** (colony) — brine condensate, rad cleanse.  
+- **Science Labs** (colony) — pool samples, inoculations.  
+- **Instance camps** (far underground only) — **recuperate** (limited O₂/stamina), **stash crate**, **NPC scrapper** (buy/sell basics, rumors). No production queues or Lite Building placement in instances.  
+- **Walk-in tubes** near colony — refuge only; no scrapper.
 
 ### Story hooks
 
@@ -292,13 +295,13 @@ Can **greybox Stratum 1** earlier on flat terrain with a single test tube prefab
 
 ---
 
-## 12. Open questions (need design call)
+## 12. Open questions
 
-1. **Swimming / wading** — full swim in brine or wade-only with stamina drain?
-2. **Radon creep** — separate meter or slow rad pressure increase?
-3. ~~**Hover-skiff on lakes**~~ — **Locked:** packed inventory deploy on water-path tags only (see biome plan §2.5).
-4. **Companion depth limits** — do all trio members enter deep strata or hold at camp?
-5. **Base building underground** — Stratum 1 camps only, or allow sealed modules at pool rims?
+1. ~~**Swimming / wading**~~ — **Locked:** wade-only, slow, stamina drain.  
+2. ~~**Radon creep**~~ — **Locked:** weak/slow default rad; **Strong Rad Zones** for spikes.  
+3. ~~**Hover-skiff**~~ — **Locked:** **cut** — not in scope.  
+4. **Companion depth limits** — do all trio members enter deep strata or hold at camp?  
+5. **Scrapper inventory** — fixed buy table or procedural junk economy?
 
 ---
 

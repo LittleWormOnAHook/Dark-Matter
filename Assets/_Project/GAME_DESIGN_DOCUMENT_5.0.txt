@@ -378,11 +378,10 @@ unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
 
   Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
 
-**Locked (July 2026):** **Full-scale surface main map** (B1–B7 regions, 200–300 m mountains).
-**Underground is instanced/teleport** on enter & exit at breaches. **Day/night cycle**
-shifts polar (B5) thermal — night intensifies cold. **B4/B5 foot only** with separate
-extreme heat vs cold+rad gear. Vehicles: manual unpack on surface; **auto-pack** near
-breach entry; manual unpack after exit.
+**Locked (July 2026):** Full-scale **surface** main map. **Most underground instanced**
+(10–20 m breach pack zone); **few walk-in** shallow tubes. Wade-only pools; weak
+underground rad unless Strong Rad Zone. No hover-skiff. Instance camps: rest, stash,
+NPC scrapper at far sites. Story branch **B5 Polar → B4 Calderas**.
 
 Promote to Appendix A2d after remaining open questions close.
 

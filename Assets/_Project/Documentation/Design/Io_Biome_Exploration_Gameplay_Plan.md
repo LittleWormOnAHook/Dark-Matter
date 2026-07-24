@@ -89,22 +89,35 @@ Any trio can enter any biome; **synergy bonuses** reward matching comp to activi
 **Locked (July 2026):**
 
 - The **surface is one full-scale main map** — geographic regions, not separate overworld levels.  
-- **Most underground is instanced** (or teleported): player **chooses to enter** at a breach → load underground scene → **choose to exit** at marked return breach → back to main map at entry anchor.  
-- Underground is **not** seamless open-world below the surface (no continuous streaming of the full subsurface). Optional **nested instance** within an underground run (brood mother chamber, vault core) is allowed.
+- **Most underground is instanced** (teleport on enter/exit at breaches).  
+- **Select few underground areas** are **walk-in on the main map** — no teleport (see §2.7).  
+- Optional **nested instance** within an underground run (brood mother, vault core) still allowed.
 
-#### Underground enter / exit flow
+#### Seamless underground exceptions (no teleport)
+
+A **small curated set** of shallow subsurface spaces exist as **geometry on the main map** (or additive sub-scenes with no loading screen):
+
+| Zone | Location | Purpose |
+|------|----------|---------|
+| **Colony refuge tubes** | Stratum 1 under / beside Command Center | Tutorial shelter, O₂ relief, first breach without load |
+| **B6 Highland skylight tubes** | Walk-in cave mouths on main map | Hub exploration, breach staging |
+| **Shallow sulfur seeps** | B1 edge pockets | Early volatile harvest |
+
+All **deep** content (Stratum 3+, brood mothers, vaults, large basins) uses **instance teleport**. When in doubt, **teleport**.
+
+#### Underground enter / exit flow (instanced breaches)
 
 ```
-Surface main map → approach breach → [auto-pack vehicle] → "Enter?" prompt
-    → load underground instance (stratum + biome variant)
-    → play subsurface content
-    → reach exit breach → "Return to surface?" prompt
-    → teleport to surface anchor → [manual unpack vehicle if desired]
+Surface main map → enter 10–20 m pack zone → [auto-pack vehicle] → "Enter?" prompt
+    → load underground instance
+    → play content (wade-only pools; weak rad unless strong-rad zone)
+    → exit breach → "Return to surface?" → teleport to anchor → [manual unpack]
 ```
 
-- **Enter:** interact or volume trigger at breach mouth / skylight / collapse sink.  
-- **Exit:** paired exit node inside instance (may be same breach from below or one-way loop).  
-- **Journal map:** surface map shows breach icons; underground map fills per instance visit.
+- **Entry pack zone:** **10–20 m radius** around breach (per-breach tunable within band; default 15 m).  
+- **Enter:** interact or volume at breach mouth — player **chooses** to enter.  
+- **Exit:** paired return node inside instance.  
+- **Walk-in zones:** no pack zone, no teleport — foot transition only.
 
 #### Vehicles — inventory deploy + underground auto-pack
 
@@ -112,17 +125,15 @@ Surface main map → approach breach → [auto-pack vehicle] → "Enter?" prompt
 
 | Action | Behavior |
 |--------|----------|
-| **Unpack (surface)** | Manual — player deploys from inventory in **Vehicle Deploy Zone** |
-| **Approach underground entry** | **Auto-pack** — within **entry pack radius** (~15–25 m, per-breach tunable), deployed vehicle packs to inventory automatically |
-| **Exit to surface** | **Manual unpack** — vehicle stays packed; player unpacks when ready on surface |
-| **Inside underground** | No vehicles (foot only); hover-skiff exception on tagged water paths if owned |
-
-**Rationale:** prevents vehicle exploits in tubes; smooth transition at breach; player control when returning to open map.
+| **Unpack (surface)** | Manual — in **Vehicle Deploy Zone** |
+| **Enter instanced breach zone** | **Auto-pack** within **10–20 m** of entry |
+| **Exit to surface** | **Manual unpack** |
+| **Inside underground** | **Foot only** — no vehicles, **no hover-skiff** |
 
 | Vehicle | Status | Role |
 |---------|--------|------|
-| **Hovercraft** | Prototype shipped | Flat / path-tagged surface; low env resistance |
-| **Io Buggy** (6-wheel) | Planned | Mountains, B3/B6 paths; environment-resistant |
+| **Hovercraft** | Prototype shipped | Flat / path-tagged surface |
+| **Io Buggy** (6-wheel) | Planned | Mountains, B3/B6 paths |
 
 **Vehicle allowance — surface regions only**
 
@@ -137,9 +148,7 @@ Surface main map → approach breach → [auto-pack vehicle] → "Enter?" prompt
 | **B5 Polar Flats** | **No** | **No** | **Foot only — extreme cold + rad gear required** |
 | B6 Highlands | Path to breach | Highland roads | |
 | B7 Ruins | No | No | Foot — silent routes |
-| All underground | No | No | Auto-pack on entry |
-
-**Future:** packed **hover-skiff** — underground water-path tags only; still no surface deploy inside instances except skiff lanes.
+| All underground (instanced) | No | No | Auto-pack at 10–20 m entry zone |
 
 #### Main-map terrain — mountains (200–300 m)
 
@@ -173,6 +182,41 @@ Shelter, volatile seeps, minerals, and ore scattered on **surface main map** and
 | **B5 Polar Flats** | Cold-tier env suit, rad inoculation, polar cover gear | Cold pole spike at night; rad stacking |
 
 Different gear **loadouts** — not one suit for both. Player prepares at colony before long B4/B5 pushes.
+
+---
+
+### 2.7 Underground fluids, radiation & instance camps (locked July 2026)
+
+#### Wade only — no swimming, no hover-skiff
+
+**Locked:** All volatile pools, brine lakes, and flooded tubes are **wade-only**.
+
+- Waist-deep max; **slow movement**, **stamina drain**, reduced aim stability.  
+- **No swim** animation or dive gameplay. **No hover-skiff** or boat vehicles.  
+- Basin Mantis and edge predators still threaten wading players.  
+- Deeper basins = wider wade lanes + stronger drain — not immersion swimming.
+
+#### Underground radiation
+
+**Default underground:** radiation pressure is **slow** and **weaker** than open surface (rock shielding).
+
+- Use existing rad meter at **reduced rate** in generic tube zones.  
+- **Strong Rad Zones** — authored volumes (B5-linked tubes, precursor leaks, ore veins) spike rad to surface-like or higher.  
+- **No separate radon meter** — weak creep is the default underground rad behavior; strong zones are explicit POIs on the map.
+
+#### Small instance camps (far underground / distant instances)
+
+**Locked:** Underground **camps are small and limited** — not colony building.
+
+| Camp function | Allowed | Not allowed |
+|---------------|---------|-------------|
+| **Recuperate** | O₂ refill (limited), stamina, minor Saturation soothe | Full medical bay |
+| **Stock inventory** | Small stash / shared crate for expedition loot | Production queues |
+| **NPC scrapper** | **Far-out instances only** — buys junk, sells basics, rumor hooks | Full vendor / roster recruit |
+
+- Colony Command Center remains the **main** base.  
+- Instance camps are **forward operating rest stops** — especially in deep B4/B5/B7 instances.  
+- Lite Building **does not** apply inside instances except pre-placed camp props.
 
 ---
 
@@ -389,15 +433,22 @@ Procedural expeditions and story quests reuse **activity templates**:
 
 ## 7. Progression & unlock flow
 
-### 7.1 Biome discovery order (recommended campaign arc)
+### 7.1 Biome discovery order & story branch (locked)
 
 ```
 B6 Highlands (hub) → B1 Plains → B2 Geysers → B3 Ash Flats
-    → B4 Calderas OR B5 Polar (player choice branch)
+    → B5 Polar (story branch #1) → B4 Calderas (story branch #2)
     → B7 Ruin Belt (after first Memory Core thread)
 ```
 
-Not a hard lock — **exposure without gear** should hurt enough to teach order organically.
+**Locked story logic — B5 before B4:**
+
+| Order | Region | Why first |
+|-------|--------|-----------|
+| **1** | **B5 Polar** | Teaches **rad + cold + night cycle**; feeds **Purification Hub** and rad inoculation craft; isotope-rush / smuggling lore sets up corporate failure themes |
+| **2** | **B4 Calderas** | **Escalation** — extreme heat, Aether-9 crew death-site candidates, caldera mystery; player arrives with rad/cold lessons and colony science unlocked |
+
+Player can still **stumble unprepared** into either region; guided quests, Ops radio, and gear checks push **B5 → B4**. Echo signals and Memory Core threads remain denser near B4/B7 after polar arc completes.
 
 ### 7.2 Gear & colony gates
 
@@ -491,12 +542,14 @@ Designed for **single-player commanding a trio**, not co-op.
 
 ## 12. Open questions
 
-1. ~~**World scale**~~ — **Locked:** full-scale **surface** main map; **underground instanced/teleport** on enter & exit.  
-2. ~~**Vehicles**~~ — **Locked:** manual unpack on surface; **auto-pack** within entry radius; manual unpack after exit.  
-3. ~~**Night cycle**~~ — **Locked:** polar (B5) thermal shifts with day/night; night intensifies cold pole.  
-4. **Player branch** — B4 vs B5 first after mid-game: moral choice or gear-gated only?  
-5. **Echo signal density** — fixed per biome or director-driven scarcity?  
-6. **Entry pack radius** — global 20 m or per-breach tunable?
+1. ~~**World scale**~~ — **Locked:** full-scale surface; instanced underground + select walk-in zones.  
+2. ~~**Vehicles**~~ — **Locked:** auto-pack 10–20 m at breach; manual unpack on exit; no skiff.  
+3. ~~**Night cycle**~~ — **Locked:** B5 polar thermal day/night shift.  
+4. ~~**Story branch**~~ — **Locked:** **B5 Polar → B4 Calderas** (science/rad before heat/mystery escalation).  
+5. ~~**Wading**~~ — **Locked:** wade-only, slow, stamina drain; no swim.  
+6. ~~**Underground rad**~~ — **Locked:** slow/weak default; **Strong Rad Zones** authored separately.  
+7. ~~**Entry pack radius**~~ — **Locked:** **10–20 m** per breach.  
+8. **Echo signal density** — fixed per biome or director-driven scarcity?
 
 ---
 
@@ -510,7 +563,7 @@ When approved, fold into **GDD Appendix A2d — Io Biome & Exploration Lock**:
 - Activity template grammar
 - Biome × weather × subsurface pairing table
 - Campaign discovery order + gear gates
-- **World structure lock:** full-scale surface map; instanced/teleport underground; day/night polar thermal; B4/B5 foot + extreme gear; vehicle auto-pack at breach
+- **World structure lock:** surface main map; instanced underground + walk-in exceptions; camps; wade-only; B5→B4 story branch
 
 ---
 
