@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Humanoid Enemy
   prefabFileName: HumanoidEnemy_Invector
   archetype: 1
+  surfaceThreatKind: 3
   meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0

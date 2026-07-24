@@ -220,6 +220,22 @@ namespace Project.AI
                 navAgent.isStopped = false;
         }
 
+        /// <summary>
+        /// Assigns a world patrol route after spawn (used by surface encounter zones).
+        /// </summary>
+        public void ConfigurePatrolRoute(Transform[] points, EnemyPatrolMode mode)
+        {
+            patrolPoints = points;
+            patrolMode = mode;
+            hasPatrolRoute = patrolPoints != null && patrolPoints.Length > 0;
+            if (!hasPatrolRoute)
+                return;
+
+            movementMode = EnemyMovementMode.Patrol;
+            patrolIndex = 0;
+            patrolDirection = 1;
+        }
+
         private bool IsStationary => movementMode == EnemyMovementMode.Stationary;
 
         private bool AllowsTranslation =>

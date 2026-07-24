@@ -226,6 +226,13 @@ ENEMY AI (EnemyAiController.cs)
   - Senses: vision (range + FOV), hearing, proximity (EnemySenses.cs)
   - Responds to player noise from combat and movement
 
+SURFACE ENCOUNTERS (expeditions + full map)
+  - SurfaceEncounterZone: player-triggered or start-spawned threat zones
+  - SurfaceEncounterTable: weighted random pool (Alien | Lifeform | Android)
+  - SurfacePatrolRoute + SurfaceEncounterSpawnAnchor: patrol waypoints per spawn
+  - Respects CombatZoneController humanoid budget near player
+  - Editor: Tools > Dark Matter Genesis > Combat > Create Surface Encounter Zone
+
 ENEMY COMBAT
   - Melee attacks with windup, cooldown, and damage to player SurvivalStats
   - Floating health bar above enemy (EnemyHealthBarPresenter.cs)
