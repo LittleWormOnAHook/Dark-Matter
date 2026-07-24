@@ -220,6 +220,54 @@ Different gear **loadouts** — not one suit for both. Player prepares at colony
 
 ---
 
+### 2.8 Echo signals — ExperienceDirector (locked July 2026)
+
+**Locked:** Echo signal placement and density are **director-driven**, not fixed per-biome spawn tables.
+
+**Owner:** `ExperienceDirector` (with `SimulationDirector` / WorldState inputs) schedules when and where signals appear. `EchoSignalRegistry` + `EchoGenerator` remain the runtime surface; the director decides **if**, **when**, and **where** to register new signals.
+
+#### Director inputs (read-only snapshots)
+
+| Input | Effect on signals |
+|-------|-------------------|
+| **Roster vs 25 cap** | Low roster → higher spawn weight; at cap → suppress new signals |
+| **Time since last rescue** | Long drought → gentle increase; recent rescue → cooldown |
+| **Colony Strain / Saturation** | High Strain → fewer signals (colony overwhelmed); stable → normal |
+| **Player region (B1–B7)** | Biome as **weight**, not guarantee — see table below |
+| **Story phase** | B5 arc boosts polar-adjacent weights; post-B5 boosts B4/B7 |
+| **Weather / Resonance** | Echo Storm (Resonance) = temporary density spike + extra hazards |
+| **Active expeditions** | Avoid spawning on top of player; prefer adjacent sectors |
+
+#### Biome weights (not fixed spawns)
+
+Director picks a **weighted region** when spawning; no biome has a static “always one signal here” node.
+
+| Region | Weight bias | Notes |
+|--------|-------------|-------|
+| B6 Highlands | High early | Tutorial / first rescues near hub |
+| B1–B3 | Medium | Mid-early roster fill |
+| B5 Polar | High during B5 story arc | Rad/cold rescue setpieces |
+| B4 Calderas | High post-B5 | Aether-9 mystery escalation |
+| B7 Ruins | High post–Memory Core | Special / rare dispositions |
+| Colony safe radius | **Zero** | Never inside Command Center perimeter |
+
+#### Scarcity rules
+
+- **Active signal cap** scales with progression (e.g. 1–2 early, 3–4 mid, 5+ late) — director enforces world-wide max.  
+- **One rescue cooldown** after success before next signal of same tier.  
+- **Failed rescue** — signal lost permanently; director may spawn replacement elsewhere after delay.  
+- **Infiltrator Scout** + player **scan** reveal signals the director has already placed — they do not create new ones.
+
+#### Echo Storm (Resonance modifier)
+
+When a Resonance Event fires (GDD A6): director enters **Echo Storm** mode for 10–15 min — elevated spawn weight, multiple concurrent signals allowed, paired hazard spike. Returns to normal scheduling after event.
+
+#### Comms
+
+Colony Ops / Aether-9 (when unlocked): *“Anomalous Echo trace flagged in [region] — Scout recommended.”* — reflects director spawn, not scripted POI.
+
+---
+
 ## 3. Surface biome roster (locked proposal — 7 regions on main map)
 
 Each biome links to **dominant pressure**, **signature weather**, **primary verbs**, and **subsurface mouth**.
@@ -427,7 +475,7 @@ Procedural expeditions and story quests reuse **activity templates**:
 | **Core Recovery** | Memory Core arc | B7, deep Aether seeps | Long |
 | **Escort Extract** | Carry injured / artifact out | Any under active weather | Variable |
 
-**Director weights** activities by: biome unlock mask, weather state, Resonance phase, colony need (O₂ low → condensate jobs).
+**Director weights** activities by: biome unlock mask, weather state, Resonance phase, colony need (O₂ low → condensate jobs). **Echo Rescue** signal availability is **ExperienceDirector** — not a static map POI.
 
 ---
 
@@ -448,7 +496,7 @@ B6 Highlands (hub) → B1 Plains → B2 Geysers → B3 Ash Flats
 | **1** | **B5 Polar** | Teaches **rad + cold + night cycle**; feeds **Purification Hub** and rad inoculation craft; isotope-rush / smuggling lore sets up corporate failure themes |
 | **2** | **B4 Calderas** | **Escalation** — extreme heat, Aether-9 crew death-site candidates, caldera mystery; player arrives with rad/cold lessons and colony science unlocked |
 
-Player can still **stumble unprepared** into either region; guided quests, Ops radio, and gear checks push **B5 → B4**. Echo signals and Memory Core threads remain denser near B4/B7 after polar arc completes.
+Player can still **stumble unprepared** into either region; guided quests, Ops radio, and gear checks push **B5 → B4**. After the polar arc, the **ExperienceDirector** raises spawn weights toward B4/B7 (not fixed biome spawns).
 
 ### 7.2 Gear & colony gates
 
@@ -549,7 +597,7 @@ Designed for **single-player commanding a trio**, not co-op.
 5. ~~**Wading**~~ — **Locked:** wade-only, slow, stamina drain; no swim.  
 6. ~~**Underground rad**~~ — **Locked:** slow/weak default; **Strong Rad Zones** authored separately.  
 7. ~~**Entry pack radius**~~ — **Locked:** **10–20 m** per breach.  
-8. **Echo signal density** — fixed per biome or director-driven scarcity?
+8. ~~**Echo signal density**~~ — **Locked:** **ExperienceDirector** schedules spawns; biomes are weights only.
 
 ---
 
@@ -563,7 +611,7 @@ When approved, fold into **GDD Appendix A2d — Io Biome & Exploration Lock**:
 - Activity template grammar
 - Biome × weather × subsurface pairing table
 - Campaign discovery order + gear gates
-- **World structure lock:** surface main map; instanced underground + walk-in exceptions; camps; wade-only; B5→B4 story branch
+- **World structure lock:** surface main map; instanced underground + walk-in exceptions; camps; wade-only; B5→B4 story branch; **Echo signals per ExperienceDirector**
 
 ---
 
