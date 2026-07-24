@@ -1,7 +1,6 @@
 using Project.Companions.Abilities;
 using Project.Companions.Invector;
 using Project.Companions;
-using Project.Companions.Abilities;
 using Project.Pioneers;
 using UnityEngine;
 
