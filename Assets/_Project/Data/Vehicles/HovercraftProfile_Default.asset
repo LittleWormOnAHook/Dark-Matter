@@ -53,6 +53,10 @@ MonoBehaviour:
   followHeight: 4.5
   followLookAhead: 6
   scrollDistanceStep: 2
+  followHeadingSmooth: 2.2
+  followPositionSmooth: 3.5
+  followLookSmooth: 4
+  followLateralTurbulenceScale: 0.12
   turretArcDegrees: 35
   turretSensitivity: {x: 0.06, y: 0.05}
   reticleSmoothSpeed: 8

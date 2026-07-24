@@ -16,6 +16,7 @@ namespace Project.Vehicles
 
     /// <summary>
     /// Cockpit fixed-forward and external follow cameras. F1 toggles; scroll zooms follow distance.
+    /// Follow mode stays level (no bank/tilt) with lagged heading for subtle aircraft-style orbit.
     /// </summary>
     [DisallowMultipleComponent]
     public class HovercraftCameraRig : MonoBehaviour
@@ -35,6 +36,8 @@ namespace Project.Vehicles
         private float _followDistance;
         private bool _active;
         private bool _snapPose;
+        private Vector3 _followPlanarForward = Vector3.forward;
+        private Quaternion _followLookRotation = Quaternion.identity;
 
         public HovercraftCameraMode Mode => _mode;
         public bool IsActive => _active;
@@ -207,12 +210,44 @@ namespace Project.Vehicles
                 return;
             }
 
+            ApplyFollowCameraPose(snap);
+        }
+
+        /// <summary>
+        /// Third-person chase cam: level horizon (no bank/tilt), lagged heading so left/right orbit
+        /// stays subtle like an aircraft chase camera, and heavily damped lateral turbulence.
+        /// </summary>
+        private void ApplyFollowCameraPose(bool snap)
+        {
             Transform followAnchor = followCamPoint != null ? followCamPoint : transform;
-            Vector3 lookTarget = transform.position + transform.forward * (profile != null ? profile.followLookAhead : 6f);
-            Vector3 offset = -transform.forward * _followDistance + Vector3.up * (profile != null ? profile.followHeight : 4.5f);
+            float lookAhead = profile != null ? profile.followLookAhead : 6f;
+            float height = profile != null ? profile.followHeight : 4.5f;
+            float headingSmooth = profile != null ? profile.followHeadingSmooth : 2.2f;
+            float positionSmooth = profile != null ? profile.followPositionSmooth : 3.5f;
+            float lookSmooth = profile != null ? profile.followLookSmooth : 4f;
+            float lateralTurbScale = profile != null ? profile.followLateralTurbulenceScale : 0.12f;
+
+            Vector3 targetForward = ResolvePlanarForward(transform.forward);
+            if (snap || _followPlanarForward.sqrMagnitude < 0.0001f)
+            {
+                _followPlanarForward = targetForward;
+            }
+            else
+            {
+                float headingT = 1f - Mathf.Exp(-headingSmooth * Time.deltaTime);
+                _followPlanarForward = Vector3.Slerp(_followPlanarForward, targetForward, headingT).normalized;
+            }
+
+            Vector3 lookTarget = transform.position + targetForward * lookAhead;
+            Vector3 offset = -_followPlanarForward * _followDistance + Vector3.up * height;
             Vector3 desiredPosition = followAnchor.position + offset;
             if (physicsDriver != null)
-                desiredPosition += physicsDriver.SampleTurbulenceOffset();
+            {
+                Vector3 turbulence = physicsDriver.SampleTurbulenceOffset();
+                turbulence.x *= lateralTurbScale;
+                turbulence.z *= lateralTurbScale;
+                desiredPosition += turbulence;
+            }
 
             if (snap)
             {
@@ -220,19 +255,39 @@ namespace Project.Vehicles
             }
             else
             {
+                float positionT = 1f - Mathf.Exp(-positionSmooth * Time.deltaTime);
                 _vehicleCamera.transform.position = Vector3.Lerp(
                     _vehicleCamera.transform.position,
                     desiredPosition,
-                    Time.deltaTime * 8f);
+                    positionT);
             }
 
-            Quaternion bankedRoot = transform.rotation * bankLocal;
-            Vector3 up = bankedRoot * Vector3.up;
-            if (up.sqrMagnitude < 0.0001f)
-                up = Vector3.up;
-            _vehicleCamera.transform.rotation = Quaternion.LookRotation(
-                lookTarget - _vehicleCamera.transform.position,
-                up);
+            // World-up look keeps the chase cam level — craft visual bank must not roll the camera.
+            Vector3 toTarget = lookTarget - _vehicleCamera.transform.position;
+            if (toTarget.sqrMagnitude < 0.0001f)
+                toTarget = targetForward;
+
+            Quaternion desiredLook = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+            if (snap)
+            {
+                _followLookRotation = desiredLook;
+                _vehicleCamera.transform.rotation = desiredLook;
+            }
+            else
+            {
+                float lookT = 1f - Mathf.Exp(-lookSmooth * Time.deltaTime);
+                _followLookRotation = Quaternion.Slerp(_followLookRotation, desiredLook, lookT);
+                _vehicleCamera.transform.rotation = _followLookRotation;
+            }
+        }
+
+        private static Vector3 ResolvePlanarForward(Vector3 forward)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(forward, Vector3.up);
+            if (planar.sqrMagnitude < 0.0001f)
+                return Vector3.forward;
+
+            return planar.normalized;
         }
 
         /// <summary>
