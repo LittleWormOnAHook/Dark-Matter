@@ -45,9 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ae1326eff26bae4eb2cc85f5df3e788, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.CombatProjectile
-  speed: 150
+  speed: 300
   maxLifetime: 3
-  radius: 0.08
+  radius: 0.02
   hitLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -79,7 +79,7 @@ Transform:
   m_GameObject: {fileID: 3451999474425238663}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 7.3, z: 0}
   m_LocalScale: {x: 0.011955087, y: 0.011955087, z: 0.036117513}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -118,7 +118,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 234173eef2ee7214bb431b498ed62195, type: 2}
+  - {fileID: 2100000, guid: 5f77cbf83028b6c46b8b0e8a2c372c99, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ae1326eff26bae4eb2cc85f5df3e788, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.CombatProjectile
-  speed: 85
+  speed: 300
   maxLifetime: 3
   radius: 0.08
   hitLayers:

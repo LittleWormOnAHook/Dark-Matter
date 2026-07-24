@@ -270,12 +270,12 @@ MonoBehaviour:
   thrusterVfx: {fileID: 556018164980831515}
   usable: {fileID: 1421051589255876009}
   fuelSystem: {fileID: 810354722967646242}
-  engineRunningClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  engineRunningClip: {fileID: 0}
   turretFireClip: {fileID: 8300000, guid: 221503a992e5bc64f88e43a08127f346, type: 3}
-  turretFireClip2: {fileID: 0}
-  boardClip: {fileID: 0}
-  exitClip: {fileID: 0}
-  boostClip: {fileID: 0}
+  turretFireClip2: {fileID: 8300000, guid: b8f88923a1641df43b9ada3b901debb7, type: 3}
+  boardClip: {fileID: 8300000, guid: 1682d7c1d6179ed449cbab1b24e2830f, type: 3}
+  exitClip: {fileID: 8300000, guid: 99edd1ed765801d42a9485951d9e2c1f, type: 3}
+  boostClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
 --- !u!114 &1421051589255876009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -323,9 +323,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Vehicles.HovercraftVehicleAudio
   profile: {fileID: 11400000, guid: 4ca7f126a161ab746bf9827c4fd45a37, type: 2}
   oneShotSource: {fileID: 7250951247326903199}
-  boardClip: {fileID: 0}
-  exitClip: {fileID: 0}
-  boostClip: {fileID: 0}
+  boardClip: {fileID: 8300000, guid: 1682d7c1d6179ed449cbab1b24e2830f, type: 3}
+  exitClip: {fileID: 8300000, guid: 99edd1ed765801d42a9485951d9e2c1f, type: 3}
+  boostClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
 --- !u!114 &556018164980831515
 MonoBehaviour:
   m_ObjectHideFlags: 0

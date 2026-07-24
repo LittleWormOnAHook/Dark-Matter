@@ -84,27 +84,52 @@ namespace Project.Data
         [Tooltip("Optional stable id for save/sync when prefab references change.")]
         public string invectorWeaponId;
 
-        [Header("Melee")]
+        [Header("Melee Base Stats")]
         public float meleeDamage = 10f;
         [Tooltip("Extra random damage rolled on top of meleeDamage. Final hit = Random between meleeDamage and meleeDamage + this value.")]
         public float meleeDamageRandomRange = 3f;
+        [Tooltip("Chance (0-1) for a critical hit on melee. Used by RollCriticalHit().")]
+        [Range(0f, 1f)]
+        public float criticalChance = 0.1f;
         [Tooltip("Damage multiplier applied to power / critical hits.")]
         public float criticalDamageMultiplier = 2f;
         public float meleeRange = 2.2f;
         public float meleeCooldown = 0.65f;
         [Tooltip("Animator playback multiplier for melee attacks. 0 uses grip + held scale.")]
         public float attackAnimationSpeed;
+        [Tooltip("Stamina spent per melee swing. 0 keeps legacy behavior (no per-swing drain from this field).")]
+        public float meleeStaminaCost;
+        [Tooltip("Knockback impulse on melee hit. Reserved for hit-path force; authored now for base-stat parity.")]
+        public float meleeKnockback;
         public int gatherPower = 1;
         public string attackTrigger = "Attack";
 
-        [Header("Ranged")]
+        [Header("Ranged Base Stats")]
         public float rangedDamage = 14f;
         public float rangedDamageRandomRange = 4f;
         public float rangedRange = 45f;
+        [Tooltip("Projectile travel speed (m/s). Ammo overrides weapon when ammo.projectileSpeed > 0. Primary velocity authoring knob.")]
         public float projectileSpeed = 85f;
+        [Tooltip("Base cone spread in degrees before accuracy, hip-fire, and close-range modifiers. Ammo overrides weapon when ammo spread > 0.")]
         public float projectileSpreadDegrees = 1.5f;
+        [Tooltip("0-100 base accuracy. Higher reduces cone spread. Skill bonuses add on top. Later weapon upgrades will raise this from the weapon base.")]
+        [Range(0f, 100f)]
+        public float weaponAccuracy = 75f;
+        [Tooltip("Within this distance (m) to the reticle aim point, spread scales toward closeRangeSpreadScale.")]
+        public float closeRangeFullAccuracyDistance = 12f;
+        [Tooltip("Spread multiplier at point-blank (0 = perfect, 1 = full spread). Lerps to 1 beyond closeRangeFullAccuracyDistance.")]
+        [Range(0f, 1f)]
+        public float closeRangeSpreadScale = 0.2f;
+        [Tooltip("Vertical camera recoil kick magnitude (authoring units matching PioneerInvectorRecoilUtility). 0 falls back to grip defaults.")]
+        public float recoilVertical;
+        [Tooltip("Horizontal camera recoil kick magnitude (half-range of ±drift). 0 falls back to grip defaults.")]
+        public float recoilHorizontal;
+        [Tooltip("When fireRate exceeds this value, recoil scales down. 0 uses default 4.5.")]
+        public float recoilFireRateScale = 4.5f;
         public float fireRate = 4f;
         public int magazineSize = 30;
+        [Tooltip("Authoritative reload duration in seconds. Pushed onto Invector weapons when > 0.")]
+        public float reloadTimeSeconds = 1.8f;
         public AmmoType defaultAmmoType = AmmoType.Gunpowder;
         public AmmoType[] compatibleAmmoTypes = { AmmoType.Gunpowder };
         [Tooltip("Ammo ItemData this weapon starts loaded with before the player ever explicitly equips or picks up ammo. Keeps 'default ammo' fire going through the exact same ammoItem-driven projectile/VFX/audio path as any other ammo, instead of falling back to this weapon's own (easy to forget) VFX fields.")]
@@ -235,6 +260,17 @@ namespace Project.Data
         public bool IsAmmo => itemType == ItemType.Ammo;
 
         /// <summary>
+        /// Ammo accuracy wins when ammo is present and authored (&gt; 0); otherwise weapon base.
+        /// Skill bonuses are applied separately in <see cref="Project.Combat.RangedFireSolver"/>.
+        /// </summary>
+        public float ResolveBaseAccuracy(ItemData ammoOrNull)
+        {
+            if (ammoOrNull != null && ammoOrNull.weaponAccuracy > 0f)
+                return ammoOrNull.weaponAccuracy;
+            return weaponAccuracy;
+        }
+
+        /// <summary>
         /// Fallback for mis-typed ammo assets (e.g. created as Consumable via Crafting Item Creator).
         /// </summary>
         public bool CountsAsAmmo =>
@@ -285,6 +321,16 @@ namespace Project.Data
             return Mathf.Clamp(gripSpeed * sizeSlowdown * cooldownSlowdown, 0.5f, 1.35f);
         }
 
+        /// <summary>Rolls a critical using this item's <see cref="criticalChance"/> (0–1).</summary>
+        public bool RollCriticalHit()
+        {
+            if (criticalChance <= 0f)
+                return false;
+            if (criticalChance >= 1f)
+                return true;
+            return Random.value <= criticalChance;
+        }
+
         public float GetAverageMeleeDamage()
         {
             float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
@@ -305,7 +351,7 @@ namespace Project.Data
 
         public float GetAverageRangedDamage()
         {
-            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float bonus = PlayerSkillAllocator.GetRangedDamageFlatBonus();
             float minDamage = Mathf.Max(1f, rangedDamage + bonus);
             float average;
             if (rangedDamageRandomRange <= 0f)
@@ -319,6 +365,14 @@ namespace Project.Data
             }
 
             return average * PlayerSkillAllocator.GetLevelWeaponDamageMultiplier();
+        }
+
+        /// <summary>Effective accuracy including category Weapon Accuracy skill (clamped 0–100).</summary>
+        public float GetEffectiveAccuracy(ItemData ammoOrNull = null)
+        {
+            float accuracy = ResolveBaseAccuracy(ammoOrNull);
+            accuracy += PlayerSkillAllocator.GetWeaponAccuracyBonusPercent();
+            return Mathf.Clamp(accuracy, 0f, 100f);
         }
 
         public float RollMeleeDamage(bool isCritical = false)
@@ -337,7 +391,7 @@ namespace Project.Data
 
         public float RollRangedDamage(bool isCritical = false)
         {
-            float bonus = PlayerSkillAllocator.GetMeleeDamageFlatBonus();
+            float bonus = PlayerSkillAllocator.GetRangedDamageFlatBonus();
             float minDamage = Mathf.Max(1f, rangedDamage + bonus);
             float rolledDamage = rangedDamageRandomRange <= 0f
                 ? minDamage

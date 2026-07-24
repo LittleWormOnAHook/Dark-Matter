@@ -46,7 +46,10 @@ MonoBehaviour:
   rangedDamageRandomRange: 4
   rangedRange: 45
   projectileSpeed: 85
-  projectileSpreadDegrees: 1.5
+  projectileSpreadDegrees: 0.6
+  weaponAccuracy: 90
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.15
   fireRate: 4
   magazineSize: 30
   defaultAmmoType: 5

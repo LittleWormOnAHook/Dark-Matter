@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 1163674759462951414}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.27666855, y: -1.2999954, z: -0.82486343}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -44,7 +44,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1163674759462951414}
   serializedVersion: 8
-  lengthInSec: 0.15
+  lengthInSec: 0.3
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 3
@@ -290,7 +290,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.009
+      scalar: 0.01
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -396,7 +396,7 @@ ParticleSystem:
     startSizeZ:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.009
+      scalar: 0.01
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -19528,9 +19528,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ae1326eff26bae4eb2cc85f5df3e788, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.CombatProjectile
-  speed: 150
+  speed: 300
   maxLifetime: 3
-  radius: 0.08
+  radius: 0.02
   hitLayers:
     serializedVersion: 2
     m_Bits: 4294967295

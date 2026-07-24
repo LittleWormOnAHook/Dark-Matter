@@ -17,6 +17,7 @@ MonoBehaviour:
   worldPrefab: {fileID: 570861866219929534, guid: d8699172f4ee6f04084ce2c62c49bf08, type: 3}
   maxStack: 999
   itemType: 4
+  deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
   equipSocketName: RightHand
@@ -45,8 +46,11 @@ MonoBehaviour:
   rangedDamage: 12.6
   rangedDamageRandomRange: 4
   rangedRange: 45
-  projectileSpeed: 85
-  projectileSpreadDegrees: 1.5
+  projectileSpeed: 230
+  projectileSpreadDegrees: 1.2
+  weaponAccuracy: 78
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.18
   fireRate: 2
   magazineSize: 30
   defaultAmmoType: 1
@@ -92,8 +96,8 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5

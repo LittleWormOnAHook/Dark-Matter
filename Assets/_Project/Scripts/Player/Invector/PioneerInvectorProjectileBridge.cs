@@ -27,8 +27,9 @@ namespace Project.Player.Invector
         private WeaponAmmoState _ammoState;
         private EquipmentController _equipment;
         private vShooterManager _shooterManager;
-        private CombatFocusController _combatFocus;
         private PioneerInvectorAmmoBridge _ammoBridge;
+        private PioneerInvectorInputBridge _inputBridge;
+        private PlayerController _player;
 
         private void Awake()
         {
@@ -36,8 +37,9 @@ namespace Project.Player.Invector
             _ammoState = GetComponent<WeaponAmmoState>();
             _equipment = GetComponent<EquipmentController>();
             _shooterManager = GetComponent<vShooterManager>();
-            _combatFocus = GetComponent<CombatFocusController>();
             _ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
+            _inputBridge = GetComponent<PioneerInvectorInputBridge>();
+            _player = GetComponent<PlayerController>();
         }
 
         private void OnEnable()
@@ -79,6 +81,18 @@ namespace Project.Player.Invector
             invectorWeapon.lightOnShot = null;
             invectorWeapon.isInfinityAmmo = true;
             invectorWeapon.dontUseReload = false;
+            if (invectorWeapon.reloadSource != null &&
+                invectorWeapon.gameObject.activeInHierarchy &&
+                !invectorWeapon.reloadSource.enabled)
+            {
+                invectorWeapon.reloadSource.enabled = true;
+            }
+            else if (invectorWeapon.source != null &&
+                     invectorWeapon.gameObject.activeInHierarchy &&
+                     !invectorWeapon.source.enabled)
+            {
+                invectorWeapon.source.enabled = true;
+            }
             PioneerInvectorRecoilUtility.ZeroWeaponRecoil(invectorWeapon);
 
             ItemData weaponItem = _equipment.EquippedItem;
@@ -96,26 +110,51 @@ namespace Project.Player.Invector
                 ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
                 : null;
 
-            Vector3 direction = ResolveFireDirection(invectorWeapon.muzzle);
-            float spread = weaponItem.projectileSpreadDegrees;
+            Transform muzzle = invectorWeapon.muzzle;
+            bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
+            float maxRange = ResolveMaxRange(weaponItem, ammoItem);
 
-            CombatProjectileSpawner.Spawn(gameObject, invectorWeapon.muzzle, weaponItem, ammoItem, direction, spread);
-        }
-
-        private Vector3 ResolveFireDirection(Transform muzzle)
-        {
-            if (_combatFocus != null && _combatFocus.TryGetAimDirection(muzzle.position, out Vector3 aimDirection))
-                return aimDirection;
-
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
+            Camera cam = ResolveGameplayCamera();
+            float aimDistance = maxRange;
+            Vector3 reticleAim = muzzle.forward;
+            if (cam != null)
             {
-                Vector3 camForward = mainCamera.transform.forward;
-                if (camForward.sqrMagnitude > 0.0001f)
-                    return camForward.normalized;
+                reticleAim = RangedFireSolver.ResolveMuzzleToReticleDirection(
+                    cam,
+                    muzzle.position,
+                    maxRange,
+                    out aimDistance);
             }
 
-            return muzzle.forward;
+            Vector3 direction = RangedFireSolver.ResolveDirection(
+                reticleAim,
+                muzzle.forward,
+                isAiming,
+                weaponItem.hipFireMaxDeviationDegrees);
+
+            float spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+                weaponItem,
+                ammoItem,
+                isAiming,
+                aimDistance,
+                applyPlayerSkillBonus: true);
+
+            CombatProjectileSpawner.Spawn(gameObject, muzzle, weaponItem, ammoItem, direction, spread);
+        }
+
+        private Camera ResolveGameplayCamera()
+        {
+            if (_player != null && _player.GameplayCamera != null)
+                return _player.GameplayCamera;
+            return Camera.main;
+        }
+
+        private static float ResolveMaxRange(ItemData weapon, ItemData ammo)
+        {
+            float range = weapon != null ? weapon.rangedRange : 45f;
+            if (ammo != null && ammo.rangedRange > 0.01f)
+                range = ammo.rangedRange;
+            return Mathf.Max(1f, range);
         }
     }
 }

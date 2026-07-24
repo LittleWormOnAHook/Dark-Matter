@@ -1,4 +1,5 @@
 using Invector.vCamera;
+using Project.CameraFx;
 using Project.Core;
 using Project.Player;
 using Project.Player.Invector;
@@ -33,6 +34,7 @@ namespace Project.Vehicles
         private HovercraftCameraMode _mode = HovercraftCameraMode.Cockpit;
         private float _followDistance;
         private bool _active;
+        private bool _snapPose;
 
         public HovercraftCameraMode Mode => _mode;
         public bool IsActive => _active;
@@ -74,8 +76,10 @@ namespace Project.Vehicles
             if (profile != null)
                 _followDistance = profile.followDistanceDefault;
             _active = true;
+            _snapPose = true;
             ApplyCameraPose(true);
             GameplayAudioUtility.EnsureListenerOnCamera(_vehicleCamera);
+            CameraShakeListener.EnsureOn(_vehicleCamera);
         }
 
         public void Deactivate()
@@ -90,6 +94,7 @@ namespace Project.Vehicles
 
             Camera restoreCamera = _player != null ? _player.GameplayCamera : _playerCamera;
             GameplayAudioUtility.EnsureListenerOnCamera(restoreCamera);
+            CameraShakeListener.EnsureOn(restoreCamera);
 
             _active = false;
             _player = null;
@@ -106,11 +111,18 @@ namespace Project.Vehicles
             if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame)
                 ToggleMode();
 
-            bool zoomed = false;
-            if (_mode == HovercraftCameraMode.Follow && CanHandleFollowZoom())
-                zoomed = HandleFollowZoom();
+            if (_mode == HovercraftCameraMode.Follow && CanHandleFollowZoom() && HandleFollowZoom())
+                _snapPose = true;
+        }
 
-            ApplyCameraPose(zoomed);
+        private void LateUpdate()
+        {
+            if (!_active)
+                return;
+
+            // Pose after HoverPhysicsDriver LateUpdate so bank matches the visual mesh 1:1 this frame.
+            ApplyCameraPose(_snapPose);
+            _snapPose = false;
         }
 
         public void ToggleMode()
@@ -122,6 +134,7 @@ namespace Project.Vehicles
             if (_mode == HovercraftCameraMode.Follow && profile != null)
                 _followDistance = Mathf.Clamp(_followDistance, profile.followDistanceMin, profile.followDistanceMax);
 
+            _snapPose = true;
             ApplyCameraPose(true);
         }
 
@@ -170,18 +183,25 @@ namespace Project.Vehicles
             if (_vehicleCamera == null)
                 return;
 
+            // Same local bank currently on the visual mesh; applied in craft-root space (not camera
+            // local) so cockpit roll matches the hull 1:1 when strafing / turning.
+            Quaternion bankLocal = physicsDriver != null
+                ? physicsDriver.CurrentVisualBankLocal
+                : Quaternion.identity;
+
             if (_mode == HovercraftCameraMode.Cockpit)
             {
                 Transform point = cockpitCamPoint != null ? cockpitCamPoint : transform;
                 Vector3 turbulence = physicsDriver != null ? physicsDriver.SampleTurbulenceOffset() : Vector3.zero;
+                Quaternion rotation = ResolveBankedCameraRotation(point, bankLocal);
                 if (snap)
                 {
-                    _vehicleCamera.transform.SetPositionAndRotation(point.position + turbulence, point.rotation);
+                    _vehicleCamera.transform.SetPositionAndRotation(point.position + turbulence, rotation);
                 }
                 else
                 {
                     _vehicleCamera.transform.position = point.position + turbulence;
-                    _vehicleCamera.transform.rotation = point.rotation;
+                    _vehicleCamera.transform.rotation = rotation;
                 }
 
                 return;
@@ -206,7 +226,26 @@ namespace Project.Vehicles
                     Time.deltaTime * 8f);
             }
 
-            _vehicleCamera.transform.rotation = Quaternion.LookRotation(lookTarget - _vehicleCamera.transform.position, Vector3.up);
+            Quaternion bankedRoot = transform.rotation * bankLocal;
+            Vector3 up = bankedRoot * Vector3.up;
+            if (up.sqrMagnitude < 0.0001f)
+                up = Vector3.up;
+            _vehicleCamera.transform.rotation = Quaternion.LookRotation(
+                lookTarget - _vehicleCamera.transform.position,
+                up);
+        }
+
+        /// <summary>
+        /// Banks the untilted cam-point rotation by the visual mesh delta in craft-root space.
+        /// Cam anchors are siblings of Visual, so point.rotation alone stays level with the RB.
+        /// </summary>
+        private Quaternion ResolveBankedCameraRotation(Transform point, Quaternion bankLocal)
+        {
+            if (point == null)
+                return transform.rotation * bankLocal;
+
+            // world = root * bank * Inverse(root) * untiltedPointWorld
+            return transform.rotation * bankLocal * Quaternion.Inverse(transform.rotation) * point.rotation;
         }
 
         private void CachePlayerCameras(PlayerController player)

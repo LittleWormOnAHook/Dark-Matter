@@ -29,6 +29,7 @@ namespace Project.UI
         private CharacterStatBarRow oxygenBar;
         private CharacterStatBarRow meleeBar;
         private CharacterStatBarRow rangedBar;
+        private CharacterStatBarRow accuracyBar;
         private CharacterEnvironmentSection environmentSection;
 
         private PlayerProgressionManager progression;
@@ -217,10 +218,16 @@ namespace Project.UI
             {
                 float damage = weapon.GetAverageRangedDamage();
                 rangedBar.SetValues(damage, CombatDamageReference, FormatStatValue(damage));
+                if (accuracyBar != null)
+                {
+                    float accuracy = weapon.GetEffectiveAccuracy();
+                    accuracyBar.SetValues(accuracy, 100f, FormatStatValue(accuracy));
+                }
             }
             else
             {
                 rangedBar.SetUnavailable("Ranged Damage");
+                accuracyBar?.SetUnavailable("Accuracy");
             }
         }
 
@@ -299,8 +306,8 @@ namespace Project.UI
             GameObject listHost = new GameObject("VitalsList", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             listHost.transform.SetParent(parent, false);
             LayoutElement listLayout = listHost.GetComponent<LayoutElement>();
-            // 6 rows now that Melee/Ranged damage live here alongside Health/Energy/Stamina/Oxygen.
-            listLayout.minHeight = HudLayoutMetrics.Scaled(180f);
+            // 7 rows: Health/Energy/Stamina/Oxygen + Melee/Ranged/Accuracy.
+            listLayout.minHeight = HudLayoutMetrics.Scaled(210f);
 
             VerticalLayoutGroup rowsGroup = listHost.GetComponent<VerticalLayoutGroup>();
             rowsGroup.spacing = 6f;
@@ -315,6 +322,7 @@ namespace Project.UI
             oxygenBar = new CharacterStatBarRow(listHost.transform, "O", "Oxygen", SurvivalPioneerUiPalette.RichFuchsia);
             meleeBar = new CharacterStatBarRow(listHost.transform, "M", "Melee Damage", SurvivalPioneerUiPalette.RichFuchsia);
             rangedBar = new CharacterStatBarRow(listHost.transform, "R", "Ranged Damage", SurvivalPioneerUiPalette.RichFuchsia);
+            accuracyBar = new CharacterStatBarRow(listHost.transform, "A", "Accuracy", SurvivalPioneerUiPalette.Gold);
         }
 
         private void BuildSurvivorPanel(Transform parent)

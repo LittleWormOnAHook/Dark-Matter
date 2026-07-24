@@ -34,12 +34,15 @@ MonoBehaviour:
   sheathedLocalScale: {x: 1, y: 1, z: 1}
   invectorWeaponPrefab: {fileID: 0}
   invectorWeaponId: 
-  meleeDamage: 15
+  meleeDamage: 18
   meleeDamageRandomRange: 6
+  criticalChance: 0.18
   criticalDamageMultiplier: 2.25
   meleeRange: 2.4
   meleeCooldown: 0.6
   attackAnimationSpeed: 0
+  meleeStaminaCost: 12
+  meleeKnockback: 3
   gatherPower: 1
   attackTrigger: Attack
   rangedDamage: 14
@@ -84,3 +87,7 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 
+
+
+
+meleeDamage: 18

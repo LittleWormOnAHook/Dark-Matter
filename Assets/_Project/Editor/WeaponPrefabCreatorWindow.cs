@@ -17,6 +17,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
     private string weaponName = "New Weapon";
     private GameObject meshSource;
+    private ItemType weaponItemType = ItemType.MeleeWeapon;
     private WeaponGrip weaponGrip = WeaponGrip.OneHanded;
     private ItemData gripTemplate;
 
@@ -31,10 +32,30 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
     private float meleeDamage = 18f;
     private float meleeDamageRandomRange = 8f;
+    private float criticalChance = 0.1f;
     private float criticalDamageMultiplier = 2.5f;
     private float meleeRange = 2.6f;
     private float meleeCooldown = 0.55f;
+    private float meleeStaminaCost = 8f;
+    private float meleeKnockback;
     private int gatherPower = 1;
+
+    private float rangedDamage = 14f;
+    private float rangedDamageRandomRange = 4f;
+    private float rangedRange = 45f;
+    private float projectileSpeed = 120f;
+    private float projectileSpreadDegrees = 1.5f;
+    private float weaponAccuracy = 75f;
+    private float closeRangeFullAccuracyDistance = 12f;
+    private float closeRangeSpreadScale = 0.2f;
+    private float recoilVertical = 2.5f;
+    private float recoilHorizontal = 0.7f;
+    private float recoilFireRateScale = 4.5f;
+    private float fireRate = 4f;
+    private int magazineSize = 30;
+    private float reloadTimeSeconds = 1.8f;
+    private float hipFireMaxDeviationDegrees = 15f;
+    private float hipFireSpreadMultiplier = 1f;
 
     private WeaponPrefabBuilder.PickupOptions pickupOptions = WeaponPrefabBuilder.DefaultPickupOptions;
 
@@ -71,6 +92,11 @@ public class WeaponPrefabCreatorWindow : EditorWindow
         meshSource = (GameObject)EditorGUILayout.ObjectField("Mesh / Model Source", meshSource, typeof(GameObject), false);
 
         EditorGUI.BeginChangeCheck();
+        bool isRangedToggle = EditorGUILayout.Toggle(
+            new GUIContent("Ranged Weapon", "Enables velocity / accuracy / spread authoring on the ItemData."),
+            weaponItemType == ItemType.RangedWeapon);
+        weaponItemType = isRangedToggle ? ItemType.RangedWeapon : ItemType.MeleeWeapon;
+
         weaponGrip = (WeaponGrip)EditorGUILayout.EnumPopup("Grip", weaponGrip);
         if (EditorGUI.EndChangeCheck())
             ApplyGripTemplateDefaults();
@@ -97,14 +123,51 @@ public class WeaponPrefabCreatorWindow : EditorWindow
         pickupOptions.AutoFitCollider = EditorGUILayout.Toggle("Auto-fit Collider", pickupOptions.AutoFitCollider);
         pickupOptions.CanRespawn = EditorGUILayout.Toggle("Can Respawn", pickupOptions.CanRespawn);
 
-        EditorGUILayout.Space(8f);
-        EditorGUILayout.LabelField("Melee Stats", EditorStyles.boldLabel);
-        meleeDamage = EditorGUILayout.FloatField("Damage", meleeDamage);
-        meleeDamageRandomRange = EditorGUILayout.FloatField("Damage Random Range", meleeDamageRandomRange);
-        criticalDamageMultiplier = EditorGUILayout.FloatField("Critical Multiplier", criticalDamageMultiplier);
-        meleeRange = EditorGUILayout.FloatField("Range", meleeRange);
-        meleeCooldown = EditorGUILayout.FloatField("Cooldown", meleeCooldown);
-        gatherPower = EditorGUILayout.IntField("Gather Power", gatherPower);
+        bool isRanged = weaponItemType == ItemType.RangedWeapon;
+
+        if (!isRanged)
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Melee Base Stats", EditorStyles.boldLabel);
+            meleeDamage = EditorGUILayout.FloatField("Damage", meleeDamage);
+            meleeDamageRandomRange = EditorGUILayout.FloatField("Damage Random Range", meleeDamageRandomRange);
+            criticalChance = EditorGUILayout.Slider("Crit Chance", criticalChance, 0f, 1f);
+            criticalDamageMultiplier = EditorGUILayout.FloatField("Critical Multiplier", criticalDamageMultiplier);
+            meleeRange = EditorGUILayout.FloatField("Range", meleeRange);
+            meleeCooldown = EditorGUILayout.FloatField("Cooldown", meleeCooldown);
+            meleeStaminaCost = EditorGUILayout.FloatField("Stamina Cost", meleeStaminaCost);
+            meleeKnockback = EditorGUILayout.FloatField("Knockback", meleeKnockback);
+            gatherPower = EditorGUILayout.IntField("Gather Power", gatherPower);
+        }
+        else
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Ranged Base Stats", EditorStyles.boldLabel);
+            rangedDamage = EditorGUILayout.FloatField("Damage", rangedDamage);
+            rangedDamageRandomRange = EditorGUILayout.FloatField("Damage Random Range", rangedDamageRandomRange);
+            rangedRange = EditorGUILayout.FloatField("Range", rangedRange);
+            fireRate = EditorGUILayout.FloatField("Fire Rate", fireRate);
+            magazineSize = EditorGUILayout.IntField("Magazine Size", magazineSize);
+            reloadTimeSeconds = EditorGUILayout.FloatField("Reload Time (s)", reloadTimeSeconds);
+            projectileSpeed = EditorGUILayout.FloatField(
+                new GUIContent("Projectile Speed", "Fallback velocity when ammo has no override. Ammo.projectileSpeed is primary."),
+                projectileSpeed);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Accuracy / Spread", EditorStyles.boldLabel);
+            projectileSpreadDegrees = EditorGUILayout.FloatField("Spread Degrees", projectileSpreadDegrees);
+            weaponAccuracy = EditorGUILayout.Slider("Weapon Accuracy", weaponAccuracy, 0f, 100f);
+            closeRangeFullAccuracyDistance = EditorGUILayout.FloatField("Close Range Dist (m)", closeRangeFullAccuracyDistance);
+            closeRangeSpreadScale = EditorGUILayout.Slider("Close Spread Scale", closeRangeSpreadScale, 0f, 1f);
+            hipFireMaxDeviationDegrees = EditorGUILayout.FloatField("Hip Max Deviation", hipFireMaxDeviationDegrees);
+            hipFireSpreadMultiplier = EditorGUILayout.FloatField("Hip Spread Multiplier", hipFireSpreadMultiplier);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Recoil", EditorStyles.boldLabel);
+            recoilVertical = EditorGUILayout.FloatField("Recoil Vertical", recoilVertical);
+            recoilHorizontal = EditorGUILayout.FloatField("Recoil Horizontal", recoilHorizontal);
+            recoilFireRateScale = EditorGUILayout.FloatField("Recoil Fire-Rate Scale", recoilFireRateScale);
+        }
 
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("Grip Template", EditorStyles.boldLabel);
@@ -116,15 +179,18 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
         autoGenerateIcon = EditorGUILayout.Toggle("Auto-generate Icon", autoGenerateIcon);
 
-        EditorGUILayout.Space(8f);
-        EditorGUILayout.LabelField("Melee Hitbox", EditorStyles.boldLabel);
-        addMeleeHitbox = EditorGUILayout.Toggle("Add To Held Prefab", addMeleeHitbox);
-        using (new EditorGUI.DisabledScope(!createHeldPrefab))
-            addHitboxToWorldPrefab = EditorGUILayout.Toggle("Add To World Prefab", addHitboxToWorldPrefab);
-        EditorGUILayout.HelpBox(
-            "Adds WeaponHitbox + a child capsule collider fit to the blade. " +
-            "Tune strikeEndBias and hitboxLocalOffset on the prefab after creation.",
-            MessageType.None);
+        if (!isRanged)
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Melee Hitbox", EditorStyles.boldLabel);
+            addMeleeHitbox = EditorGUILayout.Toggle("Add To Held Prefab", addMeleeHitbox);
+            using (new EditorGUI.DisabledScope(!createHeldPrefab))
+                addHitboxToWorldPrefab = EditorGUILayout.Toggle("Add To World Prefab", addHitboxToWorldPrefab);
+            EditorGUILayout.HelpBox(
+                "Adds WeaponHitbox + a child capsule collider fit to the blade. " +
+                "Tune strikeEndBias and hitboxLocalOffset on the prefab after creation.",
+                MessageType.None);
+        }
 
         EditorGUILayout.Space(16f);
         using (new EditorGUI.DisabledScope(!CanCreate()))
@@ -214,14 +280,42 @@ public class WeaponPrefabCreatorWindow : EditorWindow
         {
             itemData.itemName = weaponName.Trim();
             itemData.weaponGrip = weaponGrip;
-            itemData.meleeDamage = meleeDamage;
-            itemData.meleeDamageRandomRange = meleeDamageRandomRange;
-            itemData.criticalDamageMultiplier = criticalDamageMultiplier;
-            itemData.meleeRange = meleeRange;
-            itemData.meleeCooldown = meleeCooldown;
-            itemData.gatherPower = gatherPower;
             itemData.maxStack = 1;
-            itemData.itemType = ItemType.MeleeWeapon;
+            itemData.itemType = weaponItemType == ItemType.RangedWeapon
+                ? ItemType.RangedWeapon
+                : ItemType.MeleeWeapon;
+
+            if (itemData.itemType == ItemType.MeleeWeapon)
+            {
+                itemData.meleeDamage = meleeDamage;
+                itemData.meleeDamageRandomRange = meleeDamageRandomRange;
+                itemData.criticalChance = criticalChance;
+                itemData.criticalDamageMultiplier = criticalDamageMultiplier;
+                itemData.meleeRange = meleeRange;
+                itemData.meleeCooldown = meleeCooldown;
+                itemData.meleeStaminaCost = meleeStaminaCost;
+                itemData.meleeKnockback = meleeKnockback;
+                itemData.gatherPower = gatherPower;
+            }
+            else
+            {
+                itemData.rangedDamage = rangedDamage;
+                itemData.rangedDamageRandomRange = rangedDamageRandomRange;
+                itemData.rangedRange = rangedRange;
+                itemData.projectileSpeed = projectileSpeed;
+                itemData.projectileSpreadDegrees = projectileSpreadDegrees;
+                itemData.weaponAccuracy = weaponAccuracy;
+                itemData.closeRangeFullAccuracyDistance = closeRangeFullAccuracyDistance;
+                itemData.closeRangeSpreadScale = closeRangeSpreadScale;
+                itemData.recoilVertical = recoilVertical;
+                itemData.recoilHorizontal = recoilHorizontal;
+                itemData.recoilFireRateScale = recoilFireRateScale;
+                itemData.fireRate = fireRate;
+                itemData.magazineSize = magazineSize;
+                itemData.reloadTimeSeconds = reloadTimeSeconds;
+                itemData.hipFireMaxDeviationDegrees = hipFireMaxDeviationDegrees;
+                itemData.hipFireSpreadMultiplier = hipFireSpreadMultiplier;
+            }
 
             if (copyGripFromTemplate && gripTemplate != null)
                 WeaponPrefabBuilder.ApplyGripTemplate(itemData, gripTemplate);
@@ -246,6 +340,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
         GameObject worldPrefab = null;
         GameObject heldPrefab = null;
+        bool configureMeleeHitbox = addMeleeHitbox && weaponItemType != ItemType.RangedWeapon;
 
         if (createWorldPrefab)
         {
@@ -255,7 +350,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
                 worldPath,
                 itemData,
                 pickupOptions,
-                configureHitbox: addHitboxToWorldPrefab && addMeleeHitbox);
+                configureHitbox: addHitboxToWorldPrefab && configureMeleeHitbox);
         }
 
         if (createHeldPrefab)
@@ -265,7 +360,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
                 safeName + "_Held",
                 heldPath,
                 itemData,
-                configureHitbox: addMeleeHitbox);
+                configureHitbox: configureMeleeHitbox);
         }
 
         if (itemData != null)
@@ -295,7 +390,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
         EditorUtility.DisplayDialog(
             "Weapon Prefab Creator",
-            BuildSummary(safeName, dataPath, worldPath, heldPath, itemData != null, addMeleeHitbox),
+            BuildSummary(safeName, dataPath, worldPath, heldPath, itemData != null, configureMeleeHitbox && addMeleeHitbox),
             "OK");
     }
 

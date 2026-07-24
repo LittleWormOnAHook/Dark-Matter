@@ -33,6 +33,32 @@ namespace Project.Vehicles
         public float TurbulenceAmplitude { get; private set; }
         public bool BoosterActive => _boosterActive;
 
+        /// <summary>Current visual drive pitch (degrees) applied to the mesh root.</summary>
+        public float CurrentDrivePitch => _currentDrivePitch;
+
+        /// <summary>Current visual drive roll / bank (degrees) applied to the mesh root.</summary>
+        public float CurrentDriveRoll => _currentDriveRoll;
+
+        /// <summary>Local tilt quaternion matching the visual root bank (excludes high-frequency turbulence).</summary>
+        public Quaternion CurrentDriveTiltLocal =>
+            Quaternion.Euler(_currentDrivePitch, 0f, _currentDriveRoll);
+
+        /// <summary>
+        /// Exact local rotation delta currently on <see cref="visualRoot"/> vs its rest pose
+        /// (drive bank + visual turbulence). Apply in craft-root space for 1:1 camera banking.
+        /// </summary>
+        public Quaternion CurrentVisualBankLocal
+        {
+            get
+            {
+                if (visualRoot == null)
+                    return CurrentDriveTiltLocal;
+
+                return visualRoot.localRotation *
+                       Quaternion.Inverse(Quaternion.Euler(_visualBaseLocalEuler));
+            }
+        }
+
         private readonly RaycastHit[] _raycastHits = new RaycastHit[8];
         private Collider[] _ownColliders;
 

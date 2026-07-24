@@ -130,10 +130,40 @@ namespace Project.Vehicles
 
             _nextFireTime = Time.time + cooldown;
 
-            float spread = ammo != null ? ammo.projectileSpreadDegrees : weapon.projectileSpreadDegrees;
+            float aimDistance = EstimateAimDistance(muzzle != null ? muzzle : muzzle2, weapon, ammo);
+            float spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+                weapon,
+                ammo,
+                isAiming: true,
+                aimDistance,
+                applyPlayerSkillBonus: true);
             FireFromMuzzle(muzzle, weapon, ammo, spread, false);
             if (muzzle2 != null)
                 FireFromMuzzle(muzzle2, weapon, ammo, spread, true);
+        }
+
+        private float EstimateAimDistance(Transform fireMuzzle, ItemData weapon, ItemData ammo)
+        {
+            if (fireMuzzle == null)
+                return weapon != null ? weapon.closeRangeFullAccuracyDistance : 12f;
+
+            float maxRange = ammo != null && ammo.rangedRange > 0.01f
+                ? ammo.rangedRange
+                : weapon != null ? weapon.rangedRange : 45f;
+            maxRange = Mathf.Max(1f, maxRange);
+
+            if (Physics.Raycast(
+                    fireMuzzle.position,
+                    fireMuzzle.forward,
+                    out RaycastHit hit,
+                    maxRange,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Ignore))
+            {
+                return hit.distance;
+            }
+
+            return maxRange;
         }
 
         private void FireFromMuzzle(Transform fireMuzzle, ItemData weapon, ItemData ammo, float spread, bool secondary)

@@ -4,6 +4,7 @@ using Project.AI;
 using Project.Combat;
 using Project.Data;
 using Project.Interaction;
+using Project.Survival;
 using UnityEngine;
 
 namespace Project.Player.Invector
@@ -16,10 +17,12 @@ namespace Project.Player.Invector
     public class PioneerInvectorDamageBridge : MonoBehaviour, IInvectorOutgoingDamageSource
     {
         private PioneerInvectorWeaponBridge _weaponBridge;
+        private SurvivalStats _survival;
 
         private void Awake()
         {
             _weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
+            _survival = GetComponent<SurvivalStats>();
         }
 
         public float ResolveOutgoingDamage(vDamage damage, GameObject source, out bool isCritical)
@@ -41,9 +44,26 @@ namespace Project.Player.Invector
             }
 
             if (item.itemType == ItemType.MeleeWeapon)
+            {
+                isCritical = item.RollCriticalHit();
+                TrySpendMeleeStamina(item);
                 return item.RollMeleeDamage(isCritical);
+            }
 
             return damage != null ? damage.damageValue : 0f;
+        }
+
+        private void TrySpendMeleeStamina(ItemData item)
+        {
+            if (item == null || item.meleeStaminaCost <= 0f)
+                return;
+
+            if (_survival == null)
+                _survival = GetComponent<SurvivalStats>();
+            if (_survival == null)
+                return;
+
+            _survival.SetStamina(_survival.CurrentStamina - item.meleeStaminaCost);
         }
 
         public static void ApplyPioneerDamageToCollider(Collider hitCollider, float damage, GameObject source, bool isCritical, Vector3? weaponHitPoint = null)

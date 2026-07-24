@@ -628,6 +628,16 @@ Classes (locked names)
     Signal Relay (active) — expedition Echo signal boost and scan relay support
     Uplink Matrix (passive) — bonus output when assigned to comms/uplink/probe/relay buildings
 
+Weapon base stats (prototype lock)
+----------------------------------
+  Each weapon ItemData owns base combat stats (melee: damage/crit/range/cooldown/
+  stamina/knockback; ranged: damage/accuracy/spread/recoil/fire rate/mag/reload).
+  Category skills apply to all weapons of that type (Blade Training = all melee;
+  Marksman Training + Weapon Accuracy = all ranged). Ammo modifies ballistic/VFX/
+  status only — weapon owns the damage roll. Per-weapon upgrade modules later
+  stack onto these bases. See Assets/_Project/Documentation/Architecture/
+  Combat_Weapon_Base_Stats.md.
+
 
 A1. Platforms, art & tech
 -------------------------

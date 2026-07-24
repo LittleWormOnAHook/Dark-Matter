@@ -1288,8 +1288,28 @@ namespace Project.Player.Invector
                 weapon.lightOnShot = null;
                 weapon.isInfinityAmmo = true;
                 weapon.dontUseReload = false;
+                EnsureReloadAudioSource(weapon);
                 PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem);
             }
+        }
+
+        /// <summary>
+        /// Invector FinishReloadEffect calls PlayOneShot on reloadSource (defaults to the fire
+        /// AudioSource). Holstered/preloaded copies often leave that source disabled, which logs
+        /// "Can not play a disabled audio source" when a reload finishes. Re-enable for the drawn
+        /// weapon so Invector reload SFX can play safely.
+        /// </summary>
+        private static void EnsureReloadAudioSource(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            AudioSource reloadSource = weapon.reloadSource != null ? weapon.reloadSource : weapon.source;
+            if (reloadSource == null)
+                return;
+
+            if (weapon.gameObject.activeInHierarchy && !reloadSource.enabled)
+                reloadSource.enabled = true;
         }
 
         private void EquipMelee(GameObject instance)

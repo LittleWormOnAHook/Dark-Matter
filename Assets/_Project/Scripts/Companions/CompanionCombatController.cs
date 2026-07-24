@@ -608,12 +608,21 @@ namespace Project.Companions
                 return;
 
             Vector3 origin = transform.position + Vector3.up * 1.25f;
-            Vector3 direction = target.transform.position - origin;
+            Vector3 toTarget = target.transform.position - origin;
+            float aimDistance = toTarget.magnitude;
+            Vector3 direction = toTarget;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f)
                 direction = transform.forward;
 
             direction.Normalize();
+
+            float spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+                weapon,
+                ammo: null,
+                isAiming: true,
+                aimDistance,
+                applyPlayerSkillBonus: false) * 1.35f;
 
             GameObject muzzleProxy = new GameObject("CompanionMuzzleProxy");
             muzzleProxy.transform.SetPositionAndRotation(origin, Quaternion.LookRotation(direction, Vector3.up));
@@ -623,7 +632,7 @@ namespace Project.Companions
                 weapon,
                 null,
                 direction,
-                weapon.projectileSpreadDegrees * 1.35f);
+                spread);
             Destroy(muzzleProxy);
         }
 

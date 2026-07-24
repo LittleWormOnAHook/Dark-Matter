@@ -60,25 +60,55 @@ namespace Project.Player.Invector
             if (camera == null)
                 return;
 
-            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
-            float fireRateScale = 1f;
-            if (weaponItem != null && weaponItem.fireRate > 4.5f)
-                fireRateScale = Mathf.Clamp(4.5f / weaponItem.fireRate, 0.65f, 1f);
-
-            // verticalKick ~= equivalent mouse pixels before CameraInputScale (see CameraInputScale).
-            // Rifle is stocked / two-handed — mild climb, almost no lateral drift.
-            float verticalKick = isRifle
-                ? Random.Range(0.45f, 0.85f)
-                : Random.Range(2f, 3.5f);
-            verticalKick *= fireRateScale;
-
-            float horizontalKick = isRifle
-                ? Random.Range(-0.2f, 0.2f)
-                : Random.Range(-0.8f, 0.8f);
-            horizontalKick *= fireRateScale;
+            ResolveRecoilKick(weaponItem, out float verticalKick, out float horizontalKick);
 
             // RotateCamera: mouseY -= y * sensitivity. CameraInput matches PioneerShooterMeleeInput.
             camera.RotateCamera(horizontalKick * CameraInputScale, -verticalKick * CameraInputScale);
+        }
+
+        /// <summary>
+        /// Resolves vertical/horizontal kick from ItemData recoil base stats.
+        /// When both recoilVertical and recoilHorizontal are ~0, falls back to grip defaults
+        /// (rifle mild climb vs pistol stronger kick).
+        /// </summary>
+        public static void ResolveRecoilKick(ItemData weaponItem, out float verticalKick, out float horizontalKick)
+        {
+            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
+            bool useAuthored = weaponItem != null
+                && (weaponItem.recoilVertical > 0.01f || weaponItem.recoilHorizontal > 0.01f);
+
+            if (useAuthored)
+            {
+                float vertBase = weaponItem.recoilVertical > 0.01f
+                    ? weaponItem.recoilVertical
+                    : (isRifle ? 0.65f : 2.75f);
+                float horizBase = weaponItem.recoilHorizontal > 0.01f
+                    ? weaponItem.recoilHorizontal
+                    : (isRifle ? 0.2f : 0.8f);
+
+                // Authoring stores center vertical magnitude and horizontal half-range.
+                verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
+                horizontalKick = Random.Range(-horizBase, horizBase);
+            }
+            else
+            {
+                verticalKick = isRifle
+                    ? Random.Range(0.45f, 0.85f)
+                    : Random.Range(2f, 3.5f);
+                horizontalKick = isRifle
+                    ? Random.Range(-0.2f, 0.2f)
+                    : Random.Range(-0.8f, 0.8f);
+            }
+
+            float fireRateThreshold = weaponItem != null && weaponItem.recoilFireRateScale > 0.01f
+                ? weaponItem.recoilFireRateScale
+                : 4.5f;
+            float fireRateScale = 1f;
+            if (weaponItem != null && weaponItem.fireRate > fireRateThreshold)
+                fireRateScale = Mathf.Clamp(fireRateThreshold / weaponItem.fireRate, 0.65f, 1f);
+
+            verticalKick *= fireRateScale;
+            horizontalKick *= fireRateScale;
         }
 
         public static void ApplyWeaponRecoilTuning(vShooterWeapon weapon, ItemData weaponItem)
@@ -88,6 +118,16 @@ namespace Project.Player.Invector
 
             ZeroWeaponRecoil(weapon);
             ApplyWeaponAnimationRecoilTuning(weapon, weaponItem);
+            ApplyReloadTiming(weapon, weaponItem);
+        }
+
+        public static void ApplyReloadTiming(vShooterWeapon weapon, ItemData weaponItem)
+        {
+            if (weapon == null || weaponItem == null)
+                return;
+
+            if (weaponItem.reloadTimeSeconds > 0.01f)
+                weapon.reloadTime = weaponItem.reloadTimeSeconds;
         }
 
         public static void ApplyWeaponRecoilTuning(GameObject weaponRoot, ItemData weaponItem)

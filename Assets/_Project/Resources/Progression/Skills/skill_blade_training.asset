@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
   skillId: skill_blade_training
   displayName: Blade Training
-  description: +2 melee damage per rank.
+  description: +2 melee damage per rank for all melee weapons.
   requiredPlayerLevel: 2
   costPerRank: 1
   maxRank: 3
