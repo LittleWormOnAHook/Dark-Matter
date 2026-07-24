@@ -43,7 +43,8 @@ GameState and WorldState snapshots; Directors and Experience decide when storms
 spike, radio traffic fires, or narrative beats land; Presentation (Communications,
 HUD, audio) delivers what the world authorizes—without AI or UI reaching directly
 into managers. The design goal is a world that feels like it keeps running whether
-you're watching or not: sulfur storms pause base work and force shelter, expedition
+you're watching or not: sulfur storms and Resonance Supercells pause base work and
+force shelter; other weather threatens expeditions and exterior ops; expedition
 crews carry full exposure risk, and future Resonance Events will reshape Io while
 your base camp simulates injury, healing, and production at scale.
 
