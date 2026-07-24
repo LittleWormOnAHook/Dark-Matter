@@ -361,6 +361,17 @@ The player should regularly encounter evidence of previous expeditions.
 These moments tell the story without requiring long cutscenes.
 
 
+Subsurface investigation (July 2026 — not yet locked)
+------------------------------------------------------
+Cave networks and lava tubes are canon offsets (Appendix A2). Full underground
+architecture — five strata, volatile pools/lakes (not surface water), pool ecology,
+and production phasing — is documented in:
+
+  Assets/_Project/Documentation/Design/Io_Underground_Architecture_Plan.md
+
+Promote to Appendix A2c after design review.
+
+
 ================================================================================
 Chapter 4 - Core Gameplay Pillars
 ================================================================================
