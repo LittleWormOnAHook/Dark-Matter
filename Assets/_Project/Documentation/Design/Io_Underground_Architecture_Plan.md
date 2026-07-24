@@ -2,6 +2,7 @@
 
 **Status:** Design investigation (July 2026)  
 **Authority:** Supports GDD 5.0 Chapter 3 (World of Io), Appendix A2 (pressures/offsets), A2b (weather).  
+**Companion docs:** `Io_Biome_Exploration_Gameplay_Plan.md` — surface biome verbs, activities, unlock flow  
 **Not yet locked** — review before promoting to GDD Appendix A2c.
 
 ---
