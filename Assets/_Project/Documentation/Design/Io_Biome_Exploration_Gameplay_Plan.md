@@ -1,6 +1,6 @@
 # Io Biome Exploration & Gameplay Plan
 
-**Status:** Design investigation (July 2026)  
+**Status:** Design investigation — **world structure & vehicles locked July 2026**  
 **Authority:** GDD 5.0 Chapter 3 (Biome Philosophy), Appendix A2 (pressures), planned A2b (weather).  
 **Companion docs:**
 - `Io_Underground_Architecture_Plan.md` — subsurface strata & pools  
@@ -33,7 +33,7 @@ All surface/subsurface runs follow the same **six-phase loop**; biomes change wh
 | Phase | Player job | Systems involved |
 |-------|------------|------------------|
 | **Brief** | Pick trio, gear, route, weather window | Roster, Journal map, Colony Ops / Aether-9 comms |
-| **Approach** | Traverse from base or drop point to biome edge | Hovercraft, foot, cave breach |
+| **Approach** | Traverse from base or drop point to biome edge | Foot, deployable vehicle (if zone allows), cave breach |
 | **Operate** | Biome-specific verbs (see §4) | Exposure, weather, combat, scan |
 | **Discover** | POI, sample, signal, core fragment | Quest, Echo generator, research |
 | **Extract** | Leave with loot / rescued Echo before pressure wins | O₂, carry weight, storm timer |
@@ -75,6 +75,70 @@ Example: *Caldera rim + eruption column + brood wake + post–Memory Core spike*
 | **Infiltrator Scout** | Echo signal find, squeeze routes, avoid combat paths, first strike |
 
 Any trio can enter any biome; **synergy bonuses** reward matching comp to activity (see per-biome tables).
+
+### 2.5 World structure & vehicles (locked July 2026)
+
+#### Main map vs instances
+
+| Space type | Role | Content |
+|------------|------|---------|
+| **Colony main map** | Persistent hub around Command Center | Small traversable mountains, shelter pockets, volatile pool seeps, mineral/ore nodes, instance gates |
+| **Biome instances** | Majority of exploration | B1–B7 expeditions, activities, nests, wrecks — loaded for mission |
+| **Subsurface instances** | Depth content | Lava tubes, volatile basins, vaults — separate or nested load from surface instance |
+
+**Locked:** Most gameplay biomes are **instanced**, not one open-world Io. The main map is compact and purposeful — not a full moon surface.
+
+#### Main-map terrain — small mountains
+
+- Add **modest mountain areas** on the colony main map (not vast ranges).
+- Target height: **~200–300 m** — tall enough to read as highland, small enough to cross in a reasonable expedition.
+- Slopes must support **on-foot traversal** and **deployed vehicle play** (see buggy below).
+- Mountains provide: vista/wonder beats, scan unlocks, cave breach mouths, ore outcrops, weather shelter lee zones.
+
+#### Resource pockets on main map
+
+Small persistent nodes (regenerate on schedule, not infinite):
+
+- **Shelter** — shallow caves, overhangs, emergency habitat pads  
+- **Volatile seeps** — condensate / brine trickles (not full lakes)  
+- **Minerals & ore** — starter-tier gather before deep instances unlock  
+
+These teach verbs before the player commits to a full biome instance.
+
+#### Vehicles — deploy from inventory only
+
+**Locked:** No ambient hovercraft or buggy sitting in the world. All vehicles are **packed inventory items** that the player **unpacks** to deploy and **packs** back when done (prototype hovercraft already supports store-in-inventory via `HovercraftUsable`).
+
+| Vehicle | Status | Role |
+|---------|--------|------|
+| **Hovercraft** | Prototype shipped | Fast transit on **flat / path-tagged** surfaces; low environment resistance |
+| **Io Buggy** (6-wheel) | Planned | Environment-resistant; rough terrain, main-map mountains, instance path networks |
+
+**Deploy rules**
+
+1. Player must own packed vehicle in inventory / hotbar.  
+2. Unpack only in **Vehicle Deploy Zones** (flat pad, path surface, or flagged instance entry).  
+3. Some instances allow deploy **inside** on **path-like surfaces** (splines or wide navmesh lanes) — not every chamber.  
+4. Pack before extract if instance rules require (or leave deployed at main-map garage pad — design TBD per instance type).  
+5. **Ion lightning** still punishes exposed metal — vehicles are not immunity.  
+
+**Biome / instance vehicle allowance**
+
+| Context | Hovercraft | Io Buggy (6-wheel) |
+|---------|------------|-------------------|
+| Main map flats & paths | Yes | Yes |
+| Main map mountains (200–300 m) | No / risky | Yes (primary design target) |
+| B1 Sulfur Plains instance | Path lanes only | Path lanes only |
+| B2 Geyser Fields | Rare flat pads | Limited — vent gaps |
+| B3 Ash Flats | Flat corridors | Yes on packed ash roads |
+| B4 Calderas | No | No (foot + heat routing) |
+| B5 Polar Flats | Flat ice crust lanes | Yes between cover points |
+| B6 Highlands instance | Path to breach | Yes — highland roads |
+| B7 Ruins | No | No (silent / puzzle routes) |
+| Underground Stratum 1–2 | No | No (except marked underground hauler path — optional late) |
+| Underground Stratum 3+ | No | No |
+
+**Future:** packed **hover-skiff** module for flooded tube paths (see underground plan) — same deploy rules, water-path tag only.
 
 ---
 
@@ -306,7 +370,8 @@ Not a hard lock — **exposure without gear** should hurt enough to teach order 
 | Thermal gel / heat tier | B4 rim (not core) |
 | Rad inoculation | B5 relay runs |
 | Portable habitat | B4 eruption windows, B2 vent fields |
-| Hovercraft fuel range | Cross-biome approach speed |
+| Packed hovercraft (inventory) | Fast flat/path transit on main map + allowed instances |
+| Io Buggy (6-wheel, inventory) | Main-map mountains, B3/B5/B6 path networks |
 | Drill / breach kit | Stratum 2+ reliably |
 | Resonance suit tier | B7, Stratum 5 |
 
@@ -325,7 +390,7 @@ Cross-reference planned A2b weather lock:
 | Weather | Biomes most affected | Exploration change |
 |---------|---------------------|-------------------|
 | Sulfur Storm | B1, B2 | Shelter gameplay; extract abort |
-| Ion Lightning | B5, B6, B7 | Metal route avoidance; hovercraft risk |
+| Ion Lightning | B5, B6, B7 | Metal route avoidance; deployed vehicle strike risk |
 | Ash Gale | B1, B3 | Scan-led navigation; spout embed |
 | Dust Spouts | B3 | Micro-dungeon dodging |
 | Lava Surge | B4 | Path reroute; bridge burn |
@@ -371,26 +436,29 @@ Designed for **single-player commanding a trio**, not co-op.
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
-| **E0** | Biome data SO: pressure profile, verbs, weather weights | Exposure zones (shipped) |
-| **E1** | B6 Highlands greybox + Route/Scan/ Shelter verbs | Io terrain blockout |
+| **E0** | Biome data SO: pressure profile, verbs, weather weights, instance + vehicle tags | Exposure zones (shipped) |
+| **E1** | Main map blockout: colony hub + 200–300 m mountains + resource pockets | Io terrain blockout |
+| **E1b** | B6 Highlands **instance** + Route/Scan/Shelter verbs | E1 |
 | **E2** | B1 + B2 + activity templates (Recon, Harvest, Rescue) | WeatherDirector sulfur + geyser |
 | **E3** | B3 + B4 + Timed verb polish | Thermal/volcano HUD |
 | **E4** | B5 + rad relay gameplay | Inoculation loop |
 | **E5** | Underground pairing (Stratum 1–3) | Underground architecture P0–P3 |
 | **E6** | B7 + Memory Core activities | Aether-9 arc (B4 #8) |
 | **E7** | Director activity weighting + biome unlock mask | WorldState persistence |
+| **E8** | Io Buggy (6-wheel) deploy/pack + env resistance profile | Vehicle deploy zones on E1/E1b |
 
-**Starts with Io biome pass (B4 #9)** — same gate as underground architecture.
+**Starts with Io biome pass (B4 #9)** — main map shell first, then instances.
 
 ---
 
 ## 12. Open questions
 
-1. **Open world vs mission corridors** — full contiguous Io or instanced biome chunks?
-2. **Hovercraft biomes** — which allow vehicle (B1/B3 yes; B4/B7 limited)?
-3. **Night cycle** — thermal swing meaningful on B3/B5 or static lighting per biome?
-4. **Player branch** — B4 vs B5 first after mid-game: moral choice or gear-gated only?
-5. **Echo signal density** — fixed per biome or director-driven scarcity?
+1. ~~**Open world vs instances**~~ — **Locked:** mostly instances; small persistent main-map pockets.  
+2. ~~**Hovercraft biomes**~~ — **Locked:** no ambient vehicles; deploy from inventory on path-tagged zones only.  
+3. **Night cycle** — thermal swing meaningful on B3/B5 or static lighting per biome?  
+4. **Player branch** — B4 vs B5 first after mid-game: moral choice or gear-gated only?  
+5. **Echo signal density** — fixed per biome or director-driven scarcity?  
+6. **Pack-on-extract** — must vehicle repack to leave instance, or allow main-map garage staging?
 
 ---
 
@@ -404,6 +472,7 @@ When approved, fold into **GDD Appendix A2d — Io Biome & Exploration Lock**:
 - Activity template grammar
 - Biome × weather × subsurface pairing table
 - Campaign discovery order + gear gates
+- **World structure lock:** main map + instances, 200–300 m mountains, deploy-only vehicles
 
 ---
 

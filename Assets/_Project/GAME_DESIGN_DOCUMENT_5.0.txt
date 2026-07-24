@@ -371,14 +371,18 @@ and production phasing — is documented in:
 
 Promote to Appendix A2c after design review.
 
-Biome exploration & gameplay (July 2026 — not yet locked)
----------------------------------------------------------
+Biome exploration & gameplay (July 2026 — partial lock)
+-------------------------------------------------------
 Per-biome exploration verbs, activities, trio synergies, weather pairing, and
 unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
 
   Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
 
-Promote to Appendix A2d after design review.
+**Locked (July 2026):** mostly instanced biomes; compact main map with 200–300 m
+mountains, shelter/resource pockets; vehicles (hovercraft + planned 6-wheel buggy)
+deploy from inventory only on path-tagged zones — no ambient world vehicles.
+
+Promote to Appendix A2d after remaining open questions close.
 
 
 ================================================================================
