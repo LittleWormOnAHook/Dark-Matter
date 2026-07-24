@@ -371,6 +371,15 @@ and production phasing — is documented in:
 
 Promote to Appendix A2c after design review.
 
+Biome exploration & gameplay (July 2026 — not yet locked)
+---------------------------------------------------------
+Per-biome exploration verbs, activities, trio synergies, weather pairing, and
+unlock flow — seven surface biomes (B1–B7) plus subsurface depth pairing:
+
+  Assets/_Project/Documentation/Design/Io_Biome_Exploration_Gameplay_Plan.md
+
+Promote to Appendix A2d after design review.
+
 
 ================================================================================
 Chapter 4 - Core Gameplay Pillars
