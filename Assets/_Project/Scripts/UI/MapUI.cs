@@ -263,9 +263,6 @@ namespace Project.UI
             RefreshMapShellVisibility();
         }
 
-        [System.Obsolete("Use ApplyMinimapEnabled instead.")]
-        public static void ApplyMapSystemEnabled(bool enabled) => ApplyMinimapEnabled(enabled);
-
         private void ApplySystemEnabled(bool enabled)
         {
             ApplyMinimapVisibility(enabled);

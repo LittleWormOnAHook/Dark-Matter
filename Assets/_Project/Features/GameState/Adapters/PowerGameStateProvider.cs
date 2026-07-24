@@ -10,7 +10,7 @@ namespace Project.Features.GameState.Adapters
 
         public void Contribute(GameStateSnapshotBuilder builder)
         {
-            PowerGenerator[] generators = Object.FindObjectsByType<PowerGenerator>(FindObjectsSortMode.None);
+            PowerGenerator[] generators = Object.FindObjectsByType<PowerGenerator>();
             if (generators == null || generators.Length == 0)
             {
                 builder.Power = PowerSnapshot.Empty;
