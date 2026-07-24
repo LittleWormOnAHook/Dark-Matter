@@ -49,8 +49,9 @@ PRODUCT IDENTITY (5.0 — canonical game summary)
 Dark Matter: Genesis is a premium sci-fi survival colony sim set on Jupiter's moon
 Io in 2160. You lead humanity's push to prove a future there—not just scrape by, but
 rebuild civilization under brutal conditions. You manage oxygen and environmental
-pressures (radiation, cold/heat, volcanism, sulfur storms, alien life forms, and AI
-androids), gather and craft, fight on the surface, and expand a base of up to
+pressures (radiation, cold/heat, volcanism) plus dynamic Io weather (sulfur storms,
+ion lightning, ash gales, dust spouts, lava flows, geyser surges, eruptions,
+tremors), alien life forms, and AI androids), gather and craft, fight on the surface, and expand a base of up to
 twenty-two companions while a trio of three skilled companions can be switched and
 run expeditions with the player. You rescue procedural Neural Echoes, spend Aether
 Credits at vendors, and operate major structures through in-world Building Control
@@ -71,9 +72,10 @@ GameState and WorldState snapshots; Directors and Experience decide when storms
 spike, radio traffic fires, or narrative beats land; Presentation (Communications,
 HUD, audio) delivers what the world authorizes—without AI or UI reaching directly
 into managers. The design goal is a world that feels like it keeps running whether
-you're watching or not: sulfur storms pause base work and force shelter, expedition
-crews carry full exposure risk, and future Resonance Events will reshape Io while
-your colony simulates injury, healing, and production at scale.
+you're watching or not: sulfur storms and Resonance Supercells pause base work and
+force shelter; ash gales, lightning, lava surges, and geyser fields threaten
+expeditions; crews carry full exposure risk, and future Resonance Events will
+reshape Io while your colony simulates injury, healing, and production at scale.
 
 Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
 its first shipped game—the Io story, AC economy, Echo roster, Lite Building colony
@@ -315,7 +317,7 @@ Mountains collapse.
 
 New lava rivers emerge.
 
-Sulfur storms reshape traversal.
+Sulfur storms, ion lightning, ash gales, and lava surges reshape traversal.
 
 Ancient structures awaken.
 
@@ -535,7 +537,7 @@ Next production-facing chapters (planned — not yet written as full chapters):
 
   Chapter 6: Core Gameplay Loops (player, colony, expedition, research)
   Chapter 7: Colony Simulation & Companion AI
-  Chapter 8: World Systems (weather, geology, Resonance, ecology)
+  Chapter 8: World Systems (weather lock A2b shipped in appendix, geology, Resonance, ecology)
   Chapter 9: Exploration & Expeditions
   Chapter 10: Survival Systems
 
@@ -555,7 +557,7 @@ Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
 Echoes; recover Memory Cores for Aether-9 → Resonance Events; Lite Building +
 materialization pipeline for colony camp; survive O2 norm, four environmental
-pressures, alien life forms, and AI androids.
+pressures, dynamic Io weather (A2b), alien life forms, and AI androids.
 
 Classes (locked names)
 ----------------------
@@ -577,11 +579,17 @@ A2. Survival — O2 norm & biome pressures
 ----------------------------------------
   ALWAYS ON: Oxygen (tanks, deprivation FX, health drain when empty)
 
-  FOUR ENVIRONMENTAL PRESSURES:
+  FOUR ENVIRONMENTAL PRESSURES (always-on zone meters — not the same as weather):
     1. Radiation
     2. Cold / Heat — SINGLE thermal stress meter (cold pole ↔ heat pole)
-    3. Volcanos (lava, eruptions, tremors)
-    4. Sulfur storms (corrosive weather; base shelter trigger)
+    3. Volcanos (lava exposure, eruption heat, tremor stress)
+    4. Sulfur (corrosive saturation in sulfur fields and during sulfur weather)
+
+  DYNAMIC IO WEATHER (director-scheduled events — see A2b):
+    Atmospheric: sulfur storms, ion lightning storms, ash gales (+ embedded dust spouts)
+    Geological: lava flow surges, geyser field surges, caldera eruption columns,
+                tremor swarms
+    Magnetospheric: Jovian radiation pulses (often paired with ion lightning)
 
   SURFACE THREATS (combat / exploration):
     5. Alien life forms — native Io fauna; escalation by biome and Resonance
@@ -589,6 +597,125 @@ A2. Survival — O2 norm & biome pressures
 
   Offsets (design target): shelter, caves, inoculations, portable habitat
   (Architect Engineer), environmental suits (upgradeable trio gear).
+
+
+A2b. Io Weather Lock (canonical — July 2026)
+------------------------------------------
+Io weather is NOT only sulfur storms. Weather is a director-driven layer on top of
+the four environmental pressures. One reusable status-effect + exposure pipeline
+handles weather, combat, hazards, and buffs.
+
+WEATHER VS PRESSURE
+  Pressures = what a zone IS (radiation field, cold shelf, sulfur basin).
+  Weather   = what the planet DOES right now (storm front, lava surge, tremor burst).
+  Weather modifies pressure rates, visibility, traversal, and base operations.
+  Multiple pressures may spike during one weather event (e.g. caldera eruption
+  spikes thermal + volcano + ash particulate).
+
+
+LOCKED PRIMARY WEATHER EVENTS (ship set)
+  ID  Event                    Category        Scope      Base impact
+  --  -----------------------  --------------  ---------  ---------------------------
+  01  Sulfur Storm             Atmospheric     Global     FULL PAUSE + shelter
+  02  Ion Lightning Storm      Atmospheric     Regional   Comms degrade; module chip
+  03  Ash Gale                 Atmospheric     Regional   Efficiency down; no pause
+  04  Dust Spout Cluster       Atmospheric     Local      Surface-only (see note)
+  05  Lava Flow Surge          Geological      Local      Perimeter threat if adjacent
+  06  Geyser Field Surge       Hydrothermal    Regional   Surface + exterior module risk
+  07  Caldera Eruption Column  Geological      Regional   Heat/ash dome; injury risk
+  08  Tremor Swarm             Geological      Local–Reg  Stagger; cave rockfall; stress
+  09  Jovian Radiation Pulse   Magnetospheric  Regional   Radiation pressure spike
+  10  Resonance Supercell      Composite       Global     FULL PAUSE (Resonance only)
+
+  Dust Spout note: may spawn as its own local event OR as embedded sub-phenomena
+  inside Ash Gale (2–4 wandering mini-tornadoes). Never a global base-pause trigger
+  on its own.
+
+  Engineering enum mirror: IoWeatherEventKind (Assets/_Project/Scripts/Survival/Weather/).
+
+
+EVENT BEHAVIOR SUMMARY
+  01 Sulfur Storm
+     Yellow-corrosive front; visibility collapse; sulfur saturation rise.
+     Base: all production/craft queues PAUSE; companions evacuate to Command Center
+     rooms. Trio on surface takes full sulfur exposure.
+     Phases: Building → Peak → Dissipating.
+
+  02 Ion Lightning Storm
+     Jupiter–Io flux arcs; strikes favor exposed metal, high ground, conductive suits.
+     Base: radio static, degraded comms templates; unshielded outdoor modules may take
+     light damage over time. NO full queue pause.
+     Trio: near-miss stagger; hovercraft/turret metal attracts arcs.
+
+  03 Ash Gale
+     High-velocity volcanic ash; aim sway; movement penalty; bronze sky.
+     Often spawns embedded Dust Spout Cluster (04). Base: reduced power/harvest
+     efficiency; exterior work slows. NO full pause.
+
+  04 Dust Spout Cluster
+     Small dirt/ash tornadoes — solo wanderer or 2–4 pack across a zone.
+     Brief lift, debris chip damage, throws loose loot. Surface-only.
+
+  05 Lava Flow Surge
+     Existing lava channel overtops; new flow fingers cut across roads; bridges and
+     camps at risk. Timed path denial. Passive lava rivers remain zone geography;
+     this event is the SURGE that moves the hazard.
+
+  06 Geyser Field Surge
+     Region-wide rhythmic venting: hiss telegraph → steam/sulfur blast → cooldown.
+     Marked vent nodes are lethal if stood on. Strong in geyser-field biomes.
+
+  07 Caldera Eruption Column
+     Ash plume, heat dome, and fallout in volcano biomes. Spikes thermal (heat pole)
+     and volcano pressure. May rain hot ash on expeditions leaving the caldera rim.
+
+  08 Tremor Swarm
+     Seismic bursts: camera shake, stagger, cave rockfalls, building stress ticks.
+     Short swarms or sustained medium quakes. Caves and lava-tube networks amplify.
+
+  09 Jovian Radiation Pulse
+     Fast radiation front from Jupiter shadow/magnetosphere. Often precedes or
+     overlaps Ion Lightning Storm (02). Shelter and rad offsets matter.
+
+  10 Resonance Supercell (Memory Core / Resonance Events only)
+     Composite: sulfur + ion lightning + tremor at elevated intensity.
+     Second event that may trigger FULL base pause. Used for Resonance aftermath —
+     not routine scheduler fodder.
+
+
+BASE OPERATIONS RULE (locked)
+  FULL PAUSE + Command Center shelter: Sulfur Storm (01), Resonance Supercell (10).
+  All other weather: may reduce efficiency, injure exposed exterior companions, or
+  threaten perimeter structures — but does NOT auto-pause every building queue.
+  Building Control Overview tab shows active weather + ops state (Running / Reduced /
+  PAUSED).
+
+
+STACKING & SCHEDULER RULES
+  One dominant weather event per region at a time.
+  Sub-phenomena allowed (dust spouts inside ash gale; tremor during eruption).
+  Global events (01, 10) override regional scheduling for base sim.
+  Pressures stack with weather — caldera eruption + sulfur storm = extreme zone.
+  ExperienceDirector modulates frequency and intensity; WeatherDirector owns phase
+  timing (Building → Peak → Dissipating).
+  Resonance Events may force or amplify any event; may spawn Supercell (10).
+
+
+BIOME WEATHER AFFINITY (design target)
+  Sulfur plains      — Sulfur Storm, Ash Gale
+  Geyser fields      — Geyser Field Surge, Sulfur Storm
+  Lava calderas      — Lava Flow Surge, Caldera Eruption, Tremor Swarm
+  Ash flats / ridges — Ash Gale, Dust Spout Cluster
+  Polar radiation    — Jovian Radiation Pulse, Ion Lightning Storm
+  Cave / lava tubes  — Tremor Swarm (localized)
+  Precursor ruins    — Any event + Resonance Supercell bias after cores
+
+
+PLAYER-FACING COMMS (Aether-9 / Colony Ops)
+  Weather warnings use plain names above (not internal IDs).
+  Example: "Ash gale building — dust spouts likely near Ridge 7."
+  Crisis banner copy for pause events: "SULFUR STORM — BASE OPERATIONS PAUSED" or
+  "RESONANCE SUPERCELL — BASE OPERATIONS PAUSED".
 
 
 A3. Companion roster (25 cap)
@@ -606,12 +733,18 @@ A3. Companion roster (25 cap)
 A4. Base 22 & Command Center
 ----------------------------
   Base companions impervious to routine rad / thermal / volcano / surface O2.
-  NOT impervious to: sulfur storms, Command Center building damage, Strain.
+  NOT impervious to: sulfur storms, Resonance Supercells, Command Center building
+  damage, Strain, or severe exterior weather (eruption fallout, lightning module
+  damage, geyser perimeter strikes).
 
-  Sulfur storm flow:
+  Weather crisis flow (Sulfur Storm or Resonance Supercell — full pause):
     1. All base work PAUSES
     2. Evacuate to Command Center rooms
-    3. Storm ends → healthy companions resume jobs
+    3. Event ends → healthy companions resume jobs
+
+  Reduced-ops weather (ash gale, radiation pulse, ion lightning, etc.):
+    Queues may continue at reduced rate; exterior companions at injury risk;
+    Building Control Overview shows REDUCED state.
 
   Building damage: injures / incapacitates — NEVER kills base companions.
   Heal/restore required before they contribute again.
@@ -686,7 +819,8 @@ A7. Buildings, Lite Building, craft & Building Control Panels
     (NOT Journal) with tabs: Overview | Companions | Production | Craft | Changes.
     Assign base-22 companions, set production/craft queues, per-building /
     module settings.
-    Queues run while player is on expedition; PAUSE during sulfur storms.
+    Queues run while player is on expedition; PAUSE during sulfur storms and
+    Resonance Supercells (see A2b weather lock).
     Journal Craft = recipe library / scroll learning only — not primary
     production UI.
 
@@ -709,8 +843,9 @@ A9. Controls & UI (target)
   KBM primary on PC; gamepad required for consoles / optional on PC.
   Journal: Inventory, Map, Companions/Echoes (trios + roster), Skills, Craft,
   Recipes — pet UI folds into Companions/Echoes when migration completes.
-  HUD: O2 + four exposure indicators + surface-threat awareness; thermal = one
-  cold/heat meter; AC balance; base status; hotbar + toolbar.
+  HUD: O2 + four exposure indicators + active weather alert + surface-threat
+  awareness; thermal = one cold/heat meter; AC balance; base status; hotbar +
+  toolbar.
 
 
 A10. Locked decisions checklist
@@ -719,7 +854,8 @@ A10. Locked decisions checklist
   [x] AC-only economy; starter 5000 AC → 1 Skilled Companion
   [x] Single thermal (cold/heat) meter
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
-  [x] Base 22: sulfur shelter; injury never death from building damage
+  [x] Base 22: sulfur / Resonance Supercell shelter; injury never death from building damage
+  [x] Io weather lock — 10 events (A2b); sulfur + supercell = full base pause only
   [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
   [x] Lite Building colony camp direction (prototype: placement shell / BCP queues)
   [x] Surface threats: alien life + AI androids — design lock (combat AI partial)

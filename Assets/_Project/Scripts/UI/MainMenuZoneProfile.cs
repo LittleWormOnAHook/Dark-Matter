@@ -16,7 +16,7 @@ namespace Project.UI
         {
             return new[]
             {
-                CreateRuntime("12-B", -190f, "EXTREME", "Sulfur storms, radiation spikes"),
+                CreateRuntime("12-B", -190f, "EXTREME", "Sulfur storms, ion lightning, ash gales"),
                 CreateRuntime("07-A", 42f, "SAFE", "Stable thermal envelope"),
                 CreateRuntime("03-C", 428f, "EXTREME", "Lava fissures, heat cascade"),
                 CreateRuntime("01-START", 18f, "SAFE", "Command perimeter secured")
