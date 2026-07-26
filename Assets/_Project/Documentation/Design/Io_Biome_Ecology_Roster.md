@@ -27,7 +27,10 @@ Io life is **not Earth biology**. All organisms in this roster obey three locked
 | **Flora** | Brimstone Fan, Void Kelp, Tube Lace | Usually no | Ambient / harvest / hazard |
 | **Fauna** | Sulfur Hound, Vent Crab, Basin Mantis | Yes | Alien or Lifeform (`SurfaceThreatKind`) |
 | **Machine-coral** | Rust Garden | Yes (swarmers) | Lifeform visually; machine origin |
-| **Android / machine** | Corrupted patrol, survey drones | Yes | Android (`SurfaceThreatKind`) — **not fauna** |
+| **Android** | Patrol frame, survey drone, sentry bot | Yes | `SurfaceThreatKind.Android` — machine origin, **not fauna** |
+| **Humanoid threat** | Stim-sick scrapper, corporate remnant, smuggler enforcer | Yes | `SurfaceThreatKind.Android` or dedicated humanoid archetype in data — **expedition humans**, not native life |
+| **Ground machine** | Scrap mite, turret crawler, repair tick | Yes | `SurfaceThreatKind.Android`; small non-humanoid AI |
+| **Flying fauna** | Plume Moth, Ash Glass Wasp, Heat Kite | Yes / ambient | Alien or Lifeform; see §4.5 |
 
 ### 1.2 Social patterns
 
@@ -47,7 +50,7 @@ Io life is **not Earth biology**. All organisms in this roster obey three locked
 | **Geyser surge** | Vent crabs surface; pods pressurize (timed harvest window) |
 | **Tremor swarm** | Brood tunnels wake; pool film breaks; rockfall flushes jackals |
 | **Rad pulse** | Polar fauna shelter; Rift Stalkers spike aggression post-pulse |
-| **Resonance supercell** | Echo symbionts glow; android patrols erratic; Still Hunter myth traces |
+| **Resonance supercell** | Echo symbionts glow; android patrols erratic; Still Hunter myth traces; **Void Stitcher** seam-spawn rate spikes |
 
 ---
 
@@ -130,9 +133,169 @@ Shared tables — home biome sets spawn **weight bias**, not exclusivity.
 | **Trio** | Infiltrator silent approach; Tactician burst clear before swarm |
 | **Prototype** | deferred — nest spawner on wreck prop; **not fauna** origin |
 
+### 3.5 Void Stitcher *(moon-wide — deadly stealth striker)*
+
+> **Design intent:** One creepy organism the player learns to fear on **any** biome. Not the Still Hunter (myth flee encounter) — the Stitcher **fights**, **kills**, and **vanishes**. Colony Ops / Aether-9 comms: *"Do not trust the seams."*
+
+| Field | Detail |
+|-------|--------|
+| **Tier** | elite (global rare) |
+| **Biome / stratum** | **Any** B1–B7 surface; Stratum 1–4 underground. Never inside B7 silent puzzle corridors or Stratum 5 vault logic rooms |
+| **Visual** | Wrong geometry: too many joints folded flat against rock, glass-silicate skin matching local mineral — reads as terrain until it moves. In motion: unfolds upward like a torn seam; no face, only a split vent maw and needle limbs |
+| **Habitat** | Heat shimmer, mineral film, crack shadows, wade-pool edges, ash lee — anywhere a **seam** exists. Director max **1 active** per expedition |
+| **Behavior** | **Stealth / route / clear** — hidden until trigger: player isolation, companion down, low health, or standing on reflective crust >2 s. **0.5 s** glass-stress audio telegraph → **fast lunge** (high damage, brief stagger). Disengages into seam if blocked or trio focuses fire |
+| **Pressure** | Sulfur haze and heat shimmer **improve** camouflage; tremor **forces** one surface reveal per swarm; resonance supercell doubles spawn weight |
+| **Harvest** | Seam needle → unique armor mod / Aether-9 codex entry (first kill only per save bias) |
+| **Trio** | Scout sense widens telegraph window; Tactician body-block lunge; Med Tech revive target after strike — **never** send one companion alone on wounded extract |
+| **Prototype** | deferred — `legacy creature AI`, ambush preset + custom seam-hide shader; **not** humanoid/android |
+
+**Food-web position (global):** apex seam predator — no consistent prey chain; opportunist on wounded fauna and distracted expeditions. Scavengers avoid stitched ground (environmental tell: no mites on seam rocks).
+
 ---
 
-## 4. Encounter budget sketch
+## 4. Machine, humanoid & flying threat families
+
+Expedition threats split into **three machine/human buckets** plus **flying fauna**. All use `EnemyArchetype.HumanoidInvector` or a future **small-ground-machine** archetype in data — design labels here are player-facing.
+
+### 4.1 Android types (machine frames)
+
+Humanoid or semi-humanoid **corporate / military / precursor** chassis. Always machine origin — salvage reads as tech, not biology.
+
+| ID | Name | Tier | Home bias | Role | Behavior sketch |
+|----|------|------|-----------|------|-----------------|
+| A1 | **Corrupted Patrol Android** | common | B7, Stratum 5 | Ruin guard | Silent patrol loop; LOS aggro; teal corruption VFX |
+| A2 | **Rusted Survey Drone** | common | B2, Graveyard | Vent mapper | Orbits POI; scan hijack aggro; ranged chip damage |
+| A3 | **Graveyard Scrapper Drone** | common | B1, overlay | Camp salvage | Three-arm grab; aggro on crate touch |
+| A4 | **Eruption Sentry Bot** | common | B4 story POI | Heat-hardened turret torso | Burst fire; half-buried spawn |
+| A5 | **Salvage Excavator Android** | common | B3 wrecks | Tracked digger | Slow; high HP; exposes loot cache when stopped |
+| A6 | **Smuggler Remnant Android** | common | B5 caches | Stripped humanoid frame | Melee rush; drops black-market chip |
+| A7 | **Loader Automaton** | common | B2 rigs, colony ruins | Industrial hauler | Swings cargo arm; blocks narrow lanes |
+| A8 | **Symbiosis Test Unit** | elite | Stratum 2, B6 | Human-AI experiment wreck | Hybrid frame; alternates melee and pulse stagger |
+| A9 | **Comms Relay Walker** | common | B6 breaches, B5 relays | Tall antenna chassis | Calls **+1 scrap mite swarm** on alert; priority destroy |
+| A10 | **Mine Sweeper Beetle-bot** | common | Graveyard, B1–B3 roads | Medium treaded sweeper | Explodes mine props; chain reaction risk |
+
+**Prototype note (all androids):** `humanoid/android AI` or simple turret AI for A4; deferred until B4 #9.
+
+#### A1 Corrupted Patrol Android — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Standard expedition security shell; precursor teal veins; jaw plate missing |
+| **Verb** | **Clear / route** — patrol ping-pong; weak to resonance puzzle traps in B7 |
+| **Harvest** | Patrol chip, precursor wire |
+| **Trio** | Infiltrator bypass; Tactician clear |
+
+### 4.2 Humanoid expedition threats (organic)
+
+**Living humans** — deserters, stim addicts, corporate remnants, smugglers. Distinct from androids in comms and loot (tags, journals, AC bounties). Use humanoid Invector rig with **non-corruption** materials.
+
+| ID | Name | Tier | Home bias | Role | Behavior sketch |
+|----|------|------|-----------|------|-----------------|
+| H1 | **Stim-Sick Scrapper** | common | Graveyard overlay, B1 | Loot thief | Erratic wander; flails melee; low accuracy |
+| H2 | **Corporate Security Remnant** | common | B2, B4 rigs | Armored guard | Guard preset; short leash; prefers ranged |
+| H3 | **Smuggler Enforcer** | common | B5 | Black-market muscle | Pack of 2; flank on rad pulse |
+| H4 | **Tunnel Deserter** | common | Stratum 1–2, B6 | Broken expedition survivor | Flashlight lure; flees to jackal pack |
+| H5 | **Symbiosis Subject** | elite | Stratum 2 story | Partial neural lace | Phase dash; screams attract brood wake |
+| H6 | **Claim Jumper** | common | B3, B6 | Rival prospector | Snipes resource nodes; steals harvest |
+| H7 | **Isotope Rush Prospector** | common | B5 early story | Rad-suited digger | Desperate; throws rad flares |
+
+**Design rule:** humanoid threats **never** spawn from native nest anchors — only wreck, camp, and story POI anchors.
+
+#### H5 Symbiosis Subject — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Human silhouette; visible lace ports; one arm chrome, one flesh |
+| **Verb** | **Clear** — mid-game lava-tube arc; noise pulls **Brood Tunnel** wardens |
+| **Harvest** | Lace fragment → Science Labs research |
+| **Trio** | Specialist silence buff; Tactician burst before scream phase |
+
+### 4.3 Small ground machines (non-humanoid AI)
+
+Low profile tread, hop, or crawl — **not** full humanoid rig. Future `EnemyArchetype` extension or scaled drone prefab.
+
+| ID | Name | Tier | Size read | Home bias | Behavior sketch |
+|----|------|------|-----------|-----------|-----------------|
+| M1 | **Scrap Mite** | ambient → common | Palm | Rust Garden, any wreck | Swarm on alert; chip damage; flee from flame |
+| M2 | **Turret Crawler** | common | Dog-sized | B4, B7 perimeter | Deploys mini turret mode when stationary |
+| M3 | **Repair Tick** | ambient | Fist | Wreck hulls | Repairs Rust Garden; kill to slow swarm |
+| M4 | **Beacon Hopper** | ambient | Knee | B6 breaches | Harmless; maps breach; ion lightning magnet |
+| M5 | **Core-Sniffer Rover** | common | Dog-sized | B7 approach | Follows Memory Core signal; explodes on proximity |
+| M6 | **Vent Capper Bot** | common | Small box | B2 | Seals vent for corporate map; blocks gas harvest |
+| M7 | **Mag-Clamp Drone** | common | Dinner-plate | B5 ore fields | Latches metal gear; drag slow debuff |
+
+**Prototype note:** simple FSM + NavMesh or steering; pool-friendly swarm for M1.
+
+#### M2 Turret Crawler — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Low tread platform; gun pops from carapace hatch |
+| **Verb** | **Clear / time** — vulnerable during tread move; armored in turret mode |
+| **Harvest** | Crawler cell, barrel scrap |
+| **Trio** | Architect smoke deploy blocks LOS |
+
+### 4.4 Flying fauna
+
+Native **alien flyers** — not drones. Consolidates migratory entries from §3 and biome sections.
+
+| ID | Name | Tier | Flight style | Home bias | Combat? |
+|----|------|------|--------------|-----------|---------|
+| F1 | **Plume Moth** | ambient | Thermal soar | B2; migrates B1/B3/B4 | No — debuff if swarmed |
+| F2 | **Ridge Carrion Skimmer** | ambient | Low glide | B3 | No — POI tell |
+| F3 | **Polar Skimmer** | ambient | Rad-shimmer glide | B5 | No — pulse tell |
+| F4 | **Cave Scout Moth** | ambient | Tube dive | B6 breaches | No — route guide |
+| F5 | **Rift Skimmer** | common | 3-pack junction glide | Stratum 2–3 | Yes — light chip |
+| F6 | **Ash Glass Wasp** | common | Aggressive dart | B1, B3 ash weather | Yes — swarm 4–6 |
+| F7 | **Caldera Heat Kite** | common | Heat-column rider | B4 rim | Yes — dive burn |
+| F8 | **Ion Glass Bat** | ambient → common | Storm rider | B5, B6 during ion lightning | Yes during storm embed |
+
+#### F6 Ash Glass Wasp — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Angular glass wings; amber abdomen; buzz like cracked crystal |
+| **Habitat** | Ash gale embed; 4–6 per swarm |
+| **Behavior** | **Clear / route** — marks player who disturbs ash mats; short chase |
+| **Pressure** | Ash gale spawns embed; calm = single scouts only |
+| **Harvest** | Glass stinger → filter abrasive |
+| **Trio** | Tactician AoE clear; Scout marks nest hole |
+
+#### F7 Caldera Heat Kite — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Kite-shaped thermal membrane; black skeleton; glows when diving |
+| **Habitat** | 1–2 circling each caldera rim overlook |
+| **Behavior** | **Time / clear** — dive attack during eruption window; otherwise ambient |
+| **Harvest** | Kite membrane → heat cell insulator |
+| **Trio** | Specialist thermal read predicts dive |
+
+#### F8 Ion Glass Bat — reference card
+
+| Field | Detail |
+|-------|--------|
+| **Visual** | Flock of small silica bats; refract lightning strikes |
+| **Habitat** | Ion lightning storm only; 8–12 flock |
+| **Behavior** | **Route** — flying near metal gear increases strike risk; bats harmless unless startled |
+| **Harvest** | Bat silica → lightning rod craft |
+| **Trio** | Drop metal weapons during storm crossing |
+
+**Flying spawn budget:** max **2** ambient flocks OR **1** aggressive swarm per zone (stacks with §5 encounter table).
+
+### 4.5 Threat family spawn rules (director)
+
+| Family | Anchor types | Mix rule |
+|--------|--------------|----------|
+| Android | Wreck, rig, ruin patrol | Never more than **1 humanoid-frame android** + **1 small machine** in same 200 m anchor |
+| Humanoid expedition | Camp, graveyard, story POI | Max **1 pack (2–3)** or **2 solos**; no android at same POI |
+| Small ground machine | Wreck, garden, road | M1 mites only in swarms tied to A9 alert or Rust Garden |
+| Flying fauna | Open sky volumes | Weather-gated for F6–F8 |
+| **Void Stitcher** | Seam / shimmer volumes | **Global** 1 per expedition; competes with elite slot |
+
+---
+
+## 5. Encounter budget sketch
 
 Aligns with ExperienceDirector danger-budget language (GDD A2, biome plan §2.8). **Soft caps per expedition zone** — director may undershoot during high Strain.
 
@@ -143,7 +306,7 @@ Aligns with ExperienceDirector danger-budget language (GDD A2, biome plan §2.8)
 | **Common combat packs** | 1–2 packs OR 2–3 solos | Max one pack + one solo elite |
 | **Nest / colony** | 0–1 | Only if activity template = Nest Clear |
 | **Android / machine** | 0–1 | Graveyard overlay or B7; never mixed with native nest in same anchor |
-| **Elite** | 0–1 | Director gate; Caldera Mantis, Magnet Wyrm, Still Hunter trace |
+| **Elite** | 0–1 | Director gate; Caldera Mantis, Magnet Wyrm, Still Hunter trace, **Void Stitcher** (global seam predator) |
 
 **Resonance modifier:** +1 common spawn weight; brood wake doubles nest warden count (underground).  
 **Sulfur storm:** surface combat spawns suppressed; flora harvest nodes pause.  
@@ -151,7 +314,7 @@ Aligns with ExperienceDirector danger-budget language (GDD A2, biome plan §2.8)
 
 ---
 
-## 5. Surface biomes (B1–B7)
+## 6. Surface biomes (B1–B7)
 
 ---
 
@@ -1218,11 +1381,12 @@ See §3.4 — B7 android dig signature.
 
 ---
 
-## 6. Underground ecology (Stratum 1–5)
+## 7. Underground ecology (Stratum 1–5)
 
 Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology rules from `Io_Underground_Architecture_Plan.md` §6.3 remain in force.
 
-**Full cards:** this section. **Quick index:** underground plan §6.1–6.2 summary tables.
+**Full cards:** this section. **Quick index:** underground plan §6.1–6.2 summary tables.  
+**Global threats:** android / humanoid / machine / Void Stitcher — §4.
 
 ---
 
@@ -1365,12 +1529,14 @@ Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology r
 
 ---
 
-## 7. Promotion path to canon
+## 8. Promotion path to canon
 
 | Content | Promote to | Keep art-only / engineering |
 |---------|------------|------------------------------|
 | Ecology pillars + taxonomy | GDD **A2e** intro | — |
 | Per-biome roster tables + food webs | GDD **A2e** §surface | Individual concept art sheets |
+| **§4 threat families** (android, humanoid, ground machine, flying fauna) | GDD **A2e** §expedition threats | Prefab rig list, animator sets |
+| **Void Stitcher** global elite | GDD **A2e** + ExperienceDirector elite pool | Seam-hide VFX tech |
 | Underground stratum rosters | GDD **A2e** §subsurface (merge with A2c underground lock) | Modular kit names (Tube_Straight, etc.) |
 | Cross-biome migratory table | GDD **A2e** + ExperienceDirector spawn weights | Exact weight numbers (tuning) |
 | Encounter budget soft caps | GDD **A2e** + director docs | Per-zone JSON/SO tuning |
