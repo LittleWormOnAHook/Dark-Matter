@@ -292,6 +292,58 @@ Native **alien flyers** — not drones. Consolidates migratory entries from §3 
 | Small ground machine | Wreck, garden, road | M1 mites only in swarms tied to A9 alert or Rust Garden |
 | Flying fauna | Open sky volumes | Weather-gated for F6–F8 |
 | **Void Stitcher** | Seam / shimmer volumes | **Global** 1 per expedition; competes with elite slot |
+| **Expedition pet** | Player loadout (follower) | **Never** director world spawn — see §4.6 |
+
+### 4.6 Expedition pet companion *(design lock — prototype placeholders)*
+
+The legacy **pet / AI follower** loop (`Scripts/Pet/`, Journal Pet tab) is **prototype debt**. Ship target is **one** expedition pet per player — not a fourth combat companion and **not** part of the 25 Echo / trio roster cap.
+
+**Current disk placeholders (not canon):** `Ricky`, `Probe`, `Fox Cub` — Earth-animal and generic sci-fi reads; replace before ship.
+
+**Locked fork (choose one before art lock):**
+
+| Branch | Identity | Combat | Utility read |
+|--------|----------|--------|--------------|
+| **A — Io-native adorable pet** | Single unique species that could **live on Io**; chemosynthetic / sulfur-silicon cute silhouette | **No meaningful DPS** — distress call, flee, minor debuff assist at most | Fetch ping, sample sniff, camp morale, O₂ twitch-warn |
+| **B — Small robotic AI** | Pocket expedition drone; scrapper / survey puck aesthetic | **Minor attacks only** — chip damage, stagger pulse; never rivals trio DPS | Scan relay, loot ping, comms squeak, flashlight bob |
+
+**Shared rules (both branches):**
+
+- One pet slot on expedition loadout; stays at colony during base-22 sim (aggregate, not full agent).
+- UI folds into **Companions / Echoes** presentation per GDD — no separate pet progression track or AC shop loop.
+- Pet **never** spawns from `SurfaceEncounterZone` / director tables — player-owned follower only.
+- Sulfur storm: pet retreats to player bubble / colony safe state (no separate pet death loop).
+- Void Stitcher and apex elites can **ignore** pet unless player is isolated (pet is not a decoy tank).
+
+#### Option A — Io-native pet (reference concept: **Brimstone Puff**)
+
+| Field | Detail |
+|-------|--------|
+| **Tier** | player companion (non-roster) |
+| **Visual** | Round sulfur-silicate puff; soft frill; two large dark eyes; rolls when scared; faint yellow biolum when happy |
+| **Ecology read** | Scavenger cousin of Cinder Skitter; eats condensate film; too small for hound prey — **adorable because harmless** |
+| **Habitat fiction** | B1 seeps, colony tube edges; player-imprinted after rescue/hatch from fan cluster |
+| **Behavior** | **Follow / fetch / sniff** — points nose toward harvest nodes and Echo signal bearing; squeaks before sulfur saturation spike |
+| **Pressure** | Burrows in sulfur storm (cosmetic inside Architect bubble); shivers in polar night |
+| **Combat** | None — hides behind player; optional **distress chirp** pulls aggro 1 s (trio save beat, not tanking) |
+| **Trio synergy** | Med Tech calms puff faster; Scout uses sniff ping on map |
+| **Prototype** | replace Fox Cub placeholder; `legacy creature AI` follow + fetch |
+
+#### Option B — Small robotic AI (reference concept: **Field Puck**)
+
+| Field | Detail |
+|-------|--------|
+| **Tier** | player companion (non-roster) |
+| **Visual** | Knee-high hover puck; scratched corporate yellow; one wary LED “eye”; tool arm folds flat |
+| **Ecology read** | **Machine** — rebuilt from Graveyard scrapper parts; not fauna |
+| **Habitat fiction** | Built at colony craft bench; personality from bootleg firmware |
+| **Behavior** | **Follow / scan / minor zap** — short-range arc on player command; overheats after 3–4 shots |
+| **Pressure** | Ion lightning magnet (stays near player metal); sulfur storm powered down |
+| **Combat** | **Minor only** — 2–4 DPS chip; stagger pulse on cooldown; cannot kill elites alone |
+| **Trio synergy** | Communications Officer extends scan relay; Architect recharge pad refills faster |
+| **Prototype** | replace Probe placeholder; simple drone FSM + ranged ping |
+
+**Promotion:** fold chosen branch into GDD **A2e** §expedition loadout + Appendix B pet migration note when art locks.
 
 ---
 
@@ -1536,6 +1588,7 @@ Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology r
 | Ecology pillars + taxonomy | GDD **A2e** intro | — |
 | Per-biome roster tables + food webs | GDD **A2e** §surface | Individual concept art sheets |
 | **§4 threat families** (android, humanoid, ground machine, flying fauna) | GDD **A2e** §expedition threats | Prefab rig list, animator sets |
+| **§4.6 expedition pet** (Io-native **or** small robot; placeholders retired) | GDD **A2e** §loadout + B pet migration | Ricky / Fox Cub / Probe assets |
 | **Void Stitcher** global elite | GDD **A2e** + ExperienceDirector elite pool | Seam-hide VFX tech |
 | Underground stratum rosters | GDD **A2e** §subsurface (merge with A2c underground lock) | Modular kit names (Tube_Straight, etc.) |
 | Cross-biome migratory table | GDD **A2e** + ExperienceDirector spawn weights | Exact weight numbers (tuning) |
@@ -1547,7 +1600,7 @@ Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology r
 - `Io_Biome_Exploration_Gameplay_Plan.md` §4 wildlife lines (pointer only)
 - `Io_Underground_Architecture_Plan.md` §6 (index + pointer)
 
-**Out of scope (unchanged):** Unity prefabs, `SurfaceEncounterTable` wiring, animator/AI, art production, locked world rules (wade-only, instanced underground, vehicle gates).
+**Out of scope (unchanged):** Unity prefabs, `SurfaceEncounterTable` wiring, animator/AI, art production, locked world rules (wade-only, instanced underground, vehicle gates). **Pet placeholder retirement** tracks with pet migration (GDD B4 #6), not B4 #9 biome pass alone.
 
 ---
 

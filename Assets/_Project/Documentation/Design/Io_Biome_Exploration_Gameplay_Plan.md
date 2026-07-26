@@ -4,6 +4,7 @@
 **Authority:** GDD 5.0 Chapter 3 (Biome Philosophy), Appendix A2 (pressures), planned A2b (weather).  
 **Companion docs:**
 - `Io_Underground_Architecture_Plan.md` — subsurface strata & pools  
+- `Io_Biome_Ecology_Roster.md` — flora/fauna/machine ecology per biome & stratum  
 **Not yet locked** — promote to GDD Appendix A2d after review.
 
 ---
