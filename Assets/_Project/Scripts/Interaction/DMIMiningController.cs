@@ -832,7 +832,7 @@ namespace Project.Interaction
             if (source == null)
                 return null;
 
-            int key = source.GetEntityId();
+            int key = source.GetEntityId().GetHashCode();
             if (trimmedContinuousLoopCache.TryGetValue(key, out AudioClip cached) && cached != null)
                 return cached;
 

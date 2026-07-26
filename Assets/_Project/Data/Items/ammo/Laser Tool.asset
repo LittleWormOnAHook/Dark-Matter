@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Laser Tool
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Laser Tool
-  icon: {fileID: 21300000, guid: e8258b011db9aac4a9ea0754a7209870, type: 3}
+  icon: {fileID: 21300000, guid: b5263988de1f0d54e8703677486b3330, type: 3}
   worldPrefab: {fileID: 8058546030527486170, guid: 6ef949e4c3ab2894cb564e2d74893b18, type: 3}
   maxStack: 999
   itemType: 4
@@ -125,3 +125,4 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: For laser mining and has other uses
+  unlocksInventoryStorageRow: 0

@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
   displayName: Heat Vent
   zoneKind: 3
-  designerNotes: 
-  effectIntensity: 0.433
+  designerNotes: Thermal heat vents can kill anything in seconds, some can reach
+    900 degrees. Take special equipment to get close.
+  effectIntensity: 0.631
   radiationPerSecond: 0
   thermalColdPerSecond: 0
   thermalHeatPerSecond: 9
@@ -24,7 +25,7 @@ MonoBehaviour:
   oxygenDrainMultiplier: 1
   exposureRecoveryPerSecond: -1
   thermalRecoveryPerSecond: -1
-  healthDrainAtMaxExposure: 2
+  healthDrainAtMaxExposure: 4.79
   healthDrainAtMaxThermal: 2.2
   pulse:
     enabled: 1
@@ -53,5 +54,5 @@ MonoBehaviour:
     damageTakenMultiplier: 1.15
     debuffThreshold: 0.35
   gizmoColor: {r: 0.95, g: 0.35, b: 0.12, a: 0.4}
-  ambientVfxPrefab: {fileID: 0}
-  ambientLoopClip: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
+  ambientVfxPrefab: {fileID: 1461347054458134, guid: 3a173660a5c9e2044a8c74e8e7068ec8, type: 3}
+  ambientLoopClip: {fileID: 8300000, guid: ed956a1671c3f1a47aea753169b60d9e, type: 3}

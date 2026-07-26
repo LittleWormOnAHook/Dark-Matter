@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: sci_fi_pistol
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Sci-Fi Pistol
-  icon: {fileID: 21300000, guid: 5c26b9424f5e78c43916d37cd1298bc1, type: 3}
+  icon: {fileID: 21300000, guid: bc433ddb3f88de846b8a24f4b80f185c, type: 3}
   worldPrefab: {fileID: 7456544933812286296, guid: 31a656c5900a7274dadfb0b09219e95a, type: 3}
   maxStack: 10
   itemType: 3
+  deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 8948557008729901400, guid: a8568fdb9141e6c4ea85991f2179fc12, type: 3}
   equipSocketName: RightHand
@@ -60,17 +61,11 @@ MonoBehaviour:
   magazineSize: 12
   reloadTimeSeconds: 1.6
   defaultAmmoType: 0
-  compatibleAmmoTypes:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
+  compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
   defaultAmmoItem: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 3}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
   projectilePrefab: {fileID: 100000, guid: 25621447fd20a4e44841cc32dd2c0de4, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.84
@@ -93,8 +88,19 @@ MonoBehaviour:
   tracerPrefab: {fileID: 1878987882032996, guid: 2f30ce685381cf141a1c05b1ee359db2, type: 3}
   impactVfxPrefab: {fileID: 1065618375357958, guid: 6f8068e2c99ffb04b932ec74e5773db5, type: 3}
   beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 1
@@ -111,17 +117,12 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: One-handed sci-fi pistol. Hold RMB to aim, LMB to fire.
-
-
-
-
-
-rangedDamage: 14
+  unlocksInventoryStorageRow: 0

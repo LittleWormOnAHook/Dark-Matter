@@ -1,0 +1,18 @@
+---
+description: Always stage Unity hierarchy, materials, prefabs, terrain, and new assets with commits
+alwaysApply: true
+---
+
+# Unity Commit — Include Content Assets
+
+When committing and pushing Unity work, always stage related changes to:
+
+- Scene / hierarchy (`.unity` and related scene `.meta`)
+- Materials (`.mat`)
+- Prefabs (`.prefab`)
+- Terrain (`.asset` terrain data, `.terrainlayer`, heightmap/splat-related terrain files)
+- Newly added assets under `Assets/` (and their `.meta` files)
+
+Do not ship script-only commits that leave behind matching scene wiring, materials, prefabs, terrain, or new assets from the same work.
+
+Still exclude editor noise (`.vscode`), Recovery dumps (`Assets/_Recovery/`), and secrets.

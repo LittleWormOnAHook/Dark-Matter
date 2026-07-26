@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
   displayName: Mixed Hazard
   zoneKind: 6
-  designerNotes: 
+  designerNotes: These areas can have sometimes different effects on a person, from
+    radiation to sulfur gas
   effectIntensity: 0.14
   radiationPerSecond: 3
   thermalColdPerSecond: 0
@@ -46,5 +47,5 @@ MonoBehaviour:
     damageTakenMultiplier: 1.15
     debuffThreshold: 0.35
   gizmoColor: {r: 0.55, g: 0.2, b: 0.65, a: 0.4}
-  ambientVfxPrefab: {fileID: 0}
-  ambientLoopClip: {fileID: 0}
+  ambientVfxPrefab: {fileID: 3565298838687146643, guid: daf8f70fb4a14fea9a31616448a384a6, type: 3}
+  ambientLoopClip: {fileID: 8300000, guid: b4bc1655997cd78488375e6627dbd4dd, type: 3}

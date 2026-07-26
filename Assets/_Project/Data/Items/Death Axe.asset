@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Death Axe
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Death Axe
-  icon: {fileID: 21300000, guid: 971cdd75a02c60047b8f3b6233e6310e, type: 3}
+  icon: {fileID: 21300000, guid: d894dac98927d1647a626fc0d29c45d5, type: 3}
   worldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   maxStack: 1
   itemType: 2
+  deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 8800533889026050635, guid: 81e1ee198459e164ba5ca24dfd3a4d42, type: 3}
   equipSocketName: RightHand
@@ -50,10 +51,21 @@ MonoBehaviour:
   rangedRange: 45
   projectileSpeed: 85
   projectileSpreadDegrees: 1.5
+  weaponAccuracy: 75
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.2
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 4.5
   fireRate: 4
   magazineSize: 30
+  reloadTimeSeconds: 1.8
   defaultAmmoType: 0
   compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
   projectilePrefab: {fileID: 0}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
@@ -68,6 +80,32 @@ MonoBehaviour:
   ammoType: 0
   ammoPerPickup: 20
   ammoPickupGrant: 20
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  muzzleFlashPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -79,15 +117,12 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 
-
-
-
-meleeDamage: 18
+  unlocksInventoryStorageRow: 0

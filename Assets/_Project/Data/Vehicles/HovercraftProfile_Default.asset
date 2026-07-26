@@ -19,6 +19,8 @@ MonoBehaviour:
   minAltitudeAboveGround: 2
   maxAltitudeAboveGround: 10
   parkedAltitudeAboveGround: 0.35
+  exitAltitudeTolerance: 0.15
+  exitDescentTimeout: 4
   verticalAdjustSpeed: 3.5
   springStrength: 50000
   springDamping: 8000
@@ -63,14 +65,14 @@ MonoBehaviour:
   turretFireCooldown: 0.18
   turretFireClip: {fileID: 8300000, guid: 221503a992e5bc64f88e43a08127f346, type: 3}
   turretFireClip2: {fileID: 8300000, guid: b8f88923a1641df43b9ada3b901debb7, type: 3}
-  engineRunningClip: {fileID: 8300000, guid: 0ade537f9dc4fc448a78c3ff254867c5, type: 3}
-  engineVolume: 0.38
+  engineRunningClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  engineVolume: 0.59
   enginePitchRange: {x: 0.85, y: 1.35}
-  boardClip: {fileID: 8300000, guid: 1682d7c1d6179ed449cbab1b24e2830f, type: 3}
+  boardClip: {fileID: 8300000, guid: bfc5803fa8fa8924bbeaa34f4f689bb1, type: 3}
   boardVolume: 0.75
-  exitClip: {fileID: 8300000, guid: 99edd1ed765801d42a9485951d9e2c1f, type: 3}
+  exitClip: {fileID: 8300000, guid: bfc5803fa8fa8924bbeaa34f4f689bb1, type: 3}
   exitVolume: 0.75
   boostAudioClip: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
-  boostVolume: 0.85
+  boostVolume: 0.96
   weaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
   ammoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}

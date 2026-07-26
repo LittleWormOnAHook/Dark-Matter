@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.Exposure.ExposureZoneProfile
   displayName: Cold Basin
   zoneKind: 2
-  designerNotes: 
+  designerNotes: Cold Regions can reach -190 Degrees
   effectIntensity: 0.927
   radiationPerSecond: 0
   thermalColdPerSecond: 8
@@ -27,9 +27,9 @@ MonoBehaviour:
   healthDrainAtMaxExposure: 2
   healthDrainAtMaxThermal: 1.8
   pulse:
-    enabled: 0
+    enabled: 1
     activeDurationSeconds: 8
-    inactiveDurationSeconds: 4
+    inactiveDurationSeconds: 2
     activeIntensityMultiplier: 1.5
     timingJitter: 0.15
   mitigationRules:
@@ -41,7 +41,7 @@ MonoBehaviour:
     exposureReduction: 0.3
     activeLabel: Thermal shelter rig active
   playerDebuffs:
-    moveSpeedPenalty: 0.15
+    moveSpeedPenalty: 0.51
     staminaRegenPenalty: 0.2
     accuracyPenalty: 0.1
     damageTakenMultiplier: 1.15

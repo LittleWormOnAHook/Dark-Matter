@@ -1,0 +1,21 @@
+---
+description: Prefer DM/DMI naming; do not use Invector names for new or repurposed systems
+alwaysApply: true
+---
+
+# Dark Matter Naming (No Invector Branding on New Work)
+
+When creating **new** scripts, prefabs, assets, or **repurposing** third-party systems into Dark Matter: Genesis:
+
+- Prefer **`DM`** / **`DMI`** / **`Dm`** prefixes and project-native names (`DMItemCollection`, `DmEvents`, `Cache Lid`, `IO Ancient Cache`).
+- Do **not** introduce new identifiers that contain `Invector`, `vItem`, `vTrigger`, or other Invector product branding in **our** `_Project` code, prefabs, animation paths, or UI labels.
+- Legacy Invector package files under `Assets/Invector-3rdPersonController/` may remain untouched until a deliberate rename pass; when wrapping or replacing them, ship Dark Matter–named copies/APIs instead of extending Invector names into gameplay.
+- Long-term direction: migrate remaining Invector-facing names toward **DMI** / **DM** as systems are touched.
+
+## Examples
+
+| Avoid (new/repurposed) | Prefer |
+|---|---|
+| `Invector-Chest-cover` | `Cache Lid` |
+| `vItemCollection` on project prefabs | `DMItemCollection` |
+| `Chest-Open` tied to Invector paths in our assets | `Cache-Lid-Open` under `Assets/_Project/` |
