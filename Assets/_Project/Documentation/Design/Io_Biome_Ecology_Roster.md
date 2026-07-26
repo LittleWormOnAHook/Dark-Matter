@@ -4,7 +4,8 @@
 **Authority:** GDD 5.0 Chapter 3 (Living Planet), Appendix A2 (surface threats: alien life + AI androids).  
 **Companion docs:**
 - `Io_Biome_Exploration_Gameplay_Plan.md` — biome verbs, activities, unlock flow  
-- `Io_Underground_Architecture_Plan.md` — strata, pools, underground pressure modifiers  
+- `Io_Underground_Architecture_Plan.md` — strata, pools, underground pressure  
+- `Io_World_Content_Phase_Map.md` — **master phase map** (W0–W8 production integration)  
 
 **Not yet locked** — prototype remains flat terrain; Unity spawn/prefab work deferred to GDD B4 #9 (Io biome pass).
 
