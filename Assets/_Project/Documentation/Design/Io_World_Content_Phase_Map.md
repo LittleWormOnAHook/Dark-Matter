@@ -10,6 +10,8 @@
 | `Io_Underground_Architecture_Plan.md` | Strata 1–5, pools, tube grammar, underground pressure |
 | `Io_Biome_Ecology_Roster.md` | Flora/fauna cards, threat families, pets (core 12 + vanity extras), Void Stitcher |
 
+**Microsoft 365 exports:** `Microsoft365/` — Word (`.docx`) + Excel ticket tracker (`.xlsx`). Regenerate: `python3 Microsoft365/export_to_office365.py`.
+
 **Promotion target:** fold approved phases into GDD **Appendix A2f — Io World Content Phase Map** after review.
 
 **Production package:**
