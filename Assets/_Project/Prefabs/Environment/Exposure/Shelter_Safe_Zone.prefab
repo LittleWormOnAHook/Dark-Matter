@@ -69,7 +69,7 @@ MonoBehaviour:
   profile: {fileID: 11400000, guid: ae537446b5e937046974e0709facdd3d, type: 2}
   affectPlayer: 1
   affectCompanions: 1
-  playAmbientLoop: 0
+  playAmbientLoop: 1
   ambientVolume: 0.35
   ambientFadeSeconds: 0.75
   enableCameraShake: 0
