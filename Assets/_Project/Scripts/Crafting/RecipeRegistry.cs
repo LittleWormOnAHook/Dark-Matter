@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Crafting
 {
-    [CreateAssetMenu(menuName = "Project/Crafting/Recipe Registry", fileName = "RecipeRegistry")]
+    [CreateAssetMenu(menuName = "Project/Crafting/Blueprint Registry", fileName = "RecipeRegistry")]
     public class RecipeRegistry : ScriptableObject
     {
         private static RecipeRegistry cached;

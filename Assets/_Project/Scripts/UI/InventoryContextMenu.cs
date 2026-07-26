@@ -88,6 +88,7 @@ namespace Project.UI
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             CreateMenuButton("Use", () => Execute(itemActions?.TryUse(activeSlotIndex) ?? false));
+            CreateMenuButton("Install", () => Execute(itemActions?.TryInstallStorageModule(activeSlotIndex) ?? false));
             CreateMenuButton("Equip", () => Execute(itemActions?.TryEquip(activeSlotIndex) ?? false));
             CreateMenuButton("Unequip", () => Execute(itemActions?.TryUnequip(activeSlotIndex) ?? false));
             CreateAmmoSubmenuButton();
@@ -267,7 +268,8 @@ namespace Project.UI
 
         private void UpdateButtonVisibility()
         {
-            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex));
+            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex));
+            SetButtonVisible("Install", itemActions.CanInstallStorageModule(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
             SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));

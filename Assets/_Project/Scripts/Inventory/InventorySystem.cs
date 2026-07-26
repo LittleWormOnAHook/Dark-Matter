@@ -8,8 +8,16 @@ namespace Project.Inventory
 {
     public class InventorySystem : MonoBehaviour
     {
+        public const int MainInventoryColumns = 10;
+        public const int StorageRowSlotCount = 10;
+        public const int DefaultUnlockedMainSlots = 20;
+        public const int DefaultTotalMainSlots = 50;
+
         [Header("Inventory Settings")]
-        public int inventorySize = 24;
+        [Tooltip("Total main inventory slots including locked expansion rows.")]
+        public int inventorySize = DefaultTotalMainSlots;
+        [Tooltip("How many main inventory slots are unlocked at game start / currently. Remaining slots stay locked until Increase Storage Module crafts.")]
+        public int unlockedMainSlots = DefaultUnlockedMainSlots;
         public int hotbarSize = 10;
         public int toolbarSize = 2;
 
@@ -35,17 +43,22 @@ namespace Project.Inventory
             if (slots == null)
                 slots = new List<InventorySlot>();
 
-            EnsureSlotCounts(inventorySize, hotbarSize, toolbarSize);
+            EnsureSlotCounts(inventorySize, hotbarSize, toolbarSize, unlockedMainSlots);
 
             survivalStats = GetComponent<SurvivalStats>();
             equipment = GetComponent<EquipmentController>();
         }
 
-        public void EnsureSlotCounts(int mainSize, int hotbar, int toolbar)
+        public void EnsureSlotCounts(int mainSize, int hotbar, int toolbar, int unlockedMain = -1)
         {
             inventorySize = Mathf.Max(1, mainSize);
             hotbarSize = Mathf.Max(0, hotbar);
             toolbarSize = Mathf.Max(0, toolbar);
+
+            if (unlockedMain >= 0)
+                unlockedMainSlots = unlockedMain;
+
+            unlockedMainSlots = Mathf.Clamp(unlockedMainSlots, 0, inventorySize);
 
             int totalSize = inventorySize + hotbarSize + toolbarSize;
             while (slots.Count < totalSize)
@@ -59,11 +72,48 @@ namespace Project.Inventory
 
             while (slots.Count > totalSize)
                 slots.RemoveAt(slots.Count - 1);
+
+            // Locked slots cannot hold items — clear anything that ended up past the unlock edge.
+            for (int i = unlockedMainSlots; i < inventorySize; i++)
+            {
+                slots[i].item = null;
+                slots[i].amount = 0;
+            }
+        }
+
+        public bool IsMainSlotUnlocked(int index)
+        {
+            if (index < 0)
+                return false;
+
+            if (index >= inventorySize)
+                return true; // Hotbar / toolbar are always usable.
+
+            return index < unlockedMainSlots;
+        }
+
+        public bool CanUnlockNextStorageRow()
+        {
+            return unlockedMainSlots < inventorySize;
+        }
+
+        /// <summary>Unlocks the next storage row (10 slots). Returns false when fully expanded.</summary>
+        public bool TryUnlockNextStorageRow()
+        {
+            if (!CanUnlockNextStorageRow())
+                return false;
+
+            unlockedMainSlots = Mathf.Min(inventorySize, unlockedMainSlots + StorageRowSlotCount);
+            OnInventoryChanged?.Invoke();
+            return true;
         }
 
         public bool CanAcceptItemAt(int index, ItemData item)
         {
             if (item == null || index < 0 || index >= slots.Count)
+                return false;
+
+            if (!IsMainSlotUnlocked(index))
                 return false;
 
             if (equipment != null)
@@ -632,7 +682,7 @@ namespace Project.Inventory
         {
             for (int i = 0; i < slots.Count; i++)
             {
-                if (slots[i].IsEmpty)
+                if (slots[i].IsEmpty && IsMainSlotUnlocked(i))
                     return i;
             }
             return -1;
@@ -661,7 +711,7 @@ namespace Project.Inventory
             if (slots == null)
                 slots = new List<InventorySlot>();
 
-            EnsureSlotCounts(inventorySize, hotbarSize, toolbarSize);
+            EnsureSlotCounts(inventorySize, hotbarSize, toolbarSize, unlockedMainSlots);
         }
 #endif
     }

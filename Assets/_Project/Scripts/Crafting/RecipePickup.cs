@@ -8,13 +8,13 @@ namespace Project.Crafting
     [RequireComponent(typeof(Collider))]
     public class RecipePickup : MonoBehaviour, IWorldUsable
     {
-        [Header("Recipe")]
+        [Header("Blueprint")]
         [SerializeField] private string recipeId;
 
         [Header("Interaction")]
         [SerializeField] private string promptText = "Press E to use";
         [SerializeField] private float interactRange = 3f;
-        [SerializeField] private string collectedMessage = "Recipe scroll collected!";
+        [SerializeField] private string collectedMessage = "Blueprint collected!";
 
         private UIManager uiManager;
         private CraftingManager craftingManager;
@@ -148,7 +148,7 @@ namespace Project.Crafting
             RecipeDefinition recipe = RecipeRegistry.Resolve(recipeId);
             if (recipe == null)
             {
-                Debug.LogWarning($"RecipePickup: Unknown recipe id '{recipeId}'.");
+                Debug.LogWarning($"RecipePickup: Unknown blueprint id '{recipeId}'.");
                 return false;
             }
 
@@ -198,7 +198,7 @@ namespace Project.Crafting
             RecipeDefinition recipe = RecipeRegistry.Resolve(recipeId);
             string label = recipe != null && !string.IsNullOrEmpty(recipe.displayName)
                 ? recipe.displayName
-                : "Recipe";
+                : "Blueprint";
 
             return $"{promptText} — {label}";
         }

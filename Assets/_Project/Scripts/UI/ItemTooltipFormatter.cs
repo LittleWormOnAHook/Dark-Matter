@@ -231,7 +231,7 @@ namespace Project.UI
 
             StringBuilder text = new StringBuilder();
             string stationLabel = recipe.stationType == CraftingStationType.Cooking ? "Cooking" : "Workbench";
-            text.AppendLine($"<color=#C8A2FF><b>{stationLabel} Recipe</b></color>");
+            text.AppendLine($"<color=#C8A2FF><b>{stationLabel} Blueprint</b></color>");
 
             if (pendingScroll)
                 text.AppendLine("<color=#FF9F6E>Right-click to learn</color>");

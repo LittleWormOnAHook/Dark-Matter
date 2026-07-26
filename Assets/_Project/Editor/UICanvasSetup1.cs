@@ -43,7 +43,7 @@ public class UICanvasSetup : EditorWindow
         grid.spacing = new Vector2(12, 12);
         grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 8;
+        grid.constraintCount = 10;
 
         Image gridBg = mainGrid.AddComponent<Image>();
         gridBg.color = new Color(0.15f, 0.15f, 0.15f, 0.7f);

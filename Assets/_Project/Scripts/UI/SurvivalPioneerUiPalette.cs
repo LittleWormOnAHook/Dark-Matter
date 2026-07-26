@@ -25,6 +25,8 @@ namespace Project.UI
         public static Color PanelHeader => WithAlpha(CharcoalGray, 0.98f);
         public static Color PanelBorder => WithAlpha(SlateGray, 0.95f);
         public static Color SlotBackground => WithAlpha(SlateGray, 0.82f);
+        /// <summary>Locked inventory expansion slots — slightly darker than open slots.</summary>
+        public static Color LockedSlotBackground => WithAlpha(DarkNavy, 0.92f);
         public static Color ButtonNormal => WithAlpha(RichFuchsia, 0.95f);
         public static Color ButtonHighlighted => RichFuchsia;
         public static Color ButtonPressed => WithAlpha(RichFuchsia, 0.72f);

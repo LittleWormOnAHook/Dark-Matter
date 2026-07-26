@@ -216,21 +216,21 @@ namespace Project.UI
                 {
                     statusText.text = pendingScrolls > 0
                         ? craftPanelEmbedded
-                            ? "Recipe library — right-click recipe scrolls above to learn them."
-                            : "Right-click recipe scrolls above to learn them."
+                            ? "Blueprint library — right-click blueprints above to learn them."
+                            : "Right-click blueprints above to learn them."
                         : craftPanelEmbedded
-                            ? "Recipe library — collect recipe scrolls in the world to unlock recipes."
-                            : "Collect recipe scrolls in the world to learn recipes.";
+                            ? "Blueprint library — collect blueprints in the world to unlock crafts."
+                            : "Collect blueprints in the world to learn crafts.";
                 }
                 else if (!craftingManager.CurrentStation.HasValue)
                 {
                     statusText.text = pendingScrolls > 0
                         ? craftPanelEmbedded
-                            ? $"Recipe library — {recipes.Count} learned recipe(s). Right-click scrolls above; visit a station to craft."
-                            : $"{recipes.Count} learned recipe(s). Right-click scrolls above or use a station to craft."
+                            ? $"Blueprint library — {recipes.Count} learned blueprint(s). Right-click scrolls above; visit a station to craft."
+                            : $"{recipes.Count} learned blueprint(s). Right-click scrolls above or use a station to craft."
                         : craftPanelEmbedded
-                            ? $"Recipe library — {recipes.Count} learned recipe(s). Visit a cooking pot or workbench to craft."
-                            : $"{recipes.Count} learned recipe(s). Use a cooking pot or workbench to craft.";
+                            ? $"Blueprint library — {recipes.Count} learned blueprint(s). Visit a cooking pot or workbench to craft."
+                            : $"{recipes.Count} learned blueprint(s). Use a cooking pot or workbench to craft.";
                 }
                 else
                 {
@@ -244,8 +244,8 @@ namespace Project.UI
                     }
 
                     statusText.text = craftableAtStation > 0
-                        ? $"{stationLabel} — {craftableAtStation} recipe(s) ready to craft ({recipes.Count} learned)"
-                        : $"{recipes.Count} learned recipe(s). None for this {stationLabel.ToLower()} station.";
+                        ? $"{stationLabel} — {craftableAtStation} blueprint(s) ready to craft ({recipes.Count} learned)"
+                        : $"{recipes.Count} learned blueprint(s). None for this {stationLabel.ToLower()} station.";
                 }
             }
 
@@ -270,7 +270,7 @@ namespace Project.UI
             {
                 scrollHintText.text = pending.Count > 0
                     ? "Right-click a scroll, then click Learn to confirm."
-                    : "Collect recipe scrolls in the world to fill these slots.";
+                    : "Collect blueprints in the world to fill these slots.";
             }
 
             for (int i = 0; i < pending.Count; i++)
@@ -306,7 +306,7 @@ namespace Project.UI
             string recipeName = recipe != null && !string.IsNullOrEmpty(recipe.displayName)
                 ? recipe.displayName
                 : recipeId;
-            PickupToastUI.Show($"Learned recipe: {recipeName}");
+            PickupToastUI.Show($"Learned blueprint: {recipeName}");
             RefreshRecipeList();
         }
 
@@ -397,7 +397,13 @@ namespace Project.UI
         private void HandleCrafted(RecipeDefinition recipe)
         {
             if (recipe?.outputItem != null)
-                PickupToastUI.Show($"Crafted {recipe.outputAmount}x {recipe.outputItem.itemName}");
+            {
+                if (recipe.outputItem.IsInventoryStorageModule)
+                    PickupToastUI.Show("Crafted Increase Storage Module — inventory row unlocked.");
+                else
+                    PickupToastUI.Show($"Crafted {recipe.outputAmount}x {recipe.outputItem.itemName}");
+            }
+
             RefreshRecipeList();
         }
 
@@ -504,7 +510,7 @@ namespace Project.UI
             statusText = CreateText(craftPanel.transform, "Use a cooking pot or workbench to craft.", S(13f), FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             statusText.color = SurvivalPioneerUiPalette.BodyText;
 
-            scrollSectionLabel = CreateText(craftPanel.transform, "Recipe Scrolls", S(15f), FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            scrollSectionLabel = CreateText(craftPanel.transform, "Blueprints", S(15f), FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
 
             GameObject scrollRowHost = new GameObject("RecipeScrollSlots", typeof(RectTransform));
             scrollRowHost.transform.SetParent(craftPanel.transform, false);
@@ -559,7 +565,7 @@ namespace Project.UI
             scrollSlotsScroll.content = slotsContentRt;
             recipeScrollSlotsParent = slotsContent.transform;
 
-            scrollHintText = CreateText(craftPanel.transform, "Right-click a scroll to learn the recipe.", S(11f), FontStyles.Italic, TextAlignmentOptions.MidlineLeft);
+            scrollHintText = CreateText(craftPanel.transform, "Right-click a blueprint to learn it (one-time use).", S(11f), FontStyles.Italic, TextAlignmentOptions.MidlineLeft);
             scrollHintText.color = SurvivalPioneerUiPalette.MutedText;
 
             GameObject scrollObj = new GameObject("RecipeScrollView", typeof(RectTransform));

@@ -39,6 +39,7 @@ namespace Project.UI
         private Color defaultBackgroundColor = SurvivalPioneerUiPalette.SlotBackground;
         private bool wasDragged;
         private bool isSelected;
+        private bool isLocked;
         private bool suppressAmountOutline;
 
         private void Awake()
@@ -222,13 +223,28 @@ namespace Project.UI
             ApplySelectionColor();
         }
 
+        public void SetLocked(bool locked)
+        {
+            isLocked = locked;
+            ApplySelectionColor();
+
+            if (isLocked)
+                ClearSlot();
+        }
+
+        public bool IsLocked => isLocked;
+
         private void ApplySelectionColor()
         {
             if (backgroundImage != null)
-                backgroundImage.color = defaultBackgroundColor;
+            {
+                backgroundImage.color = isLocked
+                    ? SurvivalPioneerUiPalette.LockedSlotBackground
+                    : defaultBackgroundColor;
+            }
 
             if (selectionGlowImage != null)
-                selectionGlowImage.enabled = isSelected;
+                selectionGlowImage.enabled = isSelected && !isLocked;
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -238,7 +254,7 @@ namespace Project.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (slot == null || slot.IsEmpty || inventory == null) return;
+            if (isLocked || slot == null || slot.IsEmpty || inventory == null) return;
 
             if (wasDragged)
             {
@@ -294,7 +310,7 @@ namespace Project.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (slot == null || slot.IsEmpty || slot.item == null)
+            if (isLocked || slot == null || slot.IsEmpty || slot.item == null)
                 return;
 
             ItemHoverTooltip.NotifyHover(this);
@@ -311,6 +327,7 @@ namespace Project.UI
         {
             ItemHoverTooltip.HideAny();
 
+            if (isLocked) return;
             if (eventData.button != PointerEventData.InputButton.Left) return;
             if (slot == null || slot.IsEmpty) return;
 
@@ -370,6 +387,8 @@ namespace Project.UI
             InventorySlotUI target = FindSlotUnderPointer(eventData, out bool hitAnyUi);
             if (target != null && target != source)
             {
+                if (target.IsLocked)
+                    return;
                 if (!source.inventory.CanAcceptItemAt(target.slotIndex, source.slot.item))
                     return;
 

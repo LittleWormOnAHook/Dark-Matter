@@ -165,7 +165,7 @@ namespace Project.UI
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
 
-            TextMeshProUGUI heading = CreateLabel(contentArea, theme, "Recipe Library", 28f, FontStyles.Bold);
+            TextMeshProUGUI heading = CreateLabel(contentArea, theme, "Blueprint Library", 28f, FontStyles.Bold);
             heading.color = SurvivalPioneerUiPalette.BodyText;
 
             pendingSummaryText = CreateLabel(contentArea, theme, string.Empty, 18f, FontStyles.Italic);
@@ -239,14 +239,14 @@ namespace Project.UI
             if (pendingSummaryText != null)
             {
                 pendingSummaryText.text = pending != null && pending.Count > 0
-                    ? $"{pending.Count} recipe scroll(s) waiting to be learned — check your inventory."
+                    ? $"{pending.Count} blueprint(s) waiting to be learned — check your Craft / Blueprints tab."
                     : string.Empty;
             }
 
             List<RecipeDefinition> discovered = new List<RecipeDefinition>(craftingManager.GetDiscoveredRecipes());
             if (discovered.Count == 0)
             {
-                CreateInfoRow("No recipes learned yet. Find recipe scrolls out in the world to unlock crafting.");
+                CreateInfoRow("No blueprints learned yet. Find one-time-use blueprints out in the world to unlock crafting.");
                 return;
             }
 

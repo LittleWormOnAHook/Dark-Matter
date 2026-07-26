@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Project.Crafting
 {
-    [CreateAssetMenu(menuName = "Project/Crafting/Recipe Definition", fileName = "NewRecipe")]
+    [CreateAssetMenu(menuName = "Project/Crafting/Blueprint Definition", fileName = "NewBlueprint")]
     public class RecipeDefinition : ScriptableObject
     {
         [Header("Identity")]
@@ -12,7 +12,7 @@ namespace Project.Crafting
         public string displayName;
         [TextArea(2, 4)]
         public string description;
-        [Tooltip("Icon shown in crafting and scroll slots. Falls back to the output item icon when empty.")]
+        [Tooltip("Icon shown in crafting and blueprint slots. Falls back to the output item icon when empty.")]
         public Sprite icon;
 
         [Header("Station")]
@@ -26,7 +26,7 @@ namespace Project.Crafting
         public int outputAmount = 1;
 
         [Header("Progression")]
-        [Tooltip("Minimum player level required to craft this recipe.")]
+        [Tooltip("Minimum player level required to craft this blueprint.")]
         public int requiredPlayerLevel = 1;
         [Tooltip("Used for XP scaling and UI tier badges.")]
         public int recipeTier = 1;

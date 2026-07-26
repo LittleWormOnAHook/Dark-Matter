@@ -34,8 +34,39 @@ namespace Project.Inventory
             ammoState = GetComponent<WeaponAmmoState>();
         }
 
+        /// <summary>Installs an Increase Storage Module from inventory, unlocking the next row.</summary>
+        public bool TryInstallStorageModule(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.IsInventoryStorageModule)
+                return false;
+
+            if (!inventory.CanUnlockNextStorageRow())
+            {
+                PickupToastUI.Show("Inventory storage is fully expanded.");
+                return false;
+            }
+
+            if (!inventory.TryUnlockNextStorageRow())
+                return false;
+
+            inventory.RemoveItemAt(slotIndex, 1);
+            PickupToastUI.Show("Storage expanded — new inventory row unlocked.");
+            GameAudioManager.Instance?.PlayItemUse();
+            return true;
+        }
+
+        public bool CanInstallStorageModule(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            return item != null && item.IsInventoryStorageModule && inventory.CanUnlockNextStorageRow();
+        }
+
         public bool TryUse(int slotIndex)
         {
+            if (CanInstallStorageModule(slotIndex))
+                return TryInstallStorageModule(slotIndex);
+
             if (inventory == null || !inventory.UseItemAt(slotIndex))
                 return false;
 
@@ -150,7 +181,13 @@ namespace Project.Inventory
         public bool CanUse(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            return item != null && item.IsConsumable;
+            if (item == null)
+                return false;
+
+            if (item.IsInventoryStorageModule)
+                return inventory.CanUnlockNextStorageRow();
+
+            return item.IsConsumable;
         }
 
         public bool CanEquip(int slotIndex)
@@ -239,7 +276,7 @@ namespace Project.Inventory
             if (inventory == null)
                 return false;
 
-            for (int i = 0; i < inventory.inventorySize; i++)
+            for (int i = 0; i < inventory.unlockedMainSlots; i++)
             {
                 if (inventory.slots[i].IsEmpty)
                     return true;
@@ -255,7 +292,7 @@ namespace Project.Inventory
 
             for (int i = 0; i < inventory.slots.Count; i++)
             {
-                if (inventory.slots[i].IsEmpty)
+                if (inventory.slots[i].IsEmpty && inventory.IsMainSlotUnlocked(i))
                     return true;
             }
 

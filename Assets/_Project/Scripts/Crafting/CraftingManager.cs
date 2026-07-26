@@ -106,8 +106,8 @@ namespace Project.Crafting
             ProgressionRewardGranter.GrantXp(
                 ProgressionXpDefaults.RecipeLearnXp,
                 XpSource.Craft,
-                $"recipe-learn:{recipe.ResolvedId}",
-                "Recipe");
+                $"blueprint-learn:{recipe.ResolvedId}",
+                "Blueprint");
 
             OnRecipesChanged?.Invoke();
         }
@@ -176,6 +176,10 @@ namespace Project.Crafting
             if (!HasIngredients(recipe, inventory))
                 return false;
 
+            // Storage modules install on craft and do not need an empty bag slot.
+            if (recipe.outputItem.IsInventoryStorageModule)
+                return inventory.CanUnlockNextStorageRow();
+
             return inventory.HasSpaceInMainInventory(recipe.outputItem, recipe.outputAmount);
         }
 
@@ -201,14 +205,25 @@ namespace Project.Crafting
                 removedIngredients.Add((ingredient.item, ingredient.amount));
             }
 
-            int added = inventory.AddItemToMainInventory(recipe.outputItem, recipe.outputAmount);
-            if (added < recipe.outputAmount)
+            if (recipe.outputItem.IsInventoryStorageModule)
             {
-                if (added > 0)
-                    inventory.RemoveItem(recipe.outputItem, added);
+                if (!inventory.TryUnlockNextStorageRow())
+                {
+                    RollbackRemovedIngredients(inventory, removedIngredients);
+                    return false;
+                }
+            }
+            else
+            {
+                int added = inventory.AddItemToMainInventory(recipe.outputItem, recipe.outputAmount);
+                if (added < recipe.outputAmount)
+                {
+                    if (added > 0)
+                        inventory.RemoveItem(recipe.outputItem, added);
 
-                RollbackRemovedIngredients(inventory, removedIngredients);
-                return false;
+                    RollbackRemovedIngredients(inventory, removedIngredients);
+                    return false;
+                }
             }
 
             OnCrafted?.Invoke(recipe);

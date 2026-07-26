@@ -45,7 +45,7 @@ public class InventoryPanelSetup : EditorWindow
         gridLayout.spacing = new Vector2(12, 12);
         gridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 8;
+        gridLayout.constraintCount = 10;
 
         Image gridBg = mainGrid.AddComponent<Image>();
         gridBg.color = new Color(0.2f, 0.2f, 0.2f, 0.6f);

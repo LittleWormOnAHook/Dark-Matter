@@ -272,12 +272,18 @@ namespace Project.Data
         [Header("Level Gates")]
         [Tooltip("Minimum player level required to equip or use this item.")]
         public int requiredLevelToEquip = 1;
-        [Tooltip("Minimum player level required to craft recipes that output this item.")]
+        [Tooltip("Minimum player level required to craft blueprints that output this item.")]
         public int requiredLevelToCraft = 1;
 
         [Header("Tooltip")]
         [TextArea(2, 5)]
         public string tooltipDescription;
+
+        [Header("Inventory Expansion")]
+        [Tooltip("When crafted or installed, unlocks the next inventory storage row (10 slots).")]
+        public bool unlocksInventoryStorageRow;
+
+        public bool IsInventoryStorageModule => unlocksInventoryStorageRow;
 
         public bool IsConsumable =>
             itemType == ItemType.Consumable &&

@@ -35,7 +35,7 @@ namespace Project.UI
             new TabDef("Companions", JournalWindowId.Pioneers),
             new TabDef("Character", JournalWindowId.Character),
             new TabDef("Craft", JournalWindowId.Craft),
-            new TabDef("Recipes", JournalWindowId.Recipes),
+            new TabDef("Blueprints", JournalWindowId.Recipes),
             new TabDef("Skills", JournalWindowId.Skills),
             new TabDef("Echoes", JournalWindowId.Echoes),
             new TabDef("Achievements", JournalWindowId.Achievements)

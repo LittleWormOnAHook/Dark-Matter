@@ -23,7 +23,7 @@ namespace Project.Features.GameState.Adapters
             var distinct = new HashSet<string>();
             var top = new List<string>(3);
 
-            int limit = Mathf.Min(inventory.inventorySize, inventory.slots.Count);
+            int limit = Mathf.Min(inventory.unlockedMainSlots, inventory.slots.Count);
             for (int i = 0; i < limit; i++)
             {
                 InventorySystem.InventorySlot slot = inventory.slots[i];
@@ -40,7 +40,7 @@ namespace Project.Features.GameState.Adapters
             }
 
             builder.Inventory = new InventorySnapshot(
-                inventorySize: inventory.inventorySize,
+                inventorySize: inventory.unlockedMainSlots,
                 occupiedSlots: occupied,
                 distinctItemCount: distinct.Count,
                 totalStackCount: totalStacks,

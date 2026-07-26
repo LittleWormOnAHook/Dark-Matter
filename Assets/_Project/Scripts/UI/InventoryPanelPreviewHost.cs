@@ -83,7 +83,7 @@ namespace Project.UI
 
             GridLayoutGroup grid = gridGo.AddComponent<GridLayoutGroup>();
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 8;
+            grid.constraintCount = 10;
             grid.spacing = new Vector2(8f, 8f);
             grid.cellSize = new Vector2(64f, 64f);
 

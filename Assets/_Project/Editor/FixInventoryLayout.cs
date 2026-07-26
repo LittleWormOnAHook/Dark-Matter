@@ -23,7 +23,7 @@ public class FixInventoryLayout : EditorWindow
         grid.spacing = new Vector2(12, 12);
         grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 8;
+        grid.constraintCount = 10;
 
         Debug.Log("✅ Inventory Grid Layout fixed!");
         EditorApplication.ExecuteMenuItem("Edit/Play");

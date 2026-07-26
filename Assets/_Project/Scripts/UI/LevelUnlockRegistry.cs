@@ -24,9 +24,9 @@ namespace Project.UI
         {
             int nextRecipe = GetNextRecipeUnlockLevel(playerLevel);
             if (nextRecipe < 0)
-                return "All known recipes unlocked for your level.";
+                return "All known blueprints unlocked for your level.";
 
-            return $"Next recipe tier unlocks at level {nextRecipe}.";
+            return $"Next blueprint tier unlocks at level {nextRecipe}.";
         }
     }
 }
