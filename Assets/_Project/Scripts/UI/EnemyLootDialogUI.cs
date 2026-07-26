@@ -290,6 +290,31 @@ namespace Project.UI
             callback?.Invoke();
         }
 
+        private void Update()
+        {
+            if (overlayRoot == null || !overlayRoot.activeSelf || activeLootProvider == null)
+                return;
+
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.escapeKey.wasPressedThisFrame)
+            {
+                Close();
+                return;
+            }
+
+            // E loots next entry (same as Loot button). Hold Left Shift + E to loot all.
+            if (keyboard.eKey.wasPressedThisFrame)
+            {
+                if (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed)
+                    OnLootAllClicked();
+                else
+                    OnLootClicked();
+            }
+        }
+
         private static void EnsureUiInput(Transform canvasRoot)
         {
             Canvas canvas = canvasRoot.GetComponent<Canvas>() ?? canvasRoot.GetComponentInParent<Canvas>();

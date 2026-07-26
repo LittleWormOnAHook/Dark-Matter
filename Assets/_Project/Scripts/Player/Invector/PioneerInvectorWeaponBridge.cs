@@ -419,6 +419,7 @@ namespace Project.Player.Invector
                 return;
 
             _startupWeaponLayoutReady = true;
+            _equipment?.HolsterWeapon();
             HideAllSpawnedWeapons();
             ClearInvectorWeapons();
             ForceAuthoredSlotCaptures();

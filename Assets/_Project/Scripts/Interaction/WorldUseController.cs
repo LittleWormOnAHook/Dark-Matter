@@ -1112,7 +1112,35 @@ namespace Project.Interaction
             if (lootBag != null)
                 return lootBag.GetInteractionPromptMessage();
 
+            Project.Events.DMItemCollection collection = FindClosestDMItemCollectionInRange(context.PlayerPosition);
+            if (collection != null)
+                return collection.GetInteractionPromptMessage();
+
             return null;
+        }
+
+        private static Project.Events.DMItemCollection FindClosestDMItemCollectionInRange(Vector3 playerPosition)
+        {
+            Project.Events.DMItemCollection[] collections =
+                Object.FindObjectsByType<Project.Events.DMItemCollection>(FindObjectsInactive.Exclude);
+            Project.Events.DMItemCollection best = null;
+            float bestDistance = float.MaxValue;
+
+            for (int i = 0; i < collections.Length; i++)
+            {
+                Project.Events.DMItemCollection collection = collections[i];
+                if (collection == null || !collection.IsWithinInteractRange(playerPosition))
+                    continue;
+
+                float distance = Vector3.Distance(playerPosition, collection.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+
+                best = collection;
+                bestDistance = distance;
+            }
+
+            return best;
         }
 
         private static QuestGiverNpc FindClosestQuestGiverInRange(Vector3 playerPosition)
