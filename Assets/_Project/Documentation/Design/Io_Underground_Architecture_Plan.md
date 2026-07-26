@@ -3,6 +3,10 @@
 **Status:** Design investigation — **full-scale main map integration locked July 2026**  
 **Authority:** Supports GDD 5.0 Chapter 3 (World of Io), Appendix A2 (pressures/offsets), A2b (weather).  
 **Companion docs:** `Io_Biome_Exploration_Gameplay_Plan.md` — surface biome verbs, activities, unlock flow  
+`Io_Biome_Ecology_Roster.md` — full flora/fauna/machine cards per stratum  
+`Io_World_Content_Phase_Map.md` — master production phase map (W0–W8)  
+`Io_World_Content_Executive_Summary.md` — executive summary  
+`Io_World_Content_Milestone_Tickets.md` — milestone tickets  
 **Not yet locked** — review before promoting to GDD Appendix A2c.
 
 ---
@@ -148,6 +152,9 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 
 Aligned with surface ecology fantasy (chemosynthetic, sulfur-silicon, resonance-fed).  
 Underground life is **not** surface wildlife copy-pasted — it is **pressure-adapted**.
+
+**Full organism cards:** `Io_Biome_Ecology_Roster.md` §6 (Stratum 1–5).  
+Summary tables below remain the quick index.
 
 ### 6.1 Flora (subsurface)
 

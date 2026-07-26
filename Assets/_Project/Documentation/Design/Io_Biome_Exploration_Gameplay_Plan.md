@@ -4,6 +4,10 @@
 **Authority:** GDD 5.0 Chapter 3 (Biome Philosophy), Appendix A2 (pressures), planned A2b (weather).  
 **Companion docs:**
 - `Io_Underground_Architecture_Plan.md` — subsurface strata & pools  
+- `Io_Biome_Ecology_Roster.md` — flora/fauna/machine ecology per biome & stratum  
+- `Io_World_Content_Phase_Map.md` — **master phase map** (biomes + ecology + pets + production W0–W8)  
+- `Io_World_Content_Executive_Summary.md` — one-page stakeholder rollup  
+- `Io_World_Content_Milestone_Tickets.md` — IO-W0–W8 milestone tickets  
 **Not yet locked** — promote to GDD Appendix A2d after review.
 
 ---
@@ -305,7 +309,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Architect portable filter bubble; Scout storm timing callouts.
 
-**Wildlife:** Sulfur Hounds (pack), Brimstone Fans (flora), Cinder Skitters.
+**Wildlife:** Sulfur Hounds (pack), Brimstone Fans (flora), Cinder Skitters — **full ecology:** `Io_Biome_Ecology_Roster.md` §B1.
 
 ---
 
@@ -326,7 +330,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Scout times bursts; Architect seal; Tactician clears crab workers.
 
-**Wildlife:** Vent Crabs (nest), Geyser Pods (flora), Plume Moths.
+**Wildlife:** Vent Crabs (nest), Geyser Pods (flora), Plume Moths — **full ecology:** `Io_Biome_Ecology_Roster.md` §B2.
 
 ---
 
@@ -347,7 +351,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Scout leads blind routing; Specialist extends scan through ash.
 
-**Wildlife:** Dust Spout Cluster, Basalt Jackals (pack), Ash Gale embedded spawns.
+**Wildlife:** Dust Spout Cluster, Basalt Jackals (pack), Ash Gale embedded spawns — **full ecology:** `Io_Biome_Ecology_Roster.md` §B3.
 
 ---
 
@@ -371,7 +375,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Tactician draws mantis; Architect heat shelter on cooldown; Specialist thermal read.
 
-**Wildlife:** Caldera Mantis (solo), Plume Moths, Heat Eel (subsurface edge).
+**Wildlife:** Caldera Mantis (solo), Plume Moths, Heat Eel (subsurface edge) — **full ecology:** `Io_Biome_Ecology_Roster.md` §B4.
 
 ---
 
@@ -394,7 +398,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Specialist inoculations; Architect rad baffle; Scout finds cover lanes.
 
-**Wildlife:** Void Kelp (flora), Magnet Wyrm (solo, subsurface), Rift Stalkers.
+**Wildlife:** Void Kelp (flora), Magnet Wyrm (solo, subsurface), Rift Stalkers — **full ecology:** `Io_Biome_Ecology_Roster.md` §B5.
 
 ---
 
@@ -415,7 +419,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** All classes; tutorial biome for underground grammar.
 
-**Wildlife:** Tube Jackals, Brood Tunnel mouths, Glass Hive cliff variants.
+**Wildlife:** Tube Jackals, Brood Tunnel mouths, Glass Hive cliff variants — **full ecology:** `Io_Biome_Ecology_Roster.md` §B6.
 
 ---
 
@@ -437,7 +441,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 
 **Trio synergy:** Specialist scan puzzles; Infiltrator silent route; Tactician android clear.
 
-**Wildlife:** Vault Stalker, Rust Garden, Rift Stalkers, corrupted androids.
+**Wildlife:** Vault Stalker, Rust Garden, Rift Stalkers, corrupted androids — **full ecology:** `Io_Biome_Ecology_Roster.md` §B7.
 
 ---
 
