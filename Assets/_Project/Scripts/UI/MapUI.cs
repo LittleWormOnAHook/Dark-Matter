@@ -74,6 +74,8 @@ namespace Project.UI
         private Transform fullMapMarkerLayer;
         private RawImage minimapImage;
         private RawImage fullMapImage;
+        private RawImage minimapFogImage;
+        private RawImage fullMapFogImage;
         private TextMeshProUGUI minimapInfoLabel;
         private TextMeshProUGUI fullMapZoomLabel;
         private TextMeshProUGUI fullMapMarkerTooltipLabel;
@@ -126,6 +128,7 @@ namespace Project.UI
         {
             MapRegistry.MarkerRegistered += HandleMarkerRegistryChanged;
             MapRegistry.MarkerUnregistered += HandleMarkerRegistryChanged;
+            ScannerDiscoveryRegistry.Changed += HandleMarkerRegistryChanged;
             RequestImmediateMarkerRefresh();
         }
 
@@ -133,12 +136,22 @@ namespace Project.UI
         {
             MapRegistry.MarkerRegistered -= HandleMarkerRegistryChanged;
             MapRegistry.MarkerUnregistered -= HandleMarkerRegistryChanged;
+            ScannerDiscoveryRegistry.Changed -= HandleMarkerRegistryChanged;
 
             if (mapProvider != null)
                 mapProvider.MapTextureReady -= HandleMapTextureReady;
 
+            if (MapFogOfWar.Instance != null)
+                MapFogOfWar.Instance.FogUpdated -= HandleFogUpdated;
+
             if (fullMapOpen)
                 CloseFullMap();
+        }
+
+        private void HandleFogUpdated()
+        {
+            ApplyFogOverlayTextures();
+            RequestImmediateMarkerRefresh();
         }
 
         private void Start()
@@ -146,6 +159,10 @@ namespace Project.UI
             EnsureMapProvider();
             if (mapProvider != null)
                 mapProvider.MapTextureReady += HandleMapTextureReady;
+
+            MapFogOfWar fog = MapFogOfWar.EnsureExists();
+            if (fog != null)
+                fog.FogUpdated += HandleFogUpdated;
 
             SyncMinimapSpanFromWorldBounds();
             EnsureUiBuilt();
@@ -162,6 +179,9 @@ namespace Project.UI
         {
             if (mapProvider != null)
                 mapProvider.MapTextureReady -= HandleMapTextureReady;
+
+            if (MapFogOfWar.Instance != null)
+                MapFogOfWar.Instance.FogUpdated -= HandleFogUpdated;
 
             ClearMarkerIcons(minimapMarkerIcons);
             ClearMarkerIcons(fullMapMarkerIcons);
@@ -203,6 +223,8 @@ namespace Project.UI
                 RefreshMarkerIcons();
                 UpdateCompassMarkers();
             }
+
+            UpdateMinimapInfoPanel();
         }
 
         private void Update()
@@ -438,6 +460,7 @@ namespace Project.UI
             HideFullMapMarkerTooltip();
             RefreshMapShellVisibility();
             PauseForFullMap(false);
+            GameplayHudVisibility.RefreshGameplayHud();
         }
 
         private static void PauseForFullMap(bool pause)

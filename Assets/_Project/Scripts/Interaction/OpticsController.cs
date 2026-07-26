@@ -393,6 +393,7 @@ namespace Project.Interaction
             playerController?.RefreshCameraFollow();
 
             worldCamera = playerController != null ? playerController.GameplayCamera : Camera.main;
+            GameplayHudVisibility.RefreshGameplayHud();
         }
 
         private bool IsOpticsDisplayStuck()
@@ -637,7 +638,7 @@ namespace Project.Interaction
             for (int i = 0; i < scannables.Length && scanResults.Count < 24; i++)
             {
                 ScannableTarget scannable = scannables[i];
-                if (scannable == null || scannable.transform.IsChildOf(transform))
+                if (scannable == null || !scannable.IsVisibleToScanner || scannable.transform.IsChildOf(transform))
                     continue;
 
                 float distance = Vector3.Distance(origin, scannable.ScanPosition);

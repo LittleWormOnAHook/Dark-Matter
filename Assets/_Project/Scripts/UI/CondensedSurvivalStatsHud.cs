@@ -38,7 +38,14 @@ namespace Project.UI
         private bool layoutApplied;
         private bool radialBarsDisabled;
 
-        public static bool IsActive => FindAnyObjectByType<CondensedSurvivalStatsHud>() != null;
+        public static bool IsActive
+        {
+            get
+            {
+                CondensedSurvivalStatsHud hud = FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
+                return hud != null && hud.isActiveAndEnabled;
+            }
+        }
 
         private static Sprite barFillSprite;
 

@@ -125,8 +125,17 @@ namespace Project.UI
             ToolBarUI toolbar = Object.FindAnyObjectByType<ToolBarUI>();
             toolbar?.SetGameplayVisible(true);
 
-            CondensedSurvivalStatsHud statsHud = Object.FindAnyObjectByType<CondensedSurvivalStatsHud>();
+            CondensedSurvivalStatsHud statsHud = Object.FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
             statsHud?.RefreshLayout();
+
+            HotbarXpHud xpHud = Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
+            if (xpHud == null)
+            {
+                Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+                if (canvas != null)
+                    xpHud = HotbarXpHud.EnsureExists(canvas.transform);
+            }
+            xpHud?.SetVisible(true);
 
             UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
             uiManager?.SyncSurvivalBars();

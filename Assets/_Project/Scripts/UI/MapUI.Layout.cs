@@ -338,6 +338,9 @@ namespace Project.UI
 
             if (preserveManualLayout && !applyRuntimeLayout)
             {
+                Transform manualCircle = minimapRoot.transform.Find("CircleAssembly");
+                if (manualCircle != null)
+                    ApplyMinimapRingBorderColor(manualCircle);
                 WireMinimapScanButton();
                 UpdateMinimapInfoPanel();
                 return;
@@ -350,6 +353,8 @@ namespace Project.UI
             Transform circleAssembly = minimapRoot.transform.Find("CircleAssembly");
             if (circleAssembly == null)
                 return;
+
+            ApplyMinimapRingBorderColor(circleAssembly);
 
             if (circleAssembly.Find("EdgeControls") == null)
                 BuildMinimapEdgeControls(circleAssembly);
@@ -391,6 +396,20 @@ namespace Project.UI
 
             WireMinimapScanButton();
             UpdateMinimapInfoPanel();
+        }
+
+        private static void ApplyMinimapRingBorderColor(Transform circleAssembly)
+        {
+            if (circleAssembly == null)
+                return;
+
+            Transform ring = circleAssembly.Find("RingBorder");
+            if (ring == null)
+                return;
+
+            Image ringImage = ring.GetComponent<Image>();
+            if (ringImage != null)
+                ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
         }
 
         private void RemoveMinimapTitleBar()
@@ -704,9 +723,7 @@ namespace Project.UI
             ringRect.offsetMax = Vector2.zero;
             Image ringImage = ringObject.AddComponent<Image>();
             ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.CircleRing;
-            ringImage.color = ShiftUiTheme.IsReady
-                ? new Color(ShiftUiTheme.PrimaryColor.r, ShiftUiTheme.PrimaryColor.g, ShiftUiTheme.PrimaryColor.b, 0.85f)
-                : new Color(0.78f, 0.86f, 0.95f, 1f);
+            ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
             ringImage.raycastTarget = false;
             ringImage.preserveAspect = true;
 

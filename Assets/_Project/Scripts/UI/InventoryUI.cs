@@ -58,7 +58,7 @@ namespace Project.UI
         private const float HotbarSlotSpacing = 6f * HudLayoutMetrics.HudScale;
         private const float HotbarHorizontalPadding = 14f * HudLayoutMetrics.HudScale;
         private const float HotbarExtraHeight = 18f * HudLayoutMetrics.HudScale;
-        private const int MainInventoryColumns = 8;
+        private const int MainInventoryColumns = InventorySystem.MainInventoryColumns;
         private const float MainInventoryInset = 12f;
         private const float MainInventorySpacing = 8f;
 
@@ -246,7 +246,9 @@ namespace Project.UI
 
         private void SetSurvivalStatsHudVisible(bool visible, Transform canvasRoot = null)
         {
-            CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>();
+            // Include inactive: HideSurvival deactivates the GO, and default Find skips it —
+            // which permanently stuck vitals hidden after Map tab / modal HUD hide.
+            CondensedSurvivalStatsHud statsHud = FindSurvivalStatsHud();
             if (statsHud == null)
                 return;
 
@@ -267,6 +269,11 @@ namespace Project.UI
 
             UiFrontLayer.ReparentToFront(statsTransform, canvasRoot);
             statsHud.RefreshLayout();
+        }
+
+        private static CondensedSurvivalStatsHud FindSurvivalStatsHud()
+        {
+            return FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
         }
 
         private void HideLegacyPanelTitleLabels()
@@ -312,7 +319,7 @@ namespace Project.UI
                     LayoutHotbarContainer(inventorySystem.hotbarSize);
             }
 
-            CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>();
+            CondensedSurvivalStatsHud statsHud = FindSurvivalStatsHud();
             if (statsHud != null && statsPanelOriginalParent != null)
             {
                 Transform statsTransform = statsHud.transform;
@@ -321,7 +328,7 @@ namespace Project.UI
             }
 
             FindAnyObjectByType<ToolBarUI>()?.RestoreFromFrontLayer(hotbarParent);
-            FindAnyObjectByType<CondensedSurvivalStatsHud>()?.RefreshLayout();
+            FindSurvivalStatsHud()?.RefreshLayout();
             hudSlotsRaised = false;
         }
 
@@ -408,6 +415,7 @@ namespace Project.UI
                         slotUI.SetEquipmentController(equipmentController);
                         slotUI.SetItemActions(itemActions);
                         slotUI.ApplyHudSlotMetrics(HotbarSlotSize);
+                        slotUI.SetLocked(!inventorySystem.IsMainSlotUnlocked(i));
                         allSlots.Add(slotUI);
                     }
                 }
@@ -599,12 +607,14 @@ namespace Project.UI
             if (preserveHotbarLayout)
             {
                 FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
-                FindAnyObjectByType<CondensedSurvivalStatsHud>()?.RefreshLayout();
+                FindSurvivalStatsHud()?.RefreshLayout();
+                FindAnyObjectByType<HotbarXpHud>()?.AlignUnderHotbar();
                 return;
             }
 
             FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
-            FindAnyObjectByType<CondensedSurvivalStatsHud>()?.RefreshLayout();
+            FindSurvivalStatsHud()?.RefreshLayout();
+            FindAnyObjectByType<HotbarXpHud>()?.AlignUnderHotbar();
         }
 
         private void ConfigureHotbarLayoutGroup(HorizontalLayoutGroup layout)
@@ -706,8 +716,9 @@ namespace Project.UI
                 if (index >= 0 && index < inventorySystem.slots.Count)
                 {
                     allSlots[i].UpdateSlot(inventorySystem.slots[index]);
+                    allSlots[i].SetLocked(!inventorySystem.IsMainSlotUnlocked(index));
                     bool selected = false;
-                    if (equipmentController != null)
+                    if (equipmentController != null && inventorySystem.IsMainSlotUnlocked(index))
                     {
                         if (inventorySystem.IsToolbarIndex(index))
                             selected = equipmentController.IsSelectedToolbarAbsoluteIndex(index);
