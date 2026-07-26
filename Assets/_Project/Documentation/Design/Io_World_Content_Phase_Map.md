@@ -12,7 +12,11 @@
 
 **Promotion target:** fold approved phases into GDD **Appendix A2f — Io World Content Phase Map** after review.
 
-**Disk today (July 2026):** flat terrain prototype; exposure + partial combat AI + `SurfaceEncounterZone` scaffolding; **no** full biomes, ecology prefabs, or pet migration.
+**Production package:**
+- `Io_World_Content_Executive_Summary.md` — one-page stakeholder rollup  
+- `Io_World_Content_Milestone_Tickets.md` — actionable tickets IO-W0-01 through IO-W8-05  
+
+**Disk today (July 2026):**** flat terrain prototype; exposure + partial combat AI + `SurfaceEncounterZone` scaffolding; **no** full biomes, ecology prefabs, or pet migration.
 
 ---
 
@@ -433,6 +437,8 @@ Use when marking a biome **content complete** for a phase:
 | Content inventory §1 | A2e ecology + A2d biome cross-index |
 | Pet matrix §4 | A2e §pets + B4 #6 implementation checklist |
 | Per-biome checklist §5 | Production wiki / milestone tracking |
+| Executive summary | GDD **A2f** front matter / studio wiki |
+| Milestone tickets | GitHub Issues / production tracker (import IO-W* IDs) |
 
 **Do not duplicate:** organism card detail stays in `Io_Biome_Ecology_Roster.md`; verb/activity detail stays in `Io_Biome_Exploration_Gameplay_Plan.md`; strata module names stay in `Io_Underground_Architecture_Plan.md`.
 

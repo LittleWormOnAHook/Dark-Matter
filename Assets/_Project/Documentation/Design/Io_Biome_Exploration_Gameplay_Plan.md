@@ -6,6 +6,8 @@
 - `Io_Underground_Architecture_Plan.md` — subsurface strata & pools  
 - `Io_Biome_Ecology_Roster.md` — flora/fauna/machine ecology per biome & stratum  
 - `Io_World_Content_Phase_Map.md` — **master phase map** (biomes + ecology + pets + production W0–W8)  
+- `Io_World_Content_Executive_Summary.md` — one-page stakeholder rollup  
+- `Io_World_Content_Milestone_Tickets.md` — IO-W0–W8 milestone tickets  
 **Not yet locked** — promote to GDD Appendix A2d after review.
 
 ---
