@@ -294,56 +294,155 @@ Native **alien flyers** — not drones. Consolidates migratory entries from §3 
 | **Void Stitcher** | Seam / shimmer volumes | **Global** 1 per expedition; competes with elite slot |
 | **Expedition pet** | Player loadout (follower) | **Never** director world spawn — see §4.6 |
 
-### 4.6 Expedition pet companion *(design lock — prototype placeholders)*
+### 4.6 Expedition pets — 12-type collection *(design lock — prototype placeholders)*
 
-The legacy **pet / AI follower** loop (`Scripts/Pet/`, Journal Pet tab) is **prototype debt**. Ship target is **one** expedition pet per player — not a fourth combat companion and **not** part of the 25 Echo / trio roster cap.
+The legacy **pet / AI follower** loop (`Scripts/Pet/`, Journal Pet tab) is **prototype debt**.  
+**Current disk placeholders (not canon):** `Ricky`, `Probe`, `Fox Cub` — Earth-animal / generic reads; retire on pet migration (GDD B4 #6).
 
-**Current disk placeholders (not canon):** `Ricky`, `Probe`, `Fox Cub` — Earth-animal and generic sci-fi reads; replace before ship.
+**Ship target:** **12 unique pet types** collectible over the campaign — mix of **Io-native organic**, **adorable surface fauna**, and **android / small machines**. Player equips **one active pet** on expedition loadout; owned pets live in **pet inventory** at colony (not part of the 25 Echo / trio roster).
 
-**Locked fork (choose one before art lock):**
+#### 4.6.1 Design pillars
 
-| Branch | Identity | Combat | Utility read |
-|--------|----------|--------|--------------|
-| **A — Io-native adorable pet** | Single unique species that could **live on Io**; chemosynthetic / sulfur-silicon cute silhouette | **No meaningful DPS** — distress call, flee, minor debuff assist at most | Fetch ping, sample sniff, camp morale, O₂ twitch-warn |
-| **B — Small robotic AI** | Pocket expedition drone; scrapper / survey puck aesthetic | **Minor attacks only** — chip damage, stagger pulse; never rivals trio DPS | Scan relay, loot ping, comms squeak, flashlight bob |
+| Pillar | Rule |
+|--------|------|
+| **Ecology fit** | Organic pets are chemosynthetic / sulfur-silicon species — not Earth dogs, cats, or foxes |
+| **Acquisition spread** | **Majority** found during exploration; **few** gated by side quests; **one** starter immediately after prologue |
+| **Organic path** | Some spawn wild — **tame** (slow trust) or **capture + tame** (trap / sedative / shelter bait) |
+| **Machine path** | Found **broken** in wrecks or ruins → **haul or fast-travel crate** to colony → **repair + programming** at camp bench before pet inventory unlock |
+| **Combat role** | **Most** pets: minor DPS **or** short crowd-control; never rival trio damage |
+| **Utility** | **Most** pets: **auto pickup loot** within radius (scrap, AC chips, small craft mats) |
+| **Vanity tier** | **2–3** pets: adorable / cosmetic with minimal or no combat — camp morale, emotes, trail VFX |
+| **Presentation** | UI folds into **Companions / Echoes** tab per GDD — no separate pet shop or gacha loop |
 
-**Shared rules (both branches):**
+#### 4.6.2 Acquisition grammar
 
-- One pet slot on expedition loadout; stays at colony during base-22 sim (aggregate, not full agent).
-- UI folds into **Companions / Echoes** presentation per GDD — no separate pet progression track or AC shop loop.
-- Pet **never** spawns from `SurfaceEncounterZone` / director tables — player-owned follower only.
-- Sulfur storm: pet retreats to player bubble / colony safe state (no separate pet death loop).
-- Void Stitcher and apex elites can **ignore** pet unless player is isolated (pet is not a decoy tank).
+| Method | Flow | Typical type |
+|--------|------|--------------|
+| **Camp stray (starter)** | After prologue, adorable organic wanders into Command Center perimeter seeking **food scraps** → short trust micro-chain → first pet slot | Organic, vanity-leaning |
+| **Exploration tame** | Wild spawn in biome; interact with bait / shelter / class tool → trust meter over 1–2 visits | Organic |
+| **Exploration capture** | Weaken or trap (non-lethal); bring to colony **Echo Reclamation** or **pet stabilizer** prop → tame timer | Organic, skittish species |
+| **Exploration salvage** | Find broken machine chassis at wreck POI; pick up **damaged core** → colony **repair + programming** minigame or queue | Android / machine |
+| **Side quest award** | Unique pet or broken chassis issued on quest complete | Either; often flair / story tie |
 
-#### Option A — Io-native pet (reference concept: **Brimstone Puff**)
+**Machine repair loop (colony):** damaged pet item → Building Control or dedicated **Pet Bay** terminal → spend scrap + AC + optional Science sample → programming choice (aggressive / loot-focused / passive) sets minor skill bias.
+
+**Director rule:** wild pet **candidates** use authored POI + biome unlock mask — pets do **not** roll from generic `SurfaceEncounterZone` enemy tables.
+
+#### 4.6.3 Prologue starter — **Brimstone Puff**
 
 | Field | Detail |
 |-------|--------|
-| **Tier** | player companion (non-roster) |
-| **Visual** | Round sulfur-silicate puff; soft frill; two large dark eyes; rolls when scared; faint yellow biolum when happy |
-| **Ecology read** | Scavenger cousin of Cinder Skitter; eats condensate film; too small for hound prey — **adorable because harmless** |
-| **Habitat fiction** | B1 seeps, colony tube edges; player-imprinted after rescue/hatch from fan cluster |
-| **Behavior** | **Follow / fetch / sniff** — points nose toward harvest nodes and Echo signal bearing; squeaks before sulfur saturation spike |
-| **Pressure** | Burrows in sulfur storm (cosmetic inside Architect bubble); shivers in polar night |
-| **Combat** | None — hides behind player; optional **distress chirp** pulls aggro 1 s (trio save beat, not tanking) |
-| **Trio synergy** | Med Tech calms puff faster; Scout uses sniff ping on map |
-| **Prototype** | replace Fox Cub placeholder; `legacy creature AI` follow + fetch |
+| **Type** | Organic (Io-native adorable) |
+| **Acquisition** | **Camp stray** — first session after prologue; wanders to mess / scrap pile; player offers food scraps |
+| **Visual** | Round sulfur-silicate puff; soft frill; wide eyes; rolls when startled |
+| **Ecology** | Harmless scavenger cousin of Cinder Skitter; condensate film grazer |
+| **Skills** | **Auto loot** (very small radius); **sniff ping** toward nearest harvest node; **vanity** purr emote at camp |
+| **Combat** | None — hides during firefight; optional 1 s **distress chirp** (aggro dip, not tanking) |
+| **Role tag** | `vanity` + `loot` |
 
-#### Option B — Small robotic AI (reference concept: **Field Puck**)
+#### 4.6.4 Full roster — 12 pet types
+
+| # | Name | Type | Acquisition | Biome / source | Role | Primary skills |
+|---|------|------|-------------|----------------|------|----------------|
+| 1 | **Brimstone Puff** | Organic | Camp stray (post-prologue) | Colony | Vanity + loot | Sniff ping, tiny auto-loot, camp emote |
+| 2 | **Cinder Skitter Kit** | Organic | Capture + tame | B1 Sulfur Plains | Minor DPS | Fast nibble, chitin flake magnet loot |
+| 3 | **Condensate Snail** | Organic | Exploration tame | B1 seeps, shallow tubes | CC | Slime trail **slow** (short); auto-loot condensate vials |
+| 4 | **Plume Mothling** | Organic | Exploration find (trust) | B2 Geyser Fields | Vanity | Flutter light; storm warning flutter; minimal loot pickup |
+| 5 | **Vent Hatchling** | Organic | Capture + tame | B2 nests (post queen clear or steal egg POI) | CC | **Sulfur puff** blind (1 s); minor chip spit |
+| 6 | **Ash Glass Wasp Drone** | Organic | Exploration tame | B3 Ash Flats (swarm remnant) | Minor DPS | 3-hit glass sting; auto-loot ash ceramics |
+| 7 | **Ridge Pebble Roller** | Organic | Exploration find | B3/B6 ridges | Vanity | Rolling emote; pebble trail; small loot ping |
+| 8 | **Polar Skimmer Pup** | Organic | Capture + tame | B5 Polar Flats | CC | **Rad shimmer flash** distract; auto-loot in cover lanes |
+| 9 | **Tube Lace Grub** | Organic | Exploration tame | B6 / Stratum 1 | Loot | Best-in-class **auto loot** radius; no combat |
+| 10 | **Field Puck** | Machine | Salvage + repair | B1 Graveyard, B2 rigs | Minor DPS | Arc zap (overheat); scan beep; auto-loot scrap |
+| 11 | **Scrap Mite Handler** | Machine | Salvage + repair | Any wreck overlay | Loot | Deploys 2–3 mites for **wide auto-loot**; no direct DPS |
+| 12 | **Beacon Hopper** | Machine | Side quest + repair | B6 hub quest “Lost Survey” | Utility + minor CC | Map breach ping; **stun hop** (long CD); loot pickup |
+
+**Side-quest candidates (swap into slot 12 or future DLC slot — design reserve):**  
+- **Symbiosis Lace Sprite** (organic, Stratum 2 story) — resonance hum vanity + scan.  
+- **Smuggler Mag-Clamp Buddy** (machine, B5 black-market quest) — metal loot vacuum + minor grapple pull CC.
+
+*For ship v1.0, lock exactly **12** from the table above; reserve rows live in design notes only.*
+
+#### 4.6.5 Per-pet reference cards (compact)
+
+##### P2 — Cinder Skitter Kit
 
 | Field | Detail |
 |-------|--------|
-| **Tier** | player companion (non-roster) |
-| **Visual** | Knee-high hover puck; scratched corporate yellow; one wary LED “eye”; tool arm folds flat |
-| **Ecology read** | **Machine** — rebuilt from Graveyard scrapper parts; not fauna |
-| **Habitat fiction** | Built at colony craft bench; personality from bootleg firmware |
-| **Behavior** | **Follow / scan / minor zap** — short-range arc on player command; overheats after 3–4 shots |
-| **Pressure** | Ion lightning magnet (stays near player metal); sulfur storm powered down |
-| **Combat** | **Minor only** — 2–4 DPS chip; stagger pulse on cooldown; cannot kill elites alone |
-| **Trio synergy** | Communications Officer extends scan relay; Architect recharge pad refills faster |
-| **Prototype** | replace Probe placeholder; simple drone FSM + ranged ping |
+| **Capture** | Non-lethal trap after B1 unlock; stabilizer at colony |
+| **Combat** | 3–5 DPS melee nibble; flees when player HP low |
+| **Loot** | Prioritizes chitin, sulfur salts, small AC |
+| **Trio** | Tactician ignores as threat; Scout speeds tame |
 
-**Promotion:** fold chosen branch into GDD **A2e** §expedition loadout + Appendix B pet migration note when art locks.
+##### P3 — Condensate Snail
+
+| Field | Detail |
+|-------|--------|
+| **Tame** | Leave condensate bait at seep; 2 night visits |
+| **CC** | Slime path slows pursuers 20% for 2 s |
+| **Loot** | Auto-vacuum condensate and slime mats |
+
+##### P5 — Vent Hatchling
+
+| Field | Detail |
+|-------|--------|
+| **Capture** | Egg POI post–Vent Crab nest activity; carry in heat gel case |
+| **CC** | Sulfur puff blind cone; cooldown 12 s |
+| **Risk** | Loud hiss can pull one worker crab if near B2 zone |
+
+##### P8 — Polar Skimmer Pup
+
+| Field | Detail |
+|-------|--------|
+| **Capture** | Net + rad inoculation active; B5 night preferred |
+| **CC** | Flash distract — one enemy re-targets pup 1.5 s |
+| **Loot** | Strong pickup in polar cover corridors |
+
+##### P10 — Field Puck
+
+| Field | Detail |
+|-------|--------|
+| **Salvage** | Broken chassis at scrapper drone wrecks |
+| **Repair** | Scrap + capacitor + **programming**: Aggressive / Balanced / Loot |
+| **Combat** | 4–6 DPS arc; 4 shots then 8 s overheat |
+| **Loot** | Standard auto-loot |
+
+##### P11 — Scrap Mite Handler
+
+| Field | Detail |
+|-------|--------|
+| **Salvage** | Dead handler bot on Rust Garden wreck |
+| **Repair** | Higher scrap cost; mites need recharge at camp |
+| **Loot** | Largest pickup radius in roster; mites scatter on sulfur storm |
+
+##### P12 — Beacon Hopper
+
+| Field | Detail |
+|-------|--------|
+| **Quest** | B6 “Lost Survey” — return hopper core to Communications Officer |
+| **Repair** | Programming unlocks breach compass on Journal map layer |
+| **CC** | Ground pound stun 0.8 s, 30 s CD |
+| **Loot** | Medium radius; prioritizes quest tags |
+
+#### 4.6.6 Shared expedition rules
+
+- **One active pet** per expedition; swap at colony Pet Bay or loadout terminal.
+- Pets **do not** count toward trio combat AI budget; simple follower FSM + one ability slot.
+- **Auto loot:** pickup only **unlocked** item tiers per pet role; no inventory overflow — sends to player overflow rules or colony stash.
+- **Death / downed:** pet **retreats** to player (no permadeath); machine pets power down until camp recharge.
+- **Sulfur storm / supercell:** pets recall to colony safe state automatically when on surface expedition abort.
+- **Void Stitcher:** may target isolated pet only on **hard mode** director flag (default off).
+
+#### 4.6.7 Role distribution (ship balance)
+
+| Role | Count | Pets |
+|------|-------|------|
+| Vanity / minimal | 3 | Brimstone Puff, Plume Mothling, Ridge Pebble Roller |
+| Loot-focused | 3 | Tube Lace Grub, Scrap Mite Handler, Condensate Snail |
+| Minor DPS | 3 | Cinder Skitter Kit, Ash Glass Wasp Drone, Field Puck |
+| Crowd control | 3 | Vent Hatchling, Polar Skimmer Pup, Beacon Hopper |
+
+**Promotion:** fold into GDD **A2e** §expedition loadout + Appendix B pet migration; starter beat into prologue quest chain.
 
 ---
 
@@ -1588,7 +1687,7 @@ Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology r
 | Ecology pillars + taxonomy | GDD **A2e** intro | — |
 | Per-biome roster tables + food webs | GDD **A2e** §surface | Individual concept art sheets |
 | **§4 threat families** (android, humanoid, ground machine, flying fauna) | GDD **A2e** §expedition threats | Prefab rig list, animator sets |
-| **§4.6 expedition pet** (Io-native **or** small robot; placeholders retired) | GDD **A2e** §loadout + B pet migration | Ricky / Fox Cub / Probe assets |
+| **§4.6 expedition pets** (12-type collection: tame / capture / repair; starter camp stray) | GDD **A2e** §loadout + prologue beat + B pet migration | Ricky / Fox Cub / Probe assets |
 | **Void Stitcher** global elite | GDD **A2e** + ExperienceDirector elite pool | Seam-hide VFX tech |
 | Underground stratum rosters | GDD **A2e** §subsurface (merge with A2c underground lock) | Modular kit names (Tube_Straight, etc.) |
 | Cross-biome migratory table | GDD **A2e** + ExperienceDirector spawn weights | Exact weight numbers (tuning) |
