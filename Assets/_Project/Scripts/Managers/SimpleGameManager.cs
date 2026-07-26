@@ -5,6 +5,7 @@ using Project.Inventory;
 using Project.UI;
 using Project.Data;
 using Project.Pioneers;
+using Project.Map;
 
 namespace Project.Managers
 {
@@ -49,9 +50,23 @@ namespace Project.Managers
                 return;
 
             if (grantStartingItems)
+            {
+                ScannerDiscoveryRegistry.Clear();
                 InitializePlayer();
+            }
 
+            HolsterStartingWeapons();
             playerInitialized = true;
+        }
+
+        private static void HolsterStartingWeapons()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                return;
+
+            EquipmentController equipment = player.GetComponent<EquipmentController>();
+            equipment?.HolsterWeapon();
         }
 
         private void InitializePlayer()

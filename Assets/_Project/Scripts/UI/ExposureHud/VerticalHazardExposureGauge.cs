@@ -127,6 +127,15 @@ namespace Project.UI
             if (canvasGroup == null || (Mathf.Approximately(canvasGroup.alpha, target) && fadeRoutine == null))
                 return;
 
+            if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+            {
+                canvasGroup.alpha = target;
+                canvasGroup.blocksRaycasts = target > 0.01f;
+                canvasGroup.interactable = target > 0.01f;
+                fadeRoutine = null;
+                return;
+            }
+
             if (fadeRoutine != null)
                 StopCoroutine(fadeRoutine);
 

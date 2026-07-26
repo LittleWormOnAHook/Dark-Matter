@@ -25,6 +25,8 @@ namespace Project.UI
                 inventory?.EnsureSurvivalStatsHudVisible();
             else
                 inventory?.HideSurvivalStatsHud();
+
+            Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(visible);
         }
 
         public static void SetGameplayHudVisible(bool visible)
@@ -64,14 +66,15 @@ namespace Project.UI
             if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)
             {
                 SetInventoryModeHudVisible(false);
-                Object.FindAnyObjectByType<InventoryUI>()?.EnsureSurvivalStatsHudVisible();
                 Object.FindAnyObjectByType<ToolBarUI>()?.SetGameplayVisible(false);
+                Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(false);
                 return;
             }
 
             if (BuildingControlPanelUI.IsOpen)
             {
                 SetInventoryModeHudVisible(false);
+                Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(false);
                 return;
             }
 
@@ -87,6 +90,7 @@ namespace Project.UI
             }
 
             SetGameplayHudVisible(true);
+            Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(true);
         }
 
         public static void SetModalOverlayOpen(bool open)

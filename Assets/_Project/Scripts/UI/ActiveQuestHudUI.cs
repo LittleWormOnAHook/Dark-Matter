@@ -54,6 +54,7 @@ namespace Project.UI
 
             GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
             headerObject.transform.SetParent(transform, false);
+            headerObject.SetActive(false);
             RectTransform headerRect = headerObject.GetComponent<RectTransform>();
             headerRect.anchorMin = new Vector2(0f, 1f);
             headerRect.anchorMax = new Vector2(1f, 1f);
@@ -79,7 +80,7 @@ namespace Project.UI
             listRoot.anchorMin = new Vector2(0f, 0f);
             listRoot.anchorMax = new Vector2(1f, 1f);
             listRoot.offsetMin = Vector2.zero;
-            listRoot.offsetMax = new Vector2(0f, -32f);
+            listRoot.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 2f;

@@ -301,6 +301,7 @@ namespace Project.UI
             AchievementProgressBridge.EnsureExists();
             QuestGiverDialogUI.EnsureExists(transform);
             ActiveQuestHudUI.EnsureExists(transform);
+            HotbarXpHud.EnsureExists(transform);
             UiFrontLayer.Get(transform);
         }
 

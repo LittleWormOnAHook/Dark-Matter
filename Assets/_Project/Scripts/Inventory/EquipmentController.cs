@@ -49,7 +49,7 @@ namespace Project.Inventory
         public int ActiveWeaponHotbarSlot => GetWeaponHotbarSlot(activeWeaponSlot);
         public int InactiveWeaponHotbarSlot => GetWeaponHotbarSlot((activeWeaponSlot + 1) % WeaponSlotCount);
         public int SelectedSlotIndex => inventory != null ? inventory.inventorySize + selectedHotbarSlot : -1;
-        public bool IsWeaponDrawn { get; private set; } = true;
+        public bool IsWeaponDrawn { get; private set; }
 
         public bool HasActiveMeleeWeapon()
         {
