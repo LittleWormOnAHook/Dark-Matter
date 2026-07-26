@@ -149,6 +149,9 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 Aligned with surface ecology fantasy (chemosynthetic, sulfur-silicon, resonance-fed).  
 Underground life is **not** surface wildlife copy-pasted — it is **pressure-adapted**.
 
+**Full organism cards:** `Io_Biome_Ecology_Roster.md` §6 (Stratum 1–5).  
+Summary tables below remain the quick index.
+
 ### 6.1 Flora (subsurface)
 
 | Organism | Stratum | Pattern | Role |
