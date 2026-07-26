@@ -83,6 +83,57 @@ namespace Project.Player.Invector
             SyncPioneerCursorState();
         }
 
+        public override void ReloadInput()
+        {
+            if (!shooterManager || CurrentActiveWeapon == null || isReloading || cc.customAction || shooterManager.isShooting || cc.ragdolled)
+                return;
+
+            PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
+
+            if (reloadInput.GetButtonDown())
+            {
+                shootCountA = 0;
+                _aimTiming = 0f;
+
+                // Invector ReloadWeapon always proceeds while isInfinityAmmo is set — gate on Pioneer
+                // reserve ammo first, and play empty-deny SFX/head-shake instead of reload anim.
+                if (ammoBridge != null)
+                {
+                    if (ammoBridge.TryRequestReload(playEmptyDenyFeedback: true))
+                        shooterManager.ReloadWeapon();
+                    return;
+                }
+
+                shooterManager.ReloadWeapon();
+                return;
+            }
+
+            if (CurrentActiveWeapon.autoReload && !shooterManager.WeaponHasLoadedAmmo())
+            {
+                bool canAutoReload = ammoBridge == null
+                    ? shooterManager.WeaponHasUnloadedAmmo()
+                    : ammoBridge.TryRequestReload(playEmptyDenyFeedback: false);
+
+                if (!canAutoReload)
+                    return;
+
+                switch (CurrentActiveWeapon.autoReloadStyle)
+                {
+                    case vShooterWeapon.AutoReloadStyle.WhenAiming:
+                        if (IsAiming)
+                            shooterManager.ReloadWeapon();
+                        break;
+                    case vShooterWeapon.AutoReloadStyle.WhenShot:
+                        if (shotInput.GetButtonDown())
+                            shooterManager.ReloadWeapon();
+                        break;
+                    case vShooterWeapon.AutoReloadStyle.WhenAmmoAvailable:
+                        shooterManager.ReloadWeapon();
+                        break;
+                }
+            }
+        }
+
         private void SyncPioneerCursorState()
         {
             GetComponent<PlayerController>()?.ApplyCursorState();

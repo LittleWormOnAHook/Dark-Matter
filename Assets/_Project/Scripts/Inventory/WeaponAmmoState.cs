@@ -22,10 +22,14 @@ namespace Project.Inventory
         }
 
         private readonly Dictionary<int, SlotAmmo> slotAmmo = new Dictionary<int, SlotAmmo>(4);
+        private readonly Dictionary<int, ItemData> slotWeaponIdentity = new Dictionary<int, ItemData>(4);
         private EquipmentController equipment;
         private InventorySystem inventory;
 
         public event Action OnAmmoChanged;
+
+        private const string StandardAmmoItemName = "Standard";
+        private static ItemData cachedStandardAmmo;
 
         private void Awake()
         {
@@ -85,6 +89,7 @@ namespace Project.Inventory
                 return 0;
 
             AmmoType loadedType = GetLoadedAmmoType(weaponHotbarSlot);
+            ItemData loadedItem = GetLoadedAmmoItem(weaponHotbarSlot);
             int reserve = 0;
             for (int i = 0; i < inventory.slots.Count; i++)
             {
@@ -95,10 +100,28 @@ namespace Project.Inventory
                 if (slot.item.ammoType != loadedType)
                     continue;
 
+                if (!AmmoItemsCompatibleForReserve(loadedItem, slot.item))
+                    continue;
+
                 reserve += slot.amount;
             }
 
             return reserve;
+        }
+
+        private static bool AmmoItemsCompatibleForReserve(ItemData loadedItem, ItemData candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            // Keep continuous Laser Tool cells separate from pulse Laser Pistol Ammo.
+            if (loadedItem != null && loadedItem.ammoType == AmmoType.Laser)
+                return candidate.isContinuousLaser == loadedItem.isContinuousLaser;
+
+            if (candidate.ammoType == AmmoType.Laser && candidate.isContinuousLaser)
+                return loadedItem != null && loadedItem.isContinuousLaser;
+
+            return true;
         }
 
         /// <summary>
@@ -141,6 +164,33 @@ namespace Project.Inventory
             if (ammoItem == null || !ammoItem.CountsAsAmmo || amount <= 0 || equipment == null)
                 return;
 
+            // Continuous Laser Tool: unlock infinite mining power. Consume the whole pickup —
+            // never leave leftover cells in the backpack.
+            if (ammoItem.isContinuousLaser)
+            {
+                bool credited = false;
+                equipment.ForEachWeaponHotbarSlot(hotbarSlot =>
+                {
+                    ItemData weapon = equipment.GetHotbarItem(hotbarSlot);
+                    if (weapon == null || !weapon.isMiningTool || !weapon.AcceptsAmmoType(ammoItem.ammoType))
+                        return;
+
+                    SlotAmmo entry = GetOrCreateSlot(hotbarSlot, weapon);
+                    entry.loadedType = ammoItem.ammoType;
+                    entry.loadedItem = ammoItem;
+                    entry.loaded = Mathf.Max(1, weapon.magazineSize);
+                    credited = true;
+                });
+
+                // No mining tool on a weapon hotbar yet — keep the stack so the player can
+                // right-click Equip Ammo once the tool is equipped.
+                if (!credited && inventory != null)
+                    inventory.AddItem(ammoItem, amount, autoCreditAmmoToWeapons: false);
+
+                NotifyChanged();
+                return;
+            }
+
             int remaining = amount;
             equipment.ForEachWeaponHotbarSlot(hotbarSlot =>
             {
@@ -149,6 +199,10 @@ namespace Project.Inventory
 
                 ItemData weapon = equipment.GetHotbarItem(hotbarSlot);
                 if (weapon == null || !weapon.AcceptsAmmoType(ammoItem.ammoType))
+                    return;
+
+                // Continuous cells handled above. Pulse Laser / other ammo never auto-fills mining tools.
+                if (weapon.isMiningTool)
                     return;
 
                 SlotAmmo entry = GetOrCreateSlot(hotbarSlot, weapon);
@@ -194,12 +248,32 @@ namespace Project.Inventory
             if (weapon == null || !weapon.IsRangedWeapon || !weapon.AcceptsAmmoType(invSlot.item.ammoType))
                 return false;
 
+            // Continuous Laser Tool only equips to mining tools; pulse Laser never equips to mining.
+            if (weapon.isMiningTool)
+            {
+                if (!invSlot.item.isContinuousLaser)
+                    return false;
+            }
+            else if (invSlot.item.isContinuousLaser)
+            {
+                return false;
+            }
+
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
             if (entry.loaded > 0 && entry.loadedType != invSlot.item.ammoType)
                 ReturnLoadedAmmoToInventory(entry);
 
             entry.loadedType = invSlot.item.ammoType;
             entry.loadedItem = invSlot.item;
+
+            // Continuous Laser Tool unlocks infinite mining power — consume the whole stack.
+            if (weapon.isMiningTool && invSlot.item.isContinuousLaser)
+            {
+                entry.loaded = Mathf.Max(1, weapon.magazineSize);
+                inventory.RemoveItemAt(inventorySlotIndex, invSlot.amount);
+                NotifyChanged();
+                return true;
+            }
 
             int space = Mathf.Max(0, weapon.magazineSize - entry.loaded);
             int take = Mathf.Min(space, invSlot.amount);
@@ -223,8 +297,20 @@ namespace Project.Inventory
             equipment.ForEachWeaponHotbarSlot(hotbarSlot =>
             {
                 ItemData weapon = equipment.GetHotbarItem(hotbarSlot);
-                if (weapon != null && weapon.IsRangedWeapon && weapon.AcceptsAmmoType(ammoItem.ammoType))
-                    eligible.Add(hotbarSlot);
+                if (weapon == null || !weapon.IsRangedWeapon || !weapon.AcceptsAmmoType(ammoItem.ammoType))
+                    return;
+
+                if (weapon.isMiningTool)
+                {
+                    if (!ammoItem.isContinuousLaser)
+                        return;
+                }
+                else if (ammoItem.isContinuousLaser)
+                {
+                    return;
+                }
+
+                eligible.Add(hotbarSlot);
             });
 
             return eligible;
@@ -247,19 +333,145 @@ namespace Project.Inventory
             if (weapon == null || !weapon.IsRangedWeapon)
                 return;
 
+            bool isFreshWeaponInSlot = !slotWeaponIdentity.TryGetValue(weaponHotbarSlot, out ItemData previousWeapon)
+                || previousWeapon != weapon;
+
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
+            if (isFreshWeaponInSlot)
+            {
+                slotWeaponIdentity[weaponHotbarSlot] = weapon;
+                ApplyFreshWeaponAmmo(weapon, entry);
+                if (entry.loaded <= 0)
+                    TryRefillFromInventory(weapon, entry);
+                NotifyChanged();
+                return;
+            }
+
             if (entry.loaded > 0)
                 return;
 
-            TryRefillFromInventory(weapon, entry);
+            if (TryRefillFromInventory(weapon, entry))
+                NotifyChanged();
+        }
+
+        /// <summary>
+        /// First equip/pickup for a weapon slot: either Empty 0/0, or a random Standard mag load
+        /// when <see cref="ItemData.grantRandomStartingAmmo"/> is enabled.
+        /// </summary>
+        private void ApplyFreshWeaponAmmo(ItemData weapon, SlotAmmo entry)
+        {
+            ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
+            entry.loadedItem = defaultAmmo;
+            entry.loadedType = defaultAmmo != null ? defaultAmmo.ammoType : AmmoType.Gunpowder;
+            entry.loaded = 0;
+
+            if (!weapon.grantRandomStartingAmmo)
+                return;
+
+            int min = Mathf.Max(0, Mathf.Min(weapon.startingAmmoMin, weapon.startingAmmoMax));
+            int max = Mathf.Max(0, Mathf.Max(weapon.startingAmmoMin, weapon.startingAmmoMax));
+            if (max <= 0)
+                return;
+
+            int granted = UnityEngine.Random.Range(min, max + 1);
+            entry.loaded = Mathf.Clamp(granted, 0, Mathf.Max(1, weapon.magazineSize));
+        }
+
+        private SlotAmmo GetOrCreateSlot(int hotbarSlot, ItemData weapon)
+        {
+            if (!slotAmmo.TryGetValue(hotbarSlot, out SlotAmmo entry))
+            {
+                ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
+                entry = new SlotAmmo
+                {
+                    loaded = 0,
+                    loadedType = defaultAmmo != null ? defaultAmmo.ammoType : AmmoType.Gunpowder,
+                    loadedItem = defaultAmmo
+                };
+                slotAmmo[hotbarSlot] = entry;
+            }
+            else if (entry.loadedItem == null)
+            {
+                ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
+                entry.loadedItem = defaultAmmo;
+                entry.loadedType = defaultAmmo != null ? defaultAmmo.ammoType : AmmoType.Gunpowder;
+            }
+
+            return entry;
+        }
+
+        private static ItemData ResolveDefaultAmmoItemForWeapon(ItemData weapon)
+        {
+            if (weapon != null && weapon.isMiningTool)
+            {
+                if (weapon.defaultAmmoItem != null && weapon.defaultAmmoItem.CountsAsAmmo)
+                    return weapon.defaultAmmoItem;
+
+                ItemData[] all = ItemRegistry.GetAllItems();
+                for (int i = 0; i < all.Length; i++)
+                {
+                    ItemData item = all[i];
+                    if (item != null && item.CountsAsAmmo && item.isContinuousLaser && item.ammoType == AmmoType.Laser)
+                        return item;
+                }
+
+                for (int i = 0; i < all.Length; i++)
+                {
+                    ItemData item = all[i];
+                    if (item != null && item.CountsAsAmmo &&
+                        (string.Equals(item.itemName, "Laser Tool", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(item.name, "Laser Tool", StringComparison.OrdinalIgnoreCase)))
+                        return item;
+                }
+            }
+
+            return ResolveStandardAmmoItem(weapon);
+        }
+
+        /// <summary>
+        /// Player weapons always prefer Standard ammo for defaults. Falls back to the weapon's
+        /// defaultAmmoItem, then any Gunpowder ammo in the registry.
+        /// </summary>
+        public static ItemData ResolveStandardAmmoItem(ItemData weapon = null)
+        {
+            if (cachedStandardAmmo != null)
+                return cachedStandardAmmo;
+
+            ItemData[] all = ItemRegistry.GetAllItems();
+            for (int i = 0; i < all.Length; i++)
+            {
+                ItemData item = all[i];
+                if (item == null || !item.CountsAsAmmo)
+                    continue;
+
+                if (string.Equals(item.itemName, StandardAmmoItemName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(item.name, StandardAmmoItemName, StringComparison.OrdinalIgnoreCase))
+                {
+                    cachedStandardAmmo = item;
+                    return cachedStandardAmmo;
+                }
+            }
+
+            for (int i = 0; i < all.Length; i++)
+            {
+                ItemData item = all[i];
+                if (item != null && item.CountsAsAmmo && item.ammoType == AmmoType.Gunpowder)
+                {
+                    cachedStandardAmmo = item;
+                    return cachedStandardAmmo;
+                }
+            }
+
+            if (weapon != null && weapon.defaultAmmoItem != null && weapon.defaultAmmoItem.CountsAsAmmo)
+                return weapon.defaultAmmoItem;
+
+            return null;
         }
 
         /// <summary>
         /// Auto-refill on empty: only pulls inventory ammo matching the type already loaded (or
         /// defaulted) for this slot. It deliberately does NOT fall back to a different compatible
-        /// type — running dry on Plasma should leave the weapon empty, not silently swap the player
-        /// onto whatever Gunpowder happens to be sitting in their inventory. Switching ammo types is
-        /// an explicit "Equip Ammo To" action (TryEquipAmmoToWeaponSlot), never an automatic one.
+        /// type — switching ammo types is an explicit "Equip Ammo To" action.
         /// </summary>
         private bool TryRefillFromInventory(ItemData weapon, SlotAmmo entry)
         {
@@ -272,9 +484,6 @@ namespace Project.Inventory
                 return entry.loaded > 0;
             }
 
-            // Walk every matching-type stack (not just the first one found) so a full magazine
-            // refill isn't short-changed just because the player's reserve happens to be split
-            // across multiple inventory slots.
             for (int i = 0; i < inventory.slots.Count; i++)
             {
                 int needed = Mathf.Max(0, weapon.magazineSize - entry.loaded);
@@ -288,6 +497,9 @@ namespace Project.Inventory
                 if (slot.item.ammoType != entry.loadedType)
                     continue;
 
+                if (!AmmoItemsCompatibleForReserve(entry.loadedItem, slot.item))
+                    continue;
+
                 int take = Mathf.Min(needed, slot.amount);
                 entry.loadedType = slot.item.ammoType;
                 entry.loadedItem = slot.item;
@@ -296,26 +508,6 @@ namespace Project.Inventory
             }
 
             return entry.loaded > 0;
-        }
-
-        private SlotAmmo GetOrCreateSlot(int hotbarSlot, ItemData weapon)
-        {
-            if (!slotAmmo.TryGetValue(hotbarSlot, out SlotAmmo entry))
-            {
-                // Seed from the weapon's own defaultAmmoItem (if set) so "default ammo" resolves a
-                // real ItemData from the start and flows through the exact same projectile/VFX/audio
-                // path as any explicitly equipped ammo, rather than relying on ammoItem == null
-                // falling back to (easy to leave unset) weapon-level VFX fields.
-                entry = new SlotAmmo
-                {
-                    loaded = 0,
-                    loadedType = weapon.defaultAmmoItem != null ? weapon.defaultAmmoItem.ammoType : weapon.defaultAmmoType,
-                    loadedItem = weapon.defaultAmmoItem
-                };
-                slotAmmo[hotbarSlot] = entry;
-            }
-
-            return entry;
         }
 
         private void HandleInventoryChanged()
@@ -327,7 +519,12 @@ namespace Project.Inventory
             {
                 ItemData weapon = equipment.GetHotbarItem(slot);
                 if (weapon != null && weapon.IsRangedWeapon)
+                {
                     EnsureWeaponInitialized(slot, weapon);
+                    return;
+                }
+
+                slotWeaponIdentity.Remove(slot);
             });
         }
 
@@ -353,12 +550,17 @@ namespace Project.Inventory
         /// </summary>
         public static bool IsInfiniteAmmoType(AmmoType ammoType, ItemData ammoItem = null)
         {
-            return false;
+            // Continuous Laser Tool cells power mining tools indefinitely once loaded.
+            return ammoItem != null && ammoItem.isContinuousLaser;
         }
 
         public bool IsInfiniteAmmoForSlot(int weaponHotbarSlot)
         {
-            return IsInfiniteAmmoType(GetLoadedAmmoType(weaponHotbarSlot), GetLoadedAmmoItem(weaponHotbarSlot));
+            // Require at least one loaded cell so mining stays empty until Laser Tool is picked up / equipped.
+            if (!slotAmmo.TryGetValue(weaponHotbarSlot, out SlotAmmo entry) || entry.loaded <= 0)
+                return false;
+
+            return IsInfiniteAmmoType(entry.loadedType, entry.loadedItem);
         }
     }
 }

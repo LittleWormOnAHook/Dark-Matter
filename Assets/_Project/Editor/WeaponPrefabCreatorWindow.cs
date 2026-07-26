@@ -57,6 +57,13 @@ public class WeaponPrefabCreatorWindow : EditorWindow
     private float hipFireMaxDeviationDegrees = 15f;
     private float hipFireSpreadMultiplier = 1f;
 
+    private bool isMiningTool;
+    private int miningPassesRequired = 2;
+    private int miningDropMin = 1;
+    private int miningDropMax = 5;
+    private float miningLockBreakDegrees = 30f;
+    private float miningPassDuration = 1.25f;
+
     private WeaponPrefabBuilder.PickupOptions pickupOptions = WeaponPrefabBuilder.DefaultPickupOptions;
 
     [MenuItem(SurvivalPioneerEditorMenus.WeaponPrefabCreator, false, 10)]
@@ -167,6 +174,20 @@ public class WeaponPrefabCreatorWindow : EditorWindow
             recoilVertical = EditorGUILayout.FloatField("Recoil Vertical", recoilVertical);
             recoilHorizontal = EditorGUILayout.FloatField("Recoil Horizontal", recoilHorizontal);
             recoilFireRateScale = EditorGUILayout.FloatField("Recoil Fire-Rate Scale", recoilFireRateScale);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Mining Tool", EditorStyles.boldLabel);
+            isMiningTool = EditorGUILayout.Toggle(
+                new GUIContent("Mining Tool", "Hold Fire to mine ResourceNodes with a soft-locked laser. Skips combat hitscan and ammo."),
+                isMiningTool);
+            using (new EditorGUI.DisabledScope(!isMiningTool))
+            {
+                miningPassesRequired = EditorGUILayout.IntField("Passes Required", Mathf.Max(1, miningPassesRequired));
+                miningDropMin = EditorGUILayout.IntField("Drop Min", Mathf.Max(1, miningDropMin));
+                miningDropMax = EditorGUILayout.IntField("Drop Max", Mathf.Max(miningDropMin, miningDropMax));
+                miningLockBreakDegrees = EditorGUILayout.FloatField("Lock Break Degrees", miningLockBreakDegrees);
+                miningPassDuration = EditorGUILayout.FloatField("Pass Duration (s)", miningPassDuration);
+            }
         }
 
         EditorGUILayout.Space(8f);
@@ -315,6 +336,19 @@ public class WeaponPrefabCreatorWindow : EditorWindow
                 itemData.reloadTimeSeconds = reloadTimeSeconds;
                 itemData.hipFireMaxDeviationDegrees = hipFireMaxDeviationDegrees;
                 itemData.hipFireSpreadMultiplier = hipFireSpreadMultiplier;
+                itemData.isMiningTool = isMiningTool;
+                if (isMiningTool)
+                {
+                    itemData.isHitscanBeam = true;
+                    itemData.miningPassesRequired = Mathf.Max(1, miningPassesRequired);
+                    itemData.miningDropMin = Mathf.Max(1, miningDropMin);
+                    itemData.miningDropMax = Mathf.Max(itemData.miningDropMin, miningDropMax);
+                    itemData.miningLockBreakDegrees = Mathf.Max(5f, miningLockBreakDegrees);
+                    itemData.miningPassDuration = Mathf.Max(0.1f, miningPassDuration);
+                    itemData.magazineSize = 999;
+                    itemData.rangedDamage = 0f;
+                    itemData.fireRate = 12f;
+                }
             }
 
             if (copyGripFromTemplate && gripTemplate != null)

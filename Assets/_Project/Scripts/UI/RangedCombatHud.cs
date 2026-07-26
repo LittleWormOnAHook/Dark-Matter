@@ -1,3 +1,4 @@
+using Project.Combat;
 using Project.Data;
 using Project.Inventory;
 using Project.Interaction;
@@ -89,16 +90,26 @@ namespace Project.UI
             int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
             int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
             int magazineSize = Mathf.Max(1, weapon.magazineSize);
-            string ammoLabelName = ResolveAmmoLabelName(weaponHotbarSlot);
             bool infiniteReserve = ammoState != null && ammoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
+            int reserve = !infiniteReserve && ammoState != null
+                ? ammoState.GetReserveAmmoCount(weaponHotbarSlot)
+                : 0;
 
+            // Completely dry (no mag + no reserve): show Empty 0/0 instead of a misleading ammo type like Plasma 0/30.
+            if (!infiniteReserve && loaded <= 0 && reserve <= 0)
+            {
+                ammoLabel.text = weapon.isMiningTool ? "POWER Empty" : "Empty 0/0";
+                LayoutAboveHotbar();
+                return;
+            }
+
+            string ammoLabelName = weapon.isMiningTool ? "POWER" : ResolveAmmoLabelName(weaponHotbarSlot);
             if (infiniteReserve)
             {
-                ammoLabel.text = $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";
+                ammoLabel.text = weapon.isMiningTool ? "POWER ∞" : $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";
             }
             else
             {
-                int reserve = ammoState != null ? ammoState.GetReserveAmmoCount(weaponHotbarSlot) : 0;
                 ammoLabel.text = reserve > 0
                     ? $"{ammoLabelName} {loaded}/{magazineSize}  (+{reserve})"
                     : $"{ammoLabelName} {loaded}/{magazineSize}";
@@ -109,13 +120,14 @@ namespace Project.UI
         private string ResolveAmmoLabelName(int weaponHotbarSlot)
         {
             if (ammoState == null)
-                return "AMMO";
+                return "STANDARD";
 
             ItemData loadedAmmoItem = ammoState.GetLoadedAmmoItem(weaponHotbarSlot);
             if (loadedAmmoItem != null && !string.IsNullOrWhiteSpace(loadedAmmoItem.itemName))
                 return loadedAmmoItem.itemName.ToUpperInvariant();
 
-            return ammoState.GetLoadedAmmoType(weaponHotbarSlot).ToString().ToUpperInvariant();
+            AmmoType loadedType = ammoState.GetLoadedAmmoType(weaponHotbarSlot);
+            return loadedType == AmmoType.Gunpowder ? "STANDARD" : loadedType.ToString().ToUpperInvariant();
         }
 
         private void LateUpdate()

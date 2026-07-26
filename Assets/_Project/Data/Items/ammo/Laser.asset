@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
   m_Name: Laser
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
-  itemName: Laser
+  itemName: Laser Pulse
   icon: {fileID: 21300000, guid: e8258b011db9aac4a9ea0754a7209870, type: 3}
   worldPrefab: {fileID: 5381531531256870450, guid: b35bb0c64c0a9484d83a9058d99e3179, type: 3}
   maxStack: 999
   itemType: 4
+  deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
   equipSocketName: RightHand
@@ -36,26 +37,36 @@ MonoBehaviour:
   invectorWeaponId: 
   meleeDamage: 10
   meleeDamageRandomRange: 3
+  criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
   rangedDamage: 10
-  rangedDamageRandomRange: 4
-  rangedRange: 45
-  projectileSpeed: 85
-  projectileSpreadDegrees: 0.6
-  weaponAccuracy: 90
+  rangedDamageRandomRange: 3
+  rangedRange: 55
+  projectileSpeed: 0
+  projectileSpreadDegrees: 0.25
+  weaponAccuracy: 95
   closeRangeFullAccuracyDistance: 12
-  closeRangeSpreadScale: 0.15
+  closeRangeSpreadScale: 0.1
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 4.5
   fireRate: 4
   magazineSize: 30
+  reloadTimeSeconds: 1.8
   defaultAmmoType: 5
   compatibleAmmoTypes: 05000000
   defaultAmmoItem: {fileID: 0}
-  projectilePrefab: {fileID: 7579578154293531177, guid: c6349b860ff1b68448fff7bf3c8a10eb, type: 3}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
+  projectilePrefab: {fileID: 0}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
   hipFireMaxDeviationDegrees: 15
@@ -67,18 +78,29 @@ MonoBehaviour:
   aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   aimHeldLocalScale: {x: 1, y: 1, z: 1}
   ammoType: 5
-  ammoPerPickup: 20
-  ammoPickupGrant: 20
-  isHitscanBeam: 0
+  ammoPerPickup: 40
+  ammoPickupGrant: 40
+  isHitscanBeam: 1
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
   muzzleFlashPrefab: {fileID: 1556169196827650, guid: 4f2f9845677ab3f49be1179d6bd15b78, type: 3}
   tracerPrefab: {fileID: 1699459221867030, guid: 281aabf73dcc5844faf849b3dc30c1aa, type: 3}
   impactVfxPrefab: {fileID: 100004, guid: 9437d037ae4574bf6999ffedfc373202, type: 3}
-  beamVfxPrefab: {fileID: 0}
-  fireSound: {fileID: 8300000, guid: 87c51f7d41504224f91a43421598a7ff, type: 3}
+  beamVfxPrefab: {fileID: 7048032083067295583, guid: ef03efed27122084884eb9cbb3785b11, type: 3}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  fireSound: {fileID: 8300000, guid: b8f88923a1641df43b9ada3b901debb7, type: 3}
   projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 2
   statusEffectTickInterval: 1
@@ -95,11 +117,11 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: 
+  tooltipDescription: Alias of Laser Pulse (hitscan pulse laser ammo).

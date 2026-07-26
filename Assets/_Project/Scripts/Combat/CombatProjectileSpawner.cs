@@ -30,7 +30,11 @@ namespace Project.Combat
 
             ammoItem = CombatVfxUtility.ResolveAmmoItem(weapon, ammoItem);
             Vector3 fireDirection = ApplySpread(direction, spreadDegrees);
-            CombatHitResolver.SpawnMuzzleFlash(ammoItem, weapon, muzzle);
+
+            // Hitscan lasers use their own beam/sight VFX — no muzzle flash/sparks.
+            if (ammoItem == null || !ammoItem.isHitscanBeam)
+                CombatHitResolver.SpawnMuzzleFlash(ammoItem, weapon, muzzle);
+
             CombatHitResolver.PlayFireSound(ammoItem, weapon, muzzle);
 
             float damage = ResolveShotDamage(weapon, ammoItem, damageOverride);
@@ -95,6 +99,9 @@ namespace Project.Combat
                 CombatHitResolver.SpawnImpactVfx(ammoItem, weapon, hit.point, hit.normal);
                 CombatStatusEffect.Apply(ammoItem, hit.collider.gameObject, owner);
             }
+
+            // Pulse/continuous laser ammo: tracers + beam line, never a traveling projectile.
+            CombatHitResolver.SpawnHitscanBeamVisual(ammoItem, weapon, muzzle, origin, endPoint, direction, range);
         }
 
         private static Vector3 ApplySpread(Vector3 direction, float spreadDegrees)

@@ -29,6 +29,7 @@ namespace Project.Player.Invector
         private vShooterManager _shooterManager;
         private PioneerInvectorAmmoBridge _ammoBridge;
         private PioneerInvectorInputBridge _inputBridge;
+        private PioneerInvectorWeaponBridge _weaponBridge;
         private PlayerController _player;
 
         private void Awake()
@@ -39,6 +40,7 @@ namespace Project.Player.Invector
             _shooterManager = GetComponent<vShooterManager>();
             _ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
+            _weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
             _player = GetComponent<PlayerController>();
         }
 
@@ -59,7 +61,7 @@ namespace Project.Player.Invector
             if (_bootstrap != null && !_bootstrap.IsActive)
                 return;
 
-            if (invectorWeapon == null || invectorWeapon.muzzle == null || _equipment == null)
+            if (invectorWeapon == null || _equipment == null)
                 return;
 
             // Invector's own vShooterWeapon.ShootBullet spawns its own physical bullet (with a
@@ -99,6 +101,10 @@ namespace Project.Player.Invector
             if (weaponItem == null || !weaponItem.IsRangedWeapon)
                 return;
 
+            // Mining tools own continuous Fire-hold beams via DMIMiningController — never spawn combat projectiles.
+            if (weaponItem.isMiningTool)
+                return;
+
             // Single authoritative ammo decision for this trigger pull: blocks fire while a reload
             // is already in progress (pauses shooting), consumes a round (or starts a reload and
             // reports failure if the magazine just ran dry), and keeps Invector's native counter
@@ -110,7 +116,22 @@ namespace Project.Player.Invector
                 ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
                 : null;
 
-            Transform muzzle = invectorWeapon.muzzle;
+            // Prefer the authored Muzzle on the Pioneer drawn visual — never the hidden vendor muzzle.
+            Transform muzzle = null;
+            if (_weaponBridge != null &&
+                _weaponBridge.TryGetActiveDrawnMuzzle(weaponItem, out Transform drawnMuzzle) &&
+                drawnMuzzle != null)
+            {
+                muzzle = drawnMuzzle;
+            }
+            else
+            {
+                muzzle = invectorWeapon.muzzle;
+            }
+
+            if (muzzle == null)
+                return;
+
             bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
             float maxRange = ResolveMaxRange(weaponItem, ammoItem);
 

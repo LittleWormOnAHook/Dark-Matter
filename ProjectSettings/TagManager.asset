@@ -34,6 +34,10 @@ TagManager:
   - Animal
   - Climb
   - Terrain
+  - PickUp
+  - Recipe
+  - Walkable
+  - FxTemporaire
   layers:
   - Default
   - TransparentFX

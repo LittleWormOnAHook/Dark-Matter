@@ -1,0 +1,128 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
+  m_Name: DM_Mining_Tool
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
+  itemName: DM Mining Tool
+  icon: {fileID: 21300000, guid: 08b7e004b03587c46a4749d2cdcb2bc6, type: 3}
+  worldPrefab: {fileID: 7821607011889959122, guid: 8f7943112bdb6b145a52bbba5bc9f14c, type: 3}
+  maxStack: 1
+  itemType: 3
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 0
+  heldPrefab: {fileID: 1827863294949912271, guid: 3fdda50d0870e5a4da0ea60e50b0874b, type: 3}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0.003, z: 0.161}
+  heldLocalEuler: {x: -0, y: 0, z: 0}
+  useHeldLocalRotation: 1
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 0.70987874, y: 0.70987874, z: 0.70987874}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: RightUpLeg
+  sheathedLocalPosition: {x: -9.703704, y: 5.835446, z: 0.095209695}
+  sheathedLocalEuler: {x: 271.0561, y: 139.02324, z: 40.976856}
+  useSheathedLocalRotation: 1
+  sheathedLocalRotation: {x: -0.0042743664, y: -0.71199715, z: -0.70215636, w: -0.0042731008}
+  sheathedLocalScale: {x: 136.03012, y: 136.10681, z: 136.1097}
+  invectorWeaponPrefab: {fileID: 4881589711078705830, guid: bf8e7b32b76156341ac90d8a8b08c28c, type: 3}
+  invectorWeaponId: vHandgun
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalChance: 0.1
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 0
+  rangedDamageRandomRange: 4
+  rangedRange: 35
+  projectileSpeed: 85
+  projectileSpreadDegrees: 0
+  weaponAccuracy: 100
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.2
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 4.5
+  fireRate: 12
+  magazineSize: 999
+  reloadTimeSeconds: 1.8
+  defaultAmmoType: 5
+  compatibleAmmoTypes: 05000000
+  defaultAmmoItem: {fileID: 11400000, guid: 4e61aa721d9c1b14785217b4a4aa8dec, type: 2}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 0
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0.02, y: 0.02, z: 0.06}
+  aimHeldLocalEuler: {x: -12, y: 90, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: -0.64055336, y: 0.06722177, z: -0.022566283, w: 0.7646329}
+  aimHeldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
+  ammoType: 5
+  ammoPerPickup: 20
+  ammoPickupGrant: 20
+  isHitscanBeam: 1
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
+  tracerPrefab: {fileID: 1966839576898216, guid: 6e1ac1786b73ae8429067b310fd5021d, type: 3}
+  impactVfxPrefab: {fileID: 100004, guid: 9437d037ae4574bf6999ffedfc373202, type: 3}
+  beamVfxPrefab: {fileID: 7579578154293531177, guid: c6349b860ff1b68448fff7bf3c8a10eb, type: 3}
+  isMiningTool: 1
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 2493629726787154327, guid: 77ecbac8ebf34bc49bb0c53e559ab661, type: 3}
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isAcInfused: 0
+  acValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  tooltipDescription: Hold Fire to mine resource nodes with a soft-locked mining
+    laser. Two passes yield 1-5 rocks.

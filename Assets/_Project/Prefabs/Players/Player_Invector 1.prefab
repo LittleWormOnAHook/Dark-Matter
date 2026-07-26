@@ -2096,7 +2096,7 @@ MonoBehaviour:
     useInput: 1
     isAxisInUse: 0
     isUnityInput: 0
-    keyboard: LeftAlt
+    keyboard: R
     keyboardAxis: 0
     joystick: LB
     joystickAxis: 0
@@ -2169,6 +2169,12 @@ MonoBehaviour:
   enableHealthRegen: 1
   healthRegenPerSecond: 5
   healthRegenDelayAfterDamage: 3
+  maxThermalStress: 100
+  maxRadiation: 100
+  maxSulfur: 100
+  maxVolcano: 100
+  exposureRecoveryPerSecond: 8
+  thermalRecoveryPerSecond: 12
 --- !u!114 &974530526351442323
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2235,19 +2241,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7b8c9d0e1f2435689abcdef01234567, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.MeleeCombatController
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  fallbackRange: 2.2
-  fallbackCooldown: 0.8
-  attackOriginHeight: 1.25
-  swingHitWindow: 0.45
-  twoHandedCooldownMultiplier: 1.35
-  unarmedFallbackCooldown: 0.65
-  unarmedFallbackRange: 1.6
-  unarmedFallbackDamage: 8
-  comboResetWindow: 1.35
-  comboChainCooldown: 0.28
 --- !u!114 &6322937793930976833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2611,7 +2604,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: a1a1a1a1-b1b1-4c1c-8d1d-111111111002
-    m_ActionName: 'Player/Recipes[/Keyboard/r]'
+    m_ActionName: 'Player/Recipes[/Keyboard/g]'
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
@@ -2733,10 +2726,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b09f04c9acc150946afb8ec60ae183d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.RangedCombatController
-  aimLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  adsSpreadMultiplier: 0.35
 --- !u!114 &3105599002644021132
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2859,6 +2848,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae55537ebf25e76418e2705fe8747c4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.Invector.PioneerInvectorAmmoBridge
+  emptyReloadDenyClip: {fileID: 8300000, guid: cd487f8be3353624bb1858a1f0cb748f, type: 3}
+  emptyReloadDenyVolume: 0.85
+  emptyReloadHeadShakeTrauma: 0.28
+  emptyReloadDenyCooldown: 0.55
+  sharedEmptyClickClip: {fileID: 8300000, guid: 9c5ac02550d31504ebb57020dde8e988, type: 3}
+  emptyClickVolume: 0.9
+  emptyClickCooldown: 0.18
 --- !u!114 &7711223344556677889
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55906,7 +55902,7 @@ MonoBehaviour:
   _maxDamage: 25
   source: {fileID: 4044462572668517841}
   fireClip: {fileID: 8300000, guid: 097e8235e0162d64ba53da9ef4ab8d61, type: 3}
-  emptyClip: {fileID: 8300000, guid: 9b2ce00d16b72c34a9b46200421a6def, type: 3}
+  emptyClip: {fileID: 8300000, guid: 9c5ac02550d31504ebb57020dde8e988, type: 3}
   testShootEffect: 0
   lightOnShot: {fileID: 3054852417177898245}
   emittShurykenParticle:
@@ -55952,7 +55948,7 @@ MonoBehaviour:
   reloadOneByOne: 0
   _clipSize: 25
   dontUseReload: 0
-  autoReload: 1
+  autoReload: 0
   autoReloadStyle: 1
   ammoID: 13
   moveSetID: 1

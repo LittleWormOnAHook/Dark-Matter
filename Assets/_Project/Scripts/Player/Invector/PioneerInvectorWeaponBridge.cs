@@ -170,6 +170,7 @@ namespace Project.Player.Invector
             if (item == null)
                 return null;
 
+            // Mining pistol holsters on the hip like other one-handed ranged weapons.
             if (item.weaponGrip == WeaponGrip.TwoHanded || item.IsTwoHanded)
                 return "RifleHolder";
 
@@ -664,6 +665,148 @@ namespace Project.Player.Invector
             return true;
         }
 
+        /// <summary>
+        /// Resolves the muzzle transform on the active drawn ranged slot for the given item.
+        /// Prefers the authored barrel <c>muzzle</c> / <c>Muzzle</c> on the drawn visual.
+        /// </summary>
+        public bool TryGetActiveDrawnMuzzle(ItemData item, out Transform muzzle)
+        {
+            muzzle = null;
+            if (!TryGetRangedSlot(item, out RangedWeaponSlot slot) || slot?.drawnInstance == null)
+                return false;
+
+            if (!slot.drawnInstance.activeInHierarchy)
+                return false;
+
+            Transform[] children = slot.drawnInstance.GetComponentsInChildren<Transform>(true);
+
+            // Prefer authored muzzle that owns a Laser LineRenderer stack (Sci-Fi Pistol / Survival Rifle / Mining Tool).
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                if (!t.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) &&
+                    !t.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                Transform laser = t.Find("Laser");
+                if (laser == null)
+                {
+                    for (int c = 0; c < t.childCount; c++)
+                    {
+                        Transform child = t.GetChild(c);
+                        if (child != null && child.name.Equals("Laser", StringComparison.OrdinalIgnoreCase))
+                        {
+                            laser = child;
+                            break;
+                        }
+                    }
+                }
+
+                if (laser != null && laser.GetComponent<LineRenderer>() != null)
+                {
+                    muzzle = t;
+                    return true;
+                }
+            }
+
+            // Prefer the authored barrel muzzle the artist placed (exact name match).
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                if (t.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
+                    t.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                {
+                    muzzle = t;
+                    return true;
+                }
+            }
+
+            // Legacy runtime tip created for mining when no authored muzzle exists.
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                if (t.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase))
+                {
+                    muzzle = t;
+                    return true;
+                }
+            }
+
+            // Next: any transform with "uzzle" under PioneerVisual_* (authored mesh).
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                if (t.name.IndexOf("uzzle", StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                bool underVisual = false;
+                Transform p = t;
+                while (p != null && p != slot.drawnInstance.transform)
+                {
+                    if (p.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    {
+                        underVisual = true;
+                        break;
+                    }
+
+                    p = p.parent;
+                }
+
+                if (!underVisual)
+                    continue;
+
+                muzzle = t;
+                return true;
+            }
+
+            muzzle = slot.drawnInstance.transform;
+            return true;
+        }
+
+        /// <summary>
+        /// World-space barrel tip sampled from the active Pioneer mining visual (post-aim / IK safe).
+        /// </summary>
+        public bool TryGetActiveDrawnMiningTip(ItemData item, out Vector3 tipWorld)
+        {
+            tipWorld = default;
+            if (!TryGetRangedSlot(item, out RangedWeaponSlot slot) || slot?.drawnInstance == null)
+                return false;
+
+            if (!slot.drawnInstance.activeInHierarchy)
+                return false;
+
+            Transform weaponRoot = slot.drawnInstance.transform;
+            Transform visual = null;
+            Transform[] children = slot.drawnInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                {
+                    visual = t;
+                    break;
+                }
+            }
+
+            if (visual == null)
+                return false;
+
+            tipWorld = ResolveMiningMeshTipWorld(visual, weaponRoot);
+            return true;
+        }
+
         private RangedWeaponSlot FindSerializedRangedSlot(ItemData item)
         {
             if (item == null || rangedWeaponSlots == null)
@@ -969,6 +1112,7 @@ namespace Project.Player.Invector
                 existingVisual.gameObject.SetActive(true);
                 StripAuthoredVisualForEquippedWeapon(existingVisual.gameObject, item);
                 HideVendorRenderers(invectorInstance, existingVisual.transform);
+                AlignMiningToolAimAxis(invectorInstance, existingVisual.transform, item);
                 return;
             }
 
@@ -976,9 +1120,299 @@ namespace Project.Player.Invector
             visual.name = $"PioneerVisual_{visualPrefab.name}";
             visual.SetActive(true);
             StripAuthoredVisualForEquippedWeapon(visual, item);
+            AlignMiningToolAimAxis(invectorInstance, visual.transform, item);
 
             if (HasRenderer(visual))
                 HideVendorRenderers(invectorInstance, visual.transform);
+        }
+
+        /// <summary>
+        /// DM Mining Tool mesh is authored along local +X, while Invector aims along weapon +Z.
+        /// Rotate the Pioneer visual so barrel shares the aim axis, keep a stable MiningBeamMuzzle
+        /// bound to vShooterWeapon.muzzle (never leave a destroyed muzzle ref - that freezes aim camera),
+        /// and seat the mesh / leftHandIK on the grip.
+        /// </summary>
+        private static void AlignMiningToolAimAxis(GameObject invectorInstance, Transform visual, ItemData item)
+        {
+            if (invectorInstance == null || visual == null || item == null || !item.isMiningTool)
+                return;
+
+            Transform weaponRoot = invectorInstance.transform;
+
+            // Keep the authored visual pose — do not rewrite localPosition/euler (that moved the
+            // mining pistol in-hand). Only ensure the beam muzzle exists and is bound.
+            EnsureMiningBeamMuzzle(invectorInstance, visual, weaponRoot);
+
+            if (item.weaponGrip == WeaponGrip.TwoHanded)
+                AlignMiningLeftHandIk(invectorInstance, visual, weaponRoot);
+        }
+
+        /// <summary>
+        /// Runtime-safe: rebind muzzle / visual even when PrepareDrawnRangedSlot is called without an invector prefab.
+        /// </summary>
+        private static void EnsureMiningToolRuntimeBindings(GameObject instance, ItemData item)
+        {
+            if (instance == null || item == null || !item.isMiningTool)
+                return;
+
+            Transform visual = null;
+            Transform[] children = instance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                {
+                    visual = t;
+                    break;
+                }
+            }
+
+            if (visual != null)
+                AlignMiningToolAimAxis(instance, visual, item);
+            else
+                EnsureMiningBeamMuzzle(instance, null, instance.transform);
+        }
+
+        private static Vector3 ResolveMiningVisualBarrelEuler(Transform visual)
+        {
+            Bounds localBounds = GetMiningVisualLocalBounds(visual);
+            Vector3 size = localBounds.size;
+            if (size.sqrMagnitude < 0.000001f)
+                return Vector3.zero;
+
+            // Bulky legacy tool authored along +X; pistol meshes are usually along +Z already.
+            if (size.x > size.z * 1.15f && size.x >= size.y)
+                return new Vector3(0f, 270f, 0f);
+
+            return Vector3.zero;
+        }
+
+        private static Vector3 ResolveMiningVisualGripOffset(Transform visual)
+        {
+            Vector3 offset = new Vector3(0f, -0.01f, 0.06f);
+            Bounds localBounds = GetMiningVisualLocalBounds(visual);
+            if (localBounds.size.sqrMagnitude < 0.000001f)
+                return offset;
+
+            float halfLength = Mathf.Max(localBounds.extents.x, localBounds.extents.z);
+            offset.z = Mathf.Clamp(halfLength * 0.25f, 0.04f, 0.2f);
+            return offset;
+        }
+
+        private static Vector3 ResolveMiningMeshTipWorld(Transform visual, Transform weaponRoot)
+        {
+            Vector3 tipWorld = weaponRoot.position + weaponRoot.forward * 0.35f;
+            float best = float.NegativeInfinity;
+
+            // Mining Pistol mesh assets can report zero MeshFilter/localBounds while Renderer.bounds
+            // is valid — build tip candidates from world bounds remapped into each renderer.
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                    continue;
+
+                Bounds worldBounds = renderer.bounds;
+                if (worldBounds.size.sqrMagnitude < 0.000001f)
+                    continue;
+
+                Vector3 c = worldBounds.center;
+                Vector3 e = worldBounds.extents;
+                // True directional tip of an AABB is always a corner, not a face midpoint.
+                Vector3[] candidates =
+                {
+                    c + new Vector3( e.x,  e.y,  e.z),
+                    c + new Vector3( e.x,  e.y, -e.z),
+                    c + new Vector3( e.x, -e.y,  e.z),
+                    c + new Vector3( e.x, -e.y, -e.z),
+                    c + new Vector3(-e.x,  e.y,  e.z),
+                    c + new Vector3(-e.x,  e.y, -e.z),
+                    c + new Vector3(-e.x, -e.y,  e.z),
+                    c + new Vector3(-e.x, -e.y, -e.z)
+                };
+
+                for (int n = 0; n < candidates.Length; n++)
+                {
+                    float score = Vector3.Dot(candidates[n] - weaponRoot.position, weaponRoot.forward);
+                    if (score > best)
+                    {
+                        best = score;
+                        tipWorld = candidates[n];
+                    }
+                }
+            }
+
+            return tipWorld;
+        }
+
+        private static Bounds GetMiningVisualLocalBounds(Transform visual)
+        {
+            if (visual == null)
+                return new Bounds(Vector3.zero, Vector3.zero);
+
+            // Prefer remapping live renderer world bounds into visual space — authored Mining Pistol
+            // meshes often have empty MeshFilter.bounds / localBounds.
+            bool has = false;
+            Bounds local = new Bounds(Vector3.zero, Vector3.zero);
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                Bounds wb = renderer.bounds;
+                if (wb.size.sqrMagnitude < 0.000001f)
+                    continue;
+
+                for (int x = -1; x <= 1; x += 2)
+                for (int y = -1; y <= 1; y += 2)
+                for (int z = -1; z <= 1; z += 2)
+                {
+                    Vector3 corner = wb.center + Vector3.Scale(wb.extents, new Vector3(x, y, z));
+                    Vector3 inVisual = visual.InverseTransformPoint(corner);
+                    if (!has)
+                    {
+                        local = new Bounds(inVisual, Vector3.zero);
+                        has = true;
+                    }
+                    else
+                    {
+                        local.Encapsulate(inVisual);
+                    }
+                }
+            }
+
+            if (has)
+                return local;
+
+            MeshRenderer meshRenderer = visual.GetComponentInChildren<MeshRenderer>(true);
+            if (meshRenderer != null && meshRenderer.localBounds.size.sqrMagnitude > 0.000001f)
+                return meshRenderer.localBounds;
+
+            MeshFilter filter = visual.GetComponentInChildren<MeshFilter>(true);
+            if (filter != null && filter.sharedMesh != null && filter.sharedMesh.bounds.size.sqrMagnitude > 0.000001f)
+                return filter.sharedMesh.bounds;
+
+            return new Bounds(Vector3.zero, Vector3.zero);
+        }
+
+        private static void EnsureMiningBeamMuzzle(GameObject invectorInstance, Transform visual, Transform weaponRoot)
+        {
+            if (invectorInstance == null || weaponRoot == null)
+                return;
+
+            Transform tip = null;
+            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
+
+            // Prefer the authored barrel muzzle (artist-placed) over any runtime tip.
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null)
+                    continue;
+
+                if (child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
+                    child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                {
+                    tip = child;
+                    break;
+                }
+            }
+
+            if (tip == null)
+            {
+                for (int i = 0; i < children.Length; i++)
+                {
+                    Transform child = children[i];
+                    if (child != null && child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        tip = child;
+                        break;
+                    }
+                }
+            }
+
+            // Only create a runtime tip when no authored muzzle exists. Never rewrite an authored muzzle pose.
+            bool createdTip = false;
+            bool authoredMuzzle = tip != null &&
+                (tip.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
+                 tip.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase));
+
+            if (tip == null)
+            {
+                GameObject tipGo = new GameObject("MiningBeamMuzzle");
+                tip = tipGo.transform;
+                createdTip = true;
+            }
+
+            if (createdTip)
+            {
+                Transform tipParent = visual != null ? visual : weaponRoot;
+                if (tip.parent != tipParent)
+                    tip.SetParent(tipParent, true);
+
+                Vector3 tipWorld = visual != null
+                    ? ResolveMiningMeshTipWorld(visual, weaponRoot)
+                    : weaponRoot.position + weaponRoot.forward * 0.35f;
+                tip.position = tipWorld;
+                tip.rotation = Quaternion.LookRotation(weaponRoot.forward, weaponRoot.up);
+            }
+            else if (!authoredMuzzle && tip.parent == null)
+            {
+                Transform tipParent = visual != null ? visual : weaponRoot;
+                tip.SetParent(tipParent, true);
+            }
+
+            foreach (vShooterWeapon shooter in invectorInstance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (shooter != null)
+                    shooter.muzzle = tip;
+            }
+        }
+
+        private static void AlignMiningLeftHandIk(GameObject invectorInstance, Transform visual, Transform weaponRoot)
+        {
+            if (invectorInstance == null || weaponRoot == null)
+                return;
+
+            Transform leftIk = null;
+            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.Equals("leftHandIK", StringComparison.OrdinalIgnoreCase))
+                {
+                    leftIk = t;
+                    break;
+                }
+            }
+
+            if (leftIk == null)
+                return;
+
+            // Seat support hand on the underside / mid body of the mining tool (weapon local space).
+            Vector3 targetLocal = new Vector3(0.02f, -0.03f, 0.18f);
+            if (visual != null)
+            {
+                Renderer renderer = visual.GetComponentInChildren<Renderer>(true);
+                if (renderer != null)
+                {
+                    Vector3 localCenter = weaponRoot.InverseTransformPoint(renderer.bounds.center);
+                    targetLocal = new Vector3(localCenter.x + 0.02f, localCenter.y - 0.04f, Mathf.Max(0.12f, localCenter.z * 0.55f));
+                }
+            }
+
+            leftIk.position = weaponRoot.TransformPoint(targetLocal);
+            // Keep a natural palm-up support pose relative to the weapon.
+            leftIk.rotation = weaponRoot.rotation * Quaternion.Euler(280f, 40f, 200f);
+
+            foreach (vShooterWeapon shooter in invectorInstance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (shooter != null)
+                    shooter.handIKTarget = leftIk;
+            }
         }
 
         public static void PreparePreloadedWeaponInstance(GameObject instance, ItemData item, GameObject invectorPrefab = null)
@@ -989,6 +1423,7 @@ namespace Project.Player.Invector
             StripInvectorPickupUi(instance);
             if (item != null && invectorPrefab != null)
                 MountAuthoredWeaponVisual(instance, item, invectorPrefab);
+            EnsureMiningToolRuntimeBindings(instance, item);
             StripEquippedWeaponPhysics(instance);
         }
 
@@ -1288,9 +1723,30 @@ namespace Project.Player.Invector
                 weapon.lightOnShot = null;
                 weapon.isInfinityAmmo = true;
                 weapon.dontUseReload = false;
+                weapon.autoReload = false;
+                ApplySharedEmptyClickClip(weapon);
                 EnsureReloadAudioSource(weapon);
                 PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem);
             }
+        }
+
+        private static AudioClip _sharedEmptyClickClip;
+
+        private static void ApplySharedEmptyClickClip(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            if (_sharedEmptyClickClip == null)
+            {
+#if UNITY_EDITOR
+                _sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(
+                    "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3");
+#endif
+            }
+
+            if (_sharedEmptyClickClip != null)
+                weapon.emptyClip = _sharedEmptyClickClip;
         }
 
         /// <summary>

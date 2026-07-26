@@ -168,12 +168,146 @@ namespace Project.Combat
             PoolManager.ReleaseDelayed(instance, 2f);
         }
 
-        /// <summary>One-shot firing sound played at the muzzle position. Falls back to the weapon's own fire sound if the loaded ammo doesn't specify one.</summary>
+        /// <summary>
+        /// Pulse laser visual: stretches beamVfx (preferred) or tracerPrefab from muzzle to impact.
+        /// Used by hitscan laser ammo — no traveling projectile is spawned.
+        /// Attaches <see cref="HitscanBeamMuzzleFollow"/> so the beam stays glued to the live muzzle
+        /// while the shooter moves / tracks (visual only; damage already applied at fire time).
+        /// </summary>
+        public static void SpawnHitscanBeamVisual(
+            ItemData ammoItem,
+            ItemData weapon,
+            Transform muzzle,
+            Vector3 origin,
+            Vector3 endPoint,
+            Vector3 direction,
+            float range)
+        {
+            Vector3 delta = endPoint - origin;
+            float length = delta.magnitude;
+            if (length < 0.01f)
+                return;
+
+            float followRange = Mathf.Max(1f, range > 0.01f ? range : length);
+
+            // Prefer the drawn weapon's muzzle/Laser/laserSight stack (Sci-Fi Pistol, Survival Rifle, Mining Tool, etc.).
+            if (TryPulseWeaponLaserStack(muzzle, followRange, 0.35f))
+                return;
+
+            GameObject beamPrefab = ammoItem != null && ammoItem.beamVfxPrefab != null
+                ? ammoItem.beamVfxPrefab
+                : weapon != null ? weapon.beamVfxPrefab : null;
+
+            GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
+
+            Vector3 dir = direction.sqrMagnitude > 0.0001f ? direction.normalized : delta / length;
+            Quaternion rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+            if (beamPrefab != null)
+            {
+                GameObject beam = PoolManager.Spawn(beamPrefab, origin, rotation);
+                ApplyBeamLine(beam, origin, endPoint);
+                AttachMuzzleFollow(beam, muzzle, followRange);
+                CombatVfxUtility.PlayParticleSystemsRecursive(beam);
+                PoolManager.ReleaseDelayed(beam, 0.35f);
+            }
+            else if (tracerPrefab != null)
+            {
+                // Particle/trail tracers: place along the shot and scale to span muzzle→impact.
+                GameObject tracer = PoolManager.Spawn(tracerPrefab, origin, rotation);
+                ApplyBeamLine(tracer, origin, endPoint);
+                StretchTracerAlongBeam(tracer, length);
+                AttachMuzzleFollow(tracer, muzzle, followRange);
+                CombatVfxUtility.PlayParticleSystemsRecursive(tracer);
+                PoolManager.ReleaseDelayed(tracer, 0.45f);
+            }
+        }
+
+        private static bool TryPulseWeaponLaserStack(Transform muzzle, float range, float durationSeconds)
+        {
+            if (muzzle == null)
+                return false;
+
+            if (!HitscanBeamMuzzleFollow.TryFindWeaponLaserStack(muzzle, out Transform laser, out Transform stackMuzzle))
+                return false;
+
+            HitscanBeamMuzzleFollow follow = laser.GetComponent<HitscanBeamMuzzleFollow>();
+            if (follow == null)
+                follow = laser.gameObject.AddComponent<HitscanBeamMuzzleFollow>();
+
+            follow.enabled = true;
+            follow.ConfigureWeaponLaserPulse(laser, stackMuzzle, range, durationSeconds);
+            return true;
+        }
+
+        private static void AttachMuzzleFollow(GameObject root, Transform muzzle, float range)
+        {
+            if (root == null || muzzle == null)
+                return;
+
+            HitscanBeamMuzzleFollow follow = root.GetComponent<HitscanBeamMuzzleFollow>();
+            if (follow == null)
+                follow = root.AddComponent<HitscanBeamMuzzleFollow>();
+
+            follow.enabled = true;
+            follow.Configure(muzzle, range);
+        }
+
+        private static void ApplyBeamLine(GameObject root, Vector3 origin, Vector3 endPoint)
+        {
+            if (root == null)
+                return;
+
+            LineRenderer[] lines = root.GetComponentsInChildren<LineRenderer>(true);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                LineRenderer line = lines[i];
+                if (line == null)
+                    continue;
+
+                line.useWorldSpace = true;
+                line.positionCount = 2;
+                line.SetPosition(0, origin);
+                line.SetPosition(1, endPoint);
+                line.enabled = true;
+            }
+        }
+
+        private static void StretchTracerAlongBeam(GameObject root, float length)
+        {
+            if (root == null)
+                return;
+
+            // Particle-only tracers (ballistic bullet FX) must not be Z-stretched to beam length —
+            // that explodes local emission offsets into multi-meter displacement behind the player.
+            // LineRenderer beams already get exact endpoints via ApplyBeamLine.
+            if (root.GetComponentInChildren<LineRenderer>(true) == null &&
+                root.GetComponentInChildren<MeshRenderer>(true) == null &&
+                root.GetComponentInChildren<ParticleSystem>(true) != null)
+            {
+                return;
+            }
+
+            Transform t = root.transform;
+            Vector3 scale = t.localScale;
+            if (scale.z > 0.001f && length > 0.01f)
+            {
+                // Many projectile visuals are ~1 unit long on Z — stretch to beam length.
+                scale.z = length;
+                t.localScale = scale;
+            }
+        }
+
+        /// <summary>One-shot firing sound played at the muzzle position. Falls back to the weapon's own fire sound if the loaded ammo doesn't specify one — except hitscan laser ammo, which must not steal gunfire SFX.</summary>
         public static void PlayFireSound(ItemData ammoItem, ItemData weapon, Transform muzzle)
         {
-            AudioClip clip = ammoItem != null && ammoItem.fireSound != null
-                ? ammoItem.fireSound
-                : weapon != null ? weapon.fireSound : null;
+            AudioClip clip = ammoItem != null ? ammoItem.fireSound : null;
+            if (clip == null &&
+                (ammoItem == null || !ammoItem.isHitscanBeam) &&
+                weapon != null)
+            {
+                clip = weapon.fireSound;
+            }
 
             if (clip == null || muzzle == null)
                 return;

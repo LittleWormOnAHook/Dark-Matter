@@ -1,4 +1,6 @@
+using System.Collections;
 using Invector.vShooter;
+using Project.CameraFx;
 using Project.Data;
 using Project.Inventory;
 using UnityEngine;
@@ -20,11 +22,29 @@ namespace Project.Player.Invector
     [RequireComponent(typeof(EquipmentController))]
     public class PioneerInvectorAmmoBridge : MonoBehaviour
     {
+        private const string ShellDropClipPath = "Assets/Audio/Player Weapons/shellDrop1.wav";
+        private const string SharedEmptyClickClipPath = "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3";
+
+        [Header("Empty Reload Deny")]
+        [SerializeField] private AudioClip emptyReloadDenyClip;
+        [SerializeField, Range(0.05f, 1f)] private float emptyReloadDenyVolume = 0.85f;
+        [SerializeField, Range(0.05f, 1f)] private float emptyReloadHeadShakeTrauma = 0.28f;
+        [SerializeField] private float emptyReloadDenyCooldown = 0.55f;
+
+        [Header("Empty Fire Click")]
+        [Tooltip("Shared dry-fire / empty-mag click used by all player ranged weapons (matches pistol EmptyClip_A).")]
+        [SerializeField] private AudioClip sharedEmptyClickClip;
+        [SerializeField, Range(0.05f, 1f)] private float emptyClickVolume = 0.9f;
+        [SerializeField] private float emptyClickCooldown = 0.18f;
+
         private PioneerInvectorBootstrap _bootstrap;
         private WeaponAmmoState _ammoState;
         private EquipmentController _equipment;
         private vShooterManager _shooterManager;
         private int _lastSyncedSlot = -1;
+        private float _nextEmptyReloadDenyTime;
+        private float _nextEmptyClickTime;
+        private Coroutine _headShakeRoutine;
 
         private void Awake()
         {
@@ -32,6 +52,8 @@ namespace Project.Player.Invector
             _ammoState = GetComponent<WeaponAmmoState>();
             _equipment = GetComponent<EquipmentController>();
             _shooterManager = GetComponent<vShooterManager>();
+            EnsureEmptyReloadDenyClip();
+            EnsureSharedEmptyClickClip();
         }
 
         private void OnEnable()
@@ -55,6 +77,12 @@ namespace Project.Player.Invector
             {
                 _shooterManager.onFinishReloadWeapon.RemoveListener(HandleReloadFinished);
                 _shooterManager.onStartReloadWeapon.RemoveListener(HandleReloadStarted);
+            }
+
+            if (_headShakeRoutine != null)
+            {
+                StopCoroutine(_headShakeRoutine);
+                _headShakeRoutine = null;
             }
         }
 
@@ -91,6 +119,10 @@ namespace Project.Player.Invector
             if (_ammoState == null || _shooterManager == null || _equipment == null)
                 return true; // Fail open rather than silently break fire if wiring is missing.
 
+            ItemData equipped = _equipment.EquippedItem;
+            if (equipped != null && equipped.isMiningTool)
+                return true; // Internal power — never consume magazine/reserve.
+
             if (_shooterManager.isReloadingWeapon)
                 return false;
 
@@ -99,8 +131,9 @@ namespace Project.Player.Invector
 
             if (!consumed)
             {
-                // Tried to fire on an already-empty magazine — start a reload now if we can, rather
-                // than leaving the weapon permanently dry until the player happens to try again.
+                // isInfinityAmmo keeps Invector from playing its native emptyClip — play the shared
+                // pistol empty-click here so rifle/pistol dry-fire sound the same.
+                PlayEmptyFireClick();
                 TryStartReloadIfEmpty();
                 return false;
             }
@@ -111,19 +144,138 @@ namespace Project.Player.Invector
             return true;
         }
 
-        private void TryStartReloadIfEmpty()
+        /// <summary>
+        /// Manual R / auto-reload entry. Returns true if Invector ReloadWeapon should run.
+        /// When there is no reserve ammo, plays shellDrop deny SFX + a single head-shake and skips
+        /// the reload animation/audio entirely (Invector would otherwise reload because isInfinityAmmo).
+        /// </summary>
+        public bool TryRequestReload(bool playEmptyDenyFeedback)
         {
+            if (_ammoState == null || _shooterManager == null || _equipment == null)
+                return false;
+
+            if (_shooterManager.isReloadingWeapon)
+                return false;
+
+            ItemData weapon = _equipment.DrawnWeaponItem;
+            if (weapon == null || !weapon.IsRangedWeapon)
+                return false;
+
             int slot = _equipment.ActiveWeaponHotbarSlot;
-            if (_ammoState.GetActiveLoadedAmmo() > 0)
-                return;
+            int loaded = _ammoState.GetLoadedAmmo(slot);
+            int magSize = Mathf.Max(1, weapon.magazineSize);
+            if (loaded >= magSize)
+                return false;
 
             if (_ammoState.IsInfiniteAmmoForSlot(slot))
-                return;
+            {
+                // Continuous Laser Tool mining power never reloads.
+                if (weapon != null && weapon.isMiningTool)
+                    return false;
 
-            if (_ammoState.GetReserveAmmoCount(slot) <= 0)
+                return true;
+            }
+
+            if (_ammoState.GetReserveAmmoCount(slot) > 0)
+                return true;
+
+            if (playEmptyDenyFeedback)
+                PlayEmptyReloadDeny();
+
+            return false;
+        }
+
+        private void TryStartReloadIfEmpty()
+        {
+            if (!TryRequestReload(playEmptyDenyFeedback: false))
                 return;
 
             _shooterManager.ReloadWeapon();
+        }
+
+        private void PlayEmptyReloadDeny()
+        {
+            if (Time.unscaledTime < _nextEmptyReloadDenyTime)
+                return;
+
+            _nextEmptyReloadDenyTime = Time.unscaledTime + Mathf.Max(0.15f, emptyReloadDenyCooldown);
+            EnsureEmptyReloadDenyClip();
+
+            if (emptyReloadDenyClip != null)
+                AudioSource.PlayClipAtPoint(emptyReloadDenyClip, transform.position, emptyReloadDenyVolume);
+
+            if (_headShakeRoutine != null)
+                StopCoroutine(_headShakeRoutine);
+            _headShakeRoutine = StartCoroutine(HeadShakeNoRoutine());
+        }
+
+        private IEnumerator HeadShakeNoRoutine()
+        {
+            // Quick left-right-left "no" using directional trauma (one deny attempt).
+            CameraShake.ShakeDirectional(transform.right, emptyReloadHeadShakeTrauma);
+            yield return new WaitForSecondsRealtime(0.06f);
+            CameraShake.ShakeDirectional(-transform.right, emptyReloadHeadShakeTrauma * 0.9f);
+            yield return new WaitForSecondsRealtime(0.06f);
+            CameraShake.ShakeDirectional(transform.right, emptyReloadHeadShakeTrauma * 0.55f);
+            _headShakeRoutine = null;
+        }
+
+        public void PlayDryFireClick()
+        {
+            PlayEmptyFireClick();
+        }
+
+        private void PlayEmptyFireClick()
+        {
+            if (Time.unscaledTime < _nextEmptyClickTime)
+                return;
+
+            _nextEmptyClickTime = Time.unscaledTime + Mathf.Max(0.05f, emptyClickCooldown);
+            EnsureSharedEmptyClickClip();
+
+            vShooterWeapon weapon = _shooterManager != null ? _shooterManager.CurrentWeapon : null;
+            if (weapon != null)
+            {
+                // Keep every player gun on the same empty-click asset as the pistol.
+                if (sharedEmptyClickClip != null)
+                    weapon.emptyClip = sharedEmptyClickClip;
+
+                if (weapon.source != null &&
+                    weapon.gameObject.activeInHierarchy &&
+                    !weapon.source.enabled)
+                {
+                    weapon.source.enabled = true;
+                }
+
+                if (weapon.emptyClip != null && weapon.source != null && weapon.source.enabled)
+                {
+                    weapon.source.PlayOneShot(weapon.emptyClip, emptyClickVolume);
+                    return;
+                }
+            }
+
+            if (sharedEmptyClickClip != null)
+                AudioSource.PlayClipAtPoint(sharedEmptyClickClip, transform.position, emptyClickVolume);
+        }
+
+        private void EnsureSharedEmptyClickClip()
+        {
+            if (sharedEmptyClickClip != null)
+                return;
+
+#if UNITY_EDITOR
+            sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(SharedEmptyClickClipPath);
+#endif
+        }
+
+        private void EnsureEmptyReloadDenyClip()
+        {
+            if (emptyReloadDenyClip != null)
+                return;
+
+#if UNITY_EDITOR
+            emptyReloadDenyClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(ShellDropClipPath);
+#endif
         }
 
         private void HandleReloadStarted(vShooterWeapon weapon)

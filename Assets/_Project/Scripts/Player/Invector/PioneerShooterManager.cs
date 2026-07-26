@@ -16,10 +16,12 @@ namespace Project.Player.Invector
     public class PioneerShooterManager : vShooterManager
     {
         private EquipmentController _equipment;
+        private WeaponAmmoState _ammoState;
 
         public override void Start()
         {
             _equipment = GetComponent<EquipmentController>();
+            _ammoState = GetComponent<WeaponAmmoState>();
             animator = GetComponent<Animator>();
             tpCamera = FindAnyObjectByType<vThirdPersonCamera>();
             ammoManager = GetComponent<vAmmoManager>();
@@ -75,11 +77,21 @@ namespace Project.Player.Invector
         public override void ApplyRecoil()
         {
             PioneerInvectorRecoilUtility.ZeroWeaponRecoil(CurrentWeapon);
-            ApplyAnimationRecoil();
 
             ItemData weaponItem = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            ItemData ammoItem = null;
+            if (_ammoState == null)
+                _ammoState = GetComponent<WeaponAmmoState>();
+            if (_ammoState != null && _equipment != null)
+                ammoItem = _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
+
+            // Laser ammo / mining laser tool: skip animation flinch and apply near-zero camera kick.
+            bool lowRecoilLaser = PioneerInvectorRecoilUtility.IsLowRecoilLaserShot(weaponItem, ammoItem);
+            if (!lowRecoilLaser)
+                ApplyAnimationRecoil();
+
             if (weaponItem != null && weaponItem.IsRangedWeapon)
-                PioneerInvectorRecoilUtility.ApplyPlayerShotRecoil(this, weaponItem);
+                PioneerInvectorRecoilUtility.ApplyPlayerShotRecoil(this, weaponItem, ammoItem);
         }
 
         public override void CameraSway()

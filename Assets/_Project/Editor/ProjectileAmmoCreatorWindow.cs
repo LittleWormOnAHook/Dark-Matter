@@ -24,6 +24,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
 
     // Ranged / projectile behavior
     private bool isHitscanBeam;
+    private bool isContinuousLaser;
     private float rangedDamage = 14f;
     private float rangedDamageRandomRange = 4f;
     private float rangedRange = 45f;
@@ -46,6 +47,9 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
     // Audio slots
     private AudioClip fireSound;
     private AudioClip projectileTravelSound;
+    private AudioClip continuousLoopSound;
+    private AudioClip continuousStartSound;
+    private AudioClip continuousStopSound;
 
     // Elemental effect
     private StatusEffectType statusEffectOverride = StatusEffectType.None;
@@ -93,8 +97,19 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         GUILayout.Space(10);
         GUILayout.Label("Ranged Behavior", EditorStyles.boldLabel);
         isHitscanBeam = EditorGUILayout.Toggle(
-            new GUIContent("Hitscan Beam", "Instant straight-line beam (e.g. lasers) instead of a traveling physical projectile."),
+            new GUIContent(
+                "Hitscan Laser Beam",
+                "No traveling projectile. Instant muzzle particles + tracer/beam. For pulse or continuous laser weapons/tools."),
             isHitscanBeam);
+        if (isHitscanBeam)
+        {
+            EditorGUILayout.HelpBox(
+                "Laser ammo: use Ammo Type = Laser. Create separate Pulse (fireSound) and Continuous (continuousLoopSound) assets for different devices.",
+                MessageType.Info);
+            isContinuousLaser = EditorGUILayout.Toggle(
+                new GUIContent("Continuous Laser", "Hold-fire tools use loop audio; pulse weapons use Fire Sound."),
+                isContinuousLaser);
+        }
         rangedDamage = EditorGUILayout.FloatField("Damage", rangedDamage);
         rangedDamageRandomRange = EditorGUILayout.FloatField("Damage Random Range", rangedDamageRandomRange);
         rangedRange = EditorGUILayout.FloatField("Range", rangedRange);
@@ -135,7 +150,14 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         muzzleFlashPrefab = (GameObject)EditorGUILayout.ObjectField(
             new GUIContent("Muzzle Flash", "Spawned at the firing socket every shot."), muzzleFlashPrefab, typeof(GameObject), false);
         tracerPrefab = (GameObject)EditorGUILayout.ObjectField(
-            new GUIContent("Tracer / Trail", "TrailRenderer/particle prefab attached to the flying projectile."), tracerPrefab, typeof(GameObject), false);
+            new GUIContent(
+                isHitscanBeam ? "Tracer Burst" : "Tracer / Trail",
+                isHitscanBeam
+                    ? "Optional particle/tracer prefab stretched or played along the hitscan beam for pulse lasers."
+                    : "TrailRenderer/particle prefab attached to the flying projectile."),
+            tracerPrefab,
+            typeof(GameObject),
+            false);
         impactVfxPrefab = (GameObject)EditorGUILayout.ObjectField(
             new GUIContent("Impact VFX", "Spawned at the hit point on impact."), impactVfxPrefab, typeof(GameObject), false);
         if (isHitscanBeam)
@@ -146,13 +168,25 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
 
         GUILayout.Space(10);
         GUILayout.Label("Audio", EditorStyles.boldLabel);
-        fireSound = (AudioClip)EditorGUILayout.ObjectField(
-            new GUIContent("Fire Sound", "Played once at the muzzle the instant this ammo is fired."), fireSound, typeof(AudioClip), false);
+        if (!isHitscanBeam || !isContinuousLaser)
+        {
+            fireSound = (AudioClip)EditorGUILayout.ObjectField(
+                new GUIContent("Fire Sound", "Pulse shot / gunshot played once per fire."), fireSound, typeof(AudioClip), false);
+        }
         if (!isHitscanBeam)
         {
             projectileTravelSound = (AudioClip)EditorGUILayout.ObjectField(
                 new GUIContent("Projectile Travel Sound", "Looping sound that follows the flying projectile and stops the instant it hits or expires."),
                 projectileTravelSound, typeof(AudioClip), false);
+        }
+        if (isHitscanBeam && isContinuousLaser)
+        {
+            continuousLoopSound = (AudioClip)EditorGUILayout.ObjectField(
+                new GUIContent("Continuous Loop", "Loops while hold-fire laser is active."), continuousLoopSound, typeof(AudioClip), false);
+            continuousStartSound = (AudioClip)EditorGUILayout.ObjectField(
+                new GUIContent("Continuous Start", "Optional chirp when the beam starts."), continuousStartSound, typeof(AudioClip), false);
+            continuousStopSound = (AudioClip)EditorGUILayout.ObjectField(
+                new GUIContent("Continuous Stop", "Optional chirp when the beam stops."), continuousStopSound, typeof(AudioClip), false);
         }
 
         GUILayout.Space(10);
@@ -258,6 +292,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         ammoItem.closeRangeSpreadScale = closeRangeSpreadScale;
         ammoItem.projectileGravityScale = projectileGravityScale;
         ammoItem.isHitscanBeam = isHitscanBeam;
+        ammoItem.isContinuousLaser = isHitscanBeam && isContinuousLaser;
         ammoItem.splashRadius = splashRadius;
         ammoItem.splashDamageFalloff = splashDamageFalloff;
 
@@ -268,6 +303,9 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         ammoItem.projectilePrefab = projectilePrefab;
         ammoItem.fireSound = fireSound;
         ammoItem.projectileTravelSound = projectileTravelSound;
+        ammoItem.continuousLoopSound = continuousLoopSound;
+        ammoItem.continuousStartSound = continuousStartSound;
+        ammoItem.continuousStopSound = continuousStopSound;
 
         ammoItem.statusEffectOverride = statusEffectOverride;
         ammoItem.statusEffectDamagePerTick = statusEffectDamagePerTick;

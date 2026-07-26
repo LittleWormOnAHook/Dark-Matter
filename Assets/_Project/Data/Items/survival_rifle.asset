@@ -60,9 +60,9 @@ MonoBehaviour:
   fireRate: 5.5
   magazineSize: 30
   reloadTimeSeconds: 2.2
-  defaultAmmoType: 1
+  defaultAmmoType: 0
   compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
-  defaultAmmoItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 3}
+  defaultAmmoItem: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
   projectilePrefab: {fileID: 43210292418809407, guid: 677c96554679d064ab9d4df997baff2c, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.76
@@ -103,17 +103,11 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: Two-handed survival rifle. Hold RMB to aim, LMB to fire.
-
-
-
-
-
-rangedDamage: 18

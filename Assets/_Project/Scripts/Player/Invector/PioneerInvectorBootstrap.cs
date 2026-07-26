@@ -84,6 +84,9 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerInvectorProjectileBridge>() == null)
                 gameObject.AddComponent<PioneerInvectorProjectileBridge>();
 
+            if (GetComponent<DMIMiningController>() == null)
+                gameObject.AddComponent<DMIMiningController>();
+
             if (!disableLegacyCombatComponents)
                 return;
 

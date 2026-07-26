@@ -59,6 +59,11 @@ namespace Project.UI
             if (existing != null)
                 return existing;
 
+            // Never spawn providers during play-mode teardown — that leaves orphan
+            // "WorldMapProvider" objects Unity reports as scene cleanup leftovers.
+            if (!Application.isPlaying || MapRuntimeCleanup.IsQuittingPlayMode)
+                return null;
+
             Terrain terrain = FindAnyObjectByType<Terrain>();
             GameObject host = terrain != null ? terrain.gameObject : new GameObject("WorldMapProvider");
             if (terrain == null)

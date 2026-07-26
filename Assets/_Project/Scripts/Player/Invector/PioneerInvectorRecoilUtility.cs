@@ -51,7 +51,7 @@ namespace Project.Player.Invector
             ApplyWeaponAnimationRecoilTuning(manager.lWeapon);
         }
 
-        public static void ApplyPlayerShotRecoil(vShooterManager shooterManager, ItemData weaponItem)
+        public static void ApplyPlayerShotRecoil(vShooterManager shooterManager, ItemData weaponItem, ItemData ammoItem = null)
         {
             if (shooterManager == null)
                 return;
@@ -60,19 +60,56 @@ namespace Project.Player.Invector
             if (camera == null)
                 return;
 
-            ResolveRecoilKick(weaponItem, out float verticalKick, out float horizontalKick);
+            ResolveRecoilKick(weaponItem, ammoItem, out float verticalKick, out float horizontalKick);
+            if (Mathf.Abs(verticalKick) < 0.001f && Mathf.Abs(horizontalKick) < 0.001f)
+                return;
 
             // RotateCamera: mouseY -= y * sensitivity. CameraInput matches PioneerShooterMeleeInput.
             camera.RotateCamera(horizontalKick * CameraInputScale, -verticalKick * CameraInputScale);
         }
 
+        public static bool IsLowRecoilLaserAmmo(ItemData ammoItem)
+        {
+            return ammoItem != null && (ammoItem.isHitscanBeam || ammoItem.isContinuousLaser);
+        }
+
+        public static bool IsLowRecoilLaserShot(ItemData weaponItem, ItemData ammoItem)
+        {
+            if (weaponItem != null && weaponItem.isMiningTool)
+                return true;
+
+            return IsLowRecoilLaserAmmo(ammoItem);
+        }
+
         /// <summary>
         /// Resolves vertical/horizontal kick from ItemData recoil base stats.
         /// When both recoilVertical and recoilHorizontal are ~0, falls back to grip defaults
-        /// (rifle mild climb vs pistol stronger kick).
+        /// (rifle mild climb vs pistol stronger kick). Hitscan/continuous laser ammo and mining
+        /// laser tools use near-zero kick so sustained beams don't jitter the camera.
         /// </summary>
         public static void ResolveRecoilKick(ItemData weaponItem, out float verticalKick, out float horizontalKick)
         {
+            ResolveRecoilKick(weaponItem, null, out verticalKick, out horizontalKick);
+        }
+
+        public static void ResolveRecoilKick(ItemData weaponItem, ItemData ammoItem, out float verticalKick, out float horizontalKick)
+        {
+            if (weaponItem != null && weaponItem.isMiningTool)
+            {
+                // Continuous mining beam fires many recoil ticks/sec — keep kick tiny to avoid jitter.
+                verticalKick = Random.Range(0.003f, 0.008f);
+                horizontalKick = Random.Range(-0.004f, 0.004f);
+                return;
+            }
+
+            if (IsLowRecoilLaserAmmo(ammoItem))
+            {
+                // Almost zero kick for laser pistol / continuous laser cells.
+                verticalKick = Random.Range(0.02f, 0.05f);
+                horizontalKick = Random.Range(-0.02f, 0.02f);
+                return;
+            }
+
             bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
             bool useAuthored = weaponItem != null
                 && (weaponItem.recoilVertical > 0.01f || weaponItem.recoilHorizontal > 0.01f);

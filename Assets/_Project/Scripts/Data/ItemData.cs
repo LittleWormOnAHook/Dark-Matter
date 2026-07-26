@@ -132,8 +132,15 @@ namespace Project.Data
         public float reloadTimeSeconds = 1.8f;
         public AmmoType defaultAmmoType = AmmoType.Gunpowder;
         public AmmoType[] compatibleAmmoTypes = { AmmoType.Gunpowder };
-        [Tooltip("Ammo ItemData this weapon starts loaded with before the player ever explicitly equips or picks up ammo. Keeps 'default ammo' fire going through the exact same ammoItem-driven projectile/VFX/audio path as any other ammo, instead of falling back to this weapon's own (easy to forget) VFX fields.")]
+        [Tooltip("Preferred ammo ItemData for this weapon (player weapons default to Standard). Used for VFX/projectile path when a mag is loaded.")]
         public ItemData defaultAmmoItem;
+        [Header("Ranged Starting Mag")]
+        [Tooltip("If true, the first time this weapon is equipped/picked up it loads a random amount of Standard ammo into the magazine. If false, it starts Empty 0/0.")]
+        public bool grantRandomStartingAmmo;
+        [Tooltip("Inclusive min magazine rounds granted when grantRandomStartingAmmo is enabled.")]
+        public int startingAmmoMin = 1;
+        [Tooltip("Inclusive max magazine rounds granted when grantRandomStartingAmmo is enabled.")]
+        public int startingAmmoMax = 12;
         public GameObject projectilePrefab;
         public string muzzleSocketName = "Muzzle";
         public float aimFovMultiplier = 0.78f;
@@ -168,18 +175,42 @@ namespace Project.Data
         [Header("Projectile VFX")]
         [Tooltip("Spawned at the firing socket every shot (muzzle flash particle/light burst). Auto-destroyed shortly after.")]
         public GameObject muzzleFlashPrefab;
-        [Tooltip("Optional prefab with a TrailRenderer/LineRenderer/particle system attached to the flying projectile for its travel trail. Leave empty for no trail.")]
+        [Tooltip("Optional prefab with a TrailRenderer/LineRenderer/particle system. On projectile ammo it trails the bullet; on hitscan laser ammo it is stretched muzzle→impact as a pulse tracer.")]
         public GameObject tracerPrefab;
         [Tooltip("Spawned at the impact point on hit (sparks, splatter, elemental burst). Auto-destroyed shortly after.")]
         public GameObject impactVfxPrefab;
-        [Tooltip("Optional prefab used to render an instant hitscan beam between muzzle and hit point when isHitscanBeam is set. Needs a LineRenderer.")]
+        [Tooltip("Optional LineRenderer (or similar) prefab for hitscan laser beams between muzzle and hit. Preferred over tracerPrefab for continuous/pulse lasers.")]
         public GameObject beamVfxPrefab;
 
+        [Header("Mining Tool")]
+        [Tooltip("When true, Fire hold drives the mining laser instead of combat hitscan/projectile damage.")]
+        public bool isMiningTool;
+        [Tooltip("Number of mining passes required to finish a ResourceNode.")]
+        public int miningPassesRequired = 2;
+        [Tooltip("Minimum resource amount granted on the final mining pass.")]
+        public int miningDropMin = 1;
+        [Tooltip("Maximum resource amount granted on the final mining pass.")]
+        public int miningDropMax = 5;
+        [Tooltip("Aim angle from lock direction beyond which soft-lock breaks.")]
+        public float miningLockBreakDegrees = 30f;
+        [Tooltip("Seconds of continuous Fire hold required to complete one mining pass.")]
+        public float miningPassDuration = 1.25f;
+        [Tooltip("Optional rock-chunk VFX spawned at the node and pulled toward the tool muzzle.")]
+        public GameObject miningChunkVfxPrefab;
+
         [Header("Projectile Audio")]
-        [Tooltip("Played once at the muzzle the instant this ammo is fired.")]
+        [Tooltip("Played once at the muzzle the instant this ammo is fired (pulse laser / gunshot).")]
         public AudioClip fireSound;
-        [Tooltip("Looping sound that travels with the physical projectile in flight and stops the instant it hits (or expires). Not used by hitscan beam ammo.")]
+        [Tooltip("Looping sound that travels with a physical projectile in flight. Not used by hitscan beam ammo.")]
         public AudioClip projectileTravelSound;
+        [Tooltip("When true, hitscan laser ammo is for continuous hold-fire tools (continuousLoopSound). When false, pulse shots use fireSound.")]
+        public bool isContinuousLaser;
+        [Tooltip("Looping audio while a continuous laser/beam tool is firing.")]
+        public AudioClip continuousLoopSound;
+        [Tooltip("Optional one-shot when continuous laser fire starts.")]
+        public AudioClip continuousStartSound;
+        [Tooltip("Optional one-shot when continuous laser fire stops.")]
+        public AudioClip continuousStopSound;
 
         [Header("Elemental Effect")]
         [Tooltip("Status effect applied on hit. None uses the ammo type's sensible default (Fire->Burning, Ice->Frozen, Electricity->Shocked, Plasma->Corroded).")]
@@ -407,6 +438,10 @@ namespace Project.Data
         {
             if (itemType != ItemType.RangedWeapon)
                 return false;
+
+            // Mining / continuous laser tools accept Laser cells (Laser Tool ammo).
+            if (isMiningTool)
+                return type == AmmoType.Laser;
 
             if (compatibleAmmoTypes == null || compatibleAmmoTypes.Length == 0)
                 return type == defaultAmmoType;

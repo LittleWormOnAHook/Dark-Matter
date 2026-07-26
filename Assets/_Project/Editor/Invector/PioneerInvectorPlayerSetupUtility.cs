@@ -38,6 +38,7 @@ namespace Project.EditorTools.Invector
 
         private const string PistolItemPath = "Assets/_Project/Data/Items/sci_fi_pistol.asset";
         private const string RifleItemPath = "Assets/_Project/Data/Items/survival_rifle.asset";
+        private const string MiningToolItemPath = "Assets/_Project/Data/Items/DM_Mining_Tool.asset";
         private const string PreloadedMeleeSlotsRootName = "PreloadedMeleeWeaponSlots";
         private const string PreloadedRangedSlotsRootName = "PreloadedRangedWeaponSlots";
 
@@ -624,6 +625,8 @@ namespace Project.EditorTools.Invector
             List<ItemData> items = new List<ItemData>();
             AddDefaultRangedItem(PistolItemPath, items);
             AddDefaultRangedItem(RifleItemPath, items);
+            // OneHanded pistol base + existing-transform preserve — do not convert to TwoHanded rifle base.
+            AddDefaultRangedItem(MiningToolItemPath, items);
             return items;
         }
 
@@ -699,16 +702,50 @@ namespace Project.EditorTools.Invector
             if (root == null)
                 return null;
 
+            // Mining tools share the back rifle holster (per design), then fall back by grip.
             string holderName = item != null && item.weaponGrip == WeaponGrip.TwoHanded
                 ? "RifleHolder"
                 : "HandgunHolder";
 
-            Transform holder = FindChildTransformByName(root.transform, holderName);
-            if (holder != null)
-                return holder;
+            // Prefer the live VBOT_ bone holder over BodySnaps proxy (proxy has tiny scale).
+            Transform preferred = null;
+            Transform fallback = null;
+            Transform[] all = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform t = all[i];
+                if (t == null || t.name != holderName)
+                    continue;
+
+                string path = GetTransformPath(t);
+                if (path.IndexOf("VBOT_", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    preferred = t;
+                    break;
+                }
+
+                fallback ??= t;
+            }
+
+            if (preferred != null)
+                return preferred;
+            if (fallback != null)
+                return fallback;
 
             string socketName = PioneerInvectorWeaponBridge.ResolveHolsterSocketName(item);
             return FindChildTransformByName(root.transform, socketName);
+        }
+
+        private static string GetTransformPath(Transform t)
+        {
+            string path = t.name;
+            while (t.parent != null)
+            {
+                t = t.parent;
+                path = t.name + "/" + path;
+            }
+
+            return path;
         }
 
         private static GameObject InstantiatePrefabChild(GameObject prefab, Transform parent, string name)
