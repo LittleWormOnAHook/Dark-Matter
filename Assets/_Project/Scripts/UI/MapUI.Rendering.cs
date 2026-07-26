@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
+using Project.Interaction;
 using Project.Map;
 using Project.Player;
 using Project.Vehicles;
@@ -17,6 +18,11 @@ namespace Project.UI
     public partial class MapUI
     {
         private void HandleMarkerRegistryChanged(MapMarker _)
+        {
+            RequestImmediateMarkerRefresh();
+        }
+
+        private void HandleMarkerRegistryChanged()
         {
             RequestImmediateMarkerRefresh();
         }
@@ -126,6 +132,8 @@ namespace Project.UI
                 ApplyPlayerMapIconColor(minimapPlayerIconRect);
                 minimapPlayerIconRect.SetAsLastSibling();
             }
+
+            UpdateMinimapInfoPanel();
         }
 
         private Vector2 GetMinimapContentSize()
@@ -341,6 +349,9 @@ namespace Project.UI
                 if (forFullMap ? !marker.ShowOnFullMap : !marker.ShowOnMinimap)
                     continue;
 
+                if (!marker.IsRevealedOnMap)
+                    continue;
+
                 seen.Add(marker);
                 if (!iconLookup.TryGetValue(marker, out RectTransform iconRect) || iconRect == null)
                 {
@@ -494,8 +505,16 @@ namespace Project.UI
                 return;
             }
 
-            float percent = DefaultMinimapWorldSpan / minimapWorldSpan * 100f;
-            minimapInfoLabel.text = $"Range {Mathf.RoundToInt(percent)}%  |  Scan: standby";
+            float rangeMeters = MapFogOfWar.GetScanRevealRadius();
+            bool scanning = IsScannerSweepActive();
+            string scanState = scanning ? "scanning...." : "standby";
+            minimapInfoLabel.text = $"Range {Mathf.RoundToInt(rangeMeters)}m  |  Scan: {scanState}";
+        }
+
+        private static bool IsScannerSweepActive()
+        {
+            ScannerSweepController sweep = Object.FindAnyObjectByType<ScannerSweepController>();
+            return sweep != null && sweep.IsSweeping;
         }
 
         private void CreateFullMapMarkerTooltip(Transform parent)

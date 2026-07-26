@@ -48,13 +48,13 @@ namespace Project.Interaction
     public class ScannerHighlightProfile : ScriptableObject
     {
         [Header("Sweep")]
-        public float sweepRange = 50f;
+        public float sweepRange = 40f;
         public float sweepDuration = 0.85f;
         public int sweepSampleSteps = 12;
 
         [Header("Post-Scan")]
         public float defaultPostScanDuration = 10f;
-        public float postScanRangeFalloff = 50f;
+        public float postScanRangeFalloff = 40f;
 
         [Header("Tag Rules (first match wins)")]
         public ScannerHighlightRule[] tagRules;
@@ -85,11 +85,11 @@ namespace Project.Interaction
         public static ScannerHighlightProfile CreateDefaultInstance()
         {
             ScannerHighlightProfile profile = CreateInstance<ScannerHighlightProfile>();
-            profile.sweepRange = 50f;
+            profile.sweepRange = 40f;
             profile.sweepDuration = 0.85f;
             profile.sweepSampleSteps = 12;
             profile.defaultPostScanDuration = 10f;
-            profile.postScanRangeFalloff = 50f;
+            profile.postScanRangeFalloff = 40f;
             profile.tagRules = new[]
             {
                 ScannerHighlightRule.FromPalette("Enemy", ScannerTargetCategory.Enemy,
@@ -114,7 +114,7 @@ namespace Project.Interaction
             profile.fallbackRule = ScannerHighlightRule.FromPalette(
                 string.Empty,
                 ScannerTargetCategory.Generic,
-                new Color(0.35f, 1f, 0.82f, 1f),
+                SurvivalPioneerUiPalette.Gold,
                 0.65f,
                 10f,
                 10);

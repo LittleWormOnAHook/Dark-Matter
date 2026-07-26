@@ -14,6 +14,7 @@ using Project.Quests;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
+using Project.Map;
 using UnityEngine;
 
 namespace Project.Core
@@ -124,7 +125,7 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 17,
+                version = 20,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,
@@ -158,6 +159,7 @@ namespace Project.Core
                 activeWeaponSlot = equipment != null ? equipment.ActiveWeaponSlot : 0,
                 weaponDrawn = equipment == null || equipment.IsWeaponDrawn,
                 inventorySize = inventory.inventorySize,
+                unlockedMainSlots = inventory.unlockedMainSlots,
                 hotbarSize = inventory.hotbarSize,
                 toolbarSize = inventory.toolbarSize,
                 slots = BuildInventorySave(inventory),
@@ -165,7 +167,10 @@ namespace Project.Core
                 discoveredRecipeIds = craftingManager != null ? craftingManager.BuildSave() : null,
                 pendingRecipeScrollIds = craftingManager != null ? craftingManager.BuildPendingSave() : null,
                 vehicles = BuildVehicleSave(),
-                powerGenerators = BuildPowerGeneratorSave()
+                powerGenerators = BuildPowerGeneratorSave(),
+                fogOfWarMask = BuildFogOfWarSave(out int fogResolution),
+                fogOfWarResolution = fogResolution,
+                scannedDiscoveryIds = ScannerDiscoveryRegistry.BuildSave()
             };
 
             if (progressionManager != null)
@@ -281,6 +286,8 @@ namespace Project.Core
             ApplyAchievementSave(data);
             ApplyVehicleSave(data);
             ApplyPowerGeneratorSave(data);
+            ApplyFogOfWarSave(data);
+            ApplyScannerDiscoverySave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
@@ -505,6 +512,49 @@ namespace Project.Core
             return null;
         }
 
+        private static byte[] BuildFogOfWarSave(out int resolution)
+        {
+            MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
+            if (fog == null)
+            {
+                resolution = 0;
+                return null;
+            }
+
+            resolution = fog.BuildSaveResolution();
+            byte[] mask = fog.BuildSave();
+            return mask != null && mask.Length > 0 ? mask : null;
+        }
+
+        private static void ApplyFogOfWarSave(GameSaveData data)
+        {
+            MapFogOfWar fog = MapFogOfWar.EnsureExists();
+            if (fog == null)
+                return;
+
+            if (data == null || data.version < 19 || data.fogOfWarMask == null || data.fogOfWarMask.Length == 0)
+            {
+                // Fresh / pre-fog saves: stamp an initial walk circle at the player so they aren't fully blind.
+                GameObject player = PlayerLocator.FindPlayerObject();
+                if (player != null)
+                    fog.RevealCircle(player.transform.position, MapFogOfWar.WalkRevealRadiusMeters, 1.5f);
+                return;
+            }
+
+            fog.ApplySave(data.fogOfWarMask, data.fogOfWarResolution);
+        }
+
+        private static void ApplyScannerDiscoverySave(GameSaveData data)
+        {
+            if (data == null || data.version < 20)
+            {
+                ScannerDiscoveryRegistry.Clear();
+                return;
+            }
+
+            ScannerDiscoveryRegistry.ApplySave(data.scannedDiscoveryIds);
+        }
+
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)
         {
             CraftingManager craftingManager = UnityEngine.Object.FindAnyObjectByType<CraftingManager>();
@@ -641,7 +691,21 @@ namespace Project.Core
 
             if (data != null && data.version >= 7)
             {
-                inventory.EnsureSlotCounts(data.inventorySize, data.hotbarSize, data.toolbarSize);
+                int unlocked = data.version >= 18
+                    ? data.unlockedMainSlots
+                    : Mathf.Clamp(data.inventorySize > 0 ? data.inventorySize : InventorySystem.DefaultUnlockedMainSlots,
+                        InventorySystem.DefaultUnlockedMainSlots,
+                        InventorySystem.DefaultTotalMainSlots);
+
+                int totalMain = data.version >= 18
+                    ? Mathf.Max(data.inventorySize, InventorySystem.DefaultTotalMainSlots)
+                    : InventorySystem.DefaultTotalMainSlots;
+
+                // Pre-v18 saves treated inventorySize as fully open capacity.
+                if (data.version < 18)
+                    unlocked = Mathf.Clamp(data.inventorySize > 0 ? data.inventorySize : unlocked, 1, totalMain);
+
+                inventory.EnsureSlotCounts(totalMain, data.hotbarSize, data.toolbarSize, unlocked);
             }
 
             inventory.ClearAllSlots();

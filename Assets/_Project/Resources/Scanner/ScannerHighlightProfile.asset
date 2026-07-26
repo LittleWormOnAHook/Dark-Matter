@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9afeb03c72de1474cb925bae6d82e880, type: 3}
   m_Name: ScannerHighlightProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ScannerHighlightProfile
-  sweepRange: 50
+  sweepRange: 40
   sweepDuration: 0.85
   sweepSampleSteps: 12
   defaultPostScanDuration: 10
-  postScanRangeFalloff: 50
+  postScanRangeFalloff: 40
   tagRules:
   - tag: Enemy
     category: 3

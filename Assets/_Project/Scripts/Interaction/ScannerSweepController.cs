@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Project.Inventory;
+using Project.Map;
 using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,24 +8,40 @@ using UnityEngine.InputSystem;
 namespace Project.Interaction
 {
     /// <summary>
-    /// Middle-mouse terrain sweep while scanner optics are active.
-    /// Applies tag-colored post-scan outlines via OutlineController.
+    /// Middle-mouse scanner sweep: gold filled disc (light center → heavy rim) that rides terrain,
+    /// outlines scannables, and reveals fog of war.
     /// </summary>
     public class ScannerSweepController : MonoBehaviour
     {
+        private const int RadialSegments = 64;
+        private const int RadialRings = 6;
+        private const float TopologyProbeHeight = 40f;
+        private const float TopologyProbeDistance = 80f;
+        private const float TopologySurfaceLift = 0.08f;
+        private const float SweepGridSizeMeters = 0.75f;
+        private const float SweepGridLineWidth = 0.045f;
+        private const float SweepGridAlpha = 0.80f;
+
         [SerializeField] private LayerMask sweepLayers = ~0;
+        [SerializeField] private LayerMask topologyLayers = ~0;
         [SerializeField] private ScannerHighlightProfile profile;
         [SerializeField] private int maxSweepHits = 48;
-        [SerializeField] private Color sweepPulseColor = new Color(0.35f, 1f, 0.82f, 0.65f);
 
         private OpticsController opticsController;
-        private EquipmentController equipment;
         private readonly List<OpticsScanTarget> postScanResults = new List<OpticsScanTarget>(48);
         private readonly HashSet<OutlineController> postScanOutlines = new HashSet<OutlineController>();
         private readonly HashSet<int> postScanKeys = new HashSet<int>();
-        private LineRenderer sweepPulseLine;
+        private readonly RaycastHit[] topologyHits = new RaycastHit[8];
+
+        private MeshFilter sweepMeshFilter;
+        private MeshRenderer sweepMeshRenderer;
+        private Mesh sweepMesh;
+        private Vector3[] sweepVertices;
+        private Color32[] sweepColors;
+        private int[] sweepTriangles;
+        private Material sweepMaterial;
         private Coroutine sweepRoutine;
-        private bool sweepPulseBuilt;
+        private bool sweepVisualBuilt;
 
         public IReadOnlyList<OpticsScanTarget> PostScanResults => postScanResults;
         public bool IsSweeping => sweepRoutine != null;
@@ -33,7 +49,6 @@ namespace Project.Interaction
         private void Awake()
         {
             opticsController = GetComponent<OpticsController>();
-            equipment = GetComponent<EquipmentController>();
             if (profile == null)
                 profile = ScannerHighlightProfile.Load();
         }
@@ -46,7 +61,7 @@ namespace Project.Interaction
             if (!Mouse.current.middleButton.wasPressedThisFrame || sweepRoutine != null)
                 return;
 
-            sweepRoutine = StartCoroutine(RunSweep(viewCamera));
+            sweepRoutine = StartCoroutine(RunSweep());
         }
 
         public void ClearPostScanHighlights()
@@ -62,31 +77,38 @@ namespace Project.Interaction
             postScanKeys.Clear();
         }
 
-        private IEnumerator RunSweep(Camera viewCamera)
+        private IEnumerator RunSweep()
         {
             ScannerHighlightProfile activeProfile = profile != null
                 ? profile
                 : ScannerHighlightProfile.Load();
 
-            float range = activeProfile.EffectiveSweepRange;
+            // Marker detect + fog reveal start at 40m, then +skill ranks.
+            float range = MapFogOfWar.GetScanRevealRadius();
             float duration = Mathf.Max(0.2f, activeProfile.sweepDuration);
-            int steps = Mathf.Max(4, activeProfile.sweepSampleSteps);
-            Vector3 origin = viewCamera.transform.position;
+            Vector3 origin = ResolvePlayerSweepOrigin();
 
             ClearPostScanHighlights();
-            EnsureSweepPulseVisual();
-            sweepPulseLine.enabled = true;
+            EnsureSweepDiscVisual();
+            if (sweepMeshRenderer != null)
+                sweepMeshRenderer.enabled = true;
 
             HashSet<Collider> discovered = new HashSet<Collider>();
             float elapsed = 0f;
+
+            MapFogOfWar.EnsureExists();
 
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float currentRadius = range * t;
+                origin = ResolvePlayerSweepOrigin();
 
-                UpdateSweepPulseVisual(origin, currentRadius, t);
+                UpdateSweepDiscVisual(origin, currentRadius, t);
+
+                // Soft fog reveal grows with the pulse.
+                MapFogOfWar.Instance?.RevealCircle(origin, currentRadius, edgeSoftnessMeters: 5f);
 
                 int hitCount = Physics.OverlapSphereNonAlloc(
                     origin,
@@ -98,10 +120,7 @@ namespace Project.Interaction
                 for (int i = 0; i < hitCount; i++)
                 {
                     Collider hit = OpticsController.ScanHitBuffer[i];
-                    if (hit == null)
-                        continue;
-
-                    if (!discovered.Add(hit))
+                    if (hit == null || !discovered.Add(hit))
                         continue;
 
                     RegisterSweepHit(hit, origin, activeProfile);
@@ -110,7 +129,11 @@ namespace Project.Interaction
                 yield return null;
             }
 
-            sweepPulseLine.enabled = false;
+            MapFogOfWar.Instance?.RevealScanAt(origin);
+
+            if (sweepMeshRenderer != null)
+                sweepMeshRenderer.enabled = false;
+
             sweepRoutine = null;
             opticsController?.NotifyPostScanUpdated();
         }
@@ -140,11 +163,11 @@ namespace Project.Interaction
             if (!postScanKeys.Add(key))
                 return;
 
-            float duration = rule.durationSeconds > 0f
-                ? rule.durationSeconds
-                : activeProfile.defaultPostScanDuration;
+            // World items: outline only via scan flash; unlock map marker on first discovery.
+            outline.scannerOnlyOutline = true;
+            outline.PlayScanDiscoveryFlash(rule.outlineColor, rule.alpha, pulses: 5, durationSeconds: 2.5f);
+            DiscoverHitOnMap(outline.gameObject, label, rule.outlineColor);
 
-            outline.SetPostScanHighlight(rule.outlineColor, rule.alpha, duration, rule.priority);
             postScanOutlines.Add(outline);
             postScanResults.Add(new OpticsScanTarget(
                 point,
@@ -154,53 +177,234 @@ namespace Project.Interaction
                 isPostScan: true));
         }
 
-        private void EnsureSweepPulseVisual()
+        private static void DiscoverHitOnMap(GameObject root, string label, Color color)
         {
-            if (sweepPulseBuilt)
+            if (root == null)
                 return;
 
-            GameObject pulseObject = new GameObject("ScannerSweepPulse");
-            pulseObject.transform.SetParent(transform, false);
-            sweepPulseLine = pulseObject.AddComponent<LineRenderer>();
-            sweepPulseLine.useWorldSpace = true;
-            sweepPulseLine.loop = true;
-            sweepPulseLine.widthMultiplier = 0.08f;
-            sweepPulseLine.positionCount = 48;
-            sweepPulseLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            sweepPulseLine.receiveShadows = false;
-            sweepPulseLine.material = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color"))
+            MapMarker marker = root.GetComponentInParent<MapMarker>();
+            if (marker == null)
             {
-                color = sweepPulseColor
-            };
-            sweepPulseLine.startColor = sweepPulseColor;
-            sweepPulseLine.endColor = sweepPulseColor;
-            sweepPulseLine.enabled = false;
-            sweepPulseBuilt = true;
+                marker = root.AddComponent<MapMarker>();
+                marker.ConfigureScannedPoi(label, color);
+            }
+
+            ScannerDiscoveryRegistry.Discover(marker.DiscoveryId);
         }
 
-        private void UpdateSweepPulseVisual(Vector3 center, float radius, float pulseT)
+        private void EnsureSweepDiscVisual()
         {
-            if (sweepPulseLine == null)
+            if (sweepVisualBuilt)
                 return;
 
-            int segments = sweepPulseLine.positionCount;
-            float alpha = Mathf.Lerp(0.85f, 0.1f, pulseT);
-            Color color = sweepPulseColor;
-            color.a = alpha;
-            sweepPulseLine.startColor = color;
-            sweepPulseLine.endColor = color;
+            GameObject pulseObject = new GameObject("ScannerSweepDisc");
+            pulseObject.transform.SetParent(transform, false);
+            sweepMeshFilter = pulseObject.AddComponent<MeshFilter>();
+            sweepMeshRenderer = pulseObject.AddComponent<MeshRenderer>();
+            sweepMeshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            sweepMeshRenderer.receiveShadows = false;
+            sweepMeshRenderer.enabled = false;
 
-            for (int i = 0; i < segments; i++)
+            Shader shader = Shader.Find("Project/ScannerSweepDisc")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Unlit/Color");
+
+            sweepMaterial = new Material(shader)
             {
-                float angle = i / (float)segments * Mathf.PI * 2f;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                sweepPulseLine.SetPosition(i, center + offset);
+                name = "ScannerSweepDiscMat",
+                hideFlags = HideFlags.DontSave,
+                color = SurvivalPioneerUiPalette.Gold
+            };
+
+            ApplySweepMaterialDefaults(sweepMaterial);
+            sweepMeshRenderer.sharedMaterial = sweepMaterial;
+
+            BuildSweepMeshTopology();
+            sweepMeshFilter.sharedMesh = sweepMesh;
+            sweepVisualBuilt = true;
+        }
+
+        private void BuildSweepMeshTopology()
+        {
+            int vertexCount = 1 + RadialSegments * RadialRings;
+            sweepVertices = new Vector3[vertexCount];
+            sweepColors = new Color32[vertexCount];
+
+            List<int> tris = new List<int>(RadialSegments * RadialRings * 6);
+            // Center is index 0. Rings 1..RadialRings.
+            for (int ring = 0; ring < RadialRings; ring++)
+            {
+                int innerStart = ring == 0 ? 0 : 1 + (ring - 1) * RadialSegments;
+                int outerStart = 1 + ring * RadialSegments;
+                bool innerIsCenter = ring == 0;
+
+                for (int seg = 0; seg < RadialSegments; seg++)
+                {
+                    int next = (seg + 1) % RadialSegments;
+                    if (innerIsCenter)
+                    {
+                        tris.Add(0);
+                        tris.Add(outerStart + seg);
+                        tris.Add(outerStart + next);
+                    }
+                    else
+                    {
+                        int i0 = innerStart + seg;
+                        int i1 = innerStart + next;
+                        int o0 = outerStart + seg;
+                        int o1 = outerStart + next;
+                        tris.Add(i0);
+                        tris.Add(o0);
+                        tris.Add(o1);
+                        tris.Add(i0);
+                        tris.Add(o1);
+                        tris.Add(i1);
+                    }
+                }
             }
+
+            sweepTriangles = tris.ToArray();
+            sweepMesh = new Mesh { name = "ScannerSweepDiscMesh", hideFlags = HideFlags.DontSave };
+            sweepMesh.MarkDynamic();
+            sweepMesh.vertices = sweepVertices;
+            sweepMesh.colors32 = sweepColors;
+            sweepMesh.triangles = sweepTriangles;
+        }
+
+        private void UpdateSweepDiscVisual(Vector3 center, float radius, float pulseT)
+        {
+            if (sweepMesh == null || sweepVertices == null)
+                return;
+
+            // Scan disc fill at ~80% alpha (slight fade as the pulse finishes).
+            float overallAlpha = Mathf.Lerp(0.80f, 0.55f, pulseT);
+            Color gold = SurvivalPioneerUiPalette.Gold;
+
+            Vector3 centerSurface = SampleTopologyPoint(
+                center + Vector3.up * TopologyProbeHeight,
+                center.y);
+            // Mesh is parented to the player — store local verts so the sweep stays centered.
+            sweepVertices[0] = transform.InverseTransformPoint(centerSurface);
+            sweepColors[0] = ToColor32(gold, 0.35f * overallAlpha);
+
+            for (int ring = 1; ring <= RadialRings; ring++)
+            {
+                float ringT = ring / (float)RadialRings;
+                float ringRadius = radius * ringT;
+                // Heavier toward outer circumference, peak ~80% via overallAlpha.
+                float ringAlpha = Mathf.Lerp(0.40f, 1f, Mathf.Pow(ringT, 1.35f)) * overallAlpha;
+
+                int ringStart = 1 + (ring - 1) * RadialSegments;
+                for (int seg = 0; seg < RadialSegments; seg++)
+                {
+                    float angle = seg / (float)RadialSegments * Mathf.PI * 2f;
+                    Vector3 planar = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * ringRadius;
+                    Vector3 probeOrigin = center + planar + Vector3.up * TopologyProbeHeight;
+                    Vector3 surface = SampleTopologyPoint(probeOrigin, center.y);
+                    sweepVertices[ringStart + seg] = transform.InverseTransformPoint(surface);
+                    sweepColors[ringStart + seg] = ToColor32(gold, ringAlpha);
+                }
+            }
+
+            sweepMesh.vertices = sweepVertices;
+            sweepMesh.colors32 = sweepColors;
+            sweepMesh.RecalculateBounds();
+
+            if (sweepMaterial != null)
+                ApplySweepMaterialDefaults(sweepMaterial);
+        }
+
+        private static void ApplySweepMaterialDefaults(Material material)
+        {
+            if (material == null)
+                return;
+
+            Color gold = SurvivalPioneerUiPalette.Gold;
+            gold.a = 1f;
+            Color grid = Color.Lerp(gold, Color.white, 0.35f);
+            grid.a = 1f;
+
+            material.color = gold;
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", gold);
+            if (material.HasProperty("_Color"))
+                material.SetColor("_Color", gold);
+            if (material.HasProperty("_GridColor"))
+                material.SetColor("_GridColor", grid);
+            if (material.HasProperty("_GridSize"))
+                material.SetFloat("_GridSize", SweepGridSizeMeters);
+            if (material.HasProperty("_GridLineWidth"))
+                material.SetFloat("_GridLineWidth", SweepGridLineWidth);
+            if (material.HasProperty("_GridAlpha"))
+                material.SetFloat("_GridAlpha", SweepGridAlpha);
+            if (material.HasProperty("_Surface"))
+                material.SetFloat("_Surface", 1f);
+            if (material.HasProperty("_Blend"))
+                material.SetFloat("_Blend", 0f);
+            if (material.HasProperty("_ZWrite"))
+                material.SetFloat("_ZWrite", 0f);
+
+            material.renderQueue = 3000;
+        }
+
+        private static Color32 ToColor32(Color color, float alpha)
+        {
+            return new Color32(
+                (byte)Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255),
+                (byte)Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255),
+                (byte)Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255),
+                (byte)Mathf.Clamp(Mathf.RoundToInt(alpha * 255f), 0, 255));
+        }
+
+        private Vector3 SampleTopologyPoint(Vector3 probeOrigin, float fallbackY)
+        {
+            int hitCount = Physics.RaycastNonAlloc(
+                probeOrigin,
+                Vector3.down,
+                topologyHits,
+                TopologyProbeDistance,
+                topologyLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            Vector3 bestPoint = new Vector3(probeOrigin.x, fallbackY, probeOrigin.z);
+            bool found = false;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = topologyHits[i];
+                if (hit.collider == null || hit.collider.transform.IsChildOf(transform))
+                    continue;
+
+                if (hit.distance >= bestDistance)
+                    continue;
+
+                bestDistance = hit.distance;
+                bestPoint = hit.point;
+                found = true;
+            }
+
+            if (!found)
+                return new Vector3(probeOrigin.x, fallbackY, probeOrigin.z) + Vector3.up * TopologySurfaceLift;
+
+            return bestPoint + Vector3.up * TopologySurfaceLift;
+        }
+
+        private Vector3 ResolvePlayerSweepOrigin()
+        {
+            // Always center on this player root (Optics/Scanner live on the player).
+            Vector3 playerPos = transform.position;
+            return SampleTopologyPoint(playerPos + Vector3.up * TopologyProbeHeight, playerPos.y);
         }
 
         private void OnDestroy()
         {
             ClearPostScanHighlights();
+            if (sweepMesh != null)
+                Destroy(sweepMesh);
+            if (sweepMaterial != null)
+                Destroy(sweepMaterial);
         }
     }
 }

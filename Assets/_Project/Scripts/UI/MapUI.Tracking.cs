@@ -18,6 +18,7 @@ namespace Project.UI
     {
         private void HandleMapTextureReady()
         {
+            MapFogOfWar.EnsureExists()?.RebindAfterMapRefresh();
             ApplyMapTexture();
         }
 
@@ -182,7 +183,63 @@ namespace Project.UI
                 fullMapImage.color = Color.white;
             }
 
+            EnsureFogOverlays();
+            ApplyFogOverlayTextures();
             SyncMapContentLayout();
+        }
+
+        private void EnsureFogOverlays()
+        {
+            MapFogOfWar.EnsureExists();
+
+            if (minimapFogImage == null && minimapContentRect != null)
+                minimapFogImage = CreateFogOverlay(minimapContentRect, "FogOverlay");
+
+            if (fullMapFogImage == null && fullMapContentRect != null)
+                fullMapFogImage = CreateFogOverlay(fullMapContentRect, "FogOverlay");
+        }
+
+        private static RawImage CreateFogOverlay(RectTransform parent, string name)
+        {
+            Transform existing = parent.Find(name);
+            if (existing != null && existing.TryGetComponent(out RawImage existingImage))
+                return existingImage;
+
+            GameObject fogObject = new GameObject(name, typeof(RectTransform), typeof(RawImage));
+            fogObject.transform.SetParent(parent, false);
+            RectTransform rect = fogObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.SetSiblingIndex(1);
+
+            RawImage image = fogObject.GetComponent<RawImage>();
+            image.raycastTarget = false;
+            image.color = Color.white;
+            return image;
+        }
+
+        private void ApplyFogOverlayTextures()
+        {
+            MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
+            Texture2D fogTexture = fog != null ? fog.FogTexture : null;
+            if (fogTexture == null)
+                return;
+
+            if (minimapFogImage != null)
+            {
+                minimapFogImage.texture = fogTexture;
+                minimapFogImage.color = Color.white;
+                minimapFogImage.enabled = true;
+            }
+
+            if (fullMapFogImage != null)
+            {
+                fullMapFogImage.texture = fogTexture;
+                fullMapFogImage.color = Color.white;
+                fullMapFogImage.enabled = true;
+            }
         }
 
         private Texture ResolveMapTexture()

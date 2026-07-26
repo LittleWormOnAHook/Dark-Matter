@@ -22,6 +22,8 @@ namespace Project.Map
             MapUiSprites.ResetCache();
             OpticsUiSprites.ResetCache();
             WorldMapProvider.ResetStaticState();
+            MapFogOfWar.ResetStaticState();
+            ScannerDiscoveryRegistry.ResetStaticState();
             OpticsOverlayUI.ResetRuntimeState();
             PetTamingProgressUI.ResetRuntimeState();
 

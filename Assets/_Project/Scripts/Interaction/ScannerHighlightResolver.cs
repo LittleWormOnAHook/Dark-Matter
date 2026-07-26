@@ -21,6 +21,9 @@ namespace Project.Interaction
             ScannableTarget scannable = targetObject.GetComponentInParent<ScannableTarget>();
             if (scannable != null)
             {
+                if (scannable.HiddenFromScanner)
+                    return false;
+
                 label = scannable.ScanLabel;
                 if (scannable.HasCategoryOverride &&
                     profile.TryGetRuleForCategory(scannable.ScanCategory, out rule))

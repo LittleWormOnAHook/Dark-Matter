@@ -92,6 +92,10 @@ namespace Project.Progression
         public static float GetRangedDamageFlatBonus() =>
             GetTotalBonusPercent(SkillModifierType.RangedDamageFlat);
 
+        /// <summary>Extra scanner fog-reveal / sweep range in meters (ScanRangeFlat).</summary>
+        public static float GetScanRangeBonusMeters() =>
+            GetTotalBonusPercent(SkillModifierType.ScanRangeFlat);
+
         /// <summary>+% weapon accuracy from skill ranks (WeaponAccuracyPercent).</summary>
         public static float GetWeaponAccuracyBonusPercent() =>
             GetTotalBonusPercent(SkillModifierType.WeaponAccuracyPercent);

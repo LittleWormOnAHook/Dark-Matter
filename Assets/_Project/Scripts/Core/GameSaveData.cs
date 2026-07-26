@@ -10,7 +10,7 @@ namespace Project.Core
     [Serializable]
     public class GameSaveData
     {
-        public int version = 17;
+        public int version = 20;
         public int slotIndex;
         public long savedAtUtcTicks;
         public float health;
@@ -39,7 +39,8 @@ namespace Project.Core
         public int selectedToolbarSlot = -1;
         public int activeWeaponSlot;
         public bool weaponDrawn;
-        public int inventorySize = 24;
+        public int inventorySize = 50;
+        public int unlockedMainSlots = 20;
         public int hotbarSize = 10;
         public int toolbarSize = 2;
         public InventorySlotSave[] slots;
@@ -63,6 +64,9 @@ namespace Project.Core
         public PetTamingProgressSaveEntry[] petTamingProgress;
         public VehicleSaveEntry[] vehicles;
         public PowerGeneratorSaveEntry[] powerGenerators;
+        public byte[] fogOfWarMask;
+        public int fogOfWarResolution;
+        public string[] scannedDiscoveryIds;
     }
 
     /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it

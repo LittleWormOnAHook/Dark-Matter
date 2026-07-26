@@ -12,7 +12,8 @@ namespace Project.Progression
         GatherSpeedPercent,
         CraftXpPercent,
         WeaponAccuracyPercent,
-        RangedDamageFlat
+        RangedDamageFlat,
+        ScanRangeFlat
     }
 
     [CreateAssetMenu(menuName = "Project/Progression/Skill Definition", fileName = "NewSkill")]
@@ -26,7 +27,7 @@ namespace Project.Progression
         public int costPerRank = 1;
         public int maxRank = 3;
         public SkillModifierType modifierType = SkillModifierType.MaxHealthPercent;
-        [Tooltip("Percent bonus per rank for percent-based modifiers. Flat bonus per rank for MeleeDamageFlat / RangedDamageFlat.")]
+        [Tooltip("Percent bonus per rank for percent-based modifiers. Flat bonus per rank for MeleeDamageFlat / RangedDamageFlat / ScanRangeFlat.")]
         public float bonusPercentPerRank = 5f;
         public string[] prerequisiteSkillIds;
 
