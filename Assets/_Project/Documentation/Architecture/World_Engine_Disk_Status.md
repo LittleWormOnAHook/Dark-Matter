@@ -20,6 +20,7 @@ A Features module is shipped only when its `.cs` / `.asmdef` files exist under `
 | Item | Status |
 |------|--------|
 | GDD 5.0 + Architecture markdown | Present (design) |
+| `Documentation/Design/` Io biome + ecology package | **Present (design)** — exploration, underground, ecology roster, W0–W8 phase map (+ Microsoft365 exports); promote A2e/A2f after review |
 | `Features/GameState` Runtime + Adapters + Tests | **Present (Run 1)** |
 | `Features/WorldState` Runtime + Adapters + Tests | **Present (Run 1)** |
 | `Features/Directors` Runtime + Adapters + Tests | **Present (Run 1)** |
@@ -50,4 +51,5 @@ Safe Mode: see [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md).
 
 - Communications Phase 8.1 LocalVoiceLLM  
 - Communications Phase 9+ LLM / cloud conversation  
-- Full Io biomes, Aether-9 story arc
+- Full Io biomes / ecology prefabs / pet migration (design docs present; runtime deferred to GDD B4 #9 / W0–W8)
+- Aether-9 story arc

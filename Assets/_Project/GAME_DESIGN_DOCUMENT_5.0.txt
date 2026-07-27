@@ -396,6 +396,27 @@ scheduled by ExperienceDirector** (biome weights, not fixed spawns).
 
 Promote to Appendix A2d — design lock complete (July 2026).
 
+Biome ecology roster (July 2026 — not yet locked)
+-------------------------------------------------
+Per-biome / per-stratum flora, fauna, machine-coral, android/humanoid/machine
+threat families, flying fauna, Void Stitcher elite, and expedition pet roster
+(12 core + vanity extras). Chemosynthetic / sulfur-silicon / resonance-fed fantasy.
+
+  Assets/_Project/Documentation/Design/Io_Biome_Ecology_Roster.md
+
+Promote to Appendix A2e after design review.
+
+Io world content phase map (July 2026 — not yet locked)
+-------------------------------------------------------
+Unified production map W0–W8 integrating biomes, ecology, pets, underground,
+and directors. Companion rollup + milestone tickets:
+
+  Assets/_Project/Documentation/Design/Io_World_Content_Phase_Map.md
+  Assets/_Project/Documentation/Design/Io_World_Content_Executive_Summary.md
+  Assets/_Project/Documentation/Design/Io_World_Content_Milestone_Tickets.md
+
+Promote to Appendix A2f after design review.
+
 
 ================================================================================
 Chapter 4 - Core Gameplay Pillars
