@@ -32,6 +32,7 @@ namespace Project.Interaction
         private Collider[] colliders;
         private Renderer[] renderers;
         private bool isPickedUp = false;
+        private int respawnAmount = 1;
 
         public bool IsPickedUp => isPickedUp;
 
@@ -52,6 +53,7 @@ namespace Project.Interaction
             uiManager = FindAnyObjectByType<UIManager>();
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            respawnAmount = Mathf.Max(1, amount);
             StripMisplacedProjectileBehaviour();
             EnsurePickupTriggerCollider();
         }
@@ -93,6 +95,7 @@ namespace Project.Interaction
         {
             itemData = item;
             amount = dropAmount;
+            respawnAmount = Mathf.Max(1, dropAmount);
             canRespawn = false;
             isPickedUp = false;
             enabled = true;
@@ -159,40 +162,47 @@ namespace Project.Interaction
 
             if (inventory == null || itemData == null) return false;
 
-            int added = inventory.AddItem(itemData, amount);
-            if (added > 0)
+            int requested = amount;
+            int added = inventory.AddItem(itemData, requested);
+            if (added <= 0)
             {
-                QuestManager questManager = QuestManager.EnsureExists();
-                questManager?.NotifyItemCollected(itemData, added);
-                Project.Achievements.AchievementManager.EnsureExists()
-                    ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, itemData.name, added);
+                if (showPlayerPrompt)
+                    PickupToastUI.ShowInventoryFull();
+                return false;
             }
 
-            if (added >= amount)
+            QuestManager questManager = QuestManager.EnsureExists();
+            questManager?.NotifyItemCollected(itemData, added);
+            Project.Achievements.AchievementManager.EnsureExists()
+                ?.ReportProgress(Project.Achievements.AchievementTriggerType.CollectItem, itemData.name, added);
+
+            amount = Mathf.Max(0, requested - added);
+
+            GameAudioManager.Instance?.PlayItemPickup();
+
+            if (showPlayerPrompt && uiManager != null)
             {
-                GameAudioManager.Instance?.PlayItemPickup();
+                if (itemData.isAcInfused)
+                    uiManager.ShowAcReward(itemData.acValue, "Pickup");
 
-                if (showPlayerPrompt && uiManager != null)
-                {
-                    if (itemData.isAcInfused)
-                        uiManager.ShowAcReward(itemData.acValue, "Pickup");
+                uiManager.HideInteractionPrompt();
+            }
 
-                    uiManager.HideInteractionPrompt();
-                }
+            if (itemData.grantsXp && itemData.xpAmount > 0)
+            {
+                ProgressionRewardGranter.GrantXp(
+                    itemData.xpAmount,
+                    itemData.xpSource,
+                    $"special-item:{itemData.name}");
+            }
 
-                if (itemData.grantsXp && itemData.xpAmount > 0)
-                {
-                    ProgressionRewardGranter.GrantXp(
-                        itemData.xpAmount,
-                        itemData.xpSource,
-                        $"special-item:{itemData.name}");
-                }
+            PickupToastUI.Show($"+{added} {itemData.itemName}");
 
-                PickupToastUI.Show($"+{amount} {itemData.itemName}");
+            if (showPlayerPrompt)
+                TryPlayLootAnimation(inventory);
 
-                if (showPlayerPrompt)
-                    TryPlayLootAnimation(inventory);
-
+            if (amount <= 0)
+            {
                 isPickedUp = true;
                 PickupProximityDotUI.NotifyCollected(this);
 
@@ -205,17 +215,9 @@ namespace Project.Interaction
                     PickupProximityDotUI.Unregister(this);
                     Destroy(gameObject);
                 }
-
-                return true;
             }
 
-            if (showPlayerPrompt && added == 0)
-            {
-                if (uiManager != null)
-                    uiManager.ShowTimedInteractionPrompt("Inventory is full!");
-            }
-
-            return false;
+            return true;
         }
 
         private static void TryPlayLootAnimation(InventorySystem inventory)
@@ -277,6 +279,17 @@ namespace Project.Interaction
                 if (rend != null) rend.enabled = false;
             }
 
+            ParticleSystem[] particles = GetComponentsInChildren<ParticleSystem>(true);
+            for (int i = 0; i < particles.Length; i++)
+            {
+                if (particles[i] != null)
+                    particles[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
+            // Nested mesh roots can miss Renderer discovery; force-hide the whole instance.
+            if (renderers == null || renderers.Length == 0)
+                gameObject.SetActive(false);
+
             float respawnTime = Random.Range(minRespawnTime, maxRespawnTime);
             Invoke(nameof(Respawn), respawnTime);
         }
@@ -284,6 +297,10 @@ namespace Project.Interaction
         private void Respawn()
         {
             isPickedUp = false;
+            amount = Mathf.Max(1, respawnAmount);
+
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
 
             foreach (var col in colliders)
             {

@@ -1,4 +1,5 @@
 using System.Collections;
+using Project.Audio;
 using TMPro;
 using UnityEngine;
 
@@ -38,6 +39,13 @@ namespace Project.UI
 
             PickupToastUI toast = EnsureExists(canvas.transform);
             toast.Present(message);
+        }
+
+        /// <summary>Click + center fade toast used when a world pickup / gather cannot fit in inventory.</summary>
+        public static void ShowInventoryFull()
+        {
+            GameAudioManager.Instance?.PlayInventoryItemClick();
+            Show("Inventory full");
         }
 
         private void Build(Transform canvasRootTransform)

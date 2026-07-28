@@ -93,6 +93,7 @@ namespace Project.UI
             CreateMenuButton("Unequip", () => Execute(itemActions?.TryUnequip(activeSlotIndex) ?? false));
             CreateAmmoSubmenuButton();
             CreateMenuButton("Refuel", () => Execute(itemActions?.TryRefuelVehicle(activeSlotIndex) ?? false));
+            CreateMenuButton("Refill Mining Tool", () => Execute(itemActions?.TryRefillMiningTool(activeSlotIndex) ?? false));
             CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeployVehicle(activeSlotIndex) ?? false));
             CreateMenuButton("Split", () => Execute(itemActions?.TrySplit(activeSlotIndex) ?? false));
             CreateMenuButton("Drop", () => Execute(itemActions?.TryDrop(activeSlotIndex) ?? false));
@@ -274,6 +275,7 @@ namespace Project.UI
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
             SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));
             SetButtonVisible("Refuel", itemActions.CanRefuelVehicle(activeSlotIndex));
+            SetButtonVisible("Refill Mining Tool", itemActions.CanRefillMiningTool(activeSlotIndex));
             SetButtonVisible("Deploy", itemActions.CanDeployVehicle(activeSlotIndex));
             SetButtonVisible("Split", itemActions.CanSplit(activeSlotIndex));
             SetButtonVisible("Drop", itemActions.CanDrop(activeSlotIndex));

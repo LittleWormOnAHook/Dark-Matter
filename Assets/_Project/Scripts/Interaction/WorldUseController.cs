@@ -15,6 +15,7 @@ using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Project.Interaction
 {
@@ -56,6 +57,7 @@ namespace Project.Interaction
         private Camera viewCamera;
         private float lastUseTime = -999f;
         private UIManager promptUiManager;
+        private IHoldWorldUsable activeHoldUsable;
 
         public static void Register(IWorldUsable usable)
         {
@@ -85,9 +87,133 @@ namespace Project.Interaction
             ResolveCamera();
         }
 
+        private void Update()
+        {
+            TickHoldHarvest();
+        }
+
         private void LateUpdate()
         {
+            if (activeHoldUsable != null && activeHoldUsable.IsHoldActive)
+                return;
+
+            // Only own the prompt for hold-harvest focus; other systems drive their own prompts.
+            WorldUseContext context = BuildPromptContext();
+            ResourceNode harvestNode = FindAimedHoldHarvestNode(context);
+            if (harvestNode != null)
+            {
+                if (promptUiManager == null)
+                    promptUiManager = FindAnyObjectByType<UIManager>();
+                promptUiManager?.ShowInteractionPrompt(harvestNode.HoldPromptText);
+                return;
+            }
+
             ClearOwnedWorldPrompt();
+        }
+
+        private void TickHoldHarvest()
+        {
+            if (!CanUseNow())
+            {
+                CancelActiveHold();
+                return;
+            }
+
+            bool useHeld = IsUseHeld();
+            WorldUseContext context = BuildPromptContext();
+
+            if (activeHoldUsable != null && activeHoldUsable.IsHoldActive)
+            {
+                if (!useHeld)
+                {
+                    activeHoldUsable.CancelHold(context);
+                    activeHoldUsable = null;
+                    return;
+                }
+
+                if (activeHoldUsable.TickHold(context, Time.deltaTime, out _))
+                {
+                    activeHoldUsable = null;
+                    if (promptUiManager == null)
+                        promptUiManager = FindAnyObjectByType<UIManager>();
+                    promptUiManager?.HideInteractionPrompt();
+                }
+                else if (activeHoldUsable != null)
+                {
+                    if (promptUiManager == null)
+                        promptUiManager = FindAnyObjectByType<UIManager>();
+                    promptUiManager?.ShowInteractionPrompt(activeHoldUsable.HoldPromptText);
+                }
+
+                return;
+            }
+
+            if (!useHeld)
+                return;
+
+            IHoldWorldUsable holdTarget = FindHoldHarvestTarget(context);
+            if (holdTarget == null || !holdTarget.CanBeginHold(context))
+                return;
+
+            holdTarget.BeginHold(context);
+            activeHoldUsable = holdTarget;
+            if (promptUiManager == null)
+                promptUiManager = FindAnyObjectByType<UIManager>();
+            promptUiManager?.ShowInteractionPrompt(holdTarget.HoldPromptText);
+        }
+
+        private void CancelActiveHold()
+        {
+            if (activeHoldUsable == null)
+                return;
+
+            WorldUseContext context = BuildPromptContext();
+            activeHoldUsable.CancelHold(context);
+            activeHoldUsable = null;
+        }
+
+        private static bool IsUseHeld()
+        {
+            Keyboard kb = Keyboard.current;
+            if (kb != null && (kb.eKey.isPressed || kb.fKey.isPressed))
+                return true;
+
+            Gamepad pad = Gamepad.current;
+            if (pad != null && pad.buttonWest.isPressed)
+                return true;
+
+            return false;
+        }
+
+        private IHoldWorldUsable FindHoldHarvestTarget(WorldUseContext context)
+        {
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                ResourceNode aimed = context.AimHit.Value.collider.GetComponentInParent<ResourceNode>();
+                if (aimed != null
+                    && aimed.interactionMode == ResourceNodeInteractionMode.HoldHarvest
+                    && aimed.CanBeginHold(context))
+                    return aimed;
+            }
+
+            ResourceNode[] nodes = Object.FindObjectsByType<ResourceNode>(FindObjectsInactive.Exclude);
+            IHoldWorldUsable best = null;
+            float bestScore = float.MinValue;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                ResourceNode node = nodes[i];
+                if (node == null || node.interactionMode != ResourceNodeInteractionMode.HoldHarvest)
+                    continue;
+
+                float score = node.GetUsePriority(context);
+                if (score < 70f || score <= bestScore)
+                    continue;
+
+                best = node;
+                bestScore = score;
+            }
+
+            return best;
         }
 
         public void TryUse()
@@ -877,12 +1003,20 @@ namespace Project.Interaction
                 return false;
 
             ItemPickup pickup = hitCollider.GetComponentInParent<ItemPickup>();
-            if (IsCollectiblePickup(pickup, context.PlayerTransform) && pickup.TryUse(context))
+            if (IsCollectiblePickup(pickup, context.PlayerTransform))
+            {
+                // Always consume Use for collectible pickups — do not fall through to ResourceNode.Gather
+                // when ItemPickup and ResourceNode share a collider (legacy world-item prefabs).
+                pickup.TryUse(context);
                 return true;
+            }
 
             ResourceNode node = hitCollider.GetComponentInParent<ResourceNode>();
             if (node != null && context.Gatherer != null)
             {
+                if (node.interactionMode == ResourceNodeInteractionMode.HoldHarvest)
+                    return false;
+
                 node.Gather(context.Gatherer);
                 return true;
             }
@@ -1096,6 +1230,10 @@ namespace Project.Interaction
             if (injuredRecoverable != null)
                 return injuredRecoverable.GetPromptText();
 
+            ResourceNode harvestNode = FindAimedHoldHarvestNode(context);
+            if (harvestNode != null)
+                return harvestNode.HoldPromptText;
+
             QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
             if (questGiver != null)
                 return questGiver.GetInteractionPromptMessage();
@@ -1115,6 +1253,20 @@ namespace Project.Interaction
             Project.Events.DMItemCollection collection = FindClosestDMItemCollectionInRange(context.PlayerPosition);
             if (collection != null)
                 return collection.GetInteractionPromptMessage();
+
+            return null;
+        }
+
+        private static ResourceNode FindAimedHoldHarvestNode(WorldUseContext context)
+        {
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                ResourceNode node = context.AimHit.Value.collider.GetComponentInParent<ResourceNode>();
+                if (node != null
+                    && node.interactionMode == ResourceNodeInteractionMode.HoldHarvest
+                    && node.CanBeginHold(context))
+                    return node;
+            }
 
             return null;
         }

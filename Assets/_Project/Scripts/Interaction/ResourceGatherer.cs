@@ -67,10 +67,7 @@ namespace Project.Interaction
 
         private void ShowInventoryFullFeedback()
         {
-            if (uiManager != null)
-                uiManager.ShowTimedInteractionPrompt("Inventory is full!");
-            else
-                Debug.Log("Inventory is full!");
+            PickupToastUI.ShowInventoryFull();
         }
     }
 }

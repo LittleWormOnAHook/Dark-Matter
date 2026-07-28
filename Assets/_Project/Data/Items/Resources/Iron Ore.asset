@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
-  m_Name: Laser Tool
+  m_Name: Iron Ore
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
-  itemName: Laser Tool
-  icon: {fileID: 21300000, guid: b5263988de1f0d54e8703677486b3330, type: 3}
-  worldPrefab: {fileID: 8058546030527486170, guid: 6ef949e4c3ab2894cb564e2d74893b18, type: 3}
-  maxStack: 999
-  itemType: 4
+  itemName: Iron Ore
+  icon: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  worldPrefab: {fileID: 2362679460734149828, guid: 0f7a6dcfc48e0fb40aa6815b7ca4a91a, type: 3}
+  maxStack: 80
+  itemType: 1
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -49,7 +49,7 @@ MonoBehaviour:
   rangedDamage: 14
   rangedDamageRandomRange: 4
   rangedRange: 45
-  projectileSpeed: 120
+  projectileSpeed: 85
   projectileSpreadDegrees: 1.5
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
@@ -58,11 +58,11 @@ MonoBehaviour:
   recoilHorizontal: 0
   recoilFireRateScale: 4.5
   fireRate: 4
-  magazineSize: 100
+  magazineSize: 30
   reloadTimeSeconds: 1.8
-  defaultAmmoType: 5
-  compatibleAmmoTypes: 05000000
-  defaultAmmoItem: {fileID: 11400000}
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
@@ -77,10 +77,10 @@ MonoBehaviour:
   useAimHeldLocalRotation: 0
   aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   aimHeldLocalScale: {x: 1, y: 1, z: 1}
-  ammoType: 5
+  ammoType: 0
   ammoPerPickup: 20
   ammoPickupGrant: 20
-  isHitscanBeam: 1
+  isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
@@ -88,19 +88,17 @@ MonoBehaviour:
   tracerPrefab: {fileID: 0}
   impactVfxPrefab: {fileID: 0}
   beamVfxPrefab: {fileID: 0}
-  isMiningTool: 1
-  miningPassesRequired: 1
+  isMiningTool: 0
+  miningPassesRequired: 2
   miningDropMin: 1
   miningDropMax: 5
   miningLockBreakDegrees: 30
-  miningPassDuration: 5
-  miningChunkVfxPrefab: {fileID: 2493629726787154327, guid: 77ecbac8ebf34bc49bb0c53e559ab661, type: 3}
-  miningChargeDrainPerSecond: 4
-  miningChargePerPlasmaFuel: 50
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
-  isContinuousLaser: 1
-  continuousLoopSound: {fileID: 8300000, guid: 2ce0c987f044d984cbfb30a5161557e4, type: 3}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
   statusEffectOverride: 0
@@ -126,5 +124,5 @@ MonoBehaviour:
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Laser mining tool. Hold Fire to mine; reload with Plasma Fuel to restore charge.
+  tooltipDescription: Dense iron-bearing ore.
   unlocksInventoryStorageRow: 0

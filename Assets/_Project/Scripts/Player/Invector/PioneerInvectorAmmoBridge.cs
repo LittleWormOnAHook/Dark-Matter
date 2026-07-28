@@ -121,7 +121,7 @@ namespace Project.Player.Invector
 
             ItemData equipped = _equipment.EquippedItem;
             if (equipped != null && equipped.isMiningTool)
-                return true; // Internal power — never consume magazine/reserve.
+                return true; // Mining charge is drained by DMIMiningController, not shot events.
 
             if (_shooterManager.isReloadingWeapon)
                 return false;
@@ -163,17 +163,19 @@ namespace Project.Player.Invector
 
             int slot = _equipment.ActiveWeaponHotbarSlot;
             int loaded = _ammoState.GetLoadedAmmo(slot);
-            int magSize = Mathf.Max(1, weapon.magazineSize);
+            int magSize = WeaponAmmoState.GetMagazineCapacity(weapon);
             if (loaded >= magSize)
                 return false;
 
-            if (_ammoState.IsInfiniteAmmoForSlot(slot))
+            if (weapon.isMiningTool)
             {
-                // Continuous Laser Tool mining power never reloads.
-                if (weapon != null && weapon.isMiningTool)
-                    return false;
+                if (_ammoState.CountPlasmaFuelInInventory() > 0)
+                    return true;
 
-                return true;
+                if (playEmptyDenyFeedback)
+                    PlayEmptyReloadDeny();
+
+                return false;
             }
 
             if (_ammoState.GetReserveAmmoCount(slot) > 0)
@@ -292,7 +294,12 @@ namespace Project.Player.Invector
             if (item == null || !item.IsRangedWeapon)
                 return;
 
-            _ammoState.EnsureWeaponInitialized(_equipment.ActiveWeaponHotbarSlot, item);
+            int slot = _equipment.ActiveWeaponHotbarSlot;
+            if (item.isMiningTool)
+                _ammoState.TryReloadMiningWithPlasmaFuel(slot);
+            else
+                _ammoState.EnsureWeaponInitialized(slot, item);
+
             SyncMagazineFromPioneer();
             SuppressRecoilState();
         }

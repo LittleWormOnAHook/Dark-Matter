@@ -250,8 +250,16 @@ namespace Project.UI
             string ammoLine = string.Empty;
             if (activeItem != null && activeItem.IsRangedWeapon && ammo != null)
             {
-                int loaded = ammo.GetActiveLoadedAmmo();
-                ammoLine = $"\nLoaded ammo: {loaded}/{Mathf.Max(1, activeItem.magazineSize)}";
+                if (activeItem.isMiningTool)
+                {
+                    int charge = ammo.GetMiningChargePercent(equip.ActiveWeaponHotbarSlot);
+                    ammoLine = $"\nMining charge: {charge}%";
+                }
+                else
+                {
+                    int loaded = ammo.GetActiveLoadedAmmo();
+                    ammoLine = $"\nLoaded ammo: {loaded}/{WeaponAmmoState.GetMagazineCapacity(activeItem)}";
+                }
             }
 
             return

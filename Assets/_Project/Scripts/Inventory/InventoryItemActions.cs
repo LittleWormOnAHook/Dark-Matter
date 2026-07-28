@@ -178,6 +178,107 @@ namespace Project.Inventory
             return item != null && item.IsVehicle && item.deployedPrefab != null;
         }
 
+        /// <summary>Right-click action on Plasma Fuel: consume one cell into the drawn/equipped mining tool charge tank.</summary>
+        public bool TryRefillMiningTool(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !IsPlasmaFuelItem(item))
+                return false;
+
+            if (ammoState == null || equipment == null)
+            {
+                PickupToastUI.Show("No mining tool equipped.");
+                return false;
+            }
+
+            if (!TryResolveMiningToolHotbarSlot(out int miningSlot, out ItemData miningTool))
+            {
+                PickupToastUI.Show("No mining tool equipped.");
+                return false;
+            }
+
+            if (ammoState.GetMiningChargePercent(miningSlot) >= WeaponAmmoState.MiningChargeCapacity)
+            {
+                PickupToastUI.Show("Mining tool charge is full.");
+                return false;
+            }
+
+            if (inventory.CountItem(item) <= 0)
+            {
+                PickupToastUI.Show("No Plasma Fuel.");
+                return false;
+            }
+
+            if (!ammoState.TryReloadMiningWithPlasmaFuel(miningSlot))
+            {
+                PickupToastUI.Show("Could not refill mining tool.");
+                return false;
+            }
+
+            int charge = ammoState.GetMiningChargePercent(miningSlot);
+            string toolName = miningTool != null ? miningTool.itemName : "Mining tool";
+            PickupToastUI.Show($"{toolName} recharged — {charge}%");
+            GameAudioManager.Instance?.PlayItemUse();
+            return true;
+        }
+
+        public bool CanRefillMiningTool(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            return item != null && IsPlasmaFuelItem(item);
+        }
+
+        private bool TryResolveMiningToolHotbarSlot(out int hotbarSlot, out ItemData miningTool)
+        {
+            hotbarSlot = -1;
+            miningTool = null;
+            if (equipment == null)
+                return false;
+
+            ItemData drawn = equipment.DrawnWeaponItem;
+            if (drawn != null && drawn.isMiningTool && equipment.IsWeaponHotbarSlot(equipment.ActiveWeaponHotbarSlot))
+            {
+                hotbarSlot = equipment.ActiveWeaponHotbarSlot;
+                miningTool = drawn;
+                return true;
+            }
+
+            int foundSlot = -1;
+            ItemData foundTool = null;
+            equipment.ForEachWeaponHotbarSlot(slot =>
+            {
+                if (foundSlot >= 0)
+                    return;
+
+                ItemData weapon = equipment.GetHotbarItem(slot);
+                if (weapon != null && weapon.isMiningTool)
+                {
+                    foundSlot = slot;
+                    foundTool = weapon;
+                }
+            });
+
+            if (foundSlot < 0)
+                return false;
+
+            hotbarSlot = foundSlot;
+            miningTool = foundTool;
+            return true;
+        }
+
+        private static bool IsPlasmaFuelItem(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            ItemData plasma = ItemRegistry.Resolve("Plasma Fuel");
+            if (plasma != null && (item == plasma || item.itemName == plasma.itemName))
+                return true;
+
+            return string.Equals(item.itemName, "Plasma Fuel", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.name, "Plasma Fuel", System.StringComparison.OrdinalIgnoreCase);
+        }
+
         public bool CanUse(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);

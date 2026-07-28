@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7865194149268294063
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_Name
+      value: Sulfur Needle Tuft_World
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8442463038483838663}
+    - targetCorrespondingSourceObject: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2411963579227510751}
+  m_SourcePrefab: {fileID: -4161369568681901532, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+--- !u!1 &7776953011026404109 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+  m_PrefabInstance: {fileID: 7865194149268294063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &8442463038483838663
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7776953011026404109}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.9681282, y: 3.2134714, z: 2.97545}
+  m_Center: {x: -0.17533031, y: 0.5944299, z: 0.08668026}
+--- !u!114 &2411963579227510751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7776953011026404109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
+  itemData: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+  amount: 1
+  promptText: Press E to pick up
+  canRespawn: 1
+  minRespawnTime: 20
+  maxRespawnTime: 90

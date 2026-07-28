@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2354d95536300c340be27b2ba92af859, type: 3}
-  m_Name: Laser Tool
+  m_Name: Plasma Fuel
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
-  itemName: Laser Tool
-  icon: {fileID: 21300000, guid: b5263988de1f0d54e8703677486b3330, type: 3}
-  worldPrefab: {fileID: 8058546030527486170, guid: 6ef949e4c3ab2894cb564e2d74893b18, type: 3}
-  maxStack: 999
-  itemType: 4
+  itemName: Plasma Fuel
+  icon: {fileID: 21300000, guid: 87659ae3b00c1174cb502ce5f5604634, type: 3}
+  worldPrefab: {fileID: 4624473381839885526, guid: 22aa4b125f314a568c56f6a60ff0eeca, type: 3}
+  maxStack: 500
+  itemType: 1
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -35,34 +35,34 @@ MonoBehaviour:
   sheathedLocalScale: {x: 1, y: 1, z: 1}
   invectorWeaponPrefab: {fileID: 0}
   invectorWeaponId: 
-  meleeDamage: 10
-  meleeDamageRandomRange: 3
+  meleeDamage: 0
+  meleeDamageRandomRange: 0
   criticalChance: 0.1
   criticalDamageMultiplier: 2
-  meleeRange: 2.2
+  meleeRange: 0
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
   meleeKnockback: 0
-  gatherPower: 1
+  gatherPower: 0
   attackTrigger: Attack
-  rangedDamage: 14
-  rangedDamageRandomRange: 4
-  rangedRange: 45
-  projectileSpeed: 120
-  projectileSpreadDegrees: 1.5
+  rangedDamage: 0
+  rangedDamageRandomRange: 0
+  rangedRange: 0
+  projectileSpeed: 0
+  projectileSpreadDegrees: 0
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
   recoilVertical: 0
   recoilHorizontal: 0
   recoilFireRateScale: 4.5
-  fireRate: 4
-  magazineSize: 100
+  fireRate: 0
+  magazineSize: 0
   reloadTimeSeconds: 1.8
-  defaultAmmoType: 5
-  compatibleAmmoTypes: 05000000
-  defaultAmmoItem: {fileID: 11400000}
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
@@ -77,10 +77,10 @@ MonoBehaviour:
   useAimHeldLocalRotation: 0
   aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   aimHeldLocalScale: {x: 1, y: 1, z: 1}
-  ammoType: 5
-  ammoPerPickup: 20
-  ammoPickupGrant: 20
-  isHitscanBeam: 1
+  ammoType: 0
+  ammoPerPickup: 0
+  ammoPickupGrant: 0
+  isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
@@ -88,19 +88,19 @@ MonoBehaviour:
   tracerPrefab: {fileID: 0}
   impactVfxPrefab: {fileID: 0}
   beamVfxPrefab: {fileID: 0}
-  isMiningTool: 1
-  miningPassesRequired: 1
+  isMiningTool: 0
+  miningPassesRequired: 2
   miningDropMin: 1
   miningDropMax: 5
   miningLockBreakDegrees: 30
-  miningPassDuration: 5
-  miningChunkVfxPrefab: {fileID: 2493629726787154327, guid: 77ecbac8ebf34bc49bb0c53e559ab661, type: 3}
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
-  isContinuousLaser: 1
-  continuousLoopSound: {fileID: 8300000, guid: 2ce0c987f044d984cbfb30a5161557e4, type: 3}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
   statusEffectOverride: 0
@@ -121,10 +121,11 @@ MonoBehaviour:
   oxygenRestore: 0
   isAcInfused: 0
   acValue: 0
-  grantsXp: 0
-  xpAmount: 10
-  xpSource: 5
+  grantsXp: 1
+  xpAmount: 6
+  xpSource: 1
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Laser mining tool. Hold Fire to mine; reload with Plasma Fuel to restore charge.
+  tooltipDescription: Refined plasma fuel cell. Refuels the hovercraft, powers building
+    generators, and recharges the laser mining tool.
   unlocksInventoryStorageRow: 0
