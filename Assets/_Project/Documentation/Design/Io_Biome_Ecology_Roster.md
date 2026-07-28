@@ -1745,7 +1745,18 @@ Underground life is **pressure-adapted**, not surface copy-paste. Pool ecology r
 - `Io_Biome_Exploration_Gameplay_Plan.md` §4 wildlife lines (pointer only)
 - `Io_Underground_Architecture_Plan.md` §6 (index + pointer)
 
-**Out of scope (unchanged):** Unity prefabs, `SurfaceEncounterTable` wiring, animator/AI, art production, locked world rules (wade-only, instanced underground, vehicle gates). **Pet placeholder retirement** tracks with pet migration (GDD B4 #6), not B4 #9 biome pass alone.
+**Out of scope (unchanged):** Unity prefabs, `SurfaceEncounterTable` wiring, animator/AI, locked world rules (wade-only, instanced underground, vehicle gates). **Pet placeholder retirement** tracks with pet migration (GDD B4 #6), not B4 #9 biome pass alone.
+
+### Art reference — life image sheets
+
+High-poly / ray-traced contact sheets for all named Io life (flora, fauna, threats, pets):
+
+| Doc / folder | Path |
+|--------------|------|
+| Plan | [`Io_Biome_Life_Image_Sheet_Plan.md`](Io_Biome_Life_Image_Sheet_Plan.md) |
+| Manifest | [`Io_Biome_Life_Sheet_Manifest.md`](Io_Biome_Life_Sheet_Manifest.md) |
+| Set A — PBR concept | [`ArtReference/LifeSheets/`](ArtReference/LifeSheets/) |
+| Set B — Ray Traced Ultra | [`ArtReference/LifeSheets_RayTraced/`](ArtReference/LifeSheets_RayTraced/) |
 
 ---
 

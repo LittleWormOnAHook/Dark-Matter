@@ -405,6 +405,8 @@ Use when marking a biome **content complete** for a phase:
 - [ ] Activity templates playable (min 2 per biome)  
 - [ ] Journal biome tab: pressure profile + known threats  
 
+**Art reference (done):** life contact sheets — Set A [`ArtReference/LifeSheets/`](ArtReference/LifeSheets/) (PBR concept) + Set B [`ArtReference/LifeSheets_RayTraced/`](ArtReference/LifeSheets_RayTraced/) (PC Ultra ray tracing) + [`Io_Biome_Life_Sheet_Manifest.md`](Io_Biome_Life_Sheet_Manifest.md).
+
 ---
 
 ## 6. Dependencies on GDD B4 roadmap

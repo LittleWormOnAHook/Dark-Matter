@@ -1,0 +1,21 @@
+---
+description: Protect Io life art sheets from deletion without explicit user approval
+alwaysApply: true
+---
+
+# Protect Design Art Reference (Life Sheets)
+
+Do **not** delete, move, empty, overwrite-with-empty, or discard assets under:
+
+- `Assets/_Project/Documentation/Design/ArtReference/`
+- Especially `LifeSheets/` and `LifeSheets_RayTraced/`
+- Related docs: `Io_Biome_Life_Image_Sheet_Plan.md`, `Io_Biome_Life_Sheet_Manifest.md`
+
+## Rules
+
+1. **Never delete** these PNGs, folders, or their `.meta` files unless the user **explicitly approves** deletion in the current message.
+2. **Never** treat Cursor asset-cache copies as the source of truth — keep durable copies in `_Project` and prefer **git-tracked** files.
+3. Regenerating a sheet is OK when the user asks to redo/replace a specific image; that is overwrite-with-new-art, not deletion of the set.
+4. If files are missing, **restore** from Cursor cache / last known good / git — do not leave empty folders.
+5. When committing Design art work, **always stage** `ArtReference/**` including `.meta` files (Unity commit include-assets rule).
+6. Do not run clean, reset, sync, or Plastic/git operations that would wipe untracked Design art without first committing or getting approval.
