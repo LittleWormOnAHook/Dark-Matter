@@ -22,6 +22,8 @@ MonoBehaviour:
     amount: 1
   - item: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
     amount: 2
+  - item: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+    amount: 2
   outputItem: {fileID: 11400000, guid: efc7bf626774516478369a90a06f846b, type: 2}
   outputAmount: 1
   requiredPlayerLevel: 3

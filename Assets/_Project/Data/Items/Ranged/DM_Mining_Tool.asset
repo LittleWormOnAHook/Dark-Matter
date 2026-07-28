@@ -58,7 +58,7 @@ MonoBehaviour:
   recoilHorizontal: 0
   recoilFireRateScale: 4.5
   fireRate: 12
-  magazineSize: 999
+  magazineSize: 100
   reloadTimeSeconds: 1.8
   defaultAmmoType: 5
   compatibleAmmoTypes: 05000000
@@ -95,6 +95,8 @@ MonoBehaviour:
   miningLockBreakDegrees: 30
   miningPassDuration: 1.25
   miningChunkVfxPrefab: {fileID: 2493629726787154327, guid: 77ecbac8ebf34bc49bb0c53e559ab661, type: 3}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
@@ -125,4 +127,4 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: Hold Fire to mine resource nodes with a soft-locked mining
-    laser. Two passes yield 1-5 rocks.
+    laser. Reload with Plasma Fuel to restore charge. Two passes yield 1-5 rocks.

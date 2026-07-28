@@ -19,10 +19,12 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
   stationType: 1
   ingredients:
-  - item: {fileID: 11400000, guid: c4d5e6f708192a3b4c5d6e7f8091a2b3, type: 2}
-    amount: 1
+  - item: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+    amount: 5
   - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
     amount: 10
+  - item: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+    amount: 1
   outputItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}
   outputAmount: 2
   requiredPlayerLevel: 1

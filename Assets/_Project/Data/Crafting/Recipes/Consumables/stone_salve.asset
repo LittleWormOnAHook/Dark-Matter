@@ -10,19 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4a8c2e1b9d0437fa6e5d834c12b5678, type: 3}
-  m_Name: Standard_Ammo
+  m_Name: stone_salve
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeDefinition
-  recipeId: Standard_Ammo
-  displayName: Stardard Ammo
-  description: Rudementary ammo, but useful in a pinch
-  icon: {fileID: 21300000, guid: a67dc839ae195be4aadf6f9f1b3f73d4, type: 3}
+  recipeId: stone_salve
+  displayName: Stone Salve
+  description: Crush rocks into a crude salve.
+  icon: {fileID: 21300000, guid: d2c85206e194a924da24cbcea4d5e618, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
     amount: 3
-  - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
-    amount: 10
+  - item: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+    amount: 1
   outputItem: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}
   outputAmount: 2
-  requiredPlayerLevel: 1
-  recipeTier: 1
+  requiredPlayerLevel: 2
+  recipeTier: 2
