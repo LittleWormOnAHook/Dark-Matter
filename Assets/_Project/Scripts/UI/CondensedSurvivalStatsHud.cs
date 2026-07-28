@@ -38,6 +38,18 @@ namespace Project.UI
         private bool layoutApplied;
         private bool radialBarsDisabled;
 
+        /// <summary>
+        /// Survival vitals panel RectTransform when the condensed HUD is active (for ammo layout stacking).
+        /// </summary>
+        public static RectTransform TryGetPanelRect()
+        {
+            CondensedSurvivalStatsHud hud = FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Exclude);
+            if (hud == null || !hud.isActiveAndEnabled)
+                return null;
+
+            return hud.transform as RectTransform;
+        }
+
         public static bool IsActive
         {
             get
@@ -78,6 +90,15 @@ namespace Project.UI
                 RefreshLayout();
             else
                 SyncSurvivalBarValues();
+        }
+
+        private void OnEnable()
+        {
+            if (applyRuntimeLayout && Application.isPlaying)
+            {
+                layoutApplied = false;
+                ApplyLayout();
+            }
         }
 
         private void HideLegacyThermalRow()
@@ -213,12 +234,13 @@ namespace Project.UI
 
             Slider slider = row.GetComponentInChildren<Slider>(true);
             TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>(true);
-            Transform iconTransform = slider != null ? slider.transform.Find("Icon") : null;
+            Transform iconTransform = FindSegmentIcon(row);
             float iconWidth = BarHeight;
             float barWidth = Mathf.Max(8f, segmentWidth - iconWidth - IconGap);
 
             if (iconTransform != null)
             {
+                // Keep icon as a row sibling to the left of the slider so fill never covers it.
                 iconTransform.SetParent(row, false);
                 ConfigureSegmentIcon(iconTransform, iconWidth);
             }
@@ -243,6 +265,26 @@ namespace Project.UI
                     thermalView = row.gameObject.AddComponent<ThermalStressBarView>();
                 thermalView.Refresh();
             }
+        }
+
+        private static Transform FindSegmentIcon(Transform row)
+        {
+            if (row == null)
+                return null;
+
+            Transform direct = row.Find("Icon");
+            if (direct != null)
+                return direct;
+
+            Transform[] children = row.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child != null && child.name == "Icon")
+                    return child;
+            }
+
+            return null;
         }
 
         private static void ConfigureThermalLabel(TextMeshProUGUI label, float barLeftInset, float barWidth)
@@ -338,16 +380,22 @@ namespace Project.UI
             if (iconTransform is not RectTransform iconRect)
                 return;
 
+            // Left-aligned, vertically centered with the bar track.
             iconRect.anchorMin = new Vector2(0f, 0.5f);
             iconRect.anchorMax = new Vector2(0f, 0.5f);
             iconRect.pivot = new Vector2(0f, 0.5f);
             iconRect.anchoredPosition = Vector2.zero;
             iconRect.sizeDelta = new Vector2(iconSize, iconSize);
+            iconRect.localScale = Vector3.one;
+            iconRect.localRotation = Quaternion.identity;
 
             if (iconTransform.TryGetComponent<Image>(out Image iconImage))
             {
+                iconImage.enabled = true;
                 iconImage.preserveAspect = true;
                 iconImage.raycastTarget = false;
+                // Authored icons often use dark navy tints that disappear on the HUD track.
+                iconImage.color = SurvivalPioneerUiPalette.WarmOffWhite;
             }
         }
 

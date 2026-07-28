@@ -4,38 +4,47 @@ using Project.Data;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
-using Project.UI;
 using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 namespace Project.Interaction
 {
     /// <summary>
     /// Hold Fire to mine ResourceNodes with a continuous soft-locked red laser, muzzle sparks, and pass-based grants.
-    /// Mining tools use infinite Laser Tool power once loaded. Sustained fire overheats after 20s (3s cooloff).
+    /// Mining tools drain a 0–100% Plasma Fuel charge tank while Fire is held.
+    /// Sustained fire overheats after 10s (glowing red emission + smoke puff), then 3s cooloff before mining resumes.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(600)]
     public class DMIMiningController : MonoBehaviour
     {
         private const float ProgressRetainSeconds = 4f;
-        private const float MaxMineRayDistance = 80f;
-        private const float OverheatSeconds = 20f;
+        private const float MaxMineDistance = 6f;
+        private const float OverheatSeconds = 10f;
         private const float CooloffSeconds = 3f;
-        private const string HitSparksPrefabPath = "Assets/_Project/Prefabs/SparksLong.prefab";
+        private const float OverheatEmissionIntensity = 4.5f;
+        private const string HitSparksPrefabPath = "Assets/_Project/Prefabs/Combat/VFX/SparksLong.prefab";
+        private const string OverheatSmokePrefabPath = "Assets/PolygonNature/FX/FX_Prefabs/Smoke_Light_FX.prefab";
+        private const string EmptyChargeClipPath = "Assets/Audio/Others/Electricity Sound.wav";
+        private const float EmptyChargeSoundCooldown = 0.45f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
-        private static readonly Color OverheatTint = new Color(1f, 0.08f, 0.05f, 1f);
+        private static readonly Color OverheatTint = new Color(1f, 0.18f, 0.08f, 1f);
+        private static readonly Color OverheatEmission = new Color(1f, 0.12f, 0.04f, 1f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissiveColorId = Shader.PropertyToID("_EmissiveColor");
 
         [SerializeField] private LayerMask resourceLayer = ~0;
         [SerializeField] private float acquireRayRadius = 0.45f;
         [Tooltip("Impact sparks spawned at the laser LineRenderer world hit point (SparksLong).")]
         [SerializeField] private GameObject hitSparksPrefab;
+        [Tooltip("Optional smoke puff spawned at the mining tool model center on overheat. Falls back to a runtime ParticleSystem.")]
+        [SerializeField] private GameObject overheatSmokePrefab;
+        [Tooltip("Played when Fire is held while the mining tool charge is empty.")]
+        [SerializeField] private AudioClip emptyChargeClip;
 
         private EquipmentController equipment;
         private ResourceGatherer gatherer;
@@ -60,10 +69,7 @@ namespace Project.Interaction
         private ParticleSystem hitSparksParticles;
         private bool hitSparksAuthored;
 
-        private Canvas progressCanvas;
-        private RectTransform progressRoot;
-        private TextMeshProUGUI progressLabel;
-        private Image progressFill;
+        private WorldNodeProgressBar progressBar;
 
         private AudioSource continuousAudio;
         private bool continuousAudioPlaying;
@@ -73,6 +79,7 @@ namespace Project.Interaction
         private const float ContinuousLoopTrimFraction = 0.15f;
         private WeaponAmmoState ammoState;
         private float powerDrainAccumulator;
+        private float nextEmptyChargeSoundTime;
 
         private float heatSeconds;
         private float cooloffRemaining;
@@ -80,6 +87,9 @@ namespace Project.Interaction
         private GameObject heatVisualRoot;
         private Renderer[] heatRenderers;
         private Color[] heatBaseColors;
+        private Color[] heatBaseEmissions;
+        private bool[] heatHadEmission;
+        private bool heatEmissionKeywordsEnabled;
         private MaterialPropertyBlock heatPropertyBlock;
 
         private void Awake()
@@ -93,14 +103,14 @@ namespace Project.Interaction
             EnsureVisuals();
             EnsureProgressUi();
             EnsureContinuousAudio();
+            EnsureEmptyChargeClip();
             SetMiningFxActive(false);
             SetProgressUiVisible(false);
         }
 
         private void OnDisable()
         {
-            StopContinuousLaserAudio(playStopSound: false);
-            StopHitSparks();
+            StopAllMiningFx(playStopSound: false);
             RestoreHeatTint();
         }
 
@@ -112,8 +122,8 @@ namespace Project.Interaction
 
         private void Update()
         {
-            ItemData tool = equipment != null ? equipment.EquippedItem : null;
-            bool miningTool = tool != null && tool.isMiningTool && tool.IsRangedWeapon;
+            ItemData tool = ResolveDrawnMiningTool();
+            bool miningTool = tool != null;
             bool fireHeld = miningTool && IsFireHeld();
 
             if (miningTool)
@@ -124,10 +134,7 @@ namespace Project.Interaction
                 if (hasLock && lockedNode != null)
                     lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
 
-                ClearLock();
-                SetMiningFxActive(false);
-                SetProgressUiVisible(false);
-                StopContinuousLaserAudio(playStopSound: true);
+                StopAllMiningFx(playStopSound: true);
 
                 if (miningTool && isOverheated && fireHeld)
                     PlayOverheatClick();
@@ -146,10 +153,9 @@ namespace Project.Interaction
         {
             // Laser / muzzle FX must run after Invector aim + hand IK (LateUpdate), otherwise the
             // beam origin freezes at the pre-aim pose and floats off the barrel when looking around.
-            ItemData tool = equipment != null ? equipment.EquippedItem : null;
-            bool miningTool = tool != null && tool.isMiningTool && tool.IsRangedWeapon;
-            bool fireHeld = miningTool && IsFireHeld() && !isOverheated;
-            if (!miningTool || !fireHeld)
+            ItemData tool = ResolveDrawnMiningTool();
+            bool fireHeld = tool != null && IsFireHeld() && !isOverheated;
+            if (tool == null || !fireHeld)
             {
                 powerDrainAccumulator = 0f;
                 return;
@@ -160,10 +166,8 @@ namespace Project.Interaction
                 if (hasLock && lockedNode != null)
                     lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
 
-                ClearLock();
-                SetMiningFxActive(false);
-                SetProgressUiVisible(false);
-                StopContinuousLaserAudio(playStopSound: true);
+                StopAllMiningFx(playStopSound: true);
+                PlayEmptyChargeSound();
                 return;
             }
 
@@ -173,22 +177,12 @@ namespace Project.Interaction
             Vector3 origin = laserRoot != null
                 ? laserRoot.position
                 : ResolveMuzzleWorldPosition();
-            float range = MaxMineRayDistance;
-            if (tool != null)
-                range = Mathf.Max(8f, tool.rangedRange);
 
-            // Soft-lock uses the camera reticle ray; beam visuals use muzzle → aim raycast.
+            // Soft-lock uses the camera reticle ray; beam + laserSight snap to the lock / reticle point.
             Vector3 camAimDir = ResolveAimDirection(out Vector3 aimOrigin);
             UpdateSoftLock(tool, aimOrigin, camAimDir);
 
-            Camera cam = ResolveCamera();
-            Vector3 aimDirection = cam != null
-                ? RangedFireSolver.ResolveMuzzleToReticleDirection(cam, origin, range, out _)
-                : camAimDir;
-
-            Vector3 endPoint = origin + aimDirection * range;
-            if (Physics.Raycast(origin, aimDirection, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore))
-                endPoint = hit.point;
+            Vector3 endPoint = ResolveMiningBeamEndPoint(origin, aimOrigin, camAimDir);
 
             UpdateLaserVisuals(origin, endPoint);
             SetMiningFxActive(true);
@@ -205,11 +199,60 @@ namespace Project.Interaction
             }
         }
 
+        /// <summary>
+        /// When soft-locked, beam + laserSight stick to the mineral hit.
+        /// Otherwise they track the camera reticle aim point within mining range.
+        /// </summary>
+        private Vector3 ResolveMiningBeamEndPoint(Vector3 muzzleOrigin, Vector3 aimOrigin, Vector3 camAimDir)
+        {
+            if (hasLock && lockedNode != null)
+            {
+                // Keep lockPoint glued to the node surface under (or nearest) the reticle.
+                if (!TryGetLockPointOnNode(lockedNode, aimOrigin, camAimDir, out lockPoint))
+                    lockPoint = ResolveNodePoint(lockedNode);
+
+                return lockPoint;
+            }
+
+            // Unlocked: reticle world point (camera ray hit, else max range), then muzzle→that point.
+            Vector3 reticlePoint = aimOrigin + camAimDir * MaxMineDistance;
+            if (Physics.Raycast(
+                    aimOrigin,
+                    camAimDir,
+                    out RaycastHit camHit,
+                    MaxMineDistance,
+                    ~0,
+                    QueryTriggerInteraction.Ignore))
+            {
+                reticlePoint = camHit.point;
+            }
+
+            Vector3 toReticle = reticlePoint - muzzleOrigin;
+            float dist = toReticle.magnitude;
+            if (dist < 0.001f)
+                return reticlePoint;
+
+            Vector3 beamDir = toReticle / dist;
+            if (Physics.Raycast(
+                    muzzleOrigin,
+                    beamDir,
+                    out RaycastHit muzzleHit,
+                    dist,
+                    ~0,
+                    QueryTriggerInteraction.Ignore))
+            {
+                return muzzleHit.point;
+            }
+
+            return reticlePoint;
+        }
+
         private void TickOverheatState(ItemData tool, bool fireHeld)
         {
             if (isOverheated)
             {
                 cooloffRemaining -= Time.deltaTime;
+                // coolT: 1 at overheat start → 0 when cooloff ends (glow fades back to normal).
                 float coolT = CooloffSeconds > 0.01f
                     ? Mathf.Clamp01(cooloffRemaining / CooloffSeconds)
                     : 0f;
@@ -238,6 +281,7 @@ namespace Project.Interaction
                     cooloffRemaining = CooloffSeconds;
                     heatSeconds = OverheatSeconds;
                     ApplyHeatTint(tool, 1f);
+                    SpawnOverheatSmokePuff(tool);
                 }
             }
             else if (heatSeconds > 0f)
@@ -265,6 +309,35 @@ namespace Project.Interaction
             return ammoState.GetActiveLoadedAmmo() > 0;
         }
 
+        private void PlayEmptyChargeSound()
+        {
+            if (Time.unscaledTime < nextEmptyChargeSoundTime)
+                return;
+
+            EnsureEmptyChargeClip();
+            nextEmptyChargeSoundTime = Time.unscaledTime + EmptyChargeSoundCooldown;
+
+            Vector3 pos = ResolveMiningToolCenter(ResolveDrawnMiningTool());
+            if (emptyChargeClip != null)
+            {
+                AudioSource.PlayClipAtPoint(emptyChargeClip, pos, 0.85f);
+                return;
+            }
+
+            // Fallback if the Electricity clip is missing.
+            PlayOverheatClick();
+        }
+
+        private void EnsureEmptyChargeClip()
+        {
+            if (emptyChargeClip != null)
+                return;
+
+#if UNITY_EDITOR
+            emptyChargeClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(EmptyChargeClipPath);
+#endif
+        }
+
         private void PlayOverheatClick()
         {
             if (ammoBridge == null)
@@ -284,18 +357,23 @@ namespace Project.Interaction
                 return;
 
             heatVisualRoot = visual;
+            heatEmissionKeywordsEnabled = false;
             heatPropertyBlock ??= new MaterialPropertyBlock();
 
             if (visual == null)
             {
                 heatRenderers = System.Array.Empty<Renderer>();
                 heatBaseColors = System.Array.Empty<Color>();
+                heatBaseEmissions = System.Array.Empty<Color>();
+                heatHadEmission = System.Array.Empty<bool>();
                 return;
             }
 
             Renderer[] found = visual.GetComponentsInChildren<Renderer>(true);
             var list = new System.Collections.Generic.List<Renderer>(found.Length);
             var colors = new System.Collections.Generic.List<Color>(found.Length);
+            var emissions = new System.Collections.Generic.List<Color>(found.Length);
+            var hadEmission = new System.Collections.Generic.List<bool>(found.Length);
             for (int i = 0; i < found.Length; i++)
             {
                 Renderer renderer = found[i];
@@ -304,10 +382,15 @@ namespace Project.Interaction
 
                 list.Add(renderer);
                 colors.Add(ReadRendererBaseColor(renderer));
+                Color emission = ReadRendererEmission(renderer, out bool hasEmission);
+                emissions.Add(emission);
+                hadEmission.Add(hasEmission);
             }
 
             heatRenderers = list.ToArray();
             heatBaseColors = colors.ToArray();
+            heatBaseEmissions = emissions.ToArray();
+            heatHadEmission = hadEmission.ToArray();
         }
 
         private Color ReadRendererBaseColor(Renderer renderer)
@@ -326,6 +409,31 @@ namespace Project.Interaction
             return Color.white;
         }
 
+        private static Color ReadRendererEmission(Renderer renderer, out bool hasEmissionProperty)
+        {
+            hasEmissionProperty = false;
+            if (renderer == null)
+                return Color.black;
+
+            Material mat = renderer.sharedMaterial;
+            if (mat == null)
+                return Color.black;
+
+            if (mat.HasProperty(EmissionColorId))
+            {
+                hasEmissionProperty = true;
+                return mat.GetColor(EmissionColorId);
+            }
+
+            if (mat.HasProperty(EmissiveColorId))
+            {
+                hasEmissionProperty = true;
+                return mat.GetColor(EmissiveColorId);
+            }
+
+            return Color.black;
+        }
+
         private void ApplyHeatTint(ItemData tool, float heat01)
         {
             EnsureHeatRenderers(tool);
@@ -342,10 +450,52 @@ namespace Project.Interaction
                     continue;
 
                 Color baseColor = i < heatBaseColors.Length ? heatBaseColors[i] : Color.white;
-                Color tinted = Color.Lerp(baseColor, OverheatTint, heat01);
+                Color tinted = Color.Lerp(baseColor, OverheatTint, heat01 * 0.85f);
+
+                Color baseEmission = i < heatBaseEmissions.Length ? heatBaseEmissions[i] : Color.black;
+                bool authoredEmission = i < heatHadEmission.Length && heatHadEmission[i];
+                Color glow = OverheatEmission * (heat01 * OverheatEmissionIntensity);
+                // Preserve authored emission when cooling; otherwise fade toward black.
+                Color emissionRest = authoredEmission ? baseEmission : Color.black;
+                Color emission = Color.Lerp(emissionRest, glow, heat01);
+
+                heatPropertyBlock.Clear();
                 heatPropertyBlock.SetColor(BaseColorId, tinted);
                 heatPropertyBlock.SetColor(ColorId, tinted);
+                heatPropertyBlock.SetColor(EmissionColorId, emission);
+                heatPropertyBlock.SetColor(EmissiveColorId, emission);
                 renderer.SetPropertyBlock(heatPropertyBlock);
+            }
+
+            // Enable URP emission keywords once when heat appears (materials[] allocates instances).
+            if (heat01 > 0.01f && !heatEmissionKeywordsEnabled)
+            {
+                for (int i = 0; i < heatRenderers.Length; i++)
+                    EnsureRendererEmissionEnabled(heatRenderers[i], enable: true);
+                heatEmissionKeywordsEnabled = true;
+            }
+        }
+
+        private static void EnsureRendererEmissionEnabled(Renderer renderer, bool enable)
+        {
+            if (renderer == null || !enable)
+                return;
+
+            // Touching .materials instantiates unique mats so _EMISSION can be enabled without
+            // mutating shared assets. Instances are cleaned up with the weapon GameObject.
+            Material[] mats = renderer.materials;
+            if (mats == null)
+                return;
+
+            for (int i = 0; i < mats.Length; i++)
+            {
+                Material mat = mats[i];
+                if (mat == null)
+                    continue;
+
+                mat.EnableKeyword("_EMISSION");
+                if (mat.HasProperty("_EmissionColor") || mat.HasProperty(EmissionColorId))
+                    mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
         }
 
@@ -362,14 +512,197 @@ namespace Project.Interaction
                     continue;
 
                 Color baseColor = i < heatBaseColors.Length ? heatBaseColors[i] : Color.white;
+                Color baseEmission = i < heatBaseEmissions.Length ? heatBaseEmissions[i] : Color.black;
+
+                heatPropertyBlock.Clear();
                 heatPropertyBlock.SetColor(BaseColorId, baseColor);
                 heatPropertyBlock.SetColor(ColorId, baseColor);
+                heatPropertyBlock.SetColor(EmissionColorId, baseEmission);
+                heatPropertyBlock.SetColor(EmissiveColorId, baseEmission);
                 renderer.SetPropertyBlock(heatPropertyBlock);
             }
 
             heatVisualRoot = null;
             heatRenderers = null;
             heatBaseColors = null;
+            heatBaseEmissions = null;
+            heatHadEmission = null;
+            heatEmissionKeywordsEnabled = false;
+        }
+
+        /// <summary>
+        /// One-shot smoke puff attached to the drawn mining tool model (not the mineral node).
+        /// </summary>
+        private void SpawnOverheatSmokePuff(ItemData tool)
+        {
+            EnsureOverheatSmokePrefab();
+
+            GameObject toolVisual = weaponBridge != null ? weaponBridge.TryGetWeaponInstance(tool) : null;
+            if (toolVisual == null)
+                toolVisual = heatVisualRoot;
+
+            if (toolVisual == null)
+                return;
+
+            Vector3 center = ResolveMiningToolCenter(tool);
+
+            GameObject puff;
+            if (overheatSmokePrefab != null)
+            {
+                puff = Instantiate(overheatSmokePrefab);
+                puff.name = "MiningOverheatSmoke";
+            }
+            else
+            {
+                puff = CreateRuntimeSmokePuff(center);
+            }
+
+            if (puff == null)
+                return;
+
+            // Parent to the tool so the puff rides the weapon, not the mined node.
+            puff.transform.SetParent(toolVisual.transform, false);
+            puff.transform.position = center;
+            puff.transform.rotation = Quaternion.identity;
+            // Keep a small world-ish scale even if the weapon hierarchy is scaled oddly.
+            Vector3 lossy = toolVisual.transform.lossyScale;
+            puff.transform.localScale = new Vector3(
+                0.45f / Mathf.Max(0.05f, Mathf.Abs(lossy.x)),
+                0.45f / Mathf.Max(0.05f, Mathf.Abs(lossy.y)),
+                0.45f / Mathf.Max(0.05f, Mathf.Abs(lossy.z)));
+
+            ParticleSystem[] systems = puff.GetComponentsInChildren<ParticleSystem>(true);
+            for (int i = 0; i < systems.Length; i++)
+            {
+                ParticleSystem ps = systems[i];
+                if (ps == null)
+                    continue;
+
+                var main = ps.main;
+                main.loop = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                if (!ps.isPlaying)
+                    ps.Play(true);
+            }
+
+            Destroy(puff, 3.5f);
+        }
+
+        private Vector3 ResolveMiningToolCenter(ItemData tool)
+        {
+            EnsureHeatRenderers(tool);
+
+            GameObject toolVisual = heatVisualRoot;
+            if (toolVisual == null && weaponBridge != null && tool != null)
+                toolVisual = weaponBridge.TryGetWeaponInstance(tool);
+
+            if (toolVisual != null)
+            {
+                Renderer[] rends = toolVisual.GetComponentsInChildren<Renderer>(true);
+                bool hasBounds = false;
+                Bounds bounds = default;
+                for (int i = 0; i < rends.Length; i++)
+                {
+                    Renderer r = rends[i];
+                    if (r == null || r is ParticleSystemRenderer || !r.enabled || !r.gameObject.activeInHierarchy)
+                        continue;
+
+                    if (!hasBounds)
+                    {
+                        bounds = r.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(r.bounds);
+                    }
+                }
+
+                if (hasBounds)
+                    return bounds.center;
+
+                return toolVisual.transform.position;
+            }
+
+            if (muzzleTransform != null)
+                return muzzleTransform.position;
+
+            return transform.position + Vector3.up * 1.2f;
+        }
+
+        private void EnsureOverheatSmokePrefab()
+        {
+            if (overheatSmokePrefab != null)
+                return;
+
+#if UNITY_EDITOR
+            overheatSmokePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(OverheatSmokePrefabPath);
+#endif
+        }
+
+        private static GameObject CreateRuntimeSmokePuff(Vector3 worldPos)
+        {
+            GameObject go = new GameObject("MiningOverheatSmoke_Runtime");
+            go.transform.position = worldPos;
+
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.loop = false;
+            main.duration = 0.45f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.35f, 0.9f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.25f, 0.7f);
+            main.startColor = new Color(0.55f, 0.55f, 0.58f, 0.65f);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 48;
+            main.gravityModifier = -0.15f;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 18, 28) });
+
+            var shape = ps.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.08f;
+
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient grad = new Gradient();
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(0.7f, 0.7f, 0.72f), 0f),
+                    new GradientColorKey(new Color(0.45f, 0.45f, 0.48f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0.7f, 0f),
+                    new GradientAlphaKey(0.25f, 0.55f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            colorOverLifetime.color = grad;
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 1.6f));
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
+                    ?? Shader.Find("Particles/Standard Unlit")
+                    ?? Shader.Find("Sprites/Default");
+                if (shader != null)
+                {
+                    Material mat = new Material(shader) { color = new Color(0.6f, 0.6f, 0.62f, 0.55f) };
+                    renderer.sharedMaterial = mat;
+                }
+            }
+
+            ps.Play(true);
+            return go;
         }
 
         private bool TryDrainMiningPower(ItemData tool)
@@ -390,13 +723,12 @@ namespace Project.Interaction
                     return false;
             }
 
-            // Infinite Laser Tool power: keep the mag topped and never deplete.
-            int activeSlot = equipment != null ? equipment.ActiveWeaponHotbarSlot : -1;
-            if (activeSlot >= 0 && ammoState.IsInfiniteAmmoForSlot(activeSlot))
-                return true;
+            float drainPerSecond = tool.miningChargeDrainPerSecond > 0f
+                ? tool.miningChargeDrainPerSecond
+                : Mathf.Max(1f, tool.fireRate);
 
-            float rate = Mathf.Max(1f, tool.fireRate);
-            powerDrainAccumulator += rate * Time.deltaTime;
+            // Drain charge % over time while Fire is held (1 unit = 1%).
+            powerDrainAccumulator += drainPerSecond * Time.deltaTime;
             while (powerDrainAccumulator >= 1f)
             {
                 powerDrainAccumulator -= 1f;
@@ -407,8 +739,37 @@ namespace Project.Interaction
             return true;
         }
 
+        /// <summary>
+        /// Mining only while the Laser Tool is physically drawn — EquippedItem stays valid when holstered.
+        /// </summary>
+        private ItemData ResolveDrawnMiningTool()
+        {
+            if (equipment == null || !equipment.IsWeaponDrawn)
+                return null;
+
+            ItemData tool = equipment.DrawnWeaponItem;
+            if (tool == null || !tool.isMiningTool || !tool.IsRangedWeapon)
+                return null;
+
+            return tool;
+        }
+
+        /// <summary>
+        /// Journal / inventory / map / pause must not drive mining from UI clicks or leftover Fire holds.
+        /// </summary>
+        private bool IsMiningInputBlocked()
+        {
+            if (player == null)
+                player = GetComponent<PlayerController>();
+
+            return player != null && player.BlocksCombatInput;
+        }
+
         private bool IsFireHeld()
         {
+            if (IsMiningInputBlocked())
+                return false;
+
             if (Mouse.current != null && Mouse.current.leftButton.isPressed)
                 return true;
 
@@ -416,6 +777,15 @@ namespace Project.Interaction
                 return true;
 
             return false;
+        }
+
+        private void StopAllMiningFx(bool playStopSound)
+        {
+            ClearLock();
+            SetMiningFxActive(false);
+            SetProgressUiVisible(false);
+            StopContinuousLaserAudio(playStopSound);
+            StopHitSparks();
         }
 
         private Vector3 ResolveAimDirection(out Vector3 origin)
@@ -496,32 +866,63 @@ namespace Project.Interaction
 
             if (hasLock && lockedNode != null)
             {
-                Vector3 toLock = (lockPoint - aimOrigin).normalized;
-                float liveAngle = Vector3.Angle(aimDir, toLock);
-                if (liveAngle > breakDegrees)
+                float nodeDist = Vector3.Distance(transform.position, ResolveNodePoint(lockedNode));
+                if (nodeDist > MaxMineDistance)
                 {
                     lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
                     ClearLock();
                 }
                 else
                 {
-                    lockPoint = ResolveNodePoint(lockedNode);
-                    lockDirection = (lockPoint - aimOrigin).normalized;
-                    return;
+                    if (!TryGetLockPointOnNode(lockedNode, aimOrigin, aimDir, out Vector3 refreshed))
+                        refreshed = ResolveNodePoint(lockedNode);
+
+                    Vector3 toLock = (refreshed - aimOrigin).normalized;
+                    float liveAngle = Vector3.Angle(aimDir, toLock);
+                    if (liveAngle > breakDegrees)
+                    {
+                        lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
+                        ClearLock();
+                    }
+                    else
+                    {
+                        lockPoint = refreshed;
+                        lockDirection = toLock;
+                        return;
+                    }
                 }
             }
 
-            if (Physics.SphereCast(
+            // Non-convex MeshColliders on mineral nodes only respond to Raycast (not SphereCast).
+            // Prefer a precise Raycast, then a thin SphereCast fallback for legacy box/convex rocks.
+            RaycastHit hit;
+            bool acquired = Physics.Raycast(
+                aimOrigin,
+                aimDir,
+                out hit,
+                MaxMineDistance,
+                resourceLayer,
+                QueryTriggerInteraction.Ignore);
+
+            if (!acquired)
+            {
+                acquired = Physics.SphereCast(
                     aimOrigin,
-                    acquireRayRadius,
+                    Mathf.Max(0.05f, acquireRayRadius * 0.35f),
                     aimDir,
-                    out RaycastHit hit,
-                    MaxMineRayDistance,
+                    out hit,
+                    MaxMineDistance,
                     resourceLayer,
-                    QueryTriggerInteraction.Ignore))
+                    QueryTriggerInteraction.Ignore);
+            }
+
+            if (acquired)
             {
                 ResourceNode node = hit.collider.GetComponentInParent<ResourceNode>();
-                if (node != null && node.resourceItem != null)
+                if (node != null
+                    && node.resourceItem != null
+                    && node.interactionMode == ResourceNodeInteractionMode.LaserMine
+                    && Vector3.Distance(transform.position, hit.point) <= MaxMineDistance)
                 {
                     lockedNode = node;
                     lockPoint = hit.point;
@@ -529,6 +930,89 @@ namespace Project.Interaction
                     hasLock = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Finds the reticle ray hit on this specific mineral node, else a safe collider approximation.
+        /// </summary>
+        private static bool TryGetLockPointOnNode(
+            ResourceNode node,
+            Vector3 aimOrigin,
+            Vector3 aimDir,
+            out Vector3 point)
+        {
+            point = default;
+            if (node == null)
+                return false;
+
+            RaycastHit[] hits = Physics.RaycastAll(
+                aimOrigin,
+                aimDir,
+                MaxMineDistance,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDist = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                ResourceNode hitNode = hits[i].collider.GetComponentInParent<ResourceNode>();
+                if (hitNode != node)
+                    continue;
+
+                if (hits[i].distance >= bestDist)
+                    continue;
+
+                bestDist = hits[i].distance;
+                point = hits[i].point;
+                found = true;
+            }
+
+            if (found)
+                return true;
+
+            Vector3 fallbackReference = aimOrigin + aimDir * Mathf.Min(MaxMineDistance, 2f);
+            Collider[] colliders = node.GetComponentsInChildren<Collider>();
+            float closestSqrDistance = float.MaxValue;
+            bool hasColliderFallback = false;
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
+                    continue;
+
+                // Unity rejects ClosestPoint on non-convex MeshColliders. Those colliders must
+                // stay non-convex so the mining reticle can raycast their mineral surface.
+                Vector3 candidate = SupportsClosestPoint(collider)
+                    ? collider.ClosestPoint(fallbackReference)
+                    : collider.bounds.ClosestPoint(fallbackReference);
+                float sqrDistance = (candidate - fallbackReference).sqrMagnitude;
+                if (sqrDistance >= closestSqrDistance)
+                    continue;
+
+                closestSqrDistance = sqrDistance;
+                point = candidate;
+                hasColliderFallback = true;
+            }
+
+            if (hasColliderFallback)
+                return true;
+
+            point = ResolveNodePoint(node);
+            return true;
+        }
+
+        private static bool SupportsClosestPoint(Collider collider)
+        {
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider)
+            {
+                return true;
+            }
+
+            return collider is MeshCollider meshCollider && meshCollider.convex;
         }
 
         private static Vector3 ResolveNodePoint(ResourceNode node)
@@ -544,11 +1028,22 @@ namespace Project.Interaction
             if (lockedNode == null || gatherer == null)
                 return;
 
+            if (Vector3.Distance(transform.position, ResolveNodePoint(lockedNode)) > MaxMineDistance)
+            {
+                lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
+                ClearLock();
+                SetProgressUiVisible(false);
+                return;
+            }
+
+            float duration = lockedNode.ResolvePassDuration(tool.miningPassDuration);
+            int passes = lockedNode.ResolvePassCount(tool.miningPassesRequired);
+
             bool passCompleted = lockedNode.TickMining(
                 gatherer,
                 Time.deltaTime,
-                tool.miningPassDuration,
-                tool.miningPassesRequired,
+                duration,
+                passes,
                 tool.miningDropMin,
                 tool.miningDropMax,
                 ProgressRetainSeconds,
@@ -707,6 +1202,8 @@ namespace Project.Interaction
                 laserLine.enabled = true;
                 laserLine.useWorldSpace = true;
                 laserLine.positionCount = 2;
+                // Force world-space endpoints every frame so the tool LineRenderer stays
+                // aligned with the reticle / soft-locked mineral (vLaserSight is disabled).
                 laserLine.SetPosition(0, muzzlePos);
                 laserLine.SetPosition(1, endPoint);
             }
@@ -714,7 +1211,15 @@ namespace Project.Interaction
             if (laserSightSprite != null)
             {
                 laserSightSprite.gameObject.SetActive(true);
+                // Soft-lock: snap the laser reticle onto the mineral surface.
                 laserSightSprite.position = endPoint;
+                Camera cam = ResolveCamera();
+                if (cam != null)
+                {
+                    Vector3 toCam = cam.transform.position - endPoint;
+                    if (toCam.sqrMagnitude > 0.0001f)
+                        laserSightSprite.rotation = Quaternion.LookRotation(-toCam.normalized, Vector3.up);
+                }
             }
 
             UpdateHitSparks(endPoint, endPoint - muzzlePos);
@@ -926,79 +1431,39 @@ namespace Project.Interaction
 
         private void EnsureProgressUi()
         {
-            if (progressCanvas != null)
+            if (progressBar != null)
                 return;
 
-            GameObject canvasGo = new GameObject("MiningProgressCanvas");
-            canvasGo.transform.SetParent(transform, false);
-            progressCanvas = canvasGo.AddComponent<Canvas>();
-            progressCanvas.renderMode = RenderMode.WorldSpace;
-            canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
-            RectTransform canvasRect = canvasGo.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = new Vector2(2.4f, 0.55f);
-            progressRoot = canvasRect;
-
-            GameObject bg = new GameObject("Bg");
-            bg.transform.SetParent(progressRoot, false);
-            Image bgImage = bg.AddComponent<Image>();
-            bgImage.color = new Color(0.08f, 0.08f, 0.1f, 0.82f);
-            RectTransform bgRect = bg.GetComponent<RectTransform>();
-            bgRect.anchorMin = Vector2.zero;
-            bgRect.anchorMax = Vector2.one;
-            bgRect.offsetMin = Vector2.zero;
-            bgRect.offsetMax = Vector2.zero;
-
-            GameObject fillGo = new GameObject("Fill");
-            fillGo.transform.SetParent(progressRoot, false);
-            progressFill = fillGo.AddComponent<Image>();
-            progressFill.color = SurvivalPioneerUiPalette.Gold;
-            progressFill.type = Image.Type.Filled;
-            progressFill.fillMethod = Image.FillMethod.Horizontal;
-            RectTransform fillRect = fillGo.GetComponent<RectTransform>();
-            fillRect.anchorMin = new Vector2(0.05f, 0.12f);
-            fillRect.anchorMax = new Vector2(0.95f, 0.42f);
-            fillRect.offsetMin = Vector2.zero;
-            fillRect.offsetMax = Vector2.zero;
-
-            GameObject labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(progressRoot, false);
-            progressLabel = labelGo.AddComponent<TextMeshProUGUI>();
-            progressLabel.fontSize = 0.22f;
-            progressLabel.alignment = TextAlignmentOptions.Center;
-            progressLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
-            RectTransform labelRect = labelGo.GetComponent<RectTransform>();
-            labelRect.anchorMin = new Vector2(0f, 0.45f);
-            labelRect.anchorMax = new Vector2(1f, 1f);
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
+            progressBar = WorldNodeProgressBar.Create(transform);
         }
 
         private void UpdateProgressUi(ItemData tool)
         {
-            if (lockedNode == null || progressRoot == null)
+            if (lockedNode == null)
             {
                 SetProgressUiVisible(false);
                 return;
             }
 
-            SetProgressUiVisible(true);
-            Vector3 pos = ResolveNodePoint(lockedNode) + Vector3.up * 1.15f;
-            progressRoot.position = pos;
-            Camera cam = ResolveCamera();
-            if (cam != null)
-                progressRoot.rotation = Quaternion.LookRotation(progressRoot.position - cam.transform.position);
+            EnsureProgressUi();
+            if (progressBar == null)
+                return;
 
+            int total = lockedNode.ResolvePassCount(tool != null ? tool.miningPassesRequired : 1);
             string name = lockedNode.resourceItem != null ? lockedNode.resourceItem.itemName : "Resource";
             int pass = lockedNode.MiningPassIndex + 1;
-            int total = Mathf.Max(1, tool.miningPassesRequired);
-            progressLabel.text = $"{name}  {pass}/{total}";
-            progressFill.fillAmount = lockedNode.OverallMiningProgress01(tool.miningPassesRequired);
+            // Slider tracks hold time for the current mining wave (0→1 over passDuration).
+            progressBar.UpdateBar(
+                ResolveNodePoint(lockedNode) + Vector3.up * 0.75f,
+                lockedNode.MiningPassProgress01,
+                $"{name}  {pass}/{total}",
+                ResolveCamera());
         }
 
         private void SetProgressUiVisible(bool visible)
         {
-            if (progressCanvas != null)
-                progressCanvas.gameObject.SetActive(visible);
+            if (progressBar != null)
+                progressBar.SetVisible(visible);
         }
     }
 }

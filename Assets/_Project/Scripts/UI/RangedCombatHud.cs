@@ -10,7 +10,8 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Crosshair plus ammo readout while a ranged weapon is drawn.
+    /// Crosshair plus ammo / mining charge readout while a ranged weapon is drawn.
+    /// Mining tools reuse the same centered white text style as ammo counts (e.g. "CHARGE 50%").
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(120)]
@@ -22,7 +23,8 @@ namespace Project.UI
         [SerializeField] private float crosshairSize = 14f;
         [SerializeField] private float crosshairGap = 5f;
         [SerializeField] private float crosshairThickness = 2f;
-        [SerializeField] private float hotbarVerticalPadding = 6f;
+        // Kept in canvas pixels so the visible gap remains the requested seven pixels.
+        private const float SurvivalLabelGapPixels = 7f;
 
         private EquipmentController equipment;
         private WeaponAmmoState ammoState;
@@ -31,6 +33,9 @@ namespace Project.UI
         private PioneerInvectorInputBridge invectorInput;
         private TextMeshProUGUI ammoLabel;
         private RectTransform ammoRect;
+        private RectTransform petToolbarRect;
+        private RectTransform expeditionPioneerRect;
+        private readonly Vector3[] rectCorners = new Vector3[4];
 
         private void Awake()
         {
@@ -66,6 +71,8 @@ namespace Project.UI
             if (showAmmoCounter)
                 EnsureAmmoLabel();
 
+            // Drop any leftover magenta mining slider HUD from earlier builds.
+            DestroyLegacyMiningChargeHud();
             RefreshAmmoLabel();
         }
 
@@ -76,37 +83,50 @@ namespace Project.UI
 
         private void RefreshAmmoLabel()
         {
-            if (!showAmmoCounter || ammoLabel == null)
+            if (!showAmmoCounter)
                 return;
 
             if (!ShouldShowHud(out ItemData weapon))
             {
-                ammoLabel.gameObject.SetActive(false);
+                SetAmmoLabelVisible(false);
                 return;
             }
 
-            ammoLabel.gameObject.SetActive(true);
+            EnsureAmmoLabel();
+            if (ammoLabel == null)
+                return;
+
+            SetAmmoLabelVisible(true);
+
+            if (weapon.isMiningTool)
+            {
+                int percent = ammoState != null
+                    ? ammoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
+                    : 0;
+                ammoLabel.text = $"CHARGE {percent}%";
+                LayoutAboveSurvivalStats(ammoRect);
+                return;
+            }
 
             int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
             int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
-            int magazineSize = Mathf.Max(1, weapon.magazineSize);
+            int magazineSize = WeaponAmmoState.GetMagazineCapacity(weapon);
             bool infiniteReserve = ammoState != null && ammoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
             int reserve = !infiniteReserve && ammoState != null
                 ? ammoState.GetReserveAmmoCount(weaponHotbarSlot)
                 : 0;
 
-            // Completely dry (no mag + no reserve): show Empty 0/0 instead of a misleading ammo type like Plasma 0/30.
             if (!infiniteReserve && loaded <= 0 && reserve <= 0)
             {
-                ammoLabel.text = weapon.isMiningTool ? "POWER Empty" : "Empty 0/0";
-                LayoutAboveHotbar();
+                ammoLabel.text = "Empty 0/0";
+                LayoutAboveSurvivalStats(ammoRect);
                 return;
             }
 
-            string ammoLabelName = weapon.isMiningTool ? "POWER" : ResolveAmmoLabelName(weaponHotbarSlot);
+            string ammoLabelName = ResolveAmmoLabelName(weaponHotbarSlot);
             if (infiniteReserve)
             {
-                ammoLabel.text = weapon.isMiningTool ? "POWER ∞" : $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";
+                ammoLabel.text = $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";
             }
             else
             {
@@ -114,7 +134,8 @@ namespace Project.UI
                     ? $"{ammoLabelName} {loaded}/{magazineSize}  (+{reserve})"
                     : $"{ammoLabelName} {loaded}/{magazineSize}";
             }
-            LayoutAboveHotbar();
+
+            LayoutAboveSurvivalStats(ammoRect);
         }
 
         private string ResolveAmmoLabelName(int weaponHotbarSlot)
@@ -132,8 +153,17 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            if (showAmmoCounter && ammoLabel != null && ammoLabel.gameObject.activeSelf)
-                LayoutAboveHotbar();
+            if (!showAmmoCounter)
+                return;
+
+            if (ShouldShowHud(out ItemData weapon) && weapon != null && weapon.isMiningTool)
+            {
+                RefreshAmmoLabel();
+                return;
+            }
+
+            if (ammoLabel != null && ammoLabel.gameObject.activeSelf)
+                LayoutAboveSurvivalStats(ammoRect);
         }
 
         private void OnGUI()
@@ -184,8 +214,7 @@ namespace Project.UI
             if (ammoLabel != null)
                 return;
 
-            UIManager uiManager = FindAnyObjectByType<UIManager>();
-            Transform parent = uiManager != null ? uiManager.transform : transform;
+            Transform parent = ResolveHudParent();
 
             GameObject labelObject = new GameObject("RangedAmmoLabel");
             labelObject.transform.SetParent(parent, false);
@@ -194,39 +223,150 @@ namespace Project.UI
             ammoRect.anchorMin = new Vector2(0.5f, 0f);
             ammoRect.anchorMax = new Vector2(0.5f, 0f);
             ammoRect.pivot = new Vector2(0.5f, 0f);
-            ammoRect.sizeDelta = new Vector2(180f, 60f);
+            ammoRect.sizeDelta = new Vector2(220f, 28f);
 
             ammoLabel = labelObject.AddComponent<TextMeshProUGUI>();
             ammoLabel.alignment = TextAlignmentOptions.Center;
             ammoLabel.fontSize = 15f;
-            ammoLabel.color = new Color(0.95f, 0.95f, 0.95f, 0.95f);
+            ammoLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             ammoLabel.text = string.Empty;
+            ammoLabel.raycastTarget = false;
 
             Outline outline = labelObject.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
             outline.effectDistance = new Vector2(1f, -1f);
 
-            LayoutAboveHotbar();
+            LayoutAboveSurvivalStats(ammoRect);
         }
 
-        private void LayoutAboveHotbar()
+        private void SetAmmoLabelVisible(bool visible)
         {
-            if (ammoRect == null)
+            if (ammoLabel != null)
+                ammoLabel.gameObject.SetActive(visible);
+        }
+
+        private Transform ResolveHudParent()
+        {
+            UIManager uiManager = FindAnyObjectByType<UIManager>();
+            return uiManager != null ? uiManager.transform : transform;
+        }
+
+        private void LayoutAboveSurvivalStats(RectTransform target)
+        {
+            if (target == null)
                 return;
 
-            RectTransform hotbarRect = ResolveHotbarRect();
-            if (hotbarRect == null)
+            if (target.parent == null)
             {
-                ammoRect.anchoredPosition = new Vector2(0f, 118f * HudLayoutMetrics.HudScale);
+                Transform parent = ResolveHudParent();
+                if (parent != null)
+                    target.SetParent(parent, false);
+                else
+                    target.SetParent(transform, false);
+            }
+
+            // Draw above survival bars (sibling order), not behind them.
+            target.SetAsLastSibling();
+
+            RectTransform layoutParent = target.parent as RectTransform;
+            RectTransform survivalRect = CondensedSurvivalStatsHud.TryGetPanelRect();
+
+            if (layoutParent != null && survivalRect != null && survivalRect.gameObject.activeInHierarchy)
+            {
+                Vector2 survivalTop = GetTopCenterInParent(survivalRect, layoutParent);
+                target.pivot = new Vector2(0.5f, 0f);
+                target.anchorMin = new Vector2(0.5f, 0f);
+                target.anchorMax = new Vector2(0.5f, 0f);
+                target.anchoredPosition = ParentLocalToAnchoredPosition(
+                    layoutParent,
+                    target,
+                    new Vector2(ResolveLowerHudCenterX(layoutParent, survivalTop.x),
+                        survivalTop.y + SurvivalLabelGapPixels));
                 return;
             }
 
-            ammoRect.anchorMin = hotbarRect.anchorMin;
-            ammoRect.anchorMax = hotbarRect.anchorMax;
-            ammoRect.pivot = hotbarRect.pivot;
-            ammoRect.anchoredPosition = new Vector2(
-                hotbarRect.anchoredPosition.x,
-                hotbarRect.anchoredPosition.y + hotbarRect.sizeDelta.y + hotbarVerticalPadding * HudLayoutMetrics.HudScale);
+            RectTransform hotbarRect = ResolveHotbarRect();
+            if (layoutParent == null || hotbarRect == null)
+            {
+                target.anchoredPosition = new Vector2(0f, 118f * HudLayoutMetrics.HudScale);
+                return;
+            }
+
+            Vector2 hotbarTop = GetTopCenterInParent(hotbarRect, layoutParent);
+            target.pivot = new Vector2(0.5f, 0f);
+            target.anchorMin = new Vector2(0.5f, 0f);
+            target.anchorMax = new Vector2(0.5f, 0f);
+            target.anchoredPosition = ParentLocalToAnchoredPosition(
+                layoutParent,
+                target,
+                new Vector2(ResolveLowerHudCenterX(layoutParent, hotbarTop.x),
+                    hotbarTop.y + SurvivalLabelGapPixels));
+        }
+
+        /// <summary>
+        /// Centers across the complete lower strip, from PET's left edge to the expedition
+        /// PIONEERS cluster's right edge. The runtime roots are created by PetToolbarUI and
+        /// ExpeditionPioneerHudUI under MainCanvas.
+        /// </summary>
+        private float ResolveLowerHudCenterX(RectTransform layoutParent, float fallbackX)
+        {
+            petToolbarRect = ResolveHudPanelRect(layoutParent, petToolbarRect, "PetToolbar");
+            expeditionPioneerRect = ResolveHudPanelRect(layoutParent, expeditionPioneerRect, "ExpeditionPioneerHud");
+
+            if (petToolbarRect == null || expeditionPioneerRect == null ||
+                !petToolbarRect.gameObject.activeInHierarchy || !expeditionPioneerRect.gameObject.activeInHierarchy)
+            {
+                return fallbackX;
+            }
+
+            float petLeft = GetHorizontalBoundsInParent(petToolbarRect, layoutParent).x;
+            float pioneerRight = GetHorizontalBoundsInParent(expeditionPioneerRect, layoutParent).y;
+            return (petLeft + pioneerRight) * 0.5f;
+        }
+
+        private static RectTransform ResolveHudPanelRect(RectTransform layoutParent, RectTransform cached, string panelName)
+        {
+            if (cached != null)
+                return cached;
+
+            Transform panel = layoutParent.Find(panelName);
+            return panel as RectTransform;
+        }
+
+        private Vector2 GetHorizontalBoundsInParent(RectTransform rect, RectTransform layoutParent)
+        {
+            rect.GetWorldCorners(rectCorners);
+
+            float left = float.PositiveInfinity;
+            float right = float.NegativeInfinity;
+            for (int i = 0; i < rectCorners.Length; i++)
+            {
+                float x = layoutParent.InverseTransformPoint(rectCorners[i]).x;
+                left = Mathf.Min(left, x);
+                right = Mathf.Max(right, x);
+            }
+
+            return new Vector2(left, right);
+        }
+
+        private Vector2 GetTopCenterInParent(RectTransform rect, RectTransform layoutParent)
+        {
+            rect.GetWorldCorners(rectCorners);
+
+            Vector2 topLeft = layoutParent.InverseTransformPoint(rectCorners[1]);
+            Vector2 topRight = layoutParent.InverseTransformPoint(rectCorners[2]);
+            return new Vector2((topLeft.x + topRight.x) * 0.5f, Mathf.Max(topLeft.y, topRight.y));
+        }
+
+        private static Vector2 ParentLocalToAnchoredPosition(
+            RectTransform layoutParent,
+            RectTransform target,
+            Vector2 parentLocalPosition)
+        {
+            Vector2 anchorPosition = new Vector2(
+                (target.anchorMin.x - layoutParent.pivot.x) * layoutParent.rect.width,
+                (target.anchorMin.y - layoutParent.pivot.y) * layoutParent.rect.height);
+            return parentLocalPosition - anchorPosition;
         }
 
         private static RectTransform ResolveHotbarRect()
@@ -236,6 +376,18 @@ namespace Project.UI
                 return hotbarFromInventory;
 
             return null;
+        }
+
+        private static void DestroyLegacyMiningChargeHud()
+        {
+            UIManager uiManager = FindAnyObjectByType<UIManager>();
+            Transform parent = uiManager != null ? uiManager.transform : null;
+            if (parent == null)
+                return;
+
+            Transform legacy = parent.Find("MiningChargeHud");
+            if (legacy != null)
+                Object.Destroy(legacy.gameObject);
         }
     }
 }
