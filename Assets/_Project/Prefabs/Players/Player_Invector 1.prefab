@@ -2188,6 +2188,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Inventory.InventorySystem
   inventorySize: 20
+  unlockedMainSlots: 20
   hotbarSize: 10
   toolbarSize: 2
 --- !u!114 &7332195947425146993

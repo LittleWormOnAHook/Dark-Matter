@@ -68,7 +68,8 @@ PrefabInstance:
       propertyPath: amountPerGather
       value: 5
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -972654047772215680, guid: 8440a364416e8de41987b0616e833268, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

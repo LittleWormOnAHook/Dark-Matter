@@ -12,10 +12,8 @@ GameObject:
   - component: {fileID: 3220340083621884328}
   - component: {fileID: 4474259520114200009}
   - component: {fileID: 6546880221705288861}
-  - component: {fileID: 8199775835227230232}
   - component: {fileID: 816158817471521597}
   - component: {fileID: -972654047772215680}
-  - component: {fileID: 8655435512188320851}
   m_Layer: 7
   m_Name: Mushroom_World
   m_TagString: PickUp
@@ -117,21 +115,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &8199775835227230232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4131714642898419157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce04210d8b272924e8bbbbeaf7c1f04b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ResourceNode
-  resourceItem: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
-  amountPerGather: 20
-  maxHits: 3
 --- !u!65 &816158817471521597
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -168,24 +151,6 @@ MonoBehaviour:
   itemData: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
   amount: 1
   promptText: Press E to use
-  canRespawn: 1
-  minRespawnTime: 20
-  maxRespawnTime: 90
---- !u!114 &8655435512188320851
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4131714642898419157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
-  itemData: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
-  amount: 1
-  promptText: Press E to pick up
   canRespawn: 1
   minRespawnTime: 20
   maxRespawnTime: 90

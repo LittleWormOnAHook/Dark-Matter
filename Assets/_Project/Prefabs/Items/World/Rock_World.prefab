@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 7245670376149679746}
   - component: {fileID: 1095794521815163693}
   - component: {fileID: 6470864308726647192}
-  - component: {fileID: 6354520013832757163}
   - component: {fileID: 6802407948834125984}
   - component: {fileID: 8331798714347640893}
   - component: {fileID: 8716590531062477240}
@@ -114,23 +113,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.4142456, y: 0.3879738, z: 0.42173386}
-  m_Center: {x: 0.00032043457, y: 0.18157578, z: -0.00016975403}
---- !u!114 &6354520013832757163
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5619850679824680986}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce04210d8b272924e8bbbbeaf7c1f04b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ResourceNode
-  resourceItem: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
-  amountPerGather: 25
-  maxHits: 3
+  m_Size: {x: 0.4966429, y: 0.4232538, z: 0.4694083}
+  m_Center: {x: -0.002898708, y: 0.1977398, z: 0.006802678}
 --- !u!65 &6802407948834125984
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -165,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
   itemData: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
-  amount: 1
+  amount: 25
   promptText: Press E to pick up
   canRespawn: 1
   minRespawnTime: 20
@@ -185,6 +169,9 @@ MonoBehaviour:
   outlineColor: {r: 0, g: 1, b: 1, a: 1}
   alpha: 0.2
   thickness: 0.001
+  lookRange: 2
+  lookDotThreshold: 0.72
   player: {fileID: 0}
-  scanRange: 2
+  scannerFalloffDistance: 50
+  scannerOnlyOutline: 0
   outlineMaterial: {fileID: 0}

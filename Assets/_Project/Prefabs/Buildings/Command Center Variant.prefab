@@ -61,9 +61,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1294426833011932, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+      propertyPath: m_TagString
+      value: Walkable
+      objectReference: {fileID: 0}
     - target: {fileID: 1627588572608906, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
       propertyPath: m_Name
       value: Command Center Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 1627588572608906, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+      propertyPath: m_TagString
+      value: Wood
       objectReference: {fileID: 0}
     - target: {fileID: 4009105922347784, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
       propertyPath: m_LocalPosition.x
@@ -105,6 +113,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 23398101980761912, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f483cd15cfaea5d47b707c18e7c06174, type: 2}
     - target: {fileID: 33055149887099224, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
       propertyPath: m_Mesh
       value: 
@@ -118,10 +130,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4300000, guid: 9904406e34eee1b4292b52dd0ec6028a, type: 3}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 1275496622799732, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+    - {fileID: 1371647503531136, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 4009105922347784, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
-      insertIndex: 2
+      insertIndex: 0
       addedObject: {fileID: 8092799164635135930}
     - targetCorrespondingSourceObject: {fileID: 4009105922347784, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
       insertIndex: -1
@@ -136,6 +150,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1627588572608906, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5584260322584404869}
+    - targetCorrespondingSourceObject: {fileID: 1294426833011932, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4758768003840833639}
   m_SourcePrefab: {fileID: 100100000, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
 --- !u!1 &91801859779671998 stripped
 GameObject:
@@ -173,10 +190,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
   label: Command Center 12
-  color: {r: 0, g: 0.7490196, b: 1, a: 1}
+  color: {r: 0, g: 0.7037958, b: 0.93962264, a: 1}
   iconSprite: {fileID: 21300000, guid: cbf720c275e518644ae08d241225e93a, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
+  keepRegisteredWhenDisabled: 0
+  requiresScanDiscovery: 1
+  discoveryId: 
+  requiresFogReveal: 1
 --- !u!65 &5584260322584404869
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -196,8 +217,35 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.6, y: 2.2, z: 1.2}
-  m_Center: {x: 0, y: 1.1, z: 0}
+  m_Size: {x: 10.371229, y: 16.522997, z: 14.388205}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &92170137167661800 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1294426833011932, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}
+  m_PrefabInstance: {fileID: 91177029236870708}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &4758768003840833639
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 92170137167661800}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 9904406e34eee1b4292b52dd0ec6028a, type: 3}
 --- !u!4 &93963459762887996 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4009105922347784, guid: a603f239fabbe7340b05a53dd8588e06, type: 3}

@@ -53,8 +53,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6015234, y: 0.05796356, z: 0.3454297}
-  m_Center: {x: 0, y: 0.02898178, z: 0}
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0.54, z: 0}
 --- !u!114 &782753757157972933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
   recipeId: stone_salve
   promptText: Press E to learn recipe
-  interactRange: 2.5
+  interactRange: 5
   collectedMessage: Recipe scroll collected!
 --- !u!1001 &5950464740171160766
 PrefabInstance:

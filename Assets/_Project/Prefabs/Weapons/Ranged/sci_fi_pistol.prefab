@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &8027814037646896314
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 581666157560913890, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_Name
+      value: sci_fi_pistol
+      objectReference: {fileID: 0}
+    - target: {fileID: 581666157560913890, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5575035
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5575035
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5575035
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -37.863
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0000014192
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 12.239
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.70710677
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8559918206709361449, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 90
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 581666157560913890, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8890991684126540557}
+    - targetCorrespondingSourceObject: {fileID: 581666157560913890, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 361645164881719108}
+  m_SourcePrefab: {fileID: 100100000, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+--- !u!1 &7456544933812286296 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 581666157560913890, guid: f140fd7a6568b7b4c939192aeb264c48, type: 3}
+  m_PrefabInstance: {fileID: 8027814037646896314}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &8890991684126540557
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7456544933812286296}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.03361967, y: 0.112775184, z: 0.17517391}
+  m_Center: {x: 0, y: -0.0036646165, z: -0.0028977543}
+--- !u!114 &361645164881719108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7456544933812286296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
+  itemData: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
+  amount: 1
+  promptText: Press E to pick up
+  canRespawn: 0
+  minRespawnTime: 20
+  maxRespawnTime: 90

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7566832405765192050}
   - component: {fileID: 775827179733487144}
   - component: {fileID: 6929281853316232127}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: TFD_Water_Lily_Flower_01A_LOD0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 216464112311669661}
   - component: {fileID: 3003188860241101690}
   - component: {fileID: 6005891185292389947}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: TFD_Water_Lily_Flower_01A_LOD2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -191,7 +191,7 @@ GameObject:
   - component: {fileID: 3631972144159601172}
   - component: {fileID: 5859224767808190392}
   - component: {fileID: 636187203160804479}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: TFD_Water_Lily_Flower_01A_LOD1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -280,11 +280,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1656302483574914876}
   - component: {fileID: 2301233705491424516}
-  - component: {fileID: 3171104478608388507}
   - component: {fileID: 4244647163430639239}
   - component: {fileID: -4669752311540542210}
-  - component: {fileID: 3682383416323568851}
-  m_Layer: 0
+  - component: {fileID: 7673335358828106518}
+  m_Layer: 7
   m_Name: Red Lilly_World
   m_TagString: PickUp
   m_Icon: {fileID: 0}
@@ -337,21 +336,6 @@ LODGroup:
     - renderer: {fileID: 6005891185292389947}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!114 &3171104478608388507
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7022529065963280668}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce04210d8b272924e8bbbbeaf7c1f04b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ResourceNode
-  resourceItem: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
-  amountPerGather: 25
-  maxHits: 3
 --- !u!65 &4244647163430639239
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -391,21 +375,24 @@ MonoBehaviour:
   canRespawn: 1
   minRespawnTime: 20
   maxRespawnTime: 90
---- !u!114 &3682383416323568851
-MonoBehaviour:
+--- !u!65 &7673335358828106518
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7022529065963280668}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
-  itemData: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
-  amount: 1
-  promptText: Press E to use
-  canRespawn: 1
-  minRespawnTime: 20
-  maxRespawnTime: 90
+  serializedVersion: 3
+  m_Size: {x: 1.05, y: 1.05, z: 1.05}
+  m_Center: {x: 0, y: 0, z: 0}

@@ -11,10 +11,9 @@ GameObject:
   - component: {fileID: 3560657997405137906}
   - component: {fileID: 1676698358804064249}
   - component: {fileID: 7571931706023703087}
-  - component: {fileID: 6942416114948655537}
   - component: {fileID: 4652980913144473931}
   - component: {fileID: 5577776156383552203}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Oxygen Tank Mini_World
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -93,21 +92,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &6942416114948655537
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6413809825698787981}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce04210d8b272924e8bbbbeaf7c1f04b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ResourceNode
-  resourceItem: {fileID: 11400000, guid: f02b2658b1dcabd4daf8fdb0d9bd91c1, type: 2}
-  amountPerGather: 25
-  maxHits: 3
 --- !u!65 &4652980913144473931
 BoxCollider:
   m_ObjectHideFlags: 0
