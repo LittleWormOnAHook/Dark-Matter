@@ -9,7 +9,7 @@ using UnityEngine;
 /// </summary>
 public class CameraShakeEmitterCreatorWindow : EditorWindow
 {
-    private const string DefaultFolder = "Assets/_Project/Prefabs/Environment/CameraShake";
+    private const string DefaultFolder = ProjectAssetPaths.PrefabsEnvironmentCameraShake;
 
     private string emitterName = "CameraShake_Custom";
     private CameraShakePattern pattern = CameraShakePattern.OneShot;

@@ -22,7 +22,7 @@ namespace Project.EditorTools
 
     public static class PetPrefabBuilder
     {
-        private const string PrefabFolder = "Assets/_Project/Prefabs/Pets";
+        private const string PrefabFolder = ProjectAssetPaths.PrefabsPets;
         private const string ResourcesFolder = "Assets/_Project/Resources/Pets";
         private const string DefinitionFolder = "Assets/_Project/Resources/Pets/Definitions";
         private const string IconFolder = "Assets/_Project/Resources/Pets/Icons";

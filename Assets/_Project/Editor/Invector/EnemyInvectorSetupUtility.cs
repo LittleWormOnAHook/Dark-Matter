@@ -14,10 +14,10 @@ namespace Project.EditorTools.Invector
     public static class EnemyInvectorSetupUtility
     {
         private const string SourcePlayerPrefabPath = "Assets/_Project/Prefabs/Players/Player_Invector.prefab";
-        private const string HumanoidBasePrefabPath = "Assets/_Project/Prefabs/Combat/HumanoidEnemy_Invector.prefab";
+        private const string HumanoidBasePrefabPath = ProjectAssetPaths.HumanoidEnemyPrefab;
         private const string HumanoidEnemyDefinitionPath = "Assets/_Project/Data/Enemies/Humanoid_Enemy.asset";
-        private const string DefaultMeleeItemPath = "Assets/_Project/Data/Items/weap2_sword.asset";
-        private const string DefaultRangedItemPath = "Assets/_Project/Data/Items/sci_fi_pistol.asset";
+        private const string DefaultMeleeItemPath = ProjectAssetPaths.ItemsMelee + "/weap2_sword.asset";
+        private const string DefaultRangedItemPath = ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset";
 
         [MenuItem(SurvivalPioneerEditorMenus.RepairAllHumanoidCombatPrefabs, false, 130)]
         public static void RepairAllHumanoidCombatPrefabs()

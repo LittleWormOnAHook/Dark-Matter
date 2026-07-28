@@ -522,11 +522,19 @@ public static class WeaponPrefabBuilder
             return;
         }
 
-        const string itemsPrefabFolder = "Assets/_Project/Prefabs/Items";
-        const string heldPrefabFolder = "Assets/_Project/Prefabs/Items/Held";
+        const string meleePrefabFolder = ProjectAssetPaths.PrefabsWeaponsMelee;
+        const string rangedPrefabFolder = ProjectAssetPaths.PrefabsWeaponsRanged;
+        const string toolsPrefabFolder = ProjectAssetPaths.PrefabsTools;
+        const string heldLegacyFolder = ProjectAssetPaths.PrefabsItemsHeld;
 
-        int heldUpdated = RefreshWeaponHitboxesInFolder(heldPrefabFolder);
-        int itemsUpdated = RefreshWeaponHitboxesInFolder(itemsPrefabFolder, includeWorldPrefabs: true);
+        int heldUpdated = RefreshWeaponHitboxesInFolder(meleePrefabFolder)
+            + RefreshWeaponHitboxesInFolder(rangedPrefabFolder)
+            + RefreshWeaponHitboxesInFolder(toolsPrefabFolder)
+            + RefreshWeaponHitboxesInFolder(heldLegacyFolder);
+        int itemsUpdated = RefreshWeaponHitboxesInFolder(ProjectAssetPaths.PrefabsItemsWorld, includeWorldPrefabs: true)
+            + RefreshWeaponHitboxesInFolder(meleePrefabFolder, includeWorldPrefabs: true)
+            + RefreshWeaponHitboxesInFolder(rangedPrefabFolder, includeWorldPrefabs: true)
+            + RefreshWeaponHitboxesInFolder(toolsPrefabFolder, includeWorldPrefabs: true);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 

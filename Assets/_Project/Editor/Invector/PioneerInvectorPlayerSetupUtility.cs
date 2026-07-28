@@ -36,9 +36,9 @@ namespace Project.EditorTools.Invector
         private const string DefaultTwoHandMeleePath =
             "Assets/Invector-3rdPersonController/Melee Combat/Prefabs/Weapons/NoInventory/GreatKatana_NOInventory.prefab";
 
-        private const string PistolItemPath = "Assets/_Project/Data/Items/sci_fi_pistol.asset";
-        private const string RifleItemPath = "Assets/_Project/Data/Items/survival_rifle.asset";
-        private const string MiningToolItemPath = "Assets/_Project/Data/Items/DM_Mining_Tool.asset";
+        private const string PistolItemPath = ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset";
+        private const string RifleItemPath = ProjectAssetPaths.ItemsRanged + "/survival_rifle.asset";
+        private const string MiningToolItemPath = ProjectAssetPaths.ItemsRanged + "/DM_Mining_Tool.asset";
         private const string PreloadedMeleeSlotsRootName = "PreloadedMeleeWeaponSlots";
         private const string PreloadedRangedSlotsRootName = "PreloadedRangedWeaponSlots";
 

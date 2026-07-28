@@ -62,16 +62,8 @@ namespace Project.EditorTools
             serializedVolume.FindProperty("playAmbientLoop").boolValue = playAmbientLoop;
             serializedVolume.ApplyModifiedPropertiesWithoutUndo();
 
-            string prefabFolder = "Assets/_Project/Prefabs/Environment/Exposure";
-            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs/Environment"))
-            {
-                if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs"))
-                    AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
-                AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Environment");
-            }
-
-            if (!AssetDatabase.IsValidFolder(prefabFolder))
-                AssetDatabase.CreateFolder("Assets/_Project/Prefabs/Environment", "Exposure");
+            string prefabFolder = ProjectAssetPaths.PrefabsEnvironmentExposure;
+            CraftingEditorUtility.EnsureFolder(prefabFolder);
 
             string safeName = MakeSafeName(resolvedProfile.displayName);
             string prefabPath = $"{prefabFolder}/{safeName}.prefab";

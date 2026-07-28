@@ -6,7 +6,7 @@ namespace Project.EditorTools
 {
     public static class EnemySetup
     {
-        private const string PrefabPath = ProjectAssetPaths.PrefabsCombat + "/HumanoidEnemy_Invector.prefab";
+        private const string PrefabPath = ProjectAssetPaths.HumanoidEnemyPrefab;
         private const string SceneEnemyName = "Enemy_Test";
 
         [MenuItem(SurvivalPioneerEditorMenus.Combat + "Place Test Enemy", false, 10)]

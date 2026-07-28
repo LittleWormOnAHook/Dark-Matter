@@ -7,7 +7,7 @@ namespace Project.EditorTools
     public static class ExposureZoneEditorUtility
     {
         public const string ProfileFolder = "Assets/_Project/Data/Exposure";
-        public const string PrefabFolder = "Assets/_Project/Prefabs/Environment/Exposure";
+        public const string PrefabFolder = ProjectAssetPaths.PrefabsEnvironmentExposure;
 
         public static ExposureZoneProfile EnsureProfileAsset(ExposureZoneKind kind, bool overwriteExisting = false)
         {
@@ -67,18 +67,8 @@ namespace Project.EditorTools
 
         public static void EnsureFolders()
         {
-            if (!AssetDatabase.IsValidFolder("Assets/_Project/Data"))
-                AssetDatabase.CreateFolder("Assets/_Project", "Data");
-            if (!AssetDatabase.IsValidFolder(ProfileFolder))
-                AssetDatabase.CreateFolder("Assets/_Project/Data", "Exposure");
-            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs/Environment"))
-            {
-                if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs"))
-                    AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
-                AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Environment");
-            }
-            if (!AssetDatabase.IsValidFolder(PrefabFolder))
-                AssetDatabase.CreateFolder("Assets/_Project/Prefabs/Environment", "Exposure");
+            CraftingEditorUtility.EnsureFolder(ProfileFolder);
+            CraftingEditorUtility.EnsureFolder(PrefabFolder);
         }
 
         public static string GetProfileAssetName(ExposureZoneKind kind)

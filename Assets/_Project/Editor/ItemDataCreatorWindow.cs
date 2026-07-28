@@ -83,7 +83,9 @@ public class ItemDataCreatorWindow : EditorWindow
         newItem.isAcInfused = isAcInfused;
         newItem.acValue = acValue;
 
-        string dataPath = $"Assets/_Project/Data/Items/{itemName}.asset";
+        string folder = addResourceNode ? ProjectAssetPaths.ItemsResources : ProjectAssetPaths.ItemsConsumables;
+        CraftingEditorUtility.EnsureFolder(folder);
+        string dataPath = $"{folder}/{itemName}.asset";
         AssetDatabase.CreateAsset(newItem, dataPath);
 
         if (worldPrefabTemplate != null)
@@ -102,7 +104,7 @@ public class ItemDataCreatorWindow : EditorWindow
                 instance.AddComponent<BoxCollider>();
             }
 
-            string prefabPath = $"Assets/_Project/Prefabs/Items/{itemName}_World.prefab";
+            string prefabPath = $"{ProjectAssetPaths.PrefabsItemsWorld}/{itemName}_World.prefab";
             PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
             DestroyImmediate(instance);
 

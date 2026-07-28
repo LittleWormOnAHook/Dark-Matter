@@ -17,18 +17,26 @@ namespace Project.AI.Invector
         [Header("Hit Stagger")]
         [SerializeField] private bool enableHitStagger = true;
         [SerializeField] private float minStaggerDamage = 18f;
-        [SerializeField] private float defaultStaggerSeconds = 0.55f;
+        [Tooltip("How long a minor stumble keeps the enemy ragdolled before snap-recover.")]
+        [SerializeField] private float defaultStaggerSeconds = 1.55f;
         [SerializeField] private bool staggerOnCritical = true;
 
+        [Header("Reactive Hit Chance")]
+        [Tooltip("Random minor stumble chance at full health (melee and ranged).")]
+        [SerializeField, Range(0f, 1f)] private float baseStaggerChance = 0.06f;
+        [Tooltip("Random minor stumble chance as health approaches the knockdown band.")]
+        [SerializeField, Range(0f, 1f)] private float lowHealthStaggerChance = 0.28f;
+        [Tooltip("Remaining health fraction at or below this triggers a full fall + get-up.")]
+        [SerializeField, Range(0.02f, 0.35f)] private float knockdownHealthThreshold = 0.10f;
+        [SerializeField] private float knockdownDownSeconds = 2.25f;
+        [SerializeField] private float knockdownGetUpTimeout = 3.5f;
+        [SerializeField] private float criticalStaggerChanceBonus = 0.15f;
+
         [Header("Ragdoll Launch Guard")]
-        [Tooltip(
-            "vRagdoll seeds bone velocity from this root Rigidbody's linearVelocity on activation. " +
-            "Enemies move via Rigidbody.MovePosition, which reports an implicit velocity for the " +
-            "physics engine; a large single-step displacement (repath snap, terrain rescue, target " +
-            "reacquire) spikes that value for one frame. Without a clamp, a corpse can inherit that " +
-            "spike and launch/disappear instead of collapsing. Set above normal chase speed so " +
-            "natural running momentum still carries into the ragdoll.")]
-        [SerializeField] private float maxCorpseLaunchSpeed = 6f;
+        [Tooltip("Max bone linear speed kept after death settle. Higher values look like a launch.")]
+        [SerializeField] private float maxCorpseBoneSpeed = 2.5f;
+        [Tooltip("PhysX depenetration cap on ragdoll bones — high defaults explode overlapping colliders.")]
+        [SerializeField] private float maxBoneDepenetrationSpeed = 1.5f;
 
         private vThirdPersonController _controller;
         private vRagdoll _ragdoll;
@@ -37,6 +45,8 @@ namespace Project.AI.Invector
         private EnemyInvectorPhysicsCache _physicsCache;
         private Coroutine _staggerRoutine;
         private bool _isHitStaggerActive;
+        private bool _isKnockdownActive;
+        private vDamage _pendingCorpseDamage;
 
         public vRagdoll Ragdoll => _ragdoll;
 
@@ -46,6 +56,8 @@ namespace Project.AI.Invector
             (_ragdoll.isActive || (_controller != null && _controller.ragdolled));
 
         public bool IsHitStaggerActive => _isHitStaggerActive;
+
+        public bool IsKnockdownActive => _isKnockdownActive;
 
         public bool HasActiveRagdoll =>
             _ragdoll != null &&
@@ -84,6 +96,7 @@ namespace Project.AI.Invector
         {
             AbortHitStaggerCoroutine();
             _isHitStaggerActive = false;
+            _isKnockdownActive = false;
             PauseAiLocomotion(false);
             PrepareAnimatorForBodyPartLoad();
             EnsureBodyPartsLoaded();
@@ -95,7 +108,65 @@ namespace Project.AI.Invector
         }
 
         /// <summary>
-        /// Brief ragdoll on heavy hits or attacks flagged with <see cref="vDamage.activeRagdoll"/>.
+        /// Stores hit impulse from the killing blow so <see cref="ActivateCorpseRagdoll"/> can launch
+        /// the corpse even when death is orchestrated on a later event (EnemyDeathSequence).
+        /// Ranged kills use this because they never go through <see cref="TryHitStagger"/>.
+        /// </summary>
+        public void RememberHitForDeath(
+            Vector3 hitPoint,
+            Vector3 hitDirection,
+            float damageAmount,
+            Transform sender = null)
+        {
+            _pendingCorpseDamage = new vDamage(Mathf.Max(1, Mathf.RoundToInt(damageAmount)))
+            {
+                activeRagdoll = true,
+                hitReaction = false,
+                hitPosition = hitPoint,
+                sender = sender,
+                force = Vector3.zero
+            };
+        }
+
+        public void RememberHitForDeath(vDamage sourceDamage)
+        {
+            if (sourceDamage == null)
+                return;
+
+            _pendingCorpseDamage = new vDamage(sourceDamage)
+            {
+                activeRagdoll = true,
+                hitReaction = false,
+                force = Vector3.zero
+            };
+        }
+
+        /// <summary>
+        /// Ranged-friendly entry: builds a light vDamage from shot data then runs the shared stagger roll.
+        /// </summary>
+        public void TryHitStaggerFromRanged(
+            Vector3 hitPoint,
+            Vector3 hitDirection,
+            float pioneerDamage,
+            bool isCritical,
+            Transform sender = null)
+        {
+            Vector3 flat = hitDirection;
+            flat.y = 0f;
+            vDamage rangedDamage = new vDamage(Mathf.Max(1, Mathf.RoundToInt(pioneerDamage)))
+            {
+                activeRagdoll = false,
+                hitReaction = false,
+                hitPosition = hitPoint,
+                sender = sender,
+                force = flat.sqrMagnitude > 0.01f ? flat.normalized * 0.55f : Vector3.zero
+            };
+            TryHitStagger(rangedDamage, pioneerDamage, isCritical, weaponRequestsStagger: false, weaponStaggerSeconds: 0f);
+        }
+
+        /// <summary>
+        /// Brief stumble (or low-HP knockdown + get-up). Chance rises as health drops; at or below
+        /// <see cref="knockdownHealthThreshold"/> the enemy falls and stands back up.
         /// </summary>
         public void TryHitStagger(
             vDamage sourceDamage,
@@ -116,15 +187,56 @@ namespace Project.AI.Invector
             if (_staggerRoutine != null)
                 return;
 
-            bool shouldStagger = weaponRequestsStagger ||
-                                 (staggerOnCritical && isCritical) ||
-                                 pioneerDamage >= minStaggerDamage;
-            if (!shouldStagger)
+            float healthFraction = ResolveHealthFraction();
+            bool knockdownBand = healthFraction > 0f && healthFraction <= knockdownHealthThreshold;
+            if (knockdownBand)
+            {
+                vDamage knockdownDamage = BuildStaggerDamage(sourceDamage);
+                _staggerRoutine = StartCoroutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
+                return;
+            }
+
+            if (!ShouldRollMinorStagger(healthFraction, pioneerDamage, isCritical, weaponRequestsStagger))
                 return;
 
             float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
+            // Slightly longer stumbles when hurt.
+            duration *= Mathf.Lerp(1f, 1.2f, 1f - healthFraction);
+            duration = Mathf.Max(duration, 1.35f);
             vDamage staggerDamage = BuildStaggerDamage(sourceDamage);
             _staggerRoutine = StartCoroutine(HitStaggerRoutine(staggerDamage, duration));
+        }
+
+        private bool ShouldRollMinorStagger(
+            float healthFraction,
+            float pioneerDamage,
+            bool isCritical,
+            bool weaponRequestsStagger)
+        {
+            if (weaponRequestsStagger)
+                return true;
+
+            // Map full→knockdown-threshold onto 0→1 so chance ramps across the fight, not only near death.
+            float liveSpan = Mathf.Max(0.01f, 1f - knockdownHealthThreshold);
+            float ramp = healthFraction > knockdownHealthThreshold
+                ? Mathf.Clamp01((1f - healthFraction) / liveSpan)
+                : 1f;
+
+            float chance = Mathf.Lerp(baseStaggerChance, lowHealthStaggerChance, ramp);
+            if (staggerOnCritical && isCritical)
+                chance = Mathf.Clamp01(chance + criticalStaggerChanceBonus);
+            if (pioneerDamage >= minStaggerDamage)
+                chance = Mathf.Clamp01(chance + 0.2f);
+
+            return Random.value <= chance;
+        }
+
+        private float ResolveHealthFraction()
+        {
+            if (_health == null || _health.MaxHealth <= 0.01f)
+                return 1f;
+
+            return Mathf.Clamp01(_health.CurrentHealth / _health.MaxHealth);
         }
 
         public void ActivateCorpseRagdoll(vDamage damage = null)
@@ -134,6 +246,10 @@ namespace Project.AI.Invector
 
             if (IsCorpseRagdolled)
                 return;
+
+            if (damage == null)
+                damage = _pendingCorpseDamage;
+            _pendingCorpseDamage = null;
 
             // A killing blow that lands while a hit-stagger is blending back to animation (vRagdoll.state
             // == blendToAnim) leaves that transition permanently stuck: RagdollBehaviour() is the only
@@ -163,10 +279,13 @@ namespace Project.AI.Invector
 
             _physicsCache?.MarkBonesUnstable();
             EnemyInvectorHitSetup.ReleaseForRagdoll(gameObject);
-            ClampRootVelocityForRagdoll();
+            PrepareBonesForSafeRagdoll();
 
             _ragdoll.keepRagdolled = true;
             _ragdoll.ignoreGetUpAnimation = true;
+            // Unity 6 cannot clear kinematic root linearVelocity — disable inheritance instead.
+            _ragdoll.horizontalMultiplier = 0f;
+            _ragdoll.verticalMultiplier = 0f;
 
             // Distance culling can leave Animator disabled (empty bodyParts). Un-cull and reload
             // before ActivateRagdoll — otherwise setKinematic iterates nothing and the corpse freezes.
@@ -177,8 +296,13 @@ namespace Project.AI.Invector
                 return;
             }
 
-            vDamage corpseDamage = BuildCorpseDamage(damage);
-            _ragdoll.ActivateRagdoll(corpseDamage);
+            // If a hit-stagger was already active, ActivateRagdoll early-outs on isActive. Keep the
+            // live ragdoll as the corpse, but strip residual bone speeds so the body collapses in place.
+            bool alreadyRagdolled = _ragdoll.isActive;
+            if (!alreadyRagdolled)
+                _ragdoll.ActivateRagdoll(BuildCorpseDamage(damage));
+
+            ZeroBoneVelocitiesImmediate();
             StartCoroutine(SettleCorpseVelocities());
         }
 
@@ -194,9 +318,11 @@ namespace Project.AI.Invector
                 yield return null;
             }
 
-            if (_ragdoll == null || _controller == null || IsCorpseRagdolled)
+            if (_ragdoll == null || _controller == null)
                 yield break;
 
+            // keepRagdolled was already set true by ActivateCorpseRagdoll — do not bail on
+            // IsCorpseRagdolled or mid-stagger deaths would skip velocity settle entirely.
             if (!EnsureBodyPartsLoaded())
             {
                 Debug.LogWarning(
@@ -206,14 +332,22 @@ namespace Project.AI.Invector
                 yield break;
             }
 
-            vDamage corpseDamage = BuildCorpseDamage(damage);
-            _ragdoll.ActivateRagdoll(corpseDamage);
+            PrepareBonesForSafeRagdoll();
+            _ragdoll.horizontalMultiplier = 0f;
+            _ragdoll.verticalMultiplier = 0f;
+
+            bool alreadyRagdolled = _ragdoll.isActive;
+            if (!alreadyRagdolled)
+                _ragdoll.ActivateRagdoll(BuildCorpseDamage(damage));
+
+            ZeroBoneVelocitiesImmediate();
             StartCoroutine(SettleCorpseVelocities());
         }
 
         public void RestoreForRespawn()
         {
             StopHitStaggerRoutine();
+            _pendingCorpseDamage = null;
 
             if (_ragdoll != null)
             {
@@ -239,6 +373,7 @@ namespace Project.AI.Invector
         private IEnumerator HitStaggerRoutine(vDamage staggerDamage, float duration)
         {
             _isHitStaggerActive = true;
+            _isKnockdownActive = false;
             PauseAiLocomotion(true);
 
             if (_motorBridge != null)
@@ -246,11 +381,15 @@ namespace Project.AI.Invector
 
             _physicsCache?.MarkBonesUnstable();
             EnemyInvectorHitSetup.ReleaseForRagdoll(gameObject);
-            ClampRootVelocityForRagdoll();
+            PrepareBonesForSafeRagdoll();
 
+            // Soft stumble: no root-velocity inheritance, snap recover without StandUp.
+            _ragdoll.horizontalMultiplier = 0f;
+            _ragdoll.verticalMultiplier = 0f;
             _ragdoll.keepRagdolled = false;
             _ragdoll.ignoreGetUpAnimation = true;
             _ragdoll.ActivateRagdoll(staggerDamage, duration);
+            ZeroBoneVelocitiesImmediate();
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -262,6 +401,10 @@ namespace Project.AI.Invector
                     PauseAiLocomotion(false);
                     yield break;
                 }
+
+                // Keep minor staggers from PhysX-popping mid stumble.
+                if (elapsed < 0.2f)
+                    ClampBoneSpeeds(maxCorpseBoneSpeed);
 
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -275,6 +418,87 @@ namespace Project.AI.Invector
             PauseAiLocomotion(false);
         }
 
+        /// <summary>
+        /// Last-10% knockdown: stay down, then let Invector blend into StandUp and resume AI.
+        /// </summary>
+        private IEnumerator HitKnockdownRoutine(vDamage knockdownDamage, float downSeconds)
+        {
+            _isHitStaggerActive = true;
+            _isKnockdownActive = true;
+            PauseAiLocomotion(true);
+
+            if (_motorBridge != null)
+                _motorBridge.enabled = false;
+
+            _physicsCache?.MarkBonesUnstable();
+            EnemyInvectorHitSetup.ReleaseForRagdoll(gameObject);
+            PrepareBonesForSafeRagdoll();
+
+            // Allow StandUp@FromBack / FromBelly when keepRagdolled clears after downSeconds.
+            // vRagdoll's stabilizer runs ~2s; keep them down at least that long so get-up can start.
+            float keepDown = Mathf.Max(downSeconds, 2.15f);
+            _ragdoll.horizontalMultiplier = 0f;
+            _ragdoll.verticalMultiplier = 0f;
+            _ragdoll.keepRagdolled = false;
+            _ragdoll.ignoreGetUpAnimation = false;
+            _ragdoll.ActivateRagdoll(knockdownDamage, keepDown);
+            ZeroBoneVelocitiesImmediate();
+
+            float elapsed = 0f;
+            while (elapsed < keepDown)
+            {
+                if (_health != null && _health.IsDead)
+                {
+                    _staggerRoutine = null;
+                    _isHitStaggerActive = false;
+                    _isKnockdownActive = false;
+                    PauseAiLocomotion(false);
+                    yield break;
+                }
+
+                if (elapsed < 0.35f)
+                    ClampBoneSpeeds(maxCorpseBoneSpeed);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // Wait for natural get-up (ragdolled=false → StandUp) or timeout, then harden cleanup.
+            elapsed = 0f;
+            while (elapsed < knockdownGetUpTimeout)
+            {
+                if (_health != null && _health.IsDead)
+                {
+                    _staggerRoutine = null;
+                    _isHitStaggerActive = false;
+                    _isKnockdownActive = false;
+                    PauseAiLocomotion(false);
+                    yield break;
+                }
+
+                bool stillDown = _ragdoll != null &&
+                                 (_ragdoll.isActive || (_controller != null && _controller.ragdolled));
+                if (!stillDown)
+                    break;
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (_health == null || !_health.IsDead)
+            {
+                if (_ragdoll != null && (_ragdoll.isActive || (_controller != null && _controller.ragdolled)))
+                    RestoreFromHitStagger();
+                else
+                    FinalizeAfterGetUp();
+            }
+
+            _staggerRoutine = null;
+            _isHitStaggerActive = false;
+            _isKnockdownActive = false;
+            PauseAiLocomotion(false);
+        }
+
         private void RestoreFromHitStagger()
         {
             if (_health != null && _health.IsDead)
@@ -282,12 +506,18 @@ namespace Project.AI.Invector
             if (_ragdoll != null)
             {
                 _ragdoll.keepRagdolled = false;
+                _ragdoll.ignoreGetUpAnimation = true;
                 _ragdoll.RestoreRagdoll();
             }
 
             if (_controller != null && _controller.ragdolled)
                 _controller.ResetRagdoll();
 
+            FinalizeAfterGetUp();
+        }
+
+        private void FinalizeAfterGetUp()
+        {
             CapsuleCollider rootCapsule = GetComponent<CapsuleCollider>();
             if (rootCapsule != null)
                 rootCapsule.enabled = true;
@@ -307,6 +537,7 @@ namespace Project.AI.Invector
         {
             AbortHitStaggerCoroutine();
             _isHitStaggerActive = false;
+            _isKnockdownActive = false;
             PauseAiLocomotion(false);
         }
 
@@ -317,6 +548,7 @@ namespace Project.AI.Invector
 
             AbortHitStaggerCoroutine();
             _isHitStaggerActive = false;
+            _isKnockdownActive = false;
             PauseAiLocomotion(false);
 
             if (_health == null || !_health.IsDead)
@@ -448,29 +680,38 @@ namespace Project.AI.Invector
         }
 
         /// <summary>
-        /// vRagdoll.setKinematic(false) seeds every bone's velocity from this root Rigidbody's
-        /// linearVelocity. Enemies move via Rigidbody.MovePosition (see
-        /// EnemyInvectorMotorBridge.SyncRigidbodyToTransform), and a kinematic body moved a large
-        /// distance in a single fixed step (repath snap, terrain rescue, sudden target reacquire)
-        /// reports an implicit velocity spike for that step. Clamp before ragdoll activation so a
-        /// corpse collapses instead of launching or disappearing off-screen.
+        /// Caps PhysX depenetration on bone bodies. Oversized / overlapping ragdoll colliders
+        /// otherwise explode the corpse off-map on the first FixedUpdate after activation.
         /// </summary>
-        private void ClampRootVelocityForRagdoll()
+        private void PrepareBonesForSafeRagdoll()
+        {
+            float maxDepenetration = Mathf.Max(0.25f, maxBoneDepenetrationSpeed);
+            Rigidbody rootBody = GetComponent<Rigidbody>();
+            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody body = bodies[i];
+                if (body == null || body == rootBody)
+                    continue;
+
+                body.maxDepenetrationVelocity = maxDepenetration;
+                body.sleepThreshold = 0.005f;
+            }
+        }
+
+        private void ZeroBoneVelocitiesImmediate()
         {
             Rigidbody rootBody = GetComponent<Rigidbody>();
-            if (rootBody == null)
-                return;
+            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody body = bodies[i];
+                if (body == null || body == rootBody || body.isKinematic)
+                    continue;
 
-            // linearVelocity is readable/writable on a kinematic Rigidbody (Unity uses it for
-            // MovePosition-driven collision response), so this clamp works fine even though this root
-            // body is always kinematic (EnemyInvectorPhysicsCache keeps it that way; only the per-bone
-            // Rigidbodies go dynamic on ragdoll). angularVelocity is different: Unity does not support
-            // setting it on a kinematic body and logs a warning on every call, and vRagdoll never reads
-            // this body's angularVelocity anyway (only linearVelocity, see setKinematic() above) — so it
-            // must not be touched here.
-            Vector3 velocity = rootBody.linearVelocity;
-            if (velocity.sqrMagnitude > maxCorpseLaunchSpeed * maxCorpseLaunchSpeed)
-                rootBody.linearVelocity = velocity.normalized * maxCorpseLaunchSpeed;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
         }
 
         private void OnActiveRagdollRequested(vDamage damage)
@@ -483,25 +724,30 @@ namespace Project.AI.Invector
             vDamage staggerDamage = sourceDamage != null ? new vDamage(sourceDamage) : new vDamage();
             staggerDamage.activeRagdoll = true;
             staggerDamage.hitReaction = false;
+            // Soft flinch only — no dramatic launch.
             staggerDamage.force = ResolveStaggerImpulse(sourceDamage);
             return staggerDamage;
         }
 
         private static vDamage BuildCorpseDamage(vDamage sourceDamage)
         {
+            // Collapse in place. Any kill impulse plus PhysX depenetration is what made corpses vanish.
             if (sourceDamage == null)
-                return null;
-
-            vDamage corpseDamage = new vDamage(sourceDamage);
-            corpseDamage.activeRagdoll = true;
-            corpseDamage.hitReaction = false;
-            if (corpseDamage.force.sqrMagnitude < 0.01f && sourceDamage.sender != null)
             {
-                Vector3 direction = sourceDamage.hitPosition - sourceDamage.sender.position;
-                if (direction.sqrMagnitude > 0.01f)
-                    corpseDamage.force = direction.normalized * Mathf.Max(1f, corpseDamage.damageValue * 0.15f);
+                return new vDamage(1)
+                {
+                    activeRagdoll = true,
+                    hitReaction = false,
+                    force = Vector3.zero
+                };
             }
 
+            vDamage corpseDamage = new vDamage(sourceDamage)
+            {
+                activeRagdoll = true,
+                hitReaction = false,
+                force = Vector3.zero
+            };
             return corpseDamage;
         }
 
@@ -510,28 +756,37 @@ namespace Project.AI.Invector
             if (sourceDamage == null)
                 return Vector3.zero;
 
-            if (sourceDamage.force.sqrMagnitude > 0.01f)
-                return sourceDamage.force * 0.35f;
+            Vector3 direction = sourceDamage.force;
+            if (direction.sqrMagnitude < 0.01f &&
+                sourceDamage.sender != null &&
+                sourceDamage.hitPosition != Vector3.zero)
+            {
+                direction = sourceDamage.hitPosition - sourceDamage.sender.position;
+            }
 
-            if (sourceDamage.sender == null || sourceDamage.hitPosition == Vector3.zero)
-                return Vector3.zero;
-
-            Vector3 direction = sourceDamage.hitPosition - sourceDamage.sender.position;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.01f)
                 return Vector3.zero;
 
-            return direction.normalized * Mathf.Clamp(sourceDamage.damageValue * 0.08f, 0.5f, 4f);
+            // Gentle flinch — enough to tip, not enough to throw.
+            return direction.normalized * 0.55f;
         }
 
         private IEnumerator SettleCorpseVelocities()
         {
-            // Only clamp extreme bone speeds left after root-velocity inheritance — do not zero
-            // velocities (that freezes the corpse mid-air and looks like "no ragdoll").
-            for (int i = 0; i < 2; i++)
+            // Strip launch spikes for several physics steps after activation / mid-stagger conversion.
+            for (int i = 0; i < 8; i++)
+            {
+                ZeroBoneVelocitiesImmediate();
+                ClampBoneSpeeds(maxCorpseBoneSpeed);
                 yield return new WaitForFixedUpdate();
+            }
+        }
 
-            const float maxBoneSpeed = 14f;
+        private void ClampBoneSpeeds(float maxBoneSpeed)
+        {
+            float maxSpeed = Mathf.Max(0.5f, maxBoneSpeed);
+            float maxSpeedSqr = maxSpeed * maxSpeed;
             Rigidbody rootBody = GetComponent<Rigidbody>();
             Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
             for (int i = 0; i < bodies.Length; i++)
@@ -541,12 +796,12 @@ namespace Project.AI.Invector
                     continue;
 
                 Vector3 velocity = body.linearVelocity;
-                if (velocity.sqrMagnitude > maxBoneSpeed * maxBoneSpeed)
-                    body.linearVelocity = velocity.normalized * maxBoneSpeed;
+                if (velocity.sqrMagnitude > maxSpeedSqr)
+                    body.linearVelocity = velocity.normalized * maxSpeed;
 
                 Vector3 angular = body.angularVelocity;
-                if (angular.sqrMagnitude > 80f)
-                    body.angularVelocity = angular.normalized * Mathf.Sqrt(80f);
+                if (angular.sqrMagnitude > 16f)
+                    body.angularVelocity = angular.normalized * 4f;
             }
         }
     }

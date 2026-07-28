@@ -197,6 +197,10 @@ namespace Project.Data
         public float miningPassDuration = 1.25f;
         [Tooltip("Optional rock-chunk VFX spawned at the node and pulled toward the tool muzzle.")]
         public GameObject miningChunkVfxPrefab;
+        [Tooltip("Charge % drained per second while mining Fire is held. Full tank is always 100%.")]
+        public float miningChargeDrainPerSecond = 4f;
+        [Tooltip("Charge % restored when one Plasma Fuel is consumed on reload (R).")]
+        public float miningChargePerPlasmaFuel = 50f;
 
         [Header("Projectile Audio")]
         [Tooltip("Played once at the muzzle the instant this ammo is fired (pulse laser / gunshot).")]
@@ -445,9 +449,9 @@ namespace Project.Data
             if (itemType != ItemType.RangedWeapon)
                 return false;
 
-            // Mining / continuous laser tools accept Laser cells (Laser Tool ammo).
+            // Mining tools are powered by Plasma Fuel via reload — not discrete ammo magazines.
             if (isMiningTool)
-                return type == AmmoType.Laser;
+                return false;
 
             if (compatibleAmmoTypes == null || compatibleAmmoTypes.Length == 0)
                 return type == defaultAmmoType;

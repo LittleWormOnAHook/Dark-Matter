@@ -19,7 +19,6 @@ namespace Project.AI.Invector
         private EnemyInvectorRagdollBridge _ragdollBridge;
         private Transform _cachedHipsParent;
         private Coroutine _ensureDeathRoutine;
-        private Coroutine _driveAnimatorRoutine;
 
         private void Awake()
         {
@@ -57,27 +56,34 @@ namespace Project.AI.Invector
                 return;
             }
 
-            _controller.deathBy = vCharacter.DeathBy.AnimationWithRagdoll;
+            // Ranged / DoT / non-stagger deaths never enter an active hit-stagger ragdoll. Waiting on
+            // AnimationWithRagdoll + a Dead-tagged animator state left those corpses frozen in pose.
+            // Force corpse ragdoll immediately; EnsureDeathPresentation still retries if body parts
+            // need a frame to bind after distance-cull unhide.
+            MarkControllerDead();
             ClearLocomotionAnimatorParams();
-
-            if (!_controller.isDead)
-            {
-                if (_controller is vHealthController healthController)
-                {
-                    healthController.isImmortal = false;
-                    healthController.ChangeHealth(0);
-                }
-                else
-                {
-                    _controller.isDead = true;
-                }
-            }
-
             _controller.disableAnimations = false;
             _controller.StopCharacter();
 
-            _driveAnimatorRoutine = StartCoroutine(DriveDeathAnimatorUntilRagdoll());
+            _ragdollBridge?.ActivateCorpseRagdoll();
             _ensureDeathRoutine = StartCoroutine(EnsureDeathPresentation());
+        }
+
+        private void MarkControllerDead()
+        {
+            if (_controller == null || _controller.isDead)
+                return;
+
+            if (_controller is vHealthController healthController)
+            {
+                healthController.isImmortal = false;
+                // ChangeHealth sets absolute health (does not add). Drain to zero so isDead flips.
+                if (healthController.currentHealth > 0f)
+                    healthController.ChangeHealth(0);
+            }
+
+            if (!_controller.isDead)
+                _controller.isDead = true;
         }
 
         public void ResetForRespawn()
@@ -219,12 +225,6 @@ namespace Project.AI.Invector
                 StopCoroutine(_ensureDeathRoutine);
                 _ensureDeathRoutine = null;
             }
-
-            if (_driveAnimatorRoutine != null)
-            {
-                StopCoroutine(_driveAnimatorRoutine);
-                _driveAnimatorRoutine = null;
-            }
         }
 
         private void PrepareAnimatorForDeath()
@@ -243,17 +243,6 @@ namespace Project.AI.Invector
             _controller.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         }
 
-        private IEnumerator DriveDeathAnimatorUntilRagdoll()
-        {
-            while (_controller != null && _controller.isDead && !IsCorpseRagdolled())
-            {
-                _controller.UpdateAnimator();
-                yield return null;
-            }
-
-            _driveAnimatorRoutine = null;
-        }
-
         private IEnumerator EnsureDeathPresentation()
         {
             float elapsed = 0f;
@@ -265,7 +254,6 @@ namespace Project.AI.Invector
                 if (_controller.isDead || IsCorpseRagdolled())
                     break;
 
-                _controller.UpdateAnimator();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
@@ -273,12 +261,10 @@ namespace Project.AI.Invector
             if (_controller == null)
                 yield break;
 
-            if (_controller.deathBy == vCharacter.DeathBy.Ragdoll)
-            {
+            // Immediate corpse path (ranged / non-stagger): retry activation if the first attempt
+            // raced animator un-cull / body-part bind.
+            if (!IsCorpseRagdolled())
                 _ragdollBridge?.ActivateCorpseRagdoll();
-                _ensureDeathRoutine = null;
-                yield break;
-            }
 
             elapsed = 0f;
             while (elapsed < RagdollFallbackDelaySeconds)
@@ -289,12 +275,11 @@ namespace Project.AI.Invector
                 if (IsCorpseRagdolled())
                     break;
 
-                _controller.UpdateAnimator();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            if (_controller != null && _controller.isDead && !IsCorpseRagdolled())
+            if (_controller != null && !IsCorpseRagdolled())
                 _ragdollBridge?.ActivateCorpseRagdoll();
 
             _ensureDeathRoutine = null;

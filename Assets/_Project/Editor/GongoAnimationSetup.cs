@@ -8,7 +8,7 @@ namespace Project.EditorTools
     {
         private const string MixamoRoot = "Assets/Animations/Mixamo Animations";
         private const string ControllerPath = ProjectAssetPaths.AnimationsEnemies + "/GongoController.controller";
-        private const string PrefabPath = ProjectAssetPaths.PrefabsCombat + "/Gongo.prefab";
+        private const string PrefabPath = ProjectAssetPaths.GongoPrefab;
 
         private static readonly (string StateName, string ModelPath, string ClipName)[] ClipAssignments =
         {

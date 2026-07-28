@@ -23,11 +23,8 @@ public class EquipmentItemCreatorWindow : EditorWindow
         UseImageFile
     }
 
-    private const string ItemsDataFolder = "Assets/_Project/Data/Items";
-    private const string ItemsPrefabFolder = "Assets/_Project/Prefabs/Items";
-    private const string HeldPrefabFolder = "Assets/_Project/Prefabs/Items/Held";
-    private const string IconsFolder = "Assets/_Project/Art/Icons";
-    private const string SwordTemplatePath = "Assets/_Project/Data/Items/weap2_sword.asset";
+    private const string IconsFolder = ProjectAssetPaths.ArtIcons;
+    private const string SwordTemplatePath = ProjectAssetPaths.ItemsMelee + "/weap2_sword.asset";
 
     private EquipmentKind equipmentKind = EquipmentKind.MeleeWeapon;
     private string itemName = "New Weapon";
@@ -495,9 +492,15 @@ public class EquipmentItemCreatorWindow : EditorWindow
             return;
         }
 
-        string dataPath = $"{ItemsDataFolder}/{safeName}.asset";
-        string worldPrefabPath = $"{ItemsPrefabFolder}/{safeName}.prefab";
-        string heldPrefabPath = $"{HeldPrefabFolder}/{safeName}_Held.prefab";
+        string itemsDataFolder = equipmentKind == EquipmentKind.Tool
+            ? ProjectAssetPaths.ItemsTools
+            : ProjectAssetPaths.ItemsMelee;
+        string prefabFolder = equipmentKind == EquipmentKind.Tool
+            ? ProjectAssetPaths.PrefabsTools
+            : ProjectAssetPaths.PrefabsWeaponsMelee;
+        string dataPath = $"{itemsDataFolder}/{safeName}.asset";
+        string worldPrefabPath = $"{prefabFolder}/{safeName}.prefab";
+        string heldPrefabPath = $"{prefabFolder}/{safeName}_Held.prefab";
 
         if (AssetDatabase.LoadAssetAtPath<ItemData>(dataPath) != null ||
             AssetDatabase.LoadAssetAtPath<GameObject>(worldPrefabPath) != null)
@@ -510,10 +513,10 @@ public class EquipmentItemCreatorWindow : EditorWindow
                 return;
         }
 
-        EnsureFolder(ItemsDataFolder);
-        EnsureFolder(ItemsPrefabFolder);
+        EnsureFolder(itemsDataFolder);
+        EnsureFolder(prefabFolder);
         if (useSeparateHeldPrefab)
-            EnsureFolder(HeldPrefabFolder);
+            EnsureFolder(prefabFolder);
 
         icon = ResolveIconForCreate(safeName);
 

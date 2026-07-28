@@ -32,8 +32,8 @@ namespace Project.AI.Invector
         [SerializeField] private ItemData enemyPistolAmmo;
         [SerializeField] private ItemData enemyRifleAmmo;
 
-        private const string StandardAmmoPath = "Assets/_Project/Data/Items/ammo/Standard.asset";
-        private const string PlasmaAmmoPath = "Assets/_Project/Data/Items/ammo/Plasma.asset";
+        private const string StandardAmmoPath = "Assets/_Project/Data/Items/Ammo/Standard.asset";
+        private const string PlasmaAmmoPath = "Assets/_Project/Data/Items/Ammo/Plasma.asset";
 
         private vThirdPersonController _controller;
         private vMeleeManager _meleeManager;

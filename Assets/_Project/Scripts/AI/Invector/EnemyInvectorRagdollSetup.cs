@@ -35,7 +35,9 @@ namespace Project.AI.Invector
             ragdoll.removePhysicsAfterDie = false;
             ragdoll.disableColliders = true;
             ragdoll.groundLayer = ResolveGroundLayerMask();
-            ragdoll.horizontalMultiplier = 1f;
+            // Never inherit MovePosition root velocity into bones — Unity 6 kinematic roots
+            // cannot have linearVelocity cleared, and that spike launches corpses off-map.
+            ragdoll.horizontalMultiplier = 0f;
             ragdoll.verticalMultiplier = 0f;
 
             if (ragdoll.ignoreTags == null)

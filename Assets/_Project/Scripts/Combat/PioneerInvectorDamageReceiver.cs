@@ -80,16 +80,31 @@ namespace Project.Combat
 
                 if (enemyHealth != null)
                 {
+                    EnemyInvectorRagdollBridge ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
+                    if (ragdollBridge != null)
+                    {
+                        // Killing blows must feed corpse impulse before Died runs death presentation.
+                        ragdollBridge.RememberHitForDeath(staggerSnapshot);
+                        enemyHealth.TakeDamage(damage, source, isCritical);
+                        SpawnHitVfx(damage, source, hitPoint);
+
+                        if (enemyHealth.IsDead)
+                            ragdollBridge.ActivateCorpseRagdoll(staggerSnapshot);
+                        else
+                        {
+                            ragdollBridge.TryHitStagger(
+                                staggerSnapshot,
+                                damage,
+                                isCritical,
+                                wantsHitStagger,
+                                staggerSeconds);
+                        }
+
+                        return;
+                    }
+
                     enemyHealth.TakeDamage(damage, source, isCritical);
                     SpawnHitVfx(damage, source, hitPoint);
-
-                    EnemyInvectorRagdollBridge ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
-                    ragdollBridge?.TryHitStagger(
-                        staggerSnapshot,
-                        damage,
-                        isCritical,
-                        wantsHitStagger,
-                        staggerSeconds);
                     return;
                 }
             }

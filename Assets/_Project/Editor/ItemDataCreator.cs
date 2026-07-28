@@ -8,13 +8,10 @@ public class ItemDataCreator : EditorWindow
     [MenuItem(SurvivalPioneerEditorMenus.Content + "Create Starting ItemData Assets")]
     public static void CreateDefaultItems()
     {
-        string folderPath = "Assets/_Project/Data/Items";
+        string folderPath = ProjectAssetPaths.ItemsConsumables;
         
         // Create folder if it doesn't exist
-        if (!AssetDatabase.IsValidFolder(folderPath))
-        {
-            AssetDatabase.CreateFolder("Assets/_Project/Data", "Items");
-        }
+        CraftingEditorUtility.EnsureFolder(folderPath);
 
         CreateItem("Wood", 64, 0, 5, 0, false, 0);
         CreateItem("Stone", 64, 0, 0, 0, false, 0);
@@ -47,7 +44,7 @@ public class ItemDataCreator : EditorWindow
         item.isAcInfused = isAcInfused;
         item.acValue = acValue;
 
-        string path = $"Assets/_Project/Data/Items/{itemName}.asset";
+        string path = $"{ProjectAssetPaths.ItemsConsumables}/{itemName}.asset";
         AssetDatabase.CreateAsset(item, path);
     }
 }

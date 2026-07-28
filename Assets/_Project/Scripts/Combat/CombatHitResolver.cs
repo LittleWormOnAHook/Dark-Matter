@@ -1,4 +1,5 @@
 using Project.AI;
+using Project.AI.Invector;
 using Project.Companions;
 using Project.Core;
 using Project.Data;
@@ -38,8 +39,36 @@ namespace Project.Combat
                 return;
 
             GameObject damageSource = owner != null ? owner : collider.gameObject;
+
+            // Ranged hits never go through PioneerInvectorDamageReceiver / TryHitStagger. Stamp the
+            // killing impulse before TakeDamage so EnemyDeathSequence can launch the corpse ragdoll.
+            EnemyHealth enemyHealth = damageable as EnemyHealth;
+            if (enemyHealth == null && collider != null)
+                enemyHealth = collider.GetComponentInParent<EnemyHealth>();
+
+            EnemyInvectorRagdollBridge ragdollBridge = null;
+            if (enemyHealth != null && !enemyHealth.IsDead)
+            {
+                ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
+                ragdollBridge?.RememberHitForDeath(
+                    hitPoint,
+                    travelDirection,
+                    damage,
+                    damageSource != null ? damageSource.transform : null);
+            }
+
             damageable.TakeDamage(damage, damageSource, isCritical);
             NotifyEnemyProjectileHitOnAlly(damageSource, damageable, collider.transform, damage);
+
+            if (ragdollBridge != null && enemyHealth != null && !enemyHealth.IsDead)
+            {
+                ragdollBridge.TryHitStaggerFromRanged(
+                    hitPoint,
+                    travelDirection,
+                    damage,
+                    isCritical,
+                    damageSource != null ? damageSource.transform : null);
+            }
 
             Vector3 normal = travelDirection.sqrMagnitude > 0.0001f ? travelDirection.normalized : Vector3.up;
             CombatHitVfx.SpawnBloodSplatter(hitPoint, travelDirection, normal, damage);
@@ -117,6 +146,21 @@ namespace Project.Combat
                 float falloffDamage = Mathf.Lerp(centerDamage, centerDamage * ammoItem.splashDamageFalloff, t);
                 if (falloffDamage <= 0.01f)
                     continue;
+
+                EnemyHealth splashEnemy = damageable as EnemyHealth;
+                if (splashEnemy == null)
+                    splashEnemy = hitCollider.GetComponentInParent<EnemyHealth>();
+                if (splashEnemy != null && !splashEnemy.IsDead)
+                {
+                    Vector3 outward = closest - center;
+                    if (outward.sqrMagnitude < 0.0001f)
+                        outward = Vector3.up;
+                    splashEnemy.GetComponent<EnemyInvectorRagdollBridge>()?.RememberHitForDeath(
+                        closest,
+                        outward,
+                        falloffDamage,
+                        owner != null ? owner.transform : null);
+                }
 
                 damageable.TakeDamage(falloffDamage, owner, false);
                 if (!SelfReportsDamageUi(damageable))

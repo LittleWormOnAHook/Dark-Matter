@@ -24,11 +24,11 @@ namespace Project.EditorTools
             out string prefabPath)
         {
             definition ??= ScriptableObject.CreateInstance<EnemyDefinition>();
-            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombat);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombatEnemies);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EnemiesData);
 
             string fileName = SanitizeFileName(definition.prefabFileName, definition.displayName);
-            prefabPath = $"{ProjectAssetPaths.PrefabsCombat}/{fileName}.prefab";
+            prefabPath = $"{ProjectAssetPaths.PrefabsCombatEnemies}/{fileName}.prefab";
 
             if (definition.archetype == EnemyArchetype.HumanoidInvector)
             {

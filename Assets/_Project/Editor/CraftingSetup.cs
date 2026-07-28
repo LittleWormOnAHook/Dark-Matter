@@ -80,6 +80,8 @@ namespace Project.EditorTools
         {
             EnsureFolder(ProjectAssetPaths.Data + "/Crafting");
             EnsureFolder(RecipesFolder);
+            EnsureFolder(ProjectAssetPaths.RecipesConsumables);
+            EnsureFolder(ProjectAssetPaths.ItemsConsumables);
             EnsureFolder(ResourcesFolder);
         }
 
@@ -111,9 +113,9 @@ namespace Project.EditorTools
 
         private static ItemData EnsureCookedMushroomItem()
         {
-            string path = ItemsFolder + "/Cooked Mushroom.asset";
+            string path = ProjectAssetPaths.ItemsConsumables + "/Cooked Mushroom.asset";
             ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
-            ItemData mushroom = AssetDatabase.LoadAssetAtPath<ItemData>(ItemsFolder + "/Mushroom.asset");
+            ItemData mushroom = AssetDatabase.LoadAssetAtPath<ItemData>(ProjectAssetPaths.ItemsConsumables + "/Mushroom.asset");
 
             if (item == null)
             {
@@ -138,9 +140,9 @@ namespace Project.EditorTools
 
         private static ItemData EnsureForestStewItem()
         {
-            string path = ItemsFolder + "/Forest Stew.asset";
+            string path = ProjectAssetPaths.ItemsConsumables + "/Forest Stew.asset";
             ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
-            ItemData mushroom = AssetDatabase.LoadAssetAtPath<ItemData>(ItemsFolder + "/Mushroom.asset");
+            ItemData mushroom = AssetDatabase.LoadAssetAtPath<ItemData>(ProjectAssetPaths.ItemsConsumables + "/Mushroom.asset");
 
             if (item == null)
             {
@@ -164,7 +166,7 @@ namespace Project.EditorTools
 
         private static ItemData EnsureOxygenTankItem()
         {
-            string path = ItemsFolder + "/Oxygen Tank.asset";
+            string path = ProjectAssetPaths.ItemsConsumables + "/Oxygen Tank.asset";
             ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
 
             if (item == null)
@@ -188,10 +190,18 @@ namespace Project.EditorTools
 
             foreach (var spec in RecipeSpecs)
             {
-                string path = $"{RecipesFolder}/{spec.file}.asset";
+                string path = $"{ProjectAssetPaths.RecipesConsumables}/{spec.file}.asset";
                 RecipeDefinition recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(path);
                 if (recipe == null)
                 {
+                    string legacy = $"{RecipesFolder}/{spec.file}.asset";
+                    recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(legacy);
+                    if (recipe != null)
+                        path = legacy;
+                }
+                if (recipe == null)
+                {
+                    CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.RecipesConsumables);
                     recipe = ScriptableObject.CreateInstance<RecipeDefinition>();
                     AssetDatabase.CreateAsset(recipe, path);
                 }

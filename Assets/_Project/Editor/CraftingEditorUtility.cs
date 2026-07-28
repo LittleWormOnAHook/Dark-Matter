@@ -20,6 +20,42 @@ namespace Project.EditorTools
         public const string RecipeRegistryPath = ProjectAssetPaths.RecipeRegistry;
         public const string ItemRegistryPath = ProjectAssetPaths.ItemRegistry;
 
+        /// <summary>Category folder under ItemsData for a given ItemType.</summary>
+        public static string GetItemCategoryFolder(ItemType itemType)
+        {
+            switch (itemType)
+            {
+                case ItemType.MeleeWeapon: return ProjectAssetPaths.ItemsMelee;
+                case ItemType.RangedWeapon: return ProjectAssetPaths.ItemsRanged;
+                case ItemType.Ammo: return ProjectAssetPaths.ItemsAmmo;
+                case ItemType.Resource: return ProjectAssetPaths.ItemsResources;
+                case ItemType.Tool: return ProjectAssetPaths.ItemsTools;
+                case ItemType.Consumable: return ProjectAssetPaths.ItemsConsumables;
+                case ItemType.Vehicle: return ProjectAssetPaths.ItemsVehicles;
+                case ItemType.Quest: return ProjectAssetPaths.ItemsData;
+                default: return ProjectAssetPaths.ItemsData;
+            }
+        }
+
+        /// <summary>Recipe category folder inferred from the crafted output item type.</summary>
+        public static string GetRecipeCategoryFolder(ItemType outputItemType)
+        {
+            switch (outputItemType)
+            {
+                case ItemType.MeleeWeapon:
+                case ItemType.RangedWeapon:
+                    return ProjectAssetPaths.RecipesWeapons;
+                case ItemType.Ammo:
+                    return ProjectAssetPaths.RecipesAmmo;
+                case ItemType.Resource:
+                    return ProjectAssetPaths.RecipesResources;
+                case ItemType.Consumable:
+                    return ProjectAssetPaths.RecipesConsumables;
+                default:
+                    return ProjectAssetPaths.RecipesData;
+            }
+        }
+
         public static void EnsureFolder(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(folderPath) || AssetDatabase.IsValidFolder(folderPath))
@@ -181,10 +217,29 @@ namespace Project.EditorTools
             if (string.IsNullOrEmpty(safeName))
                 return null;
 
-            EnsureFolder(RecipesFolder);
-            string path = $"{RecipesFolder}/{safeName}.asset";
+            string recipeFolder = RecipesFolder;
+            if (source.outputItem != null)
+                recipeFolder = GetRecipeCategoryFolder(source.outputItem.itemType);
 
+            EnsureFolder(recipeFolder);
+            string path = $"{recipeFolder}/{safeName}.asset";
+
+            // Also find an existing recipe that may already live under another category folder.
             RecipeDefinition existing = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(path);
+            if (existing == null)
+            {
+                string[] existingGuids = AssetDatabase.FindAssets($"{safeName} t:RecipeDefinition", new[] { RecipesFolder });
+                for (int i = 0; i < existingGuids.Length; i++)
+                {
+                    string candidate = AssetDatabase.GUIDToAssetPath(existingGuids[i]);
+                    if (System.IO.Path.GetFileNameWithoutExtension(candidate) == safeName)
+                    {
+                        existing = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(candidate);
+                        path = candidate;
+                        break;
+                    }
+                }
+            }
             if (existing == null)
             {
                 AssetDatabase.CreateAsset(source, path);

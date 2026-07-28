@@ -14,12 +14,12 @@ public static class RangedCraftingSetup
     private const string ItemsFolder = ProjectAssetPaths.ItemsData;
     private const string RecipesFolder = ProjectAssetPaths.RecipesData;
 
-    private const string MetalScrapPath = ItemsFolder + "/metal_scrap.asset";
-    private const string ElectronicScrapPath = ItemsFolder + "/electronic_scrap.asset";
+    private const string MetalScrapPath = ProjectAssetPaths.ItemsResources + "/metal_scrap.asset";
+    private const string ElectronicScrapPath = ProjectAssetPaths.ItemsResources + "/electronic_scrap.asset";
 
-    private const string RifleItemPath = ItemsFolder + "/survival_rifle.asset";
-    private const string PistolItemPath = ItemsFolder + "/sci_fi_pistol.asset";
-    private const string GunpowderAmmoPath = ItemsFolder + "/ammo_gunpowder_rounds.asset";
+    private const string RifleItemPath = ProjectAssetPaths.ItemsRanged + "/survival_rifle.asset";
+    private const string PistolItemPath = ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset";
+    private const string GunpowderAmmoPath = ProjectAssetPaths.ItemsAmmo + "/ammo_gunpowder_rounds.asset";
 
     private static readonly (string id, string file, string name, string desc, (string item, int amount)[] ingredients, string output, int outputAmount)[] RecipeSpecs =
     {
@@ -69,6 +69,11 @@ public static class RangedCraftingSetup
     {
         EnsureFolder(ProjectAssetPaths.Data + "/Crafting");
         EnsureFolder(RecipesFolder);
+        EnsureFolder(ProjectAssetPaths.RecipesWeapons);
+        EnsureFolder(ProjectAssetPaths.RecipesAmmo);
+        EnsureFolder(ProjectAssetPaths.ItemsResources);
+        EnsureFolder(ProjectAssetPaths.ItemsRanged);
+        EnsureFolder(ProjectAssetPaths.ItemsAmmo);
 
         int changes = 0;
         if (EnsureScrapItem("Metal Scrap", MetalScrapPath, ComponentCategory.MetalScrap) != null)
@@ -127,10 +132,21 @@ public static class RangedCraftingSetup
             (string id, string file, string name, string desc, (string item, int amount)[] ingredients, string output, int outputAmount) spec =
                 RecipeSpecs[i];
 
-            string path = $"{RecipesFolder}/{spec.file}.asset";
+            string path = $"{ProjectAssetPaths.RecipesWeapons}/{spec.file}.asset";
+            if (spec.id.Contains("gunpowder") || spec.id.Contains("Ammo") || spec.id.Contains("rounds"))
+                path = $"{ProjectAssetPaths.RecipesAmmo}/{spec.file}.asset";
             RecipeDefinition recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(path);
             if (recipe == null)
             {
+                // Prefer category folder; fall back to legacy flat Recipes path.
+                string legacy = $"{RecipesFolder}/{spec.file}.asset";
+                recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(legacy);
+                if (recipe != null)
+                    path = legacy;
+            }
+            if (recipe == null)
+            {
+                CraftingEditorUtility.EnsureFolder(System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/'));
                 recipe = ScriptableObject.CreateInstance<RecipeDefinition>();
                 AssetDatabase.CreateAsset(recipe, path);
                 changes++;

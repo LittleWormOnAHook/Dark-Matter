@@ -36,21 +36,56 @@ namespace Project.EditorTools
 
         public const string Data = Root + "/Data";
         public const string ItemsData = Data + "/Items";
+        public const string ItemsMelee = ItemsData + "/Melee";
+        public const string ItemsRanged = ItemsData + "/Ranged";
+        public const string ItemsAmmo = ItemsData + "/Ammo";
+        public const string ItemsResources = ItemsData + "/Resources";
+        public const string ItemsTools = ItemsData + "/Tools";
+        public const string ItemsConsumables = ItemsData + "/Consumables";
+        public const string ItemsVehicles = ItemsData + "/Vehicles";
+        /// <summary>
+        /// Stub for future ResourceNode ScriptableObjects. Runtime harvest/mine nodes
+        /// live as prefabs under PrefabsWorldResources (not moved here).
+        /// </summary>
+        public const string ItemsNodes = ItemsData + "/Nodes";
         public const string EnemiesData = Data + "/Enemies";
         public const string RecipesData = Data + "/Crafting/Recipes";
+        public const string RecipesWeapons = RecipesData + "/Weapons";
+        public const string RecipesConsumables = RecipesData + "/Consumables";
+        public const string RecipesAmmo = RecipesData + "/Ammo";
+        public const string RecipesResources = RecipesData + "/Resources";
+        public const string RecipesModules = RecipesData + "/Modules";
 
         public const string Prefabs = Root + "/Prefabs";
+        public const string PrefabsBuildings = Prefabs + "/Buildings";
         public const string PrefabsCombat = Prefabs + "/Combat";
+        public const string PrefabsCombatEnemies = PrefabsCombat + "/Enemies";
+        public const string PrefabsCombatProjectiles = PrefabsCombat + "/Projectiles";
+        public const string PrefabsCombatVfx = PrefabsCombat + "/VFX";
         public const string PrefabsCrafting = Prefabs + "/Crafting";
         public const string PrefabsCraftingStations = PrefabsCrafting + "/Stations";
+        public const string PrefabsEnvironment = Prefabs + "/Environment";
+        public const string PrefabsEnvironmentCameraShake = PrefabsEnvironment + "/CameraShake";
+        public const string PrefabsEnvironmentExposure = PrefabsEnvironment + "/Exposure";
         public const string PrefabsItems = Prefabs + "/Items";
         public const string PrefabsItemsHeld = PrefabsItems + "/Held";
         public const string PrefabsItemsWorld = PrefabsItems + "/World";
+        public const string PrefabsItemsAmmo = PrefabsItems + "/Ammo";
+        public const string PrefabsWeapons = Prefabs + "/Weapons";
+        public const string PrefabsWeaponsMelee = PrefabsWeapons + "/Melee";
+        public const string PrefabsWeaponsRanged = PrefabsWeapons + "/Ranged";
+        public const string PrefabsTools = Prefabs + "/Tools";
         public const string PrefabsNpcs = Prefabs + "/NPCs";
+        public const string PrefabsPets = Prefabs + "/Pets";
         public const string PrefabsPlayers = Prefabs + "/Players";
         public const string PrefabsCompanions = Prefabs + "/Companions";
         public const string PrefabsUi = Prefabs + "/UI";
+        public const string PrefabsVehicles = Prefabs + "/Vehicles";
         public const string PrefabsWorld = Prefabs + "/World";
+        /// <summary>World ResourceNode prefabs (boulders, plants). Data stubs: ItemsNodes.</summary>
+        public const string PrefabsWorldResources = PrefabsWorld + "/Resources";
+        /// <summary>Artist / Meshy source kits. Do not relocate casually.</summary>
+        public const string PrefabsModels = Prefabs + "/Models";
 
         public const string Resources = Root + "/Resources";
         public const string ResourcesCrafting = Resources + "/Crafting";
@@ -73,12 +108,19 @@ namespace Project.EditorTools
         public const string PlayerInvectorPrefab = PrefabsPlayers + "/Player_Invector.prefab";
         public const string PioneerCompanionInvectorPrefab = PrefabsCompanions + "/PioneerCompanion_Invector.prefab";
         public const string QuestGiverPrefab = PrefabsNpcs + "/QuestGiver_PioneerGuide.prefab";
-        public const string EnemyPrefab = PrefabsCombat + "/Enemy.prefab";
+        public const string EnemyPrefab = PrefabsCombatEnemies + "/Enemy.prefab";
+        public const string HumanoidEnemyPrefab = PrefabsCombatEnemies + "/HumanoidEnemy_Invector.prefab";
+        public const string GongoPrefab = PrefabsCombatEnemies + "/Gongo.prefab";
+        public const string SparksLongPrefab = PrefabsCombatVfx + "/SparksLong.prefab";
         public const string InventorySlotPrefab = PrefabsUi + "/InventorySlot.prefab";
         public const string InventorySlotResourcesPrefab = ResourcesUi + "/InventorySlot.prefab";
         public const string RecipeRegistry = ResourcesCrafting + "/RecipeRegistry.asset";
         public const string QuestRegistry = ResourcesQuests + "/QuestRegistry.asset";
         public const string ItemRegistry = Resources + "/ItemRegistry.asset";
         public const string ReflectionProbePrefab = PrefabsWorld + "/ReflectionProbe_Outdoor.prefab";
+        public const string BoulderNodeTemplate =
+            PrefabsEnvironment + "/Nodes Minerals and Plants/Minerial Node Boulder Variant.prefab";
+        public const string SulfurNeedleTuftGlb =
+            PrefabsEnvironment + "/PlantLife/Sulfur Needle Tuft.glb";
     }
 }

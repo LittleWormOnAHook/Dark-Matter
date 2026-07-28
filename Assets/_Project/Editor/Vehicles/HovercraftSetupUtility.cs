@@ -12,7 +12,7 @@ namespace Project.EditorTools.Vehicles
     {
         private const string SourceArtPrefabPath =
             "Assets/PolygonSciFiWorlds/Prefabs/Props/Vehicles/SM_Veh_HoverCraft_01.prefab";
-        private const string OutputPrefabPath = "Assets/_Project/Prefabs/Vehicles/Hovercraft_Pioneer.prefab";
+        private const string OutputPrefabPath = ProjectAssetPaths.PrefabsVehicles + "/Hovercraft_Pioneer.prefab";
         private const string ProfileAssetPath = "Assets/_Project/Data/Vehicles/HovercraftProfile_Default.asset";
 
         [MenuItem("Tools/Dark Matter Genesis/Vehicles/Repair Hovercraft References", false, 11)]
@@ -52,7 +52,7 @@ namespace Project.EditorTools.Vehicles
         [MenuItem("Tools/Dark Matter Genesis/Vehicles/Create Hovercraft In Scene", false, 10)]
         public static void CreateHovercraftInScene()
         {
-            EnsureFolder("Assets/_Project/Prefabs/Vehicles");
+            EnsureFolder(ProjectAssetPaths.PrefabsVehicles);
             EnsureFolder("Assets/_Project/Data/Vehicles");
 
             HovercraftProfile profile = EnsureDefaultProfile();
@@ -117,7 +117,7 @@ namespace Project.EditorTools.Vehicles
             }
 
             Project.Data.ItemData plasmaFuelItem =
-                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>("Assets/_Project/Data/Items/Plasma Fuel.asset");
+                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
             changed |= WireSerializedReference(fuelSystem, "controller", controller);
             changed |= WireSerializedReference(fuelSystem, "physicsDriver", physics);
             changed |= WireSerializedReference(fuelSystem, "plasmaFuelItem", plasmaFuelItem);
@@ -427,7 +427,7 @@ namespace Project.EditorTools.Vehicles
             controllerSo.ApplyModifiedPropertiesWithoutUndo();
 
             Project.Data.ItemData plasmaFuelItem =
-                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>("Assets/_Project/Data/Items/Plasma Fuel.asset");
+                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
             SerializedObject fuelSo = new SerializedObject(fuelSystem);
             fuelSo.FindProperty("controller").objectReferenceValue = controller;
             fuelSo.FindProperty("physicsDriver").objectReferenceValue = physics;
@@ -466,9 +466,9 @@ namespace Project.EditorTools.Vehicles
 
             HovercraftProfile profile = ScriptableObject.CreateInstance<HovercraftProfile>();
             profile.weaponItem = AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(
-                "Assets/_Project/Data/Items/sci_fi_pistol.asset");
+                ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset");
             profile.ammoItem = AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(
-                "Assets/_Project/Data/Items/ammo/Plasma.asset");
+                ProjectAssetPaths.ItemsAmmo + "/Plasma.asset");
 
             AssetDatabase.CreateAsset(profile, ProfileAssetPath);
             return profile;

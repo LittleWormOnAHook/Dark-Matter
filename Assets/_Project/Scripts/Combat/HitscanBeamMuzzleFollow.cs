@@ -12,7 +12,7 @@ namespace Project.Combat
     [DefaultExecutionOrder(650)]
     public class HitscanBeamMuzzleFollow : MonoBehaviour
     {
-        private const string DefaultHitSparksPath = "Assets/_Project/Prefabs/SparksLong.prefab";
+        private const string DefaultHitSparksPath = "Assets/_Project/Prefabs/Combat/VFX/SparksLong.prefab";
 
         private Transform muzzle;
         private Transform laserRoot;

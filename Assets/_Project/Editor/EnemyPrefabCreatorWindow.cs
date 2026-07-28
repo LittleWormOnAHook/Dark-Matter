@@ -241,7 +241,7 @@ namespace Project.EditorTools
             }
 
             string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
 
             if (!EnemyInvectorSetupUtility.RebuildHumanoidEnemyAtPath(prefabPath, workingDefinition, mesh))
             {
@@ -371,7 +371,7 @@ namespace Project.EditorTools
         {
             EnsureWorkingDefinition();
             string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
 
             GameObject prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefabRoot == null)
@@ -687,7 +687,7 @@ namespace Project.EditorTools
         {
             EnsureWorkingDefinition();
             string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
 
             if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
             {
@@ -831,7 +831,7 @@ namespace Project.EditorTools
                 return;
 
             string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null)
             {
@@ -850,7 +850,7 @@ namespace Project.EditorTools
         private void DrawActionButtons()
         {
             string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
             string buildLabel = prefabExists ? "Rebuild Prefab" : "Create Prefab";
             string buildAndPlaceLabel = prefabExists ? "Rebuild + Place In Scene" : "Create Prefab + Place In Scene";
@@ -929,7 +929,7 @@ namespace Project.EditorTools
 
             EnemyDefinition definitionCopy = Instantiate(workingDefinition);
             string expectedPrefabPath =
-                $"{ProjectAssetPaths.PrefabsCombat}/{EnemyPrefabBuilder.SanitizeFileName(definitionCopy.prefabFileName, definitionCopy.displayName)}.prefab";
+                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(definitionCopy.prefabFileName, definitionCopy.displayName)}.prefab";
             bool existedBefore = AssetDatabase.LoadAssetAtPath<GameObject>(expectedPrefabPath) != null;
 
             GameObject prefab = EnemyPrefabBuilder.BuildEnemy(definitionCopy, builderSourceMode, source, out string prefabPath);

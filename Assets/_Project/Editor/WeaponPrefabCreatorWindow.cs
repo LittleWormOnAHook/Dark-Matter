@@ -8,12 +8,9 @@ using UnityEngine;
 /// </summary>
 public class WeaponPrefabCreatorWindow : EditorWindow
 {
-    private const string ItemsDataFolder = "Assets/_Project/Data/Items";
-    private const string WorldPrefabFolder = "Assets/_Project/Prefabs/Items";
-    private const string HeldPrefabFolder = "Assets/_Project/Prefabs/Items/Held";
-    private const string IconsFolder = "Assets/_Project/Art/Icons";
-    private const string OneHandTemplatePath = "Assets/_Project/Data/Items/weap2_sword.asset";
-    private const string TwoHandTemplatePath = "Assets/_Project/Data/Items/weap_two_handed.asset";
+    private const string IconsFolder = ProjectAssetPaths.ArtIcons;
+    private const string OneHandTemplatePath = ProjectAssetPaths.ItemsMelee + "/weap2_sword.asset";
+    private const string TwoHandTemplatePath = ProjectAssetPaths.ItemsMelee + "/weap_two_handed.asset";
 
     private string weaponName = "New Weapon";
     private GameObject meshSource;
@@ -274,17 +271,22 @@ public class WeaponPrefabCreatorWindow : EditorWindow
             return;
         }
 
-        string dataPath = $"{ItemsDataFolder}/{safeName}.asset";
-        string worldPath = $"{WorldPrefabFolder}/{safeName}.prefab";
-        string heldPath = $"{HeldPrefabFolder}/{safeName}_Held.prefab";
+        string itemsDataFolder = weaponItemType == ItemType.RangedWeapon
+            ? ProjectAssetPaths.ItemsRanged
+            : ProjectAssetPaths.ItemsMelee;
+        string weaponsPrefabFolder = weaponItemType == ItemType.RangedWeapon
+            ? ProjectAssetPaths.PrefabsWeaponsRanged
+            : ProjectAssetPaths.PrefabsWeaponsMelee;
+        string dataPath = $"{itemsDataFolder}/{safeName}.asset";
+        string worldPath = $"{weaponsPrefabFolder}/{safeName}.prefab";
+        string heldPath = $"{weaponsPrefabFolder}/{safeName}_Held.prefab";
 
         if (AssetExists(dataPath, worldPath, heldPath) &&
             !EditorUtility.DisplayDialog("Weapon Prefab Creator", $"Assets named '{safeName}' already exist. Overwrite?", "Overwrite", "Cancel"))
             return;
 
-        WeaponPrefabBuilder.EnsureFolder(ItemsDataFolder);
-        WeaponPrefabBuilder.EnsureFolder(WorldPrefabFolder);
-        WeaponPrefabBuilder.EnsureFolder(HeldPrefabFolder);
+        WeaponPrefabBuilder.EnsureFolder(itemsDataFolder);
+        WeaponPrefabBuilder.EnsureFolder(weaponsPrefabFolder);
 
         ItemData itemData = null;
         if (createItemData)

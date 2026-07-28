@@ -313,7 +313,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         ammoItem.statusEffectDuration = statusEffectDuration;
         ammoItem.statusEffectVfxPrefab = statusEffectVfxPrefab;
 
-        string folder = ProjectAssetPaths.ItemsData + "/Ammo";
+        string folder = ProjectAssetPaths.ItemsAmmo;
         EnsureFolder(folder);
         string safeName = MakeSafeFileName(ammoName);
         string dataPath = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{safeName}.asset");
@@ -344,7 +344,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
 
     private GameObject BuildPickupPrefab(ItemData ammoItem, string safeName)
     {
-        string folder = ProjectAssetPaths.PrefabsItemsWorld + "/Ammo";
+        string folder = ProjectAssetPaths.PrefabsItemsAmmo;
         EnsureFolder(folder);
 
         GameObject source = pickupVisualModel != null ? pickupVisualModel : projectileVisualModel;
@@ -412,7 +412,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
 
     private GameObject BuildProjectilePrefab()
     {
-        string folder = ProjectAssetPaths.PrefabsCombat + "/Projectiles";
+        string folder = ProjectAssetPaths.PrefabsCombatProjectiles;
         EnsureFolder(folder);
 
         GameObject root = new GameObject(ammoName + "_Projectile");

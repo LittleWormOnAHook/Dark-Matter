@@ -13,23 +13,25 @@ using UnityEngine.UI;
 /// </summary>
 public static class CombatSetupUtility
 {
-    private const string CombatPrefabFolder = "Assets/_Project/Prefabs/Combat";
-    private const string UiPrefabFolder = "Assets/_Project/Prefabs/UI";
-    private const string ResourcesCombatFolder = "Assets/_Project/Resources/Combat";
+    private const string CombatPrefabFolder = ProjectAssetPaths.PrefabsCombat;
+    private const string CombatEnemiesFolder = ProjectAssetPaths.PrefabsCombatEnemies;
+    private const string UiPrefabFolder = ProjectAssetPaths.PrefabsUi;
+    private const string ResourcesCombatFolder = ProjectAssetPaths.ResourcesCombat;
     private const string DummyTargetSourcePath = "Assets/Blink/Art/NPCs/Stylized/DummyTarget/DummyTarget.prefab";
     private const string BloodSplatterSourcePath =
         "Assets/Synty/PolygonGeneric/Prefabs/FX/FX_Blood_Splatter_01.prefab";
-    private const string TrainingDummyPrefabPath = CombatPrefabFolder + "/TrainingDummy.prefab";
+    private const string TrainingDummyPrefabPath = CombatEnemiesFolder + "/TrainingDummy.prefab";
     private const string DamageNumberPrefabPath = UiPrefabFolder + "/FloatingDamageNumber.prefab";
     private const string HealthBarPrefabPath = UiPrefabFolder + "/FloatingTargetHealthBar.prefab";
 
     [MenuItem(SurvivalPioneerEditorMenus.Combat + "Combat Test Dummy", false, 20)]
     private static void SetupCombatTestDummy()
     {
-        EnsureFolder("Assets/_Project/Prefabs");
+        EnsureFolder(ProjectAssetPaths.Prefabs);
         EnsureFolder(CombatPrefabFolder);
+        EnsureFolder(CombatEnemiesFolder);
         EnsureFolder(UiPrefabFolder);
-        EnsureFolder("Assets/_Project/Resources");
+        EnsureFolder(ProjectAssetPaths.Resources);
         EnsureFolder(ResourcesCombatFolder);
 
         GameObject damagePrefab = CreateOrLoadFloatingDamagePrefab();
