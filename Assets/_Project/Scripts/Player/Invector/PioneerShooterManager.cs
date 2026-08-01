@@ -71,6 +71,34 @@ namespace Project.Player.Invector
         public override void Shoot(Vector3 aimPosition, bool applyHipfirePrecision = false, bool scopeViewMode = false)
         {
             SuppressNativeRecoil();
+
+            if (_equipment == null)
+                _equipment = GetComponent<EquipmentController>();
+            if (_ammoState == null)
+                _ammoState = GetComponent<WeaponAmmoState>();
+
+            // Mining shares the handgun Invector prefab. With isInfinityAmmo, Invector keeps
+            // "succeeding" shots and will PlayOneShot(fireClip) before our projectile bridge can
+            // clear it — which sounds like the pistol Standard round when plasma is empty.
+            ItemData drawn = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            if (drawn != null && drawn.isMiningTool)
+            {
+                vShooterWeapon weapon = CurrentWeapon;
+                if (weapon != null)
+                {
+                    weapon.fireClip = null;
+                    weapon.emittShurykenParticle = null;
+                    weapon.lightOnShot = null;
+                    weapon.isInfinityAmmo = true;
+                }
+
+                if (_ammoState != null && _ammoState.GetActiveLoadedAmmo() <= 0)
+                {
+                    GetComponent<PioneerInvectorAmmoBridge>()?.PlayDryFireClick();
+                    return;
+                }
+            }
+
             base.Shoot(aimPosition, applyHipfirePrecision, scopeViewMode);
         }
 

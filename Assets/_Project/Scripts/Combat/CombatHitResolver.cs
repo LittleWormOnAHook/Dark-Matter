@@ -47,6 +47,9 @@ namespace Project.Combat
         {
             SpawnImpactVfx(ammoItem, weapon, hitPoint, hitNormal, impactVfxOverride);
 
+            if (DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon))
+                DMILaserBurnMarkSpawner.Spawn(hitPoint, hitNormal);
+
             if (playHitAudio)
                 PlayImpactHitAudio(hitPoint);
 
@@ -408,9 +411,13 @@ namespace Project.Combat
             }
         }
 
-        /// <summary>One-shot firing sound played at the muzzle position. Falls back to the weapon's own fire sound if the loaded ammo doesn't specify one — except hitscan laser ammo, which must not steal gunfire SFX.</summary>
+        /// <summary>One-shot firing sound played at the muzzle position. Falls back to the weapon's own fire sound if the loaded ammo doesn't specify one — except hitscan laser ammo, which must not steal gunfire SFX. Mining tools use continuous beam audio via DMIMiningController instead.</summary>
         public static void PlayFireSound(ItemData ammoItem, ItemData weapon, Transform muzzle)
         {
+            // Mining owns continuous hold-fire audio — never play pulse/gunshot SFX.
+            if (weapon != null && weapon.isMiningTool)
+                return;
+
             AudioClip clip = ammoItem != null ? ammoItem.fireSound : null;
             if (clip == null &&
                 (ammoItem == null || !ammoItem.isHitscanBeam) &&

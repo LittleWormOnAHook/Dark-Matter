@@ -28,7 +28,6 @@ namespace Project.UI
         private GameObject menuBackground;
         private SettingsPanelController settingsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
-        private MainMenuWalletPreviewWidget walletPreview;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
@@ -60,6 +59,10 @@ namespace Project.UI
             playerInput = FindAnyObjectByType<PlayerInput>();
             BuildMainMenu();
             UiSoundHelper.BindButtonsInHierarchy(transform);
+
+            // Loading Genesis owns the screen on boot; keep freshly built chrome hidden until it hands off.
+            if (LoadingOverlayController.IsBlockingMenu)
+                HideMenuChrome();
         }
 
         private void Update()
@@ -210,9 +213,6 @@ namespace Project.UI
             BuildButtonColumn(menuPanel.transform);
             BuildVersionLabel(menuPanel.transform);
 
-            walletPreview = menuPanel.AddComponent<MainMenuWalletPreviewWidget>();
-            walletPreview.Build(menuPanel.transform);
-
             menuMessageLabel = CreateAnchoredMessageLabel(menuPanel.transform);
 
             settingsPanel = gameObject.AddComponent<SettingsPanelController>();
@@ -348,13 +348,17 @@ namespace Project.UI
 
             ResolveStartPopup()?.HidePopup();
 
-            walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
             HideHotbars();
 
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
+
+            // World stays paused and gameplay UI swept away, but the menu itself only appears once the
+            // Loading Genesis overlay finishes fading — it re-runs this path on handoff.
+            if (LoadingOverlayController.IsBlockingMenu)
+                HideMenuChrome();
         }
 
         private void Start()
@@ -403,7 +407,6 @@ namespace Project.UI
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
             ClearMenuMessage();
-            walletPreview?.Refresh();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
             HideGameplayChromeForMenu();
             RefreshMenuButtonStates();
@@ -546,24 +549,50 @@ namespace Project.UI
 
             if (roster != null && roster.StarterPioneerSelected)
             {
-                GameSession.SetPhase(GamePhase.StartPopup);
-                ResolveStartPopup()?.ShowPopup();
+                LoadIntoExpedition();
                 return;
             }
 
             StarterPioneerSelectUI starterUi = StarterPioneerSelectUI.EnsureExists();
             if (starterUi != null)
             {
-                starterUi.Show(() =>
-                {
-                    GameSession.SetPhase(GamePhase.StartPopup);
-                    ResolveStartPopup()?.ShowPopup();
-                });
+                starterUi.Show(LoadIntoExpedition);
                 return;
             }
 
+            LoadIntoExpedition();
+        }
+
+        /// <summary>
+        /// Second Loading Genesis pass, then straight into gameplay. Replaces the old start-screen popup
+        /// step so the flow is boot loader → menu → expedition loader → game.
+        /// </summary>
+        private void LoadIntoExpedition()
+        {
             GameSession.SetPhase(GamePhase.StartPopup);
-            ResolveStartPopup()?.ShowPopup();
+            HideMenuChrome();
+            HideGameplayChromeForMenu();
+
+            LoadingOverlayController.ShowForGameStart(BeginExpedition);
+        }
+
+        private void BeginExpedition()
+        {
+            GameStartPopup startFlow = ResolveStartPopup();
+            if (startFlow != null)
+            {
+                // The popup no longer shows; it still owns the canonical "begin gameplay" sequence.
+                startFlow.HidePopup();
+                startFlow.OnStartGameClicked();
+                return;
+            }
+
+            GameSession.MarkStarted();
+            SetGameWorldPaused(false);
+            ReleaseGameplayInputCapture();
+            RefreshGameplayCamera();
+            GameAudioManager.Instance?.StartGameplayMusic();
+            MainCanvasFlow.Refresh();
         }
 
         private void ResumeFromPause()

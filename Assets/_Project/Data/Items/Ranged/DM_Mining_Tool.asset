@@ -62,7 +62,7 @@ MonoBehaviour:
   reloadTimeSeconds: 1.8
   defaultAmmoType: 5
   compatibleAmmoTypes: 05000000
-  defaultAmmoItem: {fileID: 11400000, guid: 4e61aa721d9c1b14785217b4a4aa8dec, type: 2}
+  defaultAmmoItem: {fileID: 0}
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
@@ -86,7 +86,7 @@ MonoBehaviour:
   splashDamageFalloff: 0.25
   muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
   tracerPrefab: {fileID: 1966839576898216, guid: 6e1ac1786b73ae8429067b310fd5021d, type: 3}
-  impactVfxPrefab: {fileID: 100004, guid: 9437d037ae4574bf6999ffedfc373202, type: 3}
+  impactVfxPrefab: {fileID: 1917278997959164276, guid: ac9513bf03e30174984a8bb64fce9675, type: 3}
   beamVfxPrefab: {fileID: 7579578154293531177, guid: c6349b860ff1b68448fff7bf3c8a10eb, type: 3}
   isMiningTool: 1
   miningPassesRequired: 2
@@ -99,15 +99,15 @@ MonoBehaviour:
   miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
-  isContinuousLaser: 0
-  continuousLoopSound: {fileID: 0}
+  isContinuousLaser: 1
+  continuousLoopSound: {fileID: 8300000, guid: a9e3fee688cf000499bded40dd54ff48, type: 3}
   continuousStartSound: {fileID: 0}
-  continuousStopSound: {fileID: 0}
+  continuousStopSound: {fileID: 8300000, guid: bc015ad0bbbaf9945b38b35476a595a7, type: 3}
   statusEffectOverride: 0
-  statusEffectDamagePerTick: 0
+  statusEffectDamagePerTick: 3
   statusEffectTickInterval: 1
-  statusEffectDuration: 0
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 100000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -128,3 +128,4 @@ MonoBehaviour:
   requiredLevelToCraft: 1
   tooltipDescription: Hold Fire to mine resource nodes with a soft-locked mining
     laser. Reload with Plasma Fuel to restore charge. Two passes yield 1-5 rocks.
+  unlocksInventoryStorageRow: 0

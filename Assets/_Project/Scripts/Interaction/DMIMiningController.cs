@@ -21,13 +21,18 @@ namespace Project.Interaction
     public class DMIMiningController : MonoBehaviour
     {
         private const float ProgressRetainSeconds = 4f;
+        /// <summary>Resource soft-lock / mining interaction range (meters).</summary>
         private const float MaxMineDistance = 6f;
+        /// <summary>Visual laser + hit FX range when not locked on a resource (meters).</summary>
+        private const float MaxBeamVisualDistance = 50f;
         private const float OverheatSeconds = 10f;
         private const float CooloffSeconds = 3f;
         private const float OverheatEmissionIntensity = 4.5f;
         private const string HitSparksPrefabPath = "Assets/_Project/Prefabs/Combat/VFX/SparksLong.prefab";
+        private const string DefaultHitEffectPrefabPath = "Assets/_Project/Prefabs/Particles/Hit Effect Laser.prefab";
         private const string OverheatSmokePrefabPath = "Assets/PolygonNature/FX/FX_Prefabs/Smoke_Light_FX.prefab";
-        private const string EmptyChargeClipPath = "Assets/Audio/Others/Electricity Sound.wav";
+        private const string DefaultContinuousLoopPath =
+            "Assets/Laser Weapons Sound Pack/Free/continuous_beam_1.wav";
         private const float EmptyChargeSoundCooldown = 0.45f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
         private static readonly Color OverheatTint = new Color(1f, 0.18f, 0.08f, 1f);
@@ -37,14 +42,25 @@ namespace Project.Interaction
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int EmissiveColorId = Shader.PropertyToID("_EmissiveColor");
 
+        [Header("Acquire")]
+        [Tooltip("Layers used when acquiring / soft-locking ResourceNodes for mining.")]
         [SerializeField] private LayerMask resourceLayer = ~0;
+        [Tooltip("Sphere-cast radius for mining acquire ray (soft lock).")]
         [SerializeField] private float acquireRayRadius = 0.45f;
-        [Tooltip("Impact sparks spawned at the laser LineRenderer world hit point (SparksLong).")]
+
+        [Header("FX / Audio Fallbacks (prefer DM_Mining_Tool ItemData)")]
+        [Tooltip("Fallback impact FX only when ItemData.impactVfxPrefab is empty. Primary edit: DM_Mining_Tool → Impact VFX Prefab.")]
         [SerializeField] private GameObject hitSparksPrefab;
-        [Tooltip("Optional smoke puff spawned at the mining tool model center on overheat. Falls back to a runtime ParticleSystem.")]
+        [Tooltip("Optional smoke puff at the mining tool model center on overheat.")]
         [SerializeField] private GameObject overheatSmokePrefab;
-        [Tooltip("Played when Fire is held while the mining tool charge is empty.")]
+        [Tooltip("Optional override for empty-plasma dry-fire. When null, uses the shared pistol empty-click.")]
         [SerializeField] private AudioClip emptyChargeClip;
+        [Tooltip("Fallback continuous beam loop if ItemData.continuousLoopSound is empty. Primary edit: DM_Mining_Tool.")]
+        [SerializeField] private AudioClip continuousLoopFallback;
+        [Tooltip("Fallback start one-shot if ItemData.continuousStartSound is empty.")]
+        [SerializeField] private AudioClip continuousStartFallback;
+        [Tooltip("Fallback stop one-shot if ItemData.continuousStopSound is empty.")]
+        [SerializeField] private AudioClip continuousStopFallback;
 
         private EquipmentController equipment;
         private ResourceGatherer gatherer;
@@ -68,6 +84,7 @@ namespace Project.Interaction
         private GameObject hitSparksInstance;
         private ParticleSystem hitSparksParticles;
         private bool hitSparksAuthored;
+        private GameObject hitSparksSourcePrefab;
 
         private WorldNodeProgressBar progressBar;
 
@@ -103,7 +120,6 @@ namespace Project.Interaction
             EnsureVisuals();
             EnsureProgressUi();
             EnsureContinuousAudio();
-            EnsureEmptyChargeClip();
             SetMiningFxActive(false);
             SetProgressUiVisible(false);
         }
@@ -182,9 +198,9 @@ namespace Project.Interaction
             Vector3 camAimDir = ResolveAimDirection(out Vector3 aimOrigin);
             UpdateSoftLock(tool, aimOrigin, camAimDir);
 
-            Vector3 endPoint = ResolveMiningBeamEndPoint(origin, aimOrigin, camAimDir);
+            Vector3 endPoint = ResolveMiningBeamEndPoint(origin, aimOrigin, camAimDir, out bool beamHitCollider);
 
-            UpdateLaserVisuals(origin, endPoint);
+            UpdateLaserVisuals(origin, endPoint, beamHitCollider, tool);
             SetMiningFxActive(true);
             UpdateContinuousLaserAudio(tool, origin);
 
@@ -200,37 +216,47 @@ namespace Project.Interaction
         }
 
         /// <summary>
-        /// When soft-locked, beam + laserSight stick to the mineral hit.
-        /// Otherwise they track the camera reticle aim point within mining range.
+        /// When soft-locked, beam + laserSight stick to the mineral hit (within mine range).
+        /// Otherwise the visual beam tracks the reticle out to <see cref="MaxBeamVisualDistance"/>
+        /// with impact sparks on collider hits. Resource acquire/mine still use <see cref="MaxMineDistance"/>.
         /// </summary>
-        private Vector3 ResolveMiningBeamEndPoint(Vector3 muzzleOrigin, Vector3 aimOrigin, Vector3 camAimDir)
+        private Vector3 ResolveMiningBeamEndPoint(
+            Vector3 muzzleOrigin,
+            Vector3 aimOrigin,
+            Vector3 camAimDir,
+            out bool hitCollider)
         {
+            hitCollider = false;
+
             if (hasLock && lockedNode != null)
             {
                 // Keep lockPoint glued to the node surface under (or nearest) the reticle.
                 if (!TryGetLockPointOnNode(lockedNode, aimOrigin, camAimDir, out lockPoint))
                     lockPoint = ResolveNodePoint(lockedNode);
 
+                hitCollider = true;
                 return lockPoint;
             }
 
-            // Unlocked: reticle world point (camera ray hit, else max range), then muzzle→that point.
-            Vector3 reticlePoint = aimOrigin + camAimDir * MaxMineDistance;
-            if (Physics.Raycast(
-                    aimOrigin,
-                    camAimDir,
-                    out RaycastHit camHit,
-                    MaxMineDistance,
-                    ~0,
-                    QueryTriggerInteraction.Ignore))
-            {
+            // Unlocked: visual beam / hit FX use the longer beam range (not mining acquire range).
+            Vector3 reticlePoint = aimOrigin + camAimDir * MaxBeamVisualDistance;
+            bool camHitSurface = Physics.Raycast(
+                aimOrigin,
+                camAimDir,
+                out RaycastHit camHit,
+                MaxBeamVisualDistance,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            if (camHitSurface)
                 reticlePoint = camHit.point;
-            }
 
             Vector3 toReticle = reticlePoint - muzzleOrigin;
             float dist = toReticle.magnitude;
             if (dist < 0.001f)
+            {
+                hitCollider = camHitSurface;
                 return reticlePoint;
+            }
 
             Vector3 beamDir = toReticle / dist;
             if (Physics.Raycast(
@@ -241,9 +267,11 @@ namespace Project.Interaction
                     ~0,
                     QueryTriggerInteraction.Ignore))
             {
+                hitCollider = true;
                 return muzzleHit.point;
             }
 
+            hitCollider = camHitSurface;
             return reticlePoint;
         }
 
@@ -314,31 +342,25 @@ namespace Project.Interaction
             if (Time.unscaledTime < nextEmptyChargeSoundTime)
                 return;
 
-            EnsureEmptyChargeClip();
             nextEmptyChargeSoundTime = Time.unscaledTime + EmptyChargeSoundCooldown;
 
-            Vector3 pos = ResolveMiningToolCenter(ResolveDrawnMiningTool());
+            // Same empty-mag click as pistols/rifles — not a gunshot and not the old electricity SFX.
             if (emptyChargeClip != null)
             {
+                Vector3 pos = ResolveMiningToolCenter(ResolveDrawnMiningTool());
                 AudioSource.PlayClipAtPoint(emptyChargeClip, pos, 0.85f);
                 return;
             }
 
-            // Fallback if the Electricity clip is missing.
-            PlayOverheatClick();
-        }
-
-        private void EnsureEmptyChargeClip()
-        {
-            if (emptyChargeClip != null)
-                return;
-
-#if UNITY_EDITOR
-            emptyChargeClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(EmptyChargeClipPath);
-#endif
+            PlayDryFireClick();
         }
 
         private void PlayOverheatClick()
+        {
+            PlayDryFireClick();
+        }
+
+        private void PlayDryFireClick()
         {
             if (ammoBridge == null)
                 ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
@@ -740,7 +762,7 @@ namespace Project.Interaction
         }
 
         /// <summary>
-        /// Mining only while the Laser Tool is physically drawn — EquippedItem stays valid when holstered.
+        /// Mining only while the mining tool is physically drawn — EquippedItem stays valid when holstered.
         /// </summary>
         private ItemData ResolveDrawnMiningTool()
         {
@@ -786,6 +808,7 @@ namespace Project.Interaction
             SetProgressUiVisible(false);
             StopContinuousLaserAudio(playStopSound);
             StopHitSparks();
+            DMILaserBurnMarkSpawner.ResetMiningStampState();
         }
 
         private Vector3 ResolveAimDirection(out Vector3 origin)
@@ -1068,7 +1091,7 @@ namespace Project.Interaction
 
         private void EnsureVisuals()
         {
-            EnsureHitSparksPrefab();
+            EnsureFallbackHitSparksPrefab();
             TryBindWeaponLaserStack();
 
             if (laserLine == null)
@@ -1094,28 +1117,53 @@ namespace Project.Interaction
             EnsureHitSparksInstance();
         }
 
-        private void EnsureHitSparksPrefab()
+        /// <summary>
+        /// Priority: tool.impactVfxPrefab → inspector hitSparksPrefab → Hit Effect Laser → SparksLong.
+        /// Does not overwrite the inspector fallback when a tool supplies its own Impact VFX.
+        /// </summary>
+        private GameObject ResolveHitSparksPrefab(ItemData tool)
+        {
+            if (tool != null && tool.impactVfxPrefab != null)
+                return tool.impactVfxPrefab;
+
+            EnsureFallbackHitSparksPrefab();
+            return hitSparksPrefab;
+        }
+
+        private void EnsureFallbackHitSparksPrefab()
         {
             if (hitSparksPrefab != null)
                 return;
 
 #if UNITY_EDITOR
-            hitSparksPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(HitSparksPrefabPath);
+            hitSparksPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(DefaultHitEffectPrefabPath);
+            if (hitSparksPrefab == null)
+                hitSparksPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(HitSparksPrefabPath);
 #endif
         }
 
-        private void EnsureHitSparksInstance()
+        private void EnsureHitSparksInstance(ItemData tool = null)
         {
-            if (hitSparksInstance != null && hitSparksInstance)
+            GameObject preferred = ResolveHitSparksPrefab(tool);
+
+            // Rebuild if the resolved impact prefab changed (or first create).
+            if (hitSparksInstance != null && hitSparksInstance
+                && hitSparksSourcePrefab == preferred)
                 return;
 
-            EnsureHitSparksPrefab();
-            if (hitSparksPrefab == null)
+            if (hitSparksInstance != null && !hitSparksAuthored)
+                Destroy(hitSparksInstance);
+
+            hitSparksInstance = null;
+            hitSparksParticles = null;
+            hitSparksSourcePrefab = preferred;
+
+            if (preferred == null)
                 return;
 
             hitSparksAuthored = false;
-            hitSparksInstance = Instantiate(hitSparksPrefab);
-            hitSparksInstance.name = "MiningHitSparks_SparksLong";
+            hitSparksInstance = Instantiate(preferred);
+            hitSparksInstance.name = "MiningHitEffect";
             // World-space FX host — never parent under laserSight (tiny scale warps emission).
             hitSparksInstance.transform.SetParent(null, true);
             hitSparksInstance.transform.localScale = Vector3.one;
@@ -1195,7 +1243,7 @@ namespace Project.Interaction
             return null;
         }
 
-        private void UpdateLaserVisuals(Vector3 muzzlePos, Vector3 endPoint)
+        private void UpdateLaserVisuals(Vector3 muzzlePos, Vector3 endPoint, bool hitCollider, ItemData tool)
         {
             if (laserLine != null)
             {
@@ -1222,12 +1270,24 @@ namespace Project.Interaction
                 }
             }
 
-            UpdateHitSparks(endPoint, endPoint - muzzlePos);
+            // Sparks / impact FX only when the beam lands on a collider (resource nodes included).
+            if (hitCollider)
+            {
+                Vector3 beamDelta = endPoint - muzzlePos;
+                UpdateHitSparks(endPoint, beamDelta, tool);
+                // Parent mining burns to the soft-locked resource so deplete clears them with the node.
+                Transform burnAttach = (hasLock && lockedNode != null) ? lockedNode.transform : null;
+                DMILaserBurnMarkSpawner.TryStampMining(endPoint, beamDelta, burnAttach);
+            }
+            else
+            {
+                StopHitSparks();
+            }
         }
 
-        private void UpdateHitSparks(Vector3 endPoint, Vector3 beamDelta)
+        private void UpdateHitSparks(Vector3 endPoint, Vector3 beamDelta, ItemData tool)
         {
-            EnsureHitSparksInstance();
+            EnsureHitSparksInstance(tool);
             if (hitSparksInstance == null)
                 return;
 
@@ -1275,27 +1335,76 @@ namespace Project.Interaction
             continuousAudio.volume = 0.7f;
         }
 
-        private static ItemData ResolveContinuousLaserAmmo(ItemData tool)
+        /// <summary>
+        /// Mining beam audio is authored on the mining tool ItemData (DM_Mining_Tool).
+        /// Optional defaultAmmoItem continuous clips remain as a legacy secondary source.
+        /// </summary>
+        private static ItemData ResolveContinuousLaserAudioSource(ItemData tool)
         {
             if (tool == null)
                 return null;
 
+            // Prefer the tool itself — Plasma Fuel mining wires loop/start/stop on DM_Mining_Tool.
+            if (tool.isMiningTool || tool.isContinuousLaser || tool.continuousLoopSound != null)
+                return tool;
+
             if (tool.defaultAmmoItem != null &&
-                (tool.defaultAmmoItem.isContinuousLaser || tool.defaultAmmoItem.isHitscanBeam))
+                (tool.defaultAmmoItem.isContinuousLaser ||
+                 tool.defaultAmmoItem.continuousLoopSound != null ||
+                 tool.defaultAmmoItem.isHitscanBeam))
                 return tool.defaultAmmoItem;
 
             return tool;
         }
 
+        private AudioClip ResolveContinuousLoopClip(ItemData audioSource)
+        {
+            if (audioSource != null)
+            {
+                if (audioSource.continuousLoopSound != null)
+                    return audioSource.continuousLoopSound;
+                if (audioSource.projectileTravelSound != null)
+                    return audioSource.projectileTravelSound;
+            }
+
+            if (continuousLoopFallback != null)
+                return continuousLoopFallback;
+
+            EnsureDefaultContinuousLoopFallback();
+            return continuousLoopFallback;
+        }
+
+        private AudioClip ResolveContinuousStartClip(ItemData audioSource)
+        {
+            if (audioSource != null && audioSource.continuousStartSound != null)
+                return audioSource.continuousStartSound;
+            return continuousStartFallback;
+        }
+
+        private AudioClip ResolveContinuousStopClip(ItemData audioSource)
+        {
+            if (audioSource != null && audioSource.continuousStopSound != null)
+                return audioSource.continuousStopSound;
+            return continuousStopFallback;
+        }
+
+        private void EnsureDefaultContinuousLoopFallback()
+        {
+            if (continuousLoopFallback != null)
+                return;
+
+#if UNITY_EDITOR
+            continuousLoopFallback = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultContinuousLoopPath);
+#endif
+        }
+
         private void UpdateContinuousLaserAudio(ItemData tool, Vector3 muzzlePos)
         {
             EnsureContinuousAudio();
-            ItemData ammo = ResolveContinuousLaserAmmo(tool);
-            continuousAudioAmmo = ammo;
+            ItemData audioSource = ResolveContinuousLaserAudioSource(tool);
+            continuousAudioAmmo = audioSource;
 
-            AudioClip sourceLoop = ammo != null ? ammo.continuousLoopSound : null;
-            if (sourceLoop == null && ammo != null)
-                sourceLoop = ammo.projectileTravelSound; // legacy fallback
+            AudioClip sourceLoop = ResolveContinuousLoopClip(audioSource);
 
             if (continuousAudio == null)
                 return;
@@ -1316,8 +1425,9 @@ namespace Project.Interaction
 
             if (!continuousAudioPlaying || continuousLoopSourceClip != sourceLoop)
             {
-                if (ammo != null && ammo.continuousStartSound != null)
-                    AudioSource.PlayClipAtPoint(ammo.continuousStartSound, muzzlePos);
+                AudioClip startClip = ResolveContinuousStartClip(audioSource);
+                if (startClip != null)
+                    AudioSource.PlayClipAtPoint(startClip, muzzlePos);
 
                 continuousLoopSourceClip = sourceLoop;
                 continuousAudio.clip = loop;
@@ -1403,8 +1513,12 @@ namespace Project.Interaction
             }
 
             Vector3 pos = continuousAudio != null ? continuousAudio.transform.position : transform.position;
-            if (playStopSound && continuousAudioAmmo != null && continuousAudioAmmo.continuousStopSound != null)
-                AudioSource.PlayClipAtPoint(continuousAudioAmmo.continuousStopSound, pos);
+            if (playStopSound)
+            {
+                AudioClip stopClip = ResolveContinuousStopClip(continuousAudioAmmo);
+                if (stopClip != null)
+                    AudioSource.PlayClipAtPoint(stopClip, pos);
+            }
 
             if (continuousAudio != null && continuousAudio.isPlaying)
                 continuousAudio.Stop();

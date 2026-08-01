@@ -1,3 +1,4 @@
+using Project.Combat;
 using Project.Data;
 using Project.UI;
 using UnityEngine;
@@ -458,6 +459,11 @@ namespace Project.Interaction
                 Destroy(holdProgressBar.gameObject);
                 holdProgressBar = null;
             }
+
+            // Return mining burn marks to the pool before Destroy so they are not orphaned in world space.
+            DMILaserBurnMarkHost burnHost = GetComponent<DMILaserBurnMarkHost>();
+            if (burnHost != null)
+                burnHost.ReleaseAll();
 
             Destroy(gameObject);
         }

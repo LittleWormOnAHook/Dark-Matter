@@ -1111,6 +1111,7 @@ namespace Project.Player.Invector
             if (existingVisual != null)
             {
                 existingVisual.gameObject.SetActive(true);
+                EnableRenderersUnder(existingVisual.transform);
                 StripAuthoredVisualForEquippedWeapon(existingVisual.gameObject, item);
                 HideVendorRenderers(invectorInstance, existingVisual.transform);
                 AlignMiningToolAimAxis(invectorInstance, existingVisual.transform, item);
@@ -1120,11 +1121,199 @@ namespace Project.Player.Invector
             GameObject visual = Instantiate(visualPrefab, invectorInstance.transform, false);
             visual.name = $"PioneerVisual_{visualPrefab.name}";
             visual.SetActive(true);
+            EnableRenderersUnder(visual.transform);
             StripAuthoredVisualForEquippedWeapon(visual, item);
             AlignMiningToolAimAxis(invectorInstance, visual.transform, item);
 
             if (HasRenderer(visual))
                 HideVendorRenderers(invectorInstance, visual.transform);
+        }
+
+        /// <summary>
+        /// Re-applies ItemData held/invector visuals on an existing Drawn_/Holstered_ slot and hides
+        /// leftover VBOT / GreatSword vendor meshes so the visible mesh matches the item.
+        /// </summary>
+        public static void SyncPreloadedSlotVisuals(GameObject slotInstance, ItemData item, GameObject invectorPrefab, bool holstered)
+        {
+            if (slotInstance == null || item == null)
+                return;
+
+            if (holstered)
+            {
+                EnsureHolsteredMeshMatchesItem(slotInstance, item);
+                PrepareHolsteredVisualSlot(slotInstance, item);
+                EnableRenderersUnder(slotInstance.transform);
+                return;
+            }
+
+            RemoveOrphanPioneerVisuals(slotInstance, item);
+
+            if (item.itemType == ItemType.MeleeWeapon)
+                PrepareDrawnMeleeSlot(slotInstance, item, invectorPrefab);
+            else if (item.IsRangedWeapon)
+                PrepareDrawnRangedSlot(slotInstance, item, invectorPrefab);
+            else
+                PreparePreloadedWeaponInstance(slotInstance, item, invectorPrefab);
+
+            // Prefer authored PioneerVisual; keep VBOT template meshes component-disabled.
+            EquippedVisualMarker pioneer = FindMountedVisual(slotInstance, item);
+            if (pioneer != null)
+            {
+                pioneer.gameObject.SetActive(true);
+                EnableRenderersUnder(pioneer.transform);
+                HideVendorRenderers(slotInstance, pioneer.transform);
+            }
+            else
+            {
+                EnableRenderersUnder(slotInstance.transform);
+            }
+        }
+
+        /// <summary>
+        /// Older mounts left unmarked PioneerVisual_* siblings; HideVendor then disables them as
+        /// "vendor" leftovers. Keep the ItemData-marked visual (or a single survivor) only.
+        /// </summary>
+        private static void RemoveOrphanPioneerVisuals(GameObject slotInstance, ItemData item)
+        {
+            if (slotInstance == null)
+                return;
+
+            EquippedVisualMarker keep = FindMountedVisual(slotInstance, item);
+            Transform keepTransform = keep != null ? keep.transform : null;
+
+            if (keepTransform == null)
+            {
+                for (int i = 0; i < slotInstance.transform.childCount; i++)
+                {
+                    Transform child = slotInstance.transform.GetChild(i);
+                    if (child == null || !child.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                        continue;
+
+                    keepTransform = child;
+                    EquippedVisualMarker marker = child.GetComponent<EquippedVisualMarker>();
+                    if (marker == null)
+                        marker = child.gameObject.AddComponent<EquippedVisualMarker>();
+                    if (item != null)
+                        marker.BindItem(item);
+                    break;
+                }
+            }
+
+            List<GameObject> toDestroy = new List<GameObject>(4);
+            for (int i = 0; i < slotInstance.transform.childCount; i++)
+            {
+                Transform child = slotInstance.transform.GetChild(i);
+                if (child == null || !child.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    continue;
+                if (keepTransform != null && child == keepTransform)
+                    continue;
+                toDestroy.Add(child.gameObject);
+            }
+
+            for (int i = 0; i < toDestroy.Count; i++)
+            {
+                if (toDestroy[i] != null)
+                    DestroyUnityObject(toDestroy[i]);
+            }
+        }
+
+        private static void EnsureHolsteredMeshMatchesItem(GameObject holstered, ItemData item)
+        {
+            GameObject visualPrefab = item.heldPrefab != null ? item.heldPrefab : item.worldPrefab;
+            if (visualPrefab == null || holstered == null)
+                return;
+
+            if (HolsterMeshesMatchReference(holstered, visualPrefab))
+                return;
+
+            // Strip leftover VBOT / wrong meshes, then mount the ItemData held/world visual.
+            Transform root = holstered.transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                    continue;
+                if (child.GetComponent<MeshFilter>() != null ||
+                    child.GetComponent<MeshRenderer>() != null ||
+                    child.GetComponentInChildren<Renderer>(true) != null)
+                    DestroyUnityObject(child.gameObject);
+            }
+
+            MeshFilter selfFilter = holstered.GetComponent<MeshFilter>();
+            MeshRenderer selfRenderer = holstered.GetComponent<MeshRenderer>();
+            if (selfFilter != null)
+                DestroyUnityObject(selfFilter);
+            if (selfRenderer != null)
+                DestroyUnityObject(selfRenderer);
+
+            GameObject visual = UnityEngine.Object.Instantiate(visualPrefab, holstered.transform, false);
+            visual.name = $"PioneerVisual_{visualPrefab.name}";
+            visual.SetActive(true);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+            StripAuthoredVisualForEquippedWeapon(visual, item);
+            EnableRenderersUnder(visual.transform);
+        }
+
+        private static bool HolsterMeshesMatchReference(GameObject holstered, GameObject reference)
+        {
+            HashSet<string> referenceMeshes = CollectMeshNames(reference);
+            if (referenceMeshes.Count == 0)
+                return true;
+
+            HashSet<string> holsterMeshes = CollectMeshNames(holstered);
+            if (holsterMeshes.Count == 0)
+                return false;
+
+            foreach (string meshName in holsterMeshes)
+            {
+                if (referenceMeshes.Contains(meshName))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static HashSet<string> CollectMeshNames(GameObject root)
+        {
+            HashSet<string> names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (root == null)
+                return names;
+
+            MeshFilter[] filters = root.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < filters.Length; i++)
+            {
+                if (filters[i] != null && filters[i].sharedMesh != null)
+                    names.Add(filters[i].sharedMesh.name);
+            }
+
+            SkinnedMeshRenderer[] skinned = root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinned.Length; i++)
+            {
+                if (skinned[i] != null && skinned[i].sharedMesh != null)
+                    names.Add(skinned[i].sharedMesh.name);
+            }
+
+            return names;
+        }
+
+        private static void EnableRenderersUnder(Transform root)
+        {
+            if (root == null)
+                return;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                renderer.enabled = true;
+                if (!renderer.gameObject.activeSelf)
+                    renderer.gameObject.SetActive(true);
+            }
         }
 
         /// <summary>
@@ -1725,6 +1914,8 @@ namespace Project.Player.Invector
                 weapon.isInfinityAmmo = true;
                 weapon.dontUseReload = false;
                 weapon.autoReload = false;
+                // Mining uses continuous beam audio while charged; empty plasma uses the same
+                // shared dry-fire click as other guns (never the handgun fireClip).
                 ApplySharedEmptyClickClip(weapon);
                 EnsureReloadAudioSource(weapon);
                 PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem);

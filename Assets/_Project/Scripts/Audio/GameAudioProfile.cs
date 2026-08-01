@@ -12,6 +12,10 @@ namespace Project.Audio
         public bool shuffleMusic = true;
         public bool loopCurrentTrack = true;
 
+        [Header("Loading")]
+        public AudioClip loadingAmbience;
+        [Range(0f, 1f)] public float loadingAmbienceVolume = 0.55f;
+
         [Header("Footsteps")]
         public FootstepSurfaceSet defaultFootsteps = FootstepSurfaceSet.CreateDefault();
         public FootstepSurfaceSet[] surfaceFootsteps;

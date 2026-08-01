@@ -20,6 +20,8 @@ MonoBehaviour:
   musicVolume: 0.096
   shuffleMusic: 1
   loopCurrentTrack: 1
+  loadingAmbience: {fileID: 8300000, guid: 897582033751bc54eb90a12e750f5d26, type: 3}
+  loadingAmbienceVolume: 0.55
   defaultFootsteps:
     surfaceTag: Default
     walkClips:

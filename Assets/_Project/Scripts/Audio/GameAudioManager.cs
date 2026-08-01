@@ -13,6 +13,7 @@ namespace Project.Audio
 
         private AudioSource musicSource;
         private AudioSource uiSource;
+        private AudioSource loadingSource;
         private AudioSource[] sfxPool;
         private int sfxPoolIndex;
         private int lastMusicTrackIndex = -1;
@@ -48,6 +49,13 @@ namespace Project.Audio
             uiSource.playOnAwake = false;
             uiSource.spatialBlend = 0f;
             uiSource.loop = false;
+
+            loadingSource = gameObject.AddComponent<AudioSource>();
+            loadingSource.playOnAwake = false;
+            loadingSource.spatialBlend = 0f;
+            loadingSource.loop = true;
+            // Boot overlay runs while Time.timeScale is 0, so this bed must ignore pause scaling.
+            loadingSource.ignoreListenerPause = true;
 
             sfxPool = new AudioSource[Mathf.Max(1, sfxPoolSize)];
             for (int i = 0; i < sfxPool.Length; i++)
@@ -93,6 +101,31 @@ namespace Project.Audio
         {
             if (musicSource != null)
                 musicSource.Stop();
+        }
+
+        /// <summary>Loading Genesis ambience bed. Owned here so it never fights menu/gameplay music.</summary>
+        public void StartLoadingAmbience()
+        {
+            if (loadingSource == null || profile == null || profile.loadingAmbience == null)
+                return;
+
+            loadingSource.clip = profile.loadingAmbience;
+            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume;
+            loadingSource.Play();
+        }
+
+        public void SetLoadingAmbienceFade(float normalized)
+        {
+            if (loadingSource == null || profile == null)
+                return;
+
+            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume * Mathf.Clamp01(normalized);
+        }
+
+        public void StopLoadingAmbience()
+        {
+            if (loadingSource != null)
+                loadingSource.Stop();
         }
 
         public void PlayFootstep(Vector3 position, string surfaceTag, bool isRunning)
