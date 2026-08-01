@@ -1,6 +1,8 @@
+using MalbersAnimations.PathCreation;
 using Project.AI;
 using Project.Data;
 using Project.EditorTools.Invector;
+using Project.World;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -20,6 +22,7 @@ namespace Project.EditorTools
         private GameObject humanoidMeshSource;
         private bool placeInSceneAfterCreate = true;
         private string definitionAssetFileName = "new_enemy";
+        private PathCreator patrolPathCreator;
 
         private Vector2 listScroll;
         private Vector2 editorScroll;
@@ -68,9 +71,10 @@ namespace Project.EditorTools
 
             EditorGUILayout.LabelField("Enemy Prefab Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Single pipeline for humanoid Invector enemies and generic capsule/animation enemies. " +
-                "Humanoid create/rebuild runs the full gameplay stack (AI, loadout, ragdoll, damage receivers). " +
-                "Use Repair All Humanoid Combat Prefabs to batch-fix existing prefabs.",
+                "Humanoid Meshy/character FBXs (Android, etc.): set Archetype = HumanoidInvector, assign Model FBX, Create Prefab. " +
+                "Creator swaps the root Animator avatar, hides the stock VBOT body, and bakes AI/health/ragdoll. " +
+                "Generic/creature FBXs: use LegacyCreature + Animation Pipeline clips. " +
+                "Menu: Tools → Dark Matter Genesis → Prefab Creator → Enemy Prefab Creator.",
                 MessageType.Info);
             EditorGUILayout.Space(6f);
 
@@ -124,8 +128,8 @@ namespace Project.EditorTools
                 DrawAnimationSection();
             else
                 EditorGUILayout.HelpBox(
-                    "Humanoid Invector enemies use the Player_Invector animator and weapon stack. " +
-                    "Assign melee/ranged ItemData and an optional model FBX; Create/Rebuild bakes the full stack.",
+                    "Humanoid Invector enemies use the Player_Invector animator controller with the assigned model Avatar. " +
+                    "Assign Model FBX (Meshy Humanoid), optional melee/ranged ItemData, then Create/Rebuild.",
                     MessageType.Info);
             EditorGUILayout.Space(8f);
             DrawLootSection();
@@ -169,6 +173,28 @@ namespace Project.EditorTools
         private void DrawVisualSourceSection()
         {
             EditorGUILayout.LabelField("Visual Source", EditorStyles.boldLabel);
+
+            EditorGUI.BeginChangeCheck();
+            humanoidMeshSource = (GameObject)EditorGUILayout.ObjectField(
+                "Model FBX / Prefab",
+                humanoidMeshSource,
+                typeof(GameObject),
+                false);
+            if (EditorGUI.EndChangeCheck() && humanoidMeshSource != null)
+                ApplyModelAutoDetect(humanoidMeshSource);
+
+            DrawModelInspectionPanel(humanoidMeshSource);
+
+            EditorGUILayout.BeginHorizontal();
+            GUI.enabled = humanoidMeshSource != null;
+            if (GUILayout.Button("Prepare Model Import", GUILayout.Height(22f)))
+                PrepareAssignedModelImport();
+            if (GUILayout.Button("Auto-Detect Archetype", GUILayout.Height(22f)))
+                ApplyModelAutoDetect(humanoidMeshSource);
+            GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(4f);
             visualSourceMode = (VisualSourceMode)EditorGUILayout.EnumPopup("Source Mode", visualSourceMode);
 
             switch (visualSourceMode)
@@ -186,13 +212,15 @@ namespace Project.EditorTools
                 case VisualSourceMode.ExistingPrefab:
                     existingPrefabSource = (GameObject)EditorGUILayout.ObjectField(
                         "Prefab Asset",
-                        existingPrefabSource,
+                        existingPrefabSource != null ? existingPrefabSource : humanoidMeshSource,
                         typeof(GameObject),
                         false);
                     break;
 
                 case VisualSourceMode.PlaceholderCapsule:
-                    EditorGUILayout.HelpBox("Creates a simple capsule placeholder mesh.", MessageType.None);
+                    EditorGUILayout.HelpBox(
+                        "Creates a simple capsule placeholder. Prefer assigning Model FBX for real characters.",
+                        MessageType.None);
                     break;
             }
 
@@ -205,17 +233,20 @@ namespace Project.EditorTools
                     visualSourceMode = VisualSourceMode.SelectedHierarchyObject;
                 }
             }
+
+            if (GUILayout.Button("Use Model FBX As Source", GUILayout.Width(180f)))
+            {
+                if (humanoidMeshSource != null)
+                {
+                    existingPrefabSource = humanoidMeshSource;
+                    visualSourceMode = VisualSourceMode.ExistingPrefab;
+                }
+            }
             EditorGUILayout.EndHorizontal();
 
             if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
             {
                 EditorGUILayout.Space(4f);
-                EditorGUILayout.LabelField("Humanoid Mesh", EditorStyles.boldLabel);
-                humanoidMeshSource = (GameObject)EditorGUILayout.ObjectField(
-                    "Model FBX / Prefab",
-                    humanoidMeshSource,
-                    typeof(GameObject),
-                    false);
                 if (humanoidMeshSource != null && string.IsNullOrWhiteSpace(workingDefinition.visualChildName))
                     workingDefinition.visualChildName =
                         EnemyInvectorSetupUtility.SuggestVisualChildName(humanoidMeshSource);
@@ -229,6 +260,87 @@ namespace Project.EditorTools
             }
 
             placeInSceneAfterCreate = EditorGUILayout.Toggle("Place In Open Scene After Create", placeInSceneAfterCreate);
+        }
+
+        private void DrawModelInspectionPanel(GameObject model)
+        {
+            EnemyModelAvatarUtility.ModelInspection inspection = EnemyModelAvatarUtility.Inspect(model);
+            MessageType messageType = MessageType.None;
+            if (!inspection.HasModel)
+                messageType = MessageType.None;
+            else if (inspection.IsHumanoidAvatar && inspection.IsAvatarValid && inspection.LooksHumanoidSized)
+                messageType = MessageType.Info;
+            else if (inspection.HasModel)
+                messageType = MessageType.Warning;
+
+            EditorGUILayout.BeginVertical("box");
+            EditorGUILayout.LabelField("Model Inspection", EditorStyles.miniBoldLabel);
+            if (!inspection.HasModel)
+            {
+                EditorGUILayout.LabelField("Assign a Meshy/character FBX to inspect rig, avatar, and scale.");
+            }
+            else
+            {
+                EditorGUILayout.LabelField(inspection.Summary);
+                if (!string.IsNullOrEmpty(inspection.AssetPath))
+                    EditorGUILayout.LabelField(inspection.AssetPath, EditorStyles.miniLabel);
+                EditorGUILayout.HelpBox(inspection.Recommendation, messageType);
+            }
+            EditorGUILayout.EndVertical();
+        }
+
+        private void PrepareAssignedModelImport()
+        {
+            if (humanoidMeshSource == null)
+                return;
+
+            string path = AssetDatabase.GetAssetPath(humanoidMeshSource);
+            if (string.IsNullOrEmpty(path))
+                path = EnemyModelAvatarUtility.FindPrimaryModelAssetPath(humanoidMeshSource);
+
+            if (!EnemyModelAvatarUtility.TryPrepareModelImport(path, out string message))
+            {
+                EditorUtility.DisplayDialog("Prepare Model Import", message, "OK");
+                return;
+            }
+
+            humanoidMeshSource = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            ApplyModelAutoDetect(humanoidMeshSource);
+            EditorUtility.DisplayDialog("Prepare Model Import", message, "OK");
+        }
+
+        private void ApplyModelAutoDetect(GameObject model)
+        {
+            if (model == null || workingDefinition == null)
+                return;
+
+            EnemyModelAvatarUtility.ModelInspection inspection = EnemyModelAvatarUtility.Inspect(model);
+            if (inspection.IsHumanoidAvatar && inspection.IsAvatarValid)
+            {
+                workingDefinition.archetype = EnemyArchetype.HumanoidInvector;
+                if (string.IsNullOrWhiteSpace(workingDefinition.visualChildName))
+                    workingDefinition.visualChildName = "Visual";
+            }
+            else if (inspection.AnimationType == ModelImporterAnimationType.Generic ||
+                     inspection.HasModel)
+            {
+                workingDefinition.archetype = EnemyArchetype.LegacyCreature;
+            }
+
+            existingPrefabSource = model;
+            visualSourceMode = VisualSourceMode.ExistingPrefab;
+
+            if (string.IsNullOrWhiteSpace(workingDefinition.displayName) ||
+                workingDefinition.displayName == "New Enemy")
+            {
+                workingDefinition.displayName = model.name.Replace('_', ' ');
+            }
+
+            if (string.IsNullOrWhiteSpace(workingDefinition.prefabFileName) ||
+                workingDefinition.prefabFileName == "NewEnemy")
+            {
+                workingDefinition.prefabFileName = EnemyPrefabBuilder.SanitizeFileName(model.name, "Enemy");
+            }
         }
 
         private void RebuildHumanoidPrefabWithModel()
@@ -305,15 +417,26 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.Space(4f);
                 EditorGUILayout.LabelField("Patrol Route", EditorStyles.miniBoldLabel);
+                patrolPathCreator = (PathCreator)EditorGUILayout.ObjectField(
+                    new GUIContent(
+                        "Path Creator",
+                        "Path Creator or Path Creator Variant. Apply writes onto selected scene AI / placed instance; persistent path assets also bake onto selected prefab assets."),
+                    patrolPathCreator,
+                    typeof(PathCreator),
+                    true);
+                if (GUILayout.Button("Apply Patrol Path To Selection / Prefab"))
+                    ApplyPatrolPathToEnemyTargets();
+
                 workingDefinition.patrolPointCount = EditorGUILayout.IntField("Patrol Point Count", workingDefinition.patrolPointCount);
                 workingDefinition.patrolRadius = EditorGUILayout.FloatField("Patrol Radius", workingDefinition.patrolRadius);
                 workingDefinition.patrolWaitDuration = EditorGUILayout.FloatField(
                     "Patrol Wait Duration",
                     workingDefinition.patrolWaitDuration);
                 EditorGUILayout.HelpBox(
-                    "Patrol points are generated in a circle around the spawn position when the prefab is created. " +
-                    "Move the PatrolPoints children in the prefab to customize the route.",
-                    MessageType.None);
+                    "Preferred: place Path Creator Variant, edit anchors with Path Creator's native Scene tools only, " +
+                    "then assign here. Create/Rebuild with Place in Scene applies the path to the instance. " +
+                    "Fallback: circle PatrolPoints when no path is set.",
+                    MessageType.Info);
             }
 
             if (mode == EnemyMovementMode.Stationary)
@@ -425,7 +548,24 @@ namespace Project.EditorTools
             workingDefinition.visionRange = EditorGUILayout.FloatField("Vision Range", workingDefinition.visionRange);
             workingDefinition.visionFov = EditorGUILayout.FloatField("Vision Fov", workingDefinition.visionFov);
             workingDefinition.eyeHeight = EditorGUILayout.FloatField("Eye Height", workingDefinition.eyeHeight);
+            workingDefinition.senseHearingEnabled = EditorGUILayout.Toggle(
+                "Hearing Enabled",
+                workingDefinition.senseHearingEnabled);
             workingDefinition.hearingRange = EditorGUILayout.FloatField("Hearing Range", workingDefinition.hearingRange);
+            workingDefinition.hearingAggroChance = EditorGUILayout.Slider(
+                "Hearing Aggro Chance",
+                workingDefinition.hearingAggroChance,
+                0f,
+                1f);
+            workingDefinition.hearingCooldown = EditorGUILayout.FloatField(
+                "Hearing Cooldown",
+                workingDefinition.hearingCooldown);
+            workingDefinition.aggroOnDamaged = EditorGUILayout.Toggle(
+                "Aggro On Damaged",
+                workingDefinition.aggroOnDamaged);
+            workingDefinition.aggroOnHeardHit = EditorGUILayout.Toggle(
+                "Aggro On Heard Hit",
+                workingDefinition.aggroOnHeardHit);
             workingDefinition.proximityRange = EditorGUILayout.FloatField("Proximity Range", workingDefinition.proximityRange);
 
             EditorGUILayout.Space(4f);
@@ -717,18 +857,34 @@ namespace Project.EditorTools
             sourceMode = EnemyPrefabBuilder.VisualSourceMode.PlaceholderCapsule;
             source = null;
 
+            // Model FBX field is the preferred one-click source for Meshy/character assets.
+            if (humanoidMeshSource != null &&
+                (visualSourceMode == VisualSourceMode.ExistingPrefab ||
+                 visualSourceMode == VisualSourceMode.PlaceholderCapsule ||
+                 workingDefinition.archetype == EnemyArchetype.HumanoidInvector))
+            {
+                // When a model asset is assigned, prefer it over empty hierarchy selection.
+                if (visualSourceMode != VisualSourceMode.SelectedHierarchyObject ||
+                    (selectedVisualSource == null && Selection.activeGameObject == null))
+                {
+                    source = humanoidMeshSource;
+                    sourceMode = EnemyPrefabBuilder.VisualSourceMode.ExistingPrefab;
+                    return true;
+                }
+            }
+
             switch (visualSourceMode)
             {
                 case VisualSourceMode.PlaceholderCapsule:
                     if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
                     {
                         source = humanoidMeshSource;
-                        sourceMode = EnemyPrefabBuilder.VisualSourceMode.SelectedHierarchyObject;
+                        sourceMode = EnemyPrefabBuilder.VisualSourceMode.ExistingPrefab;
                         if (source == null)
                         {
                             EditorUtility.DisplayDialog(
                                 "Enemy Prefab Creator",
-                                "Humanoid enemies need a model FBX/prefab — assign Humanoid Mesh or select a hierarchy object.",
+                                "Humanoid enemies need a model FBX/prefab — assign Model FBX / Prefab.",
                                 "OK");
                             return false;
                         }
@@ -740,10 +896,13 @@ namespace Project.EditorTools
 
                 case VisualSourceMode.ExistingPrefab:
                     sourceMode = EnemyPrefabBuilder.VisualSourceMode.ExistingPrefab;
-                    source = existingPrefabSource;
+                    source = existingPrefabSource != null ? existingPrefabSource : humanoidMeshSource;
                     if (source == null)
                     {
-                        EditorUtility.DisplayDialog("Enemy Prefab Creator", "Assign a prefab asset as the visual source.", "OK");
+                        EditorUtility.DisplayDialog(
+                            "Enemy Prefab Creator",
+                            "Assign a Model FBX / Prefab as the visual source.",
+                            "OK");
                         return false;
                     }
                     return true;
@@ -756,6 +915,13 @@ namespace Project.EditorTools
                     else
                         source = ResolveVisualSource(out missing);
 
+                    if (source == null && humanoidMeshSource != null)
+                    {
+                        source = humanoidMeshSource;
+                        sourceMode = EnemyPrefabBuilder.VisualSourceMode.ExistingPrefab;
+                        missing = false;
+                    }
+
                     if (source == null)
                         missing = true;
 
@@ -763,7 +929,7 @@ namespace Project.EditorTools
                     {
                         EditorUtility.DisplayDialog(
                             "Enemy Prefab Creator",
-                            "Select a model in the Hierarchy or switch visual source mode.",
+                            "Assign a Model FBX / Prefab, select a Hierarchy model, or switch source mode.",
                             "OK");
                         return false;
                     }
@@ -939,22 +1105,48 @@ namespace Project.EditorTools
                 return;
             }
 
+            GameObject sceneInstance = null;
             if (placeInSceneAfterCreate || forcePlaceInScene)
             {
-                GameObject instance = EnemyPrefabBuilder.PlacePrefabInScene(
+                sceneInstance = EnemyPrefabBuilder.PlacePrefabInScene(
                     prefab,
                     workingDefinition.displayName,
                     EnemyPrefabBuilder.ResolveSpawnPosition());
-
-                if (instance != null)
-                    Selection.activeGameObject = instance;
             }
 
-            Selection.activeObject = prefab;
-            EditorGUIUtility.PingObject(prefab);
+            if (patrolPathCreator != null && workingDefinition.movementMode == EnemyMovementMode.Patrol)
+            {
+                int applied = DMIPathFollowEditorUtility.ApplyToEnemies(patrolPathCreator, sceneInstance);
+                Debug.Log(applied > 0
+                    ? $"Enemy Prefab Creator: assigned Path Creator to {applied} enemy AI target(s) after build."
+                    : "Enemy Prefab Creator: Path Creator set, but no EnemyAiController targets to apply (place in scene or select an enemy).");
+            }
+
+            if (sceneInstance != null)
+                Selection.activeGameObject = sceneInstance;
+            else
+            {
+                Selection.activeObject = prefab;
+                EditorGUIUtility.PingObject(prefab);
+            }
+
             AssetDatabase.SaveAssets();
             RefreshDefinitionList();
             Debug.Log($"{(existedBefore ? "Rebuilt" : "Created")} enemy prefab at {prefabPath}");
+        }
+
+        private void ApplyPatrolPathToEnemyTargets(GameObject extraRoot = null)
+        {
+            if (patrolPathCreator == null)
+            {
+                Debug.LogWarning("Enemy Prefab Creator: assign a Path Creator first.");
+                return;
+            }
+
+            int applied = DMIPathFollowEditorUtility.ApplyToEnemies(patrolPathCreator, extraRoot);
+            Debug.Log(applied > 0
+                ? $"Enemy Prefab Creator: assigned Path Creator to {applied} enemy AI target(s)."
+                : "Enemy Prefab Creator: select a scene enemy (or persistent path + prefab asset), then Apply Patrol Path.");
         }
     }
 }

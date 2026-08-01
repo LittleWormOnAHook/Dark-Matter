@@ -86,9 +86,7 @@ namespace Project.UI
             panelRect.offsetMin = Vector2.zero;
             panelRect.offsetMax = Vector2.zero;
 
-            // No internal header here — the FullscreenUiWindow chrome (see JournalPanelUI.RegisterWindow)
-            // already renders an "Achievements" title bar above this panel's content area, so a second
-            // one here was purely redundant.
+            // No internal section header — journal tab rail identifies Achievements; shell title is hidden.
             GameObject tabRow = new GameObject("CategoryTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             tabRow.transform.SetParent(panelRoot.transform, false);
             RectTransform tabRect = tabRow.GetComponent<RectTransform>();

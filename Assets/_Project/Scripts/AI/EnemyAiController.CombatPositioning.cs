@@ -24,8 +24,10 @@ namespace Project.AI
             if (IsCombatTargetPlayer(target))
                 standoff += playerStandoffBonus;
 
-            // Never orbit farther than we can strike — that was the shove-without-attacking failure mode.
-            return Mathf.Min(standoff, effectiveRange * 0.9f);
+            // Prefer a contact band inside weapon reach so Meshy-proportion swings (shorter arms)
+            // still connect; never orbit farther than we can strike.
+            float maxOrbit = Mathf.Max(minCombatSeparation, effectiveRange * 0.72f);
+            return Mathf.Min(standoff, maxOrbit);
         }
 
         private float ResolveCombatStandoff()

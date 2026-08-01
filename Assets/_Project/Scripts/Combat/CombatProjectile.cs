@@ -24,6 +24,7 @@ namespace Project.Combat
         private AmmoType ammoType;
         private ItemData ammoItem;
         private ItemData weapon;
+        private GameObject impactVfxOverride;
         private float damage;
         private bool isCritical;
         private float gravityScale;
@@ -43,12 +44,14 @@ namespace Project.Combat
             ItemData ammoItemData = null,
             float speedOverride = 0f,
             bool critical = false,
-            ItemData weaponItemData = null)
+            ItemData weaponItemData = null,
+            GameObject impactVfxPrefabOverride = null)
         {
             owner = ownerRoot;
             ammoType = type;
             ammoItem = ammoItemData;
             weapon = weaponItemData;
+            impactVfxOverride = impactVfxPrefabOverride;
             damage = damageAmount;
             isCritical = critical;
             gravityScale = ammoItemData != null ? ammoItemData.projectileGravityScale : 0f;
@@ -62,6 +65,10 @@ namespace Project.Combat
             SpawnTracer();
             SpawnTravelAudio();
             EnsureProjectileVisible();
+
+            // Muzzle-adjacent / spawn-inside targets never produce a SphereCast hit — resolve
+            // immediate overlaps so close-range shots still damage and play impact VFX.
+            TryResolveOverlapHit();
         }
 
         private void SpawnTracer()
@@ -189,6 +196,10 @@ namespace Project.Combat
 
         private void SweepForHit()
         {
+            // Embedded / zero-delta frames still need overlap probes (melee-range pet shots).
+            if (TryResolveOverlapHit())
+                return;
+
             Vector3 delta = transform.position - previousPosition;
             float distance = delta.magnitude;
             if (distance <= 0.0001f)
@@ -208,6 +219,76 @@ namespace Project.Combat
 
                 ResolveHit(hit.collider, hit.point, hit.normal);
             }
+        }
+
+        /// <summary>
+        /// SphereCast cannot report a hit when the cast origin is already inside a collider.
+        /// OverlapSphere covers muzzle-inside / point-blank launches against any solid collider.
+        /// </summary>
+        private bool TryResolveOverlapHit()
+        {
+            if (hasHit)
+                return false;
+
+            float probeRadius = Mathf.Max(0.05f, radius);
+            Collider[] overlaps = Physics.OverlapSphere(
+                transform.position,
+                probeRadius,
+                hitLayers,
+                QueryTriggerInteraction.Ignore);
+            if (overlaps == null || overlaps.Length == 0)
+                return false;
+
+            Collider best = null;
+            float bestDistSq = float.MaxValue;
+            Vector3 origin = transform.position;
+            for (int i = 0; i < overlaps.Length; i++)
+            {
+                Collider candidate = overlaps[i];
+                if (candidate == null || CombatHitResolver.IsOwnerCollider(owner, candidate))
+                    continue;
+
+                Vector3 closest = GetClosestPointSafe(candidate, origin);
+                float distSq = (closest - origin).sqrMagnitude;
+                if (distSq >= bestDistSq)
+                    continue;
+
+                bestDistSq = distSq;
+                best = candidate;
+            }
+
+            if (best == null)
+                return false;
+
+            Vector3 hitPoint = GetClosestPointSafe(best, origin);
+            Vector3 normal = origin - hitPoint;
+            if (normal.sqrMagnitude < 0.0001f)
+                normal = -velocity.normalized;
+            else
+                normal.Normalize();
+
+            ResolveHit(best, hitPoint, normal);
+            return true;
+        }
+
+        /// <summary>
+        /// Collider.ClosestPoint only supports Box/Sphere/Capsule and convex MeshColliders.
+        /// Non-convex meshes, terrain, etc. log Errors — fall back to AABB closest point.
+        /// </summary>
+        private static Vector3 GetClosestPointSafe(Collider collider, Vector3 point)
+        {
+            if (collider == null)
+                return point;
+
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider
+                || (collider is MeshCollider meshCollider && meshCollider.convex))
+            {
+                return collider.ClosestPoint(point);
+            }
+
+            return collider.bounds.ClosestPoint(point);
         }
 
         private void ResolveHit(Collider collider, Vector3 hitPoint, Vector3 surfaceNormal)
@@ -232,7 +313,14 @@ namespace Project.Combat
             // travel direction — otherwise impact decals orient toward wherever the shot came from
             // (often roughly facing the player) instead of lying flat against the surface they hit.
             Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal : -velocity.normalized;
-            CombatHitResolver.SpawnImpactVfx(ammoItem, weapon, hitPoint, impactNormal);
+            CombatHitResolver.HandleRangedWorldImpact(
+                ammoItem,
+                weapon,
+                hitPoint,
+                impactNormal,
+                owner,
+                playHitAudio: true,
+                impactVfxOverride: impactVfxOverride);
 
             if (ammoItem != null)
                 CombatStatusEffect.Apply(ammoItem, collider.gameObject, owner);

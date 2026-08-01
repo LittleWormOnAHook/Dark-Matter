@@ -75,8 +75,18 @@ namespace Project.AI
         public float visionRange = 16f;
         public float visionFov = 110f;
         public float eyeHeight = 1.4f;
+        public bool senseHearingEnabled = true;
         public float hearingRange = 18f;
         public float proximityRange = 2.5f;
+        [Tooltip("Chance (0–1) to Chase the shooter when a ranged impact is heard nearby.")]
+        [Range(0f, 1f)]
+        public float hearingAggroChance = 0.45f;
+        [Tooltip("Seconds between hearing-aggro rolls for combat impacts.")]
+        public float hearingCooldown = 0.75f;
+        [Tooltip("Direct damage (melee/ranged) pulls this enemy into combat.")]
+        public bool aggroOnDamaged = true;
+        [Tooltip("Hearing a nearby ranged impact may pull this enemy into combat.")]
+        public bool aggroOnHeardHit = true;
 
         [Header("Melee Combat")]
         public float attackRange = 1.8f;

@@ -357,23 +357,7 @@ namespace Project.UI
             panelGroup.childForceExpandWidth = true;
             panelGroup.childForceExpandHeight = false;
 
-            TextMeshProUGUI title = CreateSectionLabel(panel.transform, 22);
-            title.text = "Survivor";
-            title.fontStyle = FontStyles.Bold;
-            title.color = SurvivalPioneerUiPalette.RichFuchsia;
-            title.alignment = TextAlignmentOptions.Top;
-            LayoutElement titleLayout = title.GetComponent<LayoutElement>();
-            titleLayout.minHeight = 28f;
-            titleLayout.preferredHeight = 28f;
-
-            GameObject divider = new GameObject("Divider", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-            divider.transform.SetParent(panel.transform, false);
-            LayoutElement dividerLayout = divider.GetComponent<LayoutElement>();
-            dividerLayout.preferredHeight = 1f;
-            dividerLayout.minHeight = 1f;
-            Image dividerImage = divider.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(dividerImage);
-            dividerImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.45f);
+            // No "Survivor" section title — Character tab on the journal rail identifies this panel.
 
             GameObject environmentHost = new GameObject("CharacterEnvironmentSection", typeof(RectTransform), typeof(CharacterEnvironmentSection), typeof(LayoutElement));
             environmentHost.transform.SetParent(panel.transform, false);

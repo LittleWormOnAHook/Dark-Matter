@@ -305,6 +305,10 @@ namespace Project.UI
             bool showFullMapOverlay = fullMapOpen && GameSession.HasStarted;
 
             fullMapOverlay.SetActive(showFullMapOverlay);
+
+            // Journal Map tab already labels the section; keep "World Map" only for standalone open.
+            if (fullMapTitleBar != null)
+                fullMapTitleBar.SetActive(showFullMapOverlay && !openedViaNavigator);
         }
 
         public static void CloseAnyOpenMap()

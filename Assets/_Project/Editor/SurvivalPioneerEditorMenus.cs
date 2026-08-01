@@ -22,12 +22,26 @@ namespace Project.EditorTools
         public const string WeaponPrefabCreatorFromSelection = PrefabCreator + "Weapon Prefab Creator From Selection";
         public const string ProjectileAmmoCreator = PrefabCreator + "Projectile + Ammo Creator";
         public const string EnemyPrefabCreator = PrefabCreator + "Enemy Prefab Creator";
+        public const string PlayerPrefabCreator = PrefabCreator + "Player Prefab Creator";
+        public const string CreatureManager = Root + "Creatures/Creature Manager";
+        public const string LegacyCreatures = Root + "Creatures/Legacy/";
+        public const string BuildSulfurHoundCreature = LegacyCreatures + "Build Sulfur Hound Prefab (Malbers OnWolf)";
+        public const string BuildSulfurHoundV2Creature = LegacyCreatures + "Build Sulfur Hound V2 Rigged Prefab";
+        public const string BuildSulfurHoundBrain = LegacyCreatures + "Build Sulfur Hound Brain Graph";
+        public const string RegisterSulfurHoundEncounter = LegacyCreatures + "Register Sulfur Hound In B1 Encounter Table";
+        public const string ValidateSulfurHoundSetup = LegacyCreatures + "Validate Sulfur Hound NavMesh + Collider";
+        public const string RebuildSulfurHoundReskin = LegacyCreatures + "Rebuild Sulfur Hound (OnWolf / Houndv3)";
         public const string TwoHandedWeaponFromScene = PrefabCreator + "Two-Handed Weapon From Scene";
 
         // Character, companion, and pet prefabs
-        public const string PetPrefabCreator = PrefabCreator + "Pet Prefab Creator";
-        public const string PetPrefabCreatorFromSelection = PrefabCreator + "Pet Prefab Creator From Selection";
-        public const string PetPrefabFoxCubDemo = PrefabCreator + "Pet Prefab (Fox Cub Demo)";
+        public const string Pets = Root + "Pets/";
+        public const string PetManager = Pets + "Pet Manager";
+        public const string PetManagerFromSelection = Pets + "Pet Manager From Selection";
+        /// <summary>Legacy alias — prefer <see cref="PetManager"/>.</summary>
+        public const string PetPrefabCreator = PetManager;
+        /// <summary>Legacy alias — prefer <see cref="PetManagerFromSelection"/>.</summary>
+        public const string PetPrefabCreatorFromSelection = PetManagerFromSelection;
+        public const string PetPrefabFoxCubDemo = Pets + "Pet Prefab (Fox Cub Demo)";
         public const string PioneerCompanionInvectorPrefab = Combat + "Build PioneerCompanion_Invector Prefab";
         public const string CompanionPrefabTool = Root + "Companion Prefab Tool";
 

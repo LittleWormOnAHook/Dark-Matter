@@ -1,0 +1,51 @@
+Dark Matter: Genesis — Creature Hiss SFX Attribution
+====================================================
+Folder: Assets/_Project/Audio/Creatures/Hisses/
+All sources below are Creative Commons Zero (CC0 1.0) / public domain —
+free to use, modify, and redistribute commercially without attribution.
+Attribution recorded here for provenance.
+
+Downloaded as Freesound HQ preview MP3s (no API key), then converted to
+stereo 44.1 kHz MP3 (~192 kbps) for Unity. Original filenames preserved
+in-place so Unity .meta GUIDs remain valid.
+
+----------------------------------------------------------------------
+Alligator_Hiss.mp3
+----------------------------------------------------------------------
+Title:    S27-21 Alligator hiss twice.wav
+Author:   craigsmith
+Source:   https://freesound.org/people/craigsmith/sounds/675513/
+License:  CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+Notes:    Trimmed ~2.3s from the loud hiss region; mono source converted
+          to stereo; loudness normalized for game one-shot use.
+Preview:  https://cdn.freesound.org/previews/675/675513_2524442-hq.mp3
+
+----------------------------------------------------------------------
+Angry_Cat_Hiss.mp3
+----------------------------------------------------------------------
+Title:    Cat hissing #2
+Author:   rickismyname
+Source:   https://freesound.org/people/rickismyname/sounds/826834/
+License:  CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+Notes:    Short stereo one-shot (~0.81s); loudness normalized.
+Preview:  https://cdn.freesound.org/previews/826/826834_16011171-hq.mp3
+
+----------------------------------------------------------------------
+Snake_Hiss.mp3
+----------------------------------------------------------------------
+Title:    Snake hissing.mp3
+Author:   schreibsel
+Source:   https://freesound.org/people/schreibsel/sounds/540162/
+License:  CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+Notes:    ~2.95s mono source converted to stereo; loudness normalized.
+          Referenced by Ember Skitter rangedAttackClip (GUID preserved).
+Preview:  https://cdn.freesound.org/previews/540/540162_7898982-hq.mp3
+
+----------------------------------------------------------------------
+Rejected candidates (not used)
+----------------------------------------------------------------------
+- Suspirias cat_hiss (649858): CC BY-NC 4.0 — non-commercial, unsuitable.
+- Pixabay / Mixkit pages: blocked or no direct CDN without browser auth.
+- Freesound API: FREESOUND_API_KEY not set in environment.
+
+Generated: 2026-07-31

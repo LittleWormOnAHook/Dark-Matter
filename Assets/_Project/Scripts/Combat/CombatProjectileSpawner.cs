@@ -96,7 +96,7 @@ namespace Project.Combat
                 if (ammoItem.HasSplashDamage)
                     CombatHitResolver.ApplySplash(ammoItem, hit.point, damage, owner, hit.collider);
 
-                CombatHitResolver.SpawnImpactVfx(ammoItem, weapon, hit.point, hit.normal);
+                CombatHitResolver.HandleRangedWorldImpact(ammoItem, weapon, hit.point, hit.normal, owner);
                 CombatStatusEffect.Apply(ammoItem, hit.collider.gameObject, owner);
             }
 

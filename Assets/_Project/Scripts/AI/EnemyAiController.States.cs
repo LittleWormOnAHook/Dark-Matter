@@ -100,14 +100,13 @@ namespace Project.AI
                 return;
             }
 
-            Transform point = patrolPoints[patrolIndex];
-            if (point == null)
+            if (!TryGetPatrolWorldPoint(patrolIndex, out Vector3 point))
             {
                 AdvancePatrolIndex();
                 return;
             }
 
-            moveTarget = point.position;
+            moveTarget = point;
             MoveTowards(moveTarget, ResolvePatrolSpeed());
 
             if (HorizontalDistance(transform.position, moveTarget) <= stopDistance + 0.5f)
@@ -524,15 +523,16 @@ namespace Project.AI
 
         private void AdvancePatrolIndex()
         {
-            if (patrolPoints == null || patrolPoints.Length == 0)
+            int count = PatrolPointCount;
+            if (count == 0)
                 return;
 
-            if (patrolMode == EnemyPatrolMode.PingPong && patrolPoints.Length > 1)
+            if (patrolMode == EnemyPatrolMode.PingPong && count > 1)
             {
                 patrolIndex += patrolDirection;
-                if (patrolIndex >= patrolPoints.Length)
+                if (patrolIndex >= count)
                 {
-                    patrolIndex = patrolPoints.Length - 2;
+                    patrolIndex = count - 2;
                     patrolDirection = -1;
                 }
                 else if (patrolIndex < 0)
@@ -543,7 +543,7 @@ namespace Project.AI
             }
             else
             {
-                patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
+                patrolIndex = (patrolIndex + 1) % count;
             }
         }
     }

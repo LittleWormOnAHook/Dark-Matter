@@ -1,5 +1,6 @@
 using Project.AI;
 using Project.AI.Invector;
+using Project.Audio;
 using Project.Companions;
 using Project.Core;
 using Project.Data;
@@ -17,12 +18,49 @@ namespace Project.Combat
     /// </summary>
     public static class CombatHitResolver
     {
+        /// <summary>
+        /// Broadcast radius for ranged impact noise. Listeners still gate with their own hearingRange
+        /// (EnemySenses / DMICreatureAiController): hear if distance &lt;= hearingRange + this radius.
+        /// </summary>
+        public const float DefaultImpactNoiseRadius = 10f;
+
         public static bool IsOwnerCollider(GameObject owner, Collider collider)
         {
             if (collider == null || owner == null)
                 return false;
 
             return collider.transform.IsChildOf(owner.transform) || collider.gameObject == owner;
+        }
+
+        /// <summary>
+        /// World impact shared by projectile + hitscan: VFX, hit SFX, and combat-impact noise so
+        /// nearby enemies/creatures can hear and optionally aggro — even when the shot hits a wall.
+        /// </summary>
+        public static void HandleRangedWorldImpact(
+            ItemData ammoItem,
+            ItemData weapon,
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            GameObject owner,
+            bool playHitAudio = true,
+            GameObject impactVfxOverride = null)
+        {
+            SpawnImpactVfx(ammoItem, weapon, hitPoint, hitNormal, impactVfxOverride);
+
+            if (playHitAudio)
+                PlayImpactHitAudio(hitPoint);
+
+            EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, DefaultImpactNoiseRadius, owner);
+        }
+
+        public static void PlayImpactHitAudio(Vector3 hitPoint)
+        {
+            GameAudioManager audio = GameAudioManager.Instance;
+            if (audio == null)
+                return;
+
+            // Reuse melee/weapon hit pipeline so ranged impacts stay on the same combat SFX profile.
+            audio.PlayWeaponHit(hitPoint, isCritical: false);
         }
 
         /// <summary>Applies direct damage to whatever the collider resolves to, plus VFX/UI feedback.</summary>
@@ -140,7 +178,7 @@ namespace Project.Combat
                 if (damageable == null)
                     continue;
 
-                Vector3 closest = hitCollider.ClosestPoint(center);
+                Vector3 closest = GetClosestPointSafe(hitCollider, center);
                 float distance = Vector3.Distance(center, closest);
                 float t = Mathf.Clamp01(distance / Mathf.Max(0.01f, ammoItem.splashRadius));
                 float falloffDamage = Mathf.Lerp(centerDamage, centerDamage * ammoItem.splashDamageFalloff, t);
@@ -169,6 +207,25 @@ namespace Project.Combat
             }
         }
 
+        /// <summary>
+        /// Collider.ClosestPoint only supports Box/Sphere/Capsule and convex MeshColliders.
+        /// </summary>
+        private static Vector3 GetClosestPointSafe(Collider collider, Vector3 point)
+        {
+            if (collider == null)
+                return point;
+
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider
+                || (collider is MeshCollider meshCollider && meshCollider.convex))
+            {
+                return collider.ClosestPoint(point);
+            }
+
+            return collider.bounds.ClosestPoint(point);
+        }
+
         /// <summary>Applies the ammo's elemental status effect (Burning/Frozen/Shocked/etc.) to whatever the collider resolves to.</summary>
         public static void ApplyStatusEffect(ItemData ammoItem, Collider collider, GameObject owner)
         {
@@ -178,11 +235,20 @@ namespace Project.Combat
             CombatStatusEffect.Apply(ammoItem, collider.gameObject, owner);
         }
 
-        public static void SpawnImpactVfx(ItemData ammoItem, ItemData weapon, Vector3 point, Vector3 normal)
+        public static void SpawnImpactVfx(
+            ItemData ammoItem,
+            ItemData weapon,
+            Vector3 point,
+            Vector3 normal,
+            GameObject impactVfxOverride = null)
         {
-            GameObject prefab = ammoItem != null && ammoItem.impactVfxPrefab != null
-                ? ammoItem.impactVfxPrefab
-                : weapon != null ? weapon.impactVfxPrefab : null;
+            GameObject prefab = impactVfxOverride;
+            if (prefab == null)
+            {
+                prefab = ammoItem != null && ammoItem.impactVfxPrefab != null
+                    ? ammoItem.impactVfxPrefab
+                    : weapon != null ? weapon.impactVfxPrefab : null;
+            }
 
             if (prefab == null)
                 return;

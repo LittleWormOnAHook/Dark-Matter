@@ -380,8 +380,8 @@ namespace Project.UI
       windowHostRect = windowHostObject.GetComponent<RectTransform>();
       windowHostRect.anchorMin = Vector2.zero;
       windowHostRect.anchorMax = Vector2.one;
-      windowHostRect.offsetMin = new Vector2(Sc(JournalTabRail.RailWidth), 0f);
-      windowHostRect.offsetMax = Vector2.zero;
+      windowHostRect.offsetMin = Vector2.zero;
+      windowHostRect.offsetMax = new Vector2(0f, -Sc(JournalTabRail.RailHeight));
 
       navigator = FullscreenUiNavigator.EnsureExists(windowHostRect);
       if (navigator == null)
@@ -478,7 +478,7 @@ namespace Project.UI
 
     private void ApplyJournalChromeSortOrder()
     {
-      // Bottom → top: dim overlay, window content, tab rail (always receives clicks on the left).
+      // Bottom → top: dim overlay, window content, top tab bar (always receives clicks).
       overlayRoot?.transform.SetAsLastSibling();
       windowHostRect?.transform.SetAsLastSibling();
       tabRail?.transform.SetAsLastSibling();
@@ -486,17 +486,14 @@ namespace Project.UI
 
     private void EnforceJournalChromeLayout()
     {
-      float railWidth = Sc(JournalTabRail.RailWidth);
+      float railHeight = Sc(JournalTabRail.RailHeight);
 
       if (windowHostRect != null)
       {
-        Vector2 hostOffsetMin = windowHostRect.offsetMin;
-        if (hostOffsetMin.x < railWidth - 0.5f)
-          windowHostRect.offsetMin = new Vector2(railWidth, hostOffsetMin.y);
-
         windowHostRect.anchorMin = Vector2.zero;
         windowHostRect.anchorMax = Vector2.one;
-        windowHostRect.offsetMax = Vector2.zero;
+        windowHostRect.offsetMin = Vector2.zero;
+        windowHostRect.offsetMax = new Vector2(0f, -railHeight);
 
         if (windowHostRect.TryGetComponent(out Image hostImage))
         {
@@ -511,11 +508,11 @@ namespace Project.UI
         RectTransform railRect = tabRail.GetComponent<RectTransform>();
         if (railRect != null)
         {
-          railRect.anchorMin = new Vector2(0f, 0f);
-          railRect.anchorMax = new Vector2(0f, 1f);
-          railRect.pivot = new Vector2(0f, 0.5f);
+          railRect.anchorMin = new Vector2(0f, 1f);
+          railRect.anchorMax = new Vector2(1f, 1f);
+          railRect.pivot = new Vector2(0.5f, 1f);
           railRect.anchoredPosition = Vector2.zero;
-          railRect.sizeDelta = new Vector2(railWidth, 0f);
+          railRect.sizeDelta = new Vector2(0f, railHeight);
         }
 
         if (tabRail.TryGetComponent(out Image railImage) && railImage.color.a < 0.05f)

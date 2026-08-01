@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd7c7b947d3ecad489703583b3bd0002, type: 3}
+  m_Name: DMI_Brain_EmberSkitter
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureBrainProfile
+  movementMode: 1
+  walkSpeed: 2
+  runSpeed: 3
+  turnSpeed: 18
+  agentAngularSpeed: 900
+  stopDistance: 0.4
+  wanderRadius: 8
+  idleDurationMin: 2
+  idleDurationMax: 2
+  idleDurationVariation: 4
+  wanderDuration: 2
+  wanderDurationVariation: 3
+  navMeshSampleRadius: 2.5
+  patrolMode: 0
+  patrolPointCount: 4
+  patrolRadius: 6
+  patrolWaitDuration: 2
+  allowChase: 1
+  allowMelee: 1
+  allowRangedSpit: 1
+  meleeHitInterval: 3
+  meleeAttackLockDuration: 0.28

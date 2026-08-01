@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a52382c5ee164449f527ab45ac9090, type: 3}
+  m_Name: SulfurHound_V2
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureDefinition
+  creatureId: sulfur_hound_v2
+  displayName: Sulfur Hound
+  prefabFileName: Sulfur_Hound_V2
+  surfaceThreatKind: 2
+  rigArchetype: 2
+  heightOffset: 0
+  prefabScale: 1
+  hitCapsuleHeight: 0
+  hitCapsuleRadius: 0
+  hitCapsuleCenterYOffset: 0
+  meleeHitHeightMultiplier: 1
+  meleeHitRadiusMultiplier: 1
+  brainProfile: {fileID: 0}
+  buildTrack: 1
+  acTemplate: 0
+  startBrainState: {fileID: 0}
+  v2AnimatorController: {fileID: 9100000, guid: ebdb8d560a37379489bd6a5a1558c17f, type: 2}
+  generateAnimatorFromSlots: 1
+  animationEntries: []
+  idleClip: {fileID: 0}
+  walkClip: {fileID: 0}
+  runClip: {fileID: 0}
+  attackClip: {fileID: 0}
+  deathClip: {fileID: 0}
+  hitClip: {fileID: 0}
+  visualSourceMode: 0
+  visualMeshSource: {fileID: 919132149155446097, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+  visualMaterialSource: {fileID: 2100000, guid: d9c17409b2973354d83e791169684a79, type: 2}
+  skipAutoReskin: 1
+  maxHealth: 80
+  destroyOnDeath: 1
+  destroyDelay: 3
+  dissolveOnDeath: 1
+  preDisintegrationDelay: 1.25
+  threatSenseRange: 9
+  threatLeashMultiplier: 1.4
+  loseTargetDelay: 2.5
+  meleeEngageRange: 2.75
+  meleeDamage: 12
+  meleeAttackCooldown: 1.1
+  xpReward: 30
+  showFloatingHealthBar: 1
+  hideHealthBarUntilDamaged: 1
+  healthBarOffset: {x: 0, y: 1.6, z: 0}
+  enableRangedParticleAttack: 1
+  spitBaseChance: 0.12
+  spitViewBoostedChance: 0.45
+  spitRange: 14
+  spitCooldown: 6
+  spitDamage: 10
+  spitVfxPrefab: {fileID: 8331695752548944653, guid: e47d245af6e76d749b6263b3fa89dcab, type: 3}
+  walkFootstepClip: {fileID: 0}
+  walkFootstepVariants: []
+  walkVolume: 0.55
+  footstepInterval: 0.4
+  rangedAttackClip: {fileID: 0}
+  rangedAttackVolume: 0.85
+  meleeAttackClip: {fileID: 0}
+  meleeAttackVolume: 0.85
+  audioMinDistance: 2
+  audioMaxDistance: 28
+  enableLoot: 1
+  acDropMin: 2
+  acDropMax: 8
+  randomLootCountMin: 0
+  randomLootCountMax: 2
+  lootItemPool: []
+  lootRespawnDelay: 20
+  lootInteractRange: 2.75

@@ -88,9 +88,41 @@ namespace Project.AI
             }
         }
 
+        /// <summary>
+        /// Ranged impact heard within sense range — chance to aggro the resolved shooter (player/pioneer).
+        /// </summary>
+        public void NotifyHeardCombatImpact(GameObject source)
+        {
+            if (!aggroOnHeardHit || health == null || health.IsDead || !chasePlayer)
+                return;
+
+            if (Time.time < nextHearingAggroTime)
+                return;
+
+            nextHearingAggroTime = Time.time + Mathf.Max(0.05f, hearingCooldown);
+
+            if (hearingAggroChance <= 0f || UnityEngine.Random.value > hearingAggroChance)
+                return;
+
+            Transform attacker = EnemyThreatSourceResolver.ResolveThreatRoot(source);
+            if (attacker == null)
+                return;
+
+            // Treat heard-hit as provocation so AllowsCombatTarget / ShouldEngagePlayer allow the player.
+            RecordThreatDamage(attacker, 0.01f);
+            NotifyAggroFromThreat(attacker);
+
+            if (debugAggro)
+            {
+                Debug.Log(
+                    $"[EnemyAggro] {name} heard-hit aggro -> {attacker.name}",
+                    this);
+            }
+        }
+
         public void NotifyAggroFromDamage(Transform attacker, float damage)
         {
-            if (attacker == null || health == null || health.IsDead || damage <= 0f)
+            if (!aggroOnDamaged || attacker == null || health == null || health.IsDead || damage <= 0f)
                 return;
 
             RecordThreatDamage(attacker, damage);
@@ -112,7 +144,7 @@ namespace Project.AI
 
         private void HandleDamagedWithSource(float damage, GameObject source, bool isCritical)
         {
-            if (source == null || health == null || health.IsDead || damage <= 0f)
+            if (!aggroOnDamaged || source == null || health == null || health.IsDead || damage <= 0f)
                 return;
 
             Transform attacker = EnemyThreatSourceResolver.ResolveThreatRoot(source);

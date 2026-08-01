@@ -1,8 +1,10 @@
 using UnityEngine;
+using MalbersAnimations.PathCreation;
 using Project.Companions;
 using Project.Interaction;
 using Project.Inventory;
 using Project.UI;
+using Project.World;
 
 namespace Project.Pet
 {
@@ -16,7 +18,8 @@ namespace Project.Pet
             Following,
             Wandering,
             Fetching,
-            Idle
+            Idle,
+            PathFollowing
         }
 
         [Header("Profile")]
@@ -68,6 +71,18 @@ namespace Project.Pet
         [SerializeField] private float fetchAttemptChance = 0.45f;
         [SerializeField] private float fetchCooldown = 15f;
 
+        [Header("Path Follow / Patrol")]
+        [Tooltip("When enabled, pet patrols the assigned Path Creator until CallToOwner / combat clears it.")]
+        [SerializeField] private bool pathFollowEnabled;
+        [Tooltip("Path Creator (or Path Creator Variant) to follow when Path Follow is enabled.")]
+        [SerializeField] private PathCreator patrolPath;
+        [Tooltip("Optional explicit provider. If empty, resolved from Patrol Path.")]
+        [SerializeField] private DMIPathFollowProvider patrolPathProvider;
+        [Tooltip("Loop = next anchor in order. PingPong = random next anchor (pet path-follow).")]
+        [SerializeField] private DMIPathPatrolMode pathPatrolMode = DMIPathPatrolMode.Loop;
+        [Tooltip("Seconds to idle at each anchor before moving to the next.")]
+        [SerializeField] private float pathPatrolWaitDuration = 2f;
+
         private PetState _state = PetState.Following;
         private InventorySystem _ownerInventory;
         private UIManager _uiManager;
@@ -83,11 +98,20 @@ namespace Project.Pet
         private float _fetchCooldownUntil;
         private float _currentSpeed;
 
+        private Vector3[] _pathPoints;
+        private int _pathIndex;
+        private DMIPathPatrolMode _pathPatrolMode = DMIPathPatrolMode.Loop;
+        private float _pathArrivalDistance = 0.75f;
+        private float _pathWaitDuration = 2f;
+        private float _pathWaitTimer;
+        private bool _resumeOwnerFollowAfterPath;
+
         public float CurrentSpeed => _currentSpeed;
         public string PetId => string.IsNullOrWhiteSpace(petId) ? name : petId;
         public PetDefinition Definition => definition;
         public Sprite InventoryIcon => inventoryIcon;
         public bool IsOwned => isOwned;
+        public Transform Owner => owner;
         public string DefaultDisplayName => displayName;
         public string Description => description;
 
@@ -165,9 +189,132 @@ namespace Project.Pet
                     PetState.Wandering => "Wandering",
                     PetState.Fetching => "Fetching",
                     PetState.Idle => "Idle",
+                    PetState.PathFollowing => "Path",
                     _ => "Following"
                 };
             }
+        }
+
+        public bool IsPathFollowing => _state == PetState.PathFollowing;
+
+        /// <summary>
+        /// Optional patrol along world anchor points (e.g. from <c>DMIPathFollowProvider</c>).
+        /// Does not break combat/owner systems — call <see cref="ClearPathFollow"/> or CallToOwner to resume.
+        /// Loop = ordered anchors. PingPong = random next anchor. Wait uses <paramref name="waitDuration"/> when &gt;= 0, else pet field.
+        /// </summary>
+        public void AssignPathFollow(
+            Vector3[] worldPoints,
+            DMIPathPatrolMode mode,
+            float arrivalDistance = 0.75f,
+            float waitDuration = -1f)
+        {
+            if (worldPoints == null || worldPoints.Length < 2)
+                return;
+
+            _pathPoints = worldPoints;
+            _pathPatrolMode = mode;
+            pathPatrolMode = mode;
+            _pathArrivalDistance = Mathf.Max(0.05f, arrivalDistance);
+            _pathWaitDuration = waitDuration >= 0f
+                ? Mathf.Max(0f, waitDuration)
+                : Mathf.Max(0f, pathPatrolWaitDuration);
+            pathPatrolWaitDuration = _pathWaitDuration;
+            _pathIndex = 0;
+            _pathWaitTimer = 0f;
+            _resumeOwnerFollowAfterPath = isOwned && followEnabled;
+            _fetchTarget = null;
+            SetState(PetState.PathFollowing);
+        }
+
+        /// <summary>Legacy bool overload: pingPong true → <see cref="DMIPathPatrolMode.PingPong"/> (random next for pets).</summary>
+        public void AssignPathFollow(Vector3[] worldPoints, bool pingPong, float arrivalDistance = 0.75f)
+        {
+            AssignPathFollow(
+                worldPoints,
+                pingPong ? DMIPathPatrolMode.PingPong : DMIPathPatrolMode.Loop,
+                arrivalDistance);
+        }
+
+        /// <summary>Assign Path Creator for path-follow / patrol and register with bezier anchors.</summary>
+        public void SetPatrolPath(PathCreator path, DMIPathFollowProvider provider = null, bool enable = true)
+        {
+            patrolPath = path;
+            patrolPathProvider = provider;
+            pathFollowEnabled = enable;
+            TryBindAssignedPatrolPath();
+        }
+
+        public void ConfigurePathPatrol(DMIPathPatrolMode mode, float waitDuration)
+        {
+            pathPatrolMode = mode;
+            pathPatrolWaitDuration = Mathf.Max(0f, waitDuration);
+            if (_state == PetState.PathFollowing)
+            {
+                _pathPatrolMode = pathPatrolMode;
+                _pathWaitDuration = pathPatrolWaitDuration;
+            }
+        }
+
+        public DMIPathPatrolMode PathPatrolMode => pathPatrolMode;
+        public float PathPatrolWaitDuration => pathPatrolWaitDuration;
+
+        public bool PathFollowEnabled
+        {
+            get => pathFollowEnabled;
+            set
+            {
+                pathFollowEnabled = value;
+                if (pathFollowEnabled)
+                    TryBindAssignedPatrolPath();
+                else
+                    ClearPathFollow();
+            }
+        }
+
+        public PathCreator PatrolPath => patrolPath;
+        public DMIPathFollowProvider PatrolPathProvider => patrolPathProvider;
+
+        public void ClearPathFollow()
+        {
+            // Unregister only — do not call UnassignPet (avoids recursion).
+            if (patrolPathProvider != null)
+                patrolPathProvider.UnregisterPet(this);
+
+            _pathPoints = null;
+            _pathIndex = 0;
+            _pathWaitTimer = 0f;
+
+            if (!companionActive)
+            {
+                SetState(PetState.Idle);
+                return;
+            }
+
+            if (isOwned && (_resumeOwnerFollowAfterPath || followEnabled) && owner != null)
+                SetState(PetState.Following);
+            else
+                SetState(PetState.Idle);
+
+            _resumeOwnerFollowAfterPath = false;
+        }
+
+        private void TryBindAssignedPatrolPath()
+        {
+            if (!pathFollowEnabled)
+                return;
+
+            DMIPathFollowProvider provider = patrolPathProvider;
+            if (provider == null)
+                provider = DMIPathFollowBinding.Resolve((Object)patrolPath ?? patrolPathProvider);
+
+            if (provider == null)
+                return;
+
+            patrolPathProvider = provider;
+            if (patrolPath == null)
+                patrolPath = provider.PathCreator;
+
+            provider.TryAssignPet(this);
         }
 
         private void Awake()
@@ -303,6 +450,7 @@ namespace Project.Pet
 
             ApplyCompanionVisibility();
             SnapToGround();
+            TryBindAssignedPatrolPath();
         }
 
         private void LateUpdate()
@@ -318,6 +466,12 @@ namespace Project.Pet
             if (!companionActive)
             {
                 _currentSpeed = 0f;
+                return;
+            }
+
+            if (_state == PetState.PathFollowing)
+            {
+                UpdatePathFollowing();
                 return;
             }
 
@@ -364,8 +518,68 @@ namespace Project.Pet
             if (!companionActive || owner == null)
                 return;
 
+            ClearPathFollow();
             SummonToOwner();
             SetState(followEnabled ? PetState.Following : PetState.Idle);
+        }
+
+        private void UpdatePathFollowing()
+        {
+            if (_pathPoints == null || _pathPoints.Length < 2)
+            {
+                ClearPathFollow();
+                return;
+            }
+
+            if (_pathWaitTimer > 0f)
+            {
+                _pathWaitTimer -= Time.deltaTime;
+                _currentSpeed = 0f;
+                if (_pathWaitTimer > 0f)
+                    return;
+
+                AdvancePathFollowIndex();
+                return;
+            }
+
+            Vector3 target = _pathPoints[Mathf.Clamp(_pathIndex, 0, _pathPoints.Length - 1)];
+            MoveTowards(target, walkSpeed);
+
+            if (HorizontalDistance(transform.position, target) > _pathArrivalDistance)
+                return;
+
+            // Idle at this anchor, then pick next (Loop ordered / PingPong random).
+            if (_pathWaitDuration > 0f)
+            {
+                _pathWaitTimer = _pathWaitDuration;
+                _currentSpeed = 0f;
+                return;
+            }
+
+            AdvancePathFollowIndex();
+        }
+
+        private void AdvancePathFollowIndex()
+        {
+            if (_pathPoints == null || _pathPoints.Length < 2)
+                return;
+
+            if (_pathPatrolMode == DMIPathPatrolMode.PingPong)
+            {
+                // Pet PingPong = random next anchor (not reverse ping-pong used by enemies/creatures).
+                int count = _pathPoints.Length;
+                if (count <= 1)
+                    return;
+
+                int next = Random.Range(0, count - 1);
+                if (next >= _pathIndex)
+                    next++;
+                _pathIndex = next;
+            }
+            else
+            {
+                _pathIndex = (_pathIndex + 1) % _pathPoints.Length;
+            }
         }
 
         private void UpdateFollowing()

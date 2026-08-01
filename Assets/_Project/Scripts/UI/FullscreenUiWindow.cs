@@ -35,6 +35,12 @@ namespace Project.UI
             Image shellImage = shell.GetComponent<Image>();
             if (shellImage != null)
                 shellImage.color = bg;
+
+            // Journal tab rail already names the section — hide redundant shell titles
+            // (Recipes, Map, Craft, etc.) while keeping header chrome + close button.
+            TextMeshProUGUI shellTitle = MenuUiBuilder.GetShellTitleText(shell);
+            if (shellTitle != null)
+                shellTitle.gameObject.SetActive(false);
         }
 
         protected virtual void OnBuild() { }

@@ -165,9 +165,7 @@ namespace Project.UI
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
 
-            TextMeshProUGUI heading = CreateLabel(contentArea, theme, "Blueprint Library", 28f, FontStyles.Bold);
-            heading.color = SurvivalPioneerUiPalette.BodyText;
-
+            // No section heading — Blueprints tab on the journal rail identifies this panel.
             pendingSummaryText = CreateLabel(contentArea, theme, string.Empty, 18f, FontStyles.Italic);
             pendingSummaryText.color = SurvivalPioneerUiPalette.MutedText;
 

@@ -19,6 +19,7 @@ namespace Project.AI
         [SerializeField] private float visionRefreshInterval = 0.12f;
 
         [Header("Hearing")]
+        [SerializeField] private bool senseHearingEnabled = true;
         [SerializeField] private float hearingRange = 18f;
         [SerializeField] private float noiseMemoryDuration = 8f;
 
@@ -29,9 +30,11 @@ namespace Project.AI
 
         private Transform player;
         private CompanionRosterBridge companionBridge;
+        private EnemyAiController aiController;
         private Vector3 lastNoisePosition;
         private float lastNoiseTime;
         private bool hasRecentNoise;
+        private EnemyNoiseKind lastNoiseKind;
         private int visionTickPhase;
         private float nextVisionRefreshTime;
         private Transform cachedVisiblePlayer;
@@ -41,10 +44,12 @@ namespace Project.AI
         public Vector3 LastNoisePosition => lastNoisePosition;
         public bool HasRecentNoise => hasRecentNoise && Time.time - lastNoiseTime <= noiseMemoryDuration;
         public float NoiseAge => HasRecentNoise ? Time.time - lastNoiseTime : float.MaxValue;
+        public EnemyNoiseKind LastNoiseKind => lastNoiseKind;
 
         private void Awake()
         {
             visionTickPhase = Mathf.Abs(gameObject.GetEntityId().GetHashCode()) % 3;
+            aiController = GetComponent<EnemyAiController>();
         }
 
         private void Start()
@@ -228,6 +233,9 @@ namespace Project.AI
 
         private void HandleNoise(EnemyNoiseEvents.NoiseEvent noiseEvent)
         {
+            if (!senseHearingEnabled)
+                return;
+
             float distance = Vector3.Distance(transform.position, noiseEvent.Position);
             if (distance > hearingRange + noiseEvent.Radius)
                 return;
@@ -235,6 +243,20 @@ namespace Project.AI
             lastNoisePosition = noiseEvent.Position;
             lastNoiseTime = Time.time;
             hasRecentNoise = true;
+            lastNoiseKind = noiseEvent.Kind;
+
+            if (noiseEvent.Kind == EnemyNoiseKind.CombatImpact)
+            {
+                if (aiController == null)
+                    aiController = GetComponent<EnemyAiController>();
+                aiController?.NotifyHeardCombatImpact(noiseEvent.Source);
+            }
+        }
+
+        public void ConfigureHearing(bool enabled, float range)
+        {
+            senseHearingEnabled = enabled;
+            hearingRange = Mathf.Max(0f, range);
         }
 
         private void EnsurePlayer()

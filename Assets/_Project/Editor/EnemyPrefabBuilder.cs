@@ -101,27 +101,43 @@ namespace Project.EditorTools
             VisualSourceMode sourceMode,
             GameObject sourceObject)
         {
+            GameObject root = null;
+
             switch (sourceMode)
             {
                 case VisualSourceMode.SelectedHierarchyObject:
                     if (sourceObject != null)
-                        return InstantiateHierarchySource(sourceObject, definition.displayName);
+                        root = InstantiateHierarchySource(sourceObject, definition.displayName);
                     break;
 
                 case VisualSourceMode.ExistingPrefab:
-                    if (sourceObject != null && PrefabUtility.IsPartOfPrefabAsset(sourceObject))
+                    if (sourceObject != null)
                     {
+                        // FBX model assets and prefab assets both work via InstantiatePrefab.
                         GameObject instance = PrefabUtility.InstantiatePrefab(sourceObject) as GameObject;
+                        if (instance == null && PrefabUtility.IsPartOfPrefabAsset(sourceObject))
+                            instance = Object.Instantiate(sourceObject);
+
                         if (instance != null)
                         {
+                            if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                                PrefabUtility.UnpackPrefabInstance(
+                                    instance,
+                                    PrefabUnpackMode.Completely,
+                                    InteractionMode.AutomatedAction);
+
                             instance.name = definition.displayName;
-                            return instance;
+                            root = instance;
                         }
                     }
                     break;
             }
 
-            return CreatePlaceholderRoot(definition.displayName);
+            if (root == null)
+                return CreatePlaceholderRoot(definition.displayName);
+
+            EnemyModelAvatarUtility.PrepareModelInstance(root, preferHumanoidAvatar: true);
+            return root;
         }
 
         private static GameObject InstantiateHierarchySource(GameObject source, string displayName)
@@ -130,6 +146,7 @@ namespace Project.EditorTools
             clone.name = string.IsNullOrWhiteSpace(displayName) ? source.name : displayName;
             clone.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
             clone.transform.localScale = source.transform.lossyScale;
+            EnemyModelAvatarUtility.PrepareModelInstance(clone, preferHumanoidAvatar: true);
             return clone;
         }
 
@@ -164,6 +181,7 @@ namespace Project.EditorTools
             SetSerializedField(senses, "visionRange", definition.visionRange);
             SetSerializedField(senses, "visionFov", definition.visionFov);
             SetSerializedField(senses, "eyeHeight", definition.eyeHeight);
+            SetSerializedField(senses, "senseHearingEnabled", definition.senseHearingEnabled);
             SetSerializedField(senses, "hearingRange", definition.hearingRange);
             SetSerializedField(senses, "proximityRange", definition.proximityRange);
 
@@ -189,6 +207,10 @@ namespace Project.EditorTools
             SetSerializedField(ai, "searchRadius", definition.searchRadius);
             SetSerializedField(ai, "idleDuration", definition.idleDuration);
             SetSerializedField(ai, "patrolWaitDuration", definition.patrolWaitDuration);
+            SetSerializedField(ai, "aggroOnDamaged", definition.aggroOnDamaged);
+            SetSerializedField(ai, "aggroOnHeardHit", definition.aggroOnHeardHit);
+            SetSerializedField(ai, "hearingAggroChance", definition.hearingAggroChance);
+            SetSerializedField(ai, "hearingCooldown", definition.hearingCooldown);
 
             ConfigurePatrolPoints(root, ai, definition);
             ConfigureHealthBar(root, definition);

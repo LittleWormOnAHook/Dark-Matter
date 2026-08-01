@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e33e187dc72d4a48aaede99913c6393, type: 3}
+  m_Name: DMI_SulfurHound_Chase
+  m_EditorClassIdentifier: MalbersAnimations::MalbersAnimations.Controller.AI.MAIState
+  ID:
+    UseConstant: 1
+    ConstantValue: 0
+    Variable: {fileID: 0}
+  tasks:
+  - {fileID: 11400000, guid: dbe712344dd260041bb449ade052d6bc, type: 2}
+  transitions:
+  - decision: {fileID: 11400000, guid: fc83dcc20546dab4482c68a460c8b259, type: 2}
+    trueState: {fileID: 11400000}
+    falseState: {fileID: 11400000, guid: 61a609279bc93ec41a5c19b69409bf4a, type: 2}
+  - decision: {fileID: 11400000, guid: 659e9d1d2131b084bab83a1f0a47836c, type: 2}
+    trueState: {fileID: 11400000, guid: 8358308aeea0ba746bcee72bb51debdb, type: 2}
+    falseState: {fileID: 11400000}
+  - decision: {fileID: 11400000, guid: a176afb221f1100478ad04f905b52eb7, type: 2}
+    trueState: {fileID: 11400000, guid: 9f01704c43af08c488096f5a400396e2, type: 2}
+    falseState: {fileID: 11400000}
+  GizmoStateColor: {r: 1, g: 0.55, b: 0.1, a: 1}
+  CreateTaskAsset: 1
+  CreateDecisionAsset: 1

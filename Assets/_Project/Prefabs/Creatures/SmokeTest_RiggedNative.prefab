@@ -1,0 +1,343 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6326898249511037458
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1024089620786290158}
+  - component: {fileID: 3104617821880933375}
+  - component: {fileID: 8711634721126665600}
+  - component: {fileID: 6966266230743484787}
+  - component: {fileID: 719909831132357727}
+  - component: {fileID: 6044329661644244627}
+  - component: {fileID: 8584338082244339430}
+  - component: {fileID: 6132290288914848937}
+  - component: {fileID: 7999379587922586118}
+  - component: {fileID: 1279544820311798998}
+  - component: {fileID: 260089317696903282}
+  m_Layer: 0
+  m_Name: SmokeTest_RiggedNative
+  m_TagString: Enemy
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1024089620786290158
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9030035474075067845}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &3104617821880933375
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.4957875
+  m_Height: 1.10175
+  m_Direction: 1
+  m_Center: {x: -0.0033626854, y: 0.5100078, z: 0.21320418}
+--- !u!195 &8711634721126665600
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.4
+  m_Speed: 2.2
+  m_Acceleration: 12
+  avoidancePriority: 50
+  m_AngularSpeed: 360
+  m_StoppingDistance: 0.4
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1.2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &6966266230743484787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91835fbe7d801a446b373f5c1976ee7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyHealth
+  maxHealth: 80
+  destroyOnDeath: 1
+  destroyDelay: 3
+  respawnTime: 0
+  healthBarAnchor: {fileID: 0}
+  healthBarOffset: {x: 0, y: 2, z: 0}
+--- !u!114 &719909831132357727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0f32674c334fdd41852f8d67f90d653, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureHealth
+  legacyHealth: {fileID: 6966266230743484787}
+--- !u!114 &6044329661644244627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36f7e577b9fd9be469ce88bf73cc828c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureBridge
+  definition: {fileID: 11400000, guid: 49a4468d601c4b940957e210879a2d2c, type: 2}
+  animal: {fileID: 0}
+  brain: {fileID: 0}
+  aiControl: {fileID: 0}
+  creatureHealth: {fileID: 719909831132357727}
+  legacyHealth: {fileID: 6966266230743484787}
+  spitAttack: {fileID: 0}
+  damageable: {fileID: 0}
+  threatSenseRange: 9
+  threatLeashMultiplier: 1.4
+  loseTargetDelay: 2.5
+  meleeEngageRange: 2.75
+  targetRefreshInterval: 0.5
+  autoAcquireThreats: 1
+  meleeDamage: 12
+  meleeHitCooldown: 0.35
+--- !u!114 &8584338082244339430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c6c5e85c2072544d831137275482685, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureAiController
+  bridge: {fileID: 6044329661644244627}
+  spitAttack: {fileID: 0}
+  health: {fileID: 6966266230743484787}
+  agent: {fileID: 8711634721126665600}
+  animationDriver: {fileID: 6132290288914848937}
+  audioDriver: {fileID: 0}
+  brainProfile: {fileID: 0}
+  movementMode: 1
+  walkSpeed: 2.2
+  runSpeed: 4.5
+  turnSpeed: 8
+  stopDistance: 0.4
+  wanderRadius: 8
+  idleDurationMin: 1.5
+  idleDurationMax: 3.5
+  navMeshSampleRadius: 2.5
+  patrolMode: 0
+  patrolPointCount: 4
+  patrolRadius: 6
+  patrolWaitDuration: 2
+  patrolPoints: []
+  allowChase: 1
+  allowMelee: 1
+  allowRangedSpit: 1
+  engageRange: 9
+  leashRange: 12.599999
+  meleeRange: 2.75
+  loseTargetDelay: 2.5
+  meleeHitInterval: 1.1
+--- !u!114 &6132290288914848937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dd5af8bdf7c9814daa07c48e16ea671, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureAnimationDriver
+  animator: {fileID: 3148312729036947391}
+  navAgent: {fileID: 0}
+  idleStateName: Idle
+  walkStateName: Walk
+  runStateName: Run
+  attackStateName: Attack
+  deathStateName: Death
+  crossFadeDuration: 0.12
+  walkSpeedThreshold: 0.15
+  runSpeedThreshold: 3.2
+  runPlaybackSpeed: 1.65
+  attackLockDuration: 0.55
+--- !u!114 &7999379587922586118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1dd19998d005714381def0389ff7d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.PioneerInvectorDamageReceiver
+  applyToChildren: 1
+--- !u!114 &1279544820311798998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc995163a8cad04fbeba3ffe4ed3dba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.EnemyDisintegrationEffect
+  enableDeathLift: 0
+  liftDuration: 2
+  liftHeight: 2
+  dissolveMaterialTemplate: {fileID: 0}
+  dissolveDuration: 1.4
+  dissolveEdgeWidth: 0.045
+  dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  replaceDeathAnimation: 1
+  autoStartOnDeathWithoutSequence: 1
+  enableSmoke: 0
+  smokeDuration: 3.2
+  smokeRiseHeight: 1.1
+  smokeExpand: 0.18
+  smokeColor: {r: 0.62, g: 0.64, b: 0.68, a: 0.48}
+  enableVolumetricSmoke: 0
+  volumetricSmokeLinger: 2.4
+--- !u!114 &260089317696903282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326898249511037458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe02ebb775c4583488ad8b7b78b2114d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyDeathSequence
+  preDisintegrationDelay: 1.25
+  postLootRespawnDelay: 0.5
+--- !u!1001 &8852836716471829038
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1024089620786290158}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_Name
+      value: CreatureVisual
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 51d1801f9f2bdbe419ac26af944980cc, type: 2}
+    - target: {fileID: 8111781155169087978, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+      propertyPath: m_UpdateWhenOffscreen
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+--- !u!95 &3148312729036947391 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+  m_PrefabInstance: {fileID: 8852836716471829038}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9030035474075067845 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 046ea79cc4162174492320b4e4e08cbe, type: 3}
+  m_PrefabInstance: {fileID: 8852836716471829038}
+  m_PrefabAsset: {fileID: 0}

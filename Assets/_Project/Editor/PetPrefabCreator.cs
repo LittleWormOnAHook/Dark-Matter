@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Project.EditorTools
 {
+    /// <summary>Quick demo menu actions for Pet Manager / PetPrefabBuilder.</summary>
     public static class PetPrefabCreator
     {
         [MenuItem(SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, false, 22)]
@@ -13,7 +14,7 @@ namespace Project.EditorTools
             if (settings.SourcePrefab == null)
             {
                 Debug.LogError(
-                    "PetPrefabCreator: Missing source prefab at Assets/_Project/Prefabs/Players/Fox Cub Variant.prefab");
+                    "Pet Manager: Missing source prefab at Assets/_Project/Prefabs/Players/Fox Cub Variant.prefab");
                 return;
             }
 

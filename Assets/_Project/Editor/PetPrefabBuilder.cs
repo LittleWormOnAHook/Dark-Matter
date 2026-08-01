@@ -1,5 +1,7 @@
 using System.IO;
+using MalbersAnimations.PathCreation;
 using Project.Pet;
+using Project.World;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,6 +20,34 @@ namespace Project.EditorTools
         public Color BellyColor;
         public Color AccentColor;
         public string PrefabName;
+
+        public DMIPetRangedAttackKind RangedAttackKind;
+        public GameObject RangedProjectilePrefab;
+        public GameObject RangedImpactVfxPrefab;
+        public float RangedMinDamage;
+        public float RangedMaxDamage;
+        public float RangedDamageBonusPerLevel;
+        public float RangedMinInterval;
+        public float RangedMaxInterval;
+        public float RangedMaxAttackRange;
+        public float RangedOwnerLeashDistance;
+        public float RangedAbandonAfterSeconds;
+        public float RangedProjectileSpeed;
+
+        public bool MeleeEnabled;
+        public float MeleeEngageRange;
+        public float MeleeDamage;
+        public float MeleeDamageRandomRange;
+        public float MeleeDamageBonusPerLevel;
+        public float MeleeAttackCooldown;
+        public float MeleeIntervalVariation;
+        public float MeleeOwnerLeashDistance;
+        public float MeleeAbandonAfterSeconds;
+
+        public bool PathFollowEnabled;
+        public PathCreator PatrolPath;
+        public DMIPathPatrolMode PathPatrolMode;
+        public float PathPatrolWaitDuration;
     }
 
     public static class PetPrefabBuilder
@@ -125,6 +155,10 @@ namespace Project.EditorTools
                 controllerSo.FindProperty("companionActive").boolValue = false;
                 controllerSo.ApplyModifiedPropertiesWithoutUndo();
 
+                ApplyRangedAttack(root, settings);
+                ApplyMeleeAttack(root, settings);
+                ApplyPathFollow(root, settings);
+
                 SavePrefab(root, outputPrefabPath);
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(resourcesPrefabPath) != null)
                     AssetDatabase.DeleteAsset(resourcesPrefabPath);
@@ -149,42 +183,261 @@ namespace Project.EditorTools
             }
         }
 
-        public static PetPrefabBuildSettings CreateFoxCubPreset()
+        /// <summary>
+        /// Applies combat settings (melee + ranged) onto an existing pet prefab asset and its Resources twin.
+        /// </summary>
+        public static bool ApplyCombatToPrefab(string prefabPath, PetPrefabBuildSettings settings, out string message)
+        {
+            message = string.Empty;
+            if (string.IsNullOrWhiteSpace(prefabPath))
+            {
+                message = "PetPrefabBuilder: Prefab path is required.";
+                return false;
+            }
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (prefabRoot == null)
+            {
+                message = $"PetPrefabBuilder: Failed to open prefab at {prefabPath}";
+                return false;
+            }
+
+            try
+            {
+                ApplyRangedAttack(prefabRoot, settings);
+                ApplyMeleeAttack(prefabRoot, settings);
+                ApplyPathFollow(prefabRoot, settings);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+
+                string fileName = Path.GetFileName(prefabPath);
+                string resourcesPath = $"{ResourcesFolder}/{fileName}";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(resourcesPath) != null &&
+                    !string.Equals(resourcesPath, prefabPath, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    AssetDatabase.CopyAsset(prefabPath, resourcesPath);
+                }
+
+                message = $"PetPrefabBuilder: Applied combat settings to {prefabPath}";
+                return true;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        public static PetPrefabBuildSettings CreateDefaultCombatSettings()
         {
             return new PetPrefabBuildSettings
             {
-                PetId = "fox_cub",
-                DisplayName = "Fox Cub",
-                Description = "A loyal companion that gathers nearby items.",
-                SourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/_Project/Prefabs/Players/Fox Cub Variant.prefab"),
-                AnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
-                    "Assets/_Project/Animations/PetFoxController.controller"),
-                AutoGenerateIcon = true,
-                FurColor = new Color(0.92f, 0.45f, 0.12f, 1f),
-                BellyColor = new Color(0.98f, 0.82f, 0.62f, 1f),
-                AccentColor = new Color(0.12f, 0.1f, 0.1f, 1f),
-                PrefabName = "FoxCub"
+                RangedAttackKind = DMIPetRangedAttackKind.None,
+                RangedMinDamage = 5f,
+                RangedMaxDamage = 10f,
+                RangedDamageBonusPerLevel = 0.05f,
+                RangedMinInterval = 3f,
+                RangedMaxInterval = 8f,
+                RangedMaxAttackRange = 22f,
+                RangedOwnerLeashDistance = 16f,
+                RangedAbandonAfterSeconds = 6f,
+                RangedProjectileSpeed = 14f,
+                MeleeEnabled = false,
+                MeleeEngageRange = 2.2f,
+                MeleeDamage = 8f,
+                MeleeDamageRandomRange = 4f,
+                MeleeDamageBonusPerLevel = 0.05f,
+                MeleeAttackCooldown = 1.4f,
+                MeleeIntervalVariation = 0.35f,
+                MeleeOwnerLeashDistance = 12f,
+                MeleeAbandonAfterSeconds = 6f,
+                PathFollowEnabled = false,
+                PathPatrolMode = DMIPathPatrolMode.Loop,
+                PathPatrolWaitDuration = 2f
             };
+        }
+
+        public static PetPrefabBuildSettings CreateFoxCubPreset()
+        {
+            PetPrefabBuildSettings settings = CreateDefaultCombatSettings();
+            settings.PetId = "fox_cub";
+            settings.DisplayName = "Fox Cub";
+            settings.Description = "A loyal companion that gathers nearby items.";
+            settings.SourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Players/Fox Cub Variant.prefab");
+            settings.AnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/_Project/Animations/PetFoxController.controller");
+            settings.AutoGenerateIcon = true;
+            settings.FurColor = new Color(0.92f, 0.45f, 0.12f, 1f);
+            settings.BellyColor = new Color(0.98f, 0.82f, 0.62f, 1f);
+            settings.AccentColor = new Color(0.12f, 0.1f, 0.1f, 1f);
+            settings.PrefabName = "FoxCub";
+            return settings;
         }
 
         public static PetPrefabBuildSettings CreateRickyPreset()
         {
-            return new PetPrefabBuildSettings
+            PetPrefabBuildSettings settings = CreateDefaultCombatSettings();
+            settings.PetId = "ricky";
+            settings.DisplayName = "Ricky";
+            settings.Description = "Ricky the Racoon, a troublesome but loyal companion that gathers nearby items.";
+            settings.SourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Malbers Animations/Animals Packs/01 Forest Pack/Raccoon/Models/Raccoon PA.prefab");
+            settings.AnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/_Project/Animations/PetRaccoonController.controller");
+            settings.AutoGenerateIcon = true;
+            settings.FurColor = new Color(0.45f, 0.42f, 0.4f, 1f);
+            settings.BellyColor = new Color(0.78f, 0.74f, 0.7f, 1f);
+            settings.AccentColor = new Color(0.12f, 0.1f, 0.1f, 1f);
+            settings.PrefabName = "Ricky";
+            return settings;
+        }
+
+        /// <summary>
+        /// Adds or strips <see cref="DMIPetRangedAttack"/> on an existing pet prefab asset (e.g. Brimmy).
+        /// </summary>
+        public static bool ApplyRangedAttackToPrefab(string prefabPath, DMIPetRangedAttackKind kind, out string message)
+        {
+            PetPrefabBuildSettings settings = CreateDefaultCombatSettings();
+            settings.RangedAttackKind = kind;
+            settings.RangedProjectilePrefab = kind == DMIPetRangedAttackKind.Fireball
+                ? AssetDatabase.LoadAssetAtPath<GameObject>(DMIPetRangedAttack.FireballProjectilePath)
+                : null;
+            settings.RangedImpactVfxPrefab = kind == DMIPetRangedAttackKind.Fireball
+                ? AssetDatabase.LoadAssetAtPath<GameObject>(DMIPetRangedAttack.FireballImpactVfxPath)
+                : null;
+            return ApplyCombatToPrefab(prefabPath, settings, out message);
+        }
+
+        private static void ApplyRangedAttack(GameObject root, PetPrefabBuildSettings settings)
+        {
+            DMIPetRangedAttack ranged = root.GetComponent<DMIPetRangedAttack>();
+
+            if (settings.RangedAttackKind == DMIPetRangedAttackKind.None)
             {
-                PetId = "ricky",
-                DisplayName = "Ricky",
-                Description = "Ricky the Racoon, a troublesome but loyal companion that gathers nearby items.",
-                SourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Malbers Animations/Animals Packs/01 Forest Pack/Raccoon/Models/Raccoon PA.prefab"),
-                AnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
-                    "Assets/_Project/Animations/PetRaccoonController.controller"),
-                AutoGenerateIcon = true,
-                FurColor = new Color(0.45f, 0.42f, 0.4f, 1f),
-                BellyColor = new Color(0.78f, 0.74f, 0.7f, 1f),
-                AccentColor = new Color(0.12f, 0.1f, 0.1f, 1f),
-                PrefabName = "Ricky"
-            };
+                if (ranged != null)
+                    Object.DestroyImmediate(ranged);
+                return;
+            }
+
+            if (ranged == null)
+                ranged = root.AddComponent<DMIPetRangedAttack>();
+
+            GameObject projectile = settings.RangedProjectilePrefab;
+            if (projectile == null && settings.RangedAttackKind == DMIPetRangedAttackKind.Fireball)
+                projectile = AssetDatabase.LoadAssetAtPath<GameObject>(DMIPetRangedAttack.FireballProjectilePath);
+
+            GameObject impact = settings.RangedImpactVfxPrefab;
+            if (impact == null && settings.RangedAttackKind == DMIPetRangedAttackKind.Fireball)
+                impact = AssetDatabase.LoadAssetAtPath<GameObject>(DMIPetRangedAttack.FireballImpactVfxPath);
+
+            float minDamage = settings.RangedMinDamage > 0f ? settings.RangedMinDamage : 5f;
+            float maxDamage = settings.RangedMaxDamage > 0f ? settings.RangedMaxDamage : 10f;
+            float minInterval = settings.RangedMinInterval > 0f ? settings.RangedMinInterval : 3f;
+            float maxInterval = settings.RangedMaxInterval > 0f ? settings.RangedMaxInterval : 8f;
+            float range = settings.RangedMaxAttackRange > 0f ? settings.RangedMaxAttackRange : 22f;
+            float leash = settings.RangedOwnerLeashDistance > 0f ? settings.RangedOwnerLeashDistance : 16f;
+            float abandon = settings.RangedAbandonAfterSeconds > 0f ? settings.RangedAbandonAfterSeconds : 6f;
+            float speed = settings.RangedProjectileSpeed > 0f ? settings.RangedProjectileSpeed : 14f;
+            float levelBonus = settings.RangedDamageBonusPerLevel > 0f ? settings.RangedDamageBonusPerLevel : 0.05f;
+
+            ranged.ConfigureSettings(
+                settings.RangedAttackKind,
+                projectile,
+                impact,
+                minDamage,
+                maxDamage,
+                levelBonus,
+                minInterval,
+                maxInterval,
+                range,
+                leash,
+                abandon,
+                speed);
+
+            SerializedObject so = new SerializedObject(ranged);
+            so.FindProperty("attackKind").enumValueIndex = (int)settings.RangedAttackKind;
+            so.FindProperty("projectilePrefab").objectReferenceValue = projectile;
+            so.FindProperty("impactVfxPrefab").objectReferenceValue = impact;
+            so.FindProperty("minBaseDamage").floatValue = minDamage;
+            so.FindProperty("maxBaseDamage").floatValue = maxDamage;
+            so.FindProperty("damageBonusPerLevel").floatValue = levelBonus;
+            so.FindProperty("minAttackInterval").floatValue = minInterval;
+            so.FindProperty("maxAttackInterval").floatValue = maxInterval;
+            so.FindProperty("maxAttackRange").floatValue = range;
+            so.FindProperty("ownerLeashDistance").floatValue = leash;
+            so.FindProperty("abandonAfterSeconds").floatValue = abandon;
+            so.FindProperty("projectileSpeed").floatValue = speed;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ApplyMeleeAttack(GameObject root, PetPrefabBuildSettings settings)
+        {
+            DMIPetMeleeAttack melee = root.GetComponent<DMIPetMeleeAttack>();
+
+            if (!settings.MeleeEnabled)
+            {
+                // Keep component if already present but disabled, so Pet Manager can re-enable without rebuild.
+                if (melee != null)
+                {
+                    melee.ConfigureSettings(
+                        false,
+                        settings.MeleeEngageRange > 0f ? settings.MeleeEngageRange : 2.2f,
+                        settings.MeleeDamage > 0f ? settings.MeleeDamage : 8f,
+                        Mathf.Max(0f, settings.MeleeDamageRandomRange),
+                        settings.MeleeDamageBonusPerLevel > 0f ? settings.MeleeDamageBonusPerLevel : 0.05f,
+                        settings.MeleeAttackCooldown > 0f ? settings.MeleeAttackCooldown : 1.4f,
+                        Mathf.Clamp(settings.MeleeIntervalVariation, 0f, 10f),
+                        settings.MeleeOwnerLeashDistance > 0f ? settings.MeleeOwnerLeashDistance : 12f,
+                        settings.MeleeAbandonAfterSeconds > 0f ? settings.MeleeAbandonAfterSeconds : 6f);
+                    EditorUtility.SetDirty(melee);
+                }
+
+                return;
+            }
+
+            if (melee == null)
+                melee = root.AddComponent<DMIPetMeleeAttack>();
+
+            float engage = settings.MeleeEngageRange > 0f ? settings.MeleeEngageRange : 2.2f;
+            float damage = settings.MeleeDamage > 0f ? settings.MeleeDamage : 8f;
+            float damageRandom = Mathf.Max(0f, settings.MeleeDamageRandomRange);
+            float levelBonus = settings.MeleeDamageBonusPerLevel > 0f ? settings.MeleeDamageBonusPerLevel : 0.05f;
+            float interval = settings.MeleeAttackCooldown > 0f ? settings.MeleeAttackCooldown : 1.4f;
+            float variation = Mathf.Clamp(settings.MeleeIntervalVariation, 0f, 10f);
+            float leash = settings.MeleeOwnerLeashDistance > 0f ? settings.MeleeOwnerLeashDistance : 12f;
+            float abandon = settings.MeleeAbandonAfterSeconds > 0f ? settings.MeleeAbandonAfterSeconds : 6f;
+
+            melee.ConfigureSettings(
+                true,
+                engage,
+                damage,
+                damageRandom,
+                levelBonus,
+                interval,
+                variation,
+                leash,
+                abandon);
+
+            SerializedObject so = new SerializedObject(melee);
+            so.FindProperty("meleeEnabled").boolValue = true;
+            so.FindProperty("meleeEngageRange").floatValue = engage;
+            so.FindProperty("meleeDamage").floatValue = damage;
+            so.FindProperty("meleeDamageRandomRange").floatValue = damageRandom;
+            so.FindProperty("damageBonusPerLevel").floatValue = levelBonus;
+            so.FindProperty("meleeAttackCooldown").floatValue = interval;
+            so.FindProperty("meleeIntervalVariation").floatValue = variation;
+            so.FindProperty("ownerLeashDistance").floatValue = leash;
+            so.FindProperty("abandonAfterSeconds").floatValue = abandon;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ApplyPathFollow(GameObject root, PetPrefabBuildSettings settings)
+        {
+            DMIPathFollowEditorUtility.TryWritePetPathOnPrefabRoot(
+                root,
+                settings.PatrolPath,
+                settings.PathFollowEnabled,
+                settings.PathPatrolMode,
+                settings.PathPatrolWaitDuration);
         }
 
         private static PetDefinition EnsurePetDefinition(string petId, string displayName, string description, Sprite icon)

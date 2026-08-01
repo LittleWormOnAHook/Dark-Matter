@@ -22,6 +22,7 @@ namespace Project.Combat
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int DissolveEdgeWidthId = Shader.PropertyToID("_DissolveEdgeWidth");
         private static readonly int DissolveEdgeColorId = Shader.PropertyToID("_DissolveEdgeColor");
+        private static readonly int DissolveSpreadId = Shader.PropertyToID("_DissolveSpread");
         private static readonly int SmokeAmountId = Shader.PropertyToID("_SmokeAmount");
         private static readonly int RiseOffsetId = Shader.PropertyToID("_RiseOffset");
         private static readonly int SmokeColorId = Shader.PropertyToID("_BaseColor");
@@ -36,6 +37,8 @@ namespace Project.Combat
         [SerializeField] private float dissolveDuration = 1.4f;
         [SerializeField] private float dissolveEdgeWidth = 0.045f;
         [SerializeField] private Color dissolveEdgeColor = new Color(1f, 0.45f, 0.1f, 1f);
+        [Tooltip("Max world-space vertex push diameter for dissolve debris (~1m for Skitter-sized creatures).")]
+        [SerializeField] private float maxDissolveDiameter = 1f;
         [SerializeField] private bool replaceDeathAnimation = true;
         [Tooltip("When no EnemyDeathSequence is present, start lift/dissolve immediately on death.")]
         [SerializeField] private bool autoStartOnDeathWithoutSequence = true;
@@ -68,6 +71,7 @@ namespace Project.Combat
         private Vector3 deathPosition;
         private Transform liftAnchor;
         private bool hasCorpseLiftOrigin;
+        private float runtimeDissolveSpread = 0.35f;
 
         public float TotalDeathPresentationSeconds =>
             (enableDeathLift ? liftDuration : 0f) + dissolveDuration;
@@ -366,6 +370,7 @@ namespace Project.Combat
 
             List<Material> animatedMaterials = new List<Material>();
             EnsureLiftAnchor();
+            runtimeDissolveSpread = ResolveDissolveSpread();
             BuildDissolveMeshes(animatedMaterials);
             IncludeDroppedWeaponDissolve(animatedMaterials);
 
@@ -629,7 +634,10 @@ namespace Project.Combat
         {
             Mesh bakedMesh = new Mesh();
             bakedMesh.name = skinnedMeshRenderer.gameObject.name + "_DissolveBake";
-            skinnedMeshRenderer.BakeMesh(bakedMesh);
+            // Bake with scale so vertices are world-sized. Avoid applying lossyScale again —
+            // Meshy/CM creatures often sit under 100× mesh/rig nodes; object-space spread
+            // would otherwise explode to tens of meters.
+            skinnedMeshRenderer.BakeMesh(bakedMesh, true);
 
             if (bakedMesh.vertexCount <= 0)
             {
@@ -645,10 +653,11 @@ namespace Project.Combat
                 skinnedMeshRenderer.shadowCastingMode,
                 skinnedMeshRenderer.receiveShadows);
 
+            // World-space bake: identity scale, match SMR world pose (not bounds center alone).
             dissolveObject.transform.SetPositionAndRotation(
-                skinnedMeshRenderer.bounds.center,
+                skinnedMeshRenderer.transform.position,
                 skinnedMeshRenderer.transform.rotation);
-            dissolveObject.transform.localScale = skinnedMeshRenderer.transform.lossyScale;
+            dissolveObject.transform.localScale = Vector3.one;
 
             MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
             ApplyDissolveMaterials(meshRenderer, skinnedMeshRenderer.sharedMaterials, animatedMaterials);
@@ -812,7 +821,36 @@ namespace Project.Combat
             material.SetFloat(DissolveEdgeWidthId, dissolveEdgeWidth);
             material.SetColor(DissolveEdgeColorId, dissolveEdgeColor);
             material.SetFloat(DissolveAmountId, 0f);
+            if (material.HasProperty(DissolveSpreadId))
+                material.SetFloat(DissolveSpreadId, runtimeDissolveSpread);
             return material;
+        }
+
+        /// <summary>
+        /// Vertex spread is object-space meters after world bake. Cap by creature bounds so
+        /// small CM creatures (~1m) do not inherit humanoid-sized explosion.
+        /// </summary>
+        private float ResolveDissolveSpread()
+        {
+            Bounds bounds = ResolveCharacterWorldBounds();
+            float maxExtent = Mathf.Max(bounds.extents.x, Mathf.Max(bounds.extents.y, bounds.extents.z));
+
+            CapsuleCollider capsule = GetComponent<CapsuleCollider>();
+            if (capsule != null)
+            {
+                float capsuleExtent = Mathf.Max(capsule.radius, capsule.height * 0.5f);
+                maxExtent = Mathf.Max(maxExtent, capsuleExtent);
+            }
+
+            float diameter = Mathf.Max(0.2f, maxExtent * 2f);
+            float cappedDiameter = Mathf.Min(diameter, Mathf.Max(0.25f, maxDissolveDiameter));
+
+            float templateSpread = 0.35f;
+            if (dissolveMaterialTemplate != null && dissolveMaterialTemplate.HasProperty(DissolveSpreadId))
+                templateSpread = dissolveMaterialTemplate.GetFloat(DissolveSpreadId);
+
+            float sizedSpread = cappedDiameter * 0.22f;
+            return Mathf.Clamp(Mathf.Min(templateSpread, sizedSpread), 0.04f, 0.35f);
         }
 
         private Material CreateSmokeMaterial(Material smokeTemplate)

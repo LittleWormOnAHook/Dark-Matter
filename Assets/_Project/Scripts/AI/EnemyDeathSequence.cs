@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Project.AI.Invector;
 using Project.Combat;
+using Project.Creatures;
 using UnityEngine;
 
 namespace Project.AI
@@ -177,6 +178,14 @@ namespace Project.AI
 
             if (_animationController != null)
                 _animationController.PlayDeath();
+
+            // RiggedNative / CM creatures use DMICreatureAnimationDriver (AI also calls PlayDeath).
+            DMICreatureAnimationDriver creatureAnim = GetComponent<DMICreatureAnimationDriver>();
+            creatureAnim?.PlayDeath();
+
+            // Idempotent — AI HandleDeath also calls NotifyDeath; plays once at death start.
+            DMICreatureAudioDriver creatureAudio = GetComponent<DMICreatureAudioDriver>();
+            creatureAudio?.NotifyDeath();
         }
 
         private void EndDeathPresentation()

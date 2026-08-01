@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a52382c5ee164449f527ab45ac9090, type: 3}
+  m_Name: Ember Skitter
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureDefinition
+  creatureId: Ember Skitter
+  displayName: Ember Skitter
+  prefabFileName: Ember Skitter
+  surfaceThreatKind: 2
+  rigArchetype: 2
+  heightOffset: -0.2
+  prefabScale: 1
+  hitCapsuleHeight: 1.15
+  hitCapsuleRadius: 0.38
+  hitCapsuleCenterYOffset: 0.2
+  meleeHitHeightMultiplier: 1
+  meleeHitRadiusMultiplier: 1.1
+  brainProfile: {fileID: 11400000, guid: c8b2fc7e380795c4ba1f800c071cea61, type: 2}
+  idleDuration: 2
+  idleDurationVariation: 4
+  wanderDuration: 2
+  wanderDurationVariation: 3
+  buildTrack: 2
+  acTemplate: 0
+  startBrainState: {fileID: 0}
+  v2AnimatorController: {fileID: 9100000, guid: c9c8221f0c4e10f47bb4ea28e4c759c5, type: 2}
+  generateAnimatorFromSlots: 1
+  animationEntries:
+  - stateName: Idle
+    clip: {fileID: 1599155768152908184, guid: 51c1b0e02182ca64ba2c39d86986bd60, type: 3}
+  - stateName: Walk
+    clip: {fileID: 2982955500637902885, guid: 7914f8cb9a35fa641bff0b21c29d56e6, type: 3}
+  - stateName: Attack
+    clip: {fileID: 8964532722025290734, guid: 1c9787ab297d045439e44d21a212798b, type: 3}
+  - stateName: Death
+    clip: {fileID: 7400000, guid: 1aa6b7b323c80294183772222226b943, type: 2}
+  idleClip: {fileID: 1599155768152908184, guid: 51c1b0e02182ca64ba2c39d86986bd60, type: 3}
+  walkClip: {fileID: 2982955500637902885, guid: 7914f8cb9a35fa641bff0b21c29d56e6, type: 3}
+  runClip: {fileID: 0}
+  attackClip: {fileID: 8964532722025290734, guid: 1c9787ab297d045439e44d21a212798b, type: 3}
+  deathClip: {fileID: 7400000, guid: 1aa6b7b323c80294183772222226b943, type: 2}
+  hitClip: {fileID: 0}
+  visualSourceMode: 0
+  visualMeshSource: {fileID: 919132149155446097, guid: ec70ad394e671f34680d927aaca6d4e7, type: 3}
+  visualMaterialSource: {fileID: 2100000, guid: 7e38bf11857f4ca4f9ea4cd3629231b8, type: 2}
+  skipAutoReskin: 1
+  boostEmissionWhileAttacking: 1
+  flashEmissionWhileAttacking: 1
+  emissionIdleIntensity: 5
+  emissionAttackIntensity: 10
+  emissionFlashRateHz: 2
+  emissionFlashTint: {r: 1, g: 0.29838014, b: 0, a: 1}
+  maxHealth: 150
+  destroyOnDeath: 1
+  destroyDelay: 3
+  dissolveOnDeath: 1
+  preDisintegrationDelay: 1.1
+  threatSenseRange: 9
+  threatLeashMultiplier: 1.4
+  loseTargetDelay: 2.5
+  meleeEngageRange: 2.75
+  meleeDamage: 9
+  meleeAttackCooldown: 3
+  meleeIntervalVariation: 3.99
+  senseHearingEnabled: 1
+  hearingRange: 14
+  hearingAggroChance: 0.55
+  hearingCooldown: 0.8
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
+  xpReward: 1000
+  showFloatingHealthBar: 1
+  hideHealthBarUntilDamaged: 1
+  healthBarOffset: {x: 0, y: 1.6, z: 0}
+  enableRangedParticleAttack: 1
+  spitBaseChance: 0.27
+  spitViewBoostedChance: 0.381
+  spitRange: 14
+  spitCooldown: 4
+  spitCooldownVariation: 1.5
+  spitDamage: 10
+  spitVfxPrefab: {fileID: 8331695752548944653, guid: e47d245af6e76d749b6263b3fa89dcab, type: 3}
+  walkFootstepClip: {fileID: 8300000, guid: e6d0e4856227dbd41be9dbf8e7c28f40, type: 3}
+  walkFootstepVariants:
+  - {fileID: 8300000, guid: e6d0e4856227dbd41be9dbf8e7c28f40, type: 3}
+  - {fileID: 8300000, guid: 5a4b1788310ec77448d16080ba045955, type: 3}
+  - {fileID: 8300000, guid: ef3fdae04bb53fc40a38fa343d41838e, type: 3}
+  walkVolume: 0.525
+  footstepInterval: 0.4
+  rangedAttackClip: {fileID: 8300000, guid: c5848f62587b1754f8c79f2a54e427b8, type: 3}
+  rangedAttackVolume: 0.85
+  meleeAttackClip: {fileID: 8300000, guid: 0bddc50a525f81a4b9525eb23315a203, type: 3}
+  meleeAttackVolume: 0.85
+  deathAudioClip: {fileID: 8300000, guid: 1412bfa3311fd0148b36a465ab314086, type: 3}
+  deathVolume: 0.844
+  audioMinDistance: 2
+  audioMaxDistance: 28
+  enableLoot: 1
+  acDropMin: 2
+  acDropMax: 8
+  randomLootCountMin: 0
+  randomLootCountMax: 2
+  lootItemPool:
+  - {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
+  - {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
+  lootRespawnDelay: 20
+  lootInteractRange: 2.75

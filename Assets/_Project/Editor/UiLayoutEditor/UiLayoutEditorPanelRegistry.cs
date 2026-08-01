@@ -183,7 +183,7 @@ namespace Project.EditorTools.UiLayout
                 SearchNames = new[] { "JournalTabRailHost" },
                 ComponentType = typeof(JournalTabRail),
                 PlayModeOnly = true,
-                Description = "Left vertical tab rail (J/I/M/K/P/C/R/T/L shortcuts)."
+                Description = "Top horizontal tab bar (J/I/M/K/P/C/R/T/L shortcuts)."
             },
             new UiPanelDefinition
             {
@@ -193,7 +193,7 @@ namespace Project.EditorTools.UiLayout
                 SearchNames = new[] { "JournalWindowHost" },
                 ComponentType = typeof(FullscreenUiNavigator),
                 PlayModeOnly = true,
-                Description = "Content area to the right of the tab rail; holds fullscreen journal windows."
+                Description = "Content area below the top tab bar; holds fullscreen journal windows."
             },
             new UiPanelDefinition
             {

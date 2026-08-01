@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
+using MalbersAnimations.PathCreation;
 using Project.AI.Invector;
 using Project.Companions;
 using Project.Survival;
+using Project.World;
 
 namespace Project.AI
 {
@@ -67,7 +69,13 @@ namespace Project.AI
         [SerializeField] private float wanderPauseMax = 5f;
 
         [Header("Patrol")]
+        [Tooltip("Path Creator (or Path Creator Variant) to patrol when Movement Mode is Patrol. Uses native Path Creator bezier anchors via DMIPathFollowProvider.")]
+        [SerializeField] private PathCreator patrolPath;
+        [Tooltip("Optional explicit provider. If empty, resolved from Patrol Path.")]
+        [SerializeField] private DMIPathFollowProvider patrolPathProvider;
+        [Tooltip("Optional Transform waypoints (e.g. encounter binders). Path Creator patrol uses world points instead.")]
         [SerializeField] private Transform[] patrolPoints;
+        private Vector3[] patrolWorldPoints;
         [SerializeField] private float patrolWaitDuration = 2f;
         [SerializeField] private float idleDuration = 3f;
 
@@ -96,11 +104,20 @@ namespace Project.AI
         [Tooltip("Unprovoked players closer than this are treated as a melee threat. Visible players beyond this are ignored.")]
         [SerializeField] private float playerThreatRange = 3f;
 
+        [Header("Hearing Aggro")]
+        [Tooltip("When true, direct damage (melee or ranged) sets threat and Chase.")]
+        [SerializeField] private bool aggroOnDamaged = true;
+        [Tooltip("When true, hearing a ranged combat impact near this enemy may aggro the shooter.")]
+        [SerializeField] private bool aggroOnHeardHit = true;
+        [SerializeField] [Range(0f, 1f)] private float hearingAggroChance = 0.45f;
+        [Tooltip("Seconds after a heard-impact roll before another hearing-aggro attempt.")]
+        [SerializeField] private float hearingCooldown = 0.75f;
+
         [Header("Combat Spacing")]
         [Tooltip("Minimum horizontal gap kept between this enemy and its melee target — prevents body-shoving the player or pioneers.")]
-        [SerializeField] private float minCombatSeparation = 1.55f;
-        [SerializeField] [Range(0.55f, 0.95f)] private float attackStandoffFraction = 0.82f;
-        [SerializeField] private float playerStandoffBonus = 0.5f;
+        [SerializeField] private float minCombatSeparation = 0.95f;
+        [SerializeField] [Range(0.45f, 0.95f)] private float attackStandoffFraction = 0.62f;
+        [SerializeField] private float playerStandoffBonus = 0.15f;
         [SerializeField] private float pioneerChaseRangeMultiplier = 1.45f;
 
         [Header("Defensive Engage")]
@@ -165,6 +182,7 @@ namespace Project.AI
         private float combatRingSlotAngle;
         private int perfPhase;
         private Vector3 cachedSeparationOffset;
+        private float nextHearingAggroTime;
         private static readonly Collider[] AvoidanceHits = new Collider[12];
         private const float AggroDuration = 8f;
         private bool locomotionPaused;
@@ -221,19 +239,105 @@ namespace Project.AI
         }
 
         /// <summary>
-        /// Assigns a world patrol route after spawn (used by surface encounter zones).
+        /// Assigns a Transform patrol route after spawn (used by surface encounter zones).
         /// </summary>
         public void ConfigurePatrolRoute(Transform[] points, EnemyPatrolMode mode)
         {
             patrolPoints = points;
+            patrolWorldPoints = null;
             patrolMode = mode;
-            hasPatrolRoute = patrolPoints != null && patrolPoints.Length > 0;
+            hasPatrolRoute = PatrolPointCount >= 1;
             if (!hasPatrolRoute)
                 return;
 
             movementMode = EnemyMovementMode.Patrol;
             patrolIndex = 0;
             patrolDirection = 1;
+        }
+
+        /// <summary>
+        /// Assigns Path Creator bezier-anchor world positions (no Transform children required).
+        /// </summary>
+        public void ConfigurePatrolRoute(Vector3[] worldPoints, EnemyPatrolMode mode)
+        {
+            patrolWorldPoints = worldPoints;
+            patrolMode = mode;
+            hasPatrolRoute = PatrolPointCount >= 1;
+            if (!hasPatrolRoute)
+                return;
+
+            movementMode = EnemyMovementMode.Patrol;
+            patrolIndex = 0;
+            patrolDirection = 1;
+        }
+
+        private int PatrolPointCount
+        {
+            get
+            {
+                if (patrolWorldPoints != null && patrolWorldPoints.Length > 0)
+                    return patrolWorldPoints.Length;
+                return patrolPoints != null ? patrolPoints.Length : 0;
+            }
+        }
+
+        private bool TryGetPatrolWorldPoint(int index, out Vector3 world)
+        {
+            if (patrolWorldPoints != null && patrolWorldPoints.Length > 0)
+            {
+                if (index < 0 || index >= patrolWorldPoints.Length)
+                {
+                    world = default;
+                    return false;
+                }
+
+                world = patrolWorldPoints[index];
+                return true;
+            }
+
+            if (patrolPoints == null || index < 0 || index >= patrolPoints.Length || patrolPoints[index] == null)
+            {
+                world = default;
+                return false;
+            }
+
+            world = patrolPoints[index].position;
+            return true;
+        }
+
+        /// <summary>
+        /// Assigns a Path Creator (or provider) for Patrol mode and registers with its bezier anchors.
+        /// </summary>
+        public void SetPatrolPath(PathCreator path, DMIPathFollowProvider provider = null)
+        {
+            patrolPath = path;
+            patrolPathProvider = provider;
+            if (path != null || provider != null)
+                movementMode = EnemyMovementMode.Patrol;
+            TryBindAssignedPatrolPath();
+        }
+
+        public PathCreator PatrolPath => patrolPath;
+        public DMIPathFollowProvider PatrolPathProvider => patrolPathProvider;
+
+        private void TryBindAssignedPatrolPath()
+        {
+            if (movementMode != EnemyMovementMode.Patrol)
+                return;
+
+            DMIPathFollowProvider provider = patrolPathProvider;
+            if (provider == null)
+                provider = DMIPathFollowBinding.Resolve((Object)patrolPath ?? patrolPathProvider);
+
+            if (provider == null)
+                return;
+
+            patrolPathProvider = provider;
+            if (patrolPath == null)
+                patrolPath = provider.PathCreator;
+
+            provider.TryAssignEnemy(this);
+            hasPatrolRoute = PatrolPointCount >= 1;
         }
 
         private bool IsStationary => movementMode == EnemyMovementMode.Stationary;
@@ -247,9 +351,10 @@ namespace Project.AI
             health = GetComponent<EnemyHealth>();
             combat = GetComponent<EnemyCombat>();
             combatBridge = GetComponent<EnemyInvectorCombatBridge>();
-            hasPatrolRoute = patrolPoints != null && patrolPoints.Length > 0;
+            hasPatrolRoute = PatrolPointCount >= 1;
             ConfigureNavMeshAgent();
             InitializeCrowdProfile();
+            TryBindAssignedPatrolPath();
         }
 
         private void InitializeCrowdProfile()
@@ -275,6 +380,7 @@ namespace Project.AI
             ClearThreatLedger();
 
             ConfigureNavMeshAgent();
+            TryBindAssignedPatrolPath();
 
             EnterCalmState();
             TrySubscribePlayerEvents();
@@ -287,6 +393,9 @@ namespace Project.AI
                 health.Died -= HandleDeath;
                 health.DamagedWithSource -= HandleDamagedWithSource;
             }
+
+            if (patrolPathProvider != null)
+                patrolPathProvider.UnregisterEnemy(this);
 
             UnsubscribePlayerEvents();
         }
@@ -447,8 +556,8 @@ namespace Project.AI
                     break;
                 case AiState.Patrol:
                     stateTimer = patrolWaitDuration;
-                    if (hasPatrolRoute)
-                        moveTarget = patrolPoints[patrolIndex].position;
+                    if (hasPatrolRoute && TryGetPatrolWorldPoint(patrolIndex, out Vector3 patrolStart))
+                        moveTarget = patrolStart;
                     break;
                 case AiState.Investigate:
                     moveTarget = senses.TryGetHeardNoise(out Vector3 noisePosition)
@@ -520,20 +629,19 @@ namespace Project.AI
                 Gizmos.DrawWireSphere(home, chaseRadius);
             }
 
-            if (patrolPoints == null)
+            int count = PatrolPointCount;
+            if (count == 0)
                 return;
 
             Gizmos.color = Color.green;
-            for (int i = 0; i < patrolPoints.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                Transform point = patrolPoints[i];
-                if (point == null)
+                if (!TryGetPatrolWorldPoint(i, out Vector3 point))
                     continue;
 
-                Gizmos.DrawWireSphere(point.position, 0.35f);
-                Transform next = patrolPoints[(i + 1) % patrolPoints.Length];
-                if (next != null)
-                    Gizmos.DrawLine(point.position, next.position);
+                Gizmos.DrawWireSphere(point, 0.35f);
+                if (TryGetPatrolWorldPoint((i + 1) % count, out Vector3 next))
+                    Gizmos.DrawLine(point, next);
             }
         }
     }
