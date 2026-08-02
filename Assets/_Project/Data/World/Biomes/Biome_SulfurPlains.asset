@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3375f2fce84f6c976b2a4d9bdb6883, type: 3}
+  m_Name: Biome_SulfurPlains
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.World.BiomeRegionData
+  regionId: 1
+  displayName: Sulfur Plains
+  campaignUnlockOrder: 1
+  designerNotes: South of B6 on plan map. Storm lanes authored in W2.
+  mapCenterU: 0.5
+  mapCenterV: 0.38
+  mapRadius: 0.12
+  mapLegendColor: {r: 0.79, g: 0.64, b: 0.15, a: 1}
+  thermalBias: 0.45
+  dominantPressures: 8
+  explorationVerbs:
+  - 0
+  - 4
+  - 3
+  vehicleAllowance: 1
+  sulfurStormWeight: 0.85
+  geyserSurgeWeight: 0
+  ashGaleWeight: 0
+  eruptionColumnWeight: 0
+  polarNightWeight: 0
+  resonanceSpikeWeight: 0

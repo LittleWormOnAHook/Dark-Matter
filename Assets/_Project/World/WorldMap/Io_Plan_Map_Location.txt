@@ -1,11 +1,15 @@
-Io surface PLAN maps (art reference only — not Unity terrain).
+Io surface PLAN maps + W1 heightmap source.
 
-Primary copy (Design art reference):
+Primary design archive copy:
   Assets/_Project/Documentation/Design/ArtReference/WorldMap/
 
 This folder (next to World/Terrain):
   Io_Plan_BiomeMap_TopDown.png   — biome regions B1–B7
   Io_Plan_BiomeMap_Isometric.png — isometric plan view
-  Io_Plan_Heightmap.png          — height / relief reference
+  Io_Plan_Heightmap.png          — height / relief (import to terrain)
 
+W1 import RAW (16-bit LE, 1024², north→+Z):
+  Assets/_Project/World/Terrain/Io_Plan_Heightmap_R16.raw
+
+Editor: Tools → Dark Matter Genesis → World → W1 Build Main Map Blockout (IO-W1-01)
 Doc: Assets/_Project/Documentation/Design/Io_Genesis_World_Map_Geography.md
