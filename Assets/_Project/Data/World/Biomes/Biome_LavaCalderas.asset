@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3375f2fce84f6c976b2a4d9bdb6883, type: 3}
+  m_Name: Biome_LavaCalderas
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.World.BiomeRegionData
+  regionId: 4
+  displayName: Lava Calderas
+  campaignUnlockOrder: 5
+  designerNotes: Genesis moon map placeholder region (W0/W1).
+  mapCenterU: 0.68
+  mapCenterV: 0.52
+  mapRadius: 0.13
+  mapLegendColor: {r: 0.36, g: 0.18, b: 0.18, a: 1}
+  dominantPressures: 20
+  explorationVerbs:
+  - 2
+  - 5
+  - 6
+  vehicleAllowance: 5
+  sulfurStormWeight: 0
+  geyserSurgeWeight: 0
+  ashGaleWeight: 0
+  eruptionColumnWeight: 0.9
+  polarNightWeight: 0
+  resonanceSpikeWeight: 0

@@ -73,6 +73,7 @@ namespace Project.EditorTools
         public const string ResetInvectorWeaponGrips = InvectorWeaponGrip + "Reset Grips On Selected Item";
         public const string OpenInvectorWeaponGripWindow = InvectorWeaponGrip + "Grip Bake Window";
         public const string Ui = Root + "UI/";
+        public const string World = Root + "World/";
         public const string Scene = Root + "Scene/";
         public const string PlaceExposureStarterKit = Scene + "Place Exposure Starter Kit (Open Scene)";
         public const string PlaceExposureStarterKitInPioneer = Scene + "Place Exposure Starter Kit In Pioneer.unity";
