@@ -16,10 +16,11 @@ MonoBehaviour:
   displayName: Polar Radiation Flats
   campaignUnlockOrder: 4
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.22
-  mapCenterV: 0.5
-  mapRadius: 0.15
-  mapLegendColor: {r: 0.42, g: 0.5, b: 0.66, a: 1}
+  mapCenterU: 0.5
+  mapCenterV: 0.9
+  mapRadius: 0.11
+  thermalBias: -0.85
+  mapLegendColor: {r: 0.42, g: 0.55, b: 0.68, a: 1}
   dominantPressures: 3
   explorationVerbs:
   - 0

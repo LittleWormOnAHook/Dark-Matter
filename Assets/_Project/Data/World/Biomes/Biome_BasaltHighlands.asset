@@ -16,11 +16,12 @@ MonoBehaviour:
   displayName: Basalt Highlands
   campaignUnlockOrder: 0
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.52
-  mapCenterV: 0.58
-  mapRadius: 0.18
-  mapLegendColor: {r: 0.55, g: 0.45, b: 0.38, a: 1}
-  dominantPressures: 1
+  mapCenterU: 0.5
+  mapCenterV: 0.22
+  mapRadius: 0.14
+  thermalBias: 0.1
+  mapLegendColor: {r: 0.29, g: 0.27, b: 0.25, a: 1}
+  dominantPressures: 6
   explorationVerbs:
   - 0
   - 6

@@ -16,10 +16,11 @@ MonoBehaviour:
   displayName: Lava Calderas
   campaignUnlockOrder: 5
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.68
-  mapCenterV: 0.52
-  mapRadius: 0.13
-  mapLegendColor: {r: 0.36, g: 0.18, b: 0.18, a: 1}
+  mapCenterU: 0.5
+  mapCenterV: 0.12
+  mapRadius: 0.1
+  thermalBias: 0.95
+  mapLegendColor: {r: 0.16, g: 0.09, b: 0.09, a: 1}
   dominantPressures: 20
   explorationVerbs:
   - 2

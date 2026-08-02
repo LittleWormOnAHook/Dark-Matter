@@ -16,10 +16,11 @@ MonoBehaviour:
   displayName: Geyser Fields
   campaignUnlockOrder: 2
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.78
-  mapCenterV: 0.62
-  mapRadius: 0.14
-  mapLegendColor: {r: 0.9, g: 0.7, b: 0.15, a: 1}
+  mapCenterU: 0.5
+  mapCenterV: 0.17
+  mapRadius: 0.12
+  thermalBias: 0.65
+  mapLegendColor: {r: 0.83, g: 0.69, b: 0.29, a: 1}
   dominantPressures: 24
   explorationVerbs:
   - 2

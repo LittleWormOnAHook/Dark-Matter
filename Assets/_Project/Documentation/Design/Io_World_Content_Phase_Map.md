@@ -6,6 +6,7 @@
 
 | Doc | Scope |
 |-----|--------|
+| `Io_World_Map_Geography_Plan.md` | **Full-moon map** — top/iso art, elevation (0–1000 m), light/dark + hot/cold axes, breach reservations |
 | `Io_Biome_Exploration_Gameplay_Plan.md` | B1–B7 verbs, activities, vehicles, weather matrix, story unlock |
 | `Io_Underground_Architecture_Plan.md` | Strata 1–5, pools, tube grammar, underground pressure |
 | `Io_Biome_Ecology_Roster.md` | Flora/fauna cards, threat families, pets (core 12 + vanity extras), Void Stitcher |

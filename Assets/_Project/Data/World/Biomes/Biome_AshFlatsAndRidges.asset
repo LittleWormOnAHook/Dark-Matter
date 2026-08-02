@@ -16,11 +16,12 @@ MonoBehaviour:
   displayName: Ash Flats & Ridges
   campaignUnlockOrder: 3
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.48
-  mapCenterV: 0.28
-  mapRadius: 0.17
-  mapLegendColor: {r: 0.45, g: 0.38, b: 0.32, a: 1}
-  dominantPressures: 18
+  mapCenterU: 0.5
+  mapCenterV: 0.43
+  mapRadius: 0.14
+  thermalBias: 0.2
+  mapLegendColor: {r: 0.55, g: 0.45, b: 0.33, a: 1}
+  dominantPressures: 20
   explorationVerbs:
   - 0
   - 1

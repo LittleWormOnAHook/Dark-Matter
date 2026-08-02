@@ -1,119 +1,84 @@
-# Io Genesis World Map — Geography Spec
+# Io Genesis World Map — Geography Spec (merged)
 
-**Status:** Phase W1 authoring foundation (prototype map art + data scaffold)  
+**Status:** Phase W0/W1 authoring foundation — **merged PR #13 + #14** (August 2026)  
 **Authority:** GDD 5.0 Appendix A2; `Io_World_Content_Phase_Map.md` W0–W1  
-**Companion:** `Io_Biome_Exploration_Gameplay_Plan.md` §2.5 (full-scale surface map)
+**Companion:** `Io_World_Map_Geography_Plan.md`, `Io_Biome_Exploration_Gameplay_Plan.md` §2.5
 
 ---
 
 ## 1. Purpose
 
-Authoritative geography for the **full-scale Io surface main map** — the single persistent overworld that hosts B1–B7, the Command Center colony, and surface breach anchors. This spec drives:
+Authoritative geography for the **full-scale Io surface main map** — one persistent overworld for B1–B7, Command Center, and breach anchors.
 
-- Procedural **top-down** and **isometric** placeholder map art (`GenesisMoonMap_*.png`)
-- `BiomeRegionData` ScriptableObject placement (UV centers, unlock order, pressure tags)
-- Future terrain blockout and streaming region boundaries
-
-**Deferred (not in this pass):** underground breach holes, instanced load volumes, final heightmap terrain sculpt.
-
----
-
-## 2. Celestial layout (tidally locked Io)
-
-Io is **tidally locked** to Jupiter. Map UV space uses a **square texture** with a **circular moon disc** mask.
-
-| Map axis | In-world meaning |
-|----------|------------------|
-| **+U (east / right)** | **Sub-Jovian hemisphere** — Jupiter dominates sky; persistent dayside heat |
-| **−U (west / left)** | **Anti-Jovian hemisphere** — cold nightside; polar radiation flats |
-| **+V (north / up)** | North polar cap band |
-| **−V (south / down)** | South equatorial ruin belt approach |
-
-**Terminator band:** diagonal soft gradient from NW (cold/dark) to SE (hot/light). Gameplay day/night cycle still runs globally; this is geographic lighting bias, not a separate level.
-
-**Real Io diameter:** ~3,643 km. Gameplay scale is **1 Unity unit = 1 meter** on the eventual main map; prototype flat terrain remains 512×512 m until W1 terrain blockout lands.
-
----
-
-## 3. Elevation model
-
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| **Max peak height** | **1,000 m** | User-directed cap for Genesis map art (overrides older 200–300 m blockout note until terrain pass rebakes) |
-| **Highland core (B6)** | 400–1,000 m | Semi-mountain ranges, hub vistas, tube skylights |
-| **Caldera rims (B4)** | 300–900 m | Volcanic rims and obsidian spires |
-| **Ash ridges (B3)** | 150–500 m | Wind-scoured ridges |
-| **Plains (B1, B2, B5)** | 0–200 m | Flats with local vent bumps |
-| **Ruin belt (B7)** | 50–350 m | Low resonance mesas |
-
-Elevation is encoded in map art as **height shading** (top-down) and **relief** (isometric). Runtime heightmap terrain will be authored separately in W1.
-
----
-
-## 4. Biome placement (B1–B7)
-
-Regions are **soft Voronoi cells** blended with fBm noise — no hard pixel borders in placeholder art.
-
-| ID | Biome | Map UV center (u, v) | Radius | Palette | Dominant pressure |
-|----|-------|----------------------|--------|---------|-------------------|
-| B6 | Basalt Highlands (hub) | (0.52, 0.58) | 0.18 | ash-bronze | Mixed — colony hub |
-| B1 | Sulfur Plains | (0.72, 0.42) | 0.16 | sulfur-amber | Sulfur |
-| B2 | Geyser Fields | (0.78, 0.62) | 0.14 | sulfur-amber | Sulfur + Volcano |
-| B3 | Ash Flats & Ridges | (0.48, 0.28) | 0.17 | ash-bronze | Thermal + Volcano |
-| B4 | Lava Calderas | (0.68, 0.52) | 0.13 | heat-obsidian | Volcano + Heat |
-| B5 | Polar Radiation Flats | (0.22, 0.50) | 0.15 | polar-rad | Radiation + Cold |
-| B7 | Precursor Ruin Belt | (0.50, 0.22) | 0.12 | aether-teal | Radiation + Resonance |
-
-**Campaign unlock order:** B6 → B1 → B2 → B3 → B5 → B4 → B7 (per `Io_World_Content_Phase_Map.md`).
-
-**Command Center:** anchored inside B6 at approximately **(0.50, 0.56)** — starter colony flats.
-
----
-
-## 5. Palette reference (life sheets)
-
-| Token | Hex (base) | Hex (accent) | Usage |
-|-------|------------|--------------|-------|
-| sulfur-amber | `#8B6914` | `#D4A017` | B1, B2 |
-| ash-bronze | `#4A4038` | `#8C7362` | B3, B6 |
-| heat-obsidian | `#1A1212` | `#5C2E2E` | B4 |
-| polar-rad | `#2A3040` | `#6B7FA8` | B5 |
-| aether-teal | `#1E4A4A` | `#3D8B8B` | B7 |
-| vacuum | `#0A0A12` | — | Off-disc space |
-
----
-
-## 6. Generated assets
-
-| File | Resolution | Role |
-|------|------------|------|
-| `Textures/WorldMap/GenesisMoonMap_TopDown.png` | 2048×2048 | Primary world map texture (UI, design) |
-| `Textures/WorldMap/GenesisMoonMap_Isometric.png` | 2048×2048 | Isometric reference / future map mode |
-| `Resources/UI/GenesisMoonMap.png` | 2048×2048 | Runtime Resources load for `WorldMapProvider` |
-
-**Regenerate:**
+**Generator (unified):**
 
 ```bash
-python3 Assets/_Project/Tools/WorldMap/generate_genesis_moon_maps.py
+python3 Assets/_Project/Tools/WorldMap/generate_io_world_map.py
 ```
 
 ---
 
-## 7. Data scaffold
+## 2. Tidally locked axes (hot vs cold)
 
-- `BiomeRegionData` — per-biome SO: region ID, display name, map UV, unlock order, verb tags, vehicle flags
-- `BiomeRegionRegistry` — resolves all B1–B7 regions for directors and map fog
-
-Editor: **Tools → Dark Matter Genesis → World → Create Biome Region Assets (B1–B7)**
+| Map direction | In-world meaning | Biomes |
+|---------------|------------------|--------|
+| **Bottom (low V)** | **Sub-Jovian — HOT** | B4 Calderas, B2 Geysers, B1 Sulfur |
+| **Top (high V)** | **Anti-Jovian — COLD** | B7 Ruin Belt |
+| **North / south rim** | **Polar caps — COLD** | B5 Polar Flats (both poles) |
+| **Center sub-Jovian** | Hub | B6 Basalt Highlands + **Command Center (0.50, 0.22)** |
+| **Left ↔ right** | Leading ↔ trailing radiation | Graveyard drift on trailing edge |
 
 ---
 
-## 8. Out of scope (this pass)
+## 3. Elevation
 
-- Underground breach anchor placement
-- NavMesh / terrain heightmap sculpt for full 3600 km map
-- Map fog of war sector unlock wiring
-- Streaming sub-scenes per biome
+| Tier | Height |
+|------|--------|
+| Max peaks | **1,000 m** |
+| B6 Highlands | 400–1,000 m |
+| B4 Calderas | 300–900 m (bowl sink at core) |
+| B3 Ash ridges | 150–500 m |
+| B1/B2/B5 plains | 0–200 m |
+| B7 Ruins | 50–350 m |
+
+---
+
+## 4. Biome UV placement (normalized 0–1, bottom-left origin)
+
+| ID | Biome | Center (u, v) | Radius | Thermal bias | Pressure |
+|----|-------|---------------|--------|--------------|----------|
+| B6 | Basalt Highlands | (0.50, 0.22) | 0.14 | +0.1 | Mixed hub |
+| B1 | Sulfur Plains | (0.50, 0.30) | 0.16 | +0.45 | Sulfur (hot) |
+| B2 | Geyser Fields | (0.50, 0.17) | 0.12 | +0.65 | Sulfur + volcano (hot) |
+| B3 | Ash Flats | (0.50, 0.43) | 0.14 | +0.2 | Thermal + volcano |
+| B5 | Polar Flats | (0.50, 0.90) | 0.11 | **−0.85** | Rad + **cold** (north cap; south mirrored in art) |
+| B4 | Lava Calderas | (0.50, 0.12) | 0.10 | **+0.95** | Volcano + **heat** |
+| B7 | Ruin Belt | (0.50, 0.78) | 0.13 | **−0.55** | Rad + resonance (**cold**) |
+
+**Unlock order:** B6 → B1 → B2 → B3 → B5 → B4 → B7
+
+---
+
+## 5. Generated assets
+
+| Output | Path | Size |
+|--------|------|------|
+| Top view (4K) | `ArtReference/WorldMap/IoWorldMap_TopView_4K.png` | 4096 |
+| Isometric (4K) | `ArtReference/WorldMap/IoWorldMap_IsoView_4K.png` | 4096 |
+| Biome mask | `ArtReference/WorldMap/IoWorldMap_TopView_4K_BiomeMask.png` | 4096 |
+| Height field | `ArtReference/WorldMap/IoWorldMap_TopView_4K_Height.png` | 4096 |
+| Legend | `ArtReference/WorldMap/IoWorldMap_Legend.png` | 1536×1024 |
+| UI top-down | `Textures/WorldMap/GenesisMoonMap_TopDown.png` | 2048 |
+| UI isometric | `Textures/WorldMap/GenesisMoonMap_Isometric.png` | 2048 |
+| Runtime map | `Resources/UI/GenesisMoonMap.png` | 2048 |
+
+---
+
+## 6. Deferred (W1+)
+
+- Underground breach terrain cutouts (markers only in art)
+- Full heightmap terrain sculpt + streaming
+- Map fog-of-war sector unlock
 
 ---
 

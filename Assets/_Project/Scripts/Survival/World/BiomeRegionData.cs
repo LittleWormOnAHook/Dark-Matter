@@ -28,6 +28,10 @@ namespace Project.Survival.World
         [Range(0.01f, 0.5f)] public float mapRadius = 0.15f;
         public Color mapLegendColor = Color.gray;
 
+        [Header("Thermal baseline (tidally locked)")]
+        [Tooltip("Positive = hotter than equatorial mean (sub-Jovian); negative = colder (anti-Jovian / polar).")]
+        [Range(-1f, 1f)] public float thermalBias = 0f;
+
         [Header("Pressures & Exploration")]
         public ExposurePressureFlags dominantPressures = ExposurePressureFlags.None;
         public BiomeExplorationVerb[] explorationVerbs;

@@ -22,6 +22,7 @@ namespace Project.EditorTools.World
             public float CenterU;
             public float CenterV;
             public float Radius;
+            public float ThermalBias;
             public Color LegendColor;
             public ExposurePressureFlags Pressures;
             public BiomeExplorationVerb[] Verbs;
@@ -41,8 +42,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.BasaltHighlands,
                 DisplayName = "Basalt Highlands",
                 UnlockOrder = 0,
-                CenterU = 0.52f, CenterV = 0.58f, Radius = 0.18f,
-                LegendColor = new Color(0.55f, 0.45f, 0.38f),
+                CenterU = 0.50f, CenterV = 0.22f, Radius = 0.14f,
+                ThermalBias = 0.1f,
+                LegendColor = new Color(0.29f, 0.27f, 0.25f),
                 Pressures = ExposurePressureFlags.ThermalCold | ExposurePressureFlags.ThermalHeat,
                 Verbs = new[] { BiomeExplorationVerb.Route, BiomeExplorationVerb.Breach, BiomeExplorationVerb.Shelter },
                 Vehicles = BiomeVehicleAllowance.HubPads,
@@ -53,8 +55,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.SulfurPlains,
                 DisplayName = "Sulfur Plains",
                 UnlockOrder = 1,
-                CenterU = 0.72f, CenterV = 0.42f, Radius = 0.16f,
-                LegendColor = new Color(0.83f, 0.63f, 0.09f),
+                CenterU = 0.50f, CenterV = 0.30f, Radius = 0.16f,
+                ThermalBias = 0.45f,
+                LegendColor = new Color(0.79f, 0.64f, 0.15f),
                 Pressures = ExposurePressureFlags.Sulfur,
                 Verbs = new[] { BiomeExplorationVerb.Route, BiomeExplorationVerb.Sample, BiomeExplorationVerb.Shelter },
                 Vehicles = BiomeVehicleAllowance.PathLanes,
@@ -65,8 +68,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.GeyserFields,
                 DisplayName = "Geyser Fields",
                 UnlockOrder = 2,
-                CenterU = 0.78f, CenterV = 0.62f, Radius = 0.14f,
-                LegendColor = new Color(0.90f, 0.70f, 0.15f),
+                CenterU = 0.50f, CenterV = 0.17f, Radius = 0.12f,
+                ThermalBias = 0.65f,
+                LegendColor = new Color(0.83f, 0.69f, 0.29f),
                 Pressures = ExposurePressureFlags.Sulfur | ExposurePressureFlags.Volcano,
                 Verbs = new[] { BiomeExplorationVerb.Time, BiomeExplorationVerb.Sample, BiomeExplorationVerb.Clear },
                 Vehicles = BiomeVehicleAllowance.LimitedPads,
@@ -77,8 +81,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.AshFlatsAndRidges,
                 DisplayName = "Ash Flats & Ridges",
                 UnlockOrder = 3,
-                CenterU = 0.48f, CenterV = 0.28f, Radius = 0.17f,
-                LegendColor = new Color(0.45f, 0.38f, 0.32f),
+                CenterU = 0.50f, CenterV = 0.43f, Radius = 0.14f,
+                ThermalBias = 0.2f,
+                LegendColor = new Color(0.55f, 0.45f, 0.33f),
                 Pressures = ExposurePressureFlags.ThermalHeat | ExposurePressureFlags.Volcano,
                 Verbs = new[] { BiomeExplorationVerb.Route, BiomeExplorationVerb.Scan, BiomeExplorationVerb.Extract },
                 Vehicles = BiomeVehicleAllowance.FlatCorridors,
@@ -89,8 +94,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.PolarRadiationFlats,
                 DisplayName = "Polar Radiation Flats",
                 UnlockOrder = 4,
-                CenterU = 0.22f, CenterV = 0.50f, Radius = 0.15f,
-                LegendColor = new Color(0.42f, 0.50f, 0.66f),
+                CenterU = 0.50f, CenterV = 0.90f, Radius = 0.11f,
+                ThermalBias = -0.85f,
+                LegendColor = new Color(0.42f, 0.55f, 0.68f),
                 Pressures = ExposurePressureFlags.Radiation | ExposurePressureFlags.ThermalCold,
                 Verbs = new[] { BiomeExplorationVerb.Route, BiomeExplorationVerb.Scan, BiomeExplorationVerb.Shelter },
                 Vehicles = BiomeVehicleAllowance.FootOnly,
@@ -101,8 +107,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.LavaCalderas,
                 DisplayName = "Lava Calderas",
                 UnlockOrder = 5,
-                CenterU = 0.68f, CenterV = 0.52f, Radius = 0.13f,
-                LegendColor = new Color(0.36f, 0.18f, 0.18f),
+                CenterU = 0.50f, CenterV = 0.12f, Radius = 0.10f,
+                ThermalBias = 0.95f,
+                LegendColor = new Color(0.16f, 0.09f, 0.09f),
                 Pressures = ExposurePressureFlags.Volcano | ExposurePressureFlags.ThermalHeat,
                 Verbs = new[] { BiomeExplorationVerb.Time, BiomeExplorationVerb.Clear, BiomeExplorationVerb.Breach },
                 Vehicles = BiomeVehicleAllowance.FootOnly,
@@ -113,8 +120,9 @@ namespace Project.EditorTools.World
                 Id = IoSurfaceRegionId.PrecursorRuinBelt,
                 DisplayName = "Precursor Ruin Belt",
                 UnlockOrder = 6,
-                CenterU = 0.50f, CenterV = 0.22f, Radius = 0.12f,
-                LegendColor = new Color(0.24f, 0.55f, 0.55f),
+                CenterU = 0.50f, CenterV = 0.78f, Radius = 0.13f,
+                ThermalBias = -0.55f,
+                LegendColor = new Color(0.16f, 0.42f, 0.42f),
                 Pressures = ExposurePressureFlags.Radiation | ExposurePressureFlags.Resonance,
                 Verbs = new[] { BiomeExplorationVerb.Scan, BiomeExplorationVerb.Stabilize, BiomeExplorationVerb.Extract },
                 Vehicles = BiomeVehicleAllowance.FootOnly,
@@ -142,6 +150,7 @@ namespace Project.EditorTools.World
                 asset.mapCenterU = seed.CenterU;
                 asset.mapCenterV = seed.CenterV;
                 asset.mapRadius = seed.Radius;
+                asset.thermalBias = seed.ThermalBias;
                 asset.mapLegendColor = seed.LegendColor;
                 asset.dominantPressures = seed.Pressures;
                 asset.explorationVerbs = seed.Verbs;

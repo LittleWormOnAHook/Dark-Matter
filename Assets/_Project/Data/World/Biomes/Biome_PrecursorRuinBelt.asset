@@ -17,9 +17,10 @@ MonoBehaviour:
   campaignUnlockOrder: 6
   designerNotes: Genesis moon map placeholder region (W0/W1).
   mapCenterU: 0.5
-  mapCenterV: 0.22
-  mapRadius: 0.12
-  mapLegendColor: {r: 0.24, g: 0.55, b: 0.55, a: 1}
+  mapCenterV: 0.78
+  mapRadius: 0.13
+  thermalBias: -0.55
+  mapLegendColor: {r: 0.16, g: 0.42, b: 0.42, a: 1}
   dominantPressures: 33
   explorationVerbs:
   - 1

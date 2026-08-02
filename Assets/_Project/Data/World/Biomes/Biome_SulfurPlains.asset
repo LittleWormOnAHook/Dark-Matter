@@ -16,10 +16,11 @@ MonoBehaviour:
   displayName: Sulfur Plains
   campaignUnlockOrder: 1
   designerNotes: Genesis moon map placeholder region (W0/W1).
-  mapCenterU: 0.72
-  mapCenterV: 0.42
+  mapCenterU: 0.5
+  mapCenterV: 0.3
   mapRadius: 0.16
-  mapLegendColor: {r: 0.83, g: 0.63, b: 0.09, a: 1}
+  thermalBias: 0.45
+  mapLegendColor: {r: 0.79, g: 0.64, b: 0.15, a: 1}
   dominantPressures: 8
   explorationVerbs:
   - 0
