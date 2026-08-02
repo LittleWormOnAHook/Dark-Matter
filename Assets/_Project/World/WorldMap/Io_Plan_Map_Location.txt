@@ -1,0 +1,11 @@
+Io surface PLAN maps (art reference only — not Unity terrain).
+
+Primary copy (Design art reference):
+  Assets/_Project/Documentation/Design/ArtReference/WorldMap/
+
+This folder (next to World/Terrain):
+  Io_Plan_BiomeMap_TopDown.png   — biome regions B1–B7
+  Io_Plan_BiomeMap_Isometric.png — isometric plan view
+  Io_Plan_Heightmap.png          — height / relief reference
+
+Doc: Assets/_Project/Documentation/Design/Io_Genesis_World_Map_Geography.md

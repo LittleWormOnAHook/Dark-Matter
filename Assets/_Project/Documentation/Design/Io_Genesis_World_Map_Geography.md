@@ -11,6 +11,10 @@ These three images are the **authoritative visual plan** for Io surface layout b
 | `Io_Plan_BiomeMap_Isometric.png` | Isometric elevation + biome color read for art direction |
 | `Io_Plan_Heightmap.png` | Grayscale relief / height reference for future terrain sculpt (0–1000 m target) |
 
+**Unity paths (same files):**
+- `Assets/_Project/World/WorldMap/` — next to `World/Terrain` (easy to find)
+- `Assets/_Project/Documentation/Design/ArtReference/WorldMap/` — design archive copy
+
 **Not included:** runtime UI textures, `BiomeRegionData`, terrain assets, or breach cutouts.
 
 **W1 next:** sculpt Unity terrain from heightmap + place exposure volumes per biome plan.
