@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3375f2fce84f6c976b2a4d9bdb6883, type: 3}
+  m_Name: Biome_PolarRadiationFlats
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Survival.World.BiomeRegionData
+  regionId: 5
+  displayName: Polar Radiation Flats
+  campaignUnlockOrder: 4
+  designerNotes: North cap primary UV. South polar mirror is the same biome id (place second volume later).
+  mapCenterU: 0.5
+  mapCenterV: 0.92
+  mapRadius: 0.1
+  mapLegendColor: {r: 0.42, g: 0.55, b: 0.68, a: 1}
+  thermalBias: -0.85
+  dominantPressures: 3
+  explorationVerbs:
+  - 0
+  - 1
+  - 3
+  vehicleAllowance: 0
+  sulfurStormWeight: 0
+  geyserSurgeWeight: 0
+  ashGaleWeight: 0
+  eruptionColumnWeight: 0
+  polarNightWeight: 0.95
+  resonanceSpikeWeight: 0

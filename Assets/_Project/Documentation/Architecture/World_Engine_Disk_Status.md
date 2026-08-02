@@ -30,6 +30,8 @@ A Features module is shipped only when its `.cs` / `.asmdef` files exist under `
 | `Features/Communications` Runtime | **Absent** (Run 2) |
 | `Features/Experience` / `Generation` | **Absent** |
 | `Scripts/Survival/Exposure/` | Present |
+| `Scripts/Survival/World/` BiomeRegionData + W1 blockout markers | **Present** (W1 tooling) |
+| `World/WorldMap/` Io plan maps + `World/Terrain/Io_Plan_Heightmap_R16.raw` | **Present** (plan → W1 import) |
 | `EchoGenerator` + chronicle + building ops save | Present |
 | World seed in `GameSaveData` | **Not yet** (Run 3) |
 

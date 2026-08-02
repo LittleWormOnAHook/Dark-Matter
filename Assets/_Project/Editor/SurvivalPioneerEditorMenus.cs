@@ -74,6 +74,7 @@ namespace Project.EditorTools
         public const string OpenInvectorWeaponGripWindow = InvectorWeaponGrip + "Grip Bake Window";
         public const string Ui = Root + "UI/";
         public const string Scene = Root + "Scene/";
+        public const string World = Root + "World/";
         public const string PlaceExposureStarterKit = Scene + "Place Exposure Starter Kit (Open Scene)";
         public const string PlaceExposureStarterKitInPioneer = Scene + "Place Exposure Starter Kit In Pioneer.unity";
         public const string Audio = Root + "Audio/";
