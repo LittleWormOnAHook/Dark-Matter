@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e4d3f29c5e40a7b2f314c5d68901a2, type: 3}
+  m_Name: BiomeRegion_B1_SulfurPlains
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.BiomeRegionData
+  regionId: 1
+  displayName: Sulfur Plains
+  designSummary: Io surface region blockout — see Io_World_Map_Geography_Plan.md
+  mapCenterUv: {x: 0.3, y: 0.35}
+  mapInfluenceRadius: 0.16
+  footOnlySurface: 0
+  campaignUnlockOrder: 2
+  maxLocalElevationMeters: 1000
+  thermalBias: 0.0
