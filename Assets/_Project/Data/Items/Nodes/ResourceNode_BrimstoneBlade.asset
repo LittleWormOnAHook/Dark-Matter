@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01714840b54be944c9c632ced45360c6, type: 3}
+  m_Name: ResourceNode_BrimstoneBlade
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ResourceNodeDefinition
+  displayName: Brimstone Blade
+  nodeKind: 1
+  designerNotes: 
+  resourceItem: {fileID: 11400000, guid: 5c9d4235006e0474c84112fb00bcbbd3, type: 2}
+  itemIcon: {fileID: 21300000, guid: 637df8bece32ef847ac9db01367f1bdd, type: 3}
+  interactionMode: 1
+  requiredTool: {fileID: 0}
+  requireMiningLaser: 0
+  holdPromptText: 
+  durationSeconds: 4.5
+  waves: 1
+  dropMin: 2
+  dropMax: 5
+  lastWaveDropScale: 1
+  holdInteractRange: 3.5
+  meshTemplate: {fileID: 7179250259705487515, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
+  lootFlyModel: {fileID: 9062877512460790226, guid: 993dac5f6f603944ab56d7bc2a5731a3, type: 3}
+  lootTint: {r: 0.85, g: 0.35, b: 0.18, a: 1}
+  nodePrefab: {fileID: 3503482765825850753, guid: 49392e58c96caad4ba333cc67c0700ba, type: 3}
+  itemMaxStack: 40
+  itemTooltip: Fan-like Io plant fronds that seep a valuable brimstone goo. Hold-E
+    harvest for crafting reagents.
+  lootYieldClip: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}
+  lootGrantClip: {fileID: 8300000, guid: ac38e039e1b87924ca20b52107b0522e, type: 3}

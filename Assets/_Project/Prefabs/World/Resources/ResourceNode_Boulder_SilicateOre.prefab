@@ -9,32 +9,44 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.30000004
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -26.418
+      value: -1.7789993
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.33
+      value: 0.27316698
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.046
+      value: 9.141002
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.32899013
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.67100984
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0.4698458
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.46984696
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -42,11 +54,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: -110
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -110
       objectReference: {fileID: 0}
     - target: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_Name
@@ -87,7 +99,11 @@ MonoBehaviour:
   dropMax: 3
   lastWaveDropScale: 0.6
   holdDurationSeconds: 4
-  holdPromptText: "Hold E \u2014 Harvest"
+  holdPromptText: 
   holdInteractRange: 3.5
-  lootAttractPrefab: {fileID: 0}
+  requiredTool: {fileID: 0}
+  requireMiningLaser: 1
+  lootAttractPrefab: {fileID: 2193111205937348350, guid: 04699d0325698294ab5655f29aafa64c, type: 3}
   lootTint: {r: 0.82, g: 0.72, b: 0.35, a: 1}
+  lootYieldClipOverride: {fileID: 0}
+  lootGrantClipOverride: {fileID: 0}

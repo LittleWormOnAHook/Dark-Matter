@@ -92,25 +92,6 @@ namespace Project.Interaction
             TickHoldHarvest();
         }
 
-        private void LateUpdate()
-        {
-            if (activeHoldUsable != null && activeHoldUsable.IsHoldActive)
-                return;
-
-            // Only own the prompt for hold-harvest focus; other systems drive their own prompts.
-            WorldUseContext context = BuildPromptContext();
-            ResourceNode harvestNode = FindAimedHoldHarvestNode(context);
-            if (harvestNode != null)
-            {
-                if (promptUiManager == null)
-                    promptUiManager = FindAnyObjectByType<UIManager>();
-                promptUiManager?.ShowInteractionPrompt(harvestNode.HoldPromptText);
-                return;
-            }
-
-            ClearOwnedWorldPrompt();
-        }
-
         private void TickHoldHarvest()
         {
             if (!CanUseNow())
@@ -132,18 +113,7 @@ namespace Project.Interaction
                 }
 
                 if (activeHoldUsable.TickHold(context, Time.deltaTime, out _))
-                {
                     activeHoldUsable = null;
-                    if (promptUiManager == null)
-                        promptUiManager = FindAnyObjectByType<UIManager>();
-                    promptUiManager?.HideInteractionPrompt();
-                }
-                else if (activeHoldUsable != null)
-                {
-                    if (promptUiManager == null)
-                        promptUiManager = FindAnyObjectByType<UIManager>();
-                    promptUiManager?.ShowInteractionPrompt(activeHoldUsable.HoldPromptText);
-                }
 
                 return;
             }
@@ -157,9 +127,6 @@ namespace Project.Interaction
 
             holdTarget.BeginHold(context);
             activeHoldUsable = holdTarget;
-            if (promptUiManager == null)
-                promptUiManager = FindAnyObjectByType<UIManager>();
-            promptUiManager?.ShowInteractionPrompt(holdTarget.HoldPromptText);
         }
 
         private void CancelActiveHold()
@@ -1230,9 +1197,7 @@ namespace Project.Interaction
             if (injuredRecoverable != null)
                 return injuredRecoverable.GetPromptText();
 
-            ResourceNode harvestNode = FindAimedHoldHarvestNode(context);
-            if (harvestNode != null)
-                return harvestNode.HoldPromptText;
+            // Hold-harvest plants use proximity dots + map markers instead of Hold-E prompt text.
 
             QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
             if (questGiver != null)
@@ -1253,20 +1218,6 @@ namespace Project.Interaction
             Project.Events.DMItemCollection collection = FindClosestDMItemCollectionInRange(context.PlayerPosition);
             if (collection != null)
                 return collection.GetInteractionPromptMessage();
-
-            return null;
-        }
-
-        private static ResourceNode FindAimedHoldHarvestNode(WorldUseContext context)
-        {
-            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
-            {
-                ResourceNode node = context.AimHit.Value.collider.GetComponentInParent<ResourceNode>();
-                if (node != null
-                    && node.interactionMode == ResourceNodeInteractionMode.HoldHarvest
-                    && node.CanBeginHold(context))
-                    return node;
-            }
 
             return null;
         }

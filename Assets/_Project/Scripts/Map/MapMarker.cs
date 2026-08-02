@@ -85,7 +85,13 @@ namespace Project.Map
 
             ResourceNode node = GetComponent<ResourceNode>();
             if (node != null && node.resourceItem != null)
-                return $"Hit to gather {node.resourceItem.itemName}";
+            {
+                string itemName = node.resourceItem.itemName;
+                if (node.interactionMode == ResourceNodeInteractionMode.HoldHarvest)
+                    return string.IsNullOrWhiteSpace(itemName) ? "Harvest" : itemName;
+
+                return $"Hit to gather {itemName}";
+            }
 
             return string.IsNullOrWhiteSpace(label) ? null : label;
         }

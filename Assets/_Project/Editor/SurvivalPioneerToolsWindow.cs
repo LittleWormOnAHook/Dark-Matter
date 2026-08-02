@@ -37,6 +37,7 @@ namespace Project.EditorTools
             {
                 (SurvivalPioneerEditorMenus.ItemDataCreator, "Gatherables: ItemData + ResourceNode world prefab"),
                 (SurvivalPioneerEditorMenus.CraftingItemCreator, "Consumables/resources: ItemData + ItemPickup world prefab"),
+                (SurvivalPioneerEditorMenus.ResourceManager, "Resource Manager — mining / plant nodes, yields, tools, ItemData"),
                 (SurvivalPioneerEditorMenus.EquipmentItemCreator, "Weapons and tools with held + pickup prefabs"),
                 (SurvivalPioneerEditorMenus.EquipmentItemCreatorFromSelection, "Equipment creator pre-filled from selection"),
                 (SurvivalPioneerEditorMenus.WeaponPrefabCreator, "Weapon held/world prefabs with optional melee hitbox"),

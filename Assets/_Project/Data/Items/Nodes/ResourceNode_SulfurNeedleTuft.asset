@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01714840b54be944c9c632ced45360c6, type: 3}
+  m_Name: ResourceNode_SulfurNeedleTuft
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ResourceNodeDefinition
+  displayName: Sulfur Needle Tuft
+  nodeKind: 1
+  designerNotes: 
+  resourceItem: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+  itemIcon: {fileID: 21300000, guid: d6fb7afc70cbbd04bb87b3b881ac0e22, type: 3}
+  interactionMode: 1
+  requiredTool: {fileID: 0}
+  requireMiningLaser: 0
+  holdPromptText: 
+  durationSeconds: 4
+  waves: 1
+  dropMin: 5
+  dropMax: 10
+  lastWaveDropScale: 1
+  holdInteractRange: 3.5
+  meshTemplate: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+  lootFlyModel: {fileID: 7776953011026404109, guid: 795a98aa78073974f9ba06791ce942da, type: 3}
+  lootTint: {r: 0.75, g: 0.82, b: 0.28, a: 1}
+  nodePrefab: {fileID: 3522438735827158173, guid: 3710f69ea3769e945be0cca15ac1e0d3, type: 3}
+  itemMaxStack: 40
+  itemTooltip: Bristly sulfur-rich plant fiber. Hold-E harvest. Antiseptic reagent
+    for medpacks and salves.
+  lootYieldClip: {fileID: 8300000, guid: ac38e039e1b87924ca20b52107b0522e, type: 3}
+  lootGrantClip: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}

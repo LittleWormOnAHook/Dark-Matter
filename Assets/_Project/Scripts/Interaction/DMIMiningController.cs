@@ -942,9 +942,11 @@ namespace Project.Interaction
             if (acquired)
             {
                 ResourceNode node = hit.collider.GetComponentInParent<ResourceNode>();
+                ItemData drawnTool = ResolveDrawnMiningTool();
                 if (node != null
                     && node.resourceItem != null
                     && node.interactionMode == ResourceNodeInteractionMode.LaserMine
+                    && node.AllowsMiningTool(drawnTool)
                     && Vector3.Distance(transform.position, hit.point) <= MaxMineDistance)
                 {
                     lockedNode = node;

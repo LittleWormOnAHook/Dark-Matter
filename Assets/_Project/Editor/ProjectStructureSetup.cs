@@ -29,6 +29,11 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsRanged);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsAmmo);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsResources);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsResourcesMining);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsResourcesHarvest);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsComponents);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsModules);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsOperations);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsTools);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsConsumables);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsVehicles);

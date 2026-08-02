@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Shared soft proximity dot visuals for pickups and Press-E interactables.
+    /// Shared soft proximity dot visuals for pickups, plant harvest nodes, and Press-E interactables.
     /// </summary>
     internal static class ProximityDotStyle
     {

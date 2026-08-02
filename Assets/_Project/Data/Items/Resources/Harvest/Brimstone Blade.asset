@@ -1,0 +1,137 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8c3e1f04b2d4a6e9f7c5d8b1a0e3f42, type: 3}
+  m_Name: Brimstone Blade
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.MineHarvestItemData
+  itemName: Brimstone Blade
+  icon: {fileID: 21300000, guid: 637df8bece32ef847ac9db01367f1bdd, type: 3}
+  worldPrefab: {fileID: 9062877512460790226, guid: 993dac5f6f603944ab56d7bc2a5731a3, type: 3}
+  maxStack: 40
+  itemType: 1
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 0
+  heldPrefab: {fileID: 0}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  useHeldLocalRotation: 0
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
+  meleeDamage: 0
+  meleeDamageRandomRange: 0
+  criticalChance: 0
+  criticalDamageMultiplier: 0
+  meleeRange: 0
+  meleeCooldown: 0
+  attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
+  gatherPower: 0
+  attackTrigger: Attack
+  rangedDamage: 0
+  rangedDamageRandomRange: 0
+  rangedRange: 0
+  projectileSpeed: 0
+  projectileSpreadDegrees: 0
+  weaponAccuracy: 0
+  closeRangeFullAccuracyDistance: 0
+  closeRangeSpreadScale: 0
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 0
+  fireRate: 0
+  magazineSize: 0
+  reloadTimeSeconds: 0
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 0
+  startingAmmoMax: 0
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0
+  hipFireMaxDeviationDegrees: 0
+  hipFireSpreadMultiplier: 0
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 0
+  ammoPickupGrant: 0
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0
+  muzzleFlashPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 0
+  miningDropMin: 0
+  miningDropMax: 0
+  miningLockBreakDegrees: 0
+  miningPassDuration: 0
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 0
+  miningChargePerPlasmaFuel: 0
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 0
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 0
+  scanRange: 0
+  opticsZoomFov: 0
+  opticsMinZoomFov: 0
+  opticsMaxZoomFov: 0
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isAcInfused: 0
+  acValue: 0
+  grantsXp: 1
+  xpAmount: 5
+  xpSource: 5
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  tooltipDescription: Fan-like Io plant fronds that seep a valuable brimstone goo
+    for crafting reagents.
+  unlocksInventoryStorageRow: 0
+  gatherKind: 1
+  lootYieldClip: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}
+  lootYieldVolume: 0.9
+  lootGrantClip: {fileID: 8300000, guid: ac38e039e1b87924ca20b52107b0522e, type: 3}
+  lootGrantVolume: 0.95
+  lootCompleteVfxPrefab: {fileID: 1091566395842728, guid: a964a27d08e8c6c47b8801b29dd3f1d6, type: 3}

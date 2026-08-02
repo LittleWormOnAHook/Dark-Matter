@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7776953011026404109
+--- !u!1 &9062877512460790226
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,25 +8,25 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 560339403106552641}
-  - component: {fileID: 3600116064872466153}
-  - component: {fileID: 2295292723246218569}
-  - component: {fileID: 8442463038483838663}
-  - component: {fileID: 2411963579227510751}
+  - component: {fileID: 9173240977159841599}
+  - component: {fileID: 6940722189612895175}
+  - component: {fileID: 2372234698057293047}
+  - component: {fileID: 2803436006969483262}
+  - component: {fileID: 6843924301155928694}
   m_Layer: 0
-  m_Name: Sulfur Needle Tuft_World
+  m_Name: Brimstone Blade_World
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &560339403106552641
+--- !u!4 &9173240977159841599
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7776953011026404109}
+  m_GameObject: {fileID: 9062877512460790226}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000001595337, y: 0.9063082, z: -0.00000003421218, w: 0.42261755}
   m_LocalPosition: {x: -12.91, y: 0.288167, z: 8.2}
@@ -35,21 +35,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 130, z: 0}
---- !u!33 &3600116064872466153
+--- !u!33 &6940722189612895175
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7776953011026404109}
+  m_GameObject: {fileID: 9062877512460790226}
   m_Mesh: {fileID: -5872077933228866730, guid: affb27d91e7cf884f8aa317d082a3b98, type: 3}
---- !u!23 &2295292723246218569
+--- !u!23 &2372234698057293047
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7776953011026404109}
+  m_GameObject: {fileID: 9062877512460790226}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -92,13 +92,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &8442463038483838663
+--- !u!65 &2803436006969483262
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7776953011026404109}
+  m_GameObject: {fileID: 9062877512460790226}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -113,19 +113,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.025761075, y: 0.014286283, z: 0.025852716}
   m_Center: {x: 0.00003373014, y: -0.00012264983, z: -0.00020529526}
---- !u!114 &2411963579227510751
+--- !u!114 &6843924301155928694
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7776953011026404109}
+  m_GameObject: {fileID: 9062877512460790226}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
-  itemData: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+  itemData: {fileID: 11400000, guid: 5c9d4235006e0474c84112fb00bcbbd3, type: 2}
   amount: 1
   promptText: Press E to pick up
   canRespawn: 1

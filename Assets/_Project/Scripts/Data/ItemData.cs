@@ -202,18 +202,18 @@ namespace Project.Data
         [Tooltip("Charge % restored when one Plasma Fuel is consumed on reload (R).")]
         public float miningChargePerPlasmaFuel = 50f;
 
-        [Header("Projectile Audio")]
-        [Tooltip("Played once at the muzzle the instant this ammo is fired (pulse laser / gunshot).")]
+        [Header("Projectile / Mining Beam Audio")]
+        [Tooltip("Pulse gunshot at muzzle. Leave empty on mining tools (they use continuousLoopSound).")]
         public AudioClip fireSound;
         [Tooltip("Looping sound that travels with a physical projectile in flight. Not used by hitscan beam ammo.")]
         public AudioClip projectileTravelSound;
-        [Tooltip("When true, hitscan laser ammo is for continuous hold-fire tools (continuousLoopSound). When false, pulse shots use fireSound.")]
+        [Tooltip("When true (or isMiningTool), hold-fire uses continuousLoopSound instead of pulse fireSound.")]
         public bool isContinuousLaser;
-        [Tooltip("Looping audio while a continuous laser/beam tool is firing.")]
+        [Tooltip("Looping audio while a continuous laser/mining beam is firing. Edit on DM_Mining_Tool for mining.")]
         public AudioClip continuousLoopSound;
-        [Tooltip("Optional one-shot when continuous laser fire starts.")]
+        [Tooltip("Optional one-shot when continuous laser/mining fire starts.")]
         public AudioClip continuousStartSound;
-        [Tooltip("Optional one-shot when continuous laser fire stops.")]
+        [Tooltip("Optional one-shot when continuous laser/mining fire stops.")]
         public AudioClip continuousStopSound;
 
         [Header("Elemental Effect")]

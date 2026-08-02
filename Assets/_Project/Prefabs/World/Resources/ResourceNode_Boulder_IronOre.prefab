@@ -82,12 +82,16 @@ MonoBehaviour:
   maxHits: 99
   interactionMode: 0
   passDuration: 5
-  waves: 2
+  waves: 3
   dropMin: 1
   dropMax: 3
   lastWaveDropScale: 0.6
   holdDurationSeconds: 4
-  holdPromptText: "Hold E \u2014 Harvest"
+  holdPromptText: 
   holdInteractRange: 3.5
-  lootAttractPrefab: {fileID: 1279149807870478, guid: 51917b8e41ef6a1469249c9dfee70390, type: 3}
+  requiredTool: {fileID: 0}
+  requireMiningLaser: 1
+  lootAttractPrefab: {fileID: 2193111205937348350, guid: 04699d0325698294ab5655f29aafa64c, type: 3}
   lootTint: {r: 0.82, g: 0.72, b: 0.35, a: 1}
+  lootYieldClipOverride: {fileID: 0}
+  lootGrantClipOverride: {fileID: 0}

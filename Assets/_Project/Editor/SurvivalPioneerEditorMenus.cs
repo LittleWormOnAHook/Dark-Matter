@@ -13,7 +13,9 @@ namespace Project.EditorTools
         // Item, equipment, and pickup prefabs
         public const string ItemDataCreator = PrefabCreator + "Item Data Creator";
         public const string CraftingItemCreator = PrefabCreator + "Crafting Item Creator";
-        public const string ResourceItemCreator = PrefabCreator + "Resource Item Creator";
+        public const string ResourceManager = PrefabCreator + "Resource Manager";
+        /// <summary>Legacy alias — prefer <see cref="ResourceManager"/>.</summary>
+        public const string ResourceItemCreator = ResourceManager;
         public const string EquipmentItemCreator = PrefabCreator + "Equipment Item Creator";
         public const string EquipmentItemCreatorFromSelection = PrefabCreator + "Equipment Item Creator From Selection";
 

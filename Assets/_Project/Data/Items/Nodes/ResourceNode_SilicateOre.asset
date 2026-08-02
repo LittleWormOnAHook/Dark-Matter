@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01714840b54be944c9c632ced45360c6, type: 3}
+  m_Name: ResourceNode_SilicateOre
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ResourceNodeDefinition
+  displayName: Silicate Ore
+  nodeKind: 0
+  designerNotes: 
+  resourceItem: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+  interactionMode: 0
+  requiredTool: {fileID: 11400000, guid: e80b925d4a2dc3e40b937ca4cb1d2523, type: 2}
+  requireMiningLaser: 1
+  durationSeconds: 5
+  waves: 1
+  dropMin: 1
+  dropMax: 3
+  lastWaveDropScale: 0.6
+  holdPromptText: 
+  holdInteractRange: 3.5
+  lootTint: {r: 0.82, g: 0.72, b: 0.35, a: 1}
+  meshTemplate: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+  nodePrefab: {fileID: 6962984059100779314, guid: 12713f90b6731e949ae29440bbc23d71, type: 3}
+  itemMaxStack: 80
+  itemIcon: {fileID: 21300000, guid: 1e3b0a949ff691c4782fe566fe74e657, type: 3}
+  itemTooltip: Io silicate rock fragments. Laser-mined from mineral boulders. Used
+    in abrasives, ceramics, and structural crafting.

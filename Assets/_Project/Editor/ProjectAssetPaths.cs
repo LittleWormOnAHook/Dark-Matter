@@ -15,6 +15,9 @@ namespace Project.EditorTools
         public const string ArtTextures = Art + "/Textures";
         public const string Audio = Root + "/Audio";
         public const string Materials = Root + "/Materials";
+        public const string MaterialsCreatures = Materials + "/Creatures";
+        public const string Meshes = Root + "/Meshes";
+        public const string MeshesCreatures = Meshes + "/Creatures";
         public const string Shaders = Root + "/Shaders";
         public const string Settings = Root + "/Settings";
         public const string SettingsInput = Settings + "/Input";
@@ -40,15 +43,30 @@ namespace Project.EditorTools
         public const string ItemsRanged = ItemsData + "/Ranged";
         public const string ItemsAmmo = ItemsData + "/Ammo";
         public const string ItemsResources = ItemsData + "/Resources";
+        /// <summary>Laser-mined ore / mineral yield ItemData.</summary>
+        public const string ItemsResourcesMining = ItemsResources + "/Mining";
+        /// <summary>Hold-E plant harvest yield ItemData.</summary>
+        public const string ItemsResourcesHarvest = ItemsResources + "/Harvest";
+        /// <summary>Salvage / craft components (scrap). Not mined from ResourceNodes.</summary>
+        public const string ItemsComponents = ItemsData + "/Components";
+        /// <summary>Building / inventory modules (e.g. storage row unlock).</summary>
+        public const string ItemsModules = ItemsData + "/Modules";
+        /// <summary>Operational fuels and similar non-harvest resources (Plasma Fuel).</summary>
+        public const string ItemsOperations = ItemsData + "/Operations";
         public const string ItemsTools = ItemsData + "/Tools";
         public const string ItemsConsumables = ItemsData + "/Consumables";
         public const string ItemsVehicles = ItemsData + "/Vehicles";
         /// <summary>
-        /// Stub for future ResourceNode ScriptableObjects. Runtime harvest/mine nodes
-        /// live as prefabs under PrefabsWorldResources (not moved here).
+        /// ResourceNodeDefinition ScriptableObjects. Runtime nodes live as prefabs under PrefabsWorldResources.
         /// </summary>
         public const string ItemsNodes = ItemsData + "/Nodes";
         public const string EnemiesData = Data + "/Enemies";
+        public const string PlayersData = Data + "/Players";
+        public const string CreaturesData = Data + "/Creatures";
+        public const string CreaturesBrainData = CreaturesData + "/Brain";
+        public const string CreaturesBrainTasks = CreaturesBrainData + "/Tasks";
+        public const string CreaturesBrainDecisions = CreaturesBrainData + "/Decisions";
+        public const string EncountersData = Data + "/Encounters";
         public const string RecipesData = Data + "/Crafting/Recipes";
         public const string RecipesWeapons = RecipesData + "/Weapons";
         public const string RecipesConsumables = RecipesData + "/Consumables";
@@ -60,6 +78,8 @@ namespace Project.EditorTools
         public const string PrefabsBuildings = Prefabs + "/Buildings";
         public const string PrefabsCombat = Prefabs + "/Combat";
         public const string PrefabsCombatEnemies = PrefabsCombat + "/Enemies";
+        public const string PrefabsCreatures = Prefabs + "/Creatures";
+        public const string PrefabsParticles = Prefabs + "/Particles";
         public const string PrefabsCombatProjectiles = PrefabsCombat + "/Projectiles";
         public const string PrefabsCombatVfx = PrefabsCombat + "/VFX";
         public const string PrefabsCrafting = Prefabs + "/Crafting";
@@ -112,6 +132,11 @@ namespace Project.EditorTools
         public const string HumanoidEnemyPrefab = PrefabsCombatEnemies + "/HumanoidEnemy_Invector.prefab";
         public const string GongoPrefab = PrefabsCombatEnemies + "/Gongo.prefab";
         public const string SparksLongPrefab = PrefabsCombatVfx + "/SparksLong.prefab";
+        /// <summary>Default one-shot when mine/harvest loot arrives at the player.</summary>
+        public const string LootCompleteVfxPrefab = PrefabsParticles + "/Flash Effect 1.prefab";
+        public const string AudioPickUp = "Assets/Audio/Pickups/pickUp.wav";
+        public const string AudioBreakStone = "Assets/Audio/Others/Break Stone.wav";
+        public const string AudioBreakWood = "Assets/Audio/Others/Break Wood Effect.wav";
         public const string InventorySlotPrefab = PrefabsUi + "/InventorySlot.prefab";
         public const string InventorySlotResourcesPrefab = ResourcesUi + "/InventorySlot.prefab";
         public const string RecipeRegistry = ResourcesCrafting + "/RecipeRegistry.asset";
@@ -121,6 +146,10 @@ namespace Project.EditorTools
         public const string BoulderNodeTemplate =
             PrefabsEnvironment + "/Nodes Minerals and Plants/Minerial Node Boulder Variant.prefab";
         public const string SulfurNeedleTuftGlb =
-            PrefabsEnvironment + "/PlantLife/Sulfur Needle Tuft.glb";
+            PrefabsEnvironment + "/PlantLife/Needle Plant/Sulfur Needle Tuft.glb";
+        public const string BrimstoneFanPlantPrefab =
+            PrefabsEnvironment + "/PlantLife/brimstone_fan_plant.fbx/Brimestome Fan Plant.prefab";
+        public const string MiningToolItem =
+            ItemsRanged + "/DM_Mining_Tool.asset";
     }
 }

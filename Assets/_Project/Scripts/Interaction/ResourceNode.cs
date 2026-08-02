@@ -1,5 +1,7 @@
 using Project.Combat;
 using Project.Data;
+using Project.Inventory;
+using Project.Map;
 using Project.UI;
 using UnityEngine;
 
@@ -17,7 +19,8 @@ namespace Project.Interaction
     /// </summary>
     public class ResourceNode : MonoBehaviour, IDamageable, IHoldWorldUsable
     {
-        [Header("Resource")]
+        [Header("Resource / Loot")]
+        [Tooltip("Item granted to the player inventory when this node finishes a mine/harvest wave.")]
         public ItemData resourceItem;
         public int amountPerGather = 1;
         public int maxHits = 3;
@@ -41,12 +44,26 @@ namespace Project.Interaction
         [Header("Hold Harvest")]
         [Tooltip("Hold-E duration when interactionMode is HoldHarvest. Falls back to passDuration.")]
         public float holdDurationSeconds = 4f;
+        [Tooltip("Legacy authoring string. Plant harvest uses proximity dots + map markers instead of Hold-E prompt UI.")]
         public string holdPromptText = "Hold E — Harvest";
         public float holdInteractRange = 3.5f;
 
-        [Header("Loot Attract")]
+        [Header("Tool Requirements")]
+        [Tooltip("Optional specific tool. Null = any valid tool for this mode (drawn mining laser / bare hands).")]
+        public ItemData requiredTool;
+        [Tooltip("When true, laser-mine nodes only accept equipped isMiningTool weapons.")]
+        public bool requireMiningLaser = true;
+
+        [Header("Loot Attract (fly-to-player)")]
+        [Tooltip("Visual that flies from the node to the player before inventory grant. " +
+                 "If empty, uses resourceItem.worldPrefab, then a tinted orb fallback.")]
         public GameObject lootAttractPrefab;
+        [Tooltip("Tint applied when using the procedural orb fallback (or materials that read vertex color).")]
         public Color lootTint = new Color(0.82f, 0.72f, 0.35f, 1f);
+        [Tooltip("Optional yield SFX override. Empty falls back to MineHarvestItemData.lootYieldClip, then built-in defaults.")]
+        public AudioClip lootYieldClipOverride;
+        [Tooltip("Optional grant SFX override when loot reaches the player.")]
+        public AudioClip lootGrantClipOverride;
 
         private int currentHits;
         private int miningPassIndex;
@@ -108,6 +125,20 @@ namespace Project.Interaction
             max = Mathf.Max(min, Mathf.Max(toolMin, toolMax));
         }
 
+        private void OnEnable()
+        {
+            if (interactionMode != ResourceNodeInteractionMode.HoldHarvest)
+                return;
+
+            EnsureHarvestMapMarker();
+            PickupProximityDotUI.RegisterHarvestNode(this);
+        }
+
+        private void OnDisable()
+        {
+            PickupProximityDotUI.UnregisterHarvestNode(this);
+        }
+
         private void Update()
         {
             if (miningProgressRetainUntil > 0f && Time.time > miningProgressRetainUntil)
@@ -126,8 +157,20 @@ namespace Project.Interaction
 
         private void OnDestroy()
         {
+            PickupProximityDotUI.UnregisterHarvestNode(this);
+
             if (holdProgressBar != null)
                 Destroy(holdProgressBar.gameObject);
+        }
+
+        private void EnsureHarvestMapMarker()
+        {
+            MapMarker marker = GetComponent<MapMarker>();
+            if (marker == null)
+                marker = gameObject.AddComponent<MapMarker>();
+
+            if (resourceItem != null)
+                marker.ConfigureForResource(resourceItem);
         }
 
         public void Gather(ResourceGatherer gatherer) => Gather(gatherer, 1);
@@ -276,10 +319,53 @@ namespace Project.Interaction
 
         public bool CanBeginHold(WorldUseContext context)
         {
-            return interactionMode == ResourceNodeInteractionMode.HoldHarvest
-                && resourceItem != null
-                && context.Gatherer != null
-                && Vector3.Distance(context.PlayerPosition, transform.position) <= holdInteractRange;
+            if (interactionMode != ResourceNodeInteractionMode.HoldHarvest
+                || resourceItem == null
+                || context.Gatherer == null
+                || Vector3.Distance(context.PlayerPosition, transform.position) > holdInteractRange)
+            {
+                return false;
+            }
+
+            return AllowsHarvestWithoutSpecialTool() || MatchesRequiredTool(ResolveEquippedTool(context));
+        }
+
+        /// <summary>True when this laser-mine node accepts the drawn mining tool.</summary>
+        public bool AllowsMiningTool(ItemData tool)
+        {
+            if (interactionMode != ResourceNodeInteractionMode.LaserMine || resourceItem == null)
+                return false;
+
+            if (requireMiningLaser && (tool == null || !tool.isMiningTool))
+                return false;
+
+            if (requiredTool != null && tool != requiredTool)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>Plant harvest with no requiredTool uses bare hands (Hold E).</summary>
+        public bool AllowsHarvestWithoutSpecialTool() =>
+            interactionMode == ResourceNodeInteractionMode.HoldHarvest && requiredTool == null;
+
+        public bool MatchesRequiredTool(ItemData tool)
+        {
+            if (requiredTool == null)
+                return true;
+            return tool == requiredTool;
+        }
+
+        private static ItemData ResolveEquippedTool(WorldUseContext context)
+        {
+            if (context.Gatherer == null)
+                return null;
+
+            EquipmentController equipment = context.Gatherer.GetComponent<EquipmentController>();
+            if (equipment == null)
+                return null;
+
+            return equipment.DrawnWeaponItem != null ? equipment.DrawnWeaponItem : equipment.EquippedItem;
         }
 
         public void BeginHold(WorldUseContext context)
@@ -382,8 +468,17 @@ namespace Project.Interaction
         {
             Transform player = gatherer != null ? gatherer.transform : null;
             Vector3 from = GetNodeCenter();
-            if (interactionMode == ResourceNodeInteractionMode.LaserMine)
-                PlayBreakStoneSound(from);
+
+            ResolveLootYieldAudio(out AudioClip yieldClip, out float yieldVolume);
+            if (yieldClip != null)
+                AudioSource.PlayClipAtPoint(yieldClip, from, yieldVolume);
+
+            // Explicit fly model → item world pickup mesh → tinted orb.
+            GameObject flyModel = lootAttractPrefab;
+            if (flyModel == null && resourceItem != null)
+                flyModel = resourceItem.worldPrefab;
+
+            ResolveLootGrantAudio(out AudioClip grantClip, out float grantVolume);
 
             ResourceLootAttractVfx.Spawn(
                 from,
@@ -391,24 +486,60 @@ namespace Project.Interaction
                 gatherer,
                 resourceItem,
                 amount,
-                lootAttractPrefab,
-                lootTint);
+                flyModel,
+                lootTint,
+                grantClip,
+                grantVolume);
+        }
+
+        private void ResolveLootYieldAudio(out AudioClip clip, out float volume)
+        {
+            clip = lootYieldClipOverride;
+            volume = 0.9f;
+
+            if (resourceItem is MineHarvestItemData lean)
+            {
+                if (clip == null)
+                    clip = lean.lootYieldClip;
+                volume = lean.lootYieldVolume;
+            }
+
+            if (clip != null)
+                return;
+
+            // Built-in defaults when item/node leave clips empty.
+            clip = interactionMode == ResourceNodeInteractionMode.HoldHarvest
+                ? LoadBuiltinClip(ref s_harvestYieldClip, BuiltinHarvestYieldClipPath)
+                : LoadBuiltinClip(ref s_breakStoneClip, BuiltinBreakStoneClipPath);
+            volume = interactionMode == ResourceNodeInteractionMode.HoldHarvest ? 0.85f : 0.9f;
+        }
+
+        private void ResolveLootGrantAudio(out AudioClip clip, out float volume)
+        {
+            clip = lootGrantClipOverride;
+            volume = 0.95f;
+
+            if (resourceItem is MineHarvestItemData lean)
+            {
+                if (clip == null)
+                    clip = lean.lootGrantClip;
+                volume = lean.lootGrantVolume;
+            }
         }
 
         private static AudioClip s_breakStoneClip;
-        private const string BreakStoneClipPath = "Assets/Audio/Others/Break Stone.wav";
+        private static AudioClip s_harvestYieldClip;
+        private const string BuiltinBreakStoneClipPath = "Assets/Audio/Others/Break Stone.wav";
+        private const string BuiltinHarvestYieldClipPath = "Assets/Audio/Others/Break Wood Effect.wav";
 
-        private static void PlayBreakStoneSound(Vector3 position)
+        private static AudioClip LoadBuiltinClip(ref AudioClip cache, string path)
         {
-            if (s_breakStoneClip == null)
-            {
+            if (cache != null)
+                return cache;
 #if UNITY_EDITOR
-                s_breakStoneClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(BreakStoneClipPath);
+            cache = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
 #endif
-            }
-
-            if (s_breakStoneClip != null)
-                AudioSource.PlayClipAtPoint(s_breakStoneClip, position, 0.9f);
+            return cache;
         }
 
         public Vector3 GetNodeCenter()
@@ -453,6 +584,8 @@ namespace Project.Interaction
             ItemPickup pickup = GetComponent<ItemPickup>();
             if (pickup != null)
                 PickupProximityDotUI.Unregister(pickup);
+
+            PickupProximityDotUI.NotifyHarvested(this);
 
             if (holdProgressBar != null)
             {

@@ -186,7 +186,18 @@ namespace Project.Interaction
             if (marker == null)
             {
                 marker = root.AddComponent<MapMarker>();
-                marker.ConfigureScannedPoi(label, color);
+
+                ResourceNode node = root.GetComponentInParent<ResourceNode>();
+                if (node != null && node.resourceItem != null)
+                    marker.ConfigureForResource(node.resourceItem);
+                else
+                {
+                    ItemPickup pickup = root.GetComponentInParent<ItemPickup>();
+                    if (pickup != null && pickup.itemData != null)
+                        marker.ConfigureForResource(pickup.itemData);
+                    else
+                        marker.ConfigureScannedPoi(label, color);
+                }
             }
 
             ScannerDiscoveryRegistry.Discover(marker.DiscoveryId);
