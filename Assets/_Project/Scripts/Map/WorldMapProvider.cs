@@ -15,8 +15,6 @@ namespace Project.Map
     {
         private const string FakeMapResourcePath = "UI/FakeMap";
         private const string FakeMapAssetPath = "Assets/_Project/Textures/UI/FakeMap.png";
-        private const string GenesisMoonMapResourcePath = "UI/GenesisMoonMap";
-        private const string GenesisMoonMapAssetPath = "Assets/_Project/Textures/WorldMap/GenesisMoonMap_TopDown.png";
 
         public static WorldMapProvider Instance { get; private set; }
 
@@ -26,8 +24,6 @@ namespace Project.Map
         [SerializeField] private Vector3 manualWorldOrigin = Vector3.zero;
         [SerializeField] private int mapTextureResolution = 256;
         [SerializeField] private Texture2D mapTextureOverride;
-        [Tooltip("Prefer the Genesis full-moon map art over FakeMap when no terrain bake is active.")]
-        [SerializeField] private bool preferGenesisMoonMap = true;
         [SerializeField] private bool buildTerrainTextureAtRuntime = true;
         [Tooltip("When a terrain exists, bake the live terrain map instead of the static FakeMap texture.")]
         [SerializeField] private bool preferTerrainGeneratedMap = true;
@@ -50,13 +46,11 @@ namespace Project.Map
         private Texture2D runtimeGeneratedTexture;
         private Texture2D fallbackTexture;
         private static Texture2D cachedFakeMapTexture;
-        private static Texture2D cachedGenesisMoonMapTexture;
 
         internal static void ResetStaticState()
         {
             Instance = null;
             cachedFakeMapTexture = null;
-            cachedGenesisMoonMapTexture = null;
         }
 
         private void Awake()
@@ -72,7 +66,7 @@ namespace Project.Map
             RefreshWorldBounds();
 
             if (mapTextureOverride == null && !ShouldPreferTerrainGeneratedMap())
-                mapTextureOverride = LoadPreferredStaticMapTexture();
+                mapTextureOverride = LoadFakeMapTexture();
 
             InitializeMapTexture();
         }
@@ -191,7 +185,7 @@ namespace Project.Map
 
             Texture2D texture = mapTextureOverride;
             if (texture == null || !IsDedicatedMapTexture(texture))
-                texture = LoadPreferredStaticMapTexture();
+                texture = LoadFakeMapTexture();
 
             if (texture == null)
                 return false;
@@ -207,7 +201,7 @@ namespace Project.Map
             if (preferTerrainGeneratedMap && HasBakeableTerrain())
                 return false;
 
-            Texture2D texture = mapTextureOverride != null ? mapTextureOverride : LoadPreferredStaticMapTexture();
+            Texture2D texture = mapTextureOverride != null ? mapTextureOverride : LoadFakeMapTexture();
             return texture != null && IsDedicatedMapTexture(texture);
         }
 
@@ -222,7 +216,7 @@ namespace Project.Map
             if (texture == null)
                 return false;
 
-            if (texture == mapTextureOverride || texture == LoadFakeMapTexture() || texture == LoadGenesisMoonMapTexture())
+            if (texture == mapTextureOverride || texture == LoadFakeMapTexture())
                 return true;
 
             return false;
@@ -454,37 +448,11 @@ namespace Project.Map
             if (provider != null && provider.ShouldPreferTerrainGeneratedMap())
                 return CreateFallbackTexture();
 
-            Texture2D fakeMap = LoadPreferredStaticMapTexture();
+            Texture2D fakeMap = LoadFakeMapTexture();
             if (fakeMap != null)
                 return fakeMap;
 
             return CreateFallbackTexture();
-        }
-
-        public static Texture2D LoadPreferredStaticMapTexture()
-        {
-            WorldMapProvider provider = Instance;
-            if (provider != null && provider.preferGenesisMoonMap)
-            {
-                Texture2D genesisMap = LoadGenesisMoonMapTexture();
-                if (genesisMap != null)
-                    return genesisMap;
-            }
-
-            return LoadFakeMapTexture();
-        }
-
-        public static Texture2D LoadGenesisMoonMapTexture()
-        {
-            if (cachedGenesisMoonMapTexture != null)
-                return cachedGenesisMoonMapTexture;
-
-            cachedGenesisMoonMapTexture = Resources.Load<Texture2D>(GenesisMoonMapResourcePath);
-#if UNITY_EDITOR
-            if (cachedGenesisMoonMapTexture == null)
-                cachedGenesisMoonMapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(GenesisMoonMapAssetPath);
-#endif
-            return cachedGenesisMoonMapTexture;
         }
 
         public static Texture2D LoadFakeMapTexture()
@@ -693,7 +661,6 @@ namespace Project.Map
 
             string name = texture.name;
             return name.Contains("FakeMap", StringComparison.OrdinalIgnoreCase)
-                || name.Contains("GenesisMoonMap", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("Map", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("Minimap", StringComparison.OrdinalIgnoreCase);
         }
