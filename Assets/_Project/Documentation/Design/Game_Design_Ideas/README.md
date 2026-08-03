@@ -10,6 +10,7 @@ Use this folder for feature concepts, player fantasies, and mechanics sketches t
 | Idea | File | Summary |
 |------|------|---------|
 | Subsurface drill transit hub | `Subsurface_Drill_Transit_Hub.md` | Human-operated drill capsule; breach entry from surface; underground-initiated survey map travel to unlocked surface and subsurface nodes |
+| Mechanics research compilation | `Mechanics_Research_Compilation.md` | Curated list of 57 mechanics from survival/extraction/colony games mapped to DMG pillars; top 12 priorities and defer list |
 
 ## Promotion path
 
