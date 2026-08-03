@@ -44,6 +44,19 @@ namespace Project.UI
                 CompassAnchoredPosition.x,
                 CompassAnchoredPosition.y - CompassTotalHeight - InfoPanelGapBelowCompass);
 
+        // --- Active quest tracker: top-right, stacked below minimap / compass / info. ---
+        public const float QuestHudGapBelowInfo = 20f;
+        public const float QuestHudWidth = 260f;
+        public const float QuestHudMaxHeight = 420f;
+
+        /// <summary>
+        /// Fallback top-right position when compass/info rects are not yet available.
+        /// </summary>
+        public static Vector2 QuestHudAnchoredPosition =>
+            new Vector2(
+                InfoPanelAnchoredPosition.x,
+                InfoPanelAnchoredPosition.y - MinimapInfoPanelHeight - QuestHudGapBelowInfo);
+
         // --- Center-screen feedback toasts (pickup / XP / messages). ---
         public const float CenterToastY = 36f;
         public const float XpToastGapBelowPickup = 8f;

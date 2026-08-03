@@ -10,7 +10,7 @@ namespace Project.AI
         [Tooltip("Optional filter. Any = matches all anchors.")]
         public SurfaceThreatKind threatKind = SurfaceThreatKind.Any;
 
-        [Tooltip("Spawn-ready combat enemy prefab.")]
+        [Tooltip("Spawn-ready combat enemy or DMI creature prefab.")]
         public GameObject prefab;
 
         [Min(0)]

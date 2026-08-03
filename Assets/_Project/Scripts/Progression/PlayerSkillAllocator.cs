@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Data;
 
 namespace Project.Progression
 {
@@ -25,7 +26,8 @@ namespace Project.Progression
                 return false;
             }
 
-            if (progression.UnspentSkillPoints < skill.costPerRank)
+            int nextCost = skill.GetCostForNextRank(progression.GetSkillRank(skill.ResolvedId));
+            if (progression.UnspentSkillPoints < nextCost)
             {
                 error = "Not enough skill points.";
                 return false;
@@ -60,8 +62,30 @@ namespace Project.Progression
             if (!CanAllocate(skill, progression, out error))
                 return false;
 
-            return progression.TrySpendSkillPoint(skill.ResolvedId, skill.costPerRank, skill.maxRank, out error);
+            int currentRank = progression.GetSkillRank(skill.ResolvedId);
+            int cost = skill.GetCostForNextRank(currentRank);
+            return progression.TrySpendSkillPoint(skill.ResolvedId, cost, skill.maxRank, out error);
         }
+
+        public static int GetMiningRank()
+        {
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            return progression != null
+                ? progression.GetSkillRank(SkillDefinition.MiningSkillId)
+                : 0;
+        }
+
+        public static int GetHarvestingRank()
+        {
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            return progression != null
+                ? progression.GetSkillRank(SkillDefinition.HarvestingSkillId)
+                : 0;
+        }
+
+        public static int GetGatherSkillRank(MineHarvestGatherKind gatherKind) =>
+            gatherKind == MineHarvestGatherKind.Harvest ? GetHarvestingRank() : GetMiningRank();
+
 
         public static float GetTotalBonusPercent(SkillModifierType modifierType)
         {

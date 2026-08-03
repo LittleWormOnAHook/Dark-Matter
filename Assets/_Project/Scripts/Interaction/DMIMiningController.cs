@@ -4,6 +4,7 @@ using Project.Data;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
+using Project.UI;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,8 +22,8 @@ namespace Project.Interaction
     public class DMIMiningController : MonoBehaviour
     {
         private const float ProgressRetainSeconds = 4f;
-        /// <summary>Resource soft-lock / mining interaction range (meters).</summary>
-        private const float MaxMineDistance = 6f;
+        /// <summary>Resource soft-lock / mining interaction range (meters). Shared with multi-tool F-scan.</summary>
+        public const float MaxMineDistance = 6f;
         /// <summary>Visual laser + hit FX range when not locked on a resource (meters).</summary>
         private const float MaxBeamVisualDistance = 50f;
         private const float OverheatSeconds = 10f;
@@ -97,6 +98,7 @@ namespace Project.Interaction
         private WeaponAmmoState ammoState;
         private float powerDrainAccumulator;
         private float nextEmptyChargeSoundTime;
+        private float nextScanRequiredToastTime;
 
         private float heatSeconds;
         private float cooloffRemaining;
@@ -946,15 +948,33 @@ namespace Project.Interaction
                 if (node != null
                     && node.resourceItem != null
                     && node.interactionMode == ResourceNodeInteractionMode.LaserMine
-                    && node.AllowsMiningTool(drawnTool)
-                    && Vector3.Distance(transform.position, hit.point) <= MaxMineDistance)
+                    && Vector3.Distance(transform.position, hit.point) <= MaxMineDistance
+                    && node.AllowsMiningToolIgnoringIdentification(drawnTool))
                 {
-                    lockedNode = node;
-                    lockPoint = hit.point;
-                    lockDirection = aimDir.normalized;
-                    hasLock = true;
+                    if (!node.IsResourceIdentified)
+                    {
+                        MaybeToastScanRequired();
+                        return;
+                    }
+
+                    if (node.AllowsMiningTool(drawnTool))
+                    {
+                        lockedNode = node;
+                        lockPoint = hit.point;
+                        lockDirection = aimDir.normalized;
+                        hasLock = true;
+                    }
                 }
             }
+        }
+
+        private void MaybeToastScanRequired()
+        {
+            if (Time.unscaledTime < nextScanRequiredToastTime)
+                return;
+
+            nextScanRequiredToastTime = Time.unscaledTime + 1.25f;
+            PickupToastUI.Show("Scan required (Hold F)");
         }
 
         /// <summary>
@@ -1566,7 +1586,7 @@ namespace Project.Interaction
                 return;
 
             int total = lockedNode.ResolvePassCount(tool != null ? tool.miningPassesRequired : 1);
-            string name = lockedNode.resourceItem != null ? lockedNode.resourceItem.itemName : "Resource";
+            string name = lockedNode.GetDisplayName();
             int pass = lockedNode.MiningPassIndex + 1;
             // Slider tracks hold time for the current mining wave (0→1 over passDuration).
             progressBar.UpdateBar(

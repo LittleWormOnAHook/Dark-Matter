@@ -23,6 +23,13 @@ namespace Project.Data
         [Tooltip("Mining = laser ore. Harvest = Hold-E plant yield.")]
         public MineHarvestGatherKind gatherKind = MineHarvestGatherKind.Mining;
 
+        [Header("Resource Scan / Identification")]
+        [Tooltip("Mining or Harvesting skill rank required to identify this resource with the multi-tool F-scan.")]
+        [Min(1)]
+        public int requiredGatherSkillRank = 1;
+        [Tooltip("Label shown when this resource has not been identified yet.")]
+        public string unknownDisplayName = "Unknown Resource";
+
         [Header("Loot Attract / Harvest Audio")]
         [Tooltip("Played at the node when a yield wave / harvest completes and loot starts flying.")]
         public AudioClip lootYieldClip;

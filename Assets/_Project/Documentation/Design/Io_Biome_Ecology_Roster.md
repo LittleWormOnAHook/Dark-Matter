@@ -609,7 +609,7 @@ Open yellow flats with low cover. Chemistry runs **fan → skitter → hound**: 
 | **Pressure** | Storm disperses pack; clear skies increase patrol radius |
 | **Harvest** | Hound sinew, sulfur sac |
 | **Trio** | Tactician draws alpha; Architect bubble for ranged support |
-| **Prototype** | deferred — `legacy creature AI`, pack preset |
+| **Prototype** | shipped — Malbers `MAnimal` + DMI brain (`Sulfur_Hound.prefab`, `SurfaceThreatKind.Lifeform`, B1 encounter table) |
 
 ##### Brimstone Leech
 

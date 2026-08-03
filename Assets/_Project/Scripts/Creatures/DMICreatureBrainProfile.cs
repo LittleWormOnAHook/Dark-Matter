@@ -31,10 +31,10 @@ namespace Project.Creatures
         [Header("Speeds")]
         public float walkSpeed = 2.2f;
         public float runSpeed = 4.5f;
-        [Tooltip("Slerp factor for FaceToward (melee / fallback facing). Higher = snappier turns.")]
-        public float turnSpeed = 8f;
-        [Tooltip("NavMeshAgent.angularSpeed (deg/sec) while pathing. 0 = leave agent default.")]
-        public float agentAngularSpeed = 480f;
+        [Tooltip("Legacy turn factor (≈ deg/sec × 18) for FaceToward / agent yaw. Lower = more natural.")]
+        public float turnSpeed = 5f;
+        [Tooltip("NavMeshAgent.angularSpeed (deg/sec) while pathing. Cap ~200 for natural turns. 0 = derive from turnSpeed.")]
+        public float agentAngularSpeed = 140f;
         public float stopDistance = 0.4f;
 
         [Header("Wander / Idle")]
@@ -76,8 +76,8 @@ namespace Project.Creatures
             movementMode = DMICreatureMovementMode.Wander;
             walkSpeed = 2.2f;
             runSpeed = 4.5f;
-            turnSpeed = 8f;
-            agentAngularSpeed = 480f;
+            turnSpeed = 5f;
+            agentAngularSpeed = 140f;
             wanderRadius = 8f;
             idleDurationMin = 1.5f;
             idleDurationMax = 3.5f;

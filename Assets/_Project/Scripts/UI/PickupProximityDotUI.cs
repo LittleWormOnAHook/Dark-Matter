@@ -266,7 +266,7 @@ namespace Project.UI
                 return false;
             }
 
-            float distance = Vector3.Distance(playerTransform.position, node.transform.position);
+            float distance = Vector3.Distance(playerTransform.position, node.GetNodeCenter());
             return distance <= proximityRadius;
         }
 

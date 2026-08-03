@@ -125,7 +125,7 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 20,
+                version = 21,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,
@@ -170,7 +170,8 @@ namespace Project.Core
                 powerGenerators = BuildPowerGeneratorSave(),
                 fogOfWarMask = BuildFogOfWarSave(out int fogResolution),
                 fogOfWarResolution = fogResolution,
-                scannedDiscoveryIds = ScannerDiscoveryRegistry.BuildSave()
+                scannedDiscoveryIds = ScannerDiscoveryRegistry.BuildSave(),
+                identifiedResourceIds = ResourceIdentificationRegistry.BuildSave()
             };
 
             if (progressionManager != null)
@@ -288,6 +289,7 @@ namespace Project.Core
             ApplyPowerGeneratorSave(data);
             ApplyFogOfWarSave(data);
             ApplyScannerDiscoverySave(data);
+            ApplyResourceIdentificationSave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
@@ -553,6 +555,17 @@ namespace Project.Core
             }
 
             ScannerDiscoveryRegistry.ApplySave(data.scannedDiscoveryIds);
+        }
+
+        private static void ApplyResourceIdentificationSave(GameSaveData data)
+        {
+            if (data == null || data.version < 21)
+            {
+                ResourceIdentificationRegistry.Clear();
+                return;
+            }
+
+            ResourceIdentificationRegistry.ApplySave(data.identifiedResourceIds);
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

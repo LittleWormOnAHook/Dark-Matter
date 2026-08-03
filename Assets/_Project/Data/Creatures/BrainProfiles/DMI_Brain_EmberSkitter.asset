@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: DMI_Brain_EmberSkitter
   m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureBrainProfile
   movementMode: 1
-  walkSpeed: 2
-  runSpeed: 3
-  turnSpeed: 18
-  agentAngularSpeed: 900
+  walkSpeed: 1
+  runSpeed: 2
+  turnSpeed: 6
+  agentAngularSpeed: 140
   stopDistance: 0.4
   wanderRadius: 8
   idleDurationMin: 2

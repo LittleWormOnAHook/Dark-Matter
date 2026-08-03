@@ -95,6 +95,14 @@ namespace Project.EditorTools
         /// <summary>Fills empty yield/grant audio and complete VFX with project defaults.</summary>
         public static void AssignGatherDefaults(MineHarvestItemData lean, bool isHarvest)
         {
+            if (lean == null)
+                return;
+
+            if (lean.requiredGatherSkillRank < 1)
+                lean.requiredGatherSkillRank = 1;
+            if (string.IsNullOrWhiteSpace(lean.unknownDisplayName))
+                lean.unknownDisplayName = "Unknown Resource";
+
             AssignDefaultLootAudio(lean, isHarvest);
             AssignDefaultLootCompleteVfx(lean);
         }

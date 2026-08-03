@@ -149,7 +149,8 @@ namespace Project.UI
             buttonLabel.alignment = TextAlignmentOptions.Center;
             buttonLabel.fontSize = 13f;
             buttonLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
-            buttonLabel.text = isMaxed ? "Max" : $"+1 ({skill.costPerRank}pt)";
+            int nextCost = skill.GetCostForNextRank(rank);
+            buttonLabel.text = isMaxed ? "Max" : $"+1 ({nextCost}pt)";
 
             SkillDefinition captured = skill;
             button.onClick.AddListener(() =>

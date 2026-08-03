@@ -233,9 +233,12 @@ namespace Project.Companions.Invector
                 if (snap == null)
                     continue;
 
-                Transform bone = snap.boneToSnap;
-                if (bone == null && bodySnap != null && snap.boneName != vSnapToBody.manuallyAssignBone)
+                // Prefer live Animator bones — serialized boneToSnap may still point at stock VBOT_.
+                Transform bone = null;
+                if (bodySnap != null && snap.boneName != vSnapToBody.manuallyAssignBone)
                     bone = bodySnap.GetBone(snap.boneName);
+                if (bone == null)
+                    bone = snap.boneToSnap;
 
                 if (bone != null)
                     snap.transform.SetParent(bone, true);

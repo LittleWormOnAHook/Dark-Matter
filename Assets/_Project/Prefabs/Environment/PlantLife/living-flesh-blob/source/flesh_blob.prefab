@@ -1,0 +1,163 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3268556873456207425
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -24.146425
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.069
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 16.593325
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_Name
+      value: flesh_blob
+      objectReference: {fileID: 0}
+    - target: {fileID: 3851932889015806577, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 328f780e99b78e64ea92b1acf16d9af8, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2863301011247153721}
+    - targetCorrespondingSourceObject: {fileID: 7891032476003776811, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4365423247833596416}
+  m_SourcePrefab: {fileID: 100100000, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+--- !u!137 &1740904749922430000 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3851932889015806577, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+  m_PrefabInstance: {fileID: 3268556873456207425}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2422187803359705872 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+  m_PrefabInstance: {fileID: 3268556873456207425}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2863301011247153721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2422187803359705872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ec21029dd433784a8ed937023c59066, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Environment.DMIFleshBlobTrigger
+  animator: {fileID: 8950528781836385232}
+  idleClip: {fileID: 4781951162920444690, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+  idleAnimSpeed: 0.1
+  triggeredAnimSpeed: 1
+  triggerRadius: 2
+  fuseDuration: 3
+  emberSkitterPrefab: {fileID: 993423207139465029, guid: 33756349f81792b419209edea67029ff, type: 3}
+  spawnCount: 2
+  spawnRadius: 1.25
+  explosionVfxPrefab: {fileID: 0}
+  destroyOnExplode: 1
+--- !u!1 &4674361560574099306 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7891032476003776811, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+  m_PrefabInstance: {fileID: 3268556873456207425}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4365423247833596416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4674361560574099306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e86ead99e453b448836eb544933c0f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMIMaterialPulseScroll
+  targetRenderer: {fileID: 1740904749922430000}
+  materialIndices: 
+  useMaterialPropertyBlock: 1
+  pulseAlpha: 0
+  alphaPulseTarget: 0
+  alphaPulseMin: 0.25
+  alphaPulseMax: 1
+  alphaPulseSpeed: 1
+  pulseEmission: 0
+  emissionPulseMin: 0.35
+  emissionPulseMax: 1.25
+  emissionPulseSpeed: 1.5
+  fallbackEmissionTint: {r: 1, g: 0.85, b: 0.55, a: 1}
+  ensureEmissionKeyword: 1
+  scrollBaseMap: 0
+  baseMapScrollSpeed: {x: 0.1, y: 0}
+  scrollEmissionMap: 0
+  emissionMapScrollSpeed: {x: 0.05, y: 0}
+  scrollNormalMap: 0
+  normalMapScrollSpeed: {x: 0, y: 0}
+  useUnscaledTime: 0
+  phaseOffset: 0
+  previewInEditMode: 1
+--- !u!95 &8950528781836385232 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
+  m_PrefabInstance: {fileID: 3268556873456207425}
+  m_PrefabAsset: {fileID: 0}

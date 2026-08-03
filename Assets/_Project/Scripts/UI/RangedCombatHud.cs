@@ -2,6 +2,7 @@ using Project.Combat;
 using Project.Data;
 using Project.Inventory;
 using Project.Interaction;
+using Project.Player;
 using Project.Player.Invector;
 using TMPro;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace Project.UI
         private InventorySystem inventory;
         private RangedCombatController rangedCombat;
         private PioneerInvectorInputBridge invectorInput;
+        private PlayerController playerController;
         private TextMeshProUGUI ammoLabel;
         private RectTransform ammoRect;
         private RectTransform petToolbarRect;
@@ -44,6 +46,7 @@ namespace Project.UI
             inventory = GetComponent<InventorySystem>();
             rangedCombat = GetComponent<RangedCombatController>();
             invectorInput = GetComponent<PioneerInvectorInputBridge>();
+            playerController = GetComponent<PlayerController>();
         }
 
         private void OnEnable()
@@ -156,7 +159,13 @@ namespace Project.UI
             if (!showAmmoCounter)
                 return;
 
-            if (ShouldShowHud(out ItemData weapon) && weapon != null && weapon.isMiningTool)
+            if (!ShouldShowHud(out ItemData weapon))
+            {
+                SetAmmoLabelVisible(false);
+                return;
+            }
+
+            if (weapon != null && weapon.isMiningTool)
             {
                 RefreshAmmoLabel();
                 return;
@@ -186,6 +195,11 @@ namespace Project.UI
         private bool ShouldShowHud(out ItemData weapon)
         {
             weapon = null;
+            if (playerController == null)
+                playerController = GetComponent<PlayerController>();
+            if (playerController != null && playerController.BlocksCombatInput)
+                return false;
+
             if (equipment == null || !equipment.HasActiveRangedWeapon())
                 return false;
 

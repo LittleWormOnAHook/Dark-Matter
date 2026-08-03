@@ -87,6 +87,9 @@ namespace Project.Player.Invector
             if (GetComponent<DMIMiningController>() == null)
                 gameObject.AddComponent<DMIMiningController>();
 
+            if (GetComponent<DMIMiningResourceScanner>() == null)
+                gameObject.AddComponent<DMIMiningResourceScanner>();
+
             if (!disableLegacyCombatComponents)
                 return;
 

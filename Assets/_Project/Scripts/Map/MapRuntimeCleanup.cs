@@ -24,6 +24,7 @@ namespace Project.Map
             WorldMapProvider.ResetStaticState();
             MapFogOfWar.ResetStaticState();
             ScannerDiscoveryRegistry.ResetStaticState();
+            ResourceIdentificationRegistry.ResetStaticState();
             OpticsOverlayUI.ResetRuntimeState();
             PetTamingProgressUI.ResetRuntimeState();
 

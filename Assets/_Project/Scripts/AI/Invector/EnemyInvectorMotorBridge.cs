@@ -22,12 +22,14 @@ namespace Project.AI.Invector
         private EnemyInvectorBootstrap _bootstrap;
         private EnemyHealth _health;
         private EnemyInvectorRagdollBridge _ragdollBridge;
+        private UnityEngine.AI.NavMeshAgent _navAgent;
         private Transform _playerTransform;
         private bool _initialized;
         private bool _hasInputHorizontal;
         private bool _hasInputVertical;
         private bool _hasInputMagnitude;
         private bool _hasSpeed;
+        private bool _animatorParamsCached;
 
         private void Awake()
         {
@@ -38,6 +40,7 @@ namespace Project.AI.Invector
             _bootstrap = GetComponent<EnemyInvectorBootstrap>();
             _health = GetComponent<EnemyHealth>();
             _ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
+            _navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         }
 
         private bool IsMotorBlocked =>
@@ -66,6 +69,7 @@ namespace Project.AI.Invector
 
             _bootstrap?.EnsureInvectorInitialized();
             EnsureControllerReady();
+            EnsureAnimatorReady();
             SyncRigidbodyToTransform();
             ApplyAiLocomotionMotor();
         }
@@ -78,7 +82,11 @@ namespace Project.AI.Invector
             if (IsMotorBlocked)
                 return;
 
-            if (_controller == null || _controller.animator == null || _aiController == null)
+            if (_controller == null || _aiController == null)
+                return;
+
+            EnsureAnimatorReady();
+            if (_controller.animator == null)
                 return;
 
             if (_controller.animator.updateMode != AnimatorUpdateMode.Normal)
@@ -86,6 +94,10 @@ namespace Project.AI.Invector
 
             if (!ShouldTickAnimator())
                 return;
+
+            // Engaged / moving humanoids must keep bone writes alive — CullUpdateTransforms
+            // intermittently freezes the last pose while NavMesh still translates the root.
+            EnsureLocomotionAnimatorWrites();
 
             _controller.UpdateAnimator();
         }
@@ -104,13 +116,21 @@ namespace Project.AI.Invector
             if (_aiController.IsEngagedWithTarget)
                 return true;
 
-            return _aiController.CurrentLocomotionSpeed > MoveSpeedThreshold;
+            return ResolvePresentationSpeed() > MoveSpeedThreshold;
         }
 
         private bool IsWithinMotorLod()
         {
             float lodDistance = ResolveMotorLodDistance();
             if (lodDistance <= 0f)
+                return true;
+
+            // Never LOD-throttle animator/motor while engaged — that produces chase glides
+            // at the cull-distance boundary when NavMesh is still driving the root.
+            if (_aiController != null && _aiController.IsEngagedWithTarget)
+                return true;
+
+            if (ResolvePresentationSpeed() > MoveSpeedThreshold)
                 return true;
 
             Camera mainCamera = Camera.main;
@@ -148,6 +168,53 @@ namespace Project.AI.Invector
             _initialized = true;
         }
 
+        private void EnsureAnimatorReady()
+        {
+            if (_controller == null)
+                return;
+
+            Animator animator = _controller.animator;
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+                if (animator == null)
+                    return;
+
+                // Init() assigns the animator reference; recover if a mid-chase Rebind/equip race cleared it.
+                _controller.Init();
+                animator = _controller.animator != null ? _controller.animator : animator;
+                _animatorParamsCached = false;
+            }
+
+            if (!animator.enabled)
+                animator.enabled = true;
+
+            animator.applyRootMotion = false;
+
+            if (!_animatorParamsCached)
+                CacheAnimatorParameters();
+        }
+
+        private void EnsureLocomotionAnimatorWrites()
+        {
+            Animator animator = _controller != null ? _controller.animator : null;
+            if (animator == null)
+                return;
+
+            bool needsBoneWrites =
+                (_aiController != null && _aiController.IsEngagedWithTarget) ||
+                ResolvePresentationSpeed() > MoveSpeedThreshold;
+
+            if (!needsBoneWrites)
+                return;
+
+            if (animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            if (!animator.enabled)
+                animator.enabled = true;
+        }
+
         private void SyncRigidbodyToTransform()
         {
             if (_body == null || !_body.isKinematic)
@@ -159,7 +226,9 @@ namespace Project.AI.Invector
 
         private void ApplyAiLocomotionMotor()
         {
-            if (ShouldSuppressLocomotionAnimator())
+            // Attack / block may hold upper-body poses, but zeroing locomotion while the root
+            // still translates (combat-ring shuffle, chase residual) is the intermittent glide.
+            if (ShouldSuppressLocomotionAnimator() && ResolvePresentationSpeed() <= MoveSpeedThreshold)
             {
                 ZeroLocomotionPresentation();
                 _controller.isGrounded = true;
@@ -169,8 +238,8 @@ namespace Project.AI.Invector
             if (_aiController.IsEngagedWithTarget)
                 _controller.isStrafing = false;
 
-            float speed = _aiController.CurrentLocomotionSpeed;
-            Vector3 worldDirection = transform.TransformDirection(_aiController.CurrentLocalMoveDirection);
+            float speed = ResolvePresentationSpeed();
+            Vector3 worldDirection = ResolvePresentationWorldDirection();
             worldDirection.y = 0f;
 
             bool walkOnly = _aiController.IsWalkOnlyLocomotion;
@@ -196,12 +265,76 @@ namespace Project.AI.Invector
             }
 
             _controller.isGrounded = true;
+            _controller.useRootMotion = false;
 
             var moveSpeed = _controller.isStrafing
                 ? _controller.strafeSpeed
                 : _controller.freeSpeed;
 
             _controller.SetAnimatorMoveSpeed(moveSpeed);
+        }
+
+        /// <summary>
+        /// Prefer AI locomotion, but fall back to rigidbody/transform delta so brief AI zeroing
+        /// (attack enter, stamina pause edge, nav velocity dip) cannot leave InputMagnitude at 0
+        /// while the root is still sliding.
+        /// </summary>
+        private float ResolvePresentationSpeed()
+        {
+            float aiSpeed = _aiController != null ? _aiController.CurrentLocomotionSpeed : 0f;
+            if (aiSpeed > MoveSpeedThreshold)
+                return aiSpeed;
+
+            if (_body != null && !_body.isKinematic)
+            {
+                Vector3 v = _body.linearVelocity;
+                v.y = 0f;
+                float bodySpeed = v.magnitude;
+                if (bodySpeed > MoveSpeedThreshold)
+                    return bodySpeed;
+            }
+
+            NavMeshAgentVelocity(out float agentSpeed, out _);
+            return agentSpeed;
+        }
+
+        private Vector3 ResolvePresentationWorldDirection()
+        {
+            if (_aiController != null)
+            {
+                Vector3 aiLocal = _aiController.CurrentLocalMoveDirection;
+                if (aiLocal.sqrMagnitude > 0.0001f)
+                    return transform.TransformDirection(aiLocal);
+            }
+
+            if (_body != null && !_body.isKinematic)
+            {
+                Vector3 v = _body.linearVelocity;
+                v.y = 0f;
+                if (v.sqrMagnitude > 0.0001f)
+                    return v.normalized;
+            }
+
+            NavMeshAgentVelocity(out float agentSpeed, out Vector3 agentDir);
+            if (agentSpeed > MoveSpeedThreshold && agentDir.sqrMagnitude > 0.0001f)
+                return agentDir;
+
+            return transform.forward;
+        }
+
+        private void NavMeshAgentVelocity(out float speed, out Vector3 flatDirection)
+        {
+            speed = 0f;
+            flatDirection = Vector3.zero;
+
+            if (_navAgent == null || !_navAgent.enabled || !_navAgent.isOnNavMesh)
+                return;
+
+            Vector3 velocity = _navAgent.velocity;
+            velocity.y = 0f;
+            speed = velocity.magnitude;
+            if (speed > 0.0001f)
+                flatDirection = velocity.normalized;
         }
 
         private void CacheAnimatorParameters()
@@ -214,6 +347,7 @@ namespace Project.AI.Invector
             _hasInputVertical = AnimatorHasParameter(animator, "InputVertical");
             _hasInputMagnitude = AnimatorHasParameter(animator, "InputMagnitude");
             _hasSpeed = AnimatorHasParameter(animator, "Speed");
+            _animatorParamsCached = true;
         }
 
         private void ZeroLocomotionPresentation()
@@ -221,6 +355,7 @@ namespace Project.AI.Invector
             _controller.moveDirection = Vector3.zero;
             _controller.input = Vector3.zero;
             _controller.isSprinting = false;
+            _controller.inputMagnitude = 0f;
 
             if (_controller.animator == null)
                 return;

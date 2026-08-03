@@ -87,9 +87,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 45586ddf42b72ec418095966c5b1afef, type: 3}
   combatVolume: 1
   buttonClickClips:
-  - {fileID: 8300000, guid: d78b095272451ff42b18c9db66c3483a, type: 3}
+  - {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
   inventoryItemClickClips:
-  - {fileID: 8300000, guid: d78b095272451ff42b18c9db66c3483a, type: 3}
+  - {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
   itemUseClips:
   - {fileID: 8300000, guid: a1f4a9bc44a8ff142af53c665b675c07, type: 3}
   itemEquipClips:

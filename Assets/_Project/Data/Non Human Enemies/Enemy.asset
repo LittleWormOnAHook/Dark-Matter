@@ -15,6 +15,11 @@ MonoBehaviour:
   enemyId: enemy
   displayName: Enemy
   prefabFileName: Enemy
+  archetype: 0
+  surfaceThreatKind: 2
+  meleeWeaponItem: {fileID: 0}
+  rangedWeaponItem: {fileID: 0}
+  preferRangedWeapon: 0
   maxHealth: 60
   destroyOnDeath: 1
   destroyDelay: 3
@@ -26,12 +31,24 @@ MonoBehaviour:
   visionRange: 16
   visionFov: 110
   eyeHeight: 1.4
+  senseHearingEnabled: 1
   hearingRange: 18
   proximityRange: 2.5
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
   attackRange: 1.8
   attackDamage: 12
   attackCooldown: 1.4
   attackWindup: 0.35
+  meleeDuration: 0.85
+  unarmedDuration: 0.55
+  rangedEngageRange: 12
+  rangedAttackCooldown: 1.2
+  rangedDuration: 0.35
+  aimHoldDuration: 1.5
+  missRate: 0.25
   movementMode: 2
   patrolMode: 0
   investigateNoise: 1
@@ -45,8 +62,10 @@ MonoBehaviour:
   patrolRadius: 6
   patrolWaitDuration: 2
   behaviorPreset: 1
-  walkSpeed: 2.4
-  runSpeed: 4.8
+  walkSpeed: 2
+  runSpeed: 3
+  chaseSpeed: 0
+  chaseSpeedMultiplier: 0.88
   turnSpeed: 8
   loseTargetDelay: 4
   searchDuration: 6
@@ -69,8 +88,8 @@ MonoBehaviour:
   lockVisualRootPosition: 0
   visualChildName: scene
   enableLoot: 1
-  piCoinsMin: 1
-  piCoinsMax: 3
+  acDropMin: 1
+  acDropMax: 3
   randomLootCountMin: 0
   randomLootCountMax: 1
   lootItemPool: []

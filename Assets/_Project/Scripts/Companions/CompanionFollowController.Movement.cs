@@ -38,8 +38,10 @@ namespace Project.Companions
 
             if (distance > stopDistance)
             {
+                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget);
+                float scaledSpeed = speed * moveScale;
                 Vector3 direction = toTarget.normalized;
-                Vector3 step = direction * (speed * Time.deltaTime);
+                Vector3 step = direction * (scaledSpeed * Time.deltaTime);
                 if (step.sqrMagnitude > distance * distance)
                     step = toTarget;
 
@@ -47,7 +49,7 @@ namespace Project.Companions
                 transform.position += step;
                 Depenetrate();
                 SyncInvectorRigidbody();
-                currentSpeed = speed;
+                currentSpeed = scaledSpeed;
             }
             else
             {
@@ -71,14 +73,9 @@ namespace Project.Companions
                 return;
 
             if (toTarget.sqrMagnitude > 0.01f && currentSpeed > 0.05f)
-            {
-                Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * Time.deltaTime);
-            }
+                DMILocomotionFacing.FaceToward(transform, flatTarget, turnSpeed);
             else if (allowIdleRest)
-            {
                 ApplyIdleRestFacing();
-            }
         }
 
         private Vector3 ComputeAvoidanceOffset()

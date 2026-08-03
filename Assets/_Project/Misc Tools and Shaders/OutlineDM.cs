@@ -13,6 +13,7 @@ public class OutlineController : MonoBehaviour
     private const int PriorityLookAt = 1;
     private const int PriorityPostScan = 2;
     private const int PriorityLiveScanner = 3;
+    private const int PriorityResourceScan = 4;
 
     [Header("Look")]
     public Color outlineColor = new Color(0.35f, 1f, 0.82f, 1f);
@@ -43,6 +44,9 @@ public class OutlineController : MonoBehaviour
     private bool outlineSlotApplied;
     private bool liveScannerHighlight;
     private float liveScannerIntensity;
+    private bool resourceScanHighlight;
+    private Color resourceScanColor;
+    private float resourceScanAlpha;
     private bool postScanActive;
     private Color postScanColor;
     private float postScanAlpha;
@@ -63,7 +67,8 @@ public class OutlineController : MonoBehaviour
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
-    public bool IsScannerHighlighted => liveScannerHighlight || postScanActive || scanFlashActive;
+    public bool IsScannerHighlighted =>
+        liveScannerHighlight || postScanActive || scanFlashActive || resourceScanHighlight;
     public bool IsPostScanHighlighted => postScanActive || scanFlashActive;
 
     private void Awake()
@@ -120,7 +125,12 @@ public class OutlineController : MonoBehaviour
         float strength = 0f;
         Color displayColor = outlineColor;
 
-        if (scanFlashActive)
+        if (resourceScanHighlight)
+        {
+            strength = 1f;
+            displayColor = resourceScanColor;
+        }
+        else if (scanFlashActive)
         {
             strength = EvaluateScanFlashStrength();
             displayColor = scanFlashColor;
@@ -149,11 +159,35 @@ public class OutlineController : MonoBehaviour
 
         pulseTimer += Time.deltaTime * 8f;
         float pulse = (Mathf.Sin(pulseTimer) + 1f) * 0.5f;
-        float alphaCap = scanFlashActive
-            ? scanFlashAlpha
-            : (postScanActive && !liveScannerHighlight ? postScanAlpha : alpha);
+        float alphaCap = resourceScanHighlight
+            ? resourceScanAlpha
+            : scanFlashActive
+                ? scanFlashAlpha
+                : (postScanActive && !liveScannerHighlight ? postScanAlpha : alpha);
         float targetAlpha = alphaCap * strength * (0.85f + 0.15f * pulse);
         ApplyOutlineVisible(Mathf.Min(alphaCap, targetAlpha), displayColor);
+    }
+
+    /// <summary>
+    /// Sustained low-alpha highlight for mining multi-tool F-scan (works on ResourceNodes with scannerOnlyOutline).
+    /// </summary>
+    public void SetResourceScanHighlight(bool highlighted, Color color, float highlightAlpha)
+    {
+        resourceScanHighlight = highlighted;
+        if (highlighted)
+        {
+            resourceScanColor = color;
+            resourceScanAlpha = Mathf.Clamp01(highlightAlpha);
+        }
+        else if (!liveScannerHighlight && !postScanActive && !scanFlashActive)
+        {
+            ApplyOutlineVisible(0f, outlineColor);
+        }
+    }
+
+    public void ClearResourceScanHighlight()
+    {
+        SetResourceScanHighlight(false, outlineColor, 0f);
     }
 
     public void SetScannerHighlight(bool highlighted, float intensity = 1f)
@@ -231,6 +265,8 @@ public class OutlineController : MonoBehaviour
     {
         liveScannerHighlight = false;
         liveScannerIntensity = 0f;
+        resourceScanHighlight = false;
+        resourceScanAlpha = 0f;
         ClearPostScanHighlight();
         ClearScanDiscoveryFlash();
         ApplyOutlineVisible(0f, outlineColor);

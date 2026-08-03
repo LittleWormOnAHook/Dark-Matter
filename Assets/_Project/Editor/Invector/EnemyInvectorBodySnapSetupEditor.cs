@@ -16,6 +16,7 @@ namespace Project.AI.Invector
                 return;
 
             EnsurePresentEditor(root);
+            EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
 
             vBodySnappingControl bodySnap = root.GetComponentInChildren<vBodySnappingControl>(true);
             if (bodySnap == null)
@@ -23,6 +24,7 @@ namespace Project.AI.Invector
 
             bodySnap.LoadBones();
             EnemyInvectorBodySnapSetup.WireSnapComponents(root, bodySnap);
+            EnemyInvectorBodySnapSetup.SnapWeaponContainersToLocalBones(root, bodySnap);
         }
 
         public static void EnsurePresentEditor(GameObject root)

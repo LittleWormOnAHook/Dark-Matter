@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using Project.Data;
 using ECM2;
 using Project.CameraFx;
+using Project.Audio;
 using Project.Core;
 using Project.Interaction;
 using Project.Player.Invector;
@@ -520,6 +521,11 @@ namespace Project.Player
 
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked)
                 return;
+
+            // Press E feedback — same clip as UI buttons (GameAudioProfile.buttonClickClips / keyPress).
+            // Only on started so Input System started+performed does not double-play.
+            if (context.started)
+                GameAudioManager.Instance?.PlayButtonClick();
 
             if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
             {

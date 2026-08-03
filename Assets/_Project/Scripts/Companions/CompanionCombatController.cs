@@ -666,8 +666,7 @@ namespace Project.Companions
             if (toTarget.sqrMagnitude < 0.01f)
                 return;
 
-            Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, faceTurnSpeed * Time.deltaTime);
+            DMILocomotionFacing.FaceToward(transform, worldPosition, faceTurnSpeed);
         }
 
         private bool IsFacingTarget(Vector3 worldPosition, float maxAngleDegrees)

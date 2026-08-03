@@ -10,7 +10,8 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Right-middle tracker for quests until they are turned in at a quest giver.
+    /// Top-right quest tracker stacked below the minimap / compass / Range-Scan info strip.
+    /// Anchored top-right (not middle) so resolution / canvas scale cannot push it into the compass.
     /// </summary>
     public class ActiveQuestHudUI : MonoBehaviour
     {
@@ -18,16 +19,23 @@ namespace Project.UI
 
         private static ActiveQuestHudUI instance;
 
+        private RectTransform rootRect;
         private RectTransform listRoot;
         private TextMeshProUGUI progressionHeader;
         private QuestManager questManager;
         private PlayerProgressionManager progression;
         private bool built;
+        private Vector2 lastCanvasSize;
+        private int lastScreenWidth;
+        private int lastScreenHeight;
 
         public static ActiveQuestHudUI EnsureExists(Transform canvasRoot)
         {
             if (instance != null)
+            {
+                instance.ApplyLockedLayout();
                 return instance;
+            }
 
             GameObject host = new GameObject("ActiveQuestHud", typeof(RectTransform));
             host.transform.SetParent(canvasRoot, false);
@@ -42,15 +50,8 @@ namespace Project.UI
                 return;
 
             built = true;
-            RectTransform rect = transform as RectTransform;
-            if (applyRuntimeLayout)
-            {
-                rect.anchorMin = new Vector2(1f, 0.5f);
-                rect.anchorMax = new Vector2(1f, 0.5f);
-                rect.pivot = new Vector2(1f, 0.5f);
-                rect.anchoredPosition = new Vector2(-HudLayoutMetrics.RightHudInset, 0f);
-                rect.sizeDelta = new Vector2(220f, 340f);
-            }
+            rootRect = transform as RectTransform;
+            ApplyLockedLayout();
 
             GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
             headerObject.transform.SetParent(transform, false);
@@ -77,17 +78,120 @@ namespace Project.UI
             GameObject listObject = new GameObject("QuestList", typeof(RectTransform));
             listObject.transform.SetParent(transform, false);
             listRoot = listObject.GetComponent<RectTransform>();
-            listRoot.anchorMin = new Vector2(0f, 0f);
+            listRoot.anchorMin = new Vector2(0f, 1f);
             listRoot.anchorMax = new Vector2(1f, 1f);
-            listRoot.offsetMin = Vector2.zero;
-            listRoot.offsetMax = Vector2.zero;
+            listRoot.pivot = new Vector2(1f, 1f);
+            listRoot.anchoredPosition = Vector2.zero;
+            listRoot.sizeDelta = new Vector2(0f, 0f);
 
             VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 2f;
             layout.childAlignment = TextAnchor.UpperRight;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
+
+            ContentSizeFitter fitter = listObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        /// <summary>
+        /// Top-right lock below the live compass / info stack (falls back to GameplayHudLayout constants).
+        /// </summary>
+        private void ApplyLockedLayout()
+        {
+            if (!applyRuntimeLayout)
+                return;
+
+            if (rootRect == null)
+                rootRect = transform as RectTransform;
+            if (rootRect == null)
+                return;
+
+            float width = GameplayHudLayout.QuestHudWidth;
+            float maxHeight = GameplayHudLayout.QuestHudMaxHeight;
+
+            rootRect.anchorMin = new Vector2(1f, 1f);
+            rootRect.anchorMax = new Vector2(1f, 1f);
+            rootRect.pivot = new Vector2(1f, 1f);
+            rootRect.sizeDelta = new Vector2(width, maxHeight);
+            rootRect.localScale = Vector3.one;
+            rootRect.anchoredPosition = ResolveAnchoredPositionBelowMinimapStack();
+
+            CacheCanvasSize();
+        }
+
+        private Vector2 ResolveAnchoredPositionBelowMinimapStack()
+        {
+            float rightInset = GameplayHudLayout.MinimapEdgeInset;
+            float topY = GameplayHudLayout.QuestHudAnchoredPosition.y;
+
+            CompassHudUI compass = FindAnyObjectByType<CompassHudUI>();
+            if (compass != null && compass.Root != null)
+            {
+                RectTransform compassRect = compass.Root;
+                rightInset = -compassRect.anchoredPosition.x;
+                topY = compassRect.anchoredPosition.y - compassRect.rect.height;
+            }
+
+            if (transform.parent != null)
+            {
+                // MapUI stacks InfoText on the MapUI/canvas root below the compass.
+                MapUI mapUi = FindAnyObjectByType<MapUI>();
+                if (mapUi != null)
+                {
+                    Transform mapInfo = mapUi.transform.Find("InfoText");
+                    if (mapInfo is RectTransform infoRect && infoRect.gameObject.activeInHierarchy)
+                    {
+                        rightInset = -infoRect.anchoredPosition.x;
+                        float infoBottom = infoRect.anchoredPosition.y - infoRect.rect.height;
+                        topY = Mathf.Min(topY, infoBottom);
+                    }
+                }
+            }
+
+            return new Vector2(
+                -rightInset,
+                topY - GameplayHudLayout.QuestHudGapBelowInfo);
+        }
+
+        private void CacheCanvasSize()
+        {
+            lastScreenWidth = Screen.width;
+            lastScreenHeight = Screen.height;
+            RectTransform canvasRect = rootRect != null ? rootRect.parent as RectTransform : null;
+            lastCanvasSize = canvasRect != null ? canvasRect.rect.size : Vector2.zero;
+        }
+
+        private bool HasViewportChanged()
+        {
+            if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
+                return true;
+
+            RectTransform canvasRect = rootRect != null ? rootRect.parent as RectTransform : null;
+            if (canvasRect == null)
+                return false;
+
+            Vector2 size = canvasRect.rect.size;
+            return !Mathf.Approximately(size.x, lastCanvasSize.x)
+                || !Mathf.Approximately(size.y, lastCanvasSize.y);
+        }
+
+        private void LateUpdate()
+        {
+            if (!applyRuntimeLayout || !built)
+                return;
+
+            if (HasViewportChanged())
+                ApplyLockedLayout();
+        }
+
+        private void OnEnable()
+        {
+            if (built)
+                ApplyLockedLayout();
         }
 
         private void Start()
@@ -103,6 +207,7 @@ namespace Project.UI
             if (progression != null)
                 progression.OnXpChanged += RefreshProgressionHeader;
 
+            ApplyLockedLayout();
             RefreshProgressionHeader();
             Refresh();
         }
@@ -117,6 +222,9 @@ namespace Project.UI
 
             if (progression != null)
                 progression.OnXpChanged -= RefreshProgressionHeader;
+
+            if (instance == this)
+                instance = null;
         }
 
         private void HandleQuestUpdated(QuestProgress progress)
@@ -157,6 +265,7 @@ namespace Project.UI
         public void Refresh()
         {
             RefreshProgressionHeader();
+            ApplyLockedLayout();
 
             if (listRoot == null)
                 return;
@@ -207,7 +316,12 @@ namespace Project.UI
             Color titleColor = progress.status == QuestStatus.Completed
                 ? SurvivalPioneerUiPalette.Gold
                 : SurvivalPioneerUiPalette.WarmOffWhite;
-            TextMeshProUGUI title = CreateLine(block.transform, FormatThreeWordsPerLine(definition.title), 24f, FontStyles.Bold, theme);
+            TextMeshProUGUI title = CreateLine(
+                block.transform,
+                FormatThreeWordsPerLine(definition.title),
+                24f,
+                FontStyles.Bold,
+                theme);
             title.alignment = TextAlignmentOptions.TopRight;
             title.lineSpacing = -6f;
             title.margin = new Vector4(0f, 0f, 0f, 1f);
@@ -223,10 +337,14 @@ namespace Project.UI
 
                     int required = Mathf.Max(1, objective.requiredCount);
                     int current = progress.GetObjectiveProgress(i);
-                    bool complete = current >= required;
                     string label = string.IsNullOrEmpty(objective.description) ? objective.type.ToString() : objective.description;
                     string line = FormatObjectiveLine(label, current, required);
-                    TextMeshProUGUI objectiveText = CreateLine(block.transform, line, 20f, FontStyles.Normal, theme);
+                    TextMeshProUGUI objectiveText = CreateLine(
+                        block.transform,
+                        line,
+                        20f,
+                        FontStyles.Normal,
+                        theme);
                     objectiveText.alignment = TextAlignmentOptions.TopRight;
                     objectiveText.lineSpacing = -12f;
                     objectiveText.paragraphSpacing = -6f;
@@ -240,7 +358,12 @@ namespace Project.UI
 
             if (progress.status == QuestStatus.Completed)
             {
-                TextMeshProUGUI turnIn = CreateLine(block.transform, FormatOneOrTwoLines("Return to quest giver"), 18f, FontStyles.Italic, theme);
+                TextMeshProUGUI turnIn = CreateLine(
+                    block.transform,
+                    FormatOneOrTwoLines("Return to quest giver"),
+                    18f,
+                    FontStyles.Italic,
+                    theme);
                 turnIn.alignment = TextAlignmentOptions.TopRight;
                 turnIn.lineSpacing = -10f;
                 turnIn.margin = new Vector4(0f, 1f, 0f, 0f);
@@ -248,7 +371,12 @@ namespace Project.UI
             }
             else if (progress.status == QuestStatus.Active)
             {
-                TextMeshProUGUI statusLine = CreateLine(block.transform, FormatOneOrTwoLines("In Progress"), 18f, FontStyles.Italic, theme);
+                TextMeshProUGUI statusLine = CreateLine(
+                    block.transform,
+                    FormatOneOrTwoLines("In Progress"),
+                    18f,
+                    FontStyles.Italic,
+                    theme);
                 statusLine.alignment = TextAlignmentOptions.TopRight;
                 statusLine.lineSpacing = -10f;
                 statusLine.margin = new Vector4(0f, 1f, 0f, 0f);

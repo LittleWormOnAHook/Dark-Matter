@@ -130,6 +130,8 @@ MonoBehaviour:
     reagent for medpacks and salves.
   unlocksInventoryStorageRow: 0
   gatherKind: 1
+  requiredGatherSkillRank: 1
+  unknownDisplayName: Unknown Resource
   lootYieldClip: {fileID: 8300000, guid: 032c161149a1c104284b736112470e73, type: 3}
   lootYieldVolume: 0.9
   lootGrantClip: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}

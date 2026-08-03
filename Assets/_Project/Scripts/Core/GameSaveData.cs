@@ -10,7 +10,7 @@ namespace Project.Core
     [Serializable]
     public class GameSaveData
     {
-        public int version = 20;
+        public int version = 21;
         public int slotIndex;
         public long savedAtUtcTicks;
         public float health;
@@ -67,6 +67,7 @@ namespace Project.Core
         public byte[] fogOfWarMask;
         public int fogOfWarResolution;
         public string[] scannedDiscoveryIds;
+        public string[] identifiedResourceIds;
     }
 
     /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it

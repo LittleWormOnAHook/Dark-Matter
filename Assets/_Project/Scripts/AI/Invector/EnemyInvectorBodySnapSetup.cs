@@ -16,6 +16,9 @@ namespace Project.AI.Invector
             if (root == null)
                 return;
 
+            // Avatar-swapped enemies keep holders on the dead VBOT rig — rebind first.
+            EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
+
             vBodySnappingControl bodySnap = root.GetComponentInChildren<vBodySnappingControl>(true);
             if (bodySnap == null)
                 return;
@@ -53,7 +56,10 @@ namespace Project.AI.Invector
                 if (bone != null)
                     snap.transform.SetParent(bone, true);
 
-                Object.Destroy(snap);
+                if (Application.isPlaying)
+                    Object.Destroy(snap);
+                else
+                    Object.DestroyImmediate(snap);
             }
         }
 
@@ -87,8 +93,10 @@ namespace Project.AI.Invector
 
                 snap.bodySnap = bodySnap;
 
-                if (snap.boneToSnap == null &&
-                    snap.boneName != vSnapToBody.manuallyAssignBone)
+                // Always refresh from the live Animator avatar. Serialized boneToSnap often still
+                // points at stock VBOT_ bones after a Meshy/T-pose visual swap; Awake then parents
+                // holders onto the dead rig and destroys vSnapToBody before Start can repair it.
+                if (snap.boneName != vSnapToBody.manuallyAssignBone)
                 {
                     Transform bone = bodySnap.GetBone(snap.boneName);
                     if (bone != null)

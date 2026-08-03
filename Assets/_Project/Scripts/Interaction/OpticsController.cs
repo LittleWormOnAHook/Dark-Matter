@@ -699,7 +699,7 @@ namespace Project.Interaction
                 ItemData item = resourceNode.resourceItem;
                 target = new OpticsScanTarget(
                     resourceNode.transform.position,
-                    item.itemName,
+                    resourceNode.GetDisplayName(),
                     MapUiSprites.GetResourceColor(item.itemType),
                     ResolveOutline(resourceNode.transform));
                 return true;

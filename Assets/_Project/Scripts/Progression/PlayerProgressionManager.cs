@@ -17,9 +17,13 @@ namespace Project.Progression
         [SerializeField] private ProgressionCurveDefinition curveOverride;
 
         private ProgressionCurveDefinition curve;
-        private int level = 1;
+        public const int NewGameStartLevel = 5;
+        public const int NewGameStartSkillPoints = 25;
+
+        private int level = NewGameStartLevel;
         private int currentXp;
-        private int unspentSkillPoints;
+        private int unspentSkillPoints = NewGameStartSkillPoints;
+        private bool xpBaselineInitialized;
         private readonly Dictionary<string, int> skillRanks = new Dictionary<string, int>();
         private readonly HashSet<string> claimedOneTimeXp = new HashSet<string>();
         private readonly HashSet<string> exploredXpIds = new HashSet<string>();
@@ -42,6 +46,7 @@ namespace Project.Progression
 
             Instance = this;
             curve = curveOverride != null ? curveOverride : ProgressionCurveDefinitionLoader.LoadDefault();
+            EnsureXpBaselineForCurrentLevel();
         }
 
         private void OnDestroy()
@@ -117,20 +122,34 @@ namespace Project.Progression
             OnXpChanged?.Invoke();
 
             int levelsGained = 0;
+            int skillPointsGained = 0;
             while (GetXpProgressInCurrentLevel() >= GetXpRequiredForNextLevel())
             {
                 level++;
                 levelsGained++;
+                skillPointsGained += GetSkillPointsForLevel(level);
             }
 
             if (levelsGained > 0)
             {
-                unspentSkillPoints += levelsGained;
+                unspentSkillPoints += skillPointsGained;
                 OnLevelUp?.Invoke(level, levelsGained);
                 OnXpChanged?.Invoke();
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Skill points awarded when the player reaches <paramref name="level"/>.
+        /// Bands: 1–5 → 5, 6–10 → 10, 11–15 → 15, …
+        /// </summary>
+        public static int GetSkillPointsForLevel(int level)
+        {
+            if (level < 1)
+                return 0;
+
+            return 5 * (((level - 1) / 5) + 1);
         }
 
         public bool TryMarkExplorationXp(string explorationId, int xpAmount)
@@ -208,9 +227,10 @@ namespace Project.Progression
 
         public void ApplySaveSnapshot(ProgressionSaveSnapshot snapshot)
         {
-            level = snapshot.playerLevel > 0 ? snapshot.playerLevel : 1;
+            level = snapshot.playerLevel > 0 ? snapshot.playerLevel : NewGameStartLevel;
             currentXp = snapshot.playerXp;
             unspentSkillPoints = snapshot.unspentSkillPoints;
+            xpBaselineInitialized = true;
 
             skillRanks.Clear();
             if (snapshot.allocatedSkillIds != null)
@@ -253,13 +273,29 @@ namespace Project.Progression
 
         public void ResetToNewGame()
         {
-            level = 1;
-            currentXp = 0;
-            unspentSkillPoints = 0;
+            level = NewGameStartLevel;
+            unspentSkillPoints = NewGameStartSkillPoints;
             skillRanks.Clear();
             exploredXpIds.Clear();
             claimedOneTimeXp.Clear();
+            xpBaselineInitialized = false;
+            EnsureXpBaselineForCurrentLevel();
             OnXpChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Lifetime XP must sit at the floor for the current level so in-level progress starts at 0.
+        /// </summary>
+        private void EnsureXpBaselineForCurrentLevel()
+        {
+            if (xpBaselineInitialized)
+                return;
+
+            if (curve == null)
+                curve = curveOverride != null ? curveOverride : ProgressionCurveDefinitionLoader.LoadDefault();
+
+            currentXp = curve != null ? curve.GetTotalXpForLevel(level) : 0;
+            xpBaselineInitialized = true;
         }
     }
 

@@ -72,8 +72,6 @@ namespace Project.EditorTools
             // Items/World/ammo → Items/Ammo
             ("Assets/_Project/Prefabs/Items/World/ammo/Laser Pistol Ammo_Pickup.prefab",
                 ProjectAssetPaths.PrefabsItemsAmmo + "/Laser Pistol Ammo_Pickup.prefab"),
-            ("Assets/_Project/Prefabs/Items/World/ammo/Laser Tool_Pickup.prefab",
-                ProjectAssetPaths.PrefabsItemsAmmo + "/Laser Tool_Pickup.prefab"),
             ("Assets/_Project/Prefabs/Items/World/ammo/Laser_Pickup.prefab",
                 ProjectAssetPaths.PrefabsItemsAmmo + "/Laser_Pickup.prefab"),
             ("Assets/_Project/Prefabs/Items/World/ammo/Plasma_Pickup.prefab",

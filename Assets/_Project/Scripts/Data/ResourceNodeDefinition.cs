@@ -35,7 +35,7 @@ namespace Project.Data
         public ItemData requiredTool;
         [Tooltip("When true, laser-mine nodes only accept equipped isMiningTool weapons.")]
         public bool requireMiningLaser = true;
-        [Tooltip("Legacy plant harvest prompt string. Runtime uses proximity dots + map markers; Hold E / F still harvests.")]
+        [Tooltip("Legacy plant harvest prompt string. Runtime uses proximity dots + map markers; Hold E harvests. F is multi-tool resource scan.")]
         public string holdPromptText = "Hold E — Harvest";
 
         [Header("Timing")]

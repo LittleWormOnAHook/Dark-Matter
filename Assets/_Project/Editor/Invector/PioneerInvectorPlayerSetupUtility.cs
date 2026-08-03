@@ -646,7 +646,7 @@ namespace Project.EditorTools.Invector
             items.Add(item);
         }
 
-        private static GameObject ResolveMeleeWeaponPrefab(ItemData item)
+        public static GameObject ResolveMeleeWeaponPrefab(ItemData item)
         {
             if (item == null)
                 return null;
@@ -657,7 +657,7 @@ namespace Project.EditorTools.Invector
             return item.IsTwoHanded ? LoadPrefab(DefaultTwoHandMeleePath) : LoadPrefab(DefaultMeleePath);
         }
 
-        private static GameObject ResolveRangedWeaponPrefab(ItemData item)
+        public static GameObject ResolveRangedWeaponPrefab(ItemData item)
         {
             if (item == null)
                 return null;

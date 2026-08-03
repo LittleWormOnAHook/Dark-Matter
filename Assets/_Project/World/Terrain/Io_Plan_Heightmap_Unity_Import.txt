@@ -1,0 +1,49 @@
+Io Plan — Unity-ready elevation heightmap (IMPORT NOTES)
+========================================================
+
+PRIMARY FILES (exactly 2048 × 2048 pixels)
+  Io_Plan_Heightmap_Unity.png   — 16-bit grayscale, SMOOTH walkable slopes
+  Io_Plan_Heightmap_Unity.raw   — same data, 16-bit little-endian, 2048×2048
+  Io_Plan_Heightmap_Unity_Preview8.png — 8-bit preview (contrast-stretched)
+
+ART (do not use for Import Raw)
+  ../WorldMap/Io_Plan_Heightmap.png — shaded-relief art reference (4096²)
+
+────────────────────────────────────────
+RECOMMENDED Unity Terrain sizes
+────────────────────────────────────────
+  Width:   2048
+  Length:  2048
+  Height:  100     ← PRIMARY (Mesh Resolution → Terrain Height)
+
+Heightmap encoding (0..1 of Terrain Height):
+  Ocean / off-island:     0
+  Plains / most biomes:   ~0.05–0.18  →  ~5–18 units at Height 100
+  Ridges / B7 ring:       ~0.18–0.28  →  ~18–28 units
+  Highlands / mountains:  ~0.25–0.40  →  ~25–40 units at Height 100
+  Central B6 peaks:       ~0.30–0.40  →  ~30–40 units
+
+OPTIONAL — if you want ~250–400 m mountain peaks instead:
+  Set Terrain Height to 1000 and re-import THIS SAME RAW.
+  Then peaks at 0.25–0.40 → ~250–400 world units. Plains scale up too.
+
+Do NOT resize / reassign the Pioneer scene Terrain.
+
+────────────────────────────────────────
+Import Raw…
+────────────────────────────────────────
+Unity TerrainData.heightmapResolution is normally 2ⁿ+1 (e.g. 2049).
+These maps are intentionally **2048×2048**.
+
+  1. Select a NEW / Io plan Terrain — never the Pioneer Terrain.
+  2. Set Width 2048, Length 2048, Height **100**.
+  3. Heightmap Resolution: 2049 if required by Unity for that size.
+  4. Terrain → Import Raw… → Io_Plan_Heightmap_Unity.raw
+       Depth:           Bit Depth 16
+       Byte Order:      Windows (little-endian)
+       Width / Height:  2048 / 2048
+       Flip Vertically: off first; enable only if upside-down
+  5. If 2048 vs 2049 mismatch: resample/pad to 2049, or let Unity resample.
+
+Editor “Setup Io Plan Terrain Shell” = flat shell only (no SetHeights).
+Regen: _gen_io_plan_unity_heightmap.py

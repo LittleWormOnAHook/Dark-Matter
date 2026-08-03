@@ -216,6 +216,14 @@ namespace Project.Data
         [Tooltip("Optional one-shot when continuous laser/mining fire stops.")]
         public AudioClip continuousStopSound;
 
+        [Header("Mining Resource Scan Audio")]
+        [Tooltip("Loop while holding F to scan a ResourceNode (mining multi-tool). Drag clip here on DM_Mining_Tool.")]
+        public AudioClip miningScanLoopSound;
+        [Tooltip("Optional one-shot when a resource scan succeeds.")]
+        public AudioClip miningScanSuccessSound;
+        [Tooltip("Optional one-shot when a scan is denied (already identified / insufficient skill).")]
+        public AudioClip miningScanDeniedSound;
+
         [Header("Elemental Effect")]
         [Tooltip("Status effect applied on hit. None uses the ammo type's sensible default (Fire->Burning, Ice->Frozen, Electricity->Shocked, Plasma->Corroded).")]
         public StatusEffectType statusEffectOverride = StatusEffectType.None;

@@ -130,6 +130,8 @@ MonoBehaviour:
     Smelted into metal components for weapons and modules.
   unlocksInventoryStorageRow: 0
   gatherKind: 0
+  requiredGatherSkillRank: 2
+  unknownDisplayName: Unknown Resource
   lootYieldClip: {fileID: 8300000, guid: 6d9eab75b322d1c449088e38a4f5e1e6, type: 3}
   lootYieldVolume: 0.9
   lootGrantClip: {fileID: 8300000, guid: 6db065b750e7e114cb33b3441bf0f56f, type: 3}

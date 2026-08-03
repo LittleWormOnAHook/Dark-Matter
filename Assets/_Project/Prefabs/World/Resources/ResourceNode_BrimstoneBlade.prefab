@@ -61,10 +61,10 @@ MonoBehaviour:
   holdInteractRange: 3.5
   requiredTool: {fileID: 0}
   requireMiningLaser: 0
-  lootAttractPrefab: {fileID: 9062877512460790226, guid: 993dac5f6f603944ab56d7bc2a5731a3, type: 3}
+  lootAttractPrefab: {fileID: 1387549824773340, guid: 6b3ede3311be17541b5cab4c8f2ab0c2, type: 3}
   lootTint: {r: 0.85, g: 0.35, b: 0.18, a: 1}
-  lootYieldClipOverride: {fileID: 0}
-  lootGrantClipOverride: {fileID: 0}
+  lootYieldClipOverride: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}
+  lootGrantClipOverride: {fileID: 8300000, guid: 6db3de4a6ea0f8c4d8328227acdd180e, type: 3}
 --- !u!65 &3545709684655512701
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -84,8 +84,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.927399, y: 0.5143062, z: 0.93069804}
-  m_Center: {x: -12.916442, y: 0.2837516, z: 8.20382}
+  m_Size: {x: 0.977399, y: 0.5643062, z: 0.98069805}
+  m_Center: {x: 0.00000023655593, y: -4.656613e-10, z: 0.00000028079376}
 --- !u!114 &6391135970869440675
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121,15 +121,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7559857941471312417, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -12.91
+      value: 0.00644207
       objectReference: {fileID: 0}
     - target: {fileID: 7559857941471312417, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.288167
+      value: 0.004415393
       objectReference: {fileID: 0}
     - target: {fileID: 7559857941471312417, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.2
+      value: -0.0038204193
       objectReference: {fileID: 0}
     - target: {fileID: 7559857941471312417, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
       propertyPath: m_LocalRotation.w

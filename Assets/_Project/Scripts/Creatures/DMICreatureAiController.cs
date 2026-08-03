@@ -39,7 +39,8 @@ namespace Project.Creatures
         [SerializeField] private DMICreatureMovementMode movementMode = DMICreatureMovementMode.Wander;
         [SerializeField] private float walkSpeed = 2.2f;
         [SerializeField] private float runSpeed = 4.5f;
-        [SerializeField] private float turnSpeed = 8f;
+        [Tooltip("Legacy turn factor (≈ deg/sec × 18). Lower = slower, more natural yaw.")]
+        [SerializeField] private float turnSpeed = 5f;
         [SerializeField] private float stopDistance = 0.4f;
         [SerializeField] private float wanderRadius = 8f;
         [SerializeField] private float idleDurationMin = 1.5f;
@@ -248,8 +249,9 @@ namespace Project.Creatures
             {
                 agent.speed = walkSpeed;
                 agent.stoppingDistance = stopDistance;
-                if (profile.agentAngularSpeed > 0.01f)
-                    agent.angularSpeed = profile.agentAngularSpeed;
+                agent.angularSpeed = profile.agentAngularSpeed > 0.01f
+                    ? Mathf.Min(profile.agentAngularSpeed, 200f)
+                    : DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
             }
 
             animationDriver?.ConfigureAttackLock(profile.meleeAttackLockDuration);
@@ -725,7 +727,12 @@ namespace Project.Creatures
             if (agent != null && agent.isOnNavMesh)
             {
                 agent.isStopped = false;
-                agent.speed = speed;
+                float moveScale = 1f;
+                if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+                    moveScale = DMILocomotionFacing.FacingMoveScale(transform, agent.desiredVelocity);
+
+                agent.speed = speed * moveScale;
+                agent.angularSpeed = DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
                 if ((agent.destination - worldTarget).sqrMagnitude > 0.25f)
                     agent.SetDestination(worldTarget);
                 return;
@@ -737,21 +744,15 @@ namespace Project.Creatures
             if (delta.sqrMagnitude < 0.0001f)
                 return;
 
-            Vector3 step = delta.normalized * (speed * Time.deltaTime);
+            float moveScaleFallback = DMILocomotionFacing.FacingMoveScale(transform, delta);
+            Vector3 step = delta.normalized * (speed * moveScaleFallback * Time.deltaTime);
             transform.position += step;
             FaceToward(flat);
         }
 
         private void FaceToward(Vector3 worldTarget)
         {
-            Vector3 flat = worldTarget;
-            flat.y = transform.position.y;
-            Vector3 dir = flat - transform.position;
-            if (dir.sqrMagnitude < 0.0001f)
-                return;
-
-            Quaternion look = Quaternion.LookRotation(dir.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * Time.deltaTime);
+            DMILocomotionFacing.FaceToward(transform, worldTarget, turnSpeed);
         }
 
         private void StopAgent()

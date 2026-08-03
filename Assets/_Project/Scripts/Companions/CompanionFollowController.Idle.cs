@@ -225,7 +225,8 @@ namespace Project.Companions
         {
             float targetYaw = formationHeadingYaw + idleRestYaw;
             Quaternion restRotation = Quaternion.Euler(0f, targetYaw, 0f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, restRotation, restFacingSpeed * Time.deltaTime);
+            float maxDegrees = DMILocomotionFacing.ToDegreesPerSecond(restFacingSpeed) * Time.deltaTime;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, restRotation, maxDegrees);
         }
 
         private float GetPersonalityFactor()

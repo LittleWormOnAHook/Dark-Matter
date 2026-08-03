@@ -1307,13 +1307,28 @@ namespace Project.Player.Invector
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer == null)
+                if (renderer == null || IsResourceScanCone(renderer.transform))
                     continue;
 
                 renderer.enabled = true;
                 if (!renderer.gameObject.activeSelf)
                     renderer.gameObject.SetActive(true);
             }
+        }
+
+        /// <summary>
+        /// Authored mining scan VFX under Drawn_DM_Mining_Tool/renderer — stays off until DMIMiningResourceScanner enables it.
+        /// </summary>
+        private static bool IsResourceScanCone(Transform t)
+        {
+            while (t != null)
+            {
+                if (t.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                t = t.parent;
+            }
+
+            return false;
         }
 
         /// <summary>

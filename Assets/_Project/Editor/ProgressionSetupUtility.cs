@@ -45,7 +45,25 @@ namespace Project.EditorTools.Progression
                 CreateSkill("skill_marksman_training", "Marksman Training", "+2 ranged damage per rank for all ranged weapons.", 2, SkillModifierType.RangedDamageFlat, 2f),
                 CreateSkill("skill_gather_efficiency", "Gather Efficiency", "Gather resources faster.", 1, SkillModifierType.GatherSpeedPercent, 6f),
                 CreateSkill("skill_artisan_focus", "Artisan Focus", "Earn more crafting XP.", 3, SkillModifierType.CraftXpPercent, 8f),
-                CreateSkill("skill_weapon_accuracy", "Weapon Accuracy", "+5% accuracy per rank for all ranged weapons.", 1, SkillModifierType.WeaponAccuracyPercent, 5f, maxRank: 5)
+                CreateSkill("skill_weapon_accuracy", "Weapon Accuracy", "+5% accuracy per rank for all ranged weapons.", 1, SkillModifierType.WeaponAccuracyPercent, 5f, maxRank: 5),
+                CreateSkill(
+                    "skill_mining",
+                    "Mining",
+                    "Unlock higher-tier ores for multi-tool resource scanning and mining.",
+                    5,
+                    SkillModifierType.MiningTier,
+                    1f,
+                    maxRank: 5,
+                    costPerTargetRank: new[] { 1, 2, 2, 2, 2 }),
+                CreateSkill(
+                    "skill_harvesting",
+                    "Harvesting",
+                    "Unlock higher-tier plants for multi-tool resource scanning and harvesting.",
+                    5,
+                    SkillModifierType.HarvestingTier,
+                    1f,
+                    maxRank: 5,
+                    costPerTargetRank: new[] { 1, 2, 2, 2, 2 })
             };
 
             SkillRegistry registry = AssetDatabase.LoadAssetAtPath<SkillRegistry>(RegistryPath);
@@ -73,7 +91,8 @@ namespace Project.EditorTools.Progression
             int requiredLevel,
             SkillModifierType modifier,
             float bonusPerRank,
-            int maxRank = 3)
+            int maxRank = 3,
+            int[] costPerTargetRank = null)
         {
             string path = $"{SkillsFolder}/{id}.asset";
             SkillDefinition skill = AssetDatabase.LoadAssetAtPath<SkillDefinition>(path);
@@ -91,6 +110,7 @@ namespace Project.EditorTools.Progression
             skill.bonusPercentPerRank = bonusPerRank;
             skill.costPerRank = 1;
             skill.maxRank = maxRank;
+            skill.costPerTargetRank = costPerTargetRank;
             EditorUtility.SetDirty(skill);
             return skill;
         }

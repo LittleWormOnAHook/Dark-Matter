@@ -313,6 +313,7 @@ namespace Project.AI.Invector
                 PioneerInvectorWeaponBridge.PrepareDrawnRangedSlot(drawn, weapon);
 
             drawn.SetActive(true);
+            RestoreDrawnWeaponVisuals(drawn);
             PioneerInvectorWeaponBridge.ApplyItemStatsToInstance(weapon, drawn);
             _activeDrawnInstance = drawn;
 
@@ -349,6 +350,57 @@ namespace Project.AI.Invector
             vMeleeWeapon weapon = drawn.GetComponentInChildren<vMeleeWeapon>(true);
             if (weapon != null)
                 _meleeManager.SetRightWeapon(weapon.gameObject);
+        }
+
+        /// <summary>
+        /// After VBOT stock-body hide (or a blanket renderer re-enable), Drawn slots must show the
+        /// ItemData PioneerVisual mesh and keep GreatSword/handgun vendor leftovers component-disabled.
+        /// </summary>
+        private static void RestoreDrawnWeaponVisuals(GameObject drawn)
+        {
+            if (drawn == null)
+                return;
+
+            Transform pioneerVisual = null;
+            Transform[] children = drawn.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || child == drawn.transform)
+                    continue;
+
+                if (!child.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    continue;
+
+                pioneerVisual = child;
+                child.gameObject.SetActive(true);
+                break;
+            }
+
+            Renderer[] renderers = drawn.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                bool underPioneer = pioneerVisual != null &&
+                                    (renderer.transform == pioneerVisual ||
+                                     renderer.transform.IsChildOf(pioneerVisual));
+
+                if (pioneerVisual != null)
+                {
+                    renderer.enabled = underPioneer;
+                    if (underPioneer && !renderer.gameObject.activeSelf)
+                        renderer.gameObject.SetActive(true);
+                }
+                else
+                {
+                    renderer.enabled = true;
+                    if (!renderer.gameObject.activeSelf)
+                        renderer.gameObject.SetActive(true);
+                }
+            }
         }
 
         private void EquipRanged(GameObject drawn)

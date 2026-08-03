@@ -27,6 +27,8 @@ namespace Project.EditorTools
             public int Waves;
             public float LastWaveScale;
             public Color LootTint;
+            /// <summary>Mining / Harvesting skill rank required to identify via multi-tool F-scan.</summary>
+            public int RequiredGatherSkillRank;
 
             public HarvestRosterEntry(
                 string name,
@@ -39,7 +41,8 @@ namespace Project.EditorTools
                 int dropMax,
                 int waves = 1,
                 float lastWaveScale = 1f,
-                Color lootTint = default)
+                Color lootTint = default,
+                int requiredGatherSkillRank = 1)
             {
                 Name = name;
                 MaxStack = maxStack;
@@ -56,6 +59,7 @@ namespace Project.EditorTools
                     : (isPlant
                         ? new Color(0.75f, 0.82f, 0.28f, 1f)
                         : new Color(0.82f, 0.72f, 0.35f, 1f));
+                RequiredGatherSkillRank = Mathf.Max(1, requiredGatherSkillRank);
             }
         }
 
@@ -70,27 +74,31 @@ namespace Project.EditorTools
                 "Io silicate rock fragments. Laser-mined from mineral boulders. Used in abrasives, ceramics, and structural crafting.",
                 isPlant: false,
                 meshPath: ProjectAssetPaths.BoulderNodeTemplate,
-                duration: 5f, dropMin: 1, dropMax: 3, waves: 1, lastWaveScale: 0.6f),
+                duration: 5f, dropMin: 1, dropMax: 3, waves: 1, lastWaveScale: 0.6f,
+                requiredGatherSkillRank: 1),
             new HarvestRosterEntry(
                 "Iron Ore", 80,
                 "Dense iron-bearing ore. Laser-mined from mineral boulders. Smelted into metal components for weapons and modules.",
                 isPlant: false,
                 meshPath: ProjectAssetPaths.BoulderNodeTemplate,
-                duration: 5f, dropMin: 1, dropMax: 3, waves: 1, lastWaveScale: 0.6f),
+                duration: 5f, dropMin: 1, dropMax: 3, waves: 1, lastWaveScale: 0.6f,
+                requiredGatherSkillRank: 2),
             new HarvestRosterEntry(
                 "Sulfur Needle Tuft", 40,
                 "Bristly sulfur-rich plant fiber. Hold-E harvest. Antiseptic reagent for medpacks and salves.",
                 isPlant: true,
                 meshPath: ProjectAssetPaths.SulfurNeedleTuftGlb,
                 duration: 4f, dropMin: 5, dropMax: 10,
-                lootTint: new Color(0.75f, 0.82f, 0.28f, 1f)),
+                lootTint: new Color(0.75f, 0.82f, 0.28f, 1f),
+                requiredGatherSkillRank: 1),
             new HarvestRosterEntry(
                 "Brimstone Blade", 20,
                 "Fan-like Io plant fronds that seep a valuable brimstone goo. Hold-E harvest for crafting reagents.",
                 isPlant: true,
                 meshPath: ProjectAssetPaths.BrimstoneFanPlantPrefab,
                 duration: 4.5f, dropMin: 2, dropMax: 5,
-                lootTint: new Color(0.85f, 0.35f, 0.18f, 1f)),
+                lootTint: new Color(0.85f, 0.35f, 0.18f, 1f),
+                requiredGatherSkillRank: 2),
         };
 
         private static readonly string[] MiningPreferredOrder = { "Silicate Ore", "Iron Ore" };
@@ -123,6 +131,8 @@ namespace Project.EditorTools
         private bool grantsXp;
         private int xpAmount = 10;
         private XpSource xpSource = XpSource.SpecialItem;
+        private int requiredGatherSkillRank = 1;
+        private string unknownDisplayName = "Unknown Resource";
 
         // Mining node authoring
         private bool showMiningSection = true;
@@ -356,6 +366,9 @@ namespace Project.EditorTools
             Color tint = hasSeed && seed.LootTint.a > 0.01f
                 ? seed.LootTint
                 : default;
+            int scanRank = hasSeed ? seed.RequiredGatherSkillRank : 1;
+            if (item is MineHarvestItemData leanItem)
+                scanRank = Mathf.Max(1, leanItem.requiredGatherSkillRank);
 
             if (def != null)
             {
@@ -383,7 +396,7 @@ namespace Project.EditorTools
 
             return new HarvestRosterEntry(
                 name, maxStack, tooltip, isPlant, meshPath,
-                duration, dropMin, dropMax, waves, lastWave, tint);
+                duration, dropMin, dropMax, waves, lastWave, tint, scanRank);
         }
 
         private static bool TryGetSeedDefault(string name, bool isPlant, out HarvestRosterEntry seed)
@@ -458,7 +471,9 @@ namespace Project.EditorTools
                 "Manage mined / harvested resources only.\n" +
                 $"ItemData → {ProjectAssetPaths.ItemsResources}/Mining or /Harvest\n" +
                 $"Node definitions → {ProjectAssetPaths.ItemsNodes}\n" +
-                $"World nodes → {ProjectAssetPaths.PrefabsWorldResources}",
+                $"World nodes → {ProjectAssetPaths.PrefabsWorldResources}\n\n" +
+                "Multi-tool F-scan (aim mode, locked on node) identifies resource types before mine/harvest. " +
+                "Required Gather Skill Rank gates Mining / Harvesting skill unlocks.",
                 MessageType.Info);
 
             tab = GUILayout.Toolbar(tab, new[] { "Mining Nodes", "Plant Nodes", "Create Item" });
@@ -493,7 +508,8 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.HelpBox(
                     "Laser-mined mineral yields from Assets/.../Resources/Mining (+ linked node definitions). " +
-                    "Requires the DM Mining Tool (or any isMiningTool) by default.",
+                    "Requires the DM Mining Tool (drawn + aim mode). Identify with Hold F scan before mining. " +
+                    "Skill: Mining (player level 5+).",
                     MessageType.None);
 
                 List<HarvestRosterEntry> roster = GetMiningRoster();
@@ -510,7 +526,7 @@ namespace Project.EditorTools
                     EditorGUILayout.BeginVertical("box");
                     EditorGUILayout.LabelField(entry.Name, EditorStyles.boldLabel);
                     EditorGUILayout.LabelField(
-                        $"Stack {entry.MaxStack}  ·  {entry.Duration:0.#}s/wave  ·  yield {entry.DropMin}-{entry.DropMax}  ·  waves {entry.Waves}",
+                        $"Stack {entry.MaxStack}  ·  {entry.Duration:0.#}s/wave  ·  yield {entry.DropMin}-{entry.DropMax}  ·  waves {entry.Waves}  ·  scan rank {entry.RequiredGatherSkillRank}",
                         EditorStyles.miniLabel);
                     EditorGUILayout.BeginHorizontal();
                     if (GUILayout.Button("Load Into Form"))
@@ -627,7 +643,8 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.HelpBox(
                     "Hold-E harvested flora from Assets/.../Resources/Harvest (+ linked node definitions). " +
-                    "Includes Sulfur Needle Tuft and Brimstone Blade when present.",
+                    "Identify with multi-tool Hold F scan (aim mode) before harvest. Skill: Harvesting (player level 5+). " +
+                    "Proximity dots + map markers after placement.",
                     MessageType.None);
 
                 List<HarvestRosterEntry> roster = GetPlantRoster();
@@ -644,7 +661,7 @@ namespace Project.EditorTools
                     EditorGUILayout.BeginVertical("box");
                     EditorGUILayout.LabelField(entry.Name, EditorStyles.boldLabel);
                     EditorGUILayout.LabelField(
-                        $"Stack {entry.MaxStack}  ·  hold {entry.Duration:0.#}s  ·  yield {entry.DropMin}-{entry.DropMax}",
+                        $"Stack {entry.MaxStack}  ·  hold {entry.Duration:0.#}s  ·  yield {entry.DropMin}-{entry.DropMax}  ·  scan rank {entry.RequiredGatherSkillRank}",
                         EditorStyles.miniLabel);
                     EditorGUILayout.BeginHorizontal();
                     if (GUILayout.Button("Load Into Form"))
@@ -678,7 +695,9 @@ namespace Project.EditorTools
             EditorGUILayout.Space(12f);
             EditorGUILayout.LabelField("Create / Update Plant Node", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Harvest input is Interact hold (keyboard E or F). Nearby plants show floating dots like item pickups and register map markers (scanner-gated).",
+                "Harvest input is Hold E (gamepad West). F is reserved for multi-tool resource scan. " +
+                "Nearby plants show floating dots and register map markers (map-scanner gated). " +
+                "Plant must be F-scanned / identified before Hold-E harvest.",
                 MessageType.None);
 
             EditorGUILayout.LabelField("Looted Item → Inventory", EditorStyles.boldLabel);
@@ -697,7 +716,7 @@ namespace Project.EditorTools
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Tool + World Plant", EditorStyles.boldLabel);
             plantRequiredTool = (ItemData)EditorGUILayout.ObjectField(
-                new GUIContent("Tool To Harvest", "Leave empty for bare-hands Hold E / F harvest."),
+                new GUIContent("Tool To Harvest", "Leave empty for bare-hands Hold E harvest."),
                 plantRequiredTool, typeof(ItemData), false);
             plantMeshTemplate = (GameObject)EditorGUILayout.ObjectField(
                 new GUIContent("World Plant Model", "Plant mesh / prefab placed in the world."),
@@ -764,7 +783,7 @@ namespace Project.EditorTools
         {
             EditorGUILayout.HelpBox(
                 "Create a mined / harvested Resource ItemData only (no operational fuels or scrap).\n" +
-                "Exposes the same gather fields as MineHarvestItemData: icon, stack, tooltip, audio, complete VFX, XP.",
+                "Gather fields: icon, stack, tooltip, scan skill rank, unknown label, audio, complete VFX, XP.",
                 MessageType.None);
 
             createItemCategory = EditorGUILayout.Popup(
@@ -802,11 +821,26 @@ namespace Project.EditorTools
         }
 
         /// <summary>
-        /// Shared MineHarvestItemData gather fields (audio, complete VFX, optional XP).
+        /// Shared MineHarvestItemData gather fields (scan gate, audio, complete VFX, optional XP).
         /// </summary>
         private void DrawMineHarvestItemDataFields(bool isPlant)
         {
             EnsureItemFieldDefaults(isPlant);
+
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("Multi-Tool Resource Scan", EditorStyles.boldLabel);
+            requiredGatherSkillRank = EditorGUILayout.IntField(
+                new GUIContent(
+                    "Required Gather Skill Rank",
+                    isPlant
+                        ? "Harvesting skill rank needed to identify this plant with Hold F scan."
+                        : "Mining skill rank needed to identify this ore with Hold F scan."),
+                Mathf.Max(1, requiredGatherSkillRank));
+            unknownDisplayName = EditorGUILayout.TextField(
+                new GUIContent(
+                    "Unknown Display Name",
+                    "Label shown on the node before the resource type is identified."),
+                string.IsNullOrWhiteSpace(unknownDisplayName) ? "Unknown Resource" : unknownDisplayName);
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Loot Attract / Harvest Audio", EditorStyles.boldLabel);
@@ -857,6 +891,9 @@ namespace Project.EditorTools
 
             if (item is MineHarvestItemData lean)
             {
+                requiredGatherSkillRank = Mathf.Max(1, lean.requiredGatherSkillRank);
+                if (!string.IsNullOrWhiteSpace(lean.unknownDisplayName))
+                    unknownDisplayName = lean.unknownDisplayName;
                 if (lean.lootYieldClip != null)
                     lootYieldClip = lean.lootYieldClip;
                 lootYieldVolume = lean.lootYieldVolume;
@@ -884,6 +921,8 @@ namespace Project.EditorTools
             miningLootTint = entry.LootTint;
             miningMeshTemplate = AssetDatabase.LoadAssetAtPath<GameObject>(entry.MeshPath);
             miningYieldItem = LoadResourceItem(entry.Name, isPlant: false);
+            requiredGatherSkillRank = Mathf.Max(1, entry.RequiredGatherSkillRank);
+            unknownDisplayName = "Unknown Resource";
 
             ResourceNodeDefinition def = FindNodeDefinitionForItemName(entry.Name, isPlant: false);
             if (def != null)
@@ -944,6 +983,8 @@ namespace Project.EditorTools
             plantMeshTemplate = AssetDatabase.LoadAssetAtPath<GameObject>(entry.MeshPath);
             plantYieldItem = LoadResourceItem(entry.Name, isPlant: true);
             plantHoldPrompt = $"Hold E — Harvest {entry.Name}";
+            requiredGatherSkillRank = Mathf.Max(1, entry.RequiredGatherSkillRank);
+            unknownDisplayName = "Unknown Resource";
 
             ResourceNodeDefinition def = FindNodeDefinitionForItemName(entry.Name, isPlant: true);
             if (def != null)
@@ -1083,6 +1124,10 @@ namespace Project.EditorTools
             item.itemType = ItemType.Resource;
             item.gatherKind = isPlant ? MineHarvestGatherKind.Harvest : MineHarvestGatherKind.Mining;
             item.maxStack = maxStack;
+            item.requiredGatherSkillRank = Mathf.Max(1, requiredGatherSkillRank);
+            item.unknownDisplayName = string.IsNullOrWhiteSpace(unknownDisplayName)
+                ? "Unknown Resource"
+                : unknownDisplayName.Trim();
             if (icon != null)
                 item.icon = icon;
             if (!string.IsNullOrWhiteSpace(tooltipDescription))
@@ -1489,12 +1534,24 @@ namespace Project.EditorTools
             for (int i = 0; i < meshes.Length; i++)
                 Object.DestroyImmediate(meshes[i]);
 
+            // Recenter visual children so the mesh sits on the node root (fixes offset colliders / dots).
+            Renderer rend = root.GetComponentInChildren<Renderer>();
+            if (rend != null)
+            {
+                Vector3 localCenter = root.transform.InverseTransformPoint(rend.bounds.center);
+                if (localCenter.sqrMagnitude > 0.0001f)
+                {
+                    for (int i = 0; i < root.transform.childCount; i++)
+                        root.transform.GetChild(i).localPosition -= localCenter;
+                    rend = root.GetComponentInChildren<Renderer>();
+                }
+            }
+
             BoxCollider box = root.GetComponent<BoxCollider>();
             if (box == null)
                 box = root.AddComponent<BoxCollider>();
 
             box.isTrigger = true;
-            Renderer rend = root.GetComponentInChildren<Renderer>();
             if (rend != null)
             {
                 Bounds b = rend.bounds;
@@ -1503,7 +1560,7 @@ namespace Project.EditorTools
                 box.size = new Vector3(
                     SafeDiv(b.size.x, lossy.x),
                     SafeDiv(b.size.y, lossy.y),
-                    SafeDiv(b.size.z, lossy.z));
+                    SafeDiv(b.size.z, lossy.z)) + Vector3.one * 0.05f;
             }
             else
             {

@@ -140,7 +140,8 @@ namespace Project.AI
         [Tooltip("Applied when chaseSpeed is 0.")]
         [Range(0.5f, 1.25f)]
         public float chaseSpeedMultiplier = 0.88f;
-        public float turnSpeed = 8f;
+        [Tooltip("Legacy turn factor (≈ deg/sec × 18). Lower = more natural yaw.")]
+        public float turnSpeed = 5f;
         public float loseTargetDelay = 4f;
         public float searchDuration = 6f;
         public float searchRadius = 4f;

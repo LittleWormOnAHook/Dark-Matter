@@ -206,7 +206,10 @@ namespace Project.Audio
 
         public void PlayInventoryItemClick()
         {
-            PlayUiClip(PickClip(profile?.buttonClickClips), profile != null ? profile.uiVolume * 0.9f : 0.75f);
+            AudioClip[] clips = profile?.inventoryItemClickClips;
+            if (clips == null || clips.Length == 0)
+                clips = profile?.buttonClickClips;
+            PlayUiClip(PickClip(clips), profile != null ? profile.uiVolume * 0.9f : 0.75f);
         }
 
         public void PlayItemUse()

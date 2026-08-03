@@ -130,6 +130,8 @@ MonoBehaviour:
     for crafting reagents.
   unlocksInventoryStorageRow: 0
   gatherKind: 1
+  requiredGatherSkillRank: 2
+  unknownDisplayName: Unknown Resource
   lootYieldClip: {fileID: 8300000, guid: 9d67eefa1e1f5ef4abba0de9d8952245, type: 3}
   lootYieldVolume: 0.9
   lootGrantClip: {fileID: 8300000, guid: ac38e039e1b87924ca20b52107b0522e, type: 3}

@@ -72,6 +72,20 @@ namespace Project.Player.Invector
             // double-deals damage.
             invectorWeapon.projectile = null;
 
+            ItemData weaponItem = _equipment.EquippedItem;
+
+            // Mining tools own continuous Fire-hold beam audio/VFX via DMIMiningController.
+            // Strip Invector pulse shot FX immediately and never spawn combat projectiles/sounds.
+            if (weaponItem != null && weaponItem.isMiningTool)
+            {
+                invectorWeapon.fireClip = null;
+                invectorWeapon.emittShurykenParticle = null;
+                invectorWeapon.lightOnShot = null;
+                invectorWeapon.isInfinityAmmo = true;
+                PioneerInvectorRecoilUtility.ZeroWeaponRecoil(invectorWeapon);
+                return;
+            }
+
             // Invector plays its own bundled fireClip on every shot (source.PlayOneShot) on top of
             // whatever ammoItem/weapon fire sound we resolve below — clear it so only one gunshot
             // isInfinityAmmo stays true so Invector's unfed native reserve (vAmmoManager) never
@@ -97,12 +111,7 @@ namespace Project.Player.Invector
             }
             PioneerInvectorRecoilUtility.ZeroWeaponRecoil(invectorWeapon);
 
-            ItemData weaponItem = _equipment.EquippedItem;
             if (weaponItem == null || !weaponItem.IsRangedWeapon)
-                return;
-
-            // Mining tools own continuous Fire-hold beams via DMIMiningController — never spawn combat projectiles.
-            if (weaponItem.isMiningTool)
                 return;
 
             // Single authoritative ammo decision for this trigger pull: blocks fire while a reload

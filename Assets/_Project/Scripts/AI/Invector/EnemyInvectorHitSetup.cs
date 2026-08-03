@@ -1,3 +1,6 @@
+using Invector.vMelee;
+using Invector.vShooter;
+using Project.Interaction;
 using UnityEngine;
 
 namespace Project.AI.Invector
@@ -93,8 +96,41 @@ namespace Project.AI.Invector
                 if (collider == null || collider.transform == root.transform)
                     continue;
 
+                // Keep melee/ranged hit volumes — vMeleeManager enables vHitBox during attack windows.
+                if (IsOutgoingWeaponHitCollider(collider))
+                    continue;
+
                 collider.enabled = false;
             }
+        }
+
+        private static bool IsOutgoingWeaponHitCollider(Collider collider)
+        {
+            if (collider == null)
+                return false;
+
+            if (collider.GetComponentInParent<vHitBox>() != null)
+                return true;
+            if (collider.GetComponentInParent<vMeleeWeapon>() != null)
+                return true;
+            if (collider.GetComponentInParent<vShooterWeapon>() != null)
+                return true;
+            if (collider.GetComponentInParent<WeaponHitbox>() != null)
+                return true;
+
+            Transform node = collider.transform;
+            while (node != null)
+            {
+                string name = node.name;
+                if (name.StartsWith("Drawn_", System.StringComparison.Ordinal) ||
+                    name.StartsWith("Holstered_", System.StringComparison.Ordinal) ||
+                    name.Equals("WeaponHitbox", System.StringComparison.Ordinal) ||
+                    name.Equals("hitBox", System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+                node = node.parent;
+            }
+
+            return false;
         }
 
         private static void FitRootCapsule(

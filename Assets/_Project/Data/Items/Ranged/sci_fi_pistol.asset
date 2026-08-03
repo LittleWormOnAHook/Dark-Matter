@@ -95,17 +95,19 @@ MonoBehaviour:
   miningLockBreakDegrees: 30
   miningPassDuration: 1.25
   miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
-  statusEffectOverride: 0
-  statusEffectDamagePerTick: 0
-  statusEffectTickInterval: 1
-  statusEffectDuration: 0
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectOverride: 3
+  statusEffectDamagePerTick: 3
+  statusEffectTickInterval: 2
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 100000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8

@@ -36,9 +36,7 @@ namespace Project.Interaction
             ResourceNode resourceNode = targetObject.GetComponentInParent<ResourceNode>();
             if (resourceNode != null)
             {
-                label = resourceNode.resourceItem != null
-                    ? resourceNode.resourceItem.itemName
-                    : resourceNode.name;
+                label = resourceNode.GetDisplayName();
                 if (profile.TryGetRuleForCategory(ScannerTargetCategory.Resource, out rule))
                     return true;
             }

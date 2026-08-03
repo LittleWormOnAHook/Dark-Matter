@@ -142,7 +142,7 @@ namespace Project.Interaction
         private static bool IsUseHeld()
         {
             Keyboard kb = Keyboard.current;
-            if (kb != null && (kb.eKey.isPressed || kb.fKey.isPressed))
+            if (kb != null && kb.eKey.isPressed)
                 return true;
 
             Gamepad pad = Gamepad.current;

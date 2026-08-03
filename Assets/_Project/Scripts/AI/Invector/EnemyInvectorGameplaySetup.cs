@@ -1,16 +1,25 @@
 using Project.Combat;
+using Project.Creatures;
 using UnityEngine;
 
 namespace Project.AI.Invector
 {
     /// <summary>
     /// Ensures the full Pioneer enemy gameplay stack exists on humanoid Invector bodies.
+    /// Skips DMI / RiggedNative / Malbers fauna that carry <see cref="DMICreatureBridge"/>
+    /// or <see cref="DMICreatureAiController"/>.
     /// </summary>
     public static class EnemyInvectorGameplaySetup
     {
         public static void Ensure(GameObject root, EnemyDefinition definition = null)
         {
             if (root == null)
+                return;
+
+            // DMI / RiggedNative / Malbers fauna use their own stack — never inject humanoid
+            // EnemyAiController / combat bridges (covers bridge-only prefabs like Sulfur_Hound V1).
+            if (root.GetComponentInChildren<DMICreatureBridge>(true) != null
+                || root.GetComponentInChildren<DMICreatureAiController>(true) != null)
                 return;
 
             EnemyHealth health = GetOrAdd<EnemyHealth>(root);
@@ -50,7 +59,7 @@ namespace Project.AI.Invector
             SetField(ai, "wanderRadius", 8f);
             SetField(ai, "chasePlayer", true);
 
-            SetField(combat, "attackRange", 1.8f);
+            SetField(combat, "attackRange", 2f);
             SetField(combat, "attackDamage", 12f);
             SetField(combat, "attackCooldown", 1.4f);
             SetField(combat, "attackWindup", 0.35f);
@@ -85,6 +94,7 @@ namespace Project.AI.Invector
             SetField(senses, "visionRange", definition.visionRange);
             SetField(senses, "visionFov", definition.visionFov);
             SetField(senses, "eyeHeight", definition.eyeHeight);
+            SetField(senses, "senseHearingEnabled", definition.senseHearingEnabled);
             SetField(senses, "hearingRange", definition.hearingRange);
             SetField(senses, "proximityRange", definition.proximityRange);
 
@@ -117,6 +127,10 @@ namespace Project.AI.Invector
             SetField(ai, "runSpeed", definition.runSpeed);
             SetField(ai, "chaseSpeed", definition.chaseSpeed);
             SetField(ai, "chaseSpeedMultiplier", definition.chaseSpeedMultiplier);
+            SetField(ai, "aggroOnDamaged", definition.aggroOnDamaged);
+            SetField(ai, "aggroOnHeardHit", definition.aggroOnHeardHit);
+            SetField(ai, "hearingAggroChance", definition.hearingAggroChance);
+            SetField(ai, "hearingCooldown", definition.hearingCooldown);
             SetField(ai, "turnSpeed", definition.turnSpeed);
             SetField(ai, "loseTargetDelay", definition.loseTargetDelay);
             SetField(ai, "searchDuration", definition.searchDuration);

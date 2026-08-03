@@ -15,7 +15,8 @@ MonoBehaviour:
   movementMode: 1
   walkSpeed: 2.2
   runSpeed: 4.5
-  turnSpeed: 8
+  turnSpeed: 5
+  agentAngularSpeed: 140
   stopDistance: 0.4
   wanderRadius: 8
   idleDurationMin: 1.5

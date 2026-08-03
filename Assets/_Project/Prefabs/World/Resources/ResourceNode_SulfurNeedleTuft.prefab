@@ -84,8 +84,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.9681282, y: 3.2134714, z: 2.97545}
-  m_Center: {x: -0.17533031, y: 0.5944299, z: 0.08668026}
+  m_Size: {x: 3.0181282, y: 3.2634714, z: 3.02545}
+  m_Center: {x: 0.000000007450581, y: -0.000000029802322, z: 0}
 --- !u!114 &2773577388402497587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,21 +115,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 981891649486560540}
     m_Modifications:
+    - target: {fileID: -3012597505919958286, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c1c0725db0a74ef4a8ab51d3052b3419, type: 2}
     - target: {fileID: 489627813733477026, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
       propertyPath: m_Name
       value: Visual
       objectReference: {fileID: 0}
     - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.17533031
       objectReference: {fileID: 0}
     - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.5944299
       objectReference: {fileID: 0}
     - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.08668026
       objectReference: {fileID: 0}
     - target: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
       propertyPath: m_LocalRotation.w
@@ -162,8 +166,56 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -6914893313639462240, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7858089534910966802}
   m_SourcePrefab: {fileID: -4161369568681901532, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+--- !u!1 &2735511971002221677 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -6914893313639462240, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+  m_PrefabInstance: {fileID: 432099883820863181}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7858089534910966802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2735511971002221677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e86ead99e453b448836eb544933c0f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMIMaterialPulseScroll
+  targetRenderer: {fileID: 6038827963679018047}
+  materialIndices: 
+  useMaterialPropertyBlock: 1
+  pulseAlpha: 0
+  alphaPulseTarget: 0
+  alphaPulseMin: 0.25
+  alphaPulseMax: 1
+  alphaPulseSpeed: 1.42
+  pulseEmission: 1
+  emissionPulseMin: 0.35
+  emissionPulseMax: 2.5
+  emissionPulseSpeed: 0.2
+  fallbackEmissionTint: {r: 1, g: 1, b: 1, a: 1}
+  ensureEmissionKeyword: 1
+  scrollBaseMap: 1
+  baseMapScrollSpeed: {x: 0.1, y: 0}
+  scrollEmissionMap: 0
+  emissionMapScrollSpeed: {x: 0.05, y: 0}
+  scrollNormalMap: 0
+  normalMapScrollSpeed: {x: 0, y: 0}
+  useUnscaledTime: 0
+  phaseOffset: 0
+  previewInEditMode: 0
+--- !u!137 &6038827963679018047 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -3012597505919958286, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}
+  m_PrefabInstance: {fileID: 432099883820863181}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8007208074277112867 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7701280569141494510, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}

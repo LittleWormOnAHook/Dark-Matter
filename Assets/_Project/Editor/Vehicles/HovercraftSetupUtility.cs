@@ -117,7 +117,8 @@ namespace Project.EditorTools.Vehicles
             }
 
             Project.Data.ItemData plasmaFuelItem =
-                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
+                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsOperations + "/Plasma Fuel.asset")
+                ?? AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
             changed |= WireSerializedReference(fuelSystem, "controller", controller);
             changed |= WireSerializedReference(fuelSystem, "physicsDriver", physics);
             changed |= WireSerializedReference(fuelSystem, "plasmaFuelItem", plasmaFuelItem);
@@ -427,7 +428,8 @@ namespace Project.EditorTools.Vehicles
             controllerSo.ApplyModifiedPropertiesWithoutUndo();
 
             Project.Data.ItemData plasmaFuelItem =
-                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
+                AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsOperations + "/Plasma Fuel.asset")
+                ?? AssetDatabase.LoadAssetAtPath<Project.Data.ItemData>(ProjectAssetPaths.ItemsResources + "/Plasma Fuel.asset");
             SerializedObject fuelSo = new SerializedObject(fuelSystem);
             fuelSo.FindProperty("controller").objectReferenceValue = controller;
             fuelSo.FindProperty("physicsDriver").objectReferenceValue = physics;

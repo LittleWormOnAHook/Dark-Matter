@@ -25,8 +25,7 @@ namespace Project.Companions
             if (toEnemy.sqrMagnitude < 0.01f)
                 return;
 
-            Quaternion look = Quaternion.LookRotation(toEnemy.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * 1.6f * Time.deltaTime);
+            DMILocomotionFacing.FaceToward(transform, enemyPos, turnSpeed * 1.6f);
         }
 
         /// <summary>

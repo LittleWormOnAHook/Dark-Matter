@@ -52,6 +52,7 @@ namespace Project.Managers
             if (grantStartingItems)
             {
                 ScannerDiscoveryRegistry.Clear();
+                ResourceIdentificationRegistry.Clear();
                 InitializePlayer();
             }
 

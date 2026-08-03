@@ -94,8 +94,8 @@ namespace Project.AI
 
             navAgent.enabled = false;
             navAgent.speed = walkSpeed;
-            navAgent.angularSpeed = Mathf.Max(120f, turnSpeed * 45f);
-            navAgent.acceleration = 14f;
+            navAgent.angularSpeed = DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
+            navAgent.acceleration = 8f;
             navAgent.stoppingDistance = stopDistance;
             navAgent.autoBraking = true;
             navAgent.updateRotation = true;
@@ -178,7 +178,12 @@ namespace Project.AI
             if (!TrySampleNavMesh(target, out Vector3 navTarget))
                 return false;
 
-            navAgent.speed = speed;
+            float moveScale = 1f;
+            if (navAgent.desiredVelocity.sqrMagnitude > 0.01f)
+                moveScale = DMILocomotionFacing.FacingMoveScale(transform, navAgent.desiredVelocity);
+
+            navAgent.speed = speed * moveScale;
+            navAgent.angularSpeed = DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
             navAgent.stoppingDistance = Mathf.Max(0.05f, arriveDistance);
 
             float repathThresholdSq = navDestinationRepathThreshold * navDestinationRepathThreshold;
@@ -282,7 +287,9 @@ namespace Project.AI
             float distance = toTarget.magnitude;
             if (distance > arriveDistance)
             {
-                Vector3 step = toTarget.normalized * (speed * Time.deltaTime);
+                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget);
+                float scaledSpeed = speed * moveScale;
+                Vector3 step = toTarget.normalized * (scaledSpeed * Time.deltaTime);
                 float maxStep = distance - arriveDistance;
                 if (step.magnitude > maxStep)
                     step = toTarget.normalized * maxStep;
@@ -292,11 +299,13 @@ namespace Project.AI
                 if (step.sqrMagnitude < 0.000001f)
                 {
                     ClearLocomotion();
+                    if (toTarget.sqrMagnitude > 0.01f)
+                        FaceTowards(flatTarget);
                     return;
                 }
 
                 transform.position += step;
-                currentLocomotionSpeed = speed;
+                currentLocomotionSpeed = scaledSpeed;
                 currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
             }
             else
@@ -310,13 +319,7 @@ namespace Project.AI
 
         private void FaceTowards(Vector3 worldPosition)
         {
-            Vector3 toTarget = worldPosition - transform.position;
-            toTarget.y = 0f;
-            if (toTarget.sqrMagnitude <= 0.01f)
-                return;
-
-            Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * Time.deltaTime);
+            DMILocomotionFacing.FaceToward(transform, worldPosition, turnSpeed);
         }
 
         private void SnapToGround()

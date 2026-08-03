@@ -80,6 +80,40 @@ namespace Project.Interaction
         public float MiningPassProgress01 => Mathf.Clamp01(miningPassProgress);
         public bool IsHoldActive => holdActive;
 
+        /// <summary>True when this node's resource type has been identified by multi-tool F-scan.</summary>
+        public bool IsResourceIdentified =>
+            resourceItem != null && ResourceIdentificationRegistry.IsIdentified(resourceItem);
+
+        public string GetDisplayName()
+        {
+            if (resourceItem == null)
+                return "Resource";
+
+            if (!IsResourceIdentified)
+            {
+                if (resourceItem is MineHarvestItemData lean
+                    && !string.IsNullOrWhiteSpace(lean.unknownDisplayName))
+                {
+                    return lean.unknownDisplayName;
+                }
+
+                return "Unknown Resource";
+            }
+
+            return string.IsNullOrEmpty(resourceItem.itemName) ? resourceItem.name : resourceItem.itemName;
+        }
+
+        public string GetUnknownDisplayName()
+        {
+            if (resourceItem is MineHarvestItemData lean
+                && !string.IsNullOrWhiteSpace(lean.unknownDisplayName))
+            {
+                return lean.unknownDisplayName;
+            }
+
+            return "Unknown Resource";
+        }
+
         public float HoldDurationSeconds =>
             holdDurationSeconds > 0.05f ? holdDurationSeconds : Mathf.Max(0.05f, passDuration);
 
@@ -327,11 +361,32 @@ namespace Project.Interaction
                 return false;
             }
 
+            if (!IsResourceIdentified)
+                return false;
+
             return AllowsHarvestWithoutSpecialTool() || MatchesRequiredTool(ResolveEquippedTool(context));
         }
 
         /// <summary>True when this laser-mine node accepts the drawn mining tool.</summary>
         public bool AllowsMiningTool(ItemData tool)
+        {
+            if (interactionMode != ResourceNodeInteractionMode.LaserMine || resourceItem == null)
+                return false;
+
+            if (!IsResourceIdentified)
+                return false;
+
+            if (requireMiningLaser && (tool == null || !tool.isMiningTool))
+                return false;
+
+            if (requiredTool != null && tool != requiredTool)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>Tool/mode checks without requiring identification (used for scan-required feedback).</summary>
+        public bool AllowsMiningToolIgnoringIdentification(ItemData tool)
         {
             if (interactionMode != ResourceNodeInteractionMode.LaserMine || resourceItem == null)
                 return false;
@@ -564,7 +619,7 @@ namespace Project.Interaction
                 return;
 
             // Same small gold time-slider as laser mining (0→1 over HoldDurationSeconds).
-            string name = resourceItem != null ? resourceItem.itemName : "Harvest";
+            string name = GetDisplayName();
             Camera cam = context.ViewCamera != null ? context.ViewCamera : Camera.main;
             holdProgressBar.UpdateBar(
                 GetNodeCenter() + Vector3.up * 0.75f,

@@ -52852,6 +52852,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   visionRefreshInterval: 0.12
+  senseHearingEnabled: 1
   hearingRange: 18
   noiseMemoryDuration: 8
   proximityRange: 2.5
@@ -52905,6 +52906,8 @@ MonoBehaviour:
   wanderRadius: 8
   wanderPauseMin: 2
   wanderPauseMax: 5
+  patrolPath: {fileID: 0}
+  patrolPathProvider: {fileID: 0}
   patrolPoints: []
   patrolWaitDuration: 2
   idleDuration: 3
@@ -52924,6 +52927,10 @@ MonoBehaviour:
   pioneerRetargetRollIntervalMin: 0.75
   pioneerRetargetRollIntervalMax: 1.35
   playerThreatRange: 3
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
   minCombatSeparation: 1.35
   attackStandoffFraction: 0.78
   playerStandoffBonus: 0.35
@@ -52968,8 +52975,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
   enableLoot: 1
   lootDisplayName: The Evil One
-  piCoinsMin: 2
-  piCoinsMax: 8
+  acDropMin: 2
+  acDropMax: 8
   randomLootCountMin: 0
   randomLootCountMax: 2
   lootItemPool: []
@@ -52996,6 +53003,7 @@ MonoBehaviour:
   dissolveDuration: 1.4
   dissolveEdgeWidth: 0.045
   dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  maxDissolveDiameter: 1
   replaceDeathAnimation: 1
   autoStartOnDeathWithoutSequence: 1
   enableSmoke: 0
@@ -53179,7 +53187,14 @@ MonoBehaviour:
   minStaggerDamage: 18
   defaultStaggerSeconds: 0.55
   staggerOnCritical: 1
-  maxCorpseLaunchSpeed: 6
+  baseStaggerChance: 0.06
+  lowHealthStaggerChance: 0.28
+  knockdownHealthThreshold: 0.1
+  knockdownDownSeconds: 2.25
+  knockdownGetUpTimeout: 3.5
+  criticalStaggerChanceBonus: 0.15
+  maxCorpseBoneSpeed: 2.5
+  maxBoneDepenetrationSpeed: 1.5
 --- !u!114 &8650219326704882083
 MonoBehaviour:
   m_ObjectHideFlags: 0

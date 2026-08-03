@@ -16,6 +16,8 @@ namespace Project.EditorTools
         private SerializedProperty worldPrefab;
         private SerializedProperty maxStack;
         private SerializedProperty gatherKind;
+        private SerializedProperty requiredGatherSkillRank;
+        private SerializedProperty unknownDisplayName;
         private SerializedProperty lootYieldClip;
         private SerializedProperty lootYieldVolume;
         private SerializedProperty lootGrantClip;
@@ -33,6 +35,8 @@ namespace Project.EditorTools
             worldPrefab = serializedObject.FindProperty("worldPrefab");
             maxStack = serializedObject.FindProperty("maxStack");
             gatherKind = serializedObject.FindProperty("gatherKind");
+            requiredGatherSkillRank = serializedObject.FindProperty("requiredGatherSkillRank");
+            unknownDisplayName = serializedObject.FindProperty("unknownDisplayName");
             lootYieldClip = serializedObject.FindProperty("lootYieldClip");
             lootYieldVolume = serializedObject.FindProperty("lootYieldVolume");
             lootGrantClip = serializedObject.FindProperty("lootGrantClip");
@@ -56,6 +60,8 @@ namespace Project.EditorTools
             EditorGUILayout.LabelField("Identity", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(itemName);
             EditorGUILayout.PropertyField(gatherKind);
+            EditorGUILayout.PropertyField(requiredGatherSkillRank);
+            EditorGUILayout.PropertyField(unknownDisplayName);
             EditorGUILayout.PropertyField(icon);
             EditorGUILayout.PropertyField(worldPrefab, new GUIContent(
                 "Loot / World Prefab",

@@ -1,5 +1,6 @@
 using UnityEngine;
 using MalbersAnimations.PathCreation;
+using Project.AI;
 using Project.Companions;
 using Project.Interaction;
 using Project.Inventory;
@@ -43,7 +44,8 @@ namespace Project.Pet
         [Header("Movement")]
         [SerializeField] private float walkSpeed = 2.2f;
         [SerializeField] private float runSpeed = 4.5f;
-        [SerializeField] private float turnSpeed = 8f;
+        [Tooltip("Legacy turn factor (≈ deg/sec × 18). Lower = slower, more natural yaw.")]
+        [SerializeField] private float turnSpeed = 5f;
         [SerializeField] private float stopDistance = 0.35f;
         [SerializeField] private float maxFollowDistance = 12f;
         [SerializeField] private float groundOffset = 0f;
@@ -792,12 +794,14 @@ namespace Project.Pet
             float distance = toTarget.magnitude;
             if (distance > stopDistance)
             {
-                Vector3 step = toTarget.normalized * (speed * Time.deltaTime);
+                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget);
+                float scaledSpeed = speed * moveScale;
+                Vector3 step = toTarget.normalized * (scaledSpeed * Time.deltaTime);
                 if (step.sqrMagnitude > distance * distance)
                     step = toTarget;
 
                 transform.position += step;
-                _currentSpeed = speed;
+                _currentSpeed = scaledSpeed;
             }
             else
             {
@@ -805,10 +809,7 @@ namespace Project.Pet
             }
 
             if (toTarget.sqrMagnitude > 0.01f)
-            {
-                Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, look, turnSpeed * Time.deltaTime);
-            }
+                DMILocomotionFacing.FaceToward(transform, flatTarget, turnSpeed);
         }
 
         private void SnapToGround()

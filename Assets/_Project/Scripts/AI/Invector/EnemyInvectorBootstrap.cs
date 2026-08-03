@@ -186,9 +186,13 @@ namespace Project.AI.Invector
             {
                 animator.enabled = true;
                 animator.updateMode = AnimatorUpdateMode.Normal;
-                animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                // AlwaysAnimate avoids intermittent chase glides when CullUpdateTransforms
+                // skips bone writes while NavMesh still moves the root.
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 animator.applyRootMotion = false;
             }
+
+            EnsureVisualMeshesUpdateOffscreen();
 
             if (ThirdPersonController != null)
             {
@@ -212,6 +216,20 @@ namespace Project.AI.Invector
             ThirdPersonController.lockMovement = true;
             ThirdPersonController.useRootMotion = false;
             ThirdPersonController.isGrounded = true;
+        }
+
+        private void EnsureVisualMeshesUpdateOffscreen()
+        {
+            SkinnedMeshRenderer[] renderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SkinnedMeshRenderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                    continue;
+
+                // Enabled Meshy body only — keep stock VBOT / props untouched.
+                renderer.updateWhenOffscreen = true;
+            }
         }
 
         private void HandleShooterWeaponEquipped(vShooterWeapon weapon, bool isLeftWeapon)

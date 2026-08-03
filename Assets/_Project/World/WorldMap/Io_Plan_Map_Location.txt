@@ -1,11 +1,31 @@
-Io surface PLAN maps (art reference only — not Unity terrain).
+Io surface PLAN maps + Unity terrain heightmaps
 
-Primary copy (Design art reference):
+Image resolution (art): 4096x4096 (4K square)
+Future Io plan terrain (separate asset): 2048x2048 world units, height 1000 m
+Unity-ready elevation maps: 2048x2048 pixels (PNG + RAW)
+Do NOT apply these sizes to the Pioneer prototype scene Terrain.
+
+ART REFERENCE (shaded-relief — NOT Unity elevation)
   Assets/_Project/Documentation/Design/ArtReference/WorldMap/
+  Assets/_Project/World/WorldMap/
+    Io_Plan_BiomeMap_TopDown.png
+    Io_Plan_BiomeMap_Isometric.png
+    Io_Plan_Heightmap.png   — artistic shaded-relief REFERENCE only
 
-This folder (next to World/Terrain):
-  Io_Plan_BiomeMap_TopDown.png   — biome regions B1–B7
-  Io_Plan_BiomeMap_Isometric.png — isometric plan view
-  Io_Plan_Heightmap.png          — height / relief reference
+UNITY-READY ELEVATION (exactly 2048x2048)
+  Assets/_Project/World/Terrain/
+    Io_Plan_Heightmap_Unity.png
+    Io_Plan_Heightmap_Unity.raw
+    Io_Plan_Heightmap_Unity_Preview8.png
+    Io_Plan_Heightmap_Unity_Import.txt
+    Io_Plan_Terrain.asset   — optional shell; prefer Import Raw after restart
+
+Import Raw: Bit 16, Windows LE, Width/Height 2048.
+Terrain size: Width 2048, Length 2048, Height **100** (peaks ~25-40 units).
+Optional Height 1000 for ~250-400 unit peaks with same RAW. See Import.txt.
+Note: TerrainData.heightmapResolution is usually 2049 (2^n+1).
+
+Editor (shell only — no height blast):
+  Tools -> Dark Matter Genesis -> Scene -> Setup Io Plan Terrain Shell (2048 / 1000m)
 
 Doc: Assets/_Project/Documentation/Design/Io_Genesis_World_Map_Geography.md

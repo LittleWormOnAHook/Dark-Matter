@@ -14,8 +14,8 @@ public static class RangedCraftingSetup
     private const string ItemsFolder = ProjectAssetPaths.ItemsData;
     private const string RecipesFolder = ProjectAssetPaths.RecipesData;
 
-    private const string MetalScrapPath = ProjectAssetPaths.ItemsResources + "/metal_scrap.asset";
-    private const string ElectronicScrapPath = ProjectAssetPaths.ItemsResources + "/electronic_scrap.asset";
+    private const string MetalScrapPath = ProjectAssetPaths.ItemsComponents + "/metal_scrap.asset";
+    private const string ElectronicScrapPath = ProjectAssetPaths.ItemsComponents + "/electronic_scrap.asset";
 
     private const string RifleItemPath = ProjectAssetPaths.ItemsRanged + "/survival_rifle.asset";
     private const string PistolItemPath = ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset";
@@ -72,6 +72,7 @@ public static class RangedCraftingSetup
         EnsureFolder(ProjectAssetPaths.RecipesWeapons);
         EnsureFolder(ProjectAssetPaths.RecipesAmmo);
         EnsureFolder(ProjectAssetPaths.ItemsResources);
+        EnsureFolder(ProjectAssetPaths.ItemsComponents);
         EnsureFolder(ProjectAssetPaths.ItemsRanged);
         EnsureFolder(ProjectAssetPaths.ItemsAmmo);
 
@@ -91,6 +92,22 @@ public static class RangedCraftingSetup
         ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(path);
         if (item == null)
         {
+            // Legacy location before Components folder split.
+            string legacy = ProjectAssetPaths.ItemsResources + "/" + Path.GetFileName(path);
+            ItemData legacyItem = AssetDatabase.LoadAssetAtPath<ItemData>(legacy);
+            if (legacyItem != null)
+            {
+                EnsureFolder(Path.GetDirectoryName(path)?.Replace('\\', '/'));
+                string moveErr = AssetDatabase.MoveAsset(legacy, path);
+                if (!string.IsNullOrEmpty(moveErr))
+                    Debug.LogWarning($"RangedCraftingSetup: could not move scrap ({moveErr}).");
+                item = AssetDatabase.LoadAssetAtPath<ItemData>(path) ?? legacyItem;
+            }
+        }
+
+        if (item == null)
+        {
+            EnsureFolder(Path.GetDirectoryName(path)?.Replace('\\', '/'));
             item = ScriptableObject.CreateInstance<ItemData>();
             AssetDatabase.CreateAsset(item, path);
         }

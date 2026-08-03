@@ -153,7 +153,7 @@ namespace Project.Inventory
             if (candidate == null)
                 return false;
 
-            // Keep continuous Laser Tool cells separate from pulse Laser Pistol Ammo.
+            // Keep continuous laser cells separate from pulse Laser Pistol Ammo.
             if (loadedItem != null && loadedItem.ammoType == AmmoType.Laser)
                 return candidate.isContinuousLaser == loadedItem.isContinuousLaser;
 
@@ -233,8 +233,7 @@ namespace Project.Inventory
             if (ammoItem == null || !ammoItem.CountsAsAmmo || amount <= 0 || equipment == null)
                 return;
 
-            // Continuous Laser Tool cells are no longer mining power — keep them as inventory ammo
-            // for any future non-mining continuous-laser uses. Mining is Plasma Fuel only.
+            // Continuous laser cells are inventory ammo only. Mining charge uses Plasma Fuel.
             if (ammoItem.isContinuousLaser)
             {
                 if (inventory != null)

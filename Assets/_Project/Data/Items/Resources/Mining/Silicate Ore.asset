@@ -130,6 +130,8 @@ MonoBehaviour:
     Used in abrasives, ceramics, and structural crafting.
   unlocksInventoryStorageRow: 0
   gatherKind: 0
+  requiredGatherSkillRank: 1
+  unknownDisplayName: Unknown Resource
   lootYieldClip: {fileID: 8300000, guid: b4eaf873d3e992740b25da529c631b63, type: 3}
   lootYieldVolume: 0.9
   lootGrantClip: {fileID: 8300000, guid: 7075ea4e7af71e84aa83e2d3a30c24f4, type: 3}

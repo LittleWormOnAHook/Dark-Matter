@@ -52,7 +52,8 @@ namespace Project.Companions
         private void ApplyHoldFacing()
         {
             Quaternion holdRotation = Quaternion.Euler(0f, holdFacingYaw, 0f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, holdRotation, restFacingSpeed * Time.deltaTime);
+            float maxDegrees = DMILocomotionFacing.ToDegreesPerSecond(restFacingSpeed) * Time.deltaTime;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, holdRotation, maxDegrees);
         }
 
         /// <summary>
