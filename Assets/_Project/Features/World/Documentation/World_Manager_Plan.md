@@ -18,7 +18,8 @@ The **World Manager** is the Dark Matter: Genesis module responsible for **build
 | Fact | Implication |
 |------|-------------|
 | Current flat terrain is **test scaffolding only** | Not the design target; do not architect around it |
-| Target is **full Io main map** — multi-tile, B1–B7, 0–1000 m elevation | Streaming, biome masks, and stamp specs from day one |
+| Target is **full Io main map** — **8 km × 8 km** tiled surface, B1–B7 | Streaming, biome masks, and stamp specs from day one |
+| **1000 m** is **max peak height** in mountainous biomes only | Lowlands, plains, and caldera floors sit lower; stamps scale per biome |
 | External terrain tool used **editor-only**, then **removed from project** | Runtime = vanilla Unity `Terrain` + our assets only |
 | **No third-party tool names** in scripts, files, or folders | Neutral names only; tool referenced in this doc where needed |
 
@@ -177,36 +178,60 @@ Unchanged from Framework standard:
 
 ## 4. Terrain pipeline (external tool → project-owned)
 
-### 4.1 Design source of truth
+### 4.1 World scale target (locked)
+
+| Dimension | Target | Notes |
+|-----------|--------|-------|
+| **Playable surface** | **8000 m × 8000 m** (8 km × 8 km) | Full Io main map; design maps authored to this extent |
+| **Max mountain peak** | **1000 m** | Applies to **mountainous biomes only** (B3 ridges, B4 caldera rims, B6 highlands) — not global floor-to-ceiling span |
+| **Lowlands / flats** | Biome-specific (often &lt; 200 m local relief) | B1 sulfur plains, B2 geyser fields, B5 polar flats — stamps use per-biome height caps |
+| **Tile grid (recommended)** | **8 × 8** tiles @ **1000 m** per tile | 64 tiles total; clean alignment with 8 km world |
+| **Alternate grids** | 16 × 16 @ 512 m, or 4 × 4 @ 2000 m | Use only if console profiling demands different tile size |
+
+**Tile count implications (8 km world):**
+
+| Tile size | Grid | Total tiles | Trade-off |
+|-----------|------|-------------|-----------|
+| **1000 m** | 8 × 8 | **64** | **Recommended** — matches 8k extent; manageable streaming chunks |
+| 512 m | 16 × 16 | 256 | Finer streaming; more stitch seams and Addressable groups |
+| 2000 m | 4 × 4 | 16 | Fewer tiles; heavier per-tile memory and LOD cost |
+
+`WorldTerrainBuildSpec` defaults: `worldSizeMeters = 8000`, `tileSizeMeters = 1000`, `gridX = 8`, `gridZ = 8`.
+
+**Phased rollout:** W1 may block out a **subset** (e.g. B6 hub + B1 corridor, 2–4 tiles) before the full 8 × 8 grid ships in W2–W3. Spec and manifest format always assume the **full 8 km extent** as the authoring target.
+
+### 4.2 Design source of truth
 
 | Asset / doc | Role |
 |-------------|------|
 | `Io_Genesis_World_Map_Geography.md` | Geography authority |
-| `Assets/_Project/World/WorldMap/Io_Plan_*.png` | Biome + height reference (0–1000 m) |
+| `Assets/_Project/World/WorldMap/Io_Plan_*.png` | Biome + height reference — map to **8 km × 8 km** extent; peaks up to **1000 m** in mountains |
 | `Io_World_Content_Phase_Map.md` W0–W8 | Content production phases |
 | `IoSurfaceRegionId` (B1–B7) | Runtime biome enum |
 
 **The current flat `New Terrain.asset` is throwaway test scaffolding.** Gameplay scenes migrate to exported Io tiles when W1 lands.
 
-### 4.2 `WorldTerrainBuildSpec` (ScriptableObject)
+### 4.3 `WorldTerrainBuildSpec` (ScriptableObject)
 
 Encodes Dark Matter Io requirements; bridge maps to external tool parameters.
 
-| Field | Example | Purpose |
-|-------|---------|---------|
+| Field | Default / example | Purpose |
+|-------|-------------------|---------|
 | `worldSeed` | `12345` | Deterministic rebuild |
-| `tileSizeMeters` | `512` / `1024` | Per-tile size |
-| `gridX`, `gridZ` | `4 × 4` (scale up) | Multi-tile grid |
+| `worldSizeMeters` | `8000` | Full playable extent (square) |
+| `tileSizeMeters` | `1000` | Per-tile horizontal size |
+| `gridX`, `gridZ` | `8 × 8` | Must satisfy `grid × tileSize == worldSize` |
 | `targetPlatform` | `Console` | LOD / detail presets |
-| `heightRangeMeters` | `0–1000` | Stamp scale per geography plan |
+| `maxMountainPeakMeters` | `1000` | Upper bound for mountainous biome stamps |
+| `biomeHeightCaps[]` | Per B1–B7 | Max local relief per biome (most biomes &lt; 1000 m) |
 | `biomeStampSets[]` | Per B1–B7 | Region height sculpt |
 | `splatProfiles[]` | Per biome | Texture rules |
 | `vegetationPass` | `BakeToTerrain` or `ExportScatterIntents` | Backdrop flora handling |
 | `playableFlattenZones[]` | B6 hub, colony pad | Flatten masks for build pads |
-| `biomeMaskTextures[]` | From `WorldMap/` PNGs | Region stamp masks |
+| `biomeMaskTextures[]` | From `WorldMap/` PNGs | Region stamp masks sampled across 8 km |
 | `outputPath` | `Assets/_Project/World/Terrain/` | Export destination |
 
-### 4.3 Authoring bridge (editor-only)
+### 4.4 Authoring bridge (editor-only)
 
 **`TerrainAuthoringBridge`** — thin wrapper; no runtime references.
 
@@ -220,7 +245,7 @@ Encodes Dark Matter Io requirements; bridge maps to external tool parameters.
 
 Prefer **session-based** rebuilds in the external tool (same spec + seed → same terrain) when available.
 
-### 4.4 Export (`TerrainExportUtility`)
+### 4.5 Export (`TerrainExportUtility`)
 
 1. Locate all `Terrain` objects from authoring hierarchy.
 2. Per tile: copy `TerrainData` → `Assets/_Project/World/Terrain/Io_Tile_{x}_{z}.asset`.
@@ -233,7 +258,7 @@ Prefer **session-based** rebuilds in the external tool (same spec + seed → sam
 5. Reparent under `World/TerrainRoot` (owned hierarchy).
 6. Sync `WorldMapProvider` bounds.
 
-### 4.5 Strip (`TerrainAuthoringStripUtility`)
+### 4.6 Strip (`TerrainAuthoringStripUtility`)
 
 | Step | Action |
 |------|--------|
@@ -249,7 +274,7 @@ Prefer **session-based** rebuilds in the external tool (same spec + seed → sam
 
 **Do ship:** vanilla `Terrain` + URP terrain layers + our materials.
 
-### 4.6 Vegetation strategy
+### 4.7 Vegetation strategy
 
 | Path | Use when |
 |------|----------|
@@ -258,7 +283,7 @@ Prefer **session-based** rebuilds in the external tool (same spec + seed → sam
 
 **Gameplay ecology** (Brimstone Fan, Sulfur Hound spawns, etc.) always via `WorldBuildProfile` content layers — not external spawners.
 
-### 4.7 Editor window flow
+### 4.8 Editor window flow
 
 **Dark Matter → World → Setup**
 
@@ -448,7 +473,7 @@ Aligned with GDD B4 + Io W0–W8. **Terrain-first** — not flat-terrain-first.
 | Deliverable | Notes |
 |-------------|-------|
 | `TerrainAuthoringBridge` automated build from spec | Optional asmdef |
-| Multi-tile grid from `WorldMap/` height/biome PNGs | Real Io scale |
+| Multi-tile **8 × 8** grid (1000 m tiles) from `WorldMap/` PNGs | Full 8 km × 8 km Io scale |
 | `TerrainTileRegistry` + `WorldStreamingService` | Console streaming |
 | `TerrainScenePartitioner` + stitch validation | Addressables per tile |
 | B6 highlands hub blockout tile | First playable geography |
@@ -522,8 +547,10 @@ Aligned with GDD B4 + Io W0–W8. **Terrain-first** — not flat-terrain-first.
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
-| Tile size | 512 m vs 1 km | Start 1 km; profile on console |
-| First playable slice | B6 hub only vs B6+B1 corridor | B6 hub + B1 corridor (W2) |
+| World extent | Fixed vs scalable | **Locked: 8 km × 8 km** |
+| Tile size | 512 m / 1000 m / 2000 m | **1000 m** → 8 × 8 grid (64 tiles); profile on console |
+| Mountain peak height | Global vs per-biome | **1000 m max** in mountainous biomes; per-biome caps elsewhere |
+| First playable slice | B6 hub only vs B6+B1 corridor | B6 hub + B1 corridor (W2); subset of full 8 × 8 grid |
 | Vegetation | Terrain bake vs DM scatter | Both: backdrop bake + gameplay scatter |
 | Addressables | Per-tile groups | Yes for console |
 | Underground | Same module vs sibling service | `UndergroundInstanceService` under World |
@@ -536,7 +563,7 @@ Aligned with GDD B4 + Io W0–W8. **Terrain-first** — not flat-terrain-first.
 | Milestone | Outcome |
 |-----------|---------|
 | **M1** | Terrain exported to `_Project/World/Terrain/`; authoring package stripped; zero console errors |
-| **M2** | Multi-tile Io slice streams; test flat terrain removed from main gameplay scene |
+| **M2** | Full or partial **8 km** tiled slice streams; test flat terrain removed from main gameplay scene |
 | **M3** | `WorldBuildProfile` populates enemies, resources, echoes, pets, shards, quest triggers on real topology |
 | **M4** | Same seed → identical terrain + content layout after rebuild |
 | **M5** | `PlanetEvolutionSnapshot` reports real seed, exploration %, biome unlock mask |
