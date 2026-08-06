@@ -13,6 +13,7 @@ Before changing the Unity project back to a previous depot, Plastic, or git save
 - `git restore`, `git reset`, or discarding work to match an older commit
 - Plastic SCM / Unity Version Control revert, switch changeset, or load older depot save
 - Loading or restoring a named checkpoint, backup branch, or recovery snapshot that undoes current work
+- Checking out `main` (or any older tip) as “cleanup” when it would drop unmerged feature work
 
 ## Before asking, name both
 
@@ -23,8 +24,33 @@ Before changing the Unity project back to a previous depot, Plastic, or git save
 
 > About to restore to **`a049a27b4`** (`Backup: _Project state before audit bug fix pass`) — timeline: **before inventory-drop / audio / settings work on this chat**. Proceed?
 
+## Switching to `main`
+
+When the user asks to “go to main”, “switch to main”, or “cleanup onto main”:
+
+1. Compare `main` to the current feature branch (or HEAD): `git log --oneline main..HEAD` / `git rev-list --count main..HEAD`.
+2. If `main` is **behind** unmerged feature work, **WARN** that checking out `main` will look like a revert / lost progress.
+3. Offer options and wait for explicit choice:
+   - **Merge first** — merge the feature branch into `main` (no force push), then stay on / switch to `main`
+   - **Stay on feature branch** — keep working where the latest state lives
+   - **Checkout main anyway** — only after the user confirms they accept losing unmerged tip work in the working tree view
+4. Never treat “go to main” as permission to discard or hard-reset feature commits.
+
+## Working scene (never silent Recovery)
+
+- Prefer the real playable scene: **`Assets/Pioneer v1.5.6.unity`** (or the current numbered Pioneer scene if renamed later).
+- **Never** load `Assets/_Recovery/*` as the working scene after a crash, domain reload, or branch switch without asking.
+- Crash dumps under `_Recovery/` are forensic only — not the intended project state.
+- If Unity opens a Recovery scene, stop, tell the user, and offer to load Pioneer v1.5.6 instead.
+
 ## Do not
 
 - Silently roll back Unity or the working tree to an older save
+- Checkout `main` or older commits/Plastic changesets as a “cleanup” without asking
 - Treat crash-recovery scenes under `Assets/_Recovery/` as the intended project state without asking
 - Force-push or hard-reset unless the user explicitly requested that destructive action **and** confirmed the named save point
+- Use Unity Version Control / Plastic auto-switch or “get latest” in a way that silently reverts the working copy to an older changeset without confirmation
+
+## Version Control note
+
+This project uses **git** as source of truth (`VersionControlSettings` = Visible Meta Files). Do not enable Plastic/UVCS workspace switching that can pull an older depot tip over the git working tree unless the user explicitly asks and confirms the target changeset.

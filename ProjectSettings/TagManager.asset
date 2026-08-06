@@ -4,6 +4,9 @@
 TagManager:
   serializedVersion: 3
   tags:
+  - Stair
+  - WallRun
+  - Fly
   - Action
   - AutoCrouch
   - Ragdoll
@@ -38,9 +41,6 @@ TagManager:
   - Recipe
   - Walkable
   - FxTemporaire
-  - Fly
-  - Stair
-  - WallRun
   layers:
   - Default
   - TransparentFX
