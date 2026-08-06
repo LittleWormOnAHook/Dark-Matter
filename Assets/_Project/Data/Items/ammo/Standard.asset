@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Standard
   icon: {fileID: 21300000, guid: a67dc839ae195be4aadf6f9f1b3f73d4, type: 3}
-  worldPrefab: {fileID: 7795608662574534003, guid: 896e540aff9514c4bbc30dc9078ae405, type: 3}
+  worldPrefab: {fileID: 6983711435863115270, guid: 896e540aff9514c4bbc30dc9078ae405, type: 3}
   maxStack: 999
+  stableItemId: ed0a2d18-862e-41aa-9853-2d7b8b86501b
   itemType: 4
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -37,10 +38,13 @@ MonoBehaviour:
   invectorWeaponId: 
   meleeDamage: 10
   meleeDamageRandomRange: 3
+  criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
   rangedDamage: 8
@@ -51,11 +55,18 @@ MonoBehaviour:
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 4.5
   fireRate: 4
   magazineSize: 30
+  reloadTimeSeconds: 1.8
   defaultAmmoType: 0
   compatibleAmmoTypes: 00000000
   defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
   projectilePrefab: {fileID: 43210292418809407, guid: 677c96554679d064ab9d4df997baff2c, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
@@ -78,8 +89,24 @@ MonoBehaviour:
   tracerPrefab: {fileID: 1878987882032996, guid: 7fa473b70378b654a84307886f90d064, type: 3}
   impactVfxPrefab: {fileID: 100002, guid: 2f9348d6583cde14eb0d82bb9732647e, type: 3}
   beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
   projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 1
@@ -104,3 +131,4 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 
+  unlocksInventoryStorageRow: 0

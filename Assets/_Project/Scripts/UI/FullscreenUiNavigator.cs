@@ -43,7 +43,7 @@ namespace Project.UI
             if (!IsAnyOpen || Keyboard.current == null)
                 return;
 
-            if (!Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (!UiEscapeGate.TryConsumeEscape())
                 return;
 
             HandleEscape();
@@ -100,7 +100,11 @@ namespace Project.UI
                 return;
 
             if (windowStack.Count == 1 && windowStack[0] == id && GetWindow(id)?.IsVisible == true)
+            {
+                // Re-assert pause / journal flags if they drifted out of sync.
+                NotifyPauseChanged(true);
                 return;
+            }
 
             HideAllWindows();
             windowStack.Clear();
@@ -202,9 +206,6 @@ namespace Project.UI
         {
             OnPauseGameplayChanged?.Invoke(paused);
 
-            Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = paused;
-
             PlayerController player = FindAnyObjectByType<PlayerController>();
             if (player != null)
                 player.SetJournalOpen(paused);
@@ -212,6 +213,19 @@ namespace Project.UI
             CameraController camera = FindAnyObjectByType<CameraController>();
             if (camera != null)
                 camera.SetJournalOpen(paused);
+
+            // Only lock the cursor when no other fullscreen / blocking UI still wants it free.
+            bool keepCursorFree = paused
+                || (player != null && (
+                    player.IsInventoryOpen
+                    || player.IsMapOpen
+                    || player.IsQuestDialogOpen
+                    || player.IsLootDialogOpen
+                    || player.IsBuildingControlOpen
+                    || player.IsGameplayPaused));
+
+            Cursor.lockState = keepCursorFree ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = keepCursorFree;
         }
     }
 }

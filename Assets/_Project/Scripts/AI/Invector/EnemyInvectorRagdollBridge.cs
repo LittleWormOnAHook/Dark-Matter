@@ -16,21 +16,27 @@ namespace Project.AI.Invector
     {
         [Header("Hit Stagger")]
         [SerializeField] private bool enableHitStagger = true;
-        [SerializeField] private float minStaggerDamage = 18f;
-        [Tooltip("How long a minor stumble keeps the enemy ragdolled before snap-recover.")]
-        [SerializeField] private float defaultStaggerSeconds = 1.55f;
+        [Tooltip("Legacy soft-ragdoll stumble duration (only used when Prefer Animator Soft Hits is off).")]
+        [SerializeField] private float defaultStaggerSeconds = 0.28f;
         [SerializeField] private bool staggerOnCritical = true;
+        [Tooltip("Non-crit soft hits use Invector TriggerReaction / animator flinch instead of ActiveRagdoll.")]
+        [SerializeField] private bool preferAnimatorSoftHits = true;
+        [Tooltip("Horizontal impulse applied on crit knockdown (meters/sec feel). Keep low for a natural tip.")]
+        [SerializeField] private float knockdownImpulse = 0.28f;
+        [Tooltip("Soft-ragdoll impulse when Prefer Animator Soft Hits is off.")]
+        [SerializeField] private float softStaggerImpulse = 0.12f;
 
-        [Header("Reactive Hit Chance")]
-        [Tooltip("Random minor stumble chance at full health (melee and ranged).")]
-        [SerializeField, Range(0f, 1f)] private float baseStaggerChance = 0.06f;
-        [Tooltip("Random minor stumble chance as health approaches the knockdown band.")]
-        [SerializeField, Range(0f, 1f)] private float lowHealthStaggerChance = 0.28f;
-        [Tooltip("Remaining health fraction at or below this triggers a full fall + get-up.")]
-        [SerializeField, Range(0.02f, 0.35f)] private float knockdownHealthThreshold = 0.10f;
-        [SerializeField] private float knockdownDownSeconds = 2.25f;
-        [SerializeField] private float knockdownGetUpTimeout = 3.5f;
-        [SerializeField] private float criticalStaggerChanceBonus = 0.15f;
+        [Header("Reactive Hit Chance (Humanoid)")]
+        [Tooltip("Base chance of a subtle hit reaction (~1 in 4 hits).")]
+        [SerializeField, Range(0f, 1f)] private float baseReactionChance = 0.25f;
+        [Tooltip("Critical hits multiply base reaction chance (1.5 = +50%).")]
+        [SerializeField, Range(1f, 3f)] private float criticalReactionChanceMultiplier = 1.5f;
+        [Tooltip("When a critical reaction triggers, play knockdown + get-up instead of a short flinch.")]
+        [SerializeField] private bool criticalReactionKnocksDown = true;
+        [SerializeField] private float knockdownDownSeconds = 1.65f;
+        [SerializeField] private float knockdownGetUpTimeout = 2.75f;
+        [Tooltip("Max bone speed during soft/crit ragdoll reactions (lower = less flop).")]
+        [SerializeField] private float maxReactionBoneSpeed = 1.15f;
 
         [Header("Ragdoll Launch Guard")]
         [Tooltip("Max bone linear speed kept after death settle. Higher values look like a launch.")]
@@ -63,14 +69,22 @@ namespace Project.AI.Invector
             _ragdoll != null &&
             (_ragdoll.isActive || (_controller != null && _controller.ragdolled));
 
+        /// <summary>
+        /// True when avatar hips have enough bone rigidbodies for Invector ragdoll to move the mesh.
+        /// </summary>
+        public bool HasUsableRagdollRig =>
+            EnemyInvectorRagdollRigRepair.HasUsableRagdollUnderAvatar(gameObject);
+
         private void Awake()
         {
             _controller = GetComponent<vThirdPersonController>();
             _health = GetComponent<EnemyHealth>();
             _motorBridge = GetComponent<EnemyInvectorMotorBridge>();
             _physicsCache = GetComponent<EnemyInvectorPhysicsCache>();
+            EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(gameObject);
             _ragdoll = EnemyInvectorRagdollSetup.EnsurePresent(gameObject);
             EnemyInvectorRagdollSetup.ConfigureForCorpse(_ragdoll);
+            _physicsCache?.Refresh();
         }
 
         private void OnEnable()
@@ -159,14 +173,16 @@ namespace Project.AI.Invector
                 hitReaction = false,
                 hitPosition = hitPoint,
                 sender = sender,
-                force = flat.sqrMagnitude > 0.01f ? flat.normalized * 0.55f : Vector3.zero
+                force = flat.sqrMagnitude > 0.01f ? flat.normalized * softStaggerImpulse : Vector3.zero
             };
             TryHitStagger(rangedDamage, pioneerDamage, isCritical, weaponRequestsStagger: false, weaponStaggerSeconds: 0f);
         }
 
         /// <summary>
-        /// Brief stumble (or low-HP knockdown + get-up). Chance rises as health drops; at or below
-        /// <see cref="knockdownHealthThreshold"/> the enemy falls and stands back up.
+        /// Soft hit flinch (animator by default), or knockdown + get-up on a critical reaction.
+        /// Humanoid-only; crits raise chance by <see cref="criticalReactionChanceMultiplier"/>.
+        /// Prefabs without a usable avatar ragdoll always use animator reactions — soft-ragdoll on
+        /// those rigs freezes the pose and AI.
         /// </summary>
         public void TryHitStagger(
             vDamage sourceDamage,
@@ -175,7 +191,7 @@ namespace Project.AI.Invector
             bool weaponRequestsStagger,
             float weaponStaggerSeconds)
         {
-            if (!enableHitStagger || _controller == null || _ragdoll == null)
+            if (!enableHitStagger || _controller == null)
                 return;
 
             if (_health != null && _health.IsDead)
@@ -184,64 +200,107 @@ namespace Project.AI.Invector
             if (_controller.isDead || IsCorpseRagdolled)
                 return;
 
+            // Already reacting / knocked down — damage still applies via bone proxies; skip stacking.
             if (_staggerRoutine != null)
                 return;
 
-            float healthFraction = ResolveHealthFraction();
-            bool knockdownBand = healthFraction > 0f && healthFraction <= knockdownHealthThreshold;
-            if (knockdownBand)
+            if (!ShouldTriggerHitReaction(isCritical, weaponRequestsStagger))
+                return;
+
+            bool knockDown = criticalReactionKnocksDown && isCritical && staggerOnCritical;
+            bool canRagdoll = _ragdoll != null && HasUsableRagdollRig && EnsureBodyPartsLoaded();
+
+            // Soft hits: animator flinch by default (no ActiveRagdoll snap/flop).
+            if (!knockDown)
             {
-                vDamage knockdownDamage = BuildStaggerDamage(sourceDamage);
-                _staggerRoutine = StartCoroutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
+                if (preferAnimatorSoftHits || !canRagdoll)
+                {
+                    PlayAnimatorHitReaction(sourceDamage, isCritical);
+                    return;
+                }
+
+                float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
+                duration = Mathf.Clamp(duration, 0.18f, 0.4f);
+                vDamage staggerDamage = BuildStaggerDamage(sourceDamage, softStaggerImpulse);
+                _staggerRoutine = StartCoroutine(HitStaggerRoutine(staggerDamage, duration));
                 return;
             }
 
-            if (!ShouldRollMinorStagger(healthFraction, pioneerDamage, isCritical, weaponRequestsStagger))
+            if (!canRagdoll)
+            {
+                PlayAnimatorHitReaction(sourceDamage, isCritical);
                 return;
+            }
 
-            float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
-            // Slightly longer stumbles when hurt.
-            duration *= Mathf.Lerp(1f, 1.2f, 1f - healthFraction);
-            duration = Mathf.Max(duration, 1.35f);
-            vDamage staggerDamage = BuildStaggerDamage(sourceDamage);
-            _staggerRoutine = StartCoroutine(HitStaggerRoutine(staggerDamage, duration));
+            vDamage knockdownDamage = BuildStaggerDamage(sourceDamage, knockdownImpulse);
+            _staggerRoutine = StartCoroutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
         }
 
-        private bool ShouldRollMinorStagger(
-            float healthFraction,
-            float pioneerDamage,
-            bool isCritical,
-            bool weaponRequestsStagger)
+        /// <summary>
+        /// Subtle Mecanim flinch via Invector TriggerReaction — default soft-hit path for humanoids
+        /// (including android). Avoids ActiveRagdoll snap-in / snap-out.
+        /// </summary>
+        private void PlayAnimatorHitReaction(vDamage sourceDamage, bool isCritical)
+        {
+            Animator animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
+            if (animator == null || !animator.enabled)
+                return;
+
+            if (sourceDamage != null && sourceDamage.sender != null && HasAnimatorParam(animator, "HitDirection"))
+            {
+                Vector3 toSender = sourceDamage.sender.position - transform.position;
+                float angle = Vector3.SignedAngle(transform.forward, toSender, Vector3.up);
+                int hitDir = angle > 45f ? 1 : angle < -45f ? 3 : 0;
+                if (Mathf.Abs(angle) > 135f)
+                    hitDir = 2;
+                animator.SetInteger("HitDirection", hitDir);
+            }
+
+            if (HasAnimatorParam(animator, "ReactionID"))
+                animator.SetInteger("ReactionID", isCritical ? 1 : 0);
+
+            if (HasAnimatorParam(animator, "TriggerReaction"))
+            {
+                animator.ResetTrigger("TriggerReaction");
+                animator.SetTrigger("TriggerReaction");
+            }
+
+            if (HasAnimatorParam(animator, "ResetState"))
+            {
+                animator.ResetTrigger("ResetState");
+                animator.SetTrigger("ResetState");
+            }
+        }
+
+        private static bool HasAnimatorParam(Animator animator, string parameterName)
+        {
+            if (animator == null || string.IsNullOrEmpty(parameterName))
+                return false;
+
+            for (int i = 0; i < animator.parameterCount; i++)
+            {
+                if (animator.GetParameter(i).name == parameterName)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool ShouldTriggerHitReaction(bool isCritical, bool weaponRequestsStagger)
         {
             if (weaponRequestsStagger)
                 return true;
 
-            // Map full→knockdown-threshold onto 0→1 so chance ramps across the fight, not only near death.
-            float liveSpan = Mathf.Max(0.01f, 1f - knockdownHealthThreshold);
-            float ramp = healthFraction > knockdownHealthThreshold
-                ? Mathf.Clamp01((1f - healthFraction) / liveSpan)
-                : 1f;
-
-            float chance = Mathf.Lerp(baseStaggerChance, lowHealthStaggerChance, ramp);
+            float chance = Mathf.Clamp01(baseReactionChance);
             if (staggerOnCritical && isCritical)
-                chance = Mathf.Clamp01(chance + criticalStaggerChanceBonus);
-            if (pioneerDamage >= minStaggerDamage)
-                chance = Mathf.Clamp01(chance + 0.2f);
+                chance = Mathf.Clamp01(chance * criticalReactionChanceMultiplier);
 
             return Random.value <= chance;
         }
 
-        private float ResolveHealthFraction()
-        {
-            if (_health == null || _health.MaxHealth <= 0.01f)
-                return 1f;
-
-            return Mathf.Clamp01(_health.CurrentHealth / _health.MaxHealth);
-        }
-
         public void ActivateCorpseRagdoll(vDamage damage = null)
         {
-            if (_controller == null || _ragdoll == null)
+            if (_controller == null)
                 return;
 
             if (IsCorpseRagdolled)
@@ -250,6 +309,23 @@ namespace Project.AI.Invector
             if (damage == null)
                 damage = _pendingCorpseDamage;
             _pendingCorpseDamage = null;
+
+            // Incomplete avatar ragdoll: do not ActivateRagdoll — it disables animator while
+            // bodyParts stay empty and the corpse freezes mid-pose with no rigidbody collapse.
+            if (_ragdoll == null || !HasUsableRagdollRig)
+            {
+                AbortHitStaggerCoroutine();
+                GetComponent<EnemyInvectorLoadoutBridge>()?.DropHeldWeaponOnDeath();
+                _controller.moveDirection = Vector3.zero;
+                _controller.input = Vector3.zero;
+                _controller.isSprinting = false;
+                _controller.StopCharacter();
+                if (_motorBridge != null)
+                    _motorBridge.enabled = false;
+                PrepareAnimatorForBodyPartLoad();
+                PlayAnimatorDeathFallback();
+                return;
+            }
 
             // A killing blow that lands while a hit-stagger is blending back to animation (vRagdoll.state
             // == blendToAnim) leaves that transition permanently stuck: RagdollBehaviour() is the only
@@ -306,6 +382,38 @@ namespace Project.AI.Invector
             StartCoroutine(SettleCorpseVelocities());
         }
 
+        private void PlayAnimatorDeathFallback()
+        {
+            if (_controller == null)
+                return;
+
+            if (_controller is vHealthController healthController)
+            {
+                healthController.isImmortal = false;
+                if (healthController.currentHealth > 0f)
+                    healthController.ChangeHealth(0);
+            }
+
+            if (!_controller.isDead)
+                _controller.isDead = true;
+
+            _controller.disableAnimations = false;
+            Animator animator = _controller.animator;
+            if (animator == null)
+                return;
+
+            animator.enabled = true;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            if (HasAnimatorParam(animator, "isDead"))
+                animator.SetBool("isDead", true);
+            if (HasAnimatorParam(animator, "InputMagnitude"))
+                animator.SetFloat("InputMagnitude", 0f);
+            if (HasAnimatorParam(animator, "InputHorizontal"))
+                animator.SetFloat("InputHorizontal", 0f);
+            if (HasAnimatorParam(animator, "InputVertical"))
+                animator.SetFloat("InputVertical", 0f);
+        }
+
         private IEnumerator ActivateCorpseRagdollWhenBodyPartsReady(vDamage damage)
         {
             PrepareAnimatorForBodyPartLoad();
@@ -327,8 +435,9 @@ namespace Project.AI.Invector
             {
                 Debug.LogWarning(
                     $"{name}: ragdoll body parts unavailable at death after retry " +
-                    "(humanoid avatar not bound, animator culled, or no ragdoll rig); corpse may not ragdoll.",
+                    "(humanoid avatar not bound, animator culled, or no ragdoll rig); playing death anim fallback.",
                     this);
+                PlayAnimatorDeathFallback();
                 yield break;
             }
 
@@ -383,13 +492,14 @@ namespace Project.AI.Invector
             EnemyInvectorHitSetup.ReleaseForRagdoll(gameObject);
             PrepareBonesForSafeRagdoll();
 
-            // Soft stumble: no root-velocity inheritance, snap recover without StandUp.
+            // Soft stumble: no root-velocity inheritance; keep duration short and bone speeds low.
             _ragdoll.horizontalMultiplier = 0f;
             _ragdoll.verticalMultiplier = 0f;
             _ragdoll.keepRagdolled = false;
             _ragdoll.ignoreGetUpAnimation = true;
             _ragdoll.ActivateRagdoll(staggerDamage, duration);
             ZeroBoneVelocitiesImmediate();
+            ClampBoneSpeeds(maxReactionBoneSpeed);
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -402,9 +512,7 @@ namespace Project.AI.Invector
                     yield break;
                 }
 
-                // Keep minor staggers from PhysX-popping mid stumble.
-                if (elapsed < 0.2f)
-                    ClampBoneSpeeds(maxCorpseBoneSpeed);
+                ClampBoneSpeeds(maxReactionBoneSpeed);
 
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -435,14 +543,15 @@ namespace Project.AI.Invector
             PrepareBonesForSafeRagdoll();
 
             // Allow StandUp@FromBack / FromBelly when keepRagdolled clears after downSeconds.
-            // vRagdoll's stabilizer runs ~2s; keep them down at least that long so get-up can start.
-            float keepDown = Mathf.Max(downSeconds, 2.15f);
+            // Keep down long enough for Invector stabilizer (~1.6s+) without a long floor flop.
+            float keepDown = Mathf.Clamp(Mathf.Max(downSeconds, 1.55f), 1.4f, 2.1f);
             _ragdoll.horizontalMultiplier = 0f;
             _ragdoll.verticalMultiplier = 0f;
             _ragdoll.keepRagdolled = false;
             _ragdoll.ignoreGetUpAnimation = false;
             _ragdoll.ActivateRagdoll(knockdownDamage, keepDown);
             ZeroBoneVelocitiesImmediate();
+            ClampBoneSpeeds(maxReactionBoneSpeed);
 
             float elapsed = 0f;
             while (elapsed < keepDown)
@@ -456,8 +565,8 @@ namespace Project.AI.Invector
                     yield break;
                 }
 
-                if (elapsed < 0.35f)
-                    ClampBoneSpeeds(maxCorpseBoneSpeed);
+                if (elapsed < 0.45f)
+                    ClampBoneSpeeds(maxReactionBoneSpeed);
 
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -719,13 +828,12 @@ namespace Project.AI.Invector
             ActivateCorpseRagdoll(damage);
         }
 
-        private static vDamage BuildStaggerDamage(vDamage sourceDamage)
+        private vDamage BuildStaggerDamage(vDamage sourceDamage, float impulseStrength)
         {
             vDamage staggerDamage = sourceDamage != null ? new vDamage(sourceDamage) : new vDamage();
             staggerDamage.activeRagdoll = true;
             staggerDamage.hitReaction = false;
-            // Soft flinch only — no dramatic launch.
-            staggerDamage.force = ResolveStaggerImpulse(sourceDamage);
+            staggerDamage.force = ResolveStaggerImpulse(sourceDamage, impulseStrength);
             return staggerDamage;
         }
 
@@ -751,9 +859,10 @@ namespace Project.AI.Invector
             return corpseDamage;
         }
 
-        private static Vector3 ResolveStaggerImpulse(vDamage sourceDamage)
+        private static Vector3 ResolveStaggerImpulse(vDamage sourceDamage, float impulseStrength)
         {
-            if (sourceDamage == null)
+            float strength = Mathf.Max(0f, impulseStrength);
+            if (strength <= 0f || sourceDamage == null)
                 return Vector3.zero;
 
             Vector3 direction = sourceDamage.force;
@@ -768,8 +877,8 @@ namespace Project.AI.Invector
             if (direction.sqrMagnitude < 0.01f)
                 return Vector3.zero;
 
-            // Gentle flinch — enough to tip, not enough to throw.
-            return direction.normalized * 0.55f;
+            // Subtle tip only — high impulse + PhysX made soft hits look like full-body launches.
+            return direction.normalized * strength;
         }
 
         private IEnumerator SettleCorpseVelocities()

@@ -38,6 +38,7 @@ namespace Project.UI
         private RectTransform petToolbarRect;
         private RectTransform expeditionPioneerRect;
         private readonly Vector3[] rectCorners = new Vector3[4];
+        private int lastMiningChargePercent = -1;
 
         private void Awake()
         {
@@ -81,6 +82,7 @@ namespace Project.UI
 
         private void HandleSelectionChanged(int _)
         {
+            lastMiningChargePercent = -1;
             RefreshAmmoLabel();
         }
 
@@ -106,7 +108,12 @@ namespace Project.UI
                 int percent = ammoState != null
                     ? ammoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
                     : 0;
-                ammoLabel.text = $"CHARGE {percent}%";
+                if (percent != lastMiningChargePercent)
+                {
+                    lastMiningChargePercent = percent;
+                    ammoLabel.text = $"CHARGE {percent}%";
+                }
+
                 LayoutAboveSurvivalStats(ammoRect);
                 return;
             }

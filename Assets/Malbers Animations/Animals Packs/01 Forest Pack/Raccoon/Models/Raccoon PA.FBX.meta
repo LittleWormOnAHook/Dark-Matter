@@ -1,586 +1,1704 @@
 fileFormatVersion: 2
 guid: 42b16888dccfed94fb39302aa553204d
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: Arms Thick
-    100002: Arms Thick 1
-    100004: Arms Thick 2
-    100006: Arms Thin
-    100008: Arms Thin 1
-    100010: Arms Thin 2
-    100012: Belly Fat
-    100014: Belly Fat 1
-    100016: Belly Fat 2
-    100018: Belly Thin
-    100020: Belly Thin 1
-    100022: Belly Thin 2
-    100024: Big Eyes
-    100026: Big Eyes 1
-    100028: Big Eyes 2
-    100030: Blink
-    100032: Blink 1
-    100034: Blink 2
-    100036: CG
-    100038: Cheek L
-    100040: Cheek LNub
-    100042: Cheek R
-    100044: Cheek RNub
-    100046: Cheek Small
-    100048: Cheek Small 1
-    100050: Cheek Small 2
-    100052: Ears Pointy
-    100054: Ears Pointy 1
-    100056: Ears Pointy 2
-    100058: Ears Round
-    100060: Ears Round 1
-    100062: Ears Round 2
-    100064: Eye
-    100066: Eye L
-    100068: Eye LNub
-    100070: Eye R
-    100072: Eye RNub
-    100074: Face Hair Long
-    100076: Face Hair Long 1
-    100078: Face Hair Long 2
-    100080: Face Hair Short
-    100082: Face Hair Short 1
-    100084: Face Hair Short 2
-    100086: Footsteps
-    100088: Hair Tail
-    100090: Hands Big
-    100092: Hands Big 1
-    100094: Hands Big 2
-    100096: Head
-    100098: Head 1
-    100100: Head 1 1
-    100102: Head 1 2
-    100104: Head 2
-    100106: Head 2 1
-    100108: Head 2 2
-    100110: Head Red Panda
-    100112: Head Red Panda 1
-    100114: Head Red Panda 2
-    100116: HeadNub
-    100118: Jaw
-    100120: JawNub
-    100122: L Calf
-    100124: L Clavicle
-    100126: L Ear
-    100128: L Finger0
-    100130: L Finger01
-    100132: L Finger0Nub
-    100134: L Finger1
-    100136: L Finger11
-    100138: L Finger1Nub
-    100140: L Finger2
-    100142: L Finger21
-    100144: L Finger2Nub
-    100146: L Finger3
-    100148: L Finger31
-    100150: L Finger3Nub
-    100152: L Finger4
-    100154: L Finger41
-    100156: L Finger4Nub
-    100158: L Foot
-    100160: L Forearm
-    100162: L Hand
-    100164: L HorseLink
-    100166: L Thigh
-    100168: L Toe0
-    100170: L Toe0Nub
-    100172: L UpperArm
-    100174: Legs Thick
-    100176: Legs Thick 1
-    100178: Legs Thick 2
-    100180: Legs Thin
-    100182: Legs Thin 1
-    100184: Legs Thin 2
-    100186: Lens
-    100188: Mouth Low
-    100190: Mouth Up
-    100192: Neck
-    100194: Neck Small
-    100196: Neck Small 1
-    100198: Neck Small 2
-    100200: Neck Thick
-    100202: Neck Thick 1
-    100204: Neck Thick 2
-    100206: Nose Big
-    100208: Nose Big 1
-    100210: Nose Big 2
-    100212: Nose Small
-    100214: Nose Small 1
-    100216: Nose Small 2
-    100218: Pelvis
-    100220: Ponytail1Nub
-    100222: Ponytail2Nub
-    100224: R Calf
-    100226: R Clavicle
-    100228: R Ear
-    100230: R Finger0
-    100232: R Finger01
-    100234: R Finger0Nub
-    100236: R Finger1
-    100238: R Finger11
-    100240: R Finger1Nub
-    100242: R Finger2
-    100244: R Finger21
-    100246: R Finger2Nub
-    100248: R Finger3
-    100250: R Finger31
-    100252: R Finger3Nub
-    100254: R Finger4
-    100256: R Finger41
-    100258: R Finger4Nub
-    100260: R Foot
-    100262: R Forearm
-    100264: R Hand
-    100266: R HorseLink
-    100268: R Thigh
-    100270: R Toe0
-    100272: R Toe0Nub
-    100274: R UpperArm
-    100276: Raccoon Poly Art
-    100278: //RootNode
-    100280: Racoon Body LOD0
-    100282: Racoon Body LOD01
-    100284: Racoon Body LOD02
-    100286: Racoon Body LOD03
-    100288: Spine
-    100290: Spine1
-    100292: Spine2
-    100294: Tail Fat
-    100296: Tail Fat 1
-    100298: Tail Fat 2
-    100300: Tail Thin
-    100302: Tail Thin 1
-    100304: Tail Thin 2
-    100306: Tail01
-    100308: Tail02
-    100310: Tail03
-    100312: Tail04
-    100314: Tail05
-    100316: TailNub
-    100318: Take out
-    100320: whiskers
-    400000: Arms Thick
-    400002: Arms Thick 1
-    400004: Arms Thick 2
-    400006: Arms Thin
-    400008: Arms Thin 1
-    400010: Arms Thin 2
-    400012: Belly Fat
-    400014: Belly Fat 1
-    400016: Belly Fat 2
-    400018: Belly Thin
-    400020: Belly Thin 1
-    400022: Belly Thin 2
-    400024: Big Eyes
-    400026: Big Eyes 1
-    400028: Big Eyes 2
-    400030: Blink
-    400032: Blink 1
-    400034: Blink 2
-    400036: CG
-    400038: Cheek L
-    400040: Cheek LNub
-    400042: Cheek R
-    400044: Cheek RNub
-    400046: Cheek Small
-    400048: Cheek Small 1
-    400050: Cheek Small 2
-    400052: Ears Pointy
-    400054: Ears Pointy 1
-    400056: Ears Pointy 2
-    400058: Ears Round
-    400060: Ears Round 1
-    400062: Ears Round 2
-    400064: Eye
-    400066: Eye L
-    400068: Eye LNub
-    400070: Eye R
-    400072: Eye RNub
-    400074: Face Hair Long
-    400076: Face Hair Long 1
-    400078: Face Hair Long 2
-    400080: Face Hair Short
-    400082: Face Hair Short 1
-    400084: Face Hair Short 2
-    400086: Footsteps
-    400088: Hair Tail
-    400090: Hands Big
-    400092: Hands Big 1
-    400094: Hands Big 2
-    400096: Head
-    400098: Head 1
-    400100: Head 1 1
-    400102: Head 1 2
-    400104: Head 2
-    400106: Head 2 1
-    400108: Head 2 2
-    400110: Head Red Panda
-    400112: Head Red Panda 1
-    400114: Head Red Panda 2
-    400116: HeadNub
-    400118: Jaw
-    400120: JawNub
-    400122: L Calf
-    400124: L Clavicle
-    400126: L Ear
-    400128: L Finger0
-    400130: L Finger01
-    400132: L Finger0Nub
-    400134: L Finger1
-    400136: L Finger11
-    400138: L Finger1Nub
-    400140: L Finger2
-    400142: L Finger21
-    400144: L Finger2Nub
-    400146: L Finger3
-    400148: L Finger31
-    400150: L Finger3Nub
-    400152: L Finger4
-    400154: L Finger41
-    400156: L Finger4Nub
-    400158: L Foot
-    400160: L Forearm
-    400162: L Hand
-    400164: L HorseLink
-    400166: L Thigh
-    400168: L Toe0
-    400170: L Toe0Nub
-    400172: L UpperArm
-    400174: Legs Thick
-    400176: Legs Thick 1
-    400178: Legs Thick 2
-    400180: Legs Thin
-    400182: Legs Thin 1
-    400184: Legs Thin 2
-    400186: Lens
-    400188: Mouth Low
-    400190: Mouth Up
-    400192: Neck
-    400194: Neck Small
-    400196: Neck Small 1
-    400198: Neck Small 2
-    400200: Neck Thick
-    400202: Neck Thick 1
-    400204: Neck Thick 2
-    400206: Nose Big
-    400208: Nose Big 1
-    400210: Nose Big 2
-    400212: Nose Small
-    400214: Nose Small 1
-    400216: Nose Small 2
-    400218: Pelvis
-    400220: Ponytail1Nub
-    400222: Ponytail2Nub
-    400224: R Calf
-    400226: R Clavicle
-    400228: R Ear
-    400230: R Finger0
-    400232: R Finger01
-    400234: R Finger0Nub
-    400236: R Finger1
-    400238: R Finger11
-    400240: R Finger1Nub
-    400242: R Finger2
-    400244: R Finger21
-    400246: R Finger2Nub
-    400248: R Finger3
-    400250: R Finger31
-    400252: R Finger3Nub
-    400254: R Finger4
-    400256: R Finger41
-    400258: R Finger4Nub
-    400260: R Foot
-    400262: R Forearm
-    400264: R Hand
-    400266: R HorseLink
-    400268: R Thigh
-    400270: R Toe0
-    400272: R Toe0Nub
-    400274: R UpperArm
-    400276: //RootNode
-    400278: Raccoon Poly Art
-    400280: Racoon Body LOD0
-    400282: Racoon Body LOD01
-    400284: Racoon Body LOD02
-    400286: Racoon Body LOD03
-    400288: Spine
-    400290: Spine1
-    400292: Spine2
-    400294: Tail Fat
-    400296: Tail Fat 1
-    400298: Tail Fat 2
-    400300: Tail Thin
-    400302: Tail Thin 1
-    400304: Tail Thin 2
-    400306: Tail01
-    400308: Tail02
-    400310: Tail03
-    400312: Tail04
-    400314: Tail05
-    400316: TailNub
-    400318: Take out
-    400320: whiskers
-    2300000: Arms Thick
-    2300002: Arms Thick 1
-    2300004: Arms Thick 2
-    2300006: Arms Thin
-    2300008: Arms Thin 1
-    2300010: Arms Thin 2
-    2300012: Belly Fat
-    2300014: Belly Fat 1
-    2300016: Belly Fat 2
-    2300018: Belly Thin
-    2300020: Belly Thin 1
-    2300022: Belly Thin 2
-    2300024: Big Eyes
-    2300026: Big Eyes 1
-    2300028: Big Eyes 2
-    2300030: Blink
-    2300032: Blink 1
-    2300034: Blink 2
-    2300036: Cheek Small
-    2300038: Cheek Small 1
-    2300040: Cheek Small 2
-    2300042: Ears Pointy
-    2300044: Ears Pointy 1
-    2300046: Ears Pointy 2
-    2300048: Ears Round
-    2300050: Ears Round 1
-    2300052: Ears Round 2
-    2300054: Face Hair Long
-    2300056: Face Hair Long 1
-    2300058: Face Hair Long 2
-    2300060: Face Hair Short
-    2300062: Face Hair Short 1
-    2300064: Face Hair Short 2
-    2300066: Hair Tail
-    2300068: Hands Big
-    2300070: Hands Big 1
-    2300072: Hands Big 2
-    2300074: Head 1
-    2300076: Head 1 1
-    2300078: Head 1 2
-    2300080: Head 2
-    2300082: Head 2 1
-    2300084: Head 2 2
-    2300086: Head Red Panda
-    2300088: Head Red Panda 1
-    2300090: Head Red Panda 2
-    2300092: Legs Thick
-    2300094: Legs Thick 1
-    2300096: Legs Thick 2
-    2300098: Legs Thin
-    2300100: Legs Thin 1
-    2300102: Legs Thin 2
-    2300104: Mouth Low
-    2300106: Mouth Up
-    2300108: Neck Small
-    2300110: Neck Small 1
-    2300112: Neck Small 2
-    2300114: Neck Thick
-    2300116: Neck Thick 1
-    2300118: Neck Thick 2
-    2300120: Nose Big
-    2300122: Nose Big 1
-    2300124: Nose Big 2
-    2300126: Nose Small
-    2300128: Nose Small 1
-    2300130: Nose Small 2
-    2300132: Tail Fat
-    2300134: Tail Fat 1
-    2300136: Tail Fat 2
-    2300138: Tail Thin
-    2300140: Tail Thin 1
-    2300142: Tail Thin 2
-    2300144: Take out
-    2300146: whiskers
-    3300000: Arms Thick
-    3300002: Arms Thick 1
-    3300004: Arms Thick 2
-    3300006: Arms Thin
-    3300008: Arms Thin 1
-    3300010: Arms Thin 2
-    3300012: Belly Fat
-    3300014: Belly Fat 1
-    3300016: Belly Fat 2
-    3300018: Belly Thin
-    3300020: Belly Thin 1
-    3300022: Belly Thin 2
-    3300024: Big Eyes
-    3300026: Big Eyes 1
-    3300028: Big Eyes 2
-    3300030: Blink
-    3300032: Blink 1
-    3300034: Blink 2
-    3300036: Cheek Small
-    3300038: Cheek Small 1
-    3300040: Cheek Small 2
-    3300042: Ears Pointy
-    3300044: Ears Pointy 1
-    3300046: Ears Pointy 2
-    3300048: Ears Round
-    3300050: Ears Round 1
-    3300052: Ears Round 2
-    3300054: Face Hair Long
-    3300056: Face Hair Long 1
-    3300058: Face Hair Long 2
-    3300060: Face Hair Short
-    3300062: Face Hair Short 1
-    3300064: Face Hair Short 2
-    3300066: Hair Tail
-    3300068: Hands Big
-    3300070: Hands Big 1
-    3300072: Hands Big 2
-    3300074: Head 1
-    3300076: Head 1 1
-    3300078: Head 1 2
-    3300080: Head 2
-    3300082: Head 2 1
-    3300084: Head 2 2
-    3300086: Head Red Panda
-    3300088: Head Red Panda 1
-    3300090: Head Red Panda 2
-    3300092: Legs Thick
-    3300094: Legs Thick 1
-    3300096: Legs Thick 2
-    3300098: Legs Thin
-    3300100: Legs Thin 1
-    3300102: Legs Thin 2
-    3300104: Mouth Low
-    3300106: Mouth Up
-    3300108: Neck Small
-    3300110: Neck Small 1
-    3300112: Neck Small 2
-    3300114: Neck Thick
-    3300116: Neck Thick 1
-    3300118: Neck Thick 2
-    3300120: Nose Big
-    3300122: Nose Big 1
-    3300124: Nose Big 2
-    3300126: Nose Small
-    3300128: Nose Small 1
-    3300130: Nose Small 2
-    3300132: Tail Fat
-    3300134: Tail Fat 1
-    3300136: Tail Fat 2
-    3300138: Tail Thin
-    3300140: Tail Thin 1
-    3300142: Tail Thin 2
-    3300144: Take out
-    3300146: whiskers
-    4300000: Mouth Low
-    4300002: Mouth Up
-    4300004: whiskers
-    4300006: Lens
-    4300008: Eye
-    4300010: Hair Tail
-    4300012: Racoon Body LOD0
-    4300014: Blink
-    4300016: Neck Thick
-    4300018: Take out
-    4300020: Belly Thin
-    4300022: Belly Fat
-    4300024: Tail Thin
-    4300026: Tail Fat
-    4300028: Big Eyes
-    4300030: Face Hair Long
-    4300032: Head 1
-    4300034: Face Hair Short
-    4300036: Neck Small
-    4300038: Ears Round
-    4300040: Ears Pointy
-    4300042: Nose Big
-    4300044: Nose Small
-    4300046: Cheek Small
-    4300048: Head 2
-    4300050: Head Red Panda
-    4300052: Arms Thick
-    4300054: Arms Thin
-    4300056: Hands Big
-    4300058: Legs Thick
-    4300060: Legs Thin
-    4300062: Racoon Body LOD01
-    4300064: Racoon Body LOD02
-    4300066: Racoon Body LOD03
-    4300068: Legs Thin
-    4300070: Blink
-    4300072: Neck Thick
-    4300074: Neck Small
-    4300076: Belly Thin
-    4300078: Belly Fat
-    4300080: Tail Thin
-    4300082: Tail Fat
-    4300084: Face Hair Long
-    4300086: Face Hair Short
-    4300088: Ears Round
-    4300090: Ears Pointy
-    4300092: Nose Big
-    4300094: Nose Small
-    4300096: Big Eyes
-    4300098: Cheek Small
-    4300100: Head 1
-    4300102: Head 2
-    4300104: Head Red Panda
-    4300106: Arms Thick
-    4300108: Arms Thin
-    4300110: Hands Big
-    4300112: Legs Thick
-    4300114: Raccoon Poly Art
-    4300116: Blink
-    4300118: Neck Thick
-    4300120: Neck Small
-    4300122: Belly Thin
-    4300124: Belly Fat
-    4300126: Tail Thin
-    4300128: Tail Fat
-    4300130: Face Hair Long
-    4300132: Face Hair Short
-    4300134: Ears Round
-    4300136: Ears Pointy
-    4300138: Nose Big
-    4300140: Nose Small
-    4300142: Big Eyes
-    4300144: Cheek Small
-    4300146: Head 1
-    4300148: Head 2
-    4300150: Head Red Panda
-    4300152: Arms Thick
-    4300154: Arms Thin
-    4300156: Hands Big
-    4300158: Legs Thick
-    4300160: Legs Thin
-    7400000: Take 001
-    9500000: //RootNode
-    13700000: Eye
-    13700002: Lens
-    13700004: Raccoon Poly Art
-    13700006: Racoon Body LOD0
-    13700008: Racoon Body LOD01
-    13700010: Racoon Body LOD02
-    13700012: Racoon Body LOD03
-    2186277476908879412: ImportLogs
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: Arms Thick
+  - first:
+      1: 100002
+    second: Arms Thick 1
+  - first:
+      1: 100004
+    second: Arms Thick 2
+  - first:
+      1: 100006
+    second: Arms Thin
+  - first:
+      1: 100008
+    second: Arms Thin 1
+  - first:
+      1: 100010
+    second: Arms Thin 2
+  - first:
+      1: 100012
+    second: Belly Fat
+  - first:
+      1: 100014
+    second: Belly Fat 1
+  - first:
+      1: 100016
+    second: Belly Fat 2
+  - first:
+      1: 100018
+    second: Belly Thin
+  - first:
+      1: 100020
+    second: Belly Thin 1
+  - first:
+      1: 100022
+    second: Belly Thin 2
+  - first:
+      1: 100024
+    second: Big Eyes
+  - first:
+      1: 100026
+    second: Big Eyes 1
+  - first:
+      1: 100028
+    second: Big Eyes 2
+  - first:
+      1: 100030
+    second: Blink
+  - first:
+      1: 100032
+    second: Blink 1
+  - first:
+      1: 100034
+    second: Blink 2
+  - first:
+      1: 100036
+    second: CG
+  - first:
+      1: 100038
+    second: Cheek L
+  - first:
+      1: 100040
+    second: Cheek LNub
+  - first:
+      1: 100042
+    second: Cheek R
+  - first:
+      1: 100044
+    second: Cheek RNub
+  - first:
+      1: 100046
+    second: Cheek Small
+  - first:
+      1: 100048
+    second: Cheek Small 1
+  - first:
+      1: 100050
+    second: Cheek Small 2
+  - first:
+      1: 100052
+    second: Ears Pointy
+  - first:
+      1: 100054
+    second: Ears Pointy 1
+  - first:
+      1: 100056
+    second: Ears Pointy 2
+  - first:
+      1: 100058
+    second: Ears Round
+  - first:
+      1: 100060
+    second: Ears Round 1
+  - first:
+      1: 100062
+    second: Ears Round 2
+  - first:
+      1: 100064
+    second: Eye
+  - first:
+      1: 100066
+    second: Eye L
+  - first:
+      1: 100068
+    second: Eye LNub
+  - first:
+      1: 100070
+    second: Eye R
+  - first:
+      1: 100072
+    second: Eye RNub
+  - first:
+      1: 100074
+    second: Face Hair Long
+  - first:
+      1: 100076
+    second: Face Hair Long 1
+  - first:
+      1: 100078
+    second: Face Hair Long 2
+  - first:
+      1: 100080
+    second: Face Hair Short
+  - first:
+      1: 100082
+    second: Face Hair Short 1
+  - first:
+      1: 100084
+    second: Face Hair Short 2
+  - first:
+      1: 100086
+    second: Footsteps
+  - first:
+      1: 100088
+    second: Hair Tail
+  - first:
+      1: 100090
+    second: Hands Big
+  - first:
+      1: 100092
+    second: Hands Big 1
+  - first:
+      1: 100094
+    second: Hands Big 2
+  - first:
+      1: 100096
+    second: Head
+  - first:
+      1: 100098
+    second: Head 1
+  - first:
+      1: 100100
+    second: Head 1 1
+  - first:
+      1: 100102
+    second: Head 1 2
+  - first:
+      1: 100104
+    second: Head 2
+  - first:
+      1: 100106
+    second: Head 2 1
+  - first:
+      1: 100108
+    second: Head 2 2
+  - first:
+      1: 100110
+    second: Head Red Panda
+  - first:
+      1: 100112
+    second: Head Red Panda 1
+  - first:
+      1: 100114
+    second: Head Red Panda 2
+  - first:
+      1: 100116
+    second: HeadNub
+  - first:
+      1: 100118
+    second: Jaw
+  - first:
+      1: 100120
+    second: JawNub
+  - first:
+      1: 100122
+    second: L Calf
+  - first:
+      1: 100124
+    second: L Clavicle
+  - first:
+      1: 100126
+    second: L Ear
+  - first:
+      1: 100128
+    second: L Finger0
+  - first:
+      1: 100130
+    second: L Finger01
+  - first:
+      1: 100132
+    second: L Finger0Nub
+  - first:
+      1: 100134
+    second: L Finger1
+  - first:
+      1: 100136
+    second: L Finger11
+  - first:
+      1: 100138
+    second: L Finger1Nub
+  - first:
+      1: 100140
+    second: L Finger2
+  - first:
+      1: 100142
+    second: L Finger21
+  - first:
+      1: 100144
+    second: L Finger2Nub
+  - first:
+      1: 100146
+    second: L Finger3
+  - first:
+      1: 100148
+    second: L Finger31
+  - first:
+      1: 100150
+    second: L Finger3Nub
+  - first:
+      1: 100152
+    second: L Finger4
+  - first:
+      1: 100154
+    second: L Finger41
+  - first:
+      1: 100156
+    second: L Finger4Nub
+  - first:
+      1: 100158
+    second: L Foot
+  - first:
+      1: 100160
+    second: L Forearm
+  - first:
+      1: 100162
+    second: L Hand
+  - first:
+      1: 100164
+    second: L HorseLink
+  - first:
+      1: 100166
+    second: L Thigh
+  - first:
+      1: 100168
+    second: L Toe0
+  - first:
+      1: 100170
+    second: L Toe0Nub
+  - first:
+      1: 100172
+    second: L UpperArm
+  - first:
+      1: 100174
+    second: Legs Thick
+  - first:
+      1: 100176
+    second: Legs Thick 1
+  - first:
+      1: 100178
+    second: Legs Thick 2
+  - first:
+      1: 100180
+    second: Legs Thin
+  - first:
+      1: 100182
+    second: Legs Thin 1
+  - first:
+      1: 100184
+    second: Legs Thin 2
+  - first:
+      1: 100186
+    second: Lens
+  - first:
+      1: 100188
+    second: Mouth Low
+  - first:
+      1: 100190
+    second: Mouth Up
+  - first:
+      1: 100192
+    second: Neck
+  - first:
+      1: 100194
+    second: Neck Small
+  - first:
+      1: 100196
+    second: Neck Small 1
+  - first:
+      1: 100198
+    second: Neck Small 2
+  - first:
+      1: 100200
+    second: Neck Thick
+  - first:
+      1: 100202
+    second: Neck Thick 1
+  - first:
+      1: 100204
+    second: Neck Thick 2
+  - first:
+      1: 100206
+    second: Nose Big
+  - first:
+      1: 100208
+    second: Nose Big 1
+  - first:
+      1: 100210
+    second: Nose Big 2
+  - first:
+      1: 100212
+    second: Nose Small
+  - first:
+      1: 100214
+    second: Nose Small 1
+  - first:
+      1: 100216
+    second: Nose Small 2
+  - first:
+      1: 100218
+    second: Pelvis
+  - first:
+      1: 100220
+    second: Ponytail1Nub
+  - first:
+      1: 100222
+    second: Ponytail2Nub
+  - first:
+      1: 100224
+    second: R Calf
+  - first:
+      1: 100226
+    second: R Clavicle
+  - first:
+      1: 100228
+    second: R Ear
+  - first:
+      1: 100230
+    second: R Finger0
+  - first:
+      1: 100232
+    second: R Finger01
+  - first:
+      1: 100234
+    second: R Finger0Nub
+  - first:
+      1: 100236
+    second: R Finger1
+  - first:
+      1: 100238
+    second: R Finger11
+  - first:
+      1: 100240
+    second: R Finger1Nub
+  - first:
+      1: 100242
+    second: R Finger2
+  - first:
+      1: 100244
+    second: R Finger21
+  - first:
+      1: 100246
+    second: R Finger2Nub
+  - first:
+      1: 100248
+    second: R Finger3
+  - first:
+      1: 100250
+    second: R Finger31
+  - first:
+      1: 100252
+    second: R Finger3Nub
+  - first:
+      1: 100254
+    second: R Finger4
+  - first:
+      1: 100256
+    second: R Finger41
+  - first:
+      1: 100258
+    second: R Finger4Nub
+  - first:
+      1: 100260
+    second: R Foot
+  - first:
+      1: 100262
+    second: R Forearm
+  - first:
+      1: 100264
+    second: R Hand
+  - first:
+      1: 100266
+    second: R HorseLink
+  - first:
+      1: 100268
+    second: R Thigh
+  - first:
+      1: 100270
+    second: R Toe0
+  - first:
+      1: 100272
+    second: R Toe0Nub
+  - first:
+      1: 100274
+    second: R UpperArm
+  - first:
+      1: 100276
+    second: Raccoon Poly Art
+  - first:
+      1: 100278
+    second: //RootNode
+  - first:
+      1: 100280
+    second: Racoon Body LOD0
+  - first:
+      1: 100282
+    second: Racoon Body LOD01
+  - first:
+      1: 100284
+    second: Racoon Body LOD02
+  - first:
+      1: 100286
+    second: Racoon Body LOD03
+  - first:
+      1: 100288
+    second: Spine
+  - first:
+      1: 100290
+    second: Spine1
+  - first:
+      1: 100292
+    second: Spine2
+  - first:
+      1: 100294
+    second: Tail Fat
+  - first:
+      1: 100296
+    second: Tail Fat 1
+  - first:
+      1: 100298
+    second: Tail Fat 2
+  - first:
+      1: 100300
+    second: Tail Thin
+  - first:
+      1: 100302
+    second: Tail Thin 1
+  - first:
+      1: 100304
+    second: Tail Thin 2
+  - first:
+      1: 100306
+    second: Tail01
+  - first:
+      1: 100308
+    second: Tail02
+  - first:
+      1: 100310
+    second: Tail03
+  - first:
+      1: 100312
+    second: Tail04
+  - first:
+      1: 100314
+    second: Tail05
+  - first:
+      1: 100316
+    second: TailNub
+  - first:
+      1: 100318
+    second: Take out
+  - first:
+      1: 100320
+    second: whiskers
+  - first:
+      4: 400000
+    second: Arms Thick
+  - first:
+      4: 400002
+    second: Arms Thick 1
+  - first:
+      4: 400004
+    second: Arms Thick 2
+  - first:
+      4: 400006
+    second: Arms Thin
+  - first:
+      4: 400008
+    second: Arms Thin 1
+  - first:
+      4: 400010
+    second: Arms Thin 2
+  - first:
+      4: 400012
+    second: Belly Fat
+  - first:
+      4: 400014
+    second: Belly Fat 1
+  - first:
+      4: 400016
+    second: Belly Fat 2
+  - first:
+      4: 400018
+    second: Belly Thin
+  - first:
+      4: 400020
+    second: Belly Thin 1
+  - first:
+      4: 400022
+    second: Belly Thin 2
+  - first:
+      4: 400024
+    second: Big Eyes
+  - first:
+      4: 400026
+    second: Big Eyes 1
+  - first:
+      4: 400028
+    second: Big Eyes 2
+  - first:
+      4: 400030
+    second: Blink
+  - first:
+      4: 400032
+    second: Blink 1
+  - first:
+      4: 400034
+    second: Blink 2
+  - first:
+      4: 400036
+    second: CG
+  - first:
+      4: 400038
+    second: Cheek L
+  - first:
+      4: 400040
+    second: Cheek LNub
+  - first:
+      4: 400042
+    second: Cheek R
+  - first:
+      4: 400044
+    second: Cheek RNub
+  - first:
+      4: 400046
+    second: Cheek Small
+  - first:
+      4: 400048
+    second: Cheek Small 1
+  - first:
+      4: 400050
+    second: Cheek Small 2
+  - first:
+      4: 400052
+    second: Ears Pointy
+  - first:
+      4: 400054
+    second: Ears Pointy 1
+  - first:
+      4: 400056
+    second: Ears Pointy 2
+  - first:
+      4: 400058
+    second: Ears Round
+  - first:
+      4: 400060
+    second: Ears Round 1
+  - first:
+      4: 400062
+    second: Ears Round 2
+  - first:
+      4: 400064
+    second: Eye
+  - first:
+      4: 400066
+    second: Eye L
+  - first:
+      4: 400068
+    second: Eye LNub
+  - first:
+      4: 400070
+    second: Eye R
+  - first:
+      4: 400072
+    second: Eye RNub
+  - first:
+      4: 400074
+    second: Face Hair Long
+  - first:
+      4: 400076
+    second: Face Hair Long 1
+  - first:
+      4: 400078
+    second: Face Hair Long 2
+  - first:
+      4: 400080
+    second: Face Hair Short
+  - first:
+      4: 400082
+    second: Face Hair Short 1
+  - first:
+      4: 400084
+    second: Face Hair Short 2
+  - first:
+      4: 400086
+    second: Footsteps
+  - first:
+      4: 400088
+    second: Hair Tail
+  - first:
+      4: 400090
+    second: Hands Big
+  - first:
+      4: 400092
+    second: Hands Big 1
+  - first:
+      4: 400094
+    second: Hands Big 2
+  - first:
+      4: 400096
+    second: Head
+  - first:
+      4: 400098
+    second: Head 1
+  - first:
+      4: 400100
+    second: Head 1 1
+  - first:
+      4: 400102
+    second: Head 1 2
+  - first:
+      4: 400104
+    second: Head 2
+  - first:
+      4: 400106
+    second: Head 2 1
+  - first:
+      4: 400108
+    second: Head 2 2
+  - first:
+      4: 400110
+    second: Head Red Panda
+  - first:
+      4: 400112
+    second: Head Red Panda 1
+  - first:
+      4: 400114
+    second: Head Red Panda 2
+  - first:
+      4: 400116
+    second: HeadNub
+  - first:
+      4: 400118
+    second: Jaw
+  - first:
+      4: 400120
+    second: JawNub
+  - first:
+      4: 400122
+    second: L Calf
+  - first:
+      4: 400124
+    second: L Clavicle
+  - first:
+      4: 400126
+    second: L Ear
+  - first:
+      4: 400128
+    second: L Finger0
+  - first:
+      4: 400130
+    second: L Finger01
+  - first:
+      4: 400132
+    second: L Finger0Nub
+  - first:
+      4: 400134
+    second: L Finger1
+  - first:
+      4: 400136
+    second: L Finger11
+  - first:
+      4: 400138
+    second: L Finger1Nub
+  - first:
+      4: 400140
+    second: L Finger2
+  - first:
+      4: 400142
+    second: L Finger21
+  - first:
+      4: 400144
+    second: L Finger2Nub
+  - first:
+      4: 400146
+    second: L Finger3
+  - first:
+      4: 400148
+    second: L Finger31
+  - first:
+      4: 400150
+    second: L Finger3Nub
+  - first:
+      4: 400152
+    second: L Finger4
+  - first:
+      4: 400154
+    second: L Finger41
+  - first:
+      4: 400156
+    second: L Finger4Nub
+  - first:
+      4: 400158
+    second: L Foot
+  - first:
+      4: 400160
+    second: L Forearm
+  - first:
+      4: 400162
+    second: L Hand
+  - first:
+      4: 400164
+    second: L HorseLink
+  - first:
+      4: 400166
+    second: L Thigh
+  - first:
+      4: 400168
+    second: L Toe0
+  - first:
+      4: 400170
+    second: L Toe0Nub
+  - first:
+      4: 400172
+    second: L UpperArm
+  - first:
+      4: 400174
+    second: Legs Thick
+  - first:
+      4: 400176
+    second: Legs Thick 1
+  - first:
+      4: 400178
+    second: Legs Thick 2
+  - first:
+      4: 400180
+    second: Legs Thin
+  - first:
+      4: 400182
+    second: Legs Thin 1
+  - first:
+      4: 400184
+    second: Legs Thin 2
+  - first:
+      4: 400186
+    second: Lens
+  - first:
+      4: 400188
+    second: Mouth Low
+  - first:
+      4: 400190
+    second: Mouth Up
+  - first:
+      4: 400192
+    second: Neck
+  - first:
+      4: 400194
+    second: Neck Small
+  - first:
+      4: 400196
+    second: Neck Small 1
+  - first:
+      4: 400198
+    second: Neck Small 2
+  - first:
+      4: 400200
+    second: Neck Thick
+  - first:
+      4: 400202
+    second: Neck Thick 1
+  - first:
+      4: 400204
+    second: Neck Thick 2
+  - first:
+      4: 400206
+    second: Nose Big
+  - first:
+      4: 400208
+    second: Nose Big 1
+  - first:
+      4: 400210
+    second: Nose Big 2
+  - first:
+      4: 400212
+    second: Nose Small
+  - first:
+      4: 400214
+    second: Nose Small 1
+  - first:
+      4: 400216
+    second: Nose Small 2
+  - first:
+      4: 400218
+    second: Pelvis
+  - first:
+      4: 400220
+    second: Ponytail1Nub
+  - first:
+      4: 400222
+    second: Ponytail2Nub
+  - first:
+      4: 400224
+    second: R Calf
+  - first:
+      4: 400226
+    second: R Clavicle
+  - first:
+      4: 400228
+    second: R Ear
+  - first:
+      4: 400230
+    second: R Finger0
+  - first:
+      4: 400232
+    second: R Finger01
+  - first:
+      4: 400234
+    second: R Finger0Nub
+  - first:
+      4: 400236
+    second: R Finger1
+  - first:
+      4: 400238
+    second: R Finger11
+  - first:
+      4: 400240
+    second: R Finger1Nub
+  - first:
+      4: 400242
+    second: R Finger2
+  - first:
+      4: 400244
+    second: R Finger21
+  - first:
+      4: 400246
+    second: R Finger2Nub
+  - first:
+      4: 400248
+    second: R Finger3
+  - first:
+      4: 400250
+    second: R Finger31
+  - first:
+      4: 400252
+    second: R Finger3Nub
+  - first:
+      4: 400254
+    second: R Finger4
+  - first:
+      4: 400256
+    second: R Finger41
+  - first:
+      4: 400258
+    second: R Finger4Nub
+  - first:
+      4: 400260
+    second: R Foot
+  - first:
+      4: 400262
+    second: R Forearm
+  - first:
+      4: 400264
+    second: R Hand
+  - first:
+      4: 400266
+    second: R HorseLink
+  - first:
+      4: 400268
+    second: R Thigh
+  - first:
+      4: 400270
+    second: R Toe0
+  - first:
+      4: 400272
+    second: R Toe0Nub
+  - first:
+      4: 400274
+    second: R UpperArm
+  - first:
+      4: 400276
+    second: //RootNode
+  - first:
+      4: 400278
+    second: Raccoon Poly Art
+  - first:
+      4: 400280
+    second: Racoon Body LOD0
+  - first:
+      4: 400282
+    second: Racoon Body LOD01
+  - first:
+      4: 400284
+    second: Racoon Body LOD02
+  - first:
+      4: 400286
+    second: Racoon Body LOD03
+  - first:
+      4: 400288
+    second: Spine
+  - first:
+      4: 400290
+    second: Spine1
+  - first:
+      4: 400292
+    second: Spine2
+  - first:
+      4: 400294
+    second: Tail Fat
+  - first:
+      4: 400296
+    second: Tail Fat 1
+  - first:
+      4: 400298
+    second: Tail Fat 2
+  - first:
+      4: 400300
+    second: Tail Thin
+  - first:
+      4: 400302
+    second: Tail Thin 1
+  - first:
+      4: 400304
+    second: Tail Thin 2
+  - first:
+      4: 400306
+    second: Tail01
+  - first:
+      4: 400308
+    second: Tail02
+  - first:
+      4: 400310
+    second: Tail03
+  - first:
+      4: 400312
+    second: Tail04
+  - first:
+      4: 400314
+    second: Tail05
+  - first:
+      4: 400316
+    second: TailNub
+  - first:
+      4: 400318
+    second: Take out
+  - first:
+      4: 400320
+    second: whiskers
+  - first:
+      23: 2300000
+    second: Arms Thick
+  - first:
+      23: 2300002
+    second: Arms Thick 1
+  - first:
+      23: 2300004
+    second: Arms Thick 2
+  - first:
+      23: 2300006
+    second: Arms Thin
+  - first:
+      23: 2300008
+    second: Arms Thin 1
+  - first:
+      23: 2300010
+    second: Arms Thin 2
+  - first:
+      23: 2300012
+    second: Belly Fat
+  - first:
+      23: 2300014
+    second: Belly Fat 1
+  - first:
+      23: 2300016
+    second: Belly Fat 2
+  - first:
+      23: 2300018
+    second: Belly Thin
+  - first:
+      23: 2300020
+    second: Belly Thin 1
+  - first:
+      23: 2300022
+    second: Belly Thin 2
+  - first:
+      23: 2300024
+    second: Big Eyes
+  - first:
+      23: 2300026
+    second: Big Eyes 1
+  - first:
+      23: 2300028
+    second: Big Eyes 2
+  - first:
+      23: 2300030
+    second: Blink
+  - first:
+      23: 2300032
+    second: Blink 1
+  - first:
+      23: 2300034
+    second: Blink 2
+  - first:
+      23: 2300036
+    second: Cheek Small
+  - first:
+      23: 2300038
+    second: Cheek Small 1
+  - first:
+      23: 2300040
+    second: Cheek Small 2
+  - first:
+      23: 2300042
+    second: Ears Pointy
+  - first:
+      23: 2300044
+    second: Ears Pointy 1
+  - first:
+      23: 2300046
+    second: Ears Pointy 2
+  - first:
+      23: 2300048
+    second: Ears Round
+  - first:
+      23: 2300050
+    second: Ears Round 1
+  - first:
+      23: 2300052
+    second: Ears Round 2
+  - first:
+      23: 2300054
+    second: Face Hair Long
+  - first:
+      23: 2300056
+    second: Face Hair Long 1
+  - first:
+      23: 2300058
+    second: Face Hair Long 2
+  - first:
+      23: 2300060
+    second: Face Hair Short
+  - first:
+      23: 2300062
+    second: Face Hair Short 1
+  - first:
+      23: 2300064
+    second: Face Hair Short 2
+  - first:
+      23: 2300066
+    second: Hair Tail
+  - first:
+      23: 2300068
+    second: Hands Big
+  - first:
+      23: 2300070
+    second: Hands Big 1
+  - first:
+      23: 2300072
+    second: Hands Big 2
+  - first:
+      23: 2300074
+    second: Head 1
+  - first:
+      23: 2300076
+    second: Head 1 1
+  - first:
+      23: 2300078
+    second: Head 1 2
+  - first:
+      23: 2300080
+    second: Head 2
+  - first:
+      23: 2300082
+    second: Head 2 1
+  - first:
+      23: 2300084
+    second: Head 2 2
+  - first:
+      23: 2300086
+    second: Head Red Panda
+  - first:
+      23: 2300088
+    second: Head Red Panda 1
+  - first:
+      23: 2300090
+    second: Head Red Panda 2
+  - first:
+      23: 2300092
+    second: Legs Thick
+  - first:
+      23: 2300094
+    second: Legs Thick 1
+  - first:
+      23: 2300096
+    second: Legs Thick 2
+  - first:
+      23: 2300098
+    second: Legs Thin
+  - first:
+      23: 2300100
+    second: Legs Thin 1
+  - first:
+      23: 2300102
+    second: Legs Thin 2
+  - first:
+      23: 2300104
+    second: Mouth Low
+  - first:
+      23: 2300106
+    second: Mouth Up
+  - first:
+      23: 2300108
+    second: Neck Small
+  - first:
+      23: 2300110
+    second: Neck Small 1
+  - first:
+      23: 2300112
+    second: Neck Small 2
+  - first:
+      23: 2300114
+    second: Neck Thick
+  - first:
+      23: 2300116
+    second: Neck Thick 1
+  - first:
+      23: 2300118
+    second: Neck Thick 2
+  - first:
+      23: 2300120
+    second: Nose Big
+  - first:
+      23: 2300122
+    second: Nose Big 1
+  - first:
+      23: 2300124
+    second: Nose Big 2
+  - first:
+      23: 2300126
+    second: Nose Small
+  - first:
+      23: 2300128
+    second: Nose Small 1
+  - first:
+      23: 2300130
+    second: Nose Small 2
+  - first:
+      23: 2300132
+    second: Tail Fat
+  - first:
+      23: 2300134
+    second: Tail Fat 1
+  - first:
+      23: 2300136
+    second: Tail Fat 2
+  - first:
+      23: 2300138
+    second: Tail Thin
+  - first:
+      23: 2300140
+    second: Tail Thin 1
+  - first:
+      23: 2300142
+    second: Tail Thin 2
+  - first:
+      23: 2300144
+    second: Take out
+  - first:
+      23: 2300146
+    second: whiskers
+  - first:
+      33: 3300000
+    second: Arms Thick
+  - first:
+      33: 3300002
+    second: Arms Thick 1
+  - first:
+      33: 3300004
+    second: Arms Thick 2
+  - first:
+      33: 3300006
+    second: Arms Thin
+  - first:
+      33: 3300008
+    second: Arms Thin 1
+  - first:
+      33: 3300010
+    second: Arms Thin 2
+  - first:
+      33: 3300012
+    second: Belly Fat
+  - first:
+      33: 3300014
+    second: Belly Fat 1
+  - first:
+      33: 3300016
+    second: Belly Fat 2
+  - first:
+      33: 3300018
+    second: Belly Thin
+  - first:
+      33: 3300020
+    second: Belly Thin 1
+  - first:
+      33: 3300022
+    second: Belly Thin 2
+  - first:
+      33: 3300024
+    second: Big Eyes
+  - first:
+      33: 3300026
+    second: Big Eyes 1
+  - first:
+      33: 3300028
+    second: Big Eyes 2
+  - first:
+      33: 3300030
+    second: Blink
+  - first:
+      33: 3300032
+    second: Blink 1
+  - first:
+      33: 3300034
+    second: Blink 2
+  - first:
+      33: 3300036
+    second: Cheek Small
+  - first:
+      33: 3300038
+    second: Cheek Small 1
+  - first:
+      33: 3300040
+    second: Cheek Small 2
+  - first:
+      33: 3300042
+    second: Ears Pointy
+  - first:
+      33: 3300044
+    second: Ears Pointy 1
+  - first:
+      33: 3300046
+    second: Ears Pointy 2
+  - first:
+      33: 3300048
+    second: Ears Round
+  - first:
+      33: 3300050
+    second: Ears Round 1
+  - first:
+      33: 3300052
+    second: Ears Round 2
+  - first:
+      33: 3300054
+    second: Face Hair Long
+  - first:
+      33: 3300056
+    second: Face Hair Long 1
+  - first:
+      33: 3300058
+    second: Face Hair Long 2
+  - first:
+      33: 3300060
+    second: Face Hair Short
+  - first:
+      33: 3300062
+    second: Face Hair Short 1
+  - first:
+      33: 3300064
+    second: Face Hair Short 2
+  - first:
+      33: 3300066
+    second: Hair Tail
+  - first:
+      33: 3300068
+    second: Hands Big
+  - first:
+      33: 3300070
+    second: Hands Big 1
+  - first:
+      33: 3300072
+    second: Hands Big 2
+  - first:
+      33: 3300074
+    second: Head 1
+  - first:
+      33: 3300076
+    second: Head 1 1
+  - first:
+      33: 3300078
+    second: Head 1 2
+  - first:
+      33: 3300080
+    second: Head 2
+  - first:
+      33: 3300082
+    second: Head 2 1
+  - first:
+      33: 3300084
+    second: Head 2 2
+  - first:
+      33: 3300086
+    second: Head Red Panda
+  - first:
+      33: 3300088
+    second: Head Red Panda 1
+  - first:
+      33: 3300090
+    second: Head Red Panda 2
+  - first:
+      33: 3300092
+    second: Legs Thick
+  - first:
+      33: 3300094
+    second: Legs Thick 1
+  - first:
+      33: 3300096
+    second: Legs Thick 2
+  - first:
+      33: 3300098
+    second: Legs Thin
+  - first:
+      33: 3300100
+    second: Legs Thin 1
+  - first:
+      33: 3300102
+    second: Legs Thin 2
+  - first:
+      33: 3300104
+    second: Mouth Low
+  - first:
+      33: 3300106
+    second: Mouth Up
+  - first:
+      33: 3300108
+    second: Neck Small
+  - first:
+      33: 3300110
+    second: Neck Small 1
+  - first:
+      33: 3300112
+    second: Neck Small 2
+  - first:
+      33: 3300114
+    second: Neck Thick
+  - first:
+      33: 3300116
+    second: Neck Thick 1
+  - first:
+      33: 3300118
+    second: Neck Thick 2
+  - first:
+      33: 3300120
+    second: Nose Big
+  - first:
+      33: 3300122
+    second: Nose Big 1
+  - first:
+      33: 3300124
+    second: Nose Big 2
+  - first:
+      33: 3300126
+    second: Nose Small
+  - first:
+      33: 3300128
+    second: Nose Small 1
+  - first:
+      33: 3300130
+    second: Nose Small 2
+  - first:
+      33: 3300132
+    second: Tail Fat
+  - first:
+      33: 3300134
+    second: Tail Fat 1
+  - first:
+      33: 3300136
+    second: Tail Fat 2
+  - first:
+      33: 3300138
+    second: Tail Thin
+  - first:
+      33: 3300140
+    second: Tail Thin 1
+  - first:
+      33: 3300142
+    second: Tail Thin 2
+  - first:
+      33: 3300144
+    second: Take out
+  - first:
+      33: 3300146
+    second: whiskers
+  - first:
+      43: 4300000
+    second: Mouth Low
+  - first:
+      43: 4300002
+    second: Mouth Up
+  - first:
+      43: 4300004
+    second: whiskers
+  - first:
+      43: 4300006
+    second: Lens
+  - first:
+      43: 4300008
+    second: Eye
+  - first:
+      43: 4300010
+    second: Hair Tail
+  - first:
+      43: 4300012
+    second: Racoon Body LOD0
+  - first:
+      43: 4300014
+    second: Blink
+  - first:
+      43: 4300016
+    second: Neck Thick
+  - first:
+      43: 4300018
+    second: Take out
+  - first:
+      43: 4300020
+    second: Belly Thin
+  - first:
+      43: 4300022
+    second: Belly Fat
+  - first:
+      43: 4300024
+    second: Tail Thin
+  - first:
+      43: 4300026
+    second: Tail Fat
+  - first:
+      43: 4300028
+    second: Big Eyes
+  - first:
+      43: 4300030
+    second: Face Hair Long
+  - first:
+      43: 4300032
+    second: Head 1
+  - first:
+      43: 4300034
+    second: Face Hair Short
+  - first:
+      43: 4300036
+    second: Neck Small
+  - first:
+      43: 4300038
+    second: Ears Round
+  - first:
+      43: 4300040
+    second: Ears Pointy
+  - first:
+      43: 4300042
+    second: Nose Big
+  - first:
+      43: 4300044
+    second: Nose Small
+  - first:
+      43: 4300046
+    second: Cheek Small
+  - first:
+      43: 4300048
+    second: Head 2
+  - first:
+      43: 4300050
+    second: Head Red Panda
+  - first:
+      43: 4300052
+    second: Arms Thick
+  - first:
+      43: 4300054
+    second: Arms Thin
+  - first:
+      43: 4300056
+    second: Hands Big
+  - first:
+      43: 4300058
+    second: Legs Thick
+  - first:
+      43: 4300060
+    second: Legs Thin
+  - first:
+      43: 4300062
+    second: Racoon Body LOD01
+  - first:
+      43: 4300064
+    second: Racoon Body LOD02
+  - first:
+      43: 4300066
+    second: Racoon Body LOD03
+  - first:
+      43: 4300068
+    second: Legs Thin
+  - first:
+      43: 4300070
+    second: Blink
+  - first:
+      43: 4300072
+    second: Neck Thick
+  - first:
+      43: 4300074
+    second: Neck Small
+  - first:
+      43: 4300076
+    second: Belly Thin
+  - first:
+      43: 4300078
+    second: Belly Fat
+  - first:
+      43: 4300080
+    second: Tail Thin
+  - first:
+      43: 4300082
+    second: Tail Fat
+  - first:
+      43: 4300084
+    second: Face Hair Long
+  - first:
+      43: 4300086
+    second: Face Hair Short
+  - first:
+      43: 4300088
+    second: Ears Round
+  - first:
+      43: 4300090
+    second: Ears Pointy
+  - first:
+      43: 4300092
+    second: Nose Big
+  - first:
+      43: 4300094
+    second: Nose Small
+  - first:
+      43: 4300096
+    second: Big Eyes
+  - first:
+      43: 4300098
+    second: Cheek Small
+  - first:
+      43: 4300100
+    second: Head 1
+  - first:
+      43: 4300102
+    second: Head 2
+  - first:
+      43: 4300104
+    second: Head Red Panda
+  - first:
+      43: 4300106
+    second: Arms Thick
+  - first:
+      43: 4300108
+    second: Arms Thin
+  - first:
+      43: 4300110
+    second: Hands Big
+  - first:
+      43: 4300112
+    second: Legs Thick
+  - first:
+      43: 4300114
+    second: Raccoon Poly Art
+  - first:
+      43: 4300116
+    second: Blink
+  - first:
+      43: 4300118
+    second: Neck Thick
+  - first:
+      43: 4300120
+    second: Neck Small
+  - first:
+      43: 4300122
+    second: Belly Thin
+  - first:
+      43: 4300124
+    second: Belly Fat
+  - first:
+      43: 4300126
+    second: Tail Thin
+  - first:
+      43: 4300128
+    second: Tail Fat
+  - first:
+      43: 4300130
+    second: Face Hair Long
+  - first:
+      43: 4300132
+    second: Face Hair Short
+  - first:
+      43: 4300134
+    second: Ears Round
+  - first:
+      43: 4300136
+    second: Ears Pointy
+  - first:
+      43: 4300138
+    second: Nose Big
+  - first:
+      43: 4300140
+    second: Nose Small
+  - first:
+      43: 4300142
+    second: Big Eyes
+  - first:
+      43: 4300144
+    second: Cheek Small
+  - first:
+      43: 4300146
+    second: Head 1
+  - first:
+      43: 4300148
+    second: Head 2
+  - first:
+      43: 4300150
+    second: Head Red Panda
+  - first:
+      43: 4300152
+    second: Arms Thick
+  - first:
+      43: 4300154
+    second: Arms Thin
+  - first:
+      43: 4300156
+    second: Hands Big
+  - first:
+      43: 4300158
+    second: Legs Thick
+  - first:
+      43: 4300160
+    second: Legs Thin
+  - first:
+      74: 7400000
+    second: Take 001
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Eye
+  - first:
+      137: 13700002
+    second: Lens
+  - first:
+      137: 13700004
+    second: Raccoon Poly Art
+  - first:
+      137: 13700006
+    second: Racoon Body LOD0
+  - first:
+      137: 13700008
+    second: Racoon Body LOD01
+  - first:
+      137: 13700010
+    second: Racoon Body LOD02
+  - first:
+      137: 13700012
+    second: Racoon Body LOD03
+  - first:
+      41386430: 2186277476908879412
+    second: ImportLogs
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: "Avatar Rig Configuration mis-match. Inbetween bone rotation
-      in configuration does not match rotation in animation file:\n\t'L HorseLink'
-      : rotation error = 82.636200 deg\n\t'R HorseLink' : rotation error = 82.636200
-      deg\n"
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -613,25 +1731,39 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 0.01
-    hasPreviousCalculatedGlobalScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 0
     normalImportMode: 1
@@ -640,10 +1772,10 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 0
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton:
     - name: Raccoon PA(Clone)
@@ -948,13 +2080,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: CG
     hasTranslationDoF: 1
     hasExtraRoot: 1
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

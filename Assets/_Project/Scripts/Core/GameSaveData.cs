@@ -10,7 +10,7 @@ namespace Project.Core
     [Serializable]
     public class GameSaveData
     {
-        public int version = 21;
+        public int version = 0;
         public int slotIndex;
         public long savedAtUtcTicks;
         public float health;

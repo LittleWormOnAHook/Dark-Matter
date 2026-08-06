@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -24,6 +25,7 @@ namespace Project.UI
         public const float BaseFontSize = 14f * 1.25f;
         public const float HighlightScale = 1.2f;
         private const float ScaleLerpSpeed = 14f;
+        private const float HoverTickCooldownSeconds = 0.04f;
 
         private readonly struct TabDef
         {
@@ -78,6 +80,8 @@ namespace Project.UI
         private readonly List<TabEntry> tabs = new List<TabEntry>(Tabs.Length);
         private readonly Dictionary<JournalWindowId, TabEntry> tabsById = new Dictionary<JournalWindowId, TabEntry>();
         private bool dirtyVisuals;
+        private JournalWindowId? lastActiveWindowId;
+        private float lastHoverTickUnscaledTime = -1f;
 
         public void Build(Transform parent, float uiScale, Action<JournalWindowId> onTabClicked)
         {
@@ -129,6 +133,9 @@ namespace Project.UI
 
         public void SetActiveTab(JournalWindowId? windowId)
         {
+            bool selectionChanged = windowId != lastActiveWindowId;
+            lastActiveWindowId = windowId;
+
             for (int i = 0; i < tabs.Count; i++)
             {
                 TabEntry entry = tabs[i];
@@ -138,6 +145,11 @@ namespace Project.UI
 
             dirtyVisuals = true;
             ApplyTabVisuals(force: true);
+
+            // Keyboard / gamepad tab switches (and clicks) land here — play once on change.
+            // Hover uses OnTabPointerEnter separately so scrubbing the rail still ticks.
+            if (selectionChanged && windowId.HasValue && gameObject.activeInHierarchy)
+                PlayTabTick();
         }
 
         private void Update()
@@ -205,6 +217,7 @@ namespace Project.UI
             Button button = tabObject.GetComponent<Button>();
             button.targetGraphic = bg;
             button.transition = Selectable.Transition.None;
+            // Click uses the shared button SFX; hover/focus ticks come from the pointer bridge.
             UiSoundHelper.BindButton(button);
 
             JournalWindowId capturedId = tab.WindowId;
@@ -252,9 +265,14 @@ namespace Project.UI
             if (!tabsById.TryGetValue(windowId, out TabEntry entry))
                 return;
 
+            bool wasHovered = entry.IsHovered;
             entry.IsHovered = true;
             RefreshTabTarget(entry);
             dirtyVisuals = true;
+
+            // Tick when scrubbing onto a new tab (not when already hovered).
+            if (!wasHovered)
+                PlayTabTick();
         }
 
         private void OnTabPointerExit(JournalWindowId windowId)
@@ -265,6 +283,27 @@ namespace Project.UI
             entry.IsHovered = false;
             RefreshTabTarget(entry);
             dirtyVisuals = true;
+        }
+
+        private void OnTabSelected(JournalWindowId windowId)
+        {
+            // Gamepad / keyboard EventSystem focus — highlight + tick without requiring a click.
+            OnTabPointerEnter(windowId);
+        }
+
+        private void OnTabDeselected(JournalWindowId windowId)
+        {
+            OnTabPointerExit(windowId);
+        }
+
+        private void PlayTabTick()
+        {
+            float now = Time.unscaledTime;
+            if (now - lastHoverTickUnscaledTime < HoverTickCooldownSeconds)
+                return;
+
+            lastHoverTickUnscaledTime = now;
+            GameAudioManager.Instance?.PlayUiHoverTick();
         }
 
         private static void RefreshTabTarget(TabEntry entry)
@@ -321,8 +360,13 @@ namespace Project.UI
 
         /// <summary>
         /// Lightweight EventSystem bridge so tab hover does not require Button color transitions.
+        /// Also handles gamepad / keyboard focus via <see cref="ISelectHandler"/>.
         /// </summary>
-        private sealed class JournalTabPointerBridge : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+        private sealed class JournalTabPointerBridge : MonoBehaviour,
+            IPointerEnterHandler,
+            IPointerExitHandler,
+            ISelectHandler,
+            IDeselectHandler
         {
             private JournalTabRail owner;
             private JournalWindowId windowId;
@@ -341,6 +385,16 @@ namespace Project.UI
             public void OnPointerExit(PointerEventData eventData)
             {
                 owner?.OnTabPointerExit(windowId);
+            }
+
+            public void OnSelect(BaseEventData eventData)
+            {
+                owner?.OnTabSelected(windowId);
+            }
+
+            public void OnDeselect(BaseEventData eventData)
+            {
+                owner?.OnTabDeselected(windowId);
             }
         }
     }

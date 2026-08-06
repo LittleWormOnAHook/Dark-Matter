@@ -1,4 +1,5 @@
 using Project.Audio;
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Map;
@@ -13,8 +14,8 @@ using UnityEngine.InputSystem;
 namespace Project.Interaction
 {
     /// <summary>
-    /// Secondary mining multi-tool scanner. While the mining tool is drawn and in aim mode,
-    /// hold F on a locked ResourceNode within mine range for 5 seconds to identify it
+    /// Secondary mining multi-tool scanner. While the mining tool is drawn, hold F (or LB) to
+    /// force aim and scan a ResourceNode within mine range for 5 seconds to identify it
     /// (gated by Mining / Harvesting skill rank). Already-identified types cannot be re-scanned.
     /// </summary>
     [DisallowMultipleComponent]
@@ -55,6 +56,7 @@ namespace Project.Interaction
         private float scanProgress;
         private bool isScanning;
         private OutlineController highlightedOutline;
+        private OutlineController addedOutlineController;
         private WorldNodeProgressBar progressBar;
         private Transform muzzleTransform;
         private AudioSource scanAudio;
@@ -75,14 +77,16 @@ namespace Project.Interaction
 
         private void OnDisable()
         {
+            SetMiningScanAimHold(false);
             CancelScan(clearProgressUi: true);
         }
 
         private void Update()
         {
             ItemData tool = ResolveDrawnMiningTool();
-            if (tool == null || IsInputBlocked() || !IsAimModeActive())
+            if (tool == null || IsInputBlocked())
             {
+                SetMiningScanAimHold(false);
                 CancelScan(clearProgressUi: true);
                 return;
             }
@@ -90,9 +94,13 @@ namespace Project.Interaction
             bool holdF = IsScanHeld();
             if (!holdF)
             {
+                SetMiningScanAimHold(false);
                 CancelScan(clearProgressUi: true);
                 return;
             }
+
+            // F / LB forces aim on the drawn mining tool — no need to be aiming first.
+            SetMiningScanAimHold(true);
 
             if (!TryAcquireTarget(out ResourceNode node, out Vector3 point))
             {
@@ -117,6 +125,7 @@ namespace Project.Interaction
                 scanPoint = point;
                 isScanning = true;
                 scanProgress += Time.deltaTime;
+                EnsureScanAudio();
                 UpdateScanVisuals();
                 UpdateProgressUi();
 
@@ -127,6 +136,21 @@ namespace Project.Interaction
 
         private void BeginScan(ResourceNode node, Vector3 point)
         {
+            // Deny immediately if skill rank is insufficient — don't wait for the full 5s timer.
+            ItemData item = node.resourceItem;
+            if (item != null)
+            {
+                MineHarvestGatherKind gatherKind = ResolveGatherKind(item, node);
+                int requiredRank = ResolveRequiredRank(item);
+                int playerRank = PlayerSkillAllocator.GetGatherSkillRank(gatherKind);
+                if (playerRank < requiredRank)
+                {
+                    string skillName = gatherKind == MineHarvestGatherKind.Harvest ? "Harvesting" : "Mining";
+                    PlayDeniedFeedback($"Requires {skillName} rank {requiredRank}");
+                    return;
+                }
+            }
+
             CancelScan(clearProgressUi: false);
             scanTarget = node;
             scanPoint = point;
@@ -189,45 +213,73 @@ namespace Project.Interaction
                 SetProgressUiVisible(false);
         }
 
+        private void SetMiningScanAimHold(bool held)
+        {
+            if (inputBridge == null)
+                inputBridge = GetComponent<PioneerInvectorInputBridge>();
+
+            inputBridge?.SetMiningScanAimHold(held);
+        }
+
         private bool TryAcquireTarget(out ResourceNode node, out Vector3 point)
         {
             node = null;
             point = default;
 
+            // Always exclude layer 2 (Ignore Raycast) regardless of the authored resourceLayer mask.
+            LayerMask effectiveMask = resourceLayer & ~(1 << 2);
+
             Vector3 aimDir = ResolveAimDirection(out Vector3 aimOrigin);
-            // Collide so HoldHarvest plant trigger colliders are scannable (same as WorldUse).
-            if (!Physics.Raycast(
-                    aimOrigin,
-                    aimDir,
-                    out RaycastHit hit,
-                    DMIMiningController.MaxMineDistance,
-                    resourceLayer,
-                    QueryTriggerInteraction.Collide))
+
+            // Use RaycastAll so we can skip non-ResourceNode hits (e.g. player colliders) instead
+            // of stopping at the first geometry collision.
+            RaycastHit[] hits = Physics.RaycastAll(
+                aimOrigin, aimDir, DMIMiningController.MaxMineDistance,
+                effectiveMask, QueryTriggerInteraction.Collide);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            RaycastHit bestHit = default;
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                ResourceNode candidate = hits[i].collider.GetComponentInParent<ResourceNode>();
+                if (candidate != null && candidate.resourceItem != null)
+                {
+                    bestHit = hits[i];
+                    found = true;
+                    break;
+                }
+            }
+
+            // Sphere-cast fallback for wider acquisition when straight raycast misses.
+            if (!found)
             {
                 if (!Physics.SphereCast(
                         aimOrigin,
                         Mathf.Max(0.05f, acquireRayRadius * 0.35f),
                         aimDir,
-                        out hit,
+                        out bestHit,
                         DMIMiningController.MaxMineDistance,
-                        resourceLayer,
+                        effectiveMask,
                         QueryTriggerInteraction.Collide))
                 {
                     return false;
                 }
+
+                found = true;
             }
 
-            node = hit.collider.GetComponentInParent<ResourceNode>();
+            node = bestHit.collider.GetComponentInParent<ResourceNode>();
             if (node == null || node.resourceItem == null)
                 return false;
 
-            if (Vector3.Distance(transform.position, hit.point) > DMIMiningController.MaxMineDistance
+            if (Vector3.Distance(transform.position, bestHit.point) > DMIMiningController.MaxMineDistance
                 && Vector3.Distance(transform.position, node.GetNodeCenter()) > DMIMiningController.MaxMineDistance)
             {
                 return false;
             }
 
-            point = hit.point;
+            point = bestHit.point;
             return true;
         }
 
@@ -243,14 +295,6 @@ namespace Project.Interaction
             return tool;
         }
 
-        private bool IsAimModeActive()
-        {
-            if (inputBridge == null)
-                inputBridge = GetComponent<PioneerInvectorInputBridge>();
-
-            return inputBridge != null && inputBridge.IsAiming;
-        }
-
         private bool IsInputBlocked()
         {
             if (player == null)
@@ -259,16 +303,25 @@ namespace Project.Interaction
             return player != null && player.BlocksCombatInput;
         }
 
+        // Left Shoulder is the gamepad scan binding — held to scan (avoids conflict with West / harvest).
         private static bool IsScanHeld()
         {
             Keyboard kb = Keyboard.current;
-            return kb != null && kb.fKey.isPressed;
+            if (kb != null && kb.fKey.isPressed)
+                return true;
+
+            Gamepad gp = Gamepad.current;
+            return gp != null && gp.leftShoulder.isPressed;
         }
 
         private static bool WasScanPressedThisFrame()
         {
             Keyboard kb = Keyboard.current;
-            return kb != null && kb.fKey.wasPressedThisFrame;
+            if (kb != null && kb.fKey.wasPressedThisFrame)
+                return true;
+
+            Gamepad gp = Gamepad.current;
+            return gp != null && gp.leftShoulder.wasPressedThisFrame;
         }
 
         private Vector3 ResolveAimDirection(out Vector3 origin)
@@ -332,6 +385,13 @@ namespace Project.Interaction
             if (highlightedOutline != null)
             {
                 highlightedOutline.ClearResourceScanHighlight();
+                // Destroy the OutlineController if we added it dynamically, so we don't litter components.
+                if (addedOutlineController != null && highlightedOutline == addedOutlineController)
+                {
+                    Destroy(addedOutlineController);
+                    addedOutlineController = null;
+                }
+
                 highlightedOutline = null;
             }
 
@@ -340,18 +400,25 @@ namespace Project.Interaction
 
             highlightedOutline = node.GetComponentInChildren<OutlineController>();
             if (highlightedOutline == null)
+            {
                 highlightedOutline = node.gameObject.AddComponent<OutlineController>();
+                addedOutlineController = highlightedOutline;
+            }
 
             highlightedOutline.SetResourceScanHighlight(true, ScanOutlineColor, ScanHighlightAlpha);
         }
 
         private GameObject ResolveScanCone()
         {
-            // Drop destroyed / missing refs so a replaced authored cone is rediscovered.
-            if (scanCone == null)
+            // Return cached cone if still valid and active in the hierarchy.
+            if (scanCone != null)
+            {
+                if (scanCone.activeInHierarchy || !scanCone.activeSelf)
+                    return scanCone;
+
+                // Cone became inactive (tool holstered/switched) — clear cache so it is rediscovered.
                 scanCone = null;
-            else
-                return scanCone;
+            }
 
             Transform drawnTool = FindDrawnMiningTool();
             if (drawnTool != null)
@@ -379,6 +446,19 @@ namespace Project.Interaction
             if (fallback != null)
             {
                 scanCone = fallback.gameObject;
+                return scanCone;
+            }
+
+            // Last resort: spawn from Resources under the drawn tool (or this player).
+            GameObject prefab = Resources.Load<GameObject>("VFX/Scan Cone");
+            if (prefab != null)
+            {
+                Transform parent = drawnTool != null ? FindChildNamed(drawnTool, "renderer") ?? drawnTool : transform;
+                scanCone = Instantiate(prefab, parent);
+                scanCone.name = ScanConeObjectName;
+                scanCone.transform.localPosition = Vector3.zero;
+                scanCone.transform.localRotation = Quaternion.identity;
+                scanCone.SetActive(false);
                 return scanCone;
             }
 
@@ -554,9 +634,17 @@ namespace Project.Interaction
             nextToastTime = Time.unscaledTime + ToastCooldownSeconds;
             AudioClip denied = ResolveScanDeniedClip(ResolveDrawnMiningTool());
             if (denied != null)
-                AudioSource.PlayClipAtPoint(denied, transform.position, 0.8f);
+            {
+                float vol = GameSettings.SfxVolume * 0.8f;
+                if (scanAudio != null)
+                    scanAudio.PlayOneShot(denied, vol);
+                else
+                    AudioSource.PlayClipAtPoint(denied, transform.position, vol);
+            }
             else
+            {
                 GameAudioManager.Instance?.PlayInventoryItemClick();
+            }
 
             PickupToastUI.Show(message);
         }
@@ -565,9 +653,17 @@ namespace Project.Interaction
         {
             AudioClip success = ResolveScanSuccessClip(ResolveDrawnMiningTool());
             if (success != null)
-                AudioSource.PlayClipAtPoint(success, transform.position, 0.85f);
+            {
+                float vol = GameSettings.SfxVolume * 0.85f;
+                if (scanAudio != null)
+                    scanAudio.PlayOneShot(success, vol);
+                else
+                    AudioSource.PlayClipAtPoint(success, transform.position, vol);
+            }
             else
+            {
                 GameAudioManager.Instance?.PlayItemPickup();
+            }
         }
 
         private static MineHarvestGatherKind ResolveGatherKind(ItemData item, ResourceNode node)

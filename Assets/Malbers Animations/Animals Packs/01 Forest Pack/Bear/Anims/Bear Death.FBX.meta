@@ -1,157 +1,426 @@
 fileFormatVersion: 2
 guid: edf2b6a8e23de8f47a073409cc605f59
 ModelImporter:
-  serializedVersion: 22
-  fileIDToRecycleName:
-    100000: ' Footsteps'
-    100002: ' HeadNub'
-    100004: ' L Finger0'
-    100006: ' L Toe0'
-    100008: ' R Finger0'
-    100010: ' R Toe0'
-    100012: Bear
-    100014: //RootNode
-    100016: CG
-    100018: CG Cheek LNub
-    100020: CG Cheek RNub
-    100022: CG Eye LNub
-    100024: CG Eye RNub
-    100026: CG TailNub
-    100028: CG TongeNub
-    100030: Cheek L
-    100032: Cheek R
-    100034: EarL
-    100036: EarR
-    100038: Eye L
-    100040: Eye R
-    100042: Head
-    100044: Jaw
-    100046: JawNub
-    100048: L Calf
-    100050: L Clavicle
-    100052: L Finger0Nub
-    100054: L Foot
-    100056: L Forearm
-    100058: L Hand
-    100060: L Thigh
-    100062: L Toe0Nub
-    100064: L UpperArm
-    100066: Neck
-    100068: Pelvis
-    100070: Ponytail1Nub
-    100072: Ponytail2Nub
-    100074: R Calf
-    100076: R Clavicle
-    100078: R Finger0Nub
-    100080: R Foot
-    100082: R Forearm
-    100084: R Hand
-    100086: R Thigh
-    100088: R Toe0Nub
-    100090: R UpperArm
-    100092: Sky001
-    100094: Spine
-    100096: Spine1
-    100098: Spine2
-    100100: Tail
-    100102: Tongue
-    100104: Z7A1K4
-    100106: Z7A1K4 1
-    100108: Z7A1K4 10
-    100110: Z7A1K4 11
-    100112: Z7A1K4 2
-    100114: Z7A1K4 3
-    100116: Z7A1K4 4
-    100118: Z7A1K4 5
-    100120: Z7A1K4 6
-    100122: Z7A1K4 7
-    100124: Z7A1K4 8
-    100126: Z7A1K4 9
-    100128: Root
-    400000: ' Footsteps'
-    400002: ' HeadNub'
-    400004: ' L Finger0'
-    400006: ' L Toe0'
-    400008: ' R Finger0'
-    400010: ' R Toe0'
-    400012: Bear
-    400014: //RootNode
-    400016: CG
-    400018: CG Cheek LNub
-    400020: CG Cheek RNub
-    400022: CG Eye LNub
-    400024: CG Eye RNub
-    400026: CG TailNub
-    400028: CG TongeNub
-    400030: Cheek L
-    400032: Cheek R
-    400034: EarL
-    400036: EarR
-    400038: Eye L
-    400040: Eye R
-    400042: Head
-    400044: Jaw
-    400046: JawNub
-    400048: L Calf
-    400050: L Clavicle
-    400052: L Finger0Nub
-    400054: L Foot
-    400056: L Forearm
-    400058: L Hand
-    400060: L Thigh
-    400062: L Toe0Nub
-    400064: L UpperArm
-    400066: Neck
-    400068: Pelvis
-    400070: Ponytail1Nub
-    400072: Ponytail2Nub
-    400074: R Calf
-    400076: R Clavicle
-    400078: R Finger0Nub
-    400080: R Foot
-    400082: R Forearm
-    400084: R Hand
-    400086: R Thigh
-    400088: R Toe0Nub
-    400090: R UpperArm
-    400092: Sky001
-    400094: Spine
-    400096: Spine1
-    400098: Spine2
-    400100: Tail
-    400102: Tongue
-    400104: Z7A1K4
-    400106: Z7A1K4 1
-    400108: Z7A1K4 10
-    400110: Z7A1K4 11
-    400112: Z7A1K4 2
-    400114: Z7A1K4 3
-    400116: Z7A1K4 4
-    400118: Z7A1K4 5
-    400120: Z7A1K4 6
-    400122: Z7A1K4 7
-    400124: Z7A1K4 8
-    400126: Z7A1K4 9
-    400128: Root
-    4300000: Bear
-    7400000: Be_Death1
-    7400002: Be_Death2
-    9500000: //RootNode
-    13700000: Bear
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: ' Footsteps'
+  - first:
+      1: 100002
+    second: ' HeadNub'
+  - first:
+      1: 100004
+    second: ' L Finger0'
+  - first:
+      1: 100006
+    second: ' L Toe0'
+  - first:
+      1: 100008
+    second: ' R Finger0'
+  - first:
+      1: 100010
+    second: ' R Toe0'
+  - first:
+      1: 100012
+    second: Bear
+  - first:
+      1: 100014
+    second: //RootNode
+  - first:
+      1: 100016
+    second: CG
+  - first:
+      1: 100018
+    second: CG Cheek LNub
+  - first:
+      1: 100020
+    second: CG Cheek RNub
+  - first:
+      1: 100022
+    second: CG Eye LNub
+  - first:
+      1: 100024
+    second: CG Eye RNub
+  - first:
+      1: 100026
+    second: CG TailNub
+  - first:
+      1: 100028
+    second: CG TongeNub
+  - first:
+      1: 100030
+    second: Cheek L
+  - first:
+      1: 100032
+    second: Cheek R
+  - first:
+      1: 100034
+    second: EarL
+  - first:
+      1: 100036
+    second: EarR
+  - first:
+      1: 100038
+    second: Eye L
+  - first:
+      1: 100040
+    second: Eye R
+  - first:
+      1: 100042
+    second: Head
+  - first:
+      1: 100044
+    second: Jaw
+  - first:
+      1: 100046
+    second: JawNub
+  - first:
+      1: 100048
+    second: L Calf
+  - first:
+      1: 100050
+    second: L Clavicle
+  - first:
+      1: 100052
+    second: L Finger0Nub
+  - first:
+      1: 100054
+    second: L Foot
+  - first:
+      1: 100056
+    second: L Forearm
+  - first:
+      1: 100058
+    second: L Hand
+  - first:
+      1: 100060
+    second: L Thigh
+  - first:
+      1: 100062
+    second: L Toe0Nub
+  - first:
+      1: 100064
+    second: L UpperArm
+  - first:
+      1: 100066
+    second: Neck
+  - first:
+      1: 100068
+    second: Pelvis
+  - first:
+      1: 100070
+    second: Ponytail1Nub
+  - first:
+      1: 100072
+    second: Ponytail2Nub
+  - first:
+      1: 100074
+    second: R Calf
+  - first:
+      1: 100076
+    second: R Clavicle
+  - first:
+      1: 100078
+    second: R Finger0Nub
+  - first:
+      1: 100080
+    second: R Foot
+  - first:
+      1: 100082
+    second: R Forearm
+  - first:
+      1: 100084
+    second: R Hand
+  - first:
+      1: 100086
+    second: R Thigh
+  - first:
+      1: 100088
+    second: R Toe0Nub
+  - first:
+      1: 100090
+    second: R UpperArm
+  - first:
+      1: 100092
+    second: Sky001
+  - first:
+      1: 100094
+    second: Spine
+  - first:
+      1: 100096
+    second: Spine1
+  - first:
+      1: 100098
+    second: Spine2
+  - first:
+      1: 100100
+    second: Tail
+  - first:
+      1: 100102
+    second: Tongue
+  - first:
+      1: 100104
+    second: Z7A1K4
+  - first:
+      1: 100106
+    second: Z7A1K4 1
+  - first:
+      1: 100108
+    second: Z7A1K4 10
+  - first:
+      1: 100110
+    second: Z7A1K4 11
+  - first:
+      1: 100112
+    second: Z7A1K4 2
+  - first:
+      1: 100114
+    second: Z7A1K4 3
+  - first:
+      1: 100116
+    second: Z7A1K4 4
+  - first:
+      1: 100118
+    second: Z7A1K4 5
+  - first:
+      1: 100120
+    second: Z7A1K4 6
+  - first:
+      1: 100122
+    second: Z7A1K4 7
+  - first:
+      1: 100124
+    second: Z7A1K4 8
+  - first:
+      1: 100126
+    second: Z7A1K4 9
+  - first:
+      1: 100128
+    second: Root
+  - first:
+      4: 400000
+    second: ' Footsteps'
+  - first:
+      4: 400002
+    second: ' HeadNub'
+  - first:
+      4: 400004
+    second: ' L Finger0'
+  - first:
+      4: 400006
+    second: ' L Toe0'
+  - first:
+      4: 400008
+    second: ' R Finger0'
+  - first:
+      4: 400010
+    second: ' R Toe0'
+  - first:
+      4: 400012
+    second: Bear
+  - first:
+      4: 400014
+    second: //RootNode
+  - first:
+      4: 400016
+    second: CG
+  - first:
+      4: 400018
+    second: CG Cheek LNub
+  - first:
+      4: 400020
+    second: CG Cheek RNub
+  - first:
+      4: 400022
+    second: CG Eye LNub
+  - first:
+      4: 400024
+    second: CG Eye RNub
+  - first:
+      4: 400026
+    second: CG TailNub
+  - first:
+      4: 400028
+    second: CG TongeNub
+  - first:
+      4: 400030
+    second: Cheek L
+  - first:
+      4: 400032
+    second: Cheek R
+  - first:
+      4: 400034
+    second: EarL
+  - first:
+      4: 400036
+    second: EarR
+  - first:
+      4: 400038
+    second: Eye L
+  - first:
+      4: 400040
+    second: Eye R
+  - first:
+      4: 400042
+    second: Head
+  - first:
+      4: 400044
+    second: Jaw
+  - first:
+      4: 400046
+    second: JawNub
+  - first:
+      4: 400048
+    second: L Calf
+  - first:
+      4: 400050
+    second: L Clavicle
+  - first:
+      4: 400052
+    second: L Finger0Nub
+  - first:
+      4: 400054
+    second: L Foot
+  - first:
+      4: 400056
+    second: L Forearm
+  - first:
+      4: 400058
+    second: L Hand
+  - first:
+      4: 400060
+    second: L Thigh
+  - first:
+      4: 400062
+    second: L Toe0Nub
+  - first:
+      4: 400064
+    second: L UpperArm
+  - first:
+      4: 400066
+    second: Neck
+  - first:
+      4: 400068
+    second: Pelvis
+  - first:
+      4: 400070
+    second: Ponytail1Nub
+  - first:
+      4: 400072
+    second: Ponytail2Nub
+  - first:
+      4: 400074
+    second: R Calf
+  - first:
+      4: 400076
+    second: R Clavicle
+  - first:
+      4: 400078
+    second: R Finger0Nub
+  - first:
+      4: 400080
+    second: R Foot
+  - first:
+      4: 400082
+    second: R Forearm
+  - first:
+      4: 400084
+    second: R Hand
+  - first:
+      4: 400086
+    second: R Thigh
+  - first:
+      4: 400088
+    second: R Toe0Nub
+  - first:
+      4: 400090
+    second: R UpperArm
+  - first:
+      4: 400092
+    second: Sky001
+  - first:
+      4: 400094
+    second: Spine
+  - first:
+      4: 400096
+    second: Spine1
+  - first:
+      4: 400098
+    second: Spine2
+  - first:
+      4: 400100
+    second: Tail
+  - first:
+      4: 400102
+    second: Tongue
+  - first:
+      4: 400104
+    second: Z7A1K4
+  - first:
+      4: 400106
+    second: Z7A1K4 1
+  - first:
+      4: 400108
+    second: Z7A1K4 10
+  - first:
+      4: 400110
+    second: Z7A1K4 11
+  - first:
+      4: 400112
+    second: Z7A1K4 2
+  - first:
+      4: 400114
+    second: Z7A1K4 3
+  - first:
+      4: 400116
+    second: Z7A1K4 4
+  - first:
+      4: 400118
+    second: Z7A1K4 5
+  - first:
+      4: 400120
+    second: Z7A1K4 6
+  - first:
+      4: 400122
+    second: Z7A1K4 7
+  - first:
+      4: 400124
+    second: Z7A1K4 8
+  - first:
+      4: 400126
+    second: Z7A1K4 9
+  - first:
+      4: 400128
+    second: Root
+  - first:
+      43: 4300000
+    second: Bear
+  - first:
+      74: 7400000
+    second: Be_Death1
+  - first:
+      74: 7400002
+    second: Be_Death2
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Bear
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -169,6 +438,7 @@ ModelImporter:
     - serializedVersion: 16
       name: Be_Death1
       takeName: Take 001
+      internalID: 0
       firstFrame: 0
       lastFrame: 99
       wrapMode: 0
@@ -329,6 +599,7 @@ ModelImporter:
     - serializedVersion: 16
       name: Be_Death2
       takeName: Take 001
+      internalID: 0
       firstFrame: 101
       lastFrame: 196
       wrapMode: 0
@@ -492,32 +763,52 @@ ModelImporter:
     globalScale: 1
     meshCompression: 0
     addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
     importVisibility: 0
     importBlendShapes: 0
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 0
     keepQuads: 0
     weldVertices: 0
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: 1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 2
     tangentImportMode: 2
     normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 2
+    normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 1
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -527,15 +818,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: CG
-    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
     hasTranslationDoF: 0
     hasExtraRoot: 1
     skeletonHasParents: 1
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 95788e7260b93224e9cfd19cc653a6bc,
-    type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 95788e7260b93224e9cfd19cc653a6bc, type: 3}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 2
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

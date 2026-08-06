@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 8206458, guid: dfea19d1d34dd174d87195f78cb44ae7, type: 3}
   audioMixerGroup: {fileID: 24352844, guid: a63f18b704a1b874a8dad30baf0939e6, type: 2}
-  TextureOrMaterialNames: []
+  TextureOrMaterialNames:
+  - 
   audioClips:
   - {fileID: 8300000, guid: 375af61fe5c06774084832c408e31683, type: 3}
   - {fileID: 8300000, guid: 229c64ed39310624c9aada3d771c7b06, type: 3}
@@ -22,7 +23,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: e5ae416f49602c1409e7c0d85ae0215c, type: 3}
   - {fileID: 8300000, guid: 169f75c2c9f5fae4c9147639256eb0c8, type: 3}
   - {fileID: 8300000, guid: 169f75c2c9f5fae4c9147639256eb0c8, type: 3}
-  particleObject: {fileID: 135586, guid: 50016857087368141803f41af4837830, type: 3}
+  particleObject: {fileID: 1000014272045796, guid: fd0817703ce86f24d969e05d7e983f3d, type: 3}
   useStepMark: 1
   stepMark: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
   stepLayer:

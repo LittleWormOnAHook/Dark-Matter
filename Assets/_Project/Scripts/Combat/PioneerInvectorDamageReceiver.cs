@@ -80,6 +80,9 @@ namespace Project.Combat
 
                 if (enemyHealth != null)
                 {
+                    if (enemyHealth.IsDead || damage <= 0f)
+                        return;
+
                     EnemyInvectorRagdollBridge ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
                     if (ragdollBridge != null)
                     {
@@ -87,6 +90,7 @@ namespace Project.Combat
                         ragdollBridge.RememberHitForDeath(staggerSnapshot);
                         enemyHealth.TakeDamage(damage, source, isCritical);
                         SpawnHitVfx(damage, source, hitPoint);
+                        PlayMeleeHitAudio(hitPoint, isCritical);
 
                         if (enemyHealth.IsDead)
                             ragdollBridge.ActivateCorpseRagdoll(staggerSnapshot);
@@ -105,13 +109,23 @@ namespace Project.Combat
 
                     enemyHealth.TakeDamage(damage, source, isCritical);
                     SpawnHitVfx(damage, source, hitPoint);
+                    PlayMeleeHitAudio(hitPoint, isCritical);
                     return;
                 }
             }
 
             Collider collider = GetComponent<Collider>();
             if (collider != null)
+            {
                 PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(collider, damage, source, isCritical, hitPoint);
+                PlayMeleeHitAudio(hitPoint, isCritical);
+            }
+        }
+
+        private void PlayMeleeHitAudio(Vector3? hitPoint, bool isCritical)
+        {
+            Vector3 point = hitPoint ?? transform.position;
+            CombatHitAudio.PlayWeaponHit(point, isCritical, GetComponent<Collider>());
         }
 
         private void SpawnHitVfx(float damage, GameObject source, Vector3? hitPoint)

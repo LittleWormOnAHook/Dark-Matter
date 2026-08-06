@@ -126,3 +126,4 @@ Material:
     - _WindColor: {r: 0.6886792, g: 0.6531693, b: 0.5684852, a: 0}
     - _WindColor1: {r: 1, g: 1, b: 1, a: 0}
     - _WindColor2: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 0}
+  m_BuildTextureStacks: []

@@ -248,7 +248,12 @@ namespace Project.Combat
 
         private static bool ShouldDissolveRenderer(Renderer renderer)
         {
-            if (renderer == null)
+            if (renderer == null || !(renderer is SkinnedMeshRenderer))
+                return false;
+
+            // Inactive VBOT LODs keep cm-space AABBs (~100 units). Baking those under a world
+            // anchor without the 0.01 armature scale explodes the dissolve to ~100m.
+            if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
                 return false;
 
             Transform node = renderer.transform;
@@ -259,13 +264,20 @@ namespace Project.Combat
                     nodeName.StartsWith("Holstered_", StringComparison.Ordinal))
                     return false;
 
+                if (nodeName.StartsWith("vHandgun", StringComparison.OrdinalIgnoreCase) ||
+                    nodeName.StartsWith("vShotgun", StringComparison.OrdinalIgnoreCase) ||
+                    nodeName.StartsWith("vBow", StringComparison.OrdinalIgnoreCase) ||
+                    nodeName.StartsWith("vRifle", StringComparison.OrdinalIgnoreCase) ||
+                    nodeName.StartsWith("vMelee", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
                 if (node.CompareTag("Weapon") || node.CompareTag("Ignore Ragdoll"))
                     return false;
 
                 node = node.parent;
             }
 
-            return renderer is SkinnedMeshRenderer;
+            return true;
         }
 
         private void OnDiedFallback()
@@ -634,10 +646,10 @@ namespace Project.Combat
         {
             Mesh bakedMesh = new Mesh();
             bakedMesh.name = skinnedMeshRenderer.gameObject.name + "_DissolveBake";
-            // Bake with scale so vertices are world-sized. Avoid applying lossyScale again —
-            // Meshy/CM creatures often sit under 100× mesh/rig nodes; object-space spread
-            // would otherwise explode to tens of meters.
-            skinnedMeshRenderer.BakeMesh(bakedMesh, true);
+            // Bake in SMR local space, then fit world size to the live mesh bounds. Meshy/VBOT
+            // hierarchies use 0.01 / 100× compensations — BakeMesh(useScale) alone still
+            // explodes when inactive cm-space LODs or wrong lossyScale paths are involved.
+            skinnedMeshRenderer.BakeMesh(bakedMesh, false);
 
             if (bakedMesh.vertexCount <= 0)
             {
@@ -653,11 +665,7 @@ namespace Project.Combat
                 skinnedMeshRenderer.shadowCastingMode,
                 skinnedMeshRenderer.receiveShadows);
 
-            // World-space bake: identity scale, match SMR world pose (not bounds center alone).
-            dissolveObject.transform.SetPositionAndRotation(
-                skinnedMeshRenderer.transform.position,
-                skinnedMeshRenderer.transform.rotation);
-            dissolveObject.transform.localScale = Vector3.one;
+            FitDissolveObjectToCharacterBounds(dissolveObject, skinnedMeshRenderer);
 
             MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
             ApplyDissolveMaterials(meshRenderer, skinnedMeshRenderer.sharedMaterials, animatedMaterials);
@@ -666,6 +674,63 @@ namespace Project.Combat
 
             if (smokeTemplate != null)
                 CreateSmokeFromBakedMesh(parent, bakedMesh, smokeTemplate, dissolveObject.transform);
+        }
+
+        /// <summary>
+        /// Places a baked dissolve mesh so its world AABB matches the source character mesh.
+        /// Parent must be unscaled (lift anchor). Caps size to the live bounds / maxDissolveDiameter.
+        /// </summary>
+        private void FitDissolveObjectToCharacterBounds(
+            GameObject dissolveObject,
+            SkinnedMeshRenderer source)
+        {
+            if (dissolveObject == null || source == null)
+                return;
+
+            Bounds target = source.bounds;
+
+            Transform dissolveTransform = dissolveObject.transform;
+            dissolveTransform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+
+            Vector3 lossy = source.transform.lossyScale;
+            float absX = Mathf.Max(1e-4f, Mathf.Abs(lossy.x));
+            float absY = Mathf.Max(1e-4f, Mathf.Abs(lossy.y));
+            float absZ = Mathf.Max(1e-4f, Mathf.Abs(lossy.z));
+            dissolveTransform.localScale = new Vector3(absX, absY, absZ);
+
+            // If lossyScale was ~1 but mesh is still cm-space (~100u AABB), rescale to live bounds.
+            MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
+            if (meshRenderer == null)
+                return;
+
+            Bounds placed = meshRenderer.bounds;
+            float placedMax = MaxExtent(placed.size);
+            float targetMax = MaxExtent(target.size);
+            float cap = Mathf.Max(0.35f, maxDissolveDiameter * 2.5f);
+            if (targetMax > cap)
+                targetMax = cap;
+
+            if (placedMax < 1e-4f || targetMax < 1e-4f)
+            {
+                dissolveTransform.position = target.center;
+                dissolveTransform.localScale = Vector3.one;
+                return;
+            }
+
+            float ratio = targetMax / placedMax;
+            // Correct when clearly wrong (cm bake at meter scale, or double-scaled 100× nodes).
+            if (ratio < 0.85f || ratio > 1.2f)
+            {
+                dissolveTransform.localScale *= ratio;
+                placed = meshRenderer.bounds;
+            }
+
+            dissolveTransform.position += target.center - meshRenderer.bounds.center;
+        }
+
+        private static float MaxExtent(Vector3 size)
+        {
+            return Mathf.Max(size.x, Mathf.Max(size.y, size.z));
         }
 
         private void EnsureLiftAnchor()
@@ -746,16 +811,34 @@ namespace Project.Combat
             Mesh smokeMesh = Instantiate(mesh);
             smokeMesh.name = mesh.name + "_Smoke";
 
+            // Always parent under the unscaled lift anchor when available so 100× weapon nodes
+            // cannot multiply smoke scale again.
+            Transform smokeParent = liftAnchor != null ? liftAnchor : parentTransform;
             GameObject smokeObject = CreateMeshObject(
-                parentTransform.gameObject.name + "_Smoke",
-                parentTransform,
+                parentTransform != null ? parentTransform.gameObject.name + "_Smoke" : "DissolveSmoke",
+                smokeParent,
                 smokeMesh,
                 UnityEngine.Rendering.ShadowCastingMode.Off,
                 false);
 
-            smokeObject.transform.localPosition = alignTransform.localPosition;
-            smokeObject.transform.localRotation = alignTransform.localRotation;
-            smokeObject.transform.localScale = alignTransform.localScale * 1.14f;
+            smokeObject.transform.SetPositionAndRotation(alignTransform.position, alignTransform.rotation);
+            Vector3 worldScale = alignTransform.lossyScale;
+            float maxAxis = Mathf.Max(Mathf.Abs(worldScale.x), Mathf.Max(Mathf.Abs(worldScale.y), Mathf.Abs(worldScale.z)));
+            if (maxAxis > 3f)
+                worldScale = Vector3.one;
+
+            if (smokeParent != null)
+            {
+                Vector3 parentLossy = smokeParent.lossyScale;
+                smokeObject.transform.localScale = new Vector3(
+                    worldScale.x / Mathf.Max(1e-4f, Mathf.Abs(parentLossy.x)),
+                    worldScale.y / Mathf.Max(1e-4f, Mathf.Abs(parentLossy.y)),
+                    worldScale.z / Mathf.Max(1e-4f, Mathf.Abs(parentLossy.z))) * 1.06f;
+            }
+            else
+            {
+                smokeObject.transform.localScale = worldScale * 1.06f;
+            }
 
             MeshRenderer smokeRenderer = smokeObject.GetComponent<MeshRenderer>();
             Material smokeMaterial = CreateSmokeMaterial(smokeTemplate);
@@ -827,20 +910,14 @@ namespace Project.Combat
         }
 
         /// <summary>
-        /// Vertex spread is object-space meters after world bake. Cap by creature bounds so
-        /// small CM creatures (~1m) do not inherit humanoid-sized explosion.
+        /// Vertex spread is object-space after the dissolve mesh is fitted to character bounds.
+        /// Cap by live mesh size only — do not inflate from oversized root capsules.
         /// </summary>
         private float ResolveDissolveSpread()
         {
             Bounds bounds = ResolveCharacterWorldBounds();
             float maxExtent = Mathf.Max(bounds.extents.x, Mathf.Max(bounds.extents.y, bounds.extents.z));
-
-            CapsuleCollider capsule = GetComponent<CapsuleCollider>();
-            if (capsule != null)
-            {
-                float capsuleExtent = Mathf.Max(capsule.radius, capsule.height * 0.5f);
-                maxExtent = Mathf.Max(maxExtent, capsuleExtent);
-            }
+            maxExtent = Mathf.Min(maxExtent, Mathf.Max(0.2f, maxDissolveDiameter * 0.55f));
 
             float diameter = Mathf.Max(0.2f, maxExtent * 2f);
             float cappedDiameter = Mathf.Min(diameter, Mathf.Max(0.25f, maxDissolveDiameter));
@@ -850,7 +927,7 @@ namespace Project.Combat
                 templateSpread = dissolveMaterialTemplate.GetFloat(DissolveSpreadId);
 
             float sizedSpread = cappedDiameter * 0.22f;
-            return Mathf.Clamp(Mathf.Min(templateSpread, sizedSpread), 0.04f, 0.35f);
+            return Mathf.Clamp(Mathf.Min(templateSpread, sizedSpread), 0.04f, 0.28f);
         }
 
         private Material CreateSmokeMaterial(Material smokeTemplate)

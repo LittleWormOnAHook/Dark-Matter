@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Sulfur Needle Tuft
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.MineHarvestItemData
   itemName: Sulfur Needle Tuft
-  icon: {fileID: 21300000, guid: d6fb7afc70cbbd04bb87b3b881ac0e22, type: 3}
+  icon: {fileID: 21300000, guid: 38f41e8b6520b95489f5c417e9a5ee43, type: 3}
   worldPrefab: {fileID: 7776953011026404109, guid: 795a98aa78073974f9ba06791ce942da, type: 3}
   maxStack: 40
+  stableItemId: 267db052f40152b48ad7de3c8993cb9b
   itemType: 1
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -103,6 +104,9 @@ MonoBehaviour:
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 0

@@ -128,7 +128,7 @@ namespace Project.Interaction
                 }
             }
 
-            if (isActive && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (isActive && UiEscapeGate.TryConsumeEscape())
             {
                 ForceDeactivate();
                 equipment?.ClearToolbarSelectionPublic();

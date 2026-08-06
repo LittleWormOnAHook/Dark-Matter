@@ -16,12 +16,14 @@ namespace MalbersAnimations
         public string title;
         public Section[] sections;
 
+
         public List<string> packages = new List<string>() { "com.unity.cinemachine" , "com.unity.mathematics" };
 
         [Serializable]
         public class Section
         {
             public string heading, text, linkText, url;
+            public UnityEngine.Object reference;
         }
     }
 
@@ -78,10 +80,21 @@ namespace MalbersAnimations
                 {
                     GUILayout.Label(section.heading, HeadingStyle);
                 }
+
+             
+
                 if (!string.IsNullOrEmpty(section.text))
                 {
                     GUILayout.Label(section.text, BodyStyle);
                 }
+
+                if (section.reference != null)
+                {
+#pragma warning disable CS0618 // Type or member is obsolete
+                    _ = EditorGUILayout.ObjectField(section.reference, typeof(UnityEngine.Object));
+#pragma warning restore CS0618 // Type or member is obsolete
+                }
+
                 if (!string.IsNullOrEmpty(section.linkText))
                 {
                     if (LinkLabel(new GUIContent(section.linkText)))

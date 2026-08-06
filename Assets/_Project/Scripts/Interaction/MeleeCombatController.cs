@@ -1,4 +1,4 @@
-using Project.Audio;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
@@ -78,9 +78,7 @@ namespace Project.Interaction
             PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(
                 hitCollider, damage, gameObject, isCritical, weaponPoint);
 
-            GameAudioManager audio = GameAudioManager.Instance;
-            if (audio != null)
-                audio.PlayWeaponHit(weaponPoint, isCritical);
+            CombatHitAudio.PlayWeaponHit(weaponPoint, isCritical, hitCollider);
         }
 
         private void Update()

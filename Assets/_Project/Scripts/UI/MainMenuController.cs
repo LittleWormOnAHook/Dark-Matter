@@ -570,6 +570,8 @@ namespace Project.UI
         private void LoadIntoExpedition()
         {
             GameSession.SetPhase(GamePhase.StartPopup);
+            // Opaque cover first so tearing down menu chrome cannot flash the player camera.
+            LoadingOverlayController.EnsureOpaqueCover();
             HideMenuChrome();
             HideGameplayChromeForMenu();
 

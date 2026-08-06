@@ -48,6 +48,40 @@ namespace Project.Data
         public GameObject worldPrefab;
         public int maxStack = 64;
 
+        [Header("Stable ID")]
+        [Tooltip("Persistent GUID assigned once per asset; used as the save key for identification registries. Auto-filled in OnValidate.")]
+        [SerializeField] private string stableItemId;
+
+        /// <summary>
+        /// Persistent GUID for this item asset. Used as the save key in ResourceIdentificationRegistry
+        /// so renames do not break existing save files. Assigned automatically in OnValidate.
+        /// </summary>
+        public string StableItemId =>
+            !string.IsNullOrEmpty(stableItemId) ? stableItemId : name;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!string.IsNullOrEmpty(stableItemId))
+                return;
+
+            string path = UnityEditor.AssetDatabase.GetAssetPath(this);
+            if (!string.IsNullOrEmpty(path))
+            {
+                string guid = UnityEditor.AssetDatabase.AssetPathToGUID(path);
+                if (!string.IsNullOrEmpty(guid))
+                {
+                    stableItemId = guid;
+                    UnityEditor.EditorUtility.SetDirty(this);
+                    return;
+                }
+            }
+
+            stableItemId = System.Guid.NewGuid().ToString("N");
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+#endif
+
         [Header("Use Type")]
         public ItemType itemType = ItemType.Consumable;
 

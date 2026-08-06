@@ -65,6 +65,8 @@ namespace Project.AI.Invector
                 hitCapsuleRadius,
                 hitCapsuleHeight,
                 hitCapsuleCenter);
+            // Before hit/ragdoll caches: remount orphan VBOT physics onto the live avatar.
+            EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(gameObject);
             EnsureInvectorInitialized();
             EnemyInvectorHitSetup.Apply(gameObject, hitCapsuleRadius, hitCapsuleHeight, hitCapsuleCenter);
             if (GetComponent<EnemyInvectorPhysicsCache>() == null)

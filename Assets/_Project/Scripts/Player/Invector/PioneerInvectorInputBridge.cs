@@ -28,6 +28,17 @@ namespace Project.Player.Invector
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
 
+        /// <summary>
+        /// Force aim while mining resource scan (F / LB) is held on a drawn mining tool.
+        /// </summary>
+        public void SetMiningScanAimHold(bool held)
+        {
+            if (_shooterInput == null)
+                _shooterInput = GetComponent<PioneerShooterMeleeInput>();
+
+            _shooterInput?.SetMiningScanAimHold(held);
+        }
+
         private void Awake()
         {
             _bootstrap = GetComponent<PioneerInvectorBootstrap>();

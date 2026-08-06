@@ -1,4 +1,4 @@
-﻿// Based on cician's shader from: https://forum.unity3d.com/threads/simple-optimized-blur-shader.185327/#post-1267642
+// Based on cician's shader from: https://forum.unity3d.com/threads/simple-optimized-blur-shader.185327/#post-1267642
  
 Shader "Custom/UI/Blur Masked" {
     Properties {
@@ -15,12 +15,8 @@ Shader "Custom/UI/Blur Masked" {
         SubShader
         {
             // Horizontal blur
-            GrabPass
-            {
-                "_HBlur"
-            }
- 
-            Pass
+
+Pass
             {          
                 CGPROGRAM
                 #pragma vertex vert
@@ -60,8 +56,8 @@ Shader "Custom/UI/Blur Masked" {
                     return o;
                 }
          
-                sampler2D _HBlur;
-                float4 _HBlur_TexelSize;
+                sampler2D _CameraOpaqueTexture;
+                float4 _CameraOpaqueTexture_TexelSize;
                 float _Size;
  
                 half4 frag( v2f i ) : COLOR
@@ -69,7 +65,7 @@ Shader "Custom/UI/Blur Masked" {
                     float alpha = tex2D(_MainTex, i.uvmain).a;
                     half4 sum = half4(0,0,0,0);
  
-                    #define GRABPIXEL(weight,kernelx) tex2Dproj( _HBlur, UNITY_PROJ_COORD(float4(i.uvgrab.x + _HBlur_TexelSize.x * kernelx * _Size * alpha, i.uvgrab.y, i.uvgrab.z, i.uvgrab.w))) * weight
+                    #define GRABPIXEL(weight,kernelx) tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x + _CameraOpaqueTexture_TexelSize.x * kernelx * _Size * alpha, i.uvgrab.y, i.uvgrab.z, i.uvgrab.w))) * weight
  
                     sum += GRABPIXEL(0.05, -4.0);
                     sum += GRABPIXEL(0.09, -3.0);
@@ -87,12 +83,8 @@ Shader "Custom/UI/Blur Masked" {
             }
  
             // Vertical blur
-            GrabPass
-            {
-                "_VBlur"
-            }
- 
-            Pass
+
+Pass
             {          
                 CGPROGRAM
                 #pragma vertex vert
@@ -132,8 +124,8 @@ Shader "Custom/UI/Blur Masked" {
                     return o;
                 }
          
-                sampler2D _VBlur;
-                float4 _VBlur_TexelSize;
+                sampler2D _CameraOpaqueTexture;
+                float4 _CameraOpaqueTexture_TexelSize;
                 float _Size;
          
                 half4 frag( v2f i ) : COLOR
@@ -141,7 +133,7 @@ Shader "Custom/UI/Blur Masked" {
                     float alpha = tex2D(_MainTex, i.uvmain).a;
                     half4 sum = half4(0,0,0,0);
  
-                    #define GRABPIXEL(weight,kernely) tex2Dproj( _VBlur, UNITY_PROJ_COORD(float4(i.uvgrab.x, i.uvgrab.y + _VBlur_TexelSize.y * kernely * _Size * alpha, i.uvgrab.z, i.uvgrab.w))) * weight
+                    #define GRABPIXEL(weight,kernely) tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x, i.uvgrab.y + _CameraOpaqueTexture_TexelSize.y * kernely * _Size * alpha, i.uvgrab.z, i.uvgrab.w))) * weight
  
                     sum += GRABPIXEL(0.05, -4.0);
                     sum += GRABPIXEL(0.09, -3.0);

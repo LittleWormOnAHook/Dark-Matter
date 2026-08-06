@@ -16,6 +16,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 457ae65c93476f941995ed72db3d86cb, type: 3}
   worldPrefab: {fileID: 4286136864832538557, guid: aab565988cb820c4bbd38d5220084171, type: 3}
   maxStack: 10
+  stableItemId: 458a0731-c885-475a-9552-fe1d2905025b
   itemType: 2
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -95,12 +96,17 @@ MonoBehaviour:
   miningLockBreakDegrees: 30
   miningPassDuration: 1.25
   miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 1

@@ -7,25 +7,39 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Center-screen result card after a successful multi-tool resource scan.
+    /// Center-screen scan identify toast: icon + resource name only (matches PickupToastUI font).
     /// </summary>
     public class ResourceScanResultUI : MonoBehaviour
     {
+        private const float IconSize = 48f;
+        private const float IconTextGap = 12f;
+        private const float ToastHeight = 56f;
+
         private static ResourceScanResultUI instance;
 
         private RectTransform panelRect;
         private CanvasGroup canvasGroup;
         private Image iconImage;
-        private TextMeshProUGUI categoryLabel;
         private TextMeshProUGUI nameLabel;
-        private TextMeshProUGUI yieldLabel;
         private Coroutine activeRoutine;
         private Transform canvasRoot;
+        private Vector2 restAnchoredPosition;
 
         public static ResourceScanResultUI EnsureExists(Transform canvasRootTransform)
         {
             if (instance != null)
-                return instance;
+            {
+                // Drop legacy multi-label cards from earlier builds.
+                if (instance.nameLabel == null || instance.transform.Find("Category") != null)
+                {
+                    Object.Destroy(instance.gameObject);
+                    instance = null;
+                }
+                else
+                {
+                    return instance;
+                }
+            }
 
             GameObject host = new GameObject("ResourceScanResultUI", typeof(RectTransform));
             host.transform.SetParent(canvasRootTransform, false);
@@ -44,7 +58,7 @@ namespace Project.UI
                 return;
 
             ResourceScanResultUI ui = EnsureExists(canvasRoot);
-            ui.Present(item, category, yieldText);
+            ui.Present(item);
         }
 
         private static Transform ResolveGameplayCanvasRoot()
@@ -68,115 +82,147 @@ namespace Project.UI
             return null;
         }
 
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
+        }
+
         private void Build(Transform canvasRootTransform)
         {
             canvasRoot = canvasRootTransform;
             panelRect = transform as RectTransform;
-            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.anchoredPosition = Vector2.zero;
-            panelRect.sizeDelta = new Vector2(380f, 130f);
+            ApplyToastAnchor();
+            panelRect.sizeDelta = new Vector2(GameplayHudLayout.ToastWidth, ToastHeight);
 
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0f;
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
 
-            Image bg = gameObject.AddComponent<Image>();
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.92f);
-            bg.raycastTarget = false;
-
-            Outline outline = gameObject.AddComponent<Outline>();
-            outline.effectColor = SurvivalPioneerUiPalette.SlateGray;
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-
             GameObject iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             iconGo.transform.SetParent(transform, false);
             RectTransform iconRect = iconGo.GetComponent<RectTransform>();
-            iconRect.anchorMin = new Vector2(0f, 0.5f);
-            iconRect.anchorMax = new Vector2(0f, 0.5f);
-            iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.anchoredPosition = new Vector2(16f, 0f);
-            iconRect.sizeDelta = new Vector2(64f, 64f);
+            iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(1f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(-IconTextGap * 0.5f, 0f);
+            iconRect.sizeDelta = new Vector2(IconSize, IconSize);
             iconImage = iconGo.GetComponent<Image>();
             iconImage.raycastTarget = false;
             iconImage.preserveAspect = true;
+            iconImage.color = Color.white;
 
-            categoryLabel = CreateLabel("Category", new Vector2(96f, 28f), new Vector2(-16f, -16f), 14f, SurvivalPioneerUiPalette.SoftBeigeGray);
-            nameLabel = CreateLabel("Name", new Vector2(96f, -4f), new Vector2(-16f, -44f), 22f, SurvivalPioneerUiPalette.WarmOffWhite, semiBold: true);
-            yieldLabel = CreateLabel("Yield", new Vector2(96f, -40f), new Vector2(-16f, -16f), 15f, SurvivalPioneerUiPalette.Gold);
-        }
+            GameObject nameGo = new GameObject("Name", typeof(RectTransform));
+            nameGo.transform.SetParent(transform, false);
+            // RectTransform is already on the GameObject — AddComponent returns null and NRE'd here.
+            RectTransform nameRect = nameGo.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0.5f, 0.5f);
+            nameRect.anchorMax = new Vector2(0.5f, 0.5f);
+            nameRect.pivot = new Vector2(0f, 0.5f);
+            nameRect.anchoredPosition = new Vector2(IconTextGap * 0.5f, 0f);
+            nameRect.sizeDelta = new Vector2(GameplayHudLayout.ToastWidth * 0.65f, ToastHeight);
 
-        private TextMeshProUGUI CreateLabel(
-            string objectName,
-            Vector2 offsetMin,
-            Vector2 offsetMax,
-            float fontSize,
-            Color color,
-            bool semiBold = false)
-        {
-            GameObject go = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshProUGUI));
-            go.transform.SetParent(transform, false);
-            RectTransform rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = offsetMin;
-            rect.offsetMax = offsetMax;
-
-            TextMeshProUGUI label = go.GetComponent<TextMeshProUGUI>();
+            nameLabel = nameGo.AddComponent<TextMeshProUGUI>();
             ShiftUiTheme theme = ShiftUiTheme.Current;
             if (theme != null)
-                theme.ApplyFont(label, semiBold);
+            {
+                theme.ApplyFont(nameLabel, semiBold: true);
+                nameLabel.color = SurvivalPioneerUiPalette.Gold;
+            }
             else
-                TmpUiHelper.ApplyDefaultFont(label);
+            {
+                TmpUiHelper.ApplyDefaultFont(nameLabel);
+                nameLabel.color = SurvivalPioneerUiPalette.Gold;
+            }
 
-            label.fontSize = fontSize;
-            label.color = color;
-            label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.raycastTarget = false;
-            return label;
+            nameLabel.fontSize = 24f;
+            nameLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            nameLabel.overflowMode = TextOverflowModes.Ellipsis;
+            nameLabel.raycastTarget = false;
         }
 
-        private void Present(ItemData item, string category, string yieldText)
+        private void Present(ItemData item)
         {
-            iconImage.enabled = item.icon != null;
+            Transform freshRoot = ResolveGameplayCanvasRoot();
+            if (freshRoot != null)
+                canvasRoot = freshRoot;
+
+            ApplyToastAnchor();
+
+            bool hasIcon = item.icon != null;
+            iconImage.enabled = hasIcon;
             iconImage.sprite = item.icon;
-            categoryLabel.text = string.IsNullOrEmpty(category) ? "Resource" : category;
             nameLabel.text = string.IsNullOrEmpty(item.itemName) ? item.name : item.itemName;
-            yieldLabel.text = string.IsNullOrEmpty(yieldText) ? string.Empty : yieldText;
+
+            RectTransform iconRect = iconImage.rectTransform;
+            RectTransform nameRect = nameLabel.rectTransform;
+            if (hasIcon)
+            {
+                iconRect.pivot = new Vector2(1f, 0.5f);
+                iconRect.anchoredPosition = new Vector2(-IconTextGap * 0.5f, 0f);
+                nameRect.pivot = new Vector2(0f, 0.5f);
+                nameRect.anchoredPosition = new Vector2(IconTextGap * 0.5f, 0f);
+                nameLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            }
+            else
+            {
+                nameRect.pivot = new Vector2(0.5f, 0.5f);
+                nameRect.anchoredPosition = Vector2.zero;
+                nameLabel.alignment = TextAlignmentOptions.Center;
+            }
 
             if (activeRoutine != null)
                 StopCoroutine(activeRoutine);
 
-            activeRoutine = StartCoroutine(AnimateCard());
+            activeRoutine = StartCoroutine(AnimateToast());
             UiFrontLayer.ReparentToFront(transform, canvasRoot);
         }
 
-        private IEnumerator AnimateCard()
+        private void ApplyToastAnchor()
         {
-            const float fadeIn = 0.25f;
-            const float hold = 3f;
-            const float fadeOut = 0.35f;
+            // Same center band as pickup / XP toasts.
+            restAnchoredPosition = GameplayHudLayout.PickupToastAnchoredPosition;
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.anchoredPosition = restAnchoredPosition;
+        }
 
+        private IEnumerator AnimateToast()
+        {
+            const float slideInDuration = 0.35f;
+            const float holdDuration = 2.3f;
+            const float fadeOutDuration = 0.35f;
+            const float slideDistance = 28f;
+
+            Vector2 startPosition = restAnchoredPosition + new Vector2(0f, -slideDistance);
+            panelRect.anchoredPosition = startPosition;
             canvasGroup.alpha = 0f;
+
             float elapsed = 0f;
-            while (elapsed < fadeIn)
+            while (elapsed < slideInDuration)
             {
                 elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = Mathf.Clamp01(elapsed / fadeIn);
+                float t = Mathf.Clamp01(elapsed / slideInDuration);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                panelRect.anchoredPosition = Vector2.Lerp(startPosition, restAnchoredPosition, eased);
+                canvasGroup.alpha = eased;
                 yield return null;
             }
 
+            panelRect.anchoredPosition = restAnchoredPosition;
             canvasGroup.alpha = 1f;
-            yield return new WaitForSecondsRealtime(hold);
+            yield return new WaitForSecondsRealtime(holdDuration);
 
             elapsed = 0f;
-            while (elapsed < fadeOut)
+            while (elapsed < fadeOutDuration)
             {
                 elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / fadeOut);
+                float t = Mathf.Clamp01(elapsed / fadeOutDuration);
+                canvasGroup.alpha = 1f - t;
+                panelRect.anchoredPosition = restAnchoredPosition + new Vector2(0f, t * 18f);
                 yield return null;
             }
 

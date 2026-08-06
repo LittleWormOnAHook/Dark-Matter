@@ -147,7 +147,7 @@ namespace Project.UI
             if (!IsOpen)
                 return;
 
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (UiEscapeGate.TryConsumeEscape())
             {
                 Hide();
                 return;

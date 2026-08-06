@@ -122,8 +122,13 @@ namespace Project.AI.Invector
             Rigidbody body = _lastDroppedWeapon.GetComponent<Rigidbody>();
             if (body != null)
             {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                // Unity 6 rejects velocity writes on kinematic bodies.
+                if (!body.isKinematic)
+                {
+                    body.linearVelocity = Vector3.zero;
+                    body.angularVelocity = Vector3.zero;
+                }
+
                 body.isKinematic = true;
                 body.useGravity = false;
             }

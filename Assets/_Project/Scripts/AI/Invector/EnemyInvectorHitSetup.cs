@@ -1,5 +1,6 @@
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.Combat;
 using Project.Interaction;
 using UnityEngine;
 
@@ -28,6 +29,7 @@ namespace Project.AI.Invector
             DisableChildSolidColliders(root);
             FitRootCapsule(root, targetRadius, targetHeight, targetCenter, fitToRenderers);
             EnsureRootDamageReceiver(root);
+            EnsureRagdollBoneDamageProxies(root);
         }
 
         public static void StabilizeRigidbodies(GameObject root)
@@ -52,12 +54,14 @@ namespace Project.AI.Invector
 
         /// <summary>
         /// Unlocks bone rigidbodies so Invector ragdoll can take over on death.
+        /// Also ensures bone damage proxies exist so melee hits still route while down.
         /// </summary>
         public static void ReleaseForRagdoll(GameObject root)
         {
             if (root == null)
                 return;
 
+            EnsureRagdollBoneDamageProxies(root);
             GetOrCreateCache(root).ReleaseBonesForRagdoll();
         }
 
@@ -201,8 +205,45 @@ namespace Project.AI.Invector
             if (rootCollider == null)
                 return;
 
-            if (root.GetComponent<Project.Combat.PioneerInvectorDamageReceiver>() == null)
-                root.AddComponent<Project.Combat.PioneerInvectorDamageReceiver>();
+            if (root.GetComponent<PioneerInvectorDamageReceiver>() == null)
+                root.AddComponent<PioneerInvectorDamageReceiver>();
+        }
+
+        /// <summary>
+        /// Adds <see cref="PioneerRagdollBoneDamageProxy"/> on every bone that has a Rigidbody + Collider
+        /// so Invector melee <c>ApplyDamage</c> (hit-GO only) still reaches the root receiver during ragdoll.
+        /// </summary>
+        public static void EnsureRagdollBoneDamageProxies(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            PioneerInvectorDamageReceiver rootReceiver = root.GetComponent<PioneerInvectorDamageReceiver>();
+            if (rootReceiver == null)
+                rootReceiver = root.AddComponent<PioneerInvectorDamageReceiver>();
+
+            Rigidbody rootBody = root.GetComponent<Rigidbody>();
+            Rigidbody[] bodies = root.GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody body = bodies[i];
+                if (body == null || body == rootBody)
+                    continue;
+
+                Collider boneCollider = body.GetComponent<Collider>();
+                if (boneCollider == null)
+                    continue;
+
+                // Skip outgoing weapon volumes that sit under the enemy hierarchy.
+                if (IsOutgoingWeaponHitCollider(boneCollider))
+                    continue;
+
+                PioneerRagdollBoneDamageProxy proxy = body.GetComponent<PioneerRagdollBoneDamageProxy>();
+                if (proxy == null)
+                    proxy = body.gameObject.AddComponent<PioneerRagdollBoneDamageProxy>();
+
+                proxy.Configure(rootReceiver);
+            }
         }
     }
 }

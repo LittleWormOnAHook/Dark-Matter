@@ -161,6 +161,8 @@ namespace Project.Interaction
 
         private void OnEnable()
         {
+            ResourceIdentificationRegistry.Changed += OnIdentificationChanged;
+
             if (interactionMode != ResourceNodeInteractionMode.HoldHarvest)
                 return;
 
@@ -170,7 +172,16 @@ namespace Project.Interaction
 
         private void OnDisable()
         {
+            ResourceIdentificationRegistry.Changed -= OnIdentificationChanged;
             PickupProximityDotUI.UnregisterHarvestNode(this);
+        }
+
+        private void OnIdentificationChanged()
+        {
+            // When an identification is added or removed, refresh the harvest map marker so the
+            // display name switches between "Unknown Resource" and the identified item name.
+            if (interactionMode == ResourceNodeInteractionMode.HoldHarvest)
+                EnsureHarvestMapMarker();
         }
 
         private void Update()

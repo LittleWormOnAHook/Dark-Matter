@@ -88,15 +88,8 @@ namespace Project.UI
                 return false;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
-            if (player != null)
-            {
-                if (player.IsInventoryOpen
-                    || player.IsJournalOpen
-                    || player.IsMapOpen
-                    || player.IsQuestDialogOpen
-                    || player.IsOpticsOpen)
-                    return false;
-            }
+            if (player != null && player.BlocksCombatInput)
+                return false;
 
             SurvivalStats survivalStats = FindAnyObjectByType<SurvivalStats>();
             if (survivalStats != null && survivalStats.IsDead)

@@ -54,6 +54,7 @@ namespace Project.Interaction
         private ResourceGatherer gatherer;
         private InventorySystem inventory;
         private PlayerController playerController;
+        private SurvivalStats survivalStats;
         private Camera viewCamera;
         private float lastUseTime = -999f;
         private UIManager promptUiManager;
@@ -80,6 +81,7 @@ namespace Project.Interaction
             gatherer = GetComponent<ResourceGatherer>();
             inventory = GetComponent<InventorySystem>();
             playerController = GetComponent<PlayerController>();
+            survivalStats = GetComponent<SurvivalStats>();
         }
 
         private void Start()
@@ -935,24 +937,16 @@ namespace Project.Interaction
             if (!GameSession.HasStarted)
                 return false;
 
-            SurvivalStats survivalStats = GetComponent<SurvivalStats>();
+            if (survivalStats == null)
+                survivalStats = GetComponent<SurvivalStats>();
             if (survivalStats != null && survivalStats.IsDead)
                 return false;
 
             if (playerController == null)
                 playerController = GetComponent<PlayerController>();
 
-            if (playerController != null)
-            {
-                if (playerController.IsInventoryOpen
-                    || playerController.IsJournalOpen
-                    || playerController.IsMapOpen
-                    || playerController.IsQuestDialogOpen
-                    || playerController.IsLootDialogOpen
-                    || playerController.IsBuildingControlOpen
-                    || playerController.IsOpticsOpen)
-                    return false;
-            }
+            if (playerController != null && playerController.BlocksCombatInput)
+                return false;
 
             return true;
         }

@@ -1,117 +1,306 @@
 fileFormatVersion: 2
 guid: b15c1123f5aa8a54f987d4a4aef02987
 ModelImporter:
-  serializedVersion: 22
-  fileIDToRecycleName:
-    100000: CG
-    100002: Ear L
-    100004: Ear R
-    100006: Eye L
-    100008: Eye R
-    100010: //RootNode
-    100012: Head
-    100014: Jaw
-    100016: L Calf
-    100018: L Clavicle
-    100020: L Foot
-    100022: L Forearm
-    100024: L Hand
-    100026: L HorseLink
-    100028: L Thigh
-    100030: L UpperArm
-    100032: Neck
-    100034: Pelvis
-    100036: R Calf
-    100038: R Clavicle
-    100040: R Foot
-    100042: R Forearm
-    100044: R Hand
-    100046: R HorseLink
-    100048: R Thigh
-    100050: R UpperArm
-    100052: Spine
-    100054: Spine1
-    100056: Spine2
-    100058: Tail
-    100060: Tail1
-    100062: Tail2
-    100064: Tail3
-    100066: Tail4
-    100068: Tail5
-    100070: Tiger01
-    100072: L Ear
-    100074: M
-    100076: R Ear
-    100078: Root
-    400000: CG
-    400002: Ear L
-    400004: Ear R
-    400006: Eye L
-    400008: Eye R
-    400010: //RootNode
-    400012: Head
-    400014: Jaw
-    400016: L Calf
-    400018: L Clavicle
-    400020: L Foot
-    400022: L Forearm
-    400024: L Hand
-    400026: L HorseLink
-    400028: L Thigh
-    400030: L UpperArm
-    400032: Neck
-    400034: Pelvis
-    400036: R Calf
-    400038: R Clavicle
-    400040: R Foot
-    400042: R Forearm
-    400044: R Hand
-    400046: R HorseLink
-    400048: R Thigh
-    400050: R UpperArm
-    400052: Spine
-    400054: Spine1
-    400056: Spine2
-    400058: Tail
-    400060: Tail1
-    400062: Tail2
-    400064: Tail3
-    400066: Tail4
-    400068: Tail5
-    400070: Tiger01
-    400072: L Ear
-    400074: M
-    400076: R Ear
-    400078: Root
-    4300000: Tiger01
-    4300002: M
-    7400000: C_Swim
-    7400002: C_Swim_Turn_Right
-    7400004: C_Swim_Turn_Left
-    7400006: C_Swim_Idle
-    7400008: C_Swim_Right
-    7400010: C_Swim_Left
-    7400012: C_Swim_Back
-    7400014: C_Swim_Back_Left
-    7400016: C_Swim_Back_Right
-    7400018: C_Swim_Enter
-    9500000: //RootNode
-    13700000: Tiger01
-    13700002: M
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: CG
+  - first:
+      1: 100002
+    second: Ear L
+  - first:
+      1: 100004
+    second: Ear R
+  - first:
+      1: 100006
+    second: Eye L
+  - first:
+      1: 100008
+    second: Eye R
+  - first:
+      1: 100010
+    second: //RootNode
+  - first:
+      1: 100012
+    second: Head
+  - first:
+      1: 100014
+    second: Jaw
+  - first:
+      1: 100016
+    second: L Calf
+  - first:
+      1: 100018
+    second: L Clavicle
+  - first:
+      1: 100020
+    second: L Foot
+  - first:
+      1: 100022
+    second: L Forearm
+  - first:
+      1: 100024
+    second: L Hand
+  - first:
+      1: 100026
+    second: L HorseLink
+  - first:
+      1: 100028
+    second: L Thigh
+  - first:
+      1: 100030
+    second: L UpperArm
+  - first:
+      1: 100032
+    second: Neck
+  - first:
+      1: 100034
+    second: Pelvis
+  - first:
+      1: 100036
+    second: R Calf
+  - first:
+      1: 100038
+    second: R Clavicle
+  - first:
+      1: 100040
+    second: R Foot
+  - first:
+      1: 100042
+    second: R Forearm
+  - first:
+      1: 100044
+    second: R Hand
+  - first:
+      1: 100046
+    second: R HorseLink
+  - first:
+      1: 100048
+    second: R Thigh
+  - first:
+      1: 100050
+    second: R UpperArm
+  - first:
+      1: 100052
+    second: Spine
+  - first:
+      1: 100054
+    second: Spine1
+  - first:
+      1: 100056
+    second: Spine2
+  - first:
+      1: 100058
+    second: Tail
+  - first:
+      1: 100060
+    second: Tail1
+  - first:
+      1: 100062
+    second: Tail2
+  - first:
+      1: 100064
+    second: Tail3
+  - first:
+      1: 100066
+    second: Tail4
+  - first:
+      1: 100068
+    second: Tail5
+  - first:
+      1: 100070
+    second: Tiger01
+  - first:
+      1: 100072
+    second: L Ear
+  - first:
+      1: 100074
+    second: M
+  - first:
+      1: 100076
+    second: R Ear
+  - first:
+      1: 100078
+    second: Root
+  - first:
+      4: 400000
+    second: CG
+  - first:
+      4: 400002
+    second: Ear L
+  - first:
+      4: 400004
+    second: Ear R
+  - first:
+      4: 400006
+    second: Eye L
+  - first:
+      4: 400008
+    second: Eye R
+  - first:
+      4: 400010
+    second: //RootNode
+  - first:
+      4: 400012
+    second: Head
+  - first:
+      4: 400014
+    second: Jaw
+  - first:
+      4: 400016
+    second: L Calf
+  - first:
+      4: 400018
+    second: L Clavicle
+  - first:
+      4: 400020
+    second: L Foot
+  - first:
+      4: 400022
+    second: L Forearm
+  - first:
+      4: 400024
+    second: L Hand
+  - first:
+      4: 400026
+    second: L HorseLink
+  - first:
+      4: 400028
+    second: L Thigh
+  - first:
+      4: 400030
+    second: L UpperArm
+  - first:
+      4: 400032
+    second: Neck
+  - first:
+      4: 400034
+    second: Pelvis
+  - first:
+      4: 400036
+    second: R Calf
+  - first:
+      4: 400038
+    second: R Clavicle
+  - first:
+      4: 400040
+    second: R Foot
+  - first:
+      4: 400042
+    second: R Forearm
+  - first:
+      4: 400044
+    second: R Hand
+  - first:
+      4: 400046
+    second: R HorseLink
+  - first:
+      4: 400048
+    second: R Thigh
+  - first:
+      4: 400050
+    second: R UpperArm
+  - first:
+      4: 400052
+    second: Spine
+  - first:
+      4: 400054
+    second: Spine1
+  - first:
+      4: 400056
+    second: Spine2
+  - first:
+      4: 400058
+    second: Tail
+  - first:
+      4: 400060
+    second: Tail1
+  - first:
+      4: 400062
+    second: Tail2
+  - first:
+      4: 400064
+    second: Tail3
+  - first:
+      4: 400066
+    second: Tail4
+  - first:
+      4: 400068
+    second: Tail5
+  - first:
+      4: 400070
+    second: Tiger01
+  - first:
+      4: 400072
+    second: L Ear
+  - first:
+      4: 400074
+    second: M
+  - first:
+      4: 400076
+    second: R Ear
+  - first:
+      4: 400078
+    second: Root
+  - first:
+      43: 4300000
+    second: Tiger01
+  - first:
+      43: 4300002
+    second: M
+  - first:
+      74: 7400000
+    second: C_Swim
+  - first:
+      74: 7400002
+    second: C_Swim_Turn_Right
+  - first:
+      74: 7400004
+    second: C_Swim_Turn_Left
+  - first:
+      74: 7400006
+    second: C_Swim_Idle
+  - first:
+      74: 7400008
+    second: C_Swim_Right
+  - first:
+      74: 7400010
+    second: C_Swim_Left
+  - first:
+      74: 7400012
+    second: C_Swim_Back
+  - first:
+      74: 7400014
+    second: C_Swim_Back_Left
+  - first:
+      74: 7400016
+    second: C_Swim_Back_Right
+  - first:
+      74: 7400018
+    second: C_Swim_Enter
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Tiger01
+  - first:
+      137: 13700002
+    second: M
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -129,6 +318,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim
       takeName: Take 001
+      internalID: 0
       firstFrame: 0
       lastFrame: 32
       wrapMode: 0
@@ -252,6 +442,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Right
       takeName: Take 001
+      internalID: 0
       firstFrame: 36
       lastFrame: 68
       wrapMode: 0
@@ -350,6 +541,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Left
       takeName: Take 001
+      internalID: 0
       firstFrame: 72
       lastFrame: 104
       wrapMode: 0
@@ -448,6 +640,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Idle
       takeName: Take 001
+      internalID: 0
       firstFrame: 108
       lastFrame: 156
       wrapMode: 0
@@ -546,6 +739,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Turn_Right
       takeName: Take 001
+      internalID: 0
       firstFrame: 160
       lastFrame: 192
       wrapMode: 0
@@ -644,6 +838,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Turn_Left
       takeName: Take 001
+      internalID: 0
       firstFrame: 195
       lastFrame: 227
       wrapMode: 0
@@ -742,6 +937,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Back
       takeName: Take 001
+      internalID: 0
       firstFrame: 231
       lastFrame: 263
       wrapMode: 0
@@ -840,6 +1036,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Back_Left
       takeName: Take 001
+      internalID: 0
       firstFrame: 267
       lastFrame: 299
       wrapMode: 0
@@ -938,6 +1135,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Back_Right
       takeName: Take 001
+      internalID: 0
       firstFrame: 303
       lastFrame: 335
       wrapMode: 0
@@ -1036,6 +1234,7 @@ ModelImporter:
     - serializedVersion: 16
       name: C_Swim_Enter
       takeName: Take 001
+      internalID: 0
       firstFrame: 346
       lastFrame: 399
       wrapMode: 0
@@ -1137,32 +1336,52 @@ ModelImporter:
     globalScale: 1
     meshCompression: 0
     addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
     importVisibility: 0
     importBlendShapes: 0
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 0
     keepQuads: 0
     weldVertices: 0
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: 1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 2
     tangentImportMode: 2
     normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 2
+    normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 1
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -1172,15 +1391,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: CG
-    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 9a5a6e2d8587a644b9b2da5d4940b5e3,
-    type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 9a5a6e2d8587a644b9b2da5d4940b5e3, type: 3}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 2
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

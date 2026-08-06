@@ -601,11 +601,10 @@ namespace Project.Rendering
             if (string.IsNullOrEmpty(slot.emissionKeyword))
                 return;
 
+            // Only toggle the keyword when missing. Avoid writing GI flags onto shared
+            // material assets (that dirties project materials and can desync URP variants).
             if (!mat.IsKeywordEnabled(slot.emissionKeyword))
-            {
                 mat.EnableKeyword(slot.emissionKeyword);
-                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-            }
         }
 
         private void ResolveRenderer()

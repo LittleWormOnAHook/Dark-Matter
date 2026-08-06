@@ -16,6 +16,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 08b7e004b03587c46a4749d2cdcb2bc6, type: 3}
   worldPrefab: {fileID: 7821607011889959122, guid: 8f7943112bdb6b145a52bbba5bc9f14c, type: 3}
   maxStack: 1
+  stableItemId: 19d1b22e-6e60-412c-8262-fcfe3fc11770
   itemType: 3
   deployedPrefab: {fileID: 0}
   weaponGrip: 0

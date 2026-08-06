@@ -232,7 +232,7 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
-            if (fullMapOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (fullMapOpen && UiEscapeGate.TryConsumeEscape())
             {
                 if (FullscreenUiNavigator.Instance != null && FullscreenUiNavigator.Instance.IsAnyOpen)
                     return;

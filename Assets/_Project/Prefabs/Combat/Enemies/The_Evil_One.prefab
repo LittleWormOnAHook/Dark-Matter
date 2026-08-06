@@ -53184,15 +53184,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.Invector.EnemyInvectorRagdollBridge
   enableHitStagger: 1
-  minStaggerDamage: 18
-  defaultStaggerSeconds: 0.55
+  defaultStaggerSeconds: 0.28
   staggerOnCritical: 1
-  baseStaggerChance: 0.06
-  lowHealthStaggerChance: 0.28
-  knockdownHealthThreshold: 0.1
-  knockdownDownSeconds: 2.25
-  knockdownGetUpTimeout: 3.5
-  criticalStaggerChanceBonus: 0.15
+  preferAnimatorSoftHits: 1
+  knockdownImpulse: 0.28
+  softStaggerImpulse: 0.12
+  baseReactionChance: 0.25
+  criticalReactionChanceMultiplier: 1.5
+  criticalReactionKnocksDown: 1
+  knockdownDownSeconds: 1.65
+  knockdownGetUpTimeout: 2.75
+  maxReactionBoneSpeed: 1.15
   maxCorpseBoneSpeed: 2.5
   maxBoneDepenetrationSpeed: 1.5
 --- !u!114 &8650219326704882083

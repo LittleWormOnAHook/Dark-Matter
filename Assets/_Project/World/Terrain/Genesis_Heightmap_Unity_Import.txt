@@ -1,0 +1,31 @@
+Genesis Heightmap — Unity Terrain Import
+========================================
+
+SOURCE
+  Attached Genesis grayscale heightmap (island / crater plateau)
+
+OUTPUT
+  Genesis_Heightmap_Unity.raw / .png / Preview8.png — 1025 × 1025, 16-bit LE
+  Genesis_Terrain.asset — TerrainData built like Io_Plan_Terrain.asset
+    World size: 1024 × 1024, Height: 100
+    Heightmap Resolution: 1025
+    Heights applied from Genesis_Heightmap_Unity.raw
+    Terrain layers copied from Io_Plan_Terrain when available
+
+────────────────────────────────────────
+Recommended (matches Io_Plan_Terrain workflow)
+────────────────────────────────────────
+  Menu: Tools → Dark Matter Genesis → Scene →
+        Setup Genesis Terrain (1024 / 100m + RAW heights)
+
+  Or assign Assets/_Project/World/Terrain/Genesis_Terrain.asset
+  to a Terrain component (do not replace Pioneer scene Terrain).
+
+────────────────────────────────────────
+Manual Import Raw… (optional)
+────────────────────────────────────────
+  Depth: 16   Byte Order: Windows (little-endian)
+  Width/Height: 1025 / 1025
+  Terrain Height: 100
+
+Encoding: black = 0 (ocean/base), white = max Terrain Height.

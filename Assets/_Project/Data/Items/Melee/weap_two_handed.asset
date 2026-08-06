@@ -16,7 +16,9 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
   worldPrefab: {fileID: 139706, guid: c5c45979905c4564694752a3c6ef4466, type: 3}
   maxStack: 10
+  stableItemId: b06ccebe-804b-4fc2-948d-f5cf58073825
   itemType: 2
+  deployedPrefab: {fileID: 0}
   weaponGrip: 1
   heldPrefab: {fileID: 5512312539173088814, guid: 7f4e2a91c8d643b0a1e59f2d8c6b3e04, type: 3}
   equipSocketName: RightHand
@@ -50,10 +52,21 @@ MonoBehaviour:
   rangedRange: 45
   projectileSpeed: 85
   projectileSpreadDegrees: 1.5
+  weaponAccuracy: 75
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.2
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 4.5
   fireRate: 4
   magazineSize: 30
+  reloadTimeSeconds: 1.8
   defaultAmmoType: 0
   compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
   projectilePrefab: {fileID: 0}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
@@ -68,6 +81,37 @@ MonoBehaviour:
   ammoType: 0
   ammoPerPickup: 20
   ammoPickupGrant: 20
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  muzzleFlashPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
+  fireSound: {fileID: 0}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -79,15 +123,12 @@ MonoBehaviour:
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
-  isPiInfused: 0
-  piValue: 0
+  isAcInfused: 0
+  acValue: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: A heavy two-handed blade. Cannot block while equipped.
-
-
-
-meleeDamage: 28
+  unlocksInventoryStorageRow: 0

@@ -1,4 +1,4 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
 Shader "Custom/UI/Blur Fast" {
     Properties {
@@ -18,10 +18,7 @@ Shader "Custom/UI/Blur Fast" {
         SubShader {
        
             // Horizontal blur
-            GrabPass {                     
-                Tags { "LightMode" = "Always" }
-            }
-            Pass {
+                        Pass {
                 Tags { "LightMode" = "Always" }
                
                 CGPROGRAM
@@ -53,17 +50,17 @@ Shader "Custom/UI/Blur Fast" {
                     return o;
                 }
                
-                sampler2D _GrabTexture;
-                float4 _GrabTexture_TexelSize;
+                sampler2D _CameraOpaqueTexture;
+                float4 _CameraOpaqueTexture_TexelSize;
                 float _Size;
                
                 half4 frag( v2f i ) : COLOR {
-//                  half4 col = tex2Dproj( _GrabTexture, UNITY_PROJ_COORD(i.uvgrab));
+//                  half4 col = tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(i.uvgrab));
 //                  return col;
                    
                     half4 sum = half4(0,0,0,0);
  
-                    #define GRABPIXEL(weight,kernelx) tex2Dproj( _GrabTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x + _GrabTexture_TexelSize.x * kernelx*_Size, i.uvgrab.y, i.uvgrab.z, i.uvgrab.w))) * weight
+                    #define GRABPIXEL(weight,kernelx) tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x + _CameraOpaqueTexture_TexelSize.x * kernelx*_Size, i.uvgrab.y, i.uvgrab.z, i.uvgrab.w))) * weight
  
                     sum += GRABPIXEL(0.05, -4.0);
                     sum += GRABPIXEL(0.09, -3.0);
@@ -81,10 +78,7 @@ Shader "Custom/UI/Blur Fast" {
             }
  
             // Vertical blur
-            GrabPass {                         
-                Tags { "LightMode" = "Always" }
-            }
-            Pass {
+                        Pass {
                 Tags { "LightMode" = "Always" }
                
                 CGPROGRAM
@@ -116,17 +110,17 @@ Shader "Custom/UI/Blur Fast" {
                     return o;
                 }
                
-                sampler2D _GrabTexture;
-                float4 _GrabTexture_TexelSize;
+                sampler2D _CameraOpaqueTexture;
+                float4 _CameraOpaqueTexture_TexelSize;
                 float _Size;
                
                 half4 frag( v2f i ) : COLOR {
-//                  half4 col = tex2Dproj( _GrabTexture, UNITY_PROJ_COORD(i.uvgrab));
+//                  half4 col = tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(i.uvgrab));
 //                  return col;
                    
                     half4 sum = half4(0,0,0,0);
  
-                    #define GRABPIXEL(weight,kernely) tex2Dproj( _GrabTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x, i.uvgrab.y + _GrabTexture_TexelSize.y * kernely*_Size, i.uvgrab.z, i.uvgrab.w))) * weight
+                    #define GRABPIXEL(weight,kernely) tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(float4(i.uvgrab.x, i.uvgrab.y + _CameraOpaqueTexture_TexelSize.y * kernely*_Size, i.uvgrab.z, i.uvgrab.w))) * weight
  
                     //G(X) = (1/(sqrt(2*PI*deviation*deviation))) * exp(-(x*x / (2*deviation*deviation)))
                    
@@ -146,10 +140,7 @@ Shader "Custom/UI/Blur Fast" {
             }
            
             // Distortion
-            GrabPass {                         
-                Tags { "LightMode" = "Always" }
-            }
-            Pass {
+                        Pass {
                 Tags { "LightMode" = "Always" }
                
                 CGPROGRAM
@@ -190,18 +181,18 @@ Shader "Custom/UI/Blur Fast" {
                 }
                
                 fixed4 _Color;
-                sampler2D _GrabTexture;
-                float4 _GrabTexture_TexelSize;
+                sampler2D _CameraOpaqueTexture;
+                float4 _CameraOpaqueTexture_TexelSize;
                 sampler2D _BumpMap;
                 sampler2D _MainTex;
                
                 half4 frag( v2f i ) : COLOR {
                     // calculate perturbed coordinates
                     half2 bump = UnpackNormal(tex2D( _BumpMap, i.uvbump )).rg; // we could optimize this by just reading the x  y without reconstructing the Z
-                    float2 offset = bump * _BumpAmt * _GrabTexture_TexelSize.xy;
+                    float2 offset = bump * _BumpAmt * _CameraOpaqueTexture_TexelSize.xy;
                     i.uvgrab.xy = offset * i.uvgrab.z + i.uvgrab.xy;
                    
-                    half4 col = tex2Dproj( _GrabTexture, UNITY_PROJ_COORD(i.uvgrab));
+                    half4 col = tex2Dproj( _CameraOpaqueTexture, UNITY_PROJ_COORD(i.uvgrab));
                     half4 tint = tex2D( _MainTex, i.uvmain ) * _Color;
                    
                     return col * tint;

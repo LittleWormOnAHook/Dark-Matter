@@ -1,91 +1,257 @@
 fileFormatVersion: 2
 guid: 52c1ce7eb9f494f4b9f9680af10815e5
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: CG
-    100002: Eye L
-    100004: Eye R
-    100006: Fox
-    100008: //RootNode
-    100010: Head
-    100012: Jaw
-    100014: L Calf
-    100016: L Cheek
-    100018: L Clavicle
-    100020: L Ear
-    100022: L Foot
-    100024: L Forearm
-    100026: L Hand
-    100028: L HorseLink
-    100030: L Thigh
-    100032: L UpperArm
-    100034: Magic
-    100036: Neck
-    100038: Pelvis
-    100040: R Calf
-    100042: R Cheek
-    100044: R Clavicle
-    100046: R Ear
-    100048: R Foot
-    100050: R Forearm
-    100052: R Hand
-    100054: R HorseLink
-    100056: R Thigh
-    100058: R UpperArm
-    100060: Spine
-    100062: Spine1
-    100064: Spine2
-    100066: Tail
-    100068: Tail1
-    100070: Tail2
-    100072: Tail3
-    100074: Tongue
-    400000: CG
-    400002: Eye L
-    400004: Eye R
-    400006: Fox
-    400008: //RootNode
-    400010: Head
-    400012: Jaw
-    400014: L Calf
-    400016: L Cheek
-    400018: L Clavicle
-    400020: L Ear
-    400022: L Foot
-    400024: L Forearm
-    400026: L Hand
-    400028: L HorseLink
-    400030: L Thigh
-    400032: L UpperArm
-    400034: Magic
-    400036: Neck
-    400038: Pelvis
-    400040: R Calf
-    400042: R Cheek
-    400044: R Clavicle
-    400046: R Ear
-    400048: R Foot
-    400050: R Forearm
-    400052: R Hand
-    400054: R HorseLink
-    400056: R Thigh
-    400058: R UpperArm
-    400060: Spine
-    400062: Spine1
-    400064: Spine2
-    400066: Tail
-    400068: Tail1
-    400070: Tail2
-    400072: Tail3
-    400074: Tongue
-    4300000: Magic
-    4300002: Fox
-    7400000: Take 001
-    9500000: //RootNode
-    13700000: Fox
-    13700002: Magic
-    2186277476908879412: ImportLogs
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: CG
+  - first:
+      1: 100002
+    second: Eye L
+  - first:
+      1: 100004
+    second: Eye R
+  - first:
+      1: 100006
+    second: Fox
+  - first:
+      1: 100008
+    second: //RootNode
+  - first:
+      1: 100010
+    second: Head
+  - first:
+      1: 100012
+    second: Jaw
+  - first:
+      1: 100014
+    second: L Calf
+  - first:
+      1: 100016
+    second: L Cheek
+  - first:
+      1: 100018
+    second: L Clavicle
+  - first:
+      1: 100020
+    second: L Ear
+  - first:
+      1: 100022
+    second: L Foot
+  - first:
+      1: 100024
+    second: L Forearm
+  - first:
+      1: 100026
+    second: L Hand
+  - first:
+      1: 100028
+    second: L HorseLink
+  - first:
+      1: 100030
+    second: L Thigh
+  - first:
+      1: 100032
+    second: L UpperArm
+  - first:
+      1: 100034
+    second: Magic
+  - first:
+      1: 100036
+    second: Neck
+  - first:
+      1: 100038
+    second: Pelvis
+  - first:
+      1: 100040
+    second: R Calf
+  - first:
+      1: 100042
+    second: R Cheek
+  - first:
+      1: 100044
+    second: R Clavicle
+  - first:
+      1: 100046
+    second: R Ear
+  - first:
+      1: 100048
+    second: R Foot
+  - first:
+      1: 100050
+    second: R Forearm
+  - first:
+      1: 100052
+    second: R Hand
+  - first:
+      1: 100054
+    second: R HorseLink
+  - first:
+      1: 100056
+    second: R Thigh
+  - first:
+      1: 100058
+    second: R UpperArm
+  - first:
+      1: 100060
+    second: Spine
+  - first:
+      1: 100062
+    second: Spine1
+  - first:
+      1: 100064
+    second: Spine2
+  - first:
+      1: 100066
+    second: Tail
+  - first:
+      1: 100068
+    second: Tail1
+  - first:
+      1: 100070
+    second: Tail2
+  - first:
+      1: 100072
+    second: Tail3
+  - first:
+      1: 100074
+    second: Tongue
+  - first:
+      4: 400000
+    second: CG
+  - first:
+      4: 400002
+    second: Eye L
+  - first:
+      4: 400004
+    second: Eye R
+  - first:
+      4: 400006
+    second: Fox
+  - first:
+      4: 400008
+    second: //RootNode
+  - first:
+      4: 400010
+    second: Head
+  - first:
+      4: 400012
+    second: Jaw
+  - first:
+      4: 400014
+    second: L Calf
+  - first:
+      4: 400016
+    second: L Cheek
+  - first:
+      4: 400018
+    second: L Clavicle
+  - first:
+      4: 400020
+    second: L Ear
+  - first:
+      4: 400022
+    second: L Foot
+  - first:
+      4: 400024
+    second: L Forearm
+  - first:
+      4: 400026
+    second: L Hand
+  - first:
+      4: 400028
+    second: L HorseLink
+  - first:
+      4: 400030
+    second: L Thigh
+  - first:
+      4: 400032
+    second: L UpperArm
+  - first:
+      4: 400034
+    second: Magic
+  - first:
+      4: 400036
+    second: Neck
+  - first:
+      4: 400038
+    second: Pelvis
+  - first:
+      4: 400040
+    second: R Calf
+  - first:
+      4: 400042
+    second: R Cheek
+  - first:
+      4: 400044
+    second: R Clavicle
+  - first:
+      4: 400046
+    second: R Ear
+  - first:
+      4: 400048
+    second: R Foot
+  - first:
+      4: 400050
+    second: R Forearm
+  - first:
+      4: 400052
+    second: R Hand
+  - first:
+      4: 400054
+    second: R HorseLink
+  - first:
+      4: 400056
+    second: R Thigh
+  - first:
+      4: 400058
+    second: R UpperArm
+  - first:
+      4: 400060
+    second: Spine
+  - first:
+      4: 400062
+    second: Spine1
+  - first:
+      4: 400064
+    second: Spine2
+  - first:
+      4: 400066
+    second: Tail
+  - first:
+      4: 400068
+    second: Tail1
+  - first:
+      4: 400070
+    second: Tail2
+  - first:
+      4: 400072
+    second: Tail3
+  - first:
+      4: 400074
+    second: Tongue
+  - first:
+      43: 4300000
+    second: Magic
+  - first:
+      43: 4300002
+    second: Fox
+  - first:
+      74: 7400000
+    second: Take 001
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Fox
+  - first:
+      137: 13700002
+    second: Magic
+  - first:
+      41386430: 2186277476908879412
+    second: ImportLogs
   externalObjects:
   - first:
       type: UnityEngine:Material
@@ -95,21 +261,20 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: 'Material #25'
+      name: Material #25
     second: {fileID: 2100000, guid: a763c8a219e865e4092be54ce776ed9b, type: 2}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -131,25 +296,39 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 0
     normalImportMode: 1
@@ -158,10 +337,10 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 0
-  copyAvatar: 1
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -171,14 +350,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: CG
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: b4dc3c74541def84191303ea727d9a51,
-    type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: b4dc3c74541def84191303ea727d9a51, type: 3}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 2
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

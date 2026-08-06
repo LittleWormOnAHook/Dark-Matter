@@ -15,13 +15,32 @@ namespace Project.Map
 
         public static event Action Changed;
 
+        /// <summary>
+        /// Returns the stable save key for <paramref name="item"/>: StableItemId if filled,
+        /// falling back to the Unity asset name for backwards compatibility.
+        /// </summary>
         public static string ResolveItemId(ItemData item)
         {
-            return item != null ? item.name : null;
+            if (item == null)
+                return null;
+
+            return !string.IsNullOrEmpty(item.StableItemId) ? item.StableItemId : item.name;
         }
 
-        public static bool IsIdentified(ItemData item) =>
-            IsIdentified(ResolveItemId(item));
+        /// <summary>
+        /// Returns true when the item is identified, checking by StableItemId and then by asset name
+        /// so old saves that stored the asset name still load correctly.
+        /// </summary>
+        public static bool IsIdentified(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (!string.IsNullOrEmpty(item.StableItemId) && IdentifiedIds.Contains(item.StableItemId))
+                return true;
+
+            return IdentifiedIds.Contains(item.name);
+        }
 
         public static bool IsIdentified(string itemId)
         {

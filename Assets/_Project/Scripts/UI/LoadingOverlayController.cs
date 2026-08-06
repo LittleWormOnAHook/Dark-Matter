@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Project.Audio;
 using TMPro;
 using UnityEngine;
@@ -14,6 +15,8 @@ namespace Project.UI
     /// 1. <see cref="LoadingMode.Boot"/> — covers the first Play Mode frames, then hands off to the main menu.
     /// 2. <see cref="LoadingMode.GameStart"/> — runs after "New Expedition" and starts gameplay on completion.
     ///
+    /// Camera flash prevention: a solid black veil stays fully opaque until load + destination handoff finish,
+    /// gameplay cameras are blacked out while the loader owns the screen, then the veil fades in from black.
     /// Dark Matter: Genesis identity only — no Pi, wallet, or legacy branding on this surface.
     /// All timing uses unscaled time because both entry points park <c>Time.timeScale</c> at 0.
     /// </summary>
@@ -29,6 +32,14 @@ namespace Project.UI
             GameStart
         }
 
+        private struct GatedCameraState
+        {
+            public Camera Camera;
+            public int CullingMask;
+            public CameraClearFlags ClearFlags;
+            public Color BackgroundColor;
+        }
+
         private const int OverlaySortingOrder = 32000;
         private const float ProgressCeilingBeforeHandoff = 0.92f;
         /// <summary>Longest the boot pass will wait past its window for a checkpoint that may never arrive.</summary>
@@ -41,22 +52,27 @@ namespace Project.UI
         /// <summary>Screen time and progress bar are both driven by this window.</summary>
         [SerializeField] private float simulatedLoadSeconds = 6f;
         [SerializeField] private float fadeOutSeconds = 0.65f;
+        [SerializeField] private float fadeInFromBlackSeconds = 0.55f;
 
         private static bool bootPending;
         private static LoadingOverlayController activeInstance;
         private static LoadingMode pendingMode = LoadingMode.Boot;
         private static Action pendingCompletion;
+        private static GameObject earlyBlackoutHost;
+        private static readonly List<GatedCameraState> gatedCameras = new List<GatedCameraState>(8);
 
         private LoadingMode mode = LoadingMode.Boot;
         private Action onCompleted;
 
-        private CanvasGroup canvasGroup;
+        private CanvasGroup contentGroup;
+        private CanvasGroup blackVeilGroup;
         private Image glowImage;
         private RectTransform logoArtRect;
         private RectTransform progressFillRect;
         private TextMeshProUGUI percentLabel;
         private int satisfiedCheckpoints;
         private int shownPercent = -1;
+        private bool cameraGateReleased;
 
         /// <summary>True while the loader owns the screen and the main menu must stay hidden.</summary>
         public static bool IsBlockingMenu => bootPending || activeInstance != null;
@@ -68,9 +84,12 @@ namespace Project.UI
             activeInstance = null;
             pendingMode = LoadingMode.Boot;
             pendingCompletion = null;
+            earlyBlackoutHost = null;
+            gatedCameras.Clear();
         }
 
         // Claimed before any Awake runs so MainMenuController can never win the race and flash its chrome.
+        // Early black veil + camera gate cover the gap before AfterSceneLoad builds the full overlay.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void ClaimBoot()
         {
@@ -78,6 +97,11 @@ namespace Project.UI
                 return;
 
             bootPending = true;
+            // Kill world SFX immediately — Invector footsteps/reloads ignore timeScale and will
+            // otherwise leak under the loader before GameAudioManager awakens.
+            // Only via the gated helper (never from SubsystemRegistration / edit-mode reload).
+            GameAudioManager.SyncWorldAudioGate();
+            EnsureEarlyBlackout();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -86,6 +110,7 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
+            GateGameplayCameras(true);
             EnsureExists();
         }
 
@@ -100,6 +125,26 @@ namespace Project.UI
         }
 
         /// <summary>
+        /// Raise an opaque black cover before menu chrome is torn down so the player camera cannot flash
+        /// between the main menu and the expedition loading pass.
+        /// </summary>
+        public static void EnsureOpaqueCover()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (activeInstance != null)
+            {
+                activeInstance.ForceOpaqueCover();
+                GateGameplayCameras(true);
+                return;
+            }
+
+            EnsureEarlyBlackout();
+            GateGameplayCameras(true);
+        }
+
+        /// <summary>
         /// Second loading pass: shown when the player leaves the menu, then <paramref name="onComplete"/>
         /// starts gameplay. Replaces the old start-screen popup step.
         /// </summary>
@@ -110,6 +155,8 @@ namespace Project.UI
                 onComplete?.Invoke();
                 return;
             }
+
+            EnsureOpaqueCover();
 
             if (activeInstance != null)
             {
@@ -128,6 +175,101 @@ namespace Project.UI
             activeInstance = host.AddComponent<LoadingOverlayController>();
         }
 
+        private static void EnsureEarlyBlackout()
+        {
+            if (earlyBlackoutHost != null || activeInstance != null)
+                return;
+
+            earlyBlackoutHost = new GameObject("LoadingGenesisEarlyBlackout");
+            UnityEngine.Object.DontDestroyOnLoad(earlyBlackoutHost);
+
+            Canvas canvas = earlyBlackoutHost.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = OverlaySortingOrder + 1;
+
+            earlyBlackoutHost.AddComponent<CanvasScaler>();
+            earlyBlackoutHost.AddComponent<GraphicRaycaster>();
+
+            CanvasGroup group = earlyBlackoutHost.AddComponent<CanvasGroup>();
+            group.alpha = 1f;
+            group.blocksRaycasts = true;
+            group.interactable = false;
+
+            MenuUiBuilder.CreateFullScreenPanel(
+                earlyBlackoutHost.transform,
+                "SolidBlack",
+                Color.black,
+                blockRaycasts: true);
+        }
+
+        private static void DestroyEarlyBlackout()
+        {
+            if (earlyBlackoutHost == null)
+                return;
+
+            UnityEngine.Object.Destroy(earlyBlackoutHost);
+            earlyBlackoutHost = null;
+        }
+
+        private static void GateGameplayCameras(bool gate)
+        {
+            if (!gate)
+            {
+                RestoreGatedCameras();
+                return;
+            }
+
+            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                Camera camera = cameras[i];
+                if (camera == null || !camera.enabled || camera.targetTexture != null)
+                    continue;
+
+                if (IsAlreadyGated(camera))
+                    continue;
+
+                gatedCameras.Add(new GatedCameraState
+                {
+                    Camera = camera,
+                    CullingMask = camera.cullingMask,
+                    ClearFlags = camera.clearFlags,
+                    BackgroundColor = camera.backgroundColor
+                });
+
+                camera.cullingMask = 0;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = Color.black;
+            }
+        }
+
+        private static bool IsAlreadyGated(Camera camera)
+        {
+            for (int i = 0; i < gatedCameras.Count; i++)
+            {
+                if (gatedCameras[i].Camera == camera)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void RestoreGatedCameras()
+        {
+            for (int i = 0; i < gatedCameras.Count; i++)
+            {
+                GatedCameraState state = gatedCameras[i];
+                if (state.Camera == null)
+                    continue;
+
+                state.Camera.cullingMask = state.CullingMask;
+                state.Camera.clearFlags = state.ClearFlags;
+                state.Camera.backgroundColor = state.BackgroundColor;
+            }
+
+            gatedCameras.Clear();
+        }
+
         private void Awake()
         {
             mode = pendingMode;
@@ -138,12 +280,25 @@ namespace Project.UI
             activeInstance = this;
             bootPending = true;
 
+            DestroyEarlyBlackout();
             BuildOverlay();
+            GateGameplayCameras(true);
             StartCoroutine(RunLoadingSequence());
         }
 
+        private float nextCameraGateCheckUnscaled = -1f;
+
         private void Update()
         {
+            // Re-gate cameras that spawn mid-load (Invector tpCamera, etc.) so they cannot flash.
+            // Throttled — FindObjectsByType every frame during boot was hammering the editor.
+            if (!cameraGateReleased && blackVeilGroup != null && blackVeilGroup.alpha > 0.99f
+                && Time.unscaledTime >= nextCameraGateCheckUnscaled)
+            {
+                nextCameraGateCheckUnscaled = Time.unscaledTime + 0.25f;
+                GateGameplayCameras(true);
+            }
+
             // Y-axis = side-to-side tumble (left ↔ right). Unscaled so it keeps turning while timeScale is 0.
             if (logoArtRect != null)
                 logoArtRect.Rotate(0f, logoSpinDegreesPerSecond * Time.unscaledDeltaTime, 0f, Space.Self);
@@ -159,6 +314,18 @@ namespace Project.UI
         {
             if (activeInstance == this)
                 activeInstance = null;
+
+            // Safety net if destroyed mid-sequence (domain reload / stop play).
+            if (gatedCameras.Count > 0)
+                RestoreGatedCameras();
+        }
+
+        private void ForceOpaqueCover()
+        {
+            if (blackVeilGroup != null)
+                blackVeilGroup.alpha = 1f;
+            if (contentGroup != null)
+                contentGroup.alpha = 1f;
         }
 
         private void BuildOverlay()
@@ -175,34 +342,50 @@ namespace Project.UI
 
             gameObject.AddComponent<GraphicRaycaster>();
 
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
-            canvasGroup.alpha = 1f;
+            // Black veil sits behind branded content so content can fade to black (not to the world camera).
+            GameObject veilObject = MenuUiBuilder.CreateFullScreenPanel(
+                transform,
+                "SolidBlackVeil",
+                Color.black,
+                blockRaycasts: true);
+            blackVeilGroup = veilObject.AddComponent<CanvasGroup>();
+            blackVeilGroup.alpha = 1f;
+            blackVeilGroup.blocksRaycasts = true;
+            blackVeilGroup.interactable = false;
+
+            GameObject contentRoot = new GameObject("LoadingContent", typeof(RectTransform));
+            contentRoot.transform.SetParent(transform, false);
+            MenuUiBuilder.StretchRectToFill(contentRoot.GetComponent<RectTransform>());
+            contentGroup = contentRoot.AddComponent<CanvasGroup>();
+            contentGroup.alpha = 1f;
+            contentGroup.blocksRaycasts = true;
+            contentGroup.interactable = false;
 
             // 1. Solid navy backdrop — also swallows clicks so the world stays inert while loading.
             MenuUiBuilder.CreateFullScreenPanel(
-                transform,
+                contentRoot.transform,
                 "SolidBackdrop",
                 SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 1f),
                 blockRaycasts: true);
 
             // 2. Atmospheric Io art at tunable alpha over the navy.
-            BuildBackgroundArt();
+            BuildBackgroundArt(contentRoot.transform);
 
             // 3. Brand block: soft glow, slow-spinning logo, product title.
-            BuildBrandBlock();
+            BuildBrandBlock(contentRoot.transform);
 
             // 4. Progress track + Loading Genesis label.
-            BuildProgressBlock();
+            BuildProgressBlock(contentRoot.transform);
         }
 
-        private void BuildBackgroundArt()
+        private void BuildBackgroundArt(Transform parent)
         {
             Texture backgroundTexture = Resources.Load<Texture>(BackgroundResourcePath);
             if (backgroundTexture == null)
                 return;
 
             GameObject artObject = new GameObject("BackgroundArt", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-            artObject.transform.SetParent(transform, false);
+            artObject.transform.SetParent(parent, false);
             MenuUiBuilder.StretchRectToFill(artObject.GetComponent<RectTransform>());
 
             RawImage art = artObject.GetComponent<RawImage>();
@@ -211,13 +394,13 @@ namespace Project.UI
             art.raycastTarget = false;
         }
 
-        private void BuildBrandBlock()
+        private void BuildBrandBlock(Transform parent)
         {
             Sprite glowSprite = ShiftUiTheme.CircleGlow ?? ShiftUiTheme.SquareGlow;
             if (glowSprite != null)
             {
                 GameObject glowObject = new GameObject("LogoGlow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                glowObject.transform.SetParent(transform, false);
+                glowObject.transform.SetParent(parent, false);
                 RectTransform glowRect = glowObject.GetComponent<RectTransform>();
                 CenterRect(glowRect, new Vector2(0f, 96f), new Vector2(720f, 720f));
 
@@ -227,10 +410,10 @@ namespace Project.UI
                 glowImage.raycastTarget = false;
             }
 
-            BuildSpinningLogo();
+            BuildSpinningLogo(parent);
 
             GameObject titleObject = new GameObject("BrandTitle", typeof(RectTransform));
-            titleObject.transform.SetParent(transform, false);
+            titleObject.transform.SetParent(parent, false);
             CenterRect(titleObject.GetComponent<RectTransform>(), new Vector2(0f, -190f), new Vector2(1200f, 90f));
 
             TextMeshProUGUI title = titleObject.AddComponent<TextMeshProUGUI>();
@@ -245,7 +428,7 @@ namespace Project.UI
             title.raycastTarget = false;
         }
 
-        private void BuildSpinningLogo()
+        private void BuildSpinningLogo(Transform parent)
         {
             // Prefer Sprite so Unity respects Alpha Is Transparency on the DMI mark; Texture is the fallback.
             Sprite logoSprite = Resources.Load<Sprite>(LogoResourcePath);
@@ -255,7 +438,7 @@ namespace Project.UI
 
             // Transparent gold DMI lettermark — no circular mask (it clips the outer D/I strokes).
             GameObject artObject = new GameObject("LogoArt", typeof(RectTransform), typeof(CanvasRenderer));
-            artObject.transform.SetParent(transform, false);
+            artObject.transform.SetParent(parent, false);
             logoArtRect = artObject.GetComponent<RectTransform>();
             CenterRect(logoArtRect, new Vector2(0f, 96f), new Vector2(LogoFrameSize, LogoFrameSize));
 
@@ -274,10 +457,10 @@ namespace Project.UI
             }
         }
 
-        private void BuildProgressBlock()
+        private void BuildProgressBlock(Transform parent)
         {
             GameObject block = new GameObject("ProgressBlock", typeof(RectTransform));
-            block.transform.SetParent(transform, false);
+            block.transform.SetParent(parent, false);
             RectTransform blockRect = block.GetComponent<RectTransform>();
             blockRect.anchorMin = new Vector2(0.5f, 0f);
             blockRect.anchorMax = new Vector2(0.5f, 0f);
@@ -356,6 +539,7 @@ namespace Project.UI
         private IEnumerator RunLoadingSequence()
         {
             GameAudioManager.EnsureExists();
+            GameAudioManager.SyncWorldAudioGate();
             GameAudioManager.Instance?.StartLoadingAmbience();
 
             // Wall clock, not Time.unscaledDeltaTime: during scene bootstrap a frame can take a full
@@ -387,9 +571,21 @@ namespace Project.UI
             }
 
             ApplyProgress(1f);
-            yield return FadeOutOverlay();
 
-            CompleteAndHandOff();
+            // Branded content fades to the solid black veil — never directly onto the player camera.
+            yield return FadeCanvasGroup(contentGroup, 1f, 0f, fadeOutSeconds, fadeAmbience: true);
+            GameAudioManager.Instance?.StopLoadingAmbience();
+
+            // Destination (menu / gameplay) presents while still fully blacked out.
+            HandOffDestination();
+
+            // Cameras restore under the opaque veil, then we fade in from black.
+            cameraGateReleased = true;
+            GateGameplayCameras(false);
+            yield return null;
+            yield return FadeCanvasGroup(blackVeilGroup, 1f, 0f, fadeInFromBlackSeconds, fadeAmbience: false);
+
+            Destroy(gameObject);
         }
 
         private bool AreBootstrapCheckpointsReady()
@@ -422,33 +618,53 @@ namespace Project.UI
             percentLabel.SetText("{0}%", percent);
         }
 
-        private IEnumerator FadeOutOverlay()
+        private IEnumerator FadeCanvasGroup(
+            CanvasGroup group,
+            float from,
+            float to,
+            float durationSeconds,
+            bool fadeAmbience)
         {
-            GameAudioManager audio = GameAudioManager.Instance;
-            float duration = Mathf.Max(0.05f, fadeOutSeconds);
+            if (group == null)
+                yield break;
+
+            GameAudioManager audio = fadeAmbience ? GameAudioManager.Instance : null;
+            float duration = Mathf.Max(0.05f, durationSeconds);
             float startedAt = Time.realtimeSinceStartup;
-            float elapsed = 0f;
+            group.alpha = from;
 
-            while (elapsed < duration)
+            while (true)
             {
-                elapsed = Time.realtimeSinceStartup - startedAt;
-                float remaining = 1f - Mathf.Clamp01(elapsed / duration);
+                float elapsed = Time.realtimeSinceStartup - startedAt;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float alpha = Mathf.Lerp(from, to, t);
+                group.alpha = alpha;
 
-                if (canvasGroup != null)
-                    canvasGroup.alpha = remaining;
+                if (audio != null)
+                {
+                    float ambience = from > to ? alpha : 1f - alpha;
+                    audio.SetLoadingAmbienceFade(ambience);
+                }
 
-                audio?.SetLoadingAmbienceFade(remaining);
+                if (t >= 1f)
+                    break;
+
                 yield return null;
             }
 
-            audio?.StopLoadingAmbience();
+            group.alpha = to;
         }
 
-        private void CompleteAndHandOff()
+        private void HandOffDestination()
         {
-            // Clear the gate before handing off so the menu (or gameplay) is allowed to present itself.
+            // Clear the menu gate before handing off so the menu (or gameplay) is allowed to present
+            // itself — still under the opaque black veil until fade-in completes.
+            // activeInstance must be cleared here (same as the old CompleteAndHandOff) or
+            // ShowMainMenu sees IsBlockingMenu and hides chrome again under the veil.
             bootPending = false;
             activeInstance = null;
+            // Stay muted through the main menu; MarkStarted() releases the gate for gameplay.
+            GameAudioManager.SyncWorldAudioGate();
 
             Action callback = onCompleted;
             onCompleted = null;
@@ -457,8 +673,6 @@ namespace Project.UI
                 callback();
             else
                 MainCanvasFlow.Refresh();
-
-            Destroy(gameObject);
         }
     }
 }

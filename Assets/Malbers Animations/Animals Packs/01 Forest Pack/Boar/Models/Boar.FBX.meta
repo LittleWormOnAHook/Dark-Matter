@@ -1,163 +1,444 @@
 fileFormatVersion: 2
 guid: 59dc7eb140be69548819cbbdef4c5a29
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: //RootNode
-    100002: CG
-    100004: Eye L
-    100006: Eye R
-    100008: Fangs 001
-    100010: Fangs 002
-    100012: Fangs 003
-    100014: Fangs 004
-    100016: Fangs 005
-    100018: Fangs 006
-    100020: Head
-    100022: Jaw
-    100024: L Calf
-    100026: L Clavicle
-    100028: L Ear
-    100030: L Finger0
-    100032: L Foot
-    100034: L Forearm
-    100036: L Hand
-    100038: L HorseLink
-    100040: L Thigh
-    100042: L Toe0
-    100044: L UpperArm
-    100046: Neck
-    100048: Pelvis
-    100050: Poly Art Boar
-    100052: R Calf
-    100054: R Clavicle
-    100056: R Ear
-    100058: R Finger0
-    100060: R Foot
-    100062: R Forearm
-    100064: R Hand
-    100066: R HorseLink
-    100068: R Thigh
-    100070: R Toe0
-    100072: R UpperArm
-    100074: Spine
-    100076: Spine1
-    100078: Spine2
-    100080: Tail01
-    100082: Tail02
-    100084: Tail03
-    100086: ' Footsteps'
-    100088: ' JawNub'
-    100090: CG L Toe01
-    100092: CG R Toe01
-    100094: CG TailNub
-    100096: HeadNub
-    100098: L Finger0Nub
-    100100: L Toe0Nub
-    100102: Magic
-    100104: Ponytail1Nub
-    100106: Ponytail2Nub
-    100108: R Finger0Nub
-    100110: R Toe0Nub
-    400000: //RootNode
-    400002: CG
-    400004: Eye L
-    400006: Eye R
-    400008: Fangs 001
-    400010: Fangs 002
-    400012: Fangs 003
-    400014: Fangs 004
-    400016: Fangs 005
-    400018: Fangs 006
-    400020: Head
-    400022: Jaw
-    400024: L Calf
-    400026: L Clavicle
-    400028: L Ear
-    400030: L Finger0
-    400032: L Foot
-    400034: L Forearm
-    400036: L Hand
-    400038: L HorseLink
-    400040: L Thigh
-    400042: L Toe0
-    400044: L UpperArm
-    400046: Neck
-    400048: Pelvis
-    400050: Poly Art Boar
-    400052: R Calf
-    400054: R Clavicle
-    400056: R Ear
-    400058: R Finger0
-    400060: R Foot
-    400062: R Forearm
-    400064: R Hand
-    400066: R HorseLink
-    400068: R Thigh
-    400070: R Toe0
-    400072: R UpperArm
-    400074: Spine
-    400076: Spine1
-    400078: Spine2
-    400080: Tail01
-    400082: Tail02
-    400084: Tail03
-    400086: ' Footsteps'
-    400088: ' JawNub'
-    400090: CG L Toe01
-    400092: CG R Toe01
-    400094: CG TailNub
-    400096: HeadNub
-    400098: L Finger0Nub
-    400100: L Toe0Nub
-    400102: Magic
-    400104: Ponytail1Nub
-    400106: Ponytail2Nub
-    400108: R Finger0Nub
-    400110: R Toe0Nub
-    2300000: Fangs 001
-    2300002: Fangs 002
-    2300004: Fangs 003
-    2300006: Fangs 004
-    2300008: Fangs 005
-    2300010: Fangs 006
-    3300000: Fangs 001
-    3300002: Fangs 002
-    3300004: Fangs 003
-    3300006: Fangs 004
-    3300008: Fangs 005
-    3300010: Fangs 006
-    4300000: Fangs 002
-    4300002: Fangs 001
-    4300004: Fangs 003
-    4300006: Fangs 004
-    4300008: Fangs 005
-    4300010: Fangs 006
-    4300012: Poly Art Boar
-    4300014: Magic
-    9500000: //RootNode
-    13700000: Poly Art Boar
-    13700002: Fangs 001
-    13700004: Fangs 003
-    13700006: Fangs 004
-    13700008: Fangs 005
-    13700010: Fangs 006
-    13700012: Magic
-    2186277476908879412: ImportLogs
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: //RootNode
+  - first:
+      1: 100002
+    second: CG
+  - first:
+      1: 100004
+    second: Eye L
+  - first:
+      1: 100006
+    second: Eye R
+  - first:
+      1: 100008
+    second: Fangs 001
+  - first:
+      1: 100010
+    second: Fangs 002
+  - first:
+      1: 100012
+    second: Fangs 003
+  - first:
+      1: 100014
+    second: Fangs 004
+  - first:
+      1: 100016
+    second: Fangs 005
+  - first:
+      1: 100018
+    second: Fangs 006
+  - first:
+      1: 100020
+    second: Head
+  - first:
+      1: 100022
+    second: Jaw
+  - first:
+      1: 100024
+    second: L Calf
+  - first:
+      1: 100026
+    second: L Clavicle
+  - first:
+      1: 100028
+    second: L Ear
+  - first:
+      1: 100030
+    second: L Finger0
+  - first:
+      1: 100032
+    second: L Foot
+  - first:
+      1: 100034
+    second: L Forearm
+  - first:
+      1: 100036
+    second: L Hand
+  - first:
+      1: 100038
+    second: L HorseLink
+  - first:
+      1: 100040
+    second: L Thigh
+  - first:
+      1: 100042
+    second: L Toe0
+  - first:
+      1: 100044
+    second: L UpperArm
+  - first:
+      1: 100046
+    second: Neck
+  - first:
+      1: 100048
+    second: Pelvis
+  - first:
+      1: 100050
+    second: Poly Art Boar
+  - first:
+      1: 100052
+    second: R Calf
+  - first:
+      1: 100054
+    second: R Clavicle
+  - first:
+      1: 100056
+    second: R Ear
+  - first:
+      1: 100058
+    second: R Finger0
+  - first:
+      1: 100060
+    second: R Foot
+  - first:
+      1: 100062
+    second: R Forearm
+  - first:
+      1: 100064
+    second: R Hand
+  - first:
+      1: 100066
+    second: R HorseLink
+  - first:
+      1: 100068
+    second: R Thigh
+  - first:
+      1: 100070
+    second: R Toe0
+  - first:
+      1: 100072
+    second: R UpperArm
+  - first:
+      1: 100074
+    second: Spine
+  - first:
+      1: 100076
+    second: Spine1
+  - first:
+      1: 100078
+    second: Spine2
+  - first:
+      1: 100080
+    second: Tail01
+  - first:
+      1: 100082
+    second: Tail02
+  - first:
+      1: 100084
+    second: Tail03
+  - first:
+      1: 100086
+    second: ' Footsteps'
+  - first:
+      1: 100088
+    second: ' JawNub'
+  - first:
+      1: 100090
+    second: CG L Toe01
+  - first:
+      1: 100092
+    second: CG R Toe01
+  - first:
+      1: 100094
+    second: CG TailNub
+  - first:
+      1: 100096
+    second: HeadNub
+  - first:
+      1: 100098
+    second: L Finger0Nub
+  - first:
+      1: 100100
+    second: L Toe0Nub
+  - first:
+      1: 100102
+    second: Magic
+  - first:
+      1: 100104
+    second: Ponytail1Nub
+  - first:
+      1: 100106
+    second: Ponytail2Nub
+  - first:
+      1: 100108
+    second: R Finger0Nub
+  - first:
+      1: 100110
+    second: R Toe0Nub
+  - first:
+      4: 400000
+    second: //RootNode
+  - first:
+      4: 400002
+    second: CG
+  - first:
+      4: 400004
+    second: Eye L
+  - first:
+      4: 400006
+    second: Eye R
+  - first:
+      4: 400008
+    second: Fangs 001
+  - first:
+      4: 400010
+    second: Fangs 002
+  - first:
+      4: 400012
+    second: Fangs 003
+  - first:
+      4: 400014
+    second: Fangs 004
+  - first:
+      4: 400016
+    second: Fangs 005
+  - first:
+      4: 400018
+    second: Fangs 006
+  - first:
+      4: 400020
+    second: Head
+  - first:
+      4: 400022
+    second: Jaw
+  - first:
+      4: 400024
+    second: L Calf
+  - first:
+      4: 400026
+    second: L Clavicle
+  - first:
+      4: 400028
+    second: L Ear
+  - first:
+      4: 400030
+    second: L Finger0
+  - first:
+      4: 400032
+    second: L Foot
+  - first:
+      4: 400034
+    second: L Forearm
+  - first:
+      4: 400036
+    second: L Hand
+  - first:
+      4: 400038
+    second: L HorseLink
+  - first:
+      4: 400040
+    second: L Thigh
+  - first:
+      4: 400042
+    second: L Toe0
+  - first:
+      4: 400044
+    second: L UpperArm
+  - first:
+      4: 400046
+    second: Neck
+  - first:
+      4: 400048
+    second: Pelvis
+  - first:
+      4: 400050
+    second: Poly Art Boar
+  - first:
+      4: 400052
+    second: R Calf
+  - first:
+      4: 400054
+    second: R Clavicle
+  - first:
+      4: 400056
+    second: R Ear
+  - first:
+      4: 400058
+    second: R Finger0
+  - first:
+      4: 400060
+    second: R Foot
+  - first:
+      4: 400062
+    second: R Forearm
+  - first:
+      4: 400064
+    second: R Hand
+  - first:
+      4: 400066
+    second: R HorseLink
+  - first:
+      4: 400068
+    second: R Thigh
+  - first:
+      4: 400070
+    second: R Toe0
+  - first:
+      4: 400072
+    second: R UpperArm
+  - first:
+      4: 400074
+    second: Spine
+  - first:
+      4: 400076
+    second: Spine1
+  - first:
+      4: 400078
+    second: Spine2
+  - first:
+      4: 400080
+    second: Tail01
+  - first:
+      4: 400082
+    second: Tail02
+  - first:
+      4: 400084
+    second: Tail03
+  - first:
+      4: 400086
+    second: ' Footsteps'
+  - first:
+      4: 400088
+    second: ' JawNub'
+  - first:
+      4: 400090
+    second: CG L Toe01
+  - first:
+      4: 400092
+    second: CG R Toe01
+  - first:
+      4: 400094
+    second: CG TailNub
+  - first:
+      4: 400096
+    second: HeadNub
+  - first:
+      4: 400098
+    second: L Finger0Nub
+  - first:
+      4: 400100
+    second: L Toe0Nub
+  - first:
+      4: 400102
+    second: Magic
+  - first:
+      4: 400104
+    second: Ponytail1Nub
+  - first:
+      4: 400106
+    second: Ponytail2Nub
+  - first:
+      4: 400108
+    second: R Finger0Nub
+  - first:
+      4: 400110
+    second: R Toe0Nub
+  - first:
+      23: 2300000
+    second: Fangs 001
+  - first:
+      23: 2300002
+    second: Fangs 002
+  - first:
+      23: 2300004
+    second: Fangs 003
+  - first:
+      23: 2300006
+    second: Fangs 004
+  - first:
+      23: 2300008
+    second: Fangs 005
+  - first:
+      23: 2300010
+    second: Fangs 006
+  - first:
+      33: 3300000
+    second: Fangs 001
+  - first:
+      33: 3300002
+    second: Fangs 002
+  - first:
+      33: 3300004
+    second: Fangs 003
+  - first:
+      33: 3300006
+    second: Fangs 004
+  - first:
+      33: 3300008
+    second: Fangs 005
+  - first:
+      33: 3300010
+    second: Fangs 006
+  - first:
+      43: 4300000
+    second: Fangs 002
+  - first:
+      43: 4300002
+    second: Fangs 001
+  - first:
+      43: 4300004
+    second: Fangs 003
+  - first:
+      43: 4300006
+    second: Fangs 004
+  - first:
+      43: 4300008
+    second: Fangs 005
+  - first:
+      43: 4300010
+    second: Fangs 006
+  - first:
+      43: 4300012
+    second: Poly Art Boar
+  - first:
+      43: 4300014
+    second: Magic
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Poly Art Boar
+  - first:
+      137: 13700002
+    second: Fangs 001
+  - first:
+      137: 13700004
+    second: Fangs 003
+  - first:
+      137: 13700006
+    second: Fangs 004
+  - first:
+      137: 13700008
+    second: Fangs 005
+  - first:
+      137: 13700010
+    second: Fangs 006
+  - first:
+      137: 13700012
+    second: Magic
+  - first:
+      41386430: 2186277476908879412
+    second: ImportLogs
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -179,25 +460,39 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 0.01
-    hasPreviousCalculatedGlobalScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 0
     normalImportMode: 1
@@ -206,10 +501,10 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 0
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -219,13 +514,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: CG
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

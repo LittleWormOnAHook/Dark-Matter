@@ -8,68 +8,68 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1646637928674852, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
-      propertyPath: m_Name
-      value: Plasma_Pickup
-      objectReference: {fileID: 0}
-    - target: {fileID: 1646637928674852, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
-      propertyPath: m_Layer
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -27.219604
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.18859558
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 13.313262
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0.00000003774895
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4093383823132316, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4fbd95154c8b6c04d9eea8eaaab9f19e, type: 2}
+    - target: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+      propertyPath: m_Name
+      value: Plasma_Pickup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1646637928674852, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6221301238187379552}
-    - targetCorrespondingSourceObject: {fileID: 1646637928674852, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5582549661410465020}
-  m_SourcePrefab: {fileID: 100100000, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
---- !u!1 &570861866219929534 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+--- !u!1 &804081226953012427 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 1646637928674852, guid: 7bc14d437600a1e4ea3780b591a7e1bb, type: 3}
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
   m_PrefabInstance: {fileID: 570200461577357722}
   m_PrefabAsset: {fileID: 0}
 --- !u!65 &6221301238187379552
@@ -78,7 +78,7 @@ BoxCollider:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 570861866219929534}
+  m_GameObject: {fileID: 804081226953012427}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -91,22 +91,22 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.29057968, y: 0.37717265, z: 0.08000011}
-  m_Center: {x: 0.0015299544, y: 0.011516757, z: 0}
+  m_Size: {x: 0.0033011641, y: 0.004026332, z: 0.001189864}
+  m_Center: {x: 0.0000000079744495, y: -0.00000008603092, z: -0.00000008800998}
 --- !u!114 &5582549661410465020
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 570861866219929534}
+  m_GameObject: {fileID: 804081226953012427}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
   itemData: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}
-  amount: 50
+  amount: 500
   promptText: Press E to pick up
   canRespawn: 1
   minRespawnTime: 20

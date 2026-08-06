@@ -182,12 +182,12 @@ Reuse `MenuUiBuilder` + palette helpers where practical so the loader matches ma
 
 ## Runtime order (as shipped)
 
-1. `BeforeSceneLoad` → `ClaimBoot()` sets the menu gate before any `Awake` runs.
-2. `AfterSceneLoad` → overlay canvas built at sorting order 32000: SolidBackdrop → BackgroundArt (`news-1` RawImage, default α 0.50, Range 0.30–0.75) → glow + masked spinning logo → progress track, fill, and **Loading Genesis...** label.
+1. `BeforeSceneLoad` → `ClaimBoot()` sets the menu gate and raises a DontDestroyOnLoad solid-black early veil so the player camera cannot render on the first frames.
+2. `AfterSceneLoad` → gameplay cameras are blacked out (`cullingMask = 0`, solid black clear); full overlay canvas at sorting order 32000: **SolidBlackVeil** → LoadingContent (SolidBackdrop → BackgroundArt → glow + spinning logo → progress).
 3. Ambience starts; bar fills over the 6s window, holding at 92% if bootstrap checkpoints (theme, audio, menu, `UIManager`) are unmet.
-4. Fade overlay + ambience → `MainCanvasFlow.Refresh()` → main menu appears.
-5. **New Expedition** → starter pick if needed → phase `StartPopup`, chrome hidden, expedition loader for 6s.
-6. Fade → `GameStartPopup.OnStartGameClicked()` starts gameplay (session marked, world unpaused, music, save slot 0).
+4. Branded content fades to the black veil (not to the world) → handoff `MainCanvasFlow.Refresh()` under opaque black → cameras restored → **fade in from black** → overlay destroyed.
+5. **New Expedition** → `EnsureOpaqueCover()` before menu chrome hides → starter pick if needed → phase `StartPopup`, expedition loader for 6s.
+6. Same black-veil handoff → `GameStartPopup.OnStartGameClicked()` starts gameplay under black → fade in from black.
 
 ---
 
@@ -202,7 +202,9 @@ Reuse `MenuUiBuilder` + palette helpers where practical so the loader matches ma
 
 ## Verification checklist
 
-- [ ] Play Mode: loader visible from first frames; no main-menu flash underneath  
+- [ ] Play Mode: solid black from first frames; loader visible; no player-camera flash before/between loads or during fade-in  
+- [ ] Handoff fades **in from black** after destination is ready (menu or gameplay) — never fades branded overlay straight onto the world camera  
+
 - [ ] Background: Dark Navy + `news-1.jpg` at default ~50% alpha; inspector clamps 0.30–0.75  
 - [ ] Branding: Dark Matter: Genesis / Loading Genesis only — no Pi, wallet, Invector, Pioneer Survivor, cyan accent  
 - [ ] Transparent gold DMI mark slow Z-spins with no box or halo edge around it  

@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Silicate Ore
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.MineHarvestItemData
   itemName: Silicate Ore
-  icon: {fileID: 21300000, guid: 1e3b0a949ff691c4782fe566fe74e657, type: 3}
+  icon: {fileID: 21300000, guid: 63c2b0b109bab1c408c0236a13bc1240, type: 3}
   worldPrefab: {fileID: 8356425610316991952, guid: 70c74c46901f50447b7c6687d580b892, type: 3}
   maxStack: 80
+  stableItemId: e83b019ce015f214286d8fee0f4c3554
   itemType: 1
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -103,6 +104,9 @@ MonoBehaviour:
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 0

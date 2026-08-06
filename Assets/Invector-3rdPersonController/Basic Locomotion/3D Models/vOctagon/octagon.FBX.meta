@@ -1,95 +1,269 @@
 fileFormatVersion: 2
 guid: 7833def81b73bca41ad546b5df04dd1d
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: corner001
-    100002: corner002
-    100004: corner003
-    100006: corner004
-    100008: corner005
-    100010: corner006
-    100012: corner007
-    100014: corner008
-    100016: fence
-    100018: fence001
-    100020: fence002
-    100022: fence003
-    100024: fence004
-    100026: fence005
-    100028: fence006
-    100030: fence007
-    100032: //RootNode
-    100034: octagon
-    400000: corner001
-    400002: corner002
-    400004: corner003
-    400006: corner004
-    400008: corner005
-    400010: corner006
-    400012: corner007
-    400014: corner008
-    400016: fence
-    400018: fence001
-    400020: fence002
-    400022: fence003
-    400024: fence004
-    400026: fence005
-    400028: fence006
-    400030: fence007
-    400032: octagon
-    400034: //RootNode
-    2300000: corner001
-    2300002: corner002
-    2300004: corner003
-    2300006: corner004
-    2300008: corner005
-    2300010: corner006
-    2300012: corner007
-    2300014: corner008
-    2300016: fence
-    2300018: fence001
-    2300020: fence002
-    2300022: fence003
-    2300024: fence004
-    2300026: fence005
-    2300028: fence006
-    2300030: fence007
-    2300032: octagon
-    3300000: corner001
-    3300002: corner002
-    3300004: corner003
-    3300006: corner004
-    3300008: corner005
-    3300010: corner006
-    3300012: corner007
-    3300014: corner008
-    3300016: fence
-    3300018: fence001
-    3300020: fence002
-    3300022: fence003
-    3300024: fence004
-    3300026: fence005
-    3300028: fence006
-    3300030: fence007
-    3300032: octagon
-    4300000: fence
-    4300002: corner002
-    4300004: corner007
-    4300006: corner008
-    4300008: fence001
-    4300010: fence002
-    4300012: corner003
-    4300014: corner004
-    4300016: corner001
-    4300018: corner005
-    4300020: corner006
-    4300022: fence004
-    4300024: fence005
-    4300026: fence006
-    4300028: fence007
-    4300030: fence003
-    4300032: octagon
+  serializedVersion: 24200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: corner001
+  - first:
+      1: 100002
+    second: corner002
+  - first:
+      1: 100004
+    second: corner003
+  - first:
+      1: 100006
+    second: corner004
+  - first:
+      1: 100008
+    second: corner005
+  - first:
+      1: 100010
+    second: corner006
+  - first:
+      1: 100012
+    second: corner007
+  - first:
+      1: 100014
+    second: corner008
+  - first:
+      1: 100016
+    second: fence
+  - first:
+      1: 100018
+    second: fence001
+  - first:
+      1: 100020
+    second: fence002
+  - first:
+      1: 100022
+    second: fence003
+  - first:
+      1: 100024
+    second: fence004
+  - first:
+      1: 100026
+    second: fence005
+  - first:
+      1: 100028
+    second: fence006
+  - first:
+      1: 100030
+    second: fence007
+  - first:
+      1: 100032
+    second: //RootNode
+  - first:
+      1: 100034
+    second: octagon
+  - first:
+      4: 400000
+    second: corner001
+  - first:
+      4: 400002
+    second: corner002
+  - first:
+      4: 400004
+    second: corner003
+  - first:
+      4: 400006
+    second: corner004
+  - first:
+      4: 400008
+    second: corner005
+  - first:
+      4: 400010
+    second: corner006
+  - first:
+      4: 400012
+    second: corner007
+  - first:
+      4: 400014
+    second: corner008
+  - first:
+      4: 400016
+    second: fence
+  - first:
+      4: 400018
+    second: fence001
+  - first:
+      4: 400020
+    second: fence002
+  - first:
+      4: 400022
+    second: fence003
+  - first:
+      4: 400024
+    second: fence004
+  - first:
+      4: 400026
+    second: fence005
+  - first:
+      4: 400028
+    second: fence006
+  - first:
+      4: 400030
+    second: fence007
+  - first:
+      4: 400032
+    second: octagon
+  - first:
+      4: 400034
+    second: //RootNode
+  - first:
+      23: 2300000
+    second: corner001
+  - first:
+      23: 2300002
+    second: corner002
+  - first:
+      23: 2300004
+    second: corner003
+  - first:
+      23: 2300006
+    second: corner004
+  - first:
+      23: 2300008
+    second: corner005
+  - first:
+      23: 2300010
+    second: corner006
+  - first:
+      23: 2300012
+    second: corner007
+  - first:
+      23: 2300014
+    second: corner008
+  - first:
+      23: 2300016
+    second: fence
+  - first:
+      23: 2300018
+    second: fence001
+  - first:
+      23: 2300020
+    second: fence002
+  - first:
+      23: 2300022
+    second: fence003
+  - first:
+      23: 2300024
+    second: fence004
+  - first:
+      23: 2300026
+    second: fence005
+  - first:
+      23: 2300028
+    second: fence006
+  - first:
+      23: 2300030
+    second: fence007
+  - first:
+      23: 2300032
+    second: octagon
+  - first:
+      33: 3300000
+    second: corner001
+  - first:
+      33: 3300002
+    second: corner002
+  - first:
+      33: 3300004
+    second: corner003
+  - first:
+      33: 3300006
+    second: corner004
+  - first:
+      33: 3300008
+    second: corner005
+  - first:
+      33: 3300010
+    second: corner006
+  - first:
+      33: 3300012
+    second: corner007
+  - first:
+      33: 3300014
+    second: corner008
+  - first:
+      33: 3300016
+    second: fence
+  - first:
+      33: 3300018
+    second: fence001
+  - first:
+      33: 3300020
+    second: fence002
+  - first:
+      33: 3300022
+    second: fence003
+  - first:
+      33: 3300024
+    second: fence004
+  - first:
+      33: 3300026
+    second: fence005
+  - first:
+      33: 3300028
+    second: fence006
+  - first:
+      33: 3300030
+    second: fence007
+  - first:
+      33: 3300032
+    second: octagon
+  - first:
+      43: 4300000
+    second: fence
+  - first:
+      43: 4300002
+    second: corner002
+  - first:
+      43: 4300004
+    second: corner007
+  - first:
+      43: 4300006
+    second: corner008
+  - first:
+      43: 4300008
+    second: fence001
+  - first:
+      43: 4300010
+    second: fence002
+  - first:
+      43: 4300012
+    second: corner003
+  - first:
+      43: 4300014
+    second: corner004
+  - first:
+      43: 4300016
+    second: corner001
+  - first:
+      43: 4300018
+    second: corner005
+  - first:
+      43: 4300020
+    second: corner006
+  - first:
+      43: 4300022
+    second: fence004
+  - first:
+      43: 4300024
+    second: fence005
+  - first:
+      43: 4300026
+    second: fence006
+  - first:
+      43: 4300028
+    second: fence007
+  - first:
+      43: 4300030
+    second: fence003
+  - first:
+      43: 4300032
+    second: octagon
   externalObjects:
   - first:
       type: UnityEngine:Material
@@ -117,18 +291,17 @@ ModelImporter:
       name: octa
     second: {fileID: 2100000, guid: 9623ac7bdcf9ed942880df4431857700, type: 2}
   materials:
-    importMaterials: 1
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -150,25 +323,39 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 1
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -177,10 +364,10 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -190,13 +377,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

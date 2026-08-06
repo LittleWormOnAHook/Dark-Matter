@@ -20,7 +20,7 @@ MonoBehaviour:
   meleeWeaponItem: {fileID: 11400000, guid: acc8c5e8067ca3644964e55a91642ee8, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0
-  maxHealth: 60
+  maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0
@@ -31,8 +31,13 @@ MonoBehaviour:
   visionRange: 8
   visionFov: 120
   eyeHeight: 1.4
-  hearingRange: 20
+  senseHearingEnabled: 1
+  hearingRange: 10
   proximityRange: 2.5
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
   attackRange: 1.8
   attackDamage: 12
   attackCooldown: 1.2

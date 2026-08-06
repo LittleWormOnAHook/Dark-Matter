@@ -31,6 +31,8 @@ namespace Project.Interaction
         private UIManager uiManager;
         private Collider[] colliders;
         private Renderer[] renderers;
+        private bool[] colliderWasEnabled;
+        private bool[] rendererWasEnabled;
         private bool isPickedUp = false;
         private int respawnAmount = 1;
 
@@ -91,7 +93,7 @@ namespace Project.Interaction
             return TryCollectFor(context.Inventory, showPlayerPrompt: true);
         }
 
-        public void PrepareForWorldDrop(ItemData item, int dropAmount)
+public void PrepareForWorldDrop(ItemData item, int dropAmount)
         {
             itemData = item;
             amount = dropAmount;
@@ -109,21 +111,18 @@ namespace Project.Interaction
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
 
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                if (renderers[i] != null)
-                    renderers[i].enabled = true;
-            }
-
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                if (colliders[i] != null)
-                    colliders[i].enabled = true;
-            }
+            // Do not force-enable every Renderer/Collider. World pickup prefabs often keep
+            // shell meshes disabled on purpose (e.g. Plasma Fuel barrel vs canister child).
+            // Blindly enabling them shows the wrong mesh / loses the authored look.
 
             ResourceNode resourceNode = GetComponent<ResourceNode>();
             if (resourceNode != null)
-                Destroy(resourceNode);
+            {
+                if (Application.isPlaying)
+                    Destroy(resourceNode);
+                else
+                    DestroyImmediate(resourceNode);
+            }
         }
 
         private void EnsurePickupTriggerCollider()
@@ -268,15 +267,26 @@ namespace Project.Interaction
         {
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            colliderWasEnabled = new bool[colliders.Length];
+            rendererWasEnabled = new bool[renderers.Length];
 
-            foreach (var col in colliders)
+            for (int i = 0; i < colliders.Length; i++)
             {
-                if (col != null) col.enabled = false;
+                Collider col = colliders[i];
+                if (col == null)
+                    continue;
+                colliderWasEnabled[i] = col.enabled;
+                col.enabled = false;
             }
 
-            foreach (var rend in renderers)
+            for (int i = 0; i < renderers.Length; i++)
             {
-                if (rend != null) rend.enabled = false;
+                Renderer rend = renderers[i];
+                if (rend == null)
+                    continue;
+                // Remember prefab-authored visibility so respawn does not turn on shell meshes.
+                rendererWasEnabled[i] = rend.enabled;
+                rend.enabled = false;
             }
 
             ParticleSystem[] particles = GetComponentsInChildren<ParticleSystem>(true);
@@ -302,21 +312,31 @@ namespace Project.Interaction
             if (!gameObject.activeSelf)
                 gameObject.SetActive(true);
 
-            foreach (var col in colliders)
+            if (colliders != null)
             {
-                if (col != null) col.enabled = true;
+                for (int i = 0; i < colliders.Length; i++)
+                {
+                    if (colliders[i] == null)
+                        continue;
+                    bool wasEnabled = colliderWasEnabled != null && i < colliderWasEnabled.Length && colliderWasEnabled[i];
+                    colliders[i].enabled = wasEnabled;
+                }
             }
 
-            foreach (var rend in renderers)
+            if (renderers != null)
             {
-                if (rend != null) rend.enabled = true;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] == null)
+                        continue;
+                    bool wasEnabled = rendererWasEnabled != null && i < rendererWasEnabled.Length && rendererWasEnabled[i];
+                    renderers[i].enabled = wasEnabled;
+                }
             }
 
             Collider mainCollider = GetComponent<Collider>();
             if (mainCollider != null)
-            {
                 mainCollider.isTrigger = true;
-            }
 
             PickupProximityDotUI.Register(this);
         }

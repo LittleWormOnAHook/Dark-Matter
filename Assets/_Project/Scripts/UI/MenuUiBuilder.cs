@@ -153,19 +153,30 @@ namespace Project.UI
         /// this to the sub-panel's own root — NOT the VerticalLayoutGroup-driven window content inside
         /// it — so it stays pinned to the corner regardless of what's laid out below it.
         /// </summary>
-        public static Button CreateTopRightBackButton(Transform panelRoot, UnityAction onClick)
+        public static Button CreateTopRightBackButton(
+            Transform panelRoot,
+            UnityAction onClick,
+            float width = -1f,
+            float height = -1f,
+            float fontSize = -1f,
+            float inset = -1f)
         {
+            float resolvedWidth = width > 0f ? width : ScaledSize(120f);
+            float resolvedHeight = height > 0f ? height : ScaledSize(44f);
+            float resolvedFont = fontSize > 0f ? fontSize : ScaledSize(18f);
+            float resolvedInset = inset >= 0f ? inset : ScaledSize(20f);
+
             Button button = CreateButton(
                 panelRoot,
                 "Back",
-                new Vector2(ScaledSize(120f), ScaledSize(44f)),
-                ScaledSize(18f));
+                new Vector2(resolvedWidth, resolvedHeight),
+                resolvedFont);
 
             RectTransform rect = button.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(1f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(1f, 1f);
-            rect.anchoredPosition = new Vector2(-ScaledSize(20f), -ScaledSize(20f));
+            rect.anchoredPosition = new Vector2(-resolvedInset, -resolvedInset);
 
             if (onClick != null)
                 button.onClick.AddListener(onClick);
@@ -329,7 +340,7 @@ namespace Project.UI
             row.transform.SetParent(parent, false);
 
             VerticalLayoutGroup rowLayout = row.AddComponent<VerticalLayoutGroup>();
-            rowLayout.spacing = 4;
+            rowLayout.spacing = 2;
             rowLayout.childControlWidth = true;
             rowLayout.childForceExpandWidth = true;
 
@@ -340,13 +351,14 @@ namespace Project.UI
             labelLayout.childControlWidth = true;
             labelLayout.childForceExpandWidth = true;
 
-            TextMeshProUGUI nameLabel = CreateRowLabel(labelRow.transform, label, 18, TextAlignmentOptions.MidlineLeft);
+            TextMeshProUGUI nameLabel = CreateRowLabel(labelRow.transform, label, 14, TextAlignmentOptions.MidlineLeft);
             LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
             nameLayout.flexibleWidth = 1f;
 
-            valueLabel = CreateRowLabel(labelRow.transform, "100%", 18, TextAlignmentOptions.MidlineRight);
+            valueLabel = CreateRowLabel(labelRow.transform, "100%", 14, TextAlignmentOptions.MidlineRight);
             LayoutElement valueLayout = valueLabel.gameObject.AddComponent<LayoutElement>();
-            valueLayout.minWidth = 70f;
+            valueLayout.minWidth = 44f;
+            valueLayout.preferredWidth = 44f;
 
             GameObject sliderObject = new GameObject("Slider", typeof(RectTransform), typeof(Slider));
             sliderObject.transform.SetParent(row.transform, false);
@@ -356,7 +368,8 @@ namespace Project.UI
             slider.value = initialValue;
 
             LayoutElement sliderLayout = sliderObject.AddComponent<LayoutElement>();
-            sliderLayout.minHeight = 24f;
+            sliderLayout.minHeight = 16f;
+            sliderLayout.preferredHeight = 16f;
 
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(sliderObject.transform, false);
@@ -374,8 +387,8 @@ namespace Project.UI
             RectTransform fillAreaRect = fillArea.GetComponent<RectTransform>();
             fillAreaRect.anchorMin = Vector2.zero;
             fillAreaRect.anchorMax = Vector2.one;
-            fillAreaRect.offsetMin = new Vector2(8f, 0f);
-            fillAreaRect.offsetMax = new Vector2(-8f, 0f);
+            fillAreaRect.offsetMin = new Vector2(6f, 0f);
+            fillAreaRect.offsetMax = new Vector2(-6f, 0f);
 
             GameObject fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fill.transform.SetParent(fillArea.transform, false);
@@ -402,14 +415,15 @@ namespace Project.UI
             ApplyUiSprite(handleImage);
             handleImage.color = Color.white;
             RectTransform handleRect = handle.GetComponent<RectTransform>();
-            handleRect.sizeDelta = new Vector2(16f, 16f);
+            handleRect.sizeDelta = new Vector2(12f, 12f);
 
             slider.fillRect = fillRect;
             slider.handleRect = handleRect;
             slider.targetGraphic = handleImage;
 
             LayoutElement rowLayoutElement = row.AddComponent<LayoutElement>();
-            rowLayoutElement.minHeight = 56f;
+            rowLayoutElement.minHeight = 36f;
+            rowLayoutElement.preferredHeight = 36f;
             return slider;
         }
 
@@ -420,7 +434,7 @@ namespace Project.UI
 
             HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.spacing = 12;
+            layout.spacing = 8;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
 
@@ -430,8 +444,10 @@ namespace Project.UI
             toggle.isOn = initialValue;
 
             LayoutElement toggleLayout = toggleObject.AddComponent<LayoutElement>();
-            toggleLayout.minWidth = 28f;
-            toggleLayout.minHeight = 28f;
+            toggleLayout.minWidth = 20f;
+            toggleLayout.preferredWidth = 20f;
+            toggleLayout.minHeight = 20f;
+            toggleLayout.preferredHeight = 20f;
 
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(toggleObject.transform, false);
@@ -458,9 +474,10 @@ namespace Project.UI
             toggle.graphic = checkImage;
             toggle.targetGraphic = backgroundImage;
 
-            CreateRowLabel(row.transform, label, 18, TextAlignmentOptions.MidlineLeft);
+            CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.minHeight = 36f;
+            rowLayout.minHeight = 26f;
+            rowLayout.preferredHeight = 26f;
             return toggle;
         }
 
@@ -472,7 +489,7 @@ namespace Project.UI
 
             HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.spacing = 12;
+            layout.spacing = 8;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
 
@@ -482,8 +499,10 @@ namespace Project.UI
             toggle.isOn = initialValue;
 
             LayoutElement toggleLayout = toggleObject.AddComponent<LayoutElement>();
-            toggleLayout.minWidth = 28f;
-            toggleLayout.minHeight = 28f;
+            toggleLayout.minWidth = 20f;
+            toggleLayout.preferredWidth = 20f;
+            toggleLayout.minHeight = 20f;
+            toggleLayout.preferredHeight = 20f;
 
             GameObject outlineObject = new GameObject("Outline", typeof(RectTransform), typeof(Image));
             outlineObject.transform.SetParent(toggleObject.transform, false);
@@ -530,9 +549,10 @@ namespace Project.UI
             toggle.graphic = fillImage;
             toggle.targetGraphic = outlineImage;
 
-            CreateRowLabel(row.transform, label, 18, TextAlignmentOptions.MidlineLeft);
+            CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.minHeight = 36f;
+            rowLayout.minHeight = 26f;
+            rowLayout.preferredHeight = 26f;
             return toggle;
         }
 
@@ -542,19 +562,22 @@ namespace Project.UI
             row.transform.SetParent(parent, false);
 
             VerticalLayoutGroup layout = row.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 4;
+            layout.spacing = 2;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
 
-            CreateRowLabel(row.transform, label, 18, TextAlignmentOptions.MidlineLeft);
+            CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
 
-            GameObject dropdownObject = new GameObject("Dropdown", typeof(RectTransform), typeof(Image), typeof(Dropdown));
+            GameObject dropdownObject = new GameObject("Dropdown", typeof(RectTransform), typeof(Image), typeof(Dropdown), typeof(LayoutElement));
             dropdownObject.transform.SetParent(row.transform, false);
             Image dropdownImage = dropdownObject.GetComponent<Image>();
             ApplyUiSprite(dropdownImage);
             dropdownImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
+            LayoutElement dropdownLayout = dropdownObject.GetComponent<LayoutElement>();
+            dropdownLayout.minHeight = 26f;
+            dropdownLayout.preferredHeight = 26f;
             RectTransform dropdownRect = dropdownObject.GetComponent<RectTransform>();
-            dropdownRect.sizeDelta = new Vector2(0f, 36f);
+            dropdownRect.sizeDelta = new Vector2(0f, 26f);
 
             Dropdown dropdown = dropdownObject.GetComponent<Dropdown>();
             dropdown.targetGraphic = dropdownImage;
@@ -569,8 +592,9 @@ namespace Project.UI
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(12f, 0f);
-            labelRect.offsetMax = new Vector2(-28f, 0f);
+            labelText.fontSize = 14;
+            labelRect.offsetMin = new Vector2(8f, 0f);
+            labelRect.offsetMax = new Vector2(-22f, 0f);
             dropdown.captionText = labelText;
 
             GameObject template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -584,7 +608,7 @@ namespace Project.UI
             templateRect.anchorMax = new Vector2(1f, 0f);
             templateRect.pivot = new Vector2(0.5f, 1f);
             templateRect.anchoredPosition = new Vector2(0f, 2f);
-            templateRect.sizeDelta = new Vector2(0f, 150f);
+            templateRect.sizeDelta = new Vector2(0f, 120f);
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
             viewport.transform.SetParent(template.transform, false);
@@ -605,14 +629,14 @@ namespace Project.UI
             contentRect.anchorMax = new Vector2(1f, 1f);
             contentRect.pivot = new Vector2(0.5f, 1f);
             contentRect.anchoredPosition = Vector2.zero;
-            contentRect.sizeDelta = new Vector2(0f, 28f);
+            contentRect.sizeDelta = new Vector2(0f, 22f);
 
             GameObject item = new GameObject("Item", typeof(RectTransform), typeof(Toggle));
             item.transform.SetParent(content.transform, false);
             RectTransform itemRect = item.GetComponent<RectTransform>();
             itemRect.anchorMin = new Vector2(0f, 0.5f);
             itemRect.anchorMax = new Vector2(1f, 0.5f);
-            itemRect.sizeDelta = new Vector2(0f, 28f);
+            itemRect.sizeDelta = new Vector2(0f, 22f);
 
             GameObject itemBackground = new GameObject("Item Background", typeof(RectTransform), typeof(Image));
             itemBackground.transform.SetParent(item.transform, false);
@@ -629,14 +653,15 @@ namespace Project.UI
             itemLabelObject.transform.SetParent(item.transform, false);
             Text itemLabel = itemLabelObject.AddComponent<Text>();
             itemLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            itemLabel.fontSize = 14;
             itemLabel.color = SurvivalPioneerUiPalette.BodyText;
             itemLabel.alignment = TextAnchor.MiddleLeft;
             itemLabel.raycastTarget = false;
             RectTransform itemLabelRect = itemLabelObject.GetComponent<RectTransform>();
             itemLabelRect.anchorMin = Vector2.zero;
             itemLabelRect.anchorMax = Vector2.one;
-            itemLabelRect.offsetMin = new Vector2(12f, 0f);
-            itemLabelRect.offsetMax = new Vector2(-12f, 0f);
+            itemLabelRect.offsetMin = new Vector2(8f, 0f);
+            itemLabelRect.offsetMax = new Vector2(-8f, 0f);
 
             Toggle itemToggle = item.GetComponent<Toggle>();
             itemToggle.targetGraphic = itemBackgroundImage;
@@ -653,7 +678,8 @@ namespace Project.UI
             dropdown.itemText = itemLabel;
 
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.minHeight = 72f;
+            rowLayout.minHeight = 46f;
+            rowLayout.preferredHeight = 46f;
             return dropdown;
         }
 

@@ -144,10 +144,10 @@ namespace Project.UI
 
         private void Update()
         {
-            if (!IsOpen || Keyboard.current == null)
+            if (!IsOpen)
                 return;
 
-            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (UiEscapeGate.TryConsumeEscape())
             {
                 Close();
                 return;

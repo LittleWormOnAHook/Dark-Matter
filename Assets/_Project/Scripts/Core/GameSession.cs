@@ -1,4 +1,5 @@
 using System;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.Core
@@ -30,6 +31,8 @@ namespace Project.Core
         public static void SetPhase(GamePhase phase)
         {
             Phase = phase;
+            if (Application.isPlaying)
+                GameAudioManager.SyncWorldAudioGate();
         }
 
         public static void MarkStarted()
@@ -38,12 +41,16 @@ namespace Project.Core
                 return;
 
             Phase = GamePhase.Playing;
+            if (Application.isPlaying)
+                GameAudioManager.SyncWorldAudioGate();
             GameStarted?.Invoke();
         }
 
         public static void ResetSession()
         {
             Phase = GamePhase.MainMenu;
+            if (Application.isPlaying)
+                GameAudioManager.SyncWorldAudioGate();
         }
     }
 }

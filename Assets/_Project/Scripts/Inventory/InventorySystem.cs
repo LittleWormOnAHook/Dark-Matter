@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Project.Combat;
 using Project.Data;
 using Project.Interaction;
+using Project.Rendering;
 using Project.Survival;
 using UnityEngine;
 
@@ -37,6 +39,15 @@ namespace Project.Inventory
 
         private SurvivalStats survivalStats;
         private EquipmentController equipment;
+
+        // Consecutive drop spacing — keep rapid drops from stacking on one spot.
+        private Vector3 lastDropSettledPosition;
+        private Vector3 lastDropPlayerPosition;
+        private float lastDropTime = -999f;
+        private int dropBurstIndex;
+        private const float DropSpacingResetSeconds = 2.5f;
+        private const float DropSpacingResetPlayerDistance = 3.5f;
+        private const float DropSpacingStep = 0.55f;
 
         private void Awake()
         {
@@ -512,81 +523,531 @@ namespace Project.Inventory
             if (item == null || amount <= 0)
                 return false;
 
-            const float dropDistance = 1f;
-            Vector3 dropPosition = ResolveDropPosition(dropDistance);
+            const float dropDistance = 1.15f;
+            Vector3 dropHint = ResolveDropHintPosition(dropDistance);
 
-            GameObject droppedObject;
-            if (item.worldPrefab != null)
-            {
-                droppedObject = Instantiate(item.worldPrefab, dropPosition, Quaternion.identity);
-            }
-            else
-            {
-                droppedObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                droppedObject.name = $"Dropped_{item.itemName}";
-                droppedObject.transform.position = dropPosition;
-                droppedObject.transform.localScale = Vector3.one * 0.35f;
-            }
+            GameObject prefab = ResolveWorldDropPrefab(item);
+            GameObject droppedObject = prefab != null
+                ? Instantiate(prefab, dropHint, Quaternion.identity)
+                : CreateFallbackDropVisual(item, dropHint);
+
+            // Keep meshes/materials/renderer enabled flags identical to the pickup prefab.
+            if (prefab != null)
+                RestorePrefabVisualState(droppedObject, prefab);
+
+            StripNonPickupBehaviours(droppedObject);
 
             ItemPickup pickup = droppedObject.GetComponent<ItemPickup>();
+            if (pickup == null)
+                pickup = droppedObject.GetComponentInChildren<ItemPickup>();
             if (pickup == null)
                 pickup = droppedObject.AddComponent<ItemPickup>();
 
             pickup.PrepareForWorldDrop(item, amount);
             EnsureDroppedPhysicsAndPickup(droppedObject);
 
-            Rigidbody body = droppedObject.GetComponent<Rigidbody>();
-            if (body == null)
-                body = droppedObject.AddComponent<Rigidbody>();
+            // Re-assert after pickup prep so PrepareForWorldDrop cannot drift visuals.
+            if (prefab != null)
+                RestorePrefabVisualState(droppedObject, prefab);
 
-            body.isKinematic = false;
-            body.detectCollisions = true;
-            body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
-            body.useGravity = true;
-            body.WakeUp();
+            SettleDroppedItemOnTerrain(droppedObject, dropHint);
+            RememberDropPosition(droppedObject.transform.position);
             return true;
         }
 
-        private Vector3 ResolveDropPosition(float dropDistance)
+        private static GameObject ResolveWorldDropPrefab(ItemData item)
+        {
+            if (item == null)
+                return null;
+
+            // Always prefer the authored world/pickup prefab so drops match scene pickups
+            // (World/*_World, Ammo/*_Pickup, weapon world shells, etc.).
+            if (item.worldPrefab != null)
+                return item.worldPrefab;
+
+            // Held meshes are often grip-scaled / stripped for hands — only use when they are
+            // not an explicit *_Held variant (those rarely match pickup look).
+            if (item.heldPrefab != null && !IsHandOnlyHeldPrefab(item.heldPrefab))
+                return item.heldPrefab;
+
+            // Weapons sometimes only author the Invector equip prefab — still better than a cube.
+            if (item.invectorWeaponPrefab != null)
+                return item.invectorWeaponPrefab;
+
+            // Last resort: held grip mesh when no world/pickup exists.
+            if (item.heldPrefab != null)
+                return item.heldPrefab;
+
+            return null;
+        }
+
+        private static bool IsHandOnlyHeldPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            string name = prefab.name;
+            return name.EndsWith("_Held", System.StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith("_Hand", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+
+        private static GameObject CreateFallbackDropVisual(ItemData item, Vector3 position)
+        {
+            GameObject droppedObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            droppedObject.name = $"Dropped_{item.itemName}";
+            droppedObject.transform.position = position;
+            droppedObject.transform.localScale = Vector3.one * 0.28f;
+
+            Collider primitiveCollider = droppedObject.GetComponent<Collider>();
+            if (primitiveCollider != null)
+                primitiveCollider.isTrigger = true;
+
+            if (item.icon != null)
+            {
+                Renderer renderer = droppedObject.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                    if (shader != null)
+                    {
+                        Material material = new Material(shader);
+                        material.mainTexture = item.icon.texture;
+                        material.color = Color.white;
+                        renderer.sharedMaterial = material;
+                    }
+                }
+            }
+
+            return droppedObject;
+        }
+
+private static void StripNonPickupBehaviours(GameObject droppedObject)
+        {
+            if (droppedObject == null)
+                return;
+
+            // Strip combat/runtime behaviours only — never touch MeshFilters, Renderers, or materials.
+            CombatProjectile[] projectiles =
+                droppedObject.GetComponentsInChildren<CombatProjectile>(true);
+            for (int i = 0; i < projectiles.Length; i++)
+                DestroyDroppedComponent(projectiles[i]);
+
+            WeaponHitbox[] hitboxes =
+                droppedObject.GetComponentsInChildren<WeaponHitbox>(true);
+            for (int i = 0; i < hitboxes.Length; i++)
+                DestroyDroppedComponent(hitboxes[i]);
+
+            EquippedVisualMarker[] markers =
+                droppedObject.GetComponentsInChildren<EquippedVisualMarker>(true);
+            for (int i = 0; i < markers.Length; i++)
+                DestroyDroppedComponent(markers[i]);
+
+            ResourceNode[] nodes = droppedObject.GetComponentsInChildren<ResourceNode>(true);
+            for (int i = 0; i < nodes.Length; i++)
+                DestroyDroppedComponent(nodes[i]);
+
+            Rigidbody[] bodies = droppedObject.GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody body = bodies[i];
+                if (body == null || body.gameObject == droppedObject)
+                    continue;
+                DestroyDroppedComponent(body);
+            }
+        }
+
+private static void DestroyDroppedComponent(Object component)
+        {
+            if (component == null)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(component);
+            else
+                Object.DestroyImmediate(component);
+        }
+
+
+        private Vector3 ResolveDropHintPosition(float dropDistance)
         {
             Vector3 forward = transform.forward;
             forward.y = 0f;
             if (forward.sqrMagnitude < 0.001f)
                 forward = Vector3.forward;
-
             forward.Normalize();
-            Vector3 probeOrigin = transform.position + forward * dropDistance + Vector3.up * 1.5f;
 
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            if (right.sqrMagnitude < 0.001f)
+                right = Vector3.right;
+            right.Normalize();
+
+            Vector3 hint = transform.position + forward * dropDistance;
+
+            float now = Time.time;
+            bool resetBurst =
+                dropBurstIndex <= 0
+                || (now - lastDropTime) > DropSpacingResetSeconds
+                || Vector3.Distance(transform.position, lastDropPlayerPosition)
+                    > DropSpacingResetPlayerDistance;
+
+            if (resetBurst)
+            {
+                dropBurstIndex = 0;
+                lastDropPlayerPosition = transform.position;
+            }
+            else
+            {
+                // Spiral / ring around the last settled drop so stacks fan out.
+                float angleRad = dropBurstIndex * (70f * Mathf.Deg2Rad);
+                float radius = DropSpacingStep * (1f + (dropBurstIndex - 1) * 0.12f);
+                Vector3 ring =
+                    right * (Mathf.Sin(angleRad) * radius)
+                    + forward * (Mathf.Cos(angleRad) * radius * 0.35f);
+                hint = lastDropSettledPosition + ring;
+
+                // Keep the fan roughly in front of the player (don't walk behind).
+                Vector3 fromPlayer = hint - transform.position;
+                fromPlayer.y = 0f;
+                float ahead = Vector3.Dot(fromPlayer, forward);
+                if (ahead < dropDistance * 0.55f)
+                    hint += forward * (dropDistance * 0.55f - ahead);
+            }
+
+            if (TryGetDropGroundY(hint, out float groundY))
+                hint.y = groundY + 0.35f;
+            else
+                hint.y = transform.position.y + 0.35f;
+
+            return hint;
+        }
+
+        private void RememberDropPosition(Vector3 settledPosition)
+        {
+            lastDropSettledPosition = settledPosition;
+            lastDropTime = Time.time;
+            lastDropPlayerPosition = transform.position;
+            dropBurstIndex++;
+        }
+
+        private bool TryGetDropGroundY(Vector3 worldPosition, out float groundY)
+        {
+            groundY = worldPosition.y;
+
+            float originY = worldPosition.y + 3f;
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain != null)
+            {
+                float terrainY = terrain.SampleHeight(worldPosition) + terrain.transform.position.y;
+                originY = Mathf.Max(originY, terrainY + 4f);
+            }
+
+            Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
+            float rayLength = originY - (worldPosition.y - 8f);
             RaycastHit[] hits = Physics.RaycastAll(
-                probeOrigin,
+                origin,
                 Vector3.down,
-                4f,
+                Mathf.Max(4f, rayLength),
                 Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
 
             float closestDistance = float.MaxValue;
-            Vector3 closestPoint = default;
             bool foundGround = false;
 
             for (int i = 0; i < hits.Length; i++)
             {
                 Collider hitCollider = hits[i].collider;
-                if (hitCollider == null || hitCollider.CompareTag("Player"))
+                if (IsIgnorableDropSurface(hitCollider))
                     continue;
 
                 if (hits[i].distance >= closestDistance)
                     continue;
 
                 closestDistance = hits[i].distance;
-                closestPoint = hits[i].point;
+                groundY = hits[i].point.y;
                 foundGround = true;
             }
 
             if (foundGround)
-                return closestPoint + Vector3.up * 0.08f;
+                return true;
 
-            return transform.position + forward * dropDistance + Vector3.up * 0.2f;
+            if (terrain != null)
+            {
+                groundY = terrain.SampleHeight(worldPosition) + terrain.transform.position.y;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsIgnorableDropSurface(Collider hitCollider)
+        {
+            if (hitCollider == null || hitCollider.isTrigger)
+                return true;
+
+            if (hitCollider.CompareTag("Player"))
+                return true;
+
+            Transform hitTransform = hitCollider.transform;
+            if (hitTransform == transform || hitTransform.IsChildOf(transform))
+                return true;
+
+            // Invector / ECM bodies often leave player colliders untagged.
+            if (hitCollider.GetComponentInParent<InventorySystem>() == this)
+                return true;
+
+            int layer = hitCollider.gameObject.layer;
+            if (layer == LayerMask.NameToLayer("Item")
+                || layer == LayerMask.NameToLayer("Player")
+                || layer == LayerMask.NameToLayer("Enemy")
+                || layer == LayerMask.NameToLayer("CompanionAI")
+                || layer == LayerMask.NameToLayer("Triggers")
+                || layer == LayerMask.NameToLayer("BodyPart"))
+                return true;
+
+            return false;
+        }
+
+        private void SettleDroppedItemOnTerrain(GameObject droppedObject, Vector3 hintPosition)
+        {
+            if (droppedObject == null)
+                return;
+
+            Vector3 position = droppedObject.transform.position;
+            position.x = hintPosition.x;
+            position.z = hintPosition.z;
+
+            if (!TryGetDropGroundY(position, out float groundY))
+                groundY = hintPosition.y;
+
+            Bounds bounds = CalculateRendererBounds(droppedObject);
+            float bottomOffset = 0.05f;
+            if (bounds.size.sqrMagnitude > 0.0001f)
+                bottomOffset = Mathf.Max(0.02f, position.y - bounds.min.y);
+
+            position.y = groundY + bottomOffset;
+            droppedObject.transform.position = position;
+
+            // Sit like scene pickups — no bounce / fall-through.
+            // Unity 6 errors if linear/angular velocity is written while kinematic, so park
+            // without touching velocities (fresh Rigidbodies are already at rest).
+            Rigidbody body = droppedObject.GetComponent<Rigidbody>();
+            if (body == null)
+                body = droppedObject.AddComponent<Rigidbody>();
+
+            if (!body.isKinematic)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+
+            body.useGravity = false;
+            body.detectCollisions = true;
+            body.isKinematic = true;
+        }
+
+        private static Bounds CalculateRendererBounds(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
+            bool hasBounds = false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                    continue;
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return bounds;
+        }
+
+        /// <summary>
+        /// Copies renderer enabled flags + sharedMaterials from the source world prefab so drops
+        /// stay identical to scene pickups (nested prefab shells, authored materials, etc.).
+        /// </summary>
+/// <summary>
+        /// Copies mesh + renderer enabled flags + sharedMaterials from the source world prefab so
+        /// every inventory drop stays identical to scene pickups (nested prefab shells, authored
+        /// materials, intentionally disabled shell meshes, ammo FBX scales, weapons, etc.).
+        /// Does not force-enable renderers — restores prefab state only.
+        /// </summary>
+        private static void RestorePrefabVisualState(GameObject instance, GameObject prefab)
+        {
+            if (instance == null || prefab == null)
+                return;
+
+            // Preserve authored root scale (tiny FBX ammo uses large scale; Plasma Fuel uses 0.5).
+            instance.transform.localScale = prefab.transform.localScale;
+
+            MeshFilter[] prefabFilters = prefab.GetComponentsInChildren<MeshFilter>(true);
+            MeshFilter[] instanceFilters = instance.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < prefabFilters.Length; i++)
+            {
+                MeshFilter prefabFilter = prefabFilters[i];
+                if (prefabFilter == null)
+                    continue;
+
+                MeshFilter instanceFilter = FindMatchingComponent(
+                    prefab.transform,
+                    instance.transform,
+                    prefabFilter,
+                    instanceFilters,
+                    i);
+                if (instanceFilter != null && prefabFilter.sharedMesh != null)
+                    instanceFilter.sharedMesh = prefabFilter.sharedMesh;
+            }
+
+            SkinnedMeshRenderer[] prefabSkinned =
+                prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            SkinnedMeshRenderer[] instanceSkinned =
+                instance.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < prefabSkinned.Length; i++)
+            {
+                SkinnedMeshRenderer prefabSkin = prefabSkinned[i];
+                if (prefabSkin == null)
+                    continue;
+
+                SkinnedMeshRenderer instanceSkin = FindMatchingComponent(
+                    prefab.transform,
+                    instance.transform,
+                    prefabSkin,
+                    instanceSkinned,
+                    i);
+                if (instanceSkin != null && prefabSkin.sharedMesh != null)
+                    instanceSkin.sharedMesh = prefabSkin.sharedMesh;
+            }
+
+            Renderer[] prefabRenderers = prefab.GetComponentsInChildren<Renderer>(true);
+            Renderer[] instanceRenderers = instance.GetComponentsInChildren<Renderer>(true);
+
+            for (int i = 0; i < prefabRenderers.Length; i++)
+            {
+                Renderer prefabRenderer = prefabRenderers[i];
+                if (prefabRenderer == null)
+                    continue;
+
+                Renderer instanceRenderer = FindMatchingRenderer(
+                    prefab.transform,
+                    instance.transform,
+                    prefabRenderer,
+                    instanceRenderers,
+                    i);
+                if (instanceRenderer == null)
+                    continue;
+
+                instanceRenderer.enabled = prefabRenderer.enabled;
+
+                Material[] shared = prefabRenderer.sharedMaterials;
+                if (shared != null && shared.Length > 0)
+                {
+                    // Assign a copy so nested PrefabInstance overrides stick on the clone.
+                    Material[] copy = new Material[shared.Length];
+                    for (int m = 0; m < shared.Length; m++)
+                        copy[m] = shared[m];
+                    instanceRenderer.sharedMaterials = copy;
+                }
+            }
+
+            // Pulse/scroll drivers cache material slots in Awake — refresh after material restore.
+            DMIMaterialPulseScroll[] pulses =
+                instance.GetComponentsInChildren<DMIMaterialPulseScroll>(true);
+            for (int i = 0; i < pulses.Length; i++)
+            {
+                if (pulses[i] != null)
+                    pulses[i].RebuildCaches();
+            }
+        }
+
+private static Renderer FindMatchingRenderer(
+            Transform prefabRoot,
+            Transform instanceRoot,
+            Renderer prefabRenderer,
+            Renderer[] instanceRenderers,
+            int prefabIndex)
+        {
+            return FindMatchingComponent(
+                prefabRoot,
+                instanceRoot,
+                prefabRenderer,
+                instanceRenderers,
+                prefabIndex);
+        }
+
+private static T FindMatchingComponent<T>(
+            Transform prefabRoot,
+            Transform instanceRoot,
+            T prefabComponent,
+            T[] instanceComponents,
+            int prefabIndex)
+            where T : Component
+        {
+            if (prefabComponent == null)
+                return null;
+
+            string relativePath = GetRelativeTransformPath(prefabRoot, prefabComponent.transform);
+            Transform instanceTransform = string.IsNullOrEmpty(relativePath)
+                ? instanceRoot
+                : instanceRoot.Find(relativePath);
+            if (instanceTransform != null)
+            {
+                T byPath = instanceTransform.GetComponent<T>();
+                if (byPath != null)
+                    return byPath;
+            }
+
+            // Nested PrefabInstance path quirks — fall back to same DFS index / name.
+            if (instanceComponents != null
+                && prefabIndex >= 0
+                && prefabIndex < instanceComponents.Length
+                && instanceComponents[prefabIndex] != null
+                && instanceComponents[prefabIndex].name == prefabComponent.name)
+            {
+                return instanceComponents[prefabIndex];
+            }
+
+            if (instanceComponents == null)
+                return null;
+
+            for (int i = 0; i < instanceComponents.Length; i++)
+            {
+                T candidate = instanceComponents[i];
+                if (candidate != null && candidate.name == prefabComponent.name)
+                    return candidate;
+            }
+
+            return null;
+        }
+
+
+        private static string GetRelativeTransformPath(Transform root, Transform target)
+        {
+            if (root == null || target == null)
+                return string.Empty;
+
+            if (target == root)
+                return string.Empty;
+
+            System.Text.StringBuilder path = new System.Text.StringBuilder(target.name);
+            Transform current = target.parent;
+            while (current != null && current != root)
+            {
+                path.Insert(0, "/");
+                path.Insert(0, current.name);
+                current = current.parent;
+            }
+
+            return current == root ? path.ToString() : string.Empty;
         }
 
         private static void EnsureDroppedPhysicsAndPickup(GameObject droppedObject)
@@ -597,42 +1058,32 @@ namespace Project.Inventory
             if (rootTransform.localScale.sqrMagnitude < 0.0001f)
                 rootTransform.localScale = Vector3.one;
 
-            Renderer[] renderers = droppedObject.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                if (renderers[i] != null)
-                    renderers[i].enabled = true;
-            }
-
+            // Preserve prefab collider/renderer enabled flags — only ensure a pickup trigger exists.
             Collider[] colliders = droppedObject.GetComponentsInChildren<Collider>(true);
-            bool hasPhysicsCollider = false;
             bool hasTriggerCollider = false;
 
             for (int i = 0; i < colliders.Length; i++)
             {
                 Collider collider = colliders[i];
-                if (collider == null)
-                    continue;
-
-                collider.enabled = true;
-                if (collider.isTrigger)
+                if (collider != null && collider.enabled && collider.isTrigger)
+                {
                     hasTriggerCollider = true;
-                else
-                    hasPhysicsCollider = true;
+                    break;
+                }
             }
 
-            if (!hasPhysicsCollider)
-            {
-                SphereCollider physicsCollider = droppedObject.AddComponent<SphereCollider>();
-                physicsCollider.radius = 0.28f;
-                physicsCollider.isTrigger = false;
-            }
-
+            // World pickups are trigger-only interactables; keep that contract for drops.
             if (!hasTriggerCollider)
             {
+                Bounds bounds = CalculateRendererBounds(droppedObject);
                 SphereCollider triggerCollider = droppedObject.AddComponent<SphereCollider>();
-                triggerCollider.radius = 0.45f;
                 triggerCollider.isTrigger = true;
+                float radius = bounds.size.sqrMagnitude > 0.0001f
+                    ? Mathf.Clamp(Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.15f, 0.25f, 0.85f)
+                    : 0.45f;
+                triggerCollider.radius = radius;
+                if (bounds.size.sqrMagnitude > 0.0001f)
+                    triggerCollider.center = droppedObject.transform.InverseTransformPoint(bounds.center);
             }
 
             int itemLayer = LayerMask.NameToLayer("Item");

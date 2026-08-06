@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Project.Core;
+using Project.Player;
 using Project.Progression;
 using Project.Quests;
 using TMPro;
@@ -55,7 +56,7 @@ namespace Project.UI
 
             GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
             headerObject.transform.SetParent(transform, false);
-            headerObject.SetActive(false);
+            headerObject.SetActive(true);
             RectTransform headerRect = headerObject.GetComponent<RectTransform>();
             headerRect.anchorMin = new Vector2(0f, 1f);
             headerRect.anchorMax = new Vector2(1f, 1f);
@@ -78,11 +79,11 @@ namespace Project.UI
             GameObject listObject = new GameObject("QuestList", typeof(RectTransform));
             listObject.transform.SetParent(transform, false);
             listRoot = listObject.GetComponent<RectTransform>();
-            listRoot.anchorMin = new Vector2(0f, 1f);
+            listRoot.anchorMin = new Vector2(0f, 0f);
             listRoot.anchorMax = new Vector2(1f, 1f);
             listRoot.pivot = new Vector2(1f, 1f);
-            listRoot.anchoredPosition = Vector2.zero;
-            listRoot.sizeDelta = new Vector2(0f, 0f);
+            listRoot.offsetMin = Vector2.zero;
+            listRoot.offsetMax = new Vector2(0f, -30f);
 
             VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 2f;
@@ -184,8 +185,21 @@ namespace Project.UI
             if (!applyRuntimeLayout || !built)
                 return;
 
+            bool hideForUi = ShouldHideForBlockingUi();
+            if (rootRect != null && rootRect.gameObject.activeSelf == hideForUi)
+                rootRect.gameObject.SetActive(!hideForUi);
+
+            if (hideForUi)
+                return;
+
             if (HasViewportChanged())
                 ApplyLockedLayout();
+        }
+
+        private static bool ShouldHideForBlockingUi()
+        {
+            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+            return player != null && player.BlocksCombatInput;
         }
 
         private void OnEnable()
@@ -270,8 +284,14 @@ namespace Project.UI
             if (listRoot == null)
                 return;
 
-            foreach (Transform child in listRoot)
+            // Detach before Destroy so VerticalLayoutGroup does not keep deferred-destroy
+            // children for a frame (avoids duplicate flash on every objective tick).
+            for (int i = listRoot.childCount - 1; i >= 0; i--)
+            {
+                Transform child = listRoot.GetChild(i);
+                child.SetParent(null, false);
                 Destroy(child.gameObject);
+            }
 
             EnsureQuestManagerSubscribed();
             if (questManager == null)

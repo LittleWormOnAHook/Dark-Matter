@@ -22,6 +22,7 @@ namespace Project.Core
     public static class GameSaveSystem
     {
         public const int SlotCount = 5;
+        public const int CurrentSaveVersion = 21;
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
@@ -125,7 +126,7 @@ namespace Project.Core
 
             GameSaveData data = new GameSaveData
             {
-                version = 21,
+                version = CurrentSaveVersion,
                 slotIndex = slotIndex,
                 savedAtUtcTicks = DateTime.UtcNow.Ticks,
                 health = stats.CurrentHealth,

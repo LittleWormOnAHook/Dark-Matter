@@ -8,68 +8,68 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1908637220760330, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
-      propertyPath: m_Name
-      value: Laser Pistol Ammo_Pickup
-      objectReference: {fileID: 0}
-    - target: {fileID: 1908637220760330, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
-      propertyPath: m_Layer
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.122
+      value: -26.977236
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.23515856
+      value: 0.17001593
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.205
+      value: 14.155428
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: -0.00000003774895
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4297007476884706, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4fbd95154c8b6c04d9eea8eaaab9f19e, type: 2}
+    - target: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+      propertyPath: m_Name
+      value: Laser Pistol Ammo_Pickup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1908637220760330, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8949394947133020655}
-    - targetCorrespondingSourceObject: {fileID: 1908637220760330, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 311580023282243624}
-  m_SourcePrefab: {fileID: 100100000, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
---- !u!1 &4008088994995378470 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+--- !u!1 &4276231069606039421 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 1908637220760330, guid: 3ff4118695945de49a625ee67dceecfb, type: 3}
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
   m_PrefabInstance: {fileID: 4006321655521899052}
   m_PrefabAsset: {fileID: 0}
 --- !u!65 &8949394947133020655
@@ -78,7 +78,7 @@ BoxCollider:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4008088994995378470}
+  m_GameObject: {fileID: 4276231069606039421}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -91,15 +91,15 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.30866122, y: 0.3400195, z: 0.07980548}
-  m_Center: {x: -0.0031018779, y: -0.0059842467, z: -0.00083396025}
+  m_Size: {x: 0.0033011641, y: 0.004026332, z: 0.001189864}
+  m_Center: {x: 0.0000000079744495, y: -0.00000008603092, z: -0.00000008800998}
 --- !u!114 &311580023282243624
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4008088994995378470}
+  m_GameObject: {fileID: 4276231069606039421}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}

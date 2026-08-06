@@ -27,6 +27,7 @@ namespace Project.Player.Invector
 
         private PioneerInvectorInputBridge _inputBridge;
         private EquipmentController _equipment;
+        private bool _miningScanAimHold;
 
         protected override void Start()
         {
@@ -45,6 +46,40 @@ namespace Project.Player.Invector
 
             base.Update();
             SyncPioneerCursorState();
+        }
+
+        /// <summary>
+        /// While held, keep aim active so mining resource scan (F / LB) can force aim without RMB/LT.
+        /// Cleared when the scan key is released.
+        /// </summary>
+        public void SetMiningScanAimHold(bool held)
+        {
+            _miningScanAimHold = held;
+            if (held && cc != null && !cc.ragdolled && CurrentActiveWeapon != null)
+                isAimingByInput = true;
+            else if (!held && (aimInput == null || !aimInput.GetButton()))
+                isAimingByInput = false;
+        }
+
+        public override void AimInput()
+        {
+            base.AimInput();
+
+            if (!_miningScanAimHold || cc == null || cc.ragdolled || CurrentActiveWeapon == null)
+                return;
+
+            isAimingByInput = true;
+
+            // base.AimInput may have cleared strafe when RMB was not held — re-enter while scan-aiming.
+            if (cc.locomotionType == vThirdPersonMotor.LocomotionType.FreeWithStrafe &&
+                !cc.lockInStrafe &&
+                !cc.isStrafing)
+            {
+                cc.Strafe();
+            }
+
+            if (headTrack != null)
+                headTrack.alwaysFollowCamera = true;
         }
 
         /// <summary>

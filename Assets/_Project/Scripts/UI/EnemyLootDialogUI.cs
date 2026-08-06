@@ -295,15 +295,15 @@ namespace Project.UI
             if (overlayRoot == null || !overlayRoot.activeSelf || activeLootProvider == null)
                 return;
 
-            var keyboard = UnityEngine.InputSystem.Keyboard.current;
-            if (keyboard == null)
-                return;
-
-            if (keyboard.escapeKey.wasPressedThisFrame)
+            if (UiEscapeGate.TryConsumeEscape())
             {
                 Close();
                 return;
             }
+
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null)
+                return;
 
             // E loots next entry (same as Loot button). Hold Left Shift + E to loot all.
             if (keyboard.eKey.wasPressedThisFrame)

@@ -200,8 +200,7 @@ namespace Project.UI
             if (menuRoot == null || !menuRoot.activeSelf)
                 return;
 
-            if (UnityEngine.InputSystem.Keyboard.current != null &&
-                UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (UiEscapeGate.TryConsumeEscape())
             {
                 Hide();
                 return;

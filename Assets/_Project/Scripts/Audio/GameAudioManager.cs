@@ -36,6 +36,7 @@ namespace Project.Audio
 
             BuildSources();
             RefreshVolumes();
+            SyncWorldAudioGate();
         }
 
         private void BuildSources()
@@ -49,12 +50,15 @@ namespace Project.Audio
             uiSource.playOnAwake = false;
             uiSource.spatialBlend = 0f;
             uiSource.loop = false;
+            // Main menu / loader keep AudioListener.pause on; clicks must still be heard.
+            uiSource.ignoreListenerPause = true;
 
             loadingSource = gameObject.AddComponent<AudioSource>();
             loadingSource.playOnAwake = false;
             loadingSource.spatialBlend = 0f;
             loadingSource.loop = true;
-            // Boot overlay runs while Time.timeScale is 0, so this bed must ignore pause scaling.
+            // Boot overlay runs while Time.timeScale is 0 and the listener is paused, so this bed
+            // must ignore both pause scaling and AudioListener.pause.
             loadingSource.ignoreListenerPause = true;
 
             sfxPool = new AudioSource[Mathf.Max(1, sfxPoolSize)];
@@ -126,6 +130,22 @@ namespace Project.Audio
         {
             if (loadingSource != null)
                 loadingSource.Stop();
+        }
+
+        /// <summary>
+        /// Mute every AudioSource that does not ignore listener pause.
+        /// Keeps Loading Genesis ambience + UI clicks while silencing Invector footsteps,
+        /// weapon reloads, and other world SFX that still fire under the menu/loader.
+        /// </summary>
+        public static void SyncWorldAudioGate()
+        {
+            // Domain reload (script recompile) must never touch AudioListener — native AV in Unity.dll.
+            // SubsystemRegistration / edit-mode InitializeOnLoad paths must stay away from this API.
+            if (!Application.isPlaying)
+                return;
+
+            // Pre-expedition (boot loader, main menu, starter select, expedition loader).
+            AudioListener.pause = !GameSession.HasStarted;
         }
 
         public void PlayFootstep(Vector3 position, string surfaceTag, bool isRunning)
@@ -204,6 +224,14 @@ namespace Project.Audio
             PlayUiClip(PickClip(profile?.buttonClickClips), profile != null ? profile.uiVolume : 0.85f);
         }
 
+        /// <summary>
+        /// Soft UI tick for hover / focus changes (journal tabs, etc.). Reuses buttonClickClips (keyPress).
+        /// </summary>
+        public void PlayUiHoverTick()
+        {
+            PlayUiClip(PickClip(profile?.buttonClickClips), profile != null ? profile.uiVolume * 0.55f : 0.45f);
+        }
+
         public void PlayInventoryItemClick()
         {
             AudioClip[] clips = profile?.inventoryItemClickClips;
@@ -252,10 +280,8 @@ namespace Project.Audio
             if (clip == null || uiSource == null)
                 return;
 
-            uiSource.clip = clip;
-            uiSource.volume = GameSettings.SfxVolume * volumeScale;
             uiSource.pitch = Random.Range(0.97f, 1.03f);
-            uiSource.Play();
+            uiSource.PlayOneShot(clip, GameSettings.SfxVolume * volumeScale);
         }
 
         public void PlayAmbientOneShot(AmbientZoneLayer layer, Vector3 position)
@@ -285,6 +311,14 @@ namespace Project.Audio
                 return;
 
             AudioSource source = GetNextSfxSource();
+            if (source == null)
+            {
+                // Pool missing — fire-and-forget one-shot so we never steal the music source.
+                float volume = GameSettings.SfxVolume * volumeScale;
+                AudioSource.PlayClipAtPoint(clip, position, Mathf.Clamp01(volume));
+                return;
+            }
+
             // Move only the pool child — never the GameAudioManager root (music/UI live here).
             source.transform.SetParent(transform, true);
             source.transform.position = position;
@@ -302,7 +336,7 @@ namespace Project.Audio
         private AudioSource GetNextSfxSource()
         {
             if (sfxPool == null || sfxPool.Length == 0)
-                return musicSource;
+                return null;
 
             AudioSource source = sfxPool[sfxPoolIndex];
             sfxPoolIndex = (sfxPoolIndex + 1) % sfxPool.Length;

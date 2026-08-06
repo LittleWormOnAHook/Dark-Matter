@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
+using Project.Player;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -117,6 +118,13 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!GameSession.HasStarted)
+            {
+                HideAllDots();
+                return;
+            }
+
+            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+            if (player != null && player.BlocksCombatInput)
             {
                 HideAllDots();
                 return;

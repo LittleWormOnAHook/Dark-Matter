@@ -16,6 +16,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: bc433ddb3f88de846b8a24f4b80f185c, type: 3}
   worldPrefab: {fileID: 7456544933812286296, guid: 31a656c5900a7274dadfb0b09219e95a, type: 3}
   maxStack: 10
+  stableItemId: 00571268-f664-42ce-a941-f8b31b403f95
   itemType: 3
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -103,6 +104,9 @@ MonoBehaviour:
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 3
   statusEffectDamagePerTick: 3
   statusEffectTickInterval: 2

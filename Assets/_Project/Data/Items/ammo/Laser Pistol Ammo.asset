@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Laser Pistol Ammo
   icon: {fileID: 21300000, guid: 1fcf282e2c6d04a46b3b5973e2186722, type: 3}
-  worldPrefab: {fileID: 4008088994995378470, guid: 04e8a0077659c3a4c9c7675876056bb2, type: 3}
+  worldPrefab: {fileID: 4276231069606039421, guid: 04e8a0077659c3a4c9c7675876056bb2, type: 3}
   maxStack: 999
+  stableItemId: 5c14bbf7-b859-40c2-8b86-d3fd91043be6
   itemType: 4
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
@@ -95,12 +96,17 @@ MonoBehaviour:
   miningLockBreakDegrees: 30
   miningPassDuration: 1.25
   miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 8300000, guid: 5dbc74a65da58144aa0a20190bcd4909, type: 3}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 8300000, guid: a9e3fee688cf000499bded40dd54ff48, type: 3}
   continuousStartSound: {fileID: 0}
   continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
   statusEffectTickInterval: 1
@@ -125,3 +131,4 @@ MonoBehaviour:
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
   tooltipDescription: 
+  unlocksInventoryStorageRow: 0

@@ -36,6 +36,8 @@ namespace Project.AI.Invector
             CacheHipsParentIfNeeded();
             _ragdollBridge?.PrepareForDeath();
 
+            bool usableRagdoll = _ragdollBridge != null && _ragdollBridge.HasUsableRagdollRig;
+
             if (_ragdollBridge != null && _ragdollBridge.HasActiveRagdoll && !_ragdollBridge.IsCorpseRagdolled)
             {
                 _ragdollBridge.ActivateCorpseRagdoll();
@@ -56,15 +58,19 @@ namespace Project.AI.Invector
                 return;
             }
 
-            // Ranged / DoT / non-stagger deaths never enter an active hit-stagger ragdoll. Waiting on
-            // AnimationWithRagdoll + a Dead-tagged animator state left those corpses frozen in pose.
-            // Force corpse ragdoll immediately; EnsureDeathPresentation still retries if body parts
-            // need a frame to bind after distance-cull unhide.
             MarkControllerDead();
             ClearLocomotionAnimatorParams();
             _controller.disableAnimations = false;
             _controller.StopCharacter();
 
+            if (!usableRagdoll)
+            {
+                // Keep Mecanim death playing — broken/orphan ragdoll would freeze the pose.
+                _ensureDeathRoutine = StartCoroutine(EnsureDeathPresentation());
+                return;
+            }
+
+            // Usable ragdoll: collapse immediately (AnimationWithRagdoll still retries via ensure).
             _ragdollBridge?.ActivateCorpseRagdoll();
             _ensureDeathRoutine = StartCoroutine(EnsureDeathPresentation());
         }
@@ -262,9 +268,13 @@ namespace Project.AI.Invector
                 yield break;
 
             // Immediate corpse path (ranged / non-stagger): retry activation if the first attempt
-            // raced animator un-cull / body-part bind.
-            if (!IsCorpseRagdolled())
-                _ragdollBridge?.ActivateCorpseRagdoll();
+            // raced animator un-cull / body-part bind. Skip when the avatar has no usable ragdoll.
+            if (!IsCorpseRagdolled() &&
+                _ragdollBridge != null &&
+                _ragdollBridge.HasUsableRagdollRig)
+            {
+                _ragdollBridge.ActivateCorpseRagdoll();
+            }
 
             elapsed = 0f;
             while (elapsed < RagdollFallbackDelaySeconds)
@@ -272,15 +282,21 @@ namespace Project.AI.Invector
                 if (_controller == null)
                     yield break;
 
-                if (IsCorpseRagdolled())
+                if (IsCorpseRagdolled() ||
+                    (_ragdollBridge != null && !_ragdollBridge.HasUsableRagdollRig))
                     break;
 
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            if (_controller != null && !IsCorpseRagdolled())
-                _ragdollBridge?.ActivateCorpseRagdoll();
+            if (_controller != null &&
+                !IsCorpseRagdolled() &&
+                _ragdollBridge != null &&
+                _ragdollBridge.HasUsableRagdollRig)
+            {
+                _ragdollBridge.ActivateCorpseRagdoll();
+            }
 
             _ensureDeathRoutine = null;
         }
