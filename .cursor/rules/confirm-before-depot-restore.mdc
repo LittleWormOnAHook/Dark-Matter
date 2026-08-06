@@ -1,0 +1,30 @@
+---
+description: Ask before restoring Unity to a previous git/Plastic/depot save point
+alwaysApply: true
+---
+
+# Confirm Before Depot / Git Restore Points
+
+Before changing the Unity project back to a previous depot, Plastic, or git save point, **STOP and ask the user for confirmation**. Do not proceed until they explicitly approve in the current message.
+
+## What counts as a restore
+
+- `git checkout` / `git switch` to another branch or commit that changes project files
+- `git restore`, `git reset`, or discarding work to match an older commit
+- Plastic SCM / Unity Version Control revert, switch changeset, or load older depot save
+- Loading or restoring a named checkpoint, backup branch, or recovery snapshot that undoes current work
+
+## Before asking, name both
+
+1. **Save point** — exact commit hash, branch name, Plastic changeset / depot label, or backup branch (e.g. `5c81c1c82`, `fix/audit-bug-pass`, `backup/pre-audit-fixes`).
+2. **Agent prompt timeline** — which conversation or work that checkpoint represents (e.g. “after inventory-drop unify”, “before audio mute fix”, “pre-settings modal rewrite”).
+
+## Example ask
+
+> About to restore to **`a049a27b4`** (`Backup: _Project state before audit bug fix pass`) — timeline: **before inventory-drop / audio / settings work on this chat**. Proceed?
+
+## Do not
+
+- Silently roll back Unity or the working tree to an older save
+- Treat crash-recovery scenes under `Assets/_Recovery/` as the intended project state without asking
+- Force-push or hard-reset unless the user explicitly requested that destructive action **and** confirmed the named save point
