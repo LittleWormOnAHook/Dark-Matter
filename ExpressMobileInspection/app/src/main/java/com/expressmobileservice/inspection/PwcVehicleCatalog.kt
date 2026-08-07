@@ -50,4 +50,61 @@ object PwcVehicleCatalog {
 
     fun modelsForMake(make: String): List<String> =
         modelsByMake[make] ?: listOf("Other", "Custom")
+
+    private val engineSizesByMakeModel: Map<String, Map<String, List<String>>> = mapOf(
+        "Sea-Doo" to mapOf(
+            "Spark" to listOf("900cc"),
+            "Spark Trixx" to listOf("900cc"),
+            "GTI" to listOf("900cc", "1300cc", "1700cc"),
+            "GTX" to listOf("1300cc", "1700cc"),
+            "RXP" to listOf("1300cc", "1630cc"),
+            "RXT" to listOf("1300cc", "1630cc"),
+            "Wake" to listOf("900cc", "1300cc", "1700cc"),
+            "Fish Pro" to listOf("1300cc", "1700cc")
+        ),
+        "Yamaha" to mapOf(
+            "VX" to listOf("1049cc"),
+            "FX" to listOf("1800cc"),
+            "EX" to listOf("1049cc"),
+            "SuperJet" to listOf("701cc", "1100cc"),
+            "GP" to listOf("1200cc")
+        ),
+        "Kawasaki" to mapOf(
+            "STX" to listOf("1498cc", "1603cc"),
+            "Ultra" to listOf("1498cc", "1603cc"),
+            "SX-R" to listOf("1498cc"),
+            "750" to listOf("750cc"),
+            "900" to listOf("900cc"),
+            "1100" to listOf("1100cc")
+        ),
+        "Honda" to mapOf(
+            "AquaTrax" to listOf("782cc", "1052cc", "1232cc")
+        )
+    )
+
+    fun engineSizesFor(make: String, model: String): List<String> {
+        val makeKey = engineSizesByMakeModel.keys.firstOrNull { it.equals(make, ignoreCase = true) }
+            ?: return defaultPwcEngines(model)
+        val models = engineSizesByMakeModel[makeKey].orEmpty()
+        val exact = models.entries.firstOrNull { it.key.equals(model, ignoreCase = true) }?.value
+        if (exact != null) return exact
+        val partial = models.entries.firstOrNull { (key, _) ->
+            model.contains(key, ignoreCase = true) || key.contains(model, ignoreCase = true)
+        }?.value
+        if (partial != null) return partial
+        return defaultPwcEngines(model)
+    }
+
+    private fun defaultPwcEngines(model: String): List<String> {
+        val parsed = Regex("""\b(\d{3,4})\b""").findAll(model)
+            .mapNotNull { it.groupValues[1].toIntOrNull() }
+            .filter { it in 400..2000 }
+            .map { "${it}cc" }
+            .distinct()
+            .toList()
+        return if (parsed.isNotEmpty()) parsed else listOf(
+            "550cc", "650cc", "717cc", "785cc", "900cc", "1000cc", "1100cc", "1200cc",
+            "1300cc", "1500cc", "1600cc", "1800cc"
+        )
+    }
 }

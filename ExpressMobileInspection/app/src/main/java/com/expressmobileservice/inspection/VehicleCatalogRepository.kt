@@ -7,7 +7,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
@@ -26,13 +25,15 @@ class VehicleCatalogRepository(context: Context) {
         if (category == VehicleCategory.JET_SKI) {
             return@withContext PwcVehicleCatalog.makes
         }
-        val cacheKey = "makes_${category.name}"
+        val cacheKey = "makes_v2_${category.name}"
         readCache(cacheKey)?.let { return@withContext it }
         val merged = linkedSetOf<String>()
         category.nhtsaTypes.forEach { type ->
             val encoded = URLEncoder.encode(type, "UTF-8")
             val url = "$BASE/GetMakesForVehicleType/$encoded?format=json"
-            fetchNhtsa(url)?.results?.mapNotNull { it.makeName }?.let { merged.addAll(it) }
+            fetchNhtsa(url)?.results?.mapNotNull { it.resolvedMakeName }?.let { names ->
+                merged.addAll(names.map(::formatVehicleLabel))
+            }
         }
         val sorted = merged.filter { it.isNotBlank() }.sorted()
         if (sorted.isNotEmpty()) writeCache(cacheKey, sorted)
@@ -42,24 +43,49 @@ class VehicleCatalogRepository(context: Context) {
     suspend fun getModels(
         category: VehicleCategory,
         make: String,
-        year: Int
+        year: Int?
     ): List<String> = withContext(Dispatchers.IO) {
         if (make.isBlank()) return@withContext emptyList()
         if (category == VehicleCategory.JET_SKI) {
             return@withContext PwcVehicleCatalog.modelsForMake(make)
         }
-        val cacheKey = "models_${category.name}_${make}_$year"
+
+        val cacheKey = "models_v2_${category.name}_${make}_${year ?: "all"}"
         readCache(cacheKey)?.let { return@withContext it }
+
+        val merged = linkedSetOf<String>()
+        if (year != null) {
+            fetchModelsForMakeYear(make, year)?.let { merged.addAll(it) }
+        }
+        if (merged.isEmpty()) {
+            fetchModelsForMake(make)?.let { merged.addAll(it) }
+        }
+
+        val models = merged.filter { it.isNotBlank() }.sorted()
+        if (models.isNotEmpty()) writeCache(cacheKey, models)
+        models.ifEmpty { listOf("Other") }
+    }
+
+    private fun fetchModelsForMakeYear(make: String, year: Int): List<String>? {
         val encodedMake = URLEncoder.encode(make, "UTF-8")
         val url = "$BASE/GetModelsForMakeYear/make/$encodedMake/modelyear/$year?format=json"
         val models = fetchNhtsa(url)?.results
             ?.mapNotNull { it.modelName }
+            ?.map(::formatVehicleLabel)
             ?.filter { it.isNotBlank() }
-            ?.distinct()
-            ?.sorted()
-            .orEmpty()
-        if (models.isNotEmpty()) writeCache(cacheKey, models)
-        models.ifEmpty { listOf("Other") }
+            ?: return null
+        return models.distinct().sorted().takeIf { it.isNotEmpty() }
+    }
+
+    private fun fetchModelsForMake(make: String): List<String>? {
+        val encodedMake = URLEncoder.encode(make, "UTF-8")
+        val url = "$BASE/GetModelsForMake/$encodedMake?format=json"
+        val models = fetchNhtsa(url)?.results
+            ?.mapNotNull { it.modelName }
+            ?.map(::formatVehicleLabel)
+            ?.filter { it.isNotBlank() }
+            ?: return null
+        return models.distinct().sorted().takeIf { it.isNotEmpty() }
     }
 
     private fun fallbackMakes(category: VehicleCategory): List<String> = when (category) {
@@ -87,8 +113,8 @@ class VehicleCatalogRepository(context: Context) {
 
     private fun fetchNhtsa(urlString: String): NhtsaResponse? = try {
         val connection = (URL(urlString).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 12_000
-            readTimeout = 12_000
+            connectTimeout = 15_000
+            readTimeout = 15_000
             requestMethod = "GET"
         }
         connection.inputStream.bufferedReader().use { reader ->
@@ -105,9 +131,13 @@ class VehicleCatalogRepository(context: Context) {
 
     @Serializable
     private data class NhtsaResult(
-        @SerialName("Make_Name") val makeName: String? = null,
+        @SerialName("MakeName") val makeName: String? = null,
+        @SerialName("Make_Name") val makeNameAlt: String? = null,
         @SerialName("Model_Name") val modelName: String? = null
-    )
+    ) {
+        val resolvedMakeName: String?
+            get() = makeName?.takeIf { it.isNotBlank() } ?: makeNameAlt?.takeIf { it.isNotBlank() }
+    }
 
     companion object {
         private const val PREFS = "vehicle_catalog_cache"
