@@ -58,9 +58,14 @@ fun defaultAppointmentStart(date: LocalDate = LocalDate.now()): Long {
     return start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
 
-fun defaultAppointmentEnd(startMillis: Long): Long =
-    startMillis.toLocalDateTime().plusHours(1)
-        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+fun defaultAppointmentEnd(startMillis: Long): Long {
+    val start = startMillis.toLocalDateTime()
+    val end = start.plusHours(1)
+    return end.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+}
+
+/** When start moves, keep end on the same day, one hour after start. */
+fun syncEndAfterStartChange(startMillis: Long): Long = defaultAppointmentEnd(startMillis)
 
 fun appointmentOverlapsDay(appointment: Appointment, day: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Boolean {
     val dayStart = day.atStartOfDay(zone).toInstant().toEpochMilli()

@@ -290,6 +290,7 @@ fun AppointmentsScreen(
                 CalendarViewMode.DAY -> {
                     DayHeaderNav(
                         date = selectedDate,
+                        appointmentCount = appointmentsForDay(filteredAppointments, selectedDate).size,
                         onPrevious = { selectedDate = selectedDate.minusDays(1) },
                         onNext = { selectedDate = selectedDate.plusDays(1) }
                     )
@@ -410,26 +411,39 @@ private fun SamsungCalendarHeader(
 @Composable
 private fun DayHeaderNav(
     date: LocalDate,
+    appointmentCount: Int,
     onPrevious: () -> Unit,
     onNext: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
-        }
-        Text(
-            text = formatDayHeader(date),
-            fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.titleMedium
-        )
-        IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onPrevious) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = formatDayHeader(date),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (appointmentCount > 0) {
+                    AppointmentGreenIndicators(
+                        appointmentCount = appointmentCount,
+                        modifier = Modifier
+                            .width(72.dp)
+                            .padding(top = 6.dp)
+                    )
+                }
+            }
+            IconButton(onClick = onNext) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
+            }
         }
     }
 }
@@ -560,17 +574,35 @@ private fun SamsungDayCell(
                 .padding(horizontal = 2.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            appointments.take(3).forEach { apt ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(Color(apt.colorArgb))
-                )
-            }
+            AppointmentGreenIndicators(
+                appointmentCount = appointments.size,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+@Composable
+private fun AppointmentGreenIndicators(
+    appointmentCount: Int,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 4
+) {
+    if (appointmentCount <= 0) return
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        repeat(appointmentCount.coerceAtMost(maxLines)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(SamsungCalendarColors.green)
+            )
+        }
     }
 }
 
@@ -684,7 +716,7 @@ private fun SamsungAgendaRow(
                 .width(3.dp)
                 .height(44.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color(appointment.colorArgb))
+                .background(SamsungCalendarColors.green)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -762,6 +794,7 @@ private fun WeekCalendarView(
             weekDays.forEach { date ->
                 val isSelected = date == anchorDate
                 val isToday = date == today
+                val dayCount = appointmentsForDay(appointments, date).size
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -772,7 +805,7 @@ private fun WeekCalendarView(
                             } else Modifier
                         )
                         .clickable { onDateSelected(date) }
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 8.dp, horizontal = 2.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -784,6 +817,13 @@ private fun WeekCalendarView(
                         text = date.dayOfMonth.toString(),
                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                         color = if (isToday) SamsungCalendarColors.green else MaterialTheme.colorScheme.onSurface
+                    )
+                    AppointmentGreenIndicators(
+                        appointmentCount = dayCount,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        maxLines = 3
                     )
                 }
             }
