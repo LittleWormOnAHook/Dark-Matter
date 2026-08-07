@@ -1,8 +1,10 @@
 package com.expressmobileservice.inspection.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,34 +17,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,21 +62,20 @@ import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
 import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.CalendarViewMode
-import com.expressmobileservice.inspection.COMPANY_NAME
 import com.expressmobileservice.inspection.appointmentsForDay
 import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
-import com.expressmobileservice.inspection.formatMonthYear
-import com.expressmobileservice.inspection.formatTime
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.openWaze
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import com.expressmobileservice.inspection.weekDaysContaining
+import com.expressmobileservice.inspection.weekNumber
 import java.time.LocalDate
 import java.time.YearMonth
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AppointmentsScreen(
     store: AppointmentStore,
@@ -89,24 +89,44 @@ fun AppointmentsScreen(
     var showEditor by remember { mutableStateOf(false) }
     var editingAppointment by remember { mutableStateOf<Appointment?>(null) }
     var appointmentToDelete by remember { mutableStateOf<Appointment?>(null) }
+    var showViewMenu by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var quickAddText by remember { mutableStateOf("") }
+    var editorQuickNotes by remember { mutableStateOf<String?>(null) }
 
     fun refresh() {
         appointments = store.getAll()
+    }
+
+    val filteredAppointments = remember(appointments, searchQuery) {
+        if (searchQuery.isBlank()) appointments
+        else appointments.filter { apt ->
+            val q = searchQuery.lowercase()
+            apt.customerName.lowercase().contains(q) ||
+                apt.customerPhone.contains(q) ||
+                apt.jobNotes.lowercase().contains(q) ||
+                apt.address.lowercase().contains(q)
+        }
     }
 
     if (showEditor) {
         AppointmentEditorScreen(
             initial = editingAppointment,
             defaultDate = selectedDate,
+            prefilledJobNotes = editorQuickNotes,
             onDismiss = {
                 showEditor = false
                 editingAppointment = null
+                editorQuickNotes = null
             },
             onSave = { appointment ->
                 store.save(appointment)
                 refresh()
                 showEditor = false
                 editingAppointment = null
+                editorQuickNotes = null
+                quickAddText = ""
             }
         )
         return
@@ -116,7 +136,7 @@ fun AppointmentsScreen(
         AlertDialog(
             onDismissRequest = { appointmentToDelete = null },
             title = { Text("Delete appointment?") },
-            text = { Text("Remove ${apt.displayTitle}?") },
+            text = { Text("Remove ${apt.agendaTitle}?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -125,7 +145,7 @@ fun AppointmentsScreen(
                         appointmentToDelete = null
                     }
                 ) {
-                    Text("Delete")
+                    Text("Delete", color = SamsungCalendarColors.green)
                 }
             },
             dismissButton = {
@@ -136,51 +156,56 @@ fun AppointmentsScreen(
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(COMPANY_NAME, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = when (viewMode) {
-                                CalendarViewMode.MONTH -> formatMonthYear(displayedMonth)
-                                CalendarViewMode.WEEK -> formatDayHeader(
-                                    weekDaysContaining(selectedDate).first()
-                                ) + " – " + formatDayHeader(
-                                    weekDaysContaining(selectedDate).last()
-                                )
-                                CalendarViewMode.DAY -> formatDayHeader(selectedDate)
-                            },
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        selectedDate = LocalDate.now()
-                        displayedMonth = YearMonth.from(selectedDate)
-                    }) {
-                        Icon(Icons.Default.Today, contentDescription = "Go to today")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
+    if (showViewMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showViewMenu = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = SamsungCalendarColors.surface
+        ) {
+            Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                Text(
+                    text = "Calendar view",
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = SamsungCalendarColors.muted
                 )
-            )
-        },
+                CalendarViewMode.entries.forEach { mode ->
+                    Text(
+                        text = when (mode) {
+                            CalendarViewMode.DAY -> "Day"
+                            CalendarViewMode.WEEK -> "Week"
+                            CalendarViewMode.MONTH -> "Month"
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewMode = mode
+                                showViewMenu = false
+                            }
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        fontSize = 18.sp,
+                        fontWeight = if (viewMode == mode) FontWeight.Bold else FontWeight.Normal,
+                        color = if (viewMode == mode) SamsungCalendarColors.green else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        modifier = modifier.background(SamsungCalendarColors.background),
+        containerColor = SamsungCalendarColors.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
                     editingAppointment = null
+                    editorQuickNotes = null
                     showEditor = true
                 },
-                containerColor = MaterialTheme.colorScheme.tertiary
+                containerColor = SamsungCalendarColors.green,
+                contentColor = Color.Black
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add appointment", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "Add appointment")
             }
         }
     ) { padding ->
@@ -188,11 +213,24 @@ fun AppointmentsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(SamsungCalendarColors.background)
         ) {
-            ViewModeSelector(
+            SamsungCalendarHeader(
                 viewMode = viewMode,
-                onViewModeChange = { viewMode = it },
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                displayedMonth = displayedMonth,
+                selectedDate = selectedDate,
+                showSearch = showSearch,
+                searchQuery = searchQuery,
+                onMenuClick = { showViewMenu = true },
+                onSearchToggle = {
+                    showSearch = !showSearch
+                    if (!showSearch) searchQuery = ""
+                },
+                onSearchChange = { searchQuery = it },
+                onGoToToday = {
+                    selectedDate = LocalDate.now()
+                    displayedMonth = YearMonth.from(selectedDate)
+                }
             )
 
             when (viewMode) {
@@ -200,28 +238,33 @@ fun AppointmentsScreen(
                     MonthCalendarGrid(
                         yearMonth = displayedMonth,
                         selectedDate = selectedDate,
-                        appointments = appointments,
-                        onPreviousMonth = {
-                            displayedMonth = displayedMonth.minusMonths(1)
-                        },
-                        onNextMonth = {
-                            displayedMonth = displayedMonth.plusMonths(1)
-                        },
+                        appointments = filteredAppointments,
+                        onPreviousMonth = { displayedMonth = displayedMonth.minusMonths(1) },
+                        onNextMonth = { displayedMonth = displayedMonth.plusMonths(1) },
                         onDateSelected = { date ->
                             selectedDate = date
                             displayedMonth = YearMonth.from(date)
                         },
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    DayAgendaList(
+                    HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
+                    SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(appointments, selectedDate),
-                        onEdit = { apt ->
+                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        quickAddText = quickAddText,
+                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddSubmit = {
+                            if (quickAddText.isNotBlank()) {
+                                editorQuickNotes = quickAddText.trim()
+                                editingAppointment = null
+                                showEditor = true
+                            }
+                        },
+                        onAppointmentClick = { apt ->
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onDelete = { appointmentToDelete = it },
+                        onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         modifier = Modifier.weight(1f)
@@ -230,15 +273,15 @@ fun AppointmentsScreen(
                 CalendarViewMode.WEEK -> {
                     WeekCalendarView(
                         anchorDate = selectedDate,
-                        appointments = appointments,
+                        appointments = filteredAppointments,
                         onPreviousWeek = { selectedDate = selectedDate.minusWeeks(1) },
                         onNextWeek = { selectedDate = selectedDate.plusWeeks(1) },
                         onDateSelected = { selectedDate = it },
-                        onEdit = { apt ->
+                        onAppointmentClick = { apt ->
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onDelete = { appointmentToDelete = it },
+                        onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         modifier = Modifier.fillMaxSize()
@@ -250,14 +293,23 @@ fun AppointmentsScreen(
                         onPrevious = { selectedDate = selectedDate.minusDays(1) },
                         onNext = { selectedDate = selectedDate.plusDays(1) }
                     )
-                    DayAgendaList(
+                    SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(appointments, selectedDate),
-                        onEdit = { apt ->
+                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        quickAddText = quickAddText,
+                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddSubmit = {
+                            if (quickAddText.isNotBlank()) {
+                                editorQuickNotes = quickAddText.trim()
+                                editingAppointment = null
+                                showEditor = true
+                            }
+                        },
+                        onAppointmentClick = { apt ->
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onDelete = { appointmentToDelete = it },
+                        onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         modifier = Modifier.weight(1f)
@@ -268,28 +320,88 @@ fun AppointmentsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ViewModeSelector(
+private fun SamsungCalendarHeader(
     viewMode: CalendarViewMode,
-    onViewModeChange: (CalendarViewMode) -> Unit,
-    modifier: Modifier = Modifier
+    displayedMonth: YearMonth,
+    selectedDate: LocalDate,
+    showSearch: Boolean,
+    searchQuery: String,
+    onMenuClick: () -> Unit,
+    onSearchToggle: () -> Unit,
+    onSearchChange: (String) -> Unit,
+    onGoToToday: () -> Unit
 ) {
-    SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {
-        CalendarViewMode.entries.forEachIndexed { index, mode ->
-            SegmentedButton(
-                selected = viewMode == mode,
-                onClick = { onViewModeChange(mode) },
-                shape = SegmentedButtonDefaults.itemShape(index, CalendarViewMode.entries.size),
-                label = {
-                    Text(
-                        text = when (mode) {
-                            CalendarViewMode.DAY -> "Day"
-                            CalendarViewMode.WEEK -> "Week"
-                            CalendarViewMode.MONTH -> "Month"
-                        }
+    val today = LocalDate.now()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SamsungCalendarColors.background)
+            .padding(horizontal = 4.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onMenuClick) {
+                Icon(
+                    Icons.Default.Menu,
+                    contentDescription = "Calendar views",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Text(
+                text = when (viewMode) {
+                    CalendarViewMode.MONTH -> formatMonthAbbrev(displayedMonth.atDay(1)).uppercase()
+                    CalendarViewMode.WEEK -> formatMonthAbbrev(selectedDate).uppercase()
+                    CalendarViewMode.DAY -> formatMonthAbbrev(selectedDate).uppercase()
+                },
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                letterSpacing = 1.sp
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onSearchToggle) {
+                    Icon(
+                        if (showSearch) Icons.Default.Close else Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, SamsungCalendarColors.muted, RoundedCornerShape(8.dp))
+                        .clickable(onClick = onGoToToday),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = today.dayOfMonth.toString(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+
+        if (showSearch) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                placeholder = { Text("Search customers, phone, jobs…") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = SamsungCalendarColors.green,
+                    cursorColor = SamsungCalendarColors.green
+                )
             )
         }
     }
@@ -336,89 +448,274 @@ private fun MonthCalendarGrid(
     val days = remember(yearMonth) { com.expressmobileservice.inspection.daysInMonthGrid(yearMonth) }
 
     Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = onPreviousMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month")
-            }
-            Text(
-                text = formatMonthAbbrev(yearMonth.atDay(1)).uppercase(),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-            IconButton(onClick = onNextMonth) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month")
-            }
-        }
-
         Row(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.width(28.dp))
             listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = SamsungCalendarColors.muted,
+                    fontSize = 11.sp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
 
         days.chunked(7).forEach { week ->
-            Row(modifier = Modifier.fillMaxWidth()) {
+            val weekLabel = weekNumber(week.first())
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 1.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = weekLabel.toString(),
+                    modifier = Modifier
+                        .width(28.dp)
+                        .padding(top = 6.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 10.sp,
+                    color = SamsungCalendarColors.muted
+                )
                 week.forEach { date ->
-                    val inMonth = date.month == yearMonth.month
-                    val isSelected = date == selectedDate
-                    val isToday = date == today
-                    val dayAppointments = appointmentsForDay(appointments, date)
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(2.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .then(
-                                if (isSelected) {
-                                    Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(8.dp))
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .clickable { onDateSelected(date) }
-                            .padding(vertical = 6.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = date.dayOfMonth.toString(),
-                                fontSize = 13.sp,
-                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                                color = when {
-                                    !inMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                                    isToday -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                            if (dayAppointments.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    dayAppointments.take(3).forEach { apt ->
-                                        Box(
-                                            modifier = Modifier
-                                                .size(width = 14.dp, height = 3.dp)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(Color(apt.colorArgb))
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    SamsungDayCell(
+                        date = date,
+                        inMonth = date.month == yearMonth.month,
+                        isSelected = date == selectedDate,
+                        isToday = date == today,
+                        appointments = appointmentsForDay(appointments, date),
+                        onClick = { onDateSelected(date) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onPreviousMonth, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous month",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(onClick = onNextMonth, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Next month",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SamsungDayCell(
+    date: LocalDate,
+    inMonth: Boolean,
+    isSelected: Boolean,
+    isToday: Boolean,
+    appointments: List<Appointment>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(horizontal = 1.dp, vertical = 2.dp)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .then(
+                    if (isSelected) {
+                        Modifier.border(1.5.dp, SamsungCalendarColors.selectedRing, CircleShape)
+                    } else Modifier
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = date.dayOfMonth.toString(),
+                fontSize = 13.sp,
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = when {
+                    !inMonth -> SamsungCalendarColors.muted.copy(alpha = 0.45f)
+                    isToday -> SamsungCalendarColors.green
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            appointments.take(3).forEach { apt ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(Color(apt.colorArgb))
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+@Composable
+private fun SamsungAgendaPanel(
+    date: LocalDate,
+    appointments: List<Appointment>,
+    quickAddText: String,
+    onQuickAddChange: (String) -> Unit,
+    onQuickAddSubmit: () -> Unit,
+    onAppointmentClick: (Appointment) -> Unit,
+    onAppointmentLongPress: (Appointment) -> Unit,
+    onDial: (Appointment) -> Unit,
+    onNavigate: (Appointment) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(SamsungCalendarColors.agendaSurface)
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            if (appointments.isEmpty()) {
+                Text(
+                    text = "No events",
+                    color = SamsungCalendarColors.muted,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else {
+                appointments.forEach { apt ->
+                    SamsungAgendaRow(
+                        appointment = apt,
+                        onClick = { onAppointmentClick(apt) },
+                        onLongClick = { onAppointmentLongPress(apt) },
+                        onDial = { onDial(apt) },
+                        onNavigate = { onNavigate(apt) }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(72.dp))
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(SamsungCalendarColors.background)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = quickAddText,
+                onValueChange = onQuickAddChange,
+                placeholder = {
+                    Text("7 PM brake job", color = SamsungCalendarColors.muted)
+                },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = SamsungCalendarColors.quickAddField,
+                    unfocusedContainerColor = SamsungCalendarColors.quickAddField,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = SamsungCalendarColors.green
+                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onQuickAddSubmit() })
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SamsungAgendaRow(
+    appointment: Appointment,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onDial: () -> Unit,
+    onNavigate: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = formatTimeRange(
+                appointment.startEpochMillis,
+                appointment.endEpochMillis,
+                appointment.allDay
+            ),
+            modifier = Modifier.width(108.dp),
+            fontSize = 13.sp,
+            color = SamsungCalendarColors.muted,
+            lineHeight = 18.sp
+        )
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(44.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(Color(appointment.colorArgb))
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = appointment.agendaTitle,
+                fontSize = 15.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 20.sp
+            )
+            if (appointment.hasPhone) {
+                Text(
+                    text = "Tap to call",
+                    fontSize = 11.sp,
+                    color = SamsungCalendarColors.green,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clickable(onClick = onDial)
+                )
+            }
+            if (appointment.hasAddress) {
+                Text(
+                    text = appointment.address,
+                    fontSize = 11.sp,
+                    color = SamsungCalendarColors.green,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clickable(onClick = onNavigate)
+                )
             }
         }
     }
@@ -431,8 +728,8 @@ private fun WeekCalendarView(
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
-    onEdit: (Appointment) -> Unit,
-    onDelete: (Appointment) -> Unit,
+    onAppointmentClick: (Appointment) -> Unit,
+    onAppointmentLongPress: (Appointment) -> Unit,
     onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
     modifier: Modifier = Modifier
@@ -441,7 +738,7 @@ private fun WeekCalendarView(
     val weekAppointments = appointmentsForWeek(appointments, anchorDate)
     val today = LocalDate.now()
 
-    Column(modifier = modifier) {
+    Column(modifier = modifier.background(SamsungCalendarColors.background)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -469,9 +766,10 @@ private fun WeekCalendarView(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                            else Color.Transparent
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(1.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
+                            } else Modifier
                         )
                         .clickable { onDateSelected(date) }
                         .padding(vertical = 8.dp),
@@ -480,25 +778,24 @@ private fun WeekCalendarView(
                     Text(
                         text = date.dayOfWeek.name.take(1),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = SamsungCalendarColors.muted
                     )
                     Text(
                         text = date.dayOfMonth.toString(),
                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        color = if (isToday) SamsungCalendarColors.green else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(color = SamsungCalendarColors.divider)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             weekDays.forEach { date ->
                 val dayItems = appointmentsForDay(weekAppointments, date)
@@ -506,176 +803,29 @@ private fun WeekCalendarView(
                     Text(
                         text = formatDayHeader(date),
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = SamsungCalendarColors.green,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                     )
                     dayItems.forEach { apt ->
-                        AppointmentCard(
+                        SamsungAgendaRow(
                             appointment = apt,
-                            onEdit = { onEdit(apt) },
-                            onDelete = { onDelete(apt) },
+                            onClick = { onAppointmentClick(apt) },
+                            onLongClick = { onAppointmentLongPress(apt) },
                             onDial = { onDial(apt) },
                             onNavigate = { onNavigate(apt) }
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             }
             if (weekAppointments.isEmpty()) {
                 Text(
-                    text = "No appointments this week.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "No events this week",
+                    color = SamsungCalendarColors.muted,
                     modifier = Modifier.padding(16.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(72.dp))
-        }
-    }
-}
-
-@Composable
-private fun DayAgendaList(
-    date: LocalDate,
-    appointments: List<Appointment>,
-    onEdit: (Appointment) -> Unit,
-    onDelete: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
-    onNavigate: (Appointment) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp)
-    ) {
-        Text(
-            text = formatDayHeader(date),
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-        if (appointments.isEmpty()) {
-            Text(
-                text = "No appointments. Tap + to add a customer job.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 24.dp)
-            )
-        } else {
-            appointments.forEach { apt ->
-                AppointmentCard(
-                    appointment = apt,
-                    onEdit = { onEdit(apt) },
-                    onDelete = { onDelete(apt) },
-                    onDial = { onDial(apt) },
-                    onNavigate = { onNavigate(apt) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-        Spacer(modifier = Modifier.height(80.dp))
-    }
-}
-
-@Composable
-private fun AppointmentCard(
-    appointment: Appointment,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onDial: () -> Unit,
-    onNavigate: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(80.dp)
-                    .background(Color(appointment.colorArgb))
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = formatTimeRange(
-                        appointment.startEpochMillis,
-                        appointment.endEpochMillis,
-                        appointment.allDay
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = appointment.displayTitle,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (appointment.customerPhone.isNotBlank()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clickable(onClick = onDial)
-                            .padding(top = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Phone,
-                            contentDescription = "Call",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = appointment.customerPhone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                }
-                if (appointment.address.isNotBlank()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clickable(onClick = onNavigate)
-                            .padding(top = 2.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = "Open in Waze",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = appointment.address,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                if (appointment.jobNotes.isNotBlank() && appointment.customerName.isNotBlank()) {
-                    Text(
-                        text = appointment.jobNotes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-            }
-            Column {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                }
-            }
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

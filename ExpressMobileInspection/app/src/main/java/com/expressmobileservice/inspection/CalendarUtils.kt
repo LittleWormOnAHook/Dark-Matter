@@ -9,6 +9,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
 import java.util.Locale
 
 private val locale = Locale.getDefault()
@@ -91,3 +92,6 @@ fun roundToNearestMinutes(millis: Long, minutes: Int = 15): Long {
 
 fun combineDateAndTime(date: LocalDate, time: LocalTime, zone: ZoneId = ZoneId.systemDefault()): Long =
     date.atTime(time).atZone(zone).toInstant().toEpochMilli()
+
+fun weekNumber(date: LocalDate): Int =
+    date.get(WeekFields.of(locale).weekOfWeekBasedYear())

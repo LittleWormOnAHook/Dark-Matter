@@ -27,6 +27,22 @@ data class Appointment(
 
     val hasPhone: Boolean get() = customerPhone.isNotBlank()
     val hasAddress: Boolean get() = address.isNotBlank()
+
+    /** Samsung-style agenda line: phone + job (e.g. "(904) 226-8986 Intake…"). */
+    val agendaTitle: String
+        get() = buildString {
+            if (customerPhone.isNotBlank()) append(customerPhone)
+            val detail = when {
+                jobNotes.isNotBlank() -> jobNotes
+                customerName.isNotBlank() -> customerName
+                else -> ""
+            }
+            if (detail.isNotBlank()) {
+                if (isNotEmpty()) append(" ")
+                append(detail)
+            }
+            if (isEmpty()) append("Appointment")
+        }
 }
 
 enum class CalendarViewMode {

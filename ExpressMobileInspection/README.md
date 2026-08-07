@@ -6,14 +6,14 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Features
 
-### Appointments (calendar)
+### Appointments (Samsung-style calendar)
 
-- **Day, Week, and Month** calendar views
-- Add appointments with **customer name**, **phone** (tap to dial any number), **job/notes**, and **address**
-- **Address opens Waze** on Android for navigation (falls back to maps if Waze is not installed)
-- Set **start/end date and time** with an all-day toggle (Samsung-style editor)
-- Colored event bars on the month grid; daily agenda list below
-- Appointments saved on device between sessions
+- **Day / Week / Month** — open the **☰ menu** (top left), like Samsung Calendar
+- Month grid with **week numbers**, colored event bars, and **today** box (top right)
+- **Search** icon to filter by customer, phone, or job
+- Bottom **quick-add** field (e.g. `7 PM brake job`) + green **+** button
+- Tap **phone** → dial; tap **address** → **Waze**
+- Long-press an event to delete
 
 ### Inspection
 

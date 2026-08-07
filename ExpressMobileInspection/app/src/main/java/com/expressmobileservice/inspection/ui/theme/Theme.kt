@@ -28,17 +28,18 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF64B5F6),
-    onPrimary = Color(0xFF0D1B2A),
+    primary = Color(0xFF4A8CFF),
+    onPrimary = Color(0xFF010101),
     primaryContainer = Color(0xFF1C2A38),
     secondary = Color(0xFF90CAF9),
-    tertiary = Color(0xFF66BB6A),
-    onTertiary = Color(0xFF0D1B2A),
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurface = Color(0xFFEDE9E4),
-    outline = Color(0xFF4A4A5A)
+    tertiary = SamsungCalendarColors.green,
+    onTertiary = Color(0xFF010101),
+    background = SamsungCalendarColors.background,
+    surface = SamsungCalendarColors.surface,
+    surfaceVariant = SamsungCalendarColors.agendaSurface,
+    onSurface = SamsungCalendarColors.onBackground,
+    onSurfaceVariant = SamsungCalendarColors.muted,
+    outline = Color(0xFF3A3A3A)
 )
 
 @Composable
