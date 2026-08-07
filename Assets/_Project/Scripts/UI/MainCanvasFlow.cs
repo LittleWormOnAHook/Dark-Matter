@@ -131,11 +131,25 @@ namespace Project.UI
             HotbarXpHud xpHud = Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
             if (xpHud == null)
             {
-                Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+                Canvas canvas = MainMenuController.ResolveMainCanvas()
+                    ?? Object.FindAnyObjectByType<Canvas>();
                 if (canvas != null)
                     xpHud = HotbarXpHud.EnsureExists(canvas.transform);
             }
             xpHud?.SetVisible(true);
+
+            ActiveQuestHudUI questHud = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
+            if (questHud == null)
+            {
+                Canvas canvas = MainMenuController.ResolveMainCanvas()
+                    ?? Object.FindAnyObjectByType<Canvas>();
+                if (canvas != null)
+                    questHud = ActiveQuestHudUI.EnsureExists(canvas.transform);
+            }
+            else
+            {
+                questHud.SetGameplayVisible(true);
+            }
 
             UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
             uiManager?.SyncSurvivalBars();
@@ -150,6 +164,8 @@ namespace Project.UI
             // hidden forever. Re-assert once more now that the phase transition is fully settled;
             // this is a no-op if everything was already correct.
             Object.FindAnyObjectByType<InventoryUI>()?.EnsureSurvivalStatsHudVisible();
+            Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.SetVisible(true);
+            Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.SetGameplayVisible(true);
         }
 
         private static void HideGameplayChrome()

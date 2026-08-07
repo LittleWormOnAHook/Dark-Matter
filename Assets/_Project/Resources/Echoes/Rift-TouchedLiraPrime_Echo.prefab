@@ -646,7 +646,7 @@ Transform:
   - {fileID: 6122261984539700171}
   - {fileID: 6447387012880269293}
   - {fileID: 7232670817398433513}
-  - {fileID: 8256110321077013272}
+  - {fileID: 8256110321077088879}
   - {fileID: 2690514786988910100}
   - {fileID: 6825074242491270882}
   - {fileID: 6448815174035266433}
@@ -9537,7 +9537,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4539542853757515123}
-  m_Father: {fileID: 8256110321077013272}
+  m_Father: {fileID: 8256110321077088879}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!33 &45258416629418726
 MeshFilter:
@@ -28619,7 +28619,7 @@ Transform:
   - {fileID: 5336860218536010151}
   - {fileID: 7371072877616423129}
   - {fileID: 5384224063025878386}
-  - {fileID: 6251830686324982206}
+  - {fileID: 6222367937291314791}
   - {fileID: 7293179558524570008}
   - {fileID: 6224437210126964105}
   m_Father: {fileID: 7867462067663331329}
@@ -44572,7 +44572,7 @@ GameObject:
   m_Layer: 8
   m_Name: Rift-TouchedLiraPrime_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -63594,7 +63594,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &6251830686324982206 stripped
+--- !u!4 &6222367937291314791 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 5660789329377109212}
@@ -65106,7 +65106,7 @@ PrefabInstance:
       addedObject: {fileID: 8919493683445360391}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e4181ec2d57b33e48b62107a6843b76d, type: 3}
---- !u!4 &8256110321077013272 stripped
+--- !u!4 &8256110321077088879 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 473464, guid: e4181ec2d57b33e48b62107a6843b76d, type: 3}
   m_PrefabInstance: {fileID: 8256110321077013271}

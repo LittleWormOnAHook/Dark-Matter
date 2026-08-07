@@ -17146,7 +17146,7 @@ GameObject:
   m_Layer: 8
   m_Name: Magma-ForgedSolaraCore_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -47896,7 +47896,7 @@ Transform:
   - {fileID: 3384606044093467073}
   - {fileID: 1159879279102946231}
   - {fileID: 3137695379479311419}
-  - {fileID: 7537441247310545342}
+  - {fileID: 2413519713206719848}
   - {fileID: 674103597801602609}
   - {fileID: 7867514122570474483}
   m_Father: {fileID: 7088494845395748001}
@@ -63563,7 +63563,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &7537441247310545342 stripped
+--- !u!4 &2413519713206719848 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 4155670342054549459}

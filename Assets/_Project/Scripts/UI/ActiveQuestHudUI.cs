@@ -25,77 +25,139 @@ namespace Project.UI
         private TextMeshProUGUI progressionHeader;
         private QuestManager questManager;
         private PlayerProgressionManager progression;
+        private CanvasGroup canvasGroup;
         private bool built;
+        private bool gameplayVisible = true;
         private Vector2 lastCanvasSize;
         private int lastScreenWidth;
         private int lastScreenHeight;
 
         public static ActiveQuestHudUI EnsureExists(Transform canvasRoot)
         {
+            if (instance == null)
+                instance = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
+
             if (instance != null)
             {
+                if (!instance.gameObject.activeSelf)
+                    instance.gameObject.SetActive(true);
+                if (canvasRoot != null && instance.transform.parent != canvasRoot)
+                    instance.transform.SetParent(canvasRoot, false);
+                instance.EnsureBuilt();
                 instance.ApplyLockedLayout();
+                instance.SetGameplayVisible(true);
                 return instance;
             }
 
             GameObject host = new GameObject("ActiveQuestHud", typeof(RectTransform));
             host.transform.SetParent(canvasRoot, false);
             instance = host.AddComponent<ActiveQuestHudUI>();
-            instance.Build();
+            instance.EnsureBuilt();
+            instance.SetGameplayVisible(true);
             return instance;
         }
 
-        private void Build()
+        /// <summary>
+        /// Session / menu / crisis gate. Transient blockers (map, journal, optics) use CanvasGroup
+        /// so LateUpdate keeps running and can restore visibility afterward.
+        /// </summary>
+        public void SetGameplayVisible(bool visible)
+        {
+            gameplayVisible = visible;
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+            ApplyPresentationVisible();
+            if (visible)
+            {
+                ApplyLockedLayout();
+                Refresh();
+            }
+        }
+
+        private void EnsureBuilt()
         {
             if (built)
                 return;
 
             built = true;
             rootRect = transform as RectTransform;
+            EnsureCanvasGroup();
             ApplyLockedLayout();
 
-            GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
-            headerObject.transform.SetParent(transform, false);
-            headerObject.SetActive(true);
-            RectTransform headerRect = headerObject.GetComponent<RectTransform>();
-            headerRect.anchorMin = new Vector2(0f, 1f);
-            headerRect.anchorMax = new Vector2(1f, 1f);
-            headerRect.pivot = new Vector2(1f, 1f);
-            headerRect.anchoredPosition = Vector2.zero;
-            headerRect.sizeDelta = new Vector2(0f, 28f);
-
-            progressionHeader = headerObject.AddComponent<TextMeshProUGUI>();
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            if (theme != null)
-                theme.ApplyFont(progressionHeader, semiBold: true);
+            // Idempotent: reclaim existing children after domain reload / double EnsureExists.
+            Transform existingHeader = transform.Find("ProgressionHeader");
+            if (existingHeader != null)
+            {
+                progressionHeader = existingHeader.GetComponent<TextMeshProUGUI>();
+            }
             else
-                TmpUiHelper.ApplyDefaultFont(progressionHeader);
-            progressionHeader.fontSize = 16f;
-            progressionHeader.fontStyle = FontStyles.Bold;
-            progressionHeader.alignment = TextAlignmentOptions.TopRight;
-            progressionHeader.color = SurvivalPioneerUiPalette.HighlightText;
-            progressionHeader.raycastTarget = false;
+            {
+                GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
+                headerObject.transform.SetParent(transform, false);
+                headerObject.SetActive(true);
+                RectTransform headerRect = headerObject.GetComponent<RectTransform>();
+                headerRect.anchorMin = new Vector2(0f, 1f);
+                headerRect.anchorMax = new Vector2(1f, 1f);
+                headerRect.pivot = new Vector2(1f, 1f);
+                headerRect.anchoredPosition = Vector2.zero;
+                headerRect.sizeDelta = new Vector2(0f, 28f);
 
-            GameObject listObject = new GameObject("QuestList", typeof(RectTransform));
-            listObject.transform.SetParent(transform, false);
-            listRoot = listObject.GetComponent<RectTransform>();
-            listRoot.anchorMin = new Vector2(0f, 0f);
-            listRoot.anchorMax = new Vector2(1f, 1f);
-            listRoot.pivot = new Vector2(1f, 1f);
-            listRoot.offsetMin = Vector2.zero;
-            listRoot.offsetMax = new Vector2(0f, -30f);
+                progressionHeader = headerObject.AddComponent<TextMeshProUGUI>();
+                ShiftUiTheme theme = ShiftUiTheme.Current;
+                if (theme != null)
+                    theme.ApplyFont(progressionHeader, semiBold: true);
+                else
+                    TmpUiHelper.ApplyDefaultFont(progressionHeader);
+                progressionHeader.fontSize = 16f;
+                progressionHeader.fontStyle = FontStyles.Bold;
+                progressionHeader.alignment = TextAlignmentOptions.TopRight;
+                progressionHeader.color = SurvivalPioneerUiPalette.HighlightText;
+                progressionHeader.raycastTarget = false;
+            }
 
-            VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 2f;
-            layout.childAlignment = TextAnchor.UpperRight;
-            layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandHeight = false;
+            Transform existingList = transform.Find("QuestList");
+            if (existingList != null)
+            {
+                listRoot = existingList as RectTransform;
+            }
+            else
+            {
+                GameObject listObject = new GameObject("QuestList", typeof(RectTransform));
+                listObject.transform.SetParent(transform, false);
+                listRoot = listObject.GetComponent<RectTransform>();
+                listRoot.anchorMin = new Vector2(0f, 0f);
+                listRoot.anchorMax = new Vector2(1f, 1f);
+                listRoot.pivot = new Vector2(1f, 1f);
+                listRoot.offsetMin = Vector2.zero;
+                listRoot.offsetMax = new Vector2(0f, -30f);
 
-            ContentSizeFitter fitter = listObject.AddComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
+                layout.spacing = 2f;
+                layout.childAlignment = TextAnchor.UpperRight;
+                layout.childControlWidth = true;
+                layout.childForceExpandWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandHeight = false;
+
+                ContentSizeFitter fitter = listObject.AddComponent<ContentSizeFitter>();
+                fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            }
+
+            // Remove accidental duplicate chrome from older builds.
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                if (child == null)
+                    continue;
+                if (child.name != "ProgressionHeader" && child.name != "QuestList")
+                    continue;
+                if ((child.name == "ProgressionHeader" && child.gameObject != progressionHeader?.gameObject)
+                    || (child.name == "QuestList" && child != listRoot))
+                {
+                    Object.Destroy(child.gameObject);
+                }
+            }
         }
 
         /// <summary>
@@ -182,18 +244,49 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            if (!applyRuntimeLayout || !built)
+            if (!built)
                 return;
 
-            bool hideForUi = ShouldHideForBlockingUi();
-            if (rootRect != null && rootRect.gameObject.activeSelf == hideForUi)
-                rootRect.gameObject.SetActive(!hideForUi);
+            // Keep the host active so CanvasGroup fade can restore after map / optics / journal.
+            // Do not fight MainMenu HideGameplayUi (that SetActive(false) stops LateUpdate until restore).
+            ApplyPresentationVisible();
 
-            if (hideForUi)
+            if (!IsPresentationVisible())
                 return;
 
-            if (HasViewportChanged())
+            if (applyRuntimeLayout && HasViewportChanged())
                 ApplyLockedLayout();
+        }
+
+        private void EnsureCanvasGroup()
+        {
+            if (canvasGroup != null)
+                return;
+
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+        }
+
+        private void ApplyPresentationVisible()
+        {
+            EnsureCanvasGroup();
+            bool visible = gameplayVisible
+                && GameSession.HasStarted
+                && !MainMenuController.BlocksGameplayHud
+                && !ShouldHideForBlockingUi()
+                && !EnvironmentalCrisisHudMode.IsCrisisActive;
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+        }
+
+        private bool IsPresentationVisible()
+        {
+            return canvasGroup != null && canvasGroup.alpha > 0.01f;
         }
 
         private static bool ShouldHideForBlockingUi()
@@ -205,11 +298,15 @@ namespace Project.UI
         private void OnEnable()
         {
             if (built)
+            {
                 ApplyLockedLayout();
+                ApplyPresentationVisible();
+            }
         }
 
         private void Start()
         {
+            EnsureBuilt();
             questManager = QuestManager.Instance ?? FindAnyObjectByType<QuestManager>();
             if (questManager != null)
             {
@@ -224,6 +321,7 @@ namespace Project.UI
             ApplyLockedLayout();
             RefreshProgressionHeader();
             Refresh();
+            ApplyPresentationVisible();
         }
 
         private void OnDestroy()

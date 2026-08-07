@@ -154,11 +154,13 @@ namespace Project.UI
 
         private static void ApplyHudRetraction(bool crisis)
         {
-            SetRootActive(FindAnyObjectByType<ToolBarUI>()?.gameObject, !crisis);
-            SetRootActive(FindAnyObjectByType<ActiveQuestHudUI>()?.gameObject, !crisis);
-            SetRootActive(FindAnyObjectByType<PickupAimReticleUI>()?.gameObject, !crisis);
-            SetRootActive(FindAnyObjectByType<PickupProximityDotUI>()?.gameObject, !crisis);
-            SetRootActive(FindAnyObjectByType<WorldInteractionDotUI>()?.gameObject, !crisis);
+            SetRootActive(FindAnyObjectByType<ToolBarUI>(FindObjectsInactive.Include)?.gameObject, !crisis);
+            ActiveQuestHudUI questHud = FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
+            if (questHud != null)
+                questHud.SetGameplayVisible(!crisis);
+            SetRootActive(FindAnyObjectByType<PickupAimReticleUI>(FindObjectsInactive.Include)?.gameObject, !crisis);
+            SetRootActive(FindAnyObjectByType<PickupProximityDotUI>(FindObjectsInactive.Include)?.gameObject, !crisis);
+            SetRootActive(FindAnyObjectByType<WorldInteractionDotUI>(FindObjectsInactive.Include)?.gameObject, !crisis);
 
             UIManager uiManager = FindAnyObjectByType<UIManager>();
             if (uiManager != null)

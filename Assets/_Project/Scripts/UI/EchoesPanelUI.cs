@@ -75,14 +75,19 @@ namespace Project.UI
             ClearChildren(chronicleListParent);
             if (roster == null || roster.EchoChronicle.Count == 0)
             {
-                CreateInfoRow(chronicleListParent, "No echo rescues logged yet.");
+                JournalPanelLayout.CreateEmptyStateCard(
+                    chronicleListParent,
+                    theme,
+                    "No rescues logged",
+                    "Neural Echo rescues and failures appear here as your chronicle grows.",
+                    "Track signals in the field to begin a rescue.");
                 return;
             }
 
             for (int i = 0; i < roster.EchoChronicle.Count; i++)
             {
                 EchoChronicleEntry entry = roster.EchoChronicle[i];
-                if (entry == null)
+                if (entry == null || entry.simulationIncident)
                     continue;
 
                 string disposition = PioneerTraitUtility.GetDispositionLabel(entry.DispositionAtRescue);
@@ -92,14 +97,23 @@ namespace Project.UI
                     : "Unknown time";
 
                 string heading = entry.rescueFailed
-                    ? $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>Rescue Failed</color>"
-                    : $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>Rescue Success</color>";
+                    ? $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.DangerRed)}>Rescue Failed</color>"
+                    : $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.PositiveGreen)}>Rescue Success</color>";
 
                 CreateCardRow(
                     chronicleListParent,
-                    $"{heading}  ·  {entry.echoName}\n" +
-                    $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.MutedText)}>{dateLabel}  ·  {entry.classSummary}</color>\n" +
-                    $"<color=#{ColorUtility.ToHtmlStringRGB(dispositionColor)}>{disposition}</color>  ·  {entry.abilitySummary}");
+                    $"{heading}  ·  {JournalPanelLayout.FormatAccentTitle(entry.echoName)}\n" +
+                    $"{JournalPanelLayout.FormatHelper($"{dateLabel}  ·  {entry.classSummary}")}\n" +
+                    $"<color=#{ColorUtility.ToHtmlStringRGB(dispositionColor)}>{disposition}</color>  ·  {JournalPanelLayout.FormatHelper(entry.abilitySummary)}");
+            }
+
+            if (chronicleListParent.childCount == 0)
+            {
+                JournalPanelLayout.CreateEmptyStateCard(
+                    chronicleListParent,
+                    theme,
+                    "No rescues logged",
+                    "Neural Echo rescues and failures appear here as your chronicle grows.");
             }
         }
 
@@ -107,6 +121,12 @@ namespace Project.UI
         {
             ClearChildren(buffListParent);
             IReadOnlyList<string> buffs = CompanionBuffRegistry.GetActiveBuffSummaries(roster);
+            if (buffs == null || buffs.Count == 0)
+            {
+                CreateInfoRow(buffListParent, "No companion buffs active.");
+                return;
+            }
+
             for (int i = 0; i < buffs.Count; i++)
                 CreateInfoRow(buffListParent, buffs[i]);
         }
@@ -116,6 +136,12 @@ namespace Project.UI
             ClearChildren(signalListParent);
             EchoSignalRegistry.EnsureDefaultPlaceholder();
             IReadOnlyList<string> signals = EchoSignalRegistry.GetActiveSignalSummaries();
+            if (signals == null || signals.Count == 0)
+            {
+                CreateInfoRow(signalListParent, "No active echo signals.");
+                return;
+            }
+
             for (int i = 0; i < signals.Count; i++)
                 CreateInfoRow(signalListParent, signals[i]);
         }
@@ -152,16 +178,16 @@ namespace Project.UI
             bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
 
             HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 6, 6);
-            layout.spacing = 10f;
+            layout.padding = JournalPanelLayout.RowPaddingRect;
+            layout.spacing = 8f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
 
             LayoutElement rowLayout = row.GetComponent<LayoutElement>();
-            rowLayout.minHeight = 36f;
+            rowLayout.minHeight = JournalPanelLayout.RowMinHeight;
 
-            TextMeshProUGUI nameLabel = CreateLabel(row.transform, record.displayName, 14f, semiBold: true);
+            TextMeshProUGUI nameLabel = CreateLabel(row.transform, record.displayName, JournalPanelLayout.BodyFontSize, semiBold: true);
             nameLabel.color = SurvivalPioneerUiPalette.BodyText;
             LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
             nameLayout.flexibleWidth = 1f;
@@ -173,10 +199,10 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(badgeBg);
             badgeBg.color = SurvivalPioneerUiPalette.WithAlpha(badgeColor, 0.85f);
             LayoutElement badgeLayout = badgeObject.GetComponent<LayoutElement>();
-            badgeLayout.preferredWidth = 88f;
-            badgeLayout.minHeight = 24f;
+            badgeLayout.preferredWidth = 80f;
+            badgeLayout.minHeight = 22f;
 
-            TextMeshProUGUI badgeLabel = CreateLabel(badgeObject.transform, PioneerTraitUtility.GetDispositionLabel(record.Disposition), 12f, semiBold: true);
+            TextMeshProUGUI badgeLabel = CreateLabel(badgeObject.transform, PioneerTraitUtility.GetDispositionLabel(record.Disposition), JournalPanelLayout.CaptionFontSize, semiBold: true);
             badgeLabel.alignment = TextAlignmentOptions.Center;
             badgeLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             Stretch(badgeLabel.rectTransform);
@@ -191,46 +217,31 @@ namespace Project.UI
 
             panelRoot = new GameObject("EchoesPanel", typeof(RectTransform), typeof(Image));
             panelRoot.transform.SetParent(parent, false);
-            RectTransform rootRect = panelRoot.GetComponent<RectTransform>();
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = new Vector2(16f, 16f);
-            rootRect.offsetMax = new Vector2(-16f, -16f);
+            JournalPanelLayout.StretchFill(panelRoot.GetComponent<RectTransform>());
 
             Image panelBg = panelRoot.GetComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(panelBg, large: true, alphaMultiplier: 0.98f);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(panelBg);
-                panelBg.color = SurvivalPioneerUiPalette.PanelBackground;
-            }
+            JournalPanelLayout.StylePanelBackground(panelBg, theme);
 
             VerticalLayoutGroup rootLayout = panelRoot.AddComponent<VerticalLayoutGroup>();
-            rootLayout.spacing = 12f;
-            rootLayout.padding = new RectOffset(14, 14, 14, 14);
-            rootLayout.childControlWidth = true;
-            rootLayout.childControlHeight = true;
-            rootLayout.childForceExpandWidth = true;
-            rootLayout.childForceExpandHeight = false;
+            JournalPanelLayout.ApplyRootVerticalLayout(rootLayout);
 
             CreateSectionHeader(panelRoot.transform, "Rescue Chronicle");
-            chronicleListParent = CreateSectionScroll(panelRoot.transform, 160f);
+            chronicleListParent = CreateSectionScroll(panelRoot.transform, 140f);
 
             CreateSectionHeader(panelRoot.transform, "Companion Buffs");
-            buffListParent = CreateSectionScroll(panelRoot.transform, 88f);
+            buffListParent = CreateSectionScroll(panelRoot.transform, 72f);
 
             CreateSectionHeader(panelRoot.transform, "Active Echo Signals");
-            signalListParent = CreateSectionScroll(panelRoot.transform, 72f);
+            signalListParent = CreateSectionScroll(panelRoot.transform, 64f);
 
             CreateSectionHeader(panelRoot.transform, "Echo Dispositions");
-            dispositionListParent = CreateSectionScroll(panelRoot.transform, 96f);
+            dispositionListParent = CreateSectionScroll(panelRoot.transform, 80f);
         }
 
         private void CreateSectionHeader(Transform parent, string title)
         {
-            TextMeshProUGUI header = CreateLabel(parent, title, 18f, semiBold: true);
-            header.color = SurvivalPioneerUiPalette.AccentText;
+            TextMeshProUGUI header = CreateLabel(parent, title, JournalPanelLayout.HeaderFontSize, semiBold: true);
+            JournalPanelLayout.ApplyHeaderStyle(header);
         }
 
         private Transform CreateSectionScroll(Transform parent, float minHeight)
@@ -240,18 +251,18 @@ namespace Project.UI
             LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
             scrollLayout.minHeight = minHeight;
             scrollLayout.preferredHeight = minHeight;
+            scrollLayout.flexibleHeight = 1f;
 
             Image scrollBg = scrollObject.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.ScrollBackground;
+            JournalPanelLayout.StyleScrollBackground(scrollBg);
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
             viewport.transform.SetParent(scrollObject.transform, false);
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
             Stretch(viewportRect);
-            viewportRect.offsetMin = new Vector2(4f, 4f);
-            viewportRect.offsetMax = new Vector2(-4f, -4f);
-            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.35f);
+            viewportRect.offsetMin = new Vector2(JournalPanelLayout.ScrollInset, JournalPanelLayout.ScrollInset);
+            viewportRect.offsetMax = new Vector2(-JournalPanelLayout.ScrollInset, -JournalPanelLayout.ScrollInset);
+            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.28f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
@@ -263,10 +274,7 @@ namespace Project.UI
             contentRect.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 6f;
-            contentLayout.padding = new RectOffset(4, 4, 4, 4);
-            contentLayout.childControlWidth = true;
-            contentLayout.childForceExpandWidth = true;
+            JournalPanelLayout.ApplyListVerticalLayout(contentLayout);
             content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             ScrollRect scroll = scrollObject.GetComponent<ScrollRect>();
@@ -281,28 +289,26 @@ namespace Project.UI
             GameObject row = new GameObject("ChronicleRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             row.transform.SetParent(parent, false);
             Image bg = row.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(row);
+            JournalPanelLayout.StyleDenseCard(bg);
 
             LayoutElement layout = row.GetComponent<LayoutElement>();
-            layout.minHeight = 72f;
+            layout.minHeight = JournalPanelLayout.CardMinHeight;
 
-            TextMeshProUGUI label = CreateLabel(row.transform, text, 13f);
+            TextMeshProUGUI label = CreateLabel(row.transform, text, JournalPanelLayout.BodyFontSize);
             label.color = SurvivalPioneerUiPalette.BodyText;
-            Stretch(label.rectTransform, 10f, 8f);
+            Stretch(label.rectTransform, JournalPanelLayout.RowPaddingH, JournalPanelLayout.RowPaddingV);
         }
 
         private void CreateInfoRow(Transform parent, string text)
         {
             GameObject row = new GameObject("InfoRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             row.transform.SetParent(parent, false);
-            row.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f);
-            row.GetComponent<LayoutElement>().minHeight = 32f;
+            row.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.45f);
+            row.GetComponent<LayoutElement>().minHeight = JournalPanelLayout.RowMinHeight;
 
-            TextMeshProUGUI label = CreateLabel(row.transform, text, 13f);
-            label.color = SurvivalPioneerUiPalette.MutedText;
-            Stretch(label.rectTransform, 10f, 6f);
+            TextMeshProUGUI label = CreateLabel(row.transform, text, JournalPanelLayout.SecondaryFontSize);
+            label.color = SurvivalPioneerUiPalette.Gold;
+            Stretch(label.rectTransform, JournalPanelLayout.RowPaddingH, 4f);
         }
 
         private TextMeshProUGUI CreateLabel(Transform parent, string text, float size, bool semiBold = false)
@@ -323,8 +329,8 @@ namespace Project.UI
             return disposition switch
             {
                 EchoDisposition.Friendly => SurvivalPioneerUiPalette.PositiveGreen,
-                EchoDisposition.Synced => SurvivalPioneerUiPalette.RichFuchsia,
-                EchoDisposition.HostileUntilSynced => SurvivalPioneerUiPalette.RichFuchsia,
+                EchoDisposition.Synced => SurvivalPioneerUiPalette.Gold,
+                EchoDisposition.HostileUntilSynced => SurvivalPioneerUiPalette.DangerRed,
                 _ => SurvivalPioneerUiPalette.SoftBeigeGray
             };
         }

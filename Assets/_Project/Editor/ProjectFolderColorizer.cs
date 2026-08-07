@@ -85,6 +85,7 @@ namespace Project.EditorTools
             { ProjectAssetPaths.ItemsOperations, new Color(0.32f, 0.66f, 0.48f) },
             { ProjectAssetPaths.ItemsTools, new Color(0.27f, 0.70f, 0.46f) },
             { ProjectAssetPaths.ItemsConsumables, new Color(0.29f, 0.73f, 0.41f) },
+            { ProjectAssetPaths.ItemsThrowables, new Color(0.35f, 0.70f, 0.38f) },
             { ProjectAssetPaths.ItemsVehicles, new Color(0.23f, 0.67f, 0.43f) },
             { ProjectAssetPaths.ItemsNodes, new Color(0.22f, 0.64f, 0.36f) },
             { ProjectAssetPaths.EnemiesData, new Color(0.22f, 0.62f, 0.38f) },

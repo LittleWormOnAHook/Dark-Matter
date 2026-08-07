@@ -275,6 +275,16 @@ namespace Project.Audio
             PlayUiClip(PickClip(profile?.achievementUnlockClips), profile != null ? profile.uiVolume * 1.05f : 0.9f);
         }
 
+        /// <summary>Level-up chime. Prefers levelUpClips, then achievementUnlockClips.</summary>
+        public void PlayLevelUp()
+        {
+            AudioClip[] clips = profile?.levelUpClips;
+            if (clips == null || clips.Length == 0)
+                clips = profile?.achievementUnlockClips;
+
+            PlayUiClip(PickClip(clips), profile != null ? profile.uiVolume * 1.1f : 0.95f);
+        }
+
         private void PlayUiClip(AudioClip clip, float volumeScale)
         {
             if (clip == null || uiSource == null)

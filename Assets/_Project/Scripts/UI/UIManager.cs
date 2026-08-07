@@ -146,16 +146,20 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            GetJournalPanel()?.TryToggleTab(JournalWindowId.Craft);
+            // C opens the Blueprints library (pending + learned). Production crafting is station-only.
+            GetJournalPanel()?.OpenToBlueprintsTab();
         }
 
-        public void OnToggleRecipes(InputAction.CallbackContext context)
+        public void OnToggleBlueprints(InputAction.CallbackContext context)
         {
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Recipes);
         }
+
+        /// <summary>Obsolete alias for <see cref="OnToggleBlueprints"/>.</summary>
+        public void OnToggleRecipes(InputAction.CallbackContext context) => OnToggleBlueprints(context);
 
         public void OnTogglePioneers(InputAction.CallbackContext context)
         {
@@ -297,6 +301,7 @@ namespace Project.UI
         {
             PickupToastUI.EnsureExists(transform);
             XpToastUI.EnsureExists(transform);
+            DMILevelUpPopupUI.EnsureExists(transform);
             AchievementUnlockPopupUI.EnsureExists(transform);
             AchievementProgressBridge.EnsureExists();
             QuestGiverDialogUI.EnsureExists(transform);
@@ -698,11 +703,9 @@ namespace Project.UI
             ShowCurrencyPopup($"+{amount} AC", source);
         }
 
-        public void ShowLevelUpPopup(int newLevel, int skillPointsGained)
+        public void ShowLevelUpPopup(int newLevel, int levelsGained = 1)
         {
-            ShowCurrencyPopup(
-                $"Level Up! Lv {newLevel}",
-                skillPointsGained > 0 ? $"+{skillPointsGained} skill point(s)" : "Level increased");
+            DMILevelUpPopupUI.Show(newLevel, levelsGained);
         }
 
         public void ShowPiReward(int amount, string source = "Gathering")

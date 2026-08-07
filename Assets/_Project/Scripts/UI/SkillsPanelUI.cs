@@ -53,7 +53,9 @@ namespace Project.UI
             progression ??= PlayerProgressionManager.EnsureExists();
             int points = progression != null ? progression.UnspentSkillPoints : 0;
             int level = progression != null ? progression.Level : 1;
-            summaryLabel.text = $"Player Level {level}  |  Unspent Skill Points: {points}";
+            summaryLabel.text =
+                $"Level {JournalPanelLayout.FormatGoldValue(level.ToString())}  ·  " +
+                $"Unspent {JournalPanelLayout.FormatGoldValue(points.ToString())}";
             summaryLabel.color = points > 0
                 ? SurvivalPioneerUiPalette.HighlightText
                 : SurvivalPioneerUiPalette.BodyText;
@@ -72,28 +74,37 @@ namespace Project.UI
             }
 
             if (!anySkill)
-                CreateInfoLabel("No skills configured. Run Tools → Dark Matter Genesis → Content → Create Starter Skills.");
+            {
+                JournalPanelLayout.CreateEmptyStateCard(
+                    listParent,
+                    theme,
+                    "No skills configured",
+                    "Starter skill definitions have not been authored yet.",
+                    "Tools → Dark Matter Genesis → Content → Create Starter Skills");
+            }
         }
 
         private void CreateSkillRow(SkillDefinition skill)
         {
-            GameObject row = new GameObject(skill.ResolvedId, typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image), typeof(Outline));
+            GameObject row = new GameObject(skill.ResolvedId, typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(Image), typeof(LayoutElement));
             row.transform.SetParent(listParent, false);
 
             Image bg = row.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
+            JournalPanelLayout.StyleDenseCard(bg);
 
-            Outline outline = row.GetComponent<Outline>();
-            outline.effectColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.55f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            LayoutElement rowLayout = row.GetComponent<LayoutElement>();
+            rowLayout.minHeight = JournalPanelLayout.RowMinHeight + 8f;
+            rowLayout.preferredHeight = JournalPanelLayout.RowMinHeight + 14f;
+            rowLayout.flexibleHeight = 0f;
 
             HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 8, 8);
-            layout.spacing = 10f;
+            layout.padding = new RectOffset(8, 8, 4, 4);
+            layout.spacing = 8f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
 
             int rank = progression != null ? progression.GetSkillRank(skill.ResolvedId) : 0;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, progression, out string error);
@@ -103,22 +114,35 @@ namespace Project.UI
             textObject.transform.SetParent(row.transform, false);
             TextMeshProUGUI label = textObject.GetComponent<TextMeshProUGUI>();
             ApplyThemeFont(label, semiBold: true);
-            label.fontSize = 14f;
+            label.fontSize = JournalPanelLayout.BodyFontSize;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.color = SurvivalPioneerUiPalette.BodyText;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+            label.maxVisibleLines = 2;
             label.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{skill.displayName}</color>  " +
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.Gold)}>(Rank {rank}/{skill.maxRank}, Lv {skill.requiredPlayerLevel}+)</color>\n" +
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.MutedText)}>{skill.description}</color>" +
+                $"{JournalPanelLayout.FormatAccentTitle(skill.displayName)}  " +
+                $"{JournalPanelLayout.FormatGoldValue($"Rank {rank}/{skill.maxRank}")}  " +
+                $"{JournalPanelLayout.FormatHelper($"Lv {skill.requiredPlayerLevel}+")}\n" +
+                $"{JournalPanelLayout.FormatHelper(Truncate(skill.description, 90))}" +
                 (!canAllocate && !isMaxed && !string.IsNullOrEmpty(error)
-                    ? $"\n<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.SoftBeigeGray)}>{error}</color>"
+                    ? $"  ·  {JournalPanelLayout.FormatHelper(error)}"
                     : string.Empty);
 
+            LayoutElement textLayout = textObject.GetComponent<LayoutElement>();
+            textLayout.flexibleWidth = 1f;
+            textLayout.minHeight = JournalPanelLayout.RowMinHeight;
+
+            float btnSize = JournalPanelLayout.SkillAllocateButtonSize;
             GameObject buttonObject = new GameObject("SpendButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
             buttonObject.transform.SetParent(row.transform, false);
             LayoutElement buttonLayout = buttonObject.GetComponent<LayoutElement>();
-            buttonLayout.preferredWidth = 96f;
-            buttonLayout.minHeight = 34f;
+            buttonLayout.preferredWidth = btnSize;
+            buttonLayout.minWidth = btnSize;
+            buttonLayout.minHeight = btnSize;
+            buttonLayout.preferredHeight = btnSize;
+            buttonLayout.flexibleWidth = 0f;
+            buttonLayout.flexibleHeight = 0f;
 
             Image buttonImage = buttonObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(buttonImage);
@@ -147,10 +171,9 @@ namespace Project.UI
             TextMeshProUGUI buttonLabel = buttonLabelObject.GetComponent<TextMeshProUGUI>();
             ApplyThemeFont(buttonLabel, semiBold: true);
             buttonLabel.alignment = TextAlignmentOptions.Center;
-            buttonLabel.fontSize = 13f;
+            buttonLabel.fontSize = JournalPanelLayout.ButtonFontSize;
             buttonLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
-            int nextCost = skill.GetCostForNextRank(rank);
-            buttonLabel.text = isMaxed ? "Max" : $"+1 ({nextCost}pt)";
+            buttonLabel.text = isMaxed ? "MAX" : "+";
 
             SkillDefinition captured = skill;
             button.onClick.AddListener(() =>
@@ -162,15 +185,11 @@ namespace Project.UI
             });
         }
 
-        private void CreateInfoLabel(string message)
+        private static string Truncate(string value, int maxChars)
         {
-            GameObject labelObject = new GameObject("Info", typeof(RectTransform), typeof(TextMeshProUGUI));
-            labelObject.transform.SetParent(listParent, false);
-            TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-            ApplyThemeFont(label);
-            label.fontSize = 14f;
-            label.color = SurvivalPioneerUiPalette.MutedText;
-            label.text = message;
+            if (string.IsNullOrEmpty(value) || value.Length <= maxChars)
+                return value ?? string.Empty;
+            return value.Substring(0, maxChars - 1) + "…";
         }
 
         private void EnsureBuilt(Transform parent)
@@ -182,50 +201,67 @@ namespace Project.UI
 
             panelRoot = new GameObject("SkillsPanel", typeof(RectTransform), typeof(Image));
             panelRoot.transform.SetParent(parent, false);
-            RectTransform rootRect = panelRoot.GetComponent<RectTransform>();
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = new Vector2(16f, 16f);
-            rootRect.offsetMax = new Vector2(-16f, -16f);
+            JournalPanelLayout.StretchFill(panelRoot.GetComponent<RectTransform>());
 
             Image panelBg = panelRoot.GetComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(panelBg, large: true, alphaMultiplier: 0.98f);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(panelBg);
-                panelBg.color = SurvivalPioneerUiPalette.PanelBackground;
-            }
+            JournalPanelLayout.StylePanelBackground(panelBg, theme);
 
-            VerticalLayoutGroup layout = panelRoot.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 12f;
-            layout.padding = new RectOffset(14, 14, 14, 14);
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            // Left half = allocation list; right half reserved for future skill detail.
+            HorizontalLayoutGroup split = panelRoot.AddComponent<HorizontalLayoutGroup>();
+            JournalPanelLayout.ApplyRootHorizontalLayout(split);
+            split.spacing = JournalPanelLayout.SectionSpacing;
+            split.padding = JournalPanelLayout.PanelPaddingRect;
 
-            summaryLabel = CreateLabel(panelRoot.transform, 20f);
+            GameObject leftColumn = new GameObject("SkillsColumn", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            leftColumn.transform.SetParent(panelRoot.transform, false);
+            LayoutElement leftLayout = leftColumn.GetComponent<LayoutElement>();
+            leftLayout.flexibleWidth = 1f;
+            leftLayout.preferredWidth = 0f;
+            leftLayout.minWidth = 220f;
+            VerticalLayoutGroup leftVertical = leftColumn.GetComponent<VerticalLayoutGroup>();
+            leftVertical.spacing = JournalPanelLayout.SectionSpacing;
+            leftVertical.padding = new RectOffset(0, 4, 0, 0);
+            leftVertical.childControlWidth = true;
+            leftVertical.childControlHeight = true;
+            leftVertical.childForceExpandWidth = true;
+            leftVertical.childForceExpandHeight = false;
+            leftVertical.childAlignment = TextAnchor.UpperLeft;
+
+            GameObject rightColumn = new GameObject("DetailColumn", typeof(RectTransform), typeof(LayoutElement), typeof(Image));
+            rightColumn.transform.SetParent(panelRoot.transform, false);
+            LayoutElement rightLayout = rightColumn.GetComponent<LayoutElement>();
+            rightLayout.flexibleWidth = 1f;
+            rightLayout.preferredWidth = 0f;
+            rightLayout.minWidth = 120f;
+            Image rightBg = rightColumn.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(rightBg);
+            rightBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.35f);
+            rightBg.raycastTarget = false;
+
+            TextMeshProUGUI sectionHeader = CreateLabel(leftColumn.transform, JournalPanelLayout.HeaderFontSize);
+            JournalPanelLayout.ApplyHeaderStyle(sectionHeader);
+            sectionHeader.text = "Allocation";
+
+            summaryLabel = CreateLabel(leftColumn.transform, JournalPanelLayout.SummaryFontSize);
             summaryLabel.color = SurvivalPioneerUiPalette.BodyText;
 
             GameObject scrollObject = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement), typeof(Image));
-            scrollObject.transform.SetParent(panelRoot.transform, false);
+            scrollObject.transform.SetParent(leftColumn.transform, false);
             LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
             scrollLayout.flexibleHeight = 1f;
-            scrollLayout.minHeight = 240f;
+            scrollLayout.minHeight = 200f;
 
             Image scrollBg = scrollObject.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            JournalPanelLayout.StyleScrollBackground(scrollBg);
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
             viewport.transform.SetParent(scrollObject.transform, false);
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
             viewportRect.anchorMin = Vector2.zero;
             viewportRect.anchorMax = Vector2.one;
-            viewportRect.offsetMin = new Vector2(4f, 4f);
-            viewportRect.offsetMax = new Vector2(-4f, -4f);
-            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.35f);
+            viewportRect.offsetMin = new Vector2(JournalPanelLayout.ScrollInset, JournalPanelLayout.ScrollInset);
+            viewportRect.offsetMax = new Vector2(-JournalPanelLayout.ScrollInset, -JournalPanelLayout.ScrollInset);
+            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.28f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
@@ -236,10 +272,7 @@ namespace Project.UI
             contentRect.offsetMin = Vector2.zero;
             contentRect.offsetMax = Vector2.zero;
             VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 8f;
-            contentLayout.padding = new RectOffset(4, 4, 4, 4);
-            contentLayout.childControlWidth = true;
-            contentLayout.childForceExpandWidth = true;
+            JournalPanelLayout.ApplyListVerticalLayout(contentLayout);
             ContentSizeFitter fitter = content.GetComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -258,6 +291,7 @@ namespace Project.UI
             ApplyThemeFont(label, semiBold: true);
             label.fontSize = size;
             label.alignment = TextAlignmentOptions.TopLeft;
+            label.GetComponent<LayoutElement>().preferredHeight = size + 6f;
             return label;
         }
 

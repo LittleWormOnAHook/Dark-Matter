@@ -71,7 +71,13 @@ namespace Project.UI
             panelCanvas.sortingOrder = 10;
 
             Image panelImage = panelGo.GetComponent<Image>();
-            panelImage.color = new Color(0.08f, 0.1f, 0.12f, 0.94f);
+            SurvivalPioneerUiPalette.ApplyPanelShellBackground(panelImage, 0.94f);
+            panelImage.enabled = true;
+
+            Outline border = panelGo.AddComponent<Outline>();
+            border.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+            border.effectDistance = new Vector2(2f, -2f);
+            border.useGraphicAlpha = true;
 
             GameObject gridGo = new GameObject("MainInventoryGrid", typeof(RectTransform));
             gridGo.transform.SetParent(panelGo.transform, false);

@@ -22,7 +22,7 @@ namespace Project.EditorTools
 
             EditorGUILayout.LabelField("Dark Matter Genesis", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Editor utilities grouped by category. Match the Tools → Dark Matter Genesis menu.",
+                "Editor utilities grouped by category. Match the Tools Ã¢â€ â€™ Dark Matter Genesis menu.",
                 MessageType.None);
             EditorGUILayout.Space(8f);
 
@@ -35,8 +35,9 @@ namespace Project.EditorTools
 
             DrawSection("Prefab Creator", new[]
             {
-                (SurvivalPioneerEditorMenus.ItemDataCreator, "Gatherables: ItemData + ResourceNode world prefab"),
-                (SurvivalPioneerEditorMenus.CraftingItemCreator, "Consumables/resources: ItemData + ItemPickup world prefab"),
+                (SurvivalPioneerEditorMenus.ItemDataCreator, "Opens Blueprint Manager → Item Data tab (gatherables / consumables / throwables)"),
+                (SurvivalPioneerEditorMenus.CraftingItemCreator, "Opens Blueprint Manager → Crafting Item tab (ingredients / outputs)"),
+                (SurvivalPioneerEditorMenus.GrenadeItemCreator, "Throwable consumable ItemData (Throwables folder, identity-only)"),
                 (SurvivalPioneerEditorMenus.ResourceManager, "Resource Manager — mining / plant nodes, yields, tools, ItemData"),
                 (SurvivalPioneerEditorMenus.EquipmentItemCreator, "Weapons and tools with held + pickup prefabs"),
                 (SurvivalPioneerEditorMenus.EquipmentItemCreatorFromSelection, "Equipment creator pre-filled from selection"),
@@ -51,7 +52,7 @@ namespace Project.EditorTools
                 (SurvivalPioneerEditorMenus.ExposureZonePrefabCreator, "Exposure zone profile + trigger prefab with hazards and mitigation"),
                 (SurvivalPioneerEditorMenus.CameraShakeEmitterCreator, "Camera shake emitters: explosion, continuous, pulse"),
                 (SurvivalPioneerEditorMenus.CameraShakeEmitterCreateAllPresets, "Batch-create all camera shake emitter prefabs"),
-                (SurvivalPioneerEditorMenus.RecipePrefabCreator, "World recipe scroll/book pickup prefabs for existing recipes"),
+                (SurvivalPioneerEditorMenus.RecipePrefabCreator, "World blueprint scroll/book pickup prefabs (opens Blueprint Manager)"),
                 (SurvivalPioneerEditorMenus.InventorySlotPrefab, "Inventory slot UI prefab"),
             });
 
@@ -93,12 +94,9 @@ namespace Project.EditorTools
 
             DrawSection("Crafting", new[]
             {
-                (SurvivalPioneerEditorMenus.Crafting + "Craftable Equipment Recipe Creator", "Add a recipe for an existing weapon or tool"),
-                (SurvivalPioneerEditorMenus.Crafting + "Recipe Creator", "Author, edit, and register recipes"),
-                (SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Icons From Output", "Copy output item icons onto recipe assets"),
-                (SurvivalPioneerEditorMenus.Crafting + "Wire Scene Stations", "Wire Cooking, Workbench, and recipe pickups"),
-                (SurvivalPioneerEditorMenus.Crafting + "Seed Starter Recipes", "Create starter recipe assets and registry entries"),
-                (SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Registry", "Refresh recipe registry from assets"),
+                (SurvivalPioneerEditorMenus.BlueprintCraftingManager, "Primary: blueprints, equipment craft, pickups, registry, Item Data, Crafting Item"),
+                (SurvivalPioneerEditorMenus.Crafting + "Wire Scene Stations", "Wire Cooking, Workbench, and blueprint pickups"),
+                (SurvivalPioneerEditorMenus.Crafting + "Seed Starter Blueprints", "Create starter blueprint assets and registry entries"),
             });
 
             DrawSection("Quests", new[]

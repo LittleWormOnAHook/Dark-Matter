@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f6e15237c30d90e4d9b2d5058d5e48db, type: 2}
+  - {fileID: 2100000, guid: a3bc62d97d560bf45aea354954271b28, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -111,8 +111,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.22501464, y: 0.2904084, z: 0.19486846}
-  m_Center: {x: 0, y: -0.2452042, z: 0}
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0.05, z: 0}
 --- !u!114 &5577776156383552203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
   itemData: {fileID: 11400000, guid: f02b2658b1dcabd4daf8fdb0d9bd91c1, type: 2}
-  amount: 1
+  amount: 10
   promptText: Press E to use
   canRespawn: 1
   minRespawnTime: 20

@@ -128,10 +128,13 @@ MonoBehaviour:
   grantsXp: 1
   xpAmount: 5
   xpSource: 5
+  grantXpEveryPickupOrUse: 1
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Io silicate rock fragments. Laser-mined from mineral boulders.
-    Used in abrasives, ceramics, and structural crafting.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: Io silicate rock from mineral boulders. Used in abrasives,
+    ceramics, and structural crafting. Small XP each mining yield.
   unlocksInventoryStorageRow: 0
   gatherKind: 0
   requiredGatherSkillRank: 1

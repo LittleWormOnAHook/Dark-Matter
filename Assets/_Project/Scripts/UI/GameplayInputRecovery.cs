@@ -54,7 +54,8 @@ namespace Project.UI
 
             return EnemyLootDialogUI.IsDialogOpen ||
                    QuestGiverDialogUI.IsDialogOpen ||
-                   BuildingControlPanelUI.IsOpen;
+                   BuildingControlPanelUI.IsOpen ||
+                   CraftingUI.IsAnyStandaloneOpen;
         }
 
         private static void RefreshInvectorInputLocks()
@@ -78,6 +79,7 @@ namespace Project.UI
             PetUI.CloseAnyOpenPet();
             QuestGiverDialogUI.CloseAnyOpenQuestDialog();
             BuildingControlPanelUI.CloseAnyOpenBuildingControl();
+            CraftingUI.CloseAnyOpenStandalone();
             Object.FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
         }
     }

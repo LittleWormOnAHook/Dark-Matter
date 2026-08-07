@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &9220273726471741887
+--- !u!1 &1476365352592294086
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,39 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8289006578405683184}
-  - component: {fileID: 4495464426224680377}
-  - component: {fileID: 5837407213582145425}
+  - component: {fileID: 2071473032459495435}
+  - component: {fileID: 711193186714269922}
+  - component: {fileID: 782753757157972933}
   m_Layer: 0
-  m_Name: RecipePickup_grilled_mushroom
+  m_Name: BlueprintPickup_stone_salve
   m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8289006578405683184
+--- !u!4 &2071473032459495435
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9220273726471741887}
+  m_GameObject: {fileID: 1476365352592294086}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6492100854620782729}
+  - {fileID: 5946237783223779198}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &4495464426224680377
+--- !u!65 &711193186714269922
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9220273726471741887}
+  m_GameObject: {fileID: 1476365352592294086}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -55,29 +55,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0.54, z: 0}
---- !u!114 &5837407213582145425
+--- !u!114 &782753757157972933
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9220273726471741887}
+  m_GameObject: {fileID: 1476365352592294086}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2b8c4d6e8f078d9c1b0a9f8e7d6c5b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
-  recipeId: grilled_mushroom
+  recipeId: stone_salve
   promptText: Press E to learn recipe
   interactRange: 5
   collectedMessage: Recipe scroll collected!
---- !u!1001 &6487884627280274249
+--- !u!1001 &5950464740171160766
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 8289006578405683184}
+    m_TransformParent: {fileID: 2071473032459495435}
     m_Modifications:
     - target: {fileID: 1173342265669808, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
       propertyPath: m_Name
@@ -128,8 +128,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
---- !u!4 &6492100854620782729 stripped
+--- !u!4 &5946237783223779198 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4798153273156544, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
-  m_PrefabInstance: {fileID: 6487884627280274249}
+  m_PrefabInstance: {fileID: 5950464740171160766}
   m_PrefabAsset: {fileID: 0}

@@ -21,7 +21,12 @@ namespace Project.UI
                 return;
 
             ApplyNamedPanel(transform, "Hotbar", theme, large: false);
-            ApplyNamedPanel(transform, "InventoryPanel", theme, large: true);
+
+            // Inventory chrome is owned by InventoryUI / UI Studio — do not force theme overwrite.
+            InventoryUI inventoryUi = GetComponent<InventoryUI>() ?? FindAnyObjectByType<InventoryUI>();
+            if (inventoryUi == null || !inventoryUi.PreservePanelChrome)
+                ApplyNamedPanel(transform, "InventoryPanel", theme, large: true);
+
             ApplyToolbarPanel(transform, theme);
             ApplyNonStatFonts(theme);
         }

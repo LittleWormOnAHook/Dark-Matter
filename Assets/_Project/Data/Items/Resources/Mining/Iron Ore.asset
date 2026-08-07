@@ -128,10 +128,13 @@ MonoBehaviour:
   grantsXp: 1
   xpAmount: 5
   xpSource: 5
+  grantXpEveryPickupOrUse: 1
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Dense iron-bearing ore. Laser-mined from mineral boulders.
-    Smelted into metal components for weapons and modules.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: Dense iron-bearing ore from laser-mined boulders. Smelts into
+    metal components for weapons and modules. Small XP each mining yield.
   unlocksInventoryStorageRow: 0
   gatherKind: 0
   requiredGatherSkillRank: 2

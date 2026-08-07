@@ -249,9 +249,9 @@ namespace Project.UI
             sectionLayout.childForceExpandHeight = false;
 
             TextMeshProUGUI headingLabel = CreateBodyLabel(sectionObject.transform, "Heading", heading);
-            headingLabel.fontSize = 13f;
+            headingLabel.fontSize = JournalPanelLayout.HeaderFontSize;
             headingLabel.fontStyle = FontStyles.Bold;
-            headingLabel.color = SurvivalPioneerUiPalette.RichFuchsia;
+            headingLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             headingLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
             return sectionObject.transform;
@@ -267,7 +267,7 @@ namespace Project.UI
             TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = text;
-            label.fontSize = 12f;
+            label.fontSize = JournalPanelLayout.SecondaryFontSize;
             label.fontStyle = FontStyles.Normal;
             label.color = SurvivalPioneerUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.MidlineLeft;

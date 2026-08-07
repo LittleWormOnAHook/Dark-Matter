@@ -47,7 +47,7 @@ namespace Project.EditorTools.UiLayout
                 SearchNames = new[] { "ThermalGauge" },
                 ComponentType = typeof(VerticalThermalNeedleGauge),
                 PlayModeOnly = true,
-                Description = "EVA temperature needle gauge (-190°F to 200°F)."
+                Description = "EVA temperature needle gauge (-190Â°F to 200Â°F)."
             },
             new UiPanelDefinition
             {
@@ -248,7 +248,7 @@ namespace Project.EditorTools.UiLayout
                 Label = "Journal Recipes Window",
                 Category = "Journal",
                 ParentSearchName = "JournalWindowHost",
-                SearchNames = new[] { "RecipesWindowHost" },
+                SearchNames = new[] { "BlueprintsWindowHost", "RecipesWindowHost" },
                 PlayModeOnly = true
             },
             new UiPanelDefinition
@@ -306,6 +306,7 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "Main Menu", Category = "Panels", PanelId = UiPanelIds.MainMenu, SearchNames = new[] { "MainMenuPanel", "MainMenuBackground" }, ComponentType = typeof(MainMenuController), PlayModeOnly = true, Description = "Runtime-built main menu (MenuUiBuilder)." },
             new UiPanelDefinition { Label = "Building Control", Category = "Panels", PanelId = UiPanelIds.BuildingControl, SearchNames = new[] { "BuildingControlOverlay", "BuildingControlPanelUI" }, ComponentType = typeof(BuildingControlPanelUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Achievement Unlock Popup", Category = "Panels", SearchNames = new[] { "AchievementUnlockPopupUI" }, ComponentType = typeof(AchievementUnlockPopupUI), PlayModeOnly = true, Description = "Center-screen achievement-unlock popup card." },
+            new UiPanelDefinition { Label = "Level Up Popup", Category = "Panels", SearchNames = new[] { "DMILevelUpPopupUI" }, ComponentType = typeof(DMILevelUpPopupUI), PlayModeOnly = true, Description = "Center-screen level-up toast with chime (non-modal)." },
             new UiPanelDefinition { Label = "Achievements Panel", Category = "Panels", SearchNames = new[] { "AchievementsPanel" }, ComponentType = typeof(AchievementsPanelUI), PlayModeOnly = true, Description = "Scrollable grid content panel for the Journal Achievements tab." },
             new UiPanelDefinition { Label = "Echoes Panel", Category = "Panels", SearchNames = new[] { "EchoesPanel" }, ComponentType = typeof(EchoesPanelUI), PlayModeOnly = true, Description = "Neural Echo chronicle content panel for the Journal Echoes tab." },
             new UiPanelDefinition { Label = "Skills Panel", Category = "Panels", SearchNames = new[] { "SkillsPanel" }, ComponentType = typeof(SkillsPanelUI), PlayModeOnly = true, Description = "Skill-spend content panel for the Journal Skills tab." },
@@ -318,7 +319,7 @@ namespace Project.EditorTools.UiLayout
 
             new UiPanelDefinition { Label = "Item Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "ItemHoverTooltip" }, PlayModeOnly = true, Description = "Runtime tooltip shown when hovering inventory slots." },
             new UiPanelDefinition { Label = "Inventory Context Menu", Category = "Mini Windows", SearchNames = new[] { "InventoryContextMenu", "MenuPanel" }, PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Recipe Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "RecipeHoverTooltip", "RecipeTooltip" }, PlayModeOnly = true },
+            new UiPanelDefinition { Label = "Blueprint Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "BlueprintHoverTooltip", "RecipeHoverTooltip", "RecipeTooltip" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Optics Overlay", Category = "Mini Windows", SearchNames = new[] { "OpticsOverlay" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Death Popup", Category = "Mini Windows", SearchNames = new[] { "DeathPopupPanel" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "Floating Damage", Category = "Mini Windows", SearchNames = new[] { "DamagePopup" }, PlayModeOnly = true },
@@ -520,6 +521,7 @@ namespace Project.EditorTools.UiLayout
                 prepared += SetSerializedBoolIfExists(behaviours[i], "applyRuntimeHudLayout", false) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "preserveHotbarLayout", true) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "preserveMainGridLayout", true) ? 1 : 0;
+                prepared += SetSerializedBoolIfExists(behaviours[i], "preservePanelChrome", true) ? 1 : 0;
                 prepared += SetSerializedBoolIfExists(behaviours[i], "preserveManualLayout", true) ? 1 : 0;
             }
 
@@ -623,6 +625,7 @@ namespace Project.EditorTools.UiLayout
                 return false;
 
             bool prepared = SetSerializedBoolIfExists(inventoryUi, "preserveMainGridLayout", true);
+            prepared |= SetSerializedBoolIfExists(inventoryUi, "preservePanelChrome", true);
             prepared |= SetSerializedBoolIfExists(inventoryUi, "applyLayoutProfile", true);
             prepared |= SetSerializedBoolIfExists(inventoryUi, "skipDefaultLayoutWhenProfileApplied", true);
             return prepared;

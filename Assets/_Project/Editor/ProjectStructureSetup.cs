@@ -36,6 +36,7 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsOperations);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsTools);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsConsumables);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsThrowables);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsVehicles);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsNodes);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.RecipesData);

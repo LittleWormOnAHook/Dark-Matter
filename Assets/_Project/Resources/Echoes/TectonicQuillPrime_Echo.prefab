@@ -163,7 +163,7 @@ GameObject:
   m_Layer: 8
   m_Name: TectonicQuillPrime_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -46377,7 +46377,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4300666684089014177}
-  m_Father: {fileID: 3620154112168780666}
+  m_Father: {fileID: 1549285239310115724}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: -180}
 --- !u!33 &1920095233152086284
 MeshFilter:
@@ -55268,7 +55268,7 @@ Transform:
   - {fileID: 6857578468167366707}
   - {fileID: 8911905132831252426}
   - {fileID: 5031185943342731941}
-  - {fileID: 3620154112168780666}
+  - {fileID: 1549285239310115724}
   - {fileID: 1443008962515839888}
   - {fileID: 8769870307285107009}
   m_Father: {fileID: 3589995373071535959}
@@ -55602,7 +55602,7 @@ Transform:
   - {fileID: 8031924667807875719}
   - {fileID: 1071754295524612930}
   - {fileID: 980530439806370236}
-  - {fileID: 5532944757104016874}
+  - {fileID: 1605179926112966605}
   - {fileID: 8761753016517860541}
   - {fileID: 608356876046277031}
   m_Father: {fileID: 4924664021182433868}
@@ -62242,7 +62242,7 @@ PrefabInstance:
       addedObject: {fileID: 4446355083478921250}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 91e984dc845ad474bb9384d4ae9c870e, type: 3}
---- !u!4 &3620154112168780666 stripped
+--- !u!4 &1549285239310115724 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1234765081182094967, guid: 91e984dc845ad474bb9384d4ae9c870e, type: 3}
   m_PrefabInstance: {fileID: 334092088012416507}
@@ -63270,7 +63270,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &5532944757104016874 stripped
+--- !u!4 &1605179926112966605 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 1050427159380907382}

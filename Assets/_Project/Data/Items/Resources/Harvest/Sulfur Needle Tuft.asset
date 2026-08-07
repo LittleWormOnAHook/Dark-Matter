@@ -128,10 +128,13 @@ MonoBehaviour:
   grantsXp: 1
   xpAmount: 5
   xpSource: 5
+  grantXpEveryPickupOrUse: 1
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Bristly sulfur-rich plant fiber. Hold-E harvest. Antiseptic
-    reagent for medpacks and salves.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: Bristly sulfur fiber from Io scrub. Hold-E harvest. Antiseptic
+    reagent for medpacks and salves. Small XP each gather.
   unlocksInventoryStorageRow: 0
   gatherKind: 1
   requiredGatherSkillRank: 1

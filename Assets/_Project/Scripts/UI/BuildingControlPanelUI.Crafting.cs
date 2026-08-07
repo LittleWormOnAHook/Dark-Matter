@@ -53,7 +53,7 @@ namespace Project.UI
             if (craftingManager != null)
                 craftingManager.CurrentStation = stationType;
 
-            craftingUi?.EmbedPanel(craftHost);
+            craftingUi?.EmbedPanel(craftHost, CraftingUiPresentationMode.Production);
             MenuUiBuilder.StretchRectToFill(craftHost);
             craftEmbedded = true;
         }

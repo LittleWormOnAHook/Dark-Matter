@@ -11,7 +11,7 @@ namespace Project.UI
     {
         private static readonly Color ScrollSlotTint = SurvivalPioneerUiPalette.SlotBackground;
         private static readonly Color ScrollSlotHoverTint = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.42f);
-        private static float SlotSize => HudLayoutMetrics.InventorySlotSize(64f);
+        private static float SlotSize => HudLayoutMetrics.InventorySlotSize(80f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;
 
         private Image backgroundImage;
@@ -77,15 +77,17 @@ namespace Project.UI
             if (learnConfirmPanel != null)
                 return;
 
+            // Overlay Learn inside the slot bounds so RectMask2D on the pending-scroll
+            // viewport cannot clip the top of the confirm button (was anchored above the tile).
             learnConfirmPanel = new GameObject("LearnConfirm", typeof(RectTransform));
             learnConfirmPanel.transform.SetParent(transform, false);
 
             RectTransform panelRect = learnConfirmPanel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 1f);
-            panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 0f);
-            panelRect.anchoredPosition = new Vector2(0f, 4f);
-            panelRect.sizeDelta = new Vector2(88f, 30f);
+            panelRect.anchorMin = new Vector2(0.08f, 0.08f);
+            panelRect.anchorMax = new Vector2(0.92f, 0.42f);
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
 
             Image panelBackground = learnConfirmPanel.AddComponent<Image>();
             panelBackground.color = SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.88f);
@@ -113,12 +115,14 @@ namespace Project.UI
             labelRect.offsetMax = Vector2.zero;
 
             TextMeshProUGUI learnLabel = labelObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(learnLabel);
             learnLabel.text = "Learn";
-            learnLabel.fontSize = 14f;
+            learnLabel.fontSize = 13f;
             learnLabel.alignment = TextAlignmentOptions.Center;
-            learnLabel.color = Color.white;
+            learnLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             learnLabel.raycastTarget = false;
 
+            learnConfirmPanel.transform.SetAsLastSibling();
             learnConfirmPanel.SetActive(false);
         }
 

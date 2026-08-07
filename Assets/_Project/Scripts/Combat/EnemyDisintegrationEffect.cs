@@ -665,7 +665,10 @@ namespace Project.Combat
                 skinnedMeshRenderer.shadowCastingMode,
                 skinnedMeshRenderer.receiveShadows);
 
-            FitDissolveObjectToCharacterBounds(dissolveObject, skinnedMeshRenderer);
+            // Fit from baked AABB → live SMR world bounds. Do NOT apply lossyScale here:
+            // Meshy Skitter BakeMesh(false) is already ~0.8m world-sized while lossyScale is 100×;
+            // multiplying both explodes the dissolve to tens of meters.
+            FitDissolveObjectToCharacterBounds(dissolveObject, bakedMesh, skinnedMeshRenderer.bounds);
 
             MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
             ApplyDissolveMaterials(meshRenderer, skinnedMeshRenderer.sharedMaterials, animatedMaterials);
@@ -682,50 +685,46 @@ namespace Project.Combat
         /// </summary>
         private void FitDissolveObjectToCharacterBounds(
             GameObject dissolveObject,
-            SkinnedMeshRenderer source)
+            Mesh bakedMesh,
+            Bounds sourceWorldBounds)
         {
-            if (dissolveObject == null || source == null)
+            if (dissolveObject == null || bakedMesh == null)
                 return;
 
-            Bounds target = source.bounds;
-
-            Transform dissolveTransform = dissolveObject.transform;
-            dissolveTransform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
-
-            Vector3 lossy = source.transform.lossyScale;
-            float absX = Mathf.Max(1e-4f, Mathf.Abs(lossy.x));
-            float absY = Mathf.Max(1e-4f, Mathf.Abs(lossy.y));
-            float absZ = Mathf.Max(1e-4f, Mathf.Abs(lossy.z));
-            dissolveTransform.localScale = new Vector3(absX, absY, absZ);
-
-            // If lossyScale was ~1 but mesh is still cm-space (~100u AABB), rescale to live bounds.
-            MeshRenderer meshRenderer = dissolveObject.GetComponent<MeshRenderer>();
-            if (meshRenderer == null)
+            Bounds localBounds = bakedMesh.bounds;
+            Vector3 localSize = localBounds.size;
+            if (localSize.x < 1e-5f || localSize.y < 1e-5f || localSize.z < 1e-5f)
+            {
+                dissolveObject.transform.position = sourceWorldBounds.center;
+                dissolveObject.transform.rotation = Quaternion.identity;
+                dissolveObject.transform.localScale = Vector3.one;
                 return;
+            }
 
-            Bounds placed = meshRenderer.bounds;
-            float placedMax = MaxExtent(placed.size);
+            Bounds target = sourceWorldBounds;
             float targetMax = MaxExtent(target.size);
             float cap = Mathf.Max(0.35f, maxDissolveDiameter * 2.5f);
-            if (targetMax > cap)
+            if (targetMax > cap && targetMax > 1e-4f)
+            {
+                float shrink = cap / targetMax;
+                target = new Bounds(target.center, target.size * shrink);
                 targetMax = cap;
-
-            if (placedMax < 1e-4f || targetMax < 1e-4f)
-            {
-                dissolveTransform.position = target.center;
-                dissolveTransform.localScale = Vector3.one;
-                return;
             }
 
-            float ratio = targetMax / placedMax;
-            // Correct when clearly wrong (cm bake at meter scale, or double-scaled 100× nodes).
-            if (ratio < 0.85f || ratio > 1.2f)
-            {
-                dissolveTransform.localScale *= ratio;
-                placed = meshRenderer.bounds;
-            }
+            float ratioX = target.size.x / localSize.x;
+            float ratioY = target.size.y / localSize.y;
+            float ratioZ = target.size.z / localSize.z;
+            float uniform = Mathf.Clamp((ratioX + ratioY + ratioZ) / 3f, 1e-4f, 8f);
 
-            dissolveTransform.position += target.center - meshRenderer.bounds.center;
+            // Hard stop: never let baked local cm-space (~100u) render as ~100m.
+            float projectedMax = MaxExtent(localSize) * uniform;
+            if (projectedMax > targetMax * 1.15f && projectedMax > 1e-4f)
+                uniform *= targetMax / projectedMax;
+
+            Transform dissolveTransform = dissolveObject.transform;
+            dissolveTransform.rotation = Quaternion.identity;
+            dissolveTransform.localScale = Vector3.one * uniform;
+            dissolveTransform.position = target.center - dissolveTransform.TransformVector(localBounds.center);
         }
 
         private static float MaxExtent(Vector3 size)

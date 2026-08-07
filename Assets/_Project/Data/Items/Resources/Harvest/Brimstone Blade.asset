@@ -128,10 +128,13 @@ MonoBehaviour:
   grantsXp: 1
   xpAmount: 5
   xpSource: 5
+  grantXpEveryPickupOrUse: 1
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Fan-like Io plant fronds that seep a valuable brimstone goo
-    for crafting reagents.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: Fan-like Io plant fronds that seep brimstone goo. Hold-E harvest.
+    Crafting reagent for reagents and camp chemistry. Small XP each gather.
   unlocksInventoryStorageRow: 0
   gatherKind: 1
   requiredGatherSkillRank: 2

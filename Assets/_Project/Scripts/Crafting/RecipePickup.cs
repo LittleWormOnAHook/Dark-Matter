@@ -158,7 +158,7 @@ namespace Project.Crafting
                 return true;
             }
 
-            if (!craftingManager.AddPendingRecipeScroll(recipe.ResolvedId))
+            if (!craftingManager.AddPendingBlueprintScroll(recipe.ResolvedId))
             {
                 MarkCollected(showToast: false);
                 return true;

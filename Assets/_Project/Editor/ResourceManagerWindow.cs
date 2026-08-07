@@ -131,6 +131,11 @@ namespace Project.EditorTools
         private bool grantsXp;
         private int xpAmount = 10;
         private XpSource xpSource = XpSource.SpecialItem;
+        private bool grantXpEveryPickupOrUse;
+        private int requiredLevelToEquip = 1;
+        private int requiredLevelToCraft = 1;
+        private int requiredLevelToUse = 1;
+        private int requiredLevelToPickup = 1;
         private int requiredGatherSkillRank = 1;
         private string unknownDisplayName = "Unknown Resource";
 
@@ -862,7 +867,7 @@ namespace Project.EditorTools
                 lootCompleteVfxPrefab, typeof(GameObject), false);
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Gather XP (optional)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Progression", EditorStyles.boldLabel);
             grantsXp = EditorGUILayout.Toggle(
                 new GUIContent("Grants XP", "When true, inventory grant also awards XP (special gather yields)."),
                 grantsXp);
@@ -870,7 +875,19 @@ namespace Project.EditorTools
             {
                 xpAmount = EditorGUILayout.IntField("XP Amount", Mathf.Max(0, xpAmount));
                 xpSource = (XpSource)EditorGUILayout.EnumPopup("XP Source", xpSource);
+                grantXpEveryPickupOrUse = EditorGUILayout.Toggle(
+                    new GUIContent(
+                        "XP Every Pickup / Use",
+                        "On: grant XP each gather/pickup. Off: one-time XP for this item asset."),
+                    grantXpEveryPickupOrUse);
             }
+
+            EditorGUILayout.Space(2f);
+            EditorGUILayout.LabelField("Level Gates", EditorStyles.boldLabel);
+            requiredLevelToEquip = Mathf.Max(0, EditorGUILayout.IntField("Required Level To Equip", requiredLevelToEquip));
+            requiredLevelToCraft = Mathf.Max(0, EditorGUILayout.IntField("Required Level To Craft", requiredLevelToCraft));
+            requiredLevelToUse = Mathf.Max(0, EditorGUILayout.IntField("Required Level To Use", requiredLevelToUse));
+            requiredLevelToPickup = Mathf.Max(0, EditorGUILayout.IntField("Required Level To Pickup", requiredLevelToPickup));
         }
 
         private void ApplyMineHarvestFieldsFromItem(ItemData item, bool isPlant)
@@ -888,6 +905,11 @@ namespace Project.EditorTools
             grantsXp = item.grantsXp;
             xpAmount = item.xpAmount;
             xpSource = item.xpSource;
+            grantXpEveryPickupOrUse = item.grantXpEveryPickupOrUse;
+            requiredLevelToEquip = item.requiredLevelToEquip;
+            requiredLevelToCraft = item.requiredLevelToCraft;
+            requiredLevelToUse = item.requiredLevelToUse;
+            requiredLevelToPickup = item.requiredLevelToPickup;
 
             if (item is MineHarvestItemData lean)
             {
@@ -1142,6 +1164,11 @@ namespace Project.EditorTools
             item.grantsXp = grantsXp;
             item.xpAmount = Mathf.Max(0, xpAmount);
             item.xpSource = xpSource;
+            item.grantXpEveryPickupOrUse = grantXpEveryPickupOrUse;
+            item.requiredLevelToEquip = Mathf.Max(0, requiredLevelToEquip);
+            item.requiredLevelToCraft = Mathf.Max(0, requiredLevelToCraft);
+            item.requiredLevelToUse = Mathf.Max(0, requiredLevelToUse);
+            item.requiredLevelToPickup = Mathf.Max(0, requiredLevelToPickup);
             MineHarvestItemMigrator.AssignGatherDefaults(item, isPlant);
             // Keep form fields in sync with any defaults the migrator filled.
             lootYieldClip = item.lootYieldClip;

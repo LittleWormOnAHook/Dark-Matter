@@ -33,7 +33,10 @@ namespace Project.UI
         public static Color ButtonDisabled => WithAlpha(SlateGray, 0.55f);
         public static Color BodyText => WithAlpha(WarmOffWhite, 0.96f);
         public static Color MutedText => WithAlpha(SoftBeigeGray, 0.95f);
+        /// <summary>Selected links / interactive highlights only — never section headers or body copy.</summary>
         public static Color AccentText => RichFuchsia;
+        /// <summary>Section headers and primary titles on dark panels — Warm Off-White (never Deep Magenta).</summary>
+        public static Color HeaderText => WarmOffWhite;
         public static Color HighlightText => Gold;
         public static Color InteractionPromptText => FromHex("#F2D056");
         public static Color HotbarLabelText => Gold;
@@ -71,6 +74,22 @@ namespace Project.UI
 
             outline.effectColor = WithAlpha(RichFuchsia, 0.72f);
             outline.effectDistance = distance ?? new Vector2(1f, -1f);
+            outline.useGraphicAlpha = true;
+            return outline;
+        }
+
+        /// <summary>Gold outline for level-up / reward chrome (XP, skill points).</summary>
+        public static Outline ApplyGoldTrim(GameObject target, Vector2? distance = null)
+        {
+            if (target == null)
+                return null;
+
+            Outline outline = target.GetComponent<Outline>();
+            if (outline == null)
+                outline = target.AddComponent<Outline>();
+
+            outline.effectColor = WithAlpha(Gold, 0.82f);
+            outline.effectDistance = distance ?? new Vector2(1.5f, -1.5f);
             outline.useGraphicAlpha = true;
             return outline;
         }

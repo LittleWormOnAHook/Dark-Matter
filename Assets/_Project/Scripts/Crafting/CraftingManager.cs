@@ -12,19 +12,29 @@ namespace Project.Crafting
     {
         public static CraftingManager Instance { get; private set; }
 
+        // Save key: discoveredRecipeIds (stable). Values are blueprint ResolvedId strings.
         private readonly HashSet<string> discoveredRecipeIds = new HashSet<string>();
         private readonly List<string> pendingRecipeScrollIds = new List<string>();
         private InventorySystem inventorySystem;
 
         public CraftingStationType? CurrentStation { get; set; }
 
-        public event Action OnRecipesChanged;
+        public event Action OnBlueprintsChanged;
+        /// <summary>Obsolete alias for <see cref="OnBlueprintsChanged"/>.</summary>
+        public event Action OnRecipesChanged
+        {
+            add => OnBlueprintsChanged += value;
+            remove => OnBlueprintsChanged -= value;
+        }
+
         public event Action<RecipeDefinition> OnCrafted;
         public event Action OnPendingScrollsChanged;
 
-        public IReadOnlyList<string> GetPendingRecipeScrolls() => pendingRecipeScrollIds;
+        public IReadOnlyList<string> GetPendingBlueprintScrolls() => pendingRecipeScrollIds;
+        /// <summary>Obsolete alias for <see cref="GetPendingBlueprintScrolls"/>.</summary>
+        public IReadOnlyList<string> GetPendingRecipeScrolls() => GetPendingBlueprintScrolls();
 
-        public bool AddPendingRecipeScroll(string id)
+        public bool AddPendingBlueprintScroll(string id)
         {
             if (string.IsNullOrEmpty(id))
                 return false;
@@ -32,7 +42,7 @@ namespace Project.Crafting
             RecipeDefinition recipe = RecipeRegistry.Resolve(id);
             if (recipe == null)
             {
-                Debug.LogWarning($"CraftingManager: Unknown recipe id '{id}'.");
+                Debug.LogWarning($"CraftingManager: Unknown blueprint id '{id}'.");
                 return false;
             }
 
@@ -42,9 +52,12 @@ namespace Project.Crafting
 
             pendingRecipeScrollIds.Add(resolvedId);
             OnPendingScrollsChanged?.Invoke();
-            OnRecipesChanged?.Invoke();
+            OnBlueprintsChanged?.Invoke();
             return true;
         }
+
+        /// <summary>Obsolete alias for <see cref="AddPendingBlueprintScroll"/>.</summary>
+        public bool AddPendingRecipeScroll(string id) => AddPendingBlueprintScroll(id);
 
         public bool TryLearnPendingScrollAt(int index)
         {
@@ -56,9 +69,9 @@ namespace Project.Crafting
             OnPendingScrollsChanged?.Invoke();
 
             if (!IsDiscovered(id))
-                DiscoverRecipe(id);
+                DiscoverBlueprint(id);
             else
-                OnRecipesChanged?.Invoke();
+                OnBlueprintsChanged?.Invoke();
 
             return true;
         }
@@ -88,7 +101,7 @@ namespace Project.Crafting
             BindInventorySystem();
         }
 
-        public void DiscoverRecipe(string id)
+        public void DiscoverBlueprint(string id)
         {
             if (string.IsNullOrEmpty(id))
                 return;
@@ -96,7 +109,7 @@ namespace Project.Crafting
             RecipeDefinition recipe = RecipeRegistry.Resolve(id);
             if (recipe == null)
             {
-                Debug.LogWarning($"CraftingManager: Unknown recipe id '{id}'.");
+                Debug.LogWarning($"CraftingManager: Unknown blueprint id '{id}'.");
                 return;
             }
 
@@ -104,24 +117,27 @@ namespace Project.Crafting
                 return;
 
             ProgressionRewardGranter.GrantXp(
-                ProgressionXpDefaults.RecipeLearnXp,
+                ProgressionXpDefaults.BlueprintLearnXp,
                 XpSource.Craft,
                 $"blueprint-learn:{recipe.ResolvedId}",
                 "Blueprint");
 
-            OnRecipesChanged?.Invoke();
+            OnBlueprintsChanged?.Invoke();
         }
+
+        /// <summary>Obsolete alias for <see cref="DiscoverBlueprint"/>.</summary>
+        public void DiscoverRecipe(string id) => DiscoverBlueprint(id);
 
         public bool IsDiscovered(string id)
         {
             return !string.IsNullOrEmpty(id) && discoveredRecipeIds.Contains(id);
         }
 
-        public IReadOnlyList<RecipeDefinition> GetDiscoveredRecipes(CraftingStationType? stationType = null)
+        public IReadOnlyList<RecipeDefinition> GetDiscoveredBlueprints(CraftingStationType? stationType = null)
         {
             List<RecipeDefinition> result = new List<RecipeDefinition>();
 
-            foreach (RecipeDefinition recipe in RecipeRegistry.GetAllRecipes())
+            foreach (RecipeDefinition recipe in RecipeRegistry.GetAllBlueprints())
             {
                 if (recipe == null || !IsDiscovered(recipe.ResolvedId))
                     continue;
@@ -134,6 +150,10 @@ namespace Project.Crafting
 
             return result;
         }
+
+        /// <summary>Obsolete alias for <see cref="GetDiscoveredBlueprints"/>.</summary>
+        public IReadOnlyList<RecipeDefinition> GetDiscoveredRecipes(CraftingStationType? stationType = null)
+            => GetDiscoveredBlueprints(stationType);
 
         public int CountItem(ItemData item, InventorySystem inventory)
         {
@@ -170,7 +190,10 @@ namespace Project.Crafting
                 return false;
 
             PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
-            if (!LevelUnlockUtility.CanAccess(progression, recipe.requiredPlayerLevel))
+            int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
+                recipe.requiredPlayerLevel,
+                recipe.outputItem);
+            if (!LevelUnlockUtility.CanAccess(progression, craftLevel))
                 return false;
 
             if (!HasIngredients(recipe, inventory))
@@ -185,6 +208,18 @@ namespace Project.Crafting
 
         public bool TryCraft(RecipeDefinition recipe, InventorySystem inventory)
         {
+            if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
+                return false;
+
+            int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
+                recipe.requiredPlayerLevel,
+                recipe.outputItem);
+            if (!LevelUnlockUtility.CanAccess(PlayerProgressionManager.EnsureExists(), craftLevel))
+            {
+                LevelUnlockUtility.ShowLevelRequiredToast(craftLevel);
+                return false;
+            }
+
             if (!CanCraft(recipe, inventory))
                 return false;
 
@@ -270,7 +305,7 @@ namespace Project.Crafting
                 }
             }
 
-            OnRecipesChanged?.Invoke();
+            OnBlueprintsChanged?.Invoke();
         }
 
         public void ApplyPendingSave(string[] ids)
@@ -292,7 +327,7 @@ namespace Project.Crafting
             }
 
             OnPendingScrollsChanged?.Invoke();
-            OnRecipesChanged?.Invoke();
+            OnBlueprintsChanged?.Invoke();
         }
 
         private void BindInventorySystem()

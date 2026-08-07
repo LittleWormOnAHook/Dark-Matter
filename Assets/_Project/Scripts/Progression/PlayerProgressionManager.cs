@@ -17,8 +17,16 @@ namespace Project.Progression
         [SerializeField] private ProgressionCurveDefinition curveOverride;
 
         private ProgressionCurveDefinition curve;
+
+        /// <summary>
+        /// Testing default new-game level (not demo/ship start). Reset to 1 (or 0-index convention) later for demo.
+        /// </summary>
         public const int NewGameStartLevel = 5;
+
+        /// <summary>Starter unspent SP granted at new game (separate from level-up SP 2→200 ≈ 959).</summary>
         public const int NewGameStartSkillPoints = 25;
+
+        public const int MaxLevel = ProgressionCurveDefinition.MaxLevel;
 
         private int level = NewGameStartLevel;
         private int currentXp;
@@ -87,17 +95,31 @@ namespace Project.Progression
         /// <summary>Linear +3% weapon damage per level above 1 (level 1 = 1x, matching GetLevelStatMultiplier's convention).</summary>
         public float GetLevelWeaponDamageMultiplier() => 1f + (level - 1) * WeaponDamageBonusPerLevel;
 
-        public int GetXpRequiredForNextLevel() =>
-            curve != null ? curve.GetXpRequiredForLevel(level + 1) : 100 + level * 25;
+        public int GetXpRequiredForNextLevel()
+        {
+            if (level >= MaxLevel)
+                return 0;
+
+            int next = level + 1;
+            if (curve != null)
+                return curve.GetXpRequiredForLevel(next);
+
+            return ProgressionCurveDefinition.EvaluateHybridXp(next);
+        }
 
         public int GetXpProgressInCurrentLevel()
         {
-            int totalForCurrent = curve != null ? curve.GetTotalXpForLevel(level) : 0;
+            int totalForCurrent = curve != null
+                ? curve.GetTotalXpForLevel(level)
+                : GetFallbackTotalXpForLevel(level);
             return Mathf.Max(0, currentXp - totalForCurrent);
         }
 
         public float GetXpProgressNormalized()
         {
+            if (level >= MaxLevel)
+                return 1f;
+
             int required = GetXpRequiredForNextLevel();
             if (required <= 0)
                 return 1f;
@@ -123,8 +145,12 @@ namespace Project.Progression
 
             int levelsGained = 0;
             int skillPointsGained = 0;
-            while (GetXpProgressInCurrentLevel() >= GetXpRequiredForNextLevel())
+            while (level < MaxLevel)
             {
+                int required = GetXpRequiredForNextLevel();
+                if (required <= 0 || GetXpProgressInCurrentLevel() < required)
+                    break;
+
                 level++;
                 levelsGained++;
                 skillPointsGained += GetSkillPointsForLevel(level);
@@ -141,15 +167,46 @@ namespace Project.Progression
         }
 
         /// <summary>
-        /// Skill points awarded when the player reaches <paramref name="level"/>.
-        /// Bands: 1–5 → 5, 6–10 → 10, 11–15 → 15, …
+        /// Skill points awarded when the player reaches <paramref name="level"/> (prop B).
+        /// Base: clamp(1 + floor((N−1)/10), 1, 5); +2 every 10th; +5 every 50th.
+        /// Sum from levels 2→200 = 959 (plus <see cref="NewGameStartSkillPoints"/> at new game).
         /// </summary>
         public static int GetSkillPointsForLevel(int level)
         {
             if (level < 1)
                 return 0;
 
-            return 5 * (((level - 1) / 5) + 1);
+            int basePoints = Mathf.Clamp(1 + ((level - 1) / 10), 1, 5);
+            int bonus = 0;
+            if (level % 10 == 0)
+                bonus += 2;
+            if (level % 50 == 0)
+                bonus += 5;
+
+            return basePoints + bonus;
+        }
+
+        /// <summary>Sum of <see cref="GetSkillPointsForLevel"/> for levels <paramref name="fromLevel"/>..<paramref name="toLevel"/> inclusive.</summary>
+        public static int GetTotalSkillPointsFromLevels(int fromLevel, int toLevel)
+        {
+            if (toLevel < fromLevel)
+                return 0;
+
+            int total = 0;
+            for (int n = fromLevel; n <= toLevel; n++)
+                total += GetSkillPointsForLevel(n);
+
+            return total;
+        }
+
+        private static int GetFallbackTotalXpForLevel(int forLevel)
+        {
+            forLevel = Mathf.Clamp(forLevel, 1, MaxLevel);
+            int total = 0;
+            for (int i = 2; i <= forLevel; i++)
+                total += ProgressionCurveDefinition.EvaluateHybridXp(i);
+
+            return total;
         }
 
         public bool TryMarkExplorationXp(string explorationId, int xpAmount)
@@ -228,6 +285,7 @@ namespace Project.Progression
         public void ApplySaveSnapshot(ProgressionSaveSnapshot snapshot)
         {
             level = snapshot.playerLevel > 0 ? snapshot.playerLevel : NewGameStartLevel;
+            level = Mathf.Clamp(level, 1, MaxLevel);
             currentXp = snapshot.playerXp;
             unspentSkillPoints = snapshot.unspentSkillPoints;
             xpBaselineInitialized = true;
@@ -294,7 +352,9 @@ namespace Project.Progression
             if (curve == null)
                 curve = curveOverride != null ? curveOverride : ProgressionCurveDefinitionLoader.LoadDefault();
 
-            currentXp = curve != null ? curve.GetTotalXpForLevel(level) : 0;
+            currentXp = curve != null
+                ? curve.GetTotalXpForLevel(level)
+                : GetFallbackTotalXpForLevel(level);
             xpBaselineInitialized = true;
         }
     }

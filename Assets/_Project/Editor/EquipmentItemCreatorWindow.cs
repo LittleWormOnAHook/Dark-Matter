@@ -547,6 +547,7 @@ public class EquipmentItemCreatorWindow : EditorWindow
         itemData.worldPrefab = worldPrefab;
         itemData.heldPrefab = heldPrefab;
 
+        ItemDataPruneUtility.Prune(itemData);
         WirePickupReference(worldPrefabPath, itemData);
         EditorUtility.SetDirty(itemData);
         AssetDatabase.SaveAssets();

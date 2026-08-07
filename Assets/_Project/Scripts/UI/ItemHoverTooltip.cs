@@ -253,7 +253,7 @@ namespace Project.UI
             if (instance != null)
                 return instance;
 
-            GameObject host = new GameObject("RecipeHoverTooltip", typeof(RectTransform));
+            GameObject host = new GameObject("BlueprintHoverTooltip", typeof(RectTransform));
             host.transform.SetParent(canvasRoot, false);
             RecipeHoverTooltip tooltip = host.AddComponent<RecipeHoverTooltip>();
             tooltip.Build();

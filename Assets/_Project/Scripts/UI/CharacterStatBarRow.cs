@@ -171,7 +171,7 @@ namespace Project.UI
             glyphLabel.text = glyph;
             glyphLabel.fontSize = 11f;
             glyphLabel.alignment = TextAlignmentOptions.Center;
-            glyphLabel.color = SurvivalPioneerUiPalette.RichFuchsia;
+            glyphLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
             glyphLabel.raycastTarget = false;
         }
 

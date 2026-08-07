@@ -104,8 +104,10 @@ namespace Project.UI
 
         private const float FullMapHeaderHeight = 64f;
         private const float FullMapTitleBarHeight = 34f;
+        private const float FullMapLegendWidth = 196f;
 
         private GameObject fullMapTitleBar;
+        private GameObject fullMapLegendRoot;
         private Vector2 fullMapPanOffset;
 
         private void Awake()

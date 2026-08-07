@@ -11,10 +11,13 @@ namespace Project.EditorTools
         public const string PrefabCreator = Root + "Prefab Creator/";
 
         // Item, equipment, and pickup prefabs
+        /// <summary>Legacy redirect ? opens Blueprint and Crafting Manager (Item Data tab).</summary>
         public const string ItemDataCreator = PrefabCreator + "Item Data Creator";
+        /// <summary>Legacy redirect ? opens Blueprint and Crafting Manager (Crafting Item tab).</summary>
         public const string CraftingItemCreator = PrefabCreator + "Crafting Item Creator";
+        public const string GrenadeItemCreator = PrefabCreator + "Grenade / Throwable Item Creator";
         public const string ResourceManager = PrefabCreator + "Resource Manager";
-        /// <summary>Legacy alias — prefer <see cref="ResourceManager"/>.</summary>
+        /// <summary>Legacy alias ? prefer <see cref="ResourceManager"/>.</summary>
         public const string ResourceItemCreator = ResourceManager;
         public const string EquipmentItemCreator = PrefabCreator + "Equipment Item Creator";
         public const string EquipmentItemCreatorFromSelection = PrefabCreator + "Equipment Item Creator From Selection";
@@ -39,9 +42,9 @@ namespace Project.EditorTools
         public const string Pets = Root + "Pets/";
         public const string PetManager = Pets + "Pet Manager";
         public const string PetManagerFromSelection = Pets + "Pet Manager From Selection";
-        /// <summary>Legacy alias — prefer <see cref="PetManager"/>.</summary>
+        /// <summary>Legacy alias ? prefer <see cref="PetManager"/>.</summary>
         public const string PetPrefabCreator = PetManager;
-        /// <summary>Legacy alias — prefer <see cref="PetManagerFromSelection"/>.</summary>
+        /// <summary>Legacy alias ? prefer <see cref="PetManagerFromSelection"/>.</summary>
         public const string PetPrefabCreatorFromSelection = PetManagerFromSelection;
         public const string PetPrefabFoxCubDemo = Pets + "Pet Prefab (Fox Cub Demo)";
         public const string PioneerCompanionInvectorPrefab = Combat + "Build PioneerCompanion_Invector Prefab";
@@ -50,13 +53,16 @@ namespace Project.EditorTools
         // UI prefabs
         public const string InventorySlotPrefab = PrefabCreator + "Inventory Slot Prefab";
         public const string ExposureZonePrefabCreator = PrefabCreator + "Exposure Zone Creator";
-        public const string RecipePrefabCreator = PrefabCreator + "Recipe Prefab Creator";
+        /// <summary>Legacy redirect ? opens Blueprint and Crafting Manager (Pickup Prefabs tab).</summary>
+        public const string RecipePrefabCreator = PrefabCreator + "Blueprint Prefab Creator";
         public const string CameraShakeEmitterCreator = PrefabCreator + "Camera Shake Emitter Creator";
         public const string CameraShakeEmitterCreateAllPresets = PrefabCreator + "Create All Camera Shake Emitter Prefabs";
 
         public const string Project = Root + "Project/";
         public const string Content = Root + "Content/";
         public const string Crafting = Root + "Crafting/";
+        /// <summary>Primary crafting/blueprint editor entry point.</summary>
+        public const string BlueprintCraftingManager = Crafting + "Blueprint and Crafting Manager";
         public const string Quests = Root + "Quests/";
         public const string Combat = Root + "Combat/";
         public const string CombatAnimations = Combat + "Animations/";

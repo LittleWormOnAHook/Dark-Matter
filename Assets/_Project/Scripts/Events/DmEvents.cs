@@ -5,6 +5,7 @@ using Project.Core;
 using Project.Data;
 using Project.Interaction;
 using Project.Map;
+using Project.Progression;
 using Project.Quests;
 using Project.UI;
 using UnityEngine;
@@ -166,8 +167,9 @@ namespace Project.Events
                 return false;
 
             QuestRewardDefinition entry = remainingLoot[0];
-            remainingLoot.RemoveAt(0);
-            GrantLootEntry(entry);
+            if (TryGrantLootEntry(entry))
+                remainingLoot.RemoveAt(0);
+
             RefreshEmptyState();
             return true;
         }
@@ -177,10 +179,18 @@ namespace Project.Events
             if (!HasRemainingLoot)
                 return false;
 
+            bool anyLeftUnlooted = false;
             for (int i = remainingLoot.Count - 1; i >= 0; i--)
-                GrantLootEntry(remainingLoot[i]);
+            {
+                if (TryGrantLootEntry(remainingLoot[i]))
+                    remainingLoot.RemoveAt(i);
+                else
+                    anyLeftUnlooted = true;
+            }
 
-            remainingLoot.Clear();
+            if (anyLeftUnlooted)
+                PickupToastUI.ShowInventoryFull();
+
             RefreshEmptyState();
             return true;
         }
@@ -223,17 +233,35 @@ namespace Project.Events
                 gameObject.SetActive(false);
         }
 
-        private void GrantLootEntry(QuestRewardDefinition entry)
+        /// <returns>True when the entry was fully granted and can be removed from remaining loot.</returns>
+        private bool TryGrantLootEntry(QuestRewardDefinition entry)
         {
             if (entry == null)
-                return;
+                return true;
 
-            QuestRewardGranter.GrantReward(entry, CacheDisplayName);
+            if (entry.type == QuestRewardType.Item && entry.item != null
+                && !LevelUnlockUtility.PassesPickupGate(entry.item, showToast: true))
+                return false;
+
+            int requested = Mathf.Max(0, entry.amount);
+            int granted = QuestRewardGranter.GrantReward(entry, CacheDisplayName);
 
             if (entry.type == QuestRewardType.Item && entry.item != null)
-                PickupToastUI.Show($"+{entry.amount} {entry.item.itemName}");
-            else if (entry.type == QuestRewardType.Pi)
-                PickupToastUI.Show($"+{entry.amount} AC");
+            {
+                if (granted > 0)
+                    PickupToastUI.Show($"+{granted} {entry.item.itemName}");
+
+                if (granted >= requested)
+                    return true;
+
+                entry.amount = Mathf.Max(0, requested - granted);
+                return false;
+            }
+
+            if (entry.type == QuestRewardType.Pi && granted > 0)
+                PickupToastUI.Show($"+{granted} AC");
+
+            return granted > 0 || requested <= 0;
         }
 
         private UIManager ResolveUiManager()

@@ -26,28 +26,13 @@ namespace Project.UI
 
             panelRoot = new GameObject("PioneerRosterPanel", typeof(RectTransform), typeof(Image));
             panelRoot.transform.SetParent(parent, false);
-            RectTransform rootRect = panelRoot.GetComponent<RectTransform>();
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = new Vector2(16f, 16f);
-            rootRect.offsetMax = new Vector2(-16f, -16f);
+            JournalPanelLayout.StretchFill(panelRoot.GetComponent<RectTransform>());
 
             Image panelBg = panelRoot.GetComponent<Image>();
-            if (theme != null)
-                theme.ApplyPanelImage(panelBg, large: true, alphaMultiplier: 0.98f);
-            else
-            {
-                MenuUiBuilder.ApplyUiSprite(panelBg);
-                panelBg.color = SurvivalPioneerUiPalette.PanelBackground;
-            }
+            JournalPanelLayout.StylePanelBackground(panelBg, theme);
 
             HorizontalLayoutGroup splitLayout = panelRoot.AddComponent<HorizontalLayoutGroup>();
-            splitLayout.spacing = 12f;
-            splitLayout.padding = new RectOffset(14, 14, 14, 14);
-            splitLayout.childControlWidth = true;
-            splitLayout.childControlHeight = true;
-            splitLayout.childForceExpandWidth = true;
-            splitLayout.childForceExpandHeight = true;
+            JournalPanelLayout.ApplyRootHorizontalLayout(splitLayout);
 
             // Left side now hosts the four grouped browser columns (Class / Echoes / Trio / Camp
             // Building) requested alongside the existing detail+loadout+trio-picker on the right.
@@ -61,14 +46,14 @@ namespace Project.UI
         private void BuildLeftColumn(Transform parent)
         {
             VerticalLayoutGroup layout = parent.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 8f;
+            layout.spacing = JournalPanelLayout.SectionSpacing;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            TextMeshProUGUI header = CreateLabel(parent, "Skilled Roster", 18f, semiBold: true);
-            header.color = SurvivalPioneerUiPalette.AccentText;
+            TextMeshProUGUI header = CreateLabel(parent, "Skilled Roster", JournalPanelLayout.HeaderFontSize, semiBold: true);
+            JournalPanelLayout.ApplyHeaderStyle(header);
 
             // Four always-visible grouped browser columns: by Class, rescued Echoes, the active
             // Expedition Trio (quick view — drag/assign still happens in the picker on the right),
@@ -77,10 +62,10 @@ namespace Project.UI
             columnsRow.transform.SetParent(parent, false);
             LayoutElement columnsRowLayout = columnsRow.GetComponent<LayoutElement>();
             columnsRowLayout.flexibleHeight = 1f;
-            columnsRowLayout.minHeight = 240f;
+            columnsRowLayout.minHeight = 220f;
 
             HorizontalLayoutGroup columnsLayout = columnsRow.GetComponent<HorizontalLayoutGroup>();
-            columnsLayout.spacing = 6f;
+            columnsLayout.spacing = 5f;
             columnsLayout.childControlWidth = true;
             columnsLayout.childControlHeight = true;
             columnsLayout.childForceExpandWidth = true;
@@ -94,9 +79,9 @@ namespace Project.UI
             GameObject colonistRow = new GameObject("ColonistSummary", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             colonistRow.transform.SetParent(parent, false);
             colonistRow.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.98f);
-            colonistRow.GetComponent<LayoutElement>().minHeight = 64f;
+            colonistRow.GetComponent<LayoutElement>().minHeight = 52f;
 
-            colonistSummaryLabel = CreateLabel(colonistRow.transform, string.Empty, 12f);
+            colonistSummaryLabel = CreateLabel(colonistRow.transform, string.Empty, JournalPanelLayout.SecondaryFontSize);
             colonistSummaryLabel.color = SurvivalPioneerUiPalette.BodyText;
             Stretch(colonistSummaryLabel.rectTransform, 10f, 8f);
         }
@@ -121,7 +106,7 @@ namespace Project.UI
             columnGroup.childForceExpandHeight = false;
 
             TextMeshProUGUI subHeader = CreateLabel(column.transform, title, 12.5f, semiBold: true);
-            subHeader.color = SurvivalPioneerUiPalette.AccentText;
+            subHeader.color = SurvivalPioneerUiPalette.WarmOffWhite;
             subHeader.alignment = TextAlignmentOptions.TopLeft;
 
             GameObject scrollObject = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement), typeof(Image));
@@ -169,26 +154,26 @@ namespace Project.UI
         private void BuildRightColumn(Transform parent)
         {
             VerticalLayoutGroup layout = parent.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 10f;
+            layout.spacing = JournalPanelLayout.SectionSpacing;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            TextMeshProUGUI header = CreateLabel(parent, "Companion Detail", 18f, semiBold: true);
-            header.color = SurvivalPioneerUiPalette.AccentText;
+            TextMeshProUGUI header = CreateLabel(parent, "COMPANION DETAIL", JournalPanelLayout.HeaderFontSize, semiBold: true);
+            JournalPanelLayout.ApplyHeaderStyle(header);
 
-            Transform scrollContent = BuildScrollableContentArea(parent, flexibleHeight: 1f, minHeight: 320f);
+            Transform scrollContent = BuildScrollableContentArea(parent, flexibleHeight: 1f, minHeight: 300f);
 
             GameObject detailHost = new GameObject("DetailHost", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             detailHost.transform.SetParent(scrollContent, false);
             detailHost.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
             LayoutElement detailLayout = detailHost.GetComponent<LayoutElement>();
-            detailLayout.minHeight = 96f;
+            detailLayout.minHeight = 80f;
             detailLayout.flexibleWidth = 1f;
 
             VerticalLayoutGroup detailHostLayout = detailHost.GetComponent<VerticalLayoutGroup>();
-            detailHostLayout.padding = new RectOffset(12, 12, 10, 10);
+            detailHostLayout.padding = JournalPanelLayout.RowPaddingRect;
             detailHostLayout.childControlWidth = true;
             detailHostLayout.childControlHeight = true;
             detailHostLayout.childForceExpandWidth = true;
@@ -198,19 +183,19 @@ namespace Project.UI
             detailHostFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             detailHostFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            detailLabel = CreateWrappingLabel(detailHost.transform, "Select a skilled companion from the roster.", 14f);
+            detailLabel = CreateWrappingLabel(detailHost.transform, "Select a skilled companion from the roster.", JournalPanelLayout.BodyFontSize);
             detailLabel.color = SurvivalPioneerUiPalette.BodyText;
 
-            synergyHintLabel = CreateWrappingLabel(scrollContent, string.Empty, 12f);
+            synergyHintLabel = CreateWrappingLabel(scrollContent, string.Empty, JournalPanelLayout.SecondaryFontSize);
             synergyHintLabel.color = SurvivalPioneerUiPalette.MutedText;
 
             TextMeshProUGUI loadoutHeader = CreateSectionHeader(scrollContent, "Loadout");
 
             GameObject loadoutRow = new GameObject("LoadoutSlots", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             loadoutRow.transform.SetParent(scrollContent, false);
-            loadoutRow.GetComponent<LayoutElement>().minHeight = 72f;
+            loadoutRow.GetComponent<LayoutElement>().minHeight = 64f;
             HorizontalLayoutGroup loadoutLayout = loadoutRow.GetComponent<HorizontalLayoutGroup>();
-            loadoutLayout.spacing = 8f;
+            loadoutLayout.spacing = 6f;
             loadoutLayout.childControlWidth = true;
             loadoutLayout.childForceExpandWidth = true;
             loadoutLayout.childControlHeight = true;
@@ -220,16 +205,16 @@ namespace Project.UI
             toolSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "ToolSlot", "Tool\n—", CycleToolLoadout, out toolSlotLabel);
             skillSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "SkillSlot", "Skill\n—", CycleSkillLoadout, out skillSlotLabel);
 
-            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a companion to edit loadout.", 12f);
+            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a companion to edit loadout.", JournalPanelLayout.SecondaryFontSize);
             loadoutStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
 
             TextMeshProUGUI trioHeader = CreateSectionHeader(scrollContent, "Expedition Trio");
 
             GameObject trioRow = new GameObject("TrioSlots", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             trioRow.transform.SetParent(scrollContent, false);
-            trioRow.GetComponent<LayoutElement>().minHeight = 80f;
+            trioRow.GetComponent<LayoutElement>().minHeight = 72f;
             HorizontalLayoutGroup trioLayout = trioRow.GetComponent<HorizontalLayoutGroup>();
-            trioLayout.spacing = 8f;
+            trioLayout.spacing = 6f;
             trioLayout.childControlWidth = true;
             trioLayout.childForceExpandWidth = true;
             trioLayout.childControlHeight = true;
@@ -304,11 +289,11 @@ namespace Project.UI
 
         private TextMeshProUGUI CreateSectionHeader(Transform parent, string title)
         {
-            TextMeshProUGUI header = CreateLabel(parent, title, 16f, semiBold: true);
-            header.color = SurvivalPioneerUiPalette.HighlightText;
+            TextMeshProUGUI header = CreateLabel(parent, title, JournalPanelLayout.HeaderFontSize, semiBold: true);
+            JournalPanelLayout.ApplyHeaderStyle(header);
             LayoutElement layout = header.GetComponent<LayoutElement>();
-            layout.minHeight = 22f;
-            layout.preferredHeight = 22f;
+            layout.minHeight = 20f;
+            layout.preferredHeight = 20f;
             return header;
         }
 
@@ -363,7 +348,7 @@ namespace Project.UI
             hostLayout.childForceExpandHeight = false;
 
             trioLoadoutLabels[slotIndex] = CreateWrappingLabel(host.transform, $"Slot {slotIndex + 1} — Empty", 12f, semiBold: true);
-            trioLoadoutLabels[slotIndex].color = SurvivalPioneerUiPalette.AccentText;
+            trioLoadoutLabels[slotIndex].color = SurvivalPioneerUiPalette.WarmOffWhite;
 
             Button hostButton = host.AddComponent<Button>();
             hostButton.transition = Selectable.Transition.None;

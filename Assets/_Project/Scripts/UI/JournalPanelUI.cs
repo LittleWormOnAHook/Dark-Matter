@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Core;
 using Project.Crafting;
+using Project.Pioneers;
 using Project.Player;
 using Project.Quests;
 using TMPro;
@@ -12,7 +13,7 @@ namespace Project.UI
 {
   public class JournalPanelUI : MonoBehaviour
   {
-    private const float UiScale = 0.75f;
+    private const float UiScale = 0.92f;
 
     private GameObject overlayRoot;
     private RectTransform windowHostRect;
@@ -25,6 +26,22 @@ namespace Project.UI
     private Button abandonQuestButton;
     private TextMeshProUGUI abandonQuestButtonLabel;
     private bool abandonConfirmPending;
+
+    private enum JournalContentSection
+    {
+        Quests,
+        Chronicle,
+        SystemLogs
+    }
+
+    private JournalContentSection journalSection = JournalContentSection.Quests;
+    private Transform journalSectionTabParent;
+    private GameObject questSplitRoot;
+    private GameObject chronicleRoot;
+    private GameObject systemLogsRoot;
+    private Transform chronicleListParent;
+    private Transform systemLogListParent;
+    private PioneerRosterManager journalRoster;
 
     private string selectedQuestId;
     private bool uiBuilt;
@@ -209,7 +226,9 @@ namespace Project.UI
 
     public void OpenToCharacterTab() => TryToggleTab(JournalWindowId.Character);
 
-    public void OpenToRecipesTab() => TryToggleTab(JournalWindowId.Recipes);
+    public void OpenToBlueprintsTab() => TryToggleTab(JournalWindowId.Recipes);
+    /// <summary>Obsolete alias for OpenToBlueprintsTab.</summary>
+    public void OpenToRecipesTab() => OpenToBlueprintsTab();
 
     public void OpenToSkillsTab() => TryToggleTab(JournalWindowId.Skills);
 
@@ -219,13 +238,18 @@ namespace Project.UI
 
     public void OpenToCraftTab(CraftingStationType? station)
     {
-      if (craftingManager == null)
-        craftingManager = CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
+      if (craftingUi == null)
+        craftingUi = FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>();
 
-      if (craftingManager != null)
-        craftingManager.CurrentStation = station;
+      if (!station.HasValue)
+      {
+        OpenToBlueprintsTab();
+        return;
+      }
 
-      TryToggleTab(JournalWindowId.Craft);
+      // Production craft opens as a popup at the world station — not a journal Craft tab.
+      navigator?.CloseAll();
+      craftingUi.OpenStationCraftingPopup(station.Value);
     }
 
     public static void CloseAnyOpenJournal()
@@ -238,6 +262,7 @@ namespace Project.UI
     {
       navigator?.CloseAll();
       EnsureInventoryUi()?.RestoreInventoryPanel();
+      craftingUi?.CloseStandalonePanel(clearStation: true);
 
       if (windowHostRect != null)
         windowHostRect.gameObject.SetActive(false);
@@ -368,6 +393,12 @@ namespace Project.UI
       questDetailTitle = null;
       questDetailBody = null;
       objectiveListParent = null;
+      journalSectionTabParent = null;
+      questSplitRoot = null;
+      chronicleRoot = null;
+      systemLogsRoot = null;
+      chronicleListParent = null;
+      systemLogListParent = null;
     }
 
     private void BuildUi()
@@ -416,6 +447,13 @@ namespace Project.UI
         pet.Configure(petUi);
       });
 
+      RegisterWindow<RecipeLibraryFullscreenWindow>(JournalWindowId.Recipes, "Blueprints", recipes =>
+      {
+        recipes.Configure(craftingUi ?? FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>());
+      });
+
+      // Kept for API compatibility; journal rail no longer shows a Craft tab.
+      // Station interaction opens CraftingUI.OpenStationCraftingPopup instead.
       RegisterWindow<CraftFullscreenWindow>(JournalWindowId.Craft, "Craft", craft =>
       {
         craft.Configure(craftingUi ?? FindAnyObjectByType<CraftingUI>() ?? gameObject.AddComponent<CraftingUI>());
@@ -430,8 +468,6 @@ namespace Project.UI
       {
         character.Configure(characterPanelUi ?? GetComponent<CharacterPanelUI>() ?? gameObject.AddComponent<CharacterPanelUI>());
       });
-
-      RegisterWindow<RecipeLibraryFullscreenWindow>(JournalWindowId.Recipes, "Recipes", recipes => { });
 
       RegisterWindow<SkillsFullscreenWindow>(JournalWindowId.Skills, "Skills", skills =>
       {
@@ -478,7 +514,7 @@ namespace Project.UI
 
     private void ApplyJournalChromeSortOrder()
     {
-      // Bottom → top: dim overlay, window content, top tab bar (always receives clicks).
+      // Bottom â†’ top: dim overlay, window content, top tab bar (always receives clicks).
       overlayRoot?.transform.SetAsLastSibling();
       windowHostRect?.transform.SetAsLastSibling();
       tabRail?.transform.SetAsLastSibling();
@@ -615,19 +651,55 @@ namespace Project.UI
         Destroy(parent.GetChild(i).gameObject);
 
       ShiftUiTheme theme = ShiftUiTheme.Current;
-      GameObject split = new GameObject("JournalSplit", typeof(RectTransform));
-      split.transform.SetParent(parent, false);
-      StretchRectToParent(split.GetComponent<RectTransform>());
+      journalRoster = PioneerRosterManager.EnsureExists();
 
-      HorizontalLayoutGroup splitLayout = split.AddComponent<HorizontalLayoutGroup>();
-      splitLayout.spacing = Sc(8f);
-      splitLayout.padding = new RectOffset(Sc(8), Sc(8), Sc(8), Sc(8));
+      VerticalLayoutGroup rootLayout = parent.gameObject.GetComponent<VerticalLayoutGroup>();
+      if (rootLayout == null)
+        rootLayout = parent.gameObject.AddComponent<VerticalLayoutGroup>();
+      rootLayout.spacing = Sc(JournalPanelLayout.SectionSpacing);
+      rootLayout.padding = new RectOffset(
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding));
+      rootLayout.childControlWidth = true;
+      rootLayout.childControlHeight = true;
+      rootLayout.childForceExpandWidth = true;
+      rootLayout.childForceExpandHeight = false;
+
+      GameObject tabRow = new GameObject("JournalSectionTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+      tabRow.transform.SetParent(parent, false);
+      LayoutElement tabRowLayout = tabRow.GetComponent<LayoutElement>();
+      tabRowLayout.minHeight = Sc(32f);
+      tabRowLayout.preferredHeight = Sc(32f);
+      HorizontalLayoutGroup tabLayout = tabRow.GetComponent<HorizontalLayoutGroup>();
+      tabLayout.spacing = Sc(4f);
+      tabLayout.childAlignment = TextAnchor.MiddleLeft;
+      tabLayout.childControlWidth = false;
+      tabLayout.childForceExpandWidth = false;
+      journalSectionTabParent = tabRow.transform;
+
+      CreateJournalSectionTab("Quests", JournalContentSection.Quests, theme);
+      CreateJournalSectionTab("Chronicle", JournalContentSection.Chronicle, theme);
+      CreateJournalSectionTab("System Logs", JournalContentSection.SystemLogs, theme);
+
+      GameObject contentHost = new GameObject("JournalContentHost", typeof(RectTransform), typeof(LayoutElement));
+      contentHost.transform.SetParent(parent, false);
+      LayoutElement contentHostLayout = contentHost.GetComponent<LayoutElement>();
+      contentHostLayout.flexibleHeight = 1f;
+      contentHostLayout.minHeight = Sc(320f);
+
+      questSplitRoot = new GameObject("QuestSplit", typeof(RectTransform));
+      questSplitRoot.transform.SetParent(contentHost.transform, false);
+      StretchRectToParent(questSplitRoot.GetComponent<RectTransform>());
+      HorizontalLayoutGroup splitLayout = questSplitRoot.AddComponent<HorizontalLayoutGroup>();
+      splitLayout.spacing = Sc(JournalPanelLayout.SectionSpacing);
       splitLayout.childControlWidth = true;
       splitLayout.childControlHeight = true;
       splitLayout.childForceExpandHeight = true;
 
       GameObject listColumn = new GameObject("QuestListColumn", typeof(RectTransform));
-      listColumn.transform.SetParent(split.transform, false);
+      listColumn.transform.SetParent(questSplitRoot.transform, false);
       LayoutElement listLayout = listColumn.AddComponent<LayoutElement>();
       listLayout.flexibleWidth = 0.45f;
       listLayout.minWidth = Sc(340f);
@@ -635,11 +707,236 @@ namespace Project.UI
       CreateQuestListColumn(listColumn.transform, theme);
 
       GameObject detailColumn = new GameObject("QuestDetailColumn", typeof(RectTransform));
-      detailColumn.transform.SetParent(split.transform, false);
+      detailColumn.transform.SetParent(questSplitRoot.transform, false);
       LayoutElement detailLayout = detailColumn.AddComponent<LayoutElement>();
       detailLayout.flexibleWidth = 0.55f;
       detailLayout.flexibleHeight = 1f;
       CreateQuestDetailColumn(detailColumn.transform, theme);
+
+      chronicleRoot = CreateLogScrollPanel(contentHost.transform, "ChronicleScroll", out chronicleListParent);
+      systemLogsRoot = CreateLogScrollPanel(contentHost.transform, "SystemLogsScroll", out systemLogListParent);
+
+      ApplyJournalSectionVisibility();
+      RefreshJournalSectionTabs();
+    }
+
+    private void CreateJournalSectionTab(string label, JournalContentSection section, ShiftUiTheme theme)
+    {
+      GameObject tab = new GameObject(label + "Tab", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+      tab.transform.SetParent(journalSectionTabParent, false);
+      LayoutElement layout = tab.GetComponent<LayoutElement>();
+      layout.minWidth = Sc(110f);
+      layout.preferredHeight = Sc(28f);
+
+      Image bg = tab.GetComponent<Image>();
+      MenuUiBuilder.ApplyUiSprite(bg);
+
+      Button button = tab.GetComponent<Button>();
+      button.targetGraphic = bg;
+      JournalContentSection captured = section;
+      button.onClick.AddListener(() =>
+      {
+        journalSection = captured;
+        ApplyJournalSectionVisibility();
+        RefreshJournalSectionTabs();
+        RefreshQuestList();
+      });
+
+      GameObject labelObj = new GameObject("Label", typeof(RectTransform));
+      labelObj.transform.SetParent(tab.transform, false);
+      TextMeshProUGUI tmp = labelObj.AddComponent<TextMeshProUGUI>();
+      ApplyFont(tmp, theme, semiBold: true);
+      tmp.text = label;
+      tmp.fontSize = Sc(JournalPanelLayout.ButtonFontSize + 1f);
+      tmp.alignment = TextAlignmentOptions.Center;
+      tmp.color = SurvivalPioneerUiPalette.BodyText;
+      tmp.raycastTarget = false;
+      StretchRectToParent(labelObj.GetComponent<RectTransform>());
+    }
+
+    private GameObject CreateLogScrollPanel(Transform parent, string name, out Transform listParent)
+    {
+      GameObject scrollObj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+      scrollObj.transform.SetParent(parent, false);
+      StretchRectToParent(scrollObj.GetComponent<RectTransform>());
+      Image scrollBg = scrollObj.GetComponent<Image>();
+      JournalPanelLayout.StyleScrollBackground(scrollBg);
+
+      GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+      viewport.transform.SetParent(scrollObj.transform, false);
+      RectTransform viewportRt = viewport.GetComponent<RectTransform>();
+      StretchRectToParent(viewportRt);
+      viewportRt.offsetMin = new Vector2(Sc(4f), Sc(4f));
+      viewportRt.offsetMax = new Vector2(-Sc(4f), -Sc(4f));
+
+      GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+      content.transform.SetParent(viewport.transform, false);
+      RectTransform contentRt = content.GetComponent<RectTransform>();
+      contentRt.anchorMin = new Vector2(0f, 1f);
+      contentRt.anchorMax = new Vector2(1f, 1f);
+      contentRt.pivot = new Vector2(0.5f, 1f);
+      contentRt.anchoredPosition = Vector2.zero;
+      contentRt.sizeDelta = Vector2.zero;
+      VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
+      JournalPanelLayout.ApplyListVerticalLayout(contentLayout);
+      content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+      ScrollRect scroll = scrollObj.GetComponent<ScrollRect>();
+      scroll.viewport = viewportRt;
+      scroll.content = contentRt;
+      scroll.horizontal = false;
+      scroll.vertical = true;
+      listParent = content.transform;
+      scrollObj.SetActive(false);
+      return scrollObj;
+    }
+
+    private void ApplyJournalSectionVisibility()
+    {
+      if (questSplitRoot != null)
+        questSplitRoot.SetActive(journalSection == JournalContentSection.Quests);
+      if (chronicleRoot != null)
+        chronicleRoot.SetActive(journalSection == JournalContentSection.Chronicle);
+      if (systemLogsRoot != null)
+        systemLogsRoot.SetActive(journalSection == JournalContentSection.SystemLogs);
+    }
+
+    private void RefreshJournalSectionTabs()
+    {
+      if (journalSectionTabParent == null)
+        return;
+
+      for (int i = 0; i < journalSectionTabParent.childCount; i++)
+      {
+        Transform child = journalSectionTabParent.GetChild(i);
+        Image bg = child.GetComponent<Image>();
+        TextMeshProUGUI label = child.GetComponentInChildren<TextMeshProUGUI>();
+        bool active =
+          (journalSection == JournalContentSection.Quests && child.name.StartsWith("Quests")) ||
+          (journalSection == JournalContentSection.Chronicle && child.name.StartsWith("Chronicle")) ||
+          (journalSection == JournalContentSection.SystemLogs && child.name.StartsWith("System"));
+
+        if (bg != null)
+          bg.color = active
+            ? SurvivalPioneerUiPalette.ActiveTabBackground
+            : SurvivalPioneerUiPalette.InactiveTabBackground;
+        if (label != null)
+          label.color = active ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText;
+      }
+    }
+
+    public void RefreshQuestList()
+    {
+      if (journalSection == JournalContentSection.Quests)
+        RefreshQuestListParents(questListParent, questDetailTitle, questDetailBody);
+      else if (journalSection == JournalContentSection.Chronicle)
+        RefreshChronicleList();
+      else
+        RefreshSystemLogList();
+    }
+
+    private void RefreshChronicleList()
+    {
+      if (chronicleListParent == null)
+        return;
+
+      foreach (Transform child in chronicleListParent)
+        Destroy(child.gameObject);
+
+      journalRoster ??= PioneerRosterManager.EnsureExists();
+      if (journalRoster == null || journalRoster.EchoChronicle.Count == 0)
+      {
+        JournalPanelLayout.CreateEmptyStateCard(
+          chronicleListParent,
+          ShiftUiTheme.Current,
+          "Rescue chronicle empty",
+          "Successful and failed Neural Echo rescues are recorded here.",
+          "Open the Echoes tab for live signals and dispositions.");
+        return;
+      }
+
+      for (int i = 0; i < journalRoster.EchoChronicle.Count; i++)
+      {
+        EchoChronicleEntry entry = journalRoster.EchoChronicle[i];
+        if (entry == null || entry.simulationIncident)
+          continue;
+        CreateJournalLogCard(
+          chronicleListParent,
+          entry.rescueFailed ? "Rescue Failed" : "Rescue Success",
+          entry.echoName,
+          $"{entry.classSummary}  ·  {entry.abilitySummary}",
+          entry.rescueFailed ? SurvivalPioneerUiPalette.DangerRed : SurvivalPioneerUiPalette.PositiveGreen);
+      }
+
+      if (chronicleListParent.childCount == 0)
+      {
+        JournalPanelLayout.CreateEmptyStateCard(
+          chronicleListParent,
+          ShiftUiTheme.Current,
+          "Rescue chronicle empty",
+          "No rescue events yet — simulation logs may still appear under System Logs.");
+      }
+    }
+
+    private void RefreshSystemLogList()
+    {
+      if (systemLogListParent == null)
+        return;
+
+      foreach (Transform child in systemLogListParent)
+        Destroy(child.gameObject);
+
+      journalRoster ??= PioneerRosterManager.EnsureExists();
+      bool any = false;
+      if (journalRoster != null)
+      {
+        for (int i = 0; i < journalRoster.EchoChronicle.Count; i++)
+        {
+          EchoChronicleEntry entry = journalRoster.EchoChronicle[i];
+          if (entry == null || !entry.simulationIncident)
+            continue;
+
+          any = true;
+          CreateJournalLogCard(
+            systemLogListParent,
+            "Colony Event",
+            entry.echoName,
+            $"{entry.classSummary}  ·  {entry.abilitySummary}",
+            SurvivalPioneerUiPalette.Gold);
+        }
+      }
+
+      if (!any)
+      {
+        JournalPanelLayout.CreateEmptyStateCard(
+          systemLogListParent,
+          ShiftUiTheme.Current,
+          "No system logs yet",
+          "Off-screen colony simulation incidents and facility strain events will appear here.",
+          "Keep the base running through sulfur storms to generate logs.");
+      }
+    }
+
+    private void CreateJournalLogCard(Transform parent, string heading, string title, string body, Color headingColor)
+    {
+      GameObject row = new GameObject("LogCard", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+      row.transform.SetParent(parent, false);
+      Image bg = row.GetComponent<Image>();
+      JournalPanelLayout.StyleDenseCard(bg);
+      row.GetComponent<LayoutElement>().minHeight = Sc(JournalPanelLayout.CardMinHeight);
+
+      TextMeshProUGUI label = CreateText(
+        row.transform,
+        $"<color=#{ColorUtility.ToHtmlStringRGB(headingColor)}>{heading}</color>  ·  {JournalPanelLayout.FormatAccentTitle(title)}\n{JournalPanelLayout.FormatMuted(body)}",
+        ShiftUiTheme.Current,
+        Sc(JournalPanelLayout.BodyFontSize),
+        TextAlignmentOptions.TopLeft);
+      label.textWrappingMode = TextWrappingModes.Normal;
+      RectTransform labelRect = label.rectTransform;
+      labelRect.anchorMin = Vector2.zero;
+      labelRect.anchorMax = Vector2.one;
+      labelRect.offsetMin = new Vector2(Sc(JournalPanelLayout.RowPaddingH), Sc(JournalPanelLayout.RowPaddingV));
+      labelRect.offsetMax = new Vector2(-Sc(JournalPanelLayout.RowPaddingH), -Sc(JournalPanelLayout.RowPaddingV));
     }
 
     private void CreateQuestListColumn(Transform parent, ShiftUiTheme theme)
@@ -681,8 +978,8 @@ namespace Project.UI
       contentRt.sizeDelta = new Vector2(0f, 0f);
 
       VerticalLayoutGroup contentLayout = content.AddComponent<VerticalLayoutGroup>();
-      contentLayout.spacing = Sc(6f);
-      contentLayout.padding = new RectOffset(Sc(4), Sc(4), Sc(4), Sc(4));
+      contentLayout.spacing = Sc(JournalPanelLayout.ListSpacing);
+      contentLayout.padding = new RectOffset(Sc(3), Sc(3), Sc(3), Sc(3));
       contentLayout.childControlWidth = true;
       contentLayout.childControlHeight = true;
       contentLayout.childForceExpandWidth = true;
@@ -702,24 +999,29 @@ namespace Project.UI
       VerticalLayoutGroup layout = parent.GetComponent<VerticalLayoutGroup>();
       if (layout == null)
         layout = parent.gameObject.AddComponent<VerticalLayoutGroup>();
-      layout.spacing = Sc(8f);
-      layout.padding = new RectOffset(Sc(8), Sc(8), Sc(8), Sc(8));
+      layout.spacing = Sc(JournalPanelLayout.SectionSpacing);
+      layout.padding = new RectOffset(
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding),
+        Sc((int)JournalPanelLayout.PanelPadding));
       layout.childControlWidth = true;
       layout.childControlHeight = true;
       layout.childForceExpandWidth = true;
       layout.childForceExpandHeight = false;
 
-      questDetailTitle = CreateText(parent, "Select a quest", theme, Sc(24f), TextAlignmentOptions.TopLeft);
+      questDetailTitle = CreateText(parent, "Select a quest", theme, Sc(20f), TextAlignmentOptions.TopLeft);
       questDetailTitle.fontStyle = FontStyles.Bold;
+      questDetailTitle.color = SurvivalPioneerUiPalette.WarmOffWhite;
 
-      questDetailBody = CreateText(parent, "", theme, Sc(16f), TextAlignmentOptions.TopLeft);
+      questDetailBody = CreateText(parent, "", theme, Sc(JournalPanelLayout.BodyFontSize), TextAlignmentOptions.TopLeft);
       questDetailBody.textWrappingMode = TextWrappingModes.Normal;
-      questDetailBody.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+      questDetailBody.color = SurvivalPioneerUiPalette.MutedText;
 
       GameObject objectiveHost = new GameObject("ObjectiveList", typeof(RectTransform));
       objectiveHost.transform.SetParent(parent, false);
       VerticalLayoutGroup objectiveLayout = objectiveHost.AddComponent<VerticalLayoutGroup>();
-      objectiveLayout.spacing = Sc(4f);
+      objectiveLayout.spacing = Sc(JournalPanelLayout.ListSpacing);
       objectiveLayout.childControlWidth = true;
       objectiveLayout.childControlHeight = true;
       objectiveLayout.childForceExpandWidth = true;
@@ -760,11 +1062,6 @@ namespace Project.UI
       abandonLabelRect.offsetMax = Vector2.zero;
 
       abandonQuestButton.gameObject.SetActive(false);
-    }
-
-    public void RefreshQuestList()
-    {
-      RefreshQuestListParents(questListParent, questDetailTitle, questDetailBody);
     }
 
     private void RefreshQuestListParents(
@@ -832,19 +1129,23 @@ namespace Project.UI
       });
 
       LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-      rowLayout.minHeight = Sc(52f);
-      rowLayout.preferredHeight = Sc(52f);
+      rowLayout.minHeight = Sc(44f);
+      rowLayout.preferredHeight = Sc(44f);
       rowLayout.flexibleWidth = 1f;
 
       VerticalLayoutGroup rowGroup = row.AddComponent<VerticalLayoutGroup>();
-      rowGroup.padding = new RectOffset(Sc(8), Sc(8), Sc(6), Sc(6));
+      rowGroup.padding = new RectOffset(
+        Sc((int)JournalPanelLayout.RowPaddingH),
+        Sc((int)JournalPanelLayout.RowPaddingH),
+        Sc((int)JournalPanelLayout.RowPaddingV),
+        Sc((int)JournalPanelLayout.RowPaddingV));
       rowGroup.childAlignment = TextAnchor.UpperLeft;
       rowGroup.childControlWidth = true;
       rowGroup.childControlHeight = true;
       rowGroup.childForceExpandWidth = true;
       rowGroup.childForceExpandHeight = false;
 
-      TextMeshProUGUI title = CreateText(row.transform, definition.title, theme, Sc(16f), TextAlignmentOptions.TopLeft);
+      TextMeshProUGUI title = CreateText(row.transform, definition.title, theme, Sc(JournalPanelLayout.BodyFontSize + 1f), TextAlignmentOptions.TopLeft);
       title.fontStyle = FontStyles.Bold;
       title.textWrappingMode = TextWrappingModes.Normal;
       title.color = QuestUiPalette.GetTitleColor(progress.status, theme);
@@ -853,7 +1154,7 @@ namespace Project.UI
         row.transform,
         QuestUiPalette.GetStatusLabel(progress.status),
         theme,
-        Sc(13f),
+        Sc(JournalPanelLayout.SecondaryFontSize),
         TextAlignmentOptions.TopLeft);
       status.color = QuestUiPalette.GetStatusLabelColor(progress.status, theme);
     }
@@ -926,7 +1227,7 @@ namespace Project.UI
       abandonConfirmPending = false;
       selectedQuestId = null;
       RefreshQuestList();
-      FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+      FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.Refresh();
     }
 
     private void HandleQuestUpdated(QuestProgress progress)
@@ -935,7 +1236,7 @@ namespace Project.UI
         selectedQuestId = progress.questId;
 
       RefreshQuestList();
-      FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+      FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.Refresh();
     }
 
     private void ClearObjectiveRows()

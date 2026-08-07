@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Project.Audio;
 using Project.Core;
 using Project.Data;
+using Project.Progression;
 using Project.UI;
 using Project.Vehicles;
 using UnityEngine;
@@ -285,6 +286,9 @@ namespace Project.Inventory
             if (item == null)
                 return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: false))
+                return false;
+
             if (item.IsInventoryStorageModule)
                 return inventory.CanUnlockNextStorageRow();
 
@@ -298,6 +302,9 @@ namespace Project.Inventory
 
             ItemData item = inventory.GetItemAt(slotIndex);
             if (item == null || !item.IsEquippable)
+                return false;
+
+            if (!LevelUnlockUtility.PassesEquipGate(item, showToast: false))
                 return false;
 
             if (inventory.IsToolbarIndex(slotIndex))

@@ -27,6 +27,11 @@ namespace Project.EditorTools
         private SerializedProperty grantsXp;
         private SerializedProperty xpAmount;
         private SerializedProperty xpSource;
+        private SerializedProperty grantXpEveryPickupOrUse;
+        private SerializedProperty requiredLevelToEquip;
+        private SerializedProperty requiredLevelToCraft;
+        private SerializedProperty requiredLevelToUse;
+        private SerializedProperty requiredLevelToPickup;
 
         private void OnEnable()
         {
@@ -46,6 +51,11 @@ namespace Project.EditorTools
             grantsXp = serializedObject.FindProperty("grantsXp");
             xpAmount = serializedObject.FindProperty("xpAmount");
             xpSource = serializedObject.FindProperty("xpSource");
+            grantXpEveryPickupOrUse = serializedObject.FindProperty("grantXpEveryPickupOrUse");
+            requiredLevelToEquip = serializedObject.FindProperty("requiredLevelToEquip");
+            requiredLevelToCraft = serializedObject.FindProperty("requiredLevelToCraft");
+            requiredLevelToUse = serializedObject.FindProperty("requiredLevelToUse");
+            requiredLevelToPickup = serializedObject.FindProperty("requiredLevelToPickup");
         }
 
         public override void OnInspectorGUI()
@@ -90,13 +100,22 @@ namespace Project.EditorTools
             EditorGUILayout.PropertyField(tooltipDescription, GUIContent.none);
 
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Gather XP (optional)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Progression", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(grantsXp);
             using (new EditorGUI.DisabledScope(!grantsXp.boolValue))
             {
                 EditorGUILayout.PropertyField(xpAmount);
                 EditorGUILayout.PropertyField(xpSource);
+                EditorGUILayout.PropertyField(
+                    grantXpEveryPickupOrUse,
+                    new GUIContent(
+                        "XP Every Pickup / Use",
+                        "On: grant XP each gather/pickup. Off: one-time XP for this item asset."));
             }
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Level Gates", EditorStyles.boldLabel);
+            DrawSuggestedXpFromGates();
 
             if (serializedObject.ApplyModifiedProperties())
             {
@@ -124,6 +143,64 @@ namespace Project.EditorTools
                 }
 
                 serializedObject.Update();
+            }
+        }
+
+        private void DrawSuggestedXpFromGates()
+        {
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(
+                requiredLevelToEquip,
+                new GUIContent("Required Level To Equip", "0 or 1 = no gate."));
+            EditorGUILayout.PropertyField(
+                requiredLevelToCraft,
+                new GUIContent("Required Level To Craft", "0 or 1 = no gate."));
+            EditorGUILayout.PropertyField(
+                requiredLevelToUse,
+                new GUIContent("Required Level To Use", "0 or 1 = no gate."));
+            EditorGUILayout.PropertyField(
+                requiredLevelToPickup,
+                new GUIContent("Required Level To Pickup", "World pickup / loot claim. 0 or 1 = no gate."));
+            bool gatesChanged = EditorGUI.EndChangeCheck();
+
+            if (gatesChanged)
+            {
+                ItemDataXpAuthoringHints.ApplySuggestedXpFromGates(
+                    xpAmount,
+                    requiredLevelToEquip.intValue,
+                    requiredLevelToCraft.intValue,
+                    requiredLevelToUse.intValue,
+                    requiredLevelToPickup.intValue,
+                    grantXpEveryPickupOrUse.boolValue);
+            }
+
+            int gate = ItemDataXpAuthoringHints.GetAuthoringGateLevel(
+                requiredLevelToEquip.intValue,
+                requiredLevelToCraft.intValue,
+                requiredLevelToUse.intValue,
+                requiredLevelToPickup.intValue);
+            bool continuous = grantXpEveryPickupOrUse.boolValue;
+            int suggested = ItemDataXpAuthoringHints.GetSuggestedXpAmount(gate, continuous);
+            int current = xpAmount.intValue;
+
+            EditorGUILayout.Space(2f);
+            EditorGUILayout.HelpBox(
+                ItemDataXpAuthoringHints.FormatPreviewLabel(gate, continuous, suggested, current)
+                + "\nGate edits auto-write xpAmount. Use Apply to resync after manual XP edits.",
+                MessageType.Info);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                using (new EditorGUI.DisabledScope(suggested == current))
+                {
+                    if (GUILayout.Button("Apply Suggested XP", GUILayout.Width(150f)))
+                    {
+                        xpAmount.intValue = suggested;
+                        if (!grantsXp.boolValue)
+                            grantsXp.boolValue = true;
+                    }
+                }
             }
         }
     }

@@ -123,8 +123,9 @@ namespace Project.Crafting
                 if (recipe == null)
                     continue;
 
-                string childName = $"RecipePickup_{recipe.ResolvedId}";
-                Transform existing = host.Find(childName);
+                string childName = $"BlueprintPickup_{recipe.ResolvedId}";
+                string legacyChildName = $"RecipePickup_{recipe.ResolvedId}";
+                Transform existing = host.Find(childName) ?? host.Find(legacyChildName);
                 GameObject pickupObject = existing != null ? existing.gameObject : new GameObject(childName);
 
                 if (existing == null)

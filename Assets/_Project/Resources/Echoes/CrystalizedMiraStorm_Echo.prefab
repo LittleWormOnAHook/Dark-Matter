@@ -10960,7 +10960,7 @@ GameObject:
   m_Layer: 8
   m_Name: CrystalizedMiraStorm_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -59711,7 +59711,7 @@ Transform:
   - {fileID: 6646886839846466656}
   - {fileID: 7720451656245374217}
   - {fileID: 5525294058450502637}
-  - {fileID: 8218119927416344571}
+  - {fileID: 4825915685837353711}
   - {fileID: 8904661491554357150}
   - {fileID: 4983050224507416658}
   m_Father: {fileID: 24408440602888058}
@@ -64451,7 +64451,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &8218119927416344571 stripped
+--- !u!4 &4825915685837353711 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 6497704648605790292}

@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Pioneers;
@@ -24,31 +25,38 @@ namespace Project.Quests
             }
         }
 
-        public static void GrantReward(QuestRewardDefinition reward, string source)
+        /// <summary>
+        /// Grants a reward. For items, returns how many were actually added to the player inventory
+        /// (may be less than <see cref="QuestRewardDefinition.amount"/> when inventory is full).
+        /// Non-item rewards return the requested amount on success, or 0 on failure.
+        /// </summary>
+        public static int GrantReward(QuestRewardDefinition reward, string source)
         {
             if (reward == null)
-                return;
+                return 0;
 
             switch (reward.type)
             {
                 case QuestRewardType.Pi:
                     GrantAetherCredits(reward.amount, source);
-                    break;
+                    return reward.amount > 0 ? reward.amount : 0;
 
                 case QuestRewardType.Item:
-                    GrantItem(reward.item, reward.amount);
-                    break;
+                    return GrantItem(reward.item, reward.amount);
 
                 case QuestRewardType.StatUpgrade:
                     ProgressionRewardGranter.GrantXp(
                         reward.amount > 0 ? reward.amount : 25,
                         XpSource.Quest,
                         $"quest-stat:{source}:{reward.statUpgradeId}");
-                    break;
+                    return reward.amount > 0 ? reward.amount : 25;
 
                 case QuestRewardType.Xp:
                     ProgressionRewardGranter.GrantXp(reward.amount, XpSource.Quest, $"quest-xp:{source}:{reward.amount}");
-                    break;
+                    return reward.amount > 0 ? reward.amount : 0;
+
+                default:
+                    return 0;
             }
         }
 
@@ -74,21 +82,36 @@ namespace Project.Quests
             SimpleGameManager.Instance?.AddAetherCredits(amount, source ?? "Quest");
         }
 
-        private static void GrantItem(ItemData item, int amount)
+        private static int GrantItem(ItemData item, int amount)
         {
             if (item == null || amount <= 0)
-                return;
+                return 0;
 
-            InventorySystem inventory = Object.FindAnyObjectByType<InventorySystem>();
+            InventorySystem inventory = ResolvePlayerInventory();
             if (inventory == null)
             {
                 Debug.LogWarning("QuestRewardGranter: No InventorySystem found to grant item reward.");
-                return;
+                return 0;
             }
 
             int added = inventory.AddItem(item, amount);
             if (added < amount)
                 Debug.LogWarning($"QuestRewardGranter: Could only add {added}/{amount} of {item.itemName}.");
+
+            return added;
+        }
+
+        private static InventorySystem ResolvePlayerInventory()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player != null)
+            {
+                InventorySystem onPlayer = player.GetComponent<InventorySystem>();
+                if (onPlayer != null)
+                    return onPlayer;
+            }
+
+            return Object.FindAnyObjectByType<InventorySystem>();
         }
     }
 }

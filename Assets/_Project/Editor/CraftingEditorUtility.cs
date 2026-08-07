@@ -37,22 +37,48 @@ namespace Project.EditorTools
             }
         }
 
-        /// <summary>Recipe category folder inferred from the crafted output item type.</summary>
+        /// <summary>
+        /// Folder for a concrete item, honoring Modules / Operations / Components / Throwables conventions.
+        /// </summary>
+        public static string GetItemCategoryFolder(ItemData item)
+        {
+            if (item == null)
+                return ProjectAssetPaths.ItemsData;
+
+            ItemDataInspectorCategory category = ItemDataInspectorCategoryResolver.Resolve(item);
+            switch (category)
+            {
+                case ItemDataInspectorCategory.ThrowableConsumable:
+                    return ProjectAssetPaths.ItemsThrowables;
+                case ItemDataInspectorCategory.Module:
+                    return ProjectAssetPaths.ItemsModules;
+                case ItemDataInspectorCategory.Operations:
+                    return ProjectAssetPaths.ItemsOperations;
+                case ItemDataInspectorCategory.Component:
+                    return ProjectAssetPaths.ItemsComponents;
+                case ItemDataInspectorCategory.MiningTool:
+                    return ProjectAssetPaths.ItemsRanged;
+                default:
+                    return GetItemCategoryFolder(item.itemType);
+            }
+        }
+
+        /// <summary>Blueprint category folder inferred from the crafted output item type.</summary>
         public static string GetRecipeCategoryFolder(ItemType outputItemType)
         {
             switch (outputItemType)
             {
                 case ItemType.MeleeWeapon:
                 case ItemType.RangedWeapon:
-                    return ProjectAssetPaths.RecipesWeapons;
+                    return ProjectAssetPaths.BlueprintsWeapons;
                 case ItemType.Ammo:
-                    return ProjectAssetPaths.RecipesAmmo;
+                    return ProjectAssetPaths.BlueprintsAmmo;
                 case ItemType.Resource:
-                    return ProjectAssetPaths.RecipesResources;
+                    return ProjectAssetPaths.BlueprintsResources;
                 case ItemType.Consumable:
-                    return ProjectAssetPaths.RecipesConsumables;
+                    return ProjectAssetPaths.BlueprintsConsumables;
                 default:
-                    return ProjectAssetPaths.RecipesData;
+                    return ProjectAssetPaths.BlueprintsData;
             }
         }
 
@@ -108,16 +134,30 @@ namespace Project.EditorTools
         public static RecipeDefinition[] LoadAllRecipeAssets()
         {
             EnsureFolder(RecipesFolder);
-            string[] guids = AssetDatabase.FindAssets("t:RecipeDefinition", new[] { RecipesFolder });
-            List<RecipeDefinition> recipes = new List<RecipeDefinition>(guids.Length);
+            List<RecipeDefinition> recipes = new List<RecipeDefinition>();
+            HashSet<string> seenPaths = new HashSet<string>();
 
-            for (int i = 0; i < guids.Length; i++)
+            void CollectFromFolder(string folder)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                RecipeDefinition recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(path);
-                if (recipe != null)
-                    recipes.Add(recipe);
+                if (string.IsNullOrEmpty(folder) || !AssetDatabase.IsValidFolder(folder))
+                    return;
+
+                string[] guids = AssetDatabase.FindAssets("t:RecipeDefinition", new[] { folder });
+                for (int i = 0; i < guids.Length; i++)
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                    if (!seenPaths.Add(path))
+                        continue;
+
+                    RecipeDefinition recipe = AssetDatabase.LoadAssetAtPath<RecipeDefinition>(path);
+                    if (recipe != null)
+                        recipes.Add(recipe);
+                }
             }
+
+            CollectFromFolder(RecipesFolder);
+            // Temporary dual-read while Assets/_Project/Data/Crafting/Recipes migrates to Blueprints.
+            CollectFromFolder(ProjectAssetPaths.Data + "/Crafting/Recipes");
 
             recipes.Sort((a, b) => string.Compare(a != null ? a.displayName : string.Empty, b != null ? b.displayName : string.Empty, System.StringComparison.OrdinalIgnoreCase));
             return recipes.ToArray();
@@ -347,13 +387,44 @@ namespace Project.EditorTools
             return null;
         }
 
+        /// <summary>Preferred new pickup prefab path (BlueprintPickup_*).</summary>
         public static string GetRecipePickupPrefabPath(string recipeId)
         {
             string safeId = SanitizeAssetName(recipeId);
             if (string.IsNullOrEmpty(safeId))
                 return string.Empty;
 
+            return $"{CraftingPrefabsFolder}/BlueprintPickup_{safeId}.prefab";
+        }
+
+        /// <summary>Legacy RecipePickup_* path kept for migration / lookup.</summary>
+        public static string GetLegacyRecipePickupPrefabPath(string recipeId)
+        {
+            string safeId = SanitizeAssetName(recipeId);
+            if (string.IsNullOrEmpty(safeId))
+                return string.Empty;
+
             return $"{CraftingPrefabsFolder}/RecipePickup_{safeId}.prefab";
+        }
+
+        /// <summary>Resolves an existing pickup prefab path (Blueprint preferred, then legacy Recipe).</summary>
+        public static string ResolveRecipePickupPrefabPath(string recipeId)
+        {
+            string preferred = GetRecipePickupPrefabPath(recipeId);
+            if (!string.IsNullOrEmpty(preferred) && AssetDatabase.LoadAssetAtPath<GameObject>(preferred) != null)
+                return preferred;
+
+            string legacy = GetLegacyRecipePickupPrefabPath(recipeId);
+            if (!string.IsNullOrEmpty(legacy) && AssetDatabase.LoadAssetAtPath<GameObject>(legacy) != null)
+                return legacy;
+
+            return preferred;
+        }
+
+        public static GameObject LoadRecipePickupPrefab(string recipeId)
+        {
+            string path = ResolveRecipePickupPrefabPath(recipeId);
+            return string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
         public static GameObject LoadDefaultBookVisual()
@@ -379,14 +450,20 @@ namespace Project.EditorTools
 
             EnsureFolder(CraftingPrefabsFolder);
 
-            string prefabPath = GetRecipePickupPrefabPath(recipeId);
+            // Prefer updating an existing legacy prefab in place; otherwise write BlueprintPickup_*.
+            string legacyPath = GetLegacyRecipePickupPrefabPath(recipeId);
+            string preferredPath = GetRecipePickupPrefabPath(recipeId);
+            string prefabPath = preferredPath;
+            if (!string.IsNullOrEmpty(legacyPath) && AssetDatabase.LoadAssetAtPath<GameObject>(legacyPath) != null)
+                prefabPath = legacyPath;
+
             if (string.IsNullOrEmpty(prefabPath))
                 return null;
 
             GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (existingPrefab != null && confirmOverwrite &&
                 !EditorUtility.DisplayDialog(
-                    "Recipe Pickup Prefab",
+                    "Blueprint Pickup Prefab",
                     $"Prefab already exists at\n{prefabPath}\n\nOverwrite it?",
                     "Overwrite",
                     "Cancel"))
@@ -417,8 +494,7 @@ namespace Project.EditorTools
             if (string.IsNullOrWhiteSpace(recipeId))
                 return null;
 
-            string prefabPath = GetRecipePickupPrefabPath(recipeId);
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            GameObject prefab = LoadRecipePickupPrefab(recipeId);
             if (prefab == null && savePrefabIfMissing)
                 prefab = CreateRecipePickupPrefab(recipeId, visualTemplate, interactRange, colliderSize, autoFitCollider);
 
@@ -437,7 +513,7 @@ namespace Project.EditorTools
             if (instance == null)
                 return null;
 
-            Undo.RegisterCreatedObjectUndo(instance, "Place Recipe Pickup");
+            Undo.RegisterCreatedObjectUndo(instance, "Place Blueprint Pickup");
 
             if (parent != null)
             {
@@ -460,7 +536,7 @@ namespace Project.EditorTools
                 return null;
 
             string safeId = SanitizeAssetName(recipeId);
-            GameObject root = new GameObject($"RecipePickup_{safeId}");
+            GameObject root = new GameObject($"BlueprintPickup_{safeId}");
 
             if (visualTemplate != null)
             {
@@ -483,7 +559,7 @@ namespace Project.EditorTools
                 collider.size = colliderSize ?? new Vector3(0.5f, 0.5f, 0.5f);
 
             RecipePickup pickup = root.AddComponent<RecipePickup>();
-            pickup.Configure(recipeId, "Press E to collect recipe", interactRange);
+            pickup.Configure(recipeId, "Press E to collect blueprint", interactRange);
             return root;
         }
 
@@ -514,7 +590,7 @@ namespace Project.EditorTools
             return Mathf.Approximately(divisor, 0f) ? value : value / divisor;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Icons From Output")]
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Blueprint Icons From Output")]
         public static void SyncRecipeIconsFromOutput()
         {
             RecipeDefinition[] recipes = LoadAllRecipeAssets();
@@ -541,11 +617,18 @@ namespace Project.EditorTools
             }
 
             EditorUtility.DisplayDialog(
-                "Sync Recipe Icons",
+                "Sync Blueprint Icons",
                 updated > 0
-                    ? $"Assigned output icons to {updated} recipe(s)."
-                    : "All recipes already have matching icons (or are missing output items).",
+                    ? $"Assigned output icons to {updated} blueprint(s)."
+                    : "All blueprints already have matching icons (or are missing output items).",
                 "OK");
+        }
+
+        /// <summary>Obsolete menu bookmark — redirects to Sync Blueprint Icons.</summary>
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Icons From Output", false, 200)]
+        private static void SyncRecipeIconsFromOutputLegacy()
+        {
+            SyncRecipeIconsFromOutput();
         }
     }
 }

@@ -25,7 +25,7 @@ GameObject:
   m_Layer: 0
   m_Name: Sulfur_Hound_V2
   m_TagString: Enemy
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -138,6 +138,7 @@ MonoBehaviour:
   viewBoostedChance: 0.45
   range: 14
   cooldown: 6
+  cooldownVariation: 0
   damage: 10
   projectileSpeed: 18
   projectileLifetime: 4
@@ -173,6 +174,7 @@ MonoBehaviour:
   autoAcquireThreats: 1
   meleeDamage: 12
   meleeHitCooldown: 0.35
+  meleeHitIntervalVariation: 0
 --- !u!114 &6273412887911327827
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190,6 +192,7 @@ MonoBehaviour:
   health: {fileID: 175679680281454889}
   agent: {fileID: 1713560146104149344}
   animationDriver: {fileID: 8004722736913525970}
+  emissionDriver: {fileID: 0}
   audioDriver: {fileID: 0}
   brainProfile: {fileID: 0}
   movementMode: 1
@@ -200,7 +203,12 @@ MonoBehaviour:
   wanderRadius: 8
   idleDurationMin: 1.5
   idleDurationMax: 3.5
+  idleDurationVariation: 0
+  wanderDuration: 0
+  wanderDurationVariation: 0
   navMeshSampleRadius: 2.5
+  patrolPath: {fileID: 0}
+  patrolPathProvider: {fileID: 0}
   patrolMode: 0
   patrolPointCount: 4
   patrolRadius: 6
@@ -214,6 +222,13 @@ MonoBehaviour:
   meleeRange: 2.75
   loseTargetDelay: 2.5
   meleeHitInterval: 1.1
+  meleeHitIntervalVariation: 0
+  senseHearingEnabled: 1
+  hearingRange: 14
+  hearingAggroChance: 0.55
+  hearingCooldown: 0.8
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
 --- !u!114 &8004722736913525970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -270,6 +285,7 @@ MonoBehaviour:
   dissolveDuration: 1.4
   dissolveEdgeWidth: 0.045
   dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  maxDissolveDiameter: 1
   replaceDeathAnimation: 1
   autoStartOnDeathWithoutSequence: 1
   enableSmoke: 0

@@ -1,7 +1,6 @@
 using Project.Audio;
 using Project.Combat;
 using Project.Data;
-using Project.Progression;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -252,13 +251,7 @@ namespace Project.Interaction
 
         private void TryGrantGatherXp()
         {
-            if (_item == null || !_item.grantsXp || _item.xpAmount <= 0)
-                return;
-
-            ProgressionRewardGranter.GrantXp(
-                _item.xpAmount,
-                _item.xpSource,
-                $"special-item:{_item.name}");
+            _item?.TryGrantConfiguredXp();
         }
     }
 }

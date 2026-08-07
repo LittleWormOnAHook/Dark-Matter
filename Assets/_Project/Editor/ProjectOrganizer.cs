@@ -105,7 +105,7 @@ namespace Project.EditorTools
             string[] legacyFolders =
             {
                 "Assets/_Project/Prefabs/Items/Crafting Equipment",
-                "Assets/_Project/Data/Recipes",
+                "Assets/_Project/Data/Crafting/Blueprints",
                 "Assets/_Project/Textures/UI",
                 "Assets/_Project/Textures",
             };

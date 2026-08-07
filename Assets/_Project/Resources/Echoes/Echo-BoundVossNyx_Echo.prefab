@@ -7022,7 +7022,7 @@ GameObject:
   m_Layer: 8
   m_Name: Echo-BoundVossNyx_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -11090,7 +11090,7 @@ Transform:
   - {fileID: 8776899869064823604}
   - {fileID: 3514270091629006996}
   - {fileID: 5828004969402381835}
-  - {fileID: 4902274803390206405}
+  - {fileID: 7498696106719039458}
   - {fileID: 3816255170466525599}
   - {fileID: 3367702612959262353}
   m_Father: {fileID: 6343796757593278011}
@@ -64951,7 +64951,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &4902274803390206405 stripped
+--- !u!4 &7498696106719039458 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 8126142092575018329}

@@ -8,19 +8,27 @@ namespace Project.UI
 {
     /// <summary>
     /// Compact level + XP bar anchored under the hotbar with a small gap.
+    /// Fill uses the same anchor-scale approach as <see cref="CharacterStatBarRow"/> /
+    /// condensed vitals (Simple/Sliced sprite + anchorMax.x) — Image.Type.Filled with no
+    /// sprite never draws, which is why the bar appeared stuck empty.
     /// </summary>
     [DisallowMultipleComponent]
     public class HotbarXpHud : MonoBehaviour
     {
-        private const float BarHeight = 14f * HudLayoutMetrics.HudScale;
+        private const float BarHeight = 18f * HudLayoutMetrics.HudScale;
         private const float GapBelowHotbar = 6f * HudLayoutMetrics.HudScale;
-        private const float LevelWidth = 52f * HudLayoutMetrics.HudScale;
+        private const float LevelWidth = 78f * HudLayoutMetrics.HudScale;
+        private const float FillLerpSpeed = 10f;
 
         private RectTransform root;
         private TextMeshProUGUI levelLabel;
+        private TextMeshProUGUI xpCountLabel;
+        private RectTransform xpFillRect;
         private Image xpFill;
         private PlayerProgressionManager progression;
         private bool built;
+        private float displayedFill;
+        private float targetFill;
 
         public static HotbarXpHud EnsureExists(Transform canvasRoot)
         {
@@ -32,7 +40,6 @@ namespace Project.UI
             }
 
             GameObject host = new GameObject("HotbarXpHud", typeof(RectTransform), typeof(HotbarXpHud));
-            host.transform.SetParent(canvasRoot, false);
             HotbarXpHud hud = host.GetComponent<HotbarXpHud>();
             hud.EnsureBuilt(canvasRoot);
             return hud;
@@ -42,6 +49,7 @@ namespace Project.UI
         {
             if (built)
             {
+                ParentToFrontLayer(canvasRoot);
                 AlignUnderHotbar();
                 Refresh();
                 return;
@@ -49,12 +57,20 @@ namespace Project.UI
 
             built = true;
             root = transform as RectTransform;
-            if (root.parent != canvasRoot && canvasRoot != null)
-                root.SetParent(canvasRoot, false);
+            ParentToFrontLayer(canvasRoot);
+
+            // Drop stale children (detach first so Destroy-deferred objects leave this hierarchy).
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                child.SetParent(null, false);
+                Destroy(child.gameObject);
+            }
 
             Image background = gameObject.GetComponent<Image>();
             if (background == null)
                 background = gameObject.AddComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(background);
             background.color = new Color(0f, 0f, 0f, 0.35f);
             background.raycastTarget = false;
 
@@ -69,49 +85,115 @@ namespace Project.UI
 
             levelLabel = levelObject.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(levelLabel);
-            levelLabel.fontSize = 13f * HudLayoutMetrics.HudScale;
+            // 13 * 1.5 = 19.5 base before HUD scale.
+            levelLabel.fontSize = 19.5f * HudLayoutMetrics.HudScale;
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.alignment = TextAlignmentOptions.MidlineLeft;
             levelLabel.color = SurvivalPioneerUiPalette.Gold;
             levelLabel.raycastTarget = false;
             levelLabel.margin = new Vector4(6f, 0f, 0f, 0f);
+            levelLabel.overflowMode = TextOverflowModes.Overflow;
+            levelLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
             GameObject trackObject = new GameObject("XpTrack", typeof(RectTransform), typeof(Image));
             trackObject.transform.SetParent(transform, false);
             RectTransform trackRect = trackObject.GetComponent<RectTransform>();
-            trackRect.anchorMin = new Vector2(0f, 0.2f);
-            trackRect.anchorMax = new Vector2(1f, 0.8f);
+            trackRect.anchorMin = new Vector2(0f, 0.15f);
+            trackRect.anchorMax = new Vector2(1f, 0.85f);
             trackRect.offsetMin = new Vector2(LevelWidth + 4f, 0f);
             trackRect.offsetMax = new Vector2(-6f, 0f);
             Image trackImage = trackObject.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(trackImage);
             trackImage.color = SurvivalPioneerUiPalette.SlateGray;
             trackImage.raycastTarget = false;
 
             GameObject fillObject = new GameObject("XpFill", typeof(RectTransform), typeof(Image));
             fillObject.transform.SetParent(trackObject.transform, false);
-            RectTransform fillRect = fillObject.GetComponent<RectTransform>();
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = Vector2.one;
-            fillRect.offsetMin = Vector2.zero;
-            fillRect.offsetMax = Vector2.zero;
+            xpFillRect = fillObject.GetComponent<RectTransform>();
+            xpFillRect.anchorMin = Vector2.zero;
+            xpFillRect.anchorMax = Vector2.one;
+            xpFillRect.pivot = new Vector2(0f, 0.5f);
+            xpFillRect.offsetMin = Vector2.zero;
+            xpFillRect.offsetMax = Vector2.zero;
             xpFill = fillObject.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(xpFill);
             xpFill.color = SurvivalPioneerUiPalette.Gold;
-            xpFill.type = Image.Type.Filled;
-            xpFill.fillMethod = Image.FillMethod.Horizontal;
             xpFill.raycastTarget = false;
+            xpFill.preserveAspect = false;
 
-            progression = PlayerProgressionManager.EnsureExists();
-            if (progression != null)
-                progression.OnXpChanged += Refresh;
+            GameObject countObject = new GameObject("XpCount", typeof(RectTransform));
+            countObject.transform.SetParent(trackObject.transform, false);
+            RectTransform countRect = countObject.GetComponent<RectTransform>();
+            countRect.anchorMin = Vector2.zero;
+            countRect.anchorMax = Vector2.one;
+            countRect.offsetMin = Vector2.zero;
+            countRect.offsetMax = Vector2.zero;
+            xpCountLabel = countObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(xpCountLabel);
+            xpCountLabel.fontSize = 11f * HudLayoutMetrics.HudScale;
+            xpCountLabel.fontStyle = FontStyles.Bold;
+            xpCountLabel.alignment = TextAlignmentOptions.Center;
+            xpCountLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            xpCountLabel.raycastTarget = false;
+            xpCountLabel.overflowMode = TextOverflowModes.Ellipsis;
+            xpCountLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
+            BindProgression();
             AlignUnderHotbar();
-            Refresh();
+            Refresh(snapFill: true);
+        }
+
+        private void OnEnable()
+        {
+            BindProgression();
+            if (built)
+                Refresh(snapFill: true);
+        }
+
+        private void OnDisable()
+        {
+            UnbindProgression();
         }
 
         private void OnDestroy()
         {
+            UnbindProgression();
+        }
+
+        private void LateUpdate()
+        {
+            if (!built || xpFillRect == null)
+                return;
+
+            if (Mathf.Approximately(displayedFill, targetFill))
+                return;
+
+            displayedFill = Mathf.MoveTowards(displayedFill, targetFill, FillLerpSpeed * Time.unscaledDeltaTime);
+            ApplyFillVisual(displayedFill);
+        }
+
+        private void BindProgression()
+        {
+            PlayerProgressionManager next = PlayerProgressionManager.EnsureExists();
+            if (progression == next)
+                return;
+
+            UnbindProgression();
+            progression = next;
             if (progression != null)
-                progression.OnXpChanged -= Refresh;
+                progression.OnXpChanged += HandleXpChanged;
+        }
+
+        private void UnbindProgression()
+        {
+            if (progression != null)
+                progression.OnXpChanged -= HandleXpChanged;
+            progression = null;
+        }
+
+        private void HandleXpChanged()
+        {
+            Refresh(snapFill: false);
         }
 
         public void AlignUnderHotbar()
@@ -121,7 +203,6 @@ namespace Project.UI
 
             RectTransform hotbar = ResolveHotbarRect();
             float width = hotbar != null ? hotbar.sizeDelta.x : HudLayoutMetrics.Scaled(640f);
-            float hotbarHeight = hotbar != null ? hotbar.sizeDelta.y : HudLayoutMetrics.Scaled(82f);
             float anchoredY = hotbar != null ? hotbar.anchoredPosition.y : HudLayoutMetrics.BottomHudInset;
             float centerX = hotbar != null ? hotbar.anchoredPosition.x : 0f;
             Vector2 anchorMin = hotbar != null ? hotbar.anchorMin : new Vector2(0.5f, 0f);
@@ -144,21 +225,83 @@ namespace Project.UI
             gameObject.SetActive(visible);
             if (visible)
             {
+                ParentToFrontLayer(ResolveCanvasRoot());
                 AlignUnderHotbar();
-                Refresh();
+                Refresh(snapFill: true);
             }
         }
 
-        public void Refresh()
+        private void ParentToFrontLayer(Transform canvasRoot)
         {
-            if (levelLabel == null || xpFill == null)
+            canvasRoot ??= ResolveCanvasRoot();
+            if (canvasRoot == null || root == null)
                 return;
 
-            progression ??= PlayerProgressionManager.EnsureExists();
+            // Stay with the hotbar on UiFrontLayer (sortingOrder 500). Leaving the XP bar on
+            // MainCanvas (order 0) made it disappear behind raised HUD chrome after map/optics.
+            Transform front = UiFrontLayer.Get(canvasRoot);
+            if (root.parent != front)
+                root.SetParent(front, false);
+        }
+
+        private static Transform ResolveCanvasRoot()
+        {
+            Canvas main = MainMenuController.ResolveMainCanvas();
+            if (main != null)
+                return main.transform;
+
+            InventoryUI inventoryUi = Object.FindAnyObjectByType<InventoryUI>();
+            if (inventoryUi != null)
+            {
+                Canvas canvas = inventoryUi.GetComponent<Canvas>() ?? inventoryUi.GetComponentInParent<Canvas>();
+                if (canvas != null)
+                    return canvas.transform;
+            }
+
+            return Object.FindAnyObjectByType<Canvas>()?.transform;
+        }
+
+        public void Refresh() => Refresh(snapFill: true);
+
+        private void Refresh(bool snapFill)
+        {
+            if (levelLabel == null || xpFillRect == null)
+                return;
+
+            BindProgression();
             int level = progression != null ? progression.Level : 1;
+            int xpIntoLevel = progression != null ? progression.GetXpProgressInCurrentLevel() : 0;
+            int xpToNext = progression != null ? progression.GetXpRequiredForNextLevel() : 0;
             float fill = progression != null ? progression.GetXpProgressNormalized() : 0f;
+
             levelLabel.text = $"Lv {level}";
-            xpFill.fillAmount = Mathf.Clamp01(fill);
+            if (xpCountLabel != null)
+            {
+                xpCountLabel.text = xpToNext > 0
+                    ? $"{xpIntoLevel} / {xpToNext} XP"
+                    : "MAX";
+            }
+
+            targetFill = Mathf.Clamp01(fill);
+            if (snapFill)
+            {
+                displayedFill = targetFill;
+                ApplyFillVisual(displayedFill);
+            }
+        }
+
+        private void ApplyFillVisual(float normalized)
+        {
+            if (xpFillRect == null)
+                return;
+
+            normalized = Mathf.Clamp01(normalized);
+            xpFillRect.anchorMin = Vector2.zero;
+            xpFillRect.anchorMax = new Vector2(normalized, 1f);
+            xpFillRect.pivot = new Vector2(0f, 0.5f);
+            xpFillRect.anchoredPosition = Vector2.zero;
+            xpFillRect.offsetMin = Vector2.zero;
+            xpFillRect.offsetMax = Vector2.zero;
         }
 
         private static RectTransform ResolveHotbarRect()

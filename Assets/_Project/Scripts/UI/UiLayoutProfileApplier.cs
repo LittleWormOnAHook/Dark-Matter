@@ -6,7 +6,7 @@ namespace Project.UI
 {
     public static class UiLayoutProfileApplier
     {
-        public static bool Apply(Transform panelRoot, UiLayoutProfile profile, bool includeInactive = true, bool panelEmbedded = false)
+        public static bool Apply(Transform panelRoot, UiLayoutProfile profile, bool includeInactive = true, bool panelEmbedded = false, bool applyRootImageStyle = true)
         {
             if (panelRoot == null || profile == null || profile.nodes == null || profile.nodes.Count == 0)
                 return false;
@@ -15,7 +15,27 @@ namespace Project.UI
             for (int i = 0; i < profile.nodes.Count; i++)
             {
                 UiLayoutNodeEntry entry = profile.nodes[i];
-                if (entry == null || !UiLayoutCaptureRules.ShouldApplyNode(entry, panelEmbedded))
+                if (entry == null)
+                    continue;
+
+                // Embedded inventory stretches via code — still restore authored chrome on the root
+                // unless the caller asked to preserve scene/Hierarchy Image values.
+                if (panelEmbedded && string.IsNullOrEmpty(entry.relativePath))
+                {
+                    if (applyRootImageStyle)
+                    {
+                        RectTransform rootRect = panelRoot as RectTransform;
+                        if (rootRect != null && entry.hasImageStyle)
+                        {
+                            ApplyImageStyle(rootRect, entry);
+                            appliedAny = true;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (!UiLayoutCaptureRules.ShouldApplyNode(entry, panelEmbedded))
                     continue;
 
                 RectTransform rect = FindRelativeRect(panelRoot, entry.relativePath);
@@ -23,7 +43,17 @@ namespace Project.UI
                     continue;
 
                 bool applyActive = UiLayoutCaptureRules.ShouldApplyRootActiveState(panelRoot, entry, panelEmbedded);
-                ApplyEntry(rect, entry, applyActive);
+                bool isRoot = string.IsNullOrEmpty(entry.relativePath);
+                if (isRoot && !applyRootImageStyle)
+                {
+                    // Apply layout/grid/etc but leave Image chrome alone.
+                    ApplyEntry(rect, entry, applyActive, applyImageStyle: false);
+                }
+                else
+                {
+                    ApplyEntry(rect, entry, applyActive);
+                }
+
                 appliedAny = true;
             }
 
@@ -77,6 +107,7 @@ namespace Project.UI
                 entry.imageColor = image.color;
                 entry.imagePreserveAspect = image.preserveAspect;
                 entry.imageType = image.type;
+                entry.imageEnabled = image.enabled;
             }
 
             if (current.TryGetComponent(out RawImage rawImage))
@@ -223,7 +254,24 @@ namespace Project.UI
             grid.childAlignment = entry.gridChildAlignment;
         }
 
-        public static void ApplyEntry(RectTransform rect, UiLayoutNodeEntry entry, bool applyActiveSelf = true)
+        private static void ApplyImageStyle(RectTransform rect, UiLayoutNodeEntry entry)
+        {
+            if (rect == null || entry == null || !entry.hasImageStyle)
+                return;
+
+            if (!rect.TryGetComponent(out Image image))
+                return;
+
+            image.sprite = entry.imageSprite;
+            if (entry.imageMaterial != null)
+                image.material = entry.imageMaterial;
+            image.color = entry.imageColor;
+            image.preserveAspect = entry.imagePreserveAspect;
+            image.type = entry.imageType;
+            image.enabled = entry.imageEnabled;
+        }
+
+        public static void ApplyEntry(RectTransform rect, UiLayoutNodeEntry entry, bool applyActiveSelf = true, bool applyImageStyle = true)
         {
             if (rect == null || entry == null)
                 return;
@@ -239,15 +287,8 @@ namespace Project.UI
             rect.offsetMax = entry.offsetMax;
             rect.localScale = entry.localScale;
 
-            if (entry.hasImageStyle && rect.TryGetComponent(out Image image))
-            {
-                image.sprite = entry.imageSprite;
-                if (entry.imageMaterial != null)
-                    image.material = entry.imageMaterial;
-                image.color = entry.imageColor;
-                image.preserveAspect = entry.imagePreserveAspect;
-                image.type = entry.imageType;
-            }
+            if (applyImageStyle && entry.hasImageStyle)
+                ApplyImageStyle(rect, entry);
 
             if (entry.hasRawImageStyle && rect.TryGetComponent(out RawImage rawImage))
             {
@@ -323,6 +364,7 @@ namespace Project.UI
                     targetImage.color = entry.imageColor;
                     targetImage.preserveAspect = entry.imagePreserveAspect;
                     targetImage.type = entry.imageType;
+                    targetImage.enabled = entry.imageEnabled;
                 }
                 else if (button.transition == Selectable.Transition.ColorTint)
                 {

@@ -818,10 +818,12 @@ GameObject:
   - component: {fileID: 442121090410458981}
   - component: {fileID: 7711223344556677889}
   - component: {fileID: 6552745687112328345}
+  - component: {fileID: 4230529835538292642}
+  - component: {fileID: 5067076059022375545}
   m_Layer: 8
   m_Name: Plaver_V5
   m_TagString: Player
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -2886,6 +2888,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.PlayerProgressionManager
   curveOverride: {fileID: 0}
+--- !u!114 &4230529835538292642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 765245e1a186f4a429b3b9136ce32106, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMIGrenadeThrowBridge
+  grenadeItem: {fileID: 11400000, guid: 6d5136e4bf5450144b514355deefa152, type: 2}
+  inventory: {fileID: 0}
+  throwManager: {fileID: 7003506458934846346}
+  throwableName: Fragment Grenade
+  maxCarry: 6
+  dmiThrowablePrefab: {fileID: 1472589237813678126, guid: 2c9e6a4744c5f8a45976d7ab73abf53c, type: 3}
+--- !u!114 &5067076059022375545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5660f46620932d3418a64ccad3f26db7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMIGrenadeCookController
+  throwManager: {fileID: 7003506458934846346}
+  throwBridge: {fileID: 4230529835538292642}
+  inventory: {fileID: 974530526351442323}
+  cookFuseSeconds: 10
+  cookTriggerThreshold: 0.35
 --- !u!1 &114158
 GameObject:
   m_ObjectHideFlags: 0
@@ -88490,6 +88527,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[0].amount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[1].amount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[2].amount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[3].amount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[0].throwable
+      value: 
+      objectReference: {fileID: 1472589237813678126, guid: 2c9e6a4744c5f8a45976d7ab73abf53c, type: 3}
     - target: {fileID: 224863294064242038, guid: 322f523885a65e746816ed5774b95d38, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
@@ -88504,6 +88561,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4909563269784334, guid: 322f523885a65e746816ed5774b95d38, type: 3}
   m_PrefabInstance: {fileID: 6965233001880693640}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7003506458934846346 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+  m_PrefabInstance: {fileID: 6965233001880693640}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3488aeb9d116a01419bf76222e7bf1d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7735452120671636557
 PrefabInstance:
   m_ObjectHideFlags: 0

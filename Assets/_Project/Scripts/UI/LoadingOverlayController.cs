@@ -47,8 +47,6 @@ namespace Project.UI
         private const float LogoFrameSize = 430f;
 
         [SerializeField, Range(0.30f, 0.75f)] private float backgroundImageAlpha = 0.50f;
-        /// <summary>Side-to-side tumble (Y axis). Degrees per unscaled second.</summary>
-        [SerializeField] private float logoSpinDegreesPerSecond = 36f;
         /// <summary>Screen time and progress bar are both driven by this window.</summary>
         [SerializeField] private float simulatedLoadSeconds = 6f;
         [SerializeField] private float fadeOutSeconds = 0.65f;
@@ -299,10 +297,7 @@ namespace Project.UI
                 GateGameplayCameras(true);
             }
 
-            // Y-axis = side-to-side tumble (left ↔ right). Unscaled so it keeps turning while timeScale is 0.
-            if (logoArtRect != null)
-                logoArtRect.Rotate(0f, logoSpinDegreesPerSecond * Time.unscaledDeltaTime, 0f, Space.Self);
-
+            // Soft glow pulse only — DMI lettermark stays static (no tumble/spin).
             if (glowImage != null)
             {
                 float pulse = 0.16f + 0.08f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 1.6f));
@@ -371,7 +366,7 @@ namespace Project.UI
             // 2. Atmospheric Io art at tunable alpha over the navy.
             BuildBackgroundArt(contentRoot.transform);
 
-            // 3. Brand block: soft glow, slow-spinning logo, product title.
+            // 3. Brand block: soft glow, static DMI logo, product title.
             BuildBrandBlock(contentRoot.transform);
 
             // 4. Progress track + Loading Genesis label.
@@ -410,7 +405,7 @@ namespace Project.UI
                 glowImage.raycastTarget = false;
             }
 
-            BuildSpinningLogo(parent);
+            BuildStaticLogo(parent);
 
             GameObject titleObject = new GameObject("BrandTitle", typeof(RectTransform));
             titleObject.transform.SetParent(parent, false);
@@ -428,7 +423,7 @@ namespace Project.UI
             title.raycastTarget = false;
         }
 
-        private void BuildSpinningLogo(Transform parent)
+        private void BuildStaticLogo(Transform parent)
         {
             // Prefer Sprite so Unity respects Alpha Is Transparency on the DMI mark; Texture is the fallback.
             Sprite logoSprite = Resources.Load<Sprite>(LogoResourcePath);
@@ -436,7 +431,7 @@ namespace Project.UI
             if (logoSprite == null && logoTexture == null)
                 return;
 
-            // Transparent gold DMI lettermark — no circular mask (it clips the outer D/I strokes).
+            // Transparent gold DMI lettermark — static, no circular mask (it clips the outer D/I strokes).
             GameObject artObject = new GameObject("LogoArt", typeof(RectTransform), typeof(CanvasRenderer));
             artObject.transform.SetParent(parent, false);
             logoArtRect = artObject.GetComponent<RectTransform>();

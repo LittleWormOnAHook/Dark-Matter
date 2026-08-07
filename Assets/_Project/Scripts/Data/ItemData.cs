@@ -310,16 +310,35 @@ namespace Project.Data
         public int acValue = 0;
 
         [Header("Progression")]
-        [Tooltip("When true, collecting this item grants XP (shards, recipe scrolls, etc.). Normal pickups stay false.")]
+        [Tooltip("When true, collecting or using this item can grant XP (shards, recipe scrolls, gather yields, etc.). Normal items stay false.")]
         public bool grantsXp;
         public int xpAmount = 10;
         public XpSource xpSource = XpSource.SpecialItem;
+        [Tooltip("When Grants XP is on: award XP every pickup / use / gather. Off = one-time XP for this item asset (default).")]
+        public bool grantXpEveryPickupOrUse;
+
+        /// <summary>
+        /// Grants configured item XP via <see cref="ProgressionRewardGranter"/>.
+        /// One-time by default (<c>special-item:{name}</c>); continuous when <see cref="grantXpEveryPickupOrUse"/> is set.
+        /// </summary>
+        public bool TryGrantConfiguredXp(string toastLabel = null)
+        {
+            if (!grantsXp || xpAmount <= 0)
+                return false;
+
+            string oneTimeKey = grantXpEveryPickupOrUse ? null : $"special-item:{name}";
+            return ProgressionRewardGranter.GrantXp(xpAmount, xpSource, oneTimeKey, toastLabel);
+        }
 
         [Header("Level Gates")]
-        [Tooltip("Minimum player level required to equip or use this item.")]
+        [Tooltip("Minimum player level to equip/select this weapon/tool. 0 or 1 = no gate.")]
         public int requiredLevelToEquip = 1;
-        [Tooltip("Minimum player level required to craft blueprints that output this item.")]
+        [Tooltip("Minimum player level to craft blueprints that output this item. 0 or 1 = no gate.")]
         public int requiredLevelToCraft = 1;
+        [Tooltip("Minimum player level to use/consume/throw this item. 0 or 1 = no gate.")]
+        public int requiredLevelToUse = 1;
+        [Tooltip("Minimum player level to pick up from the world or claim as loot. 0 or 1 = no gate.")]
+        public int requiredLevelToPickup = 1;
 
         [Header("Tooltip")]
         [TextArea(2, 5)]

@@ -21,7 +21,12 @@ namespace Project.UI
         private TextMeshProUGUI loadoutLabel;
         private TextMeshProUGUI creditsLabel;
         private TextMeshProUGUI unlocksLabel;
+        private TextMeshProUGUI xpCountLabel;
+        private RectTransform xpFillRect;
         private Image xpFillImage;
+        private float displayedXpFill;
+        private float targetXpFill;
+        private const float XpFillLerpSpeed = 10f;
 
         private CharacterStatBarRow healthBar;
         private CharacterStatBarRow energyBar;
@@ -141,7 +146,15 @@ namespace Project.UI
             oxygenBar = null;
             meleeBar = null;
             rangedBar = null;
+            accuracyBar = null;
             environmentSection = null;
+            xpFillImage = null;
+            xpFillRect = null;
+            xpCountLabel = null;
+            levelHeaderLabel = null;
+            loadoutLabel = null;
+            creditsLabel = null;
+            unlocksLabel = null;
         }
 
         public void Refresh()
@@ -164,11 +177,27 @@ namespace Project.UI
             float statMult = progression != null ? progression.GetLevelStatMultiplier() : 1f;
 
             levelHeaderLabel.text =
-                $"Level {level}\nXP {xpProgress}/{xpRequired}\nSkill Points {skillPoints}\n" +
+                $"Level {level}\nSkill Points {skillPoints}\n" +
                 $"Level stat bonus: +{Mathf.RoundToInt((statMult - 1f) * 100f)}% max vitals";
 
-            if (xpFillImage != null)
-                xpFillImage.fillAmount = progression != null ? progression.GetXpProgressNormalized() : 0f;
+            if (xpCountLabel != null)
+            {
+                xpCountLabel.text = xpRequired > 0
+                    ? $"{xpProgress} / {xpRequired} XP"
+                    : "MAX";
+            }
+
+            targetXpFill = progression != null ? progression.GetXpProgressNormalized() : 0f;
+            // Snap on large jumps (panel open / level-up); small XP gains lerp in Update.
+            if (Mathf.Abs(targetXpFill - displayedXpFill) > 0.35f)
+            {
+                displayedXpFill = targetXpFill;
+                ApplyXpFillVisual(displayedXpFill);
+            }
+            else if (Mathf.Approximately(displayedXpFill, targetXpFill))
+            {
+                ApplyXpFillVisual(displayedXpFill);
+            }
 
             RefreshStatBars(survivalStats, equipment);
             environmentSection?.RefreshFromStats(survivalStats);
@@ -278,47 +307,41 @@ namespace Project.UI
 
             panelRoot = new GameObject("CharacterPanel", typeof(RectTransform));
             panelRoot.transform.SetParent(parent, false);
-            RectTransform rootRect = panelRoot.GetComponent<RectTransform>();
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = new Vector2(16f, 16f);
-            rootRect.offsetMax = new Vector2(-16f, -16f);
+            JournalPanelLayout.StretchFill(panelRoot.GetComponent<RectTransform>());
 
             HorizontalLayoutGroup rootLayout = panelRoot.AddComponent<HorizontalLayoutGroup>();
-            rootLayout.spacing = 14f;
-            rootLayout.childControlWidth = true;
-            rootLayout.childControlHeight = true;
-            rootLayout.childForceExpandWidth = true;
-            rootLayout.childForceExpandHeight = true;
-            rootLayout.padding = new RectOffset(8, 8, 8, 8);
+            JournalPanelLayout.ApplyRootHorizontalLayout(rootLayout);
 
             GameObject infoColumn = CreateColumn(panelRoot.transform, flexibleWidth: 1f - StatsPanelWidthFraction);
-            levelHeaderLabel = CreateSectionLabel(infoColumn.transform, 18);
+            // Level header — slightly condensed vs previous oversized block.
+            levelHeaderLabel = CreateSectionLabel(infoColumn.transform, 22);
+            LayoutElement levelLayout = levelHeaderLabel.GetComponent<LayoutElement>();
+            if (levelLayout != null)
+                levelLayout.minHeight = 56f;
             CreateXpBar(infoColumn.transform);
             BuildVitalsSection(infoColumn.transform);
-            loadoutLabel = CreateSectionLabel(infoColumn.transform, 16);
-            creditsLabel = CreateSectionLabel(infoColumn.transform, 16);
-            unlocksLabel = CreateSectionLabel(infoColumn.transform, 14);
+            loadoutLabel = CreateSectionLabel(infoColumn.transform, JournalPanelLayout.BodyFontSize + 1f);
+            creditsLabel = CreateSectionLabel(infoColumn.transform, JournalPanelLayout.BodyFontSize + 1f);
+            unlocksLabel = CreateSectionLabel(infoColumn.transform, JournalPanelLayout.SecondaryFontSize);
 
             BuildSurvivorPanel(panelRoot.transform);
         }
 
         private void BuildVitalsSection(Transform parent)
         {
-            TextMeshProUGUI vitalsHeading = CreateSectionLabel(parent, 15);
+            TextMeshProUGUI vitalsHeading = CreateSectionLabel(parent, JournalPanelLayout.HeaderFontSize);
             vitalsHeading.text = "Vitals";
-            vitalsHeading.fontStyle = FontStyles.Bold;
-            vitalsHeading.color = SurvivalPioneerUiPalette.RichFuchsia;
+            JournalPanelLayout.ApplyHeaderStyle(vitalsHeading);
             vitalsHeading.alignment = TextAlignmentOptions.TopLeft;
 
             GameObject listHost = new GameObject("VitalsList", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             listHost.transform.SetParent(parent, false);
             LayoutElement listLayout = listHost.GetComponent<LayoutElement>();
             // 7 rows: Health/Energy/Stamina/Oxygen + Melee/Ranged/Accuracy.
-            listLayout.minHeight = HudLayoutMetrics.Scaled(210f);
+            listLayout.minHeight = HudLayoutMetrics.Scaled(190f);
 
             VerticalLayoutGroup rowsGroup = listHost.GetComponent<VerticalLayoutGroup>();
-            rowsGroup.spacing = 6f;
+            rowsGroup.spacing = 4f;
             rowsGroup.childControlWidth = true;
             rowsGroup.childControlHeight = true;
             rowsGroup.childForceExpandWidth = true;
@@ -347,11 +370,11 @@ namespace Project.UI
             panelLayout.flexibleHeight = 1f;
             // Wide enough for the now full-size (non-compact) temp + hazard gauges reused from the
             // player's own hotbar HUD, plus section/panel padding.
-            panelLayout.minWidth = 420f;
+            panelLayout.minWidth = 400f;
 
             VerticalLayoutGroup panelGroup = panel.GetComponent<VerticalLayoutGroup>();
-            panelGroup.padding = new RectOffset(16, 16, 14, 16);
-            panelGroup.spacing = 10f;
+            panelGroup.padding = new RectOffset(12, 12, 10, 12);
+            panelGroup.spacing = JournalPanelLayout.SectionSpacing;
             panelGroup.childControlWidth = true;
             panelGroup.childControlHeight = true;
             panelGroup.childForceExpandWidth = true;
@@ -382,8 +405,8 @@ namespace Project.UI
             layout.minWidth = 180f;
 
             VerticalLayoutGroup columnLayout = column.AddComponent<VerticalLayoutGroup>();
-            columnLayout.spacing = 10f;
-            columnLayout.padding = new RectOffset(10, 10, 10, 10);
+            columnLayout.spacing = JournalPanelLayout.SectionSpacing;
+            columnLayout.padding = JournalPanelLayout.PanelPaddingRect;
             columnLayout.childControlWidth = true;
             columnLayout.childControlHeight = true;
             columnLayout.childForceExpandWidth = true;
@@ -392,27 +415,78 @@ namespace Project.UI
             return column;
         }
 
+        private void Update()
+        {
+            if (panelRoot == null || xpFillRect == null)
+                return;
+
+            if (Mathf.Approximately(displayedXpFill, targetXpFill))
+                return;
+
+            displayedXpFill = Mathf.MoveTowards(
+                displayedXpFill,
+                targetXpFill,
+                XpFillLerpSpeed * Time.unscaledDeltaTime);
+            ApplyXpFillVisual(displayedXpFill);
+        }
+
+        private void ApplyXpFillVisual(float normalized)
+        {
+            if (xpFillRect == null)
+                return;
+
+            normalized = Mathf.Clamp01(normalized);
+            xpFillRect.anchorMin = Vector2.zero;
+            xpFillRect.anchorMax = new Vector2(normalized, 1f);
+            xpFillRect.pivot = new Vector2(0f, 0.5f);
+            xpFillRect.anchoredPosition = Vector2.zero;
+            xpFillRect.offsetMin = new Vector2(2f, 2f);
+            xpFillRect.offsetMax = new Vector2(-2f, -2f);
+        }
+
         private void CreateXpBar(Transform parent)
         {
             GameObject barRoot = new GameObject("XpBar", typeof(RectTransform), typeof(LayoutElement));
             barRoot.transform.SetParent(parent, false);
             LayoutElement layout = barRoot.GetComponent<LayoutElement>();
             layout.preferredHeight = 18f;
+            layout.minHeight = 18f;
 
             Image bg = barRoot.AddComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(bg);
             bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.95f);
+            bg.raycastTarget = false;
 
-            GameObject fillObject = new GameObject("Fill", typeof(RectTransform));
+            GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillObject.transform.SetParent(barRoot.transform, false);
-            RectTransform fillRect = fillObject.GetComponent<RectTransform>();
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = Vector2.one;
-            fillRect.offsetMin = new Vector2(2f, 2f);
-            fillRect.offsetMax = new Vector2(-2f, -2f);
-            xpFillImage = fillObject.AddComponent<Image>();
+            xpFillRect = fillObject.GetComponent<RectTransform>();
+            xpFillRect.anchorMin = Vector2.zero;
+            xpFillRect.anchorMax = Vector2.one;
+            xpFillRect.pivot = new Vector2(0f, 0.5f);
+            xpFillRect.offsetMin = new Vector2(2f, 2f);
+            xpFillRect.offsetMax = new Vector2(-2f, -2f);
+            xpFillImage = fillObject.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(xpFillImage);
             xpFillImage.color = SurvivalPioneerUiPalette.Gold;
-            xpFillImage.type = Image.Type.Filled;
-            xpFillImage.fillMethod = Image.FillMethod.Horizontal;
+            xpFillImage.raycastTarget = false;
+            xpFillImage.preserveAspect = false;
+
+            GameObject countObject = new GameObject("XpCount", typeof(RectTransform));
+            countObject.transform.SetParent(barRoot.transform, false);
+            RectTransform countRect = countObject.GetComponent<RectTransform>();
+            countRect.anchorMin = Vector2.zero;
+            countRect.anchorMax = Vector2.one;
+            countRect.offsetMin = Vector2.zero;
+            countRect.offsetMax = Vector2.zero;
+            xpCountLabel = countObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(xpCountLabel);
+            xpCountLabel.fontSize = 12f;
+            xpCountLabel.fontStyle = FontStyles.Bold;
+            xpCountLabel.alignment = TextAlignmentOptions.Center;
+            xpCountLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            xpCountLabel.raycastTarget = false;
+            xpCountLabel.overflowMode = TextOverflowModes.Ellipsis;
+            xpCountLabel.textWrappingMode = TextWrappingModes.NoWrap;
         }
 
         private static TextMeshProUGUI CreateSectionLabel(Transform parent, float fontSize)
@@ -420,7 +494,7 @@ namespace Project.UI
             GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
             labelObject.transform.SetParent(parent, false);
             LayoutElement layout = labelObject.GetComponent<LayoutElement>();
-            layout.minHeight = fontSize * 2.5f;
+            layout.minHeight = Mathf.Max(fontSize * 1.6f, 22f);
             TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(label);
             label.fontSize = fontSize;

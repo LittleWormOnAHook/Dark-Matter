@@ -97,7 +97,7 @@ namespace Project.UI
 
             titleLabel = CreateText(contentArea, "RESONANCE IMPRINT STABILIZED", theme, 26f, FontStyles.Bold);
             titleLabel.alignment = TextAlignmentOptions.Center;
-            titleLabel.color = SurvivalPioneerUiPalette.RichFuchsia;
+            titleLabel.color = SurvivalPioneerUiPalette.Gold;
 
             echoNameLabel = CreateText(contentArea, "Echo Name", theme, 34f, FontStyles.Bold);
             echoNameLabel.alignment = TextAlignmentOptions.Center;

@@ -62,6 +62,10 @@ namespace Project.UI
         public const float XpToastGapBelowPickup = 8f;
         public const float AchievementToastGapBelowXp = 10f;
 
+        /// <summary>Level-up banner sits above the pickup/XP toast stack, near true center.</summary>
+        public static Vector2 LevelUpPopupAnchoredPosition =>
+            new Vector2(0f, 88f);
+
         public static Vector2 PickupToastAnchoredPosition =>
             new Vector2(0f, CenterToastY);
 

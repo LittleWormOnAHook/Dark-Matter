@@ -36,42 +36,42 @@ MonoBehaviour:
   sheathedLocalScale: {x: 1, y: 1, z: 1}
   invectorWeaponPrefab: {fileID: 0}
   invectorWeaponId: 
-  meleeDamage: 10
-  meleeDamageRandomRange: 3
-  criticalChance: 0.1
-  criticalDamageMultiplier: 2
-  meleeRange: 2.2
-  meleeCooldown: 0.65
+  meleeDamage: 0
+  meleeDamageRandomRange: 0
+  criticalChance: 0
+  criticalDamageMultiplier: 0
+  meleeRange: 0
+  meleeCooldown: 0
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
   meleeKnockback: 0
-  gatherPower: 1
+  gatherPower: 0
   attackTrigger: Attack
-  rangedDamage: 14
-  rangedDamageRandomRange: 4
-  rangedRange: 45
-  projectileSpeed: 85
-  projectileSpreadDegrees: 1.5
-  weaponAccuracy: 75
-  closeRangeFullAccuracyDistance: 12
-  closeRangeSpreadScale: 0.2
+  rangedDamage: 0
+  rangedDamageRandomRange: 0
+  rangedRange: 0
+  projectileSpeed: 0
+  projectileSpreadDegrees: 0
+  weaponAccuracy: 0
+  closeRangeFullAccuracyDistance: 0
+  closeRangeSpreadScale: 0
   recoilVertical: 0
   recoilHorizontal: 0
-  recoilFireRateScale: 4.5
-  fireRate: 4
-  magazineSize: 30
-  reloadTimeSeconds: 1.8
+  recoilFireRateScale: 0
+  fireRate: 0
+  magazineSize: 0
+  reloadTimeSeconds: 0
   defaultAmmoType: 0
-  compatibleAmmoTypes: 00000000
+  compatibleAmmoTypes: 
   defaultAmmoItem: {fileID: 0}
   grantRandomStartingAmmo: 0
-  startingAmmoMin: 1
-  startingAmmoMax: 12
+  startingAmmoMin: 0
+  startingAmmoMax: 0
   projectilePrefab: {fileID: 0}
   muzzleSocketName: Muzzle
-  aimFovMultiplier: 0.78
-  hipFireMaxDeviationDegrees: 15
-  hipFireSpreadMultiplier: 1
+  aimFovMultiplier: 0
+  hipFireMaxDeviationDegrees: 0
+  hipFireSpreadMultiplier: 0
   useAimHeldGrip: 0
   aimHeldLocalPosition: {x: 0, y: 0, z: 0}
   aimHeldLocalEuler: {x: 0, y: 0, z: 0}
@@ -79,25 +79,25 @@ MonoBehaviour:
   aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   aimHeldLocalScale: {x: 1, y: 1, z: 1}
   ammoType: 0
-  ammoPerPickup: 20
-  ammoPickupGrant: 20
+  ammoPerPickup: 0
+  ammoPickupGrant: 0
   isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0
-  splashDamageFalloff: 0.25
+  splashDamageFalloff: 0
   muzzleFlashPrefab: {fileID: 0}
   tracerPrefab: {fileID: 0}
   impactVfxPrefab: {fileID: 0}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0
-  miningPassesRequired: 2
-  miningDropMin: 1
-  miningDropMax: 5
-  miningLockBreakDegrees: 30
-  miningPassDuration: 1.25
+  miningPassesRequired: 0
+  miningDropMin: 0
+  miningDropMax: 0
+  miningLockBreakDegrees: 0
+  miningPassDuration: 0
   miningChunkVfxPrefab: {fileID: 0}
-  miningChargeDrainPerSecond: 4
-  miningChargePerPlasmaFuel: 50
+  miningChargeDrainPerSecond: 0
+  miningChargePerPlasmaFuel: 0
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
@@ -109,26 +109,30 @@ MonoBehaviour:
   miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 0
   statusEffectDamagePerTick: 0
-  statusEffectTickInterval: 1
+  statusEffectTickInterval: 0
   statusEffectDuration: 0
   statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
-  toolRange: 8
-  scanRange: 24
-  opticsZoomFov: 38
-  opticsMinZoomFov: 18
-  opticsMaxZoomFov: 55
+  toolRange: 0
+  scanRange: 0
+  opticsZoomFov: 0
+  opticsMinZoomFov: 0
+  opticsMaxZoomFov: 0
   healthRestore: 0
-  energyRestore: 30
+  energyRestore: 100
   staminaRestore: 5
   oxygenRestore: 0
   isAcInfused: 0
   acValue: 0
-  grantsXp: 0
-  xpAmount: 10
+  grantsXp: 1
+  xpAmount: 20
   xpSource: 5
+  grantXpEveryPickupOrUse: 0
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: 
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: "Scarlet Io bloom with a sharp mineral taste. Restores +100
+    Energy and +5 Stamina. Forage carefully \u2014 blooms near active fumaroles."
   unlocksInventoryStorageRow: 0

@@ -160,7 +160,8 @@ namespace Project.UI
             {
                 StretchToParent(panelRt);
                 if (_panelLayout != null)
-                    _panelLayout.padding = new RectOffset(Si(8f, EmbeddedPanelScale), Si(8f, EmbeddedPanelScale), Si(8f, EmbeddedPanelScale), Si(8f, EmbeddedPanelScale));
+                    _panelLayout.padding = JournalPanelLayout.PanelPaddingRect;
+                    _panelLayout.spacing = JournalPanelLayout.SectionSpacing;
             }
             else if (panelRt != null)
             {

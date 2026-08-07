@@ -61,7 +61,6 @@ namespace Project.UI
             new TabDef("Pet", JournalWindowId.Pet),
             new TabDef("Companions", JournalWindowId.Pioneers),
             new TabDef("Character", JournalWindowId.Character),
-            new TabDef("Craft", JournalWindowId.Craft),
             new TabDef("Blueprints", JournalWindowId.Recipes),
             new TabDef("Skills", JournalWindowId.Skills),
             new TabDef("Echoes", JournalWindowId.Echoes),
@@ -112,8 +111,8 @@ namespace Project.UI
             tabRowRect.pivot = new Vector2(0.5f, 0.5f);
 
             HorizontalLayoutGroup rowLayout = tabRow.GetComponent<HorizontalLayoutGroup>();
-            rowLayout.padding = new RectOffset(Sc(10, uiScale), Sc(10, uiScale), Sc(8, uiScale), Sc(8, uiScale));
-            rowLayout.spacing = Sc(6f, uiScale);
+            rowLayout.padding = new RectOffset(Sc(8, uiScale), Sc(8, uiScale), Sc(6, uiScale), Sc(6, uiScale));
+            rowLayout.spacing = Sc(4f, uiScale);
             rowLayout.childAlignment = TextAnchor.MiddleCenter;
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;

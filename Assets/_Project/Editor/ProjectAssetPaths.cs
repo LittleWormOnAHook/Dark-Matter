@@ -55,6 +55,8 @@ namespace Project.EditorTools
         public const string ItemsOperations = ItemsData + "/Operations";
         public const string ItemsTools = ItemsData + "/Tools";
         public const string ItemsConsumables = ItemsData + "/Consumables";
+        /// <summary>Throwable consumables (grenades). Keep itemType Consumable; combat lives on throw prefabs.</summary>
+        public const string ItemsThrowables = ItemsData + "/Throwables";
         public const string ItemsVehicles = ItemsData + "/Vehicles";
         /// <summary>
         /// ResourceNodeDefinition ScriptableObjects. Runtime nodes live as prefabs under PrefabsWorldResources.
@@ -67,12 +69,20 @@ namespace Project.EditorTools
         public const string CreaturesBrainTasks = CreaturesBrainData + "/Tasks";
         public const string CreaturesBrainDecisions = CreaturesBrainData + "/Decisions";
         public const string EncountersData = Data + "/Encounters";
-        public const string RecipesData = Data + "/Crafting/Recipes";
-        public const string RecipesWeapons = RecipesData + "/Weapons";
-        public const string RecipesConsumables = RecipesData + "/Consumables";
-        public const string RecipesAmmo = RecipesData + "/Ammo";
-        public const string RecipesResources = RecipesData + "/Resources";
-        public const string RecipesModules = RecipesData + "/Modules";
+        /// <summary>Blueprint ScriptableObject folder (formerly Recipes).</summary>
+        public const string BlueprintsData = Data + "/Crafting/Blueprints";
+        /// <summary>Legacy alias for <see cref="BlueprintsData"/>.</summary>
+        public const string RecipesData = BlueprintsData;
+        public const string BlueprintsWeapons = BlueprintsData + "/Weapons";
+        public const string BlueprintsConsumables = BlueprintsData + "/Consumables";
+        public const string BlueprintsAmmo = BlueprintsData + "/Ammo";
+        public const string BlueprintsResources = BlueprintsData + "/Resources";
+        public const string BlueprintsModules = BlueprintsData + "/Modules";
+        public const string RecipesWeapons = BlueprintsWeapons;
+        public const string RecipesConsumables = BlueprintsConsumables;
+        public const string RecipesAmmo = BlueprintsAmmo;
+        public const string RecipesResources = BlueprintsResources;
+        public const string RecipesModules = BlueprintsModules;
 
         public const string Prefabs = Root + "/Prefabs";
         public const string PrefabsBuildings = Prefabs + "/Buildings";
@@ -139,7 +149,9 @@ namespace Project.EditorTools
         public const string AudioBreakWood = "Assets/Audio/Others/Break Wood Effect.wav";
         public const string InventorySlotPrefab = PrefabsUi + "/InventorySlot.prefab";
         public const string InventorySlotResourcesPrefab = ResourcesUi + "/InventorySlot.prefab";
-        public const string RecipeRegistry = ResourcesCrafting + "/RecipeRegistry.asset";
+        public const string BlueprintRegistry = ResourcesCrafting + "/BlueprintRegistry.asset";
+        /// <summary>Legacy alias — same asset path as <see cref="BlueprintRegistry"/> after rename.</summary>
+        public const string RecipeRegistry = BlueprintRegistry;
         public const string QuestRegistry = ResourcesQuests + "/QuestRegistry.asset";
         public const string ItemRegistry = Resources + "/ItemRegistry.asset";
         public const string ReflectionProbePrefab = PrefabsWorld + "/ReflectionProbe_Outdoor.prefab";

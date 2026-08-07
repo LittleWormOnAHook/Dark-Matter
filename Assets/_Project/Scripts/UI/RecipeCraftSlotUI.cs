@@ -16,7 +16,7 @@ namespace Project.UI
         private static readonly Color HoverTint = new Color(0.28f, 0.38f, 0.32f, 0.98f);
         private static readonly Color HoverNotReadyTint = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.35f);
 
-        private static float SlotSize => HudLayoutMetrics.InventorySlotSize(64f);
+        private static float SlotSize => HudLayoutMetrics.InventorySlotSize(96f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;
 
         private Image backgroundImage;

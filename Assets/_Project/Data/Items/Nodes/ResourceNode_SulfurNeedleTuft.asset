@@ -16,7 +16,7 @@ MonoBehaviour:
   nodeKind: 1
   designerNotes: 
   resourceItem: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
-  itemIcon: {fileID: 21300000, guid: d6fb7afc70cbbd04bb87b3b881ac0e22, type: 3}
+  itemIcon: {fileID: 21300000, guid: 845f67cdcd7b7b54d86ea23ac5e477de, type: 3}
   interactionMode: 1
   requiredTool: {fileID: 0}
   requireMiningLaser: 0

@@ -26,6 +26,7 @@ namespace Project.UI
         public Color imageColor = Color.white;
         public bool imagePreserveAspect;
         public Image.Type imageType = Image.Type.Simple;
+        public bool imageEnabled = true;
 
         public bool hasRawImageStyle;
         public Texture rawTexture;

@@ -582,7 +582,14 @@ namespace Project.Inventory
                 ItemData weapon = equipment.GetHotbarItem(slot);
                 if (weapon != null && weapon.IsRangedWeapon)
                 {
-                    EnsureWeaponInitialized(slot, weapon);
+                    // Only init freshly assigned weapons. Do NOT silently refill an empty magazine
+                    // whenever any item is picked up — that races with reload audio and skips R.
+                    // Empty→full refill belongs to EnsureWeaponInitialized after a real reload finish,
+                    // or CreditAmmoPickup for world ammo stacks.
+                    bool isFreshWeaponInSlot = !slotWeaponIdentity.TryGetValue(slot, out ItemData previousWeapon)
+                        || previousWeapon != weapon;
+                    if (isFreshWeaponInSlot)
+                        EnsureWeaponInitialized(slot, weapon);
                     return;
                 }
 

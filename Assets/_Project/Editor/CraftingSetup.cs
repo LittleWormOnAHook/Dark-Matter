@@ -54,10 +54,10 @@ namespace Project.EditorTools
             AssetDatabase.Refresh();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
-            Debug.Log("Crafting setup complete. Press E at Cooking/Workbench stations, find recipe scrolls near the Recipe Book, and use Journal > Craft tab.");
+            Debug.Log("Crafting setup complete. Press E at Cooking/Workbench stations, find blueprint scrolls near the Recipe Book, and use Journal > Craft / Blueprints tabs.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Recipes")]
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Blueprints")]
         public static void CreateCraftingContentOnly()
         {
             EnsureFolders();
@@ -73,7 +73,7 @@ namespace Project.EditorTools
             EnsureRecipeRegistry(recipes);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"Created {recipes.Count} recipes and RecipeRegistry at {RegistryPath}.");
+            Debug.Log($"Created {recipes.Count} blueprints and BlueprintRegistry at {RegistryPath}.");
         }
 
         private static void EnsureFolders()
@@ -240,7 +240,13 @@ namespace Project.EditorTools
             return recipes;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Registry")]
+        
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Recipes", false, 200)]
+        private static void SeedStarterRecipesLegacy() => CreateCraftingContentOnly();
+
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Registry", false, 201)]
+        private static void SyncRecipeRegistryLegacy() => SyncRecipeRegistryFromDataFolder();
+        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Blueprint Registry")]
         public static void SyncRecipeRegistryFromDataFolder()
         {
             EnsureFolders();
@@ -351,14 +357,14 @@ namespace Project.EditorTools
                 if (recipe == null)
                     continue;
 
-                string childName = $"RecipePickup_{recipe.ResolvedId}";
-                Transform existing = host.Find(childName);
+                string childName = $"BlueprintPickup_{recipe.ResolvedId}";
+                string legacyChildName = $"RecipePickup_{recipe.ResolvedId}";
+                Transform existing = host.Find(childName) ?? host.Find(legacyChildName);
                 GameObject pickupObject = existing != null ? existing.gameObject : null;
 
                 if (pickupObject == null)
                 {
-                    string prefabPath = CraftingEditorUtility.GetRecipePickupPrefabPath(recipe.ResolvedId);
-                    GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                    GameObject prefab = CraftingEditorUtility.LoadRecipePickupPrefab(recipe.ResolvedId);
                     if (prefab != null)
                     {
                         pickupObject = PrefabUtility.InstantiatePrefab(prefab) as GameObject;

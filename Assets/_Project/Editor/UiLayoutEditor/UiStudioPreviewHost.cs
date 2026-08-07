@@ -103,11 +103,17 @@ namespace Project.EditorTools.UiLayout
                 return;
 
             ShiftUiTheme.ResetSharedCache();
+
+            // Never overwrite InventoryPanel chrome — UI Studio / scene authored visuals are source of truth.
+            Transform inventoryPanel = root.Find("InventoryPanel");
             Image[] images = root.GetComponentsInChildren<Image>(true);
             for (int i = 0; i < images.Length; i++)
             {
                 Image image = images[i];
                 if (image == null)
+                    continue;
+
+                if (inventoryPanel != null && (image.transform == inventoryPanel || image.transform.IsChildOf(inventoryPanel)))
                     continue;
 
                 if (image.gameObject.name.Contains("Panel"))

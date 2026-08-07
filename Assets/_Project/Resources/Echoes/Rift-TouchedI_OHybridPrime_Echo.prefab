@@ -34799,7 +34799,7 @@ Transform:
   - {fileID: 8296340466003514723}
   - {fileID: 2856275708772905825}
   - {fileID: 89963849073134137}
-  - {fileID: 5033376582948986881}
+  - {fileID: 5932067482897342440}
   - {fileID: 7800831063348508324}
   - {fileID: 8275830672432334434}
   m_Father: {fileID: 8648190258660854745}
@@ -59561,7 +59561,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6555311696654655674}
-  m_Father: {fileID: 4019584083451067217}
+  m_Father: {fileID: 4019584083451249192}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!33 &2166788158584455630
 MeshFilter:
@@ -59833,7 +59833,7 @@ Transform:
   - {fileID: 5197517968399578965}
   - {fileID: 2576104070033180588}
   - {fileID: 8710877325042799107}
-  - {fileID: 4019584083451067217}
+  - {fileID: 4019584083451249192}
   m_Father: {fileID: 8171957594035769998}
   m_LocalEulerAnglesHint: {x: 4.924, y: -90, z: 90}
 --- !u!1 &8627759075078105574
@@ -60317,7 +60317,7 @@ GameObject:
   m_Layer: 8
   m_Name: Rift-TouchedI_OHybridPrime_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -63325,7 +63325,7 @@ PrefabInstance:
       addedObject: {fileID: 6904119092027987654}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e4181ec2d57b33e48b62107a6843b76d, type: 3}
---- !u!4 &4019584083451067217 stripped
+--- !u!4 &4019584083451249192 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 473464, guid: e4181ec2d57b33e48b62107a6843b76d, type: 3}
   m_PrefabInstance: {fileID: 4019584083451067216}
@@ -64275,7 +64275,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &5033376582948986881 stripped
+--- !u!4 &5932067482897342440 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 5370415832568601939}

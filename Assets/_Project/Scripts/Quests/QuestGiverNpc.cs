@@ -435,7 +435,7 @@ namespace Project.Quests
 
             questManager.ClaimRewards(offer.QuestId);
             ShowDialogue(offer.GetRewardDialogue(), () => TryInteract());
-            FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+            FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.Refresh();
         }
 
         private void AbandonQuest(QuestGiverOffer offer)
@@ -446,7 +446,7 @@ namespace Project.Quests
             if (!questManager.AbandonQuest(offer.QuestId))
                 return;
 
-            FindAnyObjectByType<ActiveQuestHudUI>()?.Refresh();
+            FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.Refresh();
             ShowDialogue($"Abandoned: {offer.quest.title}", () => TryInteract());
         }
 

@@ -318,6 +318,8 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
         string safeName = MakeSafeFileName(ammoName);
         string dataPath = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{safeName}.asset");
         AssetDatabase.CreateAsset(ammoItem, dataPath);
+        ItemDataPruneUtility.Prune(ammoItem, ItemDataInspectorCategory.Ammo);
+        EditorUtility.SetDirty(ammoItem);
 
         GameObject pickupPrefab = null;
         if (createPickupPrefab)

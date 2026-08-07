@@ -27,8 +27,8 @@ MonoBehaviour:
   regularFont: {fileID: 11400000, guid: baf5990ef136e594abc52299c06d9b48, type: 2}
   semiBoldFont: {fileID: 11400000, guid: 581c047ed60765249b12f37ff2895497, type: 2}
   boldFont: {fileID: 11400000, guid: 194c956b3d864664890e731c63fd4a02, type: 2}
-  panelFrame: {fileID: 21300000, guid: f981fdad814cbfb43969712c51317bae, type: 3}
-  panelFrameBig: {fileID: 21300000, guid: f981fdad814cbfb43969712c51317bae, type: 3}
+  panelFrame: {fileID: 21300000, guid: dc2366542d8657842a8bf5378c77bee0, type: 3}
+  panelFrameBig: {fileID: 21300000, guid: ec5758608299d7640a970e6a2d3cc107, type: 3}
   circleGlow: {fileID: 21300000, guid: 447f19d95ff0c504da9f0a9dacc358d7, type: 3}
   squareGlow: {fileID: 21300000, guid: fc01a4a612e79e14094d3a06a0ac5f35, type: 3}
   circleFilled: {fileID: 21300000, guid: c26a820b2129e2f4eb122efd27df5339, type: 3}

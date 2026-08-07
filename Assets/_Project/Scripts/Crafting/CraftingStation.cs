@@ -72,6 +72,8 @@ namespace Project.Crafting
             {
                 if (craftingManager != null && craftingManager.CurrentStation == stationType)
                     craftingManager.CurrentStation = null;
+
+                FindAnyObjectByType<CraftingUI>()?.CloseStandalonePanel(clearStation: true);
             }
         }
 
@@ -209,6 +211,8 @@ namespace Project.Crafting
 
                 if (craftingManager != null && craftingManager.CurrentStation == stationType)
                     craftingManager.CurrentStation = null;
+
+                FindAnyObjectByType<CraftingUI>()?.CloseStandalonePanel(clearStation: true);
             }
         }
 

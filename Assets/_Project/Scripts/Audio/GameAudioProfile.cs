@@ -46,6 +46,7 @@ namespace Project.Audio
         public AudioClip[] itemDropClips;
         public AudioClip[] itemPickupClips;
         public AudioClip[] achievementUnlockClips;
+        public AudioClip[] levelUpClips;
         [Range(0f, 1f)] public float uiVolume = 0.85f;
 
         [Header("3D Playback")]

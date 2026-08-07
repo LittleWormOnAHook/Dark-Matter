@@ -61,6 +61,9 @@ namespace Project.Player.Invector
             if (_equipment != null)
                 _equipment.OnSelectedHotbarChanged += HandleHotbarChanged;
 
+            if (_ammoState != null)
+                _ammoState.OnAmmoChanged += HandleAmmoChanged;
+
             if (_shooterManager != null)
             {
                 _shooterManager.onFinishReloadWeapon.AddListener(HandleReloadFinished);
@@ -72,6 +75,9 @@ namespace Project.Player.Invector
         {
             if (_equipment != null)
                 _equipment.OnSelectedHotbarChanged -= HandleHotbarChanged;
+
+            if (_ammoState != null)
+                _ammoState.OnAmmoChanged -= HandleAmmoChanged;
 
             if (_shooterManager != null)
             {
@@ -100,6 +106,16 @@ namespace Project.Player.Invector
         }
 
         private void HandleHotbarChanged(int _)
+        {
+            SyncMagazineFromPioneer();
+        }
+
+        /// <summary>
+        /// Silent magazine sync after CreditAmmoPickup / pioneer ammo changes.
+        /// Uses vShooterWeapon.AddAmmo only — never ReloadWeapon — so world ammo top-ups
+        /// do not play reload SFX.
+        /// </summary>
+        private void HandleAmmoChanged()
         {
             SyncMagazineFromPioneer();
         }

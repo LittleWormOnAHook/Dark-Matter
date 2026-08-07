@@ -259,7 +259,10 @@ namespace Project.UI
                 return;
 
             activeLootProvider.TryLootAll();
-            Close();
+            RefreshButtonStates();
+
+            if (activeLootProvider == null || !activeLootProvider.HasRemainingLoot)
+                Close();
         }
 
         private void OpenOverlay()

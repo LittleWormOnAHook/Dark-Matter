@@ -176,13 +176,13 @@ namespace Project.Vehicles
             _boosterActive = false;
             _targetAltitudeAboveGround = profile.parkedAltitudeAboveGround;
 
-            if (_rigidbody == null)
+            if (_rigidbody == null || _rigidbody.isKinematic)
                 return;
 
             Vector3 velocity = _rigidbody.linearVelocity;
             velocity.x *= 0.35f;
             velocity.z *= 0.35f;
-            _rigidbody.linearVelocity = velocity;
+            TrySetLinearVelocity(velocity);
         }
 
         /// <summary>Current craft height above sampled ground, or -1 when ground cannot be resolved.</summary>
@@ -256,12 +256,34 @@ namespace Project.Vehicles
             if (!Application.isPlaying || profile == null || _rigidbody == null)
                 return;
 
+            // Kinematic bodies reject velocity writes and ignore forces (parked / pre-deploy state).
+            if (_rigidbody.isKinematic)
+                return;
+
             UpdateTargetAltitude();
             ApplyHoverForces();
             ApplyDriveForces();
             EnforceAltitudeBand();
             ClampPlanarSpeed();
             UpdateTurbulenceMetrics();
+        }
+
+        private bool TrySetLinearVelocity(Vector3 velocity)
+        {
+            if (_rigidbody == null || _rigidbody.isKinematic)
+                return false;
+
+            _rigidbody.linearVelocity = velocity;
+            return true;
+        }
+
+        private bool TrySetAngularVelocity(Vector3 velocity)
+        {
+            if (_rigidbody == null || _rigidbody.isKinematic)
+                return false;
+
+            _rigidbody.angularVelocity = velocity;
+            return true;
         }
 
         private void LateUpdate()
@@ -370,12 +392,15 @@ namespace Project.Vehicles
             position.y = Mathf.Clamp(position.y, minY, maxY);
             transform.position = position;
 
+            if (_rigidbody.isKinematic)
+                return;
+
             Vector3 velocity = _rigidbody.linearVelocity;
             if (position.y <= minY + 0.01f && velocity.y < 0f)
                 velocity.y = 0f;
             if (position.y >= maxY - 0.01f && velocity.y > 0f)
                 velocity.y = 0f;
-            _rigidbody.linearVelocity = velocity;
+            TrySetLinearVelocity(velocity);
         }
 
         public void SnapToHoverAltitude(bool hardSnap = false)
@@ -396,8 +421,8 @@ namespace Project.Vehicles
 
             position.y = Mathf.Max(targetY, minY);
             transform.position = position;
-            _rigidbody.linearVelocity = Vector3.zero;
-            _rigidbody.angularVelocity = Vector3.zero;
+            TrySetLinearVelocity(Vector3.zero);
+            TrySetAngularVelocity(Vector3.zero);
         }
 
         private bool TryRaycastGround(Vector3 origin, float maxDistance, out RaycastHit bestHit)
@@ -435,6 +460,9 @@ namespace Project.Vehicles
 
         private void ClampPlanarSpeed()
         {
+            if (_rigidbody.isKinematic)
+                return;
+
             Vector3 velocity = _rigidbody.linearVelocity;
             Vector3 planar = Vector3.ProjectOnPlane(velocity, Vector3.up);
             float forwardSpeed = Vector3.Dot(planar, transform.forward);
@@ -443,7 +471,7 @@ namespace Project.Vehicles
             float clampedForward = Mathf.Clamp(forwardSpeed, -profile.maxReverseSpeed, profile.maxForwardSpeed);
             float clampedStrafe = Mathf.Clamp(strafeSpeed, -profile.maxStrafeSpeed, profile.maxStrafeSpeed);
             Vector3 clampedPlanar = transform.forward * clampedForward + transform.right * clampedStrafe;
-            _rigidbody.linearVelocity = clampedPlanar + Vector3.up * velocity.y;
+            TrySetLinearVelocity(clampedPlanar + Vector3.up * velocity.y);
         }
 
         private void UpdateTurbulenceMetrics()

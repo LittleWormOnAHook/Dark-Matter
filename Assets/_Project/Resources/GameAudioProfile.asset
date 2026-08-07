@@ -104,6 +104,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 7075ea4e7af71e84aa83e2d3a30c24f4, type: 3}
   achievementUnlockClips:
   - {fileID: 8300000, guid: 6ada37007453d944283930793beaa223, type: 3}
+  levelUpClips:
+  - {fileID: 8300000, guid: d173223db3d7b234fa4458f563b254b3, type: 3}
   uiVolume: 0.85
   sfxSpatialBlend: 1
   sfxMinDistance: 1

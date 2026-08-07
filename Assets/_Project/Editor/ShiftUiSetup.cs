@@ -88,7 +88,7 @@ namespace Project.EditorTools
                 mainCanvas.AddComponent<ShiftHudBootstrap>();
 
             ApplyPanelImage(mainCanvas.transform, "Hotbar", theme, large: false);
-            ApplyPanelImage(mainCanvas.transform, "InventoryPanel", theme, large: true);
+            // InventoryPanel chrome is scene/UI-Studio authored — do not force theme overwrite here.
         }
 
         private static void ApplyPanelImage(Transform canvasRoot, string panelName, ShiftUiTheme theme, bool large)

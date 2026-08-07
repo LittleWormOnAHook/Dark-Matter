@@ -26,7 +26,8 @@ namespace Project.UI
             else
                 inventory?.HideSurvivalStatsHud();
 
-            Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(visible);
+            FindXpHud()?.SetVisible(visible);
+            FindQuestHud()?.SetGameplayVisible(visible);
         }
 
         public static void SetGameplayHudVisible(bool visible)
@@ -38,6 +39,7 @@ namespace Project.UI
             if (visible && PlayerVehicleState.IsMounted)
             {
                 Object.FindAnyObjectByType<ToolBarUI>()?.SetVehicleModeHudSuppressed(true);
+                FindQuestHud()?.SetGameplayVisible(true);
                 return;
             }
 
@@ -53,6 +55,9 @@ namespace Project.UI
             // slots), but the Temperature/Hazard panels are journal-only clutter — keep them
             // hidden on every journal tab, Inventory included.
             SetExposureClusterVisible(false);
+
+            // Quest tracker stays hidden while any journal tab is open (BlocksCombatInput).
+            FindQuestHud()?.SetGameplayVisible(true);
         }
 
         public static void SetExposureClusterVisible(bool visible)
@@ -67,14 +72,16 @@ namespace Project.UI
             {
                 SetInventoryModeHudVisible(false);
                 Object.FindAnyObjectByType<ToolBarUI>()?.SetGameplayVisible(false);
-                Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(false);
+                FindXpHud()?.SetVisible(false);
+                FindQuestHud()?.SetGameplayVisible(false);
                 return;
             }
 
             if (BuildingControlPanelUI.IsOpen)
             {
                 SetInventoryModeHudVisible(false);
-                Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(false);
+                FindXpHud()?.SetVisible(false);
+                FindQuestHud()?.SetGameplayVisible(true);
                 return;
             }
 
@@ -90,7 +97,8 @@ namespace Project.UI
             }
 
             SetGameplayHudVisible(true);
-            Object.FindAnyObjectByType<HotbarXpHud>()?.SetVisible(true);
+            FindXpHud()?.SetVisible(true);
+            FindQuestHud()?.SetGameplayVisible(true);
         }
 
         public static void SetModalOverlayOpen(bool open)
@@ -99,6 +107,18 @@ namespace Project.UI
                 SetInventoryModeHudVisible(false);
             else
                 RefreshGameplayHud();
+        }
+
+        private static HotbarXpHud FindXpHud()
+        {
+            // Include inactive: SetVisible(false) deactivates the GO; default Find skips it and
+            // permanently stuck the XP bar hidden after map / optics / menu hide.
+            return Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
+        }
+
+        private static ActiveQuestHudUI FindQuestHud()
+        {
+            return Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
         }
     }
 }

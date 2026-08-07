@@ -153,8 +153,7 @@ namespace Project.Data
             staminaRestore = 0f;
             oxygenRestore = 0f;
             acValue = 0;
-            requiredLevelToEquip = 1;
-            requiredLevelToCraft = 1;
+            // Keep Progression / level gates — authoring lives on the lean inspector.
 
             if (maxStack < 1)
                 maxStack = 1;

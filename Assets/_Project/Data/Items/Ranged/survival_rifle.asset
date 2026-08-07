@@ -36,16 +36,16 @@ MonoBehaviour:
   sheathedLocalScale: {x: 1, y: 1, z: 1}
   invectorWeaponPrefab: {fileID: 1804537267582261728, guid: 6eb49b8498aebf14da0f67ba3cc0dddd, type: 3}
   invectorWeaponId: vAssaultRifle
-  meleeDamage: 10
-  meleeDamageRandomRange: 3
-  criticalChance: 0.1
-  criticalDamageMultiplier: 2
-  meleeRange: 2.2
-  meleeCooldown: 0.65
+  meleeDamage: 0
+  meleeDamageRandomRange: 0
+  criticalChance: 0
+  criticalDamageMultiplier: 0
+  meleeRange: 0
+  meleeCooldown: 0
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
   meleeKnockback: 0
-  gatherPower: 1
+  gatherPower: 0
   attackTrigger: Attack
   rangedDamage: 18
   rangedDamageRandomRange: 4
@@ -79,8 +79,8 @@ MonoBehaviour:
   aimHeldLocalRotation: {x: -0.6346855, y: 0.14677942, z: -0.08939872, w: 0.75341755}
   aimHeldLocalScale: {x: 0.85, y: 0.85, z: 0.85}
   ammoType: 1
-  ammoPerPickup: 20
-  ammoPickupGrant: 20
+  ammoPerPickup: 0
+  ammoPickupGrant: 0
   isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0
@@ -90,14 +90,14 @@ MonoBehaviour:
   impactVfxPrefab: {fileID: 1065618375357958, guid: 6f8068e2c99ffb04b932ec74e5773db5, type: 3}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0
-  miningPassesRequired: 2
-  miningDropMin: 1
-  miningDropMax: 5
-  miningLockBreakDegrees: 30
-  miningPassDuration: 1.25
+  miningPassesRequired: 0
+  miningDropMin: 0
+  miningDropMax: 0
+  miningLockBreakDegrees: 0
+  miningPassDuration: 0
   miningChunkVfxPrefab: {fileID: 0}
-  miningChargeDrainPerSecond: 4
-  miningChargePerPlasmaFuel: 50
+  miningChargeDrainPerSecond: 0
+  miningChargePerPlasmaFuel: 0
   fireSound: {fileID: 0}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
@@ -114,11 +114,11 @@ MonoBehaviour:
   statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
-  toolRange: 8
-  scanRange: 24
-  opticsZoomFov: 38
-  opticsMinZoomFov: 18
-  opticsMaxZoomFov: 55
+  toolRange: 0
+  scanRange: 0
+  opticsZoomFov: 0
+  opticsMinZoomFov: 0
+  opticsMaxZoomFov: 0
   healthRestore: 0
   energyRestore: 0
   staminaRestore: 0
@@ -128,7 +128,12 @@ MonoBehaviour:
   grantsXp: 0
   xpAmount: 10
   xpSource: 5
-  requiredLevelToEquip: 1
+  grantXpEveryPickupOrUse: 0
+  requiredLevelToEquip: 2
   requiredLevelToCraft: 1
-  tooltipDescription: Two-handed survival rifle. Hold RMB to aim, LMB to fire.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: "Two-handed expedition rifle. Damage 18\u201322, 5.5/s, 30-round
+    mag, ~55 m range, high accuracy. Equip Lv 2+. Hold RMB to aim \u2014 primary
+    mid/long kit for Io patrols."
   unlocksInventoryStorageRow: 0

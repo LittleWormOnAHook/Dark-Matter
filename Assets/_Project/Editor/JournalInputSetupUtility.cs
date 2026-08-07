@@ -66,7 +66,7 @@ public static class JournalInputSetupUtility
                 changes++;
             if (WireActionEvent(actionEvents, CraftActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleCraft"))
                 changes++;
-            if (WireActionEvent(actionEvents, RecipesActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleRecipes"))
+            if (WireActionEvent(actionEvents, RecipesActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnToggleBlueprints"))
                 changes++;
             if (WireActionEvent(actionEvents, PioneersActionId, uiManager, "Project.UI.UIManager, Assembly-CSharp", "OnTogglePioneers"))
                 changes++;
@@ -89,7 +89,7 @@ public static class JournalInputSetupUtility
 
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log(changes > 0
-            ? $"Journal input wired ({changes} change(s)). Keys: J Journal, I Inventory, M Map, U Character, P Pioneers, C Craft, R Recipes, T Skills, L Echoes."
+            ? $"Journal input wired ({changes} change(s)). Keys: J Journal, I Inventory, M Map, U Character, P Pioneers, C Craft, R Blueprints, T Skills, L Echoes."
             : "Journal input already wired.");
     }
 

@@ -439,7 +439,88 @@ namespace Project.Player.Invector
             if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
                 return;
 
+            // World pickups / inventory adds must NOT tear down and re-equip a drawn gun.
+            // Re-equipping Invector weapons with isInfinityAmmo retriggers reload SFX even for
+            // mushrooms, scrap, etc. Only refresh when the drawn/holstered weapon identity changed.
+            if (!NeedsWeaponVisualRefreshAfterInventoryChange())
+                return;
+
             RefreshEquippedWeapon();
+        }
+
+        /// <summary>
+        /// True when hotbar weapon identity no longer matches what the bridge is showing.
+        /// Unrelated stack adds (loot, scrap, ammo credit) return false.
+        /// </summary>
+        private bool NeedsWeaponVisualRefreshAfterInventoryChange()
+        {
+            if (_equipment == null)
+                return false;
+
+            if (_holsterPreviewActive)
+                return true;
+
+            if (_equipment.IsWeaponDrawn)
+            {
+                ItemData drawn = _equipment.DrawnWeaponItem;
+                if (drawn != _activeItem)
+                    return true;
+
+                return drawn != null && !IsDrawnWeaponPresentationActive(drawn);
+            }
+
+            // Holstered: refresh if we still think a drawn weapon is active, or holster target changed.
+            if (_activeItem != null)
+                return true;
+
+            ItemData equipped = _equipment.EquippedItem;
+            if (equipped == null || !equipped.IsEquippable)
+                return false;
+
+            return !IsHolsteredWeaponPresentationActive(equipped);
+        }
+
+        private bool IsDrawnWeaponPresentationActive(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot ranged))
+            {
+                return ranged.drawnInstance != null
+                    && ranged.drawnInstance.activeInHierarchy
+                    && _shooterManager != null
+                    && _shooterManager.CurrentWeapon != null
+                    && _shooterManager.CurrentWeapon.transform.IsChildOf(ranged.drawnInstance.transform);
+            }
+
+            if (item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot melee))
+            {
+                return melee.drawnInstance != null
+                    && melee.drawnInstance.activeInHierarchy
+                    && _meleeManager != null
+                    && _meleeManager.rightWeapon != null
+                    && _meleeManager.rightWeapon.transform.IsChildOf(melee.drawnInstance.transform);
+            }
+
+            if (_spawnedInstances.TryGetValue(item, out GameObject instance))
+                return instance != null && instance.activeInHierarchy;
+
+            return false;
+        }
+
+        private bool IsHolsteredWeaponPresentationActive(ItemData item)
+        {
+            if (item == null)
+                return true;
+
+            if (item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot ranged))
+                return ranged.holsteredInstance != null && ranged.holsteredInstance.activeInHierarchy;
+
+            if (item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot melee))
+                return melee.holsteredInstance != null && melee.holsteredInstance.activeInHierarchy;
+
+            return true;
         }
 
         private void HandleGameStarted()
@@ -461,10 +542,17 @@ namespace Project.Player.Invector
                 return;
             }
 
-            HideAllSpawnedWeapons();
-
             if (_equipment == null || !_equipment.IsWeaponDrawn)
             {
+                // Already holstered with the correct visual — skip teardown (avoids reload SFX).
+                if (_activeItem == null)
+                {
+                    ItemData holsterTarget = _equipment != null ? _equipment.EquippedItem : null;
+                    if (holsterTarget == null || !holsterTarget.IsEquippable || IsHolsteredWeaponPresentationActive(holsterTarget))
+                        return;
+                }
+
+                HideAllSpawnedWeapons();
                 _activeItem = null;
                 ClearInvectorWeapons();
                 ShowHolsteredWeaponIfNeeded();
@@ -475,6 +563,13 @@ namespace Project.Player.Invector
             _holsterPreviewItem = null;
 
             ItemData item = _equipment.DrawnWeaponItem;
+            // Same drawn weapon already live on the shooter/melee manager — do not unequip/re-equip.
+            // Inventory pickups used to hit this path every time and play pistol reload audio.
+            if (item != null && item == _activeItem && IsDrawnWeaponPresentationActive(item))
+                return;
+
+            HideAllSpawnedWeapons();
+
             _activeItem = item;
             if (item == null)
             {

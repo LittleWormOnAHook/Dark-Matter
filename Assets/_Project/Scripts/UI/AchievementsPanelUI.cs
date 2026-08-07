@@ -10,7 +10,14 @@ namespace Project.UI
 {
     public class AchievementsPanelUI : MonoBehaviour
     {
-        private const float SlotSize = 168f;
+        private const float SlotWidth = 168f;
+        /// <summary>Visual achievement box (icon chrome) height — text sits below this, not inside it.</summary>
+        private const float SlotBoxHeight = 100f;
+        /// <summary>Clear vertical gap between the bottom of the achievement box and the gold text under it.</summary>
+        private const float TextBelowBoxGap = 10f;
+        /// <summary>Reserved height under the box for title / description / progress lines.</summary>
+        private const float SlotTextBlockHeight = 72f;
+        private static float SlotCellHeight => SlotBoxHeight + TextBelowBoxGap + SlotTextBlockHeight;
 
         private Transform embeddedParent;
         private GameObject panelRoot;
@@ -18,6 +25,7 @@ namespace Project.UI
         private GridLayoutGroup listGrid;
         private AchievementCategory? selectedCategory;
         private Transform categoryTabParent;
+        private TextMeshProUGUI summaryLabel;
         private AchievementManager achievementManager;
         private ShiftUiTheme theme;
 
@@ -55,6 +63,7 @@ namespace Project.UI
             listParent = null;
             listGrid = null;
             categoryTabParent = null;
+            summaryLabel = null;
             embeddedParent = null;
         }
 
@@ -66,7 +75,35 @@ namespace Project.UI
             theme = ShiftUiTheme.Current;
             achievementManager ??= AchievementManager.EnsureExists();
             RebuildCategoryTabs();
+            UpdateSummary();
             RebuildList();
+        }
+
+        private void UpdateSummary()
+        {
+            if (summaryLabel == null)
+                return;
+
+            achievementManager ??= AchievementManager.EnsureExists();
+            int total = 0;
+            int unlocked = 0;
+            foreach (AchievementDefinition definition in AchievementRegistry.GetAllAchievements())
+            {
+                if (definition == null)
+                    continue;
+                if (selectedCategory.HasValue && definition.category != selectedCategory.Value)
+                    continue;
+                total++;
+                AchievementProgress progress = achievementManager?.GetProgress(definition.ResolvedId);
+                if (progress != null && progress.unlocked)
+                    unlocked++;
+            }
+
+            string filter = selectedCategory.HasValue ? selectedCategory.Value.ToString() : "All";
+            summaryLabel.text =
+                $"{JournalPanelLayout.FormatAccentTitle(filter)}  ·  " +
+                $"{JournalPanelLayout.FormatGoldValue($"{unlocked}/{total}")} unlocked";
+            summaryLabel.color = SurvivalPioneerUiPalette.BodyText;
         }
 
         private void HandleProgressUpdated(AchievementProgress progress, AchievementDefinition definition) => Refresh();
@@ -103,17 +140,34 @@ namespace Project.UI
             tabLayout.childForceExpandWidth = false;
             categoryTabParent = tabRow.transform;
 
+            // Summary strip under category tabs.
+            GameObject summaryRow = new GameObject("Summary", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+            summaryRow.transform.SetParent(panelRoot.transform, false);
+            RectTransform summaryRect = summaryRow.GetComponent<RectTransform>();
+            summaryRect.anchorMin = new Vector2(0f, 1f);
+            summaryRect.anchorMax = new Vector2(1f, 1f);
+            summaryRect.pivot = new Vector2(0.5f, 1f);
+            summaryRect.anchoredPosition = new Vector2(0f, -42f);
+            summaryRect.sizeDelta = new Vector2(-16f, 22f);
+            TextMeshProUGUI summaryTmp = summaryRow.GetComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(summaryTmp);
+            summaryTmp.fontSize = JournalPanelLayout.SecondaryFontSize;
+            summaryTmp.color = SurvivalPioneerUiPalette.Gold;
+            summaryTmp.alignment = TextAlignmentOptions.MidlineLeft;
+            summaryTmp.raycastTarget = false;
+            summaryRow.GetComponent<LayoutElement>().ignoreLayout = true;
+            summaryLabel = summaryTmp;
+
             GameObject scrollHost = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
             scrollHost.transform.SetParent(panelRoot.transform, false);
             RectTransform scrollRect = scrollHost.GetComponent<RectTransform>();
             scrollRect.anchorMin = Vector2.zero;
             scrollRect.anchorMax = Vector2.one;
             scrollRect.offsetMin = new Vector2(8f, 8f);
-            scrollRect.offsetMax = new Vector2(-8f, -48f);
+            scrollRect.offsetMax = new Vector2(-8f, -68f);
 
             Image scrollBg = scrollHost.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.5f);
+            JournalPanelLayout.StyleScrollBackground(scrollBg);
 
             // RectMask2D (not Mask) — Mask stencils off its Image's rendered alpha, so a fully
             // transparent masking graphic ends up with zero alpha everywhere and clips away every
@@ -137,7 +191,7 @@ namespace Project.UI
             contentRect.sizeDelta = new Vector2(0f, 0f);
 
             listGrid = content.GetComponent<GridLayoutGroup>();
-            listGrid.cellSize = new Vector2(SlotSize, SlotSize);
+            listGrid.cellSize = new Vector2(SlotWidth, SlotCellHeight);
             listGrid.spacing = new Vector2(10f, 10f);
             listGrid.padding = new RectOffset(10, 10, 10, 10);
             listGrid.constraint = GridLayoutGroup.Constraint.Flexible;
@@ -277,46 +331,45 @@ namespace Project.UI
             bool unlocked = progress.unlocked;
             bool hiddenLocked = definition.hidden && !unlocked;
 
-            GameObject slot = new GameObject(definition.ResolvedId, typeof(RectTransform), typeof(Image), typeof(Outline), typeof(VerticalLayoutGroup));
+            // Outer slot: box on top, then TextBelowBoxGap, then gold title/description/progress under the box.
+            GameObject slot = new GameObject(definition.ResolvedId, typeof(RectTransform), typeof(VerticalLayoutGroup));
             slot.transform.SetParent(listParent, false);
 
-            Image bg = slot.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = unlocked
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.85f);
-
-            Outline outline = slot.GetComponent<Outline>();
-            outline.effectColor = unlocked
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.65f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.45f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-
             VerticalLayoutGroup layout = slot.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 10, 8);
-            layout.spacing = 4f;
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.spacing = TextBelowBoxGap;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
             layout.childControlHeight = false;
             layout.childForceExpandHeight = false;
 
+            GameObject box = new GameObject("Box", typeof(RectTransform), typeof(Image), typeof(Outline), typeof(LayoutElement));
+            box.transform.SetParent(slot.transform, false);
+            LayoutElement boxLayout = box.GetComponent<LayoutElement>();
+            boxLayout.minHeight = SlotBoxHeight;
+            boxLayout.preferredHeight = SlotBoxHeight;
+            boxLayout.flexibleHeight = 0f;
+
+            Image bg = box.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(bg);
+            bg.color = unlocked
+                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f)
+                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.85f);
+
+            Outline outline = box.GetComponent<Outline>();
+            outline.effectColor = unlocked
+                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.65f)
+                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.45f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+
             // Icon: uses the assigned sprite when the designer set one; otherwise a category-tinted
             // placeholder swatch so the slot still reads as "this achievement's category" at a glance
             // instead of showing an empty box. Runtime-generated (dynamic/starter) achievements have no
             // asset to assign a sprite on, so they always fall back to the placeholder today.
-            // IconHost is a plain full-width row (so the outer VerticalLayoutGroup's childControlWidth
-            // doesn't distort it) containing a fixed-size square Image centered within it — that's what
-            // keeps the icon itself square while title/description below can still stretch to wrap.
-            float iconSize = SlotSize - 78f;
-            GameObject iconHost = new GameObject("Icon", typeof(RectTransform));
-            iconHost.transform.SetParent(slot.transform, false);
-            LayoutElement iconHostLayout = iconHost.AddComponent<LayoutElement>();
-            iconHostLayout.minHeight = iconSize;
-            iconHostLayout.preferredHeight = iconSize;
-
+            float iconSize = SlotBoxHeight - 20f;
             GameObject iconObj = new GameObject("IconImage", typeof(RectTransform), typeof(Image));
-            iconObj.transform.SetParent(iconHost.transform, false);
+            iconObj.transform.SetParent(box.transform, false);
             RectTransform iconRect = iconObj.GetComponent<RectTransform>();
             iconRect.anchorMin = new Vector2(0.5f, 0.5f);
             iconRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -341,27 +394,40 @@ namespace Project.UI
             string title = hiddenLocked ? "???" : definition.title;
             string description = hiddenLocked ? "Hidden achievement" : definition.description;
 
-            CreateSlotLabel(slot.transform, title, 14f, unlocked ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText,
+            // Text column under the box — outer spacing is only Box → TextColumn (TextBelowBoxGap).
+            GameObject textColumn = new GameObject("Text", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            textColumn.transform.SetParent(slot.transform, false);
+            LayoutElement textColumnLayout = textColumn.GetComponent<LayoutElement>();
+            textColumnLayout.minHeight = SlotTextBlockHeight;
+            textColumnLayout.preferredHeight = SlotTextBlockHeight;
+            textColumnLayout.flexibleHeight = 0f;
+
+            VerticalLayoutGroup textLayout = textColumn.GetComponent<VerticalLayoutGroup>();
+            textLayout.padding = new RectOffset(4, 4, 0, 0);
+            textLayout.spacing = 2f;
+            textLayout.childAlignment = TextAnchor.UpperCenter;
+            textLayout.childControlWidth = true;
+            textLayout.childForceExpandWidth = true;
+            textLayout.childControlHeight = false;
+            textLayout.childForceExpandHeight = false;
+
+            CreateSlotLabel(textColumn.transform, title, JournalPanelLayout.BodyFontSize, unlocked ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText,
                 bold: true, wrap: true, maxLines: 2, overflow: TextOverflowModes.Ellipsis);
-            CreateSlotLabel(slot.transform, description, 11f, SurvivalPioneerUiPalette.MutedText,
+            CreateSlotLabel(textColumn.transform, description, JournalPanelLayout.SecondaryFontSize, SurvivalPioneerUiPalette.Gold,
                 bold: false, wrap: true, maxLines: 3, overflow: TextOverflowModes.Ellipsis);
 
             string statusLine;
-            Color statusColor;
             if (unlocked)
             {
                 statusLine = "Unlocked";
-                statusColor = SurvivalPioneerUiPalette.PositiveGreen;
             }
             else if (definition.targetCount > 1)
             {
                 statusLine = $"{progress.currentCount} / {definition.targetCount}";
-                statusColor = SurvivalPioneerUiPalette.MutedText;
             }
             else
             {
                 statusLine = string.Empty;
-                statusColor = SurvivalPioneerUiPalette.MutedText;
             }
 
             int xpPreview = definition.xpReward;
@@ -372,7 +438,13 @@ namespace Project.UI
                 statusLine = string.IsNullOrEmpty(statusLine) ? $"+{xpPreview} XP" : $"{statusLine}  ·  +{xpPreview} XP";
 
             if (!string.IsNullOrEmpty(statusLine))
-                CreateSlotLabel(slot.transform, statusLine, 11f, statusColor, bold: true, wrap: false, maxLines: 1, overflow: TextOverflowModes.Overflow);
+            {
+                // Secondary copy under titles: Gold. Pure "Unlocked" stays PositiveGreen.
+                Color lineColor = statusLine == "Unlocked"
+                    ? SurvivalPioneerUiPalette.PositiveGreen
+                    : SurvivalPioneerUiPalette.Gold;
+                CreateSlotLabel(textColumn.transform, statusLine, JournalPanelLayout.CaptionFontSize, lineColor, bold: true, wrap: false, maxLines: 1, overflow: TextOverflowModes.Overflow);
+            }
         }
 
         private static Color GetCategoryColor(AchievementCategory category)
@@ -432,7 +504,7 @@ namespace Project.UI
             theme?.ApplyFont(tmp, semiBold: false);
             tmp.text = message;
             tmp.fontSize = 15f;
-            tmp.color = SurvivalPioneerUiPalette.MutedText;
+            tmp.color = SurvivalPioneerUiPalette.Gold;
             tmp.alignment = TextAlignmentOptions.TopLeft;
             tmp.textWrappingMode = TextWrappingModes.Normal;
         }

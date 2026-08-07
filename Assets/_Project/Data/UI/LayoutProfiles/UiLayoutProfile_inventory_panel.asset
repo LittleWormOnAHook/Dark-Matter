@@ -25,10 +25,12 @@ MonoBehaviour:
     localScale: {x: 1, y: 1, z: 1}
     activeSelf: 1
     hasImageStyle: 1
-    imageSprite: {fileID: 21300000, guid: 465cd841017ec5b42b92b8b90e5094f1, type: 3}
-    imageColor: {r: 1, g: 0.64005435, b: 0, a: 1}
+    imageSprite: {fileID: 21300000, guid: dc2366542d8657842a8bf5378c77bee0, type: 3}
+    imageMaterial: {fileID: 0}
+    imageColor: {r: 0.10980392, g: 0.16470589, b: 0.21960784, a: 0.94}
     imagePreserveAspect: 0
     imageType: 1
+    imageEnabled: 0
     hasRawImageStyle: 0
     rawTexture: {fileID: 0}
     rawImageColor: {r: 1, g: 1, b: 1, a: 1}
@@ -51,6 +53,60 @@ MonoBehaviour:
     gridStartCorner: 0
     gridStartAxis: 0
     gridChildAlignment: 0
+    hasButtonStyle: 0
+    buttonInteractable: 1
+    buttonTransition: 1
+    buttonTargetGraphicPath: 
+    buttonNormalColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonHighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonPressedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonSelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonDisabledColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonColorMultiplier: 1
+    buttonFadeDuration: 0.1
+    buttonHighlightedSprite: {fileID: 0}
+    buttonPressedSprite: {fileID: 0}
+    buttonSelectedSprite: {fileID: 0}
+    buttonDisabledSprite: {fileID: 0}
+    buttonNormalTrigger: Normal
+    buttonHighlightedTrigger: Highlighted
+    buttonPressedTrigger: Pressed
+    buttonSelectedTrigger: Selected
+    buttonDisabledTrigger: Disabled
+    hasTextStyle: 0
+    textContent: 
+    textFont: {fileID: 0}
+    textFontMaterial: {fileID: 0}
+    textFontSize: 14
+    textFontStyle: 0
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    textAlignment: 514
+    textAutoSize: 0
+    textFontSizeMin: 8
+    textFontSizeMax: 72
+    textWordWrap: 1
+    textRichText: 1
+    textRaycastTarget: 0
+    textMargin: {x: 0, y: 0, z: 0, w: 0}
+    textCharacterSpacing: 0
+    textLineSpacing: 0
+    textParagraphSpacing: 0
+    textOverflowMode: 0
+    hasLegacyTextStyle: 0
+    legacyTextContent: 
+    legacyFont: {fileID: 0}
+    legacyFontSize: 14
+    legacyTextColor: {r: 1, g: 1, b: 1, a: 1}
+    legacyAlignment: 4
+    legacyFontStyle: 0
+    legacyLineSpacing: 1
+    legacyRichText: 1
+    legacyRaycastTarget: 0
+    legacyBestFit: 0
+    legacyMinSize: 10
+    legacyMaxSize: 40
+    legacyHorizontalOverflow: 0
+    legacyVerticalOverflow: 0
   - relativePath: MainInventoryGrid
     anchorMin: {x: 0, y: 0}
     anchorMax: {x: 1, y: 1}
@@ -62,10 +118,12 @@ MonoBehaviour:
     localScale: {x: 1, y: 1, z: 1}
     activeSelf: 1
     hasImageStyle: 1
-    imageSprite: {fileID: 21300000, guid: b3486bd401291a246b3037077d083acf, type: 3}
-    imageColor: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 1}
+    imageSprite: {fileID: 21300000, guid: d7f637684db9b1147b8e7f6a1bf55fe1, type: 3}
+    imageMaterial: {fileID: 0}
+    imageColor: {r: 0.09803922, g: 0.09803922, b: 0.09803922, a: 0.8648}
     imagePreserveAspect: 0
     imageType: 1
+    imageEnabled: 1
     hasRawImageStyle: 0
     rawTexture: {fileID: 0}
     rawImageColor: {r: 1, g: 1, b: 1, a: 1}
@@ -88,3 +146,57 @@ MonoBehaviour:
     gridStartCorner: 0
     gridStartAxis: 0
     gridChildAlignment: 1
+    hasButtonStyle: 0
+    buttonInteractable: 1
+    buttonTransition: 1
+    buttonTargetGraphicPath: 
+    buttonNormalColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonHighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonPressedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonSelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonDisabledColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonColorMultiplier: 1
+    buttonFadeDuration: 0.1
+    buttonHighlightedSprite: {fileID: 0}
+    buttonPressedSprite: {fileID: 0}
+    buttonSelectedSprite: {fileID: 0}
+    buttonDisabledSprite: {fileID: 0}
+    buttonNormalTrigger: Normal
+    buttonHighlightedTrigger: Highlighted
+    buttonPressedTrigger: Pressed
+    buttonSelectedTrigger: Selected
+    buttonDisabledTrigger: Disabled
+    hasTextStyle: 0
+    textContent: 
+    textFont: {fileID: 0}
+    textFontMaterial: {fileID: 0}
+    textFontSize: 14
+    textFontStyle: 0
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    textAlignment: 514
+    textAutoSize: 0
+    textFontSizeMin: 8
+    textFontSizeMax: 72
+    textWordWrap: 1
+    textRichText: 1
+    textRaycastTarget: 0
+    textMargin: {x: 0, y: 0, z: 0, w: 0}
+    textCharacterSpacing: 0
+    textLineSpacing: 0
+    textParagraphSpacing: 0
+    textOverflowMode: 0
+    hasLegacyTextStyle: 0
+    legacyTextContent: 
+    legacyFont: {fileID: 0}
+    legacyFontSize: 14
+    legacyTextColor: {r: 1, g: 1, b: 1, a: 1}
+    legacyAlignment: 4
+    legacyFontStyle: 0
+    legacyLineSpacing: 1
+    legacyRichText: 1
+    legacyRaycastTarget: 0
+    legacyBestFit: 0
+    legacyMinSize: 10
+    legacyMaxSize: 40
+    legacyHorizontalOverflow: 0
+    legacyVerticalOverflow: 0

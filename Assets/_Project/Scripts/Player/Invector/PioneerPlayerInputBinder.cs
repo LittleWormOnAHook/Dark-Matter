@@ -104,6 +104,9 @@ namespace Project.Player.Invector
                     if (context.performed &&
                         (_playerController == null || !_playerController.IsOpticsOpen))
                     {
+                        if (_invectorInput != null && _invectorInput.BlocksWeaponFireForGrenade)
+                            break;
+
                         if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
                             PlayerVehicleState.ActiveCraft.OnAttack();
                         else
@@ -139,9 +142,9 @@ namespace Project.Player.Invector
                     if (context.performed)
                         FindAnyObjectByType<UIManager>()?.OnToggleCraft(context);
                     break;
-                case "Recipes":
+                case "Blueprints":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleRecipes(context);
+                        FindAnyObjectByType<UIManager>()?.OnToggleBlueprints(context);
                     break;
                 case "Pioneers":
                     if (context.performed)

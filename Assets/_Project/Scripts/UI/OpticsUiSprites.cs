@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Project.UI
 {
-    internal static class OpticsUiSprites
+    public static class OpticsUiSprites
     {
         private const string LibraryResourcePath = "Optics/OpticsCrosshairLibrary";
 
@@ -53,7 +53,7 @@ namespace Project.UI
             }
         }
 
-        internal static void ResetCache()
+        public static void ResetCache()
         {
             library = null;
             DestroySprite(ref binocularScopeFull);
@@ -95,7 +95,11 @@ namespace Project.UI
             if (sprite == null)
                 return;
 
-            Object.Destroy(sprite);
+            if (Application.isPlaying)
+                Object.Destroy(sprite);
+            else
+                Object.DestroyImmediate(sprite);
+
             sprite = null;
         }
     }

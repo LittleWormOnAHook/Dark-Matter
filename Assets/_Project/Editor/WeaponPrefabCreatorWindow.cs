@@ -412,6 +412,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
             if (worldPrefab != null)
                 WeaponPrefabBuilder.WirePickupItemData(worldPath, itemData);
 
+            ItemDataPruneUtility.Prune(itemData);
             EditorUtility.SetDirty(itemData);
 
             if (registerInItemRegistry)

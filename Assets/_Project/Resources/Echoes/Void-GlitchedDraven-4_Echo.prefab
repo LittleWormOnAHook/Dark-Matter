@@ -12449,7 +12449,7 @@ GameObject:
   m_Layer: 8
   m_Name: Void-GlitchedDraven-4_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -16210,7 +16210,7 @@ Transform:
   - {fileID: 6480270009329962200}
   - {fileID: 483672154060948783}
   - {fileID: 4635332893782035428}
-  - {fileID: 5845191078289802008}
+  - {fileID: 1361954204599801367}
   - {fileID: 2506683990562002077}
   - {fileID: 7718694727918133656}
   m_Father: {fileID: 6905389197032494127}
@@ -63204,7 +63204,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &5845191078289802008 stripped
+--- !u!4 &1361954204599801367 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 735143845944759468}

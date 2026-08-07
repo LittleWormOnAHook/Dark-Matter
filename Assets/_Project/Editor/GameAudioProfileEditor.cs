@@ -30,6 +30,7 @@ namespace Project.Audio.Editor
             DrawPreviewButton("Preview Button Click", profile.buttonClickClips);
             DrawPreviewButton("Preview Item Use", profile.itemUseClips);
             DrawPreviewButton("Preview Achievement Unlock", profile.achievementUnlockClips);
+            DrawPreviewButton("Preview Level Up", profile.levelUpClips);
 
             EditorGUILayout.Space(8f);
             if (GUILayout.Button("Select Resources Profile Copy"))

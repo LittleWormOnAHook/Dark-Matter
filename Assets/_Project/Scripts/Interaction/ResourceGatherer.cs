@@ -1,5 +1,6 @@
 using Project.Data;
 using Project.Inventory;
+using Project.Progression;
 using Project.Quests;
 using Project.UI;
 using UnityEngine;
@@ -45,6 +46,9 @@ namespace Project.Interaction
         {
             InventorySystem inventory = GetComponent<InventorySystem>();
             if (inventory == null || item == null || amount <= 0)
+                return false;
+
+            if (!LevelUnlockUtility.PassesPickupGate(item, showToast: true))
                 return false;
 
             int added = inventory.AddItem(item, amount);

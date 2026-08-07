@@ -48,6 +48,10 @@ namespace Project.Interaction
             sourceCamera = ResolveSourceCamera(sourceCamera);
             EnsureRigRoot();
             EnsureCamera();
+
+            if (opticsCamera != null && renderTexture != null && opticsCamera.targetTexture != renderTexture)
+                opticsCamera.targetTexture = renderTexture;
+
             return IsOutputReady;
         }
 
@@ -184,14 +188,14 @@ namespace Project.Interaction
 
         private void EnsureCamera()
         {
-            if (opticsCamera != null)
-                return;
-
             EnsureRigRoot();
 
-            GameObject cameraObject = new GameObject("OpticsCamera");
-            cameraObject.transform.SetParent(rigRoot, false);
-            opticsCamera = cameraObject.AddComponent<Camera>();
+            if (opticsCamera == null)
+            {
+                GameObject cameraObject = new GameObject("OpticsCamera");
+                cameraObject.transform.SetParent(rigRoot, false);
+                opticsCamera = cameraObject.AddComponent<Camera>();
+            }
 
             sourceCamera = ResolveSourceCamera(sourceCamera);
             if (sourceCamera != null)
@@ -208,13 +212,19 @@ namespace Project.Interaction
             }
 
             opticsCamera.depth = sourceCamera != null ? sourceCamera.depth + 1f : 10f;
-            opticsCamera.enabled = false;
+            if (!isActive)
+                opticsCamera.enabled = false;
 
+            // RT cameras must be Base in URP. Copying Overlay from the gameplay stack
+            // prevents the optics view from rendering into the masked RawImage.
+            UniversalAdditionalCameraData opticsData = opticsCamera.GetComponent<UniversalAdditionalCameraData>();
+            if (opticsData == null)
+                opticsData = opticsCamera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+
+            opticsData.renderType = CameraRenderType.Base;
             if (sourceCamera != null &&
                 sourceCamera.TryGetComponent(out UniversalAdditionalCameraData sourceData))
             {
-                UniversalAdditionalCameraData opticsData = opticsCamera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-                opticsData.renderType = sourceData.renderType;
                 opticsData.renderPostProcessing = sourceData.renderPostProcessing;
             }
 

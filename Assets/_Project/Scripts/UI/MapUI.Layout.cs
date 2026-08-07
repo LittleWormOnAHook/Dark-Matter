@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
+using Project.Data;
 using Project.Map;
 using Project.Player;
 using Project.Vehicles;
@@ -92,6 +93,7 @@ namespace Project.UI
             EnsureMinimapPlayerIconCentered();
             EnsureCompassBuilt();
             EnsureFullMapChromeLayout();
+            EnsureFullMapLegend();
             EnsureFullMapPanHandler();
             ApplySavedLayoutProfiles();
             ApplyPlayerArrowSizes();
@@ -159,6 +161,7 @@ namespace Project.UI
             fullMapCloseButton = null;
             minimapScanButton = null;
             fullMapTitleBar = null;
+            fullMapLegendRoot = null;
             fullMapPanOffset = Vector2.zero;
         }
 
@@ -248,8 +251,10 @@ namespace Project.UI
                 mapFrameRect.anchorMin = Vector2.zero;
                 mapFrameRect.anchorMax = Vector2.one;
                 mapFrameRect.offsetMin = new Vector2(12f, 12f);
-                mapFrameRect.offsetMax = new Vector2(-12f, -(FullMapHeaderHeight + 4f));
+                mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
             }
+
+            EnsureFullMapLegend();
 
             Transform zoomOnPanel = panel.Find("ZoomControls");
             if (zoomOnPanel != null && zoomOnPanel.parent == panel)
@@ -786,7 +791,7 @@ namespace Project.UI
             mapFrameRect.anchorMin = Vector2.zero;
             mapFrameRect.anchorMax = Vector2.one;
             mapFrameRect.offsetMin = new Vector2(12f, 12f);
-            mapFrameRect.offsetMax = new Vector2(-12f, -(FullMapHeaderHeight + 4f));
+            mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
             Image mapFrameBg = mapFrame.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(mapFrameBg);
             mapFrameBg.color = new Color(0.04f, 0.06f, 0.08f, 0.98f);
@@ -863,9 +868,124 @@ namespace Project.UI
             fullMapCloseButton.transform.SetAsLastSibling();
 
             CreateFullMapMarkerTooltip(mapFrame.transform);
+            EnsureFullMapLegend();
 
             SetFullMapZoom(DefaultFullMapZoom);
             RefreshMapShellVisibility();
+        }
+
+        private void EnsureFullMapLegend()
+        {
+            if (fullMapPanelRect == null)
+                return;
+
+            if (fullMapLegendRoot != null)
+            {
+                fullMapLegendRoot.transform.SetAsLastSibling();
+                return;
+            }
+
+            Transform existing = fullMapPanelRect.Find("MapLegend");
+            if (existing != null)
+            {
+                fullMapLegendRoot = existing.gameObject;
+                return;
+            }
+
+            GameObject legend = new GameObject("MapLegend", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+            legend.transform.SetParent(fullMapPanelRect, false);
+            fullMapLegendRoot = legend;
+
+            RectTransform legendRect = legend.GetComponent<RectTransform>();
+            legendRect.anchorMin = new Vector2(1f, 0f);
+            legendRect.anchorMax = new Vector2(1f, 1f);
+            legendRect.pivot = new Vector2(1f, 1f);
+            legendRect.offsetMin = new Vector2(-FullMapLegendWidth - 8f, 12f);
+            legendRect.offsetMax = new Vector2(-8f, -(FullMapHeaderHeight + 4f));
+
+            Image legendBg = legend.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(legendBg);
+            legendBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.94f);
+            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(legend, new Vector2(1f, -1f));
+
+            VerticalLayoutGroup layout = legend.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(10, 10, 10, 10);
+            layout.spacing = 6f;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.UpperLeft;
+
+            TextMeshProUGUI title = CreateLegendLabel(legend.transform, "Legend", JournalPanelLayout.HeaderFontSize, FontStyles.Bold);
+            title.color = SurvivalPioneerUiPalette.WarmOffWhite;
+
+            TextMeshProUGUI subtitle = CreateLegendLabel(legend.transform, "Terrain · POI · Icons", JournalPanelLayout.CaptionFontSize, FontStyles.Italic);
+            subtitle.color = SurvivalPioneerUiPalette.MutedText;
+
+            CreateLegendEntry(legend.transform, PlayerMapIconColor, "You (facing)");
+            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.Gold, "Quest giver");
+            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Resource), "Resource / node");
+            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Consumable), "Consumable");
+            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Tool), "Tool / gear");
+            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.MeleeWeapon), "Weapon cache");
+            CreateLegendEntry(legend.transform, new Color(1f, 0.85f, 0.2f, 1f), "Point of interest");
+            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.SoftBeigeGray, "Undiscovered (scan)");
+
+            TextMeshProUGUI tip = CreateLegendLabel(
+                legend.transform,
+                "Use Scan on the minimap to reveal nearby markers.",
+                JournalPanelLayout.CaptionFontSize,
+                FontStyles.Normal);
+            tip.color = SurvivalPioneerUiPalette.MutedText;
+            tip.textWrappingMode = TextWrappingModes.Normal;
+        }
+
+        private static void CreateLegendEntry(Transform parent, Color swatchColor, string label)
+        {
+            GameObject row = new GameObject("LegendRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            row.transform.SetParent(parent, false);
+            row.GetComponent<LayoutElement>().minHeight = 22f;
+
+            HorizontalLayoutGroup rowLayout = row.GetComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 8f;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+            rowLayout.childControlWidth = true;
+            rowLayout.childForceExpandWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandHeight = false;
+
+            GameObject swatch = new GameObject("Swatch", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            swatch.transform.SetParent(row.transform, false);
+            Image swatchImage = swatch.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(swatchImage);
+            swatchImage.color = swatchColor;
+            LayoutElement swatchLayout = swatch.GetComponent<LayoutElement>();
+            swatchLayout.preferredWidth = 14f;
+            swatchLayout.preferredHeight = 14f;
+            swatchLayout.minWidth = 14f;
+            swatchLayout.minHeight = 14f;
+            swatchLayout.flexibleWidth = 0f;
+
+            TextMeshProUGUI text = CreateLegendLabel(row.transform, label, JournalPanelLayout.SecondaryFontSize, FontStyles.Normal);
+            text.color = SurvivalPioneerUiPalette.BodyText;
+            LayoutElement textLayout = text.gameObject.AddComponent<LayoutElement>();
+            textLayout.flexibleWidth = 1f;
+        }
+
+        private static TextMeshProUGUI CreateLegendLabel(Transform parent, string value, float size, FontStyles style)
+        {
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+            labelObject.transform.SetParent(parent, false);
+            TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.text = value;
+            label.fontSize = size;
+            label.fontStyle = style;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.raycastTarget = false;
+            labelObject.GetComponent<LayoutElement>().preferredHeight = size + 6f;
+            return label;
         }
 
         private void CreateCircularMapViewport(

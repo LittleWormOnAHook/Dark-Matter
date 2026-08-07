@@ -161,6 +161,9 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
 
             if (inventory == null || itemData == null) return false;
 
+            if (!LevelUnlockUtility.PassesPickupGate(itemData, showToast: showPlayerPrompt))
+                return false;
+
             int requested = amount;
             int added = inventory.AddItem(itemData, requested);
             if (added <= 0)
@@ -187,13 +190,7 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
                 uiManager.HideInteractionPrompt();
             }
 
-            if (itemData.grantsXp && itemData.xpAmount > 0)
-            {
-                ProgressionRewardGranter.GrantXp(
-                    itemData.xpAmount,
-                    itemData.xpSource,
-                    $"special-item:{itemData.name}");
-            }
+            itemData.TryGrantConfiguredXp();
 
             PickupToastUI.Show($"+{added} {itemData.itemName}");
 

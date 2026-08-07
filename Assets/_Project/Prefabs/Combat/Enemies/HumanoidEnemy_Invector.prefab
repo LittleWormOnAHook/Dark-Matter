@@ -38974,7 +38974,7 @@ GameObject:
   m_Layer: 9
   m_Name: HumanoidEnemy_Invector
   m_TagString: Enemy
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -39522,6 +39522,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   visionRefreshInterval: 0.12
+  senseHearingEnabled: 1
   hearingRange: 18
   noiseMemoryDuration: 8
   proximityRange: 2.5
@@ -39576,8 +39577,14 @@ MonoBehaviour:
   wanderPauseMin: 2
   wanderPauseMax: 5
   patrolPoints: []
+  patrolPath: {fileID: 0}
+  patrolPathProvider: {fileID: 0}
   patrolWaitDuration: 2
   idleDuration: 3
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
   loseTargetDelay: 4
   maxChaseDuration: 6
   investigateArriveDistance: 1.2
@@ -39638,8 +39645,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
   enableLoot: 1
   lootDisplayName: Humanoid Enemy
-  piCoinsMin: 1
-  piCoinsMax: 4
+  acDropMin: 1
+  acDropMax: 4
   randomLootCountMin: 0
   randomLootCountMax: 1
   lootItemPool: []
@@ -39666,6 +39673,7 @@ MonoBehaviour:
   dissolveDuration: 1.4
   dissolveEdgeWidth: 0.045
   dissolveEdgeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  maxDissolveDiameter: 1
   replaceDeathAnimation: 1
   autoStartOnDeathWithoutSequence: 1
   enableSmoke: 0

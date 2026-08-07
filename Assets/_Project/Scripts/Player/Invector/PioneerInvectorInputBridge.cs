@@ -1,4 +1,5 @@
 using Invector.vCharacterController;
+using Project.Combat;
 using Project.Core;
 using Project.Interaction;
 using Project.Survival;
@@ -23,10 +24,15 @@ namespace Project.Player.Invector
         private SurvivalStats _survivalStats;
         private OpticsController _optics;
         private PioneerShooterMeleeInput _shooterInput;
+        private DMIGrenadeCookController _grenadeCook;
         private vThirdPersonController _motor;
         private bool _combatBlockedByUiPointer;
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
+
+        /// <summary>True while a grenade is held/cooking — weapon Attack/fire must stay off.</summary>
+        public bool BlocksWeaponFireForGrenade =>
+            _grenadeCook != null && _grenadeCook.BlocksWeaponFire;
 
         /// <summary>
         /// Force aim while mining resource scan (F / LB) is held on a drawn mining tool.
@@ -46,6 +52,8 @@ namespace Project.Player.Invector
             _survivalStats = GetComponent<SurvivalStats>();
             _optics = GetComponent<OpticsController>();
             _shooterInput = GetComponent<PioneerShooterMeleeInput>();
+            _grenadeCook = GetComponent<DMIGrenadeCookController>() ??
+                           GetComponentInChildren<DMIGrenadeCookController>(true);
             _motor = GetComponent<vThirdPersonController>();
         }
 
@@ -63,11 +71,15 @@ namespace Project.Player.Invector
         {
             bool lockLocomotion = ShouldLockLocomotionInput();
             bool lockCombat = lockLocomotion || _combatBlockedByUiPointer;
+            bool lockWeaponFire = lockCombat || BlocksWeaponFireForGrenade;
             input.SetLockBasicInput(lockLocomotion);
-            input.SetLockMeleeInput(lockCombat);
+            input.SetLockMeleeInput(lockWeaponFire);
             input.lockCameraInput = ShouldLockCameraInput();
 
-            input.SetLockShooterInput(lockCombat);
+            input.SetLockShooterInput(lockWeaponFire);
+
+            if (lockWeaponFire)
+                input.isAimingByInput = false;
 
             if (lockLocomotion && _motor != null)
                 _motor.input = Vector3.zero;
@@ -147,6 +159,9 @@ namespace Project.Player.Invector
                 return;
 
             if (ShouldLockGameplayInput())
+                return;
+
+            if (BlocksWeaponFireForGrenade)
                 return;
         }
 

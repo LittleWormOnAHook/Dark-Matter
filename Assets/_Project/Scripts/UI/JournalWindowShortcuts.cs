@@ -15,9 +15,10 @@ namespace Project.UI
                 case JournalWindowId.Pet: return 'F';
                 case JournalWindowId.Pioneers: return 'P';
                 case JournalWindowId.Character: return 'U';
-                case JournalWindowId.Craft: return 'C';
                 case JournalWindowId.Recipes: return 'R';
                 case JournalWindowId.Skills: return 'T';
+                // Craft tab removed from journal rail — C opens Blueprints library (station craft is world popup).
+                case JournalWindowId.Craft: return null;
                 case JournalWindowId.Echoes: return 'L';
                 case JournalWindowId.Achievements: return 'A';
                 default: return null;

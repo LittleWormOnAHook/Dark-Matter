@@ -2,6 +2,7 @@ using System.Text;
 using Project.Crafting;
 using Project.Data;
 using Project.Inventory;
+using Project.Progression;
 using Project.Vehicles;
 using UnityEngine;
 
@@ -32,15 +33,37 @@ namespace Project.UI
             AppendToolLines(text, item);
             AppendVehicleLines(text, item);
             AppendAcLine(text, item);
+            AppendProgressionLines(text, item);
             AppendCraftedItemLine(text, item);
 
             if (!string.IsNullOrWhiteSpace(item.tooltipDescription))
             {
                 text.AppendLine();
-                text.Append(item.tooltipDescription.Trim());
+                text.Append(SanitizeForTmp(item.tooltipDescription.Trim()));
             }
 
-            return text.ToString().TrimEnd();
+            return SanitizeForTmp(text.ToString().TrimEnd());
+        }
+
+        /// <summary>
+        /// Rajdhani SDF lacks Unicode subscripts (e.g. O₂). Map common chemistry glyphs to ASCII.
+        /// </summary>
+        public static string SanitizeForTmp(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            return value
+                .Replace('\u2080', '0')
+                .Replace('\u2081', '1')
+                .Replace('\u2082', '2')
+                .Replace('\u2083', '3')
+                .Replace('\u2084', '4')
+                .Replace('\u2085', '5')
+                .Replace('\u2086', '6')
+                .Replace('\u2087', '7')
+                .Replace('\u2088', '8')
+                .Replace('\u2089', '9');
         }
 
         private static string FormatTypeLine(ItemData item)
@@ -203,6 +226,35 @@ namespace Project.UI
             text.AppendLine($"<color=#FFD966>AC Value: {item.acValue}</color>");
         }
 
+        private static void AppendProgressionLines(StringBuilder text, ItemData item)
+        {
+            int equip = item.requiredLevelToEquip;
+            int craft = item.requiredLevelToCraft;
+            int use = item.requiredLevelToUse;
+            int pickup = item.requiredLevelToPickup;
+
+            bool anyGate = LevelUnlockUtility.IsGateActive(equip)
+                || LevelUnlockUtility.IsGateActive(craft)
+                || LevelUnlockUtility.IsGateActive(use)
+                || LevelUnlockUtility.IsGateActive(pickup);
+
+            if (!anyGate && !item.grantsXp)
+                return;
+
+            text.AppendLine();
+            text.AppendLine("<color=#A0A8B8>Progression:</color>");
+            if (LevelUnlockUtility.IsGateActive(equip))
+                text.AppendLine($"  <color=#D4A017>Equip Lv {equip}+</color>");
+            if (LevelUnlockUtility.IsGateActive(use))
+                text.AppendLine($"  <color=#D4A017>Use Lv {use}+</color>");
+            if (LevelUnlockUtility.IsGateActive(craft))
+                text.AppendLine($"  <color=#D4A017>Craft Lv {craft}+</color>");
+            if (LevelUnlockUtility.IsGateActive(pickup))
+                text.AppendLine($"  <color=#D4A017>Pickup Lv {pickup}+</color>");
+            if (item.grantsXp && item.xpAmount > 0)
+                text.AppendLine($"  <color=#C02E7A>+{item.xpAmount} XP</color>");
+        }
+
         private static void AppendCraftedItemLine(StringBuilder text, ItemData item)
         {
             string craftedLine = RecipeTooltipFormatter.BuildCraftedItemLine(item);
@@ -263,6 +315,11 @@ namespace Project.UI
                 text.AppendLine();
                 text.AppendLine("<color=#A0A8B8>Creates:</color>");
                 text.AppendLine($"  {recipe.outputAmount}x {recipe.outputItem.itemName}");
+                int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
+                    recipe.requiredPlayerLevel,
+                    recipe.outputItem);
+                if (craftLevel > 1)
+                    text.AppendLine($"  <color=#D4A017>Requires level {craftLevel}</color>");
                 AppendItemEffectSummary(text, recipe.outputItem);
                 text.AppendLine("<color=#8890A0><i>Left-click to craft when ingredients are ready.</i></color>");
             }

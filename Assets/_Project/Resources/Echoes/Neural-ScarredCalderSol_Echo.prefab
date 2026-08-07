@@ -29765,7 +29765,7 @@ Transform:
   - {fileID: 4290686486017129946}
   - {fileID: 9208735504118397137}
   - {fileID: 1486983139138339654}
-  - {fileID: 494801155853063832}
+  - {fileID: 5549532605811904198}
   - {fileID: 4602394332703046137}
   - {fileID: 8511294785535914611}
   m_Father: {fileID: 8455319289179255096}
@@ -48617,7 +48617,7 @@ GameObject:
   m_Layer: 8
   m_Name: Neural-ScarredCalderSol_Echo
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -64417,7 +64417,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
---- !u!4 &494801155853063832 stripped
+--- !u!4 &5549532605811904198 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1789445608270938811, guid: 041726e4330290b43ac95e1cf84d3636, type: 3}
   m_PrefabInstance: {fileID: 6185278250919562365}

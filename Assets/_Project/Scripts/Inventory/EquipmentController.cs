@@ -1,6 +1,7 @@
 using System;
 using Project.Data;
 using Project.Interaction;
+using Project.Progression;
 using UnityEngine;
 
 namespace Project.Inventory
@@ -210,8 +211,21 @@ namespace Project.Inventory
         public void SwitchActiveWeapon()
         {
             ClearToolbarSelection();
-            activeWeaponSlot = (activeWeaponSlot + 1) % WeaponSlotCount;
-            selectedHotbarSlot = ActiveWeaponHotbarSlot;
+            for (int offset = 1; offset <= WeaponSlotCount; offset++)
+            {
+                int candidate = (activeWeaponSlot + offset) % WeaponSlotCount;
+                int hotbarIndex = GetWeaponHotbarSlot(candidate);
+                ItemData item = GetHotbarItem(hotbarIndex);
+                if (item != null && !LevelUnlockUtility.PassesEquipGate(item, showToast: false))
+                    continue;
+
+                activeWeaponSlot = candidate;
+                selectedHotbarSlot = hotbarIndex;
+                SyncWeaponDrawnState();
+                NotifySelectionChanged();
+                return;
+            }
+
             SyncWeaponDrawnState();
             NotifySelectionChanged();
         }
@@ -223,6 +237,9 @@ namespace Project.Inventory
 
             weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
             int hotbarIndex = GetWeaponHotbarSlot(weaponSlotIndex);
+            ItemData item = GetHotbarItem(hotbarIndex);
+            if (item != null && !LevelUnlockUtility.PassesEquipGate(item, showToast: true))
+                return;
 
             ClearToolbarSelection();
 
@@ -255,6 +272,11 @@ namespace Project.Inventory
                 return;
             }
 
+            ItemData utilityItem = GetHotbarItem(clamped);
+            if (utilityItem != null && utilityItem.IsEquippable
+                && !LevelUnlockUtility.PassesEquipGate(utilityItem, showToast: true))
+                return;
+
             ClearToolbarSelection();
             selectedHotbarSlot = clamped;
             SyncWeaponDrawnState();
@@ -277,6 +299,9 @@ namespace Project.Inventory
                 NotifySelectionChanged();
                 return;
             }
+
+            if (!LevelUnlockUtility.PassesEquipGate(item, showToast: true))
+                return;
 
             if (allowToggleOff && selectedToolbarSlot == clamped)
                 ClearToolbarSelection();
@@ -394,16 +419,23 @@ namespace Project.Inventory
             return !IsWeaponItem(item);
         }
 
-        public bool CanPlaceItemAt(int absoluteSlotIndex, ItemData item)
+        public bool CanPlaceItemAt(int absoluteSlotIndex, ItemData item, bool showLevelToast = false)
         {
             if (inventory == null || item == null)
                 return false;
 
             if (inventory.IsToolbarIndex(absoluteSlotIndex))
-                return item.itemType == ItemType.Tool;
+            {
+                if (item.itemType != ItemType.Tool)
+                    return false;
+                return LevelUnlockUtility.PassesEquipGate(item, showToast: showLevelToast);
+            }
 
             if (!inventory.IsHotbarIndex(absoluteSlotIndex))
                 return true;
+
+            if (item.IsEquippable && !LevelUnlockUtility.PassesEquipGate(item, showToast: showLevelToast))
+                return false;
 
             int hotbarIndex = absoluteSlotIndex - inventory.inventorySize;
             return CanPlaceItemInHotbarSlot(hotbarIndex, item);
@@ -459,13 +491,27 @@ namespace Project.Inventory
 
         private void HandleInventoryChanged()
         {
+            int previousHotbar = selectedHotbarSlot;
+            int previousToolbar = selectedToolbarSlot;
+            bool previousDrawn = IsWeaponDrawn;
+            ItemData previousDrawnWeapon = IsWeaponDrawn ? DrawnWeaponItem : null;
+
             if (selectedToolbarSlot >= 0 && GetToolbarItem(selectedToolbarSlot) == null)
                 selectedToolbarSlot = -1;
 
             SyncWeaponDrawnState();
             if (IsWeaponDrawn)
                 SyncActiveWeaponSelection();
-            NotifySelectionChanged();
+
+            ItemData drawnWeapon = IsWeaponDrawn ? DrawnWeaponItem : null;
+            bool selectionChanged = selectedHotbarSlot != previousHotbar
+                || selectedToolbarSlot != previousToolbar
+                || IsWeaponDrawn != previousDrawn
+                || drawnWeapon != previousDrawnWeapon;
+
+            // Avoid notifying on every scrap/mushroom pickup — weapon bridge re-equip plays reload SFX.
+            if (selectionChanged)
+                NotifySelectionChanged();
         }
 
         private bool HasEquippableInHotbarSlot(int hotbarSlot)
@@ -522,6 +568,9 @@ namespace Project.Inventory
 
             InventorySystem.InventorySlot sourceSlot = inventory.slots[absoluteSlotIndex];
             if (sourceSlot.IsEmpty || sourceSlot.item == null || !sourceSlot.item.IsEquippable)
+                return false;
+
+            if (!LevelUnlockUtility.PassesEquipGate(sourceSlot.item, showToast: true))
                 return false;
 
             if (sourceSlot.item.itemType == ItemType.Tool)

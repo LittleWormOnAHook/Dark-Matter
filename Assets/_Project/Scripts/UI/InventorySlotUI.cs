@@ -389,7 +389,8 @@ namespace Project.UI
             {
                 if (target.IsLocked)
                     return;
-                if (!source.inventory.CanAcceptItemAt(target.slotIndex, source.slot.item))
+                // showLevelToast: once per failed drag onto hotbar/toolbar when level-gated.
+                if (!source.inventory.CanAcceptItemAt(target.slotIndex, source.slot.item, showLevelToast: true))
                     return;
 
                 source.inventory.MoveOrMergeSlots(source.slotIndex, target.slotIndex);

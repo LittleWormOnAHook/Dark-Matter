@@ -81,9 +81,23 @@ namespace Project.UI
             ConsolidateOverlayCanvases();
         }
 
-        internal static void ResetRuntimeState()
+        public static void ResetRuntimeState()
         {
             instance = null;
+        }
+
+        /// <summary>
+        /// Editor/play entry: destroy unsafe for edit-mode rebuilds of scene canvases.
+        /// </summary>
+        private static void DestroyOverlayObject(Object target)
+        {
+            if (target == null)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(target);
+            else
+                Object.DestroyImmediate(target);
         }
 
         public void EnsureBuilt(Transform unusedCanvasRoot = null)
@@ -103,7 +117,7 @@ namespace Project.UI
                 if (TryBindExistingOverlay(existingOverlay.gameObject))
                     return;
 
-                Destroy(existingOverlay.gameObject);
+                DestroyOverlayObject(existingOverlay.gameObject);
             }
 
             overlayRoot = new GameObject("OpticsOverlay", typeof(RectTransform), typeof(CanvasGroup));
@@ -234,7 +248,7 @@ namespace Project.UI
             if (forceRebuildStyles && viewportImage != null && template != null)
             {
                 if (viewportMaterial != null)
-                    Destroy(viewportMaterial);
+                    DestroyOverlayObject(viewportMaterial);
 
                 viewportMaterial = new Material(template) { name = template.name + "_Runtime" };
                 viewportImage.material = viewportMaterial;
@@ -304,15 +318,36 @@ namespace Project.UI
             if (viewportBackground == null || viewportImage == null || binocularRoot == null || scannerRoot == null)
                 return false;
 
+            // Scene/play-mode leftovers often keep the overlay visible with wrong sprites.
+            overlayRoot.SetActive(false);
+            if (binocularRoot != null)
+                binocularRoot.SetActive(false);
+            if (scannerRoot != null)
+                scannerRoot.SetActive(false);
+            if (markerLayer != null)
+                markerLayer.gameObject.SetActive(false);
+
             uiBuilt = true;
-            ApplyLibraryPresentation(forceRebuildStyles: false);
+            isVisible = false;
+            ApplyLibraryPresentation(forceRebuildStyles: true);
             return true;
         }
 
         public void BindRenderTexture(RenderTexture texture)
         {
-            if (viewportImage != null)
-                viewportImage.texture = texture;
+            if (viewportImage == null)
+                return;
+
+            viewportImage.texture = texture;
+            viewportImage.enabled = texture != null;
+
+            if (viewportMaterial != null && texture != null)
+            {
+                if (viewportMaterial.HasProperty("_MainTex"))
+                    viewportMaterial.SetTexture("_MainTex", texture);
+                if (viewportMaterial.HasProperty("_BaseMap"))
+                    viewportMaterial.SetTexture("_BaseMap", texture);
+            }
         }
 
         public void SetVisible(bool visible, ToolType toolType)
@@ -604,7 +639,7 @@ namespace Project.UI
                     continue;
                 }
 
-                Object.Destroy(canvas.gameObject);
+                DestroyOverlayObject(canvas.gameObject);
             }
         }
 
@@ -618,7 +653,7 @@ namespace Project.UI
                     continue;
 
                 if (childName.StartsWith("FloatingTargetHealthBar") || childName == "PetTamingProgressUI")
-                    Object.Destroy(child.gameObject);
+                    DestroyOverlayObject(child.gameObject);
             }
         }
 
@@ -634,7 +669,7 @@ namespace Project.UI
                 if (keeperOverlay == null)
                     keeperOverlay = child;
                 else
-                    Object.Destroy(child.gameObject);
+                    DestroyOverlayObject(child.gameObject);
             }
         }
 
@@ -714,7 +749,7 @@ namespace Project.UI
         private void OnDestroy()
         {
             if (viewportMaterial != null)
-                Destroy(viewportMaterial);
+                DestroyOverlayObject(viewportMaterial);
 
             if (instance == this)
                 instance = null;

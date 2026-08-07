@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &859776437475796554
+--- !u!1 &6273331636126393474
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,39 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4807327013319318658}
-  - component: {fileID: 4271761538729518569}
-  - component: {fileID: 7176604897016353116}
+  - component: {fileID: 3733142571469518678}
+  - component: {fileID: 7582274480326685542}
+  - component: {fileID: 6350625746836952749}
   m_Layer: 0
-  m_Name: RecipePickup_craft_survival_rifle
-  m_TagString: Untagged
+  m_Name: BlueprintPickup_Pimican_recipe
+  m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4807327013319318658
+--- !u!4 &3733142571469518678
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859776437475796554}
+  m_GameObject: {fileID: 6273331636126393474}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3342227453387783089}
+  - {fileID: 6647580141729235931}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &4271761538729518569
+--- !u!65 &7582274480326685542
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859776437475796554}
+  m_GameObject: {fileID: 6273331636126393474}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -55,29 +55,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0.54, z: 0}
---- !u!114 &7176604897016353116
+--- !u!114 &6350625746836952749
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859776437475796554}
+  m_GameObject: {fileID: 6273331636126393474}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2b8c4d6e8f078d9c1b0a9f8e7d6c5b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
-  recipeId: craft_survival_rifle
-  promptText: Press E to collect recipe
+  recipeId: Pimican_recipe
+  promptText: Press E to learn recipe
   interactRange: 5
-  collectedMessage: Recipe scroll collected!
---- !u!1001 &3346440382296627313
+  collectedMessage: Recipe learned!
+--- !u!1001 &6652371964182323227
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 4807327013319318658}
+    m_TransformParent: {fileID: 3733142571469518678}
     m_Modifications:
     - target: {fileID: 1173342265669808, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
       propertyPath: m_Name
@@ -128,8 +128,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
---- !u!4 &3342227453387783089 stripped
+--- !u!4 &6647580141729235931 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4798153273156544, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
-  m_PrefabInstance: {fileID: 3346440382296627313}
+  m_PrefabInstance: {fileID: 6652371964182323227}
   m_PrefabAsset: {fileID: 0}

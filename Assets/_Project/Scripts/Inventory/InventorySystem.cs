@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Project.Combat;
 using Project.Data;
 using Project.Interaction;
+using Project.Progression;
 using Project.Rendering;
 using Project.Survival;
 using UnityEngine;
@@ -119,7 +120,7 @@ namespace Project.Inventory
             return true;
         }
 
-        public bool CanAcceptItemAt(int index, ItemData item)
+        public bool CanAcceptItemAt(int index, ItemData item, bool showLevelToast = false)
         {
             if (item == null || index < 0 || index >= slots.Count)
                 return false;
@@ -128,10 +129,14 @@ namespace Project.Inventory
                 return false;
 
             if (equipment != null)
-                return equipment.CanPlaceItemAt(index, item);
+                return equipment.CanPlaceItemAt(index, item, showLevelToast);
 
             if (IsToolbarIndex(index))
-                return item.itemType == ItemType.Tool;
+            {
+                if (item.itemType != ItemType.Tool)
+                    return false;
+                return LevelUnlockUtility.PassesEquipGate(item, showToast: showLevelToast);
+            }
 
             return true;
         }
@@ -489,13 +494,18 @@ namespace Project.Inventory
             var slot = slots[index];
             if (slot.IsEmpty || slot.item == null) return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(slot.item, showToast: true))
+                return false;
+
             if (survivalStats == null)
                 survivalStats = GetComponent<SurvivalStats>();
 
             if (survivalStats != null && slot.item.IsConsumable)
             {
-                survivalStats.Consume(slot.item);
+                ItemData consumed = slot.item;
+                survivalStats.Consume(consumed);
                 RemoveItemAt(index, 1);
+                consumed.TryGrantConfiguredXp();
                 return true;
             }
             return false;

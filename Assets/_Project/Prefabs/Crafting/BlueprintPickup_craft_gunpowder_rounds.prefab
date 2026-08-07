@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8752631120393711553
+--- !u!1 &6241695158298462202
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,39 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4135651381989604058}
-  - component: {fileID: 8599810054857061923}
-  - component: {fileID: 4658323134714811345}
+  - component: {fileID: 635115038648214327}
+  - component: {fileID: 2285580945118240728}
+  - component: {fileID: 1799515738682759476}
   m_Layer: 0
-  m_Name: RecipePickup_forest_stew
+  m_Name: BlueprintPickup_craft_gunpowder_rounds
   m_TagString: Recipe
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4135651381989604058
+--- !u!4 &635115038648214327
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8752631120393711553}
+  m_GameObject: {fileID: 6241695158298462202}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6989502494119133109}
+  - {fileID: 5254275104421982548}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &8599810054857061923
+--- !u!65 &2285580945118240728
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8752631120393711553}
+  m_GameObject: {fileID: 6241695158298462202}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -55,29 +55,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0.54, z: 0}
---- !u!114 &4658323134714811345
+--- !u!114 &1799515738682759476
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8752631120393711553}
+  m_GameObject: {fileID: 6241695158298462202}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2b8c4d6e8f078d9c1b0a9f8e7d6c5b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipePickup
-  recipeId: forest_stew
-  promptText: Press E to learn recipe
+  recipeId: craft_gunpowder_rounds
+  promptText: Press E to collect recipe
   interactRange: 5
   collectedMessage: Recipe scroll collected!
---- !u!1001 &6984723041980898421
+--- !u!1001 &5259048483342291604
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 4135651381989604058}
+    m_TransformParent: {fileID: 635115038648214327}
     m_Modifications:
     - target: {fileID: 1173342265669808, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
       propertyPath: m_Name
@@ -128,8 +128,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
---- !u!4 &6989502494119133109 stripped
+--- !u!4 &5254275104421982548 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4798153273156544, guid: 94b71dbe7c75f5c46b056c1ceb10909e, type: 3}
-  m_PrefabInstance: {fileID: 6984723041980898421}
+  m_PrefabInstance: {fileID: 5259048483342291604}
   m_PrefabAsset: {fileID: 0}

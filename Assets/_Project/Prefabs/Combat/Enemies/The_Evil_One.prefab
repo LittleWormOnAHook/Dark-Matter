@@ -52304,7 +52304,7 @@ GameObject:
   m_Layer: 9
   m_Name: The_Evil_One
   m_TagString: Enemy
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -52906,11 +52906,15 @@ MonoBehaviour:
   wanderRadius: 8
   wanderPauseMin: 2
   wanderPauseMax: 5
+  patrolPoints: []
   patrolPath: {fileID: 0}
   patrolPathProvider: {fileID: 0}
-  patrolPoints: []
   patrolWaitDuration: 2
   idleDuration: 3
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
   loseTargetDelay: 4
   maxChaseDuration: 6
   investigateArriveDistance: 1.2
@@ -52927,10 +52931,6 @@ MonoBehaviour:
   pioneerRetargetRollIntervalMin: 0.75
   pioneerRetargetRollIntervalMax: 1.35
   playerThreatRange: 3
-  aggroOnDamaged: 1
-  aggroOnHeardHit: 1
-  hearingAggroChance: 0.45
-  hearingCooldown: 0.75
   minCombatSeparation: 1.35
   attackStandoffFraction: 0.78
   playerStandoffBonus: 0.35

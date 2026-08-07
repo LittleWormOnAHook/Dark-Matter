@@ -16,6 +16,12 @@ namespace Project.UI
         [Header("Panels")]
         public GameObject inventoryPanel;
 
+        [Tooltip("Optional authored panel fill Image. When assigned (or found on InventoryPanel), runtime theme will not overwrite it.")]
+        [SerializeField] private Image panelBackgroundImage;
+
+        [Tooltip("Optional authored border Outline on the inventory panel. Runtime theme will not recreate or recolor it.")]
+        [SerializeField] private Outline panelBorderOutline;
+
         [Header("Containers")]
         public Transform mainInventoryParent;
         public Transform hotbarParent;
@@ -26,6 +32,9 @@ namespace Project.UI
         [Header("Layout")]
         [Tooltip("When enabled, hotbar size/position from the scene is kept instead of being rebuilt at runtime.")]
         [SerializeField] private bool preserveHotbarLayout;
+
+        [Tooltip("When enabled, InventoryPanel background/border from the scene or UI Studio profile are kept instead of Shift theme chrome.")]
+        [SerializeField] private bool preservePanelChrome = true;
 
         [Tooltip("Optional data-driven layout applied before default code positioning.")]
         [SerializeField] private UiLayoutProfile layoutProfile;
@@ -39,6 +48,7 @@ namespace Project.UI
         [SerializeField] private bool preserveMainGridLayout;
 
         public bool IsInventoryEmbedded => inventoryPanelEmbedded;
+        public bool PreservePanelChrome => preservePanelChrome;
 
         private InventorySystem inventorySystem;
         private EquipmentController equipmentController;
@@ -116,6 +126,7 @@ namespace Project.UI
             CreateSlots();
             RefreshUI();
             RefreshMainInventoryLayout();
+            EnsureDefaultPanelChromeIfMissing();
             EnsureInventoryClosed();
             GameplayHudVisibility.RefreshGameplayHud();
             HideLegacyPanelTitleLabels();
@@ -126,23 +137,102 @@ namespace Project.UI
 
         private void ApplyShiftPanelVisuals()
         {
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            if (theme == null)
+            CachePanelChromeReferences();
+
+            // Scene / UI Studio authored chrome is source of truth when preserve is on.
+            if (preservePanelChrome)
+            {
+                if (hotbarParent != null && !preserveHotbarLayout)
+                {
+                    ShiftUiTheme theme = ShiftUiTheme.Current;
+                    Image hotbarImage = hotbarParent.GetComponent<Image>();
+                    if (theme != null && hotbarImage != null)
+                        theme.ApplyPanelImage(hotbarImage, large: false, alphaMultiplier: 0.92f);
+                }
+
+                return;
+            }
+
+            ShiftUiTheme themeFallback = ShiftUiTheme.Current;
+            if (themeFallback == null)
                 return;
 
-            if (inventoryPanel != null)
+            if (panelBackgroundImage != null)
+                themeFallback.ApplyPanelImage(panelBackgroundImage, large: true);
+            else if (inventoryPanel != null)
             {
                 Image panelImage = inventoryPanel.GetComponent<Image>();
                 if (panelImage != null)
-                    theme.ApplyPanelImage(panelImage, large: true);
+                    themeFallback.ApplyPanelImage(panelImage, large: true);
             }
 
             if (hotbarParent != null)
             {
                 Image hotbarImage = hotbarParent.GetComponent<Image>();
                 if (hotbarImage != null)
-                    theme.ApplyPanelImage(hotbarImage, large: false, alphaMultiplier: 0.92f);
+                    themeFallback.ApplyPanelImage(hotbarImage, large: false, alphaMultiplier: 0.92f);
             }
+        }
+
+        private void CachePanelChromeReferences()
+        {
+            if (inventoryPanel == null)
+                return;
+
+            if (panelBackgroundImage == null)
+                panelBackgroundImage = inventoryPanel.GetComponent<Image>();
+
+            if (panelBorderOutline == null)
+                panelBorderOutline = inventoryPanel.GetComponent<Outline>();
+        }
+
+        /// <summary>
+        /// Applies Genesis palette defaults only when the panel Image is missing/unusable (fresh UI).
+        /// Never overwrites an already-authored fill sprite/color when preservePanelChrome is on.
+        /// </summary>
+        public void EnsureDefaultPanelChromeIfMissing()
+        {
+            CachePanelChromeReferences();
+            if (panelBackgroundImage == null)
+                return;
+
+            bool needsFill = !panelBackgroundImage.enabled
+                || panelBackgroundImage.sprite == null
+                || IsBorderOnlySprite(panelBackgroundImage.sprite);
+
+            if (!needsFill && preservePanelChrome)
+                return;
+
+            SurvivalPioneerUiPalette.ApplyPanelShellBackground(panelBackgroundImage, 0.94f);
+            panelBackgroundImage.enabled = true;
+
+            if (panelBorderOutline == null)
+                panelBorderOutline = inventoryPanel != null ? inventoryPanel.GetComponent<Outline>() : null;
+
+            if (panelBorderOutline == null && inventoryPanel != null)
+            {
+                panelBorderOutline = inventoryPanel.AddComponent<Outline>();
+                panelBorderOutline.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+                panelBorderOutline.effectDistance = new Vector2(2f, -2f);
+                panelBorderOutline.useGraphicAlpha = true;
+            }
+            else if (panelBorderOutline != null && !preservePanelChrome)
+            {
+                panelBorderOutline.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+                panelBorderOutline.effectDistance = new Vector2(2f, -2f);
+            }
+        }
+
+        private static bool IsBorderOnlySprite(Sprite sprite)
+        {
+            if (sprite == null)
+                return true;
+
+            string name = sprite.name;
+            return name.IndexOf("Outline", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Stroke", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || (name.IndexOf("Cut Frame", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    && name.IndexOf("Filled", System.StringComparison.OrdinalIgnoreCase) < 0);
         }
 
         public void EmbedInventoryPanel(Transform container)
@@ -172,6 +262,7 @@ namespace Project.UI
             HideLegacyPanelTitleLabels();
             Canvas.ForceUpdateCanvases();
             RefreshMainInventoryLayout();
+            EnsureDefaultPanelChromeIfMissing();
         }
 
         public void SetBottomHudVisible(bool visible)
@@ -543,7 +634,11 @@ namespace Project.UI
                 return false;
 
             Transform root = inventoryPanel != null ? inventoryPanel.transform : transform;
-            bool applied = UiLayoutProfileApplier.Apply(root, profile, panelEmbedded: inventoryPanelEmbedded);
+            bool applied = UiLayoutProfileApplier.Apply(
+                root,
+                profile,
+                panelEmbedded: inventoryPanelEmbedded,
+                applyRootImageStyle: !preservePanelChrome);
             return applied && skipDefaultLayoutWhenProfileApplied;
         }
 
@@ -608,13 +703,13 @@ namespace Project.UI
             {
                 FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
                 FindSurvivalStatsHud()?.RefreshLayout();
-                FindAnyObjectByType<HotbarXpHud>()?.AlignUnderHotbar();
+                FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.AlignUnderHotbar();
                 return;
             }
 
             FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
             FindSurvivalStatsHud()?.RefreshLayout();
-            FindAnyObjectByType<HotbarXpHud>()?.AlignUnderHotbar();
+            FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.AlignUnderHotbar();
         }
 
         private void ConfigureHotbarLayoutGroup(HorizontalLayoutGroup layout)

@@ -26,6 +26,10 @@ namespace Project.EditorTools.Progression
             }
 
             ProgressionCurveDefinition curve = ScriptableObject.CreateInstance<ProgressionCurveDefinition>();
+            curve.expScale = ProgressionCurveDefinition.DefaultExpScale;
+            curve.expPower = ProgressionCurveDefinition.DefaultExpPower;
+            curve.linearScale = ProgressionCurveDefinition.DefaultLinearScale;
+            curve.xpRequiredPerLevel = System.Array.Empty<int>();
             AssetDatabase.CreateAsset(curve, CurvePath);
             AssetDatabase.SaveAssets();
             Selection.activeObject = curve;

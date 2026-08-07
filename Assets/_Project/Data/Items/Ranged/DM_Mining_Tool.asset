@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: DM Mining Tool
   icon: {fileID: 21300000, guid: 08b7e004b03587c46a4749d2cdcb2bc6, type: 3}
   worldPrefab: {fileID: 7821607011889959122, guid: 8f7943112bdb6b145a52bbba5bc9f14c, type: 3}
-  maxStack: 1
+  maxStack: 10
   stableItemId: 19d1b22e-6e60-412c-8262-fcfe3fc11770
   itemType: 3
   deployedPrefab: {fileID: 0}
@@ -36,16 +36,16 @@ MonoBehaviour:
   sheathedLocalScale: {x: 136.03012, y: 136.10681, z: 136.1097}
   invectorWeaponPrefab: {fileID: 4881589711078705830, guid: bf8e7b32b76156341ac90d8a8b08c28c, type: 3}
   invectorWeaponId: vHandgun
-  meleeDamage: 10
-  meleeDamageRandomRange: 3
-  criticalChance: 0.1
-  criticalDamageMultiplier: 2
-  meleeRange: 2.2
-  meleeCooldown: 0.65
+  meleeDamage: 0
+  meleeDamageRandomRange: 0
+  criticalChance: 0
+  criticalDamageMultiplier: 0
+  meleeRange: 0
+  meleeCooldown: 0
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
   meleeKnockback: 0
-  gatherPower: 1
+  gatherPower: 0
   attackTrigger: Attack
   rangedDamage: 0
   rangedDamageRandomRange: 4
@@ -79,8 +79,8 @@ MonoBehaviour:
   aimHeldLocalRotation: {x: -0.64055336, y: 0.06722177, z: -0.022566283, w: 0.7646329}
   aimHeldLocalScale: {x: 1.17, y: 1.17, z: 1.17}
   ammoType: 5
-  ammoPerPickup: 20
-  ammoPickupGrant: 20
+  ammoPerPickup: 0
+  ammoPickupGrant: 0
   isHitscanBeam: 1
   projectileGravityScale: 0
   splashRadius: 0
@@ -108,28 +108,32 @@ MonoBehaviour:
   miningScanSuccessSound: {fileID: 8300000, guid: e27ca5c5a4bcceb4db8221dffbcf4547, type: 3}
   miningScanDeniedSound: {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
   statusEffectOverride: 0
-  statusEffectDamagePerTick: 3
-  statusEffectTickInterval: 1
-  statusEffectDuration: 10
-  statusEffectVfxPrefab: {fileID: 100000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 0
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
   componentCategory: 0
   toolType: 0
-  toolRange: 8
-  scanRange: 24
-  opticsZoomFov: 38
-  opticsMinZoomFov: 18
-  opticsMaxZoomFov: 55
+  toolRange: 0
+  scanRange: 0
+  opticsZoomFov: 0
+  opticsMinZoomFov: 0
+  opticsMaxZoomFov: 0
   healthRestore: 0
   energyRestore: 0
   staminaRestore: 0
   oxygenRestore: 0
   isAcInfused: 0
   acValue: 0
-  grantsXp: 0
-  xpAmount: 10
+  grantsXp: 1
+  xpAmount: 150
   xpSource: 5
+  grantXpEveryPickupOrUse: 0
   requiredLevelToEquip: 1
   requiredLevelToCraft: 1
-  tooltipDescription: Hold Fire to mine resource nodes with a soft-locked mining
-    laser. Reload with Plasma Fuel to restore charge. Two passes yield 1-5 rocks.
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: "Soft-lock mining laser. Hold Fire for 1.25 s passes (2 passes
+    \u2192 1\u20135 yield). Range ~35 m. Reload with Plasma Fuel to restore charge.
+    Scan nodes with F when skills allow."
   unlocksInventoryStorageRow: 0
