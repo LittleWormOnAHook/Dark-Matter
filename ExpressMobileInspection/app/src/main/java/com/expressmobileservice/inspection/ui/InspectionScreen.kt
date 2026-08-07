@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Star
@@ -48,6 +49,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,7 +88,8 @@ enum class ReportShareType { PDF, IMAGE }
 @Composable
 fun InspectionScreen(
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
-    onShareError: (String) -> Unit = {}
+    onShareError: (String) -> Unit = {},
+    onRegisterStateProvider: ((() -> InspectionFormState) -> Unit)? = null
 ) {
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
@@ -97,6 +100,7 @@ fun InspectionScreen(
     var isGenerating by remember { mutableStateOf(false) }
     var showUncheckedWarning by remember { mutableStateOf(false) }
     var pendingShareType by remember { mutableStateOf<ReportShareType?>(null) }
+    var showSavedReports by remember { mutableStateOf(false) }
 
     val allItems = sections.flatMap { it.items }
     val checkedCount = allItems.count { it.status != InspectionStatus.NONE }
@@ -113,6 +117,10 @@ fun InspectionScreen(
         sections = sections,
         generalNotes = generalNotes
     )
+
+    SideEffect {
+        onRegisterStateProvider?.invoke { currentState() }
+    }
 
     fun share(type: ReportShareType) {
         if (customerName.isBlank()) {
@@ -140,6 +148,22 @@ fun InspectionScreen(
             return
         }
         share(type)
+    }
+
+    fun loadReport(state: InspectionFormState) {
+        customerName = state.customerInfo.customerName
+        customerPhone = state.customerInfo.customerPhone
+        vehicle = state.customerInfo.vehicle
+        mileage = state.customerInfo.mileage
+        generalNotes = state.generalNotes
+        sections = state.sections
+    }
+
+    if (showSavedReports) {
+        SavedReportsDialog(
+            onDismiss = { showSavedReports = false },
+            onLoadReport = { loadReport(it) }
+        )
     }
 
     if (showUncheckedWarning) {
@@ -272,6 +296,16 @@ fun InspectionScreen(
                     Icon(Icons.Default.Image, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Send as Image (JPEG)")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { showSavedReports = true },
+                    enabled = !isGenerating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.FolderOpen, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("View Saved Reports")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(

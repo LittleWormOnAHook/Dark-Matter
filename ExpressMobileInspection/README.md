@@ -11,7 +11,8 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 - Progress bar shows how many items are checked
 - **Send as PDF** — formatted document for email
 - **Send as Image (JPEG)** — snapshot for text messaging
-- **Clear Form** resets everything
+- **View Saved Reports** — open past drafts and sent PDF/image reports
+- Reports auto-save when you send PDF/image, or when you leave the app with customer info entered
 
 ## Professional report includes
 

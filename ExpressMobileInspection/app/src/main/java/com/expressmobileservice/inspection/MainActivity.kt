@@ -19,6 +19,9 @@ import java.io.File
 
 class MainActivity : ComponentActivity() {
 
+    private var currentStateProvider: (() -> InspectionFormState)? = null
+    private val savedReportStore by lazy { SavedReportStore(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,9 +37,21 @@ class MainActivity : ComponentActivity() {
                         },
                         onShareError = { message ->
                             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                        },
+                        onRegisterStateProvider = { provider ->
+                            currentStateProvider = provider
                         }
                     )
                 }
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        currentStateProvider?.invoke()?.let { state ->
+            if (state.hasSavableContent()) {
+                savedReportStore.saveDraft(state)
             }
         }
     }
@@ -55,6 +70,8 @@ class MainActivity : ComponentActivity() {
                 if (!file.exists() || file.length() == 0L) {
                     throw IllegalStateException("Report file was not created.")
                 }
+
+                savedReportStore.saveExportedReport(state, file, type)
 
                 val uri = FileProvider.getUriForFile(
                     this,
@@ -88,10 +105,6 @@ class MainActivity : ComponentActivity() {
         }.start()
     }
 
-  /**
-   * Share only the generated PDF/JPEG file. Do not set EXTRA_TEXT on file shares —
-   * many SMS and email clients treat the intent as plain text and drop the attachment.
-   */
     private fun buildFileShareIntent(
         uri: android.net.Uri,
         mimeType: String,
