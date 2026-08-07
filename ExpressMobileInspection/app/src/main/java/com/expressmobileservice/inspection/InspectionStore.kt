@@ -6,8 +6,11 @@ import kotlinx.serialization.json.Json
 
 class InspectionStore(context: Context) {
 
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
+
+    var onDataChanged: (() -> Unit)? = null
 
     fun getAll(appointmentStore: AppointmentStore? = null): List<SavedInspection> =
         decodeAll().sortedEarliestFirst(appointmentStore)
@@ -64,17 +67,24 @@ class InspectionStore(context: Context) {
     fun mostRecent(): SavedInspection? =
         decodeAll().maxByOrNull { it.updatedAtMillis }
 
-    private fun decodeAll(): List<SavedInspection> {
+    fun hasUserData(): Boolean = prefs.contains(KEY_INSPECTIONS)
+
+    fun replaceAll(inspections: List<SavedInspection>) {
+        persist(inspections, notify = false)
+    }
+
+    fun decodeAll(): List<SavedInspection> {
         val raw = prefs.getString(KEY_INSPECTIONS, null) ?: return emptyList()
         return runCatching {
             json.decodeFromString<List<SavedInspection>>(raw)
         }.getOrDefault(emptyList())
     }
 
-    private fun persist(inspections: List<SavedInspection>) {
+    private fun persist(inspections: List<SavedInspection>, notify: Boolean = true) {
         prefs.edit()
             .putString(KEY_INSPECTIONS, json.encodeToString(inspections))
             .apply()
+        if (notify) onDataChanged?.invoke()
     }
 
     companion object {

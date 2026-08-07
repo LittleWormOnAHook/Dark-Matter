@@ -43,9 +43,11 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Quick download (APK v2.1.6 — signed, latest)
+### Quick download (APK v2.1.7 — signed, latest)
 
-**[Download ExpressMobileInspection.apk (v2.1.6)](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-appointments-4704/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+**[Download ExpressMobileInspection.apk (v2.1.7)](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-appointments-4704/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+
+**Keep your data:** Install the new APK **over** the old app (do not uninstall first). Customer jobs and inspections auto-backup to Downloads and restore after reinstall when possible.
 
 Direct link:
 

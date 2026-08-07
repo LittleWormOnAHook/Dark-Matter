@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,6 +25,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         appointmentStore = AppointmentStore(this)
         inspectionStore = InspectionStore(this)
+        val snapshotData = {
+            AppDataBackup.writeSnapshot(this, appointmentStore, inspectionStore)
+        }
+        appointmentStore.onDataChanged = snapshotData
+        inspectionStore.onDataChanged = snapshotData
+        val restored = AppDataBackup.restoreIfNeeded(this, appointmentStore, inspectionStore)
         enableEdgeToEdge()
         setContent {
             ExpressMobileInspectionTheme {
@@ -31,6 +38,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    if (restored) {
+                        LaunchedEffect(Unit) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Restored saved customers and jobs",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                     HomeScreen(
                         appointmentStore = appointmentStore,
                         inspectionStore = inspectionStore,

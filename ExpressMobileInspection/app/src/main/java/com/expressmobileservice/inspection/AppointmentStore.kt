@@ -6,8 +6,11 @@ import kotlinx.serialization.json.Json
 
 class AppointmentStore(context: Context) {
 
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
+
+    var onDataChanged: (() -> Unit)? = null
 
     fun getAll(): List<Appointment> {
         val raw = prefs.getString(KEY_APPOINTMENTS, null) ?: return emptyList()
@@ -33,10 +36,19 @@ class AppointmentStore(context: Context) {
         persist(getAll().filterNot { it.id == id })
     }
 
+    fun hasUserData(): Boolean = prefs.contains(KEY_APPOINTMENTS)
+
+    fun replaceAll(appointments: List<Appointment>) {
+        prefs.edit()
+            .putString(KEY_APPOINTMENTS, json.encodeToString(appointments))
+            .apply()
+    }
+
     private fun persist(appointments: List<Appointment>) {
         prefs.edit()
             .putString(KEY_APPOINTMENTS, json.encodeToString(appointments))
             .apply()
+        onDataChanged?.invoke()
     }
 
     companion object {

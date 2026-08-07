@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -70,11 +71,11 @@ import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
+import com.expressmobileservice.inspection.daysInMonthGrid
 import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
-import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import com.expressmobileservice.inspection.weekDaysContaining
-import com.expressmobileservice.inspection.weekNumber
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -507,42 +508,36 @@ private fun MonthCalendarGrid(
     modifier: Modifier = Modifier
 ) {
     val today = LocalDate.now()
-    val days = remember(yearMonth) { com.expressmobileservice.inspection.daysInMonthGrid(yearMonth) }
+    val days = remember(yearMonth) { daysInMonthGrid(yearMonth) }
+    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
 
-    Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Spacer(modifier = Modifier.width(28.dp))
-            listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
+    Column(modifier = modifier.padding(horizontal = 8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
+            dayLabels.forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
                     color = SamsungCalendarColors.muted,
-                    fontSize = 11.sp
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(2.dp))
-
         days.chunked(7).forEach { week ->
-            val weekLabel = weekNumber(week.first())
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 1.dp),
+                    .heightIn(min = 52.dp)
+                    .padding(vertical = 2.dp),
                 verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = weekLabel.toString(),
-                    modifier = Modifier
-                        .width(28.dp)
-                        .padding(top = 6.dp),
-                    textAlign = TextAlign.Center,
-                    fontSize = 10.sp,
-                    color = SamsungCalendarColors.muted
-                )
                 week.forEach { date ->
                     SamsungDayCell(
                         date = date,
@@ -591,13 +586,13 @@ private fun SamsungDayCell(
 ) {
     Column(
         modifier = modifier
-            .padding(horizontal = 1.dp, vertical = 2.dp)
+            .padding(horizontal = 2.dp, vertical = 2.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(30.dp)
+                .size(32.dp)
                 .then(
                     if (isSelected) {
                         Modifier.border(1.5.dp, SamsungCalendarColors.selectedRing, CircleShape)
@@ -619,15 +614,16 @@ private fun SamsungDayCell(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 2.dp),
+                .heightIn(min = 10.dp)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             AppointmentGreenIndicators(
                 appointmentCount = appointments.size,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3
             )
         }
-        Spacer(modifier = Modifier.height(2.dp))
     }
 }
 
@@ -872,7 +868,9 @@ private fun WeekCalendarView(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = date.dayOfWeek.name.take(1),
+                        text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
+                            .take(1)
+                            .uppercase(),
                         style = MaterialTheme.typography.labelSmall,
                         color = SamsungCalendarColors.muted
                     )

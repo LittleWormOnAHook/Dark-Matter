@@ -40,14 +40,14 @@ fun formatTimeRange(startMillis: Long, endMillis: Long, allDay: Boolean): String
 
 fun formatMonthAbbrev(date: LocalDate): String = date.format(monthAbbrevFormatter)
 
-fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): List<LocalDate> {
+fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
     val firstOfMonth = yearMonth.atDay(1)
     val startOffset = ((firstOfMonth.dayOfWeek.value - firstDayOfWeek.value + 7) % 7)
     val gridStart = firstOfMonth.minusDays(startOffset.toLong())
     return (0 until 42).map { gridStart.plusDays(it.toLong()) }
 }
 
-fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): List<LocalDate> {
+fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
     val start = date.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
     return (0 until 7).map { start.plusDays(it.toLong()) }
 }
