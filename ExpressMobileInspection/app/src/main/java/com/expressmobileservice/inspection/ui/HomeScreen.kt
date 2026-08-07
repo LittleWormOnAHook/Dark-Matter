@@ -31,7 +31,8 @@ fun HomeScreen(
     appointmentStore: AppointmentStore,
     inspectionStore: InspectionStore,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
-    onShareError: (String) -> Unit
+    onShareError: (String) -> Unit,
+    onNotify: (String) -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(ExpressTab.APPOINTMENTS) }
     var activeInspectionId by remember {
@@ -77,6 +78,10 @@ fun HomeScreen(
                 onInspectionLinked = { inspectionId ->
                     activeInspectionId = inspectionId
                 },
+                onOpenInspection = { inspectionId ->
+                    activeInspectionId = inspectionId
+                    selectedTab = ExpressTab.INSPECTION
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
@@ -86,6 +91,7 @@ fun HomeScreen(
                 activeInspectionId = activeInspectionId,
                 onShareReport = onShareReport,
                 onShareError = onShareError,
+                onInspectionSaved = onNotify,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)

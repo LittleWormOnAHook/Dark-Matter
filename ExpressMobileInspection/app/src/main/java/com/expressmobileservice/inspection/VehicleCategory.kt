@@ -19,3 +19,6 @@ fun Appointment.vehicleSummary(): String = buildString {
         append(engineSize)
     }
 }.trim()
+
+fun Appointment.hasSavedInspection(inspectionStore: InspectionStore): Boolean =
+    inspectionId.isNotBlank() && inspectionStore.getById(inspectionId) != null

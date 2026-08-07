@@ -27,7 +27,9 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,7 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +77,7 @@ import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.toSavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import java.util.UUID
 
 enum class ReportShareType { PDF, IMAGE }
 
@@ -86,6 +88,7 @@ fun InspectionScreen(
     activeInspectionId: String?,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit = {},
+    onInspectionSaved: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var customerName by rememberSaveable { mutableStateOf("") }
@@ -157,6 +160,22 @@ fun InspectionScreen(
     val progress = if (totalCount == 0) 0f else checkedCount.toFloat() / totalCount
 
     fun currentState() = currentStateProvider.value()
+
+    fun saveInspection() {
+        val id = persistId ?: UUID.randomUUID().toString()
+        val existing = inspectionStore.getById(id)
+        inspectionStore.save(
+            currentState().toSavedInspection(
+                id = id,
+                appointmentId = existing?.appointmentId
+            )
+        )
+        if (loadedInspectionId == null) {
+            loadedInspectionId = id
+        }
+        autoSaveHint = "Inspection saved"
+        onInspectionSaved("Inspection saved")
+    }
 
     fun share(type: ReportShareType) {
         if (customerName.isBlank()) {
@@ -290,6 +309,19 @@ fun InspectionScreen(
                             .padding(bottom = 8.dp)
                     )
                 }
+                Button(
+                    onClick = { saveInspection() },
+                    enabled = !isGenerating,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Save inspection")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { beginComplete(ReportShareType.PDF) },
                     enabled = !isGenerating,

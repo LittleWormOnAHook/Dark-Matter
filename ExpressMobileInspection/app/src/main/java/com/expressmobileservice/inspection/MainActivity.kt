@@ -39,6 +39,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onShareError = { message ->
                             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                        },
+                        onNotify = { message ->
+                            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

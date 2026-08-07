@@ -69,6 +69,7 @@ import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
+import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import com.expressmobileservice.inspection.weekDaysContaining
@@ -82,6 +83,7 @@ fun AppointmentsScreen(
     store: AppointmentStore,
     inspectionStore: InspectionStore,
     onInspectionLinked: (String) -> Unit,
+    onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -275,6 +277,8 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        inspectionStore = inspectionStore,
+                        onOpenInspection = onOpenInspection,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -282,6 +286,7 @@ fun AppointmentsScreen(
                     WeekCalendarView(
                         anchorDate = selectedDate,
                         appointments = filteredAppointments,
+                        inspectionStore = inspectionStore,
                         onPreviousWeek = { selectedDate = selectedDate.minusWeeks(1) },
                         onNextWeek = { selectedDate = selectedDate.plusWeeks(1) },
                         onDateSelected = { selectedDate = it },
@@ -292,6 +297,7 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        onOpenInspection = onOpenInspection,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -321,6 +327,8 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { appointmentToDelete = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        inspectionStore = inspectionStore,
+                        onOpenInspection = onOpenInspection,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -625,6 +633,8 @@ private fun SamsungAgendaPanel(
     onAppointmentLongPress: (Appointment) -> Unit,
     onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
+    inspectionStore: InspectionStore,
+    onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -648,10 +658,12 @@ private fun SamsungAgendaPanel(
                 appointments.forEach { apt ->
                     SamsungAgendaRow(
                         appointment = apt,
+                        inspectionStore = inspectionStore,
                         onClick = { onAppointmentClick(apt) },
                         onLongClick = { onAppointmentLongPress(apt) },
                         onDial = { onDial(apt) },
-                        onNavigate = { onNavigate(apt) }
+                        onNavigate = { onNavigate(apt) },
+                        onOpenInspection = { onOpenInspection(apt.inspectionId) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -693,20 +705,25 @@ private fun SamsungAgendaPanel(
 @Composable
 private fun SamsungAgendaRow(
     appointment: Appointment,
+    inspectionStore: InspectionStore,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDial: () -> Unit,
-    onNavigate: () -> Unit
+    onNavigate: () -> Unit,
+    onOpenInspection: () -> Unit
 ) {
+    val showInsp = appointment.hasSavedInspection(inspectionStore)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.55f))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.Top
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = formatTimeRange(
@@ -714,10 +731,10 @@ private fun SamsungAgendaRow(
                 appointment.endEpochMillis,
                 appointment.allDay
             ),
-            modifier = Modifier.width(108.dp),
-            fontSize = 13.sp,
+            modifier = Modifier.width(96.dp),
+            fontSize = 12.sp,
             color = SamsungCalendarColors.muted,
-            lineHeight = 18.sp
+            lineHeight = 16.sp
         )
         Box(
             modifier = Modifier
@@ -726,7 +743,7 @@ private fun SamsungAgendaRow(
                 .clip(RoundedCornerShape(2.dp))
                 .background(SamsungCalendarColors.green)
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = appointment.agendaTitle,
@@ -758,6 +775,10 @@ private fun SamsungAgendaRow(
                 )
             }
         }
+        if (showInsp) {
+            Spacer(modifier = Modifier.width(8.dp))
+            InspBadgeButton(onClick = onOpenInspection)
+        }
     }
 }
 
@@ -765,6 +786,7 @@ private fun SamsungAgendaRow(
 private fun WeekCalendarView(
     anchorDate: LocalDate,
     appointments: List<Appointment>,
+    inspectionStore: InspectionStore,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
@@ -772,6 +794,7 @@ private fun WeekCalendarView(
     onAppointmentLongPress: (Appointment) -> Unit,
     onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
+    onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val weekDays = weekDaysContaining(anchorDate)
@@ -857,10 +880,12 @@ private fun WeekCalendarView(
                     dayItems.forEach { apt ->
                         SamsungAgendaRow(
                             appointment = apt,
+                            inspectionStore = inspectionStore,
                             onClick = { onAppointmentClick(apt) },
                             onLongClick = { onAppointmentLongPress(apt) },
                             onDial = { onDial(apt) },
-                            onNavigate = { onNavigate(apt) }
+                            onNavigate = { onNavigate(apt) },
+                            onOpenInspection = { onOpenInspection(apt.inspectionId) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }

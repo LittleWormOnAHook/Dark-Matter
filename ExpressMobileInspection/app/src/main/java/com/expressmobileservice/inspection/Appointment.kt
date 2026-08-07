@@ -34,6 +34,7 @@ data class Appointment(
 
     val hasPhone: Boolean get() = customerPhone.isNotBlank()
     val hasAddress: Boolean get() = address.isNotBlank()
+    val hasInspectionLink: Boolean get() = inspectionId.isNotBlank()
 
     /** Samsung-style agenda line: phone + job (e.g. "(904) 226-8986 Intake…"). */
     val agendaTitle: String
