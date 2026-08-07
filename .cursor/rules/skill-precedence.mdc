@@ -1,0 +1,25 @@
+---
+description: Project rules beat badjano/imported Cursor skills when guidance conflicts
+alwaysApply: true
+---
+
+# Skill Precedence (Dark Matter: Genesis)
+
+Imported Agent Skills under `.cursor/skills/` (including [badjano/skills](https://github.com/badjano/skills)) are **additive guidance only**.
+
+When a skill conflicts with any of the following, **project authority wins**:
+
+1. Always-applied rules in `.cursor/rules/`
+2. `AGENTS.md` and the Dark Matter Framework Engineering Standard
+3. GDD 5.0 (`Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`) and related GDD rules
+
+## Non-negotiable overrides
+
+- **No silent restore** — never checkout/reset/restore older Unity or git save points without explicit user confirmation in the current message (`confirm-before-depot-restore`).
+- **No forced Unity refresh** — do not call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks (`unity-console-check-after-edit`).
+- **DM / DMI naming** — do not introduce new Invector-branded project identifiers (`dm-naming-no-invector`).
+- **UI palette** — use `SurvivalPioneerUiPalette` / Shift theme colors (`survival-pioneer-ui-palette`).
+- **GDD lock** — AC-only economy, PC+consoles, thermal/Echo/Building Control Panel canon (`pioneer-survivors-gdd`).
+- **Console before done/commit** — wait for compile/domain reload; do not commit with Unity Error console entries.
+
+Skills must not rewrite scenes, prefabs, or gameplay to match generic Unity/VR/networking templates when that would contradict this project's existing systems or GDD.
