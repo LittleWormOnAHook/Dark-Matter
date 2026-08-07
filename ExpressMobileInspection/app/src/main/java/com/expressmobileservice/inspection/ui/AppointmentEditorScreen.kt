@@ -10,12 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,9 +37,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -66,13 +65,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
+import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.combineDateAndTime
 import com.expressmobileservice.inspection.defaultAppointmentEnd
 import com.expressmobileservice.inspection.defaultAppointmentStart
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatTime
 import com.expressmobileservice.inspection.syncEndAfterStartChange
-import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.toEpochMillisAtStartOfDay
 import com.expressmobileservice.inspection.toLocalDate
 import com.expressmobileservice.inspection.toLocalDateTime
@@ -89,11 +88,6 @@ private enum class PickerTarget {
     END_TIME
 }
 
-private enum class EditorStep {
-    SCHEDULE,
-    CUSTOMER
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentEditorScreen(
@@ -103,10 +97,10 @@ fun AppointmentEditorScreen(
     onDismiss: () -> Unit,
     onSave: (Appointment) -> Unit
 ) {
+    val isEditing = initial != null
     val defaultStart = initial?.startEpochMillis ?: defaultAppointmentStart(defaultDate)
     val defaultEnd = initial?.endEpochMillis ?: defaultAppointmentEnd(defaultStart)
 
-    var editorStep by remember { mutableStateOf(EditorStep.SCHEDULE) }
     var title by remember {
         mutableStateOf(
             initial?.let { if (it.jobNotes.isNotBlank()) it.jobNotes else it.customerName }
@@ -152,13 +146,11 @@ fun AppointmentEditorScreen(
             title.trim().takeIf { resolvedJob.isBlank() }.orEmpty()
         }
         if (resolvedName.isBlank() && resolvedJob.isBlank()) {
-            validationError = "Enter a title, customer, or job."
-            editorStep = EditorStep.CUSTOMER
+            validationError = "Enter a job title or customer name."
             return
         }
         if (!allDay && endMillis <= startMillis) {
             validationError = "End time must be after start time."
-            editorStep = EditorStep.SCHEDULE
             return
         }
         validationError = null
@@ -256,12 +248,8 @@ fun AppointmentEditorScreen(
                                 }
                                 val time = LocalTime.of(state.hour, state.minute)
                                 when (target) {
-                                    PickerTarget.START_TIME -> {
-                                        applyStartChange(combineDateAndTime(date, time))
-                                    }
-                                    PickerTarget.END_TIME -> {
-                                        endMillis = combineDateAndTime(date, time)
-                                    }
+                                    PickerTarget.START_TIME -> applyStartChange(combineDateAndTime(date, time))
+                                    PickerTarget.END_TIME -> endMillis = combineDateAndTime(date, time)
                                     else -> Unit
                                 }
                                 showPicker = null
@@ -283,35 +271,16 @@ fun AppointmentEditorScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = SamsungCalendarColors.background,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        when (editorStep) {
-                            EditorStep.SCHEDULE -> "Date & time"
-                            EditorStep.CUSTOMER -> "Customer info"
-                        }
-                    )
-                },
+                title = { Text(if (isEditing) "Edit job" else "Add job") },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            when (editorStep) {
-                                EditorStep.SCHEDULE -> onDismiss()
-                                EditorStep.CUSTOMER -> {
-                                    validationError = null
-                                    editorStep = EditorStep.SCHEDULE
-                                }
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = onDismiss) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = when (editorStep) {
-                                EditorStep.SCHEDULE -> "Back to calendar"
-                                EditorStep.CUSTOMER -> "Back to date and time"
-                            },
+                            contentDescription = "Back to calendar",
                             tint = Color.White
                         )
                     }
@@ -324,65 +293,31 @@ fun AppointmentEditorScreen(
             )
         },
         bottomBar = {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SamsungCalendarColors.background)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                when (editorStep) {
-                    EditorStep.SCHEDULE -> {
-                        Button(
-                            onClick = {
-                                validationError = null
-                                editorStep = EditorStep.CUSTOMER
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = SamsungCalendarColors.green,
-                                contentColor = Color.Black
-                            )
-                        ) {
-                            Text("Next: Customer info", fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
-                        }
-                    }
-                    EditorStep.CUSTOMER -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    validationError = null
-                                    editorStep = EditorStep.SCHEDULE
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = SamsungCalendarColors.green
-                                )
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Date & time")
-                            }
-                            Button(
-                                onClick = { save() },
-                                modifier = Modifier.weight(1.2f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = SamsungCalendarColors.green,
-                                    contentColor = Color.Black
-                                )
-                            ) {
-                                Text("Save", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            }
-                        }
-                    }
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        "Cancel",
+                        color = SamsungCalendarColors.green,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp
+                    )
+                }
+                Button(
+                    onClick = { save() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SamsungCalendarColors.green,
+                        contentColor = Color.Black
+                    )
+                ) {
+                    Text("Save", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
             }
         }
@@ -402,53 +337,196 @@ fun AppointmentEditorScreen(
                 )
             }
 
-            when (editorStep) {
-                EditorStep.SCHEDULE -> ScheduleStepContent(
-                    title = title,
-                    onTitleChange = {
-                        title = it
-                        if (jobNotes.isBlank() || jobNotes == title) jobNotes = it
-                    },
-                    allDay = allDay,
-                    onAllDayChange = { allDay = it },
-                    startMillis = startMillis,
-                    endMillis = endMillis,
-                    onShowPicker = { showPicker = it }
+            SectionHeader("Job & date / time")
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(SamsungCalendarColors.green)
                 )
-                EditorStep.CUSTOMER -> CustomerStepContent(
-                    customerName = customerName,
-                    onCustomerNameChange = { customerName = it },
-                    customerPhone = customerPhone,
-                    onCustomerPhoneChange = { customerPhone = it },
-                    address = address,
-                    onAddressChange = { address = it },
-                    jobNotes = jobNotes,
-                    onJobNotesChange = {
+            }
+
+            TextField(
+                value = title,
+                onValueChange = {
+                    title = it
+                    if (jobNotes.isBlank() || jobNotes == title) jobNotes = it
+                },
+                placeholder = { Text("Job title", color = SamsungCalendarColors.muted) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                singleLine = true,
+                colors = samsungTitleFieldColors(),
+                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+            )
+
+            EditorToggleRow(
+                icon = { Icon(Icons.Default.AccessTime, null, tint = SamsungCalendarColors.green) },
+                label = "All day"
+            ) {
+                Switch(
+                    checked = allDay,
+                    onCheckedChange = { allDay = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = SamsungCalendarColors.green
+                    )
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DateTimeColumn(
+                    dateText = formatDayHeader(startMillis.toLocalDate()),
+                    timeText = if (allDay) "" else formatTime(startMillis),
+                    showTime = !allDay,
+                    onDateClick = { showPicker = PickerTarget.START_DATE },
+                    onTimeClick = { showPicker = PickerTarget.START_TIME },
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = SamsungCalendarColors.muted,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                DateTimeColumn(
+                    dateText = formatDayHeader(endMillis.toLocalDate()),
+                    timeText = if (allDay) "" else formatTime(endMillis),
+                    showTime = !allDay,
+                    onDateClick = { showPicker = PickerTarget.END_DATE },
+                    onTimeClick = { showPicker = PickerTarget.END_TIME },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (!allDay) {
+                Text(
+                    text = "Changing start time sets end to 1 hour later on the same day.",
+                    color = SamsungCalendarColors.muted,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+            }
+
+            EditorField(
+                icon = { Icon(Icons.Default.Notes, null, tint = SamsungCalendarColors.green) },
+                label = "Notes"
+            ) {
+                OutlinedTextField(
+                    value = jobNotes,
+                    onValueChange = {
                         jobNotes = it
                         if (title.isBlank() || title == jobNotes) title = it
                     },
+                    placeholder = { Text("Job details, parts, follow-up") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    colors = samsungFieldColors()
+                )
+            }
+
+            HorizontalDivider(
+                color = SamsungCalendarColors.divider,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            SectionHeader("Customer info")
+
+            EditorField(
+                icon = { Icon(Icons.Default.Person, null, tint = SamsungCalendarColors.green) },
+                label = "Customer name"
+            ) {
+                OutlinedTextField(
+                    value = customerName,
+                    onValueChange = { customerName = it },
+                    placeholder = { Text("Customer name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = samsungFieldColors(),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
+                )
+            }
+
+            EditorField(
+                icon = { Icon(Icons.Default.Phone, null, tint = SamsungCalendarColors.green) },
+                label = "Phone"
+            ) {
+                OutlinedTextField(
+                    value = customerPhone,
+                    onValueChange = { customerPhone = it },
+                    placeholder = { Text("Any phone number") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = samsungFieldColors(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+            }
+
+            EditorField(
+                icon = { Icon(Icons.Default.LocationOn, null, tint = SamsungCalendarColors.green) },
+                label = "Address (opens Waze)"
+            ) {
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    placeholder = { Text("Street address") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 1,
+                    maxLines = 2,
+                    colors = samsungFieldColors(),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
+                )
+            }
+
+            EditorField(
+                icon = { Icon(Icons.Default.DirectionsCar, null, tint = SamsungCalendarColors.green) },
+                label = "Vehicle"
+            ) {
+                VehicleDropdownFields(
                     vehicleCategory = vehicleCategory,
-                    onVehicleCategoryChange = {
+                    onCategoryChange = {
                         vehicleCategory = it
                         vehicleMake = ""
                         vehicleModel = ""
                         engineSize = ""
                     },
                     vehicleYear = vehicleYear,
-                    onVehicleYearChange = {
+                    onYearChange = {
                         vehicleYear = it
                         vehicleModel = ""
                     },
                     vehicleMake = vehicleMake,
-                    onVehicleMakeChange = { vehicleMake = it },
+                    onMakeChange = { vehicleMake = it },
                     vehicleModel = vehicleModel,
-                    onVehicleModelChange = { vehicleModel = it },
+                    onModelChange = { vehicleModel = it },
                     engineSize = engineSize,
                     onEngineSizeChange = { engineSize = it },
                     mileage = mileage,
-                    onMileageChange = { mileage = it }
+                    onMileageChange = { mileage = it },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            Text(
+                text = "Save creates the calendar job and an inspection file with this customer info.",
+                color = SamsungCalendarColors.green,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -456,221 +534,18 @@ fun AppointmentEditorScreen(
 }
 
 @Composable
-private fun ScheduleStepContent(
-    title: String,
-    onTitleChange: (String) -> Unit,
-    allDay: Boolean,
-    onAllDayChange: (Boolean) -> Unit,
-    startMillis: Long,
-    endMillis: Long,
-    onShowPicker: (PickerTarget) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.End
-    ) {
-        Box(
-            modifier = Modifier
-                .size(14.dp)
-                .clip(CircleShape)
-                .background(SamsungCalendarColors.green)
-        )
-    }
-
-    TextField(
-        value = title,
-        onValueChange = onTitleChange,
-        placeholder = { Text("Title", color = SamsungCalendarColors.muted) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = SamsungCalendarColors.green
-        ),
-        textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
-    )
-
-    SamsungEditorRow(
-        icon = { Icon(Icons.Default.AccessTime, null, tint = SamsungCalendarColors.green) },
-        label = "All day"
-    ) {
-        Switch(
-            checked = allDay,
-            onCheckedChange = onAllDayChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = SamsungCalendarColors.green
-            )
-        )
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SamsungDateTimeColumn(
-            dateText = formatDayHeader(startMillis.toLocalDate()),
-            timeText = if (allDay) "" else formatTime(startMillis),
-            showTime = !allDay,
-            onDateClick = { onShowPicker(PickerTarget.START_DATE) },
-            onTimeClick = { onShowPicker(PickerTarget.START_TIME) },
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            Icons.AutoMirrored.Filled.ArrowForward,
-            contentDescription = null,
-            tint = SamsungCalendarColors.muted,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-        SamsungDateTimeColumn(
-            dateText = formatDayHeader(endMillis.toLocalDate()),
-            timeText = if (allDay) "" else formatTime(endMillis),
-            showTime = !allDay,
-            onDateClick = { onShowPicker(PickerTarget.END_DATE) },
-            onTimeClick = { onShowPicker(PickerTarget.END_TIME) },
-            modifier = Modifier.weight(1f)
-        )
-    }
-
-    if (!allDay) {
-        Text(
-            text = "End time auto-sets to 1 hour later on the same day when you change start.",
-            color = SamsungCalendarColors.muted,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-        )
-    }
-}
-
-@Composable
-private fun CustomerStepContent(
-    customerName: String,
-    onCustomerNameChange: (String) -> Unit,
-    customerPhone: String,
-    onCustomerPhoneChange: (String) -> Unit,
-    address: String,
-    onAddressChange: (String) -> Unit,
-    jobNotes: String,
-    onJobNotesChange: (String) -> Unit,
-    vehicleCategory: VehicleCategory,
-    onVehicleCategoryChange: (VehicleCategory) -> Unit,
-    vehicleYear: Int?,
-    onVehicleYearChange: (Int?) -> Unit,
-    vehicleMake: String,
-    onVehicleMakeChange: (String) -> Unit,
-    vehicleModel: String,
-    onVehicleModelChange: (String) -> Unit,
-    engineSize: String,
-    onEngineSizeChange: (String) -> Unit,
-    mileage: String,
-    onMileageChange: (String) -> Unit
-) {
-    HorizontalDivider(
-        color = SamsungCalendarColors.divider,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
-
-    SamsungDetailRow(
-        icon = { Icon(Icons.Default.Person, null, tint = SamsungCalendarColors.green) },
-        label = "Customer"
-    ) {
-        OutlinedTextField(
-            value = customerName,
-            onValueChange = onCustomerNameChange,
-            placeholder = { Text("Customer name") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = samsungFieldColors(),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
-        )
-    }
-
-    SamsungDetailRow(
-        icon = { Icon(Icons.Default.Phone, null, tint = SamsungCalendarColors.green) },
-        label = "Phone"
-    ) {
-        OutlinedTextField(
-            value = customerPhone,
-            onValueChange = onCustomerPhoneChange,
-            placeholder = { Text("Any phone number") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = samsungFieldColors(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-        )
-    }
-
-    SamsungDetailRow(
-        icon = { Icon(Icons.Default.LocationOn, null, tint = SamsungCalendarColors.green) },
-        label = "Location"
-    ) {
-        OutlinedTextField(
-            value = address,
-            onValueChange = onAddressChange,
-            placeholder = { Text("Opens in Waze on Android") },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 1,
-            maxLines = 2,
-            colors = samsungFieldColors(),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
-        )
-    }
-
-    SamsungDetailRow(
-        icon = { Icon(Icons.Default.Notes, null, tint = SamsungCalendarColors.green) },
-        label = "Job / notes"
-    ) {
-        OutlinedTextField(
-            value = jobNotes,
-            onValueChange = onJobNotesChange,
-            placeholder = { Text("Job details, parts, follow-up") },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 2,
-            maxLines = 4,
-            colors = samsungFieldColors()
-        )
-    }
-
-    SamsungDetailRow(
-        icon = { Icon(Icons.Default.DirectionsCar, null, tint = SamsungCalendarColors.green) },
-        label = "Vehicle"
-    ) {
-        VehicleDropdownFields(
-            vehicleCategory = vehicleCategory,
-            onCategoryChange = onVehicleCategoryChange,
-            vehicleYear = vehicleYear,
-            onYearChange = onVehicleYearChange,
-            vehicleMake = vehicleMake,
-            onMakeChange = onVehicleMakeChange,
-            vehicleModel = vehicleModel,
-            onModelChange = onVehicleModelChange,
-            engineSize = engineSize,
-            onEngineSizeChange = onEngineSizeChange,
-            mileage = mileage,
-            onMileageChange = onMileageChange,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-
+private fun SectionHeader(text: String) {
     Text(
-        text = "Saving creates an inspection file automatically from this customer info.",
+        text = text,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
         color = SamsungCalendarColors.green,
-        fontSize = 12.sp,
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
     )
 }
 
 @Composable
-private fun SamsungEditorRow(
+private fun EditorToggleRow(
     icon: @Composable () -> Unit,
     label: String,
     trailing: @Composable () -> Unit
@@ -692,7 +567,7 @@ private fun SamsungEditorRow(
 }
 
 @Composable
-private fun SamsungDetailRow(
+private fun EditorField(
     icon: @Composable () -> Unit,
     label: String,
     field: @Composable () -> Unit
@@ -714,7 +589,7 @@ private fun SamsungDetailRow(
 }
 
 @Composable
-private fun SamsungDateTimeColumn(
+private fun DateTimeColumn(
     dateText: String,
     timeText: String,
     showTime: Boolean,
@@ -743,7 +618,16 @@ private fun SamsungDateTimeColumn(
 }
 
 @Composable
-private fun samsungFieldColors() = OutlinedTextFieldDefaults.colors(
+private fun samsungTitleFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
+    cursorColor = SamsungCalendarColors.green
+)
+
+@Composable
+private fun samsungFieldColors() = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
     focusedBorderColor = SamsungCalendarColors.green,
     unfocusedBorderColor = SamsungCalendarColors.divider,
     cursorColor = SamsungCalendarColors.green,

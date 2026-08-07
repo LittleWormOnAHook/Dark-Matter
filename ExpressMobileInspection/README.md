@@ -9,16 +9,18 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 ### Appointments (Samsung-style calendar)
 
 - **Day / Week / Month** — open the **☰ menu** (top left), like Samsung Calendar
-- Month grid with **week numbers**, colored event bars, and **today** box (top right)
-- **Search** icon to filter by customer, phone, or job
-- Bottom **quick-add** field (e.g. `7 PM brake job`) + green **+** button
+- Month grid with **week numbers**, **green event lines** per appointment, and **today** box (top right)
+- **Customer info** step: dropdowns for **year, make, model, engine size** (1970–2026)
+  - **Car / Truck** and **Motorcycle** data from **NHTSA** (US government database)
+  - **Jet Ski / PWC** from built-in US watercraft catalog
+- **Auto inspection** — saving an appointment creates a linked **inspection file** (customer + vehicle pre-filled)
 - Tap **phone** → dial; tap **address** → **Waze**
-- Long-press an event to delete
 
 ### Inspection
 
-- Company header with name and phone number
-- Simple customer fields: Name, Phone, Vehicle, Mileage
+- Opens with the **latest appointment inspection** (auto-created when you save a calendar job)
+- Customer name, phone, vehicle, and mileage pre-filled from the appointment
+- **Auto-saves** as you check items and add notes
 - **19 essential inspection items** in 4 sections
 - Per line: tap **Good / Bad / Replace** and optional notes
 - Progress bar shows how many items are checked
