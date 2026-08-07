@@ -1,5 +1,7 @@
 # Express Mobile Service — Vehicle Inspection App
 
+> **Branch:** `express-mobile-inspection` — this Android app lives on its own branch and is **not** part of the Dark Matter: Genesis Unity game on `main`. Do not merge into `main` unless you intentionally want both in the same tree.
+
 Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick vehicle inspection, mark each item **Good**, **Bad**, or **Replace**, add notes, and send a **professional PDF or image report** to the customer.
 
 ## Features
@@ -26,9 +28,9 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 
 ### Quick download (APK)
 
-**[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/complete-inspection-report-fe85/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+**[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/express-mobile-inspection/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 
-Direct link: `https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/complete-inspection-report-fe85/ExpressMobileInspection/releases/ExpressMobileInspection.apk`
+Direct link: `https://github.com/LittleWormOnAHook/Dark-Matter/raw/express-mobile-inspection/ExpressMobileInspection/releases/ExpressMobileInspection.apk`
 
 1. Open the link on your Android phone.
 2. Allow the download.
@@ -60,3 +62,18 @@ APK path: `app/build/outputs/apk/debug/app-debug.apk`
 ## Requirements
 
 - Android 8.0+ (API 26+)
+
+## Working on this app
+
+```bash
+git fetch origin express-mobile-inspection
+git checkout express-mobile-inspection
+```
+
+Open only `ExpressMobileInspection/` in Android Studio — not the Unity project root.
+
+To return to the game:
+
+```bash
+git checkout main
+```
