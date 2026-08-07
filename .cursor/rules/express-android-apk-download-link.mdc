@@ -1,0 +1,42 @@
+# Express Mobile Inspection — APK Download Link Required
+
+Whenever you **build, bump, or ship** `ExpressMobileInspection/` (new `versionName`, signed release APK, or user asks for an installable build):
+
+## Mandatory deliverables
+
+1. **Copy the signed APK** to:
+   `ExpressMobileInspection/releases/ExpressMobileInspection.apk`
+
+2. **Commit and push** the APK (and README version bump) on the feature branch before closing the task.
+
+3. **Always give the user a direct install link** in your final message — do not end without it.
+
+## Download URL format
+
+```
+https://github.com/LittleWormOnAHook/Dark-Matter/raw/<branch>/ExpressMobileInspection/releases/ExpressMobileInspection.apk
+```
+
+Replace `<branch>` with the current git branch (e.g. `cursor/express-calendar-appointments-4704`).
+
+## README
+
+Update `ExpressMobileInspection/README.md` **Quick download** section:
+- Version label (e.g. `v2.1.9`)
+- Markdown link + raw URL in a fenced code block
+- Reminder: install **over** existing app to keep data (do not uninstall first unless install fails)
+
+## Build command
+
+```bash
+cd ExpressMobileInspection && ./gradlew assembleRelease
+cp app/build/outputs/apk/release/app-release.apk releases/ExpressMobileInspection.apk
+```
+
+## Response template (include in every APK-shipping reply)
+
+- **Version:** `vX.Y.Z` (`versionCode` N)
+- **Install:** [Download ExpressMobileInspection.apk](<full raw github url>)
+- **Direct link:** paste the raw URL in a code block for easy copy on phone
+
+Never claim an APK is ready without a pushed file and a working raw GitHub link.
