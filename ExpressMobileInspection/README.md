@@ -24,9 +24,20 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Technicians
 - Android Studio Ladybug (2024.2+) or newer recommended
 - JDK 17
 
-## Build & Install
+## Install on your phone
 
-1. Open the `ExpressMobileInspection` folder in **Android Studio**.
+### Quick download (APK)
+
+Download the pre-built APK directly on your Android phone:
+
+**[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-mobile-inspection-bdd8/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+
+1. Open the link above on your phone (Chrome works best).
+2. When prompted, allow the download.
+3. Open the downloaded file and tap **Install**.
+4. If Android blocks it, go to **Settings → Security** (or the install prompt) and allow installs from your browser for this one-time install.
+
+### Android Studio
 2. Let Gradle sync.
 3. Connect your Android phone (USB debugging on) or use an emulator.
 4. Run **Run ▶ app** or build an APK:
