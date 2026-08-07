@@ -71,6 +71,7 @@ import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.openWaze
+import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.weekNumber
@@ -99,6 +100,8 @@ fun AppointmentsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var quickAddText by remember { mutableStateOf("") }
     var editorQuickNotes by remember { mutableStateOf<String?>(null) }
+    var agendaActionTarget by remember { mutableStateOf<Appointment?>(null) }
+    val copyToClipboard = rememberCopyHandler()
 
     fun refresh() {
         appointments = store.getAll()
@@ -117,6 +120,7 @@ fun AppointmentsScreen(
 
     if (showEditor) {
         AppointmentEditorScreen(
+            appointmentStore = store,
             initial = editingAppointment,
             defaultDate = selectedDate,
             prefilledJobNotes = editorQuickNotes,
@@ -161,6 +165,34 @@ fun AppointmentsScreen(
             dismissButton = {
                 TextButton(onClick = { appointmentToDelete = null }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    agendaActionTarget?.let { apt ->
+        AlertDialog(
+            onDismissRequest = { agendaActionTarget = null },
+            title = { Text("Appointment") },
+            text = { Text(apt.agendaTitle) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                        agendaActionTarget = null
+                    }
+                ) {
+                    Text("Copy text", color = SamsungCalendarColors.green)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        agendaActionTarget = null
+                        appointmentToDelete = apt
+                    }
+                ) {
+                    Text("Delete")
                 }
             }
         )
@@ -274,7 +306,7 @@ fun AppointmentsScreen(
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onAppointmentLongPress = { appointmentToDelete = it },
+                        onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         inspectionStore = inspectionStore,
@@ -294,7 +326,7 @@ fun AppointmentsScreen(
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onAppointmentLongPress = { appointmentToDelete = it },
+                        onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         onOpenInspection = onOpenInspection,
@@ -324,7 +356,7 @@ fun AppointmentsScreen(
                             editingAppointment = apt
                             showEditor = true
                         },
-                        onAppointmentLongPress = { appointmentToDelete = it },
+                        onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         inspectionStore = inspectionStore,

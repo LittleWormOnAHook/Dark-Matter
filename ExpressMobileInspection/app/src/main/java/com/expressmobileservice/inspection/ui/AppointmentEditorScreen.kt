@@ -1,7 +1,12 @@
 package com.expressmobileservice.inspection.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +70,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
+import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.VehicleCategory
+import com.expressmobileservice.inspection.autofillLabel
+import com.expressmobileservice.inspection.autofillSuggestions
+import com.expressmobileservice.inspection.toClipboardText
+import com.expressmobileservice.inspection.BUSINESS_DAY_START_HOUR
 import com.expressmobileservice.inspection.combineDateAndTime
 import com.expressmobileservice.inspection.defaultAppointmentEnd
 import com.expressmobileservice.inspection.defaultAppointmentStart
@@ -88,9 +98,10 @@ private enum class PickerTarget {
     END_TIME
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AppointmentEditorScreen(
+    appointmentStore: AppointmentStore,
     initial: Appointment?,
     defaultDate: LocalDate,
     prefilledJobNotes: String? = null,
@@ -130,6 +141,46 @@ fun AppointmentEditorScreen(
     var endMillis by remember { mutableStateOf(defaultEnd) }
     var showPicker by remember { mutableStateOf<PickerTarget?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    val copyToClipboard = rememberCopyHandler()
+
+    val autofillQuery = remember(title, jobNotes, customerName) {
+        listOf(title, jobNotes, customerName).firstOrNull { it.isNotBlank() }.orEmpty()
+    }
+    val autofillSuggestions = remember(appointmentStore, autofillQuery, defaultDate, isEditing) {
+        val history = appointmentStore.getAll()
+        if (isEditing) {
+            history.autofillSuggestions(autofillQuery)
+        } else {
+            val forDay = history.autofillSuggestions("", defaultDate)
+            val matched = history.autofillSuggestions(autofillQuery, defaultDate)
+            (if (autofillQuery.isBlank()) forDay else matched)
+                .ifEmpty { history.autofillSuggestions(autofillQuery) }
+        }
+    }
+
+    fun applyAutofill(source: Appointment) {
+        customerName = source.customerName
+        customerPhone = source.customerPhone
+        jobNotes = source.jobNotes
+        title = when {
+            source.jobNotes.isNotBlank() -> source.jobNotes
+            source.customerName.isNotBlank() -> source.customerName
+            else -> title
+        }
+        address = source.address
+        vehicleCategory = runCatching {
+            VehicleCategory.valueOf(source.vehicleCategory)
+        }.getOrDefault(vehicleCategory)
+        vehicleYear = source.vehicleYear
+        vehicleMake = source.vehicleMake
+        vehicleModel = source.vehicleModel
+        engineSize = source.engineSize
+        mileage = source.mileage
+        if (!isEditing) {
+            startMillis = defaultAppointmentStart(defaultDate)
+            endMillis = defaultAppointmentEnd(startMillis)
+        }
+    }
 
     fun applyStartChange(newStart: Long) {
         startMillis = newStart
@@ -229,7 +280,7 @@ fun AppointmentEditorScreen(
                 val initialTime = when (target) {
                     PickerTarget.START_TIME -> startMillis.toLocalDateTime().toLocalTime()
                     PickerTarget.END_TIME -> endMillis.toLocalDateTime().toLocalTime()
-                    else -> LocalTime.now()
+                    else -> LocalTime.of(BUSINESS_DAY_START_HOUR, 0)
                 }
                 val state = rememberTimePickerState(
                     initialHour = initialTime.hour,
@@ -414,7 +465,7 @@ fun AppointmentEditorScreen(
 
             if (!allDay) {
                 Text(
-                    text = "Changing start time sets end to 1 hour later on the same day.",
+                    text = "New jobs start at 8:00 AM. Changing start time sets end to 1 hour later on the same day.",
                     color = SamsungCalendarColors.muted,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
@@ -437,6 +488,40 @@ fun AppointmentEditorScreen(
                     maxLines = 4,
                     colors = samsungFieldColors()
                 )
+                if (autofillSuggestions.isNotEmpty()) {
+                    Text(
+                        text = "Tap a previous job to fill fields (earliest time first). Hold to copy.",
+                        color = SamsungCalendarColors.muted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
+                    )
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 180.dp)
+                    ) {
+                        items(autofillSuggestions, key = { it.id }) { suggestion ->
+                            Text(
+                                text = suggestion.autofillLabel(),
+                                fontSize = 13.sp,
+                                color = SamsungCalendarColors.green,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = { applyAutofill(suggestion) },
+                                        onLongClick = {
+                                            copyToClipboard(
+                                                suggestion.toClipboardText(),
+                                                "Customer info copied"
+                                            )
+                                        }
+                                    )
+                                    .padding(vertical = 8.dp)
+                            )
+                            HorizontalDivider(color = SamsungCalendarColors.divider)
+                        }
+                    }
+                }
             }
 
             HorizontalDivider(

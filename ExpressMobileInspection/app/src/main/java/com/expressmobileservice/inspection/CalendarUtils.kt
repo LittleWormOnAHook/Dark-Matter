@@ -53,10 +53,12 @@ fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = DayOfWeek.SU
 }
 
 fun defaultAppointmentStart(date: LocalDate = LocalDate.now()): Long {
-    val nextHour = LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-    val start = date.atTime(nextHour.toLocalTime())
+    val start = date.atTime(BUSINESS_DAY_START_HOUR, 0)
     return start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
+
+/** First appointment slot of the business day (8:00 AM). */
+val BUSINESS_DAY_START_HOUR: Int = 8
 
 fun defaultAppointmentEnd(startMillis: Long): Long {
     val start = startMillis.toLocalDateTime()
