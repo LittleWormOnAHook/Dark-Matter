@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.InspectionFormState
+import com.expressmobileservice.inspection.InspectionStore
 
 enum class ExpressTab {
     APPOINTMENTS,
@@ -28,10 +29,14 @@ enum class ExpressTab {
 @Composable
 fun HomeScreen(
     appointmentStore: AppointmentStore,
+    inspectionStore: InspectionStore,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(ExpressTab.APPOINTMENTS) }
+    var activeInspectionId by remember {
+        mutableStateOf(inspectionStore.mostRecent()?.id)
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -68,11 +73,17 @@ fun HomeScreen(
         when (selectedTab) {
             ExpressTab.APPOINTMENTS -> AppointmentsScreen(
                 store = appointmentStore,
+                inspectionStore = inspectionStore,
+                onInspectionLinked = { inspectionId ->
+                    activeInspectionId = inspectionId
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
             )
             ExpressTab.INSPECTION -> InspectionScreen(
+                inspectionStore = inspectionStore,
+                activeInspectionId = activeInspectionId,
                 onShareReport = onShareReport,
                 onShareError = onShareError,
                 modifier = Modifier

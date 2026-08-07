@@ -12,8 +12,8 @@ android {
         applicationId = "com.expressmobileservice.inspection"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "2.0.2"
+        versionCode = 5
+        versionName = "2.1.0"
     }
 
     compileOptions {
@@ -69,6 +69,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")

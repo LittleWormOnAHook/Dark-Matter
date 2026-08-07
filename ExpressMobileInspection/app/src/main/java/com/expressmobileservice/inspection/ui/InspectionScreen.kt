@@ -44,8 +44,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -69,6 +72,9 @@ import com.expressmobileservice.inspection.InspectionItem
 import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
 import com.expressmobileservice.inspection.defaultInspectionSections
+import com.expressmobileservice.inspection.InspectionStore
+import com.expressmobileservice.inspection.toSavedInspection
+import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
 
 enum class ReportShareType { PDF, IMAGE }
@@ -76,6 +82,8 @@ enum class ReportShareType { PDF, IMAGE }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionScreen(
+    inspectionStore: InspectionStore,
+    activeInspectionId: String?,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit = {},
     modifier: Modifier = Modifier
@@ -89,22 +97,66 @@ fun InspectionScreen(
     var isGenerating by remember { mutableStateOf(false) }
     var showUncheckedWarning by remember { mutableStateOf(false) }
     var pendingShareType by remember { mutableStateOf<ReportShareType?>(null) }
+    var loadedInspectionId by remember { mutableStateOf<String?>(null) }
+    var autoSaveHint by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(activeInspectionId) {
+        val saved = activeInspectionId?.let { inspectionStore.getById(it) }
+            ?: inspectionStore.mostRecent()
+        if (saved != null) {
+            val form = saved.toFormState()
+            customerName = form.customerInfo.customerName
+            customerPhone = form.customerInfo.customerPhone
+            vehicle = form.customerInfo.vehicle
+            mileage = form.customerInfo.mileage
+            generalNotes = form.generalNotes
+            sections = form.sections
+            loadedInspectionId = saved.id
+            autoSaveHint = "Inspection loaded · auto-saved"
+        }
+    }
+
+    val persistId = activeInspectionId ?: loadedInspectionId
+    val currentStateProvider = rememberUpdatedState {
+        InspectionFormState(
+            customerInfo = CustomerInfo(
+                customerName = customerName,
+                customerPhone = customerPhone,
+                vehicle = vehicle,
+                mileage = mileage
+            ),
+            sections = sections,
+            generalNotes = generalNotes
+        )
+    }
+
+    LaunchedEffect(
+        customerName,
+        customerPhone,
+        vehicle,
+        mileage,
+        generalNotes,
+        sections,
+        persistId
+    ) {
+        val id = persistId ?: return@LaunchedEffect
+        delay(400)
+        val saved = inspectionStore.getById(id)
+        inspectionStore.save(
+            currentStateProvider.value().toSavedInspection(
+                id = id,
+                appointmentId = saved?.appointmentId
+            )
+        )
+        autoSaveHint = "Saved automatically"
+    }
 
     val allItems = sections.flatMap { it.items }
     val checkedCount = allItems.count { it.status != InspectionStatus.NONE }
     val totalCount = allItems.size
     val progress = if (totalCount == 0) 0f else checkedCount.toFloat() / totalCount
 
-    fun currentState() = InspectionFormState(
-        customerInfo = CustomerInfo(
-            customerName = customerName,
-            customerPhone = customerPhone,
-            vehicle = vehicle,
-            mileage = mileage
-        ),
-        sections = sections,
-        generalNotes = generalNotes
-    )
+    fun currentState() = currentStateProvider.value()
 
     fun share(type: ReportShareType) {
         if (customerName.isBlank()) {
@@ -289,11 +341,20 @@ fun InspectionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Text(
-                    text = "Tap Good, Bad, or Replace. Add notes if needed.",
-                    modifier = Modifier.padding(14.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "Tap Good, Bad, or Replace. Add notes if needed.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    autoSaveHint?.let { hint ->
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {

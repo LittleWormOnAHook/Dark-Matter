@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
 import com.expressmobileservice.inspection.AppointmentStore
+import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.CalendarViewMode
 import com.expressmobileservice.inspection.appointmentsForDay
 import com.expressmobileservice.inspection.appointmentsForWeek
@@ -79,6 +80,8 @@ import java.time.YearMonth
 @Composable
 fun AppointmentsScreen(
     store: AppointmentStore,
+    inspectionStore: InspectionStore,
+    onInspectionLinked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -122,7 +125,12 @@ fun AppointmentsScreen(
             },
             onSave = { appointment ->
                 store.save(appointment)
+                val inspection = inspectionStore.saveFromAppointment(appointment)
+                if (appointment.inspectionId != inspection.id) {
+                    store.save(appointment.copy(inspectionId = inspection.id))
+                }
                 refresh()
+                onInspectionLinked(inspection.id)
                 showEditor = false
                 editingAppointment = null
                 editorQuickNotes = null

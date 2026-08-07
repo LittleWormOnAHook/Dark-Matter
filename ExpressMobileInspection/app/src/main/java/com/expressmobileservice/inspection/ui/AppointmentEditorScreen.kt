@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
@@ -71,6 +72,7 @@ import com.expressmobileservice.inspection.defaultAppointmentStart
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatTime
 import com.expressmobileservice.inspection.syncEndAfterStartChange
+import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.toEpochMillisAtStartOfDay
 import com.expressmobileservice.inspection.toLocalDate
 import com.expressmobileservice.inspection.toLocalDateTime
@@ -117,6 +119,18 @@ fun AppointmentEditorScreen(
         mutableStateOf(initial?.jobNotes ?: prefilledJobNotes.orEmpty())
     }
     var address by remember { mutableStateOf(initial?.address.orEmpty()) }
+    var vehicleCategory by remember {
+        mutableStateOf(
+            runCatching {
+                VehicleCategory.valueOf(initial?.vehicleCategory ?: VehicleCategory.CAR_TRUCK.name)
+            }.getOrDefault(VehicleCategory.CAR_TRUCK)
+        )
+    }
+    var vehicleYear by remember { mutableStateOf(initial?.vehicleYear) }
+    var vehicleMake by remember { mutableStateOf(initial?.vehicleMake.orEmpty()) }
+    var vehicleModel by remember { mutableStateOf(initial?.vehicleModel.orEmpty()) }
+    var engineSize by remember { mutableStateOf(initial?.engineSize.orEmpty()) }
+    var mileage by remember { mutableStateOf(initial?.mileage.orEmpty()) }
     var allDay by remember { mutableStateOf(initial?.allDay ?: false) }
     var startMillis by remember { mutableStateOf(defaultStart) }
     var endMillis by remember { mutableStateOf(defaultEnd) }
@@ -148,6 +162,8 @@ fun AppointmentEditorScreen(
             return
         }
         validationError = null
+        val inspectionId = initial?.inspectionId?.takeIf { it.isNotBlank() }
+            ?: java.util.UUID.randomUUID().toString()
         onSave(
             Appointment(
                 id = initial?.id ?: java.util.UUID.randomUUID().toString(),
@@ -155,6 +171,13 @@ fun AppointmentEditorScreen(
                 customerPhone = customerPhone.trim(),
                 jobNotes = resolvedJob,
                 address = address.trim(),
+                vehicleCategory = vehicleCategory.name,
+                vehicleYear = vehicleYear,
+                vehicleMake = vehicleMake.trim(),
+                vehicleModel = vehicleModel.trim(),
+                engineSize = engineSize.trim(),
+                mileage = mileage.trim(),
+                inspectionId = inspectionId,
                 startEpochMillis = if (allDay) {
                     startMillis.toLocalDate().toEpochMillisAtStartOfDay()
                 } else startMillis,
@@ -403,7 +426,27 @@ fun AppointmentEditorScreen(
                     onJobNotesChange = {
                         jobNotes = it
                         if (title.isBlank() || title == jobNotes) title = it
-                    }
+                    },
+                    vehicleCategory = vehicleCategory,
+                    onVehicleCategoryChange = {
+                        vehicleCategory = it
+                        vehicleMake = ""
+                        vehicleModel = ""
+                        engineSize = ""
+                    },
+                    vehicleYear = vehicleYear,
+                    onVehicleYearChange = {
+                        vehicleYear = it
+                        vehicleModel = ""
+                    },
+                    vehicleMake = vehicleMake,
+                    onVehicleMakeChange = { vehicleMake = it },
+                    vehicleModel = vehicleModel,
+                    onVehicleModelChange = { vehicleModel = it },
+                    engineSize = engineSize,
+                    onEngineSizeChange = { engineSize = it },
+                    mileage = mileage,
+                    onMileageChange = { mileage = it }
                 )
             }
 
@@ -517,7 +560,19 @@ private fun CustomerStepContent(
     address: String,
     onAddressChange: (String) -> Unit,
     jobNotes: String,
-    onJobNotesChange: (String) -> Unit
+    onJobNotesChange: (String) -> Unit,
+    vehicleCategory: VehicleCategory,
+    onVehicleCategoryChange: (VehicleCategory) -> Unit,
+    vehicleYear: Int?,
+    onVehicleYearChange: (Int?) -> Unit,
+    vehicleMake: String,
+    onVehicleMakeChange: (String) -> Unit,
+    vehicleModel: String,
+    onVehicleModelChange: (String) -> Unit,
+    engineSize: String,
+    onEngineSizeChange: (String) -> Unit,
+    mileage: String,
+    onMileageChange: (String) -> Unit
 ) {
     HorizontalDivider(
         color = SamsungCalendarColors.divider,
@@ -584,6 +639,34 @@ private fun CustomerStepContent(
             colors = samsungFieldColors()
         )
     }
+
+    SamsungDetailRow(
+        icon = { Icon(Icons.Default.DirectionsCar, null, tint = SamsungCalendarColors.green) },
+        label = "Vehicle"
+    ) {
+        VehicleDropdownFields(
+            vehicleCategory = vehicleCategory,
+            onCategoryChange = onVehicleCategoryChange,
+            vehicleYear = vehicleYear,
+            onYearChange = onVehicleYearChange,
+            vehicleMake = vehicleMake,
+            onMakeChange = onVehicleMakeChange,
+            vehicleModel = vehicleModel,
+            onModelChange = onVehicleModelChange,
+            engineSize = engineSize,
+            onEngineSizeChange = onEngineSizeChange,
+            mileage = mileage,
+            onMileageChange = onMileageChange,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
+    Text(
+        text = "Saving creates an inspection file automatically from this customer info.",
+        color = SamsungCalendarColors.green,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+    )
 }
 
 @Composable

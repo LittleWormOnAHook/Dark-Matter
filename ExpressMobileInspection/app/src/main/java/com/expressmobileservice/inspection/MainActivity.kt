@@ -18,10 +18,12 @@ import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
 class MainActivity : ComponentActivity() {
 
     private lateinit var appointmentStore: AppointmentStore
+    private lateinit var inspectionStore: InspectionStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appointmentStore = AppointmentStore(this)
+        inspectionStore = InspectionStore(this)
         enableEdgeToEdge()
         setContent {
             ExpressMobileInspectionTheme {
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     HomeScreen(
                         appointmentStore = appointmentStore,
+                        inspectionStore = inspectionStore,
                         onShareReport = { state, type, onComplete ->
                             shareReport(state, type, onComplete)
                         },
