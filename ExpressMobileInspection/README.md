@@ -8,8 +8,8 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 - Simple customer fields: Name, Phone, Vehicle, Mileage
 - **19 essential inspection items** in 4 sections
 - Per line: tap **Good / Bad / Replace** and optional notes
-- **Send PDF Report** — formatted document for email
-- **Send Image Report** — JPEG snapshot for text messaging
+- Progress bar shows how many items are checked
+- **Complete & Send Report** — generates a PDF or image and opens your share sheet (email, text, etc.)
 - **Clear Form** resets everything
 
 ## Professional report includes
@@ -50,7 +50,7 @@ APK path: `app/build/outputs/apk/debug/app-debug.apk`
 1. Enter customer name, phone, vehicle, and mileage.
 2. Tap **Good**, **Bad**, or **Replace** on each inspection line.
 3. Add optional notes on any item.
-4. Tap **Send PDF Report** for email, or **Send Image Report** for text.
+4. Tap **Complete & Send Report**, then choose **PDF (email)** or **Image (text)**.
 5. Pick your messaging or email app and send to the customer.
 
 ## Requirements

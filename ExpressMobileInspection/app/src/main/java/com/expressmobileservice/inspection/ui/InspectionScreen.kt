@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,11 +33,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -70,7 +73,8 @@ enum class ReportShareType { PDF, IMAGE }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionScreen(
-    onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit
+    onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
+    onShareError: (String) -> Unit = {}
 ) {
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
@@ -78,6 +82,14 @@ fun InspectionScreen(
     var mileage by rememberSaveable { mutableStateOf("") }
     var sections by remember { mutableStateOf(defaultInspectionSections()) }
     var isGenerating by remember { mutableStateOf(false) }
+    var showCompleteDialog by remember { mutableStateOf(false) }
+    var showUncheckedWarning by remember { mutableStateOf(false) }
+    var pendingShareType by remember { mutableStateOf<ReportShareType?>(null) }
+
+    val allItems = sections.flatMap { it.items }
+    val checkedCount = allItems.count { it.status != InspectionStatus.NONE }
+    val totalCount = allItems.size
+    val progress = if (totalCount == 0) 0f else checkedCount.toFloat() / totalCount
 
     fun currentState() = InspectionFormState(
         customerInfo = CustomerInfo(
@@ -90,8 +102,105 @@ fun InspectionScreen(
     )
 
     fun share(type: ReportShareType) {
+        if (customerName.isBlank()) {
+            onShareError("Enter the customer name before sending the report.")
+            return
+        }
         isGenerating = true
-        onShareReport(currentState(), type) { isGenerating = false }
+        onShareReport(currentState(), type) { success ->
+            isGenerating = false
+            if (!success) {
+                onShareError("Could not create report. Please try again.")
+            }
+        }
+    }
+
+    fun beginComplete(type: ReportShareType) {
+        if (customerName.isBlank()) {
+            onShareError("Enter the customer name before sending the report.")
+            return
+        }
+        val unchecked = allItems.count { it.status == InspectionStatus.NONE }
+        if (unchecked > 0) {
+            pendingShareType = type
+            showUncheckedWarning = true
+            return
+        }
+        share(type)
+    }
+
+    if (showCompleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showCompleteDialog = false },
+            title = { Text("Send inspection report") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Choose how to send the completed inspection to the customer.")
+                    Button(
+                        onClick = {
+                            showCompleteDialog = false
+                            beginComplete(ReportShareType.PDF)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("PDF (email)")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showCompleteDialog = false
+                            beginComplete(ReportShareType.IMAGE)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Image (text)")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCompleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showUncheckedWarning) {
+        val unchecked = allItems.count { it.status == InspectionStatus.NONE }
+        AlertDialog(
+            onDismissRequest = {
+                showUncheckedWarning = false
+                pendingShareType = null
+            },
+            title = { Text("Items not checked") },
+            text = {
+                Text("$unchecked inspection item${if (unchecked == 1) "" else "s"} still not marked. Send the report anyway?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showUncheckedWarning = false
+                        pendingShareType?.let { share(it) }
+                        pendingShareType = null
+                    }
+                ) {
+                    Text("Send anyway")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUncheckedWarning = false
+                        pendingShareType = null
+                    }
+                ) {
+                    Text("Go back")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -139,25 +248,27 @@ fun InspectionScreen(
                         Text("Creating report…")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
+                } else {
+                    Text(
+                        text = "$checkedCount of $totalCount items checked",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
                 }
                 Button(
-                    onClick = { share(ReportShareType.PDF) },
+                    onClick = { showCompleteDialog = true },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                    Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send PDF Report")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { share(ReportShareType.IMAGE) },
-                    enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Image, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send Image Report")
+                    Text("Complete & Send Report")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(

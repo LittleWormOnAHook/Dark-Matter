@@ -2,6 +2,7 @@ package com.expressmobileservice.inspection
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +29,9 @@ class MainActivity : ComponentActivity() {
                     InspectionScreen(
                         onShareReport = { state, type, onComplete ->
                             shareReport(state, type, onComplete)
+                        },
+                        onShareError = { message ->
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
                         }
                     )
                 }
@@ -71,7 +75,14 @@ class MainActivity : ComponentActivity() {
                     onComplete(true)
                 }
             } catch (e: Exception) {
-                runOnUiThread { onComplete(false) }
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Could not create report. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onComplete(false)
+                }
             }
         }.start()
     }
