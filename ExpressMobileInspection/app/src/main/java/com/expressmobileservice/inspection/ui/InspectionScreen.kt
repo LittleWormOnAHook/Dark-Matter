@@ -80,13 +80,15 @@ import com.expressmobileservice.inspection.InspectionItem
 import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
 import com.expressmobileservice.inspection.defaultInspectionSections
-import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import com.expressmobileservice.inspection.ui.theme.inspectionStatusColors
 
 enum class ReportShareType { PDF, IMAGE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionScreen(
+    darkTheme: Boolean,
+    onDarkThemeChange: (Boolean) -> Unit,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit = {},
     onRegisterStateProvider: ((() -> InspectionFormState) -> Unit)? = null
@@ -244,7 +246,13 @@ fun InspectionScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White
-                )
+                ),
+                actions = {
+                    ThemeModeSlider(
+                        darkTheme = darkTheme,
+                        onDarkThemeChange = onDarkThemeChange
+                    )
+                }
             )
         },
         bottomBar = {
@@ -456,19 +464,20 @@ private fun CompactItemRow(
     onStatusChange: (InspectionStatus) -> Unit,
     onNotesChange: (String) -> Unit
 ) {
+    val statusColors = inspectionStatusColors()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(text = item.label, fontWeight = FontWeight.Medium, fontSize = 15.sp)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            StatusChip("Good", item.status == InspectionStatus.GOOD, InspectionColors.good, InspectionColors.goodContainer) {
+            StatusChip("Good", item.status == InspectionStatus.GOOD, statusColors.good, statusColors.goodContainer) {
                 onStatusChange(if (item.status == InspectionStatus.GOOD) InspectionStatus.NONE else InspectionStatus.GOOD)
             }
-            StatusChip("Bad", item.status == InspectionStatus.BAD, InspectionColors.bad, InspectionColors.badContainer) {
+            StatusChip("Bad", item.status == InspectionStatus.BAD, statusColors.bad, statusColors.badContainer) {
                 onStatusChange(if (item.status == InspectionStatus.BAD) InspectionStatus.NONE else InspectionStatus.BAD)
             }
-            StatusChip("Replace", item.status == InspectionStatus.REPLACE, InspectionColors.replace, InspectionColors.replaceContainer) {
+            StatusChip("Replace", item.status == InspectionStatus.REPLACE, statusColors.replace, statusColors.replaceContainer) {
                 onStatusChange(if (item.status == InspectionStatus.REPLACE) InspectionStatus.NONE else InspectionStatus.REPLACE)
             }
         }

@@ -10,8 +10,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
 import com.expressmobileservice.inspection.ui.InspectionScreen
 import com.expressmobileservice.inspection.ui.ReportShareType
 import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
@@ -25,13 +30,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val themePreferences = ThemePreferences(this)
         setContent {
-            ExpressMobileInspectionTheme {
+            var darkTheme by remember { mutableStateOf(themePreferences.isDarkMode()) }
+
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = !darkTheme
+            }
+
+            ExpressMobileInspectionTheme(darkTheme = darkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     InspectionScreen(
+                        darkTheme = darkTheme,
+                        onDarkThemeChange = { enabled ->
+                            darkTheme = enabled
+                            themePreferences.setDarkMode(enabled)
+                            WindowCompat.getInsetsController(window, window.decorView).apply {
+                                isAppearanceLightStatusBars = !enabled
+                            }
+                        },
                         onShareReport = { state, type, onComplete ->
                             shareReport(state, type, onComplete)
                         },
