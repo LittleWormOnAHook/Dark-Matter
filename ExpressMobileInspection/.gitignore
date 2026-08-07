@@ -8,6 +8,7 @@
 .externalNativeBuild
 .cxx
 *.apk
+!releases/*.apk
 *.ap_
 *.aab
 output.json
