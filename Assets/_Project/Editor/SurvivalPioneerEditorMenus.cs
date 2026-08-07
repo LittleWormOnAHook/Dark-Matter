@@ -68,6 +68,9 @@ namespace Project.EditorTools
         public const string CombatAnimations = Combat + "Animations/";
         public const string RebuildEnemyControllerFromShooterMelee = CombatAnimations + "Rebuild Selected Controller from ShooterMelee Base";
         public const string RepairAllHumanoidCombatPrefabs = Combat + "Repair All Humanoid Combat Prefabs";
+        public const string AuditAndroidEnemyChecklist = Combat + "Audit Android Enemy Checklist";
+        public const string AuditSelectedAndroidEnemyChecklist = Combat + "Audit Selected Android Enemy Checklist";
+        public const string RepairSelectedAndroidEnemyChecklist = Combat + "Repair Selected Android Enemy Checklist";
         public const string AddWeaponHitboxToSelectedPrefab = Combat + "Add Weapon Hitbox To Selected Prefab";
         public const string RefreshAllWeaponHitboxes = Combat + "Refresh All Weapon Hitboxes";
         public const string Equipment = Root + "Equipment/";
