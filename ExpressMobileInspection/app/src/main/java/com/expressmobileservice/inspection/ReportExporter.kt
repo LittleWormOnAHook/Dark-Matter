@@ -15,6 +15,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class FooterLinkIcons(
+    val website: Bitmap?,
+    val phone: Bitmap?,
+    val google: Bitmap?
+)
+
 object ReportExporter {
 
     private const val PAGE_WIDTH = 612
@@ -24,7 +30,8 @@ object ReportExporter {
     fun exportPdf(context: Context, state: InspectionFormState): File {
         PdfLinkAnnotator.init(context)
         val logo = loadLogoBitmap(context, (PAGE_WIDTH * 0.11f).toInt())
-        val renderer = ReportRenderer(PAGE_WIDTH, logo, collectLinks = true)
+        val footerIcons = loadFooterIcons(context, PAGE_WIDTH)
+        val renderer = ReportRenderer(PAGE_WIDTH, logo, footerIcons, collectLinks = true)
         val pages = renderer.buildPages(state, PAGE_HEIGHT)
         val pdf = PdfDocument()
 
@@ -44,7 +51,8 @@ object ReportExporter {
 
     fun exportImage(context: Context, state: InspectionFormState): File {
         val logo = loadLogoBitmap(context, (IMAGE_WIDTH * 0.11f).toInt())
-        val renderer = ReportRenderer(IMAGE_WIDTH, logo)
+        val footerIcons = loadFooterIcons(context, IMAGE_WIDTH)
+        val renderer = ReportRenderer(IMAGE_WIDTH, logo, footerIcons)
         val height = renderer.measureTotalHeight(state)
         val bitmap = Bitmap.createBitmap(IMAGE_WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -67,8 +75,21 @@ object ReportExporter {
     }
 
     private fun loadLogoBitmap(context: Context, sizePx: Int): Bitmap {
-        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_company_logo)
-            ?: return Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        return loadDrawableBitmap(context, R.drawable.ic_company_logo, sizePx)
+            ?: Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    }
+
+    private fun loadFooterIcons(context: Context, pageWidth: Int): FooterLinkIcons {
+        val iconSize = (pageWidth * 0.048f * 0.92f).toInt().coerceAtLeast(12)
+        return FooterLinkIcons(
+            website = loadDrawableBitmap(context, R.drawable.ic_link_globe, iconSize),
+            phone = loadDrawableBitmap(context, R.drawable.ic_link_phone, iconSize),
+            google = loadDrawableBitmap(context, R.drawable.ic_link_google, iconSize)
+        )
+    }
+
+    private fun loadDrawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap? {
+        val drawable = ContextCompat.getDrawable(context, resId) ?: return null
         val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, sizePx, sizePx)
@@ -80,6 +101,7 @@ object ReportExporter {
 internal class ReportRenderer(
     private val pageWidth: Int,
     private val logoBitmap: Bitmap? = null,
+    private val footerIcons: FooterLinkIcons? = null,
     private val collectLinks: Boolean = false
 ) {
     val linkAnnotations = mutableListOf<ReportLink>()
@@ -129,7 +151,7 @@ internal class ReportRenderer(
     }
     private val linkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = COLOR_LINK
-        textSize = pageWidth * 0.024f
+        textSize = pageWidth * 0.048f
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
     private val headerLinkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -281,11 +303,12 @@ internal class ReportRenderer(
     private fun tableHeaderHeight() = (pageWidth * 0.065f).toInt()
     private fun sectionHeaderHeight() = (pageWidth * 0.055f).toInt()
     private fun footerHeight(state: InspectionFormState): Int {
-        val lineHeight = (pageWidth * 0.035f).toInt()
         val linkLines = 3
-        val base = (pageWidth * 0.12f).toInt() + linkLines * lineHeight
+        val base = (pageWidth * 0.12f).toInt() + linkLines * footerLinkRowHeight()
         return base + generalNotesHeight(state.generalNotes)
     }
+
+    private fun footerLinkRowHeight(): Int = (pageWidth * 0.07f).toInt()
 
     private fun generalNotesHeight(notes: String): Int {
         if (notes.isBlank()) return 0
@@ -505,7 +528,8 @@ internal class ReportRenderer(
             y,
             "Website: ",
             COMPANY_WEBSITE_DISPLAY,
-            COMPANY_WEBSITE
+            COMPANY_WEBSITE,
+            footerIcons?.website
         )
         y = drawFooterLinkRow(
             canvas,
@@ -513,7 +537,8 @@ internal class ReportRenderer(
             y,
             "Call: ",
             COMPANY_PHONE_DISPLAY,
-            COMPANY_PHONE_URI
+            COMPANY_PHONE_URI,
+            footerIcons?.phone
         )
         drawFooterLinkRow(
             canvas,
@@ -521,7 +546,8 @@ internal class ReportRenderer(
             y,
             "Google review: ",
             "Leave a review on Google Maps",
-            COMPANY_GOOGLE_REVIEW_URL
+            COMPANY_GOOGLE_REVIEW_URL,
+            footerIcons?.google
         )
     }
 
@@ -531,25 +557,43 @@ internal class ReportRenderer(
         y: Int,
         prefix: String,
         linkLabel: String,
-        url: String
+        url: String,
+        iconBitmap: Bitmap?
     ): Int {
+        val rowHeight = footerLinkRowHeight()
+        val textY = y + rowHeight * 0.72f
         val x = margin.toFloat()
-        val textY = y.toFloat()
+
         canvas.drawText(prefix, x, textY, footerPaint)
-        val prefixWidth = footerPaint.measureText(prefix)
-        val linkX = x + prefixWidth
+        var linkX = x + footerPaint.measureText(prefix)
+
+        val iconSize = (linkPaint.textSize * 0.92f)
+        val iconGap = linkPaint.textSize * 0.2f
+        val linkStartX = linkX
+
+        if (iconBitmap != null) {
+            val iconTop = textY - iconSize * 0.82f
+            canvas.drawBitmap(
+                iconBitmap,
+                null,
+                RectF(linkX, iconTop, linkX + iconSize, iconTop + iconSize),
+                null
+            )
+            linkX += iconSize + iconGap
+        }
+
         canvas.drawText(linkLabel, linkX, textY, linkPaint)
         val linkWidth = linkPaint.measureText(linkLabel)
         drawLinkUnderline(canvas, linkX, textY, linkWidth, linkPaint)
         recordLink(
             pageIndex = pageIndex,
             url = url,
-            left = linkX,
-            top = textY - linkPaint.textSize * 0.85f,
+            left = linkStartX,
+            top = textY - linkPaint.textSize * 0.9f,
             right = linkX + linkWidth,
-            bottom = textY + linkPaint.textSize * 0.2f
+            bottom = textY + linkPaint.textSize * 0.25f
         )
-        return y + (pageWidth * 0.035f).toInt()
+        return y + rowHeight
     }
 
     private fun drawLinkUnderline(canvas: Canvas, x: Float, textY: Float, width: Float, paint: Paint) {

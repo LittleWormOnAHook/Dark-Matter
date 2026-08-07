@@ -25,7 +25,7 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 
 ## Install on your phone
 
-### Quick download (APK) — v1.4 (bold clickable links in PDF reports)
+### Quick download (APK) — v1.5 (larger footer links with icons)
 
 **[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-inspection-pdf-fix-c854/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 
