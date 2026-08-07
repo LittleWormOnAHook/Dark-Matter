@@ -26,7 +26,9 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 
 ### Quick download (APK)
 
-**[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-mobile-inspection-bdd8/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+**[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/complete-inspection-report-fe85/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+
+Direct link: `https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/complete-inspection-report-fe85/ExpressMobileInspection/releases/ExpressMobileInspection.apk`
 
 1. Open the link on your Android phone.
 2. Allow the download.
@@ -52,7 +54,7 @@ APK path: `app/build/outputs/apk/debug/app-debug.apk`
 1. Enter customer name, phone, vehicle, and mileage.
 2. Tap **Good**, **Bad**, or **Replace** on each inspection line.
 3. Add optional notes on any item.
-4. Tap **Complete & Send Report**, then choose **PDF (email)** or **Image (text)**.
+4. Tap **Send as PDF** or **Send as Image (JPEG)**.
 5. Pick your messaging or email app and send to the customer.
 
 ## Requirements
