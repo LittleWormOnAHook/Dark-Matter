@@ -9,6 +9,8 @@
 .cxx
 *.apk
 !releases/*.apk
+keystore/*.keystore
+!keystore/express-release.keystore
 *.ap_
 *.aab
 output.json

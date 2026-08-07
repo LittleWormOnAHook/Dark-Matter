@@ -41,7 +41,7 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Quick download (APK v2.0 — calendar + inspection)
+### Quick download (APK v2.0.1 — signed, calendar + inspection)
 
 **[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-appointments-4704/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 
@@ -53,10 +53,19 @@ https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-app
 
 1. Open the link on your Android phone.
 2. Allow the download.
-3. Open the file and tap **Install**.
-4. If Android blocks it, allow **Install unknown apps** for your browser or Files app.
+3. **Uninstall any older Express Mobile Inspection app first** (Settings → Apps) if install fails.
+4. Open the downloaded file and tap **Install**.
+5. If Android blocks it, allow **Install unknown apps** for your browser or Files app.
+6. If Play Protect warns, tap **Install anyway** (this is a sideloaded business app, not from Play Store).
 
-> **Note:** This is a release build for sideloading. For Play Store distribution you would need a signed release keystore.
+### Install troubleshooting
+
+| Problem | Fix |
+|--------|-----|
+| **App not installed** | Uninstall the old version, then try again |
+| **Can't open file** | Use Chrome or Files app; re-download (v2.0.1 is signed) |
+| **Play Protect blocked** | Tap **More details** → **Install anyway** |
+| **Download won't start** | Copy the direct link into Chrome on your phone |
 
 ### Android Studio
 
