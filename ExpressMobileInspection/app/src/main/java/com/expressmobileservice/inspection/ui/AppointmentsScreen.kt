@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,10 +47,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -283,8 +287,7 @@ fun AppointmentsScreen(
                         yearMonth = displayedMonth,
                         selectedDate = selectedDate,
                         appointments = filteredAppointments,
-                        onPreviousMonth = { displayedMonth = displayedMonth.minusMonths(1) },
-                        onNextMonth = { displayedMonth = displayedMonth.plusMonths(1) },
+                        onMonthChange = { displayedMonth = it },
                         onDateSelected = { date ->
                             selectedDate = date
                             displayedMonth = YearMonth.from(date)
@@ -498,21 +501,94 @@ private fun DayHeaderNav(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MonthCalendarGrid(
     yearMonth: YearMonth,
     selectedDate: LocalDate,
     appointments: List<Appointment>,
-    onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit,
+    onMonthChange: (YearMonth) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
+) {
+    val monthAnchor = remember { YearMonth.now() }
+    val centerPage = 1_200
+    val pageCount = centerPage * 2 + 1
+    val pagerState = rememberPagerState(
+        initialPage = centerPage + monthsBetween(monthAnchor, yearMonth),
+        pageCount = { pageCount }
+    )
+
+    fun pageToMonth(page: Int): YearMonth = monthAnchor.plusMonths((page - centerPage).toLong())
+
+    LaunchedEffect(yearMonth) {
+        val targetPage = centerPage + monthsBetween(monthAnchor, yearMonth)
+        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
+            pagerState.scrollToPage(targetPage)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .collect { page ->
+                val month = pageToMonth(page)
+                if (month != yearMonth) onMonthChange(month)
+            }
+    }
+
+    Column(modifier = modifier.padding(horizontal = 8.dp)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            MonthCalendarPage(
+                yearMonth = pageToMonth(page),
+                selectedDate = selectedDate,
+                appointments = appointments,
+                onDateSelected = onDateSelected
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(
+                onClick = { onMonthChange(yearMonth.minusMonths(1)) },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous month",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(
+                onClick = { onMonthChange(yearMonth.plusMonths(1)) },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Next month",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthCalendarPage(
+    yearMonth: YearMonth,
+    selectedDate: LocalDate,
+    appointments: List<Appointment>,
+    onDateSelected: (LocalDate) -> Unit
 ) {
     val today = LocalDate.now()
     val days = remember(yearMonth) { daysInMonthGrid(yearMonth) }
     val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
 
-    Column(modifier = modifier.padding(horizontal = 8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -552,28 +628,11 @@ private fun MonthCalendarGrid(
                 }
             }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = onPreviousMonth, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous month",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onNextMonth, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next month",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
     }
 }
+
+private fun monthsBetween(start: YearMonth, end: YearMonth): Int =
+    (end.year - start.year) * 12 + (end.monthValue - start.monthValue)
 
 @Composable
 private fun SamsungDayCell(

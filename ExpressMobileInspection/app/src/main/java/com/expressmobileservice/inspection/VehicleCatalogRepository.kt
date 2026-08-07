@@ -21,11 +21,15 @@ class VehicleCatalogRepository(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
 
+    init {
+        clearLegacyCache()
+    }
+
     suspend fun getMakes(category: VehicleCategory): List<String> = withContext(Dispatchers.IO) {
         if (category == VehicleCategory.JET_SKI) {
             return@withContext PwcVehicleCatalog.makes
         }
-        val cacheKey = "makes_v2_${category.name}"
+        val cacheKey = "makes_v3_${category.name}"
         readCache(cacheKey)?.let { return@withContext it }
         val merged = linkedSetOf<String>()
         category.nhtsaTypes.forEach { type ->
@@ -50,14 +54,36 @@ class VehicleCatalogRepository(context: Context) {
             return@withContext PwcVehicleCatalog.modelsForMake(make)
         }
 
-        val cacheKey = "models_v2_${category.name}_${make}_${year ?: "all"}"
+        val cacheKey = "models_v3_${category.name}_${make}_${year ?: "all"}"
         readCache(cacheKey)?.let { return@withContext it }
 
         val merged = linkedSetOf<String>()
+        val encodedMake = URLEncoder.encode(make, "UTF-8")
+
         if (year != null) {
+            category.nhtsaTypes.forEach { type ->
+                val encodedType = URLEncoder.encode(type, "UTF-8")
+                val url =
+                    "$BASE/GetModelsForMakeYear/make/$encodedMake/modelyear/$year/vehicletype/$encodedType?format=json"
+                fetchModelNames(url)?.let { merged.addAll(it) }
+            }
             fetchModelsForMakeYear(make, year)?.let { merged.addAll(it) }
         }
+
         if (merged.isEmpty()) {
+            category.nhtsaTypes.forEach { type ->
+                val encodedType = URLEncoder.encode(type, "UTF-8")
+                val recentYears = listOf(
+                    VehicleCategory.yearRange.last,
+                    VehicleCategory.yearRange.last - 1,
+                    VehicleCategory.yearRange.last - 2
+                )
+                recentYears.forEach { recentYear ->
+                    val url =
+                        "$BASE/GetModelsForMakeYear/make/$encodedMake/modelyear/$recentYear/vehicletype/$encodedType?format=json"
+                    fetchModelNames(url)?.let { merged.addAll(it) }
+                }
+            }
             fetchModelsForMake(make)?.let { merged.addAll(it) }
         }
 
@@ -69,17 +95,16 @@ class VehicleCatalogRepository(context: Context) {
     private fun fetchModelsForMakeYear(make: String, year: Int): List<String>? {
         val encodedMake = URLEncoder.encode(make, "UTF-8")
         val url = "$BASE/GetModelsForMakeYear/make/$encodedMake/modelyear/$year?format=json"
-        val models = fetchNhtsa(url)?.results
-            ?.mapNotNull { it.modelName }
-            ?.map(::formatVehicleLabel)
-            ?.filter { it.isNotBlank() }
-            ?: return null
-        return models.distinct().sorted().takeIf { it.isNotEmpty() }
+        return fetchModelNames(url)
     }
 
     private fun fetchModelsForMake(make: String): List<String>? {
         val encodedMake = URLEncoder.encode(make, "UTF-8")
         val url = "$BASE/GetModelsForMake/$encodedMake?format=json"
+        return fetchModelNames(url)
+    }
+
+    private fun fetchModelNames(url: String): List<String>? {
         val models = fetchNhtsa(url)?.results
             ?.mapNotNull { it.modelName }
             ?.map(::formatVehicleLabel)
@@ -100,14 +125,26 @@ class VehicleCatalogRepository(context: Context) {
         VehicleCategory.JET_SKI -> PwcVehicleCatalog.makes
     }
 
+    private fun clearLegacyCache() {
+        val legacyPrefixes = listOf("makes_v2_", "models_v2_")
+        prefs.edit().apply {
+            prefs.all.keys.forEach { key ->
+                if (legacyPrefixes.any { key.startsWith(it) }) remove(key)
+            }
+        }.apply()
+    }
+
     private fun readCache(key: String): List<String>? {
         val raw = prefs.getString(key, null) ?: return null
-        return runCatching {
+        val cached = runCatching {
             json.decodeFromString(ListSerializer(String.serializer()), raw)
-        }.getOrNull()
+        }.getOrNull() ?: return null
+        if (cached.size == 1 && cached.single() == "Other") return null
+        return cached
     }
 
     private fun writeCache(key: String, values: List<String>) {
+        if (values.isEmpty() || (values.size == 1 && values.single() == "Other")) return
         prefs.edit().putString(key, json.encodeToString(ListSerializer(String.serializer()), values)).apply()
     }
 
@@ -126,7 +163,7 @@ class VehicleCatalogRepository(context: Context) {
 
     @Serializable
     private data class NhtsaResponse(
-        val results: List<NhtsaResult>? = null
+        @SerialName("Results") val results: List<NhtsaResult>? = null
     )
 
     @Serializable

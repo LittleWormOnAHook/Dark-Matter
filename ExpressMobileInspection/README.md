@@ -9,7 +9,7 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 ### Appointments (Samsung-style calendar)
 
 - **Day / Week / Month** — open the **☰ menu** (top left), like Samsung Calendar
-- Month grid with **week numbers**, **green event lines** per appointment, and **today** box (top right)
+- Month grid with **swipe left/right** between months, **green event lines** per appointment, and **today** box (top right)
 - **Customer info** step: dropdowns for **year, make, model, engine size** (1970–2026)
   - **Car / Truck** and **Motorcycle** data from **NHTSA** (US government database)
   - **Jet Ski / PWC** from built-in US watercraft catalog
@@ -43,9 +43,9 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Quick download (APK v2.1.8 — signed, latest)
+### Quick download (APK v2.1.9 — signed, latest)
 
-**[Download ExpressMobileInspection.apk (v2.1.8)](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-appointments-4704/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
+**[Download ExpressMobileInspection.apk (v2.1.9)](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-calendar-appointments-4704/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 
 **Keep your data:** Install the new APK **over** the old app (do not uninstall first). Customer jobs and inspections auto-backup to Downloads and restore after reinstall when possible.
 
