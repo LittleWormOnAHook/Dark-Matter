@@ -1,10 +1,21 @@
-# Express Mobile Service — Vehicle Inspection App
+# Express Mobile Service — Appointments & Vehicle Inspection
 
 > **Branch:** `express-mobile-inspection` — this Android app lives on its own branch and is **not** part of the Dark Matter: Genesis Unity game on `main`. Do not merge into `main` unless you intentionally want both in the same tree.
 
-Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick vehicle inspection, mark each item **Good**, **Bad**, or **Replace**, add notes, and send a **professional PDF or image report** to the customer.
+Android app for **Express Mobile Service** (904-514-2885). Schedule customer jobs on a **day / week / month calendar**, then run vehicle inspections and send **PDF or image reports**.
 
 ## Features
+
+### Appointments (calendar)
+
+- **Day, Week, and Month** calendar views
+- Add appointments with **customer name**, **phone** (tap to dial any number), **job/notes**, and **address**
+- **Address opens Waze** on Android for navigation (falls back to maps if Waze is not installed)
+- Set **start/end date and time** with an all-day toggle (Samsung-style editor)
+- Colored event bars on the month grid; daily agenda list below
+- Appointments saved on device between sessions
+
+### Inspection
 
 - Company header with name and phone number
 - Simple customer fields: Name, Phone, Vehicle, Mileage
@@ -14,6 +25,10 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 - **Send as PDF** — formatted document for email
 - **Send as Image (JPEG)** — snapshot for text messaging
 - **Clear Form** resets everything
+
+### Home screen
+
+- Bottom tabs: **Appointments** | **Inspection**
 
 ## Professional report includes
 
@@ -53,11 +68,21 @@ APK path: `app/build/outputs/apk/debug/app-debug.apk`
 
 ## Usage
 
-1. Enter customer name, phone, vehicle, and mileage.
-2. Tap **Good**, **Bad**, or **Replace** on each inspection line.
-3. Add optional notes on any item.
-4. Tap **Send as PDF** or **Send as Image (JPEG)**.
-5. Pick your messaging or email app and send to the customer.
+### Appointments
+
+1. Open the **Appointments** tab (default).
+2. Switch **Day / Week / Month** at the top.
+3. Tap **+** to add a customer job with date, time, phone, and address.
+4. Tap a **phone number** to dial; tap an **address** to open **Waze**.
+
+### Inspection
+
+1. Open the **Inspection** tab.
+2. Enter customer name, phone, vehicle, and mileage.
+3. Tap **Good**, **Bad**, or **Replace** on each inspection line.
+4. Add optional notes on any item.
+5. Tap **Send as PDF** or **Send as Image (JPEG)**.
+6. Pick your messaging or email app and send to the customer.
 
 ## Requirements
 

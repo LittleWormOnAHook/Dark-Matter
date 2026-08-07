@@ -77,7 +77,8 @@ enum class ReportShareType { PDF, IMAGE }
 @Composable
 fun InspectionScreen(
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
-    onShareError: (String) -> Unit = {}
+    onShareError: (String) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
@@ -169,6 +170,7 @@ fun InspectionScreen(
     }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {

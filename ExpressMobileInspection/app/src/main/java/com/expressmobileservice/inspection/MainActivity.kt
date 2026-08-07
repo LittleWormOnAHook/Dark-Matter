@@ -11,14 +11,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
-import com.expressmobileservice.inspection.ui.InspectionScreen
+import com.expressmobileservice.inspection.ui.HomeScreen
 import com.expressmobileservice.inspection.ui.ReportShareType
 import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
 
 class MainActivity : ComponentActivity() {
 
+    private lateinit var appointmentStore: AppointmentStore
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        appointmentStore = AppointmentStore(this)
         enableEdgeToEdge()
         setContent {
             ExpressMobileInspectionTheme {
@@ -26,7 +29,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    InspectionScreen(
+                    HomeScreen(
+                        appointmentStore = appointmentStore,
                         onShareReport = { state, type, onComplete ->
                             shareReport(state, type, onComplete)
                         },
