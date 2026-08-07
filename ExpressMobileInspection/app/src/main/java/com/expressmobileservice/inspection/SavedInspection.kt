@@ -50,6 +50,18 @@ data class SavedInspection(
     val sections: List<SerializableInspectionSection> = defaultSerializableSections(),
     val updatedAtMillis: Long = System.currentTimeMillis()
 ) {
+    fun listTitle(): String {
+        val name = customerName.trim().ifBlank { "Unnamed customer" }
+        return if (vehicle.isBlank()) name else "$name · $vehicle"
+    }
+
+    fun listSubtitle(): String {
+        val parts = mutableListOf<String>()
+        if (customerPhone.isNotBlank()) parts.add(customerPhone)
+        if (mileage.isNotBlank()) parts.add("${mileage.trim()} mi/hrs")
+        return parts.joinToString(" · ")
+    }
+
     fun toFormState(): InspectionFormState = InspectionFormState(
         customerInfo = CustomerInfo(
             customerName = customerName,

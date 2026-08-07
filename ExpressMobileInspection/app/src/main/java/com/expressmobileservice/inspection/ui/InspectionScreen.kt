@@ -26,10 +26,18 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,9 +82,14 @@ import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
 import com.expressmobileservice.inspection.defaultInspectionSections
 import com.expressmobileservice.inspection.InspectionStore
-import com.expressmobileservice.inspection.toSavedInspection
+import androidx.compose.ui.text.style.TextOverflow
+import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import com.expressmobileservice.inspection.toSavedInspection
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 enum class ReportShareType { PDF, IMAGE }
@@ -89,6 +102,7 @@ fun InspectionScreen(
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit = {},
     onInspectionSaved: (String) -> Unit = {},
+    onActiveInspectionChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var customerName by rememberSaveable { mutableStateOf("") }
@@ -102,19 +116,26 @@ fun InspectionScreen(
     var pendingShareType by remember { mutableStateOf<ReportShareType?>(null) }
     var loadedInspectionId by remember { mutableStateOf<String?>(null) }
     var autoSaveHint by remember { mutableStateOf<String?>(null) }
+    var showInspectionList by remember { mutableStateOf(false) }
+
+    fun applySavedInspection(saved: SavedInspection) {
+        val form = saved.toFormState()
+        customerName = form.customerInfo.customerName
+        customerPhone = form.customerInfo.customerPhone
+        vehicle = form.customerInfo.vehicle
+        mileage = form.customerInfo.mileage
+        generalNotes = form.generalNotes
+        sections = form.sections
+        loadedInspectionId = saved.id
+        autoSaveHint = "Opened: ${saved.listTitle()}"
+        onActiveInspectionChange(saved.id)
+    }
 
     LaunchedEffect(activeInspectionId) {
         val saved = activeInspectionId?.let { inspectionStore.getById(it) }
             ?: inspectionStore.mostRecent()
         if (saved != null) {
-            val form = saved.toFormState()
-            customerName = form.customerInfo.customerName
-            customerPhone = form.customerInfo.customerPhone
-            vehicle = form.customerInfo.vehicle
-            mileage = form.customerInfo.mileage
-            generalNotes = form.generalNotes
-            sections = form.sections
-            loadedInspectionId = saved.id
+            applySavedInspection(saved)
             autoSaveHint = "Inspection loaded · auto-saved"
         }
     }
@@ -240,6 +261,18 @@ fun InspectionScreen(
         )
     }
 
+    if (showInspectionList) {
+        OpenInspectionsListSheet(
+            inspectionStore = inspectionStore,
+            currentInspectionId = persistId,
+            onDismiss = { showInspectionList = false },
+            onSelect = { saved ->
+                applySavedInspection(saved)
+                showInspectionList = false
+            }
+        )
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -270,6 +303,22 @@ fun InspectionScreen(
                                 Text(text = COMPANY_PHONE, style = MaterialTheme.typography.bodySmall)
                             }
                         }
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { showInspectionList = true }) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Open list",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -442,6 +491,114 @@ fun InspectionScreen(
             }
 
             Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OpenInspectionsListSheet(
+    inspectionStore: InspectionStore,
+    currentInspectionId: String?,
+    onDismiss: () -> Unit,
+    onSelect: (SavedInspection) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var inspections by remember { mutableStateOf(inspectionStore.getAll()) }
+    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy · h:mm a", Locale.US) }
+
+    LaunchedEffect(Unit) {
+        inspections = inspectionStore.getAll()
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Saved inspections",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }
+            Text(
+                text = "${inspections.size} saved",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            if (inspections.isEmpty()) {
+                Text(
+                    text = "No saved inspections yet.\nSave a job from Appointments or tap Save inspection.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 480.dp)
+                ) {
+                    items(inspections, key = { it.id }) { inspection ->
+                        val isCurrent = inspection.id == currentInspectionId
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(inspection) }
+                                .background(
+                                    if (isCurrent) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                    } else {
+                                        Color.Transparent
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = inspection.listTitle(),
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            val subtitle = inspection.listSubtitle()
+                            if (subtitle.isNotBlank()) {
+                                Text(
+                                    text = subtitle,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                            Text(
+                                text = dateFormat.format(Date(inspection.updatedAtMillis)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            }
         }
     }
 }

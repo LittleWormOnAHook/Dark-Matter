@@ -92,6 +92,7 @@ fun HomeScreen(
                 onShareReport = onShareReport,
                 onShareError = onShareError,
                 onInspectionSaved = onNotify,
+                onActiveInspectionChange = { activeInspectionId = it },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
