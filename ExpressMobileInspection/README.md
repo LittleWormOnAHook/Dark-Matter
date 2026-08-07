@@ -20,11 +20,11 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 - Color-coded status badges (Good / Bad / Replace)
 - **Additional Notes** block at the bottom of the form (included on the report)
 - Section groupings with alternating row shading
-- Summary counts and thank-you footer
+- Summary counts, website, call number, and Google review link in report footer
 
 ## Install on your phone
 
-### Quick download (APK) — v1.1 (fixes PDF/image attachment on send)
+### Quick download (APK) — v1.2 (footer links: website, call, Google review)
 
 **[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-inspection-pdf-fix-c854/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 

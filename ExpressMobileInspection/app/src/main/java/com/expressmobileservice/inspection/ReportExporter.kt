@@ -267,7 +267,9 @@ internal class ReportRenderer(
     private fun tableHeaderHeight() = (pageWidth * 0.065f).toInt()
     private fun sectionHeaderHeight() = (pageWidth * 0.055f).toInt()
     private fun footerHeight(state: InspectionFormState): Int {
-        val base = (pageWidth * 0.12f).toInt()
+        val lineHeight = (pageWidth * 0.035f).toInt()
+        val linkLines = 3
+        val base = (pageWidth * 0.12f).toInt() + linkLines * lineHeight
         return base + generalNotesHeight(state.generalNotes)
     }
 
@@ -315,7 +317,7 @@ internal class ReportRenderer(
 
         canvas.drawText(COMPANY_NAME, textStartX, yStart + h * 0.38f, titlePaint)
         canvas.drawText("Vehicle Inspection Report", textStartX, yStart + h * 0.62f, subtitlePaint)
-        val phone = "Phone: $COMPANY_PHONE"
+        val phone = "Phone: $COMPANY_PHONE_DISPLAY"
         val phoneWidth = subtitlePaint.measureText(phone)
         canvas.drawText(phone, pageWidth - pad - phoneWidth, yStart + h * 0.62f, subtitlePaint)
         val date = SimpleDateFormat("MMMM d, yyyy", Locale.US).format(Date())
@@ -465,9 +467,20 @@ internal class ReportRenderer(
             y += (pageWidth * 0.02f).toInt()
         }
 
+        val lineHeight = (pageWidth * 0.035f).toInt()
         canvas.drawText("Thank you for choosing $COMPANY_NAME.", margin.toFloat(), y.toFloat(), footerPaint)
-        y += (pageWidth * 0.035f).toInt()
-        canvas.drawText("Questions? Call $COMPANY_PHONE", margin.toFloat(), y.toFloat(), footerPaint)
+        y += lineHeight
+        canvas.drawText("Website: $COMPANY_WEBSITE_DISPLAY", margin.toFloat(), y.toFloat(), footerPaint)
+        y += lineHeight
+        canvas.drawText("Call: $COMPANY_PHONE_DISPLAY", margin.toFloat(), y.toFloat(), footerPaint)
+        y += lineHeight
+        canvas.drawText("Leave a Google review for $COMPANY_NAME", margin.toFloat(), y.toFloat(), footerPaint)
+        y += lineHeight
+        val reviewLines = wrapText(COMPANY_GOOGLE_REVIEW_URL, footerPaint, contentWidth.toFloat())
+        reviewLines.forEach { line ->
+            canvas.drawText(line, margin.toFloat(), y.toFloat(), footerPaint)
+            y += lineHeight
+        }
     }
 
     companion object {
