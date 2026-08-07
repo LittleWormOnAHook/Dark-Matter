@@ -16,6 +16,8 @@ class AppointmentStore(context: Context) {
         }.getOrDefault(emptyList()).sortedBy { it.startEpochMillis }
     }
 
+    fun getById(id: String): Appointment? = getAll().firstOrNull { it.id == id }
+
     fun save(appointment: Appointment) {
         val current = getAll().toMutableList()
         val index = current.indexOfFirst { it.id == appointment.id }

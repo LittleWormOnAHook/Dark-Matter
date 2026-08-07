@@ -81,7 +81,9 @@ import com.expressmobileservice.inspection.InspectionItem
 import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
 import com.expressmobileservice.inspection.defaultInspectionSections
+import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.InspectionStore
+import com.expressmobileservice.inspection.displaySortMillis
 import androidx.compose.ui.text.style.TextOverflow
 import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
@@ -98,6 +100,7 @@ enum class ReportShareType { PDF, IMAGE }
 @Composable
 fun InspectionScreen(
     inspectionStore: InspectionStore,
+    appointmentStore: AppointmentStore,
     activeInspectionId: String?,
     onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit,
     onShareError: (String) -> Unit = {},
@@ -169,7 +172,8 @@ fun InspectionScreen(
         inspectionStore.save(
             currentStateProvider.value().toSavedInspection(
                 id = id,
-                appointmentId = saved?.appointmentId
+                appointmentId = saved?.appointmentId,
+                inspectionDateMillis = saved?.inspectionDateMillis?.takeIf { it > 0L }
             )
         )
         autoSaveHint = "Saved automatically"
@@ -188,7 +192,8 @@ fun InspectionScreen(
         inspectionStore.save(
             currentState().toSavedInspection(
                 id = id,
-                appointmentId = existing?.appointmentId
+                appointmentId = existing?.appointmentId,
+                inspectionDateMillis = existing?.inspectionDateMillis?.takeIf { it > 0L }
             )
         )
         if (loadedInspectionId == null) {
@@ -264,6 +269,7 @@ fun InspectionScreen(
     if (showInspectionList) {
         OpenInspectionsListSheet(
             inspectionStore = inspectionStore,
+            appointmentStore = appointmentStore,
             currentInspectionId = persistId,
             onDismiss = { showInspectionList = false },
             onSelect = { saved ->
@@ -499,16 +505,17 @@ fun InspectionScreen(
 @Composable
 private fun OpenInspectionsListSheet(
     inspectionStore: InspectionStore,
+    appointmentStore: AppointmentStore,
     currentInspectionId: String?,
     onDismiss: () -> Unit,
     onSelect: (SavedInspection) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var inspections by remember { mutableStateOf(inspectionStore.getAll()) }
+    var inspections by remember { mutableStateOf(inspectionStore.getAll(appointmentStore)) }
     val dateFormat = remember { SimpleDateFormat("MMM d, yyyy · h:mm a", Locale.US) }
 
     LaunchedEffect(Unit) {
-        inspections = inspectionStore.getAll()
+        inspections = inspectionStore.getAll(appointmentStore)
     }
 
     ModalBottomSheet(
@@ -537,7 +544,7 @@ private fun OpenInspectionsListSheet(
                 }
             }
             Text(
-                text = "${inspections.size} saved",
+                text = "${inspections.size} saved · earliest first",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -589,7 +596,9 @@ private fun OpenInspectionsListSheet(
                                 )
                             }
                             Text(
-                                text = dateFormat.format(Date(inspection.updatedAtMillis)),
+                                text = dateFormat.format(
+                                    Date(inspection.displaySortMillis(appointmentStore))
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(top = 4.dp)

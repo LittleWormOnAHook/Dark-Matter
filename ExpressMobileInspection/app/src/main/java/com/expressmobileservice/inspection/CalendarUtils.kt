@@ -76,14 +76,22 @@ fun appointmentOverlapsDay(appointment: Appointment, day: LocalDate, zone: ZoneI
 }
 
 fun appointmentsForDay(appointments: List<Appointment>, day: LocalDate): List<Appointment> =
-    appointments.filter { appointmentOverlapsDay(it, day) }.sortedBy { it.startEpochMillis }
+    appointments
+        .filter { appointmentOverlapsDay(it, day) }
+        .sortedWith(
+            compareBy<Appointment> { it.allDay }
+                .thenBy { it.startEpochMillis }
+        )
 
 fun appointmentsForWeek(appointments: List<Appointment>, anchorDate: LocalDate): List<Appointment> {
     val days = weekDaysContaining(anchorDate)
     val start = days.first().toEpochMillisAtStartOfDay()
     val end = days.last().plusDays(1).toEpochMillisAtStartOfDay()
     return appointments.filter { it.startEpochMillis < end && it.endEpochMillis > start }
-        .sortedBy { it.startEpochMillis }
+        .sortedWith(
+            compareBy<Appointment> { it.allDay }
+                .thenBy { it.startEpochMillis }
+        )
 }
 
 fun roundToNearestMinutes(millis: Long, minutes: Int = 15): Long {

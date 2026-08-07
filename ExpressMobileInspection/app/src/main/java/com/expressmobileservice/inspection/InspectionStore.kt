@@ -9,26 +9,31 @@ class InspectionStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun getAll(): List<SavedInspection> {
-        val raw = prefs.getString(KEY_INSPECTIONS, null) ?: return emptyList()
-        return runCatching {
-            json.decodeFromString<List<SavedInspection>>(raw)
-        }.getOrDefault(emptyList()).sortedByDescending { it.updatedAtMillis }
-    }
+    fun getAll(appointmentStore: AppointmentStore? = null): List<SavedInspection> =
+        decodeAll().sortedEarliestFirst(appointmentStore)
 
-    fun getById(id: String): SavedInspection? = getAll().firstOrNull { it.id == id }
+    fun getById(id: String): SavedInspection? = decodeAll().firstOrNull { it.id == id }
 
     fun getByAppointmentId(appointmentId: String): SavedInspection? =
-        getAll().firstOrNull { it.appointmentId == appointmentId }
+        decodeAll().firstOrNull { it.appointmentId == appointmentId }
 
     fun save(inspection: SavedInspection) {
-        val current = getAll().toMutableList()
+        val current = decodeAll().toMutableList()
         val index = current.indexOfFirst { it.id == inspection.id }
-        val updated = inspection.copy(updatedAtMillis = System.currentTimeMillis())
+        val existing = current.getOrNull(index)
+        val resolvedDate = when {
+            inspection.inspectionDateMillis > 0L -> inspection.inspectionDateMillis
+            existing != null && existing.inspectionDateMillis > 0L -> existing.inspectionDateMillis
+            else -> System.currentTimeMillis()
+        }
+        val updated = inspection.copy(
+            inspectionDateMillis = resolvedDate,
+            updatedAtMillis = System.currentTimeMillis()
+        )
         if (index >= 0) {
             current[index] = updated
         } else {
-            current.add(0, updated)
+            current.add(updated)
         }
         persist(current)
     }
@@ -42,6 +47,7 @@ class InspectionStore(context: Context) {
                 vehicle = appointment.vehicleSummary().ifBlank { existing.vehicle },
                 mileage = appointment.mileage.ifBlank { existing.mileage },
                 generalNotes = appointment.jobNotes.ifBlank { existing.generalNotes },
+                inspectionDateMillis = appointment.startEpochMillis,
                 updatedAtMillis = System.currentTimeMillis()
             )
         } else {
@@ -52,10 +58,18 @@ class InspectionStore(context: Context) {
     }
 
     fun delete(id: String) {
-        persist(getAll().filterNot { it.id == id })
+        persist(decodeAll().filterNot { it.id == id })
     }
 
-    fun mostRecent(): SavedInspection? = getAll().firstOrNull()
+    fun mostRecent(): SavedInspection? =
+        decodeAll().maxByOrNull { it.updatedAtMillis }
+
+    private fun decodeAll(): List<SavedInspection> {
+        val raw = prefs.getString(KEY_INSPECTIONS, null) ?: return emptyList()
+        return runCatching {
+            json.decodeFromString<List<SavedInspection>>(raw)
+        }.getOrDefault(emptyList())
+    }
 
     private fun persist(inspections: List<SavedInspection>) {
         prefs.edit()

@@ -88,6 +88,7 @@ fun HomeScreen(
             )
             ExpressTab.INSPECTION -> InspectionScreen(
                 inspectionStore = inspectionStore,
+                appointmentStore = appointmentStore,
                 activeInspectionId = activeInspectionId,
                 onShareReport = onShareReport,
                 onShareError = onShareError,

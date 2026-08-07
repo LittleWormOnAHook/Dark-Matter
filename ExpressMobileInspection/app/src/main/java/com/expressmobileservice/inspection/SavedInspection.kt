@@ -48,6 +48,8 @@ data class SavedInspection(
     val mileage: String = "",
     val generalNotes: String = "",
     val sections: List<SerializableInspectionSection> = defaultSerializableSections(),
+    /** Appointment job time when linked; otherwise when the inspection was first saved. */
+    val inspectionDateMillis: Long = 0L,
     val updatedAtMillis: Long = System.currentTimeMillis()
 ) {
     fun listTitle(): String {
@@ -88,7 +90,8 @@ data class SavedInspection(
 
 fun InspectionFormState.toSavedInspection(
     id: String,
-    appointmentId: String? = null
+    appointmentId: String? = null,
+    inspectionDateMillis: Long? = null
 ): SavedInspection = SavedInspection(
     id = id,
     appointmentId = appointmentId,
@@ -110,6 +113,7 @@ fun InspectionFormState.toSavedInspection(
             }
         )
     },
+    inspectionDateMillis = inspectionDateMillis ?: System.currentTimeMillis(),
     updatedAtMillis = System.currentTimeMillis()
 )
 
@@ -140,6 +144,7 @@ fun inspectionFromAppointment(appointment: Appointment): SavedInspection {
         mileage = appointment.mileage,
         generalNotes = appointment.jobNotes,
         sections = defaultSerializableSections(),
+        inspectionDateMillis = appointment.startEpochMillis,
         updatedAtMillis = System.currentTimeMillis()
     )
 }
