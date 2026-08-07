@@ -67,8 +67,17 @@ namespace Invector
 
         private static void DrawIcon(string texName, Rect rect)
         {
+            // Character controller badge is owned by Dark Matter's DMI hierarchy overlay
+            // (Project.EditorTools.DmiCharacterHierarchyIconUtility) — skip the yellow T-pose.
+            if (texName == "controllerIcon")
+                return;
+
+            Texture2D tex = GetTex(texName);
+            if (tex == null)
+                return;
+
             Rect r = new Rect(rect.x + rect.width - 16f, rect.y, 16f, 16f);
-            GUI.DrawTexture(r, GetTex(texName));
+            GUI.DrawTexture(r, tex);
         }
 
         private static Texture2D GetTex(string name)
