@@ -82,7 +82,7 @@ object ReportExporter {
     private fun loadFooterIcons(context: Context, pageWidth: Int): FooterLinkIcons {
         val iconSize = (pageWidth * 0.048f * 0.92f).toInt().coerceAtLeast(12)
         return FooterLinkIcons(
-            website = loadDrawableBitmap(context, R.drawable.ic_link_globe, iconSize),
+            website = loadDrawableBitmap(context, R.drawable.ic_company_logo, iconSize),
             phone = loadDrawableBitmap(context, R.drawable.ic_link_phone, iconSize),
             google = loadDrawableBitmap(context, R.drawable.ic_link_google, iconSize)
         )

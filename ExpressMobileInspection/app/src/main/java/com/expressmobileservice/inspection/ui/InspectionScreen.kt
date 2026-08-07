@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -59,6 +58,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -558,10 +559,10 @@ private fun CompanyFooterLinks() {
         ) {
             Text(COMPANY_NAME, fontWeight = FontWeight.SemiBold)
             FooterLinkRow(
-                icon = Icons.Default.Language,
                 prefix = "Website: ",
                 label = COMPANY_WEBSITE_DISPLAY,
-                onClick = { openUri(context, COMPANY_WEBSITE) }
+                onClick = { openUri(context, COMPANY_WEBSITE) },
+                iconPainter = painterResource(R.drawable.ic_company_logo)
             )
             FooterLinkRow(
                 icon = Icons.Default.Phone,
@@ -581,10 +582,11 @@ private fun CompanyFooterLinks() {
 
 @Composable
 private fun FooterLinkRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
     prefix: String,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+    iconPainter: Painter? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -592,12 +594,25 @@ private fun FooterLinkRow(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        when {
+            iconPainter != null -> {
+                Image(
+                    painter = iconPainter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                )
+            }
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = prefix + label,
