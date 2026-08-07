@@ -4,9 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -20,7 +22,8 @@ object ReportExporter {
     private const val IMAGE_WIDTH = 1080
 
     fun exportPdf(context: Context, state: InspectionFormState): File {
-        val renderer = ReportRenderer(PAGE_WIDTH)
+        val logo = loadLogoBitmap(context, (PAGE_WIDTH * 0.11f).toInt())
+        val renderer = ReportRenderer(PAGE_WIDTH, logo)
         val pages = renderer.buildPages(state, PAGE_HEIGHT)
         val pdf = PdfDocument()
 
@@ -38,7 +41,8 @@ object ReportExporter {
     }
 
     fun exportImage(context: Context, state: InspectionFormState): File {
-        val renderer = ReportRenderer(IMAGE_WIDTH)
+        val logo = loadLogoBitmap(context, (IMAGE_WIDTH * 0.11f).toInt())
+        val renderer = ReportRenderer(IMAGE_WIDTH, logo)
         val height = renderer.measureTotalHeight(state)
         val bitmap = Bitmap.createBitmap(IMAGE_WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -59,9 +63,22 @@ object ReportExporter {
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         return "ExpressMobileInspection_$stamp.$extension"
     }
+
+    private fun loadLogoBitmap(context: Context, sizePx: Int): Bitmap {
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_company_logo)
+            ?: return Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, sizePx, sizePx)
+        drawable.draw(canvas)
+        return bitmap
+    }
 }
 
-internal class ReportRenderer(private val pageWidth: Int) {
+internal class ReportRenderer(
+    private val pageWidth: Int,
+    private val logoBitmap: Bitmap? = null
+) {
 
     private val margin = (pageWidth * 0.06f).toInt()
     private val contentWidth = pageWidth - margin * 2
@@ -142,7 +159,7 @@ internal class ReportRenderer(private val pageWidth: Int) {
             y += sectionHeaderHeight()
             section.items.forEach { item -> y += itemRowHeight(item) }
         }
-        y += footerHeight()
+        y += footerHeight(state)
         return y + margin
     }
 
@@ -169,7 +186,7 @@ internal class ReportRenderer(private val pageWidth: Int) {
                 if (slice.sectionTitle != null) h += sectionHeaderHeight()
                 slice.items.forEach { item -> h += itemRowHeight(item) }
             }
-            if (includeFooter) h += footerHeight()
+            if (includeFooter) h += footerHeight(state)
             return h
         }
 
@@ -245,11 +262,39 @@ internal class ReportRenderer(private val pageWidth: Int) {
         if (page.drawFooter) drawFooter(canvas, state, y)
     }
 
-    private fun headerHeight() = (pageWidth * 0.14f).toInt()
+    private fun headerHeight() = (pageWidth * 0.16f).toInt()
     private fun customerBoxHeight() = (pageWidth * 0.22f).toInt()
     private fun tableHeaderHeight() = (pageWidth * 0.065f).toInt()
     private fun sectionHeaderHeight() = (pageWidth * 0.055f).toInt()
-    private fun footerHeight() = (pageWidth * 0.12f).toInt()
+    private fun footerHeight(state: InspectionFormState): Int {
+        val base = (pageWidth * 0.12f).toInt()
+        return base + generalNotesHeight(state.generalNotes)
+    }
+
+    private fun generalNotesHeight(notes: String): Int {
+        if (notes.isBlank()) return 0
+        val lines = wrapText(notes, valuePaint, contentWidth.toFloat())
+        val lineHeight = (pageWidth * 0.035f).toInt()
+        return (pageWidth * 0.07f).toInt() + lines.size * lineHeight
+    }
+
+    private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
+        val words = text.trim().split(Regex("\\s+"))
+        if (words.isEmpty() || words.singleOrNull()?.isEmpty() == true) return emptyList()
+        val lines = mutableListOf<String>()
+        var current = words.first()
+        words.drop(1).forEach { word ->
+            val candidate = "$current $word"
+            if (paint.measureText(candidate) <= maxWidth) {
+                current = candidate
+            } else {
+                lines.add(current)
+                current = word
+            }
+        }
+        lines.add(current)
+        return lines
+    }
 
     private fun itemRowHeight(item: InspectionItem): Int {
         val base = (pageWidth * 0.075f).toInt()
@@ -260,8 +305,16 @@ internal class ReportRenderer(private val pageWidth: Int) {
         val h = headerHeight()
         canvas.drawRect(0f, yStart.toFloat(), pageWidth.toFloat(), (yStart + h).toFloat(), headerFill)
         val pad = margin.toFloat()
-        canvas.drawText(COMPANY_NAME, pad, yStart + h * 0.38f, titlePaint)
-        canvas.drawText("Vehicle Inspection Report", pad, yStart + h * 0.62f, subtitlePaint)
+        val logoSize = (pageWidth * 0.11f).toInt()
+        val textStartX = if (logoBitmap != null) pad + logoSize + pageWidth * 0.025f else pad
+
+        logoBitmap?.let { logo ->
+            val logoTop = yStart + (h - logoSize) / 2
+            canvas.drawBitmap(logo, null, Rect(margin, logoTop, margin + logoSize, logoTop + logoSize), null)
+        }
+
+        canvas.drawText(COMPANY_NAME, textStartX, yStart + h * 0.38f, titlePaint)
+        canvas.drawText("Vehicle Inspection Report", textStartX, yStart + h * 0.62f, subtitlePaint)
         val phone = "Phone: $COMPANY_PHONE"
         val phoneWidth = subtitlePaint.measureText(phone)
         canvas.drawText(phone, pageWidth - pad - phoneWidth, yStart + h * 0.62f, subtitlePaint)
@@ -399,6 +452,19 @@ internal class ReportRenderer(private val pageWidth: Int) {
         val summary = "Summary:  $good Good   •   $bad Bad   •   $replace Replace   •   $unchecked Not Checked"
         canvas.drawText(summary, margin.toFloat(), y.toFloat(), headingPaint)
         y += (pageWidth * 0.045f).toInt()
+
+        if (state.generalNotes.isNotBlank()) {
+            canvas.drawText("Additional Notes", margin.toFloat(), y.toFloat(), sectionPaint)
+            y += (pageWidth * 0.04f).toInt()
+            val lines = wrapText(state.generalNotes, valuePaint, contentWidth.toFloat())
+            val lineHeight = (pageWidth * 0.035f).toInt()
+            lines.forEach { line ->
+                canvas.drawText(line, margin.toFloat(), y.toFloat(), valuePaint)
+                y += lineHeight
+            }
+            y += (pageWidth * 0.02f).toInt()
+        }
+
         canvas.drawText("Thank you for choosing $COMPANY_NAME.", margin.toFloat(), y.toFloat(), footerPaint)
         y += (pageWidth * 0.035f).toInt()
         canvas.drawText("Questions? Call $COMPANY_PHONE", margin.toFloat(), y.toFloat(), footerPaint)

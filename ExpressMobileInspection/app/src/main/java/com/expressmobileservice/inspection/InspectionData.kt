@@ -28,7 +28,8 @@ data class CustomerInfo(
 
 data class InspectionFormState(
     val customerInfo: CustomerInfo = CustomerInfo(),
-    val sections: List<InspectionSection> = defaultInspectionSections()
+    val sections: List<InspectionSection> = defaultInspectionSections(),
+    val generalNotes: String = ""
 )
 
 fun defaultInspectionSections(): List<InspectionSection> = listOf(

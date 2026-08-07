@@ -14,9 +14,10 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 
 ## Professional report includes
 
-- Branded blue header with company name, phone, and date
+- Company header with logo, name, phone, and date
 - Customer & vehicle info box
 - Color-coded status badges (Good / Bad / Replace)
+- **Additional Notes** block at the bottom of the form (included on the report)
 - Section groupings with alternating row shading
 - Summary counts and thank-you footer
 

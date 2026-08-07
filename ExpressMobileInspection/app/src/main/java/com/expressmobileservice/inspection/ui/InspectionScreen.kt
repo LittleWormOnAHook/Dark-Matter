@@ -1,5 +1,6 @@
 package com.expressmobileservice.inspection.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,12 +53,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.expressmobileservice.inspection.R
 import com.expressmobileservice.inspection.COMPANY_NAME
 import com.expressmobileservice.inspection.COMPANY_PHONE
 import com.expressmobileservice.inspection.CustomerInfo
@@ -80,6 +83,7 @@ fun InspectionScreen(
     var customerPhone by rememberSaveable { mutableStateOf("") }
     var vehicle by rememberSaveable { mutableStateOf("") }
     var mileage by rememberSaveable { mutableStateOf("") }
+    var generalNotes by rememberSaveable { mutableStateOf("") }
     var sections by remember { mutableStateOf(defaultInspectionSections()) }
     var isGenerating by remember { mutableStateOf(false) }
     var showCompleteDialog by remember { mutableStateOf(false) }
@@ -98,7 +102,8 @@ fun InspectionScreen(
             vehicle = vehicle,
             mileage = mileage
         ),
-        sections = sections
+        sections = sections,
+        generalNotes = generalNotes
     )
 
     fun share(type: ReportShareType) {
@@ -207,20 +212,30 @@ fun InspectionScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = COMPANY_NAME,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_company_logo),
+                            contentDescription = "Express Mobile Service logo",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = COMPANY_NAME,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = COMPANY_PHONE, style = MaterialTheme.typography.bodySmall)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = COMPANY_PHONE, style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 },
@@ -277,6 +292,7 @@ fun InspectionScreen(
                         customerPhone = ""
                         vehicle = ""
                         mileage = ""
+                        generalNotes = ""
                         sections = defaultInspectionSections()
                     },
                     enabled = !isGenerating,
@@ -335,6 +351,29 @@ fun InspectionScreen(
                         sections = sections.updateItemNotes(sectionIndex, itemId, notes)
                     }
                 )
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Additional Notes", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Overall comments, recommendations, or follow-up for the customer.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = generalNotes,
+                        onValueChange = { generalNotes = it },
+                        label = { Text("Notes") },
+                        placeholder = { Text("e.g. Recommend brake service within 3,000 miles") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 6
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(100.dp))
