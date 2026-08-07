@@ -9,7 +9,8 @@ Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick
 - **19 essential inspection items** in 4 sections
 - Per line: tap **Good / Bad / Replace** and optional notes
 - Progress bar shows how many items are checked
-- **Complete & Send Report** — generates a PDF or image and opens your share sheet (email, text, etc.)
+- **Send as PDF** — formatted document for email
+- **Send as Image (JPEG)** — snapshot for text messaging
 - **Clear Form** resets everything
 
 ## Professional report includes

@@ -86,7 +86,6 @@ fun InspectionScreen(
     var generalNotes by rememberSaveable { mutableStateOf("") }
     var sections by remember { mutableStateOf(defaultInspectionSections()) }
     var isGenerating by remember { mutableStateOf(false) }
-    var showCompleteDialog by remember { mutableStateOf(false) }
     var showUncheckedWarning by remember { mutableStateOf(false) }
     var pendingShareType by remember { mutableStateOf<ReportShareType?>(null) }
 
@@ -132,45 +131,6 @@ fun InspectionScreen(
             return
         }
         share(type)
-    }
-
-    if (showCompleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showCompleteDialog = false },
-            title = { Text("Send inspection report") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Choose how to send the completed inspection to the customer.")
-                    Button(
-                        onClick = {
-                            showCompleteDialog = false
-                            beginComplete(ReportShareType.PDF)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("PDF (email)")
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            showCompleteDialog = false
-                            beginComplete(ReportShareType.IMAGE)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Image (text)")
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCompleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 
     if (showUncheckedWarning) {
@@ -277,13 +237,23 @@ fun InspectionScreen(
                     )
                 }
                 Button(
-                    onClick = { showCompleteDialog = true },
+                    onClick = { beginComplete(ReportShareType.PDF) },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null)
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Complete & Send Report")
+                    Text("Send as PDF")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { beginComplete(ReportShareType.IMAGE) },
+                    enabled = !isGenerating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Send as Image (JPEG)")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
