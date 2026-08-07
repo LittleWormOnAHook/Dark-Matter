@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,11 +22,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,34 +62,37 @@ import com.expressmobileservice.inspection.InspectionFormState
 import com.expressmobileservice.inspection.InspectionItem
 import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
-import com.expressmobileservice.inspection.ReportFormatter
 import com.expressmobileservice.inspection.defaultInspectionSections
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
 
+enum class ReportShareType { PDF, IMAGE }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InspectionScreen(onShareReport: (String) -> Unit) {
+fun InspectionScreen(
+    onShareReport: (InspectionFormState, ReportShareType, (Boolean) -> Unit) -> Unit
+) {
     var customerName by rememberSaveable { mutableStateOf("") }
-    var customerContact by rememberSaveable { mutableStateOf("") }
-    var vehicleYearMakeModel by rememberSaveable { mutableStateOf("") }
-    var vin by rememberSaveable { mutableStateOf("") }
+    var customerPhone by rememberSaveable { mutableStateOf("") }
+    var vehicle by rememberSaveable { mutableStateOf("") }
     var mileage by rememberSaveable { mutableStateOf("") }
-    var licensePlate by rememberSaveable { mutableStateOf("") }
-    var technicianName by rememberSaveable { mutableStateOf("") }
     var sections by remember { mutableStateOf(defaultInspectionSections()) }
+    var isGenerating by remember { mutableStateOf(false) }
 
     fun currentState() = InspectionFormState(
         customerInfo = CustomerInfo(
             customerName = customerName,
-            customerContact = customerContact,
-            vehicleYearMakeModel = vehicleYearMakeModel,
-            vin = vin,
-            mileage = mileage,
-            licensePlate = licensePlate,
-            technicianName = technicianName
+            customerPhone = customerPhone,
+            vehicle = vehicle,
+            mileage = mileage
         ),
         sections = sections
     )
+
+    fun share(type: ReportShareType) {
+        isGenerating = true
+        onShareReport(currentState(), type) { isGenerating = false }
+    }
 
     Scaffold(
         topBar = {
@@ -104,10 +111,7 @@ fun InspectionScreen(onShareReport: (String) -> Unit) {
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = COMPANY_PHONE,
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Text(text = COMPANY_PHONE, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 },
@@ -124,26 +128,47 @@ fun InspectionScreen(onShareReport: (String) -> Unit) {
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(12.dp)
             ) {
+                if (isGenerating) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Creating report…")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Button(
-                    onClick = { onShareReport(ReportFormatter.formatReport(currentState())) },
+                    onClick = { share(ReportShareType.PDF) },
+                    enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send Report (Text or Email)")
+                    Text("Send PDF Report")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { share(ReportShareType.IMAGE) },
+                    enabled = !isGenerating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Send Image Report")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = {
                         customerName = ""
-                        customerContact = ""
-                        vehicleYearMakeModel = ""
-                        vin = ""
+                        customerPhone = ""
+                        vehicle = ""
                         mileage = ""
-                        licensePlate = ""
-                        technicianName = ""
                         sections = defaultInspectionSections()
                     },
+                    enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null)
@@ -159,28 +184,38 @@ fun InspectionScreen(onShareReport: (String) -> Unit) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            HeaderCard()
-            CustomerInfoCard(
-                customerName = customerName,
-                onCustomerNameChange = { customerName = it },
-                customerContact = customerContact,
-                onCustomerContactChange = { customerContact = it },
-                vehicleYearMakeModel = vehicleYearMakeModel,
-                onVehicleChange = { vehicleYearMakeModel = it },
-                vin = vin,
-                onVinChange = { vin = it },
-                mileage = mileage,
-                onMileageChange = { mileage = it },
-                licensePlate = licensePlate,
-                onLicensePlateChange = { licensePlate = it },
-                technicianName = technicianName,
-                onTechnicianChange = { technicianName = it }
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Text(
+                    text = "Tap Good, Bad, or Replace. Add notes if needed.",
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Customer Info", fontWeight = FontWeight.SemiBold)
+                    FormField("Customer Name", customerName) { customerName = it }
+                    FormField(
+                        "Phone",
+                        customerPhone,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    ) { customerPhone = it }
+                    FormField("Vehicle (Year / Make / Model)", vehicle) { vehicle = it }
+                    FormField("Mileage", mileage) { mileage = it }
+                }
+            }
 
             sections.forEachIndexed { sectionIndex, section ->
-                SectionCard(
+                SectionBlock(
                     section = section,
                     onItemStatusChange = { itemId, status ->
                         sections = sections.updateItemStatus(sectionIndex, itemId, status)
@@ -191,94 +226,7 @@ fun InspectionScreen(onShareReport: (String) -> Unit) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(80.dp))
-        }
-    }
-}
-
-@Composable
-private fun HeaderCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Multi-Point Vehicle Inspection",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Tap Good, Bad, or Replace for each item. Add notes with the keyboard.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun CustomerInfoCard(
-    customerName: String,
-    onCustomerNameChange: (String) -> Unit,
-    customerContact: String,
-    onCustomerContactChange: (String) -> Unit,
-    vehicleYearMakeModel: String,
-    onVehicleChange: (String) -> Unit,
-    vin: String,
-    onVinChange: (String) -> Unit,
-    mileage: String,
-    onMileageChange: (String) -> Unit,
-    licensePlate: String,
-    onLicensePlateChange: (String) -> Unit,
-    technicianName: String,
-    onTechnicianChange: (String) -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Customer & Vehicle Info",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            FormField("Customer Name", customerName, onCustomerNameChange)
-            FormField("Phone / Email", customerContact, onCustomerContactChange)
-            FormField("Year / Make / Model", vehicleYearMakeModel, onVehicleChange)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FormField(
-                    label = "VIN",
-                    value = vin,
-                    onValueChange = onVinChange,
-                    modifier = Modifier.weight(1f),
-                    capitalization = KeyboardCapitalization.Characters
-                )
-                FormField(
-                    label = "Mileage",
-                    value = mileage,
-                    onValueChange = onMileageChange,
-                    modifier = Modifier.weight(0.5f),
-                    keyboardOptions = KeyboardOptions.Default
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FormField(
-                    label = "License Plate",
-                    value = licensePlate,
-                    onValueChange = onLicensePlateChange,
-                    modifier = Modifier.weight(1f),
-                    capitalization = KeyboardCapitalization.Characters
-                )
-                FormField(
-                    label = "Technician",
-                    value = technicianName,
-                    onValueChange = onTechnicianChange,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
@@ -287,23 +235,21 @@ private fun CustomerInfoCard(
 private fun FormField(
     label: String,
     value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    capitalization: KeyboardCapitalization = KeyboardCapitalization.Words,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = capitalization)
+    keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+    onValueChange: (String) -> Unit
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = keyboardOptions
     )
 }
 
 @Composable
-private fun SectionCard(
+private fun SectionBlock(
     section: InspectionSection,
     onItemStatusChange: (String, InspectionStatus) -> Unit,
     onItemNotesChange: (String, String) -> Unit
@@ -312,19 +258,18 @@ private fun SectionCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = section.title,
-                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 6.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
             section.items.forEachIndexed { index, item ->
-                InspectionItemRow(
+                CompactItemRow(
                     item = item,
                     onStatusChange = { onItemStatusChange(item.id, it) },
                     onNotesChange = { onItemNotesChange(item.id, it) }
                 )
                 if (index < section.items.lastIndex) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                 }
             }
         }
@@ -332,113 +277,70 @@ private fun SectionCard(
 }
 
 @Composable
-private fun InspectionItemRow(
+private fun CompactItemRow(
     item: InspectionItem,
     onStatusChange: (InspectionStatus) -> Unit,
     onNotesChange: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = item.label,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(text = item.label, fontWeight = FontWeight.Medium, fontSize = 15.sp)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            StatusChip(
-                label = "Good",
-                selected = item.status == InspectionStatus.GOOD,
-                selectedColor = InspectionColors.good,
-                selectedContainer = InspectionColors.goodContainer,
-                onClick = {
-                    onStatusChange(
-                        if (item.status == InspectionStatus.GOOD) InspectionStatus.NONE
-                        else InspectionStatus.GOOD
-                    )
-                },
-                modifier = Modifier.weight(1f)
-            )
-            StatusChip(
-                label = "Bad",
-                selected = item.status == InspectionStatus.BAD,
-                selectedColor = InspectionColors.bad,
-                selectedContainer = InspectionColors.badContainer,
-                onClick = {
-                    onStatusChange(
-                        if (item.status == InspectionStatus.BAD) InspectionStatus.NONE
-                        else InspectionStatus.BAD
-                    )
-                },
-                modifier = Modifier.weight(1f)
-            )
-            StatusChip(
-                label = "Replace",
-                selected = item.status == InspectionStatus.REPLACE,
-                selectedColor = InspectionColors.replace,
-                selectedContainer = InspectionColors.replaceContainer,
-                onClick = {
-                    onStatusChange(
-                        if (item.status == InspectionStatus.REPLACE) InspectionStatus.NONE
-                        else InspectionStatus.REPLACE
-                    )
-                },
-                modifier = Modifier.weight(1f)
-            )
+            StatusChip("Good", item.status == InspectionStatus.GOOD, InspectionColors.good, InspectionColors.goodContainer) {
+                onStatusChange(if (item.status == InspectionStatus.GOOD) InspectionStatus.NONE else InspectionStatus.GOOD)
+            }
+            StatusChip("Bad", item.status == InspectionStatus.BAD, InspectionColors.bad, InspectionColors.badContainer) {
+                onStatusChange(if (item.status == InspectionStatus.BAD) InspectionStatus.NONE else InspectionStatus.BAD)
+            }
+            StatusChip("Replace", item.status == InspectionStatus.REPLACE, InspectionColors.replace, InspectionColors.replaceContainer) {
+                onStatusChange(if (item.status == InspectionStatus.REPLACE) InspectionStatus.NONE else InspectionStatus.REPLACE)
+            }
         }
         OutlinedTextField(
             value = item.notes,
             onValueChange = onNotesChange,
             label = { Text("Notes") },
-            placeholder = { Text("Tap to add notation…") },
+            placeholder = { Text("Optional") },
             modifier = Modifier.fillMaxWidth(),
-            minLines = 1,
-            maxLines = 3
+            singleLine = true
         )
     }
 }
 
 @Composable
-private fun StatusChip(
+private fun RowScope.StatusChip(
     label: String,
     selected: Boolean,
     selectedColor: Color,
     selectedContainer: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
     val background = if (selected) selectedContainer else Color.Transparent
     val borderColor = if (selected) selectedColor else MaterialTheme.colorScheme.outline
     val textColor = if (selected) selectedColor else MaterialTheme.colorScheme.onSurface
 
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .weight(1f)
             .clip(RoundedCornerShape(8.dp))
             .background(background)
             .border(1.5.dp, borderColor, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             if (selected) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = selectedColor,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.Check, contentDescription = null, tint = selectedColor, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(3.dp))
             }
             Text(
                 text = label,
                 color = textColor,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 textAlign = TextAlign.Center
             )
         }
@@ -451,11 +353,7 @@ private fun List<InspectionSection>.updateItemStatus(
     status: InspectionStatus
 ): List<InspectionSection> = mapIndexed { index, section ->
     if (index != sectionIndex) section
-    else section.copy(
-        items = section.items.map { item ->
-            if (item.id == itemId) item.copy(status = status) else item
-        }
-    )
+    else section.copy(items = section.items.map { if (it.id == itemId) it.copy(status = status) else it })
 }
 
 private fun List<InspectionSection>.updateItemNotes(
@@ -464,9 +362,5 @@ private fun List<InspectionSection>.updateItemNotes(
     notes: String
 ): List<InspectionSection> = mapIndexed { index, section ->
     if (index != sectionIndex) section
-    else section.copy(
-        items = section.items.map { item ->
-            if (item.id == itemId) item.copy(notes = notes) else item
-        }
-    )
+    else section.copy(items = section.items.map { if (it.id == itemId) it.copy(notes = notes) else it })
 }

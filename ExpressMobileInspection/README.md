@@ -1,78 +1,58 @@
 # Express Mobile Service — Vehicle Inspection App
 
-Android checklist app for **Express Mobile Service** (904-514-2885). Technicians can run a standard multi-point vehicle inspection, mark each item **Good**, **Bad**, or **Replace**, add keyboard notes per line, and **text or email** the finished report to the customer.
+Android checklist app for **Express Mobile Service** (904-514-2885). Run a quick vehicle inspection, mark each item **Good**, **Bad**, or **Replace**, add notes, and send a **professional PDF or image report** to the customer.
 
 ## Features
 
 - Company header with name and phone number
-- Customer & vehicle info fields (name, contact, YMM, VIN, mileage, plate, technician)
-- **38 inspection items** across 6 sections based on common industry MPI checklists (Monro/AMRA, Meineke, ASE-style multi-point inspections):
-  - Exterior & Visibility
-  - Fluids & Filters
-  - Under Hood
-  - Tires & Wheels
-  - Brake System
-  - Steering & Suspension
-- Per-item **Good / Bad / Replace** touch toggles (tap again to clear)
-- Per-item **notes** field (keyboard)
-- **Send Report** opens Android share sheet with SMS and email shortcuts
+- Simple customer fields: Name, Phone, Vehicle, Mileage
+- **19 essential inspection items** in 4 sections
+- Per line: tap **Good / Bad / Replace** and optional notes
+- **Send PDF Report** — formatted document for email
+- **Send Image Report** — JPEG snapshot for text messaging
 - **Clear Form** resets everything
 
-## Requirements
+## Professional report includes
 
-- Android 8.0+ (API 26+)
-- Android Studio Ladybug (2024.2+) or newer recommended
-- JDK 17
+- Branded blue header with company name, phone, and date
+- Customer & vehicle info box
+- Color-coded status badges (Good / Bad / Replace)
+- Section groupings with alternating row shading
+- Summary counts and thank-you footer
 
 ## Install on your phone
 
 ### Quick download (APK)
 
-Download the pre-built APK directly on your Android phone:
-
 **[Download ExpressMobileInspection.apk](https://github.com/LittleWormOnAHook/Dark-Matter/raw/cursor/express-mobile-inspection-bdd8/ExpressMobileInspection/releases/ExpressMobileInspection.apk)**
 
-1. Open the link above on your phone (Chrome works best).
-2. When prompted, allow the download.
-3. Open the downloaded file and tap **Install**.
-4. If Android blocks it, go to **Settings → Security** (or the install prompt) and allow installs from your browser for this one-time install.
+1. Open the link on your Android phone.
+2. Allow the download.
+3. Open the file and tap **Install**.
 
 ### Android Studio
-2. Let Gradle sync.
-3. Connect your Android phone (USB debugging on) or use an emulator.
-4. Run **Run ▶ app** or build an APK:
+
+1. Open `ExpressMobileInspection/` in Android Studio.
+2. Connect your phone (USB debugging on).
+3. Run the app.
+
+### Build APK manually
 
 ```bash
 cd ExpressMobileInspection
 ./gradlew assembleDebug
 ```
 
-The debug APK is at:
-
-`app/build/outputs/apk/debug/app-debug.apk`
-
-Copy that file to your phone and install it, or use `adb install app/build/outputs/apk/debug/app-debug.apk`.
+APK path: `app/build/outputs/apk/debug/app-debug.apk`
 
 ## Usage
 
-1. Fill in customer and vehicle details at the top.
-2. Scroll through each section and tap **Good**, **Bad**, or **Replace** for each line.
-3. Tap the **Notes** field under any item to type a notation.
-4. Tap **Send Report (Text or Email)** when finished.
-5. Choose your messaging app, SMS, or email client and pick the customer contact.
+1. Enter customer name, phone, vehicle, and mileage.
+2. Tap **Good**, **Bad**, or **Replace** on each inspection line.
+3. Add optional notes on any item.
+4. Tap **Send PDF Report** for email, or **Send Image Report** for text.
+5. Pick your messaging or email app and send to the customer.
 
-## Project structure
+## Requirements
 
-```
-ExpressMobileInspection/
-  app/src/main/java/com/expressmobileservice/inspection/
-    MainActivity.kt          — share intent wiring
-    InspectionData.kt        — checklist items & models
-    ReportFormatter.kt       — plain-text report for SMS/email
-    ui/InspectionScreen.kt   — Compose UI
-    ui/theme/Theme.kt        — colors
-```
-
-## License
-
-Private use for Express Mobile Service.
+- Android 8.0+ (API 26+)

@@ -21,12 +21,9 @@ data class InspectionSection(
 
 data class CustomerInfo(
     val customerName: String = "",
-    val customerContact: String = "",
-    val vehicleYearMakeModel: String = "",
-    val vin: String = "",
-    val mileage: String = "",
-    val licensePlate: String = "",
-    val technicianName: String = ""
+    val customerPhone: String = "",
+    val vehicle: String = "",
+    val mileage: String = ""
 )
 
 data class InspectionFormState(
@@ -36,71 +33,42 @@ data class InspectionFormState(
 
 fun defaultInspectionSections(): List<InspectionSection> = listOf(
     InspectionSection(
-        title = "Exterior & Visibility",
+        title = "Fluids & Engine",
         items = listOf(
-            item("dashboard_lights", "Dashboard Warning Lights"),
-            item("windshield", "Windshield (cracks/chips)"),
-            item("wiper_blades", "Wiper Blades"),
-            item("body", "Body (dents/rust/structural)"),
-            item("headlights", "Headlights"),
-            item("taillights", "Taillights & Brake Lights"),
-            item("turn_signals", "Turn Signals & Marker Lights"),
-            item("license_lamp", "License Plate Lamp")
-        )
-    ),
-    InspectionSection(
-        title = "Fluids & Filters",
-        items = listOf(
-            item("engine_oil", "Engine Oil Level & Condition"),
+            item("engine_oil", "Engine Oil"),
+            item("coolant", "Coolant"),
+            item("brake_fluid", "Brake Fluid"),
             item("transmission_fluid", "Transmission Fluid"),
-            item("brake_fluid", "Brake Fluid Level"),
-            item("coolant", "Coolant Level & Condition"),
-            item("power_steering", "Power Steering Fluid"),
-            item("washer_fluid", "Washer Fluid"),
-            item("engine_air_filter", "Engine Air Filter"),
-            item("cabin_air_filter", "Cabin Air Filter")
+            item("battery", "Battery"),
+            item("air_filter", "Air Filter")
         )
     ),
     InspectionSection(
-        title = "Under Hood",
-        items = listOf(
-            item("battery", "Battery (charge/cables/corrosion)"),
-            item("coolant_hoses", "Coolant Hoses"),
-            item("drive_belts", "Drive Belts"),
-            item("belt_tensioner", "Belt Tensioner"),
-            item("exhaust", "Exhaust System"),
-            item("master_cylinder", "Master Cylinder")
-        )
-    ),
-    InspectionSection(
-        title = "Tires & Wheels",
-        items = listOf(
-            item("tire_tread", "Tire Tread Depth"),
-            item("tire_pressure", "Tire Pressure"),
-            item("tire_wear", "Tire Wear Pattern"),
-            item("wheel_alignment", "Wheel Alignment")
-        )
-    ),
-    InspectionSection(
-        title = "Brake System",
+        title = "Brakes & Tires",
         items = listOf(
             item("brake_pads", "Brake Pads"),
             item("brake_rotors", "Brake Rotors"),
-            item("brake_lines", "Brake Hoses/Lines"),
-            item("brake_hardware", "Brake Hardware/Adjuster"),
-            item("parking_brake", "Parking Brake & Cables")
+            item("tire_tread", "Tire Tread"),
+            item("tire_pressure", "Tire Pressure")
         )
     ),
     InspectionSection(
-        title = "Steering & Suspension",
+        title = "Lights & Exterior",
         items = listOf(
-            item("shocks_struts", "Shocks & Struts"),
-            item("ball_joints", "Ball Joints / Control Arms"),
-            item("cv_joints", "CV Joints / Boots"),
-            item("tie_rods", "Tie Rod Ends"),
-            item("rack_pinion", "Rack & Pinion / Steering"),
-            item("bushings", "Bushings / Link Pins"),
-            item("seals_bearings", "Seals & Bearings")
+            item("headlights", "Headlights"),
+            item("taillights", "Taillights / Brake Lights"),
+            item("turn_signals", "Turn Signals"),
+            item("wipers", "Wiper Blades"),
+            item("windshield", "Windshield")
+        )
+    ),
+    InspectionSection(
+        title = "Steering & Undercarriage",
+        items = listOf(
+            item("shocks", "Shocks / Struts"),
+            item("steering", "Steering / Tie Rods"),
+            item("exhaust", "Exhaust System"),
+            item("belts_hoses", "Belts / Hoses")
         )
     )
 )
