@@ -52,35 +52,40 @@ namespace Project.Vehicles
         public HoverPhysicsDriver PhysicsDriver => physicsDriver;
         public HovercraftUsable Usable => usable;
 
-        private void Awake()
+        private void Reset()
+        {
+            WireSerializedRefs();
+        }
+
+        private void OnValidate()
+        {
+            WireSerializedRefs();
+        }
+
+        private void WireSerializedRefs()
         {
             if (physicsDriver == null)
                 physicsDriver = GetComponent<HoverPhysicsDriver>();
-
             if (occupancy == null)
                 occupancy = GetComponent<HovercraftOccupancy>();
-
             if (cameraRig == null)
                 cameraRig = GetComponent<HovercraftCameraRig>();
-
             if (turret == null)
                 turret = GetComponent<HovercraftTurretController>();
-
             if (engineAudio == null)
                 engineAudio = GetComponent<HovercraftEngineAudio>();
-
             if (vehicleAudio == null)
                 vehicleAudio = GetComponent<HovercraftVehicleAudio>();
-
             if (thrusterVfx == null)
                 thrusterVfx = GetComponent<HovercraftThrusterVfx>();
-
             if (usable == null)
                 usable = GetComponent<HovercraftUsable>();
-
             if (fuelSystem == null)
                 fuelSystem = GetComponent<HovercraftFuelSystem>();
+        }
 
+        private void Awake()
+        {
             ApplyAudioClipOverrides();
         }
 

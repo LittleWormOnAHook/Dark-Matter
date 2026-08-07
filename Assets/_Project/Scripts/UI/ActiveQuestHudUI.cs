@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Text;
 using Project.Core;
 using Project.Player;
-using Project.Progression;
 using Project.Quests;
 using TMPro;
 using UnityEngine;
@@ -22,9 +21,7 @@ namespace Project.UI
 
         private RectTransform rootRect;
         private RectTransform listRoot;
-        private TextMeshProUGUI progressionHeader;
         private QuestManager questManager;
-        private PlayerProgressionManager progression;
         private CanvasGroup canvasGroup;
         private bool built;
         private bool gameplayVisible = true;
@@ -85,40 +82,20 @@ namespace Project.UI
             ApplyLockedLayout();
 
             // Idempotent: reclaim existing children after domain reload / double EnsureExists.
-            Transform existingHeader = transform.Find("ProgressionHeader");
-            if (existingHeader != null)
-            {
-                progressionHeader = existingHeader.GetComponent<TextMeshProUGUI>();
-            }
-            else
-            {
-                GameObject headerObject = new GameObject("ProgressionHeader", typeof(RectTransform));
-                headerObject.transform.SetParent(transform, false);
-                headerObject.SetActive(true);
-                RectTransform headerRect = headerObject.GetComponent<RectTransform>();
-                headerRect.anchorMin = new Vector2(0f, 1f);
-                headerRect.anchorMax = new Vector2(1f, 1f);
-                headerRect.pivot = new Vector2(1f, 1f);
-                headerRect.anchoredPosition = Vector2.zero;
-                headerRect.sizeDelta = new Vector2(0f, 28f);
-
-                progressionHeader = headerObject.AddComponent<TextMeshProUGUI>();
-                ShiftUiTheme theme = ShiftUiTheme.Current;
-                if (theme != null)
-                    theme.ApplyFont(progressionHeader, semiBold: true);
-                else
-                    TmpUiHelper.ApplyDefaultFont(progressionHeader);
-                progressionHeader.fontSize = 16f;
-                progressionHeader.fontStyle = FontStyles.Bold;
-                progressionHeader.alignment = TextAlignmentOptions.TopRight;
-                progressionHeader.color = SurvivalPioneerUiPalette.HighlightText;
-                progressionHeader.raycastTarget = false;
-            }
+            // Lv/XP used to live here under the compass — removed (HotbarXpHud owns that readout).
+            Transform legacyHeader = transform.Find("ProgressionHeader");
+            if (legacyHeader != null)
+                Destroy(legacyHeader.gameObject);
 
             Transform existingList = transform.Find("QuestList");
             if (existingList != null)
             {
                 listRoot = existingList as RectTransform;
+                if (listRoot != null)
+                {
+                    listRoot.offsetMin = Vector2.zero;
+                    listRoot.offsetMax = Vector2.zero;
+                }
             }
             else
             {
@@ -129,7 +106,7 @@ namespace Project.UI
                 listRoot.anchorMax = new Vector2(1f, 1f);
                 listRoot.pivot = new Vector2(1f, 1f);
                 listRoot.offsetMin = Vector2.zero;
-                listRoot.offsetMax = new Vector2(0f, -30f);
+                listRoot.offsetMax = Vector2.zero;
 
                 VerticalLayoutGroup layout = listObject.AddComponent<VerticalLayoutGroup>();
                 layout.spacing = 2f;
@@ -150,13 +127,14 @@ namespace Project.UI
                 Transform child = transform.GetChild(i);
                 if (child == null)
                     continue;
-                if (child.name != "ProgressionHeader" && child.name != "QuestList")
-                    continue;
-                if ((child.name == "ProgressionHeader" && child.gameObject != progressionHeader?.gameObject)
-                    || (child.name == "QuestList" && child != listRoot))
+                if (child.name == "ProgressionHeader")
                 {
                     Object.Destroy(child.gameObject);
+                    continue;
                 }
+
+                if (child.name == "QuestList" && child != listRoot)
+                    Object.Destroy(child.gameObject);
             }
         }
 
@@ -314,12 +292,7 @@ namespace Project.UI
                 questManager.OnQuestCompleted += HandleQuestUpdated;
             }
 
-            progression = PlayerProgressionManager.EnsureExists();
-            if (progression != null)
-                progression.OnXpChanged += RefreshProgressionHeader;
-
             ApplyLockedLayout();
-            RefreshProgressionHeader();
             Refresh();
             ApplyPresentationVisible();
         }
@@ -331,9 +304,6 @@ namespace Project.UI
                 questManager.OnQuestUpdated -= HandleQuestUpdated;
                 questManager.OnQuestCompleted -= HandleQuestUpdated;
             }
-
-            if (progression != null)
-                progression.OnXpChanged -= RefreshProgressionHeader;
 
             if (instance == this)
                 instance = null;
@@ -358,25 +328,8 @@ namespace Project.UI
             questManager.OnQuestCompleted += HandleQuestUpdated;
         }
 
-        private void RefreshProgressionHeader()
-        {
-            if (progressionHeader == null)
-                return;
-
-            progression ??= PlayerProgressionManager.EnsureExists();
-            if (progression == null)
-            {
-                progressionHeader.text = "Lv 1  |  XP 0/100";
-                return;
-            }
-
-            progressionHeader.text =
-                $"Lv {progression.Level}  |  XP {progression.GetXpProgressInCurrentLevel()}/{progression.GetXpRequiredForNextLevel()}";
-        }
-
         public void Refresh()
         {
-            RefreshProgressionHeader();
             ApplyLockedLayout();
 
             if (listRoot == null)

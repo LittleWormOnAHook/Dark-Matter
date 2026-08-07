@@ -225,6 +225,7 @@ GameObject:
   - component: {fileID: 2623120518501185388}
   - component: {fileID: 5596380077879273840}
   - component: {fileID: 4141457314553847119}
+  - component: {fileID: 5025244964411689321}
   m_Layer: 0
   m_Name: InventorySlot
   m_TagString: Untagged
@@ -305,7 +306,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.UI.InventorySlotUI
   iconImage: {fileID: 544380038376982602}
   amountText: {fileID: 4558238440510724529}
-  backgroundImage: {fileID: 0}
+  backgroundImage: {fileID: 2623120518501185388}
+  canvasGroup: {fileID: 5025244964411689321}
   preserveManualLayout: 1
   slotIndex: 0
 --- !u!114 &4141457314553847119
@@ -328,3 +330,15 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!225 &5025244964411689321
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8630063083044621162}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0

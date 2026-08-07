@@ -28,6 +28,7 @@ namespace Project.UI
         private Canvas rootCanvas;
         private Camera worldCamera;
         private Transform playerTransform;
+        private PlayerController cachedPlayer;
 
         public static void Register(ItemPickup pickup)
         {
@@ -123,7 +124,7 @@ namespace Project.UI
                 return;
             }
 
-            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+            PlayerController player = ResolvePlayer();
             if (player != null && player.BlocksCombatInput)
             {
                 HideAllDots();
@@ -236,6 +237,18 @@ namespace Project.UI
             }
         }
 
+        private PlayerController ResolvePlayer()
+        {
+            if (cachedPlayer != null)
+                return cachedPlayer;
+
+            cachedPlayer = PlayerLocator.FindPlayerController();
+            if (cachedPlayer != null)
+                playerTransform = cachedPlayer.transform;
+
+            return cachedPlayer;
+        }
+
         private bool ResolveReferences()
         {
             if (rootCanvas == null)
@@ -245,11 +258,7 @@ namespace Project.UI
                 worldCamera = Camera.main;
 
             if (playerTransform == null)
-            {
-                GameObject player = PlayerLocator.FindPlayerObject();
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                ResolvePlayer();
 
             return rootCanvas != null && worldCamera != null && playerTransform != null;
         }

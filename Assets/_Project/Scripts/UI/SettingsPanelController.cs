@@ -106,6 +106,7 @@ namespace Project.UI
                 "Apply",
                 new Vector2(120f, 32f),
                 15f);
+            applyButton.onClick.RemoveAllListeners();
             applyButton.onClick.AddListener(ApplySettings);
 
             // Pinned to the panel root so it stays fixed top-right outside the modal layout.
@@ -117,36 +118,45 @@ namespace Project.UI
                 fontSize: 14f,
                 inset: 14f);
 
+            masterSlider.onValueChanged.RemoveAllListeners();
             masterSlider.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetMasterVolume(value);
                 UpdatePercentLabel(masterValueLabel, value);
             });
+            musicSlider.onValueChanged.RemoveAllListeners();
             musicSlider.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetMusicVolume(value);
                 GameAudioManager.Instance?.RefreshVolumes();
                 UpdatePercentLabel(musicValueLabel, value);
             });
+            sfxSlider.onValueChanged.RemoveAllListeners();
             sfxSlider.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetSfxVolume(value);
                 GameAudioManager.Instance?.RefreshVolumes();
                 UpdatePercentLabel(sfxValueLabel, value);
             });
+            postProcessingToggle.onValueChanged.RemoveAllListeners();
             postProcessingToggle.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetPostProcessingEnabled(value);
                 PostProcessingController.Instance?.ApplyFromSettings();
             });
+            minimapToggle.onValueChanged.RemoveAllListeners();
             minimapToggle.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetMinimapEnabled(value);
                 MapUI.ApplyMinimapEnabled(value);
             });
+            fullscreenToggle.onValueChanged.RemoveAllListeners();
             fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
+            vsyncToggle.onValueChanged.RemoveAllListeners();
             vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
+            qualityDropdown.onValueChanged.RemoveAllListeners();
             qualityDropdown.onValueChanged.AddListener(GameSettings.SetQualityLevel);
+            resolutionDropdown.onValueChanged.RemoveAllListeners();
             resolutionDropdown.onValueChanged.AddListener(GameSettings.SetResolutionIndex);
 
             PopulateDropdowns();

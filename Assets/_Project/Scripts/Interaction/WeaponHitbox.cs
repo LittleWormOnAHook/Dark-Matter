@@ -24,6 +24,7 @@ namespace Project.Interaction
 
         private readonly HashSet<Transform> hitRoots = new HashSet<Transform>();
         private readonly RaycastHit[] sweepHits = new RaycastHit[32];
+        private readonly Collider[] overlapHits = new Collider[32];
 
         private CapsuleCollider hitCollider;
         private MeleeCombatController owner;
@@ -182,15 +183,16 @@ namespace Project.Interaction
         private void OverlapCapsule(Vector3 center, Quaternion rotation, float radius, float halfHeight, int direction)
         {
             GetCapsulePoints(center, rotation, radius, halfHeight, direction, out Vector3 pointA, out Vector3 pointB);
-            Collider[] overlaps = Physics.OverlapCapsule(
+            int hitCount = Physics.OverlapCapsuleNonAlloc(
                 pointA,
                 pointB,
                 radius,
+                overlapHits,
                 swingLayers,
                 QueryTriggerInteraction.Ignore);
 
-            for (int i = 0; i < overlaps.Length; i++)
-                TryApplyHit(overlaps[i]);
+            for (int i = 0; i < hitCount; i++)
+                TryApplyHit(overlapHits[i]);
         }
 
         private void SweepCapsule(

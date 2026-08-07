@@ -40096,6 +40096,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 006be7b8f9d5fc44eb84fa91a1e13457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Companions.PioneerCompanionAgent
+  followController: {fileID: 1852899733699616664}
+  animationDriver: {fileID: 7189763923931545681}
+  combatController: {fileID: 7105689268994189309}
+  senseController: {fileID: 3872598614600534748}
+  equipmentVisual: {fileID: 0}
 --- !u!114 &1852899733699616664
 MonoBehaviour:
   m_ObjectHideFlags: 0

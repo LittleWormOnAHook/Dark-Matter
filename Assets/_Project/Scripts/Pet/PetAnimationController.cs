@@ -134,6 +134,7 @@ namespace Project.Pet
             _animator.applyRootMotion = false;
 
             float speed = _pet.CurrentSpeed;
+
             int targetHash = _idleHash;
 
             bool inRun = _currentStateHash == _runHash;

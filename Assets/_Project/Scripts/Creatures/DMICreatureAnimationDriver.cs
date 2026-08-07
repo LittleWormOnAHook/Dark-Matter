@@ -55,6 +55,8 @@ namespace Project.Creatures
                 animator = GetComponent<Animator>() ?? GetComponentInChildren<Animator>(true);
             if (navAgent == null)
                 navAgent = GetComponent<NavMeshAgent>() ?? GetComponentInChildren<NavMeshAgent>(true);
+            if (animator != null)
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         }
 
         public void Tick(DMICreatureAiController ai)
@@ -69,6 +71,7 @@ namespace Project.Creatures
             // Prefer AI intent speed, but fall back to actual agent motion so we never
             // stick on Idle while the NavMeshAgent is clearly moving.
             float speed = ResolveLocomotionSpeed(ai);
+
             if (speed < walkSpeedThreshold)
             {
                 PlayLocomotion(idleStateName, 1f);

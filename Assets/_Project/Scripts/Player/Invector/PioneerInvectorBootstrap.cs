@@ -213,6 +213,7 @@ namespace Project.Player.Invector
                 animator.updateMode = AnimatorUpdateMode.Fixed;
                 if (ThirdPersonController != null && !ThirdPersonController.useRootMotion)
                     animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             }
 
             if (ThirdPersonController != null &&

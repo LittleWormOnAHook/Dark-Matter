@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
 using Project.Crafting;
@@ -63,11 +64,13 @@ namespace Project.UI
         private Transform standaloneContentParent;
         private bool standaloneOpen;
         private bool standaloneInputCaptured;
+        private bool standaloneOwnedTimePause;
         private TextMeshProUGUI standaloneTitleLabel;
 
         private CraftingManager craftingManager;
         private InventorySystem inventorySystem;
         private CraftingUiPresentationMode presentationMode = CraftingUiPresentationMode.Library;
+        private bool recipeRefreshQueued;
 
         private void Awake()
         {
@@ -314,6 +317,13 @@ namespace Project.UI
 
             standaloneInputCaptured = true;
 
+            // Freeze the world while the station craft popup is up (mouse UI needs a free cursor).
+            if (Time.timeScale > 0f)
+            {
+                Time.timeScale = 0f;
+                standaloneOwnedTimePause = true;
+            }
+
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetGameplayPaused(true);
 
@@ -330,6 +340,12 @@ namespace Project.UI
 
             standaloneInputCaptured = false;
 
+            if (standaloneOwnedTimePause)
+            {
+                Time.timeScale = 1f;
+                standaloneOwnedTimePause = false;
+            }
+
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetGameplayPaused(false);
 
@@ -343,6 +359,31 @@ namespace Project.UI
                 return;
 
             standaloneWindowRect.sizeDelta = new Vector2(S(StandaloneWindowWidth), S(StandaloneWindowHeight));
+        }
+
+        /// <summary>
+        /// Defers recipe refresh one frame so physics trigger callbacks never tear down UI with DestroyImmediate.
+        /// </summary>
+        public void RequestRefreshRecipeList()
+        {
+            if (!isActiveAndEnabled)
+            {
+                RefreshRecipeList();
+                return;
+            }
+
+            if (recipeRefreshQueued)
+                return;
+
+            recipeRefreshQueued = true;
+            StartCoroutine(RefreshRecipeListNextFrame());
+        }
+
+        private IEnumerator RefreshRecipeListNextFrame()
+        {
+            yield return null;
+            recipeRefreshQueued = false;
+            RefreshRecipeList();
         }
 
         public void RefreshRecipeList()
@@ -500,7 +541,7 @@ namespace Project.UI
             {
                 Transform child = emptyStateHost.GetChild(i);
                 if (child != null)
-                    DestroyImmediate(child.gameObject);
+                    Destroy(child.gameObject);
             }
 
             emptyStateHost.gameObject.SetActive(false);

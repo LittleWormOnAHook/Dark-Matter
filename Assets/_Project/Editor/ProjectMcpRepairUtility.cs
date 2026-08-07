@@ -15,7 +15,10 @@ namespace Project.EditorTools
 
         static ProjectMcpRepairUtility()
         {
-            EditorApplication.delayCall += QueueAutoConnectAfterEditorStable;
+            // Auto-connect after domain reload races Unity Search LMDB merges on 6000.4.x
+            // (UUM-116428) and can trigger another reload while indexing is still hot.
+            // Use menu Repair Cursor MCP Connection when the bridge is needed.
+            // EditorApplication.delayCall += QueueAutoConnectAfterEditorStable;
         }
 
         private static void QueueAutoConnectAfterEditorStable()

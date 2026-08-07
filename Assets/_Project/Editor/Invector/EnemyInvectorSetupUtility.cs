@@ -157,7 +157,7 @@ namespace Project.EditorTools.Invector
 
             rootAnimator.applyRootMotion = false;
             rootAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            // AlwaysAnimate is for play mode; edit-mode Scene view must stay in avatar bind pose.
+            // AlwaysAnimate avoids intermittent chase glides when CullUpdateTransforms skips bone writes.
             // Do NOT SampleAnimation Idle/attack clips here — that froze mid-pose and floated weapons.
             RuntimeAnimatorController savedController = rootAnimator.runtimeAnimatorController;
             rootAnimator.runtimeAnimatorController = null;
@@ -723,8 +723,6 @@ namespace Project.EditorTools.Invector
             if (keepController != null)
                 rootAnimator.runtimeAnimatorController = keepController;
             rootAnimator.applyRootMotion = false;
-            // AlwaysAnimate: CullUpdateTransforms freezes bone writes when the SMR briefly
-            // reports !isVisible while NavMesh still chases — intermittent glide.
             rootAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             rootAnimator.Rebind();
             rootAnimator.Update(0f);

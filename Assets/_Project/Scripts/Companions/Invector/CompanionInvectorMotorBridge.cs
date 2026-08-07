@@ -66,6 +66,9 @@ namespace Project.Companions.Invector
                     _controller.input = Vector3.zero;
                     _controller.isSprinting = false;
                     _controller.isGrounded = true;
+                    if (_controller.animator != null &&
+                        _controller.animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                        _controller.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 }
 
                 return;
@@ -76,6 +79,7 @@ namespace Project.Companions.Invector
             worldDirection.y = 0f;
 
             bool isMoving = speed > MoveSpeedThreshold && worldDirection.sqrMagnitude > 0.0001f;
+
             if (isMoving)
             {
                 worldDirection.Normalize();

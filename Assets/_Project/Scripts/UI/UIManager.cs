@@ -15,7 +15,7 @@ using Project.Survival.Exposure;
 
 namespace Project.UI
 {
-    public class UIManager : MonoBehaviour
+    public partial class UIManager : MonoBehaviour
     {
         [Header("Survival Stats UI")]
         public Slider healthSlider;
@@ -51,8 +51,6 @@ namespace Project.UI
         private SurvivalStats survivalStats;
         private Camera worldCamera;
         private float aetherCredits;
-        private float piWalletBalance;
-        private float piBalance;
         private PlayerProgressionManager trackedProgression;
 
         private InputAction characterToggleAction;
@@ -110,28 +108,7 @@ namespace Project.UI
             MainCanvasFlow.Refresh();
         }
 
-        private void EnsureJournalPanelUi()
-        {
-            if (GetComponent<JournalPanelUI>() == null)
-                gameObject.AddComponent<JournalPanelUI>();
 
-        }
-
-        private void EnsureProgressionHud()
-        {
-            GameObject player = PlayerLocator.FindPlayerObject();
-            if (player != null)
-            {
-                if (player.GetComponent<PlayerProgressionManager>() == null)
-                    player.AddComponent<PlayerProgressionManager>();
-                if (player.GetComponent<ProgressionStatScaler>() == null)
-                    player.AddComponent<ProgressionStatScaler>();
-                return;
-            }
-
-            if (GetComponent<PlayerProgressionManager>() == null)
-                gameObject.AddComponent<PlayerProgressionManager>();
-        }
 
         public void OnToggleJournal(InputAction.CallbackContext context)
         {
@@ -215,67 +192,15 @@ namespace Project.UI
             characterToggleAction.performed += OnToggleCharacter;
         }
 
-        private void EnsureQuestManager()
-        {
-            QuestManager.EnsureExists();
-        }
 
-        private void EnsureAchievementSystems()
-        {
-            AchievementManager.EnsureExists();
-            if (GetComponent<AchievementProgressBridge>() == null)
-                gameObject.AddComponent<AchievementProgressBridge>();
-        }
 
-        private void EnsureCraftingUi()
-        {
-            if (GetComponent<CraftingUI>() == null)
-                gameObject.AddComponent<CraftingUI>();
-        }
 
-        private void EnsurePeakScreenUi()
-        {
-            EnvironmentalCrisisHudMode.EnsureExists(transform);
-        }
 
-        private void EnsurePickupProximityDotUi()
-        {
-            if (GetComponent<PickupProximityDotUI>() == null)
-                gameObject.AddComponent<PickupProximityDotUI>();
-        }
 
-        private void EnsureWorldInteractionDotUi()
-        {
-            if (GetComponent<WorldInteractionDotUI>() == null)
-                gameObject.AddComponent<WorldInteractionDotUI>();
-        }
 
-        private void EnsurePickupAimReticleUi()
-        {
-            if (GetComponent<PickupAimReticleUI>() == null)
-                gameObject.AddComponent<PickupAimReticleUI>();
 
-            if (GetComponent<HovercraftTurretReticleUI>() == null)
-                gameObject.AddComponent<HovercraftTurretReticleUI>();
-        }
 
-        private void EnsureShiftHudBootstrap()
-        {
-            if (GetComponent<ShiftHudBootstrap>() == null)
-                gameObject.AddComponent<ShiftHudBootstrap>();
-        }
 
-        private void EnsureMapUi()
-        {
-            if (GetComponent<MapUI>() == null)
-                gameObject.AddComponent<MapUI>();
-        }
-
-        private void EnsureToolBarUi()
-        {
-            if (GetComponent<ToolBarUI>() == null)
-                gameObject.AddComponent<ToolBarUI>();
-        }
 
         private IEnumerator Start()
         {
@@ -297,28 +222,7 @@ namespace Project.UI
                 MainCanvasFlow.Refresh();
         }
 
-        private void EnsureGameplayUiHelpers()
-        {
-            PickupToastUI.EnsureExists(transform);
-            XpToastUI.EnsureExists(transform);
-            DMILevelUpPopupUI.EnsureExists(transform);
-            AchievementUnlockPopupUI.EnsureExists(transform);
-            AchievementProgressBridge.EnsureExists();
-            QuestGiverDialogUI.EnsureExists(transform);
-            ActiveQuestHudUI.EnsureExists(transform);
-            HotbarXpHud.EnsureExists(transform);
-            UiFrontLayer.Get(transform);
-        }
 
-        private void EnsureProgressionLevelUpFeedback()
-        {
-            trackedProgression = PlayerProgressionManager.EnsureExists();
-            if (trackedProgression == null)
-                return;
-
-            trackedProgression.OnLevelUp -= HandleProgressionLevelUp;
-            trackedProgression.OnLevelUp += HandleProgressionLevelUp;
-        }
 
         private void HandleProgressionLevelUp(int newLevel, int levelsGained)
         {
@@ -331,29 +235,6 @@ namespace Project.UI
             ApplyInteractionPromptLayout();
         }
 
-        private void EnsureInteractionPrompt()
-        {
-            if (interactionPrompt != null)
-                return;
-
-            Transform existing = transform.Find("InteractionPrompt");
-            if (existing != null)
-            {
-                interactionPrompt = existing.GetComponent<TextMeshProUGUI>();
-                if (interactionPrompt != null)
-                    return;
-            }
-
-            GameObject promptObject = new GameObject("InteractionPrompt", typeof(RectTransform));
-            promptObject.transform.SetParent(transform, false);
-            interactionPrompt = promptObject.AddComponent<TextMeshProUGUI>();
-            TmpUiHelper.ApplyDefaultFont(interactionPrompt);
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            if (theme != null)
-                theme.ApplyFont(interactionPrompt, semiBold: true);
-            interactionPrompt.raycastTarget = false;
-            interactionPrompt.gameObject.SetActive(false);
-        }
 
         private void ApplyInteractionPromptLayout()
         {
@@ -374,53 +255,8 @@ namespace Project.UI
             interactionPrompt.color = SurvivalPioneerUiPalette.InteractionPromptText;
         }
 
-        public void SetCurrencyHudVisible(bool visible)
-        {
-            if (piBalanceText == null)
-                return;
 
-            piBalanceText.gameObject.SetActive(visible);
-            if (visible)
-            {
-                ConfigurePiBalancePosition();
-                RefreshCurrencyHud();
-            }
-        }
 
-        private void ConfigurePiBalancePosition()
-        {
-            if (!applyRuntimeHudLayout || piBalanceText == null)
-                return;
-
-            RectTransform piRect = piBalanceText.rectTransform;
-            piRect.anchorMin = new Vector2(1f, 1f);
-            piRect.anchorMax = new Vector2(1f, 1f);
-            piRect.pivot = new Vector2(1f, 1f);
-            piRect.anchoredPosition = new Vector2(
-                -HudLayoutMetrics.RightHudInset,
-                -HudLayoutMetrics.TopHudInset);
-
-            piBalanceText.fontSize = Mathf.Max(12f, piBalanceText.fontSize * 0.5f);
-            piBalanceText.alignment = TextAlignmentOptions.TopRight;
-        }
-
-        private void EnsureCombatUiReady()
-        {
-            if (combatPopupParent == null)
-                combatPopupParent = popupParent != null ? popupParent : transform;
-
-            if (floatingDamagePrefab == null)
-            {
-                floatingDamagePrefab = Resources.Load<GameObject>("Combat/FloatingDamageNumber");
-#if UNITY_EDITOR
-                if (floatingDamagePrefab == null)
-                {
-                    floatingDamagePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                        "Assets/_Project/Prefabs/UI/FloatingDamageNumber.prefab");
-                }
-#endif
-            }
-        }
 
         public void ShowFloatingDamage(float damage, Vector3 worldPosition)
         {
@@ -463,32 +299,7 @@ namespace Project.UI
             survivalStats.OnStatsChanged += UpdateSurvivalUI;
         }
 
-        private void EnsureOxygenDeprivationFx()
-        {
-            if (GetComponent<OxygenDeprivationFx>() == null)
-                gameObject.AddComponent<OxygenDeprivationFx>();
-        }
 
-        private void EnsureSurvivalPanelBinder()
-        {
-            ResolveSurvivalUiReferences();
-
-            if (healthSlider == null)
-                return;
-
-            Transform current = healthSlider.transform;
-            while (current != null && current.name != "SurvivalStatsPanel")
-                current = current.parent;
-
-            if (current == null)
-                return;
-
-            if (current.GetComponent<SurvivalStatsPanelBinder>() == null)
-                current.gameObject.AddComponent<SurvivalStatsPanelBinder>();
-
-            if (current.GetComponent<CondensedSurvivalStatsHud>() == null)
-                current.gameObject.AddComponent<CondensedSurvivalStatsHud>();
-        }
 
         public void SyncSurvivalBars()
         {
@@ -654,100 +465,17 @@ namespace Project.UI
                 progress.UpdateRadialFill(clamped);
         }
 
-        public float GetAetherCredits() => aetherCredits;
 
-        public void SetAetherCredits(float balance)
-        {
-            aetherCredits = Mathf.Max(0f, balance);
-            RefreshCurrencyHud();
-        }
 
-        public float GetPiWalletBalance() => piWalletBalance;
 
-        public void SetPiWalletBalance(float balance)
-        {
-            piWalletBalance = Mathf.Max(0f, balance);
-            RefreshCurrencyHud();
-        }
 
-        public float GetPiBalance() => piBalance;
 
-        public void SetPiBalance(float balance)
-        {
-            piBalance = Mathf.Max(0f, balance);
-            RefreshCurrencyHud();
-        }
 
-        public void ShowAcReward(int amount, string source = "Reward")
-        {
-            if (amount <= 0)
-                return;
 
-            PioneerRosterManager roster = PioneerRosterManager.Instance;
-            if (roster != null)
-            {
-                roster.AddAetherCredits(amount, source);
-                return;
-            }
 
-            aetherCredits += amount;
-            ShowAcRewardPopup(amount, source);
-            RefreshCurrencyHud();
-        }
 
-        public void ShowAcRewardPopup(int amount, string source = "Reward")
-        {
-            if (amount <= 0)
-                return;
 
-            ShowCurrencyPopup($"+{amount} AC", source);
-        }
 
-        public void ShowLevelUpPopup(int newLevel, int levelsGained = 1)
-        {
-            DMILevelUpPopupUI.Show(newLevel, levelsGained);
-        }
-
-        public void ShowPiReward(int amount, string source = "Gathering")
-        {
-            ShowAcReward(amount, source);
-        }
-
-        private void RefreshCurrencyHud()
-        {
-            if (piBalanceText == null || !piBalanceText.gameObject.activeSelf)
-                return;
-
-            piBalanceText.text = $"AC: {Mathf.RoundToInt(aetherCredits)}";
-        }
-
-        private void ShowCurrencyPopup(string amountLine, string source)
-        {
-            if (piRewardPopupPrefab != null && popupParent != null)
-            {
-                GameObject popup = Instantiate(piRewardPopupPrefab, popupParent);
-                RectTransform popupRect = popup.transform as RectTransform;
-                if (popupRect != null)
-                {
-                    popupRect.anchorMin = new Vector2(0.5f, 0.5f);
-                    popupRect.anchorMax = new Vector2(0.5f, 0.5f);
-                    popupRect.pivot = new Vector2(0.5f, 0.5f);
-                    popupRect.anchoredPosition = GameplayHudLayout.MessageToastAnchoredPosition;
-                }
-
-                TextMeshProUGUI txt = popup.GetComponentInChildren<TextMeshProUGUI>();
-                if (txt != null)
-                    txt.text = $"{amountLine}\n{source}";
-
-                if (popup.GetComponent<PiRewardPopup>() == null)
-                    StartCoroutine(FadeAndDestroyPopup(popup));
-            }
-            else
-            {
-                // Fallback when reward prefab is not wired — still surface center-screen feedback.
-                PickupToastUI.Show(string.IsNullOrWhiteSpace(source) ? amountLine : $"{amountLine}  ({source})");
-            }
-        }
 
         public void ShowInteractionPrompt(string message)
         {
@@ -781,35 +509,8 @@ namespace Project.UI
                 interactionPrompt.gameObject.SetActive(false);
         }
 
-        private System.Collections.IEnumerator FadeAndDestroyPopup(GameObject popup)
-        {
-            yield return new WaitForSeconds(2.5f);
-            Destroy(popup);
-        }
 
-        public void RestartScene()
-        {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
 
-        public void RespawnPlayer()
-        {
-            Time.timeScale = 1f;
-
-            GameObject player = PlayerLocator.FindPlayerObject();
-            if (player != null)
-            {
-                PlayerDeathHandler deathHandler = player.GetComponent<PlayerDeathHandler>();
-                if (deathHandler != null)
-                {
-                    deathHandler.Respawn();
-                    return;
-                }
-            }
-
-            RestartScene();
-        }
 
         public void RefreshSurvivalDisplay()
         {
@@ -822,176 +523,11 @@ namespace Project.UI
             UpdateSurvivalUI();
         }
 
-        public void HideDeathPopup()
-        {
-            Transform deathPanel = transform.Find("DeathPopupPanel");
-            if (deathPanel != null)
-                deathPanel.gameObject.SetActive(false);
 
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
-            if (playerController != null)
-            {
-                playerController.SetInventoryOpen(false);
-                GameplayAudioUtility.EnsureListenerOnCamera(playerController.GameplayCamera);
-            }
-        }
 
-        public void ShowDeathPopup()
-        {
-            Transform existing = transform.Find("DeathPopupPanel");
-            if (existing != null)
-            {
-                existing.gameObject.SetActive(true);
-                existing.SetAsLastSibling();
-                WireDeathPopupButtons(existing);
-                ConfigurePopupCursor();
-                return;
-            }
 
-            // Create Death Popup Panel
-            GameObject deathPanel = new GameObject("DeathPopupPanel", typeof(RectTransform));
-            deathPanel.transform.SetParent(this.transform, false);
-            
-            RectTransform panelRt = deathPanel.GetComponent<RectTransform>();
-            panelRt.anchorMin = Vector2.zero;
-            panelRt.anchorMax = Vector2.one;
-            panelRt.sizeDelta = Vector2.zero;
 
-            Image bgImage = deathPanel.AddComponent<Image>();
-            bgImage.color = new Color(0f, 0f, 0f, 0.72f);
-            bgImage.raycastTarget = true;
 
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-
-            // Inner content panel
-            GameObject contentPanel = new GameObject("ContentPanel", typeof(RectTransform));
-            contentPanel.transform.SetParent(deathPanel.transform, false);
-            RectTransform contentRt = contentPanel.GetComponent<RectTransform>();
-            contentRt.anchorMin = new Vector2(0.5f, 0.5f);
-            contentRt.anchorMax = new Vector2(0.5f, 0.5f);
-            contentRt.pivot = new Vector2(0.5f, 0.5f);
-            contentRt.sizeDelta = new Vector2(520f, 320f);
-            contentRt.anchoredPosition = Vector2.zero;
-
-            Image contentBg = contentPanel.AddComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(contentBg);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(contentBg, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(contentPanel);
-
-            // Create title text "GAME OVER"
-            GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
-            titleObj.transform.SetParent(contentPanel.transform, false);
-            TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
-            if (theme != null)
-                theme.ApplyFont(titleText, bold: true);
-            else
-                TmpUiHelper.ApplyDefaultFont(titleText);
-            titleText.text = "GAME OVER";
-            titleText.fontSize = 64f;
-            titleText.fontStyle = FontStyles.Bold;
-            titleText.color = SurvivalPioneerUiPalette.WarningText;
-            titleText.alignment = TextAlignmentOptions.Center;
-            
-            RectTransform titleRt = titleObj.GetComponent<RectTransform>();
-            titleRt.anchorMin = new Vector2(0.5f, 0.7f);
-            titleRt.anchorMax = new Vector2(0.5f, 0.7f);
-            titleRt.sizeDelta = new Vector2(600f, 100f);
-            titleRt.anchoredPosition = Vector2.zero;
-
-            // Create retry button
-            GameObject retryObj = CreateStyledButton(contentPanel.transform, "RetryButton", "RETRY", new Vector2(0f, 20f));
-            Button retryBtn = retryObj.GetComponent<Button>();
-            retryBtn.onClick.AddListener(RespawnPlayer);
-
-            // Create exit button
-            GameObject exitObj = CreateStyledButton(contentPanel.transform, "ExitButton", "END GAME", new Vector2(0f, -60f));
-            Button exitBtn = exitObj.GetComponent<Button>();
-            exitBtn.onClick.AddListener(QuitGame);
-
-            deathPanel.transform.SetAsLastSibling();
-            ConfigurePopupCursor();
-        }
-
-        private void WireDeathPopupButtons(Transform deathPanel)
-        {
-            Button retryBtn = deathPanel.Find("RetryButton")?.GetComponent<Button>();
-            if (retryBtn != null)
-            {
-                retryBtn.onClick.RemoveAllListeners();
-                retryBtn.onClick.AddListener(RespawnPlayer);
-            }
-
-            Button exitBtn = deathPanel.Find("ExitButton")?.GetComponent<Button>();
-            if (exitBtn != null)
-            {
-                exitBtn.onClick.RemoveAllListeners();
-                exitBtn.onClick.AddListener(QuitGame);
-            }
-        }
-
-        private void QuitGame()
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
-        }
-
-        private void ConfigurePopupCursor()
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            PlayerController pc = FindAnyObjectByType<PlayerController>();
-            if (pc != null) pc.SetInventoryOpen(true);
-
-            CameraController cam = FindAnyObjectByType<CameraController>();
-            if (cam != null) cam.SetInventoryOpen(true);
-        }
-
-        private GameObject CreateStyledButton(Transform parent, string name, string labelText, Vector2 pos)
-        {
-            GameObject btnObj = new GameObject(name, typeof(RectTransform));
-            btnObj.transform.SetParent(parent, false);
-
-            RectTransform rt = btnObj.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.4f);
-            rt.anchorMax = new Vector2(0.5f, 0.4f);
-            rt.sizeDelta = new Vector2(220f, 50f);
-            rt.anchoredPosition = pos;
-
-            Image img = btnObj.AddComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(img);
-            img.color = SurvivalPioneerUiPalette.ButtonNormal;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(btnObj);
-
-            Button btn = btnObj.AddComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(btn, img);
-
-            // Add text child
-            GameObject txtObj = new GameObject("Text", typeof(RectTransform));
-            txtObj.transform.SetParent(btnObj.transform, false);
-
-            RectTransform txtRt = txtObj.GetComponent<RectTransform>();
-            txtRt.anchorMin = Vector2.zero;
-            txtRt.anchorMax = Vector2.one;
-            txtRt.sizeDelta = Vector2.zero;
-
-            TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
-            ShiftUiTheme theme = ShiftUiTheme.Current;
-            if (theme != null)
-                theme.ApplyFont(tmp, semiBold: true);
-            else
-                TmpUiHelper.ApplyDefaultFont(tmp);
-            tmp.text = labelText;
-            tmp.fontSize = 20f;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.color = SurvivalPioneerUiPalette.BodyText;
-            tmp.alignment = TextAlignmentOptions.Center;
-
-            return btnObj;
-        }
 
         private void OnDestroy()
         {

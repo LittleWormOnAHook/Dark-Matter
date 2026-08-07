@@ -180,6 +180,7 @@ namespace Project.UI
                 out RectTransform contentArea,
                 out Button headerCloseButton);
             titleText = MenuUiBuilder.GetShellTitleText(dialogPanel);
+            headerCloseButton.onClick.RemoveAllListeners();
             headerCloseButton.onClick.AddListener(Close);
 
             VerticalLayoutGroup layout = contentArea.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -213,8 +214,11 @@ namespace Project.UI
             lootAllButton = CreateButton(buttonRow.transform, "Loot All", theme, out _);
             closeButton = CreateButton(buttonRow.transform, "Close", theme, out _);
 
+            lootButton.onClick.RemoveAllListeners();
             lootButton.onClick.AddListener(OnLootClicked);
+            lootAllButton.onClick.RemoveAllListeners();
             lootAllButton.onClick.AddListener(OnLootAllClicked);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Close);
 
             EnforceLootDialogLayout();

@@ -274,11 +274,17 @@ namespace Project.UI
             settingsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Settings", buttonSize, buttonFontSize);
             exitButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Quit", buttonSize, buttonFontSize);
 
+            resumeButton.onClick.RemoveAllListeners();
             resumeButton.onClick.AddListener(ResumeFromPause);
+            newGameButton.onClick.RemoveAllListeners();
             newGameButton.onClick.AddListener(StartNewGame);
+            loadButton.onClick.RemoveAllListeners();
             loadButton.onClick.AddListener(OpenLoad);
+            saveButton.onClick.RemoveAllListeners();
             saveButton.onClick.AddListener(OpenSave);
+            settingsButton.onClick.RemoveAllListeners();
             settingsButton.onClick.AddListener(OpenSettings);
+            exitButton.onClick.RemoveAllListeners();
             exitButton.onClick.AddListener(ExitGame);
 
             resumeButton.gameObject.SetActive(false);

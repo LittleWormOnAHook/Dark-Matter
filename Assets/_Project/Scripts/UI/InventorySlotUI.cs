@@ -22,6 +22,7 @@ namespace Project.UI
         public Image iconImage;
         public TextMeshProUGUI amountText;
         public Image backgroundImage;
+        [SerializeField] private CanvasGroup canvasGroup;
 
         [Header("Layout")]
         [Tooltip("When enabled, icon/amount rects are not rebuilt in Awake. Set via UI Layout Editor.")]
@@ -42,21 +43,50 @@ namespace Project.UI
         private bool isLocked;
         private bool suppressAmountOutline;
 
-        private void Awake()
+        private void Reset()
         {
-            if (GetComponent<CanvasGroup>() == null)
-                gameObject.AddComponent<CanvasGroup>();
+            WireSerializedRefs(allowCreateCanvasGroup: true);
+        }
+
+        private void OnValidate()
+        {
+            WireSerializedRefs(allowCreateCanvasGroup: false);
+        }
+
+        private void WireSerializedRefs(bool allowCreateCanvasGroup)
+        {
+            if (canvasGroup == null)
+                canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null && allowCreateCanvasGroup)
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
             if (iconImage == null)
-                iconImage = transform.Find("Icon")?.GetComponent<Image>();
+            {
+                Transform icon = transform.Find("Icon");
+                if (icon != null)
+                    iconImage = icon.GetComponent<Image>();
+            }
 
             if (amountText == null)
-                amountText = transform.Find("Amount")?.GetComponent<TextMeshProUGUI>()
-                    ?? transform.Find("Icon/Amount")?.GetComponent<TextMeshProUGUI>();
+            {
+                Transform amount = transform.Find("Amount");
+                if (amount != null)
+                    amountText = amount.GetComponent<TextMeshProUGUI>();
+                if (amountText == null)
+                {
+                    Transform nested = transform.Find("Icon/Amount");
+                    if (nested != null)
+                        amountText = nested.GetComponent<TextMeshProUGUI>();
+                }
+            }
 
             if (backgroundImage == null)
                 backgroundImage = GetComponent<Image>();
+        }
 
+        private void Awake()
+        {
+            WireSerializedRefs(allowCreateCanvasGroup: true);
             ApplyShiftSlotVisuals();
             ApplyHudSlotMetrics();
         }

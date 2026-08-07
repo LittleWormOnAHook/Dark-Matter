@@ -386,9 +386,12 @@ namespace Project.UI
             environmentHost.transform.SetParent(panel.transform, false);
             LayoutElement environmentLayout = environmentHost.GetComponent<LayoutElement>();
             environmentLayout.flexibleHeight = 1f;
-            environmentLayout.minHeight = HudLayoutMetrics.Scaled(560f);
+            environmentLayout.minHeight = HudLayoutMetrics.Scaled(720f);
             environmentSection = environmentHost.GetComponent<CharacterEnvironmentSection>();
             environmentSection.Initialize();
+
+            if (panel.GetComponent<RectMask2D>() == null)
+                panel.AddComponent<RectMask2D>();
         }
 
         private static GameObject CreateColumn(Transform parent, float flexibleWidth)

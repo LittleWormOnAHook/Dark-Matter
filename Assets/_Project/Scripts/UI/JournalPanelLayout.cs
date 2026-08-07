@@ -207,12 +207,13 @@ namespace Project.UI
             if (parent == null)
                 return;
 
-            // Drop any prior empty card immediately so refresh cycles cannot stack overlapping copies.
+            // Drop any prior empty card so refresh cycles cannot stack overlapping copies.
+            // Use Destroy (not DestroyImmediate) — this path can run from physics triggers.
             for (int i = parent.childCount - 1; i >= 0; i--)
             {
                 Transform child = parent.GetChild(i);
                 if (child != null && child.name == "EmptyState")
-                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
             }
 
             GameObject card = new GameObject("EmptyState", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));

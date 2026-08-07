@@ -74,7 +74,7 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText", "CurrencyHudText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Player Level HUD", Category = "HUD", SearchNames = new[] { "PlayerLevelHud" }, PlayModeOnly = true, Description = "Lv/XP readout centered below the hotbar. Built by ActiveQuestHudUI.BuildProgressionHeader." },
+            new UiPanelDefinition { Label = "Player Level HUD", Category = "HUD", SearchNames = new[] { "HotbarXpHud", "PlayerLevelHud" }, PlayModeOnly = true, Description = "Lv/XP readout under the hotbar. Built by HotbarXpHud." },
             new UiPanelDefinition { Label = "Pickup Proximity Dots", Category = "HUD", SearchNames = new[] { "PickupProximityDots" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "World Interaction Dots", Category = "HUD", SearchNames = new[] { "WorldInteractionDots" }, ComponentType = typeof(WorldInteractionDotUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Ranged Combat HUD", Category = "HUD", SearchNames = new[] { "RangedAmmoLabel" }, ComponentType = typeof(RangedCombatHud), PlayModeOnly = true, Description = "Crosshair + ammo readout shown while a ranged weapon is drawn." },

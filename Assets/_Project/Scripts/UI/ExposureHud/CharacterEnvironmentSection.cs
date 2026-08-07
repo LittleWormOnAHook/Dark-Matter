@@ -123,8 +123,8 @@ namespace Project.UI
             if (rootLayoutElement == null)
                 rootLayoutElement = gameObject.AddComponent<LayoutElement>();
             // Environment gauges now match the player's full hotbar HUD size (see BuildEnvironmentBlock),
-            // so this needs considerably more room than the old tiny-compact-gauge layout did.
-            rootLayoutElement.minHeight = HudLayoutMetrics.Scaled(560f);
+            // so this needs room for the hazard list (~370px) plus buff/debuff/expedition blocks.
+            rootLayoutElement.minHeight = HudLayoutMetrics.Scaled(720f);
             rootLayoutElement.flexibleHeight = 1f;
 
             BuildEnvironmentBlock();
@@ -136,19 +136,17 @@ namespace Project.UI
         private void BuildEnvironmentBlock()
         {
             Transform section = CreateSectionFrame("EnvironmentSection", "Environment");
+            // Keep full-size hotbar gauges from painting outside the Character panel shell.
+            if (section.GetComponent<RectMask2D>() == null)
+                section.gameObject.AddComponent<RectMask2D>();
 
             GameObject gaugeRow = new GameObject("GaugeRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             gaugeRow.transform.SetParent(section, false);
             LayoutElement gaugeRowLayout = gaugeRow.GetComponent<LayoutElement>();
-            // Non-compact gauges (see Configure calls below) render at the same size as the player's
-            // real hotbar HUD (~407 raw units tall for the hazard panel at HotbarPanelScale) — this
-            // reserves enough row height so nothing gets visually clipped/overlapped.
-            gaugeRowLayout.minHeight = HudLayoutMetrics.Scaled(410f);
-            gaugeRowLayout.preferredHeight = HudLayoutMetrics.Scaled(410f);
 
             HorizontalLayoutGroup gaugeLayout = gaugeRow.GetComponent<HorizontalLayoutGroup>();
             gaugeLayout.spacing = 12f;
-            gaugeLayout.childAlignment = TextAnchor.LowerLeft;
+            gaugeLayout.childAlignment = TextAnchor.UpperLeft;
             gaugeLayout.childControlWidth = false;
             gaugeLayout.childControlHeight = false;
             gaugeLayout.padding = new RectOffset(4, 4, 0, 0);
@@ -165,7 +163,35 @@ namespace Project.UI
             hazardGauge = hazardObject.GetComponent<VerticalHazardExposureGauge>();
             hazardGauge.Configure(compact: false, HazardHudIconSet.LoadDefault());
 
+            float rowHeight = Mathf.Max(
+                ApplyFixedGaugeLayout(thermalObject),
+                ApplyFixedGaugeLayout(hazardObject));
+            gaugeRowLayout.minHeight = rowHeight;
+            gaugeRowLayout.preferredHeight = rowHeight;
+            gaugeRowLayout.flexibleHeight = 0f;
+
             zoneLabel = CreateBodyLabel(section, "ZoneLabel", "Environment: EVA nominal");
+        }
+
+        private static float ApplyFixedGaugeLayout(GameObject gaugeObject)
+        {
+            if (gaugeObject == null)
+                return 0f;
+
+            RectTransform rect = gaugeObject.GetComponent<RectTransform>();
+            LayoutElement layout = gaugeObject.GetComponent<LayoutElement>();
+            if (rect == null || layout == null)
+                return 0f;
+
+            float width = Mathf.Max(1f, rect.sizeDelta.x);
+            float height = Mathf.Max(1f, rect.sizeDelta.y);
+            layout.minWidth = width;
+            layout.preferredWidth = width;
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleWidth = 0f;
+            layout.flexibleHeight = 0f;
+            return height;
         }
 
         private void BuildModifierBlock(string heading, out ExposureModifierTickGrid grid)

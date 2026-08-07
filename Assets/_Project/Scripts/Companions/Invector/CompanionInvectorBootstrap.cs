@@ -130,6 +130,7 @@ namespace Project.Companions.Invector
                 animator.enabled = true;
                 animator.updateMode = AnimatorUpdateMode.Normal;
                 animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             }
 
             if (ThirdPersonController != null)

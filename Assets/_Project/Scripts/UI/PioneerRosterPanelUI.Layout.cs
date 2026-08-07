@@ -354,6 +354,7 @@ namespace Project.UI
             hostButton.transition = Selectable.Transition.None;
             hostButton.targetGraphic = host.GetComponent<Image>();
             int capturedLoadoutSlot = slotIndex;
+            hostButton.onClick.RemoveAllListeners();
             hostButton.onClick.AddListener(() => HandleTrioLoadoutPanelClicked(capturedLoadoutSlot));
 
             GameObject row = new GameObject("LoadoutRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -418,6 +419,7 @@ namespace Project.UI
             int capturedSlot = slotIndex;
             Button button = slotObject.GetComponent<Button>();
             trioSlotButtons[slotIndex] = button;
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => HandleTrioSlotClicked(capturedSlot));
 
             PioneerTrioSlotDropHandler drop = slotObject.AddComponent<PioneerTrioSlotDropHandler>();
@@ -440,6 +442,7 @@ namespace Project.UI
 
             Button button = slotObject.GetComponent<Button>();
             SurvivalPioneerUiPalette.StylePrimaryButton(button, slotImage);
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(onClick);
 
             slotObject.GetComponent<LayoutElement>().flexibleWidth = 1f;

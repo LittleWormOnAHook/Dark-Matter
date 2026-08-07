@@ -99,15 +99,19 @@ namespace Project.UI
             fuelReadoutText = CreateBodyLabel(menuPanel.transform, string.Empty);
 
             enterButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Enter", new Vector2(220f, 40f), 17f);
+            enterButton.onClick.RemoveAllListeners();
             enterButton.onClick.AddListener(OnEnterClicked);
 
             refuelButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Refuel", new Vector2(220f, 40f), 17f);
+            refuelButton.onClick.RemoveAllListeners();
             refuelButton.onClick.AddListener(OnRefuelClicked);
 
             storeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Store in Inventory", new Vector2(220f, 40f), 17f);
+            storeButton.onClick.RemoveAllListeners();
             storeButton.onClick.AddListener(OnStoreClicked);
 
             Button closeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Cancel", new Vector2(220f, 34f), 15f);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Hide);
         }
 

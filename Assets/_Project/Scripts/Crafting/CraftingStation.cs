@@ -193,7 +193,7 @@ namespace Project.Crafting
             if (craftingManager != null)
             {
                 craftingManager.CurrentStation = stationType;
-                FindAnyObjectByType<CraftingUI>()?.RefreshRecipeList();
+                FindAnyObjectByType<CraftingUI>()?.RequestRefreshRecipeList();
             }
         }
 

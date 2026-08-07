@@ -189,6 +189,7 @@ namespace Project.UI
                 titleRect.offsetMax = new Vector2(-56f, 0f);
             }
 
+            headerCloseButton.onClick.RemoveAllListeners();
             headerCloseButton.onClick.AddListener(Close);
 
             BuildSimpleContent(contentArea, theme);
@@ -220,6 +221,7 @@ namespace Project.UI
             bodyLayout.flexibleHeight = 1f;
 
             primaryButton = CreateButton(simpleContentRoot.transform, "Close", theme, out primaryButtonLabel);
+            primaryButton.onClick.RemoveAllListeners();
             primaryButton.onClick.AddListener(Close);
         }
 
@@ -282,9 +284,11 @@ namespace Project.UI
             actionRowElement.preferredHeight = 48f;
 
             questActionButton = CreateButton(actionRow.transform, "Accept", theme, out questActionButtonLabel);
+            questActionButton.onClick.RemoveAllListeners();
             questActionButton.onClick.AddListener(HandleQuestActionClicked);
 
             abandonQuestButton = CreateButton(actionRow.transform, "Abandon Quest", theme, out abandonQuestButtonLabel);
+            abandonQuestButton.onClick.RemoveAllListeners();
             abandonQuestButton.onClick.AddListener(HandleAbandonClicked);
             Image abandonImage = abandonQuestButton.GetComponent<Image>();
             if (abandonImage != null)
@@ -506,6 +510,7 @@ namespace Project.UI
             status.alignment = TextAlignmentOptions.TopLeft;
             status.color = QuestUiPalette.GetStatusLabelColor(entry.Status, theme);
 
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => SelectEntry(index));
         }
 

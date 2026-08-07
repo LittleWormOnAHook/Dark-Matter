@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.Data;
 using Project.Inventory;
 using UnityEngine;
@@ -14,6 +15,10 @@ namespace Project.Building
     [DisallowMultipleComponent]
     public class PowerGenerator : MonoBehaviour
     {
+        private static readonly List<PowerGenerator> ActiveInstances = new List<PowerGenerator>(8);
+
+        public static IReadOnlyList<PowerGenerator> Active => ActiveInstances;
+
         [Header("Building")]
         [Tooltip("Resolved automatically from BuildingControlPanel.BuildingId when left blank.")]
         [SerializeField] private string buildingIdOverride;
@@ -52,6 +57,17 @@ namespace Project.Building
             controlPanel = GetComponent<BuildingControlPanel>();
             currentFuel = Mathf.Clamp(startingFuel, 0f, maxFuel);
             hadPowerLastFrame = HasPower;
+        }
+
+        private void OnEnable()
+        {
+            if (!ActiveInstances.Contains(this))
+                ActiveInstances.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            ActiveInstances.Remove(this);
         }
 
         private void Start()

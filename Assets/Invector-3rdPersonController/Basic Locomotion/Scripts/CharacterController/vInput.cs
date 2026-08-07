@@ -20,8 +20,14 @@ namespace Invector.vCharacterController
                     _instance = FindAnyObjectByType<vInput>();
                     if (_instance == null)
                     {
-                        _instance = new GameObject("vInputType").AddComponent<vInput>();
-                        return _instance;
+                    if (!Application.isPlaying)
+                        return null;
+
+                    // HideAndDontSave avoids scene-owned leftovers on exit without DDOL lifetime issues.
+                    GameObject inputObject = new GameObject("vInputType");
+                    inputObject.hideFlags = HideFlags.HideAndDontSave;
+                    _instance = inputObject.AddComponent<vInput>();
+                    return _instance;
                     }
                 }
                 return _instance;
@@ -29,6 +35,12 @@ namespace Invector.vCharacterController
         }
 
         public vHUDController hud;
+
+        void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
+        }
 
         void Start()
         {

@@ -611,6 +611,9 @@ namespace Project.Player
             if (HovercraftInteractMenuUI.IsOpen)
                 return true;
 
+            if (CraftingUI.IsAnyStandaloneOpen)
+                return true;
+
             return BuildingControlPanelUI.IsOpen;
         }
 

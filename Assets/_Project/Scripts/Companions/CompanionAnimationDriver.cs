@@ -53,6 +53,8 @@ namespace Project.Companions
 
             followController = GetComponent<CompanionFollowController>();
             lastPosition = transform.position;
+            if (animator != null)
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         }
 
         private void Update()

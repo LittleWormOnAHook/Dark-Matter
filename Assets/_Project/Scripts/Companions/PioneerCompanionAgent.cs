@@ -11,11 +11,11 @@ namespace Project.Companions
     /// </summary>
     public class PioneerCompanionAgent : MonoBehaviour
     {
-        private CompanionFollowController followController;
-        private CompanionAnimationDriver animationDriver;
-        private CompanionCombatController combatController;
-        private CompanionSenseController senseController;
-        private CompanionEquipmentVisual equipmentVisual;
+        [SerializeField] private CompanionFollowController followController;
+        [SerializeField] private CompanionAnimationDriver animationDriver;
+        [SerializeField] private CompanionCombatController combatController;
+        [SerializeField] private CompanionSenseController senseController;
+        [SerializeField] private CompanionEquipmentVisual equipmentVisual;
         private CompanionTaskQueue taskQueue;
 
         private string pioneerRecordId;
@@ -38,41 +38,36 @@ namespace Project.Companions
             ? followController.FollowMode
             : PioneerFollowMode.FollowPlayer;
 
+        private void Reset()
+        {
+            WireSerializedRefs();
+        }
+
+        private void OnValidate()
+        {
+            WireSerializedRefs();
+        }
+
+        private void WireSerializedRefs()
+        {
+            if (followController == null)
+                followController = GetComponent<CompanionFollowController>();
+            if (animationDriver == null)
+                animationDriver = GetComponent<CompanionAnimationDriver>();
+            if (combatController == null)
+                combatController = GetComponent<CompanionCombatController>();
+            if (senseController == null)
+                senseController = GetComponent<CompanionSenseController>();
+            if (equipmentVisual == null)
+                equipmentVisual = GetComponent<CompanionEquipmentVisual>();
+        }
+
         private void Awake()
         {
-            followController = GetComponent<CompanionFollowController>();
-            if (followController == null)
-                followController = gameObject.AddComponent<CompanionFollowController>();
-
-            animationDriver = GetComponent<CompanionAnimationDriver>();
-            if (animationDriver == null)
-                animationDriver = gameObject.AddComponent<CompanionAnimationDriver>();
-
-            combatController = GetComponent<CompanionCombatController>();
-            if (combatController == null)
-                combatController = gameObject.AddComponent<CompanionCombatController>();
-
-            if (GetComponent<CompanionThreatSensor>() == null)
-                gameObject.AddComponent<CompanionThreatSensor>();
-
-            if (GetComponent<CompanionHealth>() == null)
-                gameObject.AddComponent<CompanionHealth>();
-
-            if (GetComponent<CompanionInjuryHandler>() == null)
-                gameObject.AddComponent<CompanionInjuryHandler>();
-
-            senseController = GetComponent<CompanionSenseController>();
-            if (senseController == null)
-                senseController = gameObject.AddComponent<CompanionSenseController>();
-
-            if (GetComponent<CompanionInvectorBootstrap>() == null)
-            {
-                equipmentVisual = GetComponent<CompanionEquipmentVisual>();
-                if (equipmentVisual == null)
-                    equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
-            }
-
             taskQueue = new CompanionTaskQueue();
+
+            if (equipmentVisual == null && GetComponent<CompanionInvectorBootstrap>() == null)
+                equipmentVisual = gameObject.AddComponent<CompanionEquipmentVisual>();
 
             if (CompanionInvectorBootstrap.HasInvectorStack(this) && animationDriver != null)
                 animationDriver.enabled = false;

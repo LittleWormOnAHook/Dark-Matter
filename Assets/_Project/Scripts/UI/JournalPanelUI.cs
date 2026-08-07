@@ -734,6 +734,7 @@ namespace Project.UI
       Button button = tab.GetComponent<Button>();
       button.targetGraphic = bg;
       JournalContentSection captured = section;
+      button.onClick.RemoveAllListeners();
       button.onClick.AddListener(() =>
       {
         journalSection = captured;
@@ -1044,6 +1045,7 @@ namespace Project.UI
       abandonQuestButton = abandonButtonObject.GetComponent<Button>();
       abandonQuestButton.targetGraphic = abandonImage;
       UiSoundHelper.BindButton(abandonQuestButton);
+      abandonQuestButton.onClick.RemoveAllListeners();
       abandonQuestButton.onClick.AddListener(HandleAbandonQuestClicked);
 
       GameObject abandonLabelObject = new GameObject("Label", typeof(RectTransform));
@@ -1122,6 +1124,7 @@ namespace Project.UI
       rowBg.color = QuestUiPalette.GetRowBackgroundColor(progress.status, selected, theme);
 
       Button button = row.AddComponent<Button>();
+      button.onClick.RemoveAllListeners();
       button.onClick.AddListener(() =>
       {
         selectedQuestId = definition.ResolvedId;

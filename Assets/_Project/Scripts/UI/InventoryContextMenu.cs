@@ -172,6 +172,7 @@ namespace Project.UI
                 InventoryItemActions.AmmoEquipOption option = options[i];
                 Button optionButton = MenuUiBuilder.CreateButton(ammoSubmenuContent, option.WeaponLabel, new Vector2(184f, 34f), 16f);
                 optionButton.name = "AmmoOption_" + option.WeaponHotbarSlot;
+                optionButton.onClick.RemoveAllListeners();
                 optionButton.onClick.AddListener(() =>
                 {
                     Execute(itemActions?.TryEquipAmmoToWeapon(activeSlotIndex, option.WeaponHotbarSlot) ?? false);
@@ -199,6 +200,7 @@ namespace Project.UI
         {
             Button button = MenuUiBuilder.CreateButton(menuPanel.transform, label, new Vector2(164f, 34f), 18f);
             button.name = label + "ContextButton";
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() =>
             {
                 action?.Invoke();

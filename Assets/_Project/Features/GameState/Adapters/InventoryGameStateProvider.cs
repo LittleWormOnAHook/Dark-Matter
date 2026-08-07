@@ -7,11 +7,13 @@ namespace Project.Features.GameState.Adapters
 {
     public sealed class InventoryGameStateProvider : IGameStateProvider
     {
+        private InventorySystem cachedInventory;
+
         public string DomainId => "inventory";
 
         public void Contribute(GameStateSnapshotBuilder builder)
         {
-            InventorySystem inventory = Object.FindAnyObjectByType<InventorySystem>();
+            InventorySystem inventory = ResolveInventory();
             if (inventory == null || inventory.slots == null)
             {
                 builder.Inventory = InventorySnapshot.Empty;
@@ -45,6 +47,15 @@ namespace Project.Features.GameState.Adapters
                 distinctItemCount: distinct.Count,
                 totalStackCount: totalStacks,
                 topItemLabels: top.ToArray());
+        }
+
+        private InventorySystem ResolveInventory()
+        {
+            if (cachedInventory != null)
+                return cachedInventory;
+
+            cachedInventory = Object.FindAnyObjectByType<InventorySystem>();
+            return cachedInventory;
         }
     }
 }

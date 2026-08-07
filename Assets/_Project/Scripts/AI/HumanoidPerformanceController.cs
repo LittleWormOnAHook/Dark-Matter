@@ -209,14 +209,8 @@ namespace Project.AI
 
             EnsureProtectedBodyVisible();
 
-            if (_animator != null)
-            {
-                // Near camera but idle: CullUpdateTransforms is fine. Within full-detail band,
-                // keep AlwaysAnimate so brief visibility flicker cannot freeze chase poses.
-                _animator.cullingMode = distance <= fullDetailDistance
-                    ? AnimatorCullingMode.AlwaysAnimate
-                    : AnimatorCullingMode.CullUpdateTransforms;
-            }
+            if (_animator != null && _animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         }
 
         private bool ShouldKeepAnimatorLive()
@@ -260,7 +254,7 @@ namespace Project.AI
             if (_animator != null && !IsRagdollOrStaggerBlocking())
             {
                 _animator.enabled = !culled;
-                if (!culled)
+                if (!culled && _animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
                     _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             }
 

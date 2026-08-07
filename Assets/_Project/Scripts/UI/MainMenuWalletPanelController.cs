@@ -162,8 +162,11 @@ namespace Project.UI
                 "Companions Owned",
                 new Vector2(180f * MenuScale, 36f * MenuScale),
                 16f * MenuScale);
+            balancesTabButton.onClick.RemoveAllListeners();
             balancesTabButton.onClick.AddListener(() => ShowTab(WalletTab.Balances));
+            marketplaceTabButton.onClick.RemoveAllListeners();
             marketplaceTabButton.onClick.AddListener(() => ShowTab(WalletTab.Marketplace));
+            pioneersTabButton.onClick.RemoveAllListeners();
             pioneersTabButton.onClick.AddListener(() => ShowTab(WalletTab.PioneersOwned));
 
             GameObject tabHost = new GameObject("TabHost", typeof(RectTransform));
@@ -182,6 +185,7 @@ namespace Project.UI
                 "Close",
                 new Vector2(160f * MenuScale, 44f * MenuScale),
                 18f * MenuScale);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseWalletPanel);
         }
 
@@ -418,6 +422,7 @@ namespace Project.UI
                     new Vector2(110f * MenuScale, 40f * MenuScale),
                     14f * MenuScale);
                 string offerId = offer.offerId;
+                buyButton.onClick.RemoveAllListeners();
                 buyButton.onClick.AddListener(() => HandleMarketplacePurchase(offerId));
             }
         }

@@ -21,14 +21,22 @@ namespace Project.Vehicles
         public HovercraftController Controller => controller;
         public ItemData HovercraftItem => ResolveHovercraftItem();
 
-        private void Awake()
+        private void Reset()
+        {
+            WireSerializedRefs();
+        }
+
+        private void OnValidate()
+        {
+            WireSerializedRefs();
+        }
+
+        private void WireSerializedRefs()
         {
             if (controller == null)
                 controller = GetComponent<HovercraftController>();
-
             if (occupancy == null)
                 occupancy = GetComponent<HovercraftOccupancy>();
-
             if (fuelSystem == null)
                 fuelSystem = GetComponent<HovercraftFuelSystem>();
         }

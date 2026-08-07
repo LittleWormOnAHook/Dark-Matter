@@ -123,7 +123,10 @@ namespace Project.UI
 
             UiSoundHelper.BindButton(button);
             if (onClick != null)
+            {
+                button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(onClick);
+            }
 
             GameObject textObject = new GameObject("Text", typeof(RectTransform));
             textObject.transform.SetParent(buttonObject.transform, false);
@@ -179,7 +182,10 @@ namespace Project.UI
             rect.anchoredPosition = new Vector2(-resolvedInset, -resolvedInset);
 
             if (onClick != null)
+            {
+                button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(onClick);
+            }
 
             button.transform.SetAsLastSibling();
             return button;
@@ -209,7 +215,10 @@ namespace Project.UI
 
             UiSoundHelper.BindButton(button);
             if (onClick != null)
+            {
+                button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(onClick);
+            }
 
             GameObject textObject = new GameObject("Text", typeof(RectTransform));
             textObject.transform.SetParent(buttonObject.transform, false);

@@ -1,6 +1,6 @@
 using Project.Building;
 using Project.Features.GameState;
-using UnityEngine;
+using System.Collections.Generic;
 
 namespace Project.Features.GameState.Adapters
 {
@@ -10,8 +10,8 @@ namespace Project.Features.GameState.Adapters
 
         public void Contribute(GameStateSnapshotBuilder builder)
         {
-            PowerGenerator[] generators = Object.FindObjectsByType<PowerGenerator>();
-            if (generators == null || generators.Length == 0)
+            IReadOnlyList<PowerGenerator> generators = PowerGenerator.Active;
+            if (generators == null || generators.Count == 0)
             {
                 builder.Power = PowerSnapshot.Empty;
                 return;
@@ -20,11 +20,14 @@ namespace Project.Features.GameState.Adapters
             int powered = 0;
             float fuelSum = 0f;
             bool critical = false;
-            for (int i = 0; i < generators.Length; i++)
+            int count = 0;
+            for (int i = 0; i < generators.Count; i++)
             {
                 PowerGenerator gen = generators[i];
                 if (gen == null)
                     continue;
+
+                count++;
                 if (gen.HasPower)
                     powered++;
                 fuelSum += gen.FuelPercent01;
@@ -32,10 +35,16 @@ namespace Project.Features.GameState.Adapters
                     critical = true;
             }
 
+            if (count == 0)
+            {
+                builder.Power = PowerSnapshot.Empty;
+                return;
+            }
+
             builder.Power = new PowerSnapshot(
-                generatorCount: generators.Length,
+                generatorCount: count,
                 poweredCount: powered,
-                averageFuelPercent: fuelSum / generators.Length,
+                averageFuelPercent: fuelSum / count,
                 anyCritical: critical);
         }
     }

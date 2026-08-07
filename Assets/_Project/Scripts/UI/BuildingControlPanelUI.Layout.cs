@@ -42,6 +42,7 @@ namespace Project.UI
                 out Button closeButton);
             titleText = MenuUiBuilder.GetShellTitleText(shell);
             buildingSubtitleText = CreateHeaderSubtitle(shell.transform);
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Close);
 
             GameObject layoutRoot = new GameObject("Layout", typeof(RectTransform));
@@ -203,6 +204,7 @@ namespace Project.UI
             refuelGeneratorButton = buttonObject.GetComponent<Button>();
             refuelGeneratorButton.targetGraphic = background;
             UiSoundHelper.BindButton(refuelGeneratorButton);
+            refuelGeneratorButton.onClick.RemoveAllListeners();
             refuelGeneratorButton.onClick.AddListener(OnRefuelGeneratorClicked);
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -259,6 +261,7 @@ namespace Project.UI
                 colors.selectedColor = colors.highlightedColor;
                 slotButton.colors = colors;
                 UiSoundHelper.BindButton(slotButton);
+                slotButton.onClick.RemoveAllListeners();
                 slotButton.onClick.AddListener(() => OnPioneerSlotClicked(slotIndex));
                 pioneerSlotButtons[slotIndex] = slotButton;
 
@@ -479,6 +482,7 @@ namespace Project.UI
             tabButtonRoots[tab] = tabObject;
 
             BuildingControlTab captured = tab;
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => ShowTab(captured));
         }
 
@@ -525,6 +529,7 @@ namespace Project.UI
             MenuUiBuilder.StretchRectToFill(checkmark.GetComponent<RectTransform>());
             toggle.graphic = checkImage;
 
+            toggle.onValueChanged.RemoveAllListeners();
             toggle.onValueChanged.AddListener(value => writeValue(value));
 
             TextMeshProUGUI labelText = CreateBodyText(row.transform, theme, 17f);
