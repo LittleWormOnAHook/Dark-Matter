@@ -22,21 +22,23 @@ object ReportExporter {
     private const val IMAGE_WIDTH = 1080
 
     fun exportPdf(context: Context, state: InspectionFormState): File {
+        PdfLinkAnnotator.init(context)
         val logo = loadLogoBitmap(context, (PAGE_WIDTH * 0.11f).toInt())
-        val renderer = ReportRenderer(PAGE_WIDTH, logo)
+        val renderer = ReportRenderer(PAGE_WIDTH, logo, collectLinks = true)
         val pages = renderer.buildPages(state, PAGE_HEIGHT)
         val pdf = PdfDocument()
 
         pages.forEachIndexed { index, pageContent ->
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, index + 1).create()
             val page = pdf.startPage(pageInfo)
-            renderer.drawPage(page.canvas, state, pageContent)
+            renderer.drawPage(page.canvas, state, pageContent, index)
             pdf.finishPage(page)
         }
 
         val file = File(reportsDir(context), reportFileName("pdf"))
         FileOutputStream(file).use { pdf.writeTo(it) }
         pdf.close()
+        PdfLinkAnnotator.annotate(file, renderer.linkAnnotations, PAGE_HEIGHT)
         return file
     }
 
@@ -77,8 +79,10 @@ object ReportExporter {
 
 internal class ReportRenderer(
     private val pageWidth: Int,
-    private val logoBitmap: Bitmap? = null
+    private val logoBitmap: Bitmap? = null,
+    private val collectLinks: Boolean = false
 ) {
+    val linkAnnotations = mutableListOf<ReportLink>()
 
     private val margin = (pageWidth * 0.06f).toInt()
     private val contentWidth = pageWidth - margin * 2
@@ -122,6 +126,16 @@ internal class ReportRenderer(
     private val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = COLOR_MUTED
         textSize = pageWidth * 0.022f
+    }
+    private val linkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = COLOR_LINK
+        textSize = pageWidth * 0.024f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val headerLinkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = COLOR_WHITE
+        textSize = pageWidth * 0.028f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
     private val headerFill = Paint().apply { color = COLOR_PRIMARY }
     private val boxFill = Paint().apply { color = COLOR_LIGHT_BG }
@@ -235,7 +249,7 @@ internal class ReportRenderer(
 
     fun drawFullReport(canvas: Canvas, state: InspectionFormState) {
         var y = margin
-        y = drawHeader(canvas, y)
+        y = drawHeader(canvas, y, pageIndex = 0)
         y = drawCustomerBox(canvas, state, y)
         y = drawTableHeader(canvas, y)
         state.sections.forEach { section ->
@@ -244,13 +258,13 @@ internal class ReportRenderer(
                 y = drawItemRow(canvas, item, y, index % 2 == 1)
             }
         }
-        drawFooter(canvas, state, y)
+        drawFooter(canvas, state, y, pageIndex = 0)
     }
 
-    fun drawPage(canvas: Canvas, state: InspectionFormState, page: PageContent) {
+    fun drawPage(canvas: Canvas, state: InspectionFormState, page: PageContent, pageIndex: Int) {
         canvas.drawColor(COLOR_WHITE)
         var y = margin
-        if (page.drawHeader) y = drawHeader(canvas, y)
+        if (page.drawHeader) y = drawHeader(canvas, y, pageIndex)
         if (page.drawCustomerBox) y = drawCustomerBox(canvas, state, y)
         if (page.drawTableHeader) y = drawTableHeader(canvas, y)
         page.sections.forEach { slice ->
@@ -259,7 +273,7 @@ internal class ReportRenderer(
                 y = drawItemRow(canvas, item, y, index % 2 == 1)
             }
         }
-        if (page.drawFooter) drawFooter(canvas, state, y)
+        if (page.drawFooter) drawFooter(canvas, state, y, pageIndex)
     }
 
     private fun headerHeight() = (pageWidth * 0.16f).toInt()
@@ -303,7 +317,7 @@ internal class ReportRenderer(
         return if (item.notes.isBlank()) base else base + (pageWidth * 0.04f).toInt()
     }
 
-    private fun drawHeader(canvas: Canvas, yStart: Int): Int {
+    private fun drawHeader(canvas: Canvas, yStart: Int, pageIndex: Int): Int {
         val h = headerHeight()
         canvas.drawRect(0f, yStart.toFloat(), pageWidth.toFloat(), (yStart + h).toFloat(), headerFill)
         val pad = margin.toFloat()
@@ -317,9 +331,24 @@ internal class ReportRenderer(
 
         canvas.drawText(COMPANY_NAME, textStartX, yStart + h * 0.38f, titlePaint)
         canvas.drawText("Vehicle Inspection Report", textStartX, yStart + h * 0.62f, subtitlePaint)
-        val phone = "Phone: $COMPANY_PHONE_DISPLAY"
-        val phoneWidth = subtitlePaint.measureText(phone)
-        canvas.drawText(phone, pageWidth - pad - phoneWidth, yStart + h * 0.62f, subtitlePaint)
+        val phonePrefix = "Phone: "
+        val phoneY = yStart + h * 0.62f
+        val phonePrefixWidth = subtitlePaint.measureText(phonePrefix)
+        val phoneLabelWidth = headerLinkPaint.measureText(COMPANY_PHONE_DISPLAY)
+        val phoneBlockWidth = phonePrefixWidth + phoneLabelWidth
+        val phoneX = pageWidth - pad - phoneBlockWidth
+        canvas.drawText(phonePrefix, phoneX, phoneY, subtitlePaint)
+        val linkX = phoneX + phonePrefixWidth
+        canvas.drawText(COMPANY_PHONE_DISPLAY, linkX, phoneY, headerLinkPaint)
+        drawLinkUnderline(canvas, linkX, phoneY, phoneLabelWidth, headerLinkPaint)
+        recordLink(
+            pageIndex = pageIndex,
+            url = COMPANY_PHONE_URI,
+            left = linkX,
+            top = phoneY - headerLinkPaint.textSize * 0.85f,
+            right = linkX + phoneLabelWidth,
+            bottom = phoneY + headerLinkPaint.textSize * 0.2f
+        )
         val date = SimpleDateFormat("MMMM d, yyyy", Locale.US).format(Date())
         val dateWidth = subtitlePaint.measureText(date)
         canvas.drawText(date, pageWidth - pad - dateWidth, yStart + h * 0.38f, subtitlePaint)
@@ -440,7 +469,7 @@ internal class ReportRenderer(
         canvas.drawText(label, x + padH, y + badgeH * 0.72f, paint)
     }
 
-    private fun drawFooter(canvas: Canvas, state: InspectionFormState, yStart: Int) {
+    private fun drawFooter(canvas: Canvas, state: InspectionFormState, yStart: Int, pageIndex: Int) {
         val items = state.sections.flatMap { it.items }
         val good = items.count { it.status == InspectionStatus.GOOD }
         val bad = items.count { it.status == InspectionStatus.BAD }
@@ -470,17 +499,83 @@ internal class ReportRenderer(
         val lineHeight = (pageWidth * 0.035f).toInt()
         canvas.drawText("Thank you for choosing $COMPANY_NAME.", margin.toFloat(), y.toFloat(), footerPaint)
         y += lineHeight
-        canvas.drawText("Website: $COMPANY_WEBSITE_DISPLAY", margin.toFloat(), y.toFloat(), footerPaint)
-        y += lineHeight
-        canvas.drawText("Call: $COMPANY_PHONE_DISPLAY", margin.toFloat(), y.toFloat(), footerPaint)
-        y += lineHeight
-        canvas.drawText("Leave a Google review for $COMPANY_NAME", margin.toFloat(), y.toFloat(), footerPaint)
-        y += lineHeight
-        val reviewLines = wrapText(COMPANY_GOOGLE_REVIEW_URL, footerPaint, contentWidth.toFloat())
-        reviewLines.forEach { line ->
-            canvas.drawText(line, margin.toFloat(), y.toFloat(), footerPaint)
-            y += lineHeight
-        }
+        y = drawFooterLinkRow(
+            canvas,
+            pageIndex,
+            y,
+            "Website: ",
+            COMPANY_WEBSITE_DISPLAY,
+            COMPANY_WEBSITE
+        )
+        y = drawFooterLinkRow(
+            canvas,
+            pageIndex,
+            y,
+            "Call: ",
+            COMPANY_PHONE_DISPLAY,
+            COMPANY_PHONE_URI
+        )
+        drawFooterLinkRow(
+            canvas,
+            pageIndex,
+            y,
+            "Google review: ",
+            "Leave a review on Google Maps",
+            COMPANY_GOOGLE_REVIEW_URL
+        )
+    }
+
+    private fun drawFooterLinkRow(
+        canvas: Canvas,
+        pageIndex: Int,
+        y: Int,
+        prefix: String,
+        linkLabel: String,
+        url: String
+    ): Int {
+        val x = margin.toFloat()
+        val textY = y.toFloat()
+        canvas.drawText(prefix, x, textY, footerPaint)
+        val prefixWidth = footerPaint.measureText(prefix)
+        val linkX = x + prefixWidth
+        canvas.drawText(linkLabel, linkX, textY, linkPaint)
+        val linkWidth = linkPaint.measureText(linkLabel)
+        drawLinkUnderline(canvas, linkX, textY, linkWidth, linkPaint)
+        recordLink(
+            pageIndex = pageIndex,
+            url = url,
+            left = linkX,
+            top = textY - linkPaint.textSize * 0.85f,
+            right = linkX + linkWidth,
+            bottom = textY + linkPaint.textSize * 0.2f
+        )
+        return y + (pageWidth * 0.035f).toInt()
+    }
+
+    private fun drawLinkUnderline(canvas: Canvas, x: Float, textY: Float, width: Float, paint: Paint) {
+        val underlineY = textY + paint.textSize * 0.08f
+        canvas.drawLine(x, underlineY, x + width, underlineY, paint)
+    }
+
+    private fun recordLink(
+        pageIndex: Int,
+        url: String,
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float
+    ) {
+        if (!collectLinks) return
+        linkAnnotations.add(
+            ReportLink(
+                pageIndex = pageIndex,
+                url = url,
+                left = left,
+                top = top,
+                right = right,
+                bottom = bottom
+            )
+        )
     }
 
     companion object {
@@ -500,5 +595,6 @@ internal class ReportRenderer(
         const val COLOR_REPLACE = 0xFFE65100.toInt()
         const val COLOR_REPLACE_BG = 0xFFFFF3E0.toInt()
         const val COLOR_NONE_BG = 0xFFEEEEEE.toInt()
+        const val COLOR_LINK = 0xFF1565C0.toInt()
     }
 }
