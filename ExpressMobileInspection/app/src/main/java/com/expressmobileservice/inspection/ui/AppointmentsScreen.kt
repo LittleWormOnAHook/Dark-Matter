@@ -66,6 +66,7 @@ import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.CalendarViewMode
 import com.expressmobileservice.inspection.appointmentsForDay
 import com.expressmobileservice.inspection.appointmentsForWeek
+import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
@@ -665,6 +666,10 @@ private fun SamsungAgendaPanel(
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val sortedAppointments = remember(date, appointments) {
+        appointments.sortedWith(compareAppointmentsForDay(date))
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -676,14 +681,14 @@ private fun SamsungAgendaPanel(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            if (appointments.isEmpty()) {
+            if (sortedAppointments.isEmpty()) {
                 Text(
                     text = "No events",
                     color = SamsungCalendarColors.muted,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
             } else {
-                appointments.forEach { apt ->
+                sortedAppointments.forEach { apt ->
                     SamsungAgendaRow(
                         appointment = apt,
                         inspectionStore = inspectionStore,

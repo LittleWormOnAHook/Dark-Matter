@@ -75,23 +75,37 @@ fun appointmentOverlapsDay(appointment: Appointment, day: LocalDate, zone: ZoneI
     return appointment.startEpochMillis < dayEnd && appointment.endEpochMillis > dayStart
 }
 
+/** Timed jobs first by clock time on [day], then all-day events. */
+fun compareAppointmentsForDay(day: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Comparator<Appointment> =
+    compareBy<Appointment>(
+        { if (it.allDay) 1 else 0 },
+        { it.sortMillisOnDay(day, zone) },
+        { it.endEpochMillis },
+        { it.customerName.lowercase() },
+        { it.id }
+    )
+
+private fun Appointment.sortMillisOnDay(day: LocalDate, zone: ZoneId): Long {
+    if (allDay) {
+        return day.toEpochMillisAtStartOfDay(zone)
+    }
+    val dayStart = day.atStartOfDay(zone).toInstant().toEpochMilli()
+    val dayEnd = day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+    return startEpochMillis.coerceIn(dayStart, dayEnd - 1)
+}
+
 fun appointmentsForDay(appointments: List<Appointment>, day: LocalDate): List<Appointment> =
     appointments
         .filter { appointmentOverlapsDay(it, day) }
-        .sortedWith(
-            compareBy<Appointment> { it.allDay }
-                .thenBy { it.startEpochMillis }
-        )
+        .sortedWith(compareAppointmentsForDay(day))
 
 fun appointmentsForWeek(appointments: List<Appointment>, anchorDate: LocalDate): List<Appointment> {
     val days = weekDaysContaining(anchorDate)
     val start = days.first().toEpochMillisAtStartOfDay()
     val end = days.last().plusDays(1).toEpochMillisAtStartOfDay()
-    return appointments.filter { it.startEpochMillis < end && it.endEpochMillis > start }
-        .sortedWith(
-            compareBy<Appointment> { it.allDay }
-                .thenBy { it.startEpochMillis }
-        )
+    return appointments
+        .filter { it.startEpochMillis < end && it.endEpochMillis > start }
+        .sortedWith(compareBy<Appointment> { it.startEpochMillis }.thenBy { it.id })
 }
 
 fun roundToNearestMinutes(millis: Long, minutes: Int = 15): Long {
