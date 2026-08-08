@@ -83,6 +83,7 @@ import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -324,9 +325,7 @@ fun AppointmentsScreen(
                         anchorDate = selectedDate,
                         appointments = filteredAppointments,
                         inspectionStore = inspectionStore,
-                        onPreviousWeek = { selectedDate = selectedDate.minusWeeks(1) },
-                        onNextWeek = { selectedDate = selectedDate.plusWeeks(1) },
-                        onDateSelected = { selectedDate = it },
+                        onAnchorDateChange = { selectedDate = it },
                         onAppointmentClick = { apt ->
                             editingAppointment = apt
                             showEditor = true
@@ -874,14 +873,13 @@ private fun SamsungAgendaRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WeekCalendarView(
     anchorDate: LocalDate,
     appointments: List<Appointment>,
     inspectionStore: InspectionStore,
-    onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit,
-    onDateSelected: (LocalDate) -> Unit,
+    onAnchorDateChange: (LocalDate) -> Unit,
     onAppointmentClick: (Appointment) -> Unit,
     onAppointmentLongPress: (Appointment) -> Unit,
     onDial: (Appointment) -> Unit,
@@ -889,11 +887,63 @@ private fun WeekCalendarView(
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val weekDays = weekDaysContaining(anchorDate)
-    val weekAppointments = appointmentsForWeek(appointments, anchorDate)
-    val today = LocalDate.now()
+    val weekAnchor = remember { weekDaysContaining(LocalDate.now()).first() }
+    val centerPage = 1_200
+    val pageCount = centerPage * 2 + 1
+    val pagerState = rememberPagerState(
+        initialPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate)),
+        pageCount = { pageCount }
+    )
+
+    fun pageToWeekStart(page: Int): LocalDate =
+        weekAnchor.plusWeeks((page - centerPage).toLong())
+
+    LaunchedEffect(anchorDate) {
+        val targetPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate))
+        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
+            pagerState.scrollToPage(targetPage)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .collect { page ->
+                val newWeekStart = pageToWeekStart(page)
+                val currentWeekStart = weekStartFor(anchorDate)
+                if (newWeekStart != currentWeekStart) {
+                    val dayOffset = ChronoUnit.DAYS.between(currentWeekStart, anchorDate)
+                    onAnchorDateChange(newWeekStart.plusDays(dayOffset))
+                }
+            }
+    }
 
     Column(modifier = modifier.background(SamsungCalendarColors.background)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) { page ->
+            val weekStart = pageToWeekStart(page)
+            val highlightDate = if (weekStartFor(anchorDate) == weekStart) {
+                anchorDate
+            } else {
+                weekStart.plusDays(ChronoUnit.DAYS.between(weekStartFor(anchorDate), anchorDate))
+            }
+            WeekCalendarPage(
+                weekStart = weekStart,
+                selectedDate = highlightDate,
+                appointments = appointments,
+                inspectionStore = inspectionStore,
+                onDateSelected = onAnchorDateChange,
+                onAppointmentClick = onAppointmentClick,
+                onAppointmentLongPress = onAppointmentLongPress,
+                onDial = onDial,
+                onNavigate = onNavigate,
+                onOpenInspection = onOpenInspection
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -901,21 +951,41 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onPreviousWeek) {
+            IconButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous week")
             }
-            IconButton(onClick = onNextWeek) {
+            IconButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next week")
             }
         }
+    }
+}
 
+@Composable
+private fun WeekCalendarPage(
+    weekStart: LocalDate,
+    selectedDate: LocalDate,
+    appointments: List<Appointment>,
+    inspectionStore: InspectionStore,
+    onDateSelected: (LocalDate) -> Unit,
+    onAppointmentClick: (Appointment) -> Unit,
+    onAppointmentLongPress: (Appointment) -> Unit,
+    onDial: (Appointment) -> Unit,
+    onNavigate: (Appointment) -> Unit,
+    onOpenInspection: (String) -> Unit
+) {
+    val weekDays = weekDaysContaining(weekStart)
+    val weekAppointments = appointmentsForWeek(appointments, weekStart)
+    val today = LocalDate.now()
+
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
         ) {
             weekDays.forEach { date ->
-                val isSelected = date == anchorDate
+                val isSelected = date == selectedDate
                 val isToday = date == today
                 val dayCount = appointmentsForDay(appointments, date).size
                 Column(
@@ -996,3 +1066,8 @@ private fun WeekCalendarView(
         }
     }
 }
+
+private fun weekStartFor(date: LocalDate): LocalDate = weekDaysContaining(date).first()
+
+private fun weeksBetween(startWeek: LocalDate, endWeek: LocalDate): Int =
+    ChronoUnit.WEEKS.between(startWeek, endWeek).toInt()
