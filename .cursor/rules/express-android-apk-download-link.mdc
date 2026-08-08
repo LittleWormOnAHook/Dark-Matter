@@ -7,24 +7,41 @@ Whenever you **build, bump, or ship** `ExpressMobileInspection/` (new `versionNa
 1. **Copy the signed APK** to:
    `ExpressMobileInspection/releases/ExpressMobileInspection.apk`
 
-2. **Commit and push** the APK (and README version bump) on the feature branch before closing the task.
+2. **Create or update a GitHub Release** (shareable install link):
+   ```bash
+   gh release create express-inspection-vX.Y.Z \
+     ExpressMobileInspection/releases/ExpressMobileInspection.apk \
+     --target <branch> \
+     --title "Express Mobile Inspection vX.Y.Z" \
+     --notes "Install link + short steps"
+   ```
 
-3. **Always give the user a direct install link** in your final message — do not end without it.
+3. **Update share docs** with the new version:
+   - `ExpressMobileInspection/README.md` — Shareable install link section
+   - `ExpressMobileInspection/INSTALL.md` — download URL + SMS copy/paste block
+   - `ExpressMobileInspection/releases/INSTALL_LINK.txt` — one-line share URL
 
-## Download URL format
+4. **Commit and push** APK + doc updates on the feature branch.
+
+5. **Always give the user the GitHub Releases download link** in your final message — do not end without it.
+
+## Shareable download URL (primary — use this)
+
+```
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-vX.Y.Z/ExpressMobileInspection.apk
+```
+
+Release index (all app versions):
+
+```
+https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection
+```
+
+## Fallback (branch raw URL — not for sharing)
 
 ```
 https://github.com/LittleWormOnAHook/Dark-Matter/raw/<branch>/ExpressMobileInspection/releases/ExpressMobileInspection.apk
 ```
-
-Replace `<branch>` with the current git branch (e.g. `cursor/express-calendar-appointments-4704`).
-
-## README
-
-Update `ExpressMobileInspection/README.md` **Quick download** section:
-- Version label (e.g. `v2.1.9`)
-- Markdown link + raw URL in a fenced code block
-- Reminder: install **over** existing app to keep data (do not uninstall first unless install fails)
 
 ## Build command
 
@@ -36,7 +53,8 @@ cp app/build/outputs/apk/release/app-release.apk releases/ExpressMobileInspectio
 ## Response template (include in every APK-shipping reply)
 
 - **Version:** `vX.Y.Z` (`versionCode` N)
-- **Install:** [Download ExpressMobileInspection.apk](<full raw github url>)
-- **Direct link:** paste the raw URL in a code block for easy copy on phone
+- **Install:** [Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-vX.Y.Z/ExpressMobileInspection.apk)
+- **Direct link:** paste the releases download URL in a code block for easy copy on phone
+- **All releases:** link to `releases?q=express-inspection`
 
-Never claim an APK is ready without a pushed file and a working raw GitHub link.
+Never claim an APK is ready without a pushed GitHub Release asset and a working releases download link.
