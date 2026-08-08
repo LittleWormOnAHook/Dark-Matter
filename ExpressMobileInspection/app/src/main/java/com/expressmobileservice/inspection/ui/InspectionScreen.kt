@@ -1,5 +1,7 @@
 package com.expressmobileservice.inspection.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -65,6 +68,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -73,8 +79,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.R
+import com.expressmobileservice.inspection.COMPANY_GOOGLE_REVIEW_URL
 import com.expressmobileservice.inspection.COMPANY_NAME
-import com.expressmobileservice.inspection.COMPANY_PHONE
+import com.expressmobileservice.inspection.COMPANY_PHONE_DISPLAY
+import com.expressmobileservice.inspection.COMPANY_PHONE_URI
+import com.expressmobileservice.inspection.COMPANY_WEBSITE
+import com.expressmobileservice.inspection.COMPANY_WEBSITE_DISPLAY
 import com.expressmobileservice.inspection.CustomerInfo
 import com.expressmobileservice.inspection.InspectionFormState
 import com.expressmobileservice.inspection.InspectionItem
@@ -108,6 +118,7 @@ fun InspectionScreen(
     onActiveInspectionChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
     var vehicle by rememberSaveable { mutableStateOf("") }
@@ -299,14 +310,20 @@ fun InspectionScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { openUri(context, COMPANY_PHONE_URI) }
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Phone,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = COMPANY_PHONE, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    text = COMPANY_PHONE_DISPLAY,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
@@ -495,6 +512,8 @@ fun InspectionScreen(
                     )
                 }
             }
+
+            CompanyFooterLinks()
 
             Spacer(modifier = Modifier.height(100.dp))
         }
@@ -744,4 +763,81 @@ private fun List<InspectionSection>.updateItemNotes(
 ): List<InspectionSection> = mapIndexed { index, section ->
     if (index != sectionIndex) section
     else section.copy(items = section.items.map { if (it.id == itemId) it.copy(notes = notes) else it })
+}
+
+@Composable
+private fun CompanyFooterLinks() {
+    val context = LocalContext.current
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(COMPANY_NAME, fontWeight = FontWeight.SemiBold)
+            FooterLinkRow(
+                prefix = "Website: ",
+                label = COMPANY_WEBSITE_DISPLAY,
+                onClick = { openUri(context, COMPANY_WEBSITE) },
+                iconPainter = painterResource(R.drawable.ic_company_logo)
+            )
+            FooterLinkRow(
+                icon = Icons.Default.Phone,
+                prefix = "Call: ",
+                label = COMPANY_PHONE_DISPLAY,
+                onClick = { openUri(context, COMPANY_PHONE_URI) }
+            )
+            FooterLinkRow(
+                icon = Icons.Default.Star,
+                prefix = "Google review: ",
+                label = "Leave a review on Google Maps",
+                onClick = { openUri(context, COMPANY_GOOGLE_REVIEW_URL) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FooterLinkRow(
+    prefix: String,
+    label: String,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+    iconPainter: Painter? = null
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        when {
+            iconPainter != null -> {
+                Image(
+                    painter = iconPainter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                )
+            }
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = prefix + label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+private fun openUri(context: android.content.Context, uri: String) {
+    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
 }
