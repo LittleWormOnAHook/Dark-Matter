@@ -5,14 +5,30 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 
+private fun phoneDigits(phone: String): String = phone.filter { it.isDigit() || it == '+' }
+
 fun dialPhone(context: Context, phone: String) {
-    val digits = phone.filter { it.isDigit() || it == '+' }
+    val digits = phoneDigits(phone)
     if (digits.isBlank()) {
         Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
         return
     }
     val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits"))
     context.startActivity(intent)
+}
+
+fun messagePhone(context: Context, phone: String) {
+    val digits = phoneDigits(phone)
+    if (digits.isBlank()) {
+        Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits"))
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    } else {
+        Toast.makeText(context, "No messaging app found.", Toast.LENGTH_SHORT).show()
+    }
 }
 
 fun openWaze(context: Context, address: String) {

@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -72,6 +74,7 @@ import com.expressmobileservice.inspection.appointmentsForDay
 import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
+import com.expressmobileservice.inspection.messagePhone
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
@@ -313,7 +316,6 @@ fun AppointmentsScreen(
                             showEditor = true
                         },
                         onAppointmentLongPress = { agendaActionTarget = it },
-                        onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
@@ -331,7 +333,6 @@ fun AppointmentsScreen(
                             showEditor = true
                         },
                         onAppointmentLongPress = { agendaActionTarget = it },
-                        onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         onOpenInspection = onOpenInspection,
                         modifier = Modifier.fillMaxSize()
@@ -361,7 +362,6 @@ fun AppointmentsScreen(
                             showEditor = true
                         },
                         onAppointmentLongPress = { agendaActionTarget = it },
-                        onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
                         inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
@@ -718,7 +718,6 @@ private fun SamsungAgendaPanel(
     onQuickAddSubmit: () -> Unit,
     onAppointmentClick: (Appointment) -> Unit,
     onAppointmentLongPress: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
     inspectionStore: InspectionStore,
     onOpenInspection: (String) -> Unit,
@@ -752,7 +751,6 @@ private fun SamsungAgendaPanel(
                         inspectionStore = inspectionStore,
                         onClick = { onAppointmentClick(apt) },
                         onLongClick = { onAppointmentLongPress(apt) },
-                        onDial = { onDial(apt) },
                         onNavigate = { onNavigate(apt) },
                         onOpenInspection = { onOpenInspection(apt.inspectionId) }
                     )
@@ -799,10 +797,10 @@ private fun SamsungAgendaRow(
     inspectionStore: InspectionStore,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onDial: () -> Unit,
     onNavigate: () -> Unit,
     onOpenInspection: () -> Unit
 ) {
+    val context = LocalContext.current
     val showInsp = appointment.hasSavedInspection(inspectionStore)
     Row(
         modifier = Modifier
@@ -844,14 +842,36 @@ private fun SamsungAgendaRow(
                 lineHeight = 20.sp
             )
             if (appointment.hasPhone) {
-                Text(
-                    text = "Tap to call",
-                    fontSize = 11.sp,
-                    color = SamsungCalendarColors.green,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .clickable(onClick = onDial)
-                )
+                var showPhoneMenu by remember { mutableStateOf(false) }
+                Box {
+                    Text(
+                        text = "Tap to call",
+                        fontSize = 11.sp,
+                        color = SamsungCalendarColors.green,
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .clickable { showPhoneMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showPhoneMenu,
+                        onDismissRequest = { showPhoneMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Call") },
+                            onClick = {
+                                showPhoneMenu = false
+                                dialPhone(context, appointment.customerPhone)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Message") },
+                            onClick = {
+                                showPhoneMenu = false
+                                messagePhone(context, appointment.customerPhone)
+                            }
+                        )
+                    }
+                }
             }
             if (appointment.hasAddress) {
                 Text(
@@ -882,7 +902,6 @@ private fun WeekCalendarView(
     onAnchorDateChange: (LocalDate) -> Unit,
     onAppointmentClick: (Appointment) -> Unit,
     onAppointmentLongPress: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -938,7 +957,6 @@ private fun WeekCalendarView(
                 onDateSelected = onAnchorDateChange,
                 onAppointmentClick = onAppointmentClick,
                 onAppointmentLongPress = onAppointmentLongPress,
-                onDial = onDial,
                 onNavigate = onNavigate,
                 onOpenInspection = onOpenInspection
             )
@@ -970,7 +988,6 @@ private fun WeekCalendarPage(
     onDateSelected: (LocalDate) -> Unit,
     onAppointmentClick: (Appointment) -> Unit,
     onAppointmentLongPress: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
     onOpenInspection: (String) -> Unit
 ) {
@@ -1047,7 +1064,6 @@ private fun WeekCalendarPage(
                             inspectionStore = inspectionStore,
                             onClick = { onAppointmentClick(apt) },
                             onLongClick = { onAppointmentLongPress(apt) },
-                            onDial = { onDial(apt) },
                             onNavigate = { onNavigate(apt) },
                             onOpenInspection = { onOpenInspection(apt.inspectionId) }
                         )
