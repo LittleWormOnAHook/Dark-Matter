@@ -78,3 +78,13 @@ private fun item(id: String, label: String) = InspectionItem(id = id, label = la
 
 const val COMPANY_NAME = "Express Mobile Service"
 const val COMPANY_PHONE = "904-514-2885"
+const val COMPANY_PHONE_DISPLAY = "1-904-514-2885"
+const val COMPANY_PHONE_URI = "tel:+19045142885"
+const val COMPANY_WEBSITE = "https://www.expressmobileservice.net/"
+const val COMPANY_WEBSITE_DISPLAY = "expressmobileservice.net"
+/** Resolved from Google Maps lookup by business phone (904-514-2885). */
+const val COMPANY_GOOGLE_PLACE_ID = "ChIJjfqDMeTH5YgRKDs3yoZrmlg"
+const val COMPANY_GOOGLE_REVIEW_URL =
+    "https://search.google.com/local/writereview?placeid=$COMPANY_GOOGLE_PLACE_ID"
+const val COMPANY_GOOGLE_MAPS_URL =
+    "https://www.google.com/maps/search/?api=1&query=Express+Mobile+Service&query_place_id=$COMPANY_GOOGLE_PLACE_ID"
