@@ -97,7 +97,9 @@ import com.expressmobileservice.inspection.defaultInspectionSections
 import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.displaySortMillis
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
@@ -440,9 +442,7 @@ fun InspectionScreen(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save inspection", fontSize = 14.sp)
+                    CompactButtonLabel(Icons.Default.Save, "Save inspection")
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Button(
@@ -454,9 +454,7 @@ fun InspectionScreen(
                     modifier = Modifier.compactActionButton(),
                     contentPadding = compactButtonPadding()
                 ) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as PDF", fontSize = 14.sp)
+                    CompactButtonLabel(Icons.Default.PictureAsPdf, "Send as PDF")
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedButton(
@@ -468,9 +466,7 @@ fun InspectionScreen(
                     modifier = Modifier.compactActionButton(),
                     contentPadding = compactButtonPadding()
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as Image (JPEG)", fontSize = 14.sp)
+                    CompactButtonLabel(Icons.Default.Image, "Send Image (JPEG)")
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
@@ -486,11 +482,15 @@ fun InspectionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .compactActionButtonHeight(),
-                        contentPadding = compactButtonPadding()
+                        contentPadding = compactSplitButtonPadding()
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Clear Form", fontSize = 13.sp)
+                        CompactButtonLabel(
+                            icon = Icons.Default.Refresh,
+                            text = "Clear Form",
+                            iconSize = 14.dp,
+                            fontSize = 11.sp,
+                            showIcon = false
+                        )
                     }
                     OutlinedButton(
                         onClick = {
@@ -505,14 +505,18 @@ fun InspectionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .compactActionButtonHeight(),
-                        contentPadding = compactButtonPadding(),
+                        contentPadding = compactSplitButtonPadding(),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = InspectionColors.bad
                         )
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Delete Customer", fontSize = 13.sp)
+                        CompactButtonLabel(
+                            icon = Icons.Default.Delete,
+                            text = "Delete Customer",
+                            iconSize = 14.dp,
+                            fontSize = 11.sp,
+                            showIcon = false
+                        )
                     }
                 }
             }
@@ -993,13 +997,49 @@ private fun openUri(context: android.content.Context, uri: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
 }
 
-private val CompactButtonHeight = 34.dp
+private val CompactButtonHeight = 36.dp
 
 private fun Modifier.compactActionButton(): Modifier =
-    fillMaxWidth().height(CompactButtonHeight)
+    fillMaxWidth().heightIn(min = CompactButtonHeight, max = CompactButtonHeight)
 
 private fun Modifier.compactActionButtonHeight(): Modifier =
-    height(CompactButtonHeight)
+    heightIn(min = CompactButtonHeight, max = CompactButtonHeight)
 
 private fun compactButtonPadding(): PaddingValues =
-    PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+    PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+
+private fun compactSplitButtonPadding(): PaddingValues =
+    PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+
+@Composable
+private fun CompactButtonLabel(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    iconSize: androidx.compose.ui.unit.Dp = 16.dp,
+    fontSize: TextUnit = 12.sp,
+    showIcon: Boolean = true
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        if (showIcon) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+        Text(
+            text = text,
+            fontSize = fontSize,
+            lineHeight = fontSize * 1.15f,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontSize = fontSize,
+                lineHeight = fontSize * 1.15f,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            )
+        )
+    }
+}
