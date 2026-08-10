@@ -176,20 +176,6 @@ fun AppointmentEditorScreen(
         }
     }
 
-    fun applyCustomerRecord(record: CustomerRecord) {
-        applyAutofill(record.toAppointmentFields())
-    }
-
-    fun maybeAutofillFromPhone(phone: String) {
-        if (isEditing) return
-        val digits = phone.filter { it.isDigit() }
-        if (digits.length < 7) return
-        val exact = customerRecords.firstOrNull { it.customerPhone.filter { d -> d.isDigit() } == digits }
-        if (exact != null && (customerName.isBlank() || customerName == exact.customerName)) {
-            applyCustomerRecord(exact)
-        }
-    }
-
     fun applyAutofill(source: Appointment) {
         customerName = source.customerName
         customerPhone = source.customerPhone
@@ -211,6 +197,20 @@ fun AppointmentEditorScreen(
         if (!isEditing) {
             startMillis = defaultAppointmentStart(defaultDate)
             endMillis = defaultAppointmentEnd(startMillis)
+        }
+    }
+
+    fun applyCustomerRecord(record: CustomerRecord) {
+        applyAutofill(record.toAppointmentFields())
+    }
+
+    fun maybeAutofillFromPhone(phone: String) {
+        if (isEditing) return
+        val digits = phone.filter { it.isDigit() }
+        if (digits.length < 7) return
+        val exact = customerRecords.firstOrNull { it.customerPhone.filter { d -> d.isDigit() } == digits }
+        if (exact != null && (customerName.isBlank() || customerName == exact.customerName)) {
+            applyCustomerRecord(exact)
         }
     }
 

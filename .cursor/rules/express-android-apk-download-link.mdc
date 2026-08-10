@@ -1,29 +1,43 @@
+---
+description: Every Express Mobile Inspection app update must ship a signed APK and GitHub Releases download link
+globs:
+  - ExpressMobileInspection/**
+alwaysApply: false
+---
+
 # Express Mobile Inspection — APK Download Link Required
 
-Whenever you **build, bump, or ship** `ExpressMobileInspection/` (new `versionName`, signed release APK, or user asks for an installable build):
+**Every time you change `ExpressMobileInspection/`** (features, fixes, version bump, or the user asks for an installable build), you must finish with a **working GitHub Releases download link** in your reply — even if they only asked for a code change.
 
-## Mandatory deliverables
+Do not mark the task complete until the release exists and the link works.
 
-1. **Copy the signed APK** to:
-   `ExpressMobileInspection/releases/ExpressMobileInspection.apk`
+## Mandatory deliverables (every app update)
 
-2. **Create or update a GitHub Release** (shareable install link):
+1. **Bump** `versionName` and `versionCode` in `app/build.gradle.kts` (increment from current release).
+
+2. **Build signed release APK:**
+   ```bash
+   cd ExpressMobileInspection && ./gradlew assembleRelease
+   cp app/build/outputs/apk/release/app-release.apk releases/ExpressMobileInspection.apk
+   ```
+
+3. **Create a GitHub Release** (shareable install link):
    ```bash
    gh release create express-inspection-vX.Y.Z \
      ExpressMobileInspection/releases/ExpressMobileInspection.apk \
      --target <branch> \
      --title "Express Mobile Inspection vX.Y.Z" \
-     --notes "Install link + short steps"
+     --notes "What's new + install steps"
    ```
 
-3. **Update share docs** with the new version:
+4. **Update share docs** with the new version:
    - `ExpressMobileInspection/README.md` — Shareable install link section
    - `ExpressMobileInspection/INSTALL.md` — download URL + SMS copy/paste block
    - `ExpressMobileInspection/releases/INSTALL_LINK.txt` — one-line share URL
 
-4. **Commit and push** APK + doc updates on the feature branch.
+5. **Commit and push** APK + doc updates on the feature branch.
 
-5. **Always give the user the GitHub Releases download link** in your final message — do not end without it.
+6. **Always give the user the download link** in your final message — paste the direct URL in a code block for phone copy/paste.
 
 ## Shareable download URL (primary — use this)
 
@@ -37,24 +51,12 @@ Release index (all app versions):
 https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection
 ```
 
-## Fallback (branch raw URL — not for sharing)
-
-```
-https://github.com/LittleWormOnAHook/Dark-Matter/raw/<branch>/ExpressMobileInspection/releases/ExpressMobileInspection.apk
-```
-
-## Build command
-
-```bash
-cd ExpressMobileInspection && ./gradlew assembleRelease
-cp app/build/outputs/apk/release/app-release.apk releases/ExpressMobileInspection.apk
-```
-
-## Response template (include in every APK-shipping reply)
+## Response template (include in every Express app reply)
 
 - **Version:** `vX.Y.Z` (`versionCode` N)
 - **Install:** [Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-vX.Y.Z/ExpressMobileInspection.apk)
-- **Direct link:** paste the releases download URL in a code block for easy copy on phone
+- **Direct link:** paste the releases download URL in a code block
 - **All releases:** link to `releases?q=express-inspection`
+- **Note:** Install over the old app — do not uninstall first (keeps jobs and inspections)
 
 Never claim an APK is ready without a pushed GitHub Release asset and a working releases download link.

@@ -1,6 +1,7 @@
 package com.expressmobileservice.inspection.ui
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -27,6 +28,7 @@ fun CopyableTextField(
     textStyle: TextStyle = TextStyle.Default,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     copyMessage: String = "Copied"
 ) {
@@ -52,6 +54,7 @@ fun CopyableTextField(
         textStyle = textStyle,
         colors = colors,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         visualTransformation = visualTransformation
     )
 }
@@ -72,6 +75,7 @@ fun CopyableOutlinedTextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     copyMessage: String = "Copied"
 ) {
@@ -99,6 +103,7 @@ fun CopyableOutlinedTextField(
         maxLines = maxLines,
         colors = colors,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         visualTransformation = visualTransformation
     )
 }
