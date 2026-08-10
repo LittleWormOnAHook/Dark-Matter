@@ -6,9 +6,10 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Features
 
-### Appointments (Samsung-style calendar)
+### Appointments (Regal Elegance calendar)
 
-- **Day / Week / Month** — open the **☰ menu** (top left), like Samsung Calendar
+- **Day / Week / Month** — open the **☰ menu** (top left)
+- **Month + year** shown in the header (e.g. **JUL 2026**) with engineering icon
 - Month and week views: **swipe left/right** to change month or week
 - **Customer info** step: dropdowns for **year, make, model, engine size** (1970–2026)
   - **Car / Truck** and **Motorcycle** data from **NHTSA** (US government database)
@@ -43,12 +44,12 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Shareable install link (v2.2.1) — send this to anyone
+### Shareable install link (v2.3.0) — send this to anyone
 
-**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.1/ExpressMobileInspection.apk)**
+**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.3.0/ExpressMobileInspection-v2.3.0.apk)**
 
 ```
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.1/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.3.0/ExpressMobileInspection-v2.3.0.apk
 ```
 
 All app releases: [GitHub Releases (express-inspection)](https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection)

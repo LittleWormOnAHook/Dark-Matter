@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +74,7 @@ import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
-import com.expressmobileservice.inspection.formatMonthAbbrev
+import com.expressmobileservice.inspection.formatMonthYearAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.daysInMonthGrid
@@ -81,6 +82,8 @@ import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
+import com.expressmobileservice.inspection.ui.playTypeClick
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -247,6 +250,7 @@ fun AppointmentsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
+                    playButtonClick(mainAction = true)
                     editingAppointment = null
                     editorQuickNotes = null
                     showEditor = true
@@ -275,7 +279,10 @@ fun AppointmentsScreen(
                     showSearch = !showSearch
                     if (!showSearch) searchQuery = ""
                 },
-                onSearchChange = { searchQuery = it },
+                onSearchChange = { new ->
+                    if (new.length > searchQuery.length) playTypeClick()
+                    searchQuery = new
+                },
                 onGoToToday = {
                     selectedDate = LocalDate.now()
                     displayedMonth = YearMonth.from(selectedDate)
@@ -300,7 +307,10 @@ fun AppointmentsScreen(
                         date = selectedDate,
                         appointments = appointmentsForDay(filteredAppointments, selectedDate),
                         quickAddText = quickAddText,
-                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddChange = { new ->
+                            if (new.length > quickAddText.length) playTypeClick()
+                            quickAddText = new
+                        },
                         onQuickAddSubmit = {
                             if (quickAddText.isNotBlank()) {
                                 editorQuickNotes = quickAddText.trim()
@@ -348,7 +358,10 @@ fun AppointmentsScreen(
                         date = selectedDate,
                         appointments = appointmentsForDay(filteredAppointments, selectedDate),
                         quickAddText = quickAddText,
-                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddChange = { new ->
+                            if (new.length > quickAddText.length) playTypeClick()
+                            quickAddText = new
+                        },
                         onQuickAddSubmit = {
                             if (quickAddText.isNotBlank()) {
                                 editorQuickNotes = quickAddText.trim()
@@ -405,16 +418,30 @@ private fun SamsungCalendarHeader(
                 )
             }
 
-            Text(
-                text = when (viewMode) {
-                    CalendarViewMode.MONTH -> formatMonthAbbrev(displayedMonth.atDay(1)).uppercase()
-                    CalendarViewMode.WEEK -> formatMonthAbbrev(selectedDate).uppercase()
-                    CalendarViewMode.DAY -> formatMonthAbbrev(selectedDate).uppercase()
-                },
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                letterSpacing = 1.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PrecisionManufacturing,
+                    contentDescription = null,
+                    tint = SamsungCalendarColors.green,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(end = 6.dp)
+                )
+                Text(
+                    text = when (viewMode) {
+                        CalendarViewMode.MONTH -> formatMonthYearAbbrev(displayedMonth)
+                        CalendarViewMode.WEEK -> formatMonthYearAbbrev(selectedDate)
+                        CalendarViewMode.DAY -> formatMonthYearAbbrev(selectedDate)
+                    },
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    letterSpacing = 1.sp,
+                    color = SamsungCalendarColors.onBackground
+                )
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onSearchToggle) {

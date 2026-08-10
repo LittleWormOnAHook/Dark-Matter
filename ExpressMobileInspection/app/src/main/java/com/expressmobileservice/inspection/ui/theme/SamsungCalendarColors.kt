@@ -2,18 +2,32 @@ package com.expressmobileservice.inspection.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/** Palette aligned with Samsung Calendar dark mode. */
+/**
+ * Regal Elegance palette — deep jewel tones with metallic gold accents,
+ * tuned for a professional mobile mechanics / engineering shop aesthetic.
+ */
 object SamsungCalendarColors {
-    val background = Color(0xFF010101)
-    val surface = Color(0xFF171717)
-    val agendaSurface = Color(0xFF1C1C1C)
-    val green = Color(0xFF57D26A)
-    val greenDark = Color(0xFF3DA352)
-    val eventBlue = Color(0xFF4A8CFF)
-    val eventRed = Color(0xFFFF5252)
-    val muted = Color(0xFF8A8A8A)
-    val divider = Color(0xFF2E2E2E)
-    val selectedRing = Color(0xFFE8E8E8)
-    val quickAddField = Color(0xFF2A2A2A)
-    val onBackground = Color(0xFFF5F5F5)
+    val deepPurple = Color(0xFF36194D)
+    val orchidPurple = Color(0xFF9B4F96)
+    val deepPlum = Color(0xFF592C6E)
+    val metallicGold = Color(0xFFC4A847)
+    val eggWhite = Color(0xFFF3EADD)
+    val warmTaupe = Color(0xFFBCAFA2)
+    val lightGrey = Color(0xFF999999)
+    val darkCharcoal = Color(0xFF4D4D4D)
+
+    val background = deepPurple
+    val surface = Color(0xFF2A1440)
+    val agendaSurface = Color(0xFF3D1F56)
+    /** Primary accent — gold replaces legacy green for highlights and CTAs. */
+    val green = metallicGold
+    val greenDark = Color(0xFFA89030)
+    val eventBlue = orchidPurple
+    val eventRed = Color(0xFFE65100)
+    val muted = warmTaupe
+    val divider = darkCharcoal
+    val selectedRing = metallicGold
+    val quickAddField = Color(0xFF4A285E)
+    val onBackground = eggWhite
+    val navSelectedPill = Color(0xFF592C6E)
 }

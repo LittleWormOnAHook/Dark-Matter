@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
@@ -33,6 +35,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
@@ -94,11 +97,18 @@ import com.expressmobileservice.inspection.defaultInspectionSections
 import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.displaySortMillis
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
+import com.expressmobileservice.inspection.ui.playTypeClick
+import com.expressmobileservice.inspection.formatMonthYearAbbrev
 import com.expressmobileservice.inspection.toSavedInspection
+import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -118,7 +128,6 @@ fun InspectionScreen(
     onActiveInspectionChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
     var vehicle by rememberSaveable { mutableStateOf("") }
@@ -131,6 +140,8 @@ fun InspectionScreen(
     var loadedInspectionId by remember { mutableStateOf<String?>(null) }
     var autoSaveHint by remember { mutableStateOf<String?>(null) }
     var showInspectionList by remember { mutableStateOf(false) }
+    var showDeleteCustomerConfirm by remember { mutableStateOf(false) }
+    var suppressAutoSave by remember { mutableStateOf(false) }
 
     fun applySavedInspection(saved: SavedInspection) {
         val form = saved.toFormState()
@@ -146,6 +157,7 @@ fun InspectionScreen(
     }
 
     LaunchedEffect(activeInspectionId) {
+        if (activeInspectionId == "") return@LaunchedEffect
         val saved = activeInspectionId?.let { inspectionStore.getById(it) }
             ?: inspectionStore.mostRecent()
         if (saved != null) {
@@ -154,7 +166,7 @@ fun InspectionScreen(
         }
     }
 
-    val persistId = activeInspectionId ?: loadedInspectionId
+    val persistId = (activeInspectionId ?: loadedInspectionId)?.takeIf { it.isNotBlank() }
     val currentStateProvider = rememberUpdatedState {
         InspectionFormState(
             customerInfo = CustomerInfo(
@@ -177,6 +189,10 @@ fun InspectionScreen(
         sections,
         persistId
     ) {
+        if (suppressAutoSave) {
+            suppressAutoSave = false
+            return@LaunchedEffect
+        }
         val id = persistId ?: return@LaunchedEffect
         delay(400)
         val saved = inspectionStore.getById(id)
@@ -194,6 +210,40 @@ fun InspectionScreen(
     val checkedCount = allItems.count { it.status != InspectionStatus.NONE }
     val totalCount = allItems.size
     val progress = if (totalCount == 0) 0f else checkedCount.toFloat() / totalCount
+
+    fun resetFormFields() {
+        customerName = ""
+        customerPhone = ""
+        vehicle = ""
+        mileage = ""
+        generalNotes = ""
+        sections = defaultInspectionSections()
+    }
+
+    fun clearFormOnly() {
+        suppressAutoSave = true
+        loadedInspectionId = null
+        onActiveInspectionChange("")
+        resetFormFields()
+        autoSaveHint = "Form cleared · saved customer kept in list"
+    }
+
+    fun deleteCustomer() {
+        val id = persistId ?: return
+        val saved = inspectionStore.getById(id)
+        inspectionStore.delete(id)
+        saved?.appointmentId?.let { apptId ->
+            appointmentStore.getById(apptId)?.let { appt ->
+                appointmentStore.save(appt.copy(inspectionId = ""))
+            }
+        }
+        suppressAutoSave = true
+        loadedInspectionId = null
+        onActiveInspectionChange("")
+        resetFormFields()
+        autoSaveHint = "Customer removed from saved list"
+        onInspectionSaved("Customer deleted")
+    }
 
     fun currentState() = currentStateProvider.value()
 
@@ -240,6 +290,32 @@ fun InspectionScreen(
             return
         }
         share(type)
+    }
+
+    if (showDeleteCustomerConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCustomerConfirm = false },
+            title = { Text("Delete customer?") },
+            text = {
+                Text("Remove this saved inspection from your list? This cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteCustomerConfirm = false
+                        playButtonClick()
+                        deleteCustomer()
+                    }
+                ) {
+                    Text("Delete", color = InspectionColors.bad)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteCustomerConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (showUncheckedWarning) {
@@ -295,58 +371,31 @@ fun InspectionScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_company_logo),
-                            contentDescription = "Express Mobile Service logo",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = COMPANY_NAME,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { openUri(context, COMPANY_PHONE_URI) }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = COMPANY_PHONE_DISPLAY,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
+                    ExpressMobileLogo()
                 },
                 actions = {
-                    TextButton(onClick = { showInspectionList = true }) {
+                    TextButton(onClick = {
+                        playButtonClick()
+                        showInspectionList = true
+                    }) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.Default.Engineering,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = SamsungCalendarColors.metallicGold,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Open list",
-                            color = Color.White,
+                            color = SamsungCalendarColors.eggWhite,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White
+                    containerColor = SamsungCalendarColors.deepPlum,
+                    titleContentColor = SamsungCalendarColors.eggWhite,
+                    actionIconContentColor = SamsungCalendarColors.eggWhite
                 )
             )
         },
@@ -354,7 +403,7 @@ fun InspectionScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(SamsungCalendarColors.surface)
                     .padding(12.dp)
             ) {
                 if (isGenerating) {
@@ -382,53 +431,93 @@ fun InspectionScreen(
                     )
                 }
                 Button(
-                    onClick = { saveInspection() },
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        saveInspection()
+                    },
                     enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save inspection")
+                    CompactButtonLabel(Icons.Default.Save, "Save inspection")
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Button(
-                    onClick = { beginComplete(ReportShareType.PDF) },
-                    enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as PDF")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = { beginComplete(ReportShareType.IMAGE) },
-                    enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Image, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as Image (JPEG)")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
                     onClick = {
-                        customerName = ""
-                        customerPhone = ""
-                        vehicle = ""
-                        mileage = ""
-                        generalNotes = ""
-                        sections = defaultInspectionSections()
+                        playButtonClick(mainAction = true)
+                        beginComplete(ReportShareType.PDF)
                     },
                     enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding()
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear Form")
+                    CompactButtonLabel(Icons.Default.PictureAsPdf, "Send as PDF")
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedButton(
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        beginComplete(ReportShareType.IMAGE)
+                    },
+                    enabled = !isGenerating,
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding()
+                ) {
+                    CompactButtonLabel(Icons.Default.Image, "Send Image (JPEG)")
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            playButtonClick()
+                            clearFormOnly()
+                        },
+                        enabled = !isGenerating,
+                        modifier = Modifier
+                            .weight(1f)
+                            .compactActionButtonHeight(),
+                        contentPadding = compactSplitButtonPadding()
+                    ) {
+                        CompactButtonLabel(
+                            icon = Icons.Default.Refresh,
+                            text = "Clear Form",
+                            iconSize = 14.dp,
+                            fontSize = 11.sp,
+                            showIcon = false
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            playButtonClick()
+                            if (persistId != null) {
+                                showDeleteCustomerConfirm = true
+                            } else {
+                                onShareError("No saved customer to delete.")
+                            }
+                        },
+                        enabled = !isGenerating && persistId != null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .compactActionButtonHeight(),
+                        contentPadding = compactSplitButtonPadding(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = InspectionColors.bad
+                        )
+                    ) {
+                        CompactButtonLabel(
+                            icon = Icons.Default.Delete,
+                            text = "Delete Customer",
+                            iconSize = 14.dp,
+                            fontSize = 11.sp,
+                            showIcon = false
+                        )
+                    }
                 }
             }
         }
@@ -436,14 +525,17 @@ fun InspectionScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(SamsungCalendarColors.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            InspectionDateHeader()
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.agendaSurface)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
@@ -461,12 +553,24 @@ fun InspectionScreen(
                 }
             }
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+            ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Customer Info", fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Engineering,
+                            contentDescription = null,
+                            tint = SamsungCalendarColors.metallicGold,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Customer Info", fontWeight = FontWeight.SemiBold, color = SamsungCalendarColors.eggWhite)
+                    }
                     FormField("Customer Name", customerName) { customerName = it }
                     FormField(
                         "Phone",
@@ -490,12 +594,15 @@ fun InspectionScreen(
                 )
             }
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+            ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Additional Notes", fontWeight = FontWeight.SemiBold)
+                    Text("Additional Notes", fontWeight = FontWeight.SemiBold, color = SamsungCalendarColors.eggWhite)
                     Text(
                         text = "Overall comments, recommendations, or follow-up for the customer.",
                         style = MaterialTheme.typography.bodySmall,
@@ -503,7 +610,10 @@ fun InspectionScreen(
                     )
                     OutlinedTextField(
                         value = generalNotes,
-                        onValueChange = { generalNotes = it },
+                        onValueChange = { new ->
+                            if (new.length > generalNotes.length) playTypeClick()
+                            generalNotes = new
+                        },
                         label = { Text("Notes") },
                         placeholder = { Text("e.g. Recommend brake service within 3,000 miles") },
                         modifier = Modifier.fillMaxWidth(),
@@ -517,6 +627,35 @@ fun InspectionScreen(
 
             Spacer(modifier = Modifier.height(100.dp))
         }
+    }
+}
+
+@Composable
+private fun InspectionDateHeader() {
+    val today = remember { LocalDate.now() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(SamsungCalendarColors.deepPlum)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Engineering,
+            contentDescription = null,
+            tint = SamsungCalendarColors.metallicGold,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = formatMonthYearAbbrev(today),
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            letterSpacing = 1.sp,
+            color = SamsungCalendarColors.eggWhite
+        )
     }
 }
 
@@ -539,7 +678,8 @@ private fun OpenInspectionsListSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = SamsungCalendarColors.surface
     ) {
         Column(
             modifier = Modifier
@@ -640,7 +780,10 @@ private fun FormField(
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { new ->
+            if (new.length > value.length) playTypeClick()
+            onValueChange(new)
+        },
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
@@ -654,12 +797,15 @@ private fun SectionBlock(
     onItemStatusChange: (String, InspectionStatus) -> Unit,
     onItemNotesChange: (String, String) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = section.title,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = SamsungCalendarColors.metallicGold,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             section.items.forEachIndexed { index, item ->
@@ -700,7 +846,10 @@ private fun CompactItemRow(
         }
         OutlinedTextField(
             value = item.notes,
-            onValueChange = onNotesChange,
+            onValueChange = { new ->
+                if (new.length > item.notes.length) playTypeClick()
+                onNotesChange(new)
+            },
             label = { Text("Notes") },
             placeholder = { Text("Optional") },
             modifier = Modifier.fillMaxWidth(),
@@ -727,7 +876,10 @@ private fun RowScope.StatusChip(
             .clip(RoundedCornerShape(8.dp))
             .background(background)
             .border(1.5.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable {
+                playButtonClick()
+                onClick()
+            }
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -768,7 +920,10 @@ private fun List<InspectionSection>.updateItemNotes(
 @Composable
 private fun CompanyFooterLinks() {
     val context = LocalContext.current
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+    ) {
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -840,4 +995,51 @@ private fun FooterLinkRow(
 
 private fun openUri(context: android.content.Context, uri: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+}
+
+private val CompactButtonHeight = 36.dp
+
+private fun Modifier.compactActionButton(): Modifier =
+    fillMaxWidth().heightIn(min = CompactButtonHeight, max = CompactButtonHeight)
+
+private fun Modifier.compactActionButtonHeight(): Modifier =
+    heightIn(min = CompactButtonHeight, max = CompactButtonHeight)
+
+private fun compactButtonPadding(): PaddingValues =
+    PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+
+private fun compactSplitButtonPadding(): PaddingValues =
+    PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+
+@Composable
+private fun CompactButtonLabel(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    iconSize: androidx.compose.ui.unit.Dp = 16.dp,
+    fontSize: TextUnit = 12.sp,
+    showIcon: Boolean = true
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        if (showIcon) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+        Text(
+            text = text,
+            fontSize = fontSize,
+            lineHeight = fontSize * 1.15f,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontSize = fontSize,
+                lineHeight = fontSize * 1.15f,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            )
+        )
+    }
 }
