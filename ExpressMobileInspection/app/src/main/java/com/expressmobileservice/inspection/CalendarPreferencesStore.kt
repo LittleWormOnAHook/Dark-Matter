@@ -14,7 +14,7 @@ class CalendarPreferencesStore(context: Context) {
     }
 
     fun setViewMode(mode: CalendarViewMode) {
-        prefs.edit().putString(KEY_VIEW_MODE, mode.name).apply()
+        prefs.edit().putString(KEY_VIEW_MODE, mode.name).commit()
     }
 
     fun getSelectedDate(): LocalDate? {
@@ -23,7 +23,7 @@ class CalendarPreferencesStore(context: Context) {
     }
 
     fun setSelectedDate(date: LocalDate) {
-        prefs.edit().putLong(KEY_SELECTED_EPOCH_DAY, date.toEpochDay()).apply()
+        prefs.edit().putLong(KEY_SELECTED_EPOCH_DAY, date.toEpochDay()).commit()
     }
 
     companion object {

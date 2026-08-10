@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,12 +53,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -96,13 +101,38 @@ fun AppointmentsScreen(
     val context = LocalContext.current
     val calendarPrefs = remember { CalendarPreferencesStore(context) }
     var appointments by remember { mutableStateOf(store.getAll()) }
-    var viewMode by remember { mutableStateOf(calendarPrefs.getViewMode()) }
-    var selectedDate by remember {
-        mutableStateOf(calendarPrefs.getSelectedDate() ?: LocalDate.now())
-    }
+    var viewMode by rememberSaveable(
+        saver = Saver(
+            save = { it.value.name },
+            restore = { name ->
+                mutableStateOf(
+                    runCatching { CalendarViewMode.valueOf(name) }.getOrDefault(CalendarViewMode.MONTH)
+                )
+            }
+        )
+    ) { mutableStateOf(calendarPrefs.getViewMode()) }
+    var selectedDate by rememberSaveable(
+        saver = Saver(
+            save = { it.value.toEpochDay() },
+            restore = { epochDay -> mutableStateOf(LocalDate.ofEpochDay(epochDay)) }
+        )
+    ) { mutableStateOf(calendarPrefs.getSelectedDate() ?: LocalDate.now()) }
     var displayedMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
 
-    fun persistCalendarState() {
+    fun selectDate(date: LocalDate) {
+        selectedDate = date
+        calendarPrefs.setSelectedDate(date)
+    }
+
+    fun setCalendarViewMode(mode: CalendarViewMode) {
+        viewMode = mode
+        calendarPrefs.setViewMode(mode)
+        if (mode == CalendarViewMode.MONTH) {
+            displayedMonth = YearMonth.from(selectedDate)
+        }
+    }
+
+    LaunchedEffect(viewMode, selectedDate) {
         calendarPrefs.setViewMode(viewMode)
         calendarPrefs.setSelectedDate(selectedDate)
     }
@@ -235,11 +265,7 @@ fun AppointmentsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                viewMode = mode
-                                if (mode == CalendarViewMode.MONTH) {
-                                    displayedMonth = YearMonth.from(selectedDate)
-                                }
-                                persistCalendarState()
+                                setCalendarViewMode(mode)
                                 showViewMenu = false
                             }
                             .padding(horizontal = 24.dp, vertical = 16.dp),
@@ -288,9 +314,9 @@ fun AppointmentsScreen(
                 },
                 onSearchChange = { searchQuery = it },
                 onGoToToday = {
-                    selectedDate = LocalDate.now()
-                    displayedMonth = YearMonth.from(selectedDate)
-                    persistCalendarState()
+                    val today = LocalDate.now()
+                    selectDate(today)
+                    displayedMonth = YearMonth.from(today)
                 }
             )
 
@@ -302,16 +328,15 @@ fun AppointmentsScreen(
                         appointments = filteredAppointments,
                         onMonthChange = { displayedMonth = it },
                         onDateSelected = { date ->
-                            selectedDate = date
+                            selectDate(date)
                             displayedMonth = YearMonth.from(date)
-                            persistCalendarState()
                         },
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                     HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
                     SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        appointments = filteredAppointments,
                         quickAddText = quickAddText,
                         onQuickAddChange = { quickAddText = it },
                         onQuickAddSubmit = {
@@ -337,16 +362,13 @@ fun AppointmentsScreen(
                     WeekCalendarView(
                         anchorDate = selectedDate,
                         appointments = filteredAppointments,
-                        onAnchorDateChange = {
-                            selectedDate = it
-                            persistCalendarState()
-                        },
+                        onAnchorDateChange = { selectDate(it) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
                     SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        appointments = filteredAppointments,
                         quickAddText = quickAddText,
                         onQuickAddChange = { quickAddText = it },
                         onQuickAddSubmit = {
@@ -372,18 +394,12 @@ fun AppointmentsScreen(
                     DayHeaderNav(
                         date = selectedDate,
                         appointmentCount = appointmentsForDay(filteredAppointments, selectedDate).size,
-                        onPrevious = {
-                            selectedDate = selectedDate.minusDays(1)
-                            persistCalendarState()
-                        },
-                        onNext = {
-                            selectedDate = selectedDate.plusDays(1)
-                            persistCalendarState()
-                        }
+                        onPrevious = { selectDate(selectedDate.minusDays(1)) },
+                        onNext = { selectDate(selectedDate.plusDays(1)) }
                     )
                     SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        appointments = filteredAppointments,
                         quickAddText = quickAddText,
                         onQuickAddChange = { quickAddText = it },
                         onQuickAddSubmit = {
@@ -761,8 +777,11 @@ private fun SamsungAgendaPanel(
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val sortedAppointments = remember(date, appointments) {
-        appointments.sortedWith(compareAppointmentsForDay(date))
+    val dayAppointments = remember(date, appointments) {
+        appointmentsForDay(appointments, date)
+    }
+    val sortedAppointments = remember(date, dayAppointments) {
+        dayAppointments.sortedWith(compareAppointmentsForDay(date))
     }
     val agendaScroll = rememberScrollState()
 
@@ -996,21 +1015,27 @@ private fun WeekDayHeaderRow(
             val isSelected = date == selectedDate
             val isToday = date == today
             val dayCount = appointmentsForDay(appointments, date).size
-            Column(
+            Box(
                 modifier = Modifier
                     .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .then(
                         if (isSelected) {
                             Modifier
-                                .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.35f))
-                                .border(1.5.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
+                                .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.45f))
+                                .border(2.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
                         } else Modifier
                     )
-                    .clickable { onDateSelected(date) }
-                    .padding(vertical = 8.dp, horizontal = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .pointerInput(date) {
+                        detectTapGestures(onTap = { onDateSelected(date) })
+                    },
+                contentAlignment = Alignment.Center
             ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp)
+                ) {
                 Text(
                     text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
                         .take(1)
@@ -1034,6 +1059,7 @@ private fun WeekDayHeaderRow(
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                     maxLines = 3
                 )
+                }
             }
         }
     }
