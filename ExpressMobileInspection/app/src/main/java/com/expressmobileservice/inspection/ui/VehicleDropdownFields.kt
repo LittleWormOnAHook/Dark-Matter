@@ -1,5 +1,6 @@
 package com.expressmobileservice.inspection.ui
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,7 @@ fun VehicleDropdownFields(
 ) {
     val context = LocalContext.current
     val catalog = remember { VehicleCatalogRepository(context) }
+    val copyHandler = rememberCopyHandler()
     var makes by remember { mutableStateOf<List<String>>(emptyList()) }
     var models by remember { mutableStateOf<List<String>>(emptyList()) }
     var engineSizes by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -171,7 +174,15 @@ fun VehicleDropdownFields(
             value = mileage,
             onValueChange = onMileageChange,
             label = { Text("Mileage / hours") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(mileage) {
+                    detectTapGestures(
+                        onLongPress = {
+                            if (mileage.isNotBlank()) copyHandler(mileage, "Copied")
+                        }
+                    )
+                },
             singleLine = true,
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                 focusedBorderColor = SamsungCalendarColors.green,
@@ -194,6 +205,7 @@ private fun SearchableVehicleDropdown(
     var showSheet by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val copyHandler = rememberCopyHandler()
 
     val filtered = remember(options, query) {
         if (query.isBlank()) options
@@ -213,7 +225,15 @@ private fun SearchableVehicleDropdown(
                     contentDescription = "Search $label"
                 )
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(value) {
+                    detectTapGestures(
+                        onLongPress = {
+                            if (value.isNotBlank()) copyHandler(value, "Copied")
+                        }
+                    )
+                },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                 focusedBorderColor = SamsungCalendarColors.green,
                 cursorColor = SamsungCalendarColors.green,

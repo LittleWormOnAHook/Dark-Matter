@@ -50,7 +50,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -501,12 +500,13 @@ fun InspectionScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
+                    CopyableOutlinedTextField(
                         value = generalNotes,
                         onValueChange = { generalNotes = it },
                         label = { Text("Notes") },
                         placeholder = { Text("e.g. Recommend brake service within 3,000 miles") },
                         modifier = Modifier.fillMaxWidth(),
+                        singleLine = false,
                         minLines = 3,
                         maxLines = 6
                     )
@@ -638,7 +638,7 @@ private fun FormField(
     keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
     onValueChange: (String) -> Unit
 ) {
-    OutlinedTextField(
+    CopyableOutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
@@ -698,7 +698,7 @@ private fun CompactItemRow(
                 onStatusChange(if (item.status == InspectionStatus.REPLACE) InspectionStatus.NONE else InspectionStatus.REPLACE)
             }
         }
-        OutlinedTextField(
+        CopyableOutlinedTextField(
             value = item.notes,
             onValueChange = onNotesChange,
             label = { Text("Notes") },

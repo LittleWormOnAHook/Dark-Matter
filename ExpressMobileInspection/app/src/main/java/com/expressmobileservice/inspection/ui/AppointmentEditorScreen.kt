@@ -42,13 +42,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
@@ -71,6 +69,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
 import com.expressmobileservice.inspection.AppointmentStore
+import com.expressmobileservice.inspection.CustomerRecord
+import com.expressmobileservice.inspection.distinctCustomerRecords
+import com.expressmobileservice.inspection.searchCustomers
 import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.autofillLabel
 import com.expressmobileservice.inspection.autofillSuggestions
@@ -143,6 +144,23 @@ fun AppointmentEditorScreen(
     var validationError by remember { mutableStateOf<String?>(null) }
     val copyToClipboard = rememberCopyHandler()
 
+    val customerRecords = remember(appointmentStore) {
+        appointmentStore.getAll().distinctCustomerRecords()
+    }
+
+    val nameSuggestions = remember(customerRecords, customerName, isEditing) {
+        if (isEditing || customerName.isBlank()) emptyList()
+        else customerRecords.searchCustomers(customerName)
+    }
+    val phoneSuggestions = remember(customerRecords, customerPhone, isEditing) {
+        if (isEditing || customerPhone.isBlank()) emptyList()
+        else customerRecords.searchCustomers(customerPhone)
+    }
+    val addressSuggestions = remember(customerRecords, address, isEditing) {
+        if (isEditing || address.isBlank()) emptyList()
+        else customerRecords.searchCustomers(address)
+    }
+
     val autofillQuery = remember(title, jobNotes, customerName) {
         listOf(title, jobNotes, customerName).firstOrNull { it.isNotBlank() }.orEmpty()
     }
@@ -179,6 +197,20 @@ fun AppointmentEditorScreen(
         if (!isEditing) {
             startMillis = defaultAppointmentStart(defaultDate)
             endMillis = defaultAppointmentEnd(startMillis)
+        }
+    }
+
+    fun applyCustomerRecord(record: CustomerRecord) {
+        applyAutofill(record.toAppointmentFields())
+    }
+
+    fun maybeAutofillFromPhone(phone: String) {
+        if (isEditing) return
+        val digits = phone.filter { it.isDigit() }
+        if (digits.length < 7) return
+        val exact = customerRecords.firstOrNull { it.customerPhone.filter { d -> d.isDigit() } == digits }
+        if (exact != null && (customerName.isBlank() || customerName == exact.customerName)) {
+            applyCustomerRecord(exact)
         }
     }
 
@@ -404,7 +436,7 @@ fun AppointmentEditorScreen(
                 )
             }
 
-            TextField(
+            CopyableTextField(
                 value = title,
                 onValueChange = {
                     title = it
@@ -476,7 +508,7 @@ fun AppointmentEditorScreen(
                 icon = { Icon(Icons.Default.Notes, null, tint = SamsungCalendarColors.green) },
                 label = "Notes"
             ) {
-                OutlinedTextField(
+                CopyableOutlinedTextField(
                     value = jobNotes,
                     onValueChange = {
                         jobNotes = it
@@ -484,6 +516,7 @@ fun AppointmentEditorScreen(
                     },
                     placeholder = { Text("Job details, parts, follow-up") },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
                     minLines = 2,
                     maxLines = 4,
                     colors = samsungFieldColors()
@@ -535,7 +568,7 @@ fun AppointmentEditorScreen(
                 icon = { Icon(Icons.Default.Person, null, tint = SamsungCalendarColors.green) },
                 label = "Customer name"
             ) {
-                OutlinedTextField(
+                CopyableOutlinedTextField(
                     value = customerName,
                     onValueChange = { customerName = it },
                     placeholder = { Text("Customer name") },
@@ -544,20 +577,33 @@ fun AppointmentEditorScreen(
                     colors = samsungFieldColors(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
                 )
+                CustomerSuggestionList(
+                    suggestions = nameSuggestions,
+                    onSelect = { applyCustomerRecord(it) },
+                    onCopy = copyToClipboard
+                )
             }
 
             EditorField(
                 icon = { Icon(Icons.Default.Phone, null, tint = SamsungCalendarColors.green) },
                 label = "Phone"
             ) {
-                OutlinedTextField(
+                CopyableOutlinedTextField(
                     value = customerPhone,
-                    onValueChange = { customerPhone = it },
+                    onValueChange = {
+                        customerPhone = it
+                        maybeAutofillFromPhone(it)
+                    },
                     placeholder = { Text("Any phone number") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = samsungFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+                CustomerSuggestionList(
+                    suggestions = phoneSuggestions,
+                    onSelect = { applyCustomerRecord(it) },
+                    onCopy = copyToClipboard
                 )
             }
 
@@ -565,15 +611,21 @@ fun AppointmentEditorScreen(
                 icon = { Icon(Icons.Default.LocationOn, null, tint = SamsungCalendarColors.green) },
                 label = "Address (opens Waze)"
             ) {
-                OutlinedTextField(
+                CopyableOutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
                     placeholder = { Text("Street address") },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
                     minLines = 1,
                     maxLines = 2,
                     colors = samsungFieldColors(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
+                )
+                CustomerSuggestionList(
+                    suggestions = addressSuggestions,
+                    onSelect = { applyCustomerRecord(it) },
+                    onCopy = copyToClipboard
                 )
             }
 
@@ -607,13 +659,52 @@ fun AppointmentEditorScreen(
             }
 
             Text(
-                text = "Save creates the calendar job and an inspection file with this customer info.",
+                text = "Save creates the calendar job and an inspection file with this customer info. Long-press any field to copy its text.",
                 color = SamsungCalendarColors.green,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CustomerSuggestionList(
+    suggestions: List<CustomerRecord>,
+    onSelect: (CustomerRecord) -> Unit,
+    onCopy: (String, String) -> Unit
+) {
+    if (suggestions.isEmpty()) return
+    Text(
+        text = "Tap to fill · hold to copy",
+        color = SamsungCalendarColors.muted,
+        fontSize = 11.sp,
+        modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
+    )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 120.dp)
+    ) {
+        items(suggestions, key = { "${it.customerPhone}|${it.customerName}" }) { record ->
+            Text(
+                text = record.displayLabel(),
+                fontSize = 13.sp,
+                color = SamsungCalendarColors.green,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = { onSelect(record) },
+                        onLongClick = {
+                            onCopy(record.toAppointmentFields().toClipboardText(), "Customer info copied")
+                        }
+                    )
+                    .padding(vertical = 8.dp)
+            )
+            HorizontalDivider(color = SamsungCalendarColors.divider)
         }
     }
 }

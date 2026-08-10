@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,12 +53,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -66,10 +71,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
 import com.expressmobileservice.inspection.AppointmentStore
+import com.expressmobileservice.inspection.CalendarPreferencesStore
 import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.CalendarViewMode
 import com.expressmobileservice.inspection.appointmentsForDay
-import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
@@ -83,7 +88,6 @@ import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -95,10 +99,43 @@ fun AppointmentsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val calendarPrefs = remember { CalendarPreferencesStore(context) }
     var appointments by remember { mutableStateOf(store.getAll()) }
-    var viewMode by remember { mutableStateOf(CalendarViewMode.MONTH) }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var viewMode by rememberSaveable(
+        saver = Saver(
+            save = { it.value.name },
+            restore = { name ->
+                mutableStateOf(
+                    runCatching { CalendarViewMode.valueOf(name) }.getOrDefault(CalendarViewMode.MONTH)
+                )
+            }
+        )
+    ) { mutableStateOf(calendarPrefs.getViewMode()) }
+    var selectedDate by rememberSaveable(
+        saver = Saver(
+            save = { it.value.toEpochDay() },
+            restore = { epochDay -> mutableStateOf(LocalDate.ofEpochDay(epochDay)) }
+        )
+    ) { mutableStateOf(calendarPrefs.getSelectedDate() ?: LocalDate.now()) }
     var displayedMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
+
+    fun selectDate(date: LocalDate) {
+        selectedDate = date
+        calendarPrefs.setSelectedDate(date)
+    }
+
+    fun setCalendarViewMode(mode: CalendarViewMode) {
+        viewMode = mode
+        calendarPrefs.setViewMode(mode)
+        if (mode == CalendarViewMode.MONTH) {
+            displayedMonth = YearMonth.from(selectedDate)
+        }
+    }
+
+    LaunchedEffect(viewMode, selectedDate) {
+        calendarPrefs.setViewMode(viewMode)
+        calendarPrefs.setSelectedDate(selectedDate)
+    }
     var showEditor by remember { mutableStateOf(false) }
     var editingAppointment by remember { mutableStateOf<Appointment?>(null) }
     var appointmentToDelete by remember { mutableStateOf<Appointment?>(null) }
@@ -228,7 +265,7 @@ fun AppointmentsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                viewMode = mode
+                                setCalendarViewMode(mode)
                                 showViewMenu = false
                             }
                             .padding(horizontal = 24.dp, vertical = 16.dp),
@@ -277,8 +314,9 @@ fun AppointmentsScreen(
                 },
                 onSearchChange = { searchQuery = it },
                 onGoToToday = {
-                    selectedDate = LocalDate.now()
-                    displayedMonth = YearMonth.from(selectedDate)
+                    val today = LocalDate.now()
+                    selectDate(today)
+                    displayedMonth = YearMonth.from(today)
                 }
             )
 
@@ -290,7 +328,7 @@ fun AppointmentsScreen(
                         appointments = filteredAppointments,
                         onMonthChange = { displayedMonth = it },
                         onDateSelected = { date ->
-                            selectedDate = date
+                            selectDate(date)
                             displayedMonth = YearMonth.from(date)
                         },
                         modifier = Modifier.padding(horizontal = 4.dp)
@@ -298,7 +336,7 @@ fun AppointmentsScreen(
                     HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
                     SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        appointments = filteredAppointments,
                         quickAddText = quickAddText,
                         onQuickAddChange = { quickAddText = it },
                         onQuickAddSubmit = {
@@ -324,8 +362,22 @@ fun AppointmentsScreen(
                     WeekCalendarView(
                         anchorDate = selectedDate,
                         appointments = filteredAppointments,
-                        inspectionStore = inspectionStore,
-                        onAnchorDateChange = { selectedDate = it },
+                        onAnchorDateChange = { selectDate(it) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
+                    SamsungAgendaPanel(
+                        date = selectedDate,
+                        appointments = filteredAppointments,
+                        quickAddText = quickAddText,
+                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddSubmit = {
+                            if (quickAddText.isNotBlank()) {
+                                editorQuickNotes = quickAddText.trim()
+                                editingAppointment = null
+                                showEditor = true
+                            }
+                        },
                         onAppointmentClick = { apt ->
                             editingAppointment = apt
                             showEditor = true
@@ -333,20 +385,21 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 CalendarViewMode.DAY -> {
                     DayHeaderNav(
                         date = selectedDate,
                         appointmentCount = appointmentsForDay(filteredAppointments, selectedDate).size,
-                        onPrevious = { selectedDate = selectedDate.minusDays(1) },
-                        onNext = { selectedDate = selectedDate.plusDays(1) }
+                        onPrevious = { selectDate(selectedDate.minusDays(1)) },
+                        onNext = { selectDate(selectedDate.plusDays(1)) }
                     )
                     SamsungAgendaPanel(
                         date = selectedDate,
-                        appointments = appointmentsForDay(filteredAppointments, selectedDate),
+                        appointments = filteredAppointments,
                         quickAddText = quickAddText,
                         onQuickAddChange = { quickAddText = it },
                         onQuickAddSubmit = {
@@ -443,7 +496,7 @@ private fun SamsungCalendarHeader(
         }
 
         if (showSearch) {
-            OutlinedTextField(
+            CopyableOutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
                 placeholder = { Text("Search customers, phone, jobs…") },
@@ -724,8 +777,16 @@ private fun SamsungAgendaPanel(
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val sortedAppointments = remember(date, appointments) {
-        appointments.sortedWith(compareAppointmentsForDay(date))
+    val dayAppointments = remember(date, appointments) {
+        appointmentsForDay(appointments, date)
+    }
+    val sortedAppointments = remember(date, dayAppointments) {
+        dayAppointments.sortedWith(compareAppointmentsForDay(date))
+    }
+    val agendaScroll = rememberScrollState()
+
+    LaunchedEffect(date) {
+        agendaScroll.scrollTo(0)
     }
 
     Column(
@@ -736,9 +797,16 @@ private fun SamsungAgendaPanel(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(agendaScroll)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            Text(
+                text = formatDayHeader(date),
+                fontWeight = FontWeight.SemiBold,
+                color = SamsungCalendarColors.green,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
             if (sortedAppointments.isEmpty()) {
                 Text(
                     text = "No events",
@@ -769,7 +837,7 @@ private fun SamsungAgendaPanel(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            CopyableOutlinedTextField(
                 value = quickAddText,
                 onValueChange = onQuickAddChange,
                 placeholder = {
@@ -777,7 +845,6 @@ private fun SamsungAgendaPanel(
                 },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = SamsungCalendarColors.quickAddField,
                     unfocusedContainerColor = SamsungCalendarColors.quickAddField,
@@ -878,71 +945,18 @@ private fun SamsungAgendaRow(
 private fun WeekCalendarView(
     anchorDate: LocalDate,
     appointments: List<Appointment>,
-    inspectionStore: InspectionStore,
     onAnchorDateChange: (LocalDate) -> Unit,
-    onAppointmentClick: (Appointment) -> Unit,
-    onAppointmentLongPress: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
-    onNavigate: (Appointment) -> Unit,
-    onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val weekAnchor = remember { weekDaysContaining(LocalDate.now()).first() }
-    val centerPage = 1_200
-    val pageCount = centerPage * 2 + 1
-    val pagerState = rememberPagerState(
-        initialPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate)),
-        pageCount = { pageCount }
-    )
-
-    fun pageToWeekStart(page: Int): LocalDate =
-        weekAnchor.plusWeeks((page - centerPage).toLong())
-
-    LaunchedEffect(anchorDate) {
-        val targetPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate))
-        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
-            pagerState.scrollToPage(targetPage)
-        }
-    }
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
-            .collect { page ->
-                val newWeekStart = pageToWeekStart(page)
-                val currentWeekStart = weekStartFor(anchorDate)
-                if (newWeekStart != currentWeekStart) {
-                    val dayOffset = ChronoUnit.DAYS.between(currentWeekStart, anchorDate)
-                    onAnchorDateChange(newWeekStart.plusDays(dayOffset))
-                }
-            }
-    }
+    val weekStart = weekStartFor(anchorDate)
 
     Column(modifier = modifier.background(SamsungCalendarColors.background)) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) { page ->
-            val weekStart = pageToWeekStart(page)
-            val highlightDate = if (weekStartFor(anchorDate) == weekStart) {
-                anchorDate
-            } else {
-                weekStart.plusDays(ChronoUnit.DAYS.between(weekStartFor(anchorDate), anchorDate))
-            }
-            WeekCalendarPage(
-                weekStart = weekStart,
-                selectedDate = highlightDate,
-                appointments = appointments,
-                inspectionStore = inspectionStore,
-                onDateSelected = onAnchorDateChange,
-                onAppointmentClick = onAppointmentClick,
-                onAppointmentLongPress = onAppointmentLongPress,
-                onDial = onDial,
-                onNavigate = onNavigate,
-                onOpenInspection = onOpenInspection
-            )
-        }
+        WeekDayHeaderRow(
+            weekStart = weekStart,
+            selectedDate = anchorDate,
+            appointments = appointments,
+            onDateSelected = onAnchorDateChange
+        )
 
         Row(
             modifier = Modifier
@@ -951,123 +965,104 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous week")
+            IconButton(onClick = { onAnchorDateChange(anchorDate.minusDays(1)) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
             }
-            IconButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next week")
+            Text(
+                text = formatDayHeader(anchorDate),
+                fontWeight = FontWeight.SemiBold,
+                color = SamsungCalendarColors.muted,
+                fontSize = 13.sp
+            )
+            IconButton(onClick = { onAnchorDateChange(anchorDate.plusDays(1)) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            TextButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
+                Text("Previous week", color = SamsungCalendarColors.green, fontSize = 12.sp)
+            }
+            TextButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
+                Text("Next week", color = SamsungCalendarColors.green, fontSize = 12.sp)
             }
         }
     }
 }
 
 @Composable
-private fun WeekCalendarPage(
+private fun WeekDayHeaderRow(
     weekStart: LocalDate,
     selectedDate: LocalDate,
     appointments: List<Appointment>,
-    inspectionStore: InspectionStore,
-    onDateSelected: (LocalDate) -> Unit,
-    onAppointmentClick: (Appointment) -> Unit,
-    onAppointmentLongPress: (Appointment) -> Unit,
-    onDial: (Appointment) -> Unit,
-    onNavigate: (Appointment) -> Unit,
-    onOpenInspection: (String) -> Unit
+    onDateSelected: (LocalDate) -> Unit
 ) {
     val weekDays = weekDaysContaining(weekStart)
-    val weekAppointments = appointmentsForWeek(appointments, weekStart)
     val today = LocalDate.now()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        ) {
-            weekDays.forEach { date ->
-                val isSelected = date == selectedDate
-                val isToday = date == today
-                val dayCount = appointmentsForDay(appointments, date).size
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        weekDays.forEach { date ->
+            val isSelected = date == selectedDate
+            val isToday = date == today
+            val dayCount = appointmentsForDay(appointments, date).size
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(
+                        if (isSelected) {
+                            Modifier
+                                .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.45f))
+                                .border(2.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
+                        } else Modifier
+                    )
+                    .pointerInput(date) {
+                        detectTapGestures(onTap = { onDateSelected(date) })
+                    },
+                contentAlignment = Alignment.Center
+            ) {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .then(
-                            if (isSelected) {
-                                Modifier.border(1.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
-                            } else Modifier
-                        )
-                        .clickable { onDateSelected(date) }
-                        .padding(vertical = 8.dp, horizontal = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp)
                 ) {
-                    Text(
-                        text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
-                            .take(1)
-                            .uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SamsungCalendarColors.muted
-                    )
-                    Text(
-                        text = date.dayOfMonth.toString(),
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isToday) SamsungCalendarColors.green else MaterialTheme.colorScheme.onSurface
-                    )
-                    AppointmentGreenIndicators(
-                        appointmentCount = dayCount,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 4.dp),
-                        maxLines = 3
-                    )
-                }
-            }
-        }
-
-        HorizontalDivider(color = SamsungCalendarColors.divider)
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            weekDays.forEach { date ->
-                val dayItems = appointmentsForDay(weekAppointments, date)
-                if (dayItems.isNotEmpty()) {
-                    Text(
-                        text = formatDayHeader(date),
-                        fontWeight = FontWeight.SemiBold,
-                        color = SamsungCalendarColors.green,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                    )
-                    dayItems.forEach { apt ->
-                        SamsungAgendaRow(
-                            appointment = apt,
-                            inspectionStore = inspectionStore,
-                            onClick = { onAppointmentClick(apt) },
-                            onLongClick = { onAppointmentLongPress(apt) },
-                            onDial = { onDial(apt) },
-                            onNavigate = { onNavigate(apt) },
-                            onOpenInspection = { onOpenInspection(apt.inspectionId) }
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
-            }
-            if (weekAppointments.isEmpty()) {
                 Text(
-                    text = "No events this week",
-                    color = SamsungCalendarColors.muted,
-                    modifier = Modifier.padding(16.dp)
+                    text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
+                        .take(1)
+                        .uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SamsungCalendarColors.muted
                 )
+                Text(
+                    text = date.dayOfMonth.toString(),
+                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = when {
+                        isToday -> SamsungCalendarColors.green
+                        isSelected -> MaterialTheme.colorScheme.onSurface
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
+                )
+                AppointmentGreenIndicators(
+                    appointmentCount = dayCount,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    maxLines = 3
+                )
+                }
             }
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
 private fun weekStartFor(date: LocalDate): LocalDate = weekDaysContaining(date).first()
-
-private fun weeksBetween(startWeek: LocalDate, endWeek: LocalDate): Int =
-    ChronoUnit.WEEKS.between(startWeek, endWeek).toInt()
