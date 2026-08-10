@@ -40,6 +40,13 @@ fun formatTimeRange(startMillis: Long, endMillis: Long, allDay: Boolean): String
 
 fun formatMonthAbbrev(date: LocalDate): String = date.format(monthAbbrevFormatter)
 
+/** Header label, e.g. "JUL 2026". */
+fun formatMonthYearAbbrev(date: LocalDate): String =
+    "${date.format(monthAbbrevFormatter).uppercase()} ${date.year}"
+
+fun formatMonthYearAbbrev(yearMonth: YearMonth): String =
+    formatMonthYearAbbrev(yearMonth.atDay(1))
+
 fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
     val firstOfMonth = yearMonth.atDay(1)
     val startOffset = ((firstOfMonth.dayOfWeek.value - firstDayOfWeek.value + 7) % 7)

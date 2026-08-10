@@ -14,8 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val InspBlue = Color(0xFF1565C0)
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 
 @Composable
 fun InspBadgeButton(
@@ -26,7 +25,7 @@ fun InspBadgeButton(
         modifier = modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(InspBlue)
+            .background(SamsungCalendarColors.orchidPurple)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

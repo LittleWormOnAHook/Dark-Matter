@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
@@ -98,7 +99,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.formatMonthYearAbbrev
 import com.expressmobileservice.inspection.toSavedInspection
+import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -331,22 +335,23 @@ fun InspectionScreen(
                 actions = {
                     TextButton(onClick = { showInspectionList = true }) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.Default.Engineering,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = SamsungCalendarColors.metallicGold,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Open list",
-                            color = Color.White,
+                            color = SamsungCalendarColors.eggWhite,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White
+                    containerColor = SamsungCalendarColors.deepPlum,
+                    titleContentColor = SamsungCalendarColors.eggWhite,
+                    actionIconContentColor = SamsungCalendarColors.eggWhite
                 )
             )
         },
@@ -354,7 +359,7 @@ fun InspectionScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(SamsungCalendarColors.surface)
                     .padding(12.dp)
             ) {
                 if (isGenerating) {
@@ -436,14 +441,17 @@ fun InspectionScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(SamsungCalendarColors.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            InspectionDateHeader()
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.agendaSurface)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
@@ -461,12 +469,24 @@ fun InspectionScreen(
                 }
             }
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+            ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Customer Info", fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Engineering,
+                            contentDescription = null,
+                            tint = SamsungCalendarColors.metallicGold,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Customer Info", fontWeight = FontWeight.SemiBold, color = SamsungCalendarColors.eggWhite)
+                    }
                     FormField("Customer Name", customerName) { customerName = it }
                     FormField(
                         "Phone",
@@ -490,12 +510,15 @@ fun InspectionScreen(
                 )
             }
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+            ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Additional Notes", fontWeight = FontWeight.SemiBold)
+                    Text("Additional Notes", fontWeight = FontWeight.SemiBold, color = SamsungCalendarColors.eggWhite)
                     Text(
                         text = "Overall comments, recommendations, or follow-up for the customer.",
                         style = MaterialTheme.typography.bodySmall,
@@ -520,6 +543,35 @@ fun InspectionScreen(
     }
 }
 
+@Composable
+private fun InspectionDateHeader() {
+    val today = remember { LocalDate.now() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(SamsungCalendarColors.deepPlum)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Engineering,
+            contentDescription = null,
+            tint = SamsungCalendarColors.metallicGold,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = formatMonthYearAbbrev(today),
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            letterSpacing = 1.sp,
+            color = SamsungCalendarColors.eggWhite
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OpenInspectionsListSheet(
@@ -539,7 +591,8 @@ private fun OpenInspectionsListSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = SamsungCalendarColors.surface
     ) {
         Column(
             modifier = Modifier
@@ -654,12 +707,15 @@ private fun SectionBlock(
     onItemStatusChange: (String, InspectionStatus) -> Unit,
     onItemNotesChange: (String, String) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = section.title,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = SamsungCalendarColors.metallicGold,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             section.items.forEachIndexed { index, item ->
@@ -768,7 +824,10 @@ private fun List<InspectionSection>.updateItemNotes(
 @Composable
 private fun CompanyFooterLinks() {
     val context = LocalContext.current
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SamsungCalendarColors.surface)
+    ) {
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)

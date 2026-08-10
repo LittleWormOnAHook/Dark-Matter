@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +74,7 @@ import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.formatDayHeader
-import com.expressmobileservice.inspection.formatMonthAbbrev
+import com.expressmobileservice.inspection.formatMonthYearAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.daysInMonthGrid
@@ -405,16 +406,30 @@ private fun SamsungCalendarHeader(
                 )
             }
 
-            Text(
-                text = when (viewMode) {
-                    CalendarViewMode.MONTH -> formatMonthAbbrev(displayedMonth.atDay(1)).uppercase()
-                    CalendarViewMode.WEEK -> formatMonthAbbrev(selectedDate).uppercase()
-                    CalendarViewMode.DAY -> formatMonthAbbrev(selectedDate).uppercase()
-                },
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                letterSpacing = 1.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PrecisionManufacturing,
+                    contentDescription = null,
+                    tint = SamsungCalendarColors.green,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(end = 6.dp)
+                )
+                Text(
+                    text = when (viewMode) {
+                        CalendarViewMode.MONTH -> formatMonthYearAbbrev(displayedMonth)
+                        CalendarViewMode.WEEK -> formatMonthYearAbbrev(selectedDate)
+                        CalendarViewMode.DAY -> formatMonthYearAbbrev(selectedDate)
+                    },
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    letterSpacing = 1.sp,
+                    color = SamsungCalendarColors.onBackground
+                )
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onSearchToggle) {

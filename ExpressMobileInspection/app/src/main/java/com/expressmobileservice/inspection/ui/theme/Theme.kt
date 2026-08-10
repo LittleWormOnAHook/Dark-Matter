@@ -6,40 +6,42 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val BluePrimary = Color(0xFF1565C0)
-private val BlueDark = Color(0xFF0D47A1)
-private val GreenAccent = Color(0xFF2E7D32)
-private val GreenGood = Color(0xFF2E7D32)
-private val RedBad = Color(0xFFC62828)
-private val OrangeReplace = Color(0xFFE65100)
+private val RegalGold = SamsungCalendarColors.metallicGold
+private val RegalDeepPurple = SamsungCalendarColors.deepPurple
+private val RegalDeepPlum = SamsungCalendarColors.deepPlum
+private val RegalOrchid = SamsungCalendarColors.orchidPurple
+private val RegalEggWhite = SamsungCalendarColors.eggWhite
+private val RegalTaupe = SamsungCalendarColors.warmTaupe
 
 private val LightColors = lightColorScheme(
-    primary = BluePrimary,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFBBDEFB),
-    secondary = BlueDark,
-    tertiary = GreenAccent,
-    onTertiary = Color.White,
-    background = Color(0xFFF5F7FA),
+    primary = RegalDeepPlum,
+    onPrimary = RegalEggWhite,
+    primaryContainer = Color(0xFFE8DFF0),
+    secondary = RegalGold,
+    onSecondary = RegalDeepPurple,
+    tertiary = RegalOrchid,
+    onTertiary = RegalEggWhite,
+    background = Color(0xFFF3EADD),
     surface = Color.White,
-    surfaceVariant = Color(0xFFE8EEF2),
-    onSurface = Color(0xFF1A1A1A),
-    outline = Color(0xFFB0BEC5)
+    surfaceVariant = Color(0xFFE8E0D8),
+    onSurface = Color(0xFF36194D),
+    outline = RegalTaupe
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF4A8CFF),
-    onPrimary = Color(0xFF010101),
-    primaryContainer = Color(0xFF1C2A38),
-    secondary = Color(0xFF90CAF9),
-    tertiary = SamsungCalendarColors.green,
-    onTertiary = Color(0xFF010101),
+    primary = RegalGold,
+    onPrimary = RegalDeepPurple,
+    primaryContainer = RegalDeepPlum,
+    secondary = RegalOrchid,
+    onSecondary = RegalEggWhite,
+    tertiary = RegalGold,
+    onTertiary = RegalDeepPurple,
     background = SamsungCalendarColors.background,
     surface = SamsungCalendarColors.surface,
     surfaceVariant = SamsungCalendarColors.agendaSurface,
     onSurface = SamsungCalendarColors.onBackground,
     onSurfaceVariant = SamsungCalendarColors.muted,
-    outline = Color(0xFF3A3A3A)
+    outline = SamsungCalendarColors.divider
 )
 
 @Composable
@@ -54,10 +56,10 @@ fun ExpressMobileInspectionTheme(
 }
 
 object InspectionColors {
-    val good = GreenGood
-    val bad = RedBad
-    val replace = OrangeReplace
-    val goodContainer = Color(0xFFE8F5E9)
-    val badContainer = Color(0xFFFFEBEE)
-    val replaceContainer = Color(0xFFFFF3E0)
+    val good = Color(0xFF4CAF50)
+    val bad = Color(0xFFC62828)
+    val replace = Color(0xFFE65100)
+    val goodContainer = Color(0xFF1B3D1F)
+    val badContainer = Color(0xFF3D1515)
+    val replaceContainer = Color(0xFF3D2410)
 }
