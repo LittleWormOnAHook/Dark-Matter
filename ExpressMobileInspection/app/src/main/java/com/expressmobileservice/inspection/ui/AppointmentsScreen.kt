@@ -83,7 +83,6 @@ import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -765,6 +764,11 @@ private fun SamsungAgendaPanel(
     val sortedAppointments = remember(date, appointments) {
         appointments.sortedWith(compareAppointmentsForDay(date))
     }
+    val agendaScroll = rememberScrollState()
+
+    LaunchedEffect(date) {
+        agendaScroll.scrollTo(0)
+    }
 
     Column(
         modifier = modifier
@@ -774,9 +778,16 @@ private fun SamsungAgendaPanel(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(agendaScroll)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            Text(
+                text = formatDayHeader(date),
+                fontWeight = FontWeight.SemiBold,
+                color = SamsungCalendarColors.green,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
             if (sortedAppointments.isEmpty()) {
                 Text(
                     text = "No events",
@@ -918,54 +929,15 @@ private fun WeekCalendarView(
     onAnchorDateChange: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val weekAnchor = remember { weekDaysContaining(LocalDate.now()).first() }
-    val centerPage = 1_200
-    val pageCount = centerPage * 2 + 1
-    val pagerState = rememberPagerState(
-        initialPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate)),
-        pageCount = { pageCount }
-    )
-
-    fun pageToWeekStart(page: Int): LocalDate =
-        weekAnchor.plusWeeks((page - centerPage).toLong())
-
-    LaunchedEffect(anchorDate) {
-        val targetPage = centerPage + weeksBetween(weekAnchor, weekStartFor(anchorDate))
-        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
-            pagerState.scrollToPage(targetPage)
-        }
-    }
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
-            .collect { page ->
-                val newWeekStart = pageToWeekStart(page)
-                val currentWeekStart = weekStartFor(anchorDate)
-                if (newWeekStart != currentWeekStart) {
-                    val dayOffset = ChronoUnit.DAYS.between(currentWeekStart, anchorDate)
-                    onAnchorDateChange(newWeekStart.plusDays(dayOffset))
-                }
-            }
-    }
+    val weekStart = weekStartFor(anchorDate)
 
     Column(modifier = modifier.background(SamsungCalendarColors.background)) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            val weekStart = pageToWeekStart(page)
-            val highlightDate = if (weekStartFor(anchorDate) == weekStart) {
-                anchorDate
-            } else {
-                weekStart.plusDays(ChronoUnit.DAYS.between(weekStartFor(anchorDate), anchorDate))
-            }
-            WeekDayHeaderRow(
-                weekStart = weekStart,
-                selectedDate = highlightDate,
-                appointments = appointments,
-                onDateSelected = onAnchorDateChange
-            )
-        }
+        WeekDayHeaderRow(
+            weekStart = weekStart,
+            selectedDate = anchorDate,
+            appointments = appointments,
+            onDateSelected = onAnchorDateChange
+        )
 
         Row(
             modifier = Modifier
@@ -974,8 +946,8 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous week")
+            IconButton(onClick = { onAnchorDateChange(anchorDate.minusDays(1)) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
             }
             Text(
                 text = formatDayHeader(anchorDate),
@@ -983,8 +955,23 @@ private fun WeekCalendarView(
                 color = SamsungCalendarColors.muted,
                 fontSize = 13.sp
             )
-            IconButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next week")
+            IconButton(onClick = { onAnchorDateChange(anchorDate.plusDays(1)) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            TextButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
+                Text("Previous week", color = SamsungCalendarColors.green, fontSize = 12.sp)
+            }
+            TextButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
+                Text("Next week", color = SamsungCalendarColors.green, fontSize = 12.sp)
             }
         }
     }
@@ -1015,7 +1002,9 @@ private fun WeekDayHeaderRow(
                     .clip(RoundedCornerShape(8.dp))
                     .then(
                         if (isSelected) {
-                            Modifier.border(1.5.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
+                            Modifier
+                                .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.35f))
+                                .border(1.5.dp, SamsungCalendarColors.selectedRing, RoundedCornerShape(8.dp))
                         } else Modifier
                     )
                     .clickable { onDateSelected(date) }
@@ -1051,6 +1040,3 @@ private fun WeekDayHeaderRow(
 }
 
 private fun weekStartFor(date: LocalDate): LocalDate = weekDaysContaining(date).first()
-
-private fun weeksBetween(startWeek: LocalDate, endWeek: LocalDate): Int =
-    ChronoUnit.WEEKS.between(startWeek, endWeek).toInt()
