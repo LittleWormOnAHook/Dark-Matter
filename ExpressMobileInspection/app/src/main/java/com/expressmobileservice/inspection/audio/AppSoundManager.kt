@@ -51,10 +51,10 @@ class AppSoundManager(context: Context) {
         val now = System.currentTimeMillis()
         if (now - lastTypeAtMs < 45) return
         lastTypeAtMs = now
-        play(typeId, volume = 0.55f)
+        play(typeId, volume = 0.62f, rate = 1.08f)
     }
 
-    fun playButton() = play(buttonId, volume = 0.75f)
+    fun playButton() = play(buttonId, volume = 0.78f, rate = 1f)
 
     fun playEngineRev() = play(engineId, volume = 1f)
 
@@ -65,9 +65,9 @@ class AppSoundManager(context: Context) {
         }
     }
 
-    private fun play(soundId: Int, volume: Float) {
+    private fun play(soundId: Int, volume: Float, rate: Float = 1f) {
         if (!ready || soundId == 0) return
-        soundPool.play(soundId, volume, volume, 1, 0, 1f)
+        soundPool.play(soundId, volume, volume, 1, 0, rate)
     }
 
     fun release() {
