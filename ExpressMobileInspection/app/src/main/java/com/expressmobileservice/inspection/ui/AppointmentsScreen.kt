@@ -82,6 +82,8 @@ import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
+import com.expressmobileservice.inspection.ui.playTypeClick
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -248,6 +250,7 @@ fun AppointmentsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
+                    playButtonClick(mainAction = true)
                     editingAppointment = null
                     editorQuickNotes = null
                     showEditor = true
@@ -276,7 +279,10 @@ fun AppointmentsScreen(
                     showSearch = !showSearch
                     if (!showSearch) searchQuery = ""
                 },
-                onSearchChange = { searchQuery = it },
+                onSearchChange = { new ->
+                    if (new.length > searchQuery.length) playTypeClick()
+                    searchQuery = new
+                },
                 onGoToToday = {
                     selectedDate = LocalDate.now()
                     displayedMonth = YearMonth.from(selectedDate)
@@ -301,7 +307,10 @@ fun AppointmentsScreen(
                         date = selectedDate,
                         appointments = appointmentsForDay(filteredAppointments, selectedDate),
                         quickAddText = quickAddText,
-                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddChange = { new ->
+                            if (new.length > quickAddText.length) playTypeClick()
+                            quickAddText = new
+                        },
                         onQuickAddSubmit = {
                             if (quickAddText.isNotBlank()) {
                                 editorQuickNotes = quickAddText.trim()
@@ -349,7 +358,10 @@ fun AppointmentsScreen(
                         date = selectedDate,
                         appointments = appointmentsForDay(filteredAppointments, selectedDate),
                         quickAddText = quickAddText,
-                        onQuickAddChange = { quickAddText = it },
+                        onQuickAddChange = { new ->
+                            if (new.length > quickAddText.length) playTypeClick()
+                            quickAddText = new
+                        },
                         onQuickAddSubmit = {
                             if (quickAddText.isNotBlank()) {
                                 editorQuickNotes = quickAddText.trim()

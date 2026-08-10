@@ -86,6 +86,8 @@ import com.expressmobileservice.inspection.toEpochMillisAtStartOfDay
 import com.expressmobileservice.inspection.toLocalDate
 import com.expressmobileservice.inspection.toLocalDateTime
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
+import com.expressmobileservice.inspection.ui.playTypeClick
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -353,7 +355,10 @@ fun AppointmentEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss) {
+                TextButton(onClick = {
+                    playButtonClick()
+                    onDismiss()
+                }) {
                     Text(
                         "Cancel",
                         color = SamsungCalendarColors.green,
@@ -362,7 +367,10 @@ fun AppointmentEditorScreen(
                     )
                 }
                 Button(
-                    onClick = { save() },
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        save()
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SamsungCalendarColors.green,
                         contentColor = Color.Black
@@ -406,9 +414,10 @@ fun AppointmentEditorScreen(
 
             TextField(
                 value = title,
-                onValueChange = {
-                    title = it
-                    if (jobNotes.isBlank() || jobNotes == title) jobNotes = it
+                onValueChange = { new ->
+                    if (new.length > title.length) playTypeClick()
+                    title = new
+                    if (jobNotes.isBlank() || jobNotes == title) jobNotes = new
                 },
                 placeholder = { Text("Job title", color = SamsungCalendarColors.muted) },
                 modifier = Modifier
@@ -478,9 +487,10 @@ fun AppointmentEditorScreen(
             ) {
                 OutlinedTextField(
                     value = jobNotes,
-                    onValueChange = {
-                        jobNotes = it
-                        if (title.isBlank() || title == jobNotes) title = it
+                    onValueChange = { new ->
+                        if (new.length > jobNotes.length) playTypeClick()
+                        jobNotes = new
+                        if (title.isBlank() || title == jobNotes) title = new
                     },
                     placeholder = { Text("Job details, parts, follow-up") },
                     modifier = Modifier.fillMaxWidth(),
@@ -537,7 +547,10 @@ fun AppointmentEditorScreen(
             ) {
                 OutlinedTextField(
                     value = customerName,
-                    onValueChange = { customerName = it },
+                    onValueChange = { new ->
+                        if (new.length > customerName.length) playTypeClick()
+                        customerName = new
+                    },
                     placeholder = { Text("Customer name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -552,7 +565,10 @@ fun AppointmentEditorScreen(
             ) {
                 OutlinedTextField(
                     value = customerPhone,
-                    onValueChange = { customerPhone = it },
+                    onValueChange = { new ->
+                        if (new.length > customerPhone.length) playTypeClick()
+                        customerPhone = new
+                    },
                     placeholder = { Text("Any phone number") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -567,7 +583,10 @@ fun AppointmentEditorScreen(
             ) {
                 OutlinedTextField(
                     value = address,
-                    onValueChange = { address = it },
+                    onValueChange = { new ->
+                        if (new.length > address.length) playTypeClick()
+                        address = new
+                    },
                     placeholder = { Text("Street address") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 1,

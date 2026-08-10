@@ -100,6 +100,8 @@ import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
+import com.expressmobileservice.inspection.ui.playTypeClick
 import com.expressmobileservice.inspection.formatMonthYearAbbrev
 import com.expressmobileservice.inspection.toSavedInspection
 import java.time.LocalDate
@@ -301,7 +303,10 @@ fun InspectionScreen(
                     ExpressMobileLogo()
                 },
                 actions = {
-                    TextButton(onClick = { showInspectionList = true }) {
+                    TextButton(onClick = {
+                        playButtonClick()
+                        showInspectionList = true
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Engineering,
                             contentDescription = null,
@@ -355,7 +360,10 @@ fun InspectionScreen(
                     )
                 }
                 Button(
-                    onClick = { saveInspection() },
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        saveInspection()
+                    },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -368,7 +376,10 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { beginComplete(ReportShareType.PDF) },
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        beginComplete(ReportShareType.PDF)
+                    },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -378,7 +389,10 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = { beginComplete(ReportShareType.IMAGE) },
+                    onClick = {
+                        playButtonClick(mainAction = true)
+                        beginComplete(ReportShareType.IMAGE)
+                    },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -389,6 +403,7 @@ fun InspectionScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = {
+                        playButtonClick()
                         customerName = ""
                         customerPhone = ""
                         vehicle = ""
@@ -494,7 +509,10 @@ fun InspectionScreen(
                     )
                     OutlinedTextField(
                         value = generalNotes,
-                        onValueChange = { generalNotes = it },
+                        onValueChange = { new ->
+                            if (new.length > generalNotes.length) playTypeClick()
+                            generalNotes = new
+                        },
                         label = { Text("Notes") },
                         placeholder = { Text("e.g. Recommend brake service within 3,000 miles") },
                         modifier = Modifier.fillMaxWidth(),
@@ -661,7 +679,10 @@ private fun FormField(
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { new ->
+            if (new.length > value.length) playTypeClick()
+            onValueChange(new)
+        },
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
@@ -724,7 +745,10 @@ private fun CompactItemRow(
         }
         OutlinedTextField(
             value = item.notes,
-            onValueChange = onNotesChange,
+            onValueChange = { new ->
+                if (new.length > item.notes.length) playTypeClick()
+                onNotesChange(new)
+            },
             label = { Text("Notes") },
             placeholder = { Text("Optional") },
             modifier = Modifier.fillMaxWidth(),
@@ -751,7 +775,10 @@ private fun RowScope.StatusChip(
             .clip(RoundedCornerShape(8.dp))
             .background(background)
             .border(1.5.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable {
+                playButtonClick()
+                onClick()
+            }
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {

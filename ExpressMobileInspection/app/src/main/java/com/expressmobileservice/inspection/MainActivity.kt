@@ -6,14 +6,24 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
+import com.expressmobileservice.inspection.audio.AppSoundManager
+import com.expressmobileservice.inspection.audio.LocalAppSoundManager
 import com.expressmobileservice.inspection.ui.HomeScreen
 import com.expressmobileservice.inspection.ui.ReportShareType
+import com.expressmobileservice.inspection.ui.SplashIntroScreen
 import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
 
 class MainActivity : ComponentActivity() {
@@ -33,33 +43,48 @@ class MainActivity : ComponentActivity() {
         val restored = AppDataBackup.restoreIfNeeded(this, appointmentStore, inspectionStore)
         enableEdgeToEdge()
         setContent {
+            val context = LocalContext.current
+            val soundManager = remember { AppSoundManager(context.applicationContext) }
+            DisposableEffect(soundManager) {
+                onDispose { soundManager.release() }
+            }
+            var showSplash by remember { mutableStateOf(true) }
+
             ExpressMobileInspectionTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                CompositionLocalProvider(
+                    LocalAppSoundManager provides soundManager
                 ) {
-                    if (restored) {
-                        LaunchedEffect(Unit) {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Restored saved customers and jobs",
-                                Toast.LENGTH_LONG
-                            ).show()
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        if (showSplash) {
+                            SplashIntroScreen(onFinished = { showSplash = false })
+                        } else {
+                            if (restored) {
+                                LaunchedEffect(Unit) {
+                                    Toast.makeText(
+                                        context,
+                                        "Restored saved customers and jobs",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                            HomeScreen(
+                                appointmentStore = appointmentStore,
+                                inspectionStore = inspectionStore,
+                                onShareReport = { state, type, onComplete ->
+                                    shareReport(state, type, onComplete)
+                                },
+                                onShareError = { message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                },
+                                onNotify = { message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         }
                     }
-                    HomeScreen(
-                        appointmentStore = appointmentStore,
-                        inspectionStore = inspectionStore,
-                        onShareReport = { state, type, onComplete ->
-                            shareReport(state, type, onComplete)
-                        },
-                        onShareError = { message ->
-                            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-                        },
-                        onNotify = { message ->
-                            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                        }
-                    )
                 }
             }
         }

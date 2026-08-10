@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import com.expressmobileservice.inspection.InspectionFormState
 import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.playButtonClick
 
 enum class ExpressTab {
     APPOINTMENTS,
@@ -57,7 +58,10 @@ fun HomeScreen(
             ) {
                 NavigationBarItem(
                     selected = selectedTab == ExpressTab.APPOINTMENTS,
-                    onClick = { selectedTab = ExpressTab.APPOINTMENTS },
+                    onClick = {
+                        playButtonClick()
+                        selectedTab = ExpressTab.APPOINTMENTS
+                    },
                     icon = {
                         NavIcon(
                             selected = selectedTab == ExpressTab.APPOINTMENTS,
@@ -70,7 +74,10 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = selectedTab == ExpressTab.INSPECTION,
-                    onClick = { selectedTab = ExpressTab.INSPECTION },
+                    onClick = {
+                        playButtonClick()
+                        selectedTab = ExpressTab.INSPECTION
+                    },
                     icon = {
                         NavIcon(
                             selected = selectedTab == ExpressTab.INSPECTION,
