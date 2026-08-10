@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
@@ -136,6 +138,8 @@ fun InspectionScreen(
     var loadedInspectionId by remember { mutableStateOf<String?>(null) }
     var autoSaveHint by remember { mutableStateOf<String?>(null) }
     var showInspectionList by remember { mutableStateOf(false) }
+    var showDeleteCustomerConfirm by remember { mutableStateOf(false) }
+    var suppressAutoSave by remember { mutableStateOf(false) }
 
     fun applySavedInspection(saved: SavedInspection) {
         val form = saved.toFormState()
@@ -151,6 +155,7 @@ fun InspectionScreen(
     }
 
     LaunchedEffect(activeInspectionId) {
+        if (activeInspectionId == "") return@LaunchedEffect
         val saved = activeInspectionId?.let { inspectionStore.getById(it) }
             ?: inspectionStore.mostRecent()
         if (saved != null) {
@@ -159,7 +164,7 @@ fun InspectionScreen(
         }
     }
 
-    val persistId = activeInspectionId ?: loadedInspectionId
+    val persistId = (activeInspectionId ?: loadedInspectionId)?.takeIf { it.isNotBlank() }
     val currentStateProvider = rememberUpdatedState {
         InspectionFormState(
             customerInfo = CustomerInfo(
@@ -182,6 +187,10 @@ fun InspectionScreen(
         sections,
         persistId
     ) {
+        if (suppressAutoSave) {
+            suppressAutoSave = false
+            return@LaunchedEffect
+        }
         val id = persistId ?: return@LaunchedEffect
         delay(400)
         val saved = inspectionStore.getById(id)
@@ -199,6 +208,40 @@ fun InspectionScreen(
     val checkedCount = allItems.count { it.status != InspectionStatus.NONE }
     val totalCount = allItems.size
     val progress = if (totalCount == 0) 0f else checkedCount.toFloat() / totalCount
+
+    fun resetFormFields() {
+        customerName = ""
+        customerPhone = ""
+        vehicle = ""
+        mileage = ""
+        generalNotes = ""
+        sections = defaultInspectionSections()
+    }
+
+    fun clearFormOnly() {
+        suppressAutoSave = true
+        loadedInspectionId = null
+        onActiveInspectionChange("")
+        resetFormFields()
+        autoSaveHint = "Form cleared · saved customer kept in list"
+    }
+
+    fun deleteCustomer() {
+        val id = persistId ?: return
+        val saved = inspectionStore.getById(id)
+        inspectionStore.delete(id)
+        saved?.appointmentId?.let { apptId ->
+            appointmentStore.getById(apptId)?.let { appt ->
+                appointmentStore.save(appt.copy(inspectionId = ""))
+            }
+        }
+        suppressAutoSave = true
+        loadedInspectionId = null
+        onActiveInspectionChange("")
+        resetFormFields()
+        autoSaveHint = "Customer removed from saved list"
+        onInspectionSaved("Customer deleted")
+    }
 
     fun currentState() = currentStateProvider.value()
 
@@ -245,6 +288,32 @@ fun InspectionScreen(
             return
         }
         share(type)
+    }
+
+    if (showDeleteCustomerConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCustomerConfirm = false },
+            title = { Text("Delete customer?") },
+            text = {
+                Text("Remove this saved inspection from your list? This cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteCustomerConfirm = false
+                        playButtonClick()
+                        deleteCustomer()
+                    }
+                ) {
+                    Text("Delete", color = InspectionColors.bad)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteCustomerConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (showUncheckedWarning) {
@@ -365,58 +434,86 @@ fun InspectionScreen(
                         saveInspection()
                     },
                     enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null)
+                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save inspection")
+                    Text("Save inspection", fontSize = 14.sp)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Button(
                     onClick = {
                         playButtonClick(mainAction = true)
                         beginComplete(ReportShareType.PDF)
                     },
                     enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding()
                 ) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as PDF")
+                    Text("Send as PDF", fontSize = 14.sp)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 OutlinedButton(
                     onClick = {
                         playButtonClick(mainAction = true)
                         beginComplete(ReportShareType.IMAGE)
                     },
                     enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.compactActionButton(),
+                    contentPadding = compactButtonPadding()
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = null)
+                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send as Image (JPEG)")
+                    Text("Send as Image (JPEG)", fontSize = 14.sp)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = {
-                        playButtonClick()
-                        customerName = ""
-                        customerPhone = ""
-                        vehicle = ""
-                        mileage = ""
-                        generalNotes = ""
-                        sections = defaultInspectionSections()
-                    },
-                    enabled = !isGenerating,
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear Form")
+                    OutlinedButton(
+                        onClick = {
+                            playButtonClick()
+                            clearFormOnly()
+                        },
+                        enabled = !isGenerating,
+                        modifier = Modifier
+                            .weight(1f)
+                            .compactActionButtonHeight(),
+                        contentPadding = compactButtonPadding()
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Clear Form", fontSize = 13.sp)
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            playButtonClick()
+                            if (persistId != null) {
+                                showDeleteCustomerConfirm = true
+                            } else {
+                                onShareError("No saved customer to delete.")
+                            }
+                        },
+                        enabled = !isGenerating && persistId != null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .compactActionButtonHeight(),
+                        contentPadding = compactButtonPadding(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = InspectionColors.bad
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Delete Customer", fontSize = 13.sp)
+                    }
                 }
             }
         }
@@ -895,3 +992,14 @@ private fun FooterLinkRow(
 private fun openUri(context: android.content.Context, uri: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
 }
+
+private val CompactButtonHeight = 34.dp
+
+private fun Modifier.compactActionButton(): Modifier =
+    fillMaxWidth().height(CompactButtonHeight)
+
+private fun Modifier.compactActionButtonHeight(): Modifier =
+    height(CompactButtonHeight)
+
+private fun compactButtonPadding(): PaddingValues =
+    PaddingValues(horizontal = 16.dp, vertical = 8.dp)
