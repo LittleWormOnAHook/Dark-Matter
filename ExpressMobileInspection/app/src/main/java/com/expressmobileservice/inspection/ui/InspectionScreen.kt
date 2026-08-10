@@ -122,7 +122,6 @@ fun InspectionScreen(
     onActiveInspectionChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     var customerName by rememberSaveable { mutableStateOf("") }
     var customerPhone by rememberSaveable { mutableStateOf("") }
     var vehicle by rememberSaveable { mutableStateOf("") }
@@ -299,38 +298,7 @@ fun InspectionScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_company_logo),
-                            contentDescription = "Express Mobile Service logo",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = COMPANY_NAME,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { openUri(context, COMPANY_PHONE_URI) }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = COMPANY_PHONE_DISPLAY,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
+                    ExpressMobileLogo()
                 },
                 actions = {
                     TextButton(onClick = { showInspectionList = true }) {
