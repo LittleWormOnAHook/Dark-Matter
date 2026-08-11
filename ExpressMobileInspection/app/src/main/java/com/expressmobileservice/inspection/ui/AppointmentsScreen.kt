@@ -76,6 +76,7 @@ import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
+import com.expressmobileservice.inspection.calendarWeekDayAbbreviations
 import com.expressmobileservice.inspection.daysInMonthGrid
 import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
@@ -585,7 +586,7 @@ private fun MonthCalendarPage(
 ) {
     val today = LocalDate.now()
     val days = remember(yearMonth) { daysInMonthGrid(yearMonth) }
-    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+    val dayLabels = remember { calendarWeekDayAbbreviations() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
