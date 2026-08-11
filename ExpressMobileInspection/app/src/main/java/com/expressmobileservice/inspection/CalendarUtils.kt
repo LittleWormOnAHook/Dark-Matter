@@ -14,8 +14,8 @@ import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
 
-/** US calendar convention: weeks start on Sunday, then Monday through Saturday. */
-val CALENDAR_FIRST_DAY_OF_WEEK: DayOfWeek = DayOfWeek.SUNDAY
+/** ISO / business convention: weeks start on Monday through Sunday. */
+val CALENDAR_FIRST_DAY_OF_WEEK: DayOfWeek = DayOfWeek.MONDAY
 
 private val calendarWeekFields: WeekFields = WeekFields.of(CALENDAR_FIRST_DAY_OF_WEEK, 1)
 
@@ -51,7 +51,7 @@ fun weekStartFor(date: LocalDate, firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY
     date.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
 
 fun weekDayColumnLabels(firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<String> {
-    val weekStart = weekStartFor(LocalDate.of(2024, 1, 7), firstDayOfWeek)
+    val weekStart = weekStartFor(LocalDate.of(2024, 1, 1), firstDayOfWeek)
     return (0 until 7).map { offset ->
         weekStart.plusDays(offset.toLong())
             .dayOfWeek

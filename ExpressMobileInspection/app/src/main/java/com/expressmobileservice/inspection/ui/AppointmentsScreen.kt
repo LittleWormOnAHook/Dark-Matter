@@ -120,7 +120,19 @@ fun AppointmentsScreen(
             restore = { epochDay -> mutableStateOf(LocalDate.ofEpochDay(epochDay)) }
         )
     ) { mutableStateOf(calendarPrefs.getSelectedDate() ?: LocalDate.now()) }
-    var displayedMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
+    var displayedMonth by rememberSaveable(
+        saver = Saver(
+            save = { it.value.toString() },
+            restore = { raw ->
+                mutableStateOf(runCatching { YearMonth.parse(raw) }.getOrDefault(YearMonth.now()))
+            }
+        )
+    ) {
+        mutableStateOf(
+            calendarPrefs.getDisplayedYearMonth()
+                ?: YearMonth.from(calendarPrefs.getSelectedDate() ?: LocalDate.now())
+        )
+    }
 
     fun selectDate(date: LocalDate) {
         selectedDate = date
@@ -135,9 +147,10 @@ fun AppointmentsScreen(
         }
     }
 
-    LaunchedEffect(viewMode, selectedDate) {
+    LaunchedEffect(viewMode, selectedDate, displayedMonth) {
         calendarPrefs.setViewMode(viewMode)
         calendarPrefs.setSelectedDate(selectedDate)
+        calendarPrefs.setDisplayedYearMonth(displayedMonth)
     }
     var showEditor by remember { mutableStateOf(false) }
     var editingAppointment by remember { mutableStateOf<Appointment?>(null) }

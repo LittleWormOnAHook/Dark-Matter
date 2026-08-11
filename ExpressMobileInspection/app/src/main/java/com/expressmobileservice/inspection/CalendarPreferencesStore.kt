@@ -2,6 +2,7 @@ package com.expressmobileservice.inspection
 
 import android.content.Context
 import java.time.LocalDate
+import java.time.YearMonth
 
 class CalendarPreferencesStore(context: Context) {
 
@@ -26,9 +27,19 @@ class CalendarPreferencesStore(context: Context) {
         prefs.edit().putLong(KEY_SELECTED_EPOCH_DAY, date.toEpochDay()).commit()
     }
 
+    fun getDisplayedYearMonth(): YearMonth? {
+        val raw = prefs.getString(KEY_DISPLAYED_YEAR_MONTH, null) ?: return null
+        return runCatching { YearMonth.parse(raw) }.getOrNull()
+    }
+
+    fun setDisplayedYearMonth(yearMonth: YearMonth) {
+        prefs.edit().putString(KEY_DISPLAYED_YEAR_MONTH, yearMonth.toString()).commit()
+    }
+
     companion object {
         private const val PREFS_NAME = "express_calendar_prefs"
         private const val KEY_VIEW_MODE = "view_mode"
         private const val KEY_SELECTED_EPOCH_DAY = "selected_epoch_day"
+        private const val KEY_DISPLAYED_YEAR_MONTH = "displayed_year_month"
     }
 }
