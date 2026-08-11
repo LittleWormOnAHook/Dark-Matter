@@ -84,6 +84,7 @@ import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.daysInMonthGrid
 import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
+import com.expressmobileservice.inspection.weekDayColumnLabels
 import com.expressmobileservice.inspection.weekDaysContaining
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
@@ -638,7 +639,7 @@ private fun MonthCalendarPage(
 ) {
     val today = LocalDate.now()
     val days = remember(yearMonth) { daysInMonthGrid(yearMonth) }
-    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+    val dayLabels = remember { weekDayColumnLabels() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
