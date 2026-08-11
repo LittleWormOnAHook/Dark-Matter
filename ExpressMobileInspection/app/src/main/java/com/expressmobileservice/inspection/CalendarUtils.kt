@@ -8,9 +8,13 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
+
+/** US-style calendar: weeks start on Sunday. */
+val CALENDAR_FIRST_DAY_OF_WEEK: DayOfWeek = DayOfWeek.SUNDAY
 
 private val locale = Locale.getDefault()
 private val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
@@ -40,14 +44,21 @@ fun formatTimeRange(startMillis: Long, endMillis: Long, allDay: Boolean): String
 
 fun formatMonthAbbrev(date: LocalDate): String = date.format(monthAbbrevFormatter)
 
-fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
+fun calendarWeekDayAbbreviations(displayLocale: Locale = locale): List<String> {
+    val referenceSunday = LocalDate.of(2024, 1, 7)
+    return weekDaysContaining(referenceSunday, CALENDAR_FIRST_DAY_OF_WEEK).map { date ->
+        date.dayOfWeek.getDisplayName(TextStyle.NARROW, displayLocale).take(1).uppercase()
+    }
+}
+
+fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<LocalDate> {
     val firstOfMonth = yearMonth.atDay(1)
     val startOffset = ((firstOfMonth.dayOfWeek.value - firstDayOfWeek.value + 7) % 7)
     val gridStart = firstOfMonth.minusDays(startOffset.toLong())
     return (0 until 42).map { gridStart.plusDays(it.toLong()) }
 }
 
-fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
+fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<LocalDate> {
     val start = date.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
     return (0 until 7).map { start.plusDays(it.toLong()) }
 }
@@ -123,4 +134,4 @@ fun combineDateAndTime(date: LocalDate, time: LocalTime, zone: ZoneId = ZoneId.s
     date.atTime(time).atZone(zone).toInstant().toEpochMilli()
 
 fun weekNumber(date: LocalDate): Int =
-    date.get(WeekFields.of(locale).weekOfWeekBasedYear())
+    date.get(WeekFields.of(CALENDAR_FIRST_DAY_OF_WEEK, 1).weekOfWeekBasedYear())
