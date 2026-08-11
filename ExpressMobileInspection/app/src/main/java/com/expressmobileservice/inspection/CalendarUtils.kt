@@ -8,9 +8,13 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
+
+/** US calendar convention: weeks start on Sunday. */
+val CALENDAR_FIRST_DAY_OF_WEEK: DayOfWeek = DayOfWeek.SUNDAY
 
 private val locale = Locale.getDefault()
 private val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
@@ -40,14 +44,22 @@ fun formatTimeRange(startMillis: Long, endMillis: Long, allDay: Boolean): String
 
 fun formatMonthAbbrev(date: LocalDate): String = date.format(monthAbbrevFormatter)
 
-fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
+fun weekDayColumnLabels(firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<String> =
+    (0 until 7).map { offset ->
+        DayOfWeek.of(((firstDayOfWeek.value - 1 + offset) % 7) + 1)
+            .getDisplayName(TextStyle.SHORT, locale)
+            .take(1)
+            .uppercase(locale)
+    }
+
+fun daysInMonthGrid(yearMonth: YearMonth, firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<LocalDate> {
     val firstOfMonth = yearMonth.atDay(1)
     val startOffset = ((firstOfMonth.dayOfWeek.value - firstDayOfWeek.value + 7) % 7)
     val gridStart = firstOfMonth.minusDays(startOffset.toLong())
     return (0 until 42).map { gridStart.plusDays(it.toLong()) }
 }
 
-fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): List<LocalDate> {
+fun weekDaysContaining(date: LocalDate, firstDayOfWeek: DayOfWeek = CALENDAR_FIRST_DAY_OF_WEEK): List<LocalDate> {
     val start = date.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
     return (0 until 7).map { start.plusDays(it.toLong()) }
 }
