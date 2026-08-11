@@ -86,9 +86,11 @@ import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.weekDayColumnLabels
 import com.expressmobileservice.inspection.weekDaysContaining
+import com.expressmobileservice.inspection.weekStartFor
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -987,10 +989,20 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TextButton(onClick = { onAnchorDateChange(anchorDate.minusWeeks(1)) }) {
+            TextButton(onClick = {
+                val weekStart = weekStartFor(anchorDate)
+                onAnchorDateChange(weekStart.minusDays(7).plusDays(
+                    ChronoUnit.DAYS.between(weekStart, anchorDate)
+                ))
+            }) {
                 Text("Previous week", color = SamsungCalendarColors.green, fontSize = 12.sp)
             }
-            TextButton(onClick = { onAnchorDateChange(anchorDate.plusWeeks(1)) }) {
+            TextButton(onClick = {
+                val weekStart = weekStartFor(anchorDate)
+                onAnchorDateChange(weekStart.plusDays(7).plusDays(
+                    ChronoUnit.DAYS.between(weekStart, anchorDate)
+                ))
+            }) {
                 Text("Next week", color = SamsungCalendarColors.green, fontSize = 12.sp)
             }
         }
@@ -1065,5 +1077,3 @@ private fun WeekDayHeaderRow(
         }
     }
 }
-
-private fun weekStartFor(date: LocalDate): LocalDate = weekDaysContaining(date).first()
