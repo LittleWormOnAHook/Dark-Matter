@@ -28,6 +28,7 @@ namespace Project.UI
         private GameObject menuBackground;
         private SettingsPanelController settingsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
+        private AboutPanelController aboutPanel;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
@@ -37,8 +38,10 @@ namespace Project.UI
         private Button saveButton;
         private Button loadButton;
         private Button settingsButton;
+        private Button aboutButton;
         private Button exitButton;
         private TextMeshProUGUI menuMessageLabel;
+        private TextMeshProUGUI versionLabel;
         private bool pauseOverlayActive;
         private Texture2D pendingSaveScreenshot;
 
@@ -82,6 +85,12 @@ namespace Project.UI
             if (saveSlotsPanel != null && saveSlotsPanel.IsOpen)
             {
                 saveSlotsPanel.Close();
+                return;
+            }
+
+            if (aboutPanel != null && aboutPanel.IsOpen)
+            {
+                aboutPanel.Close();
                 return;
             }
 
@@ -221,6 +230,9 @@ namespace Project.UI
             saveSlotsPanel = gameObject.AddComponent<SaveSlotsPanelController>();
             saveSlotsPanel.Build(canvasRoot, this);
 
+            aboutPanel = gameObject.AddComponent<AboutPanelController>();
+            aboutPanel.Build(canvasRoot);
+
             RefreshMenuButtonStates();
         }
 
@@ -256,7 +268,7 @@ namespace Project.UI
             columnRect.anchorMax = new Vector2(0f, 0.5f);
             columnRect.pivot = new Vector2(0f, 0.5f);
             columnRect.anchoredPosition = new Vector2(72f, 0f);
-            columnRect.sizeDelta = new Vector2(280f, 420f);
+            columnRect.sizeDelta = new Vector2(280f, 470f);
 
             VerticalLayoutGroup layout = column.GetComponent<VerticalLayoutGroup>();
             layout.spacing = Mathf.RoundToInt(14f * MenuScale);
@@ -272,6 +284,7 @@ namespace Project.UI
             loadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Load", buttonSize, buttonFontSize);
             saveButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save", buttonSize, buttonFontSize);
             settingsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Settings", buttonSize, buttonFontSize);
+            aboutButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "About", buttonSize, buttonFontSize);
             exitButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Quit", buttonSize, buttonFontSize);
 
             resumeButton.onClick.AddListener(ResumeFromPause);
@@ -279,6 +292,7 @@ namespace Project.UI
             loadButton.onClick.AddListener(OpenLoad);
             saveButton.onClick.AddListener(OpenSave);
             settingsButton.onClick.AddListener(OpenSettings);
+            aboutButton.onClick.AddListener(OpenAbout);
             exitButton.onClick.AddListener(ExitGame);
 
             resumeButton.gameObject.SetActive(false);
@@ -313,14 +327,20 @@ namespace Project.UI
             rect.anchorMax = new Vector2(0f, 0f);
             rect.pivot = new Vector2(0f, 0f);
             rect.anchoredPosition = new Vector2(24f, 24f);
-            rect.sizeDelta = new Vector2(120f, 24f);
+            rect.sizeDelta = new Vector2(360f, 24f);
 
-            TextMeshProUGUI label = versionObject.AddComponent<TextMeshProUGUI>();
-            TmpUiHelper.ApplyDefaultFont(label);
-            label.text = "v0.1";
-            label.fontSize = 14f;
-            label.color = SurvivalPioneerUiPalette.MutedText;
-            label.alignment = TextAlignmentOptions.BottomLeft;
+            versionLabel = versionObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(versionLabel);
+            versionLabel.text = GameVersionInfo.ShortFooterLabel;
+            versionLabel.fontSize = 14f;
+            versionLabel.color = SurvivalPioneerUiPalette.MutedText;
+            versionLabel.alignment = TextAlignmentOptions.BottomLeft;
+        }
+
+        private void RefreshVersionLabel()
+        {
+            if (versionLabel != null)
+                versionLabel.text = GameVersionInfo.ShortFooterLabel;
         }
 
         public void ShowMainMenu()
@@ -344,7 +364,9 @@ namespace Project.UI
 
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
+            aboutPanel?.Close();
             ClearMenuMessage();
+            RefreshVersionLabel();
 
             ResolveStartPopup()?.HidePopup();
 
@@ -406,7 +428,9 @@ namespace Project.UI
 
             settingsPanel?.Close();
             saveSlotsPanel?.Close();
+            aboutPanel?.Close();
             ClearMenuMessage();
+            RefreshVersionLabel();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
             HideGameplayChromeForMenu();
             RefreshMenuButtonStates();
@@ -615,6 +639,12 @@ namespace Project.UI
             GameplayInputRecovery.ReleaseAllInputCapture();
         }
 
+        private void OpenAbout()
+        {
+            HideHotbars();
+            aboutPanel?.Open();
+        }
+
         private void OpenSettings()
         {
             HideHotbars();
@@ -756,6 +786,7 @@ namespace Project.UI
                    candidate.name == "MainMenuBackground" ||
                    candidate.name == "SettingsPanel" ||
                    candidate.name == "SaveSlotsPanel" ||
+                   candidate.name == "AboutPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
                    candidate.name == "ExposureZoneEntryBanner" ||
