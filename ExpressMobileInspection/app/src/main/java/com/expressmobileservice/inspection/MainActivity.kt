@@ -164,7 +164,8 @@ class MainActivity : ComponentActivity() {
                                 this,
                                 uri,
                                 state.customerInfo.customerPhone,
-                                buildThankYouNoteMessage()
+                                buildThankYouNotePlainMessage(),
+                                buildThankYouNoteHtmlMessage()
                             )
                         }
                         ReportShareType.IMAGE -> {

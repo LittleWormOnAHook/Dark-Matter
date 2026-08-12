@@ -22,12 +22,23 @@ fun normalizePhoneDigits(phone: String): String =
  * Opens the default SMS/MMS app with the PDF attached and customer number pre-filled.
  * If no customer phone is on the form, opens the phone dialer instead.
  */
+fun openWebLink(context: Context, url: String) {
+    if (url.isBlank()) return
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    } else {
+        Toast.makeText(context, "No browser found.", Toast.LENGTH_SHORT).show()
+    }
+}
+
 fun shareInspectionPdfToCustomer(
     context: Context,
     pdfUri: Uri,
     customerPhone: String,
     subject: String,
-    message: String
+    message: String,
+    htmlMessage: String? = null
 ) {
     val digits = normalizePhoneDigits(customerPhone)
     if (digits.isBlank()) {
@@ -35,13 +46,16 @@ fun shareInspectionPdfToCustomer(
         return
     }
 
+    val smsBody = htmlMessage?.takeIf { it.isNotBlank() } ?: message
+
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         putExtra(Intent.EXTRA_TEXT, message)
+        htmlMessage?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_HTML_TEXT, it) }
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra("address", digits)
-        putExtra("sms_body", message)
+        putExtra("sms_body", smsBody)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
@@ -56,8 +70,9 @@ fun shareInspectionPdfToCustomer(
     }
 
     val sendToIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
-        putExtra("sms_body", message)
+        putExtra("sms_body", smsBody)
         putExtra(Intent.EXTRA_TEXT, message)
+        htmlMessage?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_HTML_TEXT, it) }
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
@@ -119,9 +134,10 @@ fun sendThankYouNote(
                 "${context.packageName}.fileprovider",
                 file
             )
-            val message = buildThankYouNoteMessage()
+            val plainMessage = buildThankYouNotePlainMessage()
+            val htmlMessage = buildThankYouNoteHtmlMessage()
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                shareThankYouWithInspectionPdf(context, uri, phone, message)
+                shareThankYouWithInspectionPdf(context, uri, phone, plainMessage, htmlMessage)
             }
         } catch (_: Exception) {
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -139,14 +155,16 @@ fun shareThankYouWithInspectionPdf(
     context: Context,
     pdfUri: Uri,
     phone: String,
-    message: String
+    message: String,
+    htmlMessage: String? = null
 ) {
     shareInspectionPdfToCustomer(
         context = context,
         pdfUri = pdfUri,
         customerPhone = phone,
         subject = "$COMPANY_NAME — Thank you",
-        message = message
+        message = message,
+        htmlMessage = htmlMessage
     )
 }
 

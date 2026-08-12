@@ -14,7 +14,7 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
   - **Car / Truck** and **Motorcycle** data from **NHTSA** (US government database)
   - **Jet Ski / PWC** from built-in US watercraft catalog
 - **Auto inspection** — saving an appointment creates a linked **inspection file** (customer + vehicle pre-filled)
-- **Thank you note** — gold **★** sends Google Messages with **inspection PDF attached**, thank-you text, Google review link, and website
+- **Thank you note** — gold **★** sends Google Messages with **inspection PDF attached**, thank-you text, clickable **Google review** and **website** button links
 
 ### Inspection
 
@@ -43,12 +43,12 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Shareable install link (v2.5.5) — send this to anyone
+### Shareable install link (v2.5.6) — send this to anyone
 
-**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.5/ExpressMobileInspection.apk)**
+**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.6/ExpressMobileInspection.apk)**
 
 ```
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.5/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.6/ExpressMobileInspection.apk
 ```
 
 All app releases: [GitHub Releases (express-inspection)](https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection)

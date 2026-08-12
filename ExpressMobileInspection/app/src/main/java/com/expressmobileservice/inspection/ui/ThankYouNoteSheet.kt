@@ -3,6 +3,7 @@ package com.expressmobileservice.inspection.ui
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,12 +41,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.expressmobileservice.inspection.Appointment
+import com.expressmobileservice.inspection.COMPANY_GOOGLE_REVIEW_URL
+import com.expressmobileservice.inspection.COMPANY_WEBSITE
 import com.expressmobileservice.inspection.InspectionFormState
 import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.ReportExporter
+import com.expressmobileservice.inspection.THANK_YOU_BODY
+import com.expressmobileservice.inspection.THANK_YOU_GOOGLE_REVIEW_LABEL
+import com.expressmobileservice.inspection.THANK_YOU_HEADING
+import com.expressmobileservice.inspection.THANK_YOU_PDF_LABEL
+import com.expressmobileservice.inspection.THANK_YOU_PROMPT
+import com.expressmobileservice.inspection.THANK_YOU_WEBSITE_LABEL
 import com.expressmobileservice.inspection.appointmentSendReadinessError
-import com.expressmobileservice.inspection.buildThankYouNoteMessage
+import com.expressmobileservice.inspection.buildThankYouNoteHtmlMessage
+import com.expressmobileservice.inspection.buildThankYouNotePlainMessage
 import com.expressmobileservice.inspection.inspectionFormForThankYou
+import com.expressmobileservice.inspection.openWebLink
 import com.expressmobileservice.inspection.resolveMessagingPhone
 import com.expressmobileservice.inspection.shareThankYouWithInspectionPdf
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
@@ -79,15 +90,14 @@ fun ThankYouNoteSheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Thank you",
+                text = THANK_YOU_HEADING,
                 color = SamsungCalendarColors.green,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Thank you for choosing Express Mobile Service. We appreciate you trusting us " +
-                    "with your vehicle today, and we hope everything is running smoothly for you.",
+                text = THANK_YOU_BODY,
                 color = SamsungCalendarColors.onBackground,
                 fontSize = 15.sp,
                 lineHeight = 22.sp,
@@ -95,7 +105,7 @@ fun ThankYouNoteSheet(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "When you have a moment, we'd love to hear how we did:",
+                text = THANK_YOU_PROMPT,
                 color = SamsungCalendarColors.muted,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center
@@ -118,7 +128,7 @@ fun ThankYouNoteSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Inspection PDF attached",
+                    text = THANK_YOU_PDF_LABEL,
                     color = SamsungCalendarColors.green,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
@@ -126,7 +136,8 @@ fun ThankYouNoteSheet(
             }
             Spacer(modifier = Modifier.height(16.dp))
             ThankYouLinkButton(
-                label = "Google review",
+                label = THANK_YOU_GOOGLE_REVIEW_LABEL,
+                url = COMPANY_GOOGLE_REVIEW_URL,
                 icon = {
                     Icon(
                         Icons.Default.Star,
@@ -137,7 +148,8 @@ fun ThankYouNoteSheet(
             )
             Spacer(modifier = Modifier.height(10.dp))
             ThankYouLinkButton(
-                label = "expressmobileservice.net",
+                label = THANK_YOU_WEBSITE_LABEL,
+                url = COMPANY_WEBSITE,
                 icon = {
                     Icon(
                         Icons.Default.Language,
@@ -166,7 +178,8 @@ fun ThankYouNoteSheet(
                         return@withImpact
                     }
                     isSending = true
-                    val message = buildThankYouNoteMessage()
+                    val plainMessage = buildThankYouNotePlainMessage()
+                    val htmlMessage = buildThankYouNoteHtmlMessage()
                     Thread {
                         try {
                             val file = ReportExporter.exportPdf(context, form)
@@ -176,7 +189,13 @@ fun ThankYouNoteSheet(
                                 file
                             )
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                shareThankYouWithInspectionPdf(context, uri, phone, message)
+                                shareThankYouWithInspectionPdf(
+                                    context,
+                                    uri,
+                                    phone,
+                                    plainMessage,
+                                    htmlMessage
+                                )
                                 isSending = false
                                 onDismiss()
                             }
@@ -231,13 +250,16 @@ fun ThankYouNoteSheet(
 @Composable
 private fun ThankYouLinkButton(
     label: String,
+    url: String,
     icon: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(SamsungCalendarColors.accentPurple, RoundedCornerShape(12.dp))
             .border(1.dp, SamsungCalendarColors.green.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
+            .clickable { openWebLink(context, url) }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
