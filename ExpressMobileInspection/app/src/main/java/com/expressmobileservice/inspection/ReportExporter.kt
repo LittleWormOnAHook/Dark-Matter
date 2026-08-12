@@ -27,25 +27,58 @@ object ReportExporter {
     private const val PAGE_HEIGHT = 792
     private const val IMAGE_WIDTH = 1080
 
-    fun exportPdf(context: Context, state: InspectionFormState): File {
+    fun exportPdf(context: Context, state: InspectionFormState): File =
+        exportPdfInternal(context, state, includeThankYouCover = false)
+
+    /** Inspection PDF with a thank-you cover page (clickable review/website buttons on page 1). */
+    fun exportPdfWithThankYouCover(context: Context, state: InspectionFormState): File =
+        exportPdfInternal(context, state, includeThankYouCover = true)
+
+    private fun exportPdfInternal(
+        context: Context,
+        state: InspectionFormState,
+        includeThankYouCover: Boolean
+    ): File {
         PdfLinkAnnotator.init(context)
         val logo = loadLogoBitmap(context, (PAGE_WIDTH * 0.11f).toInt())
         val footerIcons = loadFooterIcons(context, PAGE_WIDTH)
         val renderer = ReportRenderer(PAGE_WIDTH, logo, footerIcons, collectLinks = true)
         val pages = renderer.buildPages(state, PAGE_HEIGHT)
+        val thankYouLinks = mutableListOf<ReportLink>()
         val pdf = PdfDocument()
 
+        var pageNumber = 1
+        if (includeThankYouCover) {
+            val coverInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
+            val coverPage = pdf.startPage(coverInfo)
+            ThankYouCardExporter.drawCard(
+                canvas = coverPage.canvas,
+                cardWidth = PAGE_WIDTH.toFloat(),
+                collectLinks = true,
+                pageIndex = 0,
+                links = thankYouLinks
+            )
+            pdf.finishPage(coverPage)
+            pageNumber++
+        }
+
         pages.forEachIndexed { index, pageContent ->
-            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, index + 1).create()
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
             val page = pdf.startPage(pageInfo)
             renderer.drawPage(page.canvas, state, pageContent, index)
             pdf.finishPage(page)
+            pageNumber++
         }
 
         val file = File(reportsDir(context), reportFileName("pdf"))
         FileOutputStream(file).use { pdf.writeTo(it) }
         pdf.close()
-        PdfLinkAnnotator.annotate(file, renderer.linkAnnotations, PAGE_HEIGHT)
+
+        val inspectionPageOffset = if (includeThankYouCover) 1 else 0
+        val allLinks = thankYouLinks + renderer.linkAnnotations.map { link ->
+            link.copy(pageIndex = link.pageIndex + inspectionPageOffset)
+        }
+        PdfLinkAnnotator.annotate(file, allLinks, PAGE_HEIGHT)
         return file
     }
 

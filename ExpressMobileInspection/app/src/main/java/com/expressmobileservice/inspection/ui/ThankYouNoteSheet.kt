@@ -54,7 +54,6 @@ import com.expressmobileservice.inspection.THANK_YOU_PROMPT
 import com.expressmobileservice.inspection.THANK_YOU_WEBSITE_LABEL
 import com.expressmobileservice.inspection.appointmentSendReadinessError
 import com.expressmobileservice.inspection.ThankYouCardExporter
-import com.expressmobileservice.inspection.buildThankYouNoteSmsLinks
 import com.expressmobileservice.inspection.inspectionFormForThankYou
 import com.expressmobileservice.inspection.openWebLink
 import com.expressmobileservice.inspection.resolveMessagingPhone
@@ -178,10 +177,9 @@ fun ThankYouNoteSheet(
                         return@withImpact
                     }
                     isSending = true
-                    val smsLinks = buildThankYouNoteSmsLinks()
                     Thread {
                         try {
-                            val file = ReportExporter.exportPdf(context, form)
+                            val file = ReportExporter.exportPdfWithThankYouCover(context, form)
                             val uri = FileProvider.getUriForFile(
                                 context,
                                 "${context.packageName}.fileprovider",
@@ -194,13 +192,7 @@ fun ThankYouNoteSheet(
                                 cardFile
                             )
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                shareThankYouWithInspectionPdf(
-                                    context,
-                                    uri,
-                                    phone,
-                                    smsLinks,
-                                    cardUri
-                                )
+                                shareThankYouWithInspectionPdf(context, uri, phone, cardUri)
                                 isSending = false
                                 onDismiss()
                             }

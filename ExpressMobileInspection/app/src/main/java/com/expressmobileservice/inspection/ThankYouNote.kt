@@ -21,35 +21,14 @@ fun Appointment.resolveMessagingPhone(): String {
         ?: ""
 }
 
-/** Full plain text when no card image is attached. */
+/** Plain-text fallback if a text body is ever needed (no HTML). */
 fun buildThankYouNotePlainMessage(): String = buildString {
     appendLine(THANK_YOU_HEADING)
     appendLine()
     appendLine(THANK_YOU_BODY)
     appendLine()
     appendLine(THANK_YOU_PROMPT)
-    appendLine()
-    appendLine("Google review")
-    appendLine(COMPANY_GOOGLE_REVIEW_URL)
-    appendLine()
-    appendLine(THANK_YOU_WEBSITE_LABEL)
-    appendLine(COMPANY_WEBSITE)
 }.trimEnd()
-
-/** Short link lines for MMS when the branded card JPEG is attached (no HTML). */
-fun buildThankYouNoteSmsLinks(): String = buildString {
-    appendLine("Google review")
-    appendLine(COMPANY_GOOGLE_REVIEW_URL)
-    appendLine()
-    appendLine(THANK_YOU_WEBSITE_LABEL)
-    appendLine(COMPANY_WEBSITE)
-}.trimEnd()
-
-/** @deprecated HTML is not supported in Google Messages. */
-fun buildThankYouNoteHtmlMessage(): String = buildThankYouNoteSmsLinks()
-
-/** @deprecated Use [buildThankYouNotePlainMessage] for plain text or pass both plain + HTML when sending. */
-fun buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
 
 fun Appointment.buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
 

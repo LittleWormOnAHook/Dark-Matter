@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
         Thread {
             try {
                 val file = when (type) {
-                    ReportShareType.PDF -> ReportExporter.exportPdf(this, state)
+                    ReportShareType.PDF -> ReportExporter.exportPdfWithThankYouCover(this, state)
                     ReportShareType.IMAGE -> ReportExporter.exportImage(this, state)
                 }
                 val uri = FileProvider.getUriForFile(
@@ -171,7 +171,6 @@ class MainActivity : ComponentActivity() {
                                 this,
                                 uri,
                                 state.customerInfo.customerPhone,
-                                buildThankYouNoteSmsLinks(),
                                 cardUri
                             )
                         }

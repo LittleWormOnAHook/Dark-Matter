@@ -1,5 +1,6 @@
 package com.expressmobileservice.inspection
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -18,10 +19,6 @@ fun dialPhone(context: Context, phone: String) {
 fun normalizePhoneDigits(phone: String): String =
     phone.filter { it.isDigit() || it == '+' }
 
-/**
- * Opens the default SMS/MMS app with the PDF attached and customer number pre-filled.
- * If no customer phone is on the form, opens the phone dialer instead.
- */
 fun openWebLink(context: Context, url: String) {
     if (url.isBlank()) return
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -32,6 +29,91 @@ fun openWebLink(context: Context, url: String) {
     }
 }
 
+/**
+ * Opens Google Messages with the thank-you card image + inspection PDF attached.
+ * No HTML or long URL text — the styled card JPEG is the message body.
+ */
+fun shareThankYouWithInspectionPdf(
+    context: Context,
+    pdfUri: Uri,
+    phone: String,
+    cardImageUri: Uri?
+) {
+    val digits = normalizePhoneDigits(phone)
+    if (digits.isBlank()) {
+        Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
+    val attachments = buildList {
+        cardImageUri?.let { add(it) }
+        add(pdfUri)
+    }
+
+    fun grantReadPermissions(intent: Intent) {
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        smsPackage?.let { pkg ->
+            attachments.forEach { uri ->
+                context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
+    }
+
+    fun buildClipData(): ClipData {
+        val clip = ClipData.newUri(context.contentResolver, "Thank you card", attachments.first())
+        attachments.drop(1).forEach { uri ->
+            clip.addItem(ClipData.Item(uri))
+        }
+        return clip
+    }
+
+    if (attachments.size > 1) {
+        val multiIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "*/*"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(attachments))
+            clipData = buildClipData()
+            putExtra("address", digits)
+            putExtra("sms_body", "")
+            putExtra(Intent.EXTRA_TEXT, "")
+        }
+        grantReadPermissions(multiIntent)
+        smsPackage?.let { multiIntent.setPackage(it) }
+        if (multiIntent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(multiIntent)
+            return
+        }
+        multiIntent.setPackage(null)
+        if (multiIntent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(multiIntent)
+            return
+        }
+    }
+
+    val pdfIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "application/pdf"
+        putExtra(Intent.EXTRA_STREAM, pdfUri)
+        clipData = ClipData.newUri(context.contentResolver, "Inspection PDF", pdfUri)
+        putExtra("address", digits)
+        putExtra("sms_body", "")
+        putExtra(Intent.EXTRA_TEXT, "")
+        putExtra(Intent.EXTRA_SUBJECT, "$COMPANY_NAME — Thank you")
+    }
+    grantReadPermissions(pdfIntent)
+    smsPackage?.let { pdfIntent.setPackage(it) }
+    if (pdfIntent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(pdfIntent)
+        return
+    }
+    pdfIntent.setPackage(null)
+    if (pdfIntent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(pdfIntent)
+    } else {
+        Toast.makeText(context, "No messaging app found.", Toast.LENGTH_SHORT).show()
+    }
+}
+
+/** @deprecated Use [shareThankYouWithInspectionPdf] — HTML/text bodies are not used for thank-you MMS. */
 fun shareInspectionPdfToCustomer(
     context: Context,
     pdfUri: Uri,
@@ -40,74 +122,7 @@ fun shareInspectionPdfToCustomer(
     message: String,
     cardImageUri: Uri? = null
 ) {
-    val digits = normalizePhoneDigits(customerPhone)
-    if (digits.isBlank()) {
-        context.startActivity(Intent(Intent.ACTION_DIAL))
-        return
-    }
-
-    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
-
-    if (cardImageUri != null) {
-        val streams = arrayListOf(cardImageUri, pdfUri)
-        val multiIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-            type = "*/*"
-            putParcelableArrayListExtra(Intent.EXTRA_STREAM, streams)
-            putExtra(Intent.EXTRA_TEXT, message)
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra("address", digits)
-            putExtra("sms_body", message)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        if (smsPackage != null) {
-            multiIntent.setPackage(smsPackage)
-            if (multiIntent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(multiIntent)
-                return
-            }
-            multiIntent.setPackage(null)
-        }
-        if (multiIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(multiIntent)
-            return
-        }
-    }
-
-    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_STREAM, pdfUri)
-        putExtra(Intent.EXTRA_TEXT, message)
-        putExtra(Intent.EXTRA_SUBJECT, subject)
-        putExtra("address", digits)
-        putExtra("sms_body", message)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-
-    if (smsPackage != null) {
-        sendIntent.setPackage(smsPackage)
-        if (sendIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(sendIntent)
-            return
-        }
-        sendIntent.setPackage(null)
-    }
-
-    val sendToIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
-        putExtra("sms_body", message)
-        putExtra(Intent.EXTRA_TEXT, message)
-        putExtra(Intent.EXTRA_STREAM, pdfUri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    if (sendToIntent.resolveActivity(context.packageManager) != null) {
-        context.startActivity(sendToIntent)
-        return
-    }
-
-    if (sendIntent.resolveActivity(context.packageManager) != null) {
-        context.startActivity(sendIntent)
-    } else {
-        dialPhone(context, digits)
-    }
+    shareThankYouWithInspectionPdf(context, pdfUri, customerPhone, cardImageUri)
 }
 
 fun messagePhone(context: Context, phone: String, body: String = "") {
@@ -150,13 +165,12 @@ fun sendThankYouNote(
     Thread {
         try {
             val form = inspectionFormForThankYou(appointment, inspectionStore)
-            val file = ReportExporter.exportPdf(context, form)
-            val uri = androidx.core.content.FileProvider.getUriForFile(
+            val pdfFile = ReportExporter.exportPdfWithThankYouCover(context, form)
+            val pdfUri = androidx.core.content.FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
-                file
+                pdfFile
             )
-            val smsLinks = buildThankYouNoteSmsLinks()
             val cardFile = ThankYouCardExporter.export(context)
             val cardUri = androidx.core.content.FileProvider.getUriForFile(
                 context,
@@ -164,7 +178,7 @@ fun sendThankYouNote(
                 cardFile
             )
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                shareThankYouWithInspectionPdf(context, uri, phone, smsLinks, cardUri)
+                shareThankYouWithInspectionPdf(context, pdfUri, phone, cardUri)
             }
         } catch (_: Exception) {
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -176,23 +190,6 @@ fun sendThankYouNote(
             }
         }
     }.start()
-}
-
-fun shareThankYouWithInspectionPdf(
-    context: Context,
-    pdfUri: Uri,
-    phone: String,
-    message: String,
-    cardImageUri: Uri? = null
-) {
-    shareInspectionPdfToCustomer(
-        context = context,
-        pdfUri = pdfUri,
-        customerPhone = phone,
-        subject = "$COMPANY_NAME — Thank you",
-        message = message,
-        cardImageUri = cardImageUri
-    )
 }
 
 fun openWaze(context: Context, address: String) {
