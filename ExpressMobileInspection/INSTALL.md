@@ -16,7 +16,7 @@ https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection
 ```
 Express Mobile Service — install the inspection app (Android):
 
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.0/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.1/ExpressMobileInspection.apk
 
 1. Open the link on your phone
 2. Download → Install
