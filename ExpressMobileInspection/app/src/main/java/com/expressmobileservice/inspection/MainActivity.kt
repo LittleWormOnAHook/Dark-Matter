@@ -149,18 +149,30 @@ class MainActivity : ComponentActivity() {
                     ReportShareType.IMAGE -> "image/jpeg"
                 }
                 val subject = "$COMPANY_NAME — Vehicle Inspection Report"
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    this.type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, subject)
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "Attached is your vehicle inspection report from $COMPANY_NAME. Call $COMPANY_PHONE with any questions."
-                    )
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
+                val message =
+                    "Attached is your vehicle inspection report from $COMPANY_NAME. Call $COMPANY_PHONE with any questions."
                 runOnUiThread {
-                    startActivity(Intent.createChooser(intent, "Send inspection report"))
+                    when (type) {
+                        ReportShareType.PDF -> {
+                            shareInspectionPdfToCustomer(
+                                this,
+                                uri,
+                                state.customerInfo.customerPhone,
+                                subject,
+                                message
+                            )
+                        }
+                        ReportShareType.IMAGE -> {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                this.type = mimeType
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                putExtra(Intent.EXTRA_SUBJECT, subject)
+                                putExtra(Intent.EXTRA_TEXT, message)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(Intent.createChooser(intent, "Send inspection report"))
+                        }
+                    }
                     onComplete(true)
                 }
             } catch (e: Exception) {
