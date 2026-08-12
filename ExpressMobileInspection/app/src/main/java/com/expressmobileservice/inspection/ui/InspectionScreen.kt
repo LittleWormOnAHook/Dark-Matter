@@ -97,6 +97,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.expressmobileservice.inspection.SavedInspection
 import kotlinx.coroutines.delay
 import com.expressmobileservice.inspection.ui.theme.InspectionColors
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 import com.expressmobileservice.inspection.toSavedInspection
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -290,7 +291,8 @@ fun InspectionScreen(
     }
 
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.background(SamsungCalendarColors.background),
+        containerColor = SamsungCalendarColors.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -332,20 +334,21 @@ fun InspectionScreen(
                         Icon(
                             imageVector = Icons.Default.List,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = SamsungCalendarColors.green,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Open list",
-                            color = Color.White,
+                            color = SamsungCalendarColors.green,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White
+                    containerColor = SamsungCalendarColors.surface,
+                    titleContentColor = SamsungCalendarColors.onBackground,
+                    actionIconContentColor = SamsungCalendarColors.green
                 )
             )
         },
@@ -353,7 +356,7 @@ fun InspectionScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(SamsungCalendarColors.agendaSurface)
                     .padding(12.dp)
             ) {
                 if (isGenerating) {

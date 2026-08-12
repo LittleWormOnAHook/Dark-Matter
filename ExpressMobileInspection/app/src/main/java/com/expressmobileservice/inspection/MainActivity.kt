@@ -1,25 +1,44 @@
 package com.expressmobileservice.inspection
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
 import com.expressmobileservice.inspection.ui.HomeScreen
 import com.expressmobileservice.inspection.ui.ReportShareType
 import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var appointmentStore: AppointmentStore
     private lateinit var inspectionStore: InspectionStore
+
+    private var refreshKey by mutableIntStateOf(0)
+    private var showRestoreBanner by mutableStateOf(false)
+
+    private val importBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@registerForActivityResult
+        val result = AppDataBackup.restoreFromUri(this, uri, appointmentStore, inspectionStore)
+        handleRestoreResult(result)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,26 +49,37 @@ class MainActivity : ComponentActivity() {
         }
         appointmentStore.onDataChanged = snapshotData
         inspectionStore.onDataChanged = snapshotData
-        val restored = AppDataBackup.restoreIfNeeded(this, appointmentStore, inspectionStore)
+        val restoreResult = AppDataBackup.restoreIfNeeded(this, appointmentStore, inspectionStore)
+        showRestoreBanner = !restoreResult.restored && AppDataBackup.isStoreEmpty(appointmentStore, inspectionStore)
         enableEdgeToEdge()
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
+        window.statusBarColor = android.graphics.Color.parseColor("#010101")
+        window.navigationBarColor = android.graphics.Color.parseColor("#010101")
         setContent {
             ExpressMobileInspectionTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = SamsungCalendarColors.background
                 ) {
-                    if (restored) {
+                    if (restoreResult.restored) {
                         LaunchedEffect(Unit) {
                             Toast.makeText(
                                 this@MainActivity,
-                                "Restored saved customers and jobs",
+                                restoreMessage(restoreResult),
                                 Toast.LENGTH_LONG
                             ).show()
                         }
                     }
                     HomeScreen(
+                        key = refreshKey,
                         appointmentStore = appointmentStore,
                         inspectionStore = inspectionStore,
+                        showRestoreBanner = showRestoreBanner,
+                        onRestoreFromDownloads = { restoreFromDownloads() },
+                        onImportBackupFile = { importBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
                         onShareReport = { state, type, onComplete ->
                             shareReport(state, type, onComplete)
                         },
@@ -63,6 +93,37 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStop() {
+        if (::appointmentStore.isInitialized && ::inspectionStore.isInitialized) {
+            AppDataBackup.writeSnapshot(this, appointmentStore, inspectionStore)
+        }
+        super.onStop()
+    }
+
+    private fun restoreFromDownloads() {
+        val result = AppDataBackup.restoreFromDownloads(this, appointmentStore, inspectionStore)
+        handleRestoreResult(result)
+    }
+
+    private fun handleRestoreResult(result: AppDataBackup.RestoreResult) {
+        if (result.restored) {
+            showRestoreBanner = false
+            refreshKey++
+            Toast.makeText(this, restoreMessage(result), Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(
+                this,
+                "No backup found. Check Downloads/ExpressMobileService/ExpressMobileService_backup.json",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun restoreMessage(result: AppDataBackup.RestoreResult): String {
+        val source = result.sourceLabel ?: "backup"
+        return "Restored ${result.appointmentCount} jobs and ${result.inspectionCount} inspections from $source"
     }
 
     private fun shareReport(

@@ -99,6 +99,9 @@ fun AppointmentsScreen(
     inspectionStore: InspectionStore,
     onInspectionLinked: (String) -> Unit,
     onOpenInspection: (String) -> Unit,
+    showRestoreBanner: Boolean = false,
+    onRestoreFromDownloads: () -> Unit = {},
+    onImportBackupFile: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -277,6 +280,40 @@ fun AppointmentsScreen(
                         color = if (viewMode == mode) SamsungCalendarColors.green else MaterialTheme.colorScheme.onSurface
                     )
                 }
+                HorizontalDivider(
+                    color = SamsungCalendarColors.divider,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                Text(
+                    text = "Data",
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = SamsungCalendarColors.muted
+                )
+                Text(
+                    text = "Restore from Downloads",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onRestoreFromDownloads()
+                            showViewMenu = false
+                        }
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    fontSize = 18.sp,
+                    color = SamsungCalendarColors.green
+                )
+                Text(
+                    text = "Choose backup file…",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onImportBackupFile()
+                            showViewMenu = false
+                        }
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    fontSize = 18.sp,
+                    color = SamsungCalendarColors.green
+                )
             }
         }
     }
@@ -322,6 +359,17 @@ fun AppointmentsScreen(
                     displayedMonth = YearMonth.from(today)
                 }
             )
+
+            if (showRestoreBanner) {
+                RestoreBackupBanner(
+                    onRestoreFromDownloads = {
+                        onRestoreFromDownloads()
+                        refresh()
+                    },
+                    onImportBackupFile = onImportBackupFile
+                )
+                HorizontalDivider(color = SamsungCalendarColors.divider, thickness = 1.dp)
+            }
 
             when (viewMode) {
                 CalendarViewMode.MONTH -> {
