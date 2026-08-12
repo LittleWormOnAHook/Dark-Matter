@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
         Thread {
             try {
                 val file = when (type) {
-                    ReportShareType.PDF -> ReportExporter.exportPdf(this, state)
+                    ReportShareType.PDF -> ReportExporter.exportPdfWithThankYouCover(this, state)
                     ReportShareType.IMAGE -> ReportExporter.exportImage(this, state)
                 }
                 val uri = FileProvider.getUriForFile(
@@ -154,12 +154,17 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     when (type) {
                         ReportShareType.PDF -> {
-                            shareInspectionPdfToCustomer(
+                            val readinessError = state.inspectionSendReadinessError()
+                            if (readinessError != null) {
+                                Toast.makeText(this, readinessError, Toast.LENGTH_LONG).show()
+                                onComplete(false)
+                                return@runOnUiThread
+                            }
+                            shareThankYouWithInspectionPdf(
                                 this,
                                 uri,
                                 state.customerInfo.customerPhone,
-                                subject,
-                                message
+                                cardImageUri = null
                             )
                         }
                         ReportShareType.IMAGE -> {

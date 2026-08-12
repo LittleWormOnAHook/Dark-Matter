@@ -14,7 +14,7 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
   - **Car / Truck** and **Motorcycle** data from **NHTSA** (US government database)
   - **Jet Ski / PWC** from built-in US watercraft catalog
 - **Auto inspection** — saving an appointment creates a linked **inspection file** (customer + vehicle pre-filled)
-- Tap **phone** → dial; tap **address** → **Waze**
+- **Thank you note** — gold **★** sends a **centered purple/gold card image**, **tappable link lines** below it, and the **inspection PDF**
 
 ### Inspection
 
@@ -24,7 +24,7 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 - **19 essential inspection items** in 4 sections
 - Per line: tap **Good / Bad / Replace** and optional notes
 - Progress bar shows how many items are checked
-- **Send as PDF** — formatted document for email
+- **Send as PDF** — same as the calendar **★** thank-you: Google Messages with thank-you text + inspection PDF (form must be filled out)
 - **Send as Image (JPEG)** — snapshot for text messaging
 - **Clear Form** resets everything
 
@@ -43,12 +43,12 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Shareable install link (v2.5.3) — send this to anyone
+### Shareable install link (v2.5.11) — send this to anyone
 
-**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.3/ExpressMobileInspection.apk)**
+**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.11/ExpressMobileInspection.apk)**
 
 ```
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.3/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.11/ExpressMobileInspection.apk
 ```
 
 All app releases: [GitHub Releases (express-inspection)](https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection)
