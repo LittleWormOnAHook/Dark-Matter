@@ -30,6 +30,22 @@ fun buildThankYouNotePlainMessage(): String = buildString {
     appendLine(THANK_YOU_PROMPT)
 }.trimEnd()
 
+/**
+ * Tappable link lines placed below the thank-you card image in Google Messages.
+ * URLs are auto-linkified — no HTML.
+ */
+fun buildThankYouNoteSmsLinks(): String = buildString {
+    appendLine("Tap a link below:")
+    appendLine()
+    appendLine("Google review")
+    appendLine(COMPANY_GOOGLE_REVIEW_URL)
+    appendLine()
+    appendLine(THANK_YOU_WEBSITE_LABEL)
+    appendLine(COMPANY_WEBSITE)
+    appendLine()
+    appendLine("Inspection PDF — open the attached file")
+}.trimEnd()
+
 fun Appointment.buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
 
 fun Appointment.resolveInspection(inspectionStore: InspectionStore): SavedInspection? {

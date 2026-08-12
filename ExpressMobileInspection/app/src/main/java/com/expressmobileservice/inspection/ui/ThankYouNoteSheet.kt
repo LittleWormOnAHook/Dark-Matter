@@ -110,6 +110,13 @@ fun ThankYouNoteSheet(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Tap a link below:",
+                color = SamsungCalendarColors.muted,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

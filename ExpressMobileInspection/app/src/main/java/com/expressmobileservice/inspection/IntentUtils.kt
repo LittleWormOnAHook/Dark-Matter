@@ -30,14 +30,14 @@ fun openWebLink(context: Context, url: String) {
 }
 
 /**
- * Opens Google Messages with the thank-you card image + inspection PDF attached.
- * No HTML or long URL text — the styled card JPEG is the message body.
+ * Opens Google Messages with the thank-you card image, plain tappable links, and inspection PDF.
  */
 fun shareThankYouWithInspectionPdf(
     context: Context,
     pdfUri: Uri,
     phone: String,
-    cardImageUri: Uri?
+    cardImageUri: Uri?,
+    linkMessage: String = buildThankYouNoteSmsLinks()
 ) {
     val digits = normalizePhoneDigits(phone)
     if (digits.isBlank()) {
@@ -74,8 +74,8 @@ fun shareThankYouWithInspectionPdf(
             putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(attachments))
             clipData = buildClipData()
             putExtra("address", digits)
-            putExtra("sms_body", "")
-            putExtra(Intent.EXTRA_TEXT, "")
+            putExtra("sms_body", linkMessage)
+            putExtra(Intent.EXTRA_TEXT, linkMessage)
         }
         grantReadPermissions(multiIntent)
         smsPackage?.let { multiIntent.setPackage(it) }
@@ -95,8 +95,8 @@ fun shareThankYouWithInspectionPdf(
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         clipData = ClipData.newUri(context.contentResolver, "Inspection PDF", pdfUri)
         putExtra("address", digits)
-        putExtra("sms_body", "")
-        putExtra(Intent.EXTRA_TEXT, "")
+        putExtra("sms_body", linkMessage)
+        putExtra(Intent.EXTRA_TEXT, linkMessage)
         putExtra(Intent.EXTRA_SUBJECT, "$COMPANY_NAME — Thank you")
     }
     grantReadPermissions(pdfIntent)

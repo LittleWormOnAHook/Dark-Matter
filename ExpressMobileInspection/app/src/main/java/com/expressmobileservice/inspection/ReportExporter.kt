@@ -54,6 +54,7 @@ object ReportExporter {
             ThankYouCardExporter.drawCard(
                 canvas = coverPage.canvas,
                 cardWidth = PAGE_WIDTH.toFloat(),
+                drawLinkButtons = true,
                 collectLinks = true,
                 pageIndex = 0,
                 links = thankYouLinks
