@@ -63,7 +63,7 @@ fun HomeScreen(
             ) {
                 NavigationBarItem(
                     selected = selectedTab == ExpressTab.APPOINTMENTS,
-                    onClick = { selectedTab = ExpressTab.APPOINTMENTS },
+                    onClick = ExpressUiSounds.withAnchor { selectedTab = ExpressTab.APPOINTMENTS },
                     icon = {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
@@ -81,7 +81,7 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = selectedTab == ExpressTab.INSPECTION,
-                    onClick = { selectedTab = ExpressTab.INSPECTION },
+                    onClick = ExpressUiSounds.withAnchor { selectedTab = ExpressTab.INSPECTION },
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Build,
@@ -161,7 +161,7 @@ fun RestoreBackupBanner(
             color = SamsungCalendarColors.green,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .clickable(onClick = onRestoreFromDownloads)
+                .clickable(onClick = ExpressUiSounds.withImpact(onRestoreFromDownloads))
                 .padding(vertical = 4.dp)
         )
         Text(
@@ -169,7 +169,7 @@ fun RestoreBackupBanner(
             color = SamsungCalendarColors.green,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .clickable(onClick = onImportBackupFile)
+                .clickable(onClick = ExpressUiSounds.withImpact(onImportBackupFile))
                 .padding(vertical = 4.dp)
         )
     }

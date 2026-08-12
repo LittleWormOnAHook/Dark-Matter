@@ -203,7 +203,7 @@ fun AppointmentsScreen(
             text = { Text("Remove ${apt.agendaTitle}?") },
             confirmButton = {
                 TextButton(
-                    onClick = {
+                    onClick = ExpressUiSounds.withImpact {
                         store.delete(apt.id)
                         refresh()
                         appointmentToDelete = null
@@ -213,7 +213,7 @@ fun AppointmentsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { appointmentToDelete = null }) {
+                TextButton(onClick = ExpressUiSounds.withImpact { appointmentToDelete = null }) {
                     Text("Cancel")
                 }
             }
@@ -227,7 +227,7 @@ fun AppointmentsScreen(
             text = { Text(apt.agendaTitle) },
             confirmButton = {
                 TextButton(
-                    onClick = {
+                    onClick = ExpressUiSounds.withImpact {
                         copyToClipboard(apt.toClipboardText(), "Appointment copied")
                         agendaActionTarget = null
                     }
@@ -237,7 +237,7 @@ fun AppointmentsScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = {
+                    onClick = ExpressUiSounds.withImpact {
                         agendaActionTarget = null
                         appointmentToDelete = apt
                     }
@@ -270,10 +270,12 @@ fun AppointmentsScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                setCalendarViewMode(mode)
-                                showViewMenu = false
-                            }
+                            .clickable(
+                                onClick = ExpressUiSounds.withImpact {
+                                    setCalendarViewMode(mode)
+                                    showViewMenu = false
+                                }
+                            )
                             .padding(horizontal = 24.dp, vertical = 16.dp),
                         fontSize = 18.sp,
                         fontWeight = if (viewMode == mode) FontWeight.Bold else FontWeight.Normal,
@@ -294,10 +296,12 @@ fun AppointmentsScreen(
                     text = "Restore from Downloads",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            onRestoreFromDownloads()
-                            showViewMenu = false
-                        }
+                        .clickable(
+                            onClick = ExpressUiSounds.withImpact {
+                                onRestoreFromDownloads()
+                                showViewMenu = false
+                            }
+                        )
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     fontSize = 18.sp,
                     color = SamsungCalendarColors.green
@@ -306,10 +310,12 @@ fun AppointmentsScreen(
                     text = "Choose backup file…",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            onImportBackupFile()
-                            showViewMenu = false
-                        }
+                        .clickable(
+                            onClick = ExpressUiSounds.withImpact {
+                                onImportBackupFile()
+                                showViewMenu = false
+                            }
+                        )
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     fontSize = 18.sp,
                     color = SamsungCalendarColors.green
@@ -323,7 +329,7 @@ fun AppointmentsScreen(
         containerColor = SamsungCalendarColors.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
+                onClick = ExpressUiSounds.withAnchor {
                     editingAppointment = null
                     editorQuickNotes = null
                     showEditor = true
@@ -501,7 +507,7 @@ private fun SamsungCalendarHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onMenuClick) {
+            IconButton(onClick = ExpressUiSounds.withImpact(onMenuClick)) {
                 Icon(
                     Icons.Default.Menu,
                     contentDescription = "Calendar views",
@@ -521,7 +527,7 @@ private fun SamsungCalendarHeader(
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onSearchToggle) {
+                IconButton(onClick = ExpressUiSounds.withImpact(onSearchToggle)) {
                     Icon(
                         if (showSearch) Icons.Default.Close else Icons.Default.Search,
                         contentDescription = "Search",
@@ -534,7 +540,7 @@ private fun SamsungCalendarHeader(
                         .size(36.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .border(1.dp, SamsungCalendarColors.muted, RoundedCornerShape(8.dp))
-                        .clickable(onClick = onGoToToday),
+                        .clickable(onClick = ExpressUiSounds.withImpact(onGoToToday)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -579,7 +585,7 @@ private fun DayHeaderNav(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onPrevious) {
+            IconButton(onClick = ExpressUiSounds.withImpact(onPrevious)) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -597,7 +603,7 @@ private fun DayHeaderNav(
                     )
                 }
             }
-            IconButton(onClick = onNext) {
+            IconButton(onClick = ExpressUiSounds.withImpact(onNext)) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
             }
         }
@@ -657,7 +663,7 @@ private fun MonthCalendarGrid(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { onMonthChange(yearMonth.minusMonths(1)) },
+                onClick = ExpressUiSounds.withImpact { onMonthChange(yearMonth.minusMonths(1)) },
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
@@ -667,7 +673,7 @@ private fun MonthCalendarGrid(
                 )
             }
             IconButton(
-                onClick = { onMonthChange(yearMonth.plusMonths(1)) },
+                onClick = ExpressUiSounds.withImpact { onMonthChange(yearMonth.plusMonths(1)) },
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
@@ -750,7 +756,7 @@ private fun SamsungDayCell(
     Column(
         modifier = modifier
             .padding(horizontal = 2.dp, vertical = 2.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = ExpressUiSounds.withImpact(onClick)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
@@ -927,9 +933,9 @@ private fun SamsungAgendaRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(SamsungCalendarColors.quickAddField.copy(alpha = 0.55f))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
+            .            combinedClickable(
+                onClick = ExpressUiSounds.withImpact(onClick),
+                onLongClick = ExpressUiSounds.withImpact(onLongClick)
             )
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -968,7 +974,7 @@ private fun SamsungAgendaRow(
                     color = SamsungCalendarColors.green,
                     modifier = Modifier
                         .padding(top = 2.dp)
-                        .clickable(onClick = onDial)
+                        .clickable(onClick = ExpressUiSounds.withImpact(onDial))
                 )
             }
             if (appointment.hasAddress) {
@@ -980,7 +986,7 @@ private fun SamsungAgendaRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .padding(top = 2.dp)
-                        .clickable(onClick = onNavigate)
+                        .clickable(onClick = ExpressUiSounds.withImpact(onNavigate))
                 )
             }
         }
@@ -1016,7 +1022,7 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { onAnchorDateChange(anchorDate.minusDays(1)) }) {
+            IconButton(onClick = ExpressUiSounds.withImpact { onAnchorDateChange(anchorDate.minusDays(1)) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
             }
             Text(
@@ -1025,7 +1031,7 @@ private fun WeekCalendarView(
                 color = SamsungCalendarColors.muted,
                 fontSize = 13.sp
             )
-            IconButton(onClick = { onAnchorDateChange(anchorDate.plusDays(1)) }) {
+            IconButton(onClick = ExpressUiSounds.withImpact { onAnchorDateChange(anchorDate.plusDays(1)) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
             }
         }
@@ -1037,7 +1043,7 @@ private fun WeekCalendarView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TextButton(onClick = {
+            TextButton(onClick = ExpressUiSounds.withImpact {
                 val weekStart = weekStartFor(anchorDate)
                 onAnchorDateChange(weekStart.minusDays(7).plusDays(
                     ChronoUnit.DAYS.between(weekStart, anchorDate)
@@ -1045,7 +1051,7 @@ private fun WeekCalendarView(
             }) {
                 Text("Previous week", color = SamsungCalendarColors.green, fontSize = 12.sp)
             }
-            TextButton(onClick = {
+            TextButton(onClick = ExpressUiSounds.withImpact {
                 val weekStart = weekStartFor(anchorDate)
                 onAnchorDateChange(weekStart.plusDays(7).plusDays(
                     ChronoUnit.DAYS.between(weekStart, anchorDate)

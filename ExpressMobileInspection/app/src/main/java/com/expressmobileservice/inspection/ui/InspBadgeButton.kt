@@ -15,7 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val InspBlue = Color(0xFF1565C0)
+private val InspGold = Color(0xFFFFD700)
+private val InspPurple = Color(0xFF441F4D)
 
 @Composable
 fun InspBadgeButton(
@@ -26,13 +27,13 @@ fun InspBadgeButton(
         modifier = modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(InspBlue)
-            .clickable(onClick = onClick),
+            .background(InspGold)
+            .clickable(onClick = ExpressUiSounds.withAnchor(onClick)),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "INSP",
-            color = Color.White,
+            color = InspPurple,
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.sp

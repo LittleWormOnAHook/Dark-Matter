@@ -255,7 +255,7 @@ fun InspectionScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = {
+                    onClick = ExpressUiSounds.withAnchor {
                         showUncheckedWarning = false
                         pendingShareType?.let { share(it) }
                         pendingShareType = null
@@ -266,7 +266,7 @@ fun InspectionScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = {
+                    onClick = ExpressUiSounds.withImpact {
                         showUncheckedWarning = false
                         pendingShareType = null
                     }
@@ -313,7 +313,9 @@ fun InspectionScreen(
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { openUri(context, COMPANY_PHONE_URI) }
+                                modifier = Modifier.clickable(
+                                    onClick = ExpressUiSounds.withImpact { openUri(context, COMPANY_PHONE_URI) }
+                                )
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Phone,
@@ -330,7 +332,7 @@ fun InspectionScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { showInspectionList = true }) {
+                    TextButton(onClick = ExpressUiSounds.withImpact { showInspectionList = true }) {
                         Icon(
                             imageVector = Icons.Default.List,
                             contentDescription = null,
@@ -384,7 +386,7 @@ fun InspectionScreen(
                     )
                 }
                 Button(
-                    onClick = { saveInspection() },
+                    onClick = ExpressUiSounds.withAnchor { saveInspection() },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -397,7 +399,7 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { beginComplete(ReportShareType.PDF) },
+                    onClick = ExpressUiSounds.withAnchor { beginComplete(ReportShareType.PDF) },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -407,7 +409,7 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = { beginComplete(ReportShareType.IMAGE) },
+                    onClick = ExpressUiSounds.withImpact { beginComplete(ReportShareType.IMAGE) },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -417,7 +419,7 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = {
+                    onClick = ExpressUiSounds.withImpact {
                         customerName = ""
                         customerPhone = ""
                         vehicle = ""
@@ -561,7 +563,7 @@ private fun OpenInspectionsListSheet(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = ExpressUiSounds.withImpact(onDismiss)) {
                     Icon(Icons.Default.Close, contentDescription = "Close")
                 }
             }
@@ -590,7 +592,7 @@ private fun OpenInspectionsListSheet(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(inspection) }
+                                .clickable(onClick = ExpressUiSounds.withImpact { onSelect(inspection) })
                                 .background(
                                     if (isCurrent) {
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -730,7 +732,7 @@ private fun RowScope.StatusChip(
             .clip(RoundedCornerShape(8.dp))
             .background(background)
             .border(1.5.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = ExpressUiSounds.withImpact(onClick))
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -811,7 +813,7 @@ private fun FooterLinkRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = ExpressUiSounds.withImpact(onClick))
     ) {
         when {
             iconPainter != null -> {

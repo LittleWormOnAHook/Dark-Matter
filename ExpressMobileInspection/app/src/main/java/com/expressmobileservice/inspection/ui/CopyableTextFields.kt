@@ -43,7 +43,9 @@ fun CopyableTextField(
 
     TextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { updated ->
+            ExpressUiSounds.onTypingValueChange(value, updated, onValueChange)
+        },
         modifier = modifier.then(copyModifier),
         enabled = enabled,
         readOnly = readOnly,
@@ -90,7 +92,9 @@ fun CopyableOutlinedTextField(
 
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { updated ->
+            ExpressUiSounds.onTypingValueChange(value, updated, onValueChange)
+        },
         modifier = modifier.then(copyModifier),
         enabled = enabled,
         readOnly = readOnly,

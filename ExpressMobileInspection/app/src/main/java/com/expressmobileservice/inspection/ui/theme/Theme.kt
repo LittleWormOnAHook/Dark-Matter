@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColors = darkColorScheme(
     primary = SamsungCalendarColors.green,
-    onPrimary = Color(0xFF010101),
+    onPrimary = Color(0xFF000000),
     primaryContainer = SamsungCalendarColors.quickAddField,
     onPrimaryContainer = SamsungCalendarColors.onBackground,
     secondary = SamsungCalendarColors.greenDark,

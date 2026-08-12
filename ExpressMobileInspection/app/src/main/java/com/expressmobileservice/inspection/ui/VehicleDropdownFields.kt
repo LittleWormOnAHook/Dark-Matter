@@ -245,7 +245,7 @@ private fun SearchableVehicleDropdown(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable { showSheet = true }
+                    .clickable(onClick = ExpressUiSounds.withImpact { showSheet = true })
             )
         }
     }
@@ -268,7 +268,7 @@ private fun SearchableVehicleDropdown(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = label, fontWeight = FontWeight.SemiBold)
-                    IconButton(onClick = {
+                    IconButton(onClick = ExpressUiSounds.withImpact {
                         showSheet = false
                         query = ""
                     }) {
@@ -277,7 +277,9 @@ private fun SearchableVehicleDropdown(
                 }
                 OutlinedTextField(
                     value = query,
-                    onValueChange = { query = it },
+                    onValueChange = { updated ->
+                        ExpressUiSounds.onTypingValueChange(query, updated) { query = it }
+                    },
                     placeholder = { Text(searchHint) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
@@ -307,11 +309,13 @@ private fun SearchableVehicleDropdown(
                             text = option,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    onSelect(option)
-                                    showSheet = false
-                                    query = ""
-                                }
+                                .clickable(
+                                    onClick = ExpressUiSounds.withImpact {
+                                        onSelect(option)
+                                        showSheet = false
+                                        query = ""
+                                    }
+                                )
                                 .padding(horizontal = 16.dp, vertical = 14.dp)
                         )
                     }

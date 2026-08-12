@@ -277,7 +277,7 @@ fun AppointmentEditorScreen(
                     onDismissRequest = { showPicker = null },
                     confirmButton = {
                         TextButton(
-                            onClick = {
+                            onClick = ExpressUiSounds.withImpact {
                                 state.selectedDateMillis?.let { millis ->
                                     val pickedDate = Instant.ofEpochMilli(millis)
                                         .atZone(ZoneId.systemDefault()).toLocalDate()
@@ -300,7 +300,7 @@ fun AppointmentEditorScreen(
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showPicker = null }) {
+                        TextButton(onClick = ExpressUiSounds.withImpact { showPicker = null }) {
                             Text("Cancel")
                         }
                     }
@@ -323,7 +323,7 @@ fun AppointmentEditorScreen(
                     onDismissRequest = { showPicker = null },
                     confirmButton = {
                         TextButton(
-                            onClick = {
+                            onClick = ExpressUiSounds.withImpact {
                                 val date = when (target) {
                                     PickerTarget.START_TIME -> startMillis.toLocalDate()
                                     PickerTarget.END_TIME -> endMillis.toLocalDate()
@@ -342,7 +342,7 @@ fun AppointmentEditorScreen(
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showPicker = null }) {
+                        TextButton(onClick = ExpressUiSounds.withImpact { showPicker = null }) {
                             Text("Cancel")
                         }
                     }
@@ -360,7 +360,7 @@ fun AppointmentEditorScreen(
             TopAppBar(
                 title = { Text(if (isEditing) "Edit job" else "Add job") },
                 navigationIcon = {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = ExpressUiSounds.withImpact(onDismiss)) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back to calendar",
@@ -385,7 +385,7 @@ fun AppointmentEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss) {
+                TextButton(onClick = ExpressUiSounds.withImpact(onDismiss)) {
                     Text(
                         "Cancel",
                         color = SamsungCalendarColors.green,
@@ -394,7 +394,7 @@ fun AppointmentEditorScreen(
                     )
                 }
                 Button(
-                    onClick = { save() },
+                    onClick = ExpressUiSounds.withAnchor { save() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SamsungCalendarColors.green,
                         contentColor = Color.Black
@@ -541,8 +541,8 @@ fun AppointmentEditorScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .combinedClickable(
-                                        onClick = { applyAutofill(suggestion) },
-                                        onLongClick = {
+                                        onClick = ExpressUiSounds.withImpact { applyAutofill(suggestion) },
+                                        onLongClick = ExpressUiSounds.withImpact {
                                             copyToClipboard(
                                                 suggestion.toClipboardText(),
                                                 "Customer info copied"
@@ -697,8 +697,8 @@ private fun CustomerSuggestionList(
                 modifier = Modifier
                     .fillMaxWidth()
                     .combinedClickable(
-                        onClick = { onSelect(record) },
-                        onLongClick = {
+                        onClick = ExpressUiSounds.withImpact { onSelect(record) },
+                        onLongClick = ExpressUiSounds.withImpact {
                             onCopy(record.toAppointmentFields().toClipboardText(), "Customer info copied")
                         }
                     )
@@ -778,7 +778,7 @@ private fun DateTimeColumn(
             text = dateText,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            modifier = Modifier.clickable(onClick = onDateClick)
+            modifier = Modifier.clickable(onClick = ExpressUiSounds.withImpact(onDateClick))
         )
         if (showTime) {
             Text(
@@ -787,7 +787,7 @@ private fun DateTimeColumn(
                 fontSize = 28.sp,
                 modifier = Modifier
                     .padding(top = 4.dp)
-                    .clickable(onClick = onTimeClick)
+                    .clickable(onClick = ExpressUiSounds.withImpact(onTimeClick))
             )
         }
     }

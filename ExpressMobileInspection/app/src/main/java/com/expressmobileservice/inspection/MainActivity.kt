@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
+import com.expressmobileservice.inspection.ui.ExpressUiSounds
 import com.expressmobileservice.inspection.ui.HomeScreen
 import com.expressmobileservice.inspection.ui.ReportShareType
 import com.expressmobileservice.inspection.ui.theme.ExpressMobileInspectionTheme
@@ -56,8 +57,9 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
         }
-        window.statusBarColor = android.graphics.Color.parseColor("#010101")
-        window.navigationBarColor = android.graphics.Color.parseColor("#010101")
+        window.statusBarColor = android.graphics.Color.parseColor("#000000")
+        window.navigationBarColor = android.graphics.Color.parseColor("#000000")
+        ExpressUiSounds.init(this)
         setContent {
             ExpressMobileInspectionTheme {
                 Surface(
