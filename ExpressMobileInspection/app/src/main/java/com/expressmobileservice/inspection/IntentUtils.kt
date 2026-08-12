@@ -73,6 +73,83 @@ fun shareInspectionPdfToCustomer(
     }
 }
 
+fun messagePhone(context: Context, phone: String, body: String = "") {
+    val digits = normalizePhoneDigits(phone)
+    if (digits.isBlank()) {
+        Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
+        if (body.isNotBlank()) {
+            putExtra("sms_body", body)
+            putExtra(Intent.EXTRA_TEXT, body)
+        }
+    }
+    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
+    if (smsPackage != null) {
+        intent.setPackage(smsPackage)
+    }
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    } else {
+        Toast.makeText(context, "No messaging app found.", Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun sendThankYouNote(
+    context: Context,
+    appointment: Appointment,
+    inspectionStore: InspectionStore
+) {
+    val phone = appointment.resolveMessagingPhone()
+    if (phone.isBlank()) {
+        Toast.makeText(
+            context,
+            "Add a customer phone (or phone in the job description) to send a thank you note.",
+            Toast.LENGTH_LONG
+        ).show()
+        return
+    }
+    Thread {
+        try {
+            val form = inspectionFormForThankYou(appointment, inspectionStore)
+            val file = ReportExporter.exportPdf(context, form)
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val message = buildThankYouNoteMessage()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                shareThankYouWithInspectionPdf(context, uri, phone, message)
+            }
+        } catch (_: Exception) {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Toast.makeText(
+                    context,
+                    "Could not attach inspection PDF. Please try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }.start()
+}
+
+fun shareThankYouWithInspectionPdf(
+    context: Context,
+    pdfUri: Uri,
+    phone: String,
+    message: String
+) {
+    shareInspectionPdfToCustomer(
+        context = context,
+        pdfUri = pdfUri,
+        customerPhone = phone,
+        subject = "$COMPANY_NAME — Thank you",
+        message = message
+    )
+}
+
 fun openWaze(context: Context, address: String) {
     if (address.isBlank()) {
         Toast.makeText(context, "No address on this appointment.", Toast.LENGTH_SHORT).show()

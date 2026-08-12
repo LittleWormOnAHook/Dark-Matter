@@ -32,6 +32,20 @@ data class InspectionFormState(
     val generalNotes: String = ""
 )
 
+/** Returns an error message when the inspection is not ready to send, or null if OK. */
+fun InspectionFormState.inspectionSendReadinessError(): String? {
+    if (customerInfo.customerName.isBlank()) {
+        return "Enter the customer name before sending."
+    }
+    if (customerInfo.customerPhone.isBlank()) {
+        return "Enter the customer phone before sending."
+    }
+    if (sections.flatMap { it.items }.none { it.status != InspectionStatus.NONE }) {
+        return "Mark at least one inspection item before sending."
+    }
+    return null
+}
+
 fun defaultInspectionSections(): List<InspectionSection> = listOf(
     InspectionSection(
         title = "Fluids & Engine",

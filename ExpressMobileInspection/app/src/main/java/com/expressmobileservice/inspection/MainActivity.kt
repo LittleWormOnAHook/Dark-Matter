@@ -154,12 +154,17 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     when (type) {
                         ReportShareType.PDF -> {
-                            shareInspectionPdfToCustomer(
+                            val readinessError = state.inspectionSendReadinessError()
+                            if (readinessError != null) {
+                                Toast.makeText(this, readinessError, Toast.LENGTH_LONG).show()
+                                onComplete(false)
+                                return@runOnUiThread
+                            }
+                            shareThankYouWithInspectionPdf(
                                 this,
                                 uri,
                                 state.customerInfo.customerPhone,
-                                subject,
-                                message
+                                buildThankYouNoteMessage()
                             )
                         }
                         ReportShareType.IMAGE -> {
