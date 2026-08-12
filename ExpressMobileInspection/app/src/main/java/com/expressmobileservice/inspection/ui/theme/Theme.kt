@@ -1,6 +1,9 @@
 package com.expressmobileservice.inspection.ui.theme
 
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -42,3 +45,35 @@ object InspectionColors {
     val badContainer = Color(0xFF3D1B1B)
     val replaceContainer = Color(0xFF3D2E14)
 }
+
+@Composable
+fun samsungOutlinedFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = SamsungCalendarColors.green,
+    unfocusedBorderColor = SamsungCalendarColors.divider,
+    cursorColor = SamsungCalendarColors.green,
+    focusedContainerColor = SamsungCalendarColors.quickAddField,
+    unfocusedContainerColor = SamsungCalendarColors.quickAddField,
+    focusedTextColor = SamsungCalendarColors.onBackground,
+    unfocusedTextColor = SamsungCalendarColors.onBackground,
+    focusedLabelColor = SamsungCalendarColors.green,
+    unfocusedLabelColor = SamsungCalendarColors.muted,
+    focusedPlaceholderColor = SamsungCalendarColors.muted,
+    unfocusedPlaceholderColor = SamsungCalendarColors.muted
+)
+
+@Composable
+fun samsungTitleFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
+    focusedTextColor = SamsungCalendarColors.onBackground,
+    unfocusedTextColor = SamsungCalendarColors.onBackground,
+    cursorColor = SamsungCalendarColors.green
+)
+
+@Composable
+fun samsungCardColors() = CardDefaults.cardColors(
+    containerColor = SamsungCalendarColors.surface,
+    contentColor = SamsungCalendarColors.onBackground
+)

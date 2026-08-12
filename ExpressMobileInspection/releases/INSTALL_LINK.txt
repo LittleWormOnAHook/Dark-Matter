@@ -1,6 +1,6 @@
-Express Mobile Inspection v2.4.9 — Android install link (share this):
+Express Mobile Inspection v2.4.10 — Android install link (share this):
 
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.4.9/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.4.10/ExpressMobileInspection.apk
 
 All releases: https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection
 

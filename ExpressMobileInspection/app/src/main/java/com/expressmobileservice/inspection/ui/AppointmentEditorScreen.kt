@@ -87,6 +87,8 @@ import com.expressmobileservice.inspection.toEpochMillisAtStartOfDay
 import com.expressmobileservice.inspection.toLocalDate
 import com.expressmobileservice.inspection.toLocalDateTime
 import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
+import com.expressmobileservice.inspection.ui.theme.samsungOutlinedFieldColors
+import com.expressmobileservice.inspection.ui.theme.samsungTitleFieldColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -519,7 +521,7 @@ fun AppointmentEditorScreen(
                     singleLine = false,
                     minLines = 2,
                     maxLines = 4,
-                    colors = samsungFieldColors()
+                    colors = samsungOutlinedFieldColors()
                 )
                 if (autofillSuggestions.isNotEmpty()) {
                     Text(
@@ -574,7 +576,7 @@ fun AppointmentEditorScreen(
                     placeholder = { Text("Customer name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = samsungFieldColors(),
+                    colors = samsungOutlinedFieldColors(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
                 )
                 CustomerSuggestionList(
@@ -597,7 +599,7 @@ fun AppointmentEditorScreen(
                     placeholder = { Text("Any phone number") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = samsungFieldColors(),
+                    colors = samsungOutlinedFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
                 CustomerSuggestionList(
@@ -619,7 +621,7 @@ fun AppointmentEditorScreen(
                     singleLine = false,
                     minLines = 1,
                     maxLines = 2,
-                    colors = samsungFieldColors(),
+                    colors = samsungOutlinedFieldColors(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
                 )
                 CustomerSuggestionList(
@@ -792,21 +794,3 @@ private fun DateTimeColumn(
         }
     }
 }
-
-@Composable
-private fun samsungTitleFieldColors() = TextFieldDefaults.colors(
-    focusedContainerColor = Color.Transparent,
-    unfocusedContainerColor = Color.Transparent,
-    focusedIndicatorColor = Color.Transparent,
-    unfocusedIndicatorColor = Color.Transparent,
-    cursorColor = SamsungCalendarColors.green
-)
-
-@Composable
-private fun samsungFieldColors() = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = SamsungCalendarColors.green,
-    unfocusedBorderColor = SamsungCalendarColors.divider,
-    cursorColor = SamsungCalendarColors.green,
-    focusedContainerColor = SamsungCalendarColors.surface,
-    unfocusedContainerColor = SamsungCalendarColors.surface
-)

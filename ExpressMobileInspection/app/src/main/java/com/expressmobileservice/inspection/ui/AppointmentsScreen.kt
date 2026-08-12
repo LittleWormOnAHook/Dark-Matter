@@ -199,6 +199,9 @@ fun AppointmentsScreen(
     appointmentToDelete?.let { apt ->
         AlertDialog(
             onDismissRequest = { appointmentToDelete = null },
+            containerColor = SamsungCalendarColors.surface,
+            titleContentColor = SamsungCalendarColors.onBackground,
+            textContentColor = SamsungCalendarColors.muted,
             title = { Text("Delete appointment?") },
             text = { Text("Remove ${apt.agendaTitle}?") },
             confirmButton = {
@@ -223,6 +226,9 @@ fun AppointmentsScreen(
     agendaActionTarget?.let { apt ->
         AlertDialog(
             onDismissRequest = { agendaActionTarget = null },
+            containerColor = SamsungCalendarColors.surface,
+            titleContentColor = SamsungCalendarColors.onBackground,
+            textContentColor = SamsungCalendarColors.muted,
             title = { Text("Appointment") },
             text = { Text(apt.agendaTitle) },
             confirmButton = {

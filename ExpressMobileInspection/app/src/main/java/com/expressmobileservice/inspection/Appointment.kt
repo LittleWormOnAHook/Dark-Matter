@@ -20,7 +20,7 @@ data class Appointment(
     val startEpochMillis: Long = 0L,
     val endEpochMillis: Long = 0L,
     val allDay: Boolean = false,
-    val colorArgb: Long = 0xFF1565C0L
+    val colorArgb: Long = 0xFF57D26AL
 ) {
     val displayTitle: String
         get() = buildString {
