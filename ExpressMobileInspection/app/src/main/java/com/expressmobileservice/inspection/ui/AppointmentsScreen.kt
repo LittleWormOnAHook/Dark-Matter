@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -75,6 +76,7 @@ import com.expressmobileservice.inspection.appointmentsForWeek
 import com.expressmobileservice.inspection.compareAppointmentsForDay
 import com.expressmobileservice.inspection.dialPhone
 import com.expressmobileservice.inspection.messagePhone
+import com.expressmobileservice.inspection.sendThankYouNote
 import com.expressmobileservice.inspection.formatDayHeader
 import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
@@ -188,21 +190,40 @@ fun AppointmentsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                        sendThankYouNote(context, apt)
                         agendaActionTarget = null
                     }
                 ) {
-                    Text("Copy text", color = SamsungCalendarColors.green)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFD4A017),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Thank you note", color = Color(0xFFD4A017))
+                    }
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        agendaActionTarget = null
-                        appointmentToDelete = apt
+                Row {
+                    TextButton(
+                        onClick = {
+                            copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                            agendaActionTarget = null
+                        }
+                    ) {
+                        Text("Copy text", color = SamsungCalendarColors.green)
                     }
-                ) {
-                    Text("Delete")
+                    TextButton(
+                        onClick = {
+                            agendaActionTarget = null
+                            appointmentToDelete = apt
+                        }
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         )
@@ -870,6 +891,20 @@ private fun SamsungAgendaRow(
                                 messagePhone(context, appointment.customerPhone)
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("Thank you note") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD4A017)
+                                )
+                            },
+                            onClick = {
+                                showPhoneMenu = false
+                                sendThankYouNote(context, appointment)
+                            }
+                        )
                     }
                 }
             }
@@ -886,6 +921,8 @@ private fun SamsungAgendaRow(
                 )
             }
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        ThankYouStarButton(onClick = { sendThankYouNote(context, appointment) })
         if (showInsp) {
             Spacer(modifier = Modifier.width(8.dp))
             InspBadgeButton(onClick = onOpenInspection)

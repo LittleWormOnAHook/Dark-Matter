@@ -62,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expressmobileservice.inspection.Appointment
 import com.expressmobileservice.inspection.AppointmentStore
+import com.expressmobileservice.inspection.sendThankYouNote
 import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.autofillLabel
 import com.expressmobileservice.inspection.autofillSuggestions
@@ -108,6 +110,7 @@ fun AppointmentEditorScreen(
     onDismiss: () -> Unit,
     onSave: (Appointment) -> Unit
 ) {
+    val context = LocalContext.current
     val isEditing = initial != null
     val defaultStart = initial?.startEpochMillis ?: defaultAppointmentStart(defaultDate)
     val defaultEnd = initial?.endEpochMillis ?: defaultAppointmentEnd(defaultStart)
@@ -559,6 +562,47 @@ fun AppointmentEditorScreen(
                     colors = samsungFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
+            }
+
+            HorizontalDivider(
+                color = SamsungCalendarColors.divider,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            SectionHeader("Thank you note")
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ThankYouStarButton(
+                    onClick = {
+                        sendThankYouNote(
+                            context,
+                            Appointment(
+                                customerName = customerName,
+                                customerPhone = customerPhone,
+                                jobNotes = jobNotes
+                            )
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Send thank you note",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Google Messages to the customer with our review link, website, and phone number.",
+                        fontSize = 12.sp,
+                        color = SamsungCalendarColors.muted,
+                        lineHeight = 16.sp
+                    )
+                }
             }
 
             EditorField(

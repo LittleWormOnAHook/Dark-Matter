@@ -1,6 +1,5 @@
 package com.expressmobileservice.inspection
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -86,19 +85,18 @@ class MainActivity : ComponentActivity() {
                     ReportShareType.IMAGE -> "image/jpeg"
                 }
                 val subject = "$COMPANY_NAME — Vehicle Inspection Report"
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    this.type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, subject)
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "Attached is your vehicle inspection report from $COMPANY_NAME. Call $COMPANY_PHONE with any questions."
-                    )
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
+                val body =
+                    "Attached is your vehicle inspection report from $COMPANY_NAME. Call $COMPANY_PHONE with any questions."
                 runOnUiThread {
-                    startActivity(Intent.createChooser(intent, "Send inspection report"))
-                    onComplete(true)
+                    val started = shareReportToGoogleMessages(
+                        context = this,
+                        phone = state.customerInfo.customerPhone,
+                        attachmentUri = uri,
+                        mimeType = mimeType,
+                        subject = subject,
+                        body = body
+                    )
+                    onComplete(started)
                 }
             } catch (e: Exception) {
                 runOnUiThread {

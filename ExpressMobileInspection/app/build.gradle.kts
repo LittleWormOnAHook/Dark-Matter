@@ -12,8 +12,8 @@ android {
         applicationId = "com.expressmobileservice.inspection"
         minSdk = 26
         targetSdk = 34
-        versionCode = 17
-        versionName = "2.2.2"
+        versionCode = 20
+        versionName = "2.2.5"
     }
 
     compileOptions {
