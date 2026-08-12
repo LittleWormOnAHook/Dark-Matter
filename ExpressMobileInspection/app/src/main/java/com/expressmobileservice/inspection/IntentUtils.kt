@@ -19,25 +19,41 @@ fun dialPhone(context: Context, phone: String) {
     context.startActivity(intent)
 }
 
-fun messagePhone(context: Context, phone: String) {
+fun messagePhone(context: Context, phone: String, body: String = "") {
     val digits = phoneDigits(phone)
     if (digits.isBlank()) {
         Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
         return
     }
     val googleMessages = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
+        if (body.isNotBlank()) putExtra("sms_body", body)
         setPackage(GOOGLE_MESSAGES_PACKAGE)
     }
     if (googleMessages.resolveActivity(context.packageManager) != null) {
         context.startActivity(googleMessages)
         return
     }
-    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits"))
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
+        if (body.isNotBlank()) putExtra("sms_body", body)
+    }
     if (intent.resolveActivity(context.packageManager) != null) {
         context.startActivity(intent)
     } else {
         Toast.makeText(context, "No messaging app found.", Toast.LENGTH_SHORT).show()
     }
+}
+
+fun sendThankYouNote(context: Context, appointment: Appointment) {
+    val phone = appointment.resolveMessagingPhone()
+    if (phone.isBlank()) {
+        Toast.makeText(
+            context,
+            "Add a customer phone (or phone in the job description) to send a thank you note.",
+            Toast.LENGTH_LONG
+        ).show()
+        return
+    }
+    messagePhone(context, phone, appointment.buildThankYouNoteMessage())
 }
 
 /**
