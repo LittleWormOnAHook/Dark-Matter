@@ -151,6 +151,13 @@ class MainActivity : ComponentActivity() {
                 val subject = "$COMPANY_NAME — Vehicle Inspection Report"
                 val message =
                     "Attached is your vehicle inspection report from $COMPANY_NAME. Call $COMPANY_PHONE with any questions."
+                val cardFile = when (type) {
+                    ReportShareType.PDF -> ThankYouCardExporter.export(this)
+                    ReportShareType.IMAGE -> null
+                }
+                val cardUri = cardFile?.let {
+                    FileProvider.getUriForFile(this, "$packageName.fileprovider", it)
+                }
                 runOnUiThread {
                     when (type) {
                         ReportShareType.PDF -> {
@@ -164,8 +171,8 @@ class MainActivity : ComponentActivity() {
                                 this,
                                 uri,
                                 state.customerInfo.customerPhone,
-                                buildThankYouNotePlainMessage(),
-                                buildThankYouNoteHtmlMessage()
+                                buildThankYouNoteSmsLinks(),
+                                cardUri
                             )
                         }
                         ReportShareType.IMAGE -> {

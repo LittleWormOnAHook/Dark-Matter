@@ -38,7 +38,7 @@ fun shareInspectionPdfToCustomer(
     customerPhone: String,
     subject: String,
     message: String,
-    htmlMessage: String? = null
+    cardImageUri: Uri? = null
 ) {
     val digits = normalizePhoneDigits(customerPhone)
     if (digits.isBlank()) {
@@ -46,20 +46,43 @@ fun shareInspectionPdfToCustomer(
         return
     }
 
-    val smsBody = htmlMessage?.takeIf { it.isNotBlank() } ?: message
+    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
+
+    if (cardImageUri != null) {
+        val streams = arrayListOf(cardImageUri, pdfUri)
+        val multiIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "*/*"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, streams)
+            putExtra(Intent.EXTRA_TEXT, message)
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra("address", digits)
+            putExtra("sms_body", message)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        if (smsPackage != null) {
+            multiIntent.setPackage(smsPackage)
+            if (multiIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(multiIntent)
+                return
+            }
+            multiIntent.setPackage(null)
+        }
+        if (multiIntent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(multiIntent)
+            return
+        }
+    }
 
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         putExtra(Intent.EXTRA_TEXT, message)
-        htmlMessage?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_HTML_TEXT, it) }
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra("address", digits)
-        putExtra("sms_body", smsBody)
+        putExtra("sms_body", message)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
-    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
     if (smsPackage != null) {
         sendIntent.setPackage(smsPackage)
         if (sendIntent.resolveActivity(context.packageManager) != null) {
@@ -70,9 +93,8 @@ fun shareInspectionPdfToCustomer(
     }
 
     val sendToIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
-        putExtra("sms_body", smsBody)
+        putExtra("sms_body", message)
         putExtra(Intent.EXTRA_TEXT, message)
-        htmlMessage?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_HTML_TEXT, it) }
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
@@ -134,10 +156,15 @@ fun sendThankYouNote(
                 "${context.packageName}.fileprovider",
                 file
             )
-            val plainMessage = buildThankYouNotePlainMessage()
-            val htmlMessage = buildThankYouNoteHtmlMessage()
+            val smsLinks = buildThankYouNoteSmsLinks()
+            val cardFile = ThankYouCardExporter.export(context)
+            val cardUri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                cardFile
+            )
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                shareThankYouWithInspectionPdf(context, uri, phone, plainMessage, htmlMessage)
+                shareThankYouWithInspectionPdf(context, uri, phone, smsLinks, cardUri)
             }
         } catch (_: Exception) {
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -156,7 +183,7 @@ fun shareThankYouWithInspectionPdf(
     pdfUri: Uri,
     phone: String,
     message: String,
-    htmlMessage: String? = null
+    cardImageUri: Uri? = null
 ) {
     shareInspectionPdfToCustomer(
         context = context,
@@ -164,7 +191,7 @@ fun shareThankYouWithInspectionPdf(
         customerPhone = phone,
         subject = "$COMPANY_NAME — Thank you",
         message = message,
-        htmlMessage = htmlMessage
+        cardImageUri = cardImageUri
     )
 }
 

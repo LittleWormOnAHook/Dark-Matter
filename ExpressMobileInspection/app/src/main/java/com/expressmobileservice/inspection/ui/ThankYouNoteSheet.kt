@@ -53,8 +53,8 @@ import com.expressmobileservice.inspection.THANK_YOU_PDF_LABEL
 import com.expressmobileservice.inspection.THANK_YOU_PROMPT
 import com.expressmobileservice.inspection.THANK_YOU_WEBSITE_LABEL
 import com.expressmobileservice.inspection.appointmentSendReadinessError
-import com.expressmobileservice.inspection.buildThankYouNoteHtmlMessage
-import com.expressmobileservice.inspection.buildThankYouNotePlainMessage
+import com.expressmobileservice.inspection.ThankYouCardExporter
+import com.expressmobileservice.inspection.buildThankYouNoteSmsLinks
 import com.expressmobileservice.inspection.inspectionFormForThankYou
 import com.expressmobileservice.inspection.openWebLink
 import com.expressmobileservice.inspection.resolveMessagingPhone
@@ -178,8 +178,7 @@ fun ThankYouNoteSheet(
                         return@withImpact
                     }
                     isSending = true
-                    val plainMessage = buildThankYouNotePlainMessage()
-                    val htmlMessage = buildThankYouNoteHtmlMessage()
+                    val smsLinks = buildThankYouNoteSmsLinks()
                     Thread {
                         try {
                             val file = ReportExporter.exportPdf(context, form)
@@ -188,13 +187,19 @@ fun ThankYouNoteSheet(
                                 "${context.packageName}.fileprovider",
                                 file
                             )
+                            val cardFile = ThankYouCardExporter.export(context)
+                            val cardUri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                cardFile
+                            )
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
                                 shareThankYouWithInspectionPdf(
                                     context,
                                     uri,
                                     phone,
-                                    plainMessage,
-                                    htmlMessage
+                                    smsLinks,
+                                    cardUri
                                 )
                                 isSending = false
                                 onDismiss()

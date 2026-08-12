@@ -21,7 +21,7 @@ fun Appointment.resolveMessagingPhone(): String {
         ?: ""
 }
 
-/** Plain-text fallback for apps that ignore HTML MMS bodies. URLs stay linkified by the SMS app. */
+/** Full plain text when no card image is attached. */
 fun buildThankYouNotePlainMessage(): String = buildString {
     appendLine(THANK_YOU_HEADING)
     appendLine()
@@ -29,38 +29,24 @@ fun buildThankYouNotePlainMessage(): String = buildString {
     appendLine()
     appendLine(THANK_YOU_PROMPT)
     appendLine()
-    appendLine("$THANK_YOU_GOOGLE_REVIEW_LABEL: $COMPANY_GOOGLE_REVIEW_URL")
+    appendLine("Google review")
+    appendLine(COMPANY_GOOGLE_REVIEW_URL)
     appendLine()
-    appendLine("$THANK_YOU_WEBSITE_LABEL: $COMPANY_WEBSITE")
+    appendLine(THANK_YOU_WEBSITE_LABEL)
+    appendLine(COMPANY_WEBSITE)
 }.trimEnd()
 
-/**
- * HTML body for MMS — button labels are anchor links (no raw URLs shown).
- * Google Messages and many SMS apps render [text](url) style links from simple HTML anchors.
- */
-fun buildThankYouNoteHtmlMessage(): String = buildString {
-    appendLine("""<html><body style="font-family:sans-serif;color:#FFFFFF;background:#2C1432;">""")
-    appendLine(
-        """<p style="color:#FFD700;font-size:22px;font-weight:bold;text-align:center;margin:0 0 12px;">$THANK_YOU_HEADING</p>"""
-    )
-    appendLine(
-        """<p style="text-align:center;line-height:1.45;margin:0 0 10px;">$THANK_YOU_BODY</p>"""
-    )
-    appendLine(
-        """<p style="color:#BDB5D5;text-align:center;font-size:13px;margin:0 0 16px;">$THANK_YOU_PROMPT</p>"""
-    )
-    appendLine(
-        """<p style="text-align:center;margin:0 0 10px;">${
-            thankYouHtmlLinkButton(THANK_YOU_GOOGLE_REVIEW_LABEL, COMPANY_GOOGLE_REVIEW_URL)
-        }</p>"""
-    )
-    appendLine(
-        """<p style="text-align:center;margin:0;">${
-            thankYouHtmlLinkButton(THANK_YOU_WEBSITE_LABEL, COMPANY_WEBSITE)
-        }</p>"""
-    )
-    appendLine("</body></html>")
+/** Short link lines for MMS when the branded card JPEG is attached (no HTML). */
+fun buildThankYouNoteSmsLinks(): String = buildString {
+    appendLine("Google review")
+    appendLine(COMPANY_GOOGLE_REVIEW_URL)
+    appendLine()
+    appendLine(THANK_YOU_WEBSITE_LABEL)
+    appendLine(COMPANY_WEBSITE)
 }.trimEnd()
+
+/** @deprecated HTML is not supported in Google Messages. */
+fun buildThankYouNoteHtmlMessage(): String = buildThankYouNoteSmsLinks()
 
 /** @deprecated Use [buildThankYouNotePlainMessage] for plain text or pass both plain + HTML when sending. */
 fun buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
@@ -96,9 +82,6 @@ fun appointmentSendReadinessError(
     val form = formOverride ?: inspectionFormForThankYou(appointment, inspectionStore)
     return form.inspectionSendReadinessError()
 }
-
-private fun thankYouHtmlLinkButton(label: String, url: String): String =
-    """<a href="$url" style="display:inline-block;padding:12px 18px;border:1px solid #FFD700;border-radius:12px;background:#441F4D;color:#FFD700;font-weight:600;text-decoration:none;">$label</a>"""
 
 private fun extractPhoneFromText(text: String): String? {
     if (text.isBlank()) return null
