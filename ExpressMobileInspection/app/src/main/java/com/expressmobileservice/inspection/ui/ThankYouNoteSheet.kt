@@ -53,7 +53,6 @@ import com.expressmobileservice.inspection.THANK_YOU_PDF_LABEL
 import com.expressmobileservice.inspection.THANK_YOU_PROMPT
 import com.expressmobileservice.inspection.THANK_YOU_WEBSITE_LABEL
 import com.expressmobileservice.inspection.appointmentSendReadinessError
-import com.expressmobileservice.inspection.ThankYouCardExporter
 import com.expressmobileservice.inspection.inspectionFormForThankYou
 import com.expressmobileservice.inspection.openWebLink
 import com.expressmobileservice.inspection.resolveMessagingPhone
@@ -111,7 +110,7 @@ fun ThankYouNoteSheet(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Tap a link below:",
+                text = "Links in message:",
                 color = SamsungCalendarColors.muted,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center
@@ -192,14 +191,8 @@ fun ThankYouNoteSheet(
                                 "${context.packageName}.fileprovider",
                                 file
                             )
-                            val cardFile = ThankYouCardExporter.export(context)
-                            val cardUri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                cardFile
-                            )
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                shareThankYouWithInspectionPdf(context, uri, phone, cardUri)
+                                shareThankYouWithInspectionPdf(context, uri, phone, cardImageUri = null)
                                 isSending = false
                                 onDismiss()
                             }

@@ -96,6 +96,10 @@ const val COMPANY_PHONE_DISPLAY = "1-904-514-2885"
 const val COMPANY_PHONE_URI = "tel:+19045142885"
 const val COMPANY_WEBSITE = "https://www.expressmobileservice.net/"
 const val COMPANY_WEBSITE_DISPLAY = "expressmobileservice.net"
+/** Short share link (no www) for SMS — auto-linkified by Google Messages. */
+const val COMPANY_WEBSITE_SHORT = "https://expressmobileservice.net"
+/** Branded short link for reviews in SMS; opens [COMPANY_GOOGLE_REVIEW_URL]. */
+const val COMPANY_GOOGLE_REVIEW_SHORT = "https://expressmobileservice.net/review"
 /** Resolved from Google Maps lookup by business phone (904-514-2885). */
 const val COMPANY_GOOGLE_PLACE_ID = "ChIJjfqDMeTH5YgRKDs3yoZrmlg"
 const val COMPANY_GOOGLE_REVIEW_URL =

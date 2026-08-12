@@ -9,8 +9,8 @@ const val THANK_YOU_BODY =
     "Thank you for choosing $COMPANY_NAME. We appreciate you trusting us with your vehicle " +
         "today, and we hope everything is running smoothly for you."
 const val THANK_YOU_PROMPT = "When you have a moment, we'd love to hear how we did:"
-const val THANK_YOU_GOOGLE_REVIEW_LABEL = "Google review"
-const val THANK_YOU_WEBSITE_LABEL = COMPANY_WEBSITE_DISPLAY
+const val THANK_YOU_GOOGLE_REVIEW_LABEL = "Google Review"
+const val THANK_YOU_WEBSITE_LABEL = "Website"
 const val THANK_YOU_PDF_LABEL = "Inspection PDF attached"
 
 fun Appointment.resolveMessagingPhone(): String {
@@ -31,19 +31,18 @@ fun buildThankYouNotePlainMessage(): String = buildString {
 }.trimEnd()
 
 /**
- * Tappable link lines placed below the thank-you card image in Google Messages.
- * URLs are auto-linkified — no HTML.
+ * MMS text body: thank-you message first, then compact named links (URL on same line — tappable).
+ * SMS/RCS cannot hide URLs behind custom link text without HTML (unsupported in Google Messages).
  */
 fun buildThankYouNoteSmsLinks(): String = buildString {
-    appendLine("Tap a link below:")
+    appendLine(THANK_YOU_HEADING)
     appendLine()
-    appendLine("Google review")
-    appendLine(COMPANY_GOOGLE_REVIEW_URL)
+    appendLine(THANK_YOU_BODY)
     appendLine()
-    appendLine(THANK_YOU_WEBSITE_LABEL)
-    appendLine(COMPANY_WEBSITE)
+    appendLine(THANK_YOU_PROMPT)
     appendLine()
-    appendLine("Inspection PDF — open the attached file")
+    appendLine("$THANK_YOU_GOOGLE_REVIEW_LABEL $COMPANY_GOOGLE_REVIEW_SHORT")
+    appendLine("$THANK_YOU_WEBSITE_LABEL $COMPANY_WEBSITE_SHORT")
 }.trimEnd()
 
 fun Appointment.buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()

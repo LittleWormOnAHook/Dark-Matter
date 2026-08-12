@@ -171,14 +171,8 @@ fun sendThankYouNote(
                 "${context.packageName}.fileprovider",
                 pdfFile
             )
-            val cardFile = ThankYouCardExporter.export(context)
-            val cardUri = androidx.core.content.FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                cardFile
-            )
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                shareThankYouWithInspectionPdf(context, pdfUri, phone, cardUri)
+                shareThankYouWithInspectionPdf(context, pdfUri, phone, cardImageUri = null)
             }
         } catch (_: Exception) {
             android.os.Handler(android.os.Looper.getMainLooper()).post {
