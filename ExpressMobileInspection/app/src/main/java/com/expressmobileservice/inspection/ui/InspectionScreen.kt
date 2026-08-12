@@ -219,6 +219,10 @@ fun InspectionScreen(
             onShareError("Enter the customer name before sending the report.")
             return
         }
+        if (customerPhone.isBlank()) {
+            onShareError("Enter the customer phone before sending the report.")
+            return
+        }
         isGenerating = true
         onShareReport(currentState(), type) { success ->
             isGenerating = false
@@ -231,6 +235,10 @@ fun InspectionScreen(
     fun beginComplete(type: ReportShareType) {
         if (customerName.isBlank()) {
             onShareError("Enter the customer name before sending the report.")
+            return
+        }
+        if (customerPhone.isBlank()) {
+            onShareError("Enter the customer phone before sending the report.")
             return
         }
         val unchecked = allItems.count { it.status == InspectionStatus.NONE }

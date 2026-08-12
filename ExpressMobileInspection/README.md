@@ -24,8 +24,8 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 - **19 essential inspection items** in 4 sections
 - Per line: tap **Good / Bad / Replace** and optional notes
 - Progress bar shows how many items are checked
-- **Send as PDF** — formatted document for email
-- **Send as Image (JPEG)** — snapshot for text messaging
+- **Send as PDF** — opens **Google Messages** to the customer phone on the inspection sheet (MMS when supported)
+- **Send as Image (JPEG)** — same Messages flow with a JPEG snapshot
 - **Clear Form** resets everything
 
 ### Home screen
@@ -43,12 +43,12 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Shareable install link (v2.2.2) — send this to anyone
+### Shareable install link (v2.2.3) — send this to anyone
 
-**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.2/ExpressMobileInspection.apk)**
+**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.3/ExpressMobileInspection.apk)**
 
 ```
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.2/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.3/ExpressMobileInspection.apk
 ```
 
 All app releases: [GitHub Releases (express-inspection)](https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection)
