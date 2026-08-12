@@ -41,8 +41,11 @@ fun buildThankYouNoteSmsLinks(): String = buildString {
     appendLine()
     appendLine(THANK_YOU_PROMPT)
     appendLine()
-    appendLine("$THANK_YOU_GOOGLE_REVIEW_LABEL $COMPANY_GOOGLE_REVIEW_SHORT")
-    appendLine("$THANK_YOU_WEBSITE_LABEL $COMPANY_WEBSITE_SHORT")
+    appendLine(THANK_YOU_GOOGLE_REVIEW_LABEL)
+    appendLine(COMPANY_GOOGLE_REVIEW_URL)
+    appendLine()
+    appendLine(THANK_YOU_WEBSITE_LABEL)
+    appendLine(COMPANY_WEBSITE.trimEnd('/'))
 }.trimEnd()
 
 fun Appointment.buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
