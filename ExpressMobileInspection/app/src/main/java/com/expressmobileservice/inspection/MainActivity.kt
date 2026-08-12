@@ -163,8 +163,7 @@ class MainActivity : ComponentActivity() {
                             shareThankYouWithInspectionPdf(
                                 this,
                                 uri,
-                                state.customerInfo.customerPhone,
-                                cardImageUri = null
+                                state.customerInfo.customerPhone
                             )
                         }
                         ReportShareType.IMAGE -> {

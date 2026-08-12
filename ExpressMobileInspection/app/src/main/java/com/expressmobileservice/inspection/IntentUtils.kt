@@ -30,14 +30,14 @@ fun openWebLink(context: Context, url: String) {
 }
 
 /**
- * Opens Google Messages with the thank-you card image, plain tappable links, and inspection PDF.
+ * Opens Google Messages with thank-you text first, then the inspection PDF attached.
+ * No card image — Google Messages shows the text bubble above attachments.
  */
 fun shareThankYouWithInspectionPdf(
     context: Context,
     pdfUri: Uri,
     phone: String,
-    cardImageUri: Uri?,
-    linkMessage: String = buildThankYouNoteSmsLinks()
+    message: String = buildThankYouNoteSmsMessage()
 ) {
     val digits = normalizePhoneDigits(phone)
     if (digits.isBlank()) {
@@ -46,65 +46,27 @@ fun shareThankYouWithInspectionPdf(
     }
 
     val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
-    val attachments = buildList {
-        cardImageUri?.let { add(it) }
-        add(pdfUri)
-    }
-
-    fun grantReadPermissions(intent: Intent) {
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        smsPackage?.let { pkg ->
-            attachments.forEach { uri ->
-                context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-        }
-    }
-
-    fun buildClipData(): ClipData {
-        val clip = ClipData.newUri(context.contentResolver, "Thank you card", attachments.first())
-        attachments.drop(1).forEach { uri ->
-            clip.addItem(ClipData.Item(uri))
-        }
-        return clip
-    }
-
-    if (attachments.size > 1) {
-        val multiIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-            type = "*/*"
-            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(attachments))
-            clipData = buildClipData()
-            putExtra("address", digits)
-            putExtra("sms_body", linkMessage)
-            putExtra(Intent.EXTRA_TEXT, linkMessage)
-        }
-        grantReadPermissions(multiIntent)
-        smsPackage?.let { multiIntent.setPackage(it) }
-        if (multiIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(multiIntent)
-            return
-        }
-        multiIntent.setPackage(null)
-        if (multiIntent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(multiIntent)
-            return
-        }
-    }
-
     val pdfIntent = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
         putExtra(Intent.EXTRA_STREAM, pdfUri)
         clipData = ClipData.newUri(context.contentResolver, "Inspection PDF", pdfUri)
         putExtra("address", digits)
-        putExtra("sms_body", linkMessage)
-        putExtra(Intent.EXTRA_TEXT, linkMessage)
+        putExtra("sms_body", message)
+        putExtra(Intent.EXTRA_TEXT, message)
         putExtra(Intent.EXTRA_SUBJECT, "$COMPANY_NAME — Thank you")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    grantReadPermissions(pdfIntent)
-    smsPackage?.let { pdfIntent.setPackage(it) }
+
+    smsPackage?.let { pkg ->
+        context.grantUriPermission(pkg, pdfUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        pdfIntent.setPackage(pkg)
+    }
+
     if (pdfIntent.resolveActivity(context.packageManager) != null) {
         context.startActivity(pdfIntent)
         return
     }
+
     pdfIntent.setPackage(null)
     if (pdfIntent.resolveActivity(context.packageManager) != null) {
         context.startActivity(pdfIntent)
@@ -113,7 +75,7 @@ fun shareThankYouWithInspectionPdf(
     }
 }
 
-/** @deprecated Use [shareThankYouWithInspectionPdf] — HTML/text bodies are not used for thank-you MMS. */
+/** @deprecated Use [shareThankYouWithInspectionPdf]. */
 fun shareInspectionPdfToCustomer(
     context: Context,
     pdfUri: Uri,
@@ -122,7 +84,7 @@ fun shareInspectionPdfToCustomer(
     message: String,
     cardImageUri: Uri? = null
 ) {
-    shareThankYouWithInspectionPdf(context, pdfUri, customerPhone, cardImageUri)
+    shareThankYouWithInspectionPdf(context, pdfUri, customerPhone, message)
 }
 
 fun messagePhone(context: Context, phone: String, body: String = "") {
@@ -172,7 +134,7 @@ fun sendThankYouNote(
                 pdfFile
             )
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                shareThankYouWithInspectionPdf(context, pdfUri, phone, cardImageUri = null)
+                shareThankYouWithInspectionPdf(context, pdfUri, phone)
             }
         } catch (_: Exception) {
             android.os.Handler(android.os.Looper.getMainLooper()).post {

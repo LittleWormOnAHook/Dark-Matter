@@ -192,7 +192,7 @@ fun ThankYouNoteSheet(
                                 file
                             )
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                shareThankYouWithInspectionPdf(context, uri, phone, cardImageUri = null)
+                                shareThankYouWithInspectionPdf(context, uri, phone)
                                 isSending = false
                                 onDismiss()
                             }

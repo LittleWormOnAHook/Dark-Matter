@@ -31,10 +31,9 @@ fun buildThankYouNotePlainMessage(): String = buildString {
 }.trimEnd()
 
 /**
- * MMS text body: thank-you message first, then compact named links (URL on same line — tappable).
- * SMS/RCS cannot hide URLs behind custom link text without HTML (unsupported in Google Messages).
+ * Full MMS text: thank-you message first, then tappable link lines, then PDF is attached separately.
  */
-fun buildThankYouNoteSmsLinks(): String = buildString {
+fun buildThankYouNoteSmsMessage(): String = buildString {
     appendLine(THANK_YOU_HEADING)
     appendLine()
     appendLine(THANK_YOU_BODY)
@@ -47,6 +46,9 @@ fun buildThankYouNoteSmsLinks(): String = buildString {
     appendLine(THANK_YOU_WEBSITE_LABEL)
     appendLine(COMPANY_WEBSITE.trimEnd('/'))
 }.trimEnd()
+
+/** @deprecated Use [buildThankYouNoteSmsMessage]. */
+fun buildThankYouNoteSmsLinks(): String = buildThankYouNoteSmsMessage()
 
 fun Appointment.buildThankYouNoteMessage(): String = buildThankYouNotePlainMessage()
 
