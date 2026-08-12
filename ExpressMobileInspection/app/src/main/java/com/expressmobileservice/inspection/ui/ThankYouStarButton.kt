@@ -13,10 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
-private val ThankYouGold = Color(0xFFD4A017)
+import com.expressmobileservice.inspection.ui.theme.SamsungCalendarColors
 
 @Composable
 fun ThankYouStarButton(
@@ -28,15 +26,15 @@ fun ThankYouStarButton(
         modifier = modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(ThankYouGold.copy(alpha = 0.18f))
-            .border(1.dp, ThankYouGold.copy(alpha = 0.85f), CircleShape)
+            .background(SamsungCalendarColors.accentPurple)
+            .border(1.5.dp, SamsungCalendarColors.green, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Default.Star,
             contentDescription = contentDescription,
-            tint = ThankYouGold,
+            tint = SamsungCalendarColors.green,
             modifier = Modifier.size(22.dp)
         )
     }

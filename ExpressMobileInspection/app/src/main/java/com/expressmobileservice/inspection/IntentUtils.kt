@@ -96,7 +96,11 @@ fun messagePhone(context: Context, phone: String, body: String = "") {
     }
 }
 
-fun sendThankYouNote(context: Context, appointment: Appointment) {
+fun sendThankYouNote(
+    context: Context,
+    appointment: Appointment,
+    inspectionStore: InspectionStore
+) {
     val phone = appointment.resolveMessagingPhone()
     if (phone.isBlank()) {
         Toast.makeText(
@@ -106,7 +110,44 @@ fun sendThankYouNote(context: Context, appointment: Appointment) {
         ).show()
         return
     }
-    messagePhone(context, phone, appointment.buildThankYouNoteMessage())
+    Thread {
+        try {
+            val form = inspectionFormForThankYou(appointment, inspectionStore)
+            val file = ReportExporter.exportPdf(context, form)
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val message = buildThankYouNoteMessage()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                shareThankYouWithInspectionPdf(context, uri, phone, message)
+            }
+        } catch (_: Exception) {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Toast.makeText(
+                    context,
+                    "Could not attach inspection PDF. Please try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }.start()
+}
+
+fun shareThankYouWithInspectionPdf(
+    context: Context,
+    pdfUri: Uri,
+    phone: String,
+    message: String
+) {
+    shareInspectionPdfToCustomer(
+        context = context,
+        pdfUri = pdfUri,
+        customerPhone = phone,
+        subject = "$COMPANY_NAME — Thank you",
+        message = message
+    )
 }
 
 fun openWaze(context: Context, address: String) {

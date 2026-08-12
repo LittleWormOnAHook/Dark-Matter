@@ -73,7 +73,9 @@ import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.CustomerRecord
 import com.expressmobileservice.inspection.distinctCustomerRecords
 import com.expressmobileservice.inspection.searchCustomers
-import com.expressmobileservice.inspection.sendThankYouNote
+import android.widget.Toast
+import com.expressmobileservice.inspection.appointmentSendReadinessError
+import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.autofillLabel
 import com.expressmobileservice.inspection.autofillSuggestions
@@ -105,6 +107,7 @@ private enum class PickerTarget {
 @Composable
 fun AppointmentEditorScreen(
     appointmentStore: AppointmentStore,
+    inspectionStore: InspectionStore,
     initial: Appointment?,
     defaultDate: LocalDate,
     prefilledJobNotes: String? = null,
@@ -145,6 +148,7 @@ fun AppointmentEditorScreen(
     var endMillis by remember { mutableStateOf(defaultEnd) }
     var showPicker by remember { mutableStateOf<PickerTarget?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    var showThankYouSheet by remember { mutableStateOf(false) }
     val copyToClipboard = rememberCopyHandler()
 
     val customerRecords = remember(appointmentStore) {
@@ -264,6 +268,32 @@ fun AppointmentEditorScreen(
                 } else endMillis,
                 allDay = allDay
             )
+        )
+    }
+
+    fun draftAppointment() = Appointment(
+        id = initial?.id.orEmpty(),
+        inspectionId = initial?.inspectionId.orEmpty(),
+        customerName = customerName,
+        customerPhone = customerPhone,
+        jobNotes = jobNotes,
+        address = address,
+        vehicleCategory = vehicleCategory.name,
+        vehicleYear = vehicleYear,
+        vehicleMake = vehicleMake,
+        vehicleModel = vehicleModel,
+        engineSize = engineSize,
+        mileage = mileage,
+        startEpochMillis = startMillis,
+        endEpochMillis = endMillis,
+        allDay = allDay
+    )
+
+    if (showThankYouSheet) {
+        ThankYouNoteSheet(
+            appointment = draftAppointment(),
+            inspectionStore = inspectionStore,
+            onDismiss = { showThankYouSheet = false }
         )
     }
 
@@ -625,14 +655,15 @@ fun AppointmentEditorScreen(
             ) {
                 ThankYouStarButton(
                     onClick = ExpressUiSounds.withImpact {
-                        sendThankYouNote(
-                            context,
-                            Appointment(
-                                customerName = customerName,
-                                customerPhone = customerPhone,
-                                jobNotes = jobNotes
-                            )
+                        val error = appointmentSendReadinessError(
+                            draftAppointment(),
+                            inspectionStore
                         )
+                        if (error != null) {
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            showThankYouSheet = true
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.width(12.dp))
