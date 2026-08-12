@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -83,6 +84,7 @@ import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.daysInMonthGrid
 import com.expressmobileservice.inspection.openWaze
+import com.expressmobileservice.inspection.sendThankYouNote
 import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.weekDayColumnLabels
 import com.expressmobileservice.inspection.weekDaysContaining
@@ -228,21 +230,40 @@ fun AppointmentsScreen(
             confirmButton = {
                 TextButton(
                     onClick = ExpressUiSounds.withImpact {
-                        copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                        sendThankYouNote(context, apt)
                         agendaActionTarget = null
                     }
                 ) {
-                    Text("Copy text", color = SamsungCalendarColors.green)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFD4A017),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Thank you note", color = Color(0xFFD4A017))
+                    }
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = ExpressUiSounds.withImpact {
-                        agendaActionTarget = null
-                        appointmentToDelete = apt
+                Row {
+                    TextButton(
+                        onClick = ExpressUiSounds.withImpact {
+                            copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                            agendaActionTarget = null
+                        }
+                    ) {
+                        Text("Copy text", color = SamsungCalendarColors.green)
                     }
-                ) {
-                    Text("Delete")
+                    TextButton(
+                        onClick = ExpressUiSounds.withImpact {
+                            agendaActionTarget = null
+                            appointmentToDelete = apt
+                        }
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         )
@@ -927,6 +948,7 @@ private fun SamsungAgendaRow(
     onNavigate: () -> Unit,
     onOpenInspection: () -> Unit
 ) {
+    val context = LocalContext.current
     val showInsp = appointment.hasSavedInspection(inspectionStore)
     Row(
         modifier = Modifier
@@ -990,6 +1012,12 @@ private fun SamsungAgendaRow(
                 )
             }
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        ThankYouStarButton(
+            onClick = ExpressUiSounds.withImpact {
+                sendThankYouNote(context, appointment)
+            }
+        )
         if (showInsp) {
             Spacer(modifier = Modifier.width(8.dp))
             InspBadgeButton(onClick = onOpenInspection)

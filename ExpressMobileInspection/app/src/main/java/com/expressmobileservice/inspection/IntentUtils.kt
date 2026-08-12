@@ -73,6 +73,42 @@ fun shareInspectionPdfToCustomer(
     }
 }
 
+fun messagePhone(context: Context, phone: String, body: String = "") {
+    val digits = normalizePhoneDigits(phone)
+    if (digits.isBlank()) {
+        Toast.makeText(context, "No phone number on this appointment.", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$digits")).apply {
+        if (body.isNotBlank()) {
+            putExtra("sms_body", body)
+            putExtra(Intent.EXTRA_TEXT, body)
+        }
+    }
+    val smsPackage = Telephony.Sms.getDefaultSmsPackage(context)
+    if (smsPackage != null) {
+        intent.setPackage(smsPackage)
+    }
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    } else {
+        Toast.makeText(context, "No messaging app found.", Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun sendThankYouNote(context: Context, appointment: Appointment) {
+    val phone = appointment.resolveMessagingPhone()
+    if (phone.isBlank()) {
+        Toast.makeText(
+            context,
+            "Add a customer phone (or phone in the job description) to send a thank you note.",
+            Toast.LENGTH_LONG
+        ).show()
+        return
+    }
+    messagePhone(context, phone, appointment.buildThankYouNoteMessage())
+}
+
 fun openWaze(context: Context, address: String) {
     if (address.isBlank()) {
         Toast.makeText(context, "No address on this appointment.", Toast.LENGTH_SHORT).show()
