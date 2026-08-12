@@ -2,7 +2,7 @@
 
 **Share this link** — opens the download on any phone:
 
-## Download (v2.4.9)
+## Download (v2.5.0)
 
 **https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.0/ExpressMobileInspection.apk**
 
