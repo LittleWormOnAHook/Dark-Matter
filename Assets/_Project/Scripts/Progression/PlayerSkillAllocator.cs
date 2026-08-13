@@ -20,7 +20,7 @@ namespace Project.Progression
                 return false;
             }
 
-            if (progression.GetSkillRank(skill.ResolvedId) >= skill.maxRank)
+            if (progression.GetSkillRank(skill.ResolvedId) >= skill.ClampedMaxRank)
             {
                 error = "Max rank reached.";
                 return false;
@@ -64,7 +64,7 @@ namespace Project.Progression
 
             int currentRank = progression.GetSkillRank(skill.ResolvedId);
             int cost = skill.GetCostForNextRank(currentRank);
-            return progression.TrySpendSkillPoint(skill.ResolvedId, cost, skill.maxRank, out error);
+            return progression.TrySpendSkillPoint(skill.ResolvedId, cost, skill.ClampedMaxRank, out error);
         }
 
         public static int GetMiningRank()

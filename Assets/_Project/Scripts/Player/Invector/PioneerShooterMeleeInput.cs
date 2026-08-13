@@ -27,6 +27,7 @@ namespace Project.Player.Invector
 
         private PioneerInvectorInputBridge _inputBridge;
         private EquipmentController _equipment;
+        private PlayerController _playerController;
         private bool _miningScanAimHold;
 
         protected override void Start()
@@ -34,6 +35,7 @@ namespace Project.Player.Invector
             base.Start();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
             _equipment = GetComponent<EquipmentController>();
+            _playerController = GetComponent<PlayerController>();
             SyncPioneerCursorState();
         }
 
@@ -120,28 +122,26 @@ namespace Project.Player.Invector
 
         public override void ReloadInput()
         {
-            if (!shooterManager || CurrentActiveWeapon == null || isReloading || cc.customAction || shooterManager.isShooting || cc.ragdolled)
+            if (cc == null || cc.customAction || cc.ragdolled)
                 return;
 
-            PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
+            if (_inputBridge != null && _inputBridge.ShouldLockGameplayInput())
+                return;
 
-            if (reloadInput.GetButtonDown())
+            // WeaponModeSwitchController owns R tap/hold via Input System Update.
+            // Keep auto-reload only here; do not fire GenericInput R (legacy Input).
+            WeaponModeSwitchController modeSwitch = GetComponent<WeaponModeSwitchController>();
+
+            if (!shooterManager || CurrentActiveWeapon == null || isReloading || shooterManager.isShooting)
+                return;
+
+            if (modeSwitch == null && reloadInput.GetButtonDown())
             {
-                shootCountA = 0;
-                _aimTiming = 0f;
-
-                // Invector ReloadWeapon always proceeds while isInfinityAmmo is set — gate on Pioneer
-                // reserve ammo first, and play empty-deny SFX/head-shake instead of reload anim.
-                if (ammoBridge != null)
-                {
-                    if (ammoBridge.TryRequestReload(playEmptyDenyFeedback: true))
-                        shooterManager.ReloadWeapon();
-                    return;
-                }
-
-                shooterManager.ReloadWeapon();
+                PerformManualReload();
                 return;
             }
+
+            PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
 
             if (CurrentActiveWeapon.autoReload && !shooterManager.WeaponHasLoadedAmmo())
             {
@@ -169,9 +169,50 @@ namespace Project.Player.Invector
             }
         }
 
+        /// <summary>
+        /// Called by WeaponModeSwitchController on a quick R tap (&lt;0.2s).
+        /// Works even when lockShooterInput skipped Invector ReloadInput this frame.
+        /// Does not use UI-pointer soft-lock (hotbar hover must not eat R).
+        /// </summary>
+        public void RequestManualReloadFromModeSwitch()
+        {
+            if (cc == null || cc.customAction || cc.ragdolled)
+                return;
+
+            PlayerController pc = GetComponent<PlayerController>();
+            if (pc != null && (pc.BlocksCombatInput || pc.IsGameplayPaused))
+                return;
+
+            if (!shooterManager || CurrentActiveWeapon == null || isReloading || shooterManager.isShooting)
+                return;
+
+            PerformManualReload();
+        }
+
+        private void PerformManualReload()
+        {
+            shootCountA = 0;
+            _aimTiming = 0f;
+
+            PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
+
+            // Invector ReloadWeapon always proceeds while isInfinityAmmo is set — gate on Pioneer
+            // reserve ammo first, and play empty-deny SFX/head-shake instead of reload anim.
+            if (ammoBridge != null)
+            {
+                if (ammoBridge.TryRequestReload(playEmptyDenyFeedback: true))
+                    shooterManager.ReloadWeapon();
+                return;
+            }
+
+            shooterManager.ReloadWeapon();
+        }
+
         private void SyncPioneerCursorState()
         {
-            GetComponent<PlayerController>()?.ApplyCursorState();
+            if (_playerController == null)
+                _playerController = GetComponent<PlayerController>();
+            _playerController?.ApplyCursorState();
         }
 
         /// <summary>
@@ -187,7 +228,17 @@ namespace Project.Player.Invector
             SyncPioneerCursorState();
         }
 
-        public bool IsAimingActive => isAimingByInput || IsAiming;
+        public bool IsAimingActive
+        {
+            get
+            {
+                // Guard before base IsAiming — it reads cc.isRolling and NRE's during early Awake.
+                if (cc == null || shooterManager == null)
+                    return isAimingByInput;
+
+                return isAimingByInput || IsAiming;
+            }
+        }
 
         public override void MoveInput()
         {

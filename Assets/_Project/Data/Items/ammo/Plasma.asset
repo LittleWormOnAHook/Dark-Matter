@@ -86,7 +86,7 @@ MonoBehaviour:
   splashRadius: 0
   splashDamageFalloff: 0.25
   muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
-  tracerPrefab: {fileID: 1699459221867030, guid: 281aabf73dcc5844faf849b3dc30c1aa, type: 3}
+  tracerPrefab: {fileID: 4187284465382147618, guid: 78530f692d803864c8ab165b49aabed2, type: 3}
   impactVfxPrefab: {fileID: 1065618375357958, guid: 6f8068e2c99ffb04b932ec74e5773db5, type: 3}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0

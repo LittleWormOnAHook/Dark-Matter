@@ -20,8 +20,19 @@ namespace Project.UI
 
         public static void FinalizeGameplayInput()
         {
-            if (!GameSession.HasStarted || Time.timeScale <= 0f)
+            if (!GameSession.HasStarted)
                 return;
+
+            // Inventory (and other menu reasons) may leave timeScale at 0/0.2 — clear our holds,
+            // but never stomp a hard main-menu / boot pause.
+            GameplayMenuTime.ClearAll();
+
+            PlayerController player = PlayerLocator.FindPlayerController();
+            if (player != null && player.IsGameplayPaused)
+                return;
+
+            if (Time.timeScale <= 0f)
+                Time.timeScale = 1f;
 
             PlayerInput playerInput = Object.FindAnyObjectByType<PlayerInput>();
             if (playerInput != null)
@@ -30,7 +41,6 @@ namespace Project.UI
                 playerInput.ActivateInput();
             }
 
-            PlayerController player = PlayerLocator.FindPlayerController();
             player?.EnsureGameplayInputReady();
 
             // Fallback for startup order: if the player was not found this frame, still put
@@ -55,6 +65,7 @@ namespace Project.UI
             return EnemyLootDialogUI.IsDialogOpen ||
                    QuestGiverDialogUI.IsDialogOpen ||
                    BuildingControlPanelUI.IsOpen ||
+                   WeaponModeSwitchMenuUI.IsOpen ||
                    CraftingUI.IsAnyStandaloneOpen;
         }
 
@@ -79,6 +90,7 @@ namespace Project.UI
             PetUI.CloseAnyOpenPet();
             QuestGiverDialogUI.CloseAnyOpenQuestDialog();
             BuildingControlPanelUI.CloseAnyOpenBuildingControl();
+            WeaponModeSwitchMenuUI.HideAny();
             CraftingUI.CloseAnyOpenStandalone();
             Object.FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
         }

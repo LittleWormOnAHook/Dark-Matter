@@ -123,7 +123,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            // C opens the Blueprints library (pending + learned). Production crafting is station-only.
+            // C also opens Blueprints; primary shortcut is B. Production crafting is station-only.
             GetJournalPanel()?.OpenToBlueprintsTab();
         }
 

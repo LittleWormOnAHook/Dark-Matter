@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
   skillId: skill_marksman_training
   displayName: Marksman Training
-  description: +2 ranged damage per rank for all ranged weapons.
+  description: +2 ranged damage per rank for rifles and long guns.
+  treeCategory: 2
+  treeColumn: 0
+  treeRow: 0
   requiredPlayerLevel: 2
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 7
   bonusPercentPerRank: 2
   prerequisiteSkillIds: []
+  costPerTargetRank: 

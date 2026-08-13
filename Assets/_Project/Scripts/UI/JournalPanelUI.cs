@@ -275,6 +275,7 @@ namespace Project.UI
       if (camera != null)
         camera.SetJournalOpen(false);
 
+      GameplayMenuTime.SyncJournal(false, null);
       GameplayInputRecovery.FinalizeGameplayInput();
     }
 

@@ -197,11 +197,6 @@ namespace Project.UI
             return null;
         }
 
-        private void NotifyActiveWindowChanged()
-        {
-            OnActiveWindowChanged?.Invoke(CurrentWindow);
-        }
-
         private void NotifyPauseChanged(bool paused)
         {
             OnPauseGameplayChanged?.Invoke(paused);
@@ -213,6 +208,8 @@ namespace Project.UI
             CameraController camera = FindAnyObjectByType<CameraController>();
             if (camera != null)
                 camera.SetJournalOpen(paused);
+
+            GameplayMenuTime.SyncJournal(paused, paused ? CurrentWindow : null);
 
             // Only lock the cursor when no other fullscreen / blocking UI still wants it free.
             bool keepCursorFree = paused
@@ -226,6 +223,14 @@ namespace Project.UI
 
             Cursor.lockState = keepCursorFree ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = keepCursorFree;
+        }
+
+        private void NotifyActiveWindowChanged()
+        {
+            OnActiveWindowChanged?.Invoke(CurrentWindow);
+
+            if (IsAnyOpen)
+                GameplayMenuTime.SyncJournal(true, CurrentWindow);
         }
     }
 }

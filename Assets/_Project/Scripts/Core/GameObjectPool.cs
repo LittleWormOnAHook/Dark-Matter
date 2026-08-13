@@ -57,6 +57,10 @@ namespace Project.Core
             if (instance == null)
                 return;
 
+            // Avoid double-pushing the same instance into the inactive stack.
+            if (!instance.activeSelf && instance.transform.parent == poolRoot)
+                return;
+
             if (instance.TryGetComponent(out IPoolable poolable))
                 poolable.OnReturnedToPool();
 

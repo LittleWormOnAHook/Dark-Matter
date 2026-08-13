@@ -15,9 +15,14 @@ MonoBehaviour:
   skillId: skill_artisan_focus
   displayName: Artisan Focus
   description: Earn more crafting XP.
+  treeCategory: 3
+  treeColumn: 0
+  treeRow: 1
   requiredPlayerLevel: 3
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 5
   bonusPercentPerRank: 8
-  prerequisiteSkillIds: []
+  prerequisiteSkillIds:
+  - skill_gather_efficiency
+  costPerTargetRank: 

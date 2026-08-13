@@ -53,6 +53,7 @@ namespace Project.UI
         private InventorySystem inventorySystem;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
+        private WeaponAmmoState ammoState;
         private List<InventorySlotUI> allSlots = new List<InventorySlotUI>();
 
         private Transform inventoryPanelOriginalParent;
@@ -81,6 +82,9 @@ namespace Project.UI
             equipmentController = inventorySystem != null
                 ? inventorySystem.GetComponent<EquipmentController>()
                 : FindAnyObjectByType<EquipmentController>();
+            ammoState = inventorySystem != null
+                ? inventorySystem.GetComponent<WeaponAmmoState>()
+                : FindAnyObjectByType<WeaponAmmoState>();
 
             if (inventorySystem != null)
             {
@@ -115,6 +119,9 @@ namespace Project.UI
 
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged += RefreshUI;
+
+            if (ammoState != null)
+                ammoState.OnAmmoChanged += RefreshHotbarAmmoIcons;
 
             if (equipmentController != null)
             {
@@ -460,6 +467,9 @@ namespace Project.UI
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged -= RefreshUI;
 
+            if (ammoState != null)
+                ammoState.OnAmmoChanged -= RefreshHotbarAmmoIcons;
+
             if (equipmentController != null)
             {
                 equipmentController.OnSelectedHotbarChanged -= HandleSelectedHotbarChanged;
@@ -505,6 +515,7 @@ namespace Project.UI
                         slotUI.Initialize(inventorySystem);
                         slotUI.SetEquipmentController(equipmentController);
                         slotUI.SetItemActions(itemActions);
+                        slotUI.SetAmmoState(ammoState);
                         slotUI.ApplyHudSlotMetrics(HotbarSlotSize);
                         slotUI.SetLocked(!inventorySystem.IsMainSlotUnlocked(i));
                         allSlots.Add(slotUI);
@@ -675,6 +686,7 @@ namespace Project.UI
             slotUI.Initialize(inventorySystem);
             slotUI.SetEquipmentController(equipmentController);
             slotUI.SetItemActions(itemActions);
+            slotUI.SetAmmoState(ammoState);
             slotUI.ApplyHudSlotMetrics(HotbarSlotSize);
             slotUI.SetHudAmountPresentation(plainAmountText: true);
             allSlots.Add(slotUI);
@@ -827,7 +839,22 @@ namespace Project.UI
                 }
             }
 
+            RefreshHotbarAmmoIcons();
             FindAnyObjectByType<ToolBarUI>()?.RefreshUI();
+        }
+
+        private void RefreshHotbarAmmoIcons()
+        {
+            for (int i = 0; i < allSlots.Count; i++)
+            {
+                if (allSlots[i] == null)
+                    continue;
+
+                if (inventorySystem != null && !inventorySystem.IsHotbarIndex(allSlots[i].slotIndex))
+                    continue;
+
+                allSlots[i].RefreshAmmoTypeIcon();
+            }
         }
 
         public void RebuildSlotsIfNeeded()

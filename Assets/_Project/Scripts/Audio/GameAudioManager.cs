@@ -307,6 +307,21 @@ namespace Project.Audio
             PlayClip3D(clip, position, layer.volume, pitch, layer.spatialBlend);
         }
 
+        /// <summary>Pooled 3D one-shot for weapon fire / world SFX (avoids PlayClipAtPoint allocs).</summary>
+        public static void PlayWorldSfx(AudioClip clip, Vector3 position, float volumeScale = 1f)
+        {
+            if (clip == null)
+                return;
+
+            if (Instance != null)
+            {
+                Instance.PlayClip3D(clip, position, volumeScale, Random.Range(0.97f, 1.03f));
+                return;
+            }
+
+            AudioSource.PlayClipAtPoint(clip, position, Mathf.Clamp01(volumeScale));
+        }
+
         private void PlayCombatClip(AudioClip clip, Vector3 position, float volumeScale)
         {
             if (clip == null || profile == null)

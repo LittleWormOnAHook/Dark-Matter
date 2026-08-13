@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Survival Rifle
   icon: {fileID: 21300000, guid: f6cfffab8b48ab1498161d83bea40058, type: 3}
   worldPrefab: {fileID: 9115999198717219269, guid: 1687c103af3d73b4f9728aee53ed763f, type: 3}
-  maxStack: 10
+  maxStack: 1
   stableItemId: ff985dce-c001-4934-afb5-9f49cd86d06f
   itemType: 3
   deployedPrefab: {fileID: 0}
@@ -50,7 +50,7 @@ MonoBehaviour:
   rangedDamage: 18
   rangedDamageRandomRange: 4
   rangedRange: 55
-  projectileSpeed: 140
+  projectileSpeed: 220
   projectileSpreadDegrees: 0.9
   weaponAccuracy: 82
   closeRangeFullAccuracyDistance: 12
@@ -59,7 +59,7 @@ MonoBehaviour:
   recoilHorizontal: 0.2
   recoilFireRateScale: 4.5
   fireRate: 5.5
-  magazineSize: 30
+  magazineSize: 50
   reloadTimeSeconds: 2.2
   defaultAmmoType: 0
   compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
@@ -82,7 +82,7 @@ MonoBehaviour:
   ammoPerPickup: 0
   ammoPickupGrant: 0
   isHitscanBeam: 0
-  projectileGravityScale: 0
+  projectileGravityScale: 0.35
   splashRadius: 0
   splashDamageFalloff: 0.25
   muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}

@@ -112,6 +112,8 @@ namespace Project.UI
             QuestGiverDialogUI.EnsureExists(transform);
             ActiveQuestHudUI.EnsureExists(transform);
             HotbarXpHud.EnsureExists(transform);
+            EngagedEnemyHealthHud.EnsureExists(transform);
+            WeaponModeSwitchMenuUI.EnsureExists(transform);
             UiFrontLayer.Get(transform);
         }
 

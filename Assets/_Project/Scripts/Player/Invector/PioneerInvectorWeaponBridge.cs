@@ -42,6 +42,8 @@ namespace Project.Player.Invector
             public ItemData item;
             public GameObject drawnInstance;
             public GameObject holsteredInstance;
+
+            [NonSerialized] public Transform cachedMuzzle;
         }
 
         [Header("Default Invector Prefabs")]
@@ -747,7 +749,10 @@ namespace Project.Player.Invector
             }
 
             if (slot.drawnInstance == null)
+            {
                 slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", item);
+                slot.cachedMuzzle = null;
+            }
             if (slot.holsteredInstance == null)
                 slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", item);
 
@@ -773,6 +778,14 @@ namespace Project.Player.Invector
 
             if (!slot.drawnInstance.activeInHierarchy)
                 return false;
+
+            if (slot.cachedMuzzle != null &&
+                slot.cachedMuzzle &&
+                slot.cachedMuzzle.IsChildOf(slot.drawnInstance.transform))
+            {
+                muzzle = slot.cachedMuzzle;
+                return true;
+            }
 
             Transform[] children = slot.drawnInstance.GetComponentsInChildren<Transform>(true);
 
@@ -804,6 +817,7 @@ namespace Project.Player.Invector
                 if (laser != null && laser.GetComponent<LineRenderer>() != null)
                 {
                     muzzle = t;
+                    slot.cachedMuzzle = muzzle;
                     return true;
                 }
             }
@@ -819,6 +833,7 @@ namespace Project.Player.Invector
                     t.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
                 {
                     muzzle = t;
+                    slot.cachedMuzzle = muzzle;
                     return true;
                 }
             }
@@ -833,6 +848,7 @@ namespace Project.Player.Invector
                 if (t.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase))
                 {
                     muzzle = t;
+                    slot.cachedMuzzle = muzzle;
                     return true;
                 }
             }
@@ -864,10 +880,12 @@ namespace Project.Player.Invector
                     continue;
 
                 muzzle = t;
+                slot.cachedMuzzle = muzzle;
                 return true;
             }
 
             muzzle = slot.drawnInstance.transform;
+            slot.cachedMuzzle = muzzle;
             return true;
         }
 

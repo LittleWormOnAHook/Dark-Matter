@@ -32,11 +32,15 @@ namespace Project.UI
         public int slotIndex;
         public bool PreservesManualLayout => preserveManualLayout;
 
+        private const float AmmoTypeIconScale = 0.2f;
+
         private InventorySystem inventory;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
+        private WeaponAmmoState ammoState;
         private GameObject dragGhost;
         private Image selectionGlowImage;
+        private Image ammoTypeIcon;
         private Color defaultBackgroundColor = SurvivalPioneerUiPalette.SlotBackground;
         private bool wasDragged;
         private bool isSelected;
@@ -123,6 +127,7 @@ namespace Project.UI
 
             ApplyIconLayout();
             ConfigureAmountText();
+            LayoutAmmoTypeIcon();
         }
 
         public void SetHudAmountPresentation(bool plainAmountText)
@@ -209,6 +214,12 @@ namespace Project.UI
             itemActions = actions;
         }
 
+        public void SetAmmoState(WeaponAmmoState state)
+        {
+            ammoState = state;
+            RefreshAmmoTypeIcon();
+        }
+
         public void UpdateSlot(InventorySystem.InventorySlot newSlot)
         {
             slot = newSlot;
@@ -233,6 +244,7 @@ namespace Project.UI
             }
 
             ApplySelectionColor();
+            RefreshAmmoTypeIcon();
         }
 
         public void ClearSlot()
@@ -245,6 +257,104 @@ namespace Project.UI
             }
 
             ApplySelectionColor();
+            RefreshAmmoTypeIcon();
+        }
+
+        /// <summary>
+        /// Lower-left ammo-type badge for ranged hotbar weapons (~20% of slot size).
+        /// </summary>
+        public void RefreshAmmoTypeIcon()
+        {
+            EnsureAmmoTypeIcon();
+            if (ammoTypeIcon == null)
+                return;
+
+            Sprite icon = ResolveLoadedAmmoIcon();
+            if (icon == null)
+            {
+                ammoTypeIcon.enabled = false;
+                ammoTypeIcon.sprite = null;
+                return;
+            }
+
+            LayoutAmmoTypeIcon();
+            ammoTypeIcon.sprite = icon;
+            ammoTypeIcon.enabled = true;
+        }
+
+        private Sprite ResolveLoadedAmmoIcon()
+        {
+            if (isLocked || slot == null || slot.IsEmpty || slot.item == null || !slot.item.IsRangedWeapon)
+                return null;
+
+            if (inventory == null || !inventory.IsHotbarIndex(slotIndex))
+                return null;
+
+            int hotbarIndex = slotIndex - inventory.inventorySize;
+            if (equipmentController != null && !equipmentController.IsWeaponHotbarSlot(hotbarIndex))
+                return null;
+
+            if (ammoState == null)
+                return null;
+
+            if (slot.item.isMiningTool)
+            {
+                ItemData plasma = WeaponAmmoState.ResolvePlasmaFuelItem();
+                return plasma != null ? plasma.icon : null;
+            }
+
+            ItemData loadedAmmo = ammoState.GetLoadedAmmoItem(hotbarIndex);
+            if (loadedAmmo != null && loadedAmmo.icon != null)
+                return loadedAmmo.icon;
+
+            ItemData fallback = WeaponAmmoState.ResolveStandardAmmoItem(slot.item);
+            return fallback != null ? fallback.icon : null;
+        }
+
+        private void EnsureAmmoTypeIcon()
+        {
+            if (ammoTypeIcon != null)
+                return;
+
+            Transform existing = transform.Find("AmmoTypeIcon");
+            if (existing != null)
+            {
+                ammoTypeIcon = existing.GetComponent<Image>();
+                if (ammoTypeIcon == null)
+                    ammoTypeIcon = existing.gameObject.AddComponent<Image>();
+            }
+            else
+            {
+                GameObject iconObject = new GameObject("AmmoTypeIcon", typeof(RectTransform));
+                iconObject.transform.SetParent(transform, false);
+                ammoTypeIcon = iconObject.AddComponent<Image>();
+            }
+
+            ammoTypeIcon.raycastTarget = false;
+            ammoTypeIcon.preserveAspect = true;
+            ammoTypeIcon.color = Color.white;
+            ammoTypeIcon.enabled = false;
+            LayoutAmmoTypeIcon();
+            ammoTypeIcon.transform.SetAsLastSibling();
+        }
+
+        private void LayoutAmmoTypeIcon()
+        {
+            if (ammoTypeIcon == null)
+                return;
+
+            RectTransform slotRect = transform as RectTransform;
+            float slotSize = slotRect != null && slotRect.rect.width > 0f
+                ? slotRect.rect.width
+                : HudLayoutMetrics.InventorySlotSize(64f);
+            float iconSize = Mathf.Max(8f, slotSize * AmmoTypeIconScale);
+
+            RectTransform iconRect = ammoTypeIcon.rectTransform;
+            iconRect.anchorMin = new Vector2(0f, 0f);
+            iconRect.anchorMax = new Vector2(0f, 0f);
+            iconRect.pivot = new Vector2(0f, 0f);
+            iconRect.anchoredPosition = new Vector2(HudLayoutMetrics.Scaled(2f), HudLayoutMetrics.Scaled(2f));
+            iconRect.sizeDelta = new Vector2(iconSize, iconSize);
         }
 
         public void SetSelected(bool selected)

@@ -15,15 +15,13 @@ MonoBehaviour:
   skillId: skill_harvesting
   displayName: Harvesting
   description: Unlock higher-tier plants for multi-tool resource scanning and harvesting.
+  treeCategory: 3
+  treeColumn: 2
+  treeRow: 0
   requiredPlayerLevel: 5
   costPerRank: 1
   maxRank: 5
   modifierType: 10
   bonusPercentPerRank: 1
   prerequisiteSkillIds: []
-  costPerTargetRank:
-  - 1
-  - 2
-  - 2
-  - 2
-  - 2
+  costPerTargetRank: 0100000002000000020000000200000002000000

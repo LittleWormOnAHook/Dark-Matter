@@ -5,21 +5,19 @@ using UnityEngine;
 namespace Project.Combat
 {
     /// <summary>
-    /// Physical flying projectile shared by the player, companions, and enemies. Sweeps for hits
-    /// every frame (kinematic, not Rigidbody-driven, so it stays lightweight),
-    /// optionally arcs under gravity, and resolves damage/splash/status-effects/VFX through
-    /// CombatHitResolver so every ammo type behaves consistently regardless of who fired it.
-    /// Pooled via PoolManager (see CombatProjectileSpawner) instead of Instantiate/Destroy — Launch()
-    /// performs the full per-shot state reset, and OnReturnedToPool()/DetachAndDestroyTracer() make
-    /// sure nothing (tracer child, travel audio) leaks or duplicates across reuse cycles.
+    /// Physical flying projectile shared by the player, companions, and enemies.
+    /// Pooled via PoolManager; tracers are also pooled (no Instantiate/Destroy per shot).
     /// </summary>
     public class CombatProjectile : MonoBehaviour, IPoolable
     {
+        private const int OverlapBufferSize = 16;
+
         [SerializeField] private float speed = 85f;
         [SerializeField] private float maxLifetime = 3f;
         [SerializeField] private float radius = 0.08f;
         [SerializeField] private LayerMask hitLayers = ~0;
 
+        private float defaultSpeed;
         private GameObject owner;
         private AmmoType ammoType;
         private ItemData ammoItem;
@@ -33,8 +31,18 @@ namespace Project.Combat
         private float spawnTime;
         private bool hasHit;
         private bool launched;
+        private bool deferMotionOneFrame;
         private GameObject tracerInstance;
+        private GameObject tracerPrefabUsed;
         private AudioSource travelAudioSource;
+        private Renderer[] cachedBodyRenderers;
+        private static readonly Collider[] OverlapBuffer = new Collider[OverlapBufferSize];
+
+        private void Awake()
+        {
+            defaultSpeed = speed;
+            CacheBodyRenderers();
+        }
 
         public void Launch(
             GameObject ownerRoot,
@@ -55,56 +63,62 @@ namespace Project.Combat
             damage = damageAmount;
             isCritical = critical;
             gravityScale = ammoItemData != null ? ammoItemData.projectileGravityScale : 0f;
-            speed = speedOverride > 0f ? speedOverride : speed;
-            velocity = direction.sqrMagnitude > 0.0001f ? direction.normalized * speed : Vector3.forward * speed;
+            float launchSpeed = speedOverride > 0f ? speedOverride : defaultSpeed;
+            speed = launchSpeed;
+            velocity = direction.sqrMagnitude > 0.0001f ? direction.normalized * launchSpeed : Vector3.forward * launchSpeed;
             previousPosition = transform.position;
             spawnTime = Time.time;
             hasHit = false;
             launched = true;
+            deferMotionOneFrame = true;
 
             SpawnTracer();
             SpawnTravelAudio();
             EnsureProjectileVisible();
-
-            // Muzzle-adjacent / spawn-inside targets never produce a SphereCast hit — resolve
-            // immediate overlaps so close-range shots still damage and play impact VFX.
             TryResolveOverlapHit();
+        }
+
+        private void CacheBodyRenderers()
+        {
+            cachedBodyRenderers = GetComponentsInChildren<Renderer>(true);
         }
 
         private void SpawnTracer()
         {
-            // Reuse pooling can call Launch() again before OnReturnedToPool() ever ran (e.g. Launch
-            // called directly without going through PoolManager) — guard against stacking a second
-            // tracer child on top of a still-attached one.
-            DetachAndDestroyTracer();
+            ReleaseTracerToPool();
 
             GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
             if (tracerPrefab == null)
                 return;
 
-            tracerInstance = Instantiate(tracerPrefab, transform.position, transform.rotation, transform);
-            CombatVfxUtility.PlayParticleSystemsRecursive(tracerInstance);
+            tracerPrefabUsed = tracerPrefab;
+            tracerInstance = PoolManager.Spawn(tracerPrefab, transform.position, transform.rotation, transform);
+            if (tracerInstance == null)
+                return;
+
+            CombatVfxUtility.PrepareAttachedTracer(tracerInstance, transform.position, velocity);
         }
 
-        /// <summary>Detaches the tracer (so it can finish playing independently) and schedules its
-        /// destruction. Safe to call multiple times / when there is no tracer.</summary>
-        private void DetachAndDestroyTracer()
+        private void ReleaseTracerToPool()
         {
             if (tracerInstance == null)
                 return;
 
-            tracerInstance.transform.SetParent(null, true);
-            Destroy(tracerInstance, 2f);
+            GameObject tracer = tracerInstance;
             tracerInstance = null;
+            tracerPrefabUsed = null;
+
+            // Detach so pool reparent does not fight an active projectile hierarchy.
+            tracer.transform.SetParent(null, true);
+            PoolManager.ReleaseDelayed(tracer, 2f);
         }
 
         private void EnsureProjectileVisible()
         {
-            // A pooled instance can be reused across launches where whether a tracer is present
-            // varies (same projectile prefab shared by ammo types with/without a tracerPrefab) — so
-            // always re-enable body renderers first instead of assuming they're still in whatever
-            // state a previous launch left them in.
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            if (cachedBodyRenderers == null || cachedBodyRenderers.Length == 0)
+                CacheBodyRenderers();
+
+            Renderer[] renderers = cachedBodyRenderers;
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
@@ -131,19 +145,12 @@ namespace Project.Combat
                 visual.localScale = Vector3.one * 0.35f;
         }
 
-        /// <summary>
-        /// Looping sound that rides along with the flying projectile (parented to it, so it moves
-        /// in step) and stops the instant the projectile hits or expires.
-        /// </summary>
         private void SpawnTravelAudio()
         {
             AudioClip clip = ammoItem != null ? ammoItem.projectileTravelSound : null;
             if (clip == null)
                 return;
 
-            // Reuse the same child AudioSource across pooled reuse cycles instead of creating a new
-            // "TravelAudio" GameObject every Launch() — otherwise disabled leftovers pile up as
-            // children on a pooled instance that gets launched many times over its lifetime.
             if (travelAudioSource == null)
             {
                 GameObject audioObject = new GameObject("TravelAudio");
@@ -177,8 +184,16 @@ namespace Project.Combat
             if (Time.time - spawnTime > maxLifetime)
             {
                 StopTravelAudio();
-                DetachAndDestroyTracer();
+                ReleaseTracerToPool();
                 PoolManager.Release(gameObject);
+                return;
+            }
+
+            if (deferMotionOneFrame)
+            {
+                deferMotionOneFrame = false;
+                previousPosition = transform.position;
+                TryResolveOverlapHit();
                 return;
             }
 
@@ -196,7 +211,6 @@ namespace Project.Combat
 
         private void SweepForHit()
         {
-            // Embedded / zero-delta frames still need overlap probes (melee-range pet shots).
             if (TryResolveOverlapHit())
                 return;
 
@@ -205,46 +219,60 @@ namespace Project.Combat
             if (distance <= 0.0001f)
                 return;
 
-            if (Physics.SphereCast(
-                    previousPosition,
-                    radius,
-                    delta.normalized,
-                    out RaycastHit hit,
-                    distance,
-                    hitLayers,
-                    QueryTriggerInteraction.Ignore))
+            Vector3 origin = previousPosition;
+            Vector3 direction = delta.normalized;
+            float remaining = distance;
+
+            // Skip owner colliders and continue the sweep so self-hits do not swallow the shot.
+            const int maxSkips = 4;
+            for (int skip = 0; skip < maxSkips && remaining > 0.0001f; skip++)
             {
-                if (CombatHitResolver.IsOwnerCollider(owner, hit.collider))
+                if (!Physics.SphereCast(
+                        origin,
+                        radius,
+                        direction,
+                        out RaycastHit hit,
+                        remaining,
+                        hitLayers,
+                        QueryTriggerInteraction.Ignore))
+                {
                     return;
+                }
+
+                if (CombatHitResolver.IsOwnerCollider(owner, hit.collider))
+                {
+                    float advance = Mathf.Max(0.02f, hit.distance + 0.01f);
+                    origin += direction * advance;
+                    remaining -= advance;
+                    continue;
+                }
 
                 ResolveHit(hit.collider, hit.point, hit.normal);
+                return;
             }
         }
 
-        /// <summary>
-        /// SphereCast cannot report a hit when the cast origin is already inside a collider.
-        /// OverlapSphere covers muzzle-inside / point-blank launches against any solid collider.
-        /// </summary>
         private bool TryResolveOverlapHit()
         {
             if (hasHit)
                 return false;
 
             float probeRadius = Mathf.Max(0.05f, radius);
-            Collider[] overlaps = Physics.OverlapSphere(
+            int count = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 probeRadius,
+                OverlapBuffer,
                 hitLayers,
                 QueryTriggerInteraction.Ignore);
-            if (overlaps == null || overlaps.Length == 0)
+            if (count <= 0)
                 return false;
 
             Collider best = null;
             float bestDistSq = float.MaxValue;
             Vector3 origin = transform.position;
-            for (int i = 0; i < overlaps.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                Collider candidate = overlaps[i];
+                Collider candidate = OverlapBuffer[i];
                 if (candidate == null || CombatHitResolver.IsOwnerCollider(owner, candidate))
                     continue;
 
@@ -271,10 +299,6 @@ namespace Project.Combat
             return true;
         }
 
-        /// <summary>
-        /// Collider.ClosestPoint only supports Box/Sphere/Capsule and convex MeshColliders.
-        /// Non-convex meshes, terrain, etc. log Errors — fall back to AABB closest point.
-        /// </summary>
         private static Vector3 GetClosestPointSafe(Collider collider, Vector3 point)
         {
             if (collider == null)
@@ -309,9 +333,6 @@ namespace Project.Combat
             if (ammoItem != null && ammoItem.HasSplashDamage)
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, appliedDamage, owner, collider);
 
-            // Use the actual surface normal from the sphere-cast hit, not the bullet's reversed
-            // travel direction — otherwise impact decals orient toward wherever the shot came from
-            // (often roughly facing the player) instead of lying flat against the surface they hit.
             Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal : -velocity.normalized;
             CombatHitResolver.HandleRangedWorldImpact(
                 ammoItem,
@@ -327,24 +348,21 @@ namespace Project.Combat
             else
                 CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
 
-            DetachAndDestroyTracer();
+            ReleaseTracerToPool();
             PoolManager.Release(gameObject);
         }
 
-        /// <summary>IPoolable — Launch() performs the real per-shot reset; this is just a safety net.</summary>
         public void OnSpawnedFromPool()
         {
             hasHit = false;
         }
 
-        /// <summary>IPoolable — runs whenever the pool takes this instance back, including on the
-        /// normal hit/expiry paths above (which already clean up before releasing) and on any
-        /// future forced-release path that might skip that cleanup.</summary>
         public void OnReturnedToPool()
         {
             launched = false;
+            deferMotionOneFrame = false;
             StopTravelAudio();
-            DetachAndDestroyTracer();
+            ReleaseTracerToPool();
         }
     }
 }

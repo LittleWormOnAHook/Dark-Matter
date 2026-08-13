@@ -24,6 +24,8 @@ namespace Project.Combat
         /// </summary>
         public const float DefaultImpactNoiseRadius = 10f;
 
+        private static readonly Collider[] SplashOverlapBuffer = new Collider[48];
+
         public static bool IsOwnerCollider(GameObject owner, Collider collider)
         {
             if (collider == null || owner == null)
@@ -170,10 +172,16 @@ namespace Project.Combat
             if (ammoItem == null || !ammoItem.HasSplashDamage)
                 return;
 
-            Collider[] hits = Physics.OverlapSphere(center, ammoItem.splashRadius, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < hits.Length; i++)
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                center,
+                ammoItem.splashRadius,
+                SplashOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = hits[i];
+                Collider hitCollider = SplashOverlapBuffer[i];
                 if (hitCollider == null || hitCollider == excludeCollider || IsOwnerCollider(owner, hitCollider))
                     continue;
 
@@ -197,6 +205,7 @@ namespace Project.Combat
                     if (outward.sqrMagnitude < 0.0001f)
                         outward = Vector3.up;
                     splashEnemy.GetComponent<EnemyInvectorRagdollBridge>()?.RememberHitForDeath(
+
                         closest,
                         outward,
                         falloffDamage,
@@ -328,10 +337,10 @@ namespace Project.Combat
             {
                 // Particle/trail tracers: place along the shot and scale to span muzzle→impact.
                 GameObject tracer = PoolManager.Spawn(tracerPrefab, origin, rotation);
+                CombatVfxUtility.PrepareAttachedTracer(tracer, origin, dir);
                 ApplyBeamLine(tracer, origin, endPoint);
                 StretchTracerAlongBeam(tracer, length);
                 AttachMuzzleFollow(tracer, muzzle, followRange);
-                CombatVfxUtility.PlayParticleSystemsRecursive(tracer);
                 PoolManager.ReleaseDelayed(tracer, 0.45f);
             }
         }
@@ -429,7 +438,7 @@ namespace Project.Combat
             if (clip == null || muzzle == null)
                 return;
 
-            AudioSource.PlayClipAtPoint(clip, muzzle.position);
+            GameAudioManager.PlayWorldSfx(clip, muzzle.position, 1f);
         }
     }
 }

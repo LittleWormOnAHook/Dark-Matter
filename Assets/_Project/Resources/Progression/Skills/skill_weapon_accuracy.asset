@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
   skillId: skill_weapon_accuracy
   displayName: Weapon Accuracy
-  description: +5% accuracy per rank for all ranged weapons.
+  description: +5% accuracy per rank for ranged weapons.
+  treeCategory: 2
+  treeColumn: 1
+  treeRow: 0
   requiredPlayerLevel: 1
   costPerRank: 1
   maxRank: 5
   modifierType: 6
   bonusPercentPerRank: 5
   prerequisiteSkillIds: []
+  costPerTargetRank: 

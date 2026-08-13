@@ -15,9 +15,13 @@ MonoBehaviour:
   skillId: skill_gather_efficiency
   displayName: Gather Efficiency
   description: Gather resources faster.
+  treeCategory: 3
+  treeColumn: 0
+  treeRow: 0
   requiredPlayerLevel: 1
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 4
   bonusPercentPerRank: 6
   prerequisiteSkillIds: []
+  costPerTargetRank: 

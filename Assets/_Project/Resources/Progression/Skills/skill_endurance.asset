@@ -15,9 +15,13 @@ MonoBehaviour:
   skillId: skill_endurance
   displayName: Endurance
   description: Increase max energy.
+  treeCategory: 4
+  treeColumn: 1
+  treeRow: 0
   requiredPlayerLevel: 1
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 1
   bonusPercentPerRank: 5
   prerequisiteSkillIds: []
+  costPerTargetRank: 

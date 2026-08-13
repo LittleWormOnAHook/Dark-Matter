@@ -15,9 +15,13 @@ MonoBehaviour:
   skillId: skill_blade_training
   displayName: Blade Training
   description: +2 melee damage per rank for all melee weapons.
+  treeCategory: 0
+  treeColumn: 0
+  treeRow: 0
   requiredPlayerLevel: 2
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 3
   bonusPercentPerRank: 2
   prerequisiteSkillIds: []
+  costPerTargetRank: 

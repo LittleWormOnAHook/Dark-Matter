@@ -16,9 +16,13 @@ MonoBehaviour:
   displayName: Recon Sweep
   description: Each rank expands scanner fog reveal and sweep range by +10m (up to
     5 ranks). Base scan reveal is 40m.
+  treeCategory: 3
+  treeColumn: 1
+  treeRow: 1
   requiredPlayerLevel: 1
   costPerRank: 1
   maxRank: 5
   modifierType: 8
   bonusPercentPerRank: 10
   prerequisiteSkillIds: []
+  costPerTargetRank: 

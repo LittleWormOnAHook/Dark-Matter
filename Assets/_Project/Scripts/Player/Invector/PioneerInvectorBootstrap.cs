@@ -90,6 +90,9 @@ namespace Project.Player.Invector
             if (GetComponent<DMIMiningResourceScanner>() == null)
                 gameObject.AddComponent<DMIMiningResourceScanner>();
 
+            if (GetComponent<WeaponModeSwitchController>() == null)
+                gameObject.AddComponent<WeaponModeSwitchController>();
+
             if (!disableLegacyCombatComponents)
                 return;
 

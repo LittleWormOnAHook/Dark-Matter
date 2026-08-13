@@ -60,5 +60,22 @@ namespace Project.Progression
 
             return null;
         }
+
+        public static List<SkillDefinition> GetSkillsByCategory(SkillTreeCategory category)
+        {
+            List<SkillDefinition> result = new List<SkillDefinition>();
+            foreach (SkillDefinition skill in GetAllSkills())
+            {
+                if (skill != null && skill.treeCategory == category)
+                    result.Add(skill);
+            }
+
+            result.Sort((a, b) =>
+            {
+                int row = a.treeRow.CompareTo(b.treeRow);
+                return row != 0 ? row : a.treeColumn.CompareTo(b.treeColumn);
+            });
+            return result;
+        }
     }
 }

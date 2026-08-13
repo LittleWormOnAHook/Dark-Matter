@@ -17,7 +17,9 @@ namespace Project.UI
     ///
     /// Camera flash prevention: a solid black veil stays fully opaque until load + destination handoff finish,
     /// gameplay cameras are blacked out while the loader owns the screen, then the veil fades in from black.
+    /// Backdrop: deep-space void with RectTransform flying stars and a distant Blackhole2 sprite.
     /// Dark Matter: Genesis identity only — no Pi, wallet, or legacy branding on this surface.
+    /// DMI lettermark is disabled by default on this surface (<see cref="showDmiLogo"/>).
     /// All timing uses unscaled time because both entry points park <c>Time.timeScale</c> at 0.
     /// </summary>
     [DefaultExecutionOrder(-400)]
@@ -25,6 +27,8 @@ namespace Project.UI
     {
         public const string BackgroundResourcePath = "UI/LoadingGenesis_Background";
         public const string LogoResourcePath = "UI/LoadingGenesis_Logo";
+        public const string BlackholeResourcePath = "UI/LoadingGenesis_Blackhole";
+        public const string StarfieldShaderName = "Project/DMLoadingStarfield";
 
         private enum LoadingMode
         {
@@ -40,13 +44,33 @@ namespace Project.UI
             public Color BackgroundColor;
         }
 
+        private struct FlyingStar
+        {
+            public RectTransform Rect;
+            public Image Image;
+            public Vector2 Direction;
+            public float Depth;
+            public float Speed;
+            public float BaseSize;
+            public float TwinklePhase;
+            public bool Accent;
+        }
+
         private const int OverlaySortingOrder = 32000;
         private const float ProgressCeilingBeforeHandoff = 0.92f;
         /// <summary>Longest the boot pass will wait past its window for a checkpoint that may never arrive.</summary>
         private const float CheckpointGraceSeconds = 4f;
         private const float LogoFrameSize = 430f;
+        private const int FlyingStarCount = 48;
+        private const float StarTravelRadius = 1180f;
+        /// <summary>Up + left from screen center (UI: -x left, +y up). Small distant hole keeps prior offset.</summary>
+        private static readonly Vector2 BlackholeAnchoredPosition = new Vector2(-100f, 100f);
 
         [SerializeField, Range(0.30f, 0.75f)] private float backgroundImageAlpha = 0.50f;
+        [SerializeField, Range(40f, 120f)] private float blackholeSize = 50f;
+        [SerializeField, Range(0.4f, 1f)] private float blackholeAlpha = 0.8f;
+        [SerializeField, Range(0.0f, 0.08f)] private float blackholeApproachScale = 0.02f;
+        [SerializeField] private bool showDmiLogo = false;
         /// <summary>Screen time and progress bar are both driven by this window.</summary>
         [SerializeField] private float simulatedLoadSeconds = 6f;
         [SerializeField] private float fadeOutSeconds = 0.65f;
@@ -66,11 +90,22 @@ namespace Project.UI
         private CanvasGroup blackVeilGroup;
         private Image glowImage;
         private RectTransform logoArtRect;
+        private RectTransform blackholeRect;
         private RectTransform progressFillRect;
         private TextMeshProUGUI percentLabel;
+        private Material starfieldMaterial;
+        private FlyingStar[] flyingStars;
+        private Vector2 blackholeBaseSize;
         private int satisfiedCheckpoints;
         private int shownPercent = -1;
         private bool cameraGateReleased;
+        private static readonly int AspectId = Shader.PropertyToID("_Aspect");
+        private static readonly int UnscaledTimeId = Shader.PropertyToID("_UnscaledTime");
+        private static readonly int SpaceColorId = Shader.PropertyToID("_SpaceColor");
+        private static readonly int StarColorId = Shader.PropertyToID("_StarColor");
+        private static readonly int AccentColorId = Shader.PropertyToID("_AccentColor");
+        private static readonly int StarDensityId = Shader.PropertyToID("_StarDensity");
+        private static readonly int StarBrightnessId = Shader.PropertyToID("_StarBrightness");
 
         /// <summary>True while the loader owns the screen and the main menu must stay hidden.</summary>
         public static bool IsBlockingMenu => bootPending || activeInstance != null;
@@ -297,18 +332,94 @@ namespace Project.UI
                 GateGameplayCameras(true);
             }
 
-            // Soft glow pulse only — DMI lettermark stays static (no tumble/spin).
-            if (glowImage != null)
+            // Soft glow pulse only when the DMI lettermark is enabled.
+            if (showDmiLogo && glowImage != null)
             {
                 float pulse = 0.16f + 0.08f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 1.6f));
                 glowImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, pulse);
             }
+
+            if (starfieldMaterial != null)
+            {
+                float aspect = Screen.height > 0
+                    ? (float)Screen.width / Screen.height
+                    : 16f / 9f;
+                starfieldMaterial.SetFloat(AspectId, aspect);
+                // Loader parks timeScale at 0 — drive motion with unscaled time.
+                starfieldMaterial.SetFloat(UnscaledTimeId, Time.unscaledTime);
+            }
+
+            UpdateFlyingStars(Time.unscaledDeltaTime);
+
+            // Subtle distant approach — scale eases in over the load window.
+            if (blackholeRect != null && blackholeBaseSize.x > 0f)
+            {
+                float approach = 1f + blackholeApproachScale
+                    * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 0.55f));
+                blackholeRect.sizeDelta = blackholeBaseSize * approach;
+            }
+        }
+
+        private void UpdateFlyingStars(float unscaledDelta)
+        {
+            if (flyingStars == null || flyingStars.Length == 0)
+                return;
+
+            float dt = Mathf.Max(0f, unscaledDelta);
+            for (int i = 0; i < flyingStars.Length; i++)
+            {
+                FlyingStar star = flyingStars[i];
+                if (star.Rect == null || star.Image == null)
+                    continue;
+
+                star.Depth += star.Speed * dt;
+                if (star.Depth >= 1f)
+                {
+                    RespawnFlyingStar(ref star, randomizeDepth: false);
+                }
+
+                // Ease outward: sparse near the vanishing point, streak toward the camera.
+                float travel = star.Depth * star.Depth;
+                float radius = Mathf.Lerp(36f, StarTravelRadius, travel);
+                star.Rect.anchoredPosition = star.Direction * radius;
+
+                float size = star.BaseSize * Mathf.Lerp(0.55f, 3.4f, travel);
+                star.Rect.sizeDelta = new Vector2(size, size);
+
+                float twinkle = 0.72f + 0.28f * Mathf.Sin(Time.unscaledTime * (1.6f + star.TwinklePhase) + star.TwinklePhase);
+                float alpha = Mathf.Clamp01(0.18f + travel * 0.85f) * twinkle;
+                Color tint = star.Accent
+                    ? SurvivalPioneerUiPalette.RichFuchsia
+                    : SurvivalPioneerUiPalette.BodyText;
+                star.Image.color = SurvivalPioneerUiPalette.WithAlpha(tint, alpha);
+
+                flyingStars[i] = star;
+            }
+        }
+
+        private static void RespawnFlyingStar(ref FlyingStar star, bool randomizeDepth)
+        {
+            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            // Mild elliptical bias so stars are not a perfect circle ring of directions.
+            float ellipticity = UnityEngine.Random.Range(0.82f, 1.18f);
+            star.Direction = new Vector2(Mathf.Cos(angle) * ellipticity, Mathf.Sin(angle) / ellipticity).normalized;
+            star.Depth = randomizeDepth ? UnityEngine.Random.Range(0f, 0.82f) : UnityEngine.Random.Range(0f, 0.08f);
+            star.Speed = UnityEngine.Random.Range(0.085f, 0.22f);
+            star.BaseSize = UnityEngine.Random.Range(1.4f, 3.6f);
+            star.TwinklePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            star.Accent = UnityEngine.Random.value < 0.08f;
         }
 
         private void OnDestroy()
         {
             if (activeInstance == this)
                 activeInstance = null;
+
+            if (starfieldMaterial != null)
+            {
+                Destroy(starfieldMaterial);
+                starfieldMaterial = null;
+            }
 
             // Safety net if destroyed mid-sequence (domain reload / stop play).
             if (gatedCameras.Count > 0)
@@ -356,17 +467,17 @@ namespace Project.UI
             contentGroup.blocksRaycasts = true;
             contentGroup.interactable = false;
 
-            // 1. Solid navy backdrop — also swallows clicks so the world stays inert while loading.
+            // 1. Deep space void — also swallows clicks so the world stays inert while loading.
             MenuUiBuilder.CreateFullScreenPanel(
                 contentRoot.transform,
                 "SolidBackdrop",
-                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 1f),
+                Color.black,
                 blockRaycasts: true);
 
-            // 2. Atmospheric Io art at tunable alpha over the navy.
+            // 2. Procedural starfield + distant black hole (replaces static Io background art).
             BuildBackgroundArt(contentRoot.transform);
 
-            // 3. Brand block: soft glow, static DMI logo, product title.
+            // 3. Brand block: product title (+ optional DMI logo / glow).
             BuildBrandBlock(contentRoot.transform);
 
             // 4. Progress track + Loading Genesis label.
@@ -375,37 +486,152 @@ namespace Project.UI
 
         private void BuildBackgroundArt(Transform parent)
         {
-            Texture backgroundTexture = Resources.Load<Texture>(BackgroundResourcePath);
-            if (backgroundTexture == null)
+            BuildStarfieldLayer(parent);
+            BuildBlackholeLayer(parent);
+
+            // Light wash so title + progress stay readable without painting rings or grey panels.
+            MenuUiBuilder.CreateFullScreenPanel(
+                parent,
+                "ReadabilityWash",
+                SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.18f),
+                blockRaycasts: false);
+        }
+
+        private void BuildStarfieldLayer(Transform parent)
+        {
+            // Soft distant dust only — sparse, no dense cell grid that paints even rings.
+            // Primary flying stars are RectTransform Images updated in UpdateFlyingStars.
+            Shader starfieldShader = Shader.Find(StarfieldShaderName);
+            GameObject starfieldObject = new GameObject(
+                "StarfieldArt",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(RawImage));
+            starfieldObject.transform.SetParent(parent, false);
+            MenuUiBuilder.StretchRectToFill(starfieldObject.GetComponent<RectTransform>());
+
+            RawImage starfield = starfieldObject.GetComponent<RawImage>();
+            starfield.texture = Texture2D.whiteTexture;
+            starfield.raycastTarget = false;
+            starfield.color = Color.white;
+
+            if (starfieldShader != null)
+            {
+                starfieldMaterial = new Material(starfieldShader)
+                {
+                    name = "DMLoadingStarfield (Instance)",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                // Near-black void — not navy/grey panels that read as rings.
+                starfieldMaterial.SetColor(SpaceColorId, new Color(0.01f, 0.012f, 0.02f, 1f));
+                starfieldMaterial.SetColor(StarColorId, SurvivalPioneerUiPalette.BodyText);
+                starfieldMaterial.SetColor(AccentColorId, SurvivalPioneerUiPalette.RichFuchsia);
+                starfieldMaterial.SetFloat(StarDensityId, 10f);
+                starfieldMaterial.SetFloat(StarBrightnessId, 0.55f);
+                float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
+                starfieldMaterial.SetFloat(AspectId, aspect);
+                starfieldMaterial.SetFloat(UnscaledTimeId, Time.unscaledTime);
+                starfield.material = starfieldMaterial;
+            }
+
+            BuildTransformFlyingStars(parent);
+        }
+
+        private void BuildTransformFlyingStars(Transform parent)
+        {
+            GameObject rootObject = new GameObject("FlyingStars", typeof(RectTransform));
+            rootObject.transform.SetParent(parent, false);
+            MenuUiBuilder.StretchRectToFill(rootObject.GetComponent<RectTransform>());
+
+            Sprite starSprite = ShiftUiTheme.CircleFilled ?? ShiftUiTheme.CircleGlow;
+            flyingStars = new FlyingStar[FlyingStarCount];
+
+            for (int i = 0; i < FlyingStarCount; i++)
+            {
+                GameObject starObject = new GameObject(
+                    "Star_" + i,
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image));
+                starObject.transform.SetParent(rootObject.transform, false);
+
+                RectTransform rect = starObject.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+
+                Image image = starObject.GetComponent<Image>();
+                if (starSprite != null)
+                {
+                    image.sprite = starSprite;
+                    image.type = Image.Type.Simple;
+                }
+                else
+                {
+                    MenuUiBuilder.ApplyUiSprite(image);
+                    image.type = Image.Type.Simple;
+                }
+
+                image.raycastTarget = false;
+                image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.BodyText, 0.35f);
+
+                FlyingStar star = new FlyingStar
+                {
+                    Rect = rect,
+                    Image = image
+                };
+                RespawnFlyingStar(ref star, randomizeDepth: true);
+                flyingStars[i] = star;
+            }
+
+            // Place once before first Update so the field is not empty for a frame.
+            UpdateFlyingStars(0f);
+        }
+
+        private void BuildBlackholeLayer(Transform parent)
+        {
+            // Sprite import (Texture Type = Sprite, Alpha Is Transparency) is required for clean alpha.
+            // Resources UI texture is Blackhole2 converted to true-alpha PNG.
+            Sprite holeSprite = Resources.Load<Sprite>(BlackholeResourcePath);
+            if (holeSprite == null)
                 return;
 
-            GameObject artObject = new GameObject("BackgroundArt", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-            artObject.transform.SetParent(parent, false);
-            MenuUiBuilder.StretchRectToFill(artObject.GetComponent<RectTransform>());
+            GameObject holeObject = new GameObject("BlackholeArt", typeof(RectTransform), typeof(CanvasRenderer));
+            holeObject.transform.SetParent(parent, false);
+            blackholeRect = holeObject.GetComponent<RectTransform>();
+            blackholeBaseSize = new Vector2(blackholeSize, blackholeSize);
+            // Distant black hole: 100px left and 100px up from screen center.
+            CenterRect(blackholeRect, BlackholeAnchoredPosition, blackholeBaseSize);
 
-            RawImage art = artObject.GetComponent<RawImage>();
-            art.texture = backgroundTexture;
-            art.color = new Color(1f, 1f, 1f, backgroundImageAlpha);
-            art.raycastTarget = false;
+            // Transparent Image only — no panel chrome / RawImage behind the sprite.
+            Image hole = holeObject.AddComponent<Image>();
+            hole.sprite = holeSprite;
+            hole.preserveAspect = true;
+            hole.raycastTarget = false;
+            hole.color = new Color(1f, 1f, 1f, blackholeAlpha);
+            hole.material = null;
         }
 
         private void BuildBrandBlock(Transform parent)
         {
-            Sprite glowSprite = ShiftUiTheme.CircleGlow ?? ShiftUiTheme.SquareGlow;
-            if (glowSprite != null)
+            if (showDmiLogo)
             {
-                GameObject glowObject = new GameObject("LogoGlow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                glowObject.transform.SetParent(parent, false);
-                RectTransform glowRect = glowObject.GetComponent<RectTransform>();
-                CenterRect(glowRect, new Vector2(0f, 96f), new Vector2(720f, 720f));
+                Sprite glowSprite = ShiftUiTheme.CircleGlow ?? ShiftUiTheme.SquareGlow;
+                if (glowSprite != null)
+                {
+                    GameObject glowObject = new GameObject("LogoGlow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    glowObject.transform.SetParent(parent, false);
+                    RectTransform glowRect = glowObject.GetComponent<RectTransform>();
+                    CenterRect(glowRect, new Vector2(0f, 96f), new Vector2(720f, 720f));
 
-                glowImage = glowObject.GetComponent<Image>();
-                glowImage.sprite = glowSprite;
-                glowImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.18f);
-                glowImage.raycastTarget = false;
+                    glowImage = glowObject.GetComponent<Image>();
+                    glowImage.sprite = glowSprite;
+                    glowImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.18f);
+                    glowImage.raycastTarget = false;
+                }
+
+                BuildStaticLogo(parent);
             }
-
-            BuildStaticLogo(parent);
 
             GameObject titleObject = new GameObject("BrandTitle", typeof(RectTransform));
             titleObject.transform.SetParent(parent, false);

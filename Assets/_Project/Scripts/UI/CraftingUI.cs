@@ -317,12 +317,9 @@ namespace Project.UI
 
             standaloneInputCaptured = true;
 
-            // Freeze the world while the station craft popup is up (mouse UI needs a free cursor).
-            if (Time.timeScale > 0f)
-            {
-                Time.timeScale = 0f;
-                standaloneOwnedTimePause = true;
-            }
+            // Slow the world while the station craft popup is up (mouse UI needs a free cursor).
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonCraftingStation, true);
+            standaloneOwnedTimePause = true;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetGameplayPaused(true);
@@ -342,7 +339,7 @@ namespace Project.UI
 
             if (standaloneOwnedTimePause)
             {
-                Time.timeScale = 1f;
+                GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonCraftingStation, false);
                 standaloneOwnedTimePause = false;
             }
 

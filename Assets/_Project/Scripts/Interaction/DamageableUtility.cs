@@ -9,10 +9,18 @@ namespace Project.Interaction
             if (collider == null)
                 return null;
 
+            if (collider.TryGetComponent(out IDamageable onCollider))
+                return onCollider;
+
+            IDamageable inParent = collider.GetComponentInParent<IDamageable>();
+            if (inParent != null)
+                return inParent;
+
+            // Fallback: Unity interface lookups can miss proxies on ragdoll / nested colliders.
             MonoBehaviour[] behaviours = collider.GetComponentsInParent<MonoBehaviour>(true);
-            foreach (MonoBehaviour behaviour in behaviours)
+            for (int i = 0; i < behaviours.Length; i++)
             {
-                if (behaviour is IDamageable damageable)
+                if (behaviours[i] is IDamageable damageable)
                     return damageable;
             }
 

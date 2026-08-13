@@ -15,9 +15,13 @@ MonoBehaviour:
   skillId: skill_stamina_core
   displayName: Stamina Core
   description: Increase max stamina.
+  treeCategory: 4
+  treeColumn: 2
+  treeRow: 0
   requiredPlayerLevel: 2
   costPerRank: 1
-  maxRank: 3
+  maxRank: 5
   modifierType: 2
   bonusPercentPerRank: 5
   prerequisiteSkillIds: []
+  costPerTargetRank: 
