@@ -85,6 +85,7 @@ namespace Project.EditorTools
         public const string Audio = Root + "Audio/";
         public const string Optics = Root + "Optics/";
         public const string Maintenance = Root + "Maintenance/";
+        public const string Hdrp = Root + "HDRP/";
         public const string PlayModeSaver = Root + "Play Mode Saver/";
         public const string PlayModeSaverWindow = PlayModeSaver + "Open Window";
         public const string PlayModeSaverSaveNow = PlayModeSaver + "Save Now %#s";

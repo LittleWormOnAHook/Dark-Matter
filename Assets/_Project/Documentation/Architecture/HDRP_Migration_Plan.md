@@ -69,10 +69,18 @@ Use these rows for **defaults, store text, and advisory messages** — not for d
 - `GraphicsCapabilityAdvisor` — compares hardware + active settings to Minimum/Recommended; returns warning strings only.
 - Existing post-processing, resolution, VSync, fullscreen toggles retained.
 
+### Unity editor steps (after pulling this branch)
+
+1. Open the project and wait for HDRP package import + compile.
+2. Run **`Tools/Dark Matter Genesis/HDRP/Phase 0/1 - Create Genesis HDRP Foundation`**.
+3. Run **`Tools/Dark Matter Genesis/HDRP/Phase 1 - Create HDRP Test Scene`**.
+4. Validate tiers in the test scene; keep **`DarkMatter_Genesis v1.56`** on URP until Phase 6.
+5. When ready: **`Tools/Dark Matter Genesis/HDRP/Phase 6 - Switch Global Pipeline To HDRP High`**.
+
 ## Phase overview
 
-1. Foundation — HDRP package, wizard, WebGL retirement, five HDRP assets.
-2. Pipeline — quality wiring, bootstrap, settings stubs.
+1. **Foundation (started)** — HDRP package, wizard/foundation menu, WebGL retirement, five HDRP assets via `Tools/Dark Matter Genesis/HDRP/Phase 0/1`.
+2. Pipeline — quality wiring, bootstrap, settings stubs (**partially landed**).
 3. Code — cameras, post, scanner custom pass, dissolve shaders, `Shader.Find` factories.
 4. Materials — bulk URP → HDRP conversion (~1,600 materials).
 5. Third-party audit — per-pack pink-material sign-off.
