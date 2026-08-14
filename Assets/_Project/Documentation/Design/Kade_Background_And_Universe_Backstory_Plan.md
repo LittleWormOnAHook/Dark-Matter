@@ -3,7 +3,9 @@
 **Status:** Design draft — August 2026 (decisions locked §1.1)  
 **Authority:** Supports GDD 5.0 (2160 Io, Aether-9, Memory Cores, failed expeditions, alien/android threats).  
 **Player:** **Kade** (fixed name) — expedition lead and base-camp commander (the human player character).  
-**Companion pick remains separate:** 5000 AC → 1 starter Skilled Companion (`StarterPioneerSelectUI`).
+**Companion pick remains separate:** **0 AC** at New Game → **free** pick of 1 starter Skilled Companion (no AC spend); earn AC in play (`StarterPioneerSelectUI` refactor).
+
+**GDD note:** This plan **supersedes** GDD 5.0’s “5000 AC starter grant” for the Kade new-game flow until GDD Appendix A is updated.
 
 ---
 
@@ -12,10 +14,11 @@
 | Decision | Lock |
 |----------|------|
 | **Player name** | **Kade** is fixed — no rename field at New Game. UI and comms always use “Kade.” |
-| **Background + companion** | **Dialogue-only synergy.** `preferredCompanionHint` suggests flavor pairings; **no** mechanical duo bonuses, shared perks, or stat stacking. |
-| **Starting economy** | Every background (including Hard Mode) starts at **5000 AC** — no AC tradeoffs. |
+| **Background + companion** | **Minimum 2 companion synergies per background.** When the **starter** Skilled Companion’s class matches a synergy row, Kade gains **stat bonuses** + **1 free skill rank** (+ bonus dialogue). Synergies shown on background card and highlighted on companion select. |
+| **Starting economy** | Every background (including Hard Mode) starts at **0 AC**. First companion is a **free charter pick** — not purchased. AC comes from quests, loot, and base output. |
 | **Starting kit tier** | Every background uses the **same kit power band** (see §4.0). Weapons and items differ by **role flavor**, not DPS or vendor value. |
-| **Hard Mode** | Optional toggle on background select. **−20% Kade damage** (melee + ranged). **Same AC (5000)** and **same kit** as the chosen background — no extra gear, no stripped loadout. |
+| **Hard Mode** | Optional toggle on background select. **−20% Kade damage** (melee + ranged). **Same 0 AC** and **same kit** as the chosen background — no extra gear, no stripped loadout. |
+| **Io history (player-facing)** | Expeditions, aliens, Aether-9, and “what happened” on Io are **suspicions and rumors** until Memory Cores / evidence prove otherwise (see §7.0). |
 
 ---
 
@@ -38,7 +41,7 @@ Backgrounds are **not** companion classes. They bias Kade’s **personal** kit; 
 ```
 Main Menu → New Game
   → Kade Background Select  (NEW — includes Hard Mode toggle)
-  → Starter Skilled Companion Select  (existing)
+  → Starter Skilled Companion Select  (free pick — 0 AC; synergy bonuses if class matches)
   → Welcome / controls popup  (existing)
   → Deploy to Pioneer scene
 ```
@@ -70,7 +73,7 @@ Main Menu → New Game
 | `unlockedRecipeIds` | Optional — e.g. rad gel recipe for smuggler |
 | `passivePerkId` | Unique background trait (see §5) |
 | `commsToneTag` | Colony Ops first-contact line variant |
-| `preferredCompanionHint` | UI + **dialogue-only** companion pairing (see §8.1) |
+| `companionSynergies` | **≥2** entries — `{ companionClass, statBonuses, skillGrant, dialogueId }` (see §8.1) |
 
 ### Save / apply hooks
 
@@ -78,10 +81,12 @@ Main Menu → New Game
 |--------|------|
 | `GameSaveData` | Add `string playerBackgroundId`, `bool hardModeEnabled` |
 | `SimpleGameManager.BeginNewGameSession` | Merge background `startingItems` after base grant |
-| `PlayerProgressionManager` | Apply `startingSkillGrants` before first skill UI |
+| `PlayerProgressionManager` | Apply background `startingSkillGrants` + **companion synergy skill** after starter pick |
+| `StarterPioneerSelectUI` | Highlight offers whose `pioneerClass` matches a synergy; preview Kade bonus on hover |
 | `SurvivalStats` | Apply max stat bonuses once at init |
 | `StoryWorldStateProvider` | Expose `PlayerBackgroundId` for future dialogue |
 | `CommsQueryService` / templates | `commsToneTag` for first Ops transmission |
+| `PioneerRosterManager` / `StarterPioneerCatalog` | 0 AC grant; free starter recruit; apply companion synergy after pick |
 
 **Balance rule:** Total power ≈ equal across backgrounds. Differentiate via **stats, skills, perks, and flavor items** — not AC or weapon DPS. No background strictly dominates combat **and** survival **and** exploration.
 
@@ -97,7 +102,7 @@ Every background starts with the **same economic and combat baseline**:
 
 | Shared grant | Value |
 |--------------|-------|
-| **Aether Credits** | **5000 AC** (always — Hard Mode included) |
+| **Aether Credits** | **0 AC** (always — Hard Mode included). Companion recruit costs **0** at New Game. |
 | **Starter weapon tier** | Tier-1 — same base damage band; only animation/type differs |
 | **Consumable band** | 3× utility consumables + 1× O₂ canister equivalent |
 | **Tool / fiction item** | 1× background-flavored non-weapon (scanner, map fragment, story shell, etc.) |
@@ -116,10 +121,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_recon_sweep` rank 1 (free) |
 | **Weapon** | Compact sidearm (Tier-1 sidearm band) |
 | **Items** | Survey tablet (fiction), 2× rad sample vials, 1× O₂ canister |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Calibrated Eye*:** +10% scan range; first map sector reveal bonus at B6 vista |
 | **Rumors known** | “The rush numbers never matched the bodies.” “Polar camps went quiet before the calderas did.” |
-| **Dialogue pairing** | Science Specialist or Infiltrator Scout — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -133,10 +138,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_blade_training` rank 1, `skill_endurance` rank 1 |
 | **Weapon** | Standard issue machete (Tier-1 melee band) |
 | **Items** | Light armor patch kit, 2× stim patch, 1× O₂ canister |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Suppressing Presence*:** First melee combo in an encounter costs −10% stamina |
 | **Rumors known** | “Something got aboard during the last caldera evac — not fauna.” “Corporate security still scrubs android memory cores.” |
-| **Dialogue pairing** | Combat Tactician or Med Tech — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -150,10 +155,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_mining` rank 1, `skill_harvesting` rank 1 |
 | **Weapon** | Salvage hammer (Tier-1 melee band) |
 | **Items** | Scrap bundle ×3, repair foam ×2, 1× O₂ canister |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Strip & Save*:** +15% salvage from wreck POIs; chance for bonus scrap roll |
 | **Rumors known** | “Half the ‘lost’ expeditions left hulls you can still walk through.” “Aether-9 is a myth — or a trademark.” |
-| **Dialogue pairing** | Salvage Engineer or Architect Engineer — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -167,10 +172,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_recon_sweep` rank 1, `skill_gather_efficiency` rank 1 |
 | **Weapon** | Silenced pistol (Tier-1 sidearm band) |
 | **Items** | Stolen rad inoculation ×1, cold-tier glove liners, smuggler cache map fragment (fiction) |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Ghost Route*:** −15% encounter weight for first expedition exit from camp |
 | **Rumors known** | “Teal packages hum near caldera glass.” “Still Hunter isn’t a myth — smugglers lost two runners to ‘seams in the air.’” |
-| **Dialogue pairing** | Infiltrator Scout or Logistics Officer — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -184,10 +189,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_vital_boost` rank 1 |
 | **Weapon** | Shock baton (Tier-1 melee band) |
 | **Items** | Field med kit ×3, sulfur respirator filter ×1, 1× O₂ canister |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Triage Priority*:** Self-heal items +20% effectiveness; expedition downed companion bleed timer +15% |
 | **Rumors known** | “Injured miners described ‘voices in the sulfur.’” “Some evac pods launched empty — autopilot only.” |
-| **Dialogue pairing** | Med Tech or Science Specialist — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -201,10 +206,10 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 | **Skills** | `skill_weapon_accuracy` rank 1 |
 | **Weapon** | Pulse carbine (Tier-1 ranged band) |
 | **Items** | Relay spool ×1, Echo signal booster (consumable fiction), cracked Memory Core **shell** (story item, empty) |
-| **AC** | 5000 |
+| **AC** | 0 |
 | **Perk — *Harmonic Ear*:** Echo signal UI pings 20% sooner; Aether-9 repair quest gets unique “I’ve heard this frequency” line |
 | **Rumors known** | “Aether-9 wasn’t built — it was *found*.” “Memory Cores aren’t human tech.” “Something answers when the cores are near.” |
-| **Dialogue pairing** | Communications Officer or Science Specialist — Ops / companion banter only |
+| **Dialogue pairing (≥2)** | See §8.1 synergy table |
 
 ---
 
@@ -236,7 +241,7 @@ Implement as `BackgroundPerkRegistry` or flags on `PlayerProgressionManager` —
 | Field Medic | Low | **High** | Med | Humanitarian horror |
 | Relay Technician | Med | Med | **High** (Echo) | **Aether-9 primed** |
 
-**All rows:** 5000 AC, Tier-1 weapon band, shared consumable band (§4.0).  
+**All rows:** 0 AC, free starter companion, Tier-1 weapon band, shared consumable band (§4.0).  
 **Hard Mode:** Same row as chosen background + **−20% Kade damage** only.
 
 **Recommended default for story-first players:** Relay Technician or Survey Attaché.  
@@ -244,134 +249,197 @@ Implement as `BackgroundPerkRegistry` or flags on `PlayerProgressionManager` —
 
 ---
 
-## 7. Universe backstory — Io and the human push (2160)
+## 7. Universe backstory — suspicions, rumors, and Io (2160)
 
-### 7.1 The promise
+### 7.0 Narrative rule — nothing is confirmed at start
 
-By **2160**, Earth’s belt economy runs on Jovian metals and isotopes. **Io** was never meant to be a home — it was a ** furnace with a payroll**: sulfur, silicates, volcanic gases, and rare isotopes cooked under Jupiter’s shadow.
+**Player-facing default:** Everything Kade “knows” about Io’s past — failed expeditions, aliens, precursor tech, Aether-9, corporate crimes — is **suspicion, bar talk, redacted files, or wreckage hints**. Ops and companions use language like *“report claims,”* *“unverified,”* *“rumor,”* *“could be cover story.”*
 
-Then someone noticed the **harmonics**.
+**Evidence ladder:** Rumor → environmental POI → Echo / chronicle fragment → Memory Core slot → Aether-9 confirmation. Act one **never** states alien canon as fact in UI copy.
 
-Seismic arrays picked up repeating patterns in the calderas — too regular for magma, too deep for human drills. Funding flowed. Faith followed. **Helix Meridian**, **Aether Initiative**, and a dozen shell corps built habitats that were never designed to last.
-
-Kade arrives at the **tail end of the gold rush**, when the corps are still smiling and the graves are still fresh.
+**Writer canon (internal only — §7.8):** Design truth for directors and core arc; **not** shown to the player until earned.
 
 ---
 
-### 7.2 Timeline (player-facing history)
+### 7.1 The promise (what Kade was told)
 
-| Era | Name | What happened |
-|-----|------|----------------|
-| **2140–2148** | **First Rush** | Corporate isotope scramble; polar camps, illegal core extraction; first mass casualties from rad pulses |
-| **2149–2154** | **Symbiosis Decade** | Human–AI co-pilot experiments; android labor on Io; “Corporate Directive” labs in lava tubes |
-| **2155–2158** | **The Silence** | Three flagship expeditions stop transmitting within six months; rescue teams find intact hulls, empty suits, running life support |
-| **2159** | **Aether Initiative collapse** | Program shuttered after “unreproducible anomalies”; probe **Aether-9** sealed in a vault — or so the public ledger says |
-| **2160** | **Genesis push** | **Dark Matter: Genesis** charter — small base camp, Echo rescue doctrine, official story: *reclaim*, not *colonize* |
+By **2160**, belt corps sell Io as a ** furnace with a payroll** — isotopes, sulfur, silicates under Jupiter’s shadow. Charter briefs mention “harmonic surveys” and “reclamation.”
+
+Kade arrives at the **tail end of the gold rush**. Official smiles. Unofficial whispers say the graves outnumber the ledgers.
 
 ---
 
-### 7.3 Failed expeditions (environmental story seeds)
+### 7.2 Rumored timeline (what Kade has heard — not verified)
 
-These are **rumors and wreckage**, not fully scripted yet — background blurbs and POI labels:
+| Era (rumored) | Name | Suspicion / rumor (player-facing) |
+|---------------|------|-----------------------------------|
+| **2140–2148** | **First Rush** | Corps fought over isotopes; polar camps “went dark”; rad spikes buried in accounting |
+| **2149–2154** | **Symbiosis Decade** | Human–AI “co-pilot” trials; android labor; labs rumored in lava tubes |
+| **2155–2158** | **The Silence** | Flagships stopped calling; rescues found **empty suits** and running life support — “no bodies, no answers” |
+| **2159** | **Aether Initiative collapse** | Program killed for “bad data”; **Aether-9** sealed — or **found**, depending who you ask |
+| **2160** | **Genesis push** | Your charter: *reclaim*, not *colonize* — some think that’s PR |
 
-| Expedition | Last known | What survivors say |
-|------------|------------|-------------------|
-| **Helix Meridian Survey Seven** | B5 polar flats | Found “glass trees” that grow toward Jupiter; team stopped sleeping |
-| **Symbiosis Lab Caravan** | B4 caldera rim | Androids walked out alone, carrying human tags; tags didn’t match roster |
-| **Stillwater Protocol** | B6 highland tubes | Sent a perfect hourly status for eleven days — all from the same timestamp |
-| **Aether Initiative Team Nine** | B7 ruin belt | Recovered a machine that **answered questions before they were asked**; team Nine renamed themselves in logs |
-
-Kade’s background determines **which two expeditions** appear as “I’ve read the file” vs “I’ve heard bar talk.”
-
----
-
-### 7.4 Aether-9 (mystery hub)
-
-**Official line:** Weather probe from the First Rush, reactivated for storm prediction.
-
-**Street line:** A **found object** — a shell older than human Io presence, housing an Echo that calls itself **Aether-9**.
-
-**Truth (design canon):** Aether-9 is an **ancient Neural Echo** sealed in precursor hardware. It once held **Memory Cores** that recorded Io’s deep history. Without them, it wakes **angry, fragmented, and afraid**.
-
-Kade with **Relay Technician** background starts with an empty core shell and harmonic vocabulary — the prologue repair quest (3 objects) should acknowledge: *“You didn’t come here blind.”*
+Background blurbs use **“Kade suspects…”** / **“Kade was told…”** — not “this happened.”
 
 ---
 
-### 7.5 Aliens, precursors, and the unknown
+### 7.3 Failed expeditions — rumors tied to wreckage
 
-The game never needs to fully reveal “aliens” in act one. Layers of belief:
+| Expedition (rumored) | Last known (reported) | What people **claim** — unverified |
+|----------------------|----------------------|-------------------------------------|
+| **Helix Meridian Survey Seven** | B5 polar flats | “Glass trees” toward Jupiter; crew “stopped sleeping” |
+| **Symbiosis Lab Caravan** | B4 caldera rim | Androids walked out alone with **wrong** human tags |
+| **Stillwater Protocol** | B6 highland tubes | Hourly status for eleven days — **same timestamp** |
+| **Aether Initiative Team Nine** | B7 ruin belt | Machine “answered before asked”; crew renamed themselves in logs |
 
-#### Layer A — What corporate PR admits
-- “Unidentified seismic sources.”
-- “Non-terrestrial alloy traces.”
-- “Recommend avoidance of B7 geometry.”
-
-#### Layer B — What expedition logs claim
-- **Precursor ruins** — non-Euclidean angles, teal **Aether seeps**, silence zones where comms die.
-- **Native Io life** — chemosynthetic, sulfur-silicon, resonance-fed; not “little green men” but ** ecology that responds to Memory Core leakage**.
-- **Still Hunter** — mythic predator; one witness per decade; “seams in the air.”
-- **Void Stitcher** — real, rare, kills and vanishes; Ops says *“Do not trust the seams.”*
-
-#### Layer C — What Aether-9 will eventually say
-- Io was **visited** before life crawled from Earth’s oceans.
-- Memory Cores are **archives**, not batteries.
-- Something **watches** caldera rims when cores are moved — not necessarily hostile; ** curious ** in a way humans misread as predation.
-
-#### The unknown force (working name: **The Resonance**)
-Not a faction — a **planetary immune response** to core theft and harmonic noise. Resonance Events (10–15 min world changes) are Io ** adjusting **. Endgame question: can humanity **partner** with it, or only **provoke** it?
+Kade’s background sets which rumors feel like **file gossip** vs **street talk**. Finding a wreck POI adds: *“The rumor might be true.”*
 
 ---
 
-### 7.6 Rumor table (campfire / Ops radio fodder)
+### 7.4 Aether-9 — layers of belief (player-facing)
 
-Roll or gate by background + biome progress:
+| Layer | What Kade might believe |
+|-------|-------------------------|
+| **Corporate** | Old weather probe; reactivate for storm prediction |
+| **Street** | **Found shell** — older than human Io; something inside calls itself Aether-9 |
+| **Smuggler / relay circles** | Memory Cores aren’t batteries; something **answers** when cores get close |
+| **Your background** | Relay Tech: empty core shell + harmonic vocabulary — still **theory** until repair arc |
 
-| Rumor | Grain of truth |
-|-------|----------------|
-| “Io breathes when Jupiter aligns.” | Weather + Resonance director coupling |
-| “The cores scream when you slot them.” | Memory Core recovery setpieces |
-| “Corps built labs inside living lava tubes.” | Symbiosis Decade sites in B4/S3 |
-| “Smugglers moved teal cores for Helix.” | B5 polar arc, illegal isotope trade |
-| “Aether-9 killed its last crew.” | Partial — something on Io killed Team Nine; Aether-9 remembers fragments |
-| “Androids pray when they think you’re not listening.” | Corrupted AI prayer loops in B7 |
-| “There’s a fifth pressure they don’t put on the HUD.” | Saturation / Resonance drift (future meter) |
-| “The moon is hollow under the calderas.” | Stratum 4–5 vault network |
+Awakening dialogue stays hostile and fragmented — Aether-9 may **lie, omit, or misremember** until cores return.
+
+---
+
+### 7.5 Aliens, precursors, and the unknown — rumor tiers
+
+#### Tier 1 — Campfire / Ops rumors (always “maybe”)
+- “Non-human geometry in B7 — **if** the maps aren’t faked.”
+- “Still Hunter — **one witness per decade**, could be stress hallucination.”
+- “Void Stitcher — **do not trust the seams**” (Ops line; creature may be real, myth grows around it).
+- “Androids **praying** in ruins — corrupted loop or something else?”
+- “Fifth pressure not on the HUD” — Saturation / Resonance drift (future meter).
+
+#### Tier 2 — Wreckage & scan hints (stronger suspicion)
+- Precursor angles, teal **Aether seeps**, silence zones.
+- Native Io life — chemosynthetic / sulfur-silicon — **confirmed ecology**, alien **intent** unknown.
+- Illegal teal core shipments (B5 smuggler rumor).
+
+#### Tier 3 — Memory Core + Aether-9 arc (earned truth)
+- Cores hold **archives**, not just power.
+- Prior visitors **may** have been on Io before Earth oceans — phrasing stays cautious until late arc.
+- **The Resonance** (working internal name): planetary response to harmonic theft — players experience Events before naming it.
+
+---
+
+### 7.6 Rumor table (campfire / Ops radio)
+
+| Rumor (always suspect until proven) | Possible grain of truth (writer) |
+|-------------------------------------|----------------------------------|
+| “Io breathes when Jupiter aligns.” | Weather + Resonance coupling |
+| “The cores scream when you slot them.” | Core recovery setpieces |
+| “Corps built labs inside living lava tubes.” | Symbiosis sites B4/S3 |
+| “Smugglers moved teal cores for Helix.” | B5 polar arc |
+| “Aether-9 killed its last crew.” | Partial — Team Nine; Aether-9 fragments |
+| “The moon is hollow under the calderas.” | Stratum 4–5 vaults |
 
 ---
 
 ### 7.7 Kade’s place in the story
 
-Kade is **not** a blank slate. Each background is a **lens**:
+Each background is a **lens on rumors**, not a truth receipt:
 
-- **Corporate** Kade wants proof the rush lied.
-- **Guard** Kade wants redemption for walking away.
-- **Salvage** Kade wants a big score — or a ship off Io.
-- **Smuggler** Kade owes the wrong people money.
-- **Medic** Kade swore to reduce body counts.
-- **Relay** Kade heard the harmonics and **has to know**.
+- **Corporate** Kade — suspects the rush lied; wants proof.
+- **Guard** Kade — suspects classified android incidents; wants redemption.
+- **Salvage** Kade — suspects corps left fortunes in wrecks; wants out or score.
+- **Smuggler** Kade — suspects teal cores and Still Hunter; owes dangerous people.
+- **Medic** Kade — suspects casualties were covered up; wants fewer bodies.
+- **Relay** Kade — suspects Aether-9 was **found**; needs to hear the harmonics again.
 
-All paths converge on: **restore Aether-9 → recover Memory Cores → survive Resonance → decide if Io becomes home.**
+All paths converge on: **restore Aether-9 → recover Memory Cores → test rumors against evidence → decide if Io becomes home.**
 
-Companion selection still defines **who stands beside Kade**; background defines **who Kade already was**. Pairings unlock **extra dialogue lines only** (§8.1) — never stat bonuses.
+Companion selection defines **who stands beside Kade**; matching class unlocks **Kade stat + skill synergy** (§8.1) plus extra dialogue.
+
+---
+
+### 7.8 Writer canon (internal — do not dump on player in act one)
+
+*For designers / StoryDirector only. Reveal through cores and Resonance.*
+
+- Aether-9: ancient Neural Echo in precursor hardware; Memory Cores = archives.
+- Io likely had prior visitors; Resonance = planetary response, not a faction.
+- Something may **observe** caldera activity when cores move — curiosity misread as hostility.
 
 ---
 
 ## 8. Narrative integration beats
 
-### 8.1 Background × companion dialogue (dialogue-only synergy)
+### 8.1 Background × companion synergy (≥2 per background)
 
-When `playerBackgroundId` matches `preferredCompanionHint` class on the starter pick or expedition trio, unlock **optional banter lines** — no gameplay modifier.
+When the **starter** companion’s `SkilledPioneerClass` matches a row, apply **Kade stat bonuses** + **1 free skill rank** (stacks with background grants; no skill points spent) + **synergy dialogue** on first deploy.
 
-| Background | Companion class | Example line (companion → Kade) |
-|------------|-----------------|----------------------------------|
-| Survey Attaché | Science Specialist | “You read the telemetry. I read the chemistry. We’ll argue until we’re right.” |
-| Guard Dropout | Combat Tactician | “You know boarding drills. I know aggro. Don’t hero the rim alone.” |
-| Salvage Contractor | Salvage Engineer | “You strip hulls; I strip schedules. Helix left plenty out here.” |
-| Polar Smuggler | Infiltrator Scout | “You ran ice routes. I run signal routes. Same ghosts.” |
-| Field Medic | Med Tech | “Red Cross Io? I’ve patched worse on the plains.” |
-| Relay Technician | Communications Officer | “You heard the harmonics first. I’ll keep the channel open.” |
+**UI:** Background card lists all synergies. Companion select **highlights** matching offers and previews bonuses. Non-match = **no penalty** — background base kit only.
 
-If the player ignores the hint, **no penalty** — generic companion lines still play.
+**Starter pool today** (`StarterPioneerCatalog`): Combat Tactician, Infiltrator Scout, Science Specialist, Architect Engineer, Med Tech — **bold** rows below are pickable day one.
+
+#### BG-1 · Corporate Survey Attaché
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Science Specialist** | +10 max Energy | `skill_gather_efficiency` rank 1 | **Yes** |
+| **Infiltrator Scout** | +5 max Stamina | `skill_weapon_accuracy` rank 1 | **Yes** |
+| Communications Officer | +5 max Energy | `skill_artisan_focus` rank 1 | Roster later |
+
+#### BG-2 · Jovian Guard Dropout
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Combat Tactician** | +15 max Health | `skill_marksman_training` rank 1 | **Yes** |
+| **Med Tech** | +10 max Health | `skill_stamina_core` rank 1 | **Yes** |
+| Salvage Engineer | +5 max Stamina | `skill_endurance` rank 1 | Roster later |
+
+#### BG-3 · Salvage Guild Contractor
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Architect Engineer** | +5 max Stamina | `skill_stamina_core` rank 1 | **Yes** |
+| Salvage Engineer | +10 max Health | `skill_gather_efficiency` rank 1 | Roster later |
+| Logistics Officer | +5 max Energy | `skill_harvesting` rank 1 | Roster later |
+
+#### BG-4 · Polar Run Smuggler
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Infiltrator Scout** | +10 max Stamina | `skill_endurance` rank 1 | **Yes** |
+| Logistics Officer | +5 max Energy | `skill_weapon_accuracy` rank 1 | Roster later |
+| **Science Specialist** | +5 max Energy | `skill_recon_sweep` rank 1 | **Yes** |
+
+#### BG-5 · Field Medic (Red Cross Io)
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Med Tech** | +15 max Health | `skill_endurance` rank 1 | **Yes** |
+| **Science Specialist** | +10 max Energy | `skill_recon_sweep` rank 1 | **Yes** |
+| Combat Tactician | +5 max Health | `skill_vital_boost` rank 1 | **Yes** |
+
+#### BG-6 · Probe Relay Technician
+
+| Companion class | Kade stats | Skill grant | Starter pool? |
+|---------------|------------|-------------|---------------|
+| **Science Specialist** | +5 max Energy | `skill_recon_sweep` rank 1 | **Yes** |
+| Communications Officer | +10 max Energy | `skill_artisan_focus` rank 1 | Roster later |
+| **Infiltrator Scout** | +5 max Stamina | `skill_gather_efficiency` rank 1 | **Yes** |
+
+**Example synergy dialogue (first deploy):**
+
+| Pair | Line (companion → Kade) |
+|------|-------------------------|
+| Survey + Science | “You read the telemetry. I read the chemistry. We’ll argue until we’re right.” |
+| Guard + Tactician | “You know boarding drills. I know aggro. Don’t hero the rim alone.” |
+| Salvage + Architect | “You strip hulls; I strip schedules. Helix left plenty out here.” |
+| Smuggler + Scout | “You ran ice routes. I run signal routes. Same ghosts.” |
+| Medic + Med Tech | “Red Cross Io? I’ve patched worse on the plains.” |
+| Relay + Science | “You heard the harmonics. I’ll tell you what the samples say.” |
+
+**Implementation:** `KadeCompanionSynergyDefinition` on background SO; apply in `PioneerRosterManager` after starter pick; persist synergy skill in `allocatedSkillIds`.
 
 ### 8.2 Story beats
 
@@ -395,23 +463,27 @@ If the player ignores the hint, **no penalty** — generic companion lines still
 | **P0 — Design lock** | This doc + background table sign-off | — |
 | **P1 — Data** | 6× `KadeBackgroundDefinition` assets, registry | Item/weapon IDs stable |
 | **P2 — UI** | `KadeBackgroundSelectUI` before companion pick | `StarterPioneerSelectUI` pattern |
-| **P3 — Apply** | Save field, stat/skill/item grants on new game | `SimpleGameManager`, `PlayerProgressionManager` |
-| **P4 — Perks** | Passive trait hooks (combat, scan, salvage) | Skill modifier pipeline |
+| **P3 — Apply** | Save field, stat/skill/item grants, **0 AC** new game, free starter pick | `SimpleGameManager`, `PlayerProgressionManager`, `StarterPioneerCatalog` |
+| **P4 — Perks + synergy** | Background perks + companion synergy stat/skill apply | Skill modifier pipeline |
 | **P5 — Story** | Comms templates + Aether-9 lines keyed by `playerBackgroundId` | Communications Runtime (Run 2) |
 
-**Out of scope for v1:** Respec background, hybrid backgrounds, multiplayer, mechanical background×companion bonuses.
+**Out of scope for v1:** Respec background, hybrid backgrounds, multiplayer.
+
+**Code touch for 0 AC:** `StarterPioneerCatalog.StarterAcGrant` → **0**; offers `acCost` → **0**; `StarterPioneerSelectUI` copy → “Choose one specialist (charter included)”; `GameStartPopup` AC blurb updated.
 
 ---
 
 ## 10. Open questions
 
-1. **Promote to GDD:** Fold §7 universe backstory into Appendix A narrative after review?
+1. **Promote to GDD:** Fold §7 + 0 AC start into Appendix A (supersedes 5000 AC grant)?
 2. **Hard Mode damage value:** Confirm **−20%** Kade damage or tune in playtest (10–25% band)?
 
 **Resolved (locked):**
 - Kade = fixed name
-- Companion synergy = dialogue only
-- Hard Mode = −20% Kade damage; same 5000 AC and same kit as selected background
+- Io history = **suspicions and rumors** until evidence / Memory Cores
+- Companion synergy = **≥2 classes per background** → Kade **stat bonuses + skill rank** + dialogue
+- New Game = **0 AC**; starter companion = **free pick**
+- Hard Mode = −20% Kade damage; same 0 AC and same kit as selected background
 
 ---
 
