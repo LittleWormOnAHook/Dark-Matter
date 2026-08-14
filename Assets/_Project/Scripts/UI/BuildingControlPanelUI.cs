@@ -89,10 +89,10 @@ namespace Project.UI
         private float nextProductionTick;
         private bool lastCrisisState;
 
-        private static readonly Color ActiveTabColor = SurvivalPioneerUiPalette.ActiveTabBackground;
-        private static readonly Color InactiveTabColor = SurvivalPioneerUiPalette.InactiveTabBackground;
-        private static readonly Color ActiveLabelColor = SurvivalPioneerUiPalette.Gold;
-        private static readonly Color InactiveLabelColor = SurvivalPioneerUiPalette.BodyText;
+        private static readonly Color ActiveTabColor = DarkMatterGenesisUiPalette.ActiveTabBackground;
+        private static readonly Color InactiveTabColor = DarkMatterGenesisUiPalette.InactiveTabBackground;
+        private static readonly Color ActiveLabelColor = DarkMatterGenesisUiPalette.Gold;
+        private static readonly Color InactiveLabelColor = DarkMatterGenesisUiPalette.BodyText;
 
         public static BuildingControlPanelUI Instance => instance;
         public static bool IsOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
@@ -235,6 +235,7 @@ namespace Project.UI
                 UiFrontLayer.BringLayerToFront(transform.parent);
 
             GameplayHudVisibility.SetModalOverlayOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonBuildingControl, true);
         }
 
         private void Close()
@@ -245,6 +246,7 @@ namespace Project.UI
             activePanel = null;
 
             GameplayHudVisibility.SetModalOverlayOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonBuildingControl, false);
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetBuildingControlOpen(false);

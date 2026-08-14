@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -54,6 +55,23 @@ namespace Project.UI
         private PlayerProgressionManager trackedProgression;
 
         private InputAction characterToggleAction;
+
+        private int lastHealthDisplay = int.MinValue;
+        private int lastEnergyDisplay = int.MinValue;
+        private int lastStaminaDisplay = int.MinValue;
+        private int lastOxygenDisplay = int.MinValue;
+        private string lastThermalTempText;
+        private string lastThermalStatusText;
+        private readonly Dictionary<Slider, SurvivalSliderCache> survivalSliderCache =
+            new Dictionary<Slider, SurvivalSliderCache>(8);
+
+        private struct SurvivalSliderCache
+        {
+            public RectTransform RingFill;
+            public Image FilledImage;
+            public CircularProgressBar Circular;
+            public bool Resolved;
+        }
 
         private void Awake()
         {
@@ -252,7 +270,7 @@ namespace Project.UI
             interactionPrompt.alignment = TextAlignmentOptions.Center;
             interactionPrompt.textWrappingMode = TextWrappingModes.NoWrap;
             interactionPrompt.overflowMode = TextOverflowModes.Overflow;
-            interactionPrompt.color = SurvivalPioneerUiPalette.InteractionPromptText;
+            interactionPrompt.color = DarkMatterGenesisUiPalette.InteractionPromptText;
         }
 
 
@@ -318,30 +336,62 @@ namespace Project.UI
             SetSliderValue(staminaSlider, survivalStats.CurrentStamina / survivalStats.maxStamina);
             SetSliderValue(oxygenSlider, survivalStats.GetOxygenNormalized());
 
-            if (healthText != null)
+            int healthDisplay = Mathf.CeilToInt(survivalStats.CurrentHealth);
+            if (healthText != null && healthDisplay != lastHealthDisplay)
+            {
+                lastHealthDisplay = healthDisplay;
                 healthText.text = FormatStatValue(survivalStats.CurrentHealth, "Health");
+            }
+
             if (thermalText != null)
             {
                 ExposureStatusSnapshot snapshot = ExposureStatusService.Current;
+                string tempText;
+                string statusText;
                 if (snapshot != null && !ReferenceEquals(snapshot, ExposureStatusSnapshot.Empty))
                 {
-                    thermalText.text = $"{snapshot.TemperatureText}  {snapshot.ThermalStatusLabel}";
+                    tempText = snapshot.TemperatureText;
+                    statusText = snapshot.ThermalStatusLabel;
                 }
                 else
                 {
-                    thermalText.text = $"{ExposureTemperatureDisplay.FormatFahrenheit(survivalStats.GetDisplayTemperatureFahrenheit())}  {survivalStats.GetThermalStatusLabel()}";
+                    tempText = ExposureTemperatureDisplay.FormatFahrenheit(survivalStats.GetDisplayTemperatureFahrenheit());
+                    statusText = survivalStats.GetThermalStatusLabel();
+                }
+
+                if (tempText != lastThermalTempText || statusText != lastThermalStatusText)
+                {
+                    lastThermalTempText = tempText;
+                    lastThermalStatusText = statusText;
+                    thermalText.text = string.Concat(tempText, "  ", statusText);
                 }
             }
-            if (energyText != null)
+
+            int energyDisplay = Mathf.CeilToInt(survivalStats.CurrentEnergy);
+            if (energyText != null && energyDisplay != lastEnergyDisplay)
+            {
+                lastEnergyDisplay = energyDisplay;
                 energyText.text = FormatStatValue(survivalStats.CurrentEnergy, "Energy");
-            if (staminaText != null)
+            }
+
+            int staminaDisplay = Mathf.CeilToInt(survivalStats.CurrentStamina);
+            if (staminaText != null && staminaDisplay != lastStaminaDisplay)
+            {
+                lastStaminaDisplay = staminaDisplay;
                 staminaText.text = FormatStatValue(survivalStats.CurrentStamina, "Stamina");
+            }
+
             if (oxygenText != null)
             {
                 if (CondensedSurvivalStatsHud.IsActive)
                     oxygenText.gameObject.SetActive(true);
 
-                oxygenText.text = FormatOxygenValue(survivalStats.CurrentOxygen);
+                int oxygenDisplay = Mathf.Max(0, Mathf.CeilToInt(survivalStats.CurrentOxygen));
+                if (oxygenDisplay != lastOxygenDisplay)
+                {
+                    lastOxygenDisplay = oxygenDisplay;
+                    oxygenText.text = FormatOxygenValue(survivalStats.CurrentOxygen);
+                }
             }
         }
 
@@ -437,7 +487,7 @@ namespace Project.UI
             return $"{statName}: {Mathf.Ceil(value)}";
         }
 
-        private static void SetSliderValue(Slider slider, float normalizedValue)
+        private void SetSliderValue(Slider slider, float normalizedValue)
         {
             if (slider == null)
                 return;
@@ -445,24 +495,48 @@ namespace Project.UI
             float clamped = Mathf.Clamp01(normalizedValue);
             slider.SetValueWithoutNotify(clamped);
 
-            Transform fillTransform = slider.transform.Find("RingFill");
-            if (fillTransform is RectTransform)
+            if (!survivalSliderCache.TryGetValue(slider, out SurvivalSliderCache cache) || !cache.Resolved)
             {
-                CondensedSurvivalStatsHud.ApplyBarFill(slider, clamped);
+                cache = ResolveSurvivalSliderCache(slider);
+                survivalSliderCache[slider] = cache;
+            }
+
+            if (cache.RingFill != null)
+            {
+                CondensedSurvivalStatsHud.ApplyBarFill(slider, clamped, cache.RingFill);
                 return;
             }
 
-            if (fillTransform != null && fillTransform.TryGetComponent<Image>(out Image fillImage)
+            if (cache.FilledImage != null)
+            {
+                cache.FilledImage.fillAmount = clamped;
+                return;
+            }
+
+            if (cache.Circular != null)
+                cache.Circular.UpdateRadialFill(clamped);
+        }
+
+        private static SurvivalSliderCache ResolveSurvivalSliderCache(Slider slider)
+        {
+            SurvivalSliderCache cache = new SurvivalSliderCache { Resolved = true };
+            Transform fillTransform = slider.transform.Find("RingFill");
+            if (fillTransform is RectTransform ringFill)
+            {
+                cache.RingFill = ringFill;
+                return cache;
+            }
+
+            if (fillTransform != null && fillTransform.TryGetComponent(out Image fillImage)
                 && fillImage.type == Image.Type.Filled
                 && fillImage.fillMethod == Image.FillMethod.Horizontal)
             {
-                fillImage.fillAmount = clamped;
-                return;
+                cache.FilledImage = fillImage;
+                return cache;
             }
 
-            CircularProgressBar progress = slider.GetComponent<CircularProgressBar>();
-            if (progress != null)
-                progress.UpdateRadialFill(clamped);
+            cache.Circular = slider.GetComponent<CircularProgressBar>();
+            return cache;
         }
 
 

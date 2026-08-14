@@ -1,6 +1,7 @@
 using Project.AI;
 using Project.Combat;
 using Project.Companions;
+using Project.Core;
 using Project.Creatures;
 using Project.Player;
 using Project.Progression;
@@ -233,7 +234,7 @@ namespace Project.Pet
             if (_owner == null)
                 return null;
 
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsInactive.Exclude);
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>(FindObjectsInactive.Exclude);
             EnemyHealth best = null;
             float bestDistance = Mathf.Max(meleeEngageRange * 3f, ownerLeashDistance);
 

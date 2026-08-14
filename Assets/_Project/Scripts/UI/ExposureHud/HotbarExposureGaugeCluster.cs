@@ -34,6 +34,8 @@ namespace Project.UI
         private int clusterOriginalSiblingIndex;
         private bool uiBuilt;
         private bool raisedToFrontLayer;
+        private ExposureReceiver cachedZoneReceiver;
+        private bool zoneBannerBound;
 
         public bool IsBuilt => uiBuilt;
 
@@ -103,7 +105,7 @@ namespace Project.UI
 
         private void Update()
         {
-            if (!uiBuilt)
+            if (!uiBuilt || zoneBannerBound)
                 return;
 
             BindZoneEntryBanner();
@@ -114,12 +116,19 @@ namespace Project.UI
             if (zoneEntryBanner == null)
                 return;
 
-            ExposureStatusService service = ExposureStatusService.Instance;
-            ExposureReceiver receiver = service != null
-                ? service.GetComponent<ExposureController>() ?? service.GetComponent<ExposureReceiver>()
-                : null;
+            if (cachedZoneReceiver == null)
+            {
+                ExposureStatusService service = ExposureStatusService.Instance;
+                cachedZoneReceiver = service != null
+                    ? service.GetComponent<ExposureController>() ?? service.GetComponent<ExposureReceiver>()
+                    : null;
+            }
 
-            zoneEntryBanner.BindReceiver(receiver);
+            if (cachedZoneReceiver == null)
+                return;
+
+            zoneEntryBanner.BindReceiver(cachedZoneReceiver);
+            zoneBannerBound = true;
         }
 
         private void EnsureZoneEntryBanner(Transform canvasRoot)

@@ -39,7 +39,7 @@ Assets/_Project/Features/Communications/
 
 - Platforms: **PC first + consoles** (no mobile-as-target, no WebGL).
 - Economy: **Aether Credits (AC) only**.
-- GDD: communications attachment module / Probe Uplink; **Aether-9** is a future callsign / hub identity, not an LLM dependency.
+- GDD: communications attachment module / Probe Uplink; **Kairos** is a future callsign / hub identity, not an LLM dependency.
 - AI / LLM never reads Unity managers directly — only **Game State snapshots** / WorldState (planned) / context packs.
 - **Silence is Experience design** (HLA §2.7) — ExperienceDirector may schedule radio silence; Communications obeys density intents.
 
@@ -96,7 +96,7 @@ Crew are **data** first (ScriptableObjects), not MonoBehaviours.
 `CrewDatabase` loads all crew (`Resources/Communications/CrewDatabase` or LoadAll). No AI.
 
 Menu: **Dark Matter: Genesis → Communications → Sync Crew Database From Companions**  
-(builds from existing `NamedPioneerDefinition` assets; keeps **Aether-9**; removes placeholder Harper/Patel/Reyes/Morgan).
+(builds from existing `NamedPioneerDefinition` assets; keeps **Kairos**; removes placeholder Harper/Patel/Reyes/Morgan).
 
 ### Phase 3 — Communications Framework
 
@@ -126,7 +126,7 @@ Simple HUD first:
 
 Deferred polish (Phase 4.1 / Phase 8): waveform, radio static FX, PTT indicator, portrait animation.
 
-Palette: `SurvivalPioneerUiPalette` / `ShiftUiTheme`.
+Palette: `DarkMatterGenesisUiPalette` / `ShiftUiTheme`.
 
 ### Phase 5 — Context System
 
@@ -157,7 +157,7 @@ Still **no** LLM.
 Player asks Status / Mission / Weather / Inventory / Power / Research / Objectives via **Left Alt + 1..7**.  
 `CommsQueryService` builds a context pack, `TemplateReplyGenerator` emits Ops-tone lines, replies enqueue on the radio HUD.
 
-Speaker: **Colony Ops** (first non-AiCore crew, e.g. Kael-9) until Aether-9 is awake / advisory-unlocked (`CommsQueryService.Aether9AdvisoryUnlocked`). Aether-9 is the prologue idle machine (GDD §A6) — not day-one channel traffic.
+Speaker: **Colony Ops** (first non-AiCore crew, e.g. Kael-9) until Kairos is awake / advisory-unlocked (`CommsQueryService.KairosAdvisoryUnlocked`). Kairos is the prologue idle machine (GDD §A6) — not day-one channel traffic.
 
 ### Phase 7 — Dialogue Generator
 
@@ -165,7 +165,7 @@ Speaker: **Colony Ops** (first non-AiCore crew, e.g. Kael-9) until Aether-9 is a
 
 Deterministic phrasing upgrade: same context data, crew-flavored lines via `DialogueGenerator` + `VoiceStyle` (Professional / Tactical / Clinical / Scout / WaryMachine). No LLM.
 
-`VoiceStyleResolver` maps `CrewMember` role (and personality keywords). Aether-9 (`AiCore`) always uses **WaryMachine**, but only speaks on Alt+queries when `Aether9AdvisoryUnlocked` is true.
+`VoiceStyleResolver` maps `CrewMember` role (and personality keywords). Kairos (`AiCore`) always uses **WaryMachine**, but only speaks on Alt+queries when `KairosAdvisoryUnlocked` is true.
 
 ### Phase 8 — Voice Pipeline
 
@@ -208,7 +208,7 @@ Simulation-authored stories (arguments, illness, discoveries, equipment failure,
 
 ### Phase 13 — Companion Conversations
 
-Crew talk to each other, player, Aether-9, Mission Control without always needing player input.
+Crew talk to each other, player, Kairos, Mission Control without always needing player input.
 
 ### Phase 14 — AI Expedition Companion
 
@@ -234,7 +234,7 @@ Memory + relationships + schedules + radio + context + optional LLM — crew fee
 
 - LLM packages (Phase 9+) — deferred; template radio first
 - Phase 8.1 SimpleOffline STT/TTS
-- Aether-9 idle machine / repair quest / cores / Resonance runtime (Intelligence layer, not Communications)
+- Kairos idle machine / repair quest / cores / Resonance runtime (Intelligence layer, not Communications)
 - ExperienceDirector silence / density scheduling (after World Engine spine)
 - Treating prior “Phase X complete” ChatGPT notes as repo truth
 
@@ -255,9 +255,9 @@ See [Dark_Matter_Phase_D_Validation.md](../../../Documentation/Architecture/Dark
 
 | Upstream layer | Communications role |
 |----------------|---------------------|
-| **Intelligence** | Receives transmission intents from Story/Event/Aether-9 directors |
+| **Intelligence** | Receives transmission intents from Story/Event/Kairos directors |
 | **Experience** | Schedules silence, radio density; may defer or request soft comms |
-| **WorldState** | `ContextBuilder` enriches from story chapter, storm, Aether-9 flags |
+| **WorldState** | `ContextBuilder` enriches from story chapter, storm, Kairos flags |
 | **Presentation** | Queue, HUD, audio — this feature |
 
 ## Manual test vision (Phase 7+ milestone)

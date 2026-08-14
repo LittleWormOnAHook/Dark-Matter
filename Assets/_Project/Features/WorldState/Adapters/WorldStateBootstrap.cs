@@ -19,7 +19,7 @@ namespace Project.Features.WorldState.Adapters
 
             service.RegisterProvider(new StoryWorldStateProvider());
             service.RegisterProvider(new ColonyEvolutionWorldStateProvider());
-            service.RegisterProvider(new Aether9WorldStateProvider());
+            service.RegisterProvider(new KairosWorldStateProvider());
             service.RegisterProvider(new EnvironmentWorldStateProvider());
             service.RegisterProvider(new SessionWorldStateProvider());
             service.RegisterProvider(new ExperienceWorldStateProvider());

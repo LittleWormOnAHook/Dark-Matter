@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Project.Player;
 using Project.Player.Invector;
 using ECM2;
@@ -165,7 +165,7 @@ namespace Project.Interaction
                     return aimed;
             }
 
-            ResourceNode[] nodes = Object.FindObjectsByType<ResourceNode>(FindObjectsInactive.Exclude);
+            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude);
             IHoldWorldUsable best = null;
             float bestScore = float.MinValue;
             for (int i = 0; i < nodes.Length; i++)
@@ -277,7 +277,7 @@ namespace Project.Interaction
         }
 
         /// <summary>
-        /// True when a nearby item pickup is roughly aimed at — blocks crafting/NPC use stealing E.
+        /// True when a nearby item pickup is roughly aimed at â€” blocks crafting/NPC use stealing E.
         /// </summary>
         public static bool HasCompetingNearbyItemPickup(WorldUseContext context)
         {
@@ -285,7 +285,7 @@ namespace Project.Interaction
                 return false;
 
             float range = context.UseRange;
-            ItemPickup[] pickups = Object.FindObjectsByType<ItemPickup>(FindObjectsInactive.Exclude);
+            ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude);
             for (int i = 0; i < pickups.Length; i++)
             {
                 ItemPickup candidate = pickups[i];
@@ -301,7 +301,7 @@ namespace Project.Interaction
                     return true;
             }
 
-            RecipePickup[] recipePickups = Object.FindObjectsByType<RecipePickup>(FindObjectsInactive.Exclude);
+            RecipePickup[] recipePickups = SceneComponentCache.GetAll<RecipePickup>(FindObjectsInactive.Exclude);
             for (int i = 0; i < recipePickups.Length; i++)
             {
                 RecipePickup candidate = recipePickups[i];
@@ -322,7 +322,7 @@ namespace Project.Interaction
 
         public static bool HasActiveEnemyLootInRange(WorldUseContext context)
         {
-            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>(FindObjectsInactive.Exclude);
             for (int i = 0; i < bags.Length; i++)
             {
                 if (bags[i] != null && bags[i].CanPlayerLoot(context.PlayerPosition))
@@ -341,7 +341,7 @@ namespace Project.Interaction
 
         public static bool IsAimedAtAnyInRangeCraftingStation(WorldUseContext context)
         {
-            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>(FindObjectsInactive.Exclude);
             for (int i = 0; i < stations.Length; i++)
             {
                 CraftingStation station = stations[i];
@@ -358,7 +358,7 @@ namespace Project.Interaction
 
         public static bool IsAimedAtAnyInRangeQuestGiver(WorldUseContext context)
         {
-            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>(FindObjectsInactive.Exclude);
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
@@ -375,7 +375,7 @@ namespace Project.Interaction
 
         public static bool IsAimedAtAnyInRangeBuildingControlPanel(WorldUseContext context)
         {
-            BuildingControlPanel[] panels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>(FindObjectsInactive.Exclude);
             for (int i = 0; i < panels.Length; i++)
             {
                 BuildingControlPanel panel = panels[i];
@@ -444,7 +444,7 @@ namespace Project.Interaction
             IWorldUsable best = null;
             float bestScore = float.MinValue;
 
-            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>(FindObjectsInactive.Exclude);
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
@@ -467,7 +467,7 @@ namespace Project.Interaction
                 bestScore = score;
             }
 
-            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>(FindObjectsInactive.Exclude);
             for (int i = 0; i < stations.Length; i++)
             {
                 CraftingStation station = stations[i];
@@ -490,7 +490,7 @@ namespace Project.Interaction
                 bestScore = score;
             }
 
-            BuildingControlPanel[] controlPanels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            BuildingControlPanel[] controlPanels = SceneComponentCache.GetAll<BuildingControlPanel>(FindObjectsInactive.Exclude);
             for (int i = 0; i < controlPanels.Length; i++)
             {
                 BuildingControlPanel panel = controlPanels[i];
@@ -542,7 +542,7 @@ namespace Project.Interaction
             EnemyLootBag best = null;
             float bestScore = float.MinValue;
 
-            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>(FindObjectsInactive.Exclude);
             for (int i = 0; i < bags.Length; i++)
             {
                 EnemyLootBag bag = bags[i];
@@ -636,7 +636,7 @@ namespace Project.Interaction
                 }
             }
 
-            RecipePickup[] recipePickups = Object.FindObjectsByType<RecipePickup>(FindObjectsInactive.Exclude);
+            RecipePickup[] recipePickups = SceneComponentCache.GetAll<RecipePickup>(FindObjectsInactive.Exclude);
             float bestScore = -1f;
             for (int i = 0; i < recipePickups.Length; i++)
             {
@@ -836,7 +836,7 @@ namespace Project.Interaction
             float range = gatherer != null ? gatherer.pickupRange : fallbackRange;
             Vector3 rangeOrigin = playerPosition ?? viewRay.origin;
             float intentRange = range * PickupIntentDistanceMultiplier;
-            ItemPickup[] pickups = Object.FindObjectsByType<ItemPickup>(FindObjectsInactive.Exclude);
+            ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude);
 
             float bestScore = -1f;
             for (int i = 0; i < pickups.Length; i++)
@@ -966,7 +966,7 @@ namespace Project.Interaction
             ItemPickup pickup = hitCollider.GetComponentInParent<ItemPickup>();
             if (IsCollectiblePickup(pickup, context.PlayerTransform))
             {
-                // Always consume Use for collectible pickups — do not fall through to ResourceNode.Gather
+                // Always consume Use for collectible pickups â€” do not fall through to ResourceNode.Gather
                 // when ItemPickup and ResourceNode share a collider (legacy world-item prefabs).
                 pickup.TryUse(context);
                 return true;
@@ -1219,7 +1219,7 @@ namespace Project.Interaction
         private static Project.Events.DMItemCollection FindClosestDMItemCollectionInRange(Vector3 playerPosition)
         {
             Project.Events.DMItemCollection[] collections =
-                Object.FindObjectsByType<Project.Events.DMItemCollection>(FindObjectsInactive.Exclude);
+                SceneComponentCache.GetAll<Project.Events.DMItemCollection>(FindObjectsInactive.Exclude);
             Project.Events.DMItemCollection best = null;
             float bestDistance = float.MaxValue;
 
@@ -1242,7 +1242,7 @@ namespace Project.Interaction
 
         private static QuestGiverNpc FindClosestQuestGiverInRange(Vector3 playerPosition)
         {
-            QuestGiverNpc[] givers = Object.FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>(FindObjectsInactive.Exclude);
             QuestGiverNpc best = null;
             float bestDistance = float.MaxValue;
 
@@ -1265,7 +1265,7 @@ namespace Project.Interaction
 
         private static CraftingStation FindAimedCraftingStationInRange(WorldUseContext context)
         {
-            CraftingStation[] stations = Object.FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>(FindObjectsInactive.Exclude);
             CraftingStation best = null;
             float bestDistance = float.MaxValue;
 
@@ -1295,7 +1295,7 @@ namespace Project.Interaction
 
         private static BuildingControlPanel FindAimedBuildingControlPanelInRange(WorldUseContext context)
         {
-            BuildingControlPanel[] panels = Object.FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>(FindObjectsInactive.Exclude);
             BuildingControlPanel best = null;
             float bestDistance = float.MaxValue;
 
@@ -1325,7 +1325,7 @@ namespace Project.Interaction
 
         private static EnemyLootBag FindClosestLootBagInRange(Vector3 playerPosition)
         {
-            EnemyLootBag[] bags = Object.FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>(FindObjectsInactive.Exclude);
             EnemyLootBag best = null;
             float bestDistance = float.MaxValue;
 

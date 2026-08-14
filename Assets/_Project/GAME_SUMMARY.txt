@@ -10,14 +10,16 @@ highest GAME_DESIGN_DOCUMENT_*.txt revision under Assets/_Project/).
 ================================================================================
 
 PLAYER-FACING IDENTITY (locked)
+  Player name: **Kade**
   Primary pitch: Dark Matter: Genesis is a companion-driven survival RPG.
   Store / discovery: Story-driven sci-fi RPG with a base camp.
   Prefer "base camp" over "colony" or "colony camp" in player-facing copy.
+  AI spine: **Kairos** (name learned at prologue end; pre-name UI uses shell/probe labels)
 
 ================================================================================
 
 Dark Matter: Genesis is a companion-driven survival RPG — a story-driven sci-fi
-RPG with a base camp on Jupiter's moon Io in 2160. You lead humanity's push to
+RPG with a base camp on Jupiter's moon Io in 2160. You play as **Kade**, leading humanity's push to
 prove a future there—not just scrape by, but rebuild under brutal conditions.
 You manage oxygen and environmental pressures (radiation, cold/heat, volcanism,
 sulfur storms, alien life forms, and AI androids), gather and craft, fight on
@@ -27,10 +29,11 @@ You rescue procedural Neural Echoes, spend Aether Credits at vendors, and
 operate major structures through in-world Building Control Panels. A Lite
 Building system supports expanding your base camp.
 
-Long-term progression ties to Aether-9—an ancient Echo sealed in a dormant
+Long-term progression ties to **Kairos**—an ancient Echo sealed in a dormant
 machine—and Memory Cores that trigger Resonance Events: short world-changing
-story beats that unlock lore, systems, and base camp growth. The emotional arc
-moves you from survivor to explorer, commander, and founder of humanity's first
+story beats that unlock lore, systems, and base camp growth. Pre-prologue UI
+uses shell/probe labels; **Kade learns the name Kairos at prologue end**. The emotional arc
+moves Kade from survivor to explorer, leader, and founder of humanity's first
 permanent home beyond Earth.
 
 Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating

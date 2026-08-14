@@ -8,7 +8,7 @@
 
 ## Excellent / keep
 
-- **`ShiftUiTheme` + `SurvivalPioneerUiPalette`** — locked palette; Communications HUD compliant.
+- **`ShiftUiTheme` + `DarkMatterGenesisUiPalette`** — locked palette; Communications HUD compliant.
 - **`FullscreenUiNavigator`** — modal stack / pause coordination pattern.
 - **`JournalPanelUI` + tab rail** — hub for map, quests, roster, crafting library.
 - **`GameAudioManager`** — mixer routing, volume profiles.

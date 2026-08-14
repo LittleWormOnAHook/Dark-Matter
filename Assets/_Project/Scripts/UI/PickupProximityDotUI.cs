@@ -24,11 +24,15 @@ namespace Project.UI
         private readonly Dictionary<ResourceNode, RectTransform> activeHarvestDots = new Dictionary<ResourceNode, RectTransform>();
         private readonly Stack<RectTransform> dotPool = new Stack<RectTransform>();
 
+        private readonly List<ItemPickup> stalePickupScratch = new List<ItemPickup>(8);
+        private readonly List<ResourceNode> staleHarvestScratch = new List<ResourceNode>(8);
+
         private RectTransform dotLayer;
         private Canvas rootCanvas;
         private Camera worldCamera;
         private Transform playerTransform;
         private PlayerController cachedPlayer;
+        private float proximityRadiusSqr;
 
         public static void Register(ItemPickup pickup)
         {
@@ -92,16 +96,17 @@ namespace Project.UI
         private void Awake()
         {
             Instance = this;
+            proximityRadiusSqr = proximityRadius * proximityRadius;
             BuildDotLayer();
         }
 
         private void Start()
         {
-            ItemPickup[] existingPickups = FindObjectsByType<ItemPickup>(FindObjectsInactive.Exclude);
+            ItemPickup[] existingPickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
             for (int i = 0; i < existingPickups.Length; i++)
                 trackedPickups.Add(existingPickups[i]);
 
-            ResourceNode[] existingNodes = FindObjectsByType<ResourceNode>(FindObjectsInactive.Exclude);
+            ResourceNode[] existingNodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
             for (int i = 0; i < existingNodes.Length; i++)
             {
                 ResourceNode node = existingNodes[i];
@@ -180,23 +185,19 @@ namespace Project.UI
             if (activeDots.Count == 0)
                 return;
 
-            List<ItemPickup> staleKeys = null;
+            stalePickupScratch.Clear();
             foreach (KeyValuePair<ItemPickup, RectTransform> pair in activeDots)
             {
                 ItemPickup pickup = pair.Key;
                 if (IsPickupTrackable(pickup) && !pickup.IsPickedUp)
                     continue;
 
-                staleKeys ??= new List<ItemPickup>();
-                staleKeys.Add(pickup);
+                stalePickupScratch.Add(pickup);
             }
 
-            if (staleKeys == null)
-                return;
-
-            for (int i = 0; i < staleKeys.Count; i++)
+            for (int i = 0; i < stalePickupScratch.Count; i++)
             {
-                ItemPickup key = staleKeys[i];
+                ItemPickup key = stalePickupScratch[i];
                 if (activeDots.TryGetValue(key, out RectTransform dotRect))
                     ReleaseDotRect(dotRect);
 
@@ -209,7 +210,7 @@ namespace Project.UI
             if (activeHarvestDots.Count == 0)
                 return;
 
-            List<ResourceNode> staleKeys = null;
+            staleHarvestScratch.Clear();
             foreach (KeyValuePair<ResourceNode, RectTransform> pair in activeHarvestDots)
             {
                 ResourceNode node = pair.Key;
@@ -220,16 +221,12 @@ namespace Project.UI
                     continue;
                 }
 
-                staleKeys ??= new List<ResourceNode>();
-                staleKeys.Add(node);
+                staleHarvestScratch.Add(node);
             }
 
-            if (staleKeys == null)
-                return;
-
-            for (int i = 0; i < staleKeys.Count; i++)
+            for (int i = 0; i < staleHarvestScratch.Count; i++)
             {
-                ResourceNode key = staleKeys[i];
+                ResourceNode key = staleHarvestScratch[i];
                 if (activeHarvestDots.TryGetValue(key, out RectTransform dotRect))
                     ReleaseDotRect(dotRect);
 
@@ -255,7 +252,7 @@ namespace Project.UI
                 rootCanvas = GetComponentInParent<Canvas>();
 
             if (worldCamera == null)
-                worldCamera = Camera.main;
+                worldCamera = PlayerReference.ResolveCamera();
 
             if (playerTransform == null)
                 ResolvePlayer();
@@ -268,9 +265,7 @@ namespace Project.UI
             if (pickup == null || pickup.IsPickedUp || pickup.itemData == null)
                 return false;
 
-            Vector3 pickupPosition = pickup.transform.position;
-            float distance = Vector3.Distance(playerTransform.position, pickupPosition);
-            return distance <= proximityRadius;
+            return (pickup.transform.position - playerTransform.position).sqrMagnitude <= proximityRadiusSqr;
         }
 
         private bool ShouldShowHarvestDot(ResourceNode node)
@@ -283,8 +278,7 @@ namespace Project.UI
                 return false;
             }
 
-            float distance = Vector3.Distance(playerTransform.position, node.GetNodeCenter());
-            return distance <= proximityRadius;
+            return (node.GetNodeCenter() - playerTransform.position).sqrMagnitude <= proximityRadiusSqr;
         }
 
         private void ShowDot(ItemPickup pickup)

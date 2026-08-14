@@ -162,7 +162,7 @@ flowchart LR
 |----------|--------|-------|---------------------------|
 | `StoryWorldStateProvider` | SHIPPED | `QuestManager` | Chapter id, active/completed quest counts, primary quest id |
 | `ColonyEvolutionWorldStateProvider` | SHIPPED | `PioneerRosterManager` | Total companions, workers, injuries, shelter, echo chronicle count, AC |
-| `Aether9WorldStateProvider` | **STUB** | Static flag only | `AdvisoryUnlocked`, awake, memory cores attached (0) |
+| `KairosWorldStateProvider` | **STUB** | Static flag only | `AdvisoryUnlocked`, awake, memory cores attached (0) |
 | `EnvironmentWorldStateProvider` | SHIPPED | `ExposureStatusService`, `WeatherCommandServiceAdapter`, crisis HUD | Threat level, sulfur storm active, storm phase label, planet stub (seed=0) |
 | `SessionWorldStateProvider` | SHIPPED | `GameSession` | Session phase |
 | `ExperienceWorldStateProvider` | **STUB** | Crisis HUD heuristic | Radio density, tension, prefer-silence (crisis-driven guess) |
@@ -285,7 +285,7 @@ Files: `FacilityTaskRunner.cs` (reads `EnvironmentalCrisisHudMode.IsCrisisActive
 | `RosterChanged` | 2 | No scheduler | Simulation, Economy |
 | `SimulationTick` | 3 | **No auto tick** | Simulation, Economy, Event |
 | `StormPhaseChanged` | 4 | F11 smoke only | Weather, Experience |
-| `MemoryCoreRestored` | 5 | No scheduler | Story, Aether-9 (future) |
+| `MemoryCoreRestored` | 5 | No scheduler | Story, Kairos (future) |
 | `ManualDebug` | 6 | **F10 smoke** | All directors (log) |
 
 **Smoke driver:** `Features/Directors/Adapters/DarkMatterSmokeDriver.cs`  
@@ -301,7 +301,7 @@ Files: `FacilityTaskRunner.cs` (reads `EnvironmentalCrisisHudMode.IsCrisisActive
 | 5/7 directors are `StubDirector` | Runs 2–4 per domain |
 | No `Features/Communications/` Runtime | Run 2 — Presentation intents |
 | No `Features/Experience/` module | Run 2+ — telemetry replaces heuristic provider |
-| No `Features/Aether9/` Intelligence service | Future story arc |
+| No `Features/Kairos/` Intelligence service | Future story arc |
 | HLA §6.3 target order: Communications before Directors | Run 2 bootstrap reorder |
 | `IQuestCommandService` unused | Story director ownership migration |
 

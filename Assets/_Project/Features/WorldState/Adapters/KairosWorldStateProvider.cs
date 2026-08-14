@@ -2,16 +2,16 @@ using Project.Features.WorldState;
 
 namespace Project.Features.WorldState.Adapters
 {
-    /// <summary>Stub until Aether-9 quest / Communications advisory flag exists.</summary>
-    public sealed class Aether9WorldStateProvider : IWorldStateProvider
+    /// <summary>Stub until Kairos quest / Communications advisory flag exists.</summary>
+    public sealed class KairosWorldStateProvider : IWorldStateProvider
     {
         public static bool AdvisoryUnlocked { get; set; }
 
-        public string DomainId => "aether9";
+        public string DomainId => "kairos";
 
         public void Contribute(WorldStateSnapshotBuilder builder)
         {
-            builder.Aether9 = new Aether9Snapshot(
+            builder.Kairos = new KairosSnapshot(
                 advisoryUnlocked: AdvisoryUnlocked,
                 awake: AdvisoryUnlocked,
                 memoryCoresAttached: 0);

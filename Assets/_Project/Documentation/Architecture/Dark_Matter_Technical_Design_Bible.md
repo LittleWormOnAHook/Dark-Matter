@@ -36,7 +36,7 @@ This document explains **HOW** systems work. The HLA explains **WHY**.
 | **Dark Matter** | Framework pillars, services, directors, snapshots, editor patterns | Io lore, AC economy rules, GDD canon |
 | **Dark Matter: Genesis** | ScriptableObject content, game adapters, Shift UI theme assets | Framework interface shapes |
 
-Game-specific strings (`Aether-9`, `Aether Credits`, `Neural Echo`) appear in **Data** and **Adapters**, not in framework Runtime interface names where avoidable.
+Game-specific strings (`Kairos`, `Aether Credits`, `Neural Echo`) appear in **Data** and **Adapters**, not in framework Runtime interface names where avoidable.
 
 ---
 
@@ -50,7 +50,7 @@ World → Simulation → Intelligence → Experience → Presentation → Player
 |-------|---------------|----------------------|
 | World | Exposure, Map, spawners | `WeatherGameStateProvider`, future `IWorldService` |
 | Simulation | Roster, Building registry, FacilityTaskRunner | Future `ISimulationService` |
-| Intelligence | *(planned)* | `IDirectorOrchestrator`, `IAether9Service` |
+| Intelligence | *(planned)* | `IDirectorOrchestrator`, `IKairosService` |
 | Experience | *(planned)* | `IExperienceService`, `ExperienceDirector` |
 | Presentation | Communications, UI, Audio | `ICommunicationsService`, HUD presenters |
 | Gameplay | Player, Combat, Inventory, … | MonoBehaviours on player/entities |
@@ -174,7 +174,7 @@ public sealed class WorldStateSnapshot
     public StoryProgressSnapshot Story { get; }
     public PlanetEvolutionSnapshot Planet { get; }
     public ColonyEvolutionSnapshot Colony { get; }
-    public Aether9Snapshot Aether9 { get; }
+    public KairosSnapshot Kairos { get; }
     public SimulationSnapshot Simulation { get; }
     public ThreatSnapshot Threat { get; }
     public ExperienceSnapshot Experience { get; }
@@ -188,7 +188,7 @@ public sealed class WorldStateSnapshot
 |----------|----------|--------|
 | `story` | `StoryWorldStateProvider` | `QuestManager` progress |
 | `colony` | `ColonyEvolutionWorldStateProvider` | `PioneerRosterManager` aggregates |
-| `aether9` | `Aether9WorldStateProvider` | `CommsQueryService.Aether9AdvisoryUnlocked` + future quest |
+| `kairos` | `KairosWorldStateProvider` | `CommsQueryService.KairosAdvisoryUnlocked` + future quest |
 | `environment` | `EnvironmentWorldStateProvider` | Exposure / storm debug path |
 | `session` | `SessionWorldStateProvider` | `GameSession`, save slot metadata |
 | `experience` | `ExperienceWorldStateProvider` | Session telemetry service (stub) |
@@ -200,7 +200,7 @@ public sealed class WorldStateSnapshot
 ## 4. Intelligence layer contracts
 
 **HLA:** §2.6, §8  
-**Location (planned):** `Features/Directors/`, `Features/Aether9/`
+**Location (planned):** `Features/Directors/`, `Features/Kairos/`
 
 ### 4.1 Director orchestrator
 
@@ -236,7 +236,7 @@ StoryDirector
   → AIDirector (optional)
 ```
 
-Aether-9 participates inside Intelligence eval — consulted by Story and Experience; emits knowledge/hint intents to Presentation.
+Kairos participates inside Intelligence eval — consulted by Story and Experience; emits knowledge/hint intents to Presentation.
 
 ### 4.3 Director interfaces (planned stubs)
 
@@ -279,19 +279,19 @@ public interface IEventDirector
 
 Directors **read** WorldState; **write** only via command/intent interfaces (§9).
 
-### 4.4 Aether-9 service (planned)
+### 4.4 Kairos service (planned)
 
 ```csharp
-public interface IAether9KnowledgeService
+public interface IKairosKnowledgeService
 {
     int MemoryCoresRestored { get; }
     bool IsAdvisoryUnlocked { get; }
-    bool TryGetHint(string contextTag, out Aether9Hint hint);
+    bool TryGetHint(string contextTag, out KairosHint hint);
     IReadOnlyList<string> GetUnlockedBlueprintIds();
 }
 ```
 
-Aether-9 is Intelligence, not Presentation. Radio delivery uses `ICommunicationsIntentService`.
+Kairos is Intelligence, not Presentation. Radio delivery uses `ICommunicationsIntentService`.
 
 ---
 
@@ -405,7 +405,7 @@ public static class ContextBuilder
 }
 ```
 
-**Phase B extension:** overload or enrich from `WorldStateSnapshot` (story chapter, storm, Aether-9, experience densities) — still no manager calls.
+**Phase B extension:** overload or enrich from `WorldStateSnapshot` (story chapter, storm, Kairos, experience densities) — still no manager calls.
 
 ### 6.3 Query pipeline (planned — Run 2)
 
@@ -416,14 +416,14 @@ Alt+1..7 → CommsQueryService.Ask(CommsQueryKind)
   → ICommunicationsService.Enqueue(...)
 ```
 
-**Aether-9 flag:** `CommsQueryService.Aether9AdvisoryUnlocked` — migrate to WorldState when Run 1 lands.
+**Kairos flag:** `CommsQueryService.KairosAdvisoryUnlocked` — migrate to WorldState when Run 1 lands.
 
 ### 6.4 Radio HUD (planned — Run 2)
 
 **Type:** `RadioHudUI` — `Features/Communications/UI/`  
 **Factory:** `RadioHudUI.EnsureExists(host)`  
 **Subscribes:** `CommunicationsManager.TransmissionStarted/Ended`  
-**Palette:** `SurvivalPioneerUiPalette`
+**Palette:** `DarkMatterGenesisUiPalette`
 
 ### 6.5 Audio pipeline (planned — Run 2; Phase 8.1 deferred)
 
@@ -628,7 +628,7 @@ Exploration · Discovery · Survival · Colony · Memory · Consequence · Myste
 | `Communications` Runtime | Run 2 | §2.8 | Queue, HUD, ContextBuilder, templates — **docs only on disk** |
 | `Experience` | C+ | §2.7 | Telemetry, ExperienceSnapshot builder — **not started** |
 | `Generation` | Run 3 | §10 | Seed + generator interfaces; wrap `EchoGenerator` — **not started** |
-| `Aether9` | Later | §9 | Knowledge service, core tracking |
+| `Kairos` | Later | §9 | Knowledge service, core tracking |
 | `Simulation` | Later | §11 | Incident model, off-screen tick |
 | `Story` | Later | §2.5 | Quest service wrapper |
 

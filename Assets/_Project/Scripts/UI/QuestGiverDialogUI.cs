@@ -260,14 +260,14 @@ namespace Project.UI
             leftDescriptionText.textWrappingMode = TextWrappingModes.Normal;
             leftObjectivesText = CreateText(leftPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             leftObjectivesText.textWrappingMode = TextWrappingModes.Normal;
-            leftObjectivesText.color = SurvivalPioneerUiPalette.BodyText;
+            leftObjectivesText.color = DarkMatterGenesisUiPalette.BodyText;
 
             GameObject rightPanel = CreatePanel(splitRow.transform, "QuestProgressPanel", flexibleWidth: 1f);
             rightStatusText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
             rightProgressText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             rightProgressText.textWrappingMode = TextWrappingModes.Normal;
             rightXpText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
-            rightXpText.color = SurvivalPioneerUiPalette.Gold;
+            rightXpText.color = DarkMatterGenesisUiPalette.Gold;
             rightRewardsText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             rightRewardsText.textWrappingMode = TextWrappingModes.Normal;
 
@@ -292,7 +292,7 @@ namespace Project.UI
             abandonQuestButton.onClick.AddListener(HandleAbandonClicked);
             Image abandonImage = abandonQuestButton.GetComponent<Image>();
             if (abandonImage != null)
-                abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+                abandonImage.color = DarkMatterGenesisUiPalette.DeepMagenta;
             abandonQuestButton.gameObject.SetActive(false);
 
             boardContentRoot.SetActive(false);
@@ -304,7 +304,7 @@ namespace Project.UI
             listColumn.transform.SetParent(parent, false);
 
             Image columnBg = listColumn.GetComponent<Image>();
-            columnBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.95f);
+            columnBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.95f);
 
             LayoutElement columnLayout = listColumn.GetComponent<LayoutElement>();
             columnLayout.flexibleWidth = 0.38f;
@@ -375,7 +375,7 @@ namespace Project.UI
             panel.transform.SetParent(parent, false);
 
             Image bg = panel.GetComponent<Image>();
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.92f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.92f);
 
             LayoutElement layout = panel.GetComponent<LayoutElement>();
             if (preferredHeight > 0f)
@@ -625,6 +625,7 @@ namespace Project.UI
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -675,6 +676,7 @@ namespace Project.UI
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, false);
 
             Action callback = onClosed;
             onClosed = null;
@@ -709,7 +711,7 @@ namespace Project.UI
 
             Image image = buttonObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.ButtonNormal;
+            image.color = DarkMatterGenesisUiPalette.ButtonNormal;
             image.raycastTarget = true;
 
             Button button = buttonObject.AddComponent<Button>();

@@ -31,6 +31,15 @@ namespace Project.Survival.Exposure
         private readonly List<ExposureModifierTick> companionBuffScratch = new List<ExposureModifierTick>(8);
         private readonly List<ExposureModifierTick> companionDebuffScratch = new List<ExposureModifierTick>(8);
         private readonly List<string> companionLabelScratch = new List<string>(4);
+        private readonly List<string> activeZoneNameScratch = new List<string>(4);
+        private string[] activeZoneNameBuffer = System.Array.Empty<string>();
+        private ExposureModifierTick[] playerBuffBuffer = Array.Empty<ExposureModifierTick>();
+        private ExposureModifierTick[] playerDebuffBuffer = Array.Empty<ExposureModifierTick>();
+        private string lastTemperatureText;
+        private int lastTemperatureRounded = int.MinValue;
+        private CompanionRosterBridge cachedCompanionBridge;
+        private float nextLateRefreshTime;
+        private const float LateRefreshInterval = 0.1f;
         private readonly CompanionExposureModifierSlot[] companionSlotScratch =
             new CompanionExposureModifierSlot[PioneerRosterManager.ExpeditionTrioSize];
 
@@ -86,6 +95,11 @@ namespace Project.Survival.Exposure
             if (!CanRefresh())
                 return;
 
+            if (Time.unscaledTime < nextLateRefreshTime)
+                return;
+
+            nextLateRefreshTime = Time.unscaledTime + LateRefreshInterval;
+
             int before = lastSnapshotHash;
             RefreshSnapshot(forceNotify: false);
             if (lastSnapshotHash != before)
@@ -94,7 +108,10 @@ namespace Project.Survival.Exposure
 
         private void HandleStatsChanged()
         {
-            RefreshSnapshot(forceNotify: true);
+            int before = lastSnapshotHash;
+            RefreshSnapshot(forceNotify: false);
+            if (lastSnapshotHash != before)
+                OnSnapshotChanged?.Invoke(snapshot);
         }
 
         public void RefreshSnapshot(bool forceNotify)
@@ -137,7 +154,14 @@ namespace Project.Survival.Exposure
             float displayF = survivalStats.GetDisplayTemperatureFahrenheit();
             target.DisplayTemperatureF = displayF;
             target.ThermalStatusLabel = survivalStats.GetThermalStatusLabel();
-            target.TemperatureText = ExposureTemperatureDisplay.FormatFahrenheit(displayF);
+            int roundedF = Mathf.RoundToInt(displayF);
+            if (roundedF != lastTemperatureRounded || string.IsNullOrEmpty(lastTemperatureText))
+            {
+                lastTemperatureRounded = roundedF;
+                lastTemperatureText = ExposureTemperatureDisplay.FormatFahrenheit(displayF);
+            }
+
+            target.TemperatureText = lastTemperatureText;
             target.TemperatureGaugeNormalized = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(displayF);
 
             IReadOnlyList<ExposureZoneVolume> zones = exposureReceiver != null
@@ -145,7 +169,7 @@ namespace Project.Survival.Exposure
                 : null;
 
             target.DominantHazard = ExposureHazardEvaluator.EvaluateDominant(survivalStats, zones);
-            target.ActiveZoneNames = ExposureHazardEvaluator.CollectActiveZoneNames(zones);
+            target.ActiveZoneNames = FillActiveZoneNames(zones);
             target.IsInShelter = target.DominantHazard.IsShelter
                 || HasShelterZone(zones);
             target.CombinedExposureLevel = survivalStats.GetCombinedExposureLevel();
@@ -156,6 +180,22 @@ namespace Project.Survival.Exposure
             target.PrimaryMitigationLabel = exposureController != null
                 ? exposureController.PrimaryMitigationLabel
                 : string.Empty;
+        }
+
+        private string[] FillActiveZoneNames(IReadOnlyList<ExposureZoneVolume> zones)
+        {
+            activeZoneNameScratch.Clear();
+            ExposureHazardEvaluator.CollectActiveZoneNames(zones, activeZoneNameScratch);
+            if (activeZoneNameScratch.Count == 0)
+                return System.Array.Empty<string>();
+
+            if (activeZoneNameBuffer.Length != activeZoneNameScratch.Count)
+                activeZoneNameBuffer = new string[activeZoneNameScratch.Count];
+
+            for (int i = 0; i < activeZoneNameScratch.Count; i++)
+                activeZoneNameBuffer[i] = activeZoneNameScratch[i];
+
+            return activeZoneNameBuffer;
         }
 
         private static int ComputeSnapshotHash(ExposureStatusSnapshot target)
@@ -330,8 +370,22 @@ namespace Project.Survival.Exposure
                     0.75f));
             }
 
-            target.PlayerBuffTicks = buffScratch.ToArray();
-            target.PlayerDebuffTicks = debuffScratch.ToArray();
+            target.PlayerBuffTicks = CopyTickScratch(buffScratch, ref playerBuffBuffer);
+            target.PlayerDebuffTicks = CopyTickScratch(debuffScratch, ref playerDebuffBuffer);
+        }
+
+        private static ExposureModifierTick[] CopyTickScratch(
+            List<ExposureModifierTick> scratch,
+            ref ExposureModifierTick[] buffer)
+        {
+            if (scratch == null || scratch.Count == 0)
+                return Array.Empty<ExposureModifierTick>();
+
+            if (buffer.Length != scratch.Count)
+                buffer = new ExposureModifierTick[scratch.Count];
+
+            scratch.CopyTo(buffer);
+            return buffer;
         }
 
         private void BuildCompanionModifierSlots(ExposureStatusSnapshot target)
@@ -339,8 +393,10 @@ namespace Project.Survival.Exposure
             EnsureCompanionSlotScratch();
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
-            CompanionRosterBridge bridge = UnityEngine.Object.FindAnyObjectByType<CompanionRosterBridge>();
-            IReadOnlyList<PioneerCompanionAgent> companions = bridge != null ? bridge.ActiveCompanions : null;
+            if (cachedCompanionBridge == null)
+                cachedCompanionBridge = UnityEngine.Object.FindAnyObjectByType<CompanionRosterBridge>();
+            IReadOnlyList<PioneerCompanionAgent> companions =
+                cachedCompanionBridge != null ? cachedCompanionBridge.ActiveCompanions : null;
 
             for (int i = 0; i < companionSlotScratch.Length; i++)
             {
@@ -379,8 +435,12 @@ namespace Project.Survival.Exposure
                     slot.ExposureLevel = 0f;
                 }
 
-                slot.BuffTicks = companionBuffScratch.ToArray();
-                slot.DebuffTicks = companionDebuffScratch.ToArray();
+                slot.BuffTicks = companionBuffScratch.Count == 0
+                    ? Array.Empty<ExposureModifierTick>()
+                    : companionBuffScratch.ToArray();
+                slot.DebuffTicks = companionDebuffScratch.Count == 0
+                    ? Array.Empty<ExposureModifierTick>()
+                    : companionDebuffScratch.ToArray();
             }
 
             target.ExpeditionCompanionSlots = companionSlotScratch;

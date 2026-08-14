@@ -127,7 +127,7 @@ namespace Project.EditorTools.Rendering
             QualitySettings.SetQualityLevel(Project.Core.PlatformGraphicsProfile.HighTierIndex, applyExpensiveChanges: true);
             QualitySettings.renderPipeline = highAsset;
 
-            EditorUtility.SetDirty(GraphicsSettings.renderPipelineAsset);
+            EditorUtility.SetDirty(GraphicsSettings.defaultRenderPipeline);
             AssetDatabase.SaveAssets();
 
             EditorUtility.DisplayDialog(

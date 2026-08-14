@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
+using Project.Interaction;
 using Project.Map;
 using Project.Player;
 using Project.Vehicles;
@@ -93,6 +94,10 @@ namespace Project.UI
         private Canvas rootCanvas;
         private float nextMinimapRefreshTime;
         private float nextMarkerRefreshTime;
+        private int lastMinimapInfoRange = int.MinValue;
+        private bool lastMinimapInfoScanning;
+        private static JournalPanelUI cachedJournalPanel;
+        private static ScannerSweepController cachedScannerSweep;
         private const float MarkerRefreshInterval = 0.25f;
         private const float MinimapRefreshInterval = 0.05f;
         private const int MaxMinimapMarkers = 128;
@@ -296,7 +301,7 @@ namespace Project.UI
         {
             bool journalOpen = IsJournalOpen();
             bool minimapVisible = GameSettings.MinimapEnabled && GameSession.HasStarted && !journalOpen;
-            if (minimapRoot != null)
+            if (minimapRoot != null && minimapRoot.activeSelf != minimapVisible)
                 minimapRoot.SetActive(minimapVisible);
 
             SetCompassVisible(minimapVisible);
@@ -305,12 +310,16 @@ namespace Project.UI
                 return;
 
             bool showFullMapOverlay = fullMapOpen && GameSession.HasStarted;
-
-            fullMapOverlay.SetActive(showFullMapOverlay);
+            if (fullMapOverlay.activeSelf != showFullMapOverlay)
+                fullMapOverlay.SetActive(showFullMapOverlay);
 
             // Journal Map tab already labels the section; keep "World Map" only for standalone open.
             if (fullMapTitleBar != null)
-                fullMapTitleBar.SetActive(showFullMapOverlay && !openedViaNavigator);
+            {
+                bool showTitle = showFullMapOverlay && !openedViaNavigator;
+                if (fullMapTitleBar.activeSelf != showTitle)
+                    fullMapTitleBar.SetActive(showTitle);
+            }
         }
 
         public static void CloseAnyOpenMap()
@@ -328,8 +337,10 @@ namespace Project.UI
             if (navigator != null && navigator.IsAnyOpen)
                 return true;
 
-            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-            return journal != null && journal.IsOpen;
+            if (cachedJournalPanel == null)
+                cachedJournalPanel = FindAnyObjectByType<JournalPanelUI>();
+
+            return cachedJournalPanel != null && cachedJournalPanel.IsOpen;
         }
 
         public void OpenMapFullscreen()
@@ -477,6 +488,8 @@ namespace Project.UI
             PlayerController player = FindAnyObjectByType<PlayerController>();
             if (player != null)
                 player.SetMapOpen(pause);
+
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonStandaloneMap, pause);
         }
     }
 }

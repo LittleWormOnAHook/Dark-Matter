@@ -16,7 +16,7 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 |------------|-------|------------------|-------------------------|---------------|
 | **World** | §2.3 | `Scripts/Map/`, `Scripts/Survival/Exposure/` | `Features/World/` | Partial (legacy Exposure) |
 | **Simulation** | §2.4 | `Scripts/Pioneers/`, `Scripts/Building/`, `FacilityTaskRunner` | `Features/Simulation/` | Partial (legacy) |
-| **Intelligence** | §2.6, §8 | `Scripts/Quests/` (exec) | `Features/Directors/`, `Features/Aether9/` | **Not started** (no Directors C#) |
+| **Intelligence** | §2.6, §8 | `Scripts/Quests/` (exec) | `Features/Directors/`, `Features/Kairos/` | **Not started** (no Directors C#) |
 | **Experience** | §2.7 | — | `Features/Experience/` | **Not started** |
 | **Presentation** | §2.8 | `Scripts/UI/`, `Scripts/Audio/`; Communications **docs only** | `Features/Communications/` Runtime | Partial UI; Comms Runtime **absent** |
 | **Gameplay** | §2.2 | `Scripts/{Player,Combat,Interaction,Inventory,Crafting,Vehicles}/` | migrate when touched | Shipped (legacy) |
@@ -50,7 +50,7 @@ Maps HLA WoOS pillars and layers to **current** repo paths and **planned** `Feat
 | DirectorOrchestrator | `Features/Directors/Runtime/` | Eval order HLA §8.2 — Run 1 |
 | StoryDirector adapter | `Features/Directors/Adapters/` | Reads WorldState; commands `IQuestCommandService` |
 | ExperienceDirector | `Features/Directors/Runtime/` | Silence, densities — after spine |
-| Aether-9 knowledge | `Features/Aether9/` | Cores, codex — later |
+| Kairos knowledge | `Features/Kairos/` | Cores, codex — later |
 | Comms delivery | `Features/Communications/` | Presentation only — Run 2 |
 
 ---

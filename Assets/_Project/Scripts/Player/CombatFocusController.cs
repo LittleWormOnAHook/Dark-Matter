@@ -1,5 +1,6 @@
 using ECM2;
 using Project.AI;
+using Project.Core;
 using Project.Interaction;
 using Project.Survival;
 using UnityEngine;
@@ -147,7 +148,7 @@ namespace Project.Player
                 return;
 
             _nextEnemySearchTime = Time.time + enemySearchInterval;
-            _cachedEnemies = FindObjectsByType<EnemyHealth>(FindObjectsInactive.Exclude);
+            _cachedEnemies = SceneComponentCache.GetAll<EnemyHealth>(FindObjectsInactive.Exclude);
         }
 
         private EnemyHealth FindNearestLivingEnemy()

@@ -137,7 +137,7 @@ Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
 | **Condensate pool** | Pale, still, mist | Low sulfur; slip | Condensate vials | Safe intro underwater-adjacent content |
 | **Brimstone brine lake** | Amber, viscous | Corrosive; slow wade | Brine salts, catalysts | Mid-tier chemistry economy |
 | **Glass melt lens** | Mirror-orange | Radiant heat | Obsidian shards | Path denial / timing traversal |
-| **Aether seep pool** | Teal, pulsing | Saturation drift | Scan samples | Memory Core / Aether-9 arc |
+| **Aether seep pool** | Teal, pulsing | Saturation drift | Scan samples | Memory Core / Kairos arc |
 | **Brood basin** | Cloudy; egg rims | Aggro on contact | Rare proteins (if cleared) | Nest setpiece |
 | **Flooded junction** | Waist-deep brine | Drowning if stunned | None | Route choice; companion rescue beat |
 
@@ -262,7 +262,7 @@ Pair with A2b scheduler — these fire **primarily underground** or **amplify in
 ### Story hooks
 
 - Mid-game arc (GDD 3.0): *Human–AI symbiosis experiments in lava tubes* → wreck modules in Stratum 2.
-- Aether-9 Memory Cores → vault antechambers in Stratum 5.
+- Kairos Memory Cores → vault antechambers in Stratum 5.
 - Failed expeditions built **inside brood tunnels** — environmental storytelling prop.
 
 ---
@@ -291,7 +291,7 @@ Economy remains **AC + gathered materials** — pools are not a second currency.
 | **P2** | Mid galleries + flooded junction + Glass Kelp / glassfish | Navigation / map fog |
 | **P3** | Brimstone basins + Brine Hounds + Basin Mantis | Combat AI pack roles |
 | **P4** | Brood chambers + tremor flood coupling | WeatherDirector (A2b) |
-| **P5** | Resonance vaults + Aether seeps | Aether-9 / Memory Cores (B4 #8) |
+| **P5** | Resonance vaults + Aether seeps | Kairos / Memory Cores (B4 #8) |
 
 **Start underground architecture after:**
 

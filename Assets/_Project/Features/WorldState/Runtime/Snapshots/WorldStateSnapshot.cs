@@ -11,7 +11,7 @@ namespace Project.Features.WorldState
         public StoryProgressSnapshot Story { get; }
         public PlanetEvolutionSnapshot Planet { get; }
         public ColonyEvolutionSnapshot Colony { get; }
-        public Aether9Snapshot Aether9 { get; }
+        public KairosSnapshot Kairos { get; }
         public SimulationSnapshot Simulation { get; }
         public ThreatSnapshot Threat { get; }
         public ExperienceSnapshot Experience { get; }
@@ -23,7 +23,7 @@ namespace Project.Features.WorldState
             StoryProgressSnapshot story = null,
             PlanetEvolutionSnapshot planet = null,
             ColonyEvolutionSnapshot colony = null,
-            Aether9Snapshot aether9 = null,
+            KairosSnapshot kairos = null,
             SimulationSnapshot simulation = null,
             ThreatSnapshot threat = null,
             ExperienceSnapshot experience = null,
@@ -34,7 +34,7 @@ namespace Project.Features.WorldState
             Story = story ?? StoryProgressSnapshot.Empty;
             Planet = planet ?? PlanetEvolutionSnapshot.Empty;
             Colony = colony ?? ColonyEvolutionSnapshot.Empty;
-            Aether9 = aether9 ?? Aether9Snapshot.Empty;
+            Kairos = kairos ?? KairosSnapshot.Empty;
             Simulation = simulation ?? SimulationSnapshot.Empty;
             Threat = threat ?? ThreatSnapshot.Empty;
             Experience = experience ?? ExperienceSnapshot.Empty;
@@ -44,13 +44,13 @@ namespace Project.Features.WorldState
         public string ToOneLineSummary()
         {
             return string.Format(
-                "[WorldState] chapter={0} colony={1}/{2} storm={3} threat={4:0.00} a9={5} session={6}",
+                "[WorldState] chapter={0} colony={1}/{2} storm={3} threat={4:0.00} kairos={5} session={6}",
                 Story.ChapterId,
                 Colony.TotalCompanions,
                 Colony.WorkerCount,
                 Threat.SulfurStormActive ? Threat.StormPhaseLabel : "off",
                 Threat.EnvironmentThreat01,
-                Aether9.AdvisoryUnlocked ? "advisory" : "silent",
+                Kairos.AdvisoryUnlocked ? "advisory" : "silent",
                 Session.PhaseLabel);
         }
     }

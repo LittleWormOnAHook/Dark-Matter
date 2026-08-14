@@ -63,6 +63,8 @@ public class OutlineController : MonoBehaviour
     private Camera playerCamera;
     private MaterialPropertyBlock propertyBlock;
     private int outlineMaterialIndex = -1;
+    private float lastAppliedOutlineAlpha = -1f;
+    private Color lastAppliedOutlineColor;
     private static Material sharedOutlineMaterial;
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -113,15 +115,28 @@ public class OutlineController : MonoBehaviour
         if (rend == null)
             return;
 
-        ResolvePlayer();
-
         if (postScanActive && Time.unscaledTime >= postScanExpireTime)
             ClearPostScanHighlight();
 
         if (scanFlashActive && Time.unscaledTime >= scanFlashStartTime + scanFlashDuration)
             ClearScanDiscoveryFlash();
 
-        float lookStrength = EvaluateLookAtStrength();
+        bool hasForcedHighlight = resourceScanHighlight
+            || scanFlashActive
+            || liveScannerHighlight
+            || postScanActive;
+
+        // Scanner-only props idle with no sweep/highlight: skip player resolve + look-at work.
+        if (scannerOnlyOutline && !hasForcedHighlight)
+        {
+            if (outlineSlotApplied)
+                ApplyOutlineVisible(0f, outlineColor);
+            return;
+        }
+
+        ResolvePlayer();
+
+        float lookStrength = hasForcedHighlight ? 0f : EvaluateLookAtStrength();
         float strength = 0f;
         Color displayColor = outlineColor;
 
@@ -153,7 +168,8 @@ public class OutlineController : MonoBehaviour
 
         if (strength <= 0.001f)
         {
-            ApplyOutlineVisible(0f, displayColor);
+            if (outlineSlotApplied)
+                ApplyOutlineVisible(0f, displayColor);
             return;
         }
 
@@ -323,9 +339,13 @@ public class OutlineController : MonoBehaviour
         if (resolvedPlayer == null || lookRange <= 0f)
             return 0f;
 
+        // Cheap transform distance first — avoid Renderer.bounds unless inside range.
+        float rangeSqr = lookRange * lookRange;
+        if ((resolvedPlayer.position - transform.position).sqrMagnitude > rangeSqr * 2.25f)
+            return 0f;
+
         Vector3 itemPoint = GetHighlightPoint();
-        float distance = Vector3.Distance(resolvedPlayer.position, itemPoint);
-        if (distance > lookRange)
+        if ((resolvedPlayer.position - itemPoint).sqrMagnitude > rangeSqr)
             return 0f;
 
         Transform view = playerCamera != null ? playerCamera.transform : resolvedPlayer;
@@ -349,6 +369,9 @@ public class OutlineController : MonoBehaviour
 
     private void ResolvePlayer()
     {
+        if (resolvedPlayer != null && playerCamera != null)
+            return;
+
         if (player != null)
         {
             resolvedPlayer = player;
@@ -469,7 +492,21 @@ public class OutlineController : MonoBehaviour
     {
         if (targetAlpha <= 0.001f)
         {
-            RemoveOutlineSlot();
+            // Keep the outline material slot while hidden — removing/re-adding allocates Material[]
+            // every time look-at strength flickers across the threshold.
+            if (!outlineSlotApplied || rend == null || outlineMaterialIndex < 0)
+                return;
+
+            if (lastAppliedOutlineAlpha <= 0.001f)
+                return;
+
+            Color hidden = displayColor;
+            hidden.a = 0f;
+            propertyBlock.SetColor(ColorId, hidden);
+            propertyBlock.SetColor(BaseColorId, hidden);
+            rend.SetPropertyBlock(propertyBlock, outlineMaterialIndex);
+            lastAppliedOutlineAlpha = 0f;
+            lastAppliedOutlineColor = hidden;
             return;
         }
 
@@ -479,8 +516,24 @@ public class OutlineController : MonoBehaviour
 
         Color color = displayColor;
         color.a = Mathf.Clamp01(targetAlpha);
+        if (Mathf.Abs(color.a - lastAppliedOutlineAlpha) < 0.002f
+            && ColorsApproximatelyEqual(color, lastAppliedOutlineColor))
+        {
+            return;
+        }
+
         propertyBlock.SetColor(ColorId, color);
         propertyBlock.SetColor(BaseColorId, color);
         rend.SetPropertyBlock(propertyBlock, outlineMaterialIndex);
+        lastAppliedOutlineAlpha = color.a;
+        lastAppliedOutlineColor = color;
+    }
+
+    private static bool ColorsApproximatelyEqual(Color a, Color b)
+    {
+        return Mathf.Abs(a.r - b.r) < 0.002f
+            && Mathf.Abs(a.g - b.g) < 0.002f
+            && Mathf.Abs(a.b - b.b) < 0.002f
+            && Mathf.Abs(a.a - b.a) < 0.002f;
     }
 }

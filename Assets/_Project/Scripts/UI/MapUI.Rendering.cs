@@ -151,6 +151,17 @@ namespace Project.UI
             float zoom = Mathf.Max(
                 mapProvider.WorldBounds.size.x / span,
                 mapProvider.WorldBounds.size.z / span);
+
+            // Cap zoom so the circular viewport still shows enough texels from the map texture
+            // (extreme zoom on 256–512px bakes reads as a broken/pixelated RawImage).
+            Texture mapTexture = mapProvider.MapTexture;
+            if (mapTexture != null && mapTexture.width > 0)
+            {
+                float viewportPx = Mathf.Max(viewportSize.x, viewportSize.y);
+                float maxZoom = mapTexture.width / Mathf.Max(48f, viewportPx * 0.35f);
+                zoom = Mathf.Min(zoom, Mathf.Max(1f, maxZoom));
+            }
+
             return viewportSize * zoom;
         }
 
@@ -501,20 +512,29 @@ namespace Project.UI
 
             if (!string.IsNullOrEmpty(message))
             {
-                minimapInfoLabel.text = message;
+                if (minimapInfoLabel.text != message)
+                    minimapInfoLabel.text = message;
                 return;
             }
 
             float rangeMeters = MapFogOfWar.GetScanRevealRadius();
             bool scanning = IsScannerSweepActive();
+            int rangeRounded = Mathf.RoundToInt(rangeMeters);
+            if (rangeRounded == lastMinimapInfoRange && scanning == lastMinimapInfoScanning)
+                return;
+
+            lastMinimapInfoRange = rangeRounded;
+            lastMinimapInfoScanning = scanning;
             string scanState = scanning ? "scanning...." : "standby";
-            minimapInfoLabel.text = $"Range {Mathf.RoundToInt(rangeMeters)}m  |  Scan: {scanState}";
+            minimapInfoLabel.text = $"Range {rangeRounded}m  |  Scan: {scanState}";
         }
 
         private static bool IsScannerSweepActive()
         {
-            ScannerSweepController sweep = Object.FindAnyObjectByType<ScannerSweepController>();
-            return sweep != null && sweep.IsSweeping;
+            if (cachedScannerSweep == null)
+                cachedScannerSweep = Object.FindAnyObjectByType<ScannerSweepController>();
+
+            return cachedScannerSweep != null && cachedScannerSweep.IsSweeping;
         }
 
         private void CreateFullMapMarkerTooltip(Transform parent)

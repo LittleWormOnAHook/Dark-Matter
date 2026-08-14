@@ -50146,7 +50146,7 @@ MonoBehaviour:
       losSearchRadius: 1.5
       formationDriftDegreesPerSecond: 2.8
     buffs: []
-  coreId: Aether-9
+  coreId: Kairos
   interactRange: 4
   hostileSyncBaseChance: 0.45
   hostileGuardianPrefab: {fileID: 0}

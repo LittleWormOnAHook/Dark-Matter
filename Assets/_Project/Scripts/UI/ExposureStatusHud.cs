@@ -14,6 +14,11 @@ namespace Project.UI
 
         private SurvivalStats boundStats;
         private TextMeshProUGUI statusLabel;
+        private readonly System.Text.StringBuilder statusBuilder = new System.Text.StringBuilder(64);
+        private string lastStatusText;
+        private int lastRadPercent = int.MinValue;
+        private int lastSulfurPercent = int.MinValue;
+        private int lastVolcanoPercent = int.MinValue;
 
         private void OnEnable()
         {
@@ -70,21 +75,57 @@ namespace Project.UI
 
             if (!showRad && !showSulfur && !showVolcano)
             {
-                statusLabel.gameObject.SetActive(false);
+                if (statusLabel.gameObject.activeSelf)
+                    statusLabel.gameObject.SetActive(false);
                 return;
             }
 
-            statusLabel.gameObject.SetActive(true);
-            System.Text.StringBuilder builder = new System.Text.StringBuilder();
-            if (showRad)
-                builder.Append($"RAD {Mathf.RoundToInt(rad * 100f)}%  ");
-            if (showSulfur)
-                builder.Append($"S {Mathf.RoundToInt(sulfur * 100f)}%  ");
-            if (showVolcano)
-                builder.Append($"V {Mathf.RoundToInt(volcano * 100f)}%");
+            int radPercent = showRad ? Mathf.RoundToInt(rad * 100f) : -1;
+            int sulfurPercent = showSulfur ? Mathf.RoundToInt(sulfur * 100f) : -1;
+            int volcanoPercent = showVolcano ? Mathf.RoundToInt(volcano * 100f) : -1;
+            if (radPercent == lastRadPercent
+                && sulfurPercent == lastSulfurPercent
+                && volcanoPercent == lastVolcanoPercent
+                && statusLabel.gameObject.activeSelf)
+            {
+                return;
+            }
 
-            statusLabel.text = builder.ToString().Trim();
-            statusLabel.color = SurvivalPioneerUiPalette.Gold;
+            lastRadPercent = radPercent;
+            lastSulfurPercent = sulfurPercent;
+            lastVolcanoPercent = volcanoPercent;
+
+            statusLabel.gameObject.SetActive(true);
+            statusBuilder.Clear();
+            if (showRad)
+            {
+                statusBuilder.Append("RAD ");
+                statusBuilder.Append(radPercent);
+                statusBuilder.Append("%  ");
+            }
+
+            if (showSulfur)
+            {
+                statusBuilder.Append("S ");
+                statusBuilder.Append(sulfurPercent);
+                statusBuilder.Append("%  ");
+            }
+
+            if (showVolcano)
+            {
+                statusBuilder.Append("V ");
+                statusBuilder.Append(volcanoPercent);
+                statusBuilder.Append('%');
+            }
+
+            string text = statusBuilder.ToString().TrimEnd();
+            if (text != lastStatusText)
+            {
+                lastStatusText = text;
+                statusLabel.text = text;
+            }
+
+            statusLabel.color = DarkMatterGenesisUiPalette.Gold;
         }
 
         private void EnsureBuilt()
