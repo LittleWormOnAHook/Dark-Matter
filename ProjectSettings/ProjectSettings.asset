@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: Dark Matter Studios
-  productName: Survival Pioneer
+  productName: Dark Matter: Genesis
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -882,7 +882,7 @@ PlayerSettings:
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Survival Pioneer
+  metroApplicationDescription: Dark Matter: Genesis
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -958,7 +958,7 @@ PlayerSettings:
   cloudProjectId: 8a568aa9-08de-4e6f-ac59-dd87a26008f4
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Survival Pioneer
+  projectName: Dark Matter Genesis
   organizationId: tony-black-3410898
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

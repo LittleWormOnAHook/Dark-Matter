@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Pioneer v1.5.1.unity
     guid: 2530d36a5def6644e81595ada944b51c
-  - enabled: 1
+  - enabled: 0
     path: Assets/Pioneer v1.5.5.unity
     guid: 306ac60e174d1a34bb4f235a20cd8ebd
+  - enabled: 1
+    path: Assets/DarkMatter_Genesis v1.56.unity
+    guid: 9c55f67703e9bab41a4b7d30d786afcf
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: a35dce2a4a614b24da424ecc1655e41b, type: 2}
