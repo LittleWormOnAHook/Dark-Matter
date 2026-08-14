@@ -1,15 +1,27 @@
 # Kade Background System & Universe Backstory Plan
 
-**Status:** Design draft — August 2026  
+**Status:** Design draft — August 2026 (decisions locked §1.1)  
 **Authority:** Supports GDD 5.0 (2160 Io, Aether-9, Memory Cores, failed expeditions, alien/android threats).  
-**Player:** **Kade** — expedition lead and base-camp commander (the human player character).  
+**Player:** **Kade** (fixed name) — expedition lead and base-camp commander (the human player character).  
 **Companion pick remains separate:** 5000 AC → 1 starter Skilled Companion (`StarterPioneerSelectUI`).
+
+---
+
+## 1.1 Locked decisions
+
+| Decision | Lock |
+|----------|------|
+| **Player name** | **Kade** is fixed — no rename field at New Game. UI and comms always use “Kade.” |
+| **Background + companion** | **Dialogue-only synergy.** `preferredCompanionHint` suggests flavor pairings; **no** mechanical duo bonuses, shared perks, or stat stacking. |
+| **Starting economy** | Every background (including Hard Mode) starts at **5000 AC** — no AC tradeoffs. |
+| **Starting kit tier** | Every background uses the **same kit power band** (see §4.0). Weapons and items differ by **role flavor**, not DPS or vendor value. |
+| **Hard Mode** | Optional toggle on background select. **−20% Kade damage** (melee + ranged). **Same AC (5000)** and **same kit** as the chosen background — no extra gear, no stripped loadout. |
 
 ---
 
 ## 1. Design intent
 
-At **New Game**, after naming (optional) and **before** starter companion selection, the player chooses **Kade’s background** — similar to *Fallout*, *Dragon Age Origins*, or *Cyberpunk 2077* lifepath picks.
+At **New Game**, **before** starter companion selection, the player chooses **Kade’s background** — similar to *Fallout*, *Dragon Age Origins*, or *Cyberpunk 2077* lifepath picks. Optional **Hard Mode** toggle applies the damage penalty only.
 
 Each background answers three questions:
 
@@ -25,7 +37,7 @@ Backgrounds are **not** companion classes. They bias Kade’s **personal** kit; 
 
 ```
 Main Menu → New Game
-  → Kade Background Select  (NEW)
+  → Kade Background Select  (NEW — includes Hard Mode toggle)
   → Starter Skilled Companion Select  (existing)
   → Welcome / controls popup  (existing)
   → Deploy to Pioneer scene
@@ -33,7 +45,8 @@ Main Menu → New Game
 
 **UI:** Full-screen panel matching `StarterPioneerSelectUI` / Shift theme.  
 **Cards:** Portrait silhouette, 3-line hook, expandable “Rumors you’ve heard” blurb, stat/perk summary.  
-**Lock:** One background per save; stored in `GameSaveData.playerBackgroundId`.
+**Hard Mode:** Checkbox or toggle — “Hard Mode (−20% Kade damage)” — visible before confirm.  
+**Lock:** One background per save; stored in `GameSaveData.playerBackgroundId`. Hard flag: `GameSaveData.hardModeEnabled`.
 
 ---
 
@@ -51,31 +64,45 @@ Main Menu → New Game
 | `maxHealthBonus` | Flat add to `SurvivalStats` max |
 | `maxStaminaBonus` | Flat add |
 | `maxEnergyBonus` | Flat add (optional) |
-| `aetherCreditsBonus` | Delta from 5000 AC baseline (+/-) |
 | `startingSkillGrants` | `{ skillId, rank }[]` — pre-allocated free ranks |
 | `startingItems` | `{ itemId, count }[]` |
 | `startingWeaponItemId` | Hotbar slot 0 or inventory grant |
 | `unlockedRecipeIds` | Optional — e.g. rad gel recipe for smuggler |
 | `passivePerkId` | Unique background trait (see §5) |
 | `commsToneTag` | Colony Ops first-contact line variant |
-| `preferredCompanionHint` | UI suggestion only (not enforced) |
+| `preferredCompanionHint` | UI + **dialogue-only** companion pairing (see §8.1) |
 
 ### Save / apply hooks
 
 | System | Hook |
 |--------|------|
-| `GameSaveData` | Add `string playerBackgroundId` |
+| `GameSaveData` | Add `string playerBackgroundId`, `bool hardModeEnabled` |
 | `SimpleGameManager.BeginNewGameSession` | Merge background `startingItems` after base grant |
 | `PlayerProgressionManager` | Apply `startingSkillGrants` before first skill UI |
 | `SurvivalStats` | Apply max stat bonuses once at init |
 | `StoryWorldStateProvider` | Expose `PlayerBackgroundId` for future dialogue |
 | `CommsQueryService` / templates | `commsToneTag` for first Ops transmission |
 
-**Balance rule:** Total power ≈ equal across backgrounds. Trade AC for gear, or stats for skills — no background strictly dominates combat **and** economy **and** survival.
+**Balance rule:** Total power ≈ equal across backgrounds. Differentiate via **stats, skills, perks, and flavor items** — not AC or weapon DPS. No background strictly dominates combat **and** survival **and** exploration.
+
+**Hard Mode apply:** When `hardModeEnabled`, multiply Kade outgoing damage by **0.80** (melee + ranged). Does not affect companions, pets, or turrets.
 
 ---
 
 ## 4. Background options (six)
+
+### 4.0 Shared kit band (all backgrounds + Hard Mode)
+
+Every background starts with the **same economic and combat baseline**:
+
+| Shared grant | Value |
+|--------------|-------|
+| **Aether Credits** | **5000 AC** (always — Hard Mode included) |
+| **Starter weapon tier** | Tier-1 — same base damage band; only animation/type differs |
+| **Consumable band** | 3× utility consumables + 1× O₂ canister equivalent |
+| **Tool / fiction item** | 1× background-flavored non-weapon (scanner, map fragment, story shell, etc.) |
+
+Hard Mode does **not** remove items, swap weapons, or change AC. It only applies **−20% Kade damage**.
 
 Baseline player stats (prototype reference): use current `SurvivalStats` defaults; backgrounds apply **small** deltas (+5–15% or flat +10–25) so companions remain specialists.
 
@@ -87,12 +114,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +10 max Energy, +5 max Stamina |
 | **Skills** | `skill_recon_sweep` rank 1 (free) |
-| **Weapon** | Compact sidearm (low damage, high accuracy) |
-| **Items** | Survey tablet (scanner battery +1 use fiction), 2× rad sample vials, 1× O₂ canister |
-| **AC** | 5000 (baseline) |
+| **Weapon** | Compact sidearm (Tier-1 sidearm band) |
+| **Items** | Survey tablet (fiction), 2× rad sample vials, 1× O₂ canister |
+| **AC** | 5000 |
 | **Perk — *Calibrated Eye*:** +10% scan range; first map sector reveal bonus at B6 vista |
 | **Rumors known** | “The rush numbers never matched the bodies.” “Polar camps went quiet before the calderas did.” |
-| **Companion hint** | Science Specialist or Infiltrator Scout |
+| **Dialogue pairing** | Science Specialist or Infiltrator Scout — Ops / companion banter only |
 
 ---
 
@@ -104,12 +131,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +20 max Health, +10 max Stamina |
 | **Skills** | `skill_blade_training` rank 1, `skill_endurance` rank 1 |
-| **Weapon** | Standard issue machete (melee) |
-| **Items** | Light armor patch kit, 2× stim patch, 1× frag charge (utility) |
-| **AC** | 4500 (−500; better combat kit) |
+| **Weapon** | Standard issue machete (Tier-1 melee band) |
+| **Items** | Light armor patch kit, 2× stim patch, 1× O₂ canister |
+| **AC** | 5000 |
 | **Perk — *Suppressing Presence*:** First melee combo in an encounter costs −10% stamina |
 | **Rumors known** | “Something got aboard during the last caldera evac — not fauna.” “Corporate security still scrubs android memory cores.” |
-| **Companion hint** | Combat Tactician or Med Tech |
+| **Dialogue pairing** | Combat Tactician or Med Tech — Ops / companion banter only |
 
 ---
 
@@ -121,12 +148,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +10 max Health, +5 max Stamina |
 | **Skills** | `skill_mining` rank 1, `skill_harvesting` rank 1 |
-| **Weapon** | Salvage hammer (slow melee, bonus vs androids/wrecks) |
-| **Items** | Scrap bundle ×5, repair foam ×2, portable cutting torch (tool) |
-| **AC** | 5200 (+200; less mil gear) |
+| **Weapon** | Salvage hammer (Tier-1 melee band) |
+| **Items** | Scrap bundle ×3, repair foam ×2, 1× O₂ canister |
+| **AC** | 5000 |
 | **Perk — *Strip & Save*:** +15% salvage from wreck POIs; chance for bonus scrap roll |
 | **Rumors known** | “Half the ‘lost’ expeditions left hulls you can still walk through.” “Aether-9 is a myth — or a trademark.” |
-| **Companion hint** | Salvage Engineer or Architect Engineer |
+| **Dialogue pairing** | Salvage Engineer or Architect Engineer — Ops / companion banter only |
 
 ---
 
@@ -138,12 +165,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +10 max Stamina, +5 max Energy |
 | **Skills** | `skill_recon_sweep` rank 1, `skill_gather_efficiency` rank 1 |
-| **Weapon** | Silenced pistol (low noise; doesn’t wake resonance fauna as fast — fiction + slight aggro delay) |
-| **Items** | Stolen rad inoculation ×1, cold-tier glove liners, smuggler cache map fragment (B5 POI hint) |
-| **AC** | 4800 |
+| **Weapon** | Silenced pistol (Tier-1 sidearm band) |
+| **Items** | Stolen rad inoculation ×1, cold-tier glove liners, smuggler cache map fragment (fiction) |
+| **AC** | 5000 |
 | **Perk — *Ghost Route*:** −15% encounter weight for first expedition exit from camp |
 | **Rumors known** | “Teal packages hum near caldera glass.” “Still Hunter isn’t a myth — smugglers lost two runners to ‘seams in the air.’” |
-| **Companion hint** | Infiltrator Scout or Logistics Officer |
+| **Dialogue pairing** | Infiltrator Scout or Logistics Officer — Ops / companion banter only |
 
 ---
 
@@ -155,12 +182,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +25 max Health, +10 max Energy |
 | **Skills** | `skill_vital_boost` rank 1 |
-| **Weapon** | Shock baton (melee CC — short stun on androids/fauna) |
-| **Items** | Field med kit ×3, sulfur respirator filter ×1, triage scanner |
+| **Weapon** | Shock baton (Tier-1 melee band) |
+| **Items** | Field med kit ×3, sulfur respirator filter ×1, 1× O₂ canister |
 | **AC** | 5000 |
 | **Perk — *Triage Priority*:** Self-heal items +20% effectiveness; expedition downed companion bleed timer +15% |
 | **Rumors known** | “Injured miners described ‘voices in the sulfur.’” “Some evac pods launched empty — autopilot only.” |
-| **Companion hint** | Med Tech or Science Specialist |
+| **Dialogue pairing** | Med Tech or Science Specialist — Ops / companion banter only |
 
 ---
 
@@ -172,12 +199,12 @@ Baseline player stats (prototype reference): use current `SurvivalStats` default
 |----------|-------|
 | **Stats** | +10 max Energy, +10 max Stamina |
 | **Skills** | `skill_weapon_accuracy` rank 1 |
-| **Weapon** | Pulse carbine (energy; low mag; good vs androids) |
-| **Items** | Relay spool ×1, Echo signal booster (consumable — +1 scan ping), cracked Memory Core **shell** (story item, empty) |
+| **Weapon** | Pulse carbine (Tier-1 ranged band) |
+| **Items** | Relay spool ×1, Echo signal booster (consumable fiction), cracked Memory Core **shell** (story item, empty) |
 | **AC** | 5000 |
 | **Perk — *Harmonic Ear*:** Echo signal UI pings 20% sooner; Aether-9 repair quest gets unique “I’ve heard this frequency” line |
 | **Rumors known** | “Aether-9 wasn’t built — it was *found*.” “Memory Cores aren’t human tech.” “Something answers when the cores are near.” |
-| **Companion hint** | Communications Officer or Science Specialist |
+| **Dialogue pairing** | Communications Officer or Science Specialist — Ops / companion banter only |
 
 ---
 
@@ -200,14 +227,17 @@ Implement as `BackgroundPerkRegistry` or flags on `PlayerProgressionManager` —
 
 ## 6. Balance summary
 
-| Background | Combat | Survival | Economy | Exploration | Story |
-|------------|--------|----------|---------|-------------|-------|
-| Survey Attaché | Low | Med | Baseline | **High** | Corporate cover-ups |
-| Guard Dropout | **High** | Med | −500 AC | Low | Android/classified |
-| Salvage Contractor | Med | Med | +200 AC | Med | Wreck lore |
-| Polar Smuggler | Med | **High** (rad/cold) | −200 AC | High | Smuggling / Still Hunter |
-| Field Medic | Low | **High** | Baseline | Med | Humanitarian horror |
-| Relay Technician | Med | Med | Baseline | **High** (Echo) | **Aether-9 primed** |
+| Background | Combat | Survival | Exploration | Story lens |
+|------------|--------|----------|-------------|------------|
+| Survey Attaché | Low | Med | **High** | Corporate cover-ups |
+| Guard Dropout | **High** | Med | Low | Android / classified |
+| Salvage Contractor | Med | Med | Med | Wreck lore |
+| Polar Smuggler | Med | **High** (rad/cold fiction) | High | Smuggling / Still Hunter |
+| Field Medic | Low | **High** | Med | Humanitarian horror |
+| Relay Technician | Med | Med | **High** (Echo) | **Aether-9 primed** |
+
+**All rows:** 5000 AC, Tier-1 weapon band, shared consumable band (§4.0).  
+**Hard Mode:** Same row as chosen background + **−20% Kade damage** only.
 
 **Recommended default for story-first players:** Relay Technician or Survey Attaché.  
 **Recommended default for combat-first players:** Guard Dropout.
@@ -322,21 +352,39 @@ Kade is **not** a blank slate. Each background is a **lens**:
 
 All paths converge on: **restore Aether-9 → recover Memory Cores → survive Resonance → decide if Io becomes home.**
 
-Companion selection still defines **who stands beside Kade**; background defines **who Kade already was**.
+Companion selection still defines **who stands beside Kade**; background defines **who Kade already was**. Pairings unlock **extra dialogue lines only** (§8.1) — never stat bonuses.
 
 ---
 
 ## 8. Narrative integration beats
 
+### 8.1 Background × companion dialogue (dialogue-only synergy)
+
+When `playerBackgroundId` matches `preferredCompanionHint` class on the starter pick or expedition trio, unlock **optional banter lines** — no gameplay modifier.
+
+| Background | Companion class | Example line (companion → Kade) |
+|------------|-----------------|----------------------------------|
+| Survey Attaché | Science Specialist | “You read the telemetry. I read the chemistry. We’ll argue until we’re right.” |
+| Guard Dropout | Combat Tactician | “You know boarding drills. I know aggro. Don’t hero the rim alone.” |
+| Salvage Contractor | Salvage Engineer | “You strip hulls; I strip schedules. Helix left plenty out here.” |
+| Polar Smuggler | Infiltrator Scout | “You ran ice routes. I run signal routes. Same ghosts.” |
+| Field Medic | Med Tech | “Red Cross Io? I’ve patched worse on the plains.” |
+| Relay Technician | Communications Officer | “You heard the harmonics first. I’ll keep the channel open.” |
+
+If the player ignores the hint, **no penalty** — generic companion lines still play.
+
+### 8.2 Story beats
+
 | Beat | Background hook |
 |------|-----------------|
-| Prologue crash / camp establish | Ops greeting uses `commsToneTag` |
+| Prologue crash / camp establish | Ops greeting uses `commsToneTag`; always addresses **Kade** |
 | First Pioneer Guide / future Aether-9 interact | Relay Tech gets unique line; Smuggler mentions teal packages |
-| B5 polar entry | Smuggler + Survey have extra POI markers |
-| B4 caldera escalation | Guard + Medic recognize evac pod horror |
-| First Echo rescue | Relay + Survey bonus chronicle fragment |
+| B5 polar entry | Smuggler + Survey get extra **dialogue** POI callouts (not map markers) |
+| B4 caldera escalation | Guard + Medic recognize evac pod horror (voice lines) |
+| First Echo rescue | Relay + Survey extra chronicle **text** fragment |
 | Aether-9 repair quest (3 objects) | Each background suggests a different first object location rumor |
 | Memory Core #1 slot | Relay: “It’s listening.” Medic: “It’s in pain.” Salvage: “It’s worth a fortune.” |
+| Hard Mode | Ops optional one-liner: “Command flagged your charter as high-risk. Watch your margins, Kade.” |
 
 ---
 
@@ -351,16 +399,19 @@ Companion selection still defines **who stands beside Kade**; background defines
 | **P4 — Perks** | Passive trait hooks (combat, scan, salvage) | Skill modifier pipeline |
 | **P5 — Story** | Comms templates + Aether-9 lines keyed by `playerBackgroundId` | Communications Runtime (Run 2) |
 
-**Out of scope for v1:** Respec background, hybrid backgrounds, multiplayer.
+**Out of scope for v1:** Respec background, hybrid backgrounds, multiplayer, mechanical background×companion bonuses.
 
 ---
 
 ## 10. Open questions
 
-1. **Name gate:** Is “Kade” fixed, or player-renamable with Kade as default?
-2. **Background + companion synergies:** Cosmetic dialogue only, or small mechanical duo bonus?
-3. **Negative backgrounds:** Allow “Indebted Smuggler” (−1000 AC, better gear) as hard mode?
-4. **Promote to GDD:** Fold §7 into Appendix A narrative after review?
+1. **Promote to GDD:** Fold §7 universe backstory into Appendix A narrative after review?
+2. **Hard Mode damage value:** Confirm **−20%** Kade damage or tune in playtest (10–25% band)?
+
+**Resolved (locked):**
+- Kade = fixed name
+- Companion synergy = dialogue only
+- Hard Mode = −20% Kade damage; same 5000 AC and same kit as selected background
 
 ---
 
