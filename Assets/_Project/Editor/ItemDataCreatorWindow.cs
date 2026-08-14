@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// </summary>
     public class ItemDataCreatorWindow : EditorWindow
     {
-        [MenuItem(SurvivalPioneerEditorMenus.ItemDataCreator, false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ItemDataCreator, false, 0)]
         public static void ShowWindow()
         {
             BlueprintCraftingManagerWindow.OpenItemDataTab();

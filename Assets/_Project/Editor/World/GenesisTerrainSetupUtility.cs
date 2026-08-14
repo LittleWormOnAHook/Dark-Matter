@@ -25,7 +25,7 @@ namespace Project.EditorTools.World
         private const int ControlTextureResolution = 512;
         private const int BaseMapResolution = 512;
 
-        [MenuItem(SurvivalPioneerEditorMenus.Scene + "Setup Genesis Terrain (1024 / 100m + RAW heights)", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Setup Genesis Terrain (1024 / 100m + RAW heights)", false, 21)]
         public static void SetupGenesisTerrain()
         {
             if (!TryBuild(out TerrainData terrainData, out string error))

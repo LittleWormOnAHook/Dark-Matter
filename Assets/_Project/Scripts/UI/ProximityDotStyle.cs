@@ -32,7 +32,7 @@ namespace Project.UI
 
             Image glowImage = glowObject.AddComponent<Image>();
             glowImage.sprite = ShiftUiTheme.CircleGlow ?? MapUiSprites.Dot;
-            glowImage.color = BuildGlowColor(SurvivalPioneerUiPalette.Gold);
+            glowImage.color = BuildGlowColor(DarkMatterGenesisUiPalette.Gold);
             glowImage.raycastTarget = false;
             glowImage.preserveAspect = true;
 
@@ -84,36 +84,36 @@ namespace Project.UI
         public static Color PickupColor(ItemType itemType) =>
             MapUiSprites.GetResourceColor(itemType);
 
-        public static Color QuestGiverColor => SurvivalPioneerUiPalette.WithAlpha(
+        public static Color QuestGiverColor => DarkMatterGenesisUiPalette.WithAlpha(
             QuestUiPalette.InProgressText,
             0.92f);
 
-        public static Color CraftingColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.Gold,
+        public static Color CraftingColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.Gold,
             0.92f);
 
-        public static Color BuildingColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.RichFuchsia,
+        public static Color BuildingColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.RichFuchsia,
             0.9f);
 
-        public static Color LootColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.Gold,
+        public static Color LootColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.Gold,
             0.9f);
 
-        public static Color RecipeColor => SurvivalPioneerUiPalette.WithAlpha(
+        public static Color RecipeColor => DarkMatterGenesisUiPalette.WithAlpha(
             MapUiSprites.GetResourceColor(ItemType.Quest),
             0.92f);
 
-        public static Color PetColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.ConnectedGreen,
+        public static Color PetColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.ConnectedGreen,
             0.92f);
 
-        public static Color ScienceLabColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.RichFuchsia,
+        public static Color ScienceLabColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.RichFuchsia,
             0.88f);
 
-        public static Color EchoColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.RichFuchsia,
+        public static Color EchoColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.RichFuchsia,
             0.88f);
     }
 }

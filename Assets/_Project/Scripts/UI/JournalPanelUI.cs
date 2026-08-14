@@ -495,7 +495,7 @@ namespace Project.UI
 
       T window = host.AddComponent<T>();
       configure?.Invoke(window);
-      window.Initialize(navigator, id, title, SurvivalPioneerUiPalette.PanelBackground);
+      window.Initialize(navigator, id, title, DarkMatterGenesisUiPalette.PanelBackground);
       navigator.RegisterWindow(window);
     }
 
@@ -553,7 +553,7 @@ namespace Project.UI
         }
 
         if (tabRail.TryGetComponent(out Image railImage) && railImage.color.a < 0.05f)
-          railImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
+          railImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.96f);
       }
 
       if (overlayRoot != null && overlayRoot.TryGetComponent(out Image overlayImage))
@@ -751,7 +751,7 @@ namespace Project.UI
       tmp.text = label;
       tmp.fontSize = Sc(JournalPanelLayout.ButtonFontSize + 1f);
       tmp.alignment = TextAlignmentOptions.Center;
-      tmp.color = SurvivalPioneerUiPalette.BodyText;
+      tmp.color = DarkMatterGenesisUiPalette.BodyText;
       tmp.raycastTarget = false;
       StretchRectToParent(labelObj.GetComponent<RectTransform>());
     }
@@ -820,10 +820,10 @@ namespace Project.UI
 
         if (bg != null)
           bg.color = active
-            ? SurvivalPioneerUiPalette.ActiveTabBackground
-            : SurvivalPioneerUiPalette.InactiveTabBackground;
+            ? DarkMatterGenesisUiPalette.ActiveTabBackground
+            : DarkMatterGenesisUiPalette.InactiveTabBackground;
         if (label != null)
-          label.color = active ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText;
+          label.color = active ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.BodyText;
       }
     }
 
@@ -867,7 +867,7 @@ namespace Project.UI
           entry.rescueFailed ? "Rescue Failed" : "Rescue Success",
           entry.echoName,
           $"{entry.classSummary}  ·  {entry.abilitySummary}",
-          entry.rescueFailed ? SurvivalPioneerUiPalette.DangerRed : SurvivalPioneerUiPalette.PositiveGreen);
+          entry.rescueFailed ? DarkMatterGenesisUiPalette.DangerRed : DarkMatterGenesisUiPalette.PositiveGreen);
       }
 
       if (chronicleListParent.childCount == 0)
@@ -904,7 +904,7 @@ namespace Project.UI
             "Colony Event",
             entry.echoName,
             $"{entry.classSummary}  ·  {entry.abilitySummary}",
-            SurvivalPioneerUiPalette.Gold);
+            DarkMatterGenesisUiPalette.Gold);
         }
       }
 
@@ -954,7 +954,7 @@ namespace Project.UI
 
       Image scrollBg = scrollObj.AddComponent<Image>();
       MenuUiBuilder.ApplyUiSprite(scrollBg);
-      scrollBg.color = SurvivalPioneerUiPalette.ScrollBackground;
+      scrollBg.color = DarkMatterGenesisUiPalette.ScrollBackground;
       scrollBg.raycastTarget = true;
 
       ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
@@ -1014,11 +1014,11 @@ namespace Project.UI
 
       questDetailTitle = CreateText(parent, "Select a quest", theme, Sc(20f), TextAlignmentOptions.TopLeft);
       questDetailTitle.fontStyle = FontStyles.Bold;
-      questDetailTitle.color = SurvivalPioneerUiPalette.WarmOffWhite;
+      questDetailTitle.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
       questDetailBody = CreateText(parent, "", theme, Sc(JournalPanelLayout.BodyFontSize), TextAlignmentOptions.TopLeft);
       questDetailBody.textWrappingMode = TextWrappingModes.Normal;
-      questDetailBody.color = SurvivalPioneerUiPalette.MutedText;
+      questDetailBody.color = DarkMatterGenesisUiPalette.MutedText;
 
       GameObject objectiveHost = new GameObject("ObjectiveList", typeof(RectTransform));
       objectiveHost.transform.SetParent(parent, false);
@@ -1041,7 +1041,7 @@ namespace Project.UI
 
       Image abandonImage = abandonButtonObject.GetComponent<Image>();
       MenuUiBuilder.ApplyUiSprite(abandonImage);
-      abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+      abandonImage.color = DarkMatterGenesisUiPalette.DeepMagenta;
 
       abandonQuestButton = abandonButtonObject.GetComponent<Button>();
       abandonQuestButton.targetGraphic = abandonImage;
@@ -1056,7 +1056,7 @@ namespace Project.UI
       abandonQuestButtonLabel.text = "Abandon Quest";
       abandonQuestButtonLabel.fontSize = Sc(18f);
       abandonQuestButtonLabel.alignment = TextAlignmentOptions.Center;
-      abandonQuestButtonLabel.color = SurvivalPioneerUiPalette.BodyText;
+      abandonQuestButtonLabel.color = DarkMatterGenesisUiPalette.BodyText;
       abandonQuestButtonLabel.raycastTarget = false;
       RectTransform abandonLabelRect = abandonLabelObject.GetComponent<RectTransform>();
       abandonLabelRect.anchorMin = Vector2.zero;

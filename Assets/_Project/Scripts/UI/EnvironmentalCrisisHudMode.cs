@@ -110,7 +110,7 @@ namespace Project.UI
             vignetteRoot = MenuUiBuilder.CreateFullScreenPanel(
                 transform,
                 "CrisisVignette",
-                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.38f),
+                DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.38f),
                 blockRaycasts: false);
             vignetteRoot.SetActive(false);
 
@@ -125,8 +125,8 @@ namespace Project.UI
 
             Image bannerBg = bannerRoot.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bannerBg);
-            bannerBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.92f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(bannerRoot);
+            bannerBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.92f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(bannerRoot);
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform));
             labelObject.transform.SetParent(bannerRoot.transform, false);
@@ -139,7 +139,7 @@ namespace Project.UI
             bannerLabel.fontSize = 22f;
             bannerLabel.fontStyle = FontStyles.Bold;
             bannerLabel.alignment = TextAlignmentOptions.Center;
-            bannerLabel.color = SurvivalPioneerUiPalette.BodyText;
+            bannerLabel.color = DarkMatterGenesisUiPalette.BodyText;
             bannerLabel.raycastTarget = false;
 
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();

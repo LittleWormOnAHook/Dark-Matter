@@ -103,7 +103,7 @@ namespace Project.UI
             summaryLabel.text =
                 $"{JournalPanelLayout.FormatAccentTitle(filter)}  ·  " +
                 $"{JournalPanelLayout.FormatGoldValue($"{unlocked}/{total}")} unlocked";
-            summaryLabel.color = SurvivalPioneerUiPalette.BodyText;
+            summaryLabel.color = DarkMatterGenesisUiPalette.BodyText;
         }
 
         private void HandleProgressUpdated(AchievementProgress progress, AchievementDefinition definition) => Refresh();
@@ -152,7 +152,7 @@ namespace Project.UI
             TextMeshProUGUI summaryTmp = summaryRow.GetComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(summaryTmp);
             summaryTmp.fontSize = JournalPanelLayout.SecondaryFontSize;
-            summaryTmp.color = SurvivalPioneerUiPalette.Gold;
+            summaryTmp.color = DarkMatterGenesisUiPalette.Gold;
             summaryTmp.alignment = TextAlignmentOptions.MidlineLeft;
             summaryTmp.raycastTarget = false;
             summaryRow.GetComponent<LayoutElement>().ignoreLayout = true;
@@ -234,8 +234,8 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(bg);
             bool active = selectedCategory == category;
             bg.color = active
-                ? SurvivalPioneerUiPalette.ActiveTabBackground
-                : SurvivalPioneerUiPalette.InactiveTabBackground;
+                ? DarkMatterGenesisUiPalette.ActiveTabBackground
+                : DarkMatterGenesisUiPalette.InactiveTabBackground;
 
             LayoutElement layout = tab.AddComponent<LayoutElement>();
             layout.minWidth = 72f;
@@ -258,7 +258,7 @@ namespace Project.UI
             tmp.text = label;
             tmp.fontSize = 13f;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = active ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText;
+            tmp.color = active ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.BodyText;
             tmp.raycastTarget = false;
 
             RectTransform labelRect = labelObj.GetComponent<RectTransform>();
@@ -354,13 +354,13 @@ namespace Project.UI
             Image bg = box.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
             bg.color = unlocked
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.85f);
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.96f)
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.85f);
 
             Outline outline = box.GetComponent<Outline>();
             outline.effectColor = unlocked
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.65f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.45f);
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.65f)
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.45f);
             outline.effectDistance = new Vector2(1.5f, -1.5f);
 
             // Icon: uses the assigned sprite when the designer set one; otherwise a category-tinted
@@ -381,14 +381,14 @@ namespace Project.UI
             if (!hiddenLocked && definition.icon != null)
             {
                 iconImage.sprite = definition.icon;
-                iconImage.color = unlocked ? Color.white : SurvivalPioneerUiPalette.WithAlpha(Color.white, 0.5f);
+                iconImage.color = unlocked ? Color.white : DarkMatterGenesisUiPalette.WithAlpha(Color.white, 0.5f);
                 iconImage.preserveAspect = true;
             }
             else
             {
                 MenuUiBuilder.ApplyUiSprite(iconImage);
-                Color placeholder = hiddenLocked ? SurvivalPioneerUiPalette.SlateGray : GetCategoryColor(definition.category);
-                iconImage.color = unlocked ? placeholder : SurvivalPioneerUiPalette.WithAlpha(placeholder, 0.45f);
+                Color placeholder = hiddenLocked ? DarkMatterGenesisUiPalette.SlateGray : GetCategoryColor(definition.category);
+                iconImage.color = unlocked ? placeholder : DarkMatterGenesisUiPalette.WithAlpha(placeholder, 0.45f);
             }
 
             string title = hiddenLocked ? "???" : definition.title;
@@ -411,9 +411,9 @@ namespace Project.UI
             textLayout.childControlHeight = false;
             textLayout.childForceExpandHeight = false;
 
-            CreateSlotLabel(textColumn.transform, title, JournalPanelLayout.BodyFontSize, unlocked ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.BodyText,
+            CreateSlotLabel(textColumn.transform, title, JournalPanelLayout.BodyFontSize, unlocked ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.BodyText,
                 bold: true, wrap: true, maxLines: 2, overflow: TextOverflowModes.Ellipsis);
-            CreateSlotLabel(textColumn.transform, description, JournalPanelLayout.SecondaryFontSize, SurvivalPioneerUiPalette.Gold,
+            CreateSlotLabel(textColumn.transform, description, JournalPanelLayout.SecondaryFontSize, DarkMatterGenesisUiPalette.Gold,
                 bold: false, wrap: true, maxLines: 3, overflow: TextOverflowModes.Ellipsis);
 
             string statusLine;
@@ -441,8 +441,8 @@ namespace Project.UI
             {
                 // Secondary copy under titles: Gold. Pure "Unlocked" stays PositiveGreen.
                 Color lineColor = statusLine == "Unlocked"
-                    ? SurvivalPioneerUiPalette.PositiveGreen
-                    : SurvivalPioneerUiPalette.Gold;
+                    ? DarkMatterGenesisUiPalette.PositiveGreen
+                    : DarkMatterGenesisUiPalette.Gold;
                 CreateSlotLabel(textColumn.transform, statusLine, JournalPanelLayout.CaptionFontSize, lineColor, bold: true, wrap: false, maxLines: 1, overflow: TextOverflowModes.Overflow);
             }
         }
@@ -451,14 +451,14 @@ namespace Project.UI
         {
             return category switch
             {
-                AchievementCategory.Exploration => SurvivalPioneerUiPalette.Gold,
-                AchievementCategory.Combat => SurvivalPioneerUiPalette.DangerRed,
-                AchievementCategory.Crafting => SurvivalPioneerUiPalette.PositiveGreen,
-                AchievementCategory.Pets => SurvivalPioneerUiPalette.RichFuchsia,
-                AchievementCategory.Pioneers => SurvivalPioneerUiPalette.SlateGray,
-                AchievementCategory.General => SurvivalPioneerUiPalette.SoftBeigeGray,
-                AchievementCategory.Dynamic => SurvivalPioneerUiPalette.ConnectedGreen,
-                _ => SurvivalPioneerUiPalette.SlateGray
+                AchievementCategory.Exploration => DarkMatterGenesisUiPalette.Gold,
+                AchievementCategory.Combat => DarkMatterGenesisUiPalette.DangerRed,
+                AchievementCategory.Crafting => DarkMatterGenesisUiPalette.PositiveGreen,
+                AchievementCategory.Pets => DarkMatterGenesisUiPalette.RichFuchsia,
+                AchievementCategory.Pioneers => DarkMatterGenesisUiPalette.SlateGray,
+                AchievementCategory.General => DarkMatterGenesisUiPalette.SoftBeigeGray,
+                AchievementCategory.Dynamic => DarkMatterGenesisUiPalette.ConnectedGreen,
+                _ => DarkMatterGenesisUiPalette.SlateGray
             };
         }
 
@@ -504,7 +504,7 @@ namespace Project.UI
             theme?.ApplyFont(tmp, semiBold: false);
             tmp.text = message;
             tmp.fontSize = 15f;
-            tmp.color = SurvivalPioneerUiPalette.Gold;
+            tmp.color = DarkMatterGenesisUiPalette.Gold;
             tmp.alignment = TextAlignmentOptions.TopLeft;
             tmp.textWrappingMode = TextWrappingModes.Normal;
         }

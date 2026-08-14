@@ -75,7 +75,7 @@ flowchart TD
 
 - Product name: **Dark Matter: Genesis** (and DMI / Dark Matter logo derived from project art)
 - Copy: **Loading Genesis...**
-- Palette: `SurvivalPioneerUiPalette` / `ShiftUiTheme` only
+- Palette: `DarkMatterGenesisUiPalette` / `ShiftUiTheme` only
 
 **Forbidden on the loading screen**
 
@@ -91,7 +91,7 @@ flowchart TD
 
 ## Visual composition (UI stack, back → front)
 
-1. **SolidBackdrop** — full-bleed Image, Dark Navy `#1C2A38` (`SurvivalPioneerUiPalette.DarkNavy`)
+1. **SolidBackdrop** — full-bleed Image, Dark Navy `#1C2A38` (`DarkMatterGenesisUiPalette.DarkNavy`)
 2. **BackgroundArt** — full-bleed `RawImage` of `news-1.jpg` at tunable alpha
 3. **Rotating logo + soft glow** — circle-masked Dark Matter artwork spinning on Z, fuchsia glow behind
 4. **Progress UI** — track + fill + label **Loading Genesis...**
@@ -119,7 +119,7 @@ Composition rules: one loading composition (not a dashboard); atmospheric Io / s
 
 ### Palette reference
 
-Use `SurvivalPioneerUiPalette` / `ShiftUiTheme` — not hardcoded one-offs:
+Use `DarkMatterGenesisUiPalette` / `ShiftUiTheme` — not hardcoded one-offs:
 
 - Dark Navy backdrop
 - Slate Gray track / chrome

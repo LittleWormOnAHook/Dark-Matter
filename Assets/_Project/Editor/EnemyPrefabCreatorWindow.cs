@@ -34,7 +34,7 @@ namespace Project.EditorTools
             ExistingPrefab
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.EnemyPrefabCreator, false, 12)]
+        [MenuItem(DarkMatterGenesisEditorMenus.EnemyPrefabCreator, false, 12)]
         public static void Open()
         {
             EnemyPrefabCreatorWindow window = GetWindow<EnemyPrefabCreatorWindow>("Enemy Prefab Creator");

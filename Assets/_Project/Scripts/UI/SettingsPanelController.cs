@@ -40,7 +40,7 @@ namespace Project.UI
             panelRoot = MenuUiBuilder.CreateFullScreenPanel(
                 parent,
                 "SettingsPanel",
-                SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.82f),
+                DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.82f),
                 blockRaycasts: true);
 
             GameObject window = new GameObject("SettingsWindow", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
@@ -48,8 +48,8 @@ namespace Project.UI
 
             Image windowImage = window.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(windowImage);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(windowImage, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(window);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(windowImage, 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(window);
 
             RectTransform windowRect = window.GetComponent<RectTransform>();
             windowRect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -210,7 +210,7 @@ namespace Project.UI
 
             Image scrollBg = scrollHost.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.55f);
+            scrollBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.55f);
             scrollBg.raycastTarget = true;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
@@ -264,7 +264,7 @@ namespace Project.UI
 
             Image scrollbarBg = scrollbarObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollbarBg);
-            scrollbarBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f);
+            scrollbarBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f);
 
             GameObject handleArea = new GameObject("Sliding Area", typeof(RectTransform));
             handleArea.transform.SetParent(scrollbarObject.transform, false);
@@ -278,7 +278,7 @@ namespace Project.UI
             handle.transform.SetParent(handleArea.transform, false);
             Image handleImage = handle.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(handleImage);
-            handleImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            handleImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             RectTransform handleRect = handle.GetComponent<RectTransform>();
             handleRect.anchorMin = Vector2.zero;
             handleRect.anchorMax = Vector2.one;
@@ -348,7 +348,7 @@ namespace Project.UI
         {
             TextMeshProUGUI label = MenuUiBuilder.CreateTitle(parent, title, 15f);
             label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = SurvivalPioneerUiPalette.Gold;
+            label.color = DarkMatterGenesisUiPalette.Gold;
 
             LayoutElement layout = label.GetComponent<LayoutElement>();
             layout.minHeight = 22f;
@@ -370,7 +370,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = string.Empty;
             label.fontSize = 12f;
-            label.color = SurvivalPioneerUiPalette.SoftBeigeGray;
+            label.color = DarkMatterGenesisUiPalette.SoftBeigeGray;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.raycastTarget = false;
             label.gameObject.SetActive(false);

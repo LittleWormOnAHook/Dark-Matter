@@ -38,7 +38,7 @@ namespace Project.EditorTools
                 ClearSelectionOnly();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix Failed Editor Windows", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Fix Failed Editor Windows", false, 0)]
         public static void CloseFailedEditorWindowsMenu()
         {
             int closed = CloseFailedEditorWindows();
@@ -48,13 +48,13 @@ namespace Project.EditorTools
                 : "No failed editor windows or stale Inspector state found.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Clear Stale Selection", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear Stale Selection", false, 1)]
         public static void ClearStaleSelectionMenu()
         {
             RecoverStaleInspectorState(silent: false, aggressive: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Reset Editor Layout", false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reset Editor Layout", false, 2)]
         public static void ResetEditorLayout()
         {
             CloseFailedEditorWindows();

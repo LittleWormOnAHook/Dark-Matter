@@ -10,7 +10,7 @@ namespace Project.EditorTools
     {
         private const string TempFolder = "Assets/AI Toolkit/Temp";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix AI Toolkit Import Loop", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Fix AI Toolkit Import Loop", false, 20)]
         public static void FixImportLoop()
         {
             CloseUnityAiEditorWindows();
@@ -23,7 +23,7 @@ namespace Project.EditorTools
                     : "No AI Toolkit temp assets found. Closed Unity AI editor windows and refreshed the Asset Database.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Clear AI Toolkit Temp Folder", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear AI Toolkit Temp Folder", false, 21)]
         public static void ClearTempFolderMenu()
         {
             int removed = ClearTempFolder();

@@ -18,7 +18,7 @@ namespace Project.EditorTools.Map
         private const float ReferenceMinimapSpan = 96f;
         private const string TerrainMapSnapshotPath = "Assets/_Project/Textures/UI/TerrainMapSnapshot.png";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Scene + "Sync Map To Terrain", false, 11)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Sync Map To Terrain", false, 11)]
         public static void SyncActiveSceneMapToTerrain()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -81,7 +81,7 @@ namespace Project.EditorTools.Map
                 $"(min {bounds.min.x:0.#}, {bounds.min.z:0.#}). Changes: {changes}.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Scene + "Bake Terrain Map Snapshot", false, 12)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Bake Terrain Map Snapshot", false, 12)]
         public static void BakeTerrainMapSnapshot()
         {
             if (!TryGetCombinedTerrainBounds(out Bounds bounds, out Terrain primaryTerrain))

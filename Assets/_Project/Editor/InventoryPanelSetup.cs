@@ -6,7 +6,7 @@ using Project.EditorTools;
 
 public class InventoryPanelSetup : EditorWindow
 {
-    [MenuItem(SurvivalPioneerEditorMenus.Ui + "Inventory Panel", false, 10)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Inventory Panel", false, 10)]
     public static void CreateInventoryPanel()
     {
         // Find or create MainCanvas

@@ -30,13 +30,13 @@ public class CameraShakeEmitterCreatorWindow : EditorWindow
     private string outputFolder = DefaultFolder;
     private Vector2 scroll;
 
-    [MenuItem(SurvivalPioneerEditorMenus.CameraShakeEmitterCreator, false, 55)]
+    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreator, false, 55)]
     public static void ShowWindow()
     {
         GetWindow<CameraShakeEmitterCreatorWindow>("Camera Shake Emitter").minSize = new Vector2(420, 520);
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.CameraShakeEmitterCreateAllPresets, false, 56)]
+    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreateAllPresets, false, 56)]
     public static void CreateAllPresetsMenu()
     {
         int count = CameraShakeEmitterPrefabBuilder.CreateAllPresetPrefabs(DefaultFolder);

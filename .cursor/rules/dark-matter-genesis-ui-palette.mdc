@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Dark Matter: Genesis UI Palette
 
-Use `SurvivalPioneerUiPalette` and `ShiftUiTheme` for all UI color decisions.
+Use `DarkMatterGenesisUiPalette` and `ShiftUiTheme` for all UI color decisions.
 
 | Name | Hex | Usage |
 |------|-----|--------|
@@ -20,7 +20,7 @@ Use `SurvivalPioneerUiPalette` and `ShiftUiTheme` for all UI color decisions.
 
 ## Rules
 
-- Prefer `SurvivalPioneerUiPalette` constants over hardcoded RGB values in UI code.
+- Prefer `DarkMatterGenesisUiPalette` constants over hardcoded RGB values in UI code.
 - Panel backgrounds: Dark Navy; borders: Slate Gray; headers: Charcoal Gray.
 - Interactive buttons: Deep Magenta normal, Rich Fuchsia hover/selected, Gold for premium actions or points.
 - Body text: Warm Off-White; helper text: Soft Beige-Gray.

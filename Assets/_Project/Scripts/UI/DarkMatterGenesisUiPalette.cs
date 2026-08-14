@@ -6,7 +6,7 @@ namespace Project.UI
     /// <summary>
     /// Core Dark Matter Genesis UI palette. Use these colors for panels, borders, buttons, and text.
     /// </summary>
-    public static class SurvivalPioneerUiPalette
+    public static class DarkMatterGenesisUiPalette
     {
         /// <summary>Accent fill on SoftBeigeGray or WarmOffWhite surfaces only — never for text or dark-panel UI.</summary>
         public static readonly Color DeepMagenta = FromHex("#8F1E5E");

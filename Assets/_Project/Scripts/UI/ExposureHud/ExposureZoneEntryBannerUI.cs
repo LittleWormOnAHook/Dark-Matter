@@ -53,8 +53,8 @@ namespace Project.UI
 
             Image panel = gameObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panel);
-            panel.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.92f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(1f, -1f));
+            panel.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.92f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(1f, -1f));
 
             GameObject accentObject = new GameObject("Accent", typeof(RectTransform), typeof(Image));
             accentObject.transform.SetParent(transform, false);
@@ -66,13 +66,13 @@ namespace Project.UI
             accentRect.anchoredPosition = new Vector2(0f, -2f);
             accentBar = accentObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(accentBar);
-            accentBar.color = SurvivalPioneerUiPalette.RichFuchsia;
+            accentBar.color = DarkMatterGenesisUiPalette.RichFuchsia;
 
             headingLabel = CreateLabel("Heading", "ENTERING ZONE", 13f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(48f)));
-            headingLabel.color = SurvivalPioneerUiPalette.MutedText;
+            headingLabel.color = DarkMatterGenesisUiPalette.MutedText;
 
             zoneLabel = CreateLabel("ZoneName", "UNKNOWN", 24f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(18f)));
-            zoneLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            zoneLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             gameObject.SetActive(false);
             built = true;

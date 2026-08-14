@@ -13,10 +13,10 @@ namespace Project.UI
     public class SkillsPanelUI : MonoBehaviour
     {
         private static readonly Color RankFilledBlue = new Color(0.55f, 0.78f, 0.95f, 1f);
-        private static readonly Color RankEmptyGray = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.85f);
-        private static readonly Color PathLocked = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.35f);
-        private static readonly Color PathReady = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.55f);
-        private static readonly Color PathOwned = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.72f);
+        private static readonly Color RankEmptyGray = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.85f);
+        private static readonly Color PathLocked = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.35f);
+        private static readonly Color PathReady = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.55f);
+        private static readonly Color PathOwned = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.72f);
 
         private const float HexSize = 92f;
         private const float ColSpacing = 118f;
@@ -110,8 +110,8 @@ namespace Project.UI
                 $"Level {JournalPanelLayout.FormatGoldValue(level.ToString())}  ·  " +
                 $"Skill Points {JournalPanelLayout.FormatGoldValue(points.ToString())}";
             summaryLabel.color = points > 0
-                ? SurvivalPioneerUiPalette.HighlightText
-                : SurvivalPioneerUiPalette.BodyText;
+                ? DarkMatterGenesisUiPalette.HighlightText
+                : DarkMatterGenesisUiPalette.BodyText;
 
             categoryTitleLabel.text = SkillDefinition.GetCategoryDisplayName(activeCategory);
             RefreshCategoryTabs();
@@ -132,7 +132,7 @@ namespace Project.UI
 
             Image panelBg = panelRoot.GetComponent<Image>();
             JournalPanelLayout.StylePanelBackground(panelBg, theme);
-            panelBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
+            panelBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.96f);
 
             VerticalLayoutGroup rootLayout = panelRoot.AddComponent<VerticalLayoutGroup>();
             JournalPanelLayout.ApplyRootVerticalLayout(rootLayout);
@@ -144,7 +144,7 @@ namespace Project.UI
             header.text = "Skill Trees";
 
             summaryLabel = CreateLabel(panelRoot.transform, "Summary", JournalPanelLayout.SummaryFontSize);
-            summaryLabel.color = SurvivalPioneerUiPalette.BodyText;
+            summaryLabel.color = DarkMatterGenesisUiPalette.BodyText;
 
             GameObject tabsObject = new GameObject("CategoryTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             tabsObject.transform.SetParent(panelRoot.transform, false);
@@ -163,7 +163,7 @@ namespace Project.UI
             BuildCategoryTabs();
 
             categoryTitleLabel = CreateLabel(panelRoot.transform, "CategoryTitle", JournalPanelLayout.BodyFontSize);
-            categoryTitleLabel.color = SurvivalPioneerUiPalette.Gold;
+            categoryTitleLabel.color = DarkMatterGenesisUiPalette.Gold;
             categoryTitleLabel.fontStyle = FontStyles.Bold;
 
             GameObject bodySplit = new GameObject("BodySplit", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -183,7 +183,7 @@ namespace Project.UI
             treeHostLayout.minWidth = 320f;
             Image treeHostBg = treeHost.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(treeHostBg);
-            treeHostBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.55f);
+            treeHostBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.55f);
 
             GameObject scrollObject = new GameObject("TreeScroll", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
             scrollObject.transform.SetParent(treeHost.transform, false);
@@ -193,7 +193,7 @@ namespace Project.UI
             scrollRectTf.offsetMin = new Vector2(4f, 4f);
             scrollRectTf.offsetMax = new Vector2(-4f, -4f);
             Image scrollBg = scrollObject.GetComponent<Image>();
-            scrollBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.72f);
+            scrollBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.72f);
             scrollBg.raycastTarget = true;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
@@ -201,7 +201,7 @@ namespace Project.UI
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
             JournalPanelLayout.StretchFill(viewportRect, 0f);
             Image viewportImage = viewport.GetComponent<Image>();
-            viewportImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.15f);
+            viewportImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.15f);
             viewportImage.raycastTarget = true;
 
             GameObject content = new GameObject("Content", typeof(RectTransform));
@@ -238,7 +238,7 @@ namespace Project.UI
             detailLayout.preferredWidth = 260f;
             Image detailBg = detailColumn.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(detailBg);
-            detailBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            detailBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
             VerticalLayoutGroup detailVertical = detailColumn.GetComponent<VerticalLayoutGroup>();
             detailVertical.padding = new RectOffset(12, 12, 12, 12);
             detailVertical.spacing = 8f;
@@ -253,12 +253,12 @@ namespace Project.UI
 
             popupRoot = detailColumn.GetComponent<RectTransform>();
             popupTitle = CreateLabel(detailColumn.transform, "PopupTitle", JournalPanelLayout.SummaryFontSize);
-            popupTitle.color = SurvivalPioneerUiPalette.Gold;
+            popupTitle.color = DarkMatterGenesisUiPalette.Gold;
             popupTitle.fontStyle = FontStyles.Bold;
             popupTitle.text = "Hover a hex";
 
             popupBody = CreateLabel(detailColumn.transform, "PopupBody", JournalPanelLayout.BodyFontSize);
-            popupBody.color = SurvivalPioneerUiPalette.BodyText;
+            popupBody.color = DarkMatterGenesisUiPalette.BodyText;
             popupBody.textWrappingMode = TextWrappingModes.Normal;
             popupBody.overflowMode = TextOverflowModes.Overflow;
             LayoutElement bodyLayout = popupBody.GetComponent<LayoutElement>();
@@ -305,7 +305,7 @@ namespace Project.UI
                 ApplyThemeFont(label, semiBold: true);
                 label.alignment = TextAlignmentOptions.Center;
                 label.fontSize = JournalPanelLayout.CaptionFontSize;
-                label.color = SurvivalPioneerUiPalette.WarmOffWhite;
+                label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
                 label.text = SkillDefinition.GetCategoryDisplayName(category);
 
                 categoryButtons.Add(button);
@@ -325,13 +325,13 @@ namespace Project.UI
                 if (image != null)
                 {
                     image.color = active
-                        ? SurvivalPioneerUiPalette.WithAlpha(GetCategoryAccent(activeCategory), 0.92f)
-                        : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.75f);
+                        ? DarkMatterGenesisUiPalette.WithAlpha(GetCategoryAccent(activeCategory), 0.92f)
+                        : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.75f);
                 }
 
                 TextMeshProUGUI label = child.GetComponentInChildren<TextMeshProUGUI>();
                 if (label != null)
-                    label.color = active ? SurvivalPioneerUiPalette.WarmOffWhite : SurvivalPioneerUiPalette.MutedText;
+                    label.color = active ? DarkMatterGenesisUiPalette.WarmOffWhite : DarkMatterGenesisUiPalette.MutedText;
             }
         }
 
@@ -357,7 +357,7 @@ namespace Project.UI
                 ApplyThemeFont(emptyLabel);
                 emptyLabel.alignment = TextAlignmentOptions.Center;
                 emptyLabel.fontSize = JournalPanelLayout.BodyFontSize;
-                emptyLabel.color = SurvivalPioneerUiPalette.MutedText;
+                emptyLabel.color = DarkMatterGenesisUiPalette.MutedText;
                 emptyLabel.text = "No skills in this tree yet.\nTools → Dark Matter Genesis → Content → Create Starter Skills";
                 return;
             }
@@ -449,8 +449,8 @@ namespace Project.UI
             fill.sprite = DmHexUiSprites.FilledHex;
             fill.raycastTarget = false;
             fill.color = unlocked
-                ? SurvivalPioneerUiPalette.WithAlpha(rank > 0 ? accent : SurvivalPioneerUiPalette.CharcoalGray, rank > 0 ? 0.88f : 0.82f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f);
+                ? DarkMatterGenesisUiPalette.WithAlpha(rank > 0 ? accent : DarkMatterGenesisUiPalette.CharcoalGray, rank > 0 ? 0.88f : 0.82f)
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f);
 
             GameObject outlineObject = new GameObject("Outline", typeof(RectTransform), typeof(Image));
             outlineObject.transform.SetParent(node.transform, false);
@@ -463,10 +463,10 @@ namespace Project.UI
             outline.sprite = DmHexUiSprites.OutlineHex;
             outline.raycastTarget = false;
             outline.color = isMaxed
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.95f)
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.95f)
                 : canAllocate
-                    ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.95f)
-                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.9f);
+                    ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.95f)
+                    : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.9f);
 
             GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
             labelObject.transform.SetParent(node.transform, false);
@@ -479,7 +479,7 @@ namespace Project.UI
             ApplyThemeFont(label, semiBold: true);
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = 11f;
-            label.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.overflowMode = TextOverflowModes.Ellipsis;
             label.maxVisibleLines = 2;
@@ -642,13 +642,13 @@ namespace Project.UI
             if (highlighted)
             {
                 bool selected = selectedSkillId == view.Skill.ResolvedId;
-                view.Glow.color = SurvivalPioneerUiPalette.WithAlpha(
-                    selected ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.RichFuchsia,
+                view.Glow.color = DarkMatterGenesisUiPalette.WithAlpha(
+                    selected ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.RichFuchsia,
                     selected ? 0.5f : 0.55f);
                 if (view.Outline != null)
                 {
-                    view.Outline.color = SurvivalPioneerUiPalette.WithAlpha(
-                        selected ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.RichFuchsia,
+                    view.Outline.color = DarkMatterGenesisUiPalette.WithAlpha(
+                        selected ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.RichFuchsia,
                         1f);
                 }
             }
@@ -658,10 +658,10 @@ namespace Project.UI
                 if (view.Outline != null)
                 {
                     view.Outline.color = isMaxed
-                        ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.95f)
+                        ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.95f)
                         : canAllocate
-                            ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.95f)
-                            : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.9f);
+                            ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.95f)
+                            : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.9f);
                 }
             }
         }
@@ -701,8 +701,8 @@ namespace Project.UI
                 (string.IsNullOrEmpty(prereqLine) ? string.Empty : $"{prereqLine}\n") +
                 $"\n{status}";
             popupBody.color = canAllocate || isMaxed
-                ? SurvivalPioneerUiPalette.BodyText
-                : SurvivalPioneerUiPalette.MutedText;
+                ? DarkMatterGenesisUiPalette.BodyText
+                : DarkMatterGenesisUiPalette.MutedText;
         }
 
         private string FormatPrerequisites(SkillDefinition skill)
@@ -753,12 +753,12 @@ namespace Project.UI
         private static Color GetCategoryAccent(SkillTreeCategory category) =>
             category switch
             {
-                SkillTreeCategory.Melee => SurvivalPioneerUiPalette.DeepMagenta,
-                SkillTreeCategory.Pistols => SurvivalPioneerUiPalette.RichFuchsia,
-                SkillTreeCategory.Rifles => SurvivalPioneerUiPalette.Gold,
-                SkillTreeCategory.Survival => SurvivalPioneerUiPalette.SoftBeigeGray,
-                SkillTreeCategory.Player => SurvivalPioneerUiPalette.CharcoalGray,
-                _ => SurvivalPioneerUiPalette.SlateGray
+                SkillTreeCategory.Melee => DarkMatterGenesisUiPalette.DeepMagenta,
+                SkillTreeCategory.Pistols => DarkMatterGenesisUiPalette.RichFuchsia,
+                SkillTreeCategory.Rifles => DarkMatterGenesisUiPalette.Gold,
+                SkillTreeCategory.Survival => DarkMatterGenesisUiPalette.SoftBeigeGray,
+                SkillTreeCategory.Player => DarkMatterGenesisUiPalette.CharcoalGray,
+                _ => DarkMatterGenesisUiPalette.SlateGray
             };
 
         private static void StretchLocal(RectTransform rect)

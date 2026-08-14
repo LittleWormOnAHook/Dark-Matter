@@ -77,12 +77,12 @@ namespace Project.UI
             if (theme != null)
             {
                 theme.ApplyFont(title, semiBold: true);
-                title.color = SurvivalPioneerUiPalette.HotbarLabelText;
+                title.color = DarkMatterGenesisUiPalette.HotbarLabelText;
             }
             else
             {
                 TmpUiHelper.ApplyDefaultFont(title);
-                title.color = SurvivalPioneerUiPalette.HotbarLabelText;
+                title.color = DarkMatterGenesisUiPalette.HotbarLabelText;
             }
             title.text = "TOOLS";
             title.fontSize = HudLayoutMetrics.ScaledInt(13f);
@@ -514,7 +514,7 @@ namespace Project.UI
                 keyLabel.alignment = TextAlignmentOptions.TopLeft;
             }
 
-            keyLabel.color = SurvivalPioneerUiPalette.HotbarLabelText;
+            keyLabel.color = DarkMatterGenesisUiPalette.HotbarLabelText;
             return keyLabel;
         }
 

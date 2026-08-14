@@ -74,7 +74,7 @@ namespace Project.Audio.Editor
     {
         public const string ResourcesProfilePath = "Assets/_Project/Resources/GameAudioProfile.asset";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Audio + "Create Game Audio Profile")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Audio + "Create Game Audio Profile")]
         public static void CreateGameAudioProfile()
         {
             GameAudioProfile asset = ScriptableObject.CreateInstance<GameAudioProfile>();
@@ -86,7 +86,7 @@ namespace Project.Audio.Editor
             Selection.activeObject = asset;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Audio + "Open Game Audio Profile")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Audio + "Open Game Audio Profile")]
         public static void OpenGameAudioProfile()
         {
             GameAudioProfile profile = GameAudioProfileAssetSetup.EnsureResourcesProfile();
@@ -97,7 +97,7 @@ namespace Project.Audio.Editor
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Audio + "Create Ambient Audio Zone")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Audio + "Create Ambient Audio Zone")]
         public static void CreateAmbientAudioZone()
         {
             GameObject zoneObject = new GameObject("AmbientAudioZone");

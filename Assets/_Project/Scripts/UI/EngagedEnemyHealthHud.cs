@@ -106,7 +106,7 @@ namespace Project.UI
             nameLabel.alignment = TextAlignmentOptions.Center;
             nameLabel.fontSize = 16f;
             nameLabel.fontStyle = FontStyles.Bold;
-            nameLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            nameLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             nameLabel.raycastTarget = false;
             nameLabel.text = string.Empty;
             TmpUiHelper.TryApplyOutline(nameLabel, 0.2f, Color.black);
@@ -116,14 +116,14 @@ namespace Project.UI
 
             backgroundImage = barObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(backgroundImage);
-            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.9f);
+            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.9f);
             backgroundImage.raycastTarget = false;
 
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform));
             fillObject.transform.SetParent(barObject.transform, false);
             fillImage = fillObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(fillImage);
-            fillImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+            fillImage.color = DarkMatterGenesisUiPalette.DeepMagenta;
             fillImage.type = Image.Type.Filled;
             fillImage.fillMethod = Image.FillMethod.Horizontal;
             fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;

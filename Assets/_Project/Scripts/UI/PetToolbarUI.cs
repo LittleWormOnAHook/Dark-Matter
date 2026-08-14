@@ -132,7 +132,7 @@ namespace Project.UI
                 }
 
                 if (slotBackgroundImage != null)
-                    slotBackgroundImage.color = SurvivalPioneerUiPalette.SlotBackground;
+                    slotBackgroundImage.color = DarkMatterGenesisUiPalette.SlotBackground;
 
                 if (selectionGlowImage != null)
                     selectionGlowImage.enabled = false;
@@ -151,7 +151,7 @@ namespace Project.UI
             }
 
             if (slotBackgroundImage != null)
-                slotBackgroundImage.color = SurvivalPioneerUiPalette.SlotBackground;
+                slotBackgroundImage.color = DarkMatterGenesisUiPalette.SlotBackground;
 
             if (selectionGlowImage != null)
                 selectionGlowImage.enabled = pet.CompanionActive;
@@ -190,7 +190,7 @@ namespace Project.UI
         {
             slotBackgroundImage = slotObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(slotBackgroundImage);
-            slotBackgroundImage.color = SurvivalPioneerUiPalette.SlotBackground;
+            slotBackgroundImage.color = DarkMatterGenesisUiPalette.SlotBackground;
 
             ShiftUiTheme theme = ShiftUiTheme.Current;
             if (theme != null)
@@ -209,7 +209,7 @@ namespace Project.UI
             iconRect.offsetMax = new Vector2(-inset, -inset);
 
             Button button = slotObject.GetComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(button, slotBackgroundImage);
+            DarkMatterGenesisUiPalette.StylePrimaryButton(button, slotBackgroundImage);
             button.onClick.AddListener(ToggleToolbarPetActive);
 
             slotLabel = CreateCenteredLabel(slotObject.transform, "Empty");
@@ -246,7 +246,7 @@ namespace Project.UI
             titleLabel.fontSize = HudLayoutMetrics.ScaledInt(13f);
             titleLabel.fontStyle = FontStyles.Bold;
             titleLabel.alignment = TextAlignmentOptions.Center;
-            titleLabel.color = SurvivalPioneerUiPalette.HotbarLabelText;
+            titleLabel.color = DarkMatterGenesisUiPalette.HotbarLabelText;
 
             GameObject slotObject = new GameObject("PetSlot", typeof(RectTransform), typeof(Image), typeof(Button), typeof(PetToolbarSlotDropHandler));
             slotObject.transform.SetParent(petRoot, false);
@@ -308,7 +308,7 @@ namespace Project.UI
             label.text = text;
             label.fontSize = HudLayoutMetrics.ScaledInt(11f);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             return label;
         }
 

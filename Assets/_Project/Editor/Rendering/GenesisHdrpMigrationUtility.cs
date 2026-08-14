@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -28,17 +29,17 @@ namespace Project.EditorTools.Rendering
             ("Genesis_HDRP_Ultra.asset", GenesisHdrpTier.Ultra),
         };
 
-        [MenuItem(SurvivalPioneerEditorMenus.Hdrp + "Phase 0/1 - Create Genesis HDRP Foundation", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 0/1 - Create Genesis HDRP Foundation", false, 0)]
         public static void CreateGenesisHdrpFoundation()
         {
             EnsureFolder(HdrpRoot);
             EnsureFolder(HdrpDefaultResources);
 
-            HDRenderPipelineGlobalSettings globalSettings = EnsureGlobalSettings();
+            // HDRenderPipelineGlobalSettings is internal in HDRP 17 — use Ensure() via reflection.
+            EnsureHdrpGlobalSettings();
             HDRenderPipelineAsset[] tierAssets = CreateOrUpdateTierAssets();
 
             ConfigureQualityTiers(tierAssets);
-            RegisterGlobalSettingsMap(globalSettings);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -52,7 +53,7 @@ namespace Project.EditorTools.Rendering
                 "OK");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Hdrp + "Phase 1 - Create HDRP Test Scene", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 1 - Create HDRP Test Scene", false, 10)]
         public static void CreateHdrpTestScene()
         {
             CreateGenesisHdrpFoundation();
@@ -98,7 +99,7 @@ namespace Project.EditorTools.Rendering
                 "OK");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Hdrp + "Phase 6 - Switch Global Pipeline To HDRP High", false, 60)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 6 - Switch Global Pipeline To HDRP High", false, 60)]
         public static void SwitchGlobalPipelineToHdrpHigh()
         {
             string highPath = $"{HdrpRoot}/Genesis_HDRP_High.asset";
@@ -135,22 +136,34 @@ namespace Project.EditorTools.Rendering
                 "OK");
         }
 
-        private static HDRenderPipelineGlobalSettings EnsureGlobalSettings()
+        /// <summary>
+        /// Calls internal HDRenderPipelineGlobalSettings.Ensure(canCreateNewAsset: true).
+        /// The type is inaccessible from assembly-CSharp-Editor in HDRP 17.
+        /// </summary>
+        private static void EnsureHdrpGlobalSettings()
         {
-            string[] existing = AssetDatabase.FindAssets("t:HDRenderPipelineGlobalSettings", new[] { HdrpDefaultResources });
-            HDRenderPipelineGlobalSettings settings;
-            if (existing.Length > 0)
+            Type settingsType = typeof(HDRenderPipelineAsset).Assembly
+                .GetType("UnityEngine.Rendering.HighDefinition.HDRenderPipelineGlobalSettings");
+            if (settingsType == null)
             {
-                string path = AssetDatabase.GUIDToAssetPath(existing[0]);
-                settings = AssetDatabase.LoadAssetAtPath<HDRenderPipelineGlobalSettings>(path);
-            }
-            else
-            {
-                settings = ScriptableObject.CreateInstance<HDRenderPipelineGlobalSettings>();
-                AssetDatabase.CreateAsset(settings, $"{HdrpDefaultResources}/HDRenderPipelineGlobalSettings.asset");
+                Debug.LogWarning("[Genesis HDRP] HDRenderPipelineGlobalSettings type not found. Open Window > Rendering > HDRP Wizard after exiting Safe Mode.");
+                return;
             }
 
-            return settings;
+            MethodInfo ensure = settingsType.GetMethod(
+                "Ensure",
+                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public,
+                binder: null,
+                types: new[] { typeof(bool) },
+                modifiers: null);
+
+            if (ensure == null)
+            {
+                Debug.LogWarning("[Genesis HDRP] HDRenderPipelineGlobalSettings.Ensure(bool) not found.");
+                return;
+            }
+
+            ensure.Invoke(null, new object[] { true });
         }
 
         private static HDRenderPipelineAsset[] CreateOrUpdateTierAssets()
@@ -274,14 +287,6 @@ namespace Project.EditorTools.Rendering
         {
             UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/QualitySettings.asset");
             return new SerializedObject(assets[0]);
-        }
-
-        private static void RegisterGlobalSettingsMap(HDRenderPipelineGlobalSettings globalSettings)
-        {
-            if (globalSettings == null)
-                return;
-
-            GraphicsSettings.RegisterRenderPipelineSettings<HDRenderPipelineGlobalSettings>(globalSettings);
         }
 
         private static void AddSceneToBuildSettings(string scenePath, bool enabled)

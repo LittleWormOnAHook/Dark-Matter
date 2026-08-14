@@ -8,7 +8,7 @@ public static class OpticsCrosshairLibrarySetup
     private const string AssetPath = "Assets/_Project/Resources/Optics/OpticsCrosshairLibrary.asset";
     private const string CrosshairRoot = "Assets/TooManyCrosshairs/Unknown's Crosshairs";
 
-    [MenuItem(SurvivalPioneerEditorMenus.Optics + "Setup Crosshair Library")]
+    [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Setup Crosshair Library")]
     public static void CreateOrUpdateLibrary()
     {
         EnsureFolder("Assets/_Project/Resources");

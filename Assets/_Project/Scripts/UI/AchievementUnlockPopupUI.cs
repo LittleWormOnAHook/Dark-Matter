@@ -110,9 +110,9 @@ namespace Project.UI
 
             Image cardBg = card.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(cardBg);
-            cardBg.color = SurvivalPioneerUiPalette.PanelBackground;
+            cardBg.color = DarkMatterGenesisUiPalette.PanelBackground;
             cardBg.raycastTarget = false;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(card);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(card);
 
             VerticalLayoutGroup cardLayout = card.GetComponent<VerticalLayoutGroup>();
             cardLayout.padding = new RectOffset(0, 0, 0, 14);
@@ -127,7 +127,7 @@ namespace Project.UI
             if (headerLabel != null)
             {
                 headerLabel.alignment = TextAlignmentOptions.Center;
-                headerLabel.color = SurvivalPioneerUiPalette.Gold;
+                headerLabel.color = DarkMatterGenesisUiPalette.Gold;
             }
 
             GameObject bodyRow = new GameObject("BodyRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
@@ -153,9 +153,9 @@ namespace Project.UI
             iconLayout.preferredHeight = 72f;
             Image iconImage = iconBlock.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(iconImage);
-            iconImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.82f);
+            iconImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.82f);
             iconImage.raycastTarget = false;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(iconBlock, new Vector2(2f, -2f));
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(iconBlock, new Vector2(2f, -2f));
 
             GameObject textColumn = new GameObject("TextColumn", typeof(RectTransform), typeof(VerticalLayoutGroup));
             textColumn.transform.SetParent(bodyRow.transform, false);
@@ -169,17 +169,17 @@ namespace Project.UI
             LayoutElement textColumnLayout = textColumn.AddComponent<LayoutElement>();
             textColumnLayout.flexibleWidth = 1f;
 
-            titleLabel = CreateLabel(textColumn.transform, "Title", 26f, SurvivalPioneerUiPalette.BodyText, FontStyles.Bold, theme);
+            titleLabel = CreateLabel(textColumn.transform, "Title", 26f, DarkMatterGenesisUiPalette.BodyText, FontStyles.Bold, theme);
             titleLabel.alignment = TextAlignmentOptions.TopLeft;
             titleLabel.textWrappingMode = TextWrappingModes.Normal;
 
             descriptionRow = CreateLabelRow(textColumn.transform, out descriptionLabel, "Description", 16f,
-                SurvivalPioneerUiPalette.MutedText, FontStyles.Normal, theme);
+                DarkMatterGenesisUiPalette.MutedText, FontStyles.Normal, theme);
             descriptionLabel.alignment = TextAlignmentOptions.TopLeft;
             descriptionLabel.textWrappingMode = TextWrappingModes.Normal;
 
             xpRow = CreateLabelRow(textColumn.transform, out xpLabel, "+0 XP", 20f,
-                SurvivalPioneerUiPalette.Gold, FontStyles.Bold, theme);
+                DarkMatterGenesisUiPalette.Gold, FontStyles.Bold, theme);
             xpLabel.alignment = TextAlignmentOptions.TopLeft;
 
             ContentSizeFitter cardFitter = card.AddComponent<ContentSizeFitter>();

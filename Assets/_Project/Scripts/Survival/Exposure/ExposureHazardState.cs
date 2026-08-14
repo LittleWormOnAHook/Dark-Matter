@@ -42,7 +42,7 @@ namespace Project.Survival.Exposure
     }
 
     /// <summary>
-    /// Presentation colors aligned with SurvivalPioneerUiPalette (no UI assembly reference).
+    /// Presentation colors aligned with DarkMatterGenesisUiPalette (no UI assembly reference).
     /// </summary>
     public static class ExposureHazardPresentation
     {

@@ -42,7 +42,7 @@ namespace Project.EditorTools.Invector
         private const string PreloadedMeleeSlotsRootName = "PreloadedMeleeWeaponSlots";
         private const string PreloadedRangedSlotsRootName = "PreloadedRangedWeaponSlots";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Build Player_Invector Prefab", false, 120)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Build Player_Invector Prefab", false, 120)]
         public static void BuildPlayerInvectorPrefab()
         {
             string sourcePath = System.IO.File.Exists(OutputPlayerPrefabPath)
@@ -90,7 +90,7 @@ namespace Project.EditorTools.Invector
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Wire ItemData Invector Weapon Prefabs", false, 121)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Wire ItemData Invector Weapon Prefabs", false, 121)]
         public static void WireDefaultItemWeaponPrefabs()
         {
             AssignItemWeaponPrefab(PistolItemPath, LoadPrefab(DefaultPistolPath));
@@ -99,7 +99,7 @@ namespace Project.EditorTools.Invector
             Debug.Log("Wired sci_fi_pistol and survival_rifle Invector weapon prefabs.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Swap Pioneer Scene Player To Invector", false, 123)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Swap Pioneer Scene Player To Invector", false, 123)]
         public static void SwapScenePlayerToInvector()
         {
             BuildPlayerInvectorPrefab();
@@ -142,7 +142,7 @@ namespace Project.EditorTools.Invector
             Debug.Log("Pioneer.unity now uses Player_Invector.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Refresh Player_Invector Melee Slots", false, 124)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Refresh Player_Invector Melee Slots", false, 124)]
         public static void RefreshPlayerInvectorMeleeSlots()
         {
             GameObject invectorRoot = PrefabUtility.LoadPrefabContents(OutputPlayerPrefabPath);
@@ -160,7 +160,7 @@ namespace Project.EditorTools.Invector
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Refresh Player_Invector Ranged Slots", false, 125)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Refresh Player_Invector Ranged Slots", false, 125)]
         public static void RefreshPlayerInvectorRangedSlots()
         {
             GameObject invectorRoot = PrefabUtility.LoadPrefabContents(OutputPlayerPrefabPath);

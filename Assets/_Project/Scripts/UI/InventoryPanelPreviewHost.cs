@@ -71,11 +71,11 @@ namespace Project.UI
             panelCanvas.sortingOrder = 10;
 
             Image panelImage = panelGo.GetComponent<Image>();
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(panelImage, 0.94f);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(panelImage, 0.94f);
             panelImage.enabled = true;
 
             Outline border = panelGo.AddComponent<Outline>();
-            border.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+            border.effectColor = DarkMatterGenesisUiPalette.PanelBorder;
             border.effectDistance = new Vector2(2f, -2f);
             border.useGraphicAlpha = true;
 

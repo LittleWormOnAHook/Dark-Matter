@@ -35,7 +35,7 @@ namespace Project.EditorTools.Creatures
         private string animStatusMessage = string.Empty;
         private PathCreator creaturePatrolPath;
 
-        [MenuItem(SurvivalPioneerEditorMenus.CreatureManager, false, 25)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CreatureManager, false, 25)]
         public static void ShowWindow()
         {
             DMICreatureManagerWindow window = GetWindow<DMICreatureManagerWindow>("Creatures Manager");
@@ -43,7 +43,7 @@ namespace Project.EditorTools.Creatures
             window.RefreshDefinitions();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.BuildSulfurHoundCreature, false, 26)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundCreature, false, 26)]
         private static void BuildSulfurHoundQuick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundDefinition();
@@ -54,7 +54,7 @@ namespace Project.EditorTools.Creatures
                 Debug.LogError("[Creatures Manager] Failed to build Sulfur Hound prefab.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.BuildSulfurHoundV2Creature, false, 26)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundV2Creature, false, 26)]
         private static void BuildSulfurHoundV2Quick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundV2Definition();
@@ -65,7 +65,7 @@ namespace Project.EditorTools.Creatures
                 Debug.LogError("[Creatures Manager] Failed to build Sulfur Hound V2-A prefab.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.BuildSulfurHoundBrain, false, 27)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundBrain, false, 27)]
         private static void BuildSulfurHoundBrainQuick()
         {
             MAIState start = DMICreatureBrainAssetBuilder.EnsureSulfurHoundBrainGraph(out string path);
@@ -84,7 +84,7 @@ namespace Project.EditorTools.Creatures
                 Selection.activeObject = start;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.RegisterSulfurHoundEncounter, false, 28)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RegisterSulfurHoundEncounter, false, 28)]
         private static void RegisterSulfurHoundEncounterQuick()
         {
             SurfaceEncounterTable table = DMICreatureWorldWireUtility.EnsureB1LifeformEncounterTable(out string message);
@@ -96,7 +96,7 @@ namespace Project.EditorTools.Creatures
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.ValidateSulfurHoundSetup, false, 29)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ValidateSulfurHoundSetup, false, 29)]
         private static void ValidateSulfurHoundSetupQuick()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -113,7 +113,7 @@ namespace Project.EditorTools.Creatures
             Selection.activeObject = prefab;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.RebuildSulfurHoundReskin, false, 30)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RebuildSulfurHoundReskin, false, 30)]
         private static void RebuildSulfurHoundReskinQuick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundDefinition();
@@ -133,7 +133,7 @@ namespace Project.EditorTools.Creatures
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.LegacyCreatures + "Smoke Test RiggedNative Build", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.LegacyCreatures + "Smoke Test RiggedNative Build", false, 40)]
         private static void SmokeTestRiggedNativeBuild()
         {
             const string defPath = "Assets/_Project/Data/Creatures/SmokeTest_RiggedNative.asset";

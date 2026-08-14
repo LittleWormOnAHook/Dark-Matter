@@ -26,8 +26,8 @@ namespace Project.UI
         private static float ArcPadding => HudLayoutMetrics.Scaled(5f * SlotSizeScale);
         private static float TitleHeight => HudLayoutMetrics.Scaled(20f * TitleSizeScale);
 
-        private static Color EmptySlotColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.DarkNavy,
+        private static Color EmptySlotColor => DarkMatterGenesisUiPalette.WithAlpha(
+            DarkMatterGenesisUiPalette.DarkNavy,
             0.8f);
 
         private readonly SlotView[] slots = new SlotView[SlotCount];
@@ -232,7 +232,7 @@ namespace Project.UI
             title.fontSize = HudLayoutMetrics.ScaledInt(13f * TitleSizeScale);
             title.fontStyle = FontStyles.Bold;
             title.alignment = TextAlignmentOptions.Center;
-            title.color = SurvivalPioneerUiPalette.HotbarLabelText;
+            title.color = DarkMatterGenesisUiPalette.HotbarLabelText;
             title.raycastTarget = false;
         }
 
@@ -264,13 +264,13 @@ namespace Project.UI
             HalfCircleHealthBarGraphic healthTrack = CreateArcGraphic(
                 portraitFrame.transform,
                 "HealthTrack",
-                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f),
+                DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f),
                 1f);
 
             HalfCircleHealthBarGraphic healthFill = CreateArcGraphic(
                 portraitFrame.transform,
                 "HealthFill",
-                SurvivalPioneerUiPalette.PositiveGreen,
+                DarkMatterGenesisUiPalette.PositiveGreen,
                 1f);
 
             GameObject portraitObject = new GameObject("Portrait", typeof(RectTransform), typeof(Image), typeof(Mask));
@@ -302,7 +302,7 @@ namespace Project.UI
             initialsLabel.fontSize = HudLayoutMetrics.ScaledInt(16f * SlotSizeScale);
             initialsLabel.fontStyle = FontStyles.Bold;
             initialsLabel.alignment = TextAlignmentOptions.Center;
-            initialsLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            initialsLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             initialsLabel.raycastTarget = false;
 
             GameObject stripObject = new GameObject("ModifierStrip", typeof(RectTransform), typeof(ExposureModifierMicroStrip));
@@ -483,8 +483,8 @@ namespace Project.UI
             float normalized = max > 0.01f ? current / max : 0f;
             slot.HealthFill.FillAmount = normalized;
             slot.HealthFill.color = normalized <= 0.3f
-                ? SurvivalPioneerUiPalette.DangerRed
-                : SurvivalPioneerUiPalette.PositiveGreen;
+                ? DarkMatterGenesisUiPalette.DangerRed
+                : DarkMatterGenesisUiPalette.PositiveGreen;
         }
 
         private CompanionHealth FindCompanionHealth(string pioneerRecordId)

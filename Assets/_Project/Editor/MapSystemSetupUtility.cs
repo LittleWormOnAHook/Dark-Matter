@@ -17,7 +17,7 @@ public static class MapSystemSetupUtility
     private const string MapActionId = "e8f9a0b1-c2d3-4456-a789-012345678abc";
     private const string JournalActionId = "b1c2d3e4-f5a6-4789-b012-3456789abcde";
 
-    [MenuItem(SurvivalPioneerEditorMenus.Scene + "Map System", false, 0)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Map System", false, 0)]
     public static void SetupMapSystem()
     {
         Scene scene = SceneManager.GetActiveScene();

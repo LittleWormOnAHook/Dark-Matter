@@ -65,7 +65,7 @@ namespace Project.EditorTools
         private string statusMessage = string.Empty;
         private MessageType statusType = MessageType.Info;
 
-        [MenuItem(SurvivalPioneerEditorMenus.BlueprintCraftingManager, false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BlueprintCraftingManager, false, 10)]
         public static void Open()
         {
             OpenTab(ManagerTab.Blueprints);
@@ -513,7 +513,7 @@ namespace Project.EditorTools
             if (GUILayout.Button("Use Selected ItemData", GUILayout.Width(170f)))
                 UseSelectedItemDataForEquipment();
             if (GUILayout.Button("Open Equipment Item Creator", GUILayout.Width(210f)))
-                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.EquipmentItemCreator);
+                EditorApplication.ExecuteMenuItem(DarkMatterGenesisEditorMenus.EquipmentItemCreator);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(8f);
@@ -705,7 +705,7 @@ namespace Project.EditorTools
 
             if (GUILayout.Button("Sync Blueprint Registry From Assets", GUILayout.Height(32f)))
             {
-                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Blueprint Registry");
+                EditorApplication.ExecuteMenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Registry");
                 SetStatus("Ran Sync Blueprint Registry.", MessageType.Info);
             }
 
@@ -720,13 +720,13 @@ namespace Project.EditorTools
 
             if (GUILayout.Button("Wire Scene Stations", GUILayout.Height(32f)))
             {
-                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.Crafting + "Wire Scene Stations");
+                EditorApplication.ExecuteMenuItem(DarkMatterGenesisEditorMenus.Crafting + "Wire Scene Stations");
                 SetStatus("Wired scene crafting stations and pickups.", MessageType.Info);
             }
 
             if (GUILayout.Button("Seed Starter Blueprints", GUILayout.Height(32f)))
             {
-                EditorApplication.ExecuteMenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Blueprints");
+                EditorApplication.ExecuteMenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Blueprints");
                 RefreshLists();
                 SetStatus("Seeded starter blueprints.", MessageType.Info);
             }

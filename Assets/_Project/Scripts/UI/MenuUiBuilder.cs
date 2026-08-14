@@ -110,14 +110,14 @@ namespace Project.UI
                 ApplyUiSprite(circleImage);
             }
 
-            Color normalColor = SurvivalPioneerUiPalette.BodyText;
+            Color normalColor = DarkMatterGenesisUiPalette.BodyText;
             circleImage.color = normalColor;
 
             Button button = buttonObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = normalColor;
-            colors.highlightedColor = SurvivalPioneerUiPalette.RichFuchsia;
-            colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
+            colors.highlightedColor = DarkMatterGenesisUiPalette.RichFuchsia;
+            colors.pressedColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.72f);
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
 
@@ -138,7 +138,7 @@ namespace Project.UI
             text.text = "X";
             text.fontSize = Mathf.Max(12f, size * 0.42f);
             text.fontStyle = FontStyles.Bold;
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -207,8 +207,8 @@ namespace Project.UI
             Button button = buttonObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f);
-            colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
+            colors.highlightedColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.85f);
+            colors.pressedColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.72f);
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
             button.transition = Selectable.Transition.ColorTint;
@@ -230,7 +230,7 @@ namespace Project.UI
             text.text = "X";
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -259,11 +259,11 @@ namespace Project.UI
 
             Image image = buttonObject.GetComponent<Image>();
             ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.ButtonNormal;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(buttonObject);
+            image.color = DarkMatterGenesisUiPalette.ButtonNormal;
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(buttonObject);
 
             Button button = buttonObject.GetComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(button, image);
+            DarkMatterGenesisUiPalette.StylePrimaryButton(button, image);
 
             UiSoundHelper.BindButton(button);
 
@@ -274,7 +274,7 @@ namespace Project.UI
             text.text = label;
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -297,7 +297,7 @@ namespace Project.UI
             title.text = text;
             title.fontSize = fontSize;
             title.fontStyle = FontStyles.Bold;
-            title.color = SurvivalPioneerUiPalette.BodyText;
+            title.color = DarkMatterGenesisUiPalette.BodyText;
             title.alignment = TextAlignmentOptions.Center;
             title.raycastTarget = false;
 
@@ -319,8 +319,8 @@ namespace Project.UI
 
             Image titleBarBg = titleBarObject.AddComponent<Image>();
             ApplyUiSprite(titleBarBg);
-            SurvivalPioneerUiPalette.ApplyThinPanelBackground(titleBarBg, 0.95f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(titleBarObject);
+            DarkMatterGenesisUiPalette.ApplyThinPanelBackground(titleBarBg, 0.95f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(titleBarObject);
             titleBarBg.raycastTarget = false;
 
             GameObject titleObject = new GameObject("Title", typeof(RectTransform));
@@ -337,7 +337,7 @@ namespace Project.UI
             label.fontSize = fontSize;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.raycastTarget = false;
 
             return titleBarObject;
@@ -384,7 +384,7 @@ namespace Project.UI
             background.transform.SetParent(sliderObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
             ApplyUiSprite(backgroundImage);
-            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 1f);
+            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 1f);
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.anchorMax = Vector2.one;
@@ -403,7 +403,7 @@ namespace Project.UI
             fill.transform.SetParent(fillArea.transform, false);
             Image fillImage = fill.GetComponent<Image>();
             ApplyUiSprite(fillImage);
-            fillImage.color = SurvivalPioneerUiPalette.Gold;
+            fillImage.color = DarkMatterGenesisUiPalette.Gold;
             RectTransform fillRect = fill.GetComponent<RectTransform>();
             fillRect.anchorMin = Vector2.zero;
             fillRect.anchorMax = Vector2.one;
@@ -462,7 +462,7 @@ namespace Project.UI
             background.transform.SetParent(toggleObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
             ApplyUiSprite(backgroundImage);
-            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
+            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 1f);
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.anchorMax = Vector2.one;
@@ -473,7 +473,7 @@ namespace Project.UI
             checkmark.transform.SetParent(background.transform, false);
             Image checkImage = checkmark.GetComponent<Image>();
             ApplyUiSprite(checkImage);
-            checkImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            checkImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             RectTransform checkRect = checkmark.GetComponent<RectTransform>();
             checkRect.anchorMin = new Vector2(0.15f, 0.15f);
             checkRect.anchorMax = new Vector2(0.85f, 0.85f);
@@ -527,7 +527,7 @@ namespace Project.UI
                 ApplyUiSprite(outlineImage);
             }
 
-            outlineImage.color = SurvivalPioneerUiPalette.BodyText;
+            outlineImage.color = DarkMatterGenesisUiPalette.BodyText;
             RectTransform outlineRect = outlineObject.GetComponent<RectTransform>();
             outlineRect.anchorMin = Vector2.zero;
             outlineRect.anchorMax = Vector2.one;
@@ -548,7 +548,7 @@ namespace Project.UI
                 ApplyUiSprite(fillImage);
             }
 
-            fillImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            fillImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             RectTransform fillRect = fillObject.GetComponent<RectTransform>();
             fillRect.anchorMin = new Vector2(0.12f, 0.12f);
             fillRect.anchorMax = new Vector2(0.88f, 0.88f);
@@ -581,7 +581,7 @@ namespace Project.UI
             dropdownObject.transform.SetParent(row.transform, false);
             Image dropdownImage = dropdownObject.GetComponent<Image>();
             ApplyUiSprite(dropdownImage);
-            dropdownImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
+            dropdownImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 1f);
             LayoutElement dropdownLayout = dropdownObject.GetComponent<LayoutElement>();
             dropdownLayout.minHeight = 26f;
             dropdownLayout.preferredHeight = 26f;
@@ -595,7 +595,7 @@ namespace Project.UI
             labelObject.transform.SetParent(dropdownObject.transform, false);
             Text labelText = labelObject.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.color = SurvivalPioneerUiPalette.BodyText;
+            labelText.color = DarkMatterGenesisUiPalette.BodyText;
             labelText.alignment = TextAnchor.MiddleLeft;
             labelText.raycastTarget = false;
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
@@ -611,7 +611,7 @@ namespace Project.UI
             template.SetActive(false);
             Image templateImage = template.GetComponent<Image>();
             ApplyUiSprite(templateImage);
-            templateImage.color = SurvivalPioneerUiPalette.ScrollBackground;
+            templateImage.color = DarkMatterGenesisUiPalette.ScrollBackground;
             RectTransform templateRect = template.GetComponent<RectTransform>();
             templateRect.anchorMin = new Vector2(0f, 0f);
             templateRect.anchorMax = new Vector2(1f, 0f);
@@ -651,7 +651,7 @@ namespace Project.UI
             itemBackground.transform.SetParent(item.transform, false);
             Image itemBackgroundImage = itemBackground.GetComponent<Image>();
             ApplyUiSprite(itemBackgroundImage);
-            itemBackgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 1f);
+            itemBackgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 1f);
             RectTransform itemBackgroundRect = itemBackground.GetComponent<RectTransform>();
             itemBackgroundRect.anchorMin = Vector2.zero;
             itemBackgroundRect.anchorMax = Vector2.one;
@@ -663,7 +663,7 @@ namespace Project.UI
             Text itemLabel = itemLabelObject.AddComponent<Text>();
             itemLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             itemLabel.fontSize = 14;
-            itemLabel.color = SurvivalPioneerUiPalette.BodyText;
+            itemLabel.color = DarkMatterGenesisUiPalette.BodyText;
             itemLabel.alignment = TextAnchor.MiddleLeft;
             itemLabel.raycastTarget = false;
             RectTransform itemLabelRect = itemLabelObject.GetComponent<RectTransform>();
@@ -710,7 +710,7 @@ namespace Project.UI
             out RectTransform contentArea,
             out Button closeButton)
         {
-            GameObject shell = CreateFullScreenPanel(parent, title + "Shell", SurvivalPioneerUiPalette.PanelBackground, blockRaycasts: true);
+            GameObject shell = CreateFullScreenPanel(parent, title + "Shell", DarkMatterGenesisUiPalette.PanelBackground, blockRaycasts: true);
             BuildModalShellInterior(shell.transform, title, FullscreenUiWindow.HeaderHeight, 26f, out contentArea, out closeButton);
             return shell;
         }
@@ -727,8 +727,8 @@ namespace Project.UI
 
             Image shellBg = shell.GetComponent<Image>();
             ApplyUiSprite(shellBg);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(shellBg, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(shell);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(shellBg, 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(shell);
             shellBg.raycastTarget = true;
 
             ApplyCenteredModalShellLayout(shell, size);
@@ -785,7 +785,7 @@ namespace Project.UI
 
             Image headerBg = header.GetComponent<Image>();
             ApplyUiSprite(headerBg);
-            headerBg.color = SurvivalPioneerUiPalette.PanelHeader;
+            headerBg.color = DarkMatterGenesisUiPalette.PanelHeader;
 
             GameObject titleObject = new GameObject("Title", typeof(RectTransform));
             titleObject.transform.SetParent(header.transform, false);
@@ -797,7 +797,7 @@ namespace Project.UI
             titleText.text = title;
             titleText.fontSize = titleFontSize;
             titleText.fontStyle = FontStyles.Bold;
-            titleText.color = SurvivalPioneerUiPalette.BodyText;
+            titleText.color = DarkMatterGenesisUiPalette.BodyText;
             titleText.alignment = TextAlignmentOptions.TopLeft;
             titleText.raycastTarget = false;
 
@@ -839,13 +839,13 @@ namespace Project.UI
 
             Image image = tileObject.GetComponent<Image>();
             ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.96f);
 
             Button button = tileObject.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = image.color;
-            colors.highlightedColor = SurvivalPioneerUiPalette.ButtonHighlighted;
-            colors.pressedColor = SurvivalPioneerUiPalette.ButtonPressed;
+            colors.highlightedColor = DarkMatterGenesisUiPalette.ButtonHighlighted;
+            colors.pressedColor = DarkMatterGenesisUiPalette.ButtonPressed;
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
             UiSoundHelper.BindButton(button);
@@ -860,7 +860,7 @@ namespace Project.UI
             text.text = label;
             text.fontSize = 18f;
             text.fontStyle = FontStyles.Bold;
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             text.alignment = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
@@ -881,7 +881,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = text;
             label.fontSize = size;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.alignment = alignment;
             label.raycastTarget = false;
             return label;

@@ -20,7 +20,7 @@ namespace Project.UI
     public class MainMenuController : MonoBehaviour
     {
         private const float MenuScale = 1f;
-        private static readonly Color MenuBackgroundColor = SurvivalPioneerUiPalette.DarkNavy;
+        private static readonly Color MenuBackgroundColor = DarkMatterGenesisUiPalette.DarkNavy;
 
         [SerializeField] private bool buildOnAwake = true;
 
@@ -244,7 +244,7 @@ namespace Project.UI
 
             TextMeshProUGUI subtitle = MenuUiBuilder.CreateTitle(titleBlock.transform, "IO // JUPITER SYSTEM", 16f * MenuScale);
             subtitle.alignment = TextAlignmentOptions.TopLeft;
-            subtitle.color = SurvivalPioneerUiPalette.MutedText;
+            subtitle.color = DarkMatterGenesisUiPalette.MutedText;
         }
 
         private void BuildButtonColumn(Transform parent)
@@ -304,7 +304,7 @@ namespace Project.UI
             TextMeshProUGUI label = messageObject.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(label);
             label.fontSize = 16f * MenuScale;
-            label.color = SurvivalPioneerUiPalette.Gold;
+            label.color = DarkMatterGenesisUiPalette.Gold;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.gameObject.SetActive(false);
             return label;
@@ -325,7 +325,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = "v0.1";
             label.fontSize = 14f;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.BottomLeft;
         }
 

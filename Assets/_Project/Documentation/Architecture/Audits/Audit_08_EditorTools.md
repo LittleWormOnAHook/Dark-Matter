@@ -12,7 +12,7 @@
 
 | Category | Count | Path | Examples |
 |----------|------:|------|----------|
-| Root utilities | ~79 | `Editor/` | `EnemyPrefabCreatorWindow`, `CraftingSetup`, `QuestGiverSetup`, `SurvivalPioneerEditorMenus` |
+| Root utilities | ~79 | `Editor/` | `EnemyPrefabCreatorWindow`, `CraftingSetup`, `QuestGiverSetup`, `DarkMatterGenesisEditorMenus` |
 | Invector setup | 9 | `Editor/Invector/` | Pioneer/enemy setup, ragdoll audit |
 | UI Layout Studio | 12 | `Editor/UiLayoutEditor/` | `UiStudioWindow`, layout capture |
 | Companions | 3 | `Editor/Companions/` | `CompanionPrefabGenerator` |

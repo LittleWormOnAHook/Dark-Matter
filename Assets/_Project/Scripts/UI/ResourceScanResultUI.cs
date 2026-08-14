@@ -128,12 +128,12 @@ namespace Project.UI
             if (theme != null)
             {
                 theme.ApplyFont(nameLabel, semiBold: true);
-                nameLabel.color = SurvivalPioneerUiPalette.Gold;
+                nameLabel.color = DarkMatterGenesisUiPalette.Gold;
             }
             else
             {
                 TmpUiHelper.ApplyDefaultFont(nameLabel);
-                nameLabel.color = SurvivalPioneerUiPalette.Gold;
+                nameLabel.color = DarkMatterGenesisUiPalette.Gold;
             }
 
             nameLabel.fontSize = 24f;

@@ -14,7 +14,7 @@ namespace Project.EditorTools
         private bool placeInOpenScene = true;
         private bool playAmbientLoop;
 
-        [MenuItem(SurvivalPioneerEditorMenus.ExposureZonePrefabCreator, false, 12)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ExposureZonePrefabCreator, false, 12)]
         public static void ShowWindow()
         {
             GetWindow<ExposureZonePrefabCreatorWindow>("Exposure Zone Creator").minSize = new Vector2(460f, 520f);

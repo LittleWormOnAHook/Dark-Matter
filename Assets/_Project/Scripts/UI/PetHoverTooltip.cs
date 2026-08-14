@@ -50,7 +50,7 @@ namespace Project.UI
 
             Image panelImage = panel.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panelImage);
-            panelImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PanelBackground, 0.96f);
+            panelImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PanelBackground, 0.96f);
             panelImage.raycastTarget = false;
 
             RectTransform panelRect = panel.GetComponent<RectTransform>();
@@ -79,14 +79,14 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(titleText);
             titleText.fontSize = 18f;
             titleText.fontStyle = FontStyles.Bold;
-            titleText.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            titleText.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             GameObject bodyObj = new GameObject("Body", typeof(RectTransform));
             bodyObj.transform.SetParent(panel.transform, false);
             bodyText = bodyObj.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(bodyText);
             bodyText.fontSize = 14f;
-            bodyText.color = SurvivalPioneerUiPalette.SoftBeigeGray;
+            bodyText.color = DarkMatterGenesisUiPalette.SoftBeigeGray;
             bodyText.textWrappingMode = TextWrappingModes.Normal;
 
             Hide();

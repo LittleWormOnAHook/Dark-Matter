@@ -10,7 +10,7 @@ namespace Project.EditorTools
     {
         private const string ShiftRoot = "Assets/Shift - Complete Sci-Fi UI";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Setup Shift UI Theme")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Setup Shift UI Theme")]
         public static void SetupShiftUiTheme()
         {
             EnsureThemeAsset();

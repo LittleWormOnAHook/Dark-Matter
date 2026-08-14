@@ -61,9 +61,9 @@ namespace Project.UI
 
             severityGradientSprite = GaugeGradientTexture.BuildHorizontal(new[]
             {
-                SurvivalPioneerUiPalette.PositiveGreen,
-                SurvivalPioneerUiPalette.Gold,
-                SurvivalPioneerUiPalette.DeepMagenta,
+                DarkMatterGenesisUiPalette.PositiveGreen,
+                DarkMatterGenesisUiPalette.Gold,
+                DarkMatterGenesisUiPalette.DeepMagenta,
             });
             return severityGradientSprite;
         }
@@ -206,16 +206,16 @@ namespace Project.UI
             {
                 severityLabel.text = snapshot.HazardSeverityLabel;
                 severityLabel.color = combined >= 0.65f
-                    ? SurvivalPioneerUiPalette.DeepMagenta
+                    ? DarkMatterGenesisUiPalette.DeepMagenta
                     : combined >= 0.35f
-                        ? SurvivalPioneerUiPalette.Gold
-                        : SurvivalPioneerUiPalette.WarmOffWhite;
+                        ? DarkMatterGenesisUiPalette.Gold
+                        : DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
             if (percentLabel != null)
             {
                 percentLabel.text = $"{Mathf.RoundToInt(combined * 100f)}%";
-                percentLabel.color = SurvivalPioneerUiPalette.MutedText;
+                percentLabel.color = DarkMatterGenesisUiPalette.MutedText;
             }
 
             if (dominantLabel != null)
@@ -228,7 +228,7 @@ namespace Project.UI
                     dominantLabel.text = "EVA NOMINAL";
 
                 dominantLabel.color = snapshot.DominantHazard.IsClear
-                    ? SurvivalPioneerUiPalette.MutedText
+                    ? DarkMatterGenesisUiPalette.MutedText
                     : snapshot.DominantHazard.DisplayColor;
             }
 
@@ -278,13 +278,13 @@ namespace Project.UI
 
             level = Mathf.Clamp01(level);
             bool active = level > 0.05f;
-            Color displayTint = active ? tint : SurvivalPioneerUiPalette.MutedText;
+            Color displayTint = active ? tint : DarkMatterGenesisUiPalette.MutedText;
 
             if (slot.IconSprite != null)
             {
                 slot.IconSprite.sprite = entry.Icon;
                 slot.IconSprite.enabled = entry.Icon != null;
-                slot.IconSprite.color = active ? Color.white : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.MutedText, 0.65f);
+                slot.IconSprite.color = active ? Color.white : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.MutedText, 0.65f);
             }
 
             if (slot.IconLabel != null)
@@ -295,7 +295,7 @@ namespace Project.UI
             }
 
             if (slot.IconBackground != null)
-                slot.IconBackground.color = SurvivalPioneerUiPalette.WithAlpha(tint, active ? 0.35f : 0.12f);
+                slot.IconBackground.color = DarkMatterGenesisUiPalette.WithAlpha(tint, active ? 0.35f : 0.12f);
 
             if (slot.BarFill != null)
             {
@@ -304,7 +304,7 @@ namespace Project.UI
                 slot.BarFill.offsetMax = Vector2.zero;
                 Image fillImage = slot.BarFill.GetComponent<Image>();
                 if (fillImage != null)
-                    fillImage.color = SurvivalPioneerUiPalette.WithAlpha(tint, 0.95f);
+                    fillImage.color = DarkMatterGenesisUiPalette.WithAlpha(tint, 0.95f);
             }
         }
 
@@ -370,7 +370,7 @@ namespace Project.UI
                 "HAZARDS",
                 12f * layoutScale,
                 FontStyles.Bold,
-                SurvivalPioneerUiPalette.WarmOffWhite,
+                DarkMatterGenesisUiPalette.WarmOffWhite,
                 HudLayoutMetrics.Scaled(16f * layoutScale));
             severityLabel = CreateLayoutLabel(
                 contentObject.transform,
@@ -378,7 +378,7 @@ namespace Project.UI
                 "CLEAR",
                 10f * layoutScale,
                 FontStyles.Bold,
-                SurvivalPioneerUiPalette.WarmOffWhite,
+                DarkMatterGenesisUiPalette.WarmOffWhite,
                 HudLayoutMetrics.Scaled(14f * layoutScale));
 
             GameObject summaryTrack = CreateChild("SummaryTrack", contentObject.transform);
@@ -387,7 +387,7 @@ namespace Project.UI
             summaryLayout.minHeight = summaryLayout.preferredHeight;
             Image summaryTrackImage = summaryTrack.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(summaryTrackImage);
-            summaryTrackImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+            summaryTrackImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
 
             GameObject summaryFill = CreateChild("SummaryFill", summaryTrack.transform);
             summaryFillRect = summaryFill.GetComponent<RectTransform>();
@@ -411,7 +411,7 @@ namespace Project.UI
                     "EVA NOMINAL",
                     9f * layoutScale,
                     FontStyles.Normal,
-                    SurvivalPioneerUiPalette.MutedText,
+                    DarkMatterGenesisUiPalette.MutedText,
                     HudLayoutMetrics.Scaled(14f * layoutScale));
 
                 GameObject spacer = CreateChild("Spacer", contentObject.transform);
@@ -429,7 +429,7 @@ namespace Project.UI
                 "0%",
                 9f * layoutScale,
                 FontStyles.Bold,
-                SurvivalPioneerUiPalette.MutedText,
+                DarkMatterGenesisUiPalette.MutedText,
                 HudLayoutMetrics.Scaled(12f * layoutScale));
 
             BuildHazardList(contentObject.transform, layoutScale);
@@ -463,7 +463,7 @@ namespace Project.UI
                 HazardListDefinition definition = HotbarHazardRows[i];
                 HazardHudIconEntry entry = definition.ResolveIcon(icons);
                 Color tint = definition.Kind == ExposureZoneKind.ShelterSafe
-                    ? SurvivalPioneerUiPalette.PositiveGreen
+                    ? DarkMatterGenesisUiPalette.PositiveGreen
                     : ExposureHazardPresentation.GetColor(definition.Kind);
                 string label = ExposureHazardPresentation.GetHudDisplayName(definition.Kind);
 
@@ -562,7 +562,7 @@ namespace Project.UI
             {
                 MenuUiBuilder.ApplyUiSprite(iconBackground);
             }
-            iconBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.35f);
+            iconBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.35f);
 
             GameObject spriteObject = CreateChild("Sprite", iconBg.transform);
             RectTransform spriteRect = spriteObject.GetComponent<RectTransform>();
@@ -596,7 +596,7 @@ namespace Project.UI
             barLayout.minHeight = barHeight;
             Image barTrackImage = barTrack.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barTrackImage);
-            barTrackImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.9f);
+            barTrackImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.9f);
 
             GameObject barFill = CreateChild("BarFill", barTrack.transform);
             RectTransform barFillRect = barFill.GetComponent<RectTransform>();
@@ -606,7 +606,7 @@ namespace Project.UI
             barFillRect.offsetMax = new Vector2(-1f, -1f);
             Image barFillImage = barFill.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barFillImage);
-            barFillImage.color = SurvivalPioneerUiPalette.PositiveGreen;
+            barFillImage.color = DarkMatterGenesisUiPalette.PositiveGreen;
 
             return new HazardIconSlot
             {
@@ -661,9 +661,9 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(panel);
             // Matches HovercraftStatusHudUI's panel exactly (same alpha + trim inset) so the two
             // HUDs read as one consistent style.
-            panel.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.9f);
+            panel.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.9f);
             panel.raycastTarget = false;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(backgroundObject, new Vector2(1.2f, -1.2f));
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(backgroundObject, new Vector2(1.2f, -1.2f));
         }
 
         private static GameObject CreateChild(string name, Transform parent)

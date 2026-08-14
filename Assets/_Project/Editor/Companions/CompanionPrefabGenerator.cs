@@ -412,7 +412,7 @@ namespace Project.EditorTools.Companions
             return result.Replace(" ", "");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Root + "Generate All Echo Prefabs", false, 6)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Echo Prefabs", false, 6)]
         public static void MenuGenerateAllEchoPrefabs()
         {
             List<NamedPioneerDefinition> definitions = CompanionCatalogRegistryUtility.FindAllDataAssets();
@@ -423,7 +423,7 @@ namespace Project.EditorTools.Companions
                 "OK");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Root + "Generate All Recruit Prefabs", false, 7)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Recruit Prefabs", false, 7)]
         public static void MenuGenerateAllRecruitPrefabs()
         {
             List<NamedPioneerDefinition> definitions = CompanionCatalogRegistryUtility.FindAllDataAssets();

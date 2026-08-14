@@ -3,7 +3,7 @@ namespace Project.EditorTools
     /// <summary>
     /// Shared Unity menu paths for Dark Matter Genesis editor utilities.
     /// </summary>
-    public static class SurvivalPioneerEditorMenus
+    public static class DarkMatterGenesisEditorMenus
     {
         public const string Root = "Tools/Dark Matter Genesis/";
         public const string ToolsWindow = Root + "Tools Window";

@@ -9,7 +9,7 @@ namespace Project.EditorTools.Invector
 {
     public static class EnemyInvectorRagdollAuditUtility
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Audit Humanoid Ragdoll Setup", false, 132)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Humanoid Ragdoll Setup", false, 132)]
         public static void AuditHumanoidRagdollSetup()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectAssetPaths.PrefabsCombat });
@@ -63,7 +63,7 @@ namespace Project.EditorTools.Invector
                 Debug.Log(message);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Audit Selected Ragdoll Setup", false, 134)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Selected Ragdoll Setup", false, 134)]
         public static void AuditSelectedRagdollSetup()
         {
             GameObject[] selected = Selection.gameObjects;

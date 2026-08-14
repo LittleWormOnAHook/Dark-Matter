@@ -7,7 +7,7 @@ namespace Project.EditorTools
     /// <summary>Quick demo menu actions for Pet Manager / PetPrefabBuilder.</summary>
     public static class PetPrefabCreator
     {
-        [MenuItem(SurvivalPioneerEditorMenus.PetPrefabFoxCubDemo, false, 22)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PetPrefabFoxCubDemo, false, 22)]
         public static void CreateFoxCubPetPrefab()
         {
             PetPrefabBuildSettings settings = PetPrefabBuilder.CreateFoxCubPreset();

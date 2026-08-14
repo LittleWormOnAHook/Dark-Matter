@@ -36,7 +36,7 @@ namespace Project.EditorTools
                 AudioListener.pause = false;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Clear AudioListener Pause", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear AudioListener Pause", false, 21)]
         private static void ClearPauseMenu()
         {
             AudioListener.pause = false;

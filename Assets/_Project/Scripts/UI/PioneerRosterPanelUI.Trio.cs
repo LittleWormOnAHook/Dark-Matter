@@ -51,7 +51,7 @@ namespace Project.UI
         {
             pendingTrioSlot = slotIndex;
             trioStatusLabel.text = $"Select a roster companion for slot {slotIndex + 1}.";
-            trioStatusLabel.color = SurvivalPioneerUiPalette.HighlightText;
+            trioStatusLabel.color = DarkMatterGenesisUiPalette.HighlightText;
             RefreshTrioPicker();
         }
 
@@ -71,7 +71,7 @@ namespace Project.UI
             }
 
             trioStatusLabel.text = "All trio slots are filled. Unslot one first.";
-            trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+            trioStatusLabel.color = DarkMatterGenesisUiPalette.WarningText;
         }
 
         internal void AssignPioneerToTrioSlot(int slotIndex, string pioneerId)
@@ -135,12 +135,12 @@ namespace Project.UI
             if (roster.TrySetExpeditionTrio(trioDraft, out string error))
             {
                 trioStatusLabel.text = successMessage ?? "Expedition trio updated.";
-                trioStatusLabel.color = SurvivalPioneerUiPalette.PositiveGreen;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.PositiveGreen;
             }
             else
             {
                 trioStatusLabel.text = string.IsNullOrEmpty(error) ? "Could not update trio." : error;
-                trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.WarningText;
             }
 
             Refresh();
@@ -160,7 +160,7 @@ namespace Project.UI
             if (record == null || !roster.CanJoinTrio(record))
             {
                 trioStatusLabel.text = $"{record?.displayName ?? "Companion"} cannot join the expedition trio.";
-                trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.WarningText;
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace Project.UI
 
             pendingTrioSlot = slotIndex;
             trioStatusLabel.text = $"Select a roster companion for slot {slotIndex + 1}, or click the slot again to cycle.";
-            trioStatusLabel.color = SurvivalPioneerUiPalette.HighlightText;
+            trioStatusLabel.color = DarkMatterGenesisUiPalette.HighlightText;
             RefreshTrioPicker();
         }
 
@@ -222,7 +222,7 @@ namespace Project.UI
             if (eligible.Count == 0)
             {
                 trioStatusLabel.text = "No eligible companions for expedition trio.";
-                trioStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.WarningText;
                 return;
             }
 
@@ -268,10 +268,10 @@ namespace Project.UI
 
                 Image slotImage = trioSlotButtons[i].GetComponent<Image>();
                 slotImage.color = pending
-                    ? SurvivalPioneerUiPalette.ButtonHighlighted
+                    ? DarkMatterGenesisUiPalette.ButtonHighlighted
                     : assigned != null
-                        ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f)
-                        : SurvivalPioneerUiPalette.SlotBackground;
+                        ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.85f)
+                        : DarkMatterGenesisUiPalette.SlotBackground;
             }
 
             if (pendingTrioSlot < 0)
@@ -280,7 +280,7 @@ namespace Project.UI
                 trioStatusLabel.text = active == 0
                     ? "Drag or right-click companions into trio slots (1–3 active)."
                     : $"{active} companion(s) active. Right-click slots to unslot or transmute.";
-                trioStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.MutedText;
             }
         }
 
@@ -335,7 +335,7 @@ namespace Project.UI
                         ? "Specs: —"
                         : $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)} · Lv {record.level}  ·  " +
                           $"Rad {record.radiationResistance:P0} · Exp {record.expeditionEfficiency:P0} · Syn {record.combatSynergy:P0}";
-                    trioSpecsLabels[i].color = SurvivalPioneerUiPalette.MutedText;
+                    trioSpecsLabels[i].color = DarkMatterGenesisUiPalette.MutedText;
                 }
 
                 if (trioBuffLabels[i] != null)
@@ -346,18 +346,18 @@ namespace Project.UI
                     string buffText = FormatBuffs(record?.buffs, record != null ? slot?.BuffTicks : null);
                     trioBuffLabels[i].text = $"Buffs: {buffText}";
                     trioBuffLabels[i].color = buffText == "—"
-                        ? SurvivalPioneerUiPalette.MutedText
-                        : SurvivalPioneerUiPalette.PositiveGreen;
+                        ? DarkMatterGenesisUiPalette.MutedText
+                        : DarkMatterGenesisUiPalette.PositiveGreen;
                 }
 
-                Color debuffActiveColor = SurvivalPioneerUiPalette.MutedText;
+                Color debuffActiveColor = DarkMatterGenesisUiPalette.MutedText;
                 if (trioDebuffLabels[i] != null)
                 {
                     string debuffText = FormatTicks(record != null ? slot?.DebuffTicks : null);
                     trioDebuffLabels[i].text = $"Debuffs: {debuffText}";
                     debuffActiveColor = debuffText == "—"
-                        ? SurvivalPioneerUiPalette.MutedText
-                        : SurvivalPioneerUiPalette.WarningText;
+                        ? DarkMatterGenesisUiPalette.MutedText
+                        : DarkMatterGenesisUiPalette.WarningText;
                     if (!trioIsFlashing[i])
                         trioDebuffLabels[i].color = debuffActiveColor;
                 }
