@@ -22,7 +22,7 @@ namespace Project.Core
     public static class GameSaveSystem
     {
         public const int SlotCount = 5;
-        public const int CurrentSaveVersion = 21;
+        public const int CurrentSaveVersion = 22;
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
@@ -172,7 +172,8 @@ namespace Project.Core
                 fogOfWarMask = BuildFogOfWarSave(out int fogResolution),
                 fogOfWarResolution = fogResolution,
                 scannedDiscoveryIds = ScannerDiscoveryRegistry.BuildSave(),
-                identifiedResourceIds = ResourceIdentificationRegistry.BuildSave()
+                identifiedResourceIds = ResourceIdentificationRegistry.BuildSave(),
+                pptKnownKeywordIds = Project.PPT.PptKeywordLog.BuildSave()
             };
 
             if (progressionManager != null)
@@ -291,6 +292,7 @@ namespace Project.Core
             ApplyFogOfWarSave(data);
             ApplyScannerDiscoverySave(data);
             ApplyResourceIdentificationSave(data);
+            ApplyPptKeywordSave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
@@ -567,6 +569,17 @@ namespace Project.Core
             }
 
             ResourceIdentificationRegistry.ApplySave(data.identifiedResourceIds);
+        }
+
+        private static void ApplyPptKeywordSave(GameSaveData data)
+        {
+            if (data == null || data.version < 22)
+            {
+                Project.PPT.PptKeywordLog.Clear();
+                return;
+            }
+
+            Project.PPT.PptKeywordLog.ApplySave(data.pptKnownKeywordIds);
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)
