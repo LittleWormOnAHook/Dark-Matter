@@ -40,20 +40,21 @@ HDRP asset prefix: `Genesis_HDRP_*` under `Assets/Settings/HDRP/`.
 ### Runtime behavior
 
 - Default: **RT off** for all platforms and quality tiers.
-- Player can enable RT in settings when hardware supports it.
-- When unsupported or below minimum spec: toggle disabled or auto-off with clear UI feedback.
-- Fallback when RT off: SSR, shadow maps, and standard HDRP lighting (no RT-only content lock).
+- **All graphics settings remain selectable** on PC/macOS — no hardware-based disable.
+- Below Minimum/Recommended guidance: **non-blocking performance notices** only.
+- If RT cannot execute on hardware, **SSR/shadow fallback** at pipeline level; do not remove the toggle.
+- Fallback when RT off or unsupported: SSR, shadow maps, and standard HDRP lighting (no RT-only content lock).
 
-### PC hardware thresholds
+### PC hardware guidance
 
-Full store/FAQ copy and RT gate thresholds live in **`Documentation/System_Requirements.md`**.
+Store/FAQ copy and performance advisories live in **`Documentation/System_Requirements.md`**.
 
-| Profile | Target |
-|---------|--------|
+| Profile | Testing / guidance target (not a lock) |
+|---------|----------------------------------------|
 | **Minimum** | 1080p, Low RT, 30–60 FPS — RTX 2060 / RTX 3050 / RX 6600 XT, 6–8 GB VRAM, Core i5 (8th Gen) / Ryzen 5 (2nd Gen), 8–16 GB RAM; HDD or SSD |
 | **Recommended** | 1440p+, High RT, 60+ FPS — RTX 4070 Ti / 4080+ or RX 7800 XT / 7900 XTX, 12–16 GB+ VRAM, Core i7 (12th Gen+) / Ryzen 7 (5000/7000+), 16–32 GB RAM; SSD/NVMe recommended |
 
-Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High RT” preset without warnings.
+Use these rows for **defaults, store text, and advisory messages** — not for disabling settings.
 
 ### Console
 
@@ -62,9 +63,10 @@ Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High R
 
 ## Settings integration (planned)
 
-- Graphics quality dropdown → five tiers.
-- Ray tracing toggle (PC and macOS; gated on GPU/VRAM/CPU/RAM only — **not** on storage type; RT allowed on HDD).
-- Volumetric fog / shadow quality sub-settings within tier bands.
+- Graphics quality dropdown → five tiers; **all tiers always selectable** on PC/macOS.
+- Ray tracing toggle — **always available** on PC/macOS; advisories when guidance thresholds not met.
+- Volumetric fog / shadow quality sub-settings — always available; advisories on weak hardware.
+- `GraphicsCapabilityAdvisor` — compares hardware + active settings to Minimum/Recommended; returns warning strings only.
 - Existing post-processing, resolution, VSync, fullscreen toggles retained.
 
 ## Phase overview
@@ -86,7 +88,7 @@ Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High R
 
 ## References
 
-- **`Documentation/System_Requirements.md`** — canonical PC minimum/recommended specs and RT gates
+- **`Documentation/System_Requirements.md`** — canonical guidance specs and performance-advisory policy (no hard gates)
 - GDD 5.0 — platforms PC + consoles, semi-low-poly Io
 - `World_Engine_Disk_Status.md` — disk truth before claiming shipped features
 - Working scene rule: `.cursor/rules/confirm-before-depot-restore.mdc`
