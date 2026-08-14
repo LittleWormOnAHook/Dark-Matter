@@ -5,7 +5,7 @@ namespace Project.Vehicles
 {
     [CreateAssetMenu(
         fileName = "HovercraftProfile",
-        menuName = "Survival Pioneer/Vehicles/Hovercraft Profile")]
+        menuName = "Dark Matter Genesis/Vehicles/Hovercraft Profile")]
     public class HovercraftProfile : ScriptableObject
     {
         [Header("Interaction")]
