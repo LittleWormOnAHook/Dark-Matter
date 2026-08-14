@@ -19,6 +19,7 @@ namespace Project.UI
         private Slider musicSlider;
         private Slider sfxSlider;
         private Toggle postProcessingToggle;
+        private Toggle rayTracingToggle;
         private Toggle minimapToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
@@ -27,6 +28,7 @@ namespace Project.UI
         private TextMeshProUGUI masterValueLabel;
         private TextMeshProUGUI musicValueLabel;
         private TextMeshProUGUI sfxValueLabel;
+        private TextMeshProUGUI graphicsAdvisoryLabel;
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
@@ -83,7 +85,9 @@ namespace Project.UI
             resolutionDropdown = MenuUiBuilder.CreateDropdownRow(scrollContent, "Resolution");
             fullscreenToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Fullscreen", GameSettings.Fullscreen);
             vsyncToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "VSync", GameSettings.VSync);
+            rayTracingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Ray Tracing", GameSettings.RayTracingEnabled);
             postProcessingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Post Processing", GameSettings.PostProcessingEnabled);
+            graphicsAdvisoryLabel = CreateAdvisoryLabel(scrollContent);
 
             CreateSectionTitle(scrollContent, "Gameplay");
             minimapToggle = MenuUiBuilder.CreateCircleToggleRow(scrollContent, "Minimap", GameSettings.MinimapEnabled);
@@ -154,8 +158,18 @@ namespace Project.UI
             fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
             vsyncToggle.onValueChanged.RemoveAllListeners();
             vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
+            rayTracingToggle.onValueChanged.RemoveAllListeners();
+            rayTracingToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetRayTracingEnabled(value);
+                RefreshGraphicsAdvisory();
+            });
             qualityDropdown.onValueChanged.RemoveAllListeners();
-            qualityDropdown.onValueChanged.AddListener(GameSettings.SetQualityLevel);
+            qualityDropdown.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetQualityLevel(value);
+                RefreshGraphicsAdvisory();
+            });
             resolutionDropdown.onValueChanged.RemoveAllListeners();
             resolutionDropdown.onValueChanged.AddListener(GameSettings.SetResolutionIndex);
 
@@ -307,8 +321,10 @@ namespace Project.UI
             minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
+            rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);
             qualityDropdown.SetValueWithoutNotify(QualitySettings.GetQualityLevel());
             resolutionDropdown.SetValueWithoutNotify(GameSettings.GetCurrentResolutionIndex());
+            RefreshGraphicsAdvisory();
 
             UpdatePercentLabel(masterValueLabel, GameSettings.MasterVolume);
             UpdatePercentLabel(musicValueLabel, GameSettings.MusicVolume);
@@ -338,6 +354,39 @@ namespace Project.UI
             layout.minHeight = 22f;
             layout.preferredHeight = 22f;
             layout.flexibleHeight = 0f;
+        }
+
+        private static TextMeshProUGUI CreateAdvisoryLabel(Transform parent)
+        {
+            GameObject labelObject = new GameObject("GraphicsAdvisory", typeof(RectTransform), typeof(LayoutElement));
+            labelObject.transform.SetParent(parent, false);
+
+            LayoutElement layout = labelObject.GetComponent<LayoutElement>();
+            layout.minHeight = 36f;
+            layout.preferredHeight = 36f;
+            layout.flexibleHeight = 0f;
+
+            TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.text = string.Empty;
+            label.fontSize = 12f;
+            label.color = SurvivalPioneerUiPalette.SoftBeigeGray;
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.raycastTarget = false;
+            label.gameObject.SetActive(false);
+            return label;
+        }
+
+        private void RefreshGraphicsAdvisory()
+        {
+            if (graphicsAdvisoryLabel == null)
+                return;
+
+            string summary = GameSettings.GetGraphicsAdvisorySummary();
+            graphicsAdvisoryLabel.text = string.IsNullOrEmpty(summary)
+                ? string.Empty
+                : summary;
+            graphicsAdvisoryLabel.gameObject.SetActive(!string.IsNullOrEmpty(summary));
         }
 
         private static void UpdatePercentLabel(TextMeshProUGUI label, float value)

@@ -14,6 +14,7 @@ namespace Project.Core
         private const string QualityKey = "settings.quality";
         private const string ResolutionIndexKey = "settings.resolutionIndex";
         private const string MinimapEnabledKey = "settings.mapSystemEnabled";
+        private const string RayTracingKey = "settings.rayTracing";
         private const string SaveExistsKey = "save.exists";
 
         public static float MasterVolume { get; private set; } = 1f;
@@ -23,6 +24,7 @@ namespace Project.Core
         public static bool MinimapEnabled { get; private set; } = true;
         public static bool Fullscreen { get; private set; } = true;
         public static bool VSync { get; private set; } = true;
+        public static bool RayTracingEnabled { get; private set; }
 
         public static bool HasSaveFile => GameSaveSystem.HasAnySaveFile;
 
@@ -35,6 +37,7 @@ namespace Project.Core
             MinimapEnabled = PlayerPrefs.GetInt(MinimapEnabledKey, 1) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             VSync = PlayerPrefs.GetInt(VSyncKey, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1;
+            RayTracingEnabled = PlayerPrefs.GetInt(RayTracingKey, 0) == 1;
 
             int quality = PlayerPrefs.GetInt(QualityKey, QualitySettings.GetQualityLevel());
             quality = Mathf.Clamp(quality, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
@@ -56,6 +59,7 @@ namespace Project.Core
             PlayerPrefs.SetInt(MinimapEnabledKey, MinimapEnabled ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
             PlayerPrefs.SetInt(VSyncKey, VSync ? 1 : 0);
+            PlayerPrefs.SetInt(RayTracingKey, RayTracingEnabled ? 1 : 0);
             PlayerPrefs.SetInt(QualityKey, QualitySettings.GetQualityLevel());
             PlayerPrefs.SetInt(ResolutionIndexKey, GetCurrentResolutionIndex());
             PlayerPrefs.Save();
@@ -106,6 +110,16 @@ namespace Project.Core
             level = Mathf.Clamp(level, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
             QualitySettings.SetQualityLevel(level, applyExpensiveChanges: true);
             PlatformGraphicsBootstrap.ApplyTierOverrides(level);
+        }
+
+        public static void SetRayTracingEnabled(bool enabled)
+        {
+            RayTracingEnabled = enabled;
+        }
+
+        public static string GetGraphicsAdvisorySummary()
+        {
+            return GraphicsCapabilityAdvisor.EvaluateCurrentSettings().Summary;
         }
 
         public static void SetResolutionIndex(int index)
