@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Dark Matter Studios
-  productName: Survival Pioneer
+  companyName: Dark Matter Interactive
+  productName: Dark Matter Genesis
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -42,7 +42,7 @@ PlayerSettings:
   m_SplashScreenLogos:
   - logo: {fileID: 21300000, guid: d7209599befc32646ae7109c87b5c035, type: 3}
     duration: 5.09
-  m_VirtualRealitySplashScreen: {fileID: 2800000, guid: 6cc64ab95b5de3c4fba5c883e0e086d5, type: 3}
+  m_VirtualRealitySplashScreen: {fileID: 2800000, guid: 48609c86ae750ce499e4798a952e9c9f, type: 3}
   defaultScreenWidth: 1024
   defaultScreenHeight: 768
   defaultScreenWidthWeb: 960
@@ -146,7 +146,9 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 0.1.0
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: 11400000, guid: a35dce2a4a614b24da424ecc1655e41b, type: 2}
+  - {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   xboxOneDisableKinectGpuReservation: 1
@@ -300,7 +302,7 @@ PlayerSettings:
   - m_BuildTarget: 
     m_Icons:
     - serializedVersion: 2
-      m_Icon: {fileID: 2800000, guid: 6cc64ab95b5de3c4fba5c883e0e086d5, type: 3}
+      m_Icon: {fileID: 2800000, guid: 433044d7941b9ab4abec7b5aa47c00e6, type: 3}
       m_Width: 128
       m_Height: 128
       m_Kind: 0
@@ -531,7 +533,10 @@ PlayerSettings:
       m_Height: 720
       m_Kind: 1
       m_SubKind: 
-  m_BuildTargetBatching: []
+  m_BuildTargetBatching:
+  - m_BuildTarget: Standalone
+    m_StaticBatching: 1
+    m_DynamicBatching: 0
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs: []
   m_BuildTargetGraphicsJobMode: []
@@ -850,7 +855,7 @@ PlayerSettings:
     PS4: UNITY_POST_PROCESSING_STACK_V2
     PS5: UNITY_POST_PROCESSING_STACK_V2
     QNX: UNITY_POST_PROCESSING_STACK_V2
-    Standalone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY;UNITY_POST_PROCESSING_STACK_V2;INVECTOR_BASIC;INVECTOR_MELEE;INVECTOR_SHOOTER;PIONEER_INVECTOR;UNITY_URP
+    Standalone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY;UNITY_POST_PROCESSING_STACK_V2;INVECTOR_BASIC;INVECTOR_MELEE;INVECTOR_SHOOTER;PIONEER_INVECTOR;UNITY_URP;GAIA_V3_CINEMACHINE_OR_NEWER;GAIA_INPUT_SYSTEM;UPPipeline;GAIA_2023;GAIA_MESH_PRESENT
     VisionOS: UNITY_POST_PROCESSING_STACK_V2
     WebGL: UNITY_POST_PROCESSING_STACK_V2;INVECTOR_BASIC;INVECTOR_MELEE;INVECTOR_SHOOTER;PIONEER_INVECTOR
     XboxOne: UNITY_POST_PROCESSING_STACK_V2
@@ -882,7 +887,7 @@ PlayerSettings:
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Survival Pioneer
+  metroApplicationDescription: Dark Matter Genesis
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -958,7 +963,7 @@ PlayerSettings:
   cloudProjectId: 8a568aa9-08de-4e6f-ac59-dd87a26008f4
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Survival Pioneer
+  projectName: Dark Matter Genesis
   organizationId: tony-black-3410898
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

@@ -8,7 +8,7 @@ namespace Project.Survival.Exposure
     /// </summary>
     [CreateAssetMenu(
         fileName = "exposure_zone_profile",
-        menuName = "Survival Pioneer/Survival/Exposure Zone Profile")]
+        menuName = "Dark Matter Genesis/Survival/Exposure Zone Profile")]
     public class ExposureZoneProfile : ScriptableObject
     {
         [Header("Identity")]
