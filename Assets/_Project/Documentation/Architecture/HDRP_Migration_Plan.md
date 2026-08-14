@@ -43,16 +43,16 @@ HDRP asset prefix: `Genesis_HDRP_*` under `Assets/Settings/HDRP/`.
 - When unsupported or below minimum spec: toggle disabled or auto-off with clear UI feedback.
 - Fallback when RT off: SSR, shadow maps, and standard HDRP lighting (no RT-only content lock).
 
-### Minimum PC hardware (when RT enabled)
+### PC hardware thresholds
 
-| Component | Requirement |
-|-----------|-------------|
-| GPU | NVIDIA GeForce **RTX 2060** or AMD Radeon **RX 6000** series or better |
-| CPU | Intel **Core i5** or equivalent |
-| System RAM | **16 GB** |
-| VRAM | **8 GB** |
+Full store/FAQ copy and RT gate thresholds live in **`Documentation/System_Requirements.md`**.
 
-Use these thresholds for capability detection, settings tooltips, and store/FAQ copy.
+| Profile | Target |
+|---------|--------|
+| **Minimum** | 1080p, Low RT, 30–60 FPS — RTX 2060 / RTX 3050 / RX 6600 XT, 6–8 GB VRAM, Core i5 (8th Gen) / Ryzen 5 (2nd Gen), 8–16 GB RAM |
+| **Recommended** | 1440p+, High RT, 60+ FPS — RTX 4070 Ti / 4080+ or RX 7800 XT / 7900 XTX, 12–16 GB+ VRAM, Core i7 (12th Gen+) / Ryzen 7 (5000/7000+), 16–32 GB RAM |
+
+Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High RT” preset without warnings.
 
 ### Console
 
@@ -85,6 +85,7 @@ Use these thresholds for capability detection, settings tooltips, and store/FAQ 
 
 ## References
 
+- **`Documentation/System_Requirements.md`** — canonical PC minimum/recommended specs and RT gates
 - GDD 5.0 — platforms PC + consoles, semi-low-poly Io
 - `World_Engine_Disk_Status.md` — disk truth before claiming shipped features
 - Working scene rule: `.cursor/rules/confirm-before-depot-restore.mdc`
