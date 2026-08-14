@@ -17,7 +17,7 @@ Locked product and technical decisions for the URP → HDRP conversion. Update t
 - **WebGL retired** — remove build profiles and Web GL quality tier naming.
 - **Visual target:** cinematic HDR (volumetric fog, physical lights, exposure, post).
 - **Console:** **60 FPS minimum** on default quality tier per platform.
-- **macOS:** ship alongside Windows PC; same quality tiers and optional RT rules (SSD required only when RT is enabled).
+- **macOS:** ship alongside Windows PC; same quality tiers and optional RT rules.
 
 ## Quality tiers (5)
 
@@ -50,8 +50,8 @@ Full store/FAQ copy and RT gate thresholds live in **`Documentation/System_Requi
 
 | Profile | Target |
 |---------|--------|
-| **Minimum** | 1080p, Low RT, 30–60 FPS — RTX 2060 / RTX 3050 / RX 6600 XT, 6–8 GB VRAM, Core i5 (8th Gen) / Ryzen 5 (2nd Gen), 8–16 GB RAM; **SSD not required** unless RT is on |
-| **Recommended** | 1440p+, High RT, 60+ FPS — RTX 4070 Ti / 4080+ or RX 7800 XT / 7900 XTX, 12–16 GB+ VRAM, Core i7 (12th Gen+) / Ryzen 7 (5000/7000+), 16–32 GB RAM; **SSD required for RT**; NVMe for High RT |
+| **Minimum** | 1080p, Low RT, 30–60 FPS — RTX 2060 / RTX 3050 / RX 6600 XT, 6–8 GB VRAM, Core i5 (8th Gen) / Ryzen 5 (2nd Gen), 8–16 GB RAM; HDD or SSD |
+| **Recommended** | 1440p+, High RT, 60+ FPS — RTX 4070 Ti / 4080+ or RX 7800 XT / 7900 XTX, 12–16 GB+ VRAM, Core i7 (12th Gen+) / Ryzen 7 (5000/7000+), 16–32 GB RAM; SSD/NVMe recommended |
 
 Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High RT” preset without warnings.
 
@@ -63,7 +63,7 @@ Use **Minimum** row for RT toggle eligibility; **Recommended** row for “High R
 ## Settings integration (planned)
 
 - Graphics quality dropdown → five tiers.
-- Ray tracing toggle (PC and macOS; gated on GPU/VRAM/CPU/RAM + **SSD when RT on**).
+- Ray tracing toggle (PC and macOS; gated on GPU/VRAM/CPU/RAM only — **not** on storage type; RT allowed on HDD).
 - Volumetric fog / shadow quality sub-settings within tier bands.
 - Existing post-processing, resolution, VSync, fullscreen toggles retained.
 
