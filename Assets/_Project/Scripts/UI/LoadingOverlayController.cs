@@ -29,6 +29,7 @@ namespace Project.UI
         public const string LogoResourcePath = "UI/LoadingGenesis_Logo";
         public const string BlackholeResourcePath = "UI/LoadingGenesis_Blackhole";
         public const string StarfieldShaderName = "Project/DMLoadingStarfield";
+        public const string StarfieldMaterialResourcePath = "UI/DMLoadingStarfield";
 
         private enum LoadingMode
         {
@@ -500,7 +501,10 @@ namespace Project.UI
         {
             // Soft distant dust only — sparse, no dense cell grid that paints even rings.
             // Primary flying stars are RectTransform Images updated in UpdateFlyingStars.
-            Shader starfieldShader = Shader.Find(StarfieldShaderName);
+            Material starfieldTemplate = Resources.Load<Material>(StarfieldMaterialResourcePath);
+            Shader starfieldShader = starfieldTemplate != null
+                ? starfieldTemplate.shader
+                : Shader.Find(StarfieldShaderName);
             GameObject starfieldObject = new GameObject(
                 "StarfieldArt",
                 typeof(RectTransform),
@@ -516,11 +520,11 @@ namespace Project.UI
 
             if (starfieldShader != null)
             {
-                starfieldMaterial = new Material(starfieldShader)
-                {
-                    name = "DMLoadingStarfield (Instance)",
-                    hideFlags = HideFlags.HideAndDontSave
-                };
+                starfieldMaterial = starfieldTemplate != null
+                    ? new Material(starfieldTemplate)
+                    : new Material(starfieldShader);
+                starfieldMaterial.name = "DMLoadingStarfield (Instance)";
+                starfieldMaterial.hideFlags = HideFlags.HideAndDontSave;
                 // Near-black void — not navy/grey panels that read as rings.
                 starfieldMaterial.SetColor(SpaceColorId, new Color(0.01f, 0.012f, 0.02f, 1f));
                 starfieldMaterial.SetColor(StarColorId, DarkMatterGenesisUiPalette.BodyText);
