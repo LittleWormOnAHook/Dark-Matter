@@ -1163,6 +1163,10 @@ namespace Project.UI
             if (template != null)
                 return new Material(template) { name = template.name + "_Runtime" };
 
+            Material resourceTemplate = Resources.Load<Material>("UI/OpticsViewport");
+            if (resourceTemplate != null)
+                return new Material(resourceTemplate) { name = resourceTemplate.name + "_Runtime" };
+
             Shader shader = Shader.Find("Project/OpticsViewport");
             if (shader == null)
                 shader = Shader.Find("UI/Default");
