@@ -29,6 +29,41 @@ namespace Project.UI
             rect.localScale = Vector3.one;
         }
 
+        private void LayoutSquareFullMapFrame(RectTransform mapFrameRect)
+        {
+            if (mapFrameRect == null)
+                return;
+
+            const float pad = 12f;
+            float headerReserve = FullMapHeaderHeight + 4f;
+            float legendReserve = FullMapLegendWidth + 16f;
+            Vector2 panelSize = fullMapPanelRect != null ? fullMapPanelRect.rect.size : Vector2.zero;
+
+            if (panelSize.x < 64f || panelSize.y < 64f)
+            {
+                mapFrameRect.anchorMin = Vector2.zero;
+                mapFrameRect.anchorMax = Vector2.one;
+                mapFrameRect.pivot = new Vector2(0.5f, 0.5f);
+                mapFrameRect.anchoredPosition = Vector2.zero;
+                mapFrameRect.sizeDelta = Vector2.zero;
+                mapFrameRect.offsetMin = new Vector2(pad, pad);
+                mapFrameRect.offsetMax = new Vector2(-legendReserve, -headerReserve);
+                return;
+            }
+
+            float availableWidth = Mathf.Max(64f, panelSize.x - pad - legendReserve);
+            float availableHeight = Mathf.Max(64f, panelSize.y - headerReserve - pad);
+            float side = Mathf.Min(availableWidth, availableHeight);
+            float left = pad + (availableWidth - side) * 0.5f;
+            float bottom = pad + (availableHeight - side) * 0.5f;
+
+            mapFrameRect.anchorMin = Vector2.zero;
+            mapFrameRect.anchorMax = Vector2.zero;
+            mapFrameRect.pivot = Vector2.zero;
+            mapFrameRect.anchoredPosition = new Vector2(left, bottom);
+            mapFrameRect.sizeDelta = new Vector2(side, side);
+        }
+
         private void EnsureUiBuilt()
         {
             if (uiBuilt)
@@ -247,12 +282,7 @@ namespace Project.UI
 
             Transform mapFrame = panel.Find("MapFrame");
             if (mapFrame is RectTransform mapFrameRect)
-            {
-                mapFrameRect.anchorMin = Vector2.zero;
-                mapFrameRect.anchorMax = Vector2.one;
-                mapFrameRect.offsetMin = new Vector2(12f, 12f);
-                mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
-            }
+                LayoutSquareFullMapFrame(mapFrameRect);
 
             EnsureFullMapLegend();
 
@@ -415,6 +445,23 @@ namespace Project.UI
             Image ringImage = ring.GetComponent<Image>();
             if (ringImage != null)
                 ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
+        }
+
+        private void ApplyMinimapHoldZoomVisual(bool active)
+        {
+            if (minimapRingImage == null && minimapRoot != null)
+            {
+                Transform ring = minimapRoot.transform.Find("CircleAssembly/RingBorder");
+                if (ring != null)
+                    minimapRingImage = ring.GetComponent<Image>();
+            }
+
+            if (minimapRingImage == null)
+                return;
+
+            minimapRingImage.color = active
+                ? DarkMatterGenesisUiPalette.Gold
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
         }
 
         private void RemoveMinimapTitleBar()
@@ -787,11 +834,7 @@ namespace Project.UI
 
             GameObject mapFrame = new GameObject("MapFrame", typeof(RectTransform));
             mapFrame.transform.SetParent(panelObject.transform, false);
-            RectTransform mapFrameRect = mapFrame.GetComponent<RectTransform>();
-            mapFrameRect.anchorMin = Vector2.zero;
-            mapFrameRect.anchorMax = Vector2.one;
-            mapFrameRect.offsetMin = new Vector2(12f, 12f);
-            mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
+            LayoutSquareFullMapFrame(mapFrame.GetComponent<RectTransform>());
             Image mapFrameBg = mapFrame.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(mapFrameBg);
             mapFrameBg.color = new Color(0.04f, 0.06f, 0.08f, 0.98f);
@@ -849,13 +892,13 @@ namespace Project.UI
             CreateHeaderZoomControls(
                 headerObject.transform,
                 out fullMapZoomLabel,
-                () => SetFullMapZoom(fullMapZoom - 0.25f),
+                () => SetFullMapZoom(fullMapZoom - GetFullMapZoomStep()),
                 () =>
                 {
                     SetFullMapZoom(DefaultFullMapZoom);
                     CenterFullMapOnPlayer();
                 },
-                () => SetFullMapZoom(fullMapZoom + 0.25f));
+                () => SetFullMapZoom(fullMapZoom + GetFullMapZoomStep()));
 
             fullMapCloseButton = MenuUiBuilder.CreateCircleCloseButton(headerObject.transform, 28f);
             RectTransform closeRect = fullMapCloseButton.GetComponent<RectTransform>();
