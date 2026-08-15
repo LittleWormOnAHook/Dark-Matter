@@ -86,6 +86,8 @@ namespace Project.EditorTools
         public const string Optics = Root + "Optics/";
         public const string Maintenance = Root + "Maintenance/";
         public const string Hdrp = Root + "HDRP/";
+        public const string Hierarchy = Root + "Hierarchy/";
+        public const string HierarchySortChildren = Hierarchy + "Sort Children/";
         public const string PlayModeSaver = Root + "Play Mode Saver/";
         public const string PlayModeSaverWindow = PlayModeSaver + "Open Window";
         public const string PlayModeSaverSaveNow = PlayModeSaver + "Save Now %#s";

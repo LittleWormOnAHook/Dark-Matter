@@ -22266,10 +22266,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 465651970}
     - target: {fileID: 1345475376888885506, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
-      propertyPath: pathFollowEnabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1345475376888885506, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
       propertyPath: patrolPathProvider
       value: 
       objectReference: {fileID: 465651969}
@@ -22317,17 +22313,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8263356845890459766, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 827254897262869609, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1553781029}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
 --- !u!114 &1085190045 stripped
 MonoBehaviour:
@@ -23234,11 +23223,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 441482e8936e35048a1dffac814e3ef8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.HighDefinition.Runtime::UnityEngine.Rendering.HighDefinition.StaticLightingSky
-  m_Profile: {fileID: 11400000, guid: b4155a7523ca37c459c7ddad99041d27, type: 2}
-  m_StaticLightingSkyUniqueID: 4
+  m_Profile: {fileID: 11400000, guid: 27b5276e68e5c0649b39b3fada7b325e, type: 2}
+  m_StaticLightingSkyUniqueID: 1
   m_StaticLightingCloudsUniqueID: 1
   m_StaticLightingVolumetricClouds: 1
-  bounces: 2
+  bounces: 1
 --- !u!4 &1110171241
 Transform:
   m_ObjectHideFlags: 1
@@ -23284,8 +23273,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 1
-  m_Color: {r: 0.62603766, g: 0.79114646, b: 0.89433956, a: 1}
-  m_Intensity: 6115.616
+  m_Color: {r: 1, g: 0.98506147, b: 0.88113207, a: 1}
+  m_Intensity: 8059.9414
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -23328,7 +23317,7 @@ Light:
   m_LightShadowCasterMode: 2
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 0.92
-  m_ColorTemperature: 3917
+  m_ColorTemperature: 2902
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 0, y: 0, z: NaN, w: -1.0565628e-35}
   m_UseBoundingSphereOverride: 0
@@ -23347,7 +23336,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1111799627}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5912982, y: 0.17831865, z: -0.60837543, w: 0.49844593}
+  m_LocalRotation: {x: 0.66103274, y: 0.11624619, z: -0.5317797, w: 0.5164619}
   m_LocalPosition: {x: 67.1, y: 223.1, z: -61.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -23544,7 +23533,7 @@ MonoBehaviour:
   m_ObsoleteContactShadows: 0
   m_SpotIESCutoffPercent: 100
   m_LightDimmer: 1
-  m_VolumetricDimmer: 1
+  m_VolumetricDimmer: 1.04
   m_FadeDistance: 10000
   m_VolumetricFadeDistance: 10000
   m_AffectDiffuse: 1
@@ -23567,7 +23556,7 @@ MonoBehaviour:
   m_AngularDiameter: 0.5
   diameterMultiplerMode: 0
   diameterMultiplier: 1
-  diameterOverride: 0.5
+  diameterOverride: 0.47
   celestialBodyShadingSource: 1
   sunLightOverride: {fileID: 0}
   sunColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23575,12 +23564,12 @@ MonoBehaviour:
   moonPhase: 0.2
   moonPhaseRotation: 0
   earthshine: 1
-  flareSize: 2
+  flareSize: 37.6
   flareTint: {r: 1, g: 1, b: 1, a: 1}
   flareFalloff: 4
   flareMultiplier: 1
   surfaceTexture: {fileID: 0}
-  surfaceTint: {r: 1, g: 1, b: 1, a: 1}
+  surfaceTint: {r: 1, g: 0, b: 0.7457932, a: 1}
   m_Distance: 1.5e+11
   m_UseRayTracedShadows: 0
   m_NumRayTracingSamples: 4
@@ -37103,51 +37092,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400006, guid: 312d2426fde12474f9e96f17926e7499, type: 3}
   m_PrefabInstance: {fileID: 755731094}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1553781025 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 827254897262869609, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
-  m_PrefabInstance: {fileID: 1085190044}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &1553781027 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 2176784975428863488, guid: a362f2432a8b1f942aa663d5436546dd, type: 3}
-  m_PrefabInstance: {fileID: 1085190044}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1553781029
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1553781025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e86ead99e453b448836eb544933c0f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMIMaterialPulseScroll
-  targetRenderer: {fileID: 1553781027}
-  materialIndices: 00000000
-  useMaterialPropertyBlock: 1
-  pulseAlpha: 0
-  alphaPulseTarget: 0
-  alphaPulseMin: 0.267
-  alphaPulseMax: 1
-  alphaPulseSpeed: 1.42
-  pulseEmission: 1
-  emissionPulseMin: 0.24
-  emissionPulseMax: 33.61
-  emissionPulseSpeed: 0.6
-  fallbackEmissionTint: {r: 1, g: 1, b: 1, a: 1}
-  ensureEmissionKeyword: 1
-  scrollBaseMap: 0
-  baseMapScrollSpeed: {x: 0.1, y: 0}
-  scrollEmissionMap: 0
-  emissionMapScrollSpeed: {x: 0.05, y: 0}
-  scrollNormalMap: 0
-  normalMapScrollSpeed: {x: 0, y: 0}
-  useUnscaledTime: 0
-  phaseOffset: 0
-  previewInEditMode: 1
 --- !u!1001 &1569555144
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -45962,7 +45906,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4365423247833596416, guid: 058e9e018a363da4596eb087ae3bd996, type: 3}
       propertyPath: emissionPulseMax
-      value: 55.53
+      value: 49.9
       objectReference: {fileID: 0}
     - target: {fileID: 4365423247833596416, guid: 058e9e018a363da4596eb087ae3bd996, type: 3}
       propertyPath: emissionPulseMin
