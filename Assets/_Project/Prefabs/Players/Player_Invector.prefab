@@ -2153,6 +2153,7 @@ MonoBehaviour:
   scrollZoomNotchScale: 0.75
   runtimeMinCameraDistance: 2
   runtimeMaxCameraDistance: 15
+  runtimeDefaultCameraDistance: 5.5
 --- !u!114 &6755861738323253669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2325,6 +2326,7 @@ MonoBehaviour:
   opticsEyeOffset: {x: 0, y: 0.08, z: 0.12}
   opticsFallbackHeadHeight: 1.65
   opticsBodyTurnSpeed: 18
+  hidePlayerMeshInBinoculars: 1
   aimShoulderOffset: 0.55
   aimFollowDistance: 4.2
   aimCameraLerpSpeed: 10
@@ -2926,7 +2928,7 @@ MonoBehaviour:
   throwManager: {fileID: 7003506458934846346}
   throwBridge: {fileID: 5848084994099898968}
   inventory: {fileID: 974530526351442323}
-  cookFuseSeconds: 10
+  cookFuseSeconds: 5
   cookTriggerThreshold: 0.35
 --- !u!1 &114158
 GameObject:
@@ -37131,7 +37133,7 @@ MonoBehaviour:
         passFoldout: 0
         m_Version: 0
         scanlinesMaterial: {fileID: 0}
-        scanSpeed: 2
+        scanSpeed: 1.56
         lineThickness: 2
         scanColor: {r: 0, g: 1, b: 1, a: 0.3}
 --- !u!114 &4981562826467345417
@@ -37148,7 +37150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.ScannerHdrpOverlayGate
   customPassVolume: {fileID: 0}
   sweepController: {fileID: 0}
-  enableDuringSweep: 1
+  enableDuringSweep: 0
 --- !u!1 &4582062862400472410
 GameObject:
   m_ObjectHideFlags: 0

@@ -32,6 +32,8 @@ namespace Project.Rendering
 
         protected override void Execute(CustomPassContext ctx)
         {
+            // Crash-prone AfterPostProcess blit — gate must keep the volume disabled.
+            // Extra guard if a scene somehow enables the volume without the overlay gate.
             if (scanlinesMaterial == null)
                 return;
 

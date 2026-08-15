@@ -10,6 +10,7 @@ Shader "Project/OpticsViewport"
         _ScannerFuzz ("Scanner Fuzz", Range(0.0, 0.12)) = 0.045
         _Tint ("Tint", Color) = (1, 1, 1, 1)
         _Mode ("Mode (0=Binoculars 1=Scanner)", Float) = 0
+        _Passthrough ("Passthrough Mask", Float) = 0
     }
 
     SubShader
@@ -58,6 +59,7 @@ Shader "Project/OpticsViewport"
             float _ScannerFuzz;
             float4 _Tint;
             float _Mode;
+            float _Passthrough;
 
             float2 AspectCorrect(float2 uv)
             {
@@ -93,7 +95,6 @@ Shader "Project/OpticsViewport"
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
                 float2 centered = AspectCorrect(i.uv);
                 bool scanner = _Mode > 0.5;
                 float softness = _EdgeSoftness + (scanner ? _ScannerFuzz : 0.0);
@@ -101,6 +102,15 @@ Shader "Project/OpticsViewport"
                 float mask = scanner
                     ? RectMask(centered, _RectHalfWidth, _RectHalfHeight, softness)
                     : CircleMask(centered, _Radius, softness);
+
+                // HDRP live-camera path: opaque black outside the viewport hole, clear inside.
+                if (_Passthrough > 0.5)
+                {
+                    float outside = 1.0 - mask;
+                    return fixed4(0.0, 0.0, 0.0, outside * saturate(_Tint.a) * i.color.a);
+                }
+
+                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
 
                 if (scanner)
                 {

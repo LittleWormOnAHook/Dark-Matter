@@ -39,6 +39,10 @@ namespace Project.UI
         private int toolbarOriginalSiblingIndex;
         private bool raisedToFrontLayer;
 
+        private const float BinocularHoldSeconds = 0.28f;
+        private float binocularKeyDownUnscaledTime = -1f;
+        private bool binocularHoldTriggered;
+
         public void EnsureBuilt(Transform canvasRoot, GameObject slotPrefabOverride = null, Transform hotbarAnchor = null)
         {
             if (uiBuilt)
@@ -409,8 +413,67 @@ namespace Project.UI
 
             if (Keyboard.current.nKey.wasPressedThisFrame)
                 UseTool(ToolType.Scanner);
-            else if (Keyboard.current.bKey.wasPressedThisFrame)
-                UseTool(ToolType.Binoculars);
+
+            HandleBinocularsVsBlueprintsKey();
+        }
+
+        /// <summary>
+        /// Shared B key: hold → binoculars, tap (press+release before hold threshold) → Blueprints.
+        /// </summary>
+        private void HandleBinocularsVsBlueprintsKey()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            UnityEngine.InputSystem.Controls.KeyControl bKey = keyboard.bKey;
+
+            if (bKey.wasPressedThisFrame)
+            {
+                binocularKeyDownUnscaledTime = Time.unscaledTime;
+                binocularHoldTriggered = false;
+            }
+
+            if (bKey.isPressed &&
+                binocularKeyDownUnscaledTime >= 0f &&
+                !binocularHoldTriggered &&
+                Time.unscaledTime - binocularKeyDownUnscaledTime >= BinocularHoldSeconds)
+            {
+                binocularHoldTriggered = true;
+                if (CanUseToolbarHotkeys())
+                    UseTool(ToolType.Binoculars);
+            }
+
+            if (!bKey.wasReleasedThisFrame)
+                return;
+
+            bool wasTap = !binocularHoldTriggered && binocularKeyDownUnscaledTime >= 0f;
+            binocularKeyDownUnscaledTime = -1f;
+            binocularHoldTriggered = false;
+
+            if (!wasTap || !CanUseToolbarHotkeys())
+                return;
+
+            // Tap B → Blueprints journal tab (Input System keyboard B is suppressed in UIManager).
+            FindAnyObjectByType<UIManager>()?.ToggleBlueprintsFromTap();
+        }
+
+        private static bool CanUseToolbarHotkeys()
+        {
+            if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)
+                return false;
+
+            // Don't steal B while typing in an InputField / TMP field.
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject != null)
+            {
+                GameObject selected = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
+                if (selected.GetComponent<TMPro.TMP_InputField>() != null ||
+                    selected.GetComponent<UnityEngine.UI.InputField>() != null)
+                    return false;
+            }
+
+            return true;
         }
 
         private void UseTool(ToolType toolType)
@@ -456,7 +519,8 @@ namespace Project.UI
                 equipmentController.BinocularsToolbarSlot
             };
 
-            string[] keyHints = { "N", "B" };
+            // Key hints deferred to settings keyboard/mouse/controller scheme.
+            string[] keyHints = { string.Empty, string.Empty };
 
             for (int i = 0; i < inventorySystem.toolbarSize && i < slotOrder.Length; i++)
             {

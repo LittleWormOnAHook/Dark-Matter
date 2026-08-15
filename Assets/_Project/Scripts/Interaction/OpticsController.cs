@@ -154,7 +154,8 @@ namespace Project.Interaction
             if (tool.toolType == ToolType.Scanner)
                 scannerSweep?.TickScannerInput(true, worldCamera);
 
-            if (Mouse.current != null)
+            // Mouse-wheel FOV zoom is binoculars-only.
+            if (tool.toolType == ToolType.Binoculars && Mouse.current != null)
                 HandleOpticsScrollZoom(tool);
             else
                 DecayScrollMomentum();
@@ -321,6 +322,7 @@ namespace Project.Interaction
                 return false;
 
             float zoomFov = Mathf.Clamp(tool.opticsZoomFov, tool.opticsMinZoomFov, tool.opticsMaxZoomFov);
+            bool isScanner = tool.toolType == ToolType.Scanner;
 
             if (!cameraRig.Activate(tool.toolType))
             {
@@ -328,13 +330,15 @@ namespace Project.Interaction
                 return false;
             }
 
-            RenderTexture renderTexture = cameraRig.RenderTexture;
-            if (renderTexture == null || !cameraRig.HasValidOutput)
+            // HDRP uses passthrough (live camera + UI frame). URP uses an offscreen RT.
+            RenderTexture renderTexture = cameraRig.IsPassthroughMode ? null : cameraRig.RenderTexture;
+            if (!cameraRig.HasValidOutput || (!cameraRig.IsPassthroughMode && renderTexture == null))
             {
                 cameraRig.Deactivate();
                 return false;
             }
 
+            overlayUi.SetPassthroughMode(cameraRig.IsPassthroughMode);
             overlayUi.BindRenderTexture(renderTexture);
             overlayUi.SetVisible(true, tool.toolType);
 
@@ -347,10 +351,22 @@ namespace Project.Interaction
 
             isActive = true;
             activeSinceFrame = Time.frameCount;
-            playerController.SetOpticsOpen(true, zoomFov);
-            cameraRig.SetFieldOfView(zoomFov);
-            worldHighlight?.SetActive(tool.toolType == ToolType.Scanner);
-            if (tool.toolType != ToolType.Scanner)
+
+            if (isScanner)
+            {
+                float currentFov = playerController.GameplayCamera != null
+                    ? playerController.GameplayCamera.fieldOfView
+                    : zoomFov;
+                playerController.SetOpticsOpen(true, currentFov, driveCameraFov: false, pushCameraForward: false);
+            }
+            else
+            {
+                playerController.SetOpticsOpen(true, zoomFov, driveCameraFov: true, pushCameraForward: true);
+                cameraRig.SetFieldOfView(zoomFov);
+            }
+
+            worldHighlight?.SetActive(isScanner);
+            if (!isScanner)
             {
                 overlayUi.ClearScannerMarkers();
                 worldHighlight?.Clear();
@@ -384,6 +400,7 @@ namespace Project.Interaction
             cameraRig?.Deactivate();
             cameraRig?.ForceRestoreMainCamera();
             overlayUi?.BindRenderTexture(null);
+            overlayUi?.SetPassthroughMode(false);
             overlayUi?.ClearScannerMarkers();
             overlayUi?.SetVisible(false, ToolType.None);
             worldHighlight?.SetActive(false);
@@ -428,11 +445,24 @@ namespace Project.Interaction
             }
 
             float zoomFov = Mathf.Clamp(tool.opticsZoomFov, tool.opticsMinZoomFov, tool.opticsMaxZoomFov);
-            playerController?.SetOpticsZoomFov(zoomFov);
-            cameraRig?.SetFieldOfView(zoomFov);
+            bool isScanner = tool.toolType == ToolType.Scanner;
+            if (isScanner)
+            {
+                float currentFov = playerController != null && playerController.GameplayCamera != null
+                    ? playerController.GameplayCamera.fieldOfView
+                    : zoomFov;
+                playerController?.SetOpticsOpen(true, currentFov, driveCameraFov: false, pushCameraForward: false);
+            }
+            else
+            {
+                playerController?.SetOpticsOpen(true, zoomFov, driveCameraFov: true, pushCameraForward: true);
+                playerController?.SetOpticsZoomFov(zoomFov);
+                cameraRig?.SetFieldOfView(zoomFov);
+            }
+
             overlayUi?.SetVisible(true, tool.toolType);
-            worldHighlight?.SetActive(tool.toolType == ToolType.Scanner);
-            if (tool.toolType != ToolType.Scanner)
+            worldHighlight?.SetActive(isScanner);
+            if (!isScanner)
             {
                 overlayUi?.ClearScannerMarkers();
                 worldHighlight?.Clear();

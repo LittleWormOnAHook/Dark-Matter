@@ -85,7 +85,8 @@ namespace Project.Interaction
 
             // Marker detect + fog reveal start at 40m, then +skill ranks.
             float range = MapFogOfWar.GetScanRevealRadius();
-            float duration = Mathf.Max(0.2f, activeProfile.sweepDuration);
+            // 50% slower than profile (half speed → 2× duration).
+            float duration = Mathf.Max(0.2f, activeProfile.sweepDuration) * 2f;
             Vector3 origin = ResolvePlayerSweepOrigin();
 
             ClearPostScanHighlights();

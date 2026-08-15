@@ -141,13 +141,27 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            // C also opens Blueprints; primary shortcut is B. Production crafting is station-only.
+            // C also opens Blueprints; tap B is primary (hold B = binoculars). Production crafting is station-only.
             GetJournalPanel()?.OpenToBlueprintsTab();
         }
 
         public void OnToggleBlueprints(InputAction.CallbackContext context)
         {
             if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            // Keyboard B is shared: tap = Blueprints (ToolBarUI), hold = binoculars.
+            // Ignore the Input System performed pulse on keyboard B so hold can resolve first.
+            if (context.control != null && context.control.device is Keyboard)
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Recipes);
+        }
+
+        /// <summary>Opens/toggles Blueprints from a confirmed keyboard B tap (not hold).</summary>
+        public void ToggleBlueprintsFromTap()
+        {
+            if (!GameSession.HasStarted)
                 return;
 
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Recipes);

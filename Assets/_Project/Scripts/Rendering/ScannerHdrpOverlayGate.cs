@@ -5,8 +5,10 @@ using UnityEngine.Rendering.HighDefinition;
 namespace Project.Rendering
 {
     /// <summary>
-    /// Keeps <see cref="ScannerHdrpCustomPass"/> off unless a scanner sweep is active.
-    /// Prevents the always-on AfterPostProcess overlay from replacing the Game view with scanlines.
+    /// Keeps <see cref="ScannerHdrpCustomPass"/> off by default.
+    /// Enabling the AfterPostProcess Custom Pass during a sweep caused native D3D12 crashes;
+    /// leave <see cref="enableDuringSweep"/> false until a safer fullscreen path exists.
+    /// World-space sweep disc + outlines remain the active scanner FX.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CustomPassVolume))]
@@ -14,7 +16,8 @@ namespace Project.Rendering
     {
         [SerializeField] private CustomPassVolume customPassVolume;
         [SerializeField] private ScannerSweepController sweepController;
-        [SerializeField] private bool enableDuringSweep = true;
+        [Tooltip("Unsafe under current HDRP Custom Pass blit — keep false to avoid GPU crashes.")]
+        [SerializeField] private bool enableDuringSweep = false;
 
         private void Awake()
         {
@@ -25,6 +28,7 @@ namespace Project.Rendering
                 sweepController = GetComponentInParent<ScannerSweepController>()
                     ?? FindAnyObjectByType<ScannerSweepController>();
 
+            // Always force off at start so prefab/scene overrides cannot leave the pass live.
             SetVolumeEnabled(false);
         }
 
@@ -35,10 +39,14 @@ namespace Project.Rendering
 
         private void LateUpdate()
         {
-            bool wantEnabled = enableDuringSweep
-                && sweepController != null
-                && sweepController.IsSweeping;
+            // Hard-disable path: never turn the volume on while the crash-prone pass is wired.
+            if (!enableDuringSweep)
+            {
+                SetVolumeEnabled(false);
+                return;
+            }
 
+            bool wantEnabled = sweepController != null && sweepController.IsSweeping;
             SetVolumeEnabled(wantEnabled);
         }
 
