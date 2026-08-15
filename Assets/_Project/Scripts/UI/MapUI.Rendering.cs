@@ -530,6 +530,19 @@ namespace Project.UI
             UpdateMinimapInfoPanel();
         }
 
+        private void ApplyMinimapScrollZoom(int zoomInDirection)
+        {
+            float step = (MaxMinimapSpan - MinMinimapSpan) / MinimapScrollNotchesFullRange;
+            minimapWorldSpan = Mathf.Clamp(
+                minimapWorldSpan - zoomInDirection * step,
+                MinMinimapSpan,
+                MaxMinimapSpan);
+            lastMinimapInfoRange = int.MinValue;
+            UpdateMinimap();
+            RequestImmediateMarkerRefresh();
+            UpdateMinimapInfoPanel("Hold M  |  Scroll to zoom");
+        }
+
         private void ResetMinimapSpan()
         {
             minimapWorldSpan = DefaultMinimapWorldSpan;

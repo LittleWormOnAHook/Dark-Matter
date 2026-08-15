@@ -447,6 +447,23 @@ namespace Project.UI
                 ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
         }
 
+        private void ApplyMinimapHoldZoomVisual(bool active)
+        {
+            if (minimapRingImage == null && minimapRoot != null)
+            {
+                Transform ring = minimapRoot.transform.Find("CircleAssembly/RingBorder");
+                if (ring != null)
+                    minimapRingImage = ring.GetComponent<Image>();
+            }
+
+            if (minimapRingImage == null)
+                return;
+
+            minimapRingImage.color = active
+                ? DarkMatterGenesisUiPalette.Gold
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
+        }
+
         private void RemoveMinimapTitleBar()
         {
             if (minimapRoot == null)
