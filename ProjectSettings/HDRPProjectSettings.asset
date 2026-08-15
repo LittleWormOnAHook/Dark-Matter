@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.HighDefinition.Editor::UnityEditor.Rendering.HighDefinition.HDProjectSettings
   m_ProjectSettingFolderPath: HDRPDefaultResources
-  m_LastMaterialVersion: -1
+  m_LastMaterialVersion: 13
   m_HDShaderGraphLastSeenVersion: 0
   m_PluginMaterialVersions:
     m_Keys: []

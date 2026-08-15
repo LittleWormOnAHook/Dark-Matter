@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
@@ -9,6 +10,7 @@ namespace Project.Rendering
     /// URP continues to use <see cref="ScannerPostProcess"/> (OnRenderImage) when available.
     /// Dual-pipeline choice: keep URP component + HDRP Custom Pass; do not force Phase 6.
     /// </summary>
+    [Serializable]
     public sealed class ScannerHdrpCustomPass : CustomPass
     {
         [SerializeField] private Material scanlinesMaterial;
