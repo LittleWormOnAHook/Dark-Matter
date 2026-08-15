@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Project.Data;
@@ -11,6 +12,8 @@ using Project.Player.Invector;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
+using Invector.vCamera;
+using Invector;
 
 namespace Project.Player
 {
@@ -45,6 +48,8 @@ namespace Project.Player
         [SerializeField] private Vector3 opticsEyeOffset = new Vector3(0f, 0.08f, 0.12f);
         [SerializeField] private float opticsFallbackHeadHeight = 1.65f;
         [SerializeField] private float opticsBodyTurnSpeed = 18f;
+        [Tooltip("Hide player meshes while binoculars are open so the body never occludes the view.")]
+        [SerializeField] private bool hidePlayerMeshInBinoculars = true;
 
         private Character _character;
         private PioneerInvectorBootstrap _invectorBootstrap;
@@ -69,6 +74,11 @@ namespace Project.Player
         private Coroutine _teleportPhaseRoutine;
         private float _opticsTargetFov = 40f;
         private float _opticsCurrentFov = 40f;
+        private float _opticsSavedCameraFov = -1f;
+        private float _opticsSavedStateFov = -1f;
+        private bool _opticsDriveFov;
+        private bool _opticsPushCameraForward;
+        private readonly List<Renderer> _opticsHiddenRenderers = new List<Renderer>(32);
         private float _cameraYaw;
         private float _cameraPitch;
         private float _currentFollowDistance;
@@ -98,6 +108,8 @@ namespace Project.Player
         public bool IsLootDialogOpen => _lootDialogOpen;
         public bool IsBuildingControlOpen => _buildingControlOpen;
         public bool IsOpticsOpen => _opticsOpen;
+        /// <summary>True while binoculars freeze Invector follow distance and pin the camera to the eye.</summary>
+        public bool IsBinocularCameraFrozen => _opticsOpen && _opticsPushCameraForward;
         public bool IsTeleportPhaseLocked => _teleportPhaseLocked;
         public bool IsSprinting =>
             UsesInvectorMotor()
@@ -320,35 +332,293 @@ namespace Project.Player
                 StopPlayerMovement();
         }
 
-        public void SetOpticsOpen(bool open, float zoomFov = 40f)
+        public void SetOpticsOpen(
+            bool open,
+            float zoomFov = 40f,
+            bool driveCameraFov = true,
+            bool pushCameraForward = false)
         {
-            if (open == _opticsOpen && (!open || Mathf.Approximately(_opticsTargetFov, zoomFov)))
+            if (open == _opticsOpen
+                && (!open || (Mathf.Approximately(_opticsTargetFov, zoomFov)
+                              && _opticsDriveFov == driveCameraFov
+                              && _opticsPushCameraForward == pushCameraForward)))
                 return;
 
+            if (open && !_opticsOpen)
+            {
+                // Scanner: do not touch camera pose/zoom at all.
+                // Binoculars: freeze Invector camera (leave its zoom state untouched) and move to eye.
+                if (driveCameraFov)
+                    CaptureOpticsBaselineFov();
+                if (pushCameraForward)
+                    BeginBinocularCameraFreeze();
+            }
+            else if (!open && _opticsOpen)
+            {
+                if (_opticsPushCameraForward)
+                    EndBinocularCameraFreeze();
+                if (_opticsDriveFov)
+                    RestoreOpticsBaselineFov();
+            }
+
             _opticsOpen = open;
+            _opticsDriveFov = open && driveCameraFov;
+            _opticsPushCameraForward = open && pushCameraForward;
             _opticsTargetFov = zoomFov;
             _opticsCurrentFov = zoomFov;
 
             ApplyCursorState();
 
             if (open)
+            {
                 StopPlayerMovement();
+                if (_opticsDriveFov)
+                    ApplyOpticsCameraFov(immediate: true);
+                if (_opticsPushCameraForward)
+                    ApplyBinocularEyePose();
+            }
         }
 
         public void SetOpticsZoomFov(float zoomFov)
         {
+            if (!_opticsDriveFov)
+                return;
             _opticsTargetFov = zoomFov;
         }
 
         public void SetOpticsZoomTarget(float zoomFov)
         {
+            if (!_opticsDriveFov)
+                return;
             _opticsTargetFov = zoomFov;
         }
 
         public void SnapOpticsZoom(float zoomFov)
         {
+            if (!_opticsDriveFov && !_opticsOpen)
+                return;
+
+            if (!_opticsDriveFov)
+                return;
+
             _opticsTargetFov = zoomFov;
             _opticsCurrentFov = zoomFov;
+            if (_opticsOpen)
+                ApplyOpticsCameraFov(immediate: true);
+        }
+
+        /// <summary>
+        /// Keeps gameplay camera FOV on the optics zoom target while binoculars are open.
+        /// Does not mutate Invector distance/zoom state (camera script is frozen instead).
+        /// </summary>
+        public void ApplyOpticsCameraFov(bool immediate = false)
+        {
+            if (!_opticsOpen || !_opticsDriveFov)
+                return;
+
+            if (immediate)
+                _opticsCurrentFov = _opticsTargetFov;
+            else
+            {
+                _opticsCurrentFov = Mathf.Lerp(
+                    _opticsCurrentFov,
+                    _opticsTargetFov,
+                    Time.deltaTime * Mathf.Max(opticsZoomLerpSpeed, 0.01f));
+            }
+
+            Camera cam = GameplayCamera;
+            if (cam != null)
+                cam.fieldOfView = _opticsCurrentFov;
+        }
+
+        /// <summary>
+        /// Freeze Invector third-person camera so player zoom/distance is never overwritten.
+        /// Eye pose is applied on the live Camera transform only.
+        /// </summary>
+        public void ApplyOpticsCameraDistance()
+        {
+            if (!_opticsOpen || !_opticsPushCameraForward)
+                return;
+
+            ApplyBinocularEyePose();
+        }
+
+        private bool _opticsTpCameraWasEnabled;
+        private bool _opticsTpCameraFrozen;
+        private Vector3 _opticsSavedCamPosition;
+        private Quaternion _opticsSavedCamRotation;
+        private float _opticsSavedTpZoom = -1f;
+
+        private void BeginBinocularCameraFreeze()
+        {
+            var tpCamera = ResolveInvectorTpCamera();
+            Camera cam = GameplayCamera;
+
+            if (cam != null)
+            {
+                _opticsSavedCamPosition = cam.transform.position;
+                _opticsSavedCamRotation = cam.transform.rotation;
+            }
+
+            if (tpCamera != null)
+            {
+                PioneerInvectorRecoilUtility.ResetRecoilOffset(tpCamera);
+
+                _opticsSavedTpZoom = tpCamera.CurrentZoom >= 2.5f
+                    ? tpCamera.CurrentZoom
+                    : (tpCamera.distance >= 2.5f ? tpCamera.distance : 5.5f);
+                _opticsTpCameraWasEnabled = tpCamera.enabled;
+
+                if (cam != null)
+                {
+                    Vector3 normalized = cam.transform.eulerAngles.NormalizeAngle();
+                    tpCamera.mouseY = normalized.x;
+                    tpCamera.mouseX = normalized.y;
+                }
+
+                tpCamera.enabled = false;
+                _opticsTpCameraFrozen = true;
+            }
+            else
+            {
+                _opticsSavedTpZoom = -1f;
+                _opticsTpCameraFrozen = false;
+            }
+
+            SetPlayerMeshVisibleForBinoculars(false);
+            ApplyBinocularEyePose();
+        }
+
+        private void EndBinocularCameraFreeze()
+        {
+            SetPlayerMeshVisibleForBinoculars(true);
+
+            var tpCamera = ResolveInvectorTpCamera();
+            if (tpCamera != null)
+                PioneerInvectorRecoilUtility.ResetRecoilOffset(tpCamera);
+
+            if (_opticsTpCameraFrozen && tpCamera != null)
+            {
+                // Re-enable and hard-restore scroll zoom — transform may still be at eye pose
+                // until the next FixedUpdate, so ForceSet keeps distance/currentZoom consistent.
+                tpCamera.enabled = _opticsTpCameraWasEnabled;
+                float restoreZoom = _opticsSavedTpZoom >= 2.5f ? _opticsSavedTpZoom : 5.5f;
+                tpCamera.ForceSetZoomDistance(restoreZoom);
+                if (GameplayCamera != null)
+                    GameplayCamera.transform.SetPositionAndRotation(_opticsSavedCamPosition, _opticsSavedCamRotation);
+            }
+            else
+            {
+                Camera cam = GameplayCamera;
+                if (cam != null)
+                {
+                    cam.transform.SetPositionAndRotation(_opticsSavedCamPosition, _opticsSavedCamRotation);
+                }
+            }
+
+            _opticsSavedTpZoom = -1f;
+            _opticsTpCameraFrozen = false;
+        }
+
+        private void ApplyBinocularEyePose()
+        {
+            if (!_opticsPushCameraForward)
+                return;
+
+            Camera cam = GameplayCamera;
+            if (cam == null)
+                return;
+
+            // Pin eye position only — look rotation is driven by PioneerShooterMeleeInput while tpCamera is frozen.
+            Vector3 eye = OpticsEyeWorldPosition;
+            Quaternion look = cam.transform.rotation;
+            cam.transform.position = eye + look * Vector3.forward * 0.12f;
+        }
+
+        private void SetPlayerMeshVisibleForBinoculars(bool visible)
+        {
+            if (!hidePlayerMeshInBinoculars)
+                return;
+
+            if (visible)
+            {
+                for (int i = 0; i < _opticsHiddenRenderers.Count; i++)
+                {
+                    Renderer renderer = _opticsHiddenRenderers[i];
+                    if (renderer != null)
+                        renderer.enabled = true;
+                }
+
+                _opticsHiddenRenderers.Clear();
+                return;
+            }
+
+            _opticsHiddenRenderers.Clear();
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                    continue;
+                if (renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer)
+                    continue;
+
+                renderer.enabled = false;
+                _opticsHiddenRenderers.Add(renderer);
+            }
+        }
+
+        private void CaptureOpticsBaselineFov()
+        {
+            Camera cam = GameplayCamera;
+            if (cam != null)
+                _opticsSavedCameraFov = cam.fieldOfView;
+
+            var tpCamera = ResolveInvectorTpCamera();
+            if (tpCamera != null && tpCamera.currentState != null)
+                _opticsSavedStateFov = tpCamera.currentState.fov;
+            else
+                _opticsSavedStateFov = _opticsSavedCameraFov;
+        }
+
+        private void RestoreOpticsBaselineFov()
+        {
+            float restoreFov = _opticsSavedStateFov > 1f
+                ? _opticsSavedStateFov
+                : (_opticsSavedCameraFov > 1f ? _opticsSavedCameraFov : -1f);
+
+            if (restoreFov > 1f)
+            {
+                Camera cam = GameplayCamera;
+                if (cam != null)
+                    cam.fieldOfView = restoreFov;
+
+                SyncInvectorCameraStateFov(restoreFov);
+            }
+
+            _opticsSavedCameraFov = -1f;
+            _opticsSavedStateFov = -1f;
+        }
+
+        private void SyncInvectorCameraStateFov(float fov)
+        {
+            var tpCamera = ResolveInvectorTpCamera();
+            if (tpCamera == null)
+                return;
+
+            if (tpCamera.currentState != null)
+                tpCamera.currentState.fov = fov;
+            if (tpCamera.lerpState != null)
+                tpCamera.lerpState.fov = fov;
+        }
+
+        private vThirdPersonCamera ResolveInvectorTpCamera()
+        {
+            if (!UsesInvectorMotor() || _invectorBootstrap == null)
+                return null;
+
+            PioneerShooterMeleeInput shooterInput = _invectorBootstrap.ShooterInput;
+            return shooterInput != null ? shooterInput.tpCamera : null;
         }
 
         public void AdjustOpticsZoom(float delta)
@@ -630,24 +900,24 @@ namespace Project.Player
             if (UsesInvectorMotor())
             {
                 ApplyCursorState();
+                ApplyOpticsCameraFov();
+                ApplyBinocularEyePose();
                 return;
             }
 
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
+            {
+                ApplyOpticsCameraFov();
+                ApplyBinocularEyePose();
                 return;
+            }
 
             ApplyLookInput();
             _combatFocus?.UpdateFocus();
             UpdateCamera();
             ApplyRangedAimBodyRotation();
-
-            if (_opticsOpen)
-            {
-                _opticsCurrentFov = Mathf.Lerp(
-                    _opticsCurrentFov,
-                    _opticsTargetFov,
-                    Time.deltaTime * opticsZoomLerpSpeed);
-            }
+            ApplyOpticsCameraFov();
+            ApplyBinocularEyePose();
         }
 
         private void PollLookInput()
@@ -744,6 +1014,28 @@ namespace Project.Player
         public Vector3 GetPlanarForward()
         {
             return Quaternion.Euler(0f, _cameraYaw, 0f) * Vector3.forward;
+        }
+
+        /// <summary>
+        /// Applies mouse-look while binoculars freeze tpCamera. Matches PioneerShooterMeleeInput / tpCamera pitch rules.
+        /// </summary>
+        public void ApplyBinocularLookDelta(float lookX, float lookY)
+        {
+            if (!IsBinocularCameraFrozen)
+                return;
+
+            Camera cam = GameplayCamera;
+            if (cam == null)
+                return;
+
+            Vector3 euler = cam.transform.eulerAngles;
+            float pitch = euler.x;
+            if (pitch > 180f)
+                pitch -= 360f;
+
+            pitch = Mathf.Clamp(pitch - lookY, minPitch, maxPitch);
+            float yaw = euler.y + lookX;
+            cam.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
 
         public void AlignPlayerToOpticsLook()
@@ -852,7 +1144,7 @@ namespace Project.Player
             desiredPosition = ResolveCameraCollision(pivot, desiredPosition);
             cameraTransform.position = desiredPosition;
 
-            if (_character.camera != null)
+            if (_character.camera != null && !_opticsOpen)
             {
                 float targetFov = _rangedAimActive ? _aimFovTarget : _defaultFov;
                 _character.camera.fieldOfView = Mathf.Lerp(

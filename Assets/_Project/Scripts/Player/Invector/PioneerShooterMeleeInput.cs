@@ -1,5 +1,6 @@
 using Invector.vCharacterController;
 using Invector.vShooter;
+using Invector;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
@@ -23,12 +24,16 @@ namespace Project.Player.Invector
         [Header("Pioneer Camera Zoom")]
         [SerializeField] private float scrollZoomNotchScale = 0.75f;
         [SerializeField] private float runtimeMinCameraDistance = 2.5f;
-        [SerializeField] private float runtimeMaxCameraDistance = 10f;
+        [SerializeField] private float runtimeMaxCameraDistance = 12f;
+        [SerializeField] private float runtimeDefaultCameraDistance = 5.5f;
 
         private PioneerInvectorInputBridge _inputBridge;
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private bool _miningScanAimHold;
+        /// <summary>Scroll zoom the player chose — preserved across aim/culling so ChangeState cannot wipe it.</summary>
+        private float _preferredCameraZoom = -1f;
+        private bool _wasAimingCameraLastFrame;
 
         protected override void Start()
         {
@@ -282,10 +287,8 @@ namespace Project.Player.Invector
 
         public override void CameraInput()
         {
-            if (!cameraMain || tpCamera == null || !CanReadCameraInput())
+            if (!cameraMain || !CanReadCameraInput())
                 return;
-
-            EnsureRuntimeZoomState();
 
             float x = 0f;
             float y = 0f;
@@ -302,37 +305,150 @@ namespace Project.Player.Invector
             if (invertCameraInputVertical)
                 y *= -1f;
 
+            if (_playerController != null && _playerController.IsBinocularCameraFrozen)
+            {
+                ApplyBinocularDirectLook(x, y);
+                return;
+            }
+
+            if (tpCamera == null)
+                return;
+
+            EnsureRuntimeZoomState();
             tpCamera.RotateCamera(x, y);
 
             if (!lockCameraInput && Mouse.current != null)
             {
-                float scroll = Mouse.current.scroll.ReadValue().y / ScrollUnitsPerNotch * scrollZoomNotchScale;
-                if (Mathf.Abs(scroll) > 0.001f)
-                    tpCamera.Zoom(scroll);
+                // Binocular FOV zoom is owned by OpticsController — don't also change follow distance.
+                bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
+                if (!opticsOwnsScroll)
+                {
+                    float scroll = Mouse.current.scroll.ReadValue().y / ScrollUnitsPerNotch * scrollZoomNotchScale;
+                    if (Mathf.Abs(scroll) > 0.001f)
+                    {
+                        tpCamera.Zoom(scroll);
+                        RememberPreferredZoom();
+                    }
+                }
             }
         }
 
+        /// <summary>
+        /// Binoculars disable vThirdPersonCamera so follow distance is not overwritten.
+        /// Rotate the live gameplay camera directly; best-effort sync tpCamera angles for restore.
+        /// </summary>
+        private void ApplyBinocularDirectLook(float x, float y)
+        {
+            if (_playerController == null)
+                return;
+
+            _playerController.ApplyBinocularLookDelta(x, y);
+
+            if (tpCamera == null || cameraMain == null)
+                return;
+
+            Vector3 normalized = cameraMain.transform.eulerAngles.NormalizeAngle();
+            tpCamera.mouseY = normalized.x;
+            tpCamera.mouseX = normalized.y;
+        }
+
+        private static bool IsAimCameraStateName(string stateName)
+        {
+            if (string.IsNullOrEmpty(stateName))
+                return false;
+            return stateName.IndexOf("Aim", System.StringComparison.OrdinalIgnoreCase) >= 0
+                   || stateName.IndexOf("Scope", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void RememberPreferredZoom()
+        {
+            if (tpCamera == null)
+                return;
+
+            float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            if (zoom >= runtimeMinCameraDistance)
+                _preferredCameraZoom = Mathf.Clamp(zoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
+        }
+
+        private float GetPreferredZoom()
+        {
+            if (_preferredCameraZoom >= runtimeMinCameraDistance)
+                return Mathf.Clamp(_preferredCameraZoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
+            return runtimeDefaultCameraDistance;
+        }
+
+        /// <summary>
+        /// Keep free-look third-person zoom playable without fighting Aim camera states.
+        /// Never rewrite Aiming lerpState (shared list refs) or ForceSet from temporary culling dips.
+        /// </summary>
         private void EnsureRuntimeZoomState()
         {
             if (tpCamera?.currentState == null)
                 return;
 
-            if (tpCamera.currentState.useZoom &&
-                tpCamera.currentState.minDistance > 0.01f &&
-                tpCamera.currentState.maxDistance > tpCamera.currentState.minDistance)
+            bool aiming = IsAimCameraStateName(tpCamera.currentStateName);
+
+            if (!aiming && tpCamera.CurrentZoom >= runtimeMinCameraDistance)
             {
+                // Track live free-look zoom so aim / ChangeState cannot permanently wipe it.
+                _preferredCameraZoom = Mathf.Clamp(
+                    tpCamera.CurrentZoom,
+                    runtimeMinCameraDistance,
+                    runtimeMaxCameraDistance);
+            }
+
+            // Only repair a permanently broken zoom (e.g. optics left near-zero).
+            // Do NOT ForceSet when distance alone dips from wall culling — that wiped scroll zoom.
+            if (!aiming
+                && tpCamera.CurrentZoom < runtimeMinCameraDistance - 0.01f
+                && tpCamera.distance < runtimeMinCameraDistance - 0.01f)
+            {
+                tpCamera.ForceSetZoomDistance(GetPreferredZoom());
                 return;
             }
 
-            float currentDistance = tpCamera.distance > 0.01f
-                ? tpCamera.distance
-                : Mathf.Max(runtimeMinCameraDistance, tpCamera.currentState.defaultDistance);
+            if (aiming)
+            {
+                _wasAimingCameraLastFrame = true;
+                return;
+            }
 
-            tpCamera.currentState.useZoom = true;
-            tpCamera.currentState.minDistance = Mathf.Min(runtimeMinCameraDistance, currentDistance);
-            tpCamera.currentState.maxDistance = Mathf.Max(runtimeMaxCameraDistance, currentDistance);
-            if (tpCamera.currentState.defaultDistance <= 0.01f)
-                tpCamera.currentState.defaultDistance = currentDistance;
+            // Free-look only: enable scroll zoom range without mutating Aim list assets via lerpState.
+            // lerpState is a live reference into CameraStateList — only touch it when it is also free-look,
+            // otherwise FixedUpdate Slerp copies useZoom=false from Default every physics tick and kills zoom.
+            ApplyFreeLookZoomRange(tpCamera.currentState);
+            if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
+                ApplyFreeLookZoomRange(tpCamera.lerpState);
+
+            // One-shot restore when leaving aim — do not fight intentional scroll-in every frame.
+            if (_wasAimingCameraLastFrame)
+            {
+                _wasAimingCameraLastFrame = false;
+                float preferred = GetPreferredZoom();
+                if (_preferredCameraZoom >= runtimeMinCameraDistance
+                    && tpCamera.CurrentZoom + 0.05f < preferred)
+                {
+                    tpCamera.ForceSetZoomDistance(preferred);
+                }
+            }
+        }
+
+        private void ApplyFreeLookZoomRange(vThirdPersonCameraState state)
+        {
+            if (state == null)
+                return;
+
+            state.useZoom = true;
+            state.minDistance = runtimeMinCameraDistance;
+            state.maxDistance = Mathf.Max(runtimeMaxCameraDistance, state.maxDistance, GetPreferredZoom());
+            if (state.defaultDistance < runtimeMinCameraDistance
+                || state.defaultDistance > runtimeMaxCameraDistance * 1.5f)
+            {
+                state.defaultDistance = Mathf.Clamp(
+                    state.defaultDistance > 0.01f ? state.defaultDistance : runtimeDefaultCameraDistance,
+                    runtimeMinCameraDistance,
+                    state.maxDistance);
+            }
         }
 
         private bool CanReadGameplayInput()
@@ -374,19 +490,20 @@ namespace Project.Player.Invector
             if (shooterManager == null || shotLayer < 0 || CurrentActiveWeapon == null)
                 return;
 
-            bool isRifle = _equipment != null &&
-                           EquipmentController.IsRangedWeaponItem(_equipment.DrawnWeaponItem) &&
-                           _equipment.DrawnWeaponItem.weaponGrip == WeaponGrip.TwoHanded;
+            ItemData weaponItem = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            ItemData ammoItem = null;
+            if (_equipment != null)
+            {
+                WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+                if (ammoState != null)
+                    ammoItem = ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
+            }
 
-            float weight;
-            if (IsAiming && isUsingScopeView)
-                weight = isRifle
-                    ? PioneerInvectorRecoilUtility.RifleScopeShotLayerWeight
-                    : PioneerInvectorRecoilUtility.ScopeShotLayerWeight;
-            else
-                weight = isRifle
-                    ? PioneerInvectorRecoilUtility.RifleShotLayerWeight
-                    : PioneerInvectorRecoilUtility.ShotLayerWeight;
+            bool isScopeView = IsAiming && isUsingScopeView;
+            float weight = PioneerInvectorRecoilUtility.ResolveShotAnimationWeight(
+                weaponItem,
+                ammoItem,
+                isScopeView);
 
             animator.SetLayerWeight(shotLayer, weight);
         }
