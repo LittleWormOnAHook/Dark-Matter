@@ -86,13 +86,13 @@ Shader "Custom/ScannerPostProcess"
 
             float4 Frag(Varyings input) : SV_Target
             {
-                // CustomPassCommon Varyings only exposes positionCS; derive UV / pixel coords from it.
+                // CustomPassCommon Varyings only exposes positionCS; derive UV from clip position.
+                // Sample (not Load) so AfterPostProcess uses _AfterPostProcessColorBuffer with correct scale.
                 float2 uv = input.positionCS.xy * _ScreenSize.zw;
-                uint2 pixelCoords = (uint2)input.positionCS.xy;
-                float4 screenColor = float4(CustomPassLoadCameraColor(pixelCoords, 0), 1);
+                float3 screenColor = CustomPassSampleCameraColor(uv, 0);
                 float scan = frac(uv.y * _LineThickness + _Time.y * _ScanSpeed);
                 scan = step(0.95, scan);
-                return lerp(screenColor, _ScanColor, scan * _ScanColor.a);
+                return float4(lerp(screenColor, _ScanColor.rgb, scan * _ScanColor.a), 1);
             }
             ENDHLSL
         }

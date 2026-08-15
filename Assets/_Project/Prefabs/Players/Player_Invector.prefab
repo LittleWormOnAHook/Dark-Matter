@@ -36819,6 +36819,7 @@ GameObject:
   - component: {fileID: 3809005456849432279}
   - component: {fileID: 7684091887045404743}
   - component: {fileID: 3677116205230364790}
+  - component: {fileID: 4981562826467345417}
   m_Layer: 8
   m_Name: Camera
   m_TagString: MainCamera
@@ -37103,7 +37104,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4531840985911540798}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26d6499a6bd256e47b859377446493a1, type: 3}
   m_Name: 
@@ -37131,8 +37132,23 @@ MonoBehaviour:
         m_Version: 0
         scanlinesMaterial: {fileID: 0}
         scanSpeed: 2
-        lineThickness: 200
+        lineThickness: 2
         scanColor: {r: 0, g: 1, b: 1, a: 0.3}
+--- !u!114 &4981562826467345417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4531840985911540798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49660ff6c379a943892e20153058f31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.ScannerHdrpOverlayGate
+  customPassVolume: {fileID: 0}
+  sweepController: {fileID: 0}
+  enableDuringSweep: 1
 --- !u!1 &4582062862400472410
 GameObject:
   m_ObjectHideFlags: 0

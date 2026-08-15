@@ -8,14 +8,16 @@ namespace Project.Rendering
     /// <summary>
     /// HDRP Custom Pass that applies <c>Custom/ScannerPostProcess</c> as a fullscreen scanline overlay.
     /// URP continues to use <see cref="ScannerPostProcess"/> (OnRenderImage) when available.
-    /// Dual-pipeline choice: keep URP component + HDRP Custom Pass; do not force Phase 6.
+    /// Must resolve/bind like <see cref="FullScreenCustomPass"/> or AfterPostProcess samples return black.
     /// </summary>
     [Serializable]
     public sealed class ScannerHdrpCustomPass : CustomPass
     {
+        private const string FullscreenPassName = "ScannerFullscreen";
+
         [SerializeField] private Material scanlinesMaterial;
         [SerializeField] private float scanSpeed = 2f;
-        [SerializeField] private float lineThickness = 200f;
+        [SerializeField] private float lineThickness = 2f;
         [SerializeField] private Color scanColor = new Color(0f, 1f, 1f, 0.3f);
 
         protected override void Setup(ScriptableRenderContext renderContext, CommandBuffer cmd)
@@ -36,10 +38,24 @@ namespace Project.Rendering
             scanlinesMaterial.SetFloat("_ScanSpeed", scanSpeed);
             scanlinesMaterial.SetFloat("_LineThickness", lineThickness);
             scanlinesMaterial.SetColor("_ScanColor", scanColor);
+            scanlinesMaterial.SetFloat("_FadeValue", fadeValue);
 
-            // Pass 0 = CustomPassLoadCameraColor path when CustomPassCommon is included.
-            CoreUtils.SetRenderTarget(ctx.cmd, ctx.cameraColorBuffer, ClearFlag.None);
-            CoreUtils.DrawFullScreen(ctx.cmd, scanlinesMaterial, shaderPassId: 0);
+            // Same fetch path as FullScreenCustomPass.fetchColorBuffer — without this,
+            // CustomPassSample/LoadCameraColor at AfterPostProcess reads an unbound buffer (black).
+            ResolveMSAAColorBuffer(ctx);
+            SetRenderTargetAuto(ctx.cmd);
+
+            int passIndex = scanlinesMaterial.FindPass(FullscreenPassName);
+            if (passIndex < 0)
+                passIndex = 0;
+
+            CoreUtils.DrawFullScreen(ctx.cmd, scanlinesMaterial, shaderPassId: passIndex);
+        }
+
+        protected override void Cleanup()
+        {
+            CoreUtils.Destroy(scanlinesMaterial);
+            scanlinesMaterial = null;
         }
     }
 }
