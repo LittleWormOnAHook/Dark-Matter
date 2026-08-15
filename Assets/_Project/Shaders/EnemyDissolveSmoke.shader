@@ -113,7 +113,6 @@ Shader "Project/EnemyDissolveSmoke"
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
 
             CBUFFER_START(UnityPerMaterial)

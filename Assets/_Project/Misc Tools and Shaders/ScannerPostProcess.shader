@@ -86,8 +86,10 @@ Shader "Custom/ScannerPostProcess"
 
             float4 Frag(Varyings input) : SV_Target
             {
-                float2 uv = input.uv;
-                float4 screenColor = float4(CustomPassLoadCameraColor(uv, 0), 1);
+                // CustomPassCommon Varyings only exposes positionCS; derive UV / pixel coords from it.
+                float2 uv = input.positionCS.xy * _ScreenSize.zw;
+                uint2 pixelCoords = (uint2)input.positionCS.xy;
+                float4 screenColor = float4(CustomPassLoadCameraColor(pixelCoords, 0), 1);
                 float scan = frac(uv.y * _LineThickness + _Time.y * _ScanSpeed);
                 scan = step(0.95, scan);
                 return lerp(screenColor, _ScanColor, scan * _ScanColor.a);
@@ -109,7 +111,7 @@ Shader "Custom/ScannerPostProcess"
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
+            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
 
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
