@@ -1,4 +1,4 @@
-﻿using Invector.vCharacterController;
+using Invector.vCharacterController;
 using System.Collections;
 using UnityEngine;
 
@@ -504,7 +504,21 @@ namespace Invector.vCamera
                 indexList = CameraStateList.tpCameraStates.IndexOf(state);
             }
 
-            currentZoom = state.defaultDistance;
+            // Pioneer: Aim/Scope may set a close follow distance. Free-look states keep the
+            // player's scroll zoom instead of resetting to the authored default (~2m).
+            // Authored Default has useZoom=false, so do NOT key off useZoom here.
+            if (state != null)
+            {
+                if (IsPioneerAimCameraState(state.Name))
+                {
+                    currentZoom = state.defaultDistance;
+                }
+                else if (currentZoom < 2.5f)
+                {
+                    currentZoom = state.defaultDistance >= 2.5f ? state.defaultDistance : 5.5f;
+                }
+                // else keep currentZoom (player scroll preference across Default/Crouch/Strafing)
+            }
 
             if (currentState.cameraMode == TPCameraMode.FixedAngle)
             {
@@ -652,29 +666,60 @@ namespace Invector.vCamera
         /// <param name="zoomSpeed"></param>
         public virtual void Zoom(float scroolValue)
         {
-            // Pioneer patch: several imported camera states have zoom disabled and min/max
-            // distances left at zero. Enable a normal third-person distance zoom at runtime.
-            EnsurePioneerZoomState(currentState);
-            EnsurePioneerZoomState(lerpState);
+            // Pioneer: enable scroll zoom on free-look states only. Never rewrite Aim/Scope list
+            // assets (lerpState is a live reference into CameraStateList).
+            if (currentState != null && !IsPioneerAimCameraState(currentState.Name))
+                EnsurePioneerZoomState(currentState);
             currentZoom -= scroolValue * scrollSpeed;
+        }
+
+        /// <summary>
+        /// Pioneer: hard-set follow distance without going through scroll deltas.
+        /// Used to recover from illegal near-zero distances after optics.
+        /// </summary>
+        public void ForceSetZoomDistance(float zoom)
+        {
+            if (currentState != null && !IsPioneerAimCameraState(currentState.Name))
+                EnsurePioneerZoomState(currentState);
+            float min = currentState != null ? Mathf.Max(2.5f, currentState.minDistance) : 2.5f;
+            float max = currentState != null ? Mathf.Max(12f, currentState.maxDistance) : 12f;
+            float clamped = Mathf.Clamp(zoom, min, max);
+            currentZoom = clamped;
+            distance = clamped;
+        }
+
+        /// <summary>Pioneer: read-only scroll zoom target for _Project scripts.</summary>
+        public float CurrentZoom => currentZoom;
+
+        protected static bool IsPioneerAimCameraState(string stateName)
+        {
+            if (string.IsNullOrEmpty(stateName))
+                return false;
+            return stateName.IndexOf("Aim", System.StringComparison.OrdinalIgnoreCase) >= 0
+                   || stateName.IndexOf("Scope", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         protected virtual void EnsurePioneerZoomState(vThirdPersonCameraState state)
         {
-            if (state == null)
+            if (state == null || IsPioneerAimCameraState(state.Name))
                 return;
 
-            if (state.useZoom && state.minDistance > 0.01f && state.maxDistance > state.minDistance)
-                return;
+            // Free-look third-person zoom only. Do not mutate Aim/Scope authored distances.
+            const float MinDist = 2.5f;
+            const float MaxDist = 12f;
+            const float DefaultDist = 5.5f;
 
-            float baseDistance = distance > 0.01f ? distance : state.defaultDistance;
-            if (baseDistance <= 0.01f)
-                baseDistance = 5f;
+            float baseDistance = distance >= MinDist
+                ? distance
+                : (currentZoom >= MinDist
+                    ? currentZoom
+                    : (state.defaultDistance >= MinDist ? state.defaultDistance : DefaultDist));
 
             state.useZoom = true;
-            state.defaultDistance = baseDistance;
-            state.minDistance = Mathf.Max(1.5f, baseDistance * 0.35f);
-            state.maxDistance = Mathf.Max(baseDistance * 1.85f, baseDistance + 3f);
+            if (state.defaultDistance < MinDist || state.defaultDistance > MaxDist * 1.5f)
+                state.defaultDistance = Mathf.Clamp(baseDistance, MinDist, MaxDist);
+            state.minDistance = MinDist;
+            state.maxDistance = Mathf.Max(MaxDist, state.maxDistance, baseDistance);
         }
 
         public virtual void CheckCameraIsRotating()
