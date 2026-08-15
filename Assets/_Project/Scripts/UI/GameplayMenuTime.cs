@@ -17,6 +17,7 @@ namespace Project.UI
         public const string ReasonJournal = "Journal";
         public const string ReasonBuildingControl = "BuildingControl";
         public const string ReasonQuestDialog = "QuestDialog";
+        public const string ReasonPptDirections = "PptDirections";
         public const string ReasonLootDialog = "LootDialog";
         public const string ReasonCraftingStation = "CraftingStation";
         public const string ReasonHovercraftMenu = "HovercraftMenu";

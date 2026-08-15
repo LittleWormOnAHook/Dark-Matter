@@ -133,7 +133,7 @@ namespace Project.Pioneers
                 ? definition.recruitmentPitch
                 : (!string.IsNullOrWhiteSpace(record.backstory) ? record.backstory : "...");
 
-            QuestGiverDialogUI.Show(record.displayName, message, TryRecruit, "Ask to Join the Colony");
+            QuestGiverDialogUI.Show(record.displayName, message, TryRecruit, "Ask to Join the Colony", npcAnchor: transform);
             return true;
         }
 

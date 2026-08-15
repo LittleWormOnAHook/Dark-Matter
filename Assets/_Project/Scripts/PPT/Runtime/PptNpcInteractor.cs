@@ -41,6 +41,7 @@ namespace Project.PPT
         public float HoldDurationSeconds => holdDurationSeconds;
         public string HoldPromptText => holdPromptText;
         public bool IsHoldActive => holdActive;
+        public bool OffersDirections => CanOfferDirections();
 
         private void Awake()
         {
@@ -136,7 +137,7 @@ namespace Project.PPT
         {
             string speaker = SpeakerDisplayName;
 
-            QuestGiverDialogUI.Show(speaker, result.Phrase, null);
+            QuestGiverDialogUI.Show(speaker, result.Phrase, null, npcAnchor: transform);
 
             if (result.Kind == PptDirectionKind.Unknown)
             {
@@ -155,7 +156,7 @@ namespace Project.PPT
                 gestureController?.PlayPoint(result.BearingDegrees);
         }
 
-        private void OpenDirectionsMenu()
+        public void OpenDirectionsMenu()
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
@@ -185,7 +186,11 @@ namespace Project.PPT
             if (questGiver != null)
                 return questGiver.IsWithinInteractRange(playerPosition);
 
-            return PlayerInteractionUtility.IsWithinRange(playerPosition, interactCollider, transform.position, interactRange);
+            float distance = PlayerInteractionUtility.DistanceToInteractable(
+                playerPosition,
+                interactCollider,
+                transform.position);
+            return distance <= interactRange;
         }
     }
 }

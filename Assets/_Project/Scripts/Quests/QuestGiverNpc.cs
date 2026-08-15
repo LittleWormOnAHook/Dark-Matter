@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Interaction;
 using Project.Map;
+using Project.PPT;
 using Project.Progression;
 using Project.UI;
 using UnityEngine;
@@ -292,7 +293,7 @@ namespace Project.Quests
             List<QuestBoardEntry> entries = BuildQuestBoardEntries();
             if (entries.Count == 0)
             {
-                ShowDialogue("I don't have any quests for you right now.");
+                ShowDialogue("I don't have any quests for you right now.", directionsCallback: ResolveDirectionsCallback());
                 return true;
             }
 
@@ -301,7 +302,9 @@ namespace Project.Quests
                 displayName,
                 questBoardIntro,
                 entries,
-                null);
+                null,
+                ResolveDirectionsCallback(),
+                transform);
 
             return true;
         }
@@ -531,16 +534,32 @@ namespace Project.Quests
             return $"{promptText} — {label}";
         }
 
-        private void ShowDialogue(string message, Action onContinue = null, string buttonLabel = "Continue")
+        private void ShowDialogue(
+            string message,
+            Action onContinue = null,
+            string buttonLabel = "Continue",
+            Action directionsCallback = null)
         {
             if (string.IsNullOrEmpty(message))
                 return;
 
             uiManager?.HideInteractionPrompt();
-            QuestGiverDialogUI.Show(displayName, message, () =>
-            {
-                onContinue?.Invoke();
-            }, buttonLabel);
+            QuestGiverDialogUI.Show(
+                displayName,
+                message,
+                () => onContinue?.Invoke(),
+                buttonLabel,
+                directionsCallback ?? ResolveDirectionsCallback(),
+                transform);
+        }
+
+        private Action ResolveDirectionsCallback()
+        {
+            PptNpcInteractor interactor = GetComponent<PptNpcInteractor>();
+            if (interactor == null || !interactor.OffersDirections)
+                return null;
+
+            return interactor.OpenDirectionsMenu;
         }
 
         private static int GetQuestXpReward(QuestDefinition quest)

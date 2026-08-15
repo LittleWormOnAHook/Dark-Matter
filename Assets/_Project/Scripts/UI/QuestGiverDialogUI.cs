@@ -35,11 +35,19 @@ namespace Project.UI
         private TextMeshProUGUI questActionButtonLabel;
         private Button abandonQuestButton;
         private TextMeshProUGUI abandonQuestButtonLabel;
+        private Button directionsButton;
+        private TextMeshProUGUI directionsButtonLabel;
+        private Button boardDirectionsButton;
+        private TextMeshProUGUI boardDirectionsButtonLabel;
         private bool abandonConfirmPending;
         private Action onClosed;
+        private Action onDirectionsRequested;
         private bool built;
         private IList<QuestBoardEntry> currentEntries;
         private int selectedEntryIndex = -1;
+        private CanvasGroup overlayCanvasGroup;
+        private NpcDialogProximityFade proximityFade;
+        private Transform npcAnchor;
 
         public static QuestGiverDialogUI Instance => instance;
 
@@ -53,7 +61,7 @@ namespace Project.UI
 
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
-            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null))
+            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null || instance.boardDirectionsButton == null))
             {
                 instance.TeardownInternal();
                 instance = null;
@@ -130,9 +138,17 @@ namespace Project.UI
             questActionButtonLabel = null;
             abandonQuestButton = null;
             abandonQuestButtonLabel = null;
+            directionsButton = null;
+            directionsButtonLabel = null;
+            boardDirectionsButton = null;
+            boardDirectionsButtonLabel = null;
             abandonConfirmPending = false;
+            onDirectionsRequested = null;
             currentEntries = null;
             selectedEntryIndex = -1;
+            overlayCanvasGroup = null;
+            proximityFade = null;
+            npcAnchor = null;
 
             if (instance == this)
                 instance = null;
@@ -140,24 +156,36 @@ namespace Project.UI
             Destroy(gameObject);
         }
 
-        public static void Show(string speakerName, string message, Action closedCallback = null, string primaryLabel = "Continue")
+        public static void Show(
+            string speakerName,
+            string message,
+            Action closedCallback = null,
+            string primaryLabel = "Continue",
+            Action directionsCallback = null,
+            Transform npcAnchor = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel);
+            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel, directionsCallback, npcAnchor);
         }
 
-        public static void ShowQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback = null)
+        public static void ShowQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback = null,
+            Action directionsCallback = null,
+            Transform npcAnchor = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback);
+            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback, directionsCallback, npcAnchor);
         }
 
         private void Build(Transform canvasRoot)
@@ -171,6 +199,12 @@ namespace Project.UI
 
             overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "DialogOverlay", new Color(0f, 0f, 0f, 0.5f), blockRaycasts: true);
             overlayRoot.transform.SetAsLastSibling();
+            overlayCanvasGroup = overlayRoot.GetComponent<CanvasGroup>();
+            if (overlayCanvasGroup == null)
+                overlayCanvasGroup = overlayRoot.AddComponent<CanvasGroup>();
+            proximityFade = GetComponent<NpcDialogProximityFade>();
+            if (proximityFade == null)
+                proximityFade = gameObject.AddComponent<NpcDialogProximityFade>();
 
             dialogPanel = MenuUiBuilder.CreateCenteredModalShell(
                 overlayRoot.transform,
@@ -223,6 +257,11 @@ namespace Project.UI
             primaryButton = CreateButton(simpleContentRoot.transform, "Close", theme, out primaryButtonLabel);
             primaryButton.onClick.RemoveAllListeners();
             primaryButton.onClick.AddListener(Close);
+
+            directionsButton = CreateButton(simpleContentRoot.transform, "Ask for Directions", theme, out directionsButtonLabel);
+            directionsButton.onClick.RemoveAllListeners();
+            directionsButton.onClick.AddListener(HandleDirectionsClicked);
+            directionsButton.gameObject.SetActive(false);
         }
 
         private void BuildBoardContent(RectTransform contentArea, ShiftUiTheme theme)
@@ -282,6 +321,11 @@ namespace Project.UI
             LayoutElement actionRowElement = actionRow.GetComponent<LayoutElement>();
             actionRowElement.minHeight = 48f;
             actionRowElement.preferredHeight = 48f;
+
+            boardDirectionsButton = CreateButton(actionRow.transform, "Ask for Directions", theme, out boardDirectionsButtonLabel);
+            boardDirectionsButton.onClick.RemoveAllListeners();
+            boardDirectionsButton.onClick.AddListener(HandleDirectionsClicked);
+            boardDirectionsButton.gameObject.SetActive(false);
 
             questActionButton = CreateButton(actionRow.transform, "Accept", theme, out questActionButtonLabel);
             questActionButton.onClick.RemoveAllListeners();
@@ -400,21 +444,38 @@ namespace Project.UI
             return panel;
         }
 
-        private void PresentSimple(string speakerName, string message, Action closedCallback, string primaryLabel)
+        private void PresentSimple(
+            string speakerName,
+            string message,
+            Action closedCallback,
+            string primaryLabel,
+            Action directionsCallback,
+            Transform anchor)
         {
             onClosed = closedCallback;
+            onDirectionsRequested = directionsCallback;
+            npcAnchor = anchor;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             bodyText.text = message ?? string.Empty;
             simpleContentRoot.SetActive(true);
             boardContentRoot.SetActive(false);
             primaryButtonLabel.text = string.IsNullOrEmpty(primaryLabel) ? "Continue" : primaryLabel;
             primaryButton.interactable = true;
+            ApplyDirectionsButtons();
             OpenOverlay();
         }
 
-        private void PresentQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback)
+        private void PresentQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback,
+            Action directionsCallback,
+            Transform anchor)
         {
             onClosed = closedCallback;
+            onDirectionsRequested = directionsCallback;
+            npcAnchor = anchor;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             currentEntries = entries;
             selectedEntryIndex = entries != null && entries.Count > 0 ? 0 : -1;
@@ -452,8 +513,26 @@ namespace Project.UI
                     abandonQuestButton.gameObject.SetActive(false);
             }
 
+            ApplyDirectionsButtons();
             RefreshQuestListLayout();
             OpenOverlay();
+        }
+
+        private void ApplyDirectionsButtons()
+        {
+            bool showDirections = onDirectionsRequested != null;
+
+            if (directionsButton != null)
+            {
+                directionsButton.gameObject.SetActive(showDirections);
+                directionsButton.interactable = showDirections;
+            }
+
+            if (boardDirectionsButton != null)
+            {
+                boardDirectionsButton.gameObject.SetActive(showDirections);
+                boardDirectionsButton.interactable = showDirections;
+            }
         }
 
         private void RefreshQuestListLayout()
@@ -590,6 +669,16 @@ namespace Project.UI
             callback.Invoke();
         }
 
+        private void HandleDirectionsClicked()
+        {
+            if (onDirectionsRequested == null)
+                return;
+
+            Action callback = onDirectionsRequested;
+            Close();
+            callback.Invoke();
+        }
+
         private void HandleAbandonClicked()
         {
             if (currentEntries == null || selectedEntryIndex < 0 || selectedEntryIndex >= currentEntries.Count)
@@ -633,6 +722,11 @@ namespace Project.UI
             overlayRoot.transform.SetAsLastSibling();
             EnforceQuestDialogLayout();
             UiFrontLayer.BringLayerToFront(transform.parent);
+
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
+            proximityFade?.BeginMonitoring(npcAnchor, overlayCanvasGroup, Close);
         }
 
         private void EnforceQuestDialogLayout()
@@ -666,13 +760,21 @@ namespace Project.UI
 
         private void Close()
         {
+            proximityFade?.StopMonitoring();
+
             if (overlayRoot != null)
                 overlayRoot.SetActive(false);
+
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
+            npcAnchor = null;
 
             ClearQuestPicker();
             currentEntries = null;
             selectedEntryIndex = -1;
             abandonConfirmPending = false;
+            onDirectionsRequested = null;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);

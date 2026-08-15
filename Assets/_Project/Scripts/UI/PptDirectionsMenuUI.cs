@@ -1,10 +1,13 @@
 using System.Collections.Generic;
-using Project.UI;
+using Project.Player;
+using Project.PPT;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
-namespace Project.PPT
+namespace Project.UI
 {
     public sealed class PptDirectionsMenuUI : MonoBehaviour
     {
@@ -18,6 +21,16 @@ namespace Project.PPT
         private bool built;
         private PptNpcInteractor currentInteractor;
         private int currentPage;
+        private CanvasGroup overlayCanvasGroup;
+        private NpcDialogProximityFade proximityFade;
+
+        public static bool IsOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
+
+        public static void CloseAnyOpen()
+        {
+            if (instance != null && IsOpen)
+                instance.Close();
+        }
 
         public static PptDirectionsMenuUI EnsureExists(Transform canvasRoot)
         {
@@ -28,28 +41,40 @@ namespace Project.PPT
             host.transform.SetParent(canvasRoot, false);
             MenuUiBuilder.StretchRectToFill(host.GetComponent<RectTransform>());
             instance = host.AddComponent<PptDirectionsMenuUI>();
-            instance.Build();
+            instance.Build(canvasRoot);
             return instance;
         }
 
         public void Show(PptNpcInteractor interactor)
         {
             if (!built)
-                Build();
+            {
+                Canvas canvas = FindAnyObjectByType<Canvas>();
+                if (canvas != null)
+                    Build(canvas.transform);
+            }
 
             currentInteractor = interactor;
             currentPage = 0;
-            overlayRoot.SetActive(true);
             RefreshPage();
+            OpenOverlay();
         }
 
-        private void Build()
+        private void Build(Transform canvasRoot)
         {
+            EnsureUiInput(canvasRoot);
+
             overlayRoot = MenuUiBuilder.CreateFullScreenPanel(
                 transform,
                 "PptDirectionsOverlay",
                 new Color(0f, 0f, 0f, 0.55f),
                 blockRaycasts: true);
+            overlayCanvasGroup = overlayRoot.GetComponent<CanvasGroup>();
+            if (overlayCanvasGroup == null)
+                overlayCanvasGroup = overlayRoot.AddComponent<CanvasGroup>();
+            proximityFade = GetComponent<NpcDialogProximityFade>();
+            if (proximityFade == null)
+                proximityFade = gameObject.AddComponent<NpcDialogProximityFade>();
 
             GameObject shell = MenuUiBuilder.CreateCenteredModalShell(
                 overlayRoot.transform,
@@ -74,6 +99,7 @@ namespace Project.PPT
             bodyText.text = "Where do you need to go?";
             bodyText.fontSize = 28f;
             bodyText.color = DarkMatterGenesisUiPalette.BodyText;
+            bodyText.raycastTarget = false;
             ShiftUiTheme.Current?.ApplyFont(bodyText);
 
             GameObject choices = new GameObject("Choices", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -101,6 +127,24 @@ namespace Project.PPT
 
             overlayRoot.SetActive(false);
             built = true;
+        }
+
+        private void OpenOverlay()
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            player?.SetQuestDialogOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonPptDirections, true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            overlayRoot.SetActive(true);
+            overlayRoot.transform.SetAsLastSibling();
+            UiFrontLayer.BringLayerToFront(transform.parent);
+
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
+            proximityFade?.BeginMonitoring(currentInteractor != null ? currentInteractor.transform : null, overlayCanvasGroup, Close);
         }
 
         private void RefreshPage()
@@ -153,8 +197,9 @@ namespace Project.PPT
 
         private void OnChoice(PptEntry entry)
         {
-            currentInteractor?.HandleDirectionChoice(entry);
+            PptNpcInteractor interactor = currentInteractor;
             Close();
+            interactor?.HandleDirectionChoice(entry);
         }
 
         private void NextPage()
@@ -171,11 +216,34 @@ namespace Project.PPT
 
         private void Close()
         {
+            proximityFade?.StopMonitoring();
+
             if (overlayRoot != null)
                 overlayRoot.SetActive(false);
 
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
             currentInteractor = null;
             currentPage = 0;
+
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            player?.SetQuestDialogOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonPptDirections, false);
+        }
+
+        private static void EnsureUiInput(Transform canvasRoot)
+        {
+            Canvas canvas = canvasRoot.GetComponent<Canvas>() ?? canvasRoot.GetComponentInParent<Canvas>();
+            if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
+                canvas.gameObject.AddComponent<GraphicRaycaster>();
+
+            if (FindAnyObjectByType<EventSystem>() != null)
+                return;
+
+            GameObject eventSystemObject = new GameObject("EventSystem");
+            eventSystemObject.AddComponent<EventSystem>();
+            eventSystemObject.AddComponent<InputSystemUIInputModule>();
         }
     }
 }

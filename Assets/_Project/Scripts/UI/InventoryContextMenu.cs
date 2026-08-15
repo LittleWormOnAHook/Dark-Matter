@@ -186,8 +186,37 @@ namespace Project.UI
 
             RectTransform mainRect = menuPanel.GetComponent<RectTransform>();
             RectTransform submenuRect = ammoSubmenuPanel.GetComponent<RectTransform>();
-            submenuRect.position = mainRect.position + new Vector3(mainRect.rect.width, 0f, 0f);
+            Transform equipAmmoButton = menuPanel.transform.Find("EquipAmmoContextButton");
+            RectTransform alignRow = equipAmmoButton != null
+                ? equipAmmoButton.GetComponent<RectTransform>()
+                : mainRect;
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(mainRect);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(submenuRect);
+            PositionFlyoutBeside(mainRect, submenuRect, alignRow);
             ClampToScreen(submenuRect);
+        }
+
+        /// <summary>
+        /// Places a flyout flush to the anchor panel's right edge in world space so UI scale
+        /// does not separate submenu buttons from the parent menu.
+        /// </summary>
+        private static void PositionFlyoutBeside(RectTransform anchorPanel, RectTransform flyoutPanel, RectTransform alignRow)
+        {
+            if (anchorPanel == null || flyoutPanel == null)
+                return;
+
+            Vector3[] anchorCorners = new Vector3[4];
+            anchorPanel.GetWorldCorners(anchorCorners);
+
+            RectTransform row = alignRow != null ? alignRow : anchorPanel;
+            Vector3[] rowCorners = new Vector3[4];
+            row.GetWorldCorners(rowCorners);
+
+            float rightX = anchorCorners[2].x;
+            float topY = rowCorners[1].y;
+            Vector3 pos = flyoutPanel.position;
+            flyoutPanel.position = new Vector3(rightX, topY, pos.z);
         }
 
         private void HideAmmoSubmenu()

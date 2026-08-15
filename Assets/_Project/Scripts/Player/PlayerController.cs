@@ -464,9 +464,9 @@ namespace Project.Player
             {
                 PioneerInvectorRecoilUtility.ResetRecoilOffset(tpCamera);
 
-                _opticsSavedTpZoom = tpCamera.CurrentZoom >= 2.5f
+                _opticsSavedTpZoom = tpCamera.CurrentZoom >= 1.5f
                     ? tpCamera.CurrentZoom
-                    : (tpCamera.distance >= 2.5f ? tpCamera.distance : 5.5f);
+                    : (tpCamera.distance >= 1.5f ? tpCamera.distance : 1.6f);
                 _opticsTpCameraWasEnabled = tpCamera.enabled;
 
                 if (cam != null)
@@ -502,7 +502,7 @@ namespace Project.Player
                 // Re-enable and hard-restore scroll zoom — transform may still be at eye pose
                 // until the next FixedUpdate, so ForceSet keeps distance/currentZoom consistent.
                 tpCamera.enabled = _opticsTpCameraWasEnabled;
-                float restoreZoom = _opticsSavedTpZoom >= 2.5f ? _opticsSavedTpZoom : 5.5f;
+                float restoreZoom = _opticsSavedTpZoom >= 1.5f ? _opticsSavedTpZoom : 1.6f;
                 tpCamera.ForceSetZoomDistance(restoreZoom);
                 if (GameplayCamera != null)
                     GameplayCamera.transform.SetPositionAndRotation(_opticsSavedCamPosition, _opticsSavedCamRotation);
@@ -876,6 +876,9 @@ namespace Project.Player
                 return true;
 
             if (QuestGiverDialogUI.IsDialogOpen)
+                return true;
+
+            if (PptDirectionsMenuUI.IsOpen)
                 return true;
 
             if (HovercraftInteractMenuUI.IsOpen)
