@@ -152,7 +152,7 @@ namespace Project.UI
                 MapFogOfWar.Instance.FogUpdated -= HandleFogUpdated;
 
             if (fullMapOpen)
-                CloseFullMap();
+                CloseFullMapLocal();
         }
 
         private void HandleFogUpdated()
@@ -407,10 +407,20 @@ namespace Project.UI
             if (!fullMapOpen)
                 return;
 
+            CloseFullMapLocal();
+            RefreshMapShellVisibility();
+        }
+
+        private void CloseFullMapLocal()
+        {
+            if (!fullMapOpen)
+                return;
+
             fullMapOpen = false;
             openedViaNavigator = false;
             HideFullMapMarkerTooltip();
-            RefreshMapShellVisibility();
+            if (fullMapOverlay != null)
+                fullMapOverlay.SetActive(false);
         }
 
         public void ToggleFullMap()
@@ -461,6 +471,12 @@ namespace Project.UI
         {
             if (!fullMapOpen)
                 return;
+
+            if (!isActiveAndEnabled)
+            {
+                CloseFullMapLocal();
+                return;
+            }
 
             if (openedViaNavigator)
             {
