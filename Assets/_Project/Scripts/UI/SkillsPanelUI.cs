@@ -622,8 +622,17 @@ namespace Project.UI
             }
 
             RefreshPopupContent();
-            if (!string.IsNullOrEmpty(error) && error != "Max rank reached.")
+
+            if (!string.IsNullOrEmpty(error)
+                && skill.requiredPlayerLevel > 1
+                && !LevelUnlockUtility.CanAccess(progression, skill.requiredPlayerLevel))
+            {
+                LevelUnlockUtility.ShowRequireLevelPopup(skill.requiredPlayerLevel);
+            }
+            else if (!string.IsNullOrEmpty(error) && error != "Max rank reached.")
+            {
                 Debug.Log($"[Skills] {skill.displayName}: {error}");
+            }
 
             foreach (KeyValuePair<string, HexNodeView> pair in nodeViews)
                 ApplyHoverVisual(pair.Value, pair.Key == selectedSkillId);
