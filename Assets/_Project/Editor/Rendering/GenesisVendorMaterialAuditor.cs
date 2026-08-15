@@ -69,14 +69,119 @@ namespace Project.EditorTools.Rendering
             if (!EditorUtility.DisplayDialog(
                     "Convert Folder URP→HDRP",
                     "Apply conversion to .mat files under the chosen folder?\n\n" +
-                    "Only URP Lit/Unlit/Particles/Baked Lit are converted.\n" +
-                    "Custom / Shader Graph / Built-in are skipped.\n" +
-                    "Graphics pipeline stays on URP (Phase 6 not run).",
+                    "Only URP Lit/Unlit/Particles/Baked Lit and common Legacy/Mobile particle shaders are converted.\n" +
+                    "Custom / Shader Graph / Built-in non-particle are skipped.\n" +
+                    "Active Graphics pipeline is preserved (HDRP High stays HDRP).",
                     "Convert",
                     "Cancel"))
                 return;
 
             ConvertSelectedOrPromptFolder(dryRun: false, showDialog: true);
+        }
+
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP", false, 33)]
+        public static void ConvertSceneReferencedParticlesMenu()
+        {
+            string report = ConvertSceneReferencedParticles(dryRun: false, showDialog: true);
+            Debug.Log($"{LogPrefix}\n{report}");
+        }
+
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP (Dry Run)", false, 34)]
+        public static void ConvertSceneReferencedParticlesDryRunMenu()
+        {
+            string report = ConvertSceneReferencedParticles(dryRun: true, showDialog: true);
+            Debug.Log($"{LogPrefix}\n{report}");
+        }
+
+        /// <summary>
+        /// Converts Legacy/Mobile/URP particle materials currently referenced by renderers
+        /// in open scenes (and their prefab assets when the mat lives under Assets/).
+        /// </summary>
+        public static string ConvertSceneReferencedParticles(bool dryRun, bool showDialog)
+        {
+            Shader hdrpUnlit = Shader.Find(HdrpUnlitName);
+            if (hdrpUnlit == null)
+                return "HDRP/Unlit shader not found.";
+
+            var unique = new HashSet<Material>();
+            var renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (Renderer r in renderers)
+            {
+                Material[] mats = r.sharedMaterials;
+                if (mats == null)
+                    continue;
+                foreach (Material m in mats)
+                {
+                    if (m == null || m.shader == null)
+                        continue;
+                    ConversionKind kind = Classify(m.shader.name);
+                    if (kind == ConversionKind.ToUnlitParticles || kind == ConversionKind.ToUnlit)
+                        unique.Add(m);
+                }
+            }
+
+            int converted = 0;
+            int skipped = 0;
+            var samples = new List<string>();
+            RenderPipelineAsset graphicsBefore = GraphicsSettings.defaultRenderPipeline;
+
+            try
+            {
+                if (!dryRun)
+                    AssetDatabase.StartAssetEditing();
+
+                foreach (Material mat in unique)
+                {
+                    string path = AssetDatabase.GetAssetPath(mat);
+                    string shaderName = mat.shader.name;
+                    ConversionKind kind = Classify(shaderName);
+                    if (kind != ConversionKind.ToUnlitParticles && kind != ConversionKind.ToUnlit)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    if (samples.Count < 40)
+                        samples.Add($"{(string.IsNullOrEmpty(path) ? mat.name + " (instance)" : path)} ← {shaderName}");
+
+                    if (dryRun)
+                        continue;
+
+                    try
+                    {
+                        ConvertToHdrpUnlit(mat, hdrpUnlit, particlesStyle: true);
+                        if (!string.IsNullOrEmpty(path))
+                            EditorUtility.SetDirty(mat);
+                        converted++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"{LogPrefix} Particle convert failed {path}: {ex.Message}");
+                    }
+                }
+            }
+            finally
+            {
+                if (!dryRun)
+                {
+                    AssetDatabase.StopAssetEditing();
+                    AssetDatabase.SaveAssets();
+                }
+
+                // Never flip pipeline away from HDRP High.
+                if (graphicsBefore != null && GraphicsSettings.defaultRenderPipeline != graphicsBefore)
+                    GraphicsSettings.defaultRenderPipeline = graphicsBefore;
+            }
+
+            string summary =
+                $"{(dryRun ? "DRY RUN" : "APPLIED")}: scene particle candidates={unique.Count}, " +
+                $"converted={converted}, skipped={skipped}\n" +
+                string.Join("\n", samples);
+
+            if (showDialog)
+                EditorUtility.DisplayDialog("Scene Particle→HDRP", summary, "OK");
+
+            return summary;
         }
 
         /// <summary>MCP entry — writes audit markdown, returns summary text.</summary>
@@ -203,15 +308,24 @@ namespace Project.EditorTools.Rendering
                     AssetDatabase.SaveAssets();
                 }
 
-                // Guard: never leave Phase 6 applied.
-                if (urpAsset != null)
+                // Preserve active pipeline. Pre-Phase-6 builds temporarily swapped RP assets
+                // during convert; do NOT force URP back once Graphics is already HDRP.
+                bool graphicsIsHdrp = graphicsBefore != null
+                    && graphicsBefore.name.IndexOf("HDRP", StringComparison.OrdinalIgnoreCase) >= 0;
+                if (!graphicsIsHdrp && urpAsset != null
+                    && GraphicsSettings.defaultRenderPipeline != graphicsBefore)
                 {
-                    GraphicsSettings.defaultRenderPipeline = urpAsset;
-                    QualitySettings.renderPipeline = urpAsset;
+                    GraphicsSettings.defaultRenderPipeline = graphicsBefore != null ? graphicsBefore : urpAsset;
+                    if (QualitySettings.renderPipeline != null
+                        && QualitySettings.renderPipeline.name.IndexOf("HDRP", StringComparison.OrdinalIgnoreCase) < 0)
+                        QualitySettings.renderPipeline = graphicsBefore != null ? graphicsBefore : urpAsset;
                 }
-                else if (graphicsBefore != null)
+                else if (graphicsBefore != null
+                         && GraphicsSettings.defaultRenderPipeline != graphicsBefore
+                         && graphicsIsHdrp)
                 {
                     GraphicsSettings.defaultRenderPipeline = graphicsBefore;
+                    QualitySettings.renderPipeline = graphicsBefore;
                 }
 
                 if (QualitySettings.GetQualityLevel() != qualityBefore)
@@ -568,6 +682,12 @@ namespace Project.EditorTools.Rendering
             if (shaderName == UrpParticlesUnlitName || shaderName == UrpParticlesLitName)
                 return ConversionKind.ToUnlitParticles;
 
+            // Built-in / mobile particle leftovers — common pink sources under HDRP.
+            if (shaderName.StartsWith("Legacy Shaders/Particles/", StringComparison.Ordinal)
+                || shaderName.StartsWith("Mobile/Particles/", StringComparison.Ordinal)
+                || shaderName.StartsWith("Particles/", StringComparison.Ordinal))
+                return ConversionKind.ToUnlitParticles;
+
             return ConversionKind.Skip;
         }
 
@@ -666,10 +786,19 @@ namespace Project.EditorTools.Rendering
             Vector2 baseScale = GetTexScale(mat, "_BaseMap", "_MainTex");
             Vector2 baseOffset = GetTexOffset(mat, "_BaseMap", "_MainTex");
             Color baseColor = GetColor(mat, "_BaseColor", "_Color", Color.white);
+            // Built-in particle shaders often tint via _TintColor.
+            if (particlesStyle && mat.HasProperty("_TintColor"))
+                baseColor = mat.GetColor("_TintColor");
+
             float surface = GetFloat(mat, "_Surface", 0f);
             float blend = GetFloat(mat, "_Blend", 0f);
             float cull = GetFloat(mat, "_Cull", 2f);
             bool doubleSided = mat.doubleSidedGI || Mathf.Approximately(cull, 0f) || particlesStyle;
+            string srcShader = mat.shader != null ? mat.shader.name : string.Empty;
+            bool additive = particlesStyle
+                && (srcShader.IndexOf("Additive", StringComparison.OrdinalIgnoreCase) >= 0
+                    || srcShader.IndexOf("Add ", StringComparison.OrdinalIgnoreCase) >= 0
+                    || Mathf.Approximately(blend, 2f));
 
             mat.shader = hdrpUnlit;
             if (baseMap != null)
@@ -684,7 +813,9 @@ namespace Project.EditorTools.Rendering
             HDMaterial.SetSurfaceType(mat, transparent);
             if (transparent && mat.HasProperty("_BlendMode"))
             {
-                float hdrpBlend = blend switch { 1f => 4f, 2f => 1f, _ => particlesStyle ? 1f : 0f };
+                float hdrpBlend = additive
+                    ? 1f
+                    : blend switch { 1f => 4f, 2f => 1f, _ => particlesStyle ? 1f : 0f };
                 mat.SetFloat("_BlendMode", hdrpBlend);
             }
 

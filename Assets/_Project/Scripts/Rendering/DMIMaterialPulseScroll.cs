@@ -7,7 +7,8 @@ namespace Project.Rendering
     /// <see cref="Renderer"/> (MeshRenderer / SkinnedMeshRenderer) via
     /// <see cref="MaterialPropertyBlock"/> so shared materials are not permanently mutated.
     /// <para>
-    /// Supports <b>URP Lit / Unlit</b> (<c>_BaseColor</c>, <c>_EmissionColor</c>, <c>_EMISSION</c>)
+    /// Supports <b>HDRP Lit / Unlit</b> (<c>_EmissiveColor</c>, <c>_BaseColorMap_ST</c>),
+    /// <b>URP Lit / Unlit</b> (<c>_BaseColor</c>, <c>_EmissionColor</c>, <c>_EMISSION</c>),
     /// and <b>glTFast Shader Graph</b> <c>glTF-pbrMetallicRoughness</c>
     /// (<c>baseColorFactor</c>, <c>emissiveFactor</c>, <c>_EMISSIVE</c>).
     /// </para>
@@ -15,8 +16,11 @@ namespace Project.Rendering
     /// <b>Emission pulse:</b> Min/Max are intensity <b>multipliers</b> on the authored
     /// emissive color. If authored emission is near-black, Min/Max are treated as
     /// <b>absolute HDR intensity</b> on <see cref="fallbackEmissionTint"/>.
+    /// HDRP Lit also exposes a legacy <c>_EmissionColor</c> property — this driver prefers
+    /// <c>_EmissiveColor</c> so pulses hit the real HDRP emissive channel.
     /// When Pulse Emission is on, the shader's emission keyword is enabled if present
-    /// (URP <c>_EMISSION</c>; glTF <c>_EMISSIVE</c>). MPB cannot set keywords.
+    /// (HDRP <c>_EMISSIVE_COLOR</c>; URP <c>_EMISSION</c>; glTF <c>_EMISSIVE</c>).
+    /// MPB cannot set keywords.
     /// </para>
     /// <para>
     /// <b>Creature coexistence:</b> Do not drive the same material slots as
@@ -39,16 +43,23 @@ namespace Project.Rendering
     {
         private const float NearBlackLuminance = 0.002f;
 
-        // URP Lit / Unlit
+        // URP Lit / Unlit (+ HDRP Lit also exposes several of these names)
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int UnlitColorId = Shader.PropertyToID("_UnlitColor");
         private static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int EmissiveColorId = Shader.PropertyToID("_EmissiveColor");
+        private static readonly int EmissiveIntensityId = Shader.PropertyToID("_EmissiveIntensity");
+        private static readonly int UseEmissiveIntensityId = Shader.PropertyToID("_UseEmissiveIntensity");
         private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
+        private static readonly int BaseColorMapStId = Shader.PropertyToID("_BaseColorMap_ST");
+        private static readonly int UnlitColorMapStId = Shader.PropertyToID("_UnlitColorMap_ST");
         private static readonly int MainTexStId = Shader.PropertyToID("_MainTex_ST");
         private static readonly int EmissionMapStId = Shader.PropertyToID("_EmissionMap_ST");
+        private static readonly int EmissiveColorMapStId = Shader.PropertyToID("_EmissiveColorMap_ST");
         private static readonly int BumpMapStId = Shader.PropertyToID("_BumpMap_ST");
+        private static readonly int NormalMapStId = Shader.PropertyToID("_NormalMap_ST");
 
         // glTFast Shader Graphs/glTF-pbrMetallicRoughness
         private static readonly int GltfBaseColorFactorId = Shader.PropertyToID("baseColorFactor");
@@ -59,6 +70,7 @@ namespace Project.Rendering
         private static readonly int GltfNormalTextureStId = Shader.PropertyToID("normalTexture_ST");
 
         private const string UrpEmissionKeyword = "_EMISSION";
+        private const string HdrpEmissiveColorKeyword = "_EMISSIVE_COLOR";
         private const string GltfEmissiveKeyword = "_EMISSIVE";
 
         public enum AlphaPulseTarget
@@ -101,7 +113,7 @@ namespace Project.Rendering
 
         [Header("Emission Pulse")]
         [Tooltip(
-            "Pulse emissive HDR (URP _EmissionColor / _EmissiveColor, or glTF emissiveFactor). " +
+            "Pulse emissive HDR (HDRP _EmissiveColor, URP _EmissionColor, or glTF emissiveFactor). " +
             "Min/Max multiply authored emission when it has luminance; " +
             "if authored is near-black, Min/Max are absolute HDR intensity on Fallback Emission Tint. " +
             "Conflicts with DMICreatureEmissionDriver on the same slots — disable one.")]
@@ -127,7 +139,7 @@ namespace Project.Rendering
 
         [Tooltip(
             "When Pulse Emission is on, enable the shader emission keyword on target materials " +
-            "(URP _EMISSION, glTF _EMISSIVE). Required for URP Lit; glTF usually already has _EMISSIVE. " +
+            "(HDRP _EMISSIVE_COLOR, URP _EMISSION, glTF _EMISSIVE). Required for lit emissive paths. " +
             "MPB cannot set keywords. May dirty shared material assets.")]
         [SerializeField] private bool ensureEmissionKeyword = true;
 
@@ -179,7 +191,13 @@ namespace Project.Rendering
 
             public bool hasEmission;
             public int emissionPropId;
-            /// <summary>URP uses _EMISSION; glTF Shader Graph uses _EMISSIVE.</summary>
+            /// <summary>
+            /// Optional secondary emission id (HDRP Lit often has both <c>_EmissiveColor</c> and
+            /// a legacy <c>_EmissionColor</c>). Dual-write keeps MPB overrides coherent.
+            /// </summary>
+            public bool hasSecondaryEmission;
+            public int secondaryEmissionPropId;
+            /// <summary>HDRP uses _EMISSIVE_COLOR; URP uses _EMISSION; glTF uses _EMISSIVE.</summary>
             public string emissionKeyword;
 
             public bool hasBaseMapSt;
@@ -334,9 +352,9 @@ namespace Project.Rendering
                     warnedMissingEmission = true;
                     Debug.LogWarning(
                         "[DMIMaterialPulseScroll] No emission color property on '" + name +
-                        "' materials (_EmissionColor / _EmissiveColor / emissiveFactor). " +
+                        "' materials (_EmissiveColor / _EmissionColor / emissiveFactor). " +
                         "Pulse Emission will boost base color HDR as a fallback. " +
-                        "Prefer enabling Emission on a URP Lit material.",
+                        "Prefer enabling Emission on HDRP Lit (or URP Lit).",
                         this);
                 }
             }
@@ -431,7 +449,10 @@ namespace Project.Rendering
         {
             if (slot.hasEmission)
             {
-                propertyBlock.SetColor(slot.emissionPropId, ResolvePulsedEmission(ref slot, emissionMul));
+                Color pulsed = ResolvePulsedEmission(ref slot, emissionMul);
+                propertyBlock.SetColor(slot.emissionPropId, pulsed);
+                if (slot.hasSecondaryEmission)
+                    propertyBlock.SetColor(slot.secondaryEmissionPropId, pulsed);
                 return;
             }
 
@@ -444,7 +465,10 @@ namespace Project.Rendering
         {
             if (slot.hasEmission)
             {
-                mat.SetColor(slot.emissionPropId, ResolvePulsedEmission(ref slot, emissionMul));
+                Color pulsed = ResolvePulsedEmission(ref slot, emissionMul);
+                mat.SetColor(slot.emissionPropId, pulsed);
+                if (slot.hasSecondaryEmission)
+                    mat.SetColor(slot.secondaryEmissionPropId, pulsed);
                 return;
             }
 
@@ -596,15 +620,42 @@ namespace Project.Rendering
             if (mat == null || !slot.hasEmission)
                 return;
 
+            // HDRP Lit: ensure emissive color keyword. Map keyword may already be on when
+            // an emissive texture is authored; color-only still needs _EMISSIVE_COLOR.
+            if (IsHdrpShader(mat.shader) && slot.emissionPropId == EmissiveColorId)
+            {
+                if (mat.HasProperty(UseEmissiveIntensityId) && mat.GetFloat(UseEmissiveIntensityId) > 0.5f)
+                {
+                    // Bake intensity into color so MPB _EmissiveColor pulses are visible.
+                    mat.SetFloat(UseEmissiveIntensityId, 0f);
+                    if (mat.HasProperty(EmissiveColorId))
+                        mat.SetColor(EmissiveColorId, slot.authoredEmission);
+                }
+
+                if (!mat.IsKeywordEnabled(HdrpEmissiveColorKeyword))
+                    mat.EnableKeyword(HdrpEmissiveColorKeyword);
+                return;
+            }
+
             // glTF often exposes emissiveFactor without needing a keyword toggle, but
             // _EMISSIVE is still the graph's feature flag when present.
             if (string.IsNullOrEmpty(slot.emissionKeyword))
                 return;
 
             // Only toggle the keyword when missing. Avoid writing GI flags onto shared
-            // material assets (that dirties project materials and can desync URP variants).
+            // material assets (that dirties project materials and can desync variants).
             if (!mat.IsKeywordEnabled(slot.emissionKeyword))
                 mat.EnableKeyword(slot.emissionKeyword);
+        }
+
+        private static bool IsHdrpShader(Shader shader)
+        {
+            if (shader == null)
+                return false;
+
+            string name = shader.name;
+            return name.StartsWith("HDRP/", System.StringComparison.Ordinal)
+                   || name.StartsWith("Hidden/HDRP", System.StringComparison.Ordinal);
         }
 
         private void ResolveRenderer()
@@ -621,15 +672,18 @@ namespace Project.Rendering
 
         private static void CacheFromMaterial(Material mat, ref SlotCache slot)
         {
-            // Base color: URP Lit → legacy → glTF PBR
+            bool hdrp = IsHdrpShader(mat.shader);
+
+            // Base color: HDRP Lit/Unlit → URP Lit → legacy → glTF PBR
             if (TryBindColor(mat, BaseColorId, ref slot.hasBaseColor, ref slot.baseColorPropId, ref slot.authoredBaseColor)
+                || TryBindColor(mat, UnlitColorId, ref slot.hasBaseColor, ref slot.baseColorPropId, ref slot.authoredBaseColor)
                 || TryBindColor(mat, ColorId, ref slot.hasBaseColor, ref slot.baseColorPropId, ref slot.authoredBaseColor)
                 || TryBindColor(mat, GltfBaseColorFactorId, ref slot.hasBaseColor, ref slot.baseColorPropId, ref slot.authoredBaseColor))
             {
                 // bound
             }
 
-            // Cutoff: URP → glTF
+            // Cutoff: URP/HDRP → glTF
             if (mat.HasProperty(CutoffId))
             {
                 slot.hasCutoff = true;
@@ -643,12 +697,41 @@ namespace Project.Rendering
                 slot.authoredCutoff = mat.GetFloat(GltfAlphaCutoffId);
             }
 
-            // Emission: URP Lit → HDRP-style → glTF emissiveFactor
-            if (TryBindColor(mat, EmissionColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
+            // Emission: prefer HDRP _EmissiveColor over legacy _EmissionColor.
+            // HDRP Lit exposes BOTH — binding _EmissionColor first made pulses drive the
+            // wrong channel while real emissive stayed static.
+            if (hdrp && TryBindColor(mat, EmissiveColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
+            {
+                slot.emissionKeyword = HdrpEmissiveColorKeyword;
+                if (mat.HasProperty(EmissionColorId))
+                {
+                    slot.hasSecondaryEmission = true;
+                    slot.secondaryEmissionPropId = EmissionColorId;
+                }
+
+                // When UseEmissiveIntensity is on, authored RGB is LDR and intensity is separate.
+                if (mat.HasProperty(UseEmissiveIntensityId)
+                    && mat.GetFloat(UseEmissiveIntensityId) > 0.5f
+                    && mat.HasProperty(EmissiveIntensityId))
+                {
+                    float intensity = mat.GetFloat(EmissiveIntensityId);
+                    slot.authoredEmission *= intensity;
+                }
+            }
+            else if (!hdrp && TryBindColor(mat, EmissionColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
             {
                 slot.emissionKeyword = UrpEmissionKeyword;
+                if (mat.HasProperty(EmissiveColorId))
+                {
+                    slot.hasSecondaryEmission = true;
+                    slot.secondaryEmissionPropId = EmissiveColorId;
+                }
             }
             else if (TryBindColor(mat, EmissiveColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
+            {
+                slot.emissionKeyword = hdrp ? HdrpEmissiveColorKeyword : UrpEmissionKeyword;
+            }
+            else if (TryBindColor(mat, EmissionColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
             {
                 slot.emissionKeyword = UrpEmissionKeyword;
             }
@@ -660,23 +743,27 @@ namespace Project.Rendering
             if (slot.hasEmission)
                 slot.useAbsoluteEmissionIntensity = EmissionLuminance(slot.authoredEmission) < NearBlackLuminance;
 
-            // Base UV ST
-            if (TryBindVector(mat, BaseMapStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt)
+            // Base UV ST: HDRP Lit → HDRP Unlit → URP → legacy → glTF
+            if (TryBindVector(mat, BaseColorMapStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt)
+                || TryBindVector(mat, UnlitColorMapStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt)
+                || TryBindVector(mat, BaseMapStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt)
                 || TryBindVector(mat, MainTexStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt)
                 || TryBindVector(mat, GltfBaseColorTextureStId, ref slot.hasBaseMapSt, ref slot.baseMapStPropId, ref slot.authoredBaseMapSt))
             {
                 // bound
             }
 
-            // Emission UV ST
-            if (TryBindVector(mat, EmissionMapStId, ref slot.hasEmissionMapSt, ref slot.emissionMapStPropId, ref slot.authoredEmissionMapSt)
+            // Emission UV ST: HDRP → URP → glTF
+            if (TryBindVector(mat, EmissiveColorMapStId, ref slot.hasEmissionMapSt, ref slot.emissionMapStPropId, ref slot.authoredEmissionMapSt)
+                || TryBindVector(mat, EmissionMapStId, ref slot.hasEmissionMapSt, ref slot.emissionMapStPropId, ref slot.authoredEmissionMapSt)
                 || TryBindVector(mat, GltfEmissiveTextureStId, ref slot.hasEmissionMapSt, ref slot.emissionMapStPropId, ref slot.authoredEmissionMapSt))
             {
                 // bound
             }
 
-            // Normal UV ST
-            if (TryBindVector(mat, BumpMapStId, ref slot.hasBumpMapSt, ref slot.bumpMapStPropId, ref slot.authoredBumpMapSt)
+            // Normal UV ST: HDRP → URP → glTF
+            if (TryBindVector(mat, NormalMapStId, ref slot.hasBumpMapSt, ref slot.bumpMapStPropId, ref slot.authoredBumpMapSt)
+                || TryBindVector(mat, BumpMapStId, ref slot.hasBumpMapSt, ref slot.bumpMapStPropId, ref slot.authoredBumpMapSt)
                 || TryBindVector(mat, GltfNormalTextureStId, ref slot.hasBumpMapSt, ref slot.bumpMapStPropId, ref slot.authoredBumpMapSt))
             {
                 // bound

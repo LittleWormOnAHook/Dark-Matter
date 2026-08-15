@@ -11,6 +11,8 @@ namespace Project.Rendering.Editor
         {
             EditorGUILayout.HelpBox(
                 "Supported shaders:\n" +
+                "• HDRP Lit / Unlit — _BaseColor / _UnlitColor, _EmissiveColor (+ _EMISSIVE_COLOR),\n" +
+                "  _BaseColorMap_ST / _EmissiveColorMap_ST / _NormalMap_ST\n" +
                 "• URP Lit / Unlit — _BaseColor, _EmissionColor (+ _EMISSION), _BaseMap_ST / _EmissionMap_ST\n" +
                 "• glTF-pbrMetallicRoughness (glTFast) — baseColorFactor, emissiveFactor (+ _EMISSIVE),\n" +
                 "  baseColorTexture_ST / emissiveTexture_ST / normalTexture_ST\n\n" +
@@ -18,6 +20,7 @@ namespace Project.Rendering.Editor
                 "• Authored emission has color → multipliers on that HDR color\n" +
                 "• Authored emission near-black → absolute HDR intensity × Fallback Tint\n" +
                 "• No emission property → falls back to boosting base color HDR\n" +
+                "On HDRP Lit, _EmissiveColor is preferred over legacy _EmissionColor.\n" +
                 "Pulse Emission auto-enables the shader emission keyword when needed.\n\n" +
                 "Prefer MaterialPropertyBlock (default) so shared materials are not mutated.\n" +
                 "Preview In Edit Mode shows the pulse without Play (uses MPB only).\n" +
@@ -56,8 +59,8 @@ namespace Project.Rendering.Editor
             if (renderer != null && renderer.sharedMaterial != null)
             {
                 Material mat = renderer.sharedMaterial;
-                bool hasEm = mat.HasProperty("_EmissionColor")
-                             || mat.HasProperty("_EmissiveColor")
+                bool hasEm = mat.HasProperty("_EmissiveColor")
+                             || mat.HasProperty("_EmissionColor")
                              || mat.HasProperty("emissiveFactor");
                 EditorGUILayout.Space(4f);
                 EditorGUILayout.LabelField("Bind Preview", EditorStyles.boldLabel);
@@ -65,10 +68,17 @@ namespace Project.Rendering.Editor
                 EditorGUILayout.LabelField("Shader", mat.shader != null ? mat.shader.name : "(null)");
                 EditorGUILayout.LabelField("Material", mat.name);
                 EditorGUILayout.LabelField("Has emission prop", hasEm ? "Yes" : "No (base-color fallback)");
-                if (mat.HasProperty("_EmissionColor"))
+                bool hdrp = mat.shader != null && mat.shader.name.StartsWith("HDRP/", System.StringComparison.Ordinal);
+                if (hdrp && mat.HasProperty("_EmissiveColor"))
+                    EditorGUILayout.LabelField("_EmissiveColor", mat.GetColor("_EmissiveColor").ToString());
+                else if (mat.HasProperty("_EmissionColor"))
                     EditorGUILayout.LabelField("_EmissionColor", mat.GetColor("_EmissionColor").ToString());
                 else if (mat.HasProperty("emissiveFactor"))
                     EditorGUILayout.LabelField("emissiveFactor", mat.GetColor("emissiveFactor").ToString());
+                if (mat.HasProperty("_BaseColorMap_ST"))
+                    EditorGUILayout.LabelField("UV ST", "_BaseColorMap_ST (HDRP)");
+                else if (mat.HasProperty("_BaseMap_ST"))
+                    EditorGUILayout.LabelField("UV ST", "_BaseMap_ST (URP)");
                 if (!Application.isPlaying)
                     EditorGUILayout.HelpBox(
                         "Pulse drives materials at runtime and in Edit Mode when Preview is on. " +

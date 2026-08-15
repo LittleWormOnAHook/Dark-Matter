@@ -178,29 +178,31 @@ namespace Project.EditorTools.Rendering
                 AssetDatabase.StopAssetEditing();
                 AssetDatabase.SaveAssets();
 
-                // Never leave Phase 6 half-applied. Prefer PC_RPAsset when present.
-                RenderPipelineAsset restorePipeline = urpAsset != null ? urpAsset : graphicsBefore;
-                if (restorePipeline != null)
+                // Preserve active pipeline after Phase 6. Only restore a pre-convert snapshot
+                // when Graphics was not already HDRP.
+                bool graphicsWasHdrp = graphicsBefore != null
+                    && graphicsBefore.name.IndexOf("HDRP", StringComparison.OrdinalIgnoreCase) >= 0;
+                if (graphicsWasHdrp)
                 {
-                    GraphicsSettings.defaultRenderPipeline = restorePipeline;
-                    QualitySettings.renderPipeline = restorePipeline;
+                    if (GraphicsSettings.defaultRenderPipeline != graphicsBefore)
+                        GraphicsSettings.defaultRenderPipeline = graphicsBefore;
+                    if (qualityRpBefore != null && QualitySettings.renderPipeline != qualityRpBefore)
+                        QualitySettings.renderPipeline = qualityRpBefore;
                 }
-                else if (GraphicsSettings.defaultRenderPipeline != graphicsBefore)
+                else
                 {
-                    GraphicsSettings.defaultRenderPipeline = graphicsBefore;
+                    RenderPipelineAsset restorePipeline = urpAsset != null ? urpAsset : graphicsBefore;
+                    if (restorePipeline != null)
+                    {
+                        GraphicsSettings.defaultRenderPipeline = restorePipeline;
+                        QualitySettings.renderPipeline = restorePipeline;
+                    }
                 }
 
                 if (QualitySettings.GetQualityLevel() != qualityBefore)
                     QualitySettings.SetQualityLevel(qualityBefore, applyExpensiveChanges: false);
 
-                // Keep active High/playable tier on URP even if a prior snapshot was wrong.
-                if (urpAsset != null)
-                    QualitySettings.renderPipeline = urpAsset;
-                else if (QualitySettings.renderPipeline != qualityRpBefore)
-                    QualitySettings.renderPipeline = qualityRpBefore;
-
                 AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
             }
 
             return report;
@@ -224,6 +226,11 @@ namespace Project.EditorTools.Rendering
                 return ConversionKind.ToUnlit;
 
             if (shaderName == UrpParticlesUnlitName || shaderName == UrpParticlesLitName)
+                return ConversionKind.ToUnlitParticles;
+
+            if (shaderName.StartsWith("Legacy Shaders/Particles/", StringComparison.Ordinal)
+                || shaderName.StartsWith("Mobile/Particles/", StringComparison.Ordinal)
+                || shaderName.StartsWith("Particles/", StringComparison.Ordinal))
                 return ConversionKind.ToUnlitParticles;
 
             return ConversionKind.Skip;
@@ -352,6 +359,8 @@ namespace Project.EditorTools.Rendering
             Vector2 baseScale = GetTexScale(mat, "_BaseMap", "_MainTex");
             Vector2 baseOffset = GetTexOffset(mat, "_BaseMap", "_MainTex");
             Color baseColor = GetColor(mat, "_BaseColor", "_Color", Color.white);
+            if (particlesStyle && mat.HasProperty("_TintColor"))
+                baseColor = mat.GetColor("_TintColor");
 
             Texture emissionMap = GetTex(mat, "_EmissionMap");
             Color emissionColor = GetColor(mat, "_EmissionColor", null, Color.black);
@@ -365,6 +374,10 @@ namespace Project.EditorTools.Rendering
             float blend = GetFloat(mat, "_Blend", 0f);
             float cull = GetFloat(mat, "_Cull", 2f);
             bool doubleSided = mat.doubleSidedGI || Mathf.Approximately(cull, 0f) || particlesStyle;
+            string srcShader = mat.shader != null ? mat.shader.name : string.Empty;
+            bool additive = particlesStyle
+                && (srcShader.IndexOf("Additive", StringComparison.OrdinalIgnoreCase) >= 0
+                    || Mathf.Approximately(blend, 2f));
 
             // Particles often use additive transparent.
             if (particlesStyle && surface < 0.5f && mat.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"))
@@ -400,7 +413,9 @@ namespace Project.EditorTools.Rendering
             HDMaterial.SetSurfaceType(mat, transparent);
             if (transparent && mat.HasProperty("_BlendMode"))
             {
-                float hdrpBlend = blend switch
+                float hdrpBlend = additive
+                    ? 1f
+                    : blend switch
                 {
                     1f => 4f,
                     2f => 1f,
