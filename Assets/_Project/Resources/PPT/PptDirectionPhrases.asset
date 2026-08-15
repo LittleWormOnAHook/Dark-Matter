@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 592488c6e61b4b7e8a2a09dbf9650e14, type: 3}
+  m_Name: PptDirectionPhrases
+  m_EditorClassIdentifier: 
+  northPhrases:
+  - north of here
+  - to the north
+  southPhrases:
+  - south of here
+  - to the south
+  eastPhrases:
+  - east of here
+  - to the east
+  westPhrases:
+  - west of here
+  - to the west
+  northeastPhrases:
+  - northeast of here
+  northwestPhrases:
+  - northwest of here
+  southeastPhrases:
+  - southeast of here
+  southwestPhrases:
+  - southwest of here
+  generalAreaPhrases:
+  - Try looking around {area}.
+  - Somewhere in {area} — that's the best I can do.
+  - Head toward {area} and keep your eyes open.
+  referNpcPhrases:
+  - Ask {npc} — they know that area better.
+  - You want {npc} for that kind of direction.
+  - '{npc} might point you the right way.'
+  unknownBarks:
+  - Never heard of that.
+  - Sorry, can't help you there.
+  - No idea where that is.
+  - Try someone closer to town.

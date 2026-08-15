@@ -68,6 +68,7 @@ namespace Project.Core
         public int fogOfWarResolution;
         public string[] scannedDiscoveryIds;
         public string[] identifiedResourceIds;
+        public string[] pptKnownKeywordIds;
     }
 
     /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it

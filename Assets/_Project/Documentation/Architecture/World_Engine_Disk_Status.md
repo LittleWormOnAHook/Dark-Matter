@@ -28,6 +28,7 @@ A Features module is shipped only when its `.cs` / `.asmdef` files exist under `
 | `CompanionSystemsBootstrap` Features chain | **Wired:** GameState → WorldState → Directors |
 | Smoke F9 / F10 / F11 | **Present** (`DarkMatterSmokeDriver`) |
 | `Features/Communications` Runtime | **Absent** (Run 2) |
+| PPT People / Places / Things | **Phase 1 on disk** — `Scripts/PPT` runtime + `Resources/PPT` sample registry + GERALD Hold E. Adapter: `Features/PPT` |
 | `Features/Experience` / `Generation` | **Absent** |
 | `Scripts/Survival/Exposure/` | Present |
 | `EchoGenerator` + chronicle + building ops save | Present |

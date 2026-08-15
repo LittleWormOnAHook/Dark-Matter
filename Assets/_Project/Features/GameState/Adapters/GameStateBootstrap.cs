@@ -1,4 +1,5 @@
 using Project.Features.GameState;
+using Project.Features.PPT.Adapters;
 using UnityEngine;
 
 namespace Project.Features.GameState.Adapters
@@ -22,10 +23,11 @@ namespace Project.Features.GameState.Adapters
             service.RegisterProvider(new ResearchGameStateProvider());
             service.RegisterProvider(new CrewGameStateProvider());
             service.RegisterProvider(new BuildingGameStateProvider());
+            service.RegisterProvider(new PptGameStateProvider());
 
             GameStateService.SetInstance(service);
             Service = service;
-            Debug.Log("[GameState] Bootstrap complete — 9 providers registered.");
+            Debug.Log("[GameState] Bootstrap complete — 10 providers registered.");
             return service;
         }
     }

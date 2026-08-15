@@ -10,6 +10,7 @@ using Project.Core;
 using Project.Crafting;
 using Project.Inventory;
 using Project.Pet;
+using Project.PPT;
 using Project.Quests;
 using Project.Survival;
 using Project.UI;
@@ -125,7 +126,7 @@ namespace Project.Interaction
             if (!useHeld)
                 return;
 
-            IHoldWorldUsable holdTarget = FindHoldHarvestTarget(context);
+            IHoldWorldUsable holdTarget = FindHoldTarget(context);
             if (holdTarget == null || !holdTarget.CanBeginHold(context))
                 return;
 
@@ -156,10 +157,14 @@ namespace Project.Interaction
             return false;
         }
 
-        private IHoldWorldUsable FindHoldHarvestTarget(WorldUseContext context)
+        private IHoldWorldUsable FindHoldTarget(WorldUseContext context)
         {
             if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
             {
+                PptNpcInteractor aimedDirections = context.AimHit.Value.collider.GetComponentInParent<PptNpcInteractor>();
+                if (aimedDirections != null && aimedDirections.CanBeginHold(context))
+                    return aimedDirections;
+
                 ResourceNode aimed = context.AimHit.Value.collider.GetComponentInParent<ResourceNode>();
                 if (aimed != null
                     && aimed.interactionMode == ResourceNodeInteractionMode.HoldHarvest
@@ -167,9 +172,28 @@ namespace Project.Interaction
                     return aimed;
             }
 
-            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude);
+            PptNpcInteractor[] directionNpcs = SceneComponentCache.GetAll<PptNpcInteractor>(FindObjectsInactive.Exclude);
             IHoldWorldUsable best = null;
             float bestScore = float.MinValue;
+
+            for (int i = 0; i < directionNpcs.Length; i++)
+            {
+                PptNpcInteractor interactor = directionNpcs[i];
+                if (interactor == null || !interactor.CanBeginHold(context))
+                    continue;
+
+                float score = interactor.GetUsePriority(context);
+                if (score < 70f || score <= bestScore)
+                    continue;
+
+                best = interactor;
+                bestScore = score;
+            }
+
+            if (best != null)
+                return best;
+
+            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude);
             for (int i = 0; i < nodes.Length; i++)
             {
                 ResourceNode node = nodes[i];
@@ -1230,7 +1254,13 @@ namespace Project.Interaction
 
             QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
             if (questGiver != null)
+            {
+                PptNpcInteractor directions = questGiver.GetComponent<PptNpcInteractor>();
+                if (directions != null && directions.Profile != null && directions.Profile.HasTalkOption(PptTalkOptions.Directions))
+                    return questGiver.GetInteractionPromptMessage() + " · Hold E — Ask directions";
+
                 return questGiver.GetInteractionPromptMessage();
+            }
 
             CraftingStation craftingStation = FindAimedCraftingStationInRange(context);
             if (craftingStation != null)

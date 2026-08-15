@@ -41,6 +41,7 @@ namespace Project.Quests
         private Quaternion visualBaseLocalRotation;
 
         public string NpcId => npcId;
+        public string DisplayName => displayName;
         public bool IsPlayerInRange => playerInRange;
         public QuestGiverOffer[] QuestOffers => questOffers;
 

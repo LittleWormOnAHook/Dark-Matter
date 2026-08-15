@@ -11,6 +11,7 @@ namespace Project.Features.GameState
         public ResearchSnapshot Research { get; set; } = ResearchSnapshot.Empty;
         public CrewSnapshot Crew { get; set; } = CrewSnapshot.Empty;
         public BuildingSnapshot Buildings { get; set; } = BuildingSnapshot.Empty;
+        public PptKnowledgeSnapshot PptKnowledge { get; set; } = PptKnowledgeSnapshot.Empty;
 
         public GameStateSnapshot Build(long capturedAtUtcTicks)
         {
@@ -24,7 +25,8 @@ namespace Project.Features.GameState
                 Colony,
                 Research,
                 Crew,
-                Buildings);
+                Buildings,
+                PptKnowledge);
         }
     }
 }

@@ -15982,6 +15982,8 @@ GameObject:
   - component: {fileID: 722856540}
   - component: {fileID: 722856539}
   - component: {fileID: 722856538}
+  - component: {fileID: 722856542}
+  - component: {fileID: 722856543}
   m_Layer: 0
   m_Name: GERALD
   m_TagString: Untagged
@@ -16123,6 +16125,37 @@ CapsuleCollider:
   m_Height: 2.11
   m_Direction: 1
   m_Center: {x: 0, y: 0.42, z: 0}
+--- !u!114 &722856542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 722856536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98c5d7814b0142b983d55e0ae8f99c06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.PPT.PptNpcInteractor
+  npcId: pioneer_guide
+  profile: {fileID: 11400000, guid: 251cf7e2c11e4e64abee4f32ef5d6387, type: 2}
+  interactRange: 5
+  holdDurationSeconds: 0.75
+  holdPromptText: Hold E — Ask for directions
+--- !u!114 &722856543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 722856536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a5ed8534b884ffa8d2a3c59e34087ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.PPT.PptNpcGestureController
+  animator: {fileID: 0}
+  visualRoot: {fileID: 1596636410}
 --- !u!1 &729263929
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,6 +5,7 @@ using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Player;
+using Project.UI;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -393,7 +394,8 @@ namespace Project.Player.Invector
             {
                 // Binocular FOV zoom is owned by OpticsController — don't also change follow distance.
                 bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
-                if (!opticsOwnsScroll)
+                bool minimapOwnsScroll = MapUI.IsMinimapScrollZoomActive;
+                if (!opticsOwnsScroll && !minimapOwnsScroll)
                     ApplyMouseWheelZoom();
             }
         }

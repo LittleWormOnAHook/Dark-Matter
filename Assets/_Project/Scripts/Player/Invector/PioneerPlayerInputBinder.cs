@@ -131,8 +131,7 @@ namespace Project.Player.Invector
                         FindAnyObjectByType<InventoryUI>()?.OnToggleInventory(context);
                     break;
                 case "Map":
-                    if (context.performed)
-                        FindAnyObjectByType<MapUI>()?.OnToggleMap(context);
+                    FindAnyObjectByType<MapUI>()?.OnToggleMap(context);
                     break;
                 case "Journal":
                     if (context.performed)
