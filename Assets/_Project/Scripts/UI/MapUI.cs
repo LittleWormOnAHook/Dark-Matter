@@ -151,8 +151,14 @@ namespace Project.UI
             if (MapFogOfWar.Instance != null)
                 MapFogOfWar.Instance.FogUpdated -= HandleFogUpdated;
 
+            // Local teardown only. CloseFullMap() can PopWindow → CloseAll → pause/HUD refresh,
+            // which runs GameObject.Find / SetActive on other UI while this object is disabling.
             if (fullMapOpen)
-                CloseFullMap();
+            {
+                fullMapOpen = false;
+                openedViaNavigator = false;
+                HideFullMapMarkerTooltip();
+            }
         }
 
         private void HandleFogUpdated()
@@ -461,6 +467,16 @@ namespace Project.UI
         {
             if (!fullMapOpen)
                 return;
+
+            // Already tearing down (OnDisable / inactive): never re-enter the navigator or HUD
+            // Find cascade from this call path.
+            if (!isActiveAndEnabled)
+            {
+                fullMapOpen = false;
+                openedViaNavigator = false;
+                HideFullMapMarkerTooltip();
+                return;
+            }
 
             if (openedViaNavigator)
             {
