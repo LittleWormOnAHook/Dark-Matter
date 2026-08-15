@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Interaction;
 using Project.Map;
+using Project.PPT;
 using Project.Progression;
 using Project.UI;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Project.Quests
         private UIManager uiManager;
         private QuestManager questManager;
         private Collider interactCollider;
+        private PptNpcInteractor pptInteractor;
         private bool playerInRange;
         private Animator idleAnimator;
         private Transform visualRoot;
@@ -54,6 +56,7 @@ namespace Project.Quests
             if (interactCollider != null)
                 interactCollider.isTrigger = true;
 
+            pptInteractor = GetComponent<PptNpcInteractor>();
             EnsureMapMarker();
         }
 
@@ -301,9 +304,22 @@ namespace Project.Quests
                 displayName,
                 questBoardIntro,
                 entries,
-                null);
+                null,
+                BuildAskDirectionsCallback());
 
             return true;
+        }
+
+        private Action BuildAskDirectionsCallback()
+        {
+            if (pptInteractor == null)
+                pptInteractor = GetComponent<PptNpcInteractor>();
+
+            if (pptInteractor == null || !pptInteractor.CanOfferDirections())
+                return null;
+
+            PptNpcInteractor interactor = pptInteractor;
+            return () => interactor.TryOpenDirectionsMenu();
         }
 
         private List<QuestBoardEntry> BuildQuestBoardEntries()
@@ -537,10 +553,15 @@ namespace Project.Quests
                 return;
 
             uiManager?.HideInteractionPrompt();
-            QuestGiverDialogUI.Show(displayName, message, () =>
-            {
-                onContinue?.Invoke();
-            }, buttonLabel);
+            QuestGiverDialogUI.Show(
+                displayName,
+                message,
+                () =>
+                {
+                    onContinue?.Invoke();
+                },
+                buttonLabel,
+                BuildAskDirectionsCallback());
         }
 
         private static int GetQuestXpReward(QuestDefinition quest)

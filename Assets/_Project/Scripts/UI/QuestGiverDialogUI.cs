@@ -35,8 +35,13 @@ namespace Project.UI
         private TextMeshProUGUI questActionButtonLabel;
         private Button abandonQuestButton;
         private TextMeshProUGUI abandonQuestButtonLabel;
+        private Button boardDirectionsButton;
+        private TextMeshProUGUI boardDirectionsButtonLabel;
+        private Button simpleDirectionsButton;
+        private TextMeshProUGUI simpleDirectionsButtonLabel;
         private bool abandonConfirmPending;
         private Action onClosed;
+        private Action onAskDirections;
         private bool built;
         private IList<QuestBoardEntry> currentEntries;
         private int selectedEntryIndex = -1;
@@ -53,7 +58,11 @@ namespace Project.UI
 
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
-            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null))
+            if (instance != null && instance.built
+                && (instance.questListScroll == null
+                    || instance.abandonQuestButton == null
+                    || instance.boardDirectionsButton == null
+                    || instance.simpleDirectionsButton == null))
             {
                 instance.TeardownInternal();
                 instance = null;
@@ -130,7 +139,12 @@ namespace Project.UI
             questActionButtonLabel = null;
             abandonQuestButton = null;
             abandonQuestButtonLabel = null;
+            boardDirectionsButton = null;
+            boardDirectionsButtonLabel = null;
+            simpleDirectionsButton = null;
+            simpleDirectionsButtonLabel = null;
             abandonConfirmPending = false;
+            onAskDirections = null;
             currentEntries = null;
             selectedEntryIndex = -1;
 
@@ -140,24 +154,34 @@ namespace Project.UI
             Destroy(gameObject);
         }
 
-        public static void Show(string speakerName, string message, Action closedCallback = null, string primaryLabel = "Continue")
+        public static void Show(
+            string speakerName,
+            string message,
+            Action closedCallback = null,
+            string primaryLabel = "Continue",
+            Action askDirectionsCallback = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel);
+            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel, askDirectionsCallback);
         }
 
-        public static void ShowQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback = null)
+        public static void ShowQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback = null,
+            Action askDirectionsCallback = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback);
+            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback, askDirectionsCallback);
         }
 
         private void Build(Transform canvasRoot)
@@ -220,7 +244,32 @@ namespace Project.UI
             LayoutElement bodyLayout = bodyText.gameObject.AddComponent<LayoutElement>();
             bodyLayout.flexibleHeight = 1f;
 
-            primaryButton = CreateButton(simpleContentRoot.transform, "Close", theme, out primaryButtonLabel);
+            GameObject simpleActionRow = new GameObject(
+                "SimpleActionRow",
+                typeof(RectTransform),
+                typeof(HorizontalLayoutGroup),
+                typeof(LayoutElement));
+            simpleActionRow.transform.SetParent(simpleContentRoot.transform, false);
+            HorizontalLayoutGroup simpleRowLayout = simpleActionRow.GetComponent<HorizontalLayoutGroup>();
+            simpleRowLayout.spacing = 10f;
+            simpleRowLayout.childControlWidth = true;
+            simpleRowLayout.childControlHeight = true;
+            simpleRowLayout.childForceExpandWidth = true;
+            simpleRowLayout.childForceExpandHeight = false;
+            LayoutElement simpleRowElement = simpleActionRow.GetComponent<LayoutElement>();
+            simpleRowElement.minHeight = 48f;
+            simpleRowElement.preferredHeight = 48f;
+
+            simpleDirectionsButton = CreateButton(
+                simpleActionRow.transform,
+                "Directions",
+                theme,
+                out simpleDirectionsButtonLabel);
+            simpleDirectionsButton.onClick.RemoveAllListeners();
+            simpleDirectionsButton.onClick.AddListener(HandleAskDirectionsClicked);
+            simpleDirectionsButton.gameObject.SetActive(false);
+
+            primaryButton = CreateButton(simpleActionRow.transform, "Close", theme, out primaryButtonLabel);
             primaryButton.onClick.RemoveAllListeners();
             primaryButton.onClick.AddListener(Close);
         }
@@ -286,6 +335,11 @@ namespace Project.UI
             questActionButton = CreateButton(actionRow.transform, "Accept", theme, out questActionButtonLabel);
             questActionButton.onClick.RemoveAllListeners();
             questActionButton.onClick.AddListener(HandleQuestActionClicked);
+
+            boardDirectionsButton = CreateButton(actionRow.transform, "Directions", theme, out boardDirectionsButtonLabel);
+            boardDirectionsButton.onClick.RemoveAllListeners();
+            boardDirectionsButton.onClick.AddListener(HandleAskDirectionsClicked);
+            boardDirectionsButton.gameObject.SetActive(false);
 
             abandonQuestButton = CreateButton(actionRow.transform, "Abandon Quest", theme, out abandonQuestButtonLabel);
             abandonQuestButton.onClick.RemoveAllListeners();
@@ -400,21 +454,34 @@ namespace Project.UI
             return panel;
         }
 
-        private void PresentSimple(string speakerName, string message, Action closedCallback, string primaryLabel)
+        private void PresentSimple(
+            string speakerName,
+            string message,
+            Action closedCallback,
+            string primaryLabel,
+            Action askDirectionsCallback)
         {
             onClosed = closedCallback;
+            onAskDirections = askDirectionsCallback;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             bodyText.text = message ?? string.Empty;
             simpleContentRoot.SetActive(true);
             boardContentRoot.SetActive(false);
             primaryButtonLabel.text = string.IsNullOrEmpty(primaryLabel) ? "Continue" : primaryLabel;
             primaryButton.interactable = true;
+            SetDirectionsButtonsVisible(askDirectionsCallback != null);
             OpenOverlay();
         }
 
-        private void PresentQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback)
+        private void PresentQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback,
+            Action askDirectionsCallback)
         {
             onClosed = closedCallback;
+            onAskDirections = askDirectionsCallback;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             currentEntries = entries;
             selectedEntryIndex = entries != null && entries.Count > 0 ? 0 : -1;
@@ -422,6 +489,7 @@ namespace Project.UI
 
             simpleContentRoot.SetActive(false);
             boardContentRoot.SetActive(true);
+            SetDirectionsButtonsVisible(askDirectionsCallback != null);
 
             ClearQuestPicker();
             ShiftUiTheme theme = ShiftUiTheme.Current;
@@ -454,6 +522,15 @@ namespace Project.UI
 
             RefreshQuestListLayout();
             OpenOverlay();
+        }
+
+        private void SetDirectionsButtonsVisible(bool visible)
+        {
+            if (simpleDirectionsButton != null)
+                simpleDirectionsButton.gameObject.SetActive(visible && simpleContentRoot != null && simpleContentRoot.activeSelf);
+
+            if (boardDirectionsButton != null)
+                boardDirectionsButton.gameObject.SetActive(visible && boardContentRoot != null && boardContentRoot.activeSelf);
         }
 
         private void RefreshQuestListLayout()
@@ -570,6 +647,16 @@ namespace Project.UI
             }
         }
 
+        private void HandleAskDirectionsClicked()
+        {
+            Action callback = onAskDirections;
+            if (callback == null)
+                return;
+
+            Close();
+            callback.Invoke();
+        }
+
         private void HandleQuestActionClicked()
         {
             if (currentEntries == null || selectedEntryIndex < 0 || selectedEntryIndex >= currentEntries.Count)
@@ -673,6 +760,7 @@ namespace Project.UI
             currentEntries = null;
             selectedEntryIndex = -1;
             abandonConfirmPending = false;
+            onAskDirections = null;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);
