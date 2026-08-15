@@ -32,8 +32,16 @@ Assets/_Project/Scripts/Vendor/       IVendor
 Assets/_Project/Scripts/UI/           PptDirectionsMenuUI
 Assets/_Project/Features/PPT/         GameState adapter
 Assets/_Project/Resources/PPT/        Phase 1 sample registry
-Assets/_Project/Editor/PPT/           Phase 1 wiring menu
+Assets/_Project/Editor/PPT/           Phase 0+1 verify / Phase 1 wiring menus
 ```
+
+## Editor re-run (required after disk-only agent merges)
+
+Prior cloud agents authored Phase 0+1 on disk without Unity Editor execution. On a machine with Unity open on the playable scene, run:
+
+1. `Tools/Dark Matter Genesis/PPT/Phase 0+1 - Verify Foundation + Wire Sample Registry`
+2. Confirm dialog reports **PASS** and Console has no new PPT errors after compile/domain reload
+3. Play Mode: Tap E on GERALD → **Directions** (or Hold E) → pick Camp / Sulfur Dunes / Old Runes
 
 ## Phase 1 sample content
 
@@ -54,14 +62,16 @@ Loaded from `Resources.Load("PPT/PptRegistry")`.
 
 - Prefab `Assets/_Project/Prefabs/NPCs/QuestGiver_PioneerGuide.prefab`
 - Playable scene NPC **GERALD** in `Assets/Dark Matter Genesis v1.56.unity` and `Assets/_Project/Scenes/Dark Matter Genesis v1.57.unity`
-- Editor menu: `Tools/Dark Matter Genesis/PPT/Phase 1 - Wire Pioneer Guide + Sample Registry`
+- Editor menus:
+  - `Tools/Dark Matter Genesis/PPT/Phase 0+1 - Verify Foundation + Wire Sample Registry`
+  - `Tools/Dark Matter Genesis/PPT/Phase 1 - Wire Pioneer Guide + Sample Registry`
 - ALEXO is **not** wired (shares `npcId: pioneer_guide` in scene data)
 
 ### Playtest
 
 1. Start a game (or load a save).
 2. Aim at GERALD. Prompt should include **Hold E — Ask directions**.
-3. Hold E → 3 keywords (Camp, Old Runes of Pedra, Sulfur Dunes).
+3. Tap E → quest/talk panel → **Directions** (or Hold E) → 3 keywords (Camp, Old Runes of Pedra, Sulfur Dunes).
 4. Pick one → phrase + lime tracer, general area, or shrug.
 5. Accept Supply Run → Mushrooms is added to the keyword log.
 
@@ -84,8 +94,8 @@ Loaded from `Resources.Load("PPT/PptRegistry")`.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 0 | Foundation (runtime, save v22, Hold E contract) | Done |
-| 1 | MVP Directions (sample registry + GERALD / Pioneer Guide) | This slice |
+| 0 | Foundation (runtime, save v22, Hold E contract) | On disk — re-verify via Phase 0+1 Editor menu |
+| 1 | MVP Directions (sample registry + GERALD / Pioneer Guide + dialog Directions) | On disk — re-wire / playtest via Phase 0+1 Editor menu |
 | 2 | Talk hub on `QuestGiverDialogUI` + Journal Knowledge tab + `[ppt:]` tags | Directions button on dialog (partial); Knowledge tab / tags not started |
 | 3 | Point / Shrug animator states (procedural rotate already in Phase 1) | Not started |
 | 4 | Conversation player for `PptConversationDefinition` | Schema only |
