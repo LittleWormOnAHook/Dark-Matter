@@ -281,7 +281,8 @@ namespace Project.EditorTools.Rendering
             SetBool(settings, "supportSSR", tier >= GenesisHdrpTier.Quality);
             SetBool(settings, "supportSSAO", tier >= GenesisHdrpTier.Balanced);
             SetBool(settings, "supportVolumetrics", tier >= GenesisHdrpTier.Balanced);
-            SetInt(settings, "msaaSampleCount", tier >= GenesisHdrpTier.High ? 2 : 1);
+            // MSAA is costly in HDRP deferred; prefer TAA / SMAA via camera. Keep sample count at 1 for all play tiers.
+            SetInt(settings, "msaaSampleCount", 1);
 
             SerializedProperty shadowInit = settings.FindPropertyRelative("hdShadowInitParams");
             if (shadowInit != null)
@@ -330,8 +331,8 @@ namespace Project.EditorTools.Rendering
                     i == (int)GenesisHdrpTier.Performance ? 25f :
                     i == (int)GenesisHdrpTier.Balanced ? 30f :
                     i >= (int)GenesisHdrpTier.High ? 40f : 35f;
-                tier.FindPropertyRelative("antiAliasing").intValue =
-                    i >= (int)GenesisHdrpTier.High ? 2 : i >= (int)GenesisHdrpTier.Quality ? 1 : 0;
+                // QualitySettings MSAA does not map cleanly to HDRP; leave off and use camera AA / upscalers.
+                tier.FindPropertyRelative("antiAliasing").intValue = 0;
             }
 
             qualitySettings.FindProperty("m_CurrentQuality").intValue = Project.Core.PlatformGraphicsProfile.DefaultQualityIndex;
