@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Dark Matter Genesis v1.56.unity
     guid: fe6d59d81242bce4fb79632bd40a06bf
+  - enabled: 1
+    path: Assets/_Project/Scenes/Genesis_HDRP_Test.unity
+    guid: 96ddd5f61897ec74089fc4a4104012c4
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: a35dce2a4a614b24da424ecc1655e41b, type: 2}

@@ -32,17 +32,31 @@ namespace Project.EditorTools.Rendering
         [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 0/1 - Create Genesis HDRP Foundation", false, 0)]
         public static void CreateGenesisHdrpFoundation()
         {
+            CreateGenesisHdrpFoundationInternal(showDialog: true);
+        }
+
+        /// <summary>
+        /// Creates Genesis HDRP tier assets and quality wiring without modal dialogs (MCP / automation).
+        /// Keeps Graphics + active quality on URP until Phase 6.
+        /// </summary>
+        public static void CreateGenesisHdrpFoundationInternal(bool showDialog)
+        {
             EnsureFolder(HdrpRoot);
             EnsureFolder(HdrpDefaultResources);
 
             // HDRenderPipelineGlobalSettings is internal in HDRP 17 — use Ensure() via reflection.
+            // While URP remains active, Ensure() may NRE in MigrateDefaultVolumeProfile (no HDRP editor assets).
             EnsureHdrpGlobalSettings();
             HDRenderPipelineAsset[] tierAssets = CreateOrUpdateTierAssets();
 
             ConfigureQualityTiers(tierAssets);
+            PreserveUrpUntilPhase6();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            if (!showDialog)
+                return;
 
             EditorUtility.DisplayDialog(
                 "Genesis HDRP Foundation",
@@ -56,12 +70,18 @@ namespace Project.EditorTools.Rendering
         [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 1 - Create HDRP Test Scene", false, 10)]
         public static void CreateHdrpTestScene()
         {
-            CreateGenesisHdrpFoundation();
+            CreateHdrpTestSceneInternal(showDialog: true);
+        }
+
+        public static void CreateHdrpTestSceneInternal(bool showDialog)
+        {
+            CreateGenesisHdrpFoundationInternal(showDialog: false);
 
             if (File.Exists(TestScenePath))
             {
                 EditorSceneManager.OpenScene(TestScenePath, OpenSceneMode.Single);
-                EditorUtility.DisplayDialog("Genesis HDRP Test Scene", "Opened existing test scene.", "OK");
+                if (showDialog)
+                    EditorUtility.DisplayDialog("Genesis HDRP Test Scene", "Opened existing test scene.", "OK");
                 return;
             }
 
@@ -90,6 +110,9 @@ namespace Project.EditorTools.Rendering
 
             EditorSceneManager.SaveScene(scene, TestScenePath);
             AddSceneToBuildSettings(TestScenePath, enabled: true);
+
+            if (!showDialog)
+                return;
 
             EditorUtility.DisplayDialog(
                 "Genesis HDRP Test Scene",
@@ -139,6 +162,7 @@ namespace Project.EditorTools.Rendering
         /// <summary>
         /// Calls internal HDRenderPipelineGlobalSettings.Ensure(canCreateNewAsset: true).
         /// The type is inaccessible from assembly-CSharp-Editor in HDRP 17.
+        /// While URP is still the active Graphics pipeline, Ensure/Migrate can NRE — catch and continue.
         /// </summary>
         private static void EnsureHdrpGlobalSettings()
         {
@@ -163,7 +187,39 @@ namespace Project.EditorTools.Rendering
                 return;
             }
 
-            ensure.Invoke(null, new object[] { true });
+            try
+            {
+                ensure.Invoke(null, new object[] { true });
+            }
+            catch (TargetInvocationException ex)
+            {
+                string detail = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                Debug.LogWarning(
+                    "[Genesis HDRP] HDRenderPipelineGlobalSettings.Ensure failed while URP is active " +
+                    $"(expected until Phase 6): {detail}. Continuing tier asset creation.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Genesis HDRP] HDRenderPipelineGlobalSettings.Ensure failed: {ex.Message}. Continuing tier asset creation.");
+            }
+        }
+
+        /// <summary>
+        /// Quality tiers may reference Genesis HDRP assets for later switching, but PPT holds URP
+        /// on Graphics + the active quality until Phase 6.
+        /// </summary>
+        private static void PreserveUrpUntilPhase6()
+        {
+            RenderPipelineAsset urp = AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>("Assets/Settings/PC_RPAsset.asset");
+            if (urp == null)
+            {
+                Debug.LogWarning("[Genesis HDRP] PC_RPAsset not found; cannot reaffirm URP after foundation.");
+                return;
+            }
+
+            GraphicsSettings.defaultRenderPipeline = urp;
+            QualitySettings.renderPipeline = urp;
+            EditorUtility.SetDirty(urp);
         }
 
         private static HDRenderPipelineAsset[] CreateOrUpdateTierAssets()
