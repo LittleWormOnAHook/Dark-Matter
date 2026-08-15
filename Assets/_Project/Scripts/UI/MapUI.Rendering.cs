@@ -86,7 +86,7 @@ namespace Project.UI
 
             Vector2 viewportSize = fullMapViewportRect.rect.size;
             if (viewportSize.sqrMagnitude < 1f)
-                viewportSize = new Vector2(640f, 480f);
+                viewportSize = new Vector2(640f, 640f);
 
             Vector2 contentSize = GetFullMapContentSize();
             if (HasMapWorldPosition())
@@ -179,15 +179,54 @@ namespace Project.UI
                 pan.x * sin + pan.y * cos);
         }
 
+        private static float GetFullMapZoomStep()
+        {
+            return (MaxFullMapZoom - MinFullMapZoom) / FullMapScrollNotchesFullRange;
+        }
+
         private Vector2 GetFullMapContentSize()
         {
             Vector2 viewportSize = fullMapViewportRect != null
                 ? fullMapViewportRect.rect.size
-                : new Vector2(640f, 480f);
+                : new Vector2(640f, 640f);
             if (viewportSize.sqrMagnitude < 1f)
-                viewportSize = new Vector2(640f, 480f);
+                viewportSize = new Vector2(640f, 640f);
 
-            return viewportSize * fullMapZoom;
+            float aspect = GetFullMapTextureAspect();
+            float fittedWidth;
+            float fittedHeight;
+            if (viewportSize.x / Mathf.Max(1f, viewportSize.y) > aspect)
+            {
+                fittedHeight = viewportSize.y;
+                fittedWidth = fittedHeight * aspect;
+            }
+            else
+            {
+                fittedWidth = viewportSize.x;
+                fittedHeight = fittedWidth / Mathf.Max(0.0001f, aspect);
+            }
+
+            return new Vector2(fittedWidth, fittedHeight) * fullMapZoom;
+        }
+
+        private float GetFullMapTextureAspect()
+        {
+            Texture mapTexture = fullMapImage != null ? fullMapImage.texture : null;
+            if (mapTexture == null && mapProvider != null)
+                mapTexture = mapProvider.MapTexture;
+
+            if (mapTexture != null && mapTexture.height > 0)
+                return mapTexture.width / (float)mapTexture.height;
+
+            if (mapProvider != null)
+            {
+                float worldX = mapProvider.WorldBounds.size.x;
+                float worldZ = mapProvider.WorldBounds.size.z;
+                if (worldX > 1f && worldZ > 1f)
+                    return worldX / worldZ;
+            }
+
+            return 1f;
         }
 
         private static Vector2 MapUvToContentLocal(Vector2 mapUv, Vector2 contentSize)
@@ -204,7 +243,7 @@ namespace Project.UI
 
             Vector2 viewportSize = fullMapViewportRect.rect.size;
             if (viewportSize.sqrMagnitude < 1f)
-                viewportSize = new Vector2(640f, 480f);
+                viewportSize = new Vector2(640f, 640f);
 
             Vector2 contentSize = GetFullMapContentSize();
             fullMapContentRect.sizeDelta = contentSize;

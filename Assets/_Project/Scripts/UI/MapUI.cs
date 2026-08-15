@@ -36,6 +36,7 @@ namespace Project.UI
         private const float DefaultFullMapZoom = 5f;
         private const float MinFullMapZoom = 1f;
         private const float MaxFullMapZoom = 8f;
+        private const float FullMapScrollNotchesFullRange = 3f;
         private const float MinimapPlayerIconSize = 24f;
         private const float FullMapPlayerIconSize = 48f;
 
@@ -254,7 +255,10 @@ namespace Project.UI
 
             float scroll = Mouse.current.scroll.ReadValue().y;
             if (Mathf.Abs(scroll) > 0.01f)
-                SetFullMapZoom(fullMapZoom + scroll * 0.0015f);
+            {
+                int direction = scroll > 0f ? 1 : -1;
+                SetFullMapZoom(fullMapZoom + direction * GetFullMapZoomStep());
+            }
         }
 
         public void OnToggleMap(InputAction.CallbackContext context)
@@ -358,6 +362,7 @@ namespace Project.UI
             if (fullMapOverlay != null)
                 fullMapOverlay.transform.SetAsLastSibling();
 
+            RefreshFullMapFrameLayout();
             fullMapZoom = DefaultFullMapZoom;
             UpdateFullMapZoomLabel();
             CenterFullMapOnPlayer();
@@ -446,6 +451,7 @@ namespace Project.UI
             PauseForFullMap(fullMapOpen);
             if (fullMapOpen)
             {
+                RefreshFullMapFrameLayout();
                 fullMapZoom = DefaultFullMapZoom;
                 UpdateFullMapZoomLabel();
                 CenterFullMapOnPlayer();
@@ -478,6 +484,15 @@ namespace Project.UI
             RefreshMapShellVisibility();
             PauseForFullMap(false);
             GameplayHudVisibility.RefreshGameplayHud();
+        }
+
+        private void RefreshFullMapFrameLayout()
+        {
+            if (preserveManualLayout || !applyRuntimeLayout)
+                return;
+
+            Canvas.ForceUpdateCanvases();
+            EnsureFullMapChromeLayout();
         }
 
         private static void PauseForFullMap(bool pause)
