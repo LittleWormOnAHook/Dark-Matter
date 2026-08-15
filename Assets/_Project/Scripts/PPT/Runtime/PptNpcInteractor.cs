@@ -112,7 +112,7 @@ namespace Project.PPT
                 return false;
 
             holdActive = false;
-            OpenDirectionsMenu();
+            TryOpenDirectionsMenu();
             return true;
         }
 
@@ -155,17 +155,22 @@ namespace Project.PPT
                 gestureController?.PlayPoint(result.BearingDegrees);
         }
 
-        private void OpenDirectionsMenu()
+        /// <summary>Opens the keyword directions menu (same as completing Hold E).</summary>
+        public bool TryOpenDirectionsMenu()
         {
+            if (!CanOfferDirections())
+                return false;
+
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
-                return;
+                return false;
 
             PptDirectionsMenuUI ui = PptDirectionsMenuUI.EnsureExists(canvas.transform);
             ui.Show(this);
+            return true;
         }
 
-        private bool CanOfferDirections()
+        public bool CanOfferDirections()
         {
             if (!GameSession.HasStarted)
                 return false;

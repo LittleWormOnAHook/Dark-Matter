@@ -20,7 +20,7 @@ Discovery-aware NPC directions: **Tap E** talks / opens the quest board. **Hold 
 ## Player flow
 
 1. **Tap E** — existing talk / quest board (`QuestGiverNpc`; shop via `IVendor` when added).
-2. **Hold E** — `PptNpcInteractor` opens directions menu (discovered keywords only).
+2. **Directions button** on the NPC dialog / quest board (when the NPC has PPT Directions) opens the keyword menu. **Hold E** still works as a shortcut.
 3. Pick keyword → resolver returns precise / general / refer / unknown.
 4. Precise → point gesture + lime terrain tracer. Unknown → shrug + bark.
 
@@ -86,7 +86,7 @@ Loaded from `Resources.Load("PPT/PptRegistry")`.
 |-------|------|--------|
 | 0 | Foundation (runtime, save v22, Hold E contract) | Done |
 | 1 | MVP Directions (sample registry + GERALD / Pioneer Guide) | This slice |
-| 2 | Talk hub on `QuestGiverDialogUI` + Journal Knowledge tab + `[ppt:]` tags | Not started |
+| 2 | Talk hub on `QuestGiverDialogUI` + Journal Knowledge tab + `[ppt:]` tags | Directions button on dialog (partial); Knowledge tab / tags not started |
 | 3 | Point / Shrug animator states (procedural rotate already in Phase 1) | Not started |
 | 4 | Conversation player for `PptConversationDefinition` | Schema only |
 | 5 | Radio consumes `PptKnowledgeSnapshot` | Snapshot hook only |

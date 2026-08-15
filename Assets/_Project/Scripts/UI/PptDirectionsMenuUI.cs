@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Player;
 using Project.UI;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace Project.PPT
         private bool built;
         private PptNpcInteractor currentInteractor;
         private int currentPage;
+
+        public static bool IsOpen =>
+            instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
 
         public static PptDirectionsMenuUI EnsureExists(Transform canvasRoot)
         {
@@ -39,7 +43,7 @@ namespace Project.PPT
 
             currentInteractor = interactor;
             currentPage = 0;
-            overlayRoot.SetActive(true);
+            OpenOverlay();
             RefreshPage();
         }
 
@@ -101,6 +105,19 @@ namespace Project.PPT
 
             overlayRoot.SetActive(false);
             built = true;
+        }
+
+        private void OpenOverlay()
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            player?.SetQuestDialogOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            overlayRoot.SetActive(true);
+            overlayRoot.transform.SetAsLastSibling();
+            UiFrontLayer.BringLayerToFront(transform.parent);
         }
 
         private void RefreshPage()
@@ -176,6 +193,10 @@ namespace Project.PPT
 
             currentInteractor = null;
             currentPage = 0;
+
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            player?.SetQuestDialogOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, false);
         }
     }
 }
