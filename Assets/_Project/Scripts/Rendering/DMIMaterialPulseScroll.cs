@@ -620,8 +620,9 @@ namespace Project.Rendering
             if (mat == null || !slot.hasEmission)
                 return;
 
-            // HDRP Lit: ensure emissive color keyword. Map keyword may already be on when
-            // an emissive texture is authored; color-only still needs _EMISSIVE_COLOR.
+            // HDRP Lit: ensure emissive path. Prefer _EMISSIVE_COLOR for color-only;
+            // when an emissive map is authored, HDRP keeps _EMISSIVE_COLOR_MAP and may
+            // reject _EMISSIVE_COLOR (HDMaterial.ValidateMaterial strips it).
             if (IsHdrpShader(mat.shader) && slot.emissionPropId == EmissiveColorId)
             {
                 if (mat.HasProperty(UseEmissiveIntensityId) && mat.GetFloat(UseEmissiveIntensityId) > 0.5f)
@@ -632,7 +633,9 @@ namespace Project.Rendering
                         mat.SetColor(EmissiveColorId, slot.authoredEmission);
                 }
 
-                if (!mat.IsKeywordEnabled(HdrpEmissiveColorKeyword))
+                const string HdrpEmissiveColorMapKeyword = "_EMISSIVE_COLOR_MAP";
+                bool hasEmissiveMap = mat.IsKeywordEnabled(HdrpEmissiveColorMapKeyword);
+                if (!hasEmissiveMap && !mat.IsKeywordEnabled(HdrpEmissiveColorKeyword))
                     mat.EnableKeyword(HdrpEmissiveColorKeyword);
                 return;
             }

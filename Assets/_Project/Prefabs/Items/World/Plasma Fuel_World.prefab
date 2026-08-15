@@ -108,24 +108,24 @@ MonoBehaviour:
   useMaterialPropertyBlock: 1
   pulseAlpha: 0
   alphaPulseTarget: 0
-  alphaPulseMin: 0.25
-  alphaPulseMax: 1
-  alphaPulseSpeed: 1
+  alphaPulseMin: 0.579
+  alphaPulseMax: 0.69
+  alphaPulseSpeed: 0.73
   pulseEmission: 1
   emissionPulseMin: 0.35
-  emissionPulseMax: 2.8
-  emissionPulseSpeed: 5.21
-  fallbackEmissionTint: {r: 1, g: 0.0020324427, b: 0, a: 1}
+  emissionPulseMax: 3.23
+  emissionPulseSpeed: 0.5
+  fallbackEmissionTint: {r: 0, g: 0.50591207, b: 1, a: 1}
   ensureEmissionKeyword: 1
   scrollBaseMap: 0
   baseMapScrollSpeed: {x: 0, y: 0}
-  scrollEmissionMap: 0
+  scrollEmissionMap: 1
   emissionMapScrollSpeed: {x: 4.92, y: -2.24}
   scrollNormalMap: 0
   normalMapScrollSpeed: {x: 0, y: 0}
   useUnscaledTime: 0
   phaseOffset: 0
-  previewInEditMode: 0
+  previewInEditMode: 1
 --- !u!1 &8159309966250858704
 GameObject:
   m_ObjectHideFlags: 0

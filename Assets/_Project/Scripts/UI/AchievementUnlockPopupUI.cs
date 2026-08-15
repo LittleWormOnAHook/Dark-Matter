@@ -66,8 +66,26 @@ namespace Project.UI
                 XpReward = xpReward
             });
 
-            if (activeRoutine == null)
-                activeRoutine = StartCoroutine(ProcessQueue());
+            TryStartQueue();
+        }
+
+        private void OnEnable()
+        {
+            TryStartQueue();
+        }
+
+        private void TryStartQueue()
+        {
+            if (activeRoutine != null || pendingPopups.Count == 0)
+                return;
+
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+
+            if (!isActiveAndEnabled)
+                return;
+
+            activeRoutine = StartCoroutine(ProcessQueue());
         }
 
         private IEnumerator ProcessQueue()
