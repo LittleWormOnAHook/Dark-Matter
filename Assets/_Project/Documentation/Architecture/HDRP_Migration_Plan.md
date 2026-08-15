@@ -81,9 +81,9 @@ Use these rows for **defaults, store text, and advisory messages** — not for d
 
 1. **Foundation (started)** — HDRP package, wizard/foundation menu, WebGL retirement, five HDRP assets via `Tools/Dark Matter Genesis/HDRP/Phase 0/1`.
 2. Pipeline — quality wiring, bootstrap, settings stubs (**partially landed**).
-3. Code — cameras, post, scanner custom pass, dissolve shaders, `Shader.Find` factories.
-4. Materials — bulk URP → HDRP conversion (~1,600 materials).
-5. Third-party audit — per-pack pink-material sign-off.
+3. Code — cameras, post, scanner custom pass, dissolve shaders, `Shader.Find` factories. **Custom dissolve/smoke/scanner dual-pipeline shaders landed; `ScannerHdrpCustomPass` stub ready.**
+4. Materials — bulk URP → HDRP conversion (~1,600 materials). **`_Project` URP Lit/Unlit batch done; customs dual-targeted.**
+5. Third-party audit — per-pack pink-material sign-off. **See `HDRP_Vendor_Material_Audit.md` + folder dry-run/apply menus.**
 6. Global switch — `Dark Matter Genesis v1.56` + lighting rebake.
 7. Cinematic HDR tuning + optional RT path.
 8. 60 FPS certification matrix (console, Windows PC, macOS).

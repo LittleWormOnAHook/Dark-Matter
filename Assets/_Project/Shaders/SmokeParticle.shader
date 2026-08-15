@@ -1,16 +1,14 @@
-Shader "Project/EnemyDissolveSmoke"
+Shader "Project/SmokeParticle"
 {
     Properties
     {
-        _BaseColor("Color", Color) = (0.38, 0.38, 0.42, 0.55)
-        _SmokeAmount("Smoke Amount", Range(0, 1)) = 0
-        _RiseOffset("Rise Offset", Float) = 0
-        _NoiseScale("Noise Scale", Float) = 4
-        _Expand("Expand", Float) = 0.08
+        _MainTex("Particle Texture", 2D) = "white" {}
+        _TintColor("Tint Color", Color) = (0.5, 0.5, 0.5, 0.5)
+        _InvFade("Soft Particles Factor", Range(0.01, 3.0)) = 1.0
     }
 
     // -------------------------------------------------------------------------
-    // URP
+    // URP — alpha-blended particle billboard
     // -------------------------------------------------------------------------
     SubShader
     {
@@ -18,12 +16,13 @@ Shader "Project/EnemyDissolveSmoke"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Transparent"
-            "Queue" = "Transparent+100"
+            "Queue" = "Transparent"
+            "IgnoreProjector" = "True"
         }
 
         Pass
         {
-            Name "Smoke"
+            Name "SmokeParticle"
             Tags { "LightMode" = "UniversalForwardOnly" }
 
             Blend SrcAlpha OneMinusSrcAlpha
@@ -37,50 +36,42 @@ Shader "Project/EnemyDissolveSmoke"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
             CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-                half _SmokeAmount;
-                half _RiseOffset;
-                half _NoiseScale;
-                half _Expand;
+                float4 _MainTex_ST;
+                half4 _TintColor;
+                half _InvFade;
             CBUFFER_END
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
+                float4 color : COLOR;
+                float2 uv : TEXCOORD0;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 positionWS : TEXCOORD0;
+                half4 color : COLOR;
+                float2 uv : TEXCOORD0;
             };
-
-            float Hash13(float3 p)
-            {
-                p = frac(p * 0.1031);
-                p += dot(p, p.yzx + 33.33);
-                return frac((p.x + p.y) * p.z);
-            }
 
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                float3 expanded = input.positionOS.xyz + input.normalOS * _Expand;
-                expanded.y += _RiseOffset;
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(expanded);
-                output.positionCS = vertexInput.positionCS;
-                output.positionWS = vertexInput.positionWS;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.color = input.color * _TintColor;
                 return output;
             }
 
             half4 frag(Varyings input) : SV_Target
             {
-                float noise = Hash13(input.positionWS * _NoiseScale);
-                float puff = smoothstep(0.02, 0.92, noise);
-                float alpha = _BaseColor.a * puff * (1.0 - _SmokeAmount);
-                return half4(_BaseColor.rgb, alpha);
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                return tex * input.color * 2.0h;
             }
             ENDHLSL
         }
@@ -95,12 +86,13 @@ Shader "Project/EnemyDissolveSmoke"
         {
             "RenderPipeline" = "HDRenderPipeline"
             "RenderType" = "Transparent"
-            "Queue" = "Transparent+100"
+            "Queue" = "Transparent"
+            "IgnoreProjector" = "True"
         }
 
         Pass
         {
-            Name "Smoke"
+            Name "SmokeParticle"
             Tags { "LightMode" = "ForwardOnly" }
 
             Blend SrcAlpha OneMinusSrcAlpha
@@ -116,50 +108,43 @@ Shader "Project/EnemyDissolveSmoke"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
 
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
             CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-                half _SmokeAmount;
-                half _RiseOffset;
-                half _NoiseScale;
-                half _Expand;
+                float4 _MainTex_ST;
+                half4 _TintColor;
+                half _InvFade;
             CBUFFER_END
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
+                float4 color : COLOR;
+                float2 uv : TEXCOORD0;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 positionWS : TEXCOORD0;
+                half4 color : COLOR;
+                float2 uv : TEXCOORD0;
             };
-
-            float Hash13(float3 p)
-            {
-                p = frac(p * 0.1031);
-                p += dot(p, p.yzx + 33.33);
-                return frac((p.x + p.y) * p.z);
-            }
 
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                float3 expanded = input.positionOS.xyz + input.normalOS * _Expand;
-                expanded.y += _RiseOffset;
-                float3 positionWS = TransformObjectToWorld(expanded);
+                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.positionCS = TransformWorldToHClip(positionWS);
-                output.positionWS = positionWS;
+                output.uv = input.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+                output.color = input.color * _TintColor;
                 return output;
             }
 
             half4 frag(Varyings input) : SV_Target
             {
-                float noise = Hash13(input.positionWS * _NoiseScale);
-                float puff = smoothstep(0.02, 0.92, noise);
-                float alpha = _BaseColor.a * puff * (1.0 - _SmokeAmount);
-                return half4(_BaseColor.rgb, alpha);
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                return tex * input.color * 2.0h;
             }
             ENDHLSL
         }
