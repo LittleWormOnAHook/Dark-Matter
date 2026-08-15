@@ -18,6 +18,7 @@ namespace Project.UI
         [SerializeField] private TextMeshProUGUI valueLabel;
 
         private SurvivalStats boundStats;
+        private int lastLabelBucket = int.MinValue;
 
         private void Awake()
         {
@@ -75,12 +76,31 @@ namespace Project.UI
 
             if (valueLabel != null)
             {
+                int bucket;
+                string label;
                 if (Mathf.Abs(signed) < 0.05f)
-                    valueLabel.text = "OK";
+                {
+                    bucket = 0;
+                    label = "OK";
+                }
                 else if (signed < 0f)
-                    valueLabel.text = $"C {Mathf.RoundToInt(coldAmount * 100f)}";
+                {
+                    int coldPercent = Mathf.RoundToInt(coldAmount * 100f);
+                    bucket = -1000 - coldPercent;
+                    label = $"C {coldPercent}";
+                }
                 else
-                    valueLabel.text = $"H {Mathf.RoundToInt(heatAmount * 100f)}";
+                {
+                    int heatPercent = Mathf.RoundToInt(heatAmount * 100f);
+                    bucket = 1000 + heatPercent;
+                    label = $"H {heatPercent}";
+                }
+
+                if (bucket != lastLabelBucket)
+                {
+                    lastLabelBucket = bucket;
+                    valueLabel.text = label;
+                }
             }
         }
 
@@ -95,7 +115,7 @@ namespace Project.UI
 
             coldFill ??= CreateFillImage(track, "ColdFill", new Color(0.35f, 0.72f, 0.95f, 1f));
             heatFill ??= CreateFillImage(track, "HeatFill", new Color(0.95f, 0.45f, 0.18f, 1f));
-            centerMarker ??= CreateFillImage(track, "CenterMarker", SurvivalPioneerUiPalette.SoftBeigeGray);
+            centerMarker ??= CreateFillImage(track, "CenterMarker", DarkMatterGenesisUiPalette.SoftBeigeGray);
 
             if (centerMarker != null)
             {

@@ -372,7 +372,7 @@ Use these tickets in your tracker (GitHub Issues, Linear, etc.) — copy title +
 **Acceptance criteria:**
 - [ ] Spawns from seam/shimmer volumes any biome B1–B7 (not B7 silent puzzles)
 - [ ] Audio telegraph before damage; Scout sense widens window (if kit live)
-- [ ] Ops/Aether-9 comms line on first encounter stub
+- [ ] Ops/Kairos comms line on first encounter stub
 - [ ] Does not replace Caldera Mantis apex role in B4
 
 **Refs:** Ecology §3.5.
@@ -562,7 +562,7 @@ Use these tickets in your tracker (GitHub Issues, Linear, etc.) — copy title +
 | | |
 |--|--|
 | **Track** | World art + Narrative |
-| **Blocked by** | IO-W5-01, GDD B4 #8 Aether-9 / Memory Cores |
+| **Blocked by** | IO-W5-01, GDD B4 #8 Kairos / Memory Cores |
 | **Unlocks** | IO-W6-02, IO-W6-03 |
 
 **Description:** B7 Ruin Belt surface; silent zones; vault lock POIs; android patrol routes.
@@ -758,7 +758,7 @@ Use these tickets in your tracker (GitHub Issues, Linear, etc.) — copy title +
 
 **Acceptance criteria:**
 - [ ] Full pet loop on gamepad without keyboard
-- [ ] UI palette per `SurvivalPioneerUiPalette`
+- [ ] UI palette per `DarkMatterGenesisUiPalette`
 
 **Refs:** UI palette rule; GDD A9.
 

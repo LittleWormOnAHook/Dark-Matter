@@ -31,8 +31,8 @@ namespace Project.UI
             if (background != null)
             {
                 Color baseColor = tick.Kind == ExposureModifierKind.Buff
-                    ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PositiveGreen, 0.28f)
-                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DeepMagenta, 0.32f);
+                    ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PositiveGreen, 0.28f)
+                    : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DeepMagenta, 0.32f);
                 background.color = Color.Lerp(baseColor, tick.Tint, 0.35f);
             }
         }
@@ -54,7 +54,7 @@ namespace Project.UI
 
             background = bgObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
-            background.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            background.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
 
             HorizontalLayoutGroup layout = bgObject.GetComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(6, 8, 2, 2);
@@ -78,7 +78,7 @@ namespace Project.UI
             glyphLabel.fontSize = 11f;
             glyphLabel.fontStyle = FontStyles.Bold;
             glyphLabel.alignment = TextAlignmentOptions.Center;
-            glyphLabel.color = SurvivalPioneerUiPalette.HighlightText;
+            glyphLabel.color = DarkMatterGenesisUiPalette.HighlightText;
 
             GameObject bodyObject = new GameObject("Body", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
             bodyObject.transform.SetParent(bgObject.transform, false);
@@ -89,7 +89,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(bodyLabel);
             bodyLabel.fontSize = 10f;
             bodyLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            bodyLabel.color = SurvivalPioneerUiPalette.BodyText;
+            bodyLabel.color = DarkMatterGenesisUiPalette.BodyText;
             bodyLabel.overflowMode = TextOverflowModes.Ellipsis;
             bodyLabel.textWrappingMode = TextWrappingModes.NoWrap;
         }

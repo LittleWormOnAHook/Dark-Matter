@@ -128,7 +128,7 @@ namespace Project.UI
             rootRect.sizeDelta = new Vector2(CrossArm * 2f + CrossGap * 2f, CrossArm * 2f + CrossGap * 2f);
             root.transform.SetAsLastSibling();
 
-            Color reticleColor = SurvivalPioneerUiPalette.DangerRed;
+            Color reticleColor = DarkMatterGenesisUiPalette.DangerRed;
 
             dotRect = CreateLine(rootRect, "Dot", new Vector2(DotSize, DotSize), Vector2.zero);
             dotImage = dotRect.GetComponent<Image>();

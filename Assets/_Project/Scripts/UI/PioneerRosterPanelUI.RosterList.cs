@@ -240,7 +240,7 @@ namespace Project.UI
             header.GetComponent<LayoutElement>().minHeight = 20f;
 
             TextMeshProUGUI label = CreateLabel(header.transform, text, 11f, semiBold: true);
-            label.color = SurvivalPioneerUiPalette.HighlightText;
+            label.color = DarkMatterGenesisUiPalette.HighlightText;
             Stretch(label.rectTransform, 4f, 2f);
         }
 
@@ -256,11 +256,11 @@ namespace Project.UI
             Image bg = row.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
             bg.color = selected
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.35f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.35f)
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.96f);
 
             if (selected)
-                SurvivalPioneerUiPalette.ApplyFuchsiaTrim(row);
+                DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(row);
 
             LayoutElement rowLayout = row.GetComponent<LayoutElement>();
             rowLayout.minHeight = 48f;
@@ -271,9 +271,9 @@ namespace Project.UI
             string subtitle = subtitleOverride ?? $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}";
 
             TextMeshProUGUI label = CreateLabel(row.transform, string.Empty, 11.5f, semiBold: selected);
-            label.color = canJoin ? SurvivalPioneerUiPalette.BodyText : SurvivalPioneerUiPalette.MutedText;
+            label.color = canJoin ? DarkMatterGenesisUiPalette.BodyText : DarkMatterGenesisUiPalette.MutedText;
             label.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{record.displayName}</color>{starterTag}{trioTag}{stateTag}\n" +
+                $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{record.displayName}</color>{starterTag}{trioTag}{stateTag}\n" +
                 subtitle;
             Stretch(label.rectTransform, 8f, 4f);
 
@@ -317,7 +317,7 @@ namespace Project.UI
             label.fontSize = 11.5f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
             label.text = message;
         }
     }

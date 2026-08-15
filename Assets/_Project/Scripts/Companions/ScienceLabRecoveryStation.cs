@@ -60,6 +60,16 @@ namespace Project.Companions
             return $"Press E to Reassign {displayName}";
         }
 
+        /// <summary>
+        /// Cheap interactability check for proximity dots (no string allocation).
+        /// </summary>
+        public bool CanShowInteractionHint()
+        {
+            PioneerRosterManager roster = PioneerRosterManager.Instance;
+            SkilledPioneerRecord record = roster != null ? roster.FindSkilledById(pioneerRecordId) : null;
+            return record != null && record.WorkState == PioneerWorkState.Injured;
+        }
+
         public float GetUsePriority(WorldUseContext context)
         {
             if (!CanRecover(context, out float distance, out Vector3 aimPoint))

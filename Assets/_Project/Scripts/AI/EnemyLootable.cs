@@ -40,6 +40,7 @@ namespace Project.AI
 
         public bool HasRemainingLoot => remainingLoot.Count > 0;
         public bool IsLootPending => lootPending;
+        public string DisplayName => lootDisplayName;
 
         private void Awake()
         {

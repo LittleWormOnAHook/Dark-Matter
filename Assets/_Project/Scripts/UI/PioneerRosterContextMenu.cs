@@ -23,7 +23,20 @@ namespace Project.UI
 
         public static void HideAny()
         {
-            instance?.Hide();
+            // Unity fake-null: destroyed objects are not C# null, so ?. still invokes Hide().
+            if (instance == null)
+            {
+                instance = null;
+                return;
+            }
+
+            instance.Hide();
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
         }
 
         public static PioneerRosterContextMenu EnsureExists(Transform canvasRootTransform, PioneerRosterPanelUI rosterPanel)
@@ -34,6 +47,9 @@ namespace Project.UI
                 instance.canvasRoot = canvasRootTransform;
                 return instance;
             }
+
+            // Stale destroyed static reference after canvas rebuild / domain reload.
+            instance = null;
 
             GameObject host = new GameObject("PioneerRosterContextMenu", typeof(RectTransform));
             host.transform.SetParent(canvasRootTransform, false);
@@ -219,6 +235,11 @@ namespace Project.UI
 
         public void Hide()
         {
+            // Guard destroyed hosts — calling transform on a destroyed MonoBehaviour throws
+            // and was aborting LoadingOverlayController fade-in (black screen after load).
+            if (this == null)
+                return;
+
             if (menuRoot != null)
                 menuRoot.SetActive(false);
 

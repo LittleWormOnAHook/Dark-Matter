@@ -448,7 +448,7 @@ public static class WeaponPrefabBuilder
         MapMarkerEditorUtility.RemoveMapMarkers(root);
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.AddWeaponHitboxToSelectedPrefab, false, 14)]
+    [MenuItem(DarkMatterGenesisEditorMenus.AddWeaponHitboxToSelectedPrefab, false, 14)]
     public static void AddHitboxToSelectedPrefab()
     {
         UnityEngine.Object[] selected = Selection.objects;
@@ -488,7 +488,7 @@ public static class WeaponPrefabBuilder
             "OK");
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.AddWeaponHitboxToSelectedPrefab, true)]
+    [MenuItem(DarkMatterGenesisEditorMenus.AddWeaponHitboxToSelectedPrefab, true)]
     private static bool ValidateAddHitboxToSelectedPrefab()
     {
         UnityEngine.Object[] selected = Selection.objects;
@@ -509,7 +509,7 @@ public static class WeaponPrefabBuilder
         return false;
     }
 
-    [MenuItem(SurvivalPioneerEditorMenus.RefreshAllWeaponHitboxes, false, 15)]
+    [MenuItem(DarkMatterGenesisEditorMenus.RefreshAllWeaponHitboxes, false, 15)]
     public static void RefreshAllWeaponHitboxes()
     {
         if (!EditorUtility.DisplayDialog(

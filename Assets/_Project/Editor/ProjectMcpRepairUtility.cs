@@ -36,13 +36,13 @@ namespace Project.EditorTools
             TryAutoConnectBridgeOnce();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair Cursor MCP Connection", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection", false, 0)]
         public static void RepairCursorMcpConnectionMenu()
         {
             RepairCursorMcpConnection(showDialog: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Repair Cursor MCP Connection (Silent)", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection (Silent)", false, 1)]
         public static void RepairCursorMcpConnectionSilentMenu()
         {
             RepairCursorMcpConnection(showDialog: false);

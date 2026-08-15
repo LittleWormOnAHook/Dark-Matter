@@ -114,13 +114,13 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Injured Companions";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Companions sent here after falling in combat. Right-click a row and choose Reassign when recovery is complete.";
 
             healthStatusLabel = CreateBodyText(content, theme, 18f);
-            healthStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
+            healthStatusLabel.color = DarkMatterGenesisUiPalette.MutedText;
 
             GameObject listHost = new GameObject("InjuredList", typeof(RectTransform), typeof(VerticalLayoutGroup));
             listHost.transform.SetParent(content, false);
@@ -166,7 +166,7 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Overview";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             overviewBuildingNameText = CreateBodyText(content, theme, 22f);
             overviewAssignedText = CreateBodyText(content, theme, 20f);
@@ -199,7 +199,7 @@ namespace Project.UI
 
             Image background = buttonObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
-            background.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f);
+            background.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.85f);
 
             refuelGeneratorButton = buttonObject.GetComponent<Button>();
             refuelGeneratorButton.targetGraphic = background;
@@ -216,7 +216,7 @@ namespace Project.UI
                 TmpUiHelper.ApplyDefaultFont(refuelGeneratorButtonLabel);
             refuelGeneratorButtonLabel.fontSize = 16f;
             refuelGeneratorButtonLabel.alignment = TextAlignmentOptions.Center;
-            refuelGeneratorButtonLabel.color = SurvivalPioneerUiPalette.BodyText;
+            refuelGeneratorButtonLabel.color = DarkMatterGenesisUiPalette.BodyText;
             refuelGeneratorButtonLabel.text = "Load Plasma Fuel";
             refuelGeneratorButtonLabel.raycastTarget = false;
             MenuUiBuilder.StretchRectToFill(refuelGeneratorButtonLabel.GetComponent<RectTransform>());
@@ -230,13 +230,13 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Companion Assignments";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Click a slot to cycle through available base companions (up to four per building).";
 
             pioneerAssignmentHintText = CreateBodyText(content, theme, 17f);
-            pioneerAssignmentHintText.color = SurvivalPioneerUiPalette.MutedText;
+            pioneerAssignmentHintText.color = DarkMatterGenesisUiPalette.MutedText;
             pioneerAssignmentHintText.margin = new Vector4(0f, 4f, 0f, 10f);
 
             for (int i = 0; i < BuildingOperationRegistry.MaxAssignedPioneers; i++)
@@ -250,14 +250,14 @@ namespace Project.UI
 
                 Image rowBackground = slotRow.GetComponent<Image>();
                 MenuUiBuilder.ApplyUiSprite(rowBackground);
-                rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+                rowBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
 
                 Button slotButton = slotRow.GetComponent<Button>();
                 slotButton.targetGraphic = rowBackground;
                 ColorBlock colors = slotButton.colors;
                 colors.normalColor = rowBackground.color;
-                colors.highlightedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.22f);
-                colors.pressedColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.85f);
+                colors.highlightedColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.22f);
+                colors.pressedColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.85f);
                 colors.selectedColor = colors.highlightedColor;
                 slotButton.colors = colors;
                 UiSoundHelper.BindButton(slotButton);
@@ -274,7 +274,7 @@ namespace Project.UI
                     TmpUiHelper.ApplyDefaultFont(label);
                 label.fontSize = 18f;
                 label.alignment = TextAlignmentOptions.MidlineLeft;
-                label.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+                label.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.BodyText;
                 label.raycastTarget = false;
                 RectTransform labelRect = label.GetComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero;
@@ -294,14 +294,14 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Production Queue";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Queued recipes run while you are on expedition and pause during sulfur storms.";
 
             productionPausedOverlay = CreateBodyText(content, theme, 20f);
             productionPausedOverlay.fontStyle = FontStyles.Bold;
-            productionPausedOverlay.color = SurvivalPioneerUiPalette.WarningText;
+            productionPausedOverlay.color = DarkMatterGenesisUiPalette.WarningText;
             productionPausedOverlay.gameObject.SetActive(false);
 
             GameObject listHost = new GameObject("QueueList", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -325,7 +325,7 @@ namespace Project.UI
             TextMeshProUGUI heading = CreateBodyText(content, theme, 26f);
             heading.text = "Building Settings";
             heading.fontStyle = FontStyles.Bold;
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             CreateBodyText(content, theme, 18f).text =
                 "Per-building automation and mode toggles. Changes apply to this structure only.";
@@ -429,7 +429,7 @@ namespace Project.UI
             TextMeshProUGUI headingText = CreateBodyText(content.transform, theme, 26f);
             headingText.text = heading;
             headingText.fontStyle = FontStyles.Bold;
-            headingText.color = SurvivalPioneerUiPalette.BodyText;
+            headingText.color = DarkMatterGenesisUiPalette.BodyText;
 
             for (int i = 0; i < paragraphs.Length; i++)
             {
@@ -457,7 +457,7 @@ namespace Project.UI
             Image background = tabObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
             background.color = InactiveTabColor;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(tabObject);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(tabObject);
 
             Button button = tabObject.GetComponent<Button>();
             button.targetGraphic = background;
@@ -515,7 +515,7 @@ namespace Project.UI
 
             Image toggleBg = toggleObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(toggleBg);
-            toggleBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 1f);
+            toggleBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 1f);
 
             Toggle toggle = toggleObject.GetComponent<Toggle>();
             toggle.targetGraphic = toggleBg;
@@ -525,7 +525,7 @@ namespace Project.UI
             checkmark.transform.SetParent(toggleObject.transform, false);
             Image checkImage = checkmark.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(checkImage);
-            checkImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            checkImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             MenuUiBuilder.StretchRectToFill(checkmark.GetComponent<RectTransform>());
             toggle.graphic = checkImage;
 
@@ -552,7 +552,7 @@ namespace Project.UI
                 theme.ApplyFont(subtitle);
             subtitle.fontSize = 14f;
             subtitle.fontStyle = FontStyles.Italic;
-            subtitle.color = SurvivalPioneerUiPalette.MutedText;
+            subtitle.color = DarkMatterGenesisUiPalette.MutedText;
             subtitle.alignment = TextAlignmentOptions.BottomLeft;
             subtitle.raycastTarget = false;
 
@@ -588,7 +588,7 @@ namespace Project.UI
             else
                 TmpUiHelper.ApplyDefaultFont(text);
             text.fontSize = size;
-            text.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+            text.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.BodyText;
             text.raycastTarget = false;
             return text;
         }

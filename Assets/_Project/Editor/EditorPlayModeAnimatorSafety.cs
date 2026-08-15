@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class EditorPlayModeAnimatorSafety
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Restore Player Animators After Play", false, 4)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Restore Player Animators After Play", false, 4)]
         public static void RestorePlayerAnimatorsMenu()
         {
             EditorUtility.DisplayDialog(

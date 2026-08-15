@@ -30,7 +30,7 @@ namespace Project.UI
 
             Image barBg = bar.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barBg);
-            barBg.color = SurvivalPioneerUiPalette.PanelBackground;
+            barBg.color = DarkMatterGenesisUiPalette.PanelBackground;
 
             HorizontalLayoutGroup layout = bar.GetComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(16, 16, 8, 8);
@@ -64,8 +64,8 @@ namespace Project.UI
             tempLabel.text = $"{zone.temperatureC:0}°C";
             conditionLabel.text = zone.surfaceCondition;
             conditionLabel.color = zone.surfaceCondition == "SAFE"
-                ? SurvivalPioneerUiPalette.PositiveGreen
-                : SurvivalPioneerUiPalette.DangerRed;
+                ? DarkMatterGenesisUiPalette.PositiveGreen
+                : DarkMatterGenesisUiPalette.DangerRed;
             hazardsLabel.text = zone.hazardsText;
         }
 
@@ -80,7 +80,7 @@ namespace Project.UI
                 theme.ApplyFont(label, semiBold: true);
             label.text = text;
             label.fontSize = fontSize;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
             LayoutElement layout = labelObj.AddComponent<LayoutElement>();

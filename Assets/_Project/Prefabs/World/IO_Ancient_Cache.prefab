@@ -17,16 +17,20 @@ PrefabInstance:
       value: Cache Lid
       objectReference: {fileID: 0}
     - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5903122
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.463646
+      value: -2.359415
       objectReference: {fileID: 0}
     - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.059739105
+      value: 0.059433926
       objectReference: {fileID: 0}
     - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.2801771
+      value: 5.281556
       objectReference: {fileID: 0}
     - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -64,6 +68,10 @@ PrefabInstance:
       propertyPath: 'm_Animations.Array.data[0]'
       value: 
       objectReference: {fileID: 7400000, guid: 4a3b7161da371ea4b989ba129f46d4f1, type: 2}
+    - target: {fileID: 19983670, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 111ee638dd846464d8a9e6fe3d5f0865, type: 2}
     - target: {fileID: 8712899089745074413, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
       propertyPath: openAnimationName
       value: Cache-Lid-Open

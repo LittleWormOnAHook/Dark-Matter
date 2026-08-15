@@ -41,7 +41,7 @@ namespace Project.UI
 
             backgroundImage = gameObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(backgroundImage);
-            backgroundImage.color = SurvivalPioneerUiPalette.SlotBackground;
+            backgroundImage.color = DarkMatterGenesisUiPalette.SlotBackground;
 
             LayoutElement layout = gameObject.AddComponent<LayoutElement>();
             layout.minWidth = slotSize;
@@ -67,7 +67,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(emptyLabel);
             emptyLabel.text = string.Empty;
             emptyLabel.fontSize = 11f * slotScale;
-            emptyLabel.color = SurvivalPioneerUiPalette.SoftBeigeGray;
+            emptyLabel.color = DarkMatterGenesisUiPalette.SoftBeigeGray;
             emptyLabel.alignment = TextAlignmentOptions.Center;
             emptyLabel.raycastTarget = false;
             RectTransform labelRect = labelObj.GetComponent<RectTransform>();

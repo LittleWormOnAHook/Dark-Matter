@@ -30,7 +30,7 @@ namespace Project.UI
                 if (healthStatusLabel != null)
                 {
                     healthStatusLabel.text = message;
-                    healthStatusLabel.color = SurvivalPioneerUiPalette.WarningText;
+                    healthStatusLabel.color = DarkMatterGenesisUiPalette.WarningText;
                 }
 
                 return;
@@ -42,7 +42,7 @@ namespace Project.UI
             if (healthStatusLabel != null)
             {
                 healthStatusLabel.text = message;
-                healthStatusLabel.color = SurvivalPioneerUiPalette.BodyText;
+                healthStatusLabel.color = DarkMatterGenesisUiPalette.BodyText;
             }
 
             RefreshHealthTab();
@@ -126,7 +126,7 @@ namespace Project.UI
             ShiftUiTheme theme = ShiftUiTheme.Current;
             TextMeshProUGUI label = CreateBodyText(healthListParent, theme, 18f);
             label.text = message;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
         }
 
         private void CreateHealthRow(SkilledPioneerRecord record, PioneerRosterManager roster)
@@ -136,7 +136,7 @@ namespace Project.UI
 
             UnityEngine.UI.Image bg = row.GetComponent<UnityEngine.UI.Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
 
             LayoutElement rowLayout = row.GetComponent<LayoutElement>();
             rowLayout.minHeight = 56f;
@@ -165,9 +165,9 @@ namespace Project.UI
 
             label.fontSize = 16f;
             label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = ready ? SurvivalPioneerUiPalette.BodyText : SurvivalPioneerUiPalette.MutedText;
+            label.color = ready ? DarkMatterGenesisUiPalette.BodyText : DarkMatterGenesisUiPalette.MutedText;
             label.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
+                $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
                 $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  {status}";
 
             ScienceLabHealthRowHandler handler = row.AddComponent<ScienceLabHealthRowHandler>();

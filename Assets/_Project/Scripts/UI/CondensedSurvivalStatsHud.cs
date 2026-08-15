@@ -32,7 +32,7 @@ namespace Project.UI
             new Color(0.92f, 0.18f, 0.14f, 1f),
             new Color(0.91f, 0.63f, 0.27f, 1f),
             new Color(0.71f, 0.88f, 0.40f, 1f),
-            SurvivalPioneerUiPalette.RichFuchsia
+            DarkMatterGenesisUiPalette.RichFuchsia
         };
 
         private bool layoutApplied;
@@ -68,6 +68,14 @@ namespace Project.UI
 
             Transform fillTransform = slider.transform.Find("RingFill");
             if (fillTransform is not RectTransform fillRect)
+                return;
+
+            ApplyBarFill(slider, normalized, fillRect);
+        }
+
+        public static void ApplyBarFill(Slider slider, float normalized, RectTransform fillRect)
+        {
+            if (slider == null || fillRect == null)
                 return;
 
             normalized = Mathf.Clamp01(normalized);
@@ -306,7 +314,7 @@ namespace Project.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 6f;
             label.fontSizeMax = BarHeight * 0.85f;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.raycastTarget = false;
             label.overflowMode = TextOverflowModes.Overflow;
         }
@@ -345,7 +353,7 @@ namespace Project.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 6f;
             label.fontSizeMax = BarHeight * 0.85f;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.raycastTarget = false;
             label.overflowMode = TextOverflowModes.Overflow;
         }
@@ -395,7 +403,7 @@ namespace Project.UI
                 iconImage.preserveAspect = true;
                 iconImage.raycastTarget = false;
                 // Authored icons often use dark navy tints that disappear on the HUD track.
-                iconImage.color = SurvivalPioneerUiPalette.WarmOffWhite;
+                iconImage.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             }
         }
 

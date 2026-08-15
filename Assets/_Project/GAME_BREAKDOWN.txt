@@ -622,9 +622,9 @@ ENVIRONMENT
 
 KEY PLACED OBJECTS
   - Player spawn
-  - QuestGiver_PioneerGuide (temporary companion — replace with idle Aether-9 machine
+  - QuestGiver_PioneerGuide (temporary companion — replace with idle Kairos machine
     as main mystery / prologue hub; keep side quest givers separate)
-  - Target (not built): Aether-9 dormant machine (idle interactable) → repair
+  - Target (not built): Kairos dormant machine (idle interactable) → repair
     quest (3 objects) → awaken → Memory Core slots → Resonance Events
   - TrainingDummy (combat practice)
   - Enemies container (Gongo, The Evil One, etc.)
@@ -654,7 +654,7 @@ PREFAB FOLDERS (Assets/_Project/Prefabs/)
 Menu root: Tools > Dark Matter: Genesis/
 
 TOOLS WINDOW
-  - SurvivalPioneerToolsWindow.cs — hub for common setup actions
+  - DarkMatterGenesisToolsWindow.cs — hub for common setup actions
 
 PROJECT & CONTENT
   - Project structure setup and organizer
@@ -698,10 +698,10 @@ MAINTENANCE
   - Attachment modules: generators, power grids, auto gather, logistics,
     communications, defense, mining (see Building System above)
   - Full Building Control production / companion assignment / sulfur-storm sim
-  - Aether-9 prologue idle machine (dormant interact / awaken dialogue)
-  - Aether-9 3-object repair quest + Memory Core attach UX
+  - Kairos prologue idle machine (dormant interact / awaken dialogue)
+  - Kairos 3-object repair quest + Memory Core attach UX
   - Resonance Event runtime (world change + story unlocks)
-  - Trust-gated Aether-9 advisory radio (Colony Ops handles queries until awake)
+  - Trust-gated Kairos advisory radio (Colony Ops handles queries until awake)
   - Console/gamepad ship parity (Input System present; cert not done)
   - Some legacy currency field names remain in code — AC is gameplay truth
   - StatUpgrade quest reward type (logged as placeholder only)

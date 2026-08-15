@@ -43,7 +43,7 @@ namespace Project.Interaction
             GameObject bg = new GameObject("Background");
             bg.transform.SetParent(_root, false);
             Image bgImage = bg.AddComponent<Image>();
-            bgImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            bgImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
             bgImage.raycastTarget = false;
             RectTransform bgRect = bg.GetComponent<RectTransform>();
             bgRect.anchorMin = Vector2.zero;
@@ -62,7 +62,7 @@ namespace Project.Interaction
             GameObject fillGo = new GameObject("Fill");
             fillGo.transform.SetParent(fillArea.transform, false);
             _fill = fillGo.AddComponent<Image>();
-            _fill.color = SurvivalPioneerUiPalette.Gold;
+            _fill.color = DarkMatterGenesisUiPalette.Gold;
             _fill.raycastTarget = false;
             RectTransform fillRect = fillGo.GetComponent<RectTransform>();
             // Left-anchored so Slider can grow fill width with value (0→1 over time).
@@ -89,7 +89,7 @@ namespace Project.Interaction
             _label = labelGo.AddComponent<TextMeshProUGUI>();
             _label.fontSize = 0.035f;
             _label.alignment = TextAlignmentOptions.Center;
-            _label.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            _label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             _label.textWrappingMode = TextWrappingModes.NoWrap;
             _label.raycastTarget = false;
             RectTransform labelRect = labelGo.GetComponent<RectTransform>();

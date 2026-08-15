@@ -25,9 +25,9 @@ namespace Project.Companions
         private const float LegacyRangedStandoffRangeFactor = 0.6f;
         private const float RifleStandoffScale = 0.5f;
 
-        // ResolveTarget()/FindEnemyThreateningPlayer() each do a full-scene FindObjectsByType<EnemyHealth>()
-        // scan; with several companions doing this every single Update() frame the cost multiplies
-        // fast. Throttling to ~7Hz (matching EnemySenses' vision-refresh cadence) is imperceptible for
+        // ResolveTarget()/FindEnemyThreateningPlayer() shared SceneComponentCache.GetAll<EnemyHealth>()
+        // scans; with several companions doing this every Update() the cost still multiplies.
+        // Throttling to ~7Hz (matching EnemySenses' vision-refresh cadence) is imperceptible for
         // target acquisition/handoff but cuts the scan cost by roughly 85% at 60fps.
         private const float TargetScanInterval = 0.15f;
 
@@ -161,7 +161,7 @@ namespace Project.Companions
                 return null;
 
             Transform playerRoot = playerObject.transform;
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>();
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>();
             EnemyHealth best = null;
             float bestDistance = assistAlertRange;
 
@@ -551,7 +551,7 @@ namespace Project.Companions
 
         private EnemyHealth FindNearestEnemyWithin(float maxRange, bool requireThreatCone)
         {
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>();
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>();
             EnemyHealth best = null;
             float bestDistance = maxRange;
 

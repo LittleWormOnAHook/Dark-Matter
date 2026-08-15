@@ -15,9 +15,9 @@ namespace Project.UI
                 case JournalWindowId.Pet: return 'F';
                 case JournalWindowId.Pioneers: return 'P';
                 case JournalWindowId.Character: return 'U';
-                case JournalWindowId.Recipes: return 'B';
+                case JournalWindowId.Recipes: return 'B'; // tap B; hold B is binoculars (ToolBarUI)
                 case JournalWindowId.Skills: return 'T';
-                // Craft tab removed from journal rail — C still opens Blueprints; primary shortcut is B.
+                // Craft tab removed from journal rail — C still opens Blueprints; tap B is primary.
                 case JournalWindowId.Craft: return null;
                 case JournalWindowId.Echoes: return 'L';
                 case JournalWindowId.Achievements: return 'A';

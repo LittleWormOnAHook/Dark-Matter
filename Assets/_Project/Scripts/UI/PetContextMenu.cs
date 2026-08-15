@@ -19,7 +19,19 @@ namespace Project.UI
 
         public static void HideAny()
         {
-            instance?.Hide();
+            if (instance == null)
+            {
+                instance = null;
+                return;
+            }
+
+            instance.Hide();
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
         }
 
         public static PetContextMenu EnsureExists(Transform canvasRootTransform)
@@ -65,7 +77,7 @@ namespace Project.UI
 
             Image panelImage = menuPanel.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panelImage);
-            panelImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PanelBackground, 0.98f);
+            panelImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PanelBackground, 0.98f);
             panelImage.raycastTarget = true;
 
             RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
@@ -133,6 +145,9 @@ namespace Project.UI
 
         public void Hide()
         {
+            if (this == null)
+                return;
+
             activePet = null;
             if (menuRoot != null)
                 menuRoot.SetActive(false);

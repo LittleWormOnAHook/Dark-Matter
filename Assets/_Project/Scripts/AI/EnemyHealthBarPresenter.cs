@@ -25,7 +25,10 @@ namespace Project.AI
         private EnemyLootable lootable;
         private EnemyInvectorBootstrap invectorBootstrap;
         private float lastPlayerAttackTime = -999f;
+        private float firstEngagedTime = -1f;
         private bool reporting;
+        private bool wasEngagedLastFrame;
+        private Transform _canvasRoot;
 
         private void Awake()
         {
@@ -41,9 +44,11 @@ namespace Project.AI
             if (!showFloatingHealthBar || health == null)
                 return;
 
-            EngagedEnemyHealthHud.EnsureExists(ResolveCanvasRoot());
+            _canvasRoot = ResolveCanvasRoot();
+            EngagedEnemyHealthHud.EnsureExists(_canvasRoot);
 
             health.DamagedBy += OnDamagedBy;
+            health.HealthChanged += OnHealthChanged;
             health.Died += HandleDied;
             health.Respawned += HandleRespawned;
         }
@@ -53,6 +58,7 @@ namespace Project.AI
             if (health != null)
             {
                 health.DamagedBy -= OnDamagedBy;
+                health.HealthChanged -= OnHealthChanged;
                 health.Died -= HandleDied;
                 health.Respawned -= HandleRespawned;
             }
@@ -74,6 +80,14 @@ namespace Project.AI
             }
 
             bool engaged = IsEngagedWithPlayer();
+            if (engaged && !wasEngagedLastFrame)
+                firstEngagedTime = Time.time;
+
+            if (!engaged && wasEngagedLastFrame)
+                EngagedEnemyHealthHud.Instance?.ReleaseEngagementCandidate(health);
+
+            wasEngagedLastFrame = engaged;
+
             bool playerAttacking = Time.time - lastPlayerAttackTime <= EngagedEnemyHealthHud.AttackLinger;
             bool shouldShow = engaged || playerAttacking;
 
@@ -88,17 +102,20 @@ namespace Project.AI
                 return;
             }
 
-            float priority = Mathf.Max(
-                lastPlayerAttackTime,
-                engaged ? Time.time : float.NegativeInfinity);
+            // While the player is actively damaging this target, HUD refresh is event-driven.
+            if (playerAttacking)
+            {
+                reporting = true;
+                return;
+            }
 
-            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(ResolveCanvasRoot());
-            hud.ShowOrUpdate(
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot);
+            hud.UpdateFromEngagement(
                 health,
                 ResolveDisplayName(),
                 health.CurrentHealth,
                 health.MaxHealth,
-                priority);
+                firstEngagedTime);
             reporting = true;
         }
 
@@ -108,6 +125,29 @@ namespace Project.AI
                 return;
 
             lastPlayerAttackTime = Time.time;
+            PushHealthHudImmediate();
+        }
+
+        private void OnHealthChanged(float current, float max)
+        {
+            if (health == null || health.IsDead)
+                return;
+
+            EngagedEnemyHealthHud.Instance?.UpdateHealthIfBound(health, current, max);
+        }
+
+        private void PushHealthHudImmediate()
+        {
+            if (!showFloatingHealthBar || health == null || health.IsDead)
+                return;
+
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
+            hud.ShowFromPlayerDamage(
+                health,
+                ResolveDisplayName(),
+                health.CurrentHealth,
+                health.MaxHealth);
+            reporting = true;
         }
 
         private void HandleDied()
@@ -119,7 +159,10 @@ namespace Project.AI
         private void HandleRespawned()
         {
             lastPlayerAttackTime = -999f;
+            firstEngagedTime = -1f;
+            wasEngagedLastFrame = false;
             reporting = false;
+            EngagedEnemyHealthHud.Instance?.ReleaseEngagementCandidate(health);
         }
 
         private bool IsEngagedWithPlayer()
@@ -185,10 +228,16 @@ namespace Project.AI
             return source == player || source.transform.IsChildOf(player.transform);
         }
 
+        private static Transform _cachedCanvasRoot;
+
         private static Transform ResolveCanvasRoot()
         {
+            if (_cachedCanvasRoot != null)
+                return _cachedCanvasRoot;
+
             UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
-            return uiManager != null ? uiManager.transform : null;
+            _cachedCanvasRoot = uiManager != null ? uiManager.transform : null;
+            return _cachedCanvasRoot;
         }
     }
 }

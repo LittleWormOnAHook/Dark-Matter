@@ -264,7 +264,7 @@ namespace Project.Pet
             if (_owner == null)
                 return null;
 
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsInactive.Exclude);
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>(FindObjectsInactive.Exclude);
             EnemyHealth best = null;
             float bestDistance = maxAttackRange;
 

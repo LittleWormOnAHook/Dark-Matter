@@ -17,6 +17,7 @@ namespace Project.Player.Invector
     {
         private EquipmentController _equipment;
         private WeaponAmmoState _ammoState;
+        private bool _nativeRecoilSuppressed;
 
         public override void Start()
         {
@@ -64,8 +65,22 @@ namespace Project.Player.Invector
             if (!Application.isPlaying)
                 return;
 
-            PioneerInvectorRecoilUtility.ApplyShooterManagerDefaults(this);
-            PioneerInvectorRecoilUtility.SuppressInvectorNativeRecoil(this);
+            // Invector can re-enable native recoil on equip — refresh only while armed or firing.
+            bool needsNativeSuppress = isShooting || isReloading || CurrentWeapon != null || applyRecoilToCamera;
+            if (needsNativeSuppress || !_nativeRecoilSuppressed)
+            {
+                PioneerInvectorRecoilUtility.ApplyShooterManagerDefaults(this);
+                PioneerInvectorRecoilUtility.SuppressInvectorNativeRecoil(this);
+                _nativeRecoilSuppressed = CurrentWeapon != null && !applyRecoilToCamera;
+            }
+
+            if (_equipment == null)
+                _equipment = GetComponent<EquipmentController>();
+
+            ItemData weaponItem = _equipment != null ? _equipment.DrawnWeaponItem : null;
+
+            if (PioneerInvectorRecoilUtility.HasActiveRecoil(tpCamera) || isShooting)
+                PioneerInvectorRecoilUtility.TickRecoilRecovery(tpCamera, weaponItem, Time.deltaTime);
         }
 
         public override void Shoot(Vector3 aimPosition, bool applyHipfirePrecision = false, bool scopeViewMode = false)
@@ -113,9 +128,8 @@ namespace Project.Player.Invector
             if (_ammoState != null && _equipment != null)
                 ammoItem = _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
 
-            // Laser ammo / mining laser tool: skip animation flinch and apply near-zero camera kick.
-            bool lowRecoilLaser = PioneerInvectorRecoilUtility.IsLowRecoilLaserShot(weaponItem, ammoItem);
-            if (!lowRecoilLaser)
+            // Laser / low-weight ammo may still use a subtle animation pulse from ammoRecoilProfile.
+            if (!PioneerInvectorRecoilUtility.ShouldSkipAnimationRecoil(weaponItem, ammoItem))
                 ApplyAnimationRecoil();
 
             if (weaponItem != null && weaponItem.IsRangedWeapon)

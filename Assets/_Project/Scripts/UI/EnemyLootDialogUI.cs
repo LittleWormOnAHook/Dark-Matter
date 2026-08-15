@@ -144,6 +144,7 @@ namespace Project.UI
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetLootDialogOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonLootDialog, false);
         }
 
         private static void DestroyUiHost(GameObject host)
@@ -273,6 +274,7 @@ namespace Project.UI
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetLootDialogOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonLootDialog, true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -349,7 +351,7 @@ namespace Project.UI
             text.fontSize = size;
             text.fontStyle = style;
             text.alignment = TextAlignmentOptions.TopLeft;
-            text.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+            text.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.BodyText;
             text.raycastTarget = false;
             return text;
         }
@@ -365,12 +367,12 @@ namespace Project.UI
 
             Image image = buttonObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.ButtonNormal;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(buttonObject);
+            image.color = DarkMatterGenesisUiPalette.ButtonNormal;
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(buttonObject);
             image.raycastTarget = true;
 
             Button button = buttonObject.AddComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(button, image);
+            DarkMatterGenesisUiPalette.StylePrimaryButton(button, image);
             UiSoundHelper.BindButton(button);
 
             GameObject textObject = new GameObject("Text", typeof(RectTransform));
@@ -383,7 +385,7 @@ namespace Project.UI
             labelText.text = label;
             labelText.fontSize = 22f;
             labelText.alignment = TextAlignmentOptions.Center;
-            labelText.color = SurvivalPioneerUiPalette.BodyText;
+            labelText.color = DarkMatterGenesisUiPalette.BodyText;
             labelText.raycastTarget = false;
             RectTransform textRect = textObject.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;

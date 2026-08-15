@@ -10,7 +10,7 @@ namespace Project.UI
     public class SettingsPanelController : MonoBehaviour
     {
         private const float WindowWidth = 440f;
-        private const float WindowHeight = 520f;
+        private const float WindowHeight = 560f;
         private const float HeaderHeight = 36f;
         private const float FooterHeight = 44f;
 
@@ -18,7 +18,9 @@ namespace Project.UI
         private Slider masterSlider;
         private Slider musicSlider;
         private Slider sfxSlider;
+        private Slider uiScaleSlider;
         private Toggle postProcessingToggle;
+        private Toggle rayTracingToggle;
         private Toggle minimapToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
@@ -27,6 +29,8 @@ namespace Project.UI
         private TextMeshProUGUI masterValueLabel;
         private TextMeshProUGUI musicValueLabel;
         private TextMeshProUGUI sfxValueLabel;
+        private TextMeshProUGUI uiScaleValueLabel;
+        private TextMeshProUGUI graphicsAdvisoryLabel;
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
@@ -38,7 +42,7 @@ namespace Project.UI
             panelRoot = MenuUiBuilder.CreateFullScreenPanel(
                 parent,
                 "SettingsPanel",
-                SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.82f),
+                DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.82f),
                 blockRaycasts: true);
 
             GameObject window = new GameObject("SettingsWindow", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
@@ -46,8 +50,8 @@ namespace Project.UI
 
             Image windowImage = window.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(windowImage);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(windowImage, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(window);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(windowImage, 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(window);
 
             RectTransform windowRect = window.GetComponent<RectTransform>();
             windowRect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -83,10 +87,18 @@ namespace Project.UI
             resolutionDropdown = MenuUiBuilder.CreateDropdownRow(scrollContent, "Resolution");
             fullscreenToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Fullscreen", GameSettings.Fullscreen);
             vsyncToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "VSync", GameSettings.VSync);
+            rayTracingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Ray Tracing", GameSettings.RayTracingEnabled);
             postProcessingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Post Processing", GameSettings.PostProcessingEnabled);
+            graphicsAdvisoryLabel = CreateAdvisoryLabel(scrollContent);
 
             CreateSectionTitle(scrollContent, "Gameplay");
             minimapToggle = MenuUiBuilder.CreateCircleToggleRow(scrollContent, "Minimap", GameSettings.MinimapEnabled);
+            uiScaleSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "UI Scale", GameSettings.UiScale, out uiScaleValueLabel);
+            uiScaleSlider.minValue = GameSettings.UiScaleMin;
+            uiScaleSlider.maxValue = GameSettings.UiScaleMax;
+            uiScaleSlider.wholeNumbers = false;
+            uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
+            UpdatePercentLabel(uiScaleValueLabel, GameSettings.UiScale);
 
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             buttonRow.transform.SetParent(window.transform, false);
@@ -138,6 +150,12 @@ namespace Project.UI
                 GameAudioManager.Instance?.RefreshVolumes();
                 UpdatePercentLabel(sfxValueLabel, value);
             });
+            uiScaleSlider.onValueChanged.RemoveAllListeners();
+            uiScaleSlider.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetUiScale(value);
+                UpdatePercentLabel(uiScaleValueLabel, value);
+            });
             postProcessingToggle.onValueChanged.RemoveAllListeners();
             postProcessingToggle.onValueChanged.AddListener(value =>
             {
@@ -154,8 +172,18 @@ namespace Project.UI
             fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
             vsyncToggle.onValueChanged.RemoveAllListeners();
             vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
+            rayTracingToggle.onValueChanged.RemoveAllListeners();
+            rayTracingToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetRayTracingEnabled(value);
+                RefreshGraphicsAdvisory();
+            });
             qualityDropdown.onValueChanged.RemoveAllListeners();
-            qualityDropdown.onValueChanged.AddListener(GameSettings.SetQualityLevel);
+            qualityDropdown.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetQualityLevel(value);
+                RefreshGraphicsAdvisory();
+            });
             resolutionDropdown.onValueChanged.RemoveAllListeners();
             resolutionDropdown.onValueChanged.AddListener(GameSettings.SetResolutionIndex);
 
@@ -196,7 +224,7 @@ namespace Project.UI
 
             Image scrollBg = scrollHost.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.55f);
+            scrollBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.55f);
             scrollBg.raycastTarget = true;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
@@ -250,7 +278,7 @@ namespace Project.UI
 
             Image scrollbarBg = scrollbarObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollbarBg);
-            scrollbarBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f);
+            scrollbarBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f);
 
             GameObject handleArea = new GameObject("Sliding Area", typeof(RectTransform));
             handleArea.transform.SetParent(scrollbarObject.transform, false);
@@ -264,7 +292,7 @@ namespace Project.UI
             handle.transform.SetParent(handleArea.transform, false);
             Image handleImage = handle.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(handleImage);
-            handleImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            handleImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             RectTransform handleRect = handle.GetComponent<RectTransform>();
             handleRect.anchorMin = Vector2.zero;
             handleRect.anchorMax = Vector2.one;
@@ -295,6 +323,7 @@ namespace Project.UI
             GameSettings.Save();
             GameAudioManager.Instance?.RefreshVolumes();
             PostProcessingController.Instance?.ApplyFromSettings();
+            UiScaleApplier.ApplyFromSettings();
             Close();
         }
 
@@ -303,16 +332,22 @@ namespace Project.UI
             masterSlider.SetValueWithoutNotify(GameSettings.MasterVolume);
             musicSlider.SetValueWithoutNotify(GameSettings.MusicVolume);
             sfxSlider.SetValueWithoutNotify(GameSettings.SfxVolume);
+            uiScaleSlider.minValue = GameSettings.UiScaleMin;
+            uiScaleSlider.maxValue = GameSettings.UiScaleMax;
+            uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
             postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
             minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
+            rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);
             qualityDropdown.SetValueWithoutNotify(QualitySettings.GetQualityLevel());
             resolutionDropdown.SetValueWithoutNotify(GameSettings.GetCurrentResolutionIndex());
+            RefreshGraphicsAdvisory();
 
             UpdatePercentLabel(masterValueLabel, GameSettings.MasterVolume);
             UpdatePercentLabel(musicValueLabel, GameSettings.MusicVolume);
             UpdatePercentLabel(sfxValueLabel, GameSettings.SfxVolume);
+            UpdatePercentLabel(uiScaleValueLabel, GameSettings.UiScale);
         }
 
         private void PopulateDropdowns()
@@ -332,12 +367,45 @@ namespace Project.UI
         {
             TextMeshProUGUI label = MenuUiBuilder.CreateTitle(parent, title, 15f);
             label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.color = SurvivalPioneerUiPalette.Gold;
+            label.color = DarkMatterGenesisUiPalette.Gold;
 
             LayoutElement layout = label.GetComponent<LayoutElement>();
             layout.minHeight = 22f;
             layout.preferredHeight = 22f;
             layout.flexibleHeight = 0f;
+        }
+
+        private static TextMeshProUGUI CreateAdvisoryLabel(Transform parent)
+        {
+            GameObject labelObject = new GameObject("GraphicsAdvisory", typeof(RectTransform), typeof(LayoutElement));
+            labelObject.transform.SetParent(parent, false);
+
+            LayoutElement layout = labelObject.GetComponent<LayoutElement>();
+            layout.minHeight = 36f;
+            layout.preferredHeight = 36f;
+            layout.flexibleHeight = 0f;
+
+            TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(label);
+            label.text = string.Empty;
+            label.fontSize = 12f;
+            label.color = DarkMatterGenesisUiPalette.SoftBeigeGray;
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.raycastTarget = false;
+            label.gameObject.SetActive(false);
+            return label;
+        }
+
+        private void RefreshGraphicsAdvisory()
+        {
+            if (graphicsAdvisoryLabel == null)
+                return;
+
+            string summary = GameSettings.GetGraphicsAdvisorySummary();
+            graphicsAdvisoryLabel.text = string.IsNullOrEmpty(summary)
+                ? string.Empty
+                : summary;
+            graphicsAdvisoryLabel.gameObject.SetActive(!string.IsNullOrEmpty(summary));
         }
 
         private static void UpdatePercentLabel(TextMeshProUGUI label, float value)

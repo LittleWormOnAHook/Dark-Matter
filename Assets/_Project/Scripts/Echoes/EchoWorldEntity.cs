@@ -19,7 +19,7 @@ namespace Project.Echoes
 
         [Header("Signal")]
         [SerializeField] private SkilledPioneerRecord signalRecord;
-        [SerializeField] private string coreId = "Aether-9";
+        [SerializeField] private string coreId = "Kairos";
         [SerializeField] private float interactRange = 4f;
 
         [Header("Hostile Echo")]
@@ -56,10 +56,10 @@ namespace Project.Echoes
             DestroyHostileGuardian();
         }
 
-        public void Initialize(SkilledPioneerRecord record, string signalCoreId = "Aether-9")
+        public void Initialize(SkilledPioneerRecord record, string signalCoreId = "Kairos")
         {
             signalRecord = record;
-            coreId = signalCoreId ?? "Aether-9";
+            coreId = signalCoreId ?? "Kairos";
             localSynced = record != null && record.Disposition != EchoDisposition.HostileUntilSynced;
             RegisterSignalSummary();
             EnsureHostileGuardianIfNeeded();

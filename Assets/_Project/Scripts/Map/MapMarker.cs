@@ -123,7 +123,7 @@ namespace Project.Map
         public void ConfigureQuestGiver(string npcDisplayName)
         {
             label = string.IsNullOrWhiteSpace(npcDisplayName) ? "Quest Giver" : npcDisplayName;
-            color = SurvivalPioneerUiPalette.Gold;
+            color = DarkMatterGenesisUiPalette.Gold;
             showOnMinimap = true;
             showOnFullMap = true;
             requiresScanDiscovery = false;

@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// </summary>
     public class CraftingItemCreatorWindow : EditorWindow
     {
-        [MenuItem(SurvivalPioneerEditorMenus.CraftingItemCreator, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CraftingItemCreator, false, 1)]
         public static void Open()
         {
             BlueprintCraftingManagerWindow.OpenCraftingItemTab();

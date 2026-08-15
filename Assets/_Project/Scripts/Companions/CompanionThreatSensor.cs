@@ -1,4 +1,5 @@
 using Project.AI;
+using Project.Core;
 using Project.Player;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace Project.Companions
         public EnemyHealth ScanForThreat(Transform owner, CombatFocusController playerFocus)
         {
             float maxRange = EffectiveDetectRange(playerFocus);
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>();
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>();
             EnemyHealth best = null;
             float bestScore = float.MaxValue;
 

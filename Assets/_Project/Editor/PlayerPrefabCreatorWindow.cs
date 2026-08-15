@@ -24,7 +24,7 @@ namespace Project.EditorTools
         private Vector2 listScroll;
         private Vector2 editorScroll;
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayerPrefabCreator, false, 13)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, 13)]
         public static void Open()
         {
             PlayerPrefabCreatorWindow window = GetWindow<PlayerPrefabCreatorWindow>("Player Prefab Creator");

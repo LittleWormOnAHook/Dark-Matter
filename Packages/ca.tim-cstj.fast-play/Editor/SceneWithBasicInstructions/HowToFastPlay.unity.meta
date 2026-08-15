@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 789d2c6613b0af444be682510a5dc7b7
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 353186
+  packageName: Fast Play
+  packageVersion: 1.0.1
+  assetPath: Packages/ca.tim-cstj.fast-play/Editor/SceneWithBasicInstructions/HowToFastPlay.unity
+  uploadId: 883896

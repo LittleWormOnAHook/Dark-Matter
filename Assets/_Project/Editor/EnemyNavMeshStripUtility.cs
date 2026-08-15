@@ -8,7 +8,7 @@ namespace Project.EditorTools
 {
     public static class EnemyNavMeshStripUtility
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Strip NavMesh From Combat Prefabs", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Strip NavMesh From Combat Prefabs", false, 21)]
         public static void StripNavMeshFromCombatPrefabs()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectAssetPaths.PrefabsCombat });

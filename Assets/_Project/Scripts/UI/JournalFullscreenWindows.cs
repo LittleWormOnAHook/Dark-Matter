@@ -365,7 +365,7 @@ namespace Project.UI
             iconBlock.transform.SetParent(contentArea, false);
             Image iconImage = iconBlock.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(iconImage);
-            iconImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.55f);
+            iconImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.55f);
             LayoutElement iconLayout = iconBlock.AddComponent<LayoutElement>();
             iconLayout.minHeight = 64f;
             iconLayout.preferredHeight = 64f;
@@ -373,7 +373,7 @@ namespace Project.UI
             iconLayout.preferredWidth = 64f;
 
             TextMeshProUGUI heading = CreateStubText(contentArea, stubHeading ?? "Coming Soon", 24f, FontStyles.Bold, TextAlignmentOptions.TopLeft, theme);
-            heading.color = SurvivalPioneerUiPalette.BodyText;
+            heading.color = DarkMatterGenesisUiPalette.BodyText;
 
             TextMeshProUGUI body = CreateStubText(
                 contentArea,
@@ -383,7 +383,7 @@ namespace Project.UI
                 TextAlignmentOptions.TopLeft,
                 theme);
             body.textWrappingMode = TextWrappingModes.Normal;
-            body.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+            body.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.BodyText;
 
             if (featureBullets != null && featureBullets.Length > 0)
             {
@@ -410,7 +410,7 @@ namespace Project.UI
                         FontStyles.Normal,
                         TextAlignmentOptions.TopLeft,
                         theme);
-                    bullet.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.MutedText;
+                    bullet.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.MutedText;
                 }
             }
 
@@ -421,7 +421,7 @@ namespace Project.UI
                 FontStyles.Italic,
                 TextAlignmentOptions.TopLeft,
                 theme);
-            footer.color = SurvivalPioneerUiPalette.MutedText;
+            footer.color = DarkMatterGenesisUiPalette.MutedText;
         }
 
         private static TextMeshProUGUI CreateStubText(

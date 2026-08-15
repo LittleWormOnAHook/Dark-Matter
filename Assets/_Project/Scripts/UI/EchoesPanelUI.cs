@@ -97,8 +97,8 @@ namespace Project.UI
                     : "Unknown time";
 
                 string heading = entry.rescueFailed
-                    ? $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.DangerRed)}>Rescue Failed</color>"
-                    : $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.PositiveGreen)}>Rescue Success</color>";
+                    ? $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.DangerRed)}>Rescue Failed</color>"
+                    : $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.PositiveGreen)}>Rescue Success</color>";
 
                 CreateCardRow(
                     chronicleListParent,
@@ -175,7 +175,7 @@ namespace Project.UI
 
             Image bg = row.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.96f);
 
             HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
             layout.padding = JournalPanelLayout.RowPaddingRect;
@@ -188,7 +188,7 @@ namespace Project.UI
             rowLayout.minHeight = JournalPanelLayout.RowMinHeight;
 
             TextMeshProUGUI nameLabel = CreateLabel(row.transform, record.displayName, JournalPanelLayout.BodyFontSize, semiBold: true);
-            nameLabel.color = SurvivalPioneerUiPalette.BodyText;
+            nameLabel.color = DarkMatterGenesisUiPalette.BodyText;
             LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
             nameLayout.flexibleWidth = 1f;
 
@@ -197,14 +197,14 @@ namespace Project.UI
             badgeObject.transform.SetParent(row.transform, false);
             Image badgeBg = badgeObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(badgeBg);
-            badgeBg.color = SurvivalPioneerUiPalette.WithAlpha(badgeColor, 0.85f);
+            badgeBg.color = DarkMatterGenesisUiPalette.WithAlpha(badgeColor, 0.85f);
             LayoutElement badgeLayout = badgeObject.GetComponent<LayoutElement>();
             badgeLayout.preferredWidth = 80f;
             badgeLayout.minHeight = 22f;
 
             TextMeshProUGUI badgeLabel = CreateLabel(badgeObject.transform, PioneerTraitUtility.GetDispositionLabel(record.Disposition), JournalPanelLayout.CaptionFontSize, semiBold: true);
             badgeLabel.alignment = TextAlignmentOptions.Center;
-            badgeLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            badgeLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             Stretch(badgeLabel.rectTransform);
         }
 
@@ -262,7 +262,7 @@ namespace Project.UI
             Stretch(viewportRect);
             viewportRect.offsetMin = new Vector2(JournalPanelLayout.ScrollInset, JournalPanelLayout.ScrollInset);
             viewportRect.offsetMax = new Vector2(-JournalPanelLayout.ScrollInset, -JournalPanelLayout.ScrollInset);
-            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.28f);
+            viewport.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.28f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
@@ -295,7 +295,7 @@ namespace Project.UI
             layout.minHeight = JournalPanelLayout.CardMinHeight;
 
             TextMeshProUGUI label = CreateLabel(row.transform, text, JournalPanelLayout.BodyFontSize);
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             Stretch(label.rectTransform, JournalPanelLayout.RowPaddingH, JournalPanelLayout.RowPaddingV);
         }
 
@@ -303,11 +303,11 @@ namespace Project.UI
         {
             GameObject row = new GameObject("InfoRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             row.transform.SetParent(parent, false);
-            row.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.45f);
+            row.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.45f);
             row.GetComponent<LayoutElement>().minHeight = JournalPanelLayout.RowMinHeight;
 
             TextMeshProUGUI label = CreateLabel(row.transform, text, JournalPanelLayout.SecondaryFontSize);
-            label.color = SurvivalPioneerUiPalette.Gold;
+            label.color = DarkMatterGenesisUiPalette.Gold;
             Stretch(label.rectTransform, JournalPanelLayout.RowPaddingH, 4f);
         }
 
@@ -328,10 +328,10 @@ namespace Project.UI
         {
             return disposition switch
             {
-                EchoDisposition.Friendly => SurvivalPioneerUiPalette.PositiveGreen,
-                EchoDisposition.Synced => SurvivalPioneerUiPalette.Gold,
-                EchoDisposition.HostileUntilSynced => SurvivalPioneerUiPalette.DangerRed,
-                _ => SurvivalPioneerUiPalette.SoftBeigeGray
+                EchoDisposition.Friendly => DarkMatterGenesisUiPalette.PositiveGreen,
+                EchoDisposition.Synced => DarkMatterGenesisUiPalette.Gold,
+                EchoDisposition.HostileUntilSynced => DarkMatterGenesisUiPalette.DangerRed,
+                _ => DarkMatterGenesisUiPalette.SoftBeigeGray
             };
         }
 

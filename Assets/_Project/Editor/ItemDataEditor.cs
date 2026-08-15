@@ -663,6 +663,10 @@ namespace Project.EditorTools
             EditorGUILayout.PropertyField(weaponAccuracy);
             EditorGUILayout.PropertyField(closeRangeFullAccuracyDistance);
             EditorGUILayout.PropertyField(closeRangeSpreadScale);
+            EditorGUILayout.LabelField("Shot Recoil (per weapon grip)", EditorStyles.miniBoldLabel);
+            SerializedProperty ammoRecoilProfile = serializedObject.FindProperty("ammoRecoilProfile");
+            if (ammoRecoilProfile != null)
+                EditorGUILayout.PropertyField(ammoRecoilProfile, true);
             EditorGUILayout.PropertyField(projectilePrefab);
         }
 

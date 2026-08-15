@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// </summary>
     public class RecipePrefabCreatorWindow : EditorWindow
     {
-        [MenuItem(SurvivalPioneerEditorMenus.RecipePrefabCreator, false, 14)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RecipePrefabCreator, false, 14)]
         public static void Open()
         {
             BlueprintCraftingManagerWindow.OpenPickupsTab();

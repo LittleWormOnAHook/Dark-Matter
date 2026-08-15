@@ -27,7 +27,7 @@ namespace Project.Progression
 
         /// <summary>Player-facing toast / popup copy for level gates.</summary>
         public static string FormatLevelRequiredMessage(int requiredLevel) =>
-            $"Level required: {requiredLevel}";
+            $"Require Level {requiredLevel}";
 
         public static void ShowLevelRequiredToast(int requiredLevel)
         {
@@ -35,6 +35,15 @@ namespace Project.Progression
                 return;
 
             PickupToastUI.Show(FormatLevelRequiredMessage(requiredLevel));
+        }
+
+        /// <summary>Center popup: title "Require Level" + required level number.</summary>
+        public static void ShowRequireLevelPopup(int requiredLevel)
+        {
+            if (!IsGateActive(requiredLevel))
+                return;
+
+            DMIRequireLevelPopupUI.Show(requiredLevel);
         }
 
         public static bool PassesEquipGate(ItemData item, bool showToast = false) =>

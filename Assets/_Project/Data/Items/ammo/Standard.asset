@@ -55,8 +55,8 @@ MonoBehaviour:
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
-  recoilVertical: 0
-  recoilHorizontal: 0
+  recoilVertical: 0.72
+  recoilHorizontal: 0.32
   recoilFireRateScale: 0
   fireRate: 0
   magazineSize: 0
@@ -81,6 +81,13 @@ MonoBehaviour:
   ammoType: 0
   ammoPerPickup: 50
   ammoPickupGrant: 50
+  ammoRecoilProfile:
+    pistolCameraVertical: 2.8
+    pistolCameraHorizontal: 0.75
+    pistolAnimationWeight: 0.38
+    rifleCameraVertical: 4.2
+    rifleCameraHorizontal: 1.1
+    rifleAnimationWeight: 0.18
   isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0

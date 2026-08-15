@@ -1,3 +1,4 @@
+using Invector;
 using Invector.vCamera;
 using Invector.vShooter;
 using Project.Data;
@@ -28,6 +29,31 @@ namespace Project.Player.Invector
         /// <summary>Rifle scope shot layer — barely visible pulse so ADS stays stable.</summary>
         public const float RifleScopeShotLayerWeight = 0.12f;
 
+        private const float ScopeWeightScalePistol = ScopeShotLayerWeight / ShotLayerWeight;
+        private const float ScopeWeightScaleRifle = RifleScopeShotLayerWeight / RifleShotLayerWeight;
+
+        /// <summary>Max stacked visual recoil before clamp (degrees).</summary>
+        private const float MaxPitchRecoilOffset = 10f;
+        private const float MaxYawRecoilOffset = 5f;
+
+        /// <summary>Underdamped spring — stiffness high, damping low enough for a slight rebound past aim.</summary>
+        private const float RecoilSpringStiffness = 210f;
+        private const float RecoilSpringDampingPistol = 13.5f;
+        private const float RecoilSpringDampingRifle = 16f;
+
+        /// <summary>Extra downward velocity on kick so pitch dips slightly below aim before settling.</summary>
+        private const float ReboundVelocityFromKick = 0.32f;
+        private const float ReboundVelocityHorizontal = 0.18f;
+        private const float MaxRecoilRecoveryVelocity = 14f;
+        private const float MaxSpringDeltaTime = 1f / 30f;
+
+        private static Vector2 _recoilRecoveryVelocity;
+
+        public static bool HasActiveRecoil(vThirdPersonCamera camera) =>
+            camera != null
+            && (camera.offsetMouse.sqrMagnitude > 0.00001f
+                || _recoilRecoveryVelocity.sqrMagnitude > 0.00001f);
+
         public static void ApplyShooterManagerDefaults(vShooterManager manager)
         {
             if (manager == null)
@@ -57,15 +83,95 @@ namespace Project.Player.Invector
                 return;
 
             vThirdPersonCamera camera = shooterManager.tpCamera;
-            if (camera == null)
+            if (camera == null || !camera.isInit)
                 return;
 
             ResolveRecoilKick(weaponItem, ammoItem, out float verticalKick, out float horizontalKick);
             if (Mathf.Abs(verticalKick) < 0.001f && Mathf.Abs(horizontalKick) < 0.001f)
                 return;
 
-            // RotateCamera: mouseY -= y * sensitivity. CameraInput matches PioneerShooterMeleeInput.
-            camera.RotateCamera(horizontalKick * CameraInputScale, -verticalKick * CameraInputScale);
+            // Temporary kick on offsetMouse — decays in TickRecoilRecovery so aim baseline (mouseX/Y) is preserved.
+            Vector2 offset = camera.offsetMouse;
+            offset.y -= verticalKick;
+            offset.x += horizontalKick;
+            offset.y = Mathf.Clamp(offset.y, -MaxPitchRecoilOffset, MaxPitchRecoilOffset);
+            offset.x = Mathf.Clamp(offset.x, -MaxYawRecoilOffset, MaxYawRecoilOffset);
+            camera.offsetMouse = offset;
+
+            // Bias spring velocity so recovery overshoots slightly (dip back below aim) before settling.
+            if (weaponItem == null || !weaponItem.isMiningTool)
+            {
+                _recoilRecoveryVelocity.y += verticalKick * ReboundVelocityFromKick;
+                _recoilRecoveryVelocity.x -= horizontalKick * ReboundVelocityHorizontal;
+                ClampRecoilRecoveryVelocity();
+            }
+
+            camera.CheckCameraIsRotating();
+        }
+
+        private static void ClampRecoilRecoveryVelocity()
+        {
+            _recoilRecoveryVelocity.x = Mathf.Clamp(
+                _recoilRecoveryVelocity.x,
+                -MaxRecoilRecoveryVelocity,
+                MaxRecoilRecoveryVelocity);
+            _recoilRecoveryVelocity.y = Mathf.Clamp(
+                _recoilRecoveryVelocity.y,
+                -MaxRecoilRecoveryVelocity,
+                MaxRecoilRecoveryVelocity);
+        }
+
+        /// <summary>
+        /// Spring recoil offset back to zero with a slight rebound past aim baseline.
+        /// Call from PioneerShooterManager each frame while playing.
+        /// </summary>
+        public static void TickRecoilRecovery(vThirdPersonCamera camera, ItemData weaponItem, float deltaTime)
+        {
+            if (camera == null || deltaTime <= 0f)
+                return;
+
+            deltaTime = Mathf.Min(deltaTime, MaxSpringDeltaTime);
+
+            Vector2 offset = camera.offsetMouse;
+            if (offset.sqrMagnitude < 0.00001f && _recoilRecoveryVelocity.sqrMagnitude < 0.00001f)
+            {
+                if (offset != Vector2.zero)
+                    camera.offsetMouse = Vector2.zero;
+                _recoilRecoveryVelocity = Vector2.zero;
+                return;
+            }
+
+            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
+            float damping = isRifle ? RecoilSpringDampingRifle : RecoilSpringDampingPistol;
+
+            Vector2 acceleration =
+                -offset * RecoilSpringStiffness
+                - _recoilRecoveryVelocity * damping;
+            _recoilRecoveryVelocity += acceleration * deltaTime;
+            offset += _recoilRecoveryVelocity * deltaTime;
+
+            if (Mathf.Abs(offset.y) > MaxPitchRecoilOffset)
+            {
+                offset.y = Mathf.Sign(offset.y) * MaxPitchRecoilOffset;
+                _recoilRecoveryVelocity.y *= 0.35f;
+            }
+
+            if (Mathf.Abs(offset.x) > MaxYawRecoilOffset)
+            {
+                offset.x = Mathf.Sign(offset.x) * MaxYawRecoilOffset;
+                _recoilRecoveryVelocity.x *= 0.35f;
+            }
+
+            ClampRecoilRecoveryVelocity();
+            camera.offsetMouse = offset;
+        }
+
+        /// <summary>Clears any in-flight recoil offset (e.g. cutscene / optics handoff).</summary>
+        public static void ResetRecoilOffset(vThirdPersonCamera camera)
+        {
+            _recoilRecoveryVelocity = Vector2.zero;
+            if (camera != null)
+                camera.offsetMouse = Vector2.zero;
         }
 
         public static bool IsLowRecoilLaserAmmo(ItemData ammoItem)
@@ -81,11 +187,38 @@ namespace Project.Player.Invector
             return IsLowRecoilLaserAmmo(ammoItem);
         }
 
+        public static bool ShouldSkipAnimationRecoil(ItemData weaponItem, ItemData ammoItem)
+        {
+            return ResolveShotAnimationWeight(weaponItem, ammoItem, isScopeView: false) < 0.01f;
+        }
+
+        public static float ResolveShotAnimationWeight(ItemData weaponItem, ItemData ammoItem, bool isScopeView)
+        {
+            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
+
+            if (ammoItem != null && ammoItem.ammoRecoilProfile.HasAuthoredValues)
+            {
+                float weight = ammoItem.ammoRecoilProfile.GetAnimationWeight(isRifle);
+                if (isScopeView && weight > 0.001f)
+                {
+                    float scopeScale = isRifle ? ScopeWeightScaleRifle : ScopeWeightScalePistol;
+                    weight *= scopeScale;
+                }
+
+                return weight;
+            }
+
+            if (IsLowRecoilLaserShot(weaponItem, ammoItem))
+                return 0f;
+
+            if (isScopeView)
+                return isRifle ? RifleScopeShotLayerWeight : ScopeShotLayerWeight;
+
+            return isRifle ? RifleShotLayerWeight : ShotLayerWeight;
+        }
+
         /// <summary>
-        /// Resolves vertical/horizontal kick from ItemData recoil base stats.
-        /// When both recoilVertical and recoilHorizontal are ~0, falls back to grip defaults
-        /// (rifle mild climb vs pistol stronger kick). Hitscan/continuous laser ammo and mining
-        /// laser tools use near-zero kick so sustained beams don't jitter the camera.
+        /// Resolves vertical/horizontal kick from ammo recoil profile, then weapon ItemData, then grip defaults.
         /// </summary>
         public static void ResolveRecoilKick(ItemData weaponItem, out float verticalKick, out float horizontalKick)
         {
@@ -102,15 +235,24 @@ namespace Project.Player.Invector
                 return;
             }
 
+            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
+
+            if (ammoItem != null && ammoItem.ammoRecoilProfile.HasAuthoredValues)
+            {
+                ammoItem.ammoRecoilProfile.GetCameraKick(isRifle, out float vertBase, out float horizBase);
+                verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
+                horizontalKick = Random.Range(-horizBase, horizBase);
+                ApplyFireRateScale(weaponItem, ref verticalKick, ref horizontalKick);
+                return;
+            }
+
             if (IsLowRecoilLaserAmmo(ammoItem))
             {
-                // Almost zero kick for laser pistol / continuous laser cells.
                 verticalKick = Random.Range(0.02f, 0.05f);
                 horizontalKick = Random.Range(-0.02f, 0.02f);
                 return;
             }
 
-            bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
             bool useAuthored = weaponItem != null
                 && (weaponItem.recoilVertical > 0.01f || weaponItem.recoilHorizontal > 0.01f);
 
@@ -123,7 +265,6 @@ namespace Project.Player.Invector
                     ? weaponItem.recoilHorizontal
                     : (isRifle ? 0.2f : 0.8f);
 
-                // Authoring stores center vertical magnitude and horizontal half-range.
                 verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
                 horizontalKick = Random.Range(-horizBase, horizBase);
             }
@@ -137,13 +278,18 @@ namespace Project.Player.Invector
                     : Random.Range(-0.8f, 0.8f);
             }
 
+            ApplyFireRateScale(weaponItem, ref verticalKick, ref horizontalKick);
+        }
+
+        private static void ApplyFireRateScale(ItemData weaponItem, ref float verticalKick, ref float horizontalKick)
+        {
             float fireRateThreshold = weaponItem != null && weaponItem.recoilFireRateScale > 0.01f
                 ? weaponItem.recoilFireRateScale
                 : 4.5f;
-            float fireRateScale = 1f;
-            if (weaponItem != null && weaponItem.fireRate > fireRateThreshold)
-                fireRateScale = Mathf.Clamp(fireRateThreshold / weaponItem.fireRate, 0.65f, 1f);
+            if (weaponItem == null || weaponItem.fireRate <= fireRateThreshold)
+                return;
 
+            float fireRateScale = Mathf.Clamp(fireRateThreshold / weaponItem.fireRate, 0.65f, 1f);
             verticalKick *= fireRateScale;
             horizontalKick *= fireRateScale;
         }
@@ -190,8 +336,6 @@ namespace Project.Player.Invector
             bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
             weapon.shotID = MildShotAnimationId;
             weapon.scopeShootAnimationWeight = isRifle ? RifleScopeShotLayerWeight : ScopeShotLayerWeight;
-            // Keep support-hand IK on during Shot Fire so the left hand stays glued to the
-            // handguard while the weapon recoils (disableIkOnShot leaves the hand floating).
             weapon.disableIkOnShot = false;
             weapon.cameraStability = 1f;
         }

@@ -108,7 +108,8 @@ namespace Project.UI
                 int percent = ammoState != null
                     ? ammoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
                     : 0;
-                if (percent != lastMiningChargePercent)
+                bool needsLayout = percent != lastMiningChargePercent;
+                if (needsLayout)
                 {
                     lastMiningChargePercent = percent;
                     ammoLabel.text = $"CHARGE {percent}%";
@@ -174,6 +175,13 @@ namespace Project.UI
 
             if (weapon != null && weapon.isMiningTool)
             {
+                if (ammoState == null || equipment == null)
+                    return;
+
+                int percent = ammoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot);
+                if (percent == lastMiningChargePercent && ammoLabel != null && ammoLabel.gameObject.activeSelf)
+                    return;
+
                 RefreshAmmoLabel();
                 return;
             }
@@ -249,7 +257,7 @@ namespace Project.UI
             ammoLabel = labelObject.AddComponent<TextMeshProUGUI>();
             ammoLabel.alignment = TextAlignmentOptions.Center;
             ammoLabel.fontSize = 15f;
-            ammoLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            ammoLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             ammoLabel.text = string.Empty;
             ammoLabel.raycastTarget = false;
 

@@ -1,6 +1,6 @@
 # Audit_06 — Story
 
-**HLA:** §2.5 Story · §2.9 Aether-9 (Intelligence)  
+**HLA:** §2.5 Story · §2.9 Kairos (Intelligence)  
 **Paths:** `Scripts/Quests/`, `Scripts/Echoes/`  
 **Audit date:** July 2026
 
@@ -23,8 +23,8 @@
 | `QuestManager` execution | `StoryDirector` + `IQuestCommandService` adapter |
 | Quest data | `Features/Story/Data/` |
 | `EchoGenerator` | `Features/Generation/` or Simulation |
-| Aether-9 quest state | `Features/Aether9/` Intelligence layer |
-| `CommsQueryService.Aether9AdvisoryUnlocked` | `Aether9WorldStateProvider` |
+| Kairos quest state | `Features/Kairos/` Intelligence layer |
+| `CommsQueryService.KairosAdvisoryUnlocked` | `KairosWorldStateProvider` |
 
 ---
 
@@ -48,11 +48,11 @@
 | `StoryChapterId` | quest graph / active arc |
 | `CompletedQuestIds` | QuestManager |
 | `ActiveQuestIds` | MissionSnapshot (GameState) |
-| `MemoryCoresRestored` | Aether-9 provider (future) |
-| `Aether9AdvisoryUnlocked` | Comms flag → WorldState |
+| `MemoryCoresRestored` | Kairos provider (future) |
+| `KairosAdvisoryUnlocked` | Comms flag → WorldState |
 | Echo rescue count | roster chronicle |
 
-**Providers:** `StoryWorldStateProvider`, `Aether9WorldStateProvider`.
+**Providers:** `StoryWorldStateProvider`, `KairosWorldStateProvider`.
 
 ---
 

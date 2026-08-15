@@ -227,7 +227,7 @@ namespace Project.UI
 
             Image cardBg = cardObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(cardBg);
-            cardBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.45f);
+            cardBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.45f);
 
             LayoutElement cardLayout = cardObject.GetComponent<LayoutElement>();
             cardLayout.flexibleWidth = 1f;
@@ -243,7 +243,7 @@ namespace Project.UI
 
             TextMeshProUGUI nameLabel = CreateBodyLabel(cardObject.transform, $"CompanionName_{slotIndex + 1}", $"Companion slot {slotIndex + 1}");
             nameLabel.fontStyle = FontStyles.Bold;
-            nameLabel.color = SurvivalPioneerUiPalette.BodyText;
+            nameLabel.color = DarkMatterGenesisUiPalette.BodyText;
             nameLabel.alignment = TextAlignmentOptions.Top;
 
             ExposureModifierTickGrid rowBuffGrid = CreateTickGrid(cardObject.transform, $"CompanionBuffGrid_{slotIndex + 1}");
@@ -264,7 +264,7 @@ namespace Project.UI
 
             Image sectionBg = sectionObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(sectionBg);
-            sectionBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.55f);
+            sectionBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.55f);
 
             VerticalLayoutGroup sectionLayout = sectionObject.GetComponent<VerticalLayoutGroup>();
             sectionLayout.spacing = 6f;
@@ -277,7 +277,7 @@ namespace Project.UI
             TextMeshProUGUI headingLabel = CreateBodyLabel(sectionObject.transform, "Heading", heading);
             headingLabel.fontSize = JournalPanelLayout.HeaderFontSize;
             headingLabel.fontStyle = FontStyles.Bold;
-            headingLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            headingLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             headingLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
             return sectionObject.transform;
@@ -295,7 +295,7 @@ namespace Project.UI
             label.text = text;
             label.fontSize = JournalPanelLayout.SecondaryFontSize;
             label.fontStyle = FontStyles.Normal;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.textWrappingMode = TextWrappingModes.Normal;
             return label;

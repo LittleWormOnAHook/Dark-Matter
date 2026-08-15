@@ -257,6 +257,25 @@ namespace Project.Creatures
             if (mat == null)
                 return false;
 
+            // HDRP Lit exposes both _EmissiveColor (real) and legacy _EmissionColor —
+            // prefer the HDRP channel when the shader is HDRP.
+            bool hdrp = mat.shader != null
+                        && (mat.shader.name.StartsWith("HDRP/", System.StringComparison.Ordinal)
+                            || mat.shader.name.StartsWith("Hidden/HDRP", System.StringComparison.Ordinal));
+
+            if (hdrp && mat.HasProperty(EmissiveColorId))
+            {
+                emission = mat.GetColor(EmissiveColorId);
+                if (mat.HasProperty("_UseEmissiveIntensity")
+                    && mat.GetFloat("_UseEmissiveIntensity") > 0.5f
+                    && mat.HasProperty("_EmissiveIntensity"))
+                {
+                    emission *= mat.GetFloat("_EmissiveIntensity");
+                }
+
+                return true;
+            }
+
             if (mat.HasProperty(EmissionColorId))
             {
                 emission = mat.GetColor(EmissionColorId);

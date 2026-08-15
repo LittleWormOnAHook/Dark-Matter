@@ -105,7 +105,7 @@ namespace Project.UI
             else
             {
                 MenuUiBuilder.ApplyUiSprite(image);
-                image.color = SurvivalPioneerUiPalette.PanelBackground;
+                image.color = DarkMatterGenesisUiPalette.PanelBackground;
             }
         }
 
@@ -115,7 +115,7 @@ namespace Project.UI
                 return;
 
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
         }
 
         public static void StyleDenseCard(Image image, bool accentTrim = true)
@@ -124,9 +124,9 @@ namespace Project.UI
                 return;
 
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.96f);
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.96f);
             if (accentTrim && image.gameObject != null)
-                SurvivalPioneerUiPalette.ApplyFuchsiaTrim(image.gameObject, new Vector2(1f, -1f));
+                DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(image.gameObject, new Vector2(1f, -1f));
         }
 
         /// <summary>Section headers — Warm Off-White, never magenta/fuchsia.</summary>
@@ -137,7 +137,7 @@ namespace Project.UI
 
             label.fontSize = HeaderFontSize;
             label.fontStyle = FontStyles.Bold;
-            label.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             label.alignment = TextAlignmentOptions.MidlineLeft;
         }
 
@@ -147,7 +147,7 @@ namespace Project.UI
                 return;
 
             label.fontSize = BodyFontSize;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.alignment = TextAlignmentOptions.TopLeft;
         }
 
@@ -157,27 +157,27 @@ namespace Project.UI
                 return;
 
             label.fontSize = SecondaryFontSize;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.TopLeft;
         }
 
         public static string FormatGoldValue(string value) =>
-            $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.Gold)}>{value}</color>";
+            $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.Gold)}>{value}</color>";
 
         /// <summary>Title/name emphasis — Warm Off-White (not magenta).</summary>
         public static string FormatAccentTitle(string value) =>
-            $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.WarmOffWhite)}>{value}</color>";
+            $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.WarmOffWhite)}>{value}</color>";
 
         /// <summary>Selected link / interactive highlight only — Rich Fuchsia.</summary>
         public static string FormatLinkHighlight(string value) =>
-            $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{value}</color>";
+            $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{value}</color>";
 
         public static string FormatMuted(string value) =>
-            $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.MutedText)}>{value}</color>";
+            $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.MutedText)}>{value}</color>";
 
         /// <summary>Secondary helper copy on dark panels — Gold for contrast (not Soft Beige / magenta).</summary>
         public static string FormatHelper(string value) =>
-            $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.Gold)}>{value}</color>";
+            $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.Gold)}>{value}</color>";
 
         /// <summary>Thin horizontal rule between journal/craft sections.</summary>
         public static GameObject CreateSectionDivider(Transform parent)
@@ -190,7 +190,7 @@ namespace Project.UI
 
             Image image = divider.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.85f);
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.85f);
             image.raycastTarget = false;
 
             LayoutElement layout = divider.GetComponent<LayoutElement>();
@@ -241,19 +241,19 @@ namespace Project.UI
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             TextMeshProUGUI titleLabel = CreateInlineLabel(card.transform, theme, title, HeaderFontSize, FontStyles.Bold);
-            titleLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            titleLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             if (!string.IsNullOrWhiteSpace(body))
             {
                 TextMeshProUGUI bodyLabel = CreateInlineLabel(card.transform, theme, body, BodyFontSize, FontStyles.Normal);
-                bodyLabel.color = SurvivalPioneerUiPalette.Gold;
+                bodyLabel.color = DarkMatterGenesisUiPalette.Gold;
                 bodyLabel.textWrappingMode = TextWrappingModes.Normal;
             }
 
             if (!string.IsNullOrWhiteSpace(tip))
             {
                 TextMeshProUGUI tipLabel = CreateInlineLabel(card.transform, theme, tip, SecondaryFontSize, FontStyles.Italic);
-                tipLabel.color = SurvivalPioneerUiPalette.Gold;
+                tipLabel.color = DarkMatterGenesisUiPalette.Gold;
                 tipLabel.textWrappingMode = TextWrappingModes.Normal;
             }
         }

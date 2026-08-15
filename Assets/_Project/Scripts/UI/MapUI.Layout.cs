@@ -414,7 +414,7 @@ namespace Project.UI
 
             Image ringImage = ring.GetComponent<Image>();
             if (ringImage != null)
-                ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
+                ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
         }
 
         private void RemoveMinimapTitleBar()
@@ -728,7 +728,7 @@ namespace Project.UI
             ringRect.offsetMax = Vector2.zero;
             Image ringImage = ringObject.AddComponent<Image>();
             ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.CircleRing;
-            ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
+            ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
             ringImage.raycastTarget = false;
             ringImage.preserveAspect = true;
 
@@ -905,8 +905,8 @@ namespace Project.UI
 
             Image legendBg = legend.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(legendBg);
-            legendBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.94f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(legend, new Vector2(1f, -1f));
+            legendBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.94f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(legend, new Vector2(1f, -1f));
 
             VerticalLayoutGroup layout = legend.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(10, 10, 10, 10);
@@ -918,26 +918,26 @@ namespace Project.UI
             layout.childAlignment = TextAnchor.UpperLeft;
 
             TextMeshProUGUI title = CreateLegendLabel(legend.transform, "Legend", JournalPanelLayout.HeaderFontSize, FontStyles.Bold);
-            title.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            title.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             TextMeshProUGUI subtitle = CreateLegendLabel(legend.transform, "Terrain · POI · Icons", JournalPanelLayout.CaptionFontSize, FontStyles.Italic);
-            subtitle.color = SurvivalPioneerUiPalette.MutedText;
+            subtitle.color = DarkMatterGenesisUiPalette.MutedText;
 
             CreateLegendEntry(legend.transform, PlayerMapIconColor, "You (facing)");
-            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.Gold, "Quest giver");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.Gold, "Quest giver");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Resource), "Resource / node");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Consumable), "Consumable");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Tool), "Tool / gear");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.MeleeWeapon), "Weapon cache");
             CreateLegendEntry(legend.transform, new Color(1f, 0.85f, 0.2f, 1f), "Point of interest");
-            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.SoftBeigeGray, "Undiscovered (scan)");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.SoftBeigeGray, "Undiscovered (scan)");
 
             TextMeshProUGUI tip = CreateLegendLabel(
                 legend.transform,
                 "Use Scan on the minimap to reveal nearby markers.",
                 JournalPanelLayout.CaptionFontSize,
                 FontStyles.Normal);
-            tip.color = SurvivalPioneerUiPalette.MutedText;
+            tip.color = DarkMatterGenesisUiPalette.MutedText;
             tip.textWrappingMode = TextWrappingModes.Normal;
         }
 
@@ -968,7 +968,7 @@ namespace Project.UI
             swatchLayout.flexibleWidth = 0f;
 
             TextMeshProUGUI text = CreateLegendLabel(row.transform, label, JournalPanelLayout.SecondaryFontSize, FontStyles.Normal);
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             LayoutElement textLayout = text.gameObject.AddComponent<LayoutElement>();
             textLayout.flexibleWidth = 1f;
         }

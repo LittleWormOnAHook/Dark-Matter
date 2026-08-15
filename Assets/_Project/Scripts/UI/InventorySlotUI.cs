@@ -41,7 +41,7 @@ namespace Project.UI
         private GameObject dragGhost;
         private Image selectionGlowImage;
         private Image ammoTypeIcon;
-        private Color defaultBackgroundColor = SurvivalPioneerUiPalette.SlotBackground;
+        private Color defaultBackgroundColor = DarkMatterGenesisUiPalette.SlotBackground;
         private bool wasDragged;
         private bool isSelected;
         private bool isLocked;
@@ -379,7 +379,7 @@ namespace Project.UI
             if (backgroundImage != null)
             {
                 backgroundImage.color = isLocked
-                    ? SurvivalPioneerUiPalette.LockedSlotBackground
+                    ? DarkMatterGenesisUiPalette.LockedSlotBackground
                     : defaultBackgroundColor;
             }
 

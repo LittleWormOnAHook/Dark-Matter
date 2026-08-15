@@ -18,7 +18,7 @@ When a skill conflicts with any of the following, **project authority wins**:
 - **No silent restore** — never checkout/reset/restore older Unity or git save points without explicit user confirmation in the current message (`confirm-before-depot-restore`).
 - **No forced Unity refresh** — do not call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks (`unity-console-check-after-edit`).
 - **DM / DMI naming** — do not introduce new Invector-branded project identifiers (`dm-naming-no-invector`).
-- **UI palette** — use `SurvivalPioneerUiPalette` / Shift theme colors (`dark-matter-genesis-ui-palette`).
+- **UI palette** — use `DarkMatterGenesisUiPalette` / Shift theme colors (`dark-matter-genesis-ui-palette`).
 - **GDD lock** — AC-only economy, PC+consoles, thermal/Echo/Building Control Panel canon (`dark-matter-genesis-gdd`).
 - **Console before done/commit** — wait for compile/domain reload; do not commit with Unity Error console entries.
 

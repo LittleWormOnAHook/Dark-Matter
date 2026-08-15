@@ -347,13 +347,13 @@ namespace Project.UI
             rowsGroup.childForceExpandWidth = true;
             rowsGroup.childForceExpandHeight = false;
 
-            healthBar = new CharacterStatBarRow(listHost.transform, "+", "Health", SurvivalPioneerUiPalette.RichFuchsia);
-            energyBar = new CharacterStatBarRow(listHost.transform, "E", "Energy", SurvivalPioneerUiPalette.RichFuchsia);
-            staminaBar = new CharacterStatBarRow(listHost.transform, "S", "Stamina", SurvivalPioneerUiPalette.RichFuchsia);
-            oxygenBar = new CharacterStatBarRow(listHost.transform, "O", "Oxygen", SurvivalPioneerUiPalette.RichFuchsia);
-            meleeBar = new CharacterStatBarRow(listHost.transform, "M", "Melee Damage", SurvivalPioneerUiPalette.RichFuchsia);
-            rangedBar = new CharacterStatBarRow(listHost.transform, "R", "Ranged Damage", SurvivalPioneerUiPalette.RichFuchsia);
-            accuracyBar = new CharacterStatBarRow(listHost.transform, "A", "Accuracy", SurvivalPioneerUiPalette.Gold);
+            healthBar = new CharacterStatBarRow(listHost.transform, "+", "Health", DarkMatterGenesisUiPalette.RichFuchsia);
+            energyBar = new CharacterStatBarRow(listHost.transform, "E", "Energy", DarkMatterGenesisUiPalette.RichFuchsia);
+            staminaBar = new CharacterStatBarRow(listHost.transform, "S", "Stamina", DarkMatterGenesisUiPalette.RichFuchsia);
+            oxygenBar = new CharacterStatBarRow(listHost.transform, "O", "Oxygen", DarkMatterGenesisUiPalette.RichFuchsia);
+            meleeBar = new CharacterStatBarRow(listHost.transform, "M", "Melee Damage", DarkMatterGenesisUiPalette.RichFuchsia);
+            rangedBar = new CharacterStatBarRow(listHost.transform, "R", "Ranged Damage", DarkMatterGenesisUiPalette.RichFuchsia);
+            accuracyBar = new CharacterStatBarRow(listHost.transform, "A", "Accuracy", DarkMatterGenesisUiPalette.Gold);
         }
 
         private void BuildSurvivorPanel(Transform parent)
@@ -362,8 +362,8 @@ namespace Project.UI
             panel.transform.SetParent(parent, false);
 
             Image panelBg = panel.GetComponent<Image>();
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(panelBg, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(panel, new Vector2(1.5f, -1.5f));
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(panelBg, 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(panel, new Vector2(1.5f, -1.5f));
 
             LayoutElement panelLayout = panel.GetComponent<LayoutElement>();
             panelLayout.flexibleWidth = StatsPanelWidthFraction;
@@ -400,7 +400,7 @@ namespace Project.UI
             column.transform.SetParent(parent, false);
 
             Image bg = column.GetComponent<Image>();
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.55f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.55f);
 
             LayoutElement layout = column.GetComponent<LayoutElement>();
             layout.flexibleWidth = flexibleWidth;
@@ -457,7 +457,7 @@ namespace Project.UI
 
             Image bg = barRoot.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.95f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.95f);
             bg.raycastTarget = false;
 
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
@@ -470,7 +470,7 @@ namespace Project.UI
             xpFillRect.offsetMax = new Vector2(-2f, -2f);
             xpFillImage = fillObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(xpFillImage);
-            xpFillImage.color = SurvivalPioneerUiPalette.Gold;
+            xpFillImage.color = DarkMatterGenesisUiPalette.Gold;
             xpFillImage.raycastTarget = false;
             xpFillImage.preserveAspect = false;
 
@@ -486,7 +486,7 @@ namespace Project.UI
             xpCountLabel.fontSize = 12f;
             xpCountLabel.fontStyle = FontStyles.Bold;
             xpCountLabel.alignment = TextAlignmentOptions.Center;
-            xpCountLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            xpCountLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             xpCountLabel.raycastTarget = false;
             xpCountLabel.overflowMode = TextOverflowModes.Ellipsis;
             xpCountLabel.textWrappingMode = TextWrappingModes.NoWrap;
@@ -501,7 +501,7 @@ namespace Project.UI
             TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(label);
             label.fontSize = fontSize;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.alignment = TextAlignmentOptions.TopLeft;
             label.textWrappingMode = TextWrappingModes.Normal;
             return label;

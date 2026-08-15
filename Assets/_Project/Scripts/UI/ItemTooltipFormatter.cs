@@ -200,8 +200,10 @@ namespace Project.UI
 
             if (item.IsOpticsTool)
             {
-                string keyHint = item.toolType == ToolType.Scanner ? "[N]" : "[B]";
-                text.AppendLine($"  Toolbar: {keyHint} Use tool  |  [RMB] Toggle optics");
+                string openHint = item.toolType == ToolType.Scanner
+                    ? "[N] Use tool  |  [RMB] Toggle optics"
+                    : "[Hold B] Binoculars  |  [B] Blueprints  |  [RMB] Close optics";
+                text.AppendLine($"  Toolbar: {openHint}");
                 text.AppendLine("  [Scroll] Zoom while optics are open");
             }
         }

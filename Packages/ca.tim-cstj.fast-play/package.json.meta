@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5abdd3475bcc9c64c87bc274d95898c4
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 353186
+  packageName: Fast Play
+  packageVersion: 1.0.1
+  assetPath: Packages/ca.tim-cstj.fast-play/package.json
+  uploadId: 883896

@@ -6,7 +6,7 @@ using Project.EditorTools;
 
 public class UICanvasSetup : EditorWindow
 {
-    [MenuItem(SurvivalPioneerEditorMenus.Ui + "Full UI Canvas + Inventory", false, 0)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Full UI Canvas + Inventory", false, 0)]
     public static void CreateFullUI()
     {
         GameObject canvasObj = GameObject.Find("MainCanvas") ?? new GameObject("MainCanvas");

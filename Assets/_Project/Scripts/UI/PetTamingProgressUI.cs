@@ -62,7 +62,7 @@ namespace Project.UI
             bgRect.offsetMax = Vector2.zero;
             Image bg = bgObj.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.92f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.92f);
 
             GameObject fillObj = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillObj.transform.SetParent(bgObj.transform, false);
@@ -73,7 +73,7 @@ namespace Project.UI
             fillRect.offsetMax = new Vector2(-2f, -2f);
             fillImage = fillObj.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(fillImage);
-            fillImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            fillImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             fillImage.type = Image.Type.Filled;
             fillImage.fillMethod = Image.FillMethod.Horizontal;
 
@@ -83,7 +83,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.fontSize = 12f;
             label.alignment = TextAlignmentOptions.Center;
-            label.color = SurvivalPioneerUiPalette.Gold;
+            label.color = DarkMatterGenesisUiPalette.Gold;
             label.raycastTarget = false;
             RectTransform labelRect = labelObj.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;

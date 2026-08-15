@@ -91,6 +91,20 @@ namespace Project.Survival
         private float externalExposureHealthDrain;
         private float externalThermalHealthDrain;
         private bool insideExposureZone;
+        private ExposureController cachedExposureController;
+
+        // Walking drains stats every frame; notifying UI/listeners every frame allocates TMP strings
+        // and rebuilds exposure snapshots. Quantize + throttle keeps bars smooth enough without GC stalls.
+        private const float StatsNotifyMinInterval = 0.1f;
+        private float nextStatsNotifyTime;
+        private float lastNotifiedHealth = float.NaN;
+        private float lastNotifiedEnergy = float.NaN;
+        private float lastNotifiedStamina = float.NaN;
+        private float lastNotifiedOxygen = float.NaN;
+        private float lastNotifiedThermal = float.NaN;
+        private float lastNotifiedRadiation = float.NaN;
+        private float lastNotifiedSulfur = float.NaN;
+        private float lastNotifiedVolcano = float.NaN;
 
         private void OnValidate()
         {
@@ -118,7 +132,7 @@ namespace Project.Survival
             CurrentSulfur = 0f;
             CurrentVolcano = 0f;
             ClearExternalExposureModifiers();
-            OnStatsChanged?.Invoke();
+            NotifyStatsChanged(force: true);
         }
 
         /// <summary>
@@ -213,9 +227,51 @@ namespace Project.Survival
                 ui.RefreshSurvivalDisplay();
         }
 
-        private void NotifyStatsChanged()
+        private void NotifyStatsChanged(bool force = true)
         {
+            if (!force)
+            {
+                if (Time.unscaledTime < nextStatsNotifyTime)
+                    return;
+
+                if (!HasNotifiableStatsDelta())
+                    return;
+
+                nextStatsNotifyTime = Time.unscaledTime + StatsNotifyMinInterval;
+            }
+
+            CaptureNotifiedStatsSnapshot();
             OnStatsChanged?.Invoke();
+        }
+
+        private bool HasNotifiableStatsDelta()
+        {
+            // Display text uses ceil/round; keep notify thresholds near UI quantization.
+            return !ApproximatelyUi(CurrentHealth, lastNotifiedHealth, 0.25f)
+                || !ApproximatelyUi(CurrentEnergy, lastNotifiedEnergy, 0.25f)
+                || !ApproximatelyUi(CurrentStamina, lastNotifiedStamina, 0.5f)
+                || !ApproximatelyUi(CurrentOxygen, lastNotifiedOxygen, 0.5f)
+                || !ApproximatelyUi(CurrentThermalStress, lastNotifiedThermal, 0.25f)
+                || !ApproximatelyUi(CurrentRadiation, lastNotifiedRadiation, 0.25f)
+                || !ApproximatelyUi(CurrentSulfur, lastNotifiedSulfur, 0.25f)
+                || !ApproximatelyUi(CurrentVolcano, lastNotifiedVolcano, 0.25f);
+        }
+
+        private void CaptureNotifiedStatsSnapshot()
+        {
+            lastNotifiedHealth = CurrentHealth;
+            lastNotifiedEnergy = CurrentEnergy;
+            lastNotifiedStamina = CurrentStamina;
+            lastNotifiedOxygen = CurrentOxygen;
+            lastNotifiedThermal = CurrentThermalStress;
+            lastNotifiedRadiation = CurrentRadiation;
+            lastNotifiedSulfur = CurrentSulfur;
+            lastNotifiedVolcano = CurrentVolcano;
+        }
+
+        private static bool ApproximatelyUi(float current, float last, float threshold)
+        {
+            return !float.IsNaN(last) && Mathf.Abs(current - last) < threshold;
         }
 
         private bool CanSimulateStats()
@@ -268,7 +324,7 @@ namespace Project.Survival
             if (CurrentHealth <= 0f)
                 Die();
 
-            OnStatsChanged?.Invoke();
+            NotifyStatsChanged(force: false);
         }
 
         private bool IsStatCritical(float current, float max)
@@ -288,7 +344,7 @@ namespace Project.Survival
             CurrentEnergy = Mathf.Min(maxEnergy, CurrentEnergy + item.energyRestore);
             CurrentStamina = Mathf.Min(maxStamina, CurrentStamina + item.staminaRestore);
             CurrentOxygen = Mathf.Min(maxOxygen, CurrentOxygen + item.oxygenRestore);
-            OnStatsChanged?.Invoke();
+            NotifyStatsChanged(force: true);
         }
 
         public void SetStamina(float newStamina)
@@ -450,11 +506,12 @@ namespace Project.Survival
 
         private float GetStaminaRegenMultiplier()
         {
-            ExposureController controller = GetComponent<ExposureController>();
-            if (controller == null)
+            if (cachedExposureController == null)
+                cachedExposureController = GetComponent<ExposureController>();
+            if (cachedExposureController == null)
                 return 1f;
 
-            return 1f - controller.CurrentStaminaRegenPenalty;
+            return 1f - cachedExposureController.CurrentStaminaRegenPenalty;
         }
 
         void IDamageable.TakeDamage(float damage, GameObject source, bool isCritical)
@@ -476,7 +533,7 @@ namespace Project.Survival
             if (CurrentHealth <= 0f)
                 Die();
             else
-                OnStatsChanged?.Invoke();
+                NotifyStatsChanged(force: true);
         }
 
         private void ApplyHealthRegen()

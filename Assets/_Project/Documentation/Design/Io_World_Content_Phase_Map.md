@@ -197,7 +197,7 @@ B4 #9 Io biome pass    W6  B7 + vaults S4–S5 + core pets complete
 |------|---------|
 | **B3** | Ash gale navigation, ridge recon scan, spout alley, buried wreck salvage |
 | **B4** | Rim survey, lens crossing, caldera mantis hunt, collapse dive instance (foot only, heat suit) |
-| Story | B4 sites tease Aether-9 crew loss (prep for B4 #8) |
+| Story | B4 sites tease Kairos crew loss (prep for B4 #8) |
 
 #### Flora & fauna
 
@@ -315,7 +315,7 @@ B4 #9 Io biome pass    W6  B7 + vaults S4–S5 + core pets complete
 
 **All 12 core + 4 vanity seed** achievable in campaign.
 
-**Depends on:** W5, Aether-9 / Memory Core arc (GDD B4 #8).  
+**Depends on:** W5, Kairos / Memory Core arc (GDD B4 #8).  
 **Biome plan refs:** E6. **Underground refs:** P5.
 
 ---
@@ -417,7 +417,7 @@ Use when marking a biome **content complete** for a phase:
 | 4 Living-world slice | W2 (storms affect B1/B2 verbs) |
 | 5 Command Center sim | W4+ (sulfur shelter fiction for base-22) |
 | 6 Pet fold | W2 (Pet Bay + inventory; retire placeholders) |
-| 8 Aether-9 / Memory Cores | W6 (B7, S5, Core-Sniffer fiction) |
+| 8 Kairos / Memory Cores | W6 (B7, S5, Core-Sniffer fiction) |
 | 9 Io biome pass | **W1–W8 aggregate** (this document) |
 
 ---

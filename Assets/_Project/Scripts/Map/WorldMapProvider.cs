@@ -22,7 +22,7 @@ namespace Project.Map
         [SerializeField] private bool useTerrainBounds = true;
         [SerializeField] private Vector2 manualWorldSize = new Vector2(512f, 512f);
         [SerializeField] private Vector3 manualWorldOrigin = Vector3.zero;
-        [SerializeField] private int mapTextureResolution = 256;
+        [SerializeField] private int mapTextureResolution = 512;
         [SerializeField] private Texture2D mapTextureOverride;
         [SerializeField] private bool buildTerrainTextureAtRuntime = true;
         [Tooltip("When a terrain exists, bake the live terrain map instead of the static FakeMap texture.")]
@@ -166,8 +166,19 @@ namespace Project.Map
                 return;
             }
 
-            fallbackTexture = CreateFallbackTexture();
-            MapTexture = fallbackTexture;
+            // Prefer the authored FakeMap while terrain baking runs — never flash the tiny
+            // procedural placeholder (looks like a broken/pixelated minimap in builds).
+            Texture2D interim = LoadFakeMapTexture();
+            if (interim != null)
+            {
+                MapTexture = interim;
+            }
+            else
+            {
+                fallbackTexture = CreateFallbackTexture();
+                MapTexture = fallbackTexture;
+            }
+
             IsMapTextureReady = true;
             MapTextureReady?.Invoke();
 
@@ -262,8 +273,18 @@ namespace Project.Map
             if (cameraTexture != null)
                 DestroyImmediate(cameraTexture);
 
-            texture = BakeTerrainMapTexture(data, ResolveMapTextureResolution(data), textureName);
-            return texture != null;
+            Texture2D heightSplat = BakeTerrainMapTexture(data, ResolveMapTextureResolution(data), textureName);
+            if (HasUsableMapTexture(heightSplat))
+            {
+                texture = heightSplat;
+                return true;
+            }
+
+            if (heightSplat != null)
+                DestroyImmediate(heightSplat);
+
+            // Leave FakeMap / prior interim in place — do not promote muddy flat bakes.
+            return false;
         }
 
         private static bool HasUsableMapTexture(Texture2D texture)
@@ -271,9 +292,19 @@ namespace Project.Map
             if (texture == null || texture.width < 2 || texture.height < 2)
                 return false;
 
+            // Tiny procedural placeholders are never display-worthy.
+            if (texture.width < 32 || texture.height < 32)
+                return false;
+
+            // Authored FakeMap / Resources textures may be non-readable in player builds.
+            if (!texture.isReadable)
+                return texture.width >= 128 && texture.height >= 128;
+
             Color baseline = texture.GetPixel(0, 0);
             int samples = 0;
             int differentSamples = 0;
+            float luminanceAccum = 0f;
+            float luminanceSqAccum = 0f;
             int stepX = Mathf.Max(1, texture.width / 8);
             int stepY = Mathf.Max(1, texture.height / 8);
 
@@ -283,6 +314,10 @@ namespace Project.Map
                 {
                     Color sample = texture.GetPixel(x, y);
                     samples++;
+                    float lum = sample.r * 0.299f + sample.g * 0.587f + sample.b * 0.114f;
+                    luminanceAccum += lum;
+                    luminanceSqAccum += lum * lum;
+
                     float dr = sample.r - baseline.r;
                     float dg = sample.g - baseline.g;
                     float db = sample.b - baseline.b;
@@ -292,7 +327,17 @@ namespace Project.Map
                 }
             }
 
-            return samples > 0 && differentSamples > 0;
+            if (samples <= 0 || differentSamples <= 0)
+                return false;
+
+            // Flat prototype terrains bake to near-uniform muddy aerials that look like a
+            // broken RawImage when zoomed in the circular minimap — reject those.
+            float mean = luminanceAccum / samples;
+            float variance = (luminanceSqAccum / samples) - (mean * mean);
+            if (variance < 0.0025f)
+                return false;
+
+            return differentSamples >= Mathf.Max(3, samples / 4);
         }
 
         public Texture2D BakeTerrainMapTexture(TerrainData data, int resolution, string textureName = "TerrainMapSnapshot")
@@ -442,11 +487,8 @@ namespace Project.Map
         public static Texture2D CreateDisplayFallback()
         {
             WorldMapProvider provider = Instance;
-            if (provider != null && provider.ShouldPreferTerrainGeneratedMap() && provider.MapTexture != null)
+            if (provider != null && provider.MapTexture != null && HasUsableMapTexture(provider.MapTexture))
                 return provider.MapTexture;
-
-            if (provider != null && provider.ShouldPreferTerrainGeneratedMap())
-                return CreateFallbackTexture();
 
             Texture2D fakeMap = LoadFakeMapTexture();
             if (fakeMap != null)
@@ -647,11 +689,11 @@ namespace Project.Map
 
             int scaled = mapTextureResolution;
             if (maxDimension > 700f)
-                scaled = Mathf.Max(scaled, 384);
-            if (maxDimension > 1400f)
                 scaled = Mathf.Max(scaled, 512);
+            if (maxDimension > 1400f)
+                scaled = Mathf.Max(scaled, 768);
 
-            return Mathf.Clamp(scaled, 64, 512);
+            return Mathf.Clamp(scaled, 128, 1024);
         }
 
         private static bool IsDedicatedMapTexture(Texture2D texture)
@@ -676,7 +718,8 @@ namespace Project.Map
 
         private static Texture2D CreateFallbackTexture()
         {
-            Texture2D texture = new Texture2D(8, 8, TextureFormat.RGBA32, false)
+            const int size = 64;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
                 name = "FallbackWorldMap",
                 wrapMode = TextureWrapMode.Clamp,
@@ -686,11 +729,12 @@ namespace Project.Map
             Color baseColor = new Color(0.14f, 0.18f, 0.16f, 1f);
             Color gridColor = new Color(0.2f, 0.26f, 0.22f, 1f);
 
-            for (int y = 0; y < 8; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < 8; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    bool grid = x == 0 || y == 0 || x == 7 || y == 7;
+                    bool grid = x == 0 || y == 0 || x == size - 1 || y == size - 1
+                        || (x % 8) == 0 || (y % 8) == 0;
                     texture.SetPixel(x, y, grid ? gridColor : baseColor);
                 }
             }

@@ -13,21 +13,34 @@ namespace Project.UI
 {
     /// <summary>
     /// Colored proximity dots for Press-E interactables (NPCs, stations, loot, pets, etc.).
+    /// Blueprint scroll dots are owned by PickupProximityDotUI.
     /// </summary>
     public class WorldInteractionDotUI : MonoBehaviour
     {
         public static WorldInteractionDotUI Instance { get; private set; }
 
+        private const float ScanInterval = 0.12f;
+
+        private struct DotAnchor
+        {
+            public Transform Transform;
+            public float HeightOffset;
+            public Color Color;
+        }
+
         [SerializeField] private float verticalWorldOffset = ProximityDotStyle.DefaultWorldOffset;
 
         private readonly Dictionary<Object, RectTransform> activeDots = new Dictionary<Object, RectTransform>();
+        private readonly Dictionary<Object, DotAnchor> activeAnchors = new Dictionary<Object, DotAnchor>();
         private readonly HashSet<Object> visibleThisFrame = new HashSet<Object>();
         private readonly Stack<RectTransform> dotPool = new Stack<RectTransform>();
+        private readonly List<Object> staleScratch = new List<Object>(16);
 
         private RectTransform dotLayer;
         private Canvas rootCanvas;
         private Camera worldCamera;
         private Transform playerTransform;
+        private float nextScanTime;
 
         private void Awake()
         {
@@ -52,9 +65,15 @@ namespace Project.UI
             if (!ResolveReferences())
                 return;
 
-            visibleThisFrame.Clear();
-            ScanInteractables();
-            HideStaleDots();
+            if (Time.unscaledTime >= nextScanTime)
+            {
+                nextScanTime = Time.unscaledTime + ScanInterval;
+                visibleThisFrame.Clear();
+                ScanInteractables();
+                HideStaleDots();
+            }
+
+            RepositionActiveDots();
         }
 
         private void ScanInteractables()
@@ -63,15 +82,25 @@ namespace Project.UI
             ScanCraftingStations();
             ScanBuildingPanels();
             ScanLootBags();
-            ScanRecipePickups();
             ScanPetAdoptables();
             ScanInjuredRecoverables();
             ScanEchoEntities();
         }
 
+        private void RepositionActiveDots()
+        {
+            foreach (KeyValuePair<Object, RectTransform> pair in activeDots)
+            {
+                if (!activeAnchors.TryGetValue(pair.Key, out DotAnchor anchor) || anchor.Transform == null)
+                    continue;
+
+                PositionDot(pair.Value, anchor.Transform.position, anchor.HeightOffset);
+            }
+        }
+
         private void ScanQuestGivers()
         {
-            QuestGiverNpc[] givers = FindObjectsByType<QuestGiverNpc>(FindObjectsInactive.Exclude);
+            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>();
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
@@ -84,7 +113,7 @@ namespace Project.UI
 
         private void ScanCraftingStations()
         {
-            CraftingStation[] stations = FindObjectsByType<CraftingStation>(FindObjectsInactive.Exclude);
+            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>();
             for (int i = 0; i < stations.Length; i++)
             {
                 CraftingStation station = stations[i];
@@ -97,7 +126,7 @@ namespace Project.UI
 
         private void ScanBuildingPanels()
         {
-            BuildingControlPanel[] panels = FindObjectsByType<BuildingControlPanel>(FindObjectsInactive.Exclude);
+            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>();
             for (int i = 0; i < panels.Length; i++)
             {
                 BuildingControlPanel panel = panels[i];
@@ -110,7 +139,7 @@ namespace Project.UI
 
         private void ScanLootBags()
         {
-            EnemyLootBag[] bags = FindObjectsByType<EnemyLootBag>(FindObjectsInactive.Exclude);
+            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>();
             for (int i = 0; i < bags.Length; i++)
             {
                 EnemyLootBag bag = bags[i];
@@ -121,34 +150,16 @@ namespace Project.UI
             }
         }
 
-        private void ScanRecipePickups()
-        {
-            RecipePickup[] pickups = FindObjectsByType<RecipePickup>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < pickups.Length; i++)
-            {
-                RecipePickup pickup = pickups[i];
-                if (pickup == null || pickup.IsLearned)
-                    continue;
-
-                float distance = Vector3.Distance(playerTransform.position, pickup.transform.position);
-                if (distance > pickup.InteractRange)
-                    continue;
-
-                ShowDot(pickup, pickup.transform, verticalWorldOffset, ProximityDotStyle.RecipeColor);
-            }
-        }
-
         private void ScanPetAdoptables()
         {
-            PetWorldAdoptable[] adoptables = FindObjectsByType<PetWorldAdoptable>(FindObjectsInactive.Exclude);
+            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>();
             for (int i = 0; i < adoptables.Length; i++)
             {
                 PetWorldAdoptable adoptable = adoptables[i];
                 if (adoptable == null)
                     continue;
 
-                float distance = Vector3.Distance(playerTransform.position, adoptable.transform.position);
-                if (distance > adoptable.InteractRange)
+                if (!IsWithinRange(adoptable.transform.position, adoptable.InteractRange))
                     continue;
 
                 ShowDot(adoptable, adoptable.transform, 0.55f, ProximityDotStyle.PetColor);
@@ -158,15 +169,14 @@ namespace Project.UI
         private void ScanInjuredRecoverables()
         {
             InjuredPioneerLabRecoverable[] recoverables =
-                FindObjectsByType<InjuredPioneerLabRecoverable>(FindObjectsInactive.Exclude);
+                SceneComponentCache.GetAll<InjuredPioneerLabRecoverable>();
             for (int i = 0; i < recoverables.Length; i++)
             {
                 InjuredPioneerLabRecoverable recoverable = recoverables[i];
-                if (recoverable == null || string.IsNullOrEmpty(recoverable.GetPromptText()))
+                if (recoverable == null || !recoverable.CanShowInteractionHint())
                     continue;
 
-                float distance = Vector3.Distance(playerTransform.position, recoverable.transform.position);
-                if (distance > recoverable.InteractRange)
+                if (!IsWithinRange(recoverable.transform.position, recoverable.InteractRange))
                     continue;
 
                 ShowDot(recoverable, recoverable.transform, 0.85f, ProximityDotStyle.ScienceLabColor);
@@ -175,19 +185,24 @@ namespace Project.UI
 
         private void ScanEchoEntities()
         {
-            EchoWorldEntity[] echoes = FindObjectsByType<EchoWorldEntity>(FindObjectsInactive.Exclude);
+            EchoWorldEntity[] echoes = SceneComponentCache.GetAll<EchoWorldEntity>();
             for (int i = 0; i < echoes.Length; i++)
             {
                 EchoWorldEntity echo = echoes[i];
                 if (echo == null || !echo.IsInteractable)
                     continue;
 
-                float distance = Vector3.Distance(playerTransform.position, echo.transform.position);
-                if (distance > echo.InteractRange)
+                if (!IsWithinRange(echo.transform.position, echo.InteractRange))
                     continue;
 
                 ShowDot(echo, echo.transform, 1f, ProximityDotStyle.EchoColor);
             }
+        }
+
+        private bool IsWithinRange(Vector3 worldPosition, float range)
+        {
+            float rangeSqr = range * range;
+            return (worldPosition - playerTransform.position).sqrMagnitude <= rangeSqr;
         }
 
         private void ShowDot(Object owner, Transform anchor, float heightOffset, Color color)
@@ -196,6 +211,12 @@ namespace Project.UI
                 return;
 
             visibleThisFrame.Add(owner);
+            activeAnchors[owner] = new DotAnchor
+            {
+                Transform = anchor,
+                HeightOffset = heightOffset,
+                Color = color
+            };
 
             if (!activeDots.TryGetValue(owner, out RectTransform dotRect))
             {
@@ -206,8 +227,11 @@ namespace Project.UI
             {
                 ProximityDotStyle.ApplyColor(dotRect, color);
             }
+        }
 
-            Vector3 worldPoint = anchor.position + Vector3.up * heightOffset;
+        private void PositionDot(RectTransform dotRect, Vector3 worldPosition, float heightOffset)
+        {
+            Vector3 worldPoint = worldPosition + Vector3.up * heightOffset;
             Vector3 screenPoint = worldCamera.WorldToScreenPoint(worldPoint);
             if (screenPoint.z <= 0f)
             {
@@ -231,26 +255,23 @@ namespace Project.UI
             if (activeDots.Count == 0)
                 return;
 
-            List<Object> stale = null;
+            staleScratch.Clear();
             foreach (KeyValuePair<Object, RectTransform> pair in activeDots)
             {
                 if (visibleThisFrame.Contains(pair.Key))
                     continue;
 
-                stale ??= new List<Object>();
-                stale.Add(pair.Key);
+                staleScratch.Add(pair.Key);
             }
 
-            if (stale == null)
-                return;
-
-            for (int i = 0; i < stale.Count; i++)
+            for (int i = 0; i < staleScratch.Count; i++)
             {
-                Object key = stale[i];
+                Object key = staleScratch[i];
                 if (activeDots.TryGetValue(key, out RectTransform dotRect))
                     ReleaseDot(dotRect);
 
                 activeDots.Remove(key);
+                activeAnchors.Remove(key);
             }
         }
 
@@ -260,6 +281,7 @@ namespace Project.UI
                 ReleaseDot(pair.Value);
 
             activeDots.Clear();
+            activeAnchors.Clear();
             visibleThisFrame.Clear();
         }
 
@@ -286,14 +308,10 @@ namespace Project.UI
                 rootCanvas = GetComponentInParent<Canvas>();
 
             if (worldCamera == null)
-                worldCamera = Camera.main;
+                worldCamera = PlayerReference.ResolveCamera();
 
             if (playerTransform == null)
-            {
-                GameObject player = PlayerLocator.FindPlayerObject();
-                if (player != null)
-                    playerTransform = player.transform;
-            }
+                playerTransform = PlayerReference.Transform ?? PlayerReference.ResolveTransform();
 
             return rootCanvas != null && worldCamera != null && playerTransform != null;
         }

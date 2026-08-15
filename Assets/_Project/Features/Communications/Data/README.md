@@ -8,4 +8,4 @@ Planned authored radio identity assets:
 - Assets: `Resources/Communications/Crew/` + `Resources/Communications/CrewDatabase.asset`
 
 Planned menu: **Dark Matter: Genesis → Communications → Sync Crew Database From Companions**
-(uses existing companion `NamedPioneerDefinition` assets + Aether-9).
+(uses existing companion `NamedPioneerDefinition` assets + Kairos).

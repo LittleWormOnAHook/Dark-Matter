@@ -30,6 +30,7 @@ namespace Project.UI
         private float displayedNormalized;
         private float targetFahrenheit;
         private float displayedFahrenheit;
+        private int lastDisplayedFahrenheitText = int.MinValue;
         private float trackHeight;
         private float labelBlock;
         private float titleBlock;
@@ -76,14 +77,30 @@ namespace Project.UI
             if (tubeRect == null)
                 return;
 
-            float speed = Time.deltaTime * 10f;
-            displayedNormalized = Mathf.Lerp(displayedNormalized, targetNormalized, speed);
-            displayedFahrenheit = Mathf.Lerp(displayedFahrenheit, targetFahrenheit, speed);
+            bool settled = Mathf.Abs(displayedNormalized - targetNormalized) < 0.0005f
+                && Mathf.Abs(displayedFahrenheit - targetFahrenheit) < 0.05f;
+            if (settled)
+            {
+                displayedNormalized = targetNormalized;
+                displayedFahrenheit = targetFahrenheit;
+            }
+            else
+            {
+                float speed = Time.deltaTime * 10f;
+                displayedNormalized = Mathf.Lerp(displayedNormalized, targetNormalized, speed);
+                displayedFahrenheit = Mathf.Lerp(displayedFahrenheit, targetFahrenheit, speed);
+            }
+
             ApplyPointer(displayedNormalized);
 
             if (valueLabel == null)
                 return;
 
+            int rounded = Mathf.RoundToInt(displayedFahrenheit);
+            if (rounded == lastDisplayedFahrenheitText)
+                return;
+
+            lastDisplayedFahrenheitText = rounded;
             // Fahrenheit is the primary EVA suit readout everywhere — compact (Journal) and full
             // (hotbar) layouts both lead with °F; the hotbar's non-compact scale still shows °C as a
             // secondary reference on the right-hand tick labels (see EnsureBuilt below).
@@ -129,7 +146,7 @@ namespace Project.UI
 
             Image tubeBg = tubeObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(tubeBg);
-            tubeBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+            tubeBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
 
             GameObject gradientObject = CreateChild("Gradient", tubeObject.transform);
             RectTransform gradientRect = gradientObject.GetComponent<RectTransform>();
@@ -144,7 +161,7 @@ namespace Project.UI
             gradientImage.raycastTarget = false;
 
             float nominalY = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(ExposureTemperatureDisplay.NominalFahrenheit) * trackHeight;
-            CreateTick(tubeObject.transform, nominalY, SurvivalPioneerUiPalette.Gold, 3f);
+            CreateTick(tubeObject.transform, nominalY, DarkMatterGenesisUiPalette.Gold, 3f);
 
             for (int i = 0; i < ScaleFahrenheitMarks.Length; i++)
             {
@@ -184,7 +201,7 @@ namespace Project.UI
             {
                 MenuUiBuilder.ApplyUiSprite(ringImage);
             }
-            ringImage.color = SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.85f);
+            ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.85f);
             ringImage.raycastTarget = false;
 
             GameObject pointerFill = CreateChild("Fill", pointerObject.transform);
@@ -203,7 +220,7 @@ namespace Project.UI
             {
                 MenuUiBuilder.ApplyUiSprite(pointerImage);
             }
-            pointerImage.color = SurvivalPioneerUiPalette.Gold;
+            pointerImage.color = DarkMatterGenesisUiPalette.Gold;
             pointerImage.raycastTarget = false;
 
             valueLabel = CreateText(
@@ -213,7 +230,7 @@ namespace Project.UI
                 compactMode ? 16f : 24f * layoutScale,
                 FontStyles.Bold,
                 new Vector2(0f, HudLayoutMetrics.Scaled(compactMode ? 16f : 12f * layoutScale)));
-            valueLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            valueLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             if (compactMode)
             {
@@ -224,7 +241,7 @@ namespace Project.UI
                     9f * layoutScale,
                     FontStyles.Normal,
                     new Vector2(0f, HudLayoutMetrics.Scaled(2f)));
-                statusLabel.color = SurvivalPioneerUiPalette.MutedText;
+                statusLabel.color = DarkMatterGenesisUiPalette.MutedText;
             }
 
             TextMeshProUGUI titleLabel = CreateTopTitle(
@@ -234,7 +251,7 @@ namespace Project.UI
                 10f * layoutScale,
                 titleBlock,
                 titleTopPadding);
-            titleLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            titleLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             titleLabel.transform.SetAsLastSibling();
 
             displayedNormalized = targetNormalized;
@@ -259,9 +276,9 @@ namespace Project.UI
             MenuUiBuilder.ApplyUiSprite(panel);
             // Matches HovercraftStatusHudUI's panel exactly (same alpha + trim inset, no extra top
             // accent strip) so the Temperature/Hazards panels read as one consistent style with it.
-            panel.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.9f);
+            panel.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.9f);
             panel.raycastTarget = false;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(backgroundObject, new Vector2(1.2f, -1.2f));
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(backgroundObject, new Vector2(1.2f, -1.2f));
         }
 
         private void CreateTick(Transform parent, float y, Color color, float height)
@@ -292,7 +309,7 @@ namespace Project.UI
                 FontStyles.Normal,
                 new Vector2(x, y));
             label.alignment = leftSide ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.MidlineLeft;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
         }
 
         private static GameObject CreateChild(string name, Transform parent)

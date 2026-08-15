@@ -43,7 +43,7 @@ namespace Project.EditorTools
             ProjectAssetPaths.Scripts + "/Quests",
         };
 
-        [MenuItem(SurvivalPioneerEditorMenus.Project + "Organize Project Folders", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Organize Project Folders", false, 10)]
         public static void OrganizeProject()
         {
             if (!EditorUtility.DisplayDialog(

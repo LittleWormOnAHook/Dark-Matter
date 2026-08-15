@@ -62,24 +62,24 @@ namespace Project.Companions
         public static Color GetClassTint(SkilledPioneerRecord record)
         {
             if (record == null)
-                return SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.8f);
+                return DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.8f);
 
             Color baseTint = record.pioneerClass switch
             {
-                SkilledPioneerClass.ArchitectEngineer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.92f),
-                SkilledPioneerClass.ScienceSpecialist => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.88f),
-                SkilledPioneerClass.CombatTactician => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.9f),
-                SkilledPioneerClass.InfiltratorScout => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.95f),
-                SkilledPioneerClass.IoHybrid => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.WarmOffWhite, 0.94f),
-                SkilledPioneerClass.MedTech => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PositiveGreen, 0.9f),
-                SkilledPioneerClass.LogisticsOfficer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.88f),
-                SkilledPioneerClass.SalvageEngineer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.92f),
-                SkilledPioneerClass.CommunicationsOfficer => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.86f),
-                _ => SurvivalPioneerUiPalette.BodyText
+                SkilledPioneerClass.ArchitectEngineer => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.92f),
+                SkilledPioneerClass.ScienceSpecialist => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.88f),
+                SkilledPioneerClass.CombatTactician => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.9f),
+                SkilledPioneerClass.InfiltratorScout => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.95f),
+                SkilledPioneerClass.IoHybrid => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.WarmOffWhite, 0.94f),
+                SkilledPioneerClass.MedTech => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PositiveGreen, 0.9f),
+                SkilledPioneerClass.LogisticsOfficer => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.88f),
+                SkilledPioneerClass.SalvageEngineer => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.92f),
+                SkilledPioneerClass.CommunicationsOfficer => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.86f),
+                _ => DarkMatterGenesisUiPalette.BodyText
             };
 
             if (record.Kind == PioneerKind.RescuedEcho)
-                baseTint = Color.Lerp(baseTint, SurvivalPioneerUiPalette.RichFuchsia, 0.35f);
+                baseTint = Color.Lerp(baseTint, DarkMatterGenesisUiPalette.RichFuchsia, 0.35f);
 
             return baseTint;
         }

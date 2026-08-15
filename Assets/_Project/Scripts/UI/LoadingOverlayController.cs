@@ -66,8 +66,7 @@ namespace Project.UI
         /// <summary>Up + left from screen center (UI: -x left, +y up). Small distant hole keeps prior offset.</summary>
         private static readonly Vector2 BlackholeAnchoredPosition = new Vector2(-100f, 100f);
 
-        [SerializeField, Range(0.30f, 0.75f)] private float backgroundImageAlpha = 0.50f;
-        [SerializeField, Range(40f, 120f)] private float blackholeSize = 50f;
+        [SerializeField, Range(40f, 200f)] private float blackholeSize = 150f;
         [SerializeField, Range(0.4f, 1f)] private float blackholeAlpha = 0.8f;
         [SerializeField, Range(0.0f, 0.08f)] private float blackholeApproachScale = 0.02f;
         [SerializeField] private bool showDmiLogo = false;
@@ -336,7 +335,7 @@ namespace Project.UI
             if (showDmiLogo && glowImage != null)
             {
                 float pulse = 0.16f + 0.08f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 1.6f));
-                glowImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, pulse);
+                glowImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, pulse);
             }
 
             if (starfieldMaterial != null)
@@ -389,9 +388,9 @@ namespace Project.UI
                 float twinkle = 0.72f + 0.28f * Mathf.Sin(Time.unscaledTime * (1.6f + star.TwinklePhase) + star.TwinklePhase);
                 float alpha = Mathf.Clamp01(0.18f + travel * 0.85f) * twinkle;
                 Color tint = star.Accent
-                    ? SurvivalPioneerUiPalette.RichFuchsia
-                    : SurvivalPioneerUiPalette.BodyText;
-                star.Image.color = SurvivalPioneerUiPalette.WithAlpha(tint, alpha);
+                    ? DarkMatterGenesisUiPalette.RichFuchsia
+                    : DarkMatterGenesisUiPalette.BodyText;
+                star.Image.color = DarkMatterGenesisUiPalette.WithAlpha(tint, alpha);
 
                 flyingStars[i] = star;
             }
@@ -493,7 +492,7 @@ namespace Project.UI
             MenuUiBuilder.CreateFullScreenPanel(
                 parent,
                 "ReadabilityWash",
-                SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.18f),
+                DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.18f),
                 blockRaycasts: false);
         }
 
@@ -524,8 +523,8 @@ namespace Project.UI
                 };
                 // Near-black void — not navy/grey panels that read as rings.
                 starfieldMaterial.SetColor(SpaceColorId, new Color(0.01f, 0.012f, 0.02f, 1f));
-                starfieldMaterial.SetColor(StarColorId, SurvivalPioneerUiPalette.BodyText);
-                starfieldMaterial.SetColor(AccentColorId, SurvivalPioneerUiPalette.RichFuchsia);
+                starfieldMaterial.SetColor(StarColorId, DarkMatterGenesisUiPalette.BodyText);
+                starfieldMaterial.SetColor(AccentColorId, DarkMatterGenesisUiPalette.RichFuchsia);
                 starfieldMaterial.SetFloat(StarDensityId, 10f);
                 starfieldMaterial.SetFloat(StarBrightnessId, 0.55f);
                 float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
@@ -573,7 +572,7 @@ namespace Project.UI
                 }
 
                 image.raycastTarget = false;
-                image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.BodyText, 0.35f);
+                image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.BodyText, 0.35f);
 
                 FlyingStar star = new FlyingStar
                 {
@@ -590,9 +589,25 @@ namespace Project.UI
 
         private void BuildBlackholeLayer(Transform parent)
         {
-            // Sprite import (Texture Type = Sprite, Alpha Is Transparency) is required for clean alpha.
-            // Resources UI texture is Blackhole2 converted to true-alpha PNG.
+            // Prefer the Sprite sub-asset (Texture Type = Sprite + Alpha Is Transparency).
+            // Fallback builds a sprite from the Texture2D so a Default import never shows as opaque checkerboard.
             Sprite holeSprite = Resources.Load<Sprite>(BlackholeResourcePath);
+            if (holeSprite == null)
+            {
+                Texture2D holeTexture = Resources.Load<Texture2D>(BlackholeResourcePath);
+                if (holeTexture != null)
+                {
+                    holeSprite = Sprite.Create(
+                        holeTexture,
+                        new Rect(0f, 0f, holeTexture.width, holeTexture.height),
+                        new Vector2(0.5f, 0.5f),
+                        100f,
+                        0,
+                        SpriteMeshType.FullRect);
+                    holeSprite.name = "LoadingGenesis_Blackhole_Runtime";
+                }
+            }
+
             if (holeSprite == null)
                 return;
 
@@ -606,8 +621,10 @@ namespace Project.UI
             // Transparent Image only — no panel chrome / RawImage behind the sprite.
             Image hole = holeObject.AddComponent<Image>();
             hole.sprite = holeSprite;
+            hole.type = Image.Type.Simple;
             hole.preserveAspect = true;
             hole.raycastTarget = false;
+            hole.maskable = false;
             hole.color = new Color(1f, 1f, 1f, blackholeAlpha);
             hole.material = null;
         }
@@ -626,7 +643,7 @@ namespace Project.UI
 
                     glowImage = glowObject.GetComponent<Image>();
                     glowImage.sprite = glowSprite;
-                    glowImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.18f);
+                    glowImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.18f);
                     glowImage.raycastTarget = false;
                 }
 
@@ -644,7 +661,7 @@ namespace Project.UI
             title.fontSize = 52f;
             title.fontStyle = FontStyles.Bold;
             title.characterSpacing = 14f;
-            title.color = SurvivalPioneerUiPalette.BodyText;
+            title.color = DarkMatterGenesisUiPalette.BodyText;
             title.alignment = TextAlignmentOptions.Center;
             title.raycastTarget = false;
         }
@@ -693,12 +710,12 @@ namespace Project.UI
             label.text = "Loading Genesis...";
             label.fontSize = 24f;
             label.characterSpacing = 6f;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
 
             percentLabel = CreateProgressLabel(block.transform, "PercentLabel", TextAlignmentOptions.MidlineRight);
             percentLabel.text = "0%";
             percentLabel.fontSize = 22f;
-            percentLabel.color = SurvivalPioneerUiPalette.Gold;
+            percentLabel.color = DarkMatterGenesisUiPalette.Gold;
 
             GameObject track = new GameObject("ProgressTrack", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             track.transform.SetParent(block.transform, false);
@@ -711,7 +728,7 @@ namespace Project.UI
 
             Image trackImage = track.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(trackImage);
-            trackImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.9f);
+            trackImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.9f);
             trackImage.raycastTarget = false;
 
             GameObject fill = new GameObject("ProgressFill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -724,7 +741,7 @@ namespace Project.UI
 
             Image fillImage = fill.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(fillImage);
-            fillImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            fillImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             fillImage.raycastTarget = false;
         }
 
@@ -890,10 +907,19 @@ namespace Project.UI
             Action callback = onCompleted;
             onCompleted = null;
 
-            if (callback != null)
-                callback();
-            else
-                MainCanvasFlow.Refresh();
+            // Never let destination handoff exceptions abort the fade-in / camera restore
+            // that follows in RunLoadingSequence (that left players on a permanent black veil).
+            try
+            {
+                if (callback != null)
+                    callback();
+                else
+                    MainCanvasFlow.Refresh();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
+            }
         }
     }
 }

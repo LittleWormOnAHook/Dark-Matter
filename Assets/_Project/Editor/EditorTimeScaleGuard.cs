@@ -30,7 +30,7 @@ namespace Project.EditorTools
             }
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Reset Time Scale To 1", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reset Time Scale To 1", false, 20)]
         private static void ResetTimeScaleMenu()
         {
             EnsureProjectTimeScale(forceLog: true);

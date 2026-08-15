@@ -34,7 +34,7 @@ namespace Project.EditorTools
             EditorApplication.delayCall += () => SanitizeTagManager();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix Tag Manager", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Fix Tag Manager", false, 10)]
         public static void FixTagManagerMenu()
         {
             if (SanitizeTagManager(forceLog: true))

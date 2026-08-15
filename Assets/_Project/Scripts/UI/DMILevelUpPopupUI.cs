@@ -75,9 +75,9 @@ namespace Project.UI
 
             Image cardBg = card.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(cardBg);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(cardBg, 0.94f);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(cardBg, 0.94f);
             cardBg.raycastTarget = false;
-            SurvivalPioneerUiPalette.ApplyGoldTrim(card);
+            DarkMatterGenesisUiPalette.ApplyGoldTrim(card);
 
             VerticalLayoutGroup cardLayout = card.GetComponent<VerticalLayoutGroup>();
             cardLayout.padding = new RectOffset(0, 0, 0, 16);
@@ -92,12 +92,12 @@ namespace Project.UI
             if (headerLabel != null)
             {
                 headerLabel.alignment = TextAlignmentOptions.Center;
-                headerLabel.color = SurvivalPioneerUiPalette.Gold;
+                headerLabel.color = DarkMatterGenesisUiPalette.Gold;
             }
 
             Outline headerOutline = headerBar.GetComponent<Outline>();
             if (headerOutline != null)
-                headerOutline.effectColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.78f);
+                headerOutline.effectColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.78f);
 
             GameObject body = new GameObject("Body", typeof(RectTransform), typeof(VerticalLayoutGroup));
             body.transform.SetParent(card.transform, false);
@@ -109,14 +109,14 @@ namespace Project.UI
             bodyLayout.childForceExpandWidth = true;
             bodyLayout.childForceExpandHeight = false;
 
-            headlineLabel = CreateLabel(body.transform, "Headline", 28f, SurvivalPioneerUiPalette.BodyText, FontStyles.Bold, theme);
+            headlineLabel = CreateLabel(body.transform, "Headline", 28f, DarkMatterGenesisUiPalette.BodyText, FontStyles.Bold, theme);
             headlineLabel.alignment = TextAlignmentOptions.Center;
             headlineLabel.text = "You Leveled Up!";
 
-            levelLabel = CreateLabel(body.transform, "Level", 22f, SurvivalPioneerUiPalette.Gold, FontStyles.Bold, theme);
+            levelLabel = CreateLabel(body.transform, "Level", 22f, DarkMatterGenesisUiPalette.Gold, FontStyles.Bold, theme);
             levelLabel.alignment = TextAlignmentOptions.Center;
 
-            subtitleLabel = CreateLabel(body.transform, "Subtitle", 16f, SurvivalPioneerUiPalette.MutedText, FontStyles.Normal, theme);
+            subtitleLabel = CreateLabel(body.transform, "Subtitle", 16f, DarkMatterGenesisUiPalette.MutedText, FontStyles.Normal, theme);
             subtitleLabel.alignment = TextAlignmentOptions.Center;
 
             ContentSizeFitter cardFitter = card.AddComponent<ContentSizeFitter>();

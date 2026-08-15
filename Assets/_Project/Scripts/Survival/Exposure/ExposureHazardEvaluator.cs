@@ -71,6 +71,21 @@ namespace Project.Survival.Exposure
                 return System.Array.Empty<string>();
 
             var names = new List<string>(activeZones.Count);
+            CollectActiveZoneNames(activeZones, names);
+            return names.Count == 0 ? System.Array.Empty<string>() : names.ToArray();
+        }
+
+        public static void CollectActiveZoneNames(
+            IReadOnlyList<ExposureZoneVolume> activeZones,
+            List<string> names)
+        {
+            if (names == null)
+                return;
+
+            names.Clear();
+            if (activeZones == null || activeZones.Count == 0)
+                return;
+
             for (int i = 0; i < activeZones.Count; i++)
             {
                 ExposureZoneVolume zone = activeZones[i];
@@ -84,8 +99,6 @@ namespace Project.Survival.Exposure
                 if (!names.Contains(name))
                     names.Add(name);
             }
-
-            return names.ToArray();
         }
 
         private static ExposureHazardState BuildHazard(ExposureZoneKind kind, string displayName, float severity)

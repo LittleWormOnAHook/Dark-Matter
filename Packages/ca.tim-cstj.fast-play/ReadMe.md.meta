@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4cedfc8331ccec445ae0ee85d547dc96
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 353186
+  packageName: Fast Play
+  packageVersion: 1.0.1
+  assetPath: Packages/ca.tim-cstj.fast-play/ReadMe.md
+  uploadId: 883896

@@ -258,7 +258,7 @@ namespace Project.Map
 
         private void RebuildFogPixelsFromMask()
         {
-            Color gold = SurvivalPioneerUiPalette.Gold;
+            Color gold = DarkMatterGenesisUiPalette.Gold;
             byte gr = (byte)Mathf.RoundToInt(gold.r * 255f);
             byte gg = (byte)Mathf.RoundToInt(gold.g * 255f);
             byte gb = (byte)Mathf.RoundToInt(gold.b * 255f);

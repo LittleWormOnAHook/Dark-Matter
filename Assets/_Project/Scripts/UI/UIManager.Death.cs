@@ -94,8 +94,8 @@ namespace Project.UI
 
             Image contentBg = contentPanel.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(contentBg);
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(contentBg, 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(contentPanel);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(contentBg, 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(contentPanel);
 
             // Create title text "GAME OVER"
             GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
@@ -108,7 +108,7 @@ namespace Project.UI
             titleText.text = "GAME OVER";
             titleText.fontSize = 64f;
             titleText.fontStyle = FontStyles.Bold;
-            titleText.color = SurvivalPioneerUiPalette.WarningText;
+            titleText.color = DarkMatterGenesisUiPalette.WarningText;
             titleText.alignment = TextAlignmentOptions.Center;
             
             RectTransform titleRt = titleObj.GetComponent<RectTransform>();
@@ -182,11 +182,11 @@ namespace Project.UI
 
             Image img = btnObj.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(img);
-            img.color = SurvivalPioneerUiPalette.ButtonNormal;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(btnObj);
+            img.color = DarkMatterGenesisUiPalette.ButtonNormal;
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(btnObj);
 
             Button btn = btnObj.AddComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(btn, img);
+            DarkMatterGenesisUiPalette.StylePrimaryButton(btn, img);
 
             // Add text child
             GameObject txtObj = new GameObject("Text", typeof(RectTransform));
@@ -206,7 +206,7 @@ namespace Project.UI
             tmp.text = labelText;
             tmp.fontSize = 20f;
             tmp.fontStyle = FontStyles.Bold;
-            tmp.color = SurvivalPioneerUiPalette.BodyText;
+            tmp.color = DarkMatterGenesisUiPalette.BodyText;
             tmp.alignment = TextAlignmentOptions.Center;
 
             return btnObj;

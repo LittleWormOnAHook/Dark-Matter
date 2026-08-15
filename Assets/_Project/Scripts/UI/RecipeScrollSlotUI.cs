@@ -9,8 +9,8 @@ namespace Project.UI
 {
     public class RecipeScrollSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        private static readonly Color ScrollSlotTint = SurvivalPioneerUiPalette.SlotBackground;
-        private static readonly Color ScrollSlotHoverTint = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.42f);
+        private static readonly Color ScrollSlotTint = DarkMatterGenesisUiPalette.SlotBackground;
+        private static readonly Color ScrollSlotHoverTint = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.42f);
         private static float SlotSize => HudLayoutMetrics.InventorySlotSize(80f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;
 
@@ -90,7 +90,7 @@ namespace Project.UI
             panelRect.pivot = new Vector2(0.5f, 0.5f);
 
             Image panelBackground = learnConfirmPanel.AddComponent<Image>();
-            panelBackground.color = SurvivalPioneerUiPalette.WithAlpha(Color.black, 0.88f);
+            panelBackground.color = DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.88f);
 
             GameObject buttonObject = new GameObject("LearnButton", typeof(RectTransform));
             buttonObject.transform.SetParent(learnConfirmPanel.transform, false);
@@ -101,7 +101,7 @@ namespace Project.UI
             buttonRect.offsetMax = new Vector2(-2f, -2f);
 
             Image buttonImage = buttonObject.AddComponent<Image>();
-            buttonImage.color = SurvivalPioneerUiPalette.RichFuchsia;
+            buttonImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
             learnButton = buttonObject.AddComponent<Button>();
             learnButton.targetGraphic = buttonImage;
             learnButton.onClick.AddListener(HandleLearnButtonClicked);
@@ -119,7 +119,7 @@ namespace Project.UI
             learnLabel.text = "Learn";
             learnLabel.fontSize = 13f;
             learnLabel.alignment = TextAlignmentOptions.Center;
-            learnLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            learnLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             learnLabel.raycastTarget = false;
 
             learnConfirmPanel.transform.SetAsLastSibling();

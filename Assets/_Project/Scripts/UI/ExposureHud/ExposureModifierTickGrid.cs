@@ -72,7 +72,7 @@ namespace Project.UI
             emptyLabel = emptyObject.GetComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(emptyLabel);
             emptyLabel.fontSize = 11f;
-            emptyLabel.color = SurvivalPioneerUiPalette.MutedText;
+            emptyLabel.color = DarkMatterGenesisUiPalette.MutedText;
             emptyLabel.alignment = TextAlignmentOptions.MidlineLeft;
         }
 

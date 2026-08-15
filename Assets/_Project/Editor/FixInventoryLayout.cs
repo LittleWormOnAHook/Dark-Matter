@@ -5,7 +5,7 @@ using Project.EditorTools;
 
 public class FixInventoryLayout : EditorWindow
 {
-    [MenuItem(SurvivalPioneerEditorMenus.Ui + "Fix Inventory Grid Layout")]
+    [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Fix Inventory Grid Layout")]
     public static void FixLayout()
     {
         GameObject gridObj = GameObject.Find("MainInventoryGrid");

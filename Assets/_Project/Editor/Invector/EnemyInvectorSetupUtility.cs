@@ -22,7 +22,7 @@ namespace Project.EditorTools.Invector
         private const string DefaultMeleeItemPath = ProjectAssetPaths.ItemsMelee + "/weap2_sword.asset";
         private const string DefaultRangedItemPath = ProjectAssetPaths.ItemsRanged + "/sci_fi_pistol.asset";
 
-        [MenuItem(SurvivalPioneerEditorMenus.RepairAllHumanoidCombatPrefabs, false, 130)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RepairAllHumanoidCombatPrefabs, false, 130)]
         public static void RepairAllHumanoidCombatPrefabs()
         {
             EnsureHumanoidEnemyDefinitionAsset();

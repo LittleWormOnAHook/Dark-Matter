@@ -35,7 +35,7 @@ namespace Project.UI
                 : "N/A";
 
             detailLabel.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
+                $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
                 $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}\n\n" +
                 $"Rad {record.radiationResistance:P0}  ·  Exp {record.expeditionEfficiency:P0}  ·  Syn {record.combatSynergy:P0}\n" +
                 $"Saturation {record.saturation:P0}  ·  Disposition {disposition}\n\n" +
@@ -219,7 +219,7 @@ namespace Project.UI
             return pioneerClass switch
             {
                 SkilledPioneerClass.ArchitectEngineer => "Class synergy: Portable Purification Field stabilizes hostile Echo saturation.",
-                SkilledPioneerClass.ScienceSpecialist => "Class synergy: Analysis link amplifies Aether-9 scans and core archive gains.",
+                SkilledPioneerClass.ScienceSpecialist => "Class synergy: Analysis link amplifies Kairos scans and core archive gains.",
                 SkilledPioneerClass.CombatTactician => "Class synergy: Hold line protects the trio during echo rescue setpieces.",
                 SkilledPioneerClass.InfiltratorScout => "Class synergy: Vent burst timing detects Echo signals near hazards.",
                 SkilledPioneerClass.MedTech => "Class synergy: Field triage stabilizes injured companions after sulfur exposure.",

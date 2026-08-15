@@ -211,7 +211,7 @@ namespace Project.UI
 
             acBalanceLabel = MenuUiBuilder.CreateTitle(root.transform, "Aether Credits: 0", 20f * MenuScale);
             acBalanceLabel.alignment = TextAlignmentOptions.TopLeft;
-            acBalanceLabel.color = SurvivalPioneerUiPalette.Gold;
+            acBalanceLabel.color = DarkMatterGenesisUiPalette.Gold;
 
             root.SetActive(false);
             return root;

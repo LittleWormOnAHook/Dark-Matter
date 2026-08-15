@@ -14,7 +14,7 @@ namespace Project.EditorTools.Progression
         private const string CurvePath = ProgressionResourcesRoot + "/ProgressionCurve.asset";
         private const string RegistryPath = ProgressionResourcesRoot + "/SkillRegistry.asset";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Content + "Create Progression Curve", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Progression Curve", false, 40)]
         public static void CreateProgressionCurve()
         {
             EnsureFolder(ProgressionResourcesRoot);
@@ -35,7 +35,7 @@ namespace Project.EditorTools.Progression
             Selection.activeObject = curve;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Content + "Create Starter Skills + Registry", false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Skills + Registry", false, 41)]
         public static void CreateStarterSkills()
         {
             EnsureFolder(SkillsFolder);

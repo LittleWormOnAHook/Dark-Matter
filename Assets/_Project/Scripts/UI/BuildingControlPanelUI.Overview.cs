@@ -101,10 +101,10 @@ namespace Project.UI
                     ? "Sulfur storm: BUILDING"
                     : "Sulfur storm: Running";
             overviewStormText.color = opsPaused
-                ? SurvivalPioneerUiPalette.WarningText
+                ? DarkMatterGenesisUiPalette.WarningText
                 : crisisActive
-                    ? SurvivalPioneerUiPalette.Gold
-                    : SurvivalPioneerUiPalette.PositiveGreen;
+                    ? DarkMatterGenesisUiPalette.Gold
+                    : DarkMatterGenesisUiPalette.PositiveGreen;
 
             if (overviewMaintenanceText != null)
             {
@@ -162,8 +162,8 @@ namespace Project.UI
             string powerState = generator.HasPower ? "Powered" : "OFFLINE — no fuel";
             overviewPowerText.text = $"Generator: {Mathf.RoundToInt(generator.FuelPercent01 * 100f)}% fuel ({powerState})";
             overviewPowerText.color = generator.HasPower
-                ? SurvivalPioneerUiPalette.PositiveGreen
-                : SurvivalPioneerUiPalette.WarningText;
+                ? DarkMatterGenesisUiPalette.PositiveGreen
+                : DarkMatterGenesisUiPalette.WarningText;
 
             if (refuelGeneratorButtonLabel != null)
             {
@@ -225,17 +225,17 @@ namespace Project.UI
                 {
                     if (string.IsNullOrEmpty(assignedName))
                     {
-                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+                        rowBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
                     }
                     else if (assignedRecord != null
                         && specializedBuilding
                         && BuildingControlAssignmentHints.IsIdealAssignment(assignedRecord, buildingId))
                     {
-                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.22f);
+                        rowBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.22f);
                     }
                     else if (assignedRecord != null && specializedBuilding)
                     {
-                        rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.16f);
+                        rowBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.16f);
                     }
                     else
                     {
@@ -307,7 +307,7 @@ namespace Project.UI
 
             Image rowBackground = row.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(rowBackground);
-            rowBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f);
+            rowBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f);
 
             GameObject labelObject = new GameObject("RecipeLabel", typeof(RectTransform));
             labelObject.transform.SetParent(row.transform, false);
@@ -318,7 +318,7 @@ namespace Project.UI
                 TmpUiHelper.ApplyDefaultFont(recipeLabel);
             recipeLabel.fontSize = 18f;
             recipeLabel.alignment = TextAlignmentOptions.TopLeft;
-            recipeLabel.color = SurvivalPioneerUiPalette.BodyText;
+            recipeLabel.color = DarkMatterGenesisUiPalette.BodyText;
             recipeLabel.raycastTarget = false;
             RectTransform recipeRect = recipeLabel.rectTransform;
             recipeRect.anchorMin = new Vector2(0f, 0.55f);
@@ -334,7 +334,7 @@ namespace Project.UI
             barBackgroundObject.transform.SetParent(row.transform, false);
             Image barBackground = barBackgroundObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barBackground);
-            barBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.98f);
+            barBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.98f);
             RectTransform barBackgroundRect = barBackgroundObject.GetComponent<RectTransform>();
             barBackgroundRect.anchorMin = new Vector2(0f, 0.2f);
             barBackgroundRect.anchorMax = new Vector2(1f, 0.45f);
@@ -346,8 +346,8 @@ namespace Project.UI
             Image barFill = barFillObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(barFill);
             barFill.color = paused
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.85f)
-                : SurvivalPioneerUiPalette.RichFuchsia;
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.85f)
+                : DarkMatterGenesisUiPalette.RichFuchsia;
             barFill.type = Image.Type.Filled;
             barFill.fillMethod = Image.FillMethod.Horizontal;
             barFill.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -363,7 +363,7 @@ namespace Project.UI
                 TmpUiHelper.ApplyDefaultFont(percentLabel);
             percentLabel.fontSize = 14f;
             percentLabel.alignment = TextAlignmentOptions.BottomRight;
-            percentLabel.color = theme != null ? theme.secondaryTextColor : SurvivalPioneerUiPalette.BodyText;
+            percentLabel.color = theme != null ? theme.secondaryTextColor : DarkMatterGenesisUiPalette.BodyText;
             percentLabel.raycastTarget = false;
             RectTransform percentRect = percentLabel.rectTransform;
             percentRect.anchorMin = new Vector2(0f, 0f);

@@ -209,7 +209,7 @@ namespace Project.EditorTools
             return pruned;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Prune Unused ItemData Fields", false, 50)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Prune Unused ItemData Fields", false, 50)]
         public static void MenuPruneAll()
         {
             int count = PruneAllProjectItems();
