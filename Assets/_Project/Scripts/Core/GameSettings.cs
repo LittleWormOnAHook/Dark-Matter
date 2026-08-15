@@ -15,11 +15,16 @@ namespace Project.Core
         private const string ResolutionIndexKey = "settings.resolutionIndex";
         private const string MinimapEnabledKey = "settings.mapSystemEnabled";
         private const string RayTracingKey = "settings.rayTracing";
+        private const string UiScaleKey = "settings.uiScale";
         private const string SaveExistsKey = "save.exists";
+
+        public const float UiScaleMin = 0.4f;
+        public const float UiScaleMax = 1.25f;
 
         public static float MasterVolume { get; private set; } = 1f;
         public static float MusicVolume { get; private set; } = 1f;
         public static float SfxVolume { get; private set; } = 1f;
+        public static float UiScale { get; private set; } = 1f;
         public static bool PostProcessingEnabled { get; private set; } = true;
         public static bool MinimapEnabled { get; private set; } = true;
         public static bool Fullscreen { get; private set; } = true;
@@ -33,6 +38,7 @@ namespace Project.Core
             MasterVolume = PlayerPrefs.GetFloat(MasterVolumeKey, 1f);
             MusicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.85f);
             SfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, 1f);
+            UiScale = Mathf.Clamp(PlayerPrefs.GetFloat(UiScaleKey, 1f), UiScaleMin, UiScaleMax);
             PostProcessingEnabled = PlayerPrefs.GetInt(PostProcessingKey, 1) == 1;
             MinimapEnabled = PlayerPrefs.GetInt(MinimapEnabledKey, 1) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
@@ -48,6 +54,7 @@ namespace Project.Core
             ApplyDisplay();
             SetResolutionIndex(GetCurrentResolutionIndex());
             PlatformGraphicsBootstrap.ApplyAfterSettingsLoad();
+            Project.UI.UiScaleApplier.ApplyFromSettings();
         }
 
         public static void Save()
@@ -55,6 +62,7 @@ namespace Project.Core
             PlayerPrefs.SetFloat(MasterVolumeKey, MasterVolume);
             PlayerPrefs.SetFloat(MusicVolumeKey, MusicVolume);
             PlayerPrefs.SetFloat(SfxVolumeKey, SfxVolume);
+            PlayerPrefs.SetFloat(UiScaleKey, UiScale);
             PlayerPrefs.SetInt(PostProcessingKey, PostProcessingEnabled ? 1 : 0);
             PlayerPrefs.SetInt(MinimapEnabledKey, MinimapEnabled ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
@@ -81,6 +89,12 @@ namespace Project.Core
         {
             SfxVolume = Mathf.Clamp01(value);
             GameAudioManager.Instance?.RefreshVolumes();
+        }
+
+        public static void SetUiScale(float value)
+        {
+            UiScale = Mathf.Clamp(value, UiScaleMin, UiScaleMax);
+            Project.UI.UiScaleApplier.ApplyFromSettings();
         }
 
         public static void SetPostProcessingEnabled(bool enabled)

@@ -11,8 +11,8 @@ namespace Project.UI
     /// <summary>
     /// Hazard dashboard: summary severity + per-zone list (hotbar) or compact icon grid (journal).
     /// In hotbar/HUD mode (enableAutoHide: true) the panel stays hidden until a real hazard is
-    /// active, fades out again on exit, and can be peeked at any time with the J key for a few
-    /// seconds. Journal usage is unaffected (enableAutoHide defaults false: always visible).
+    /// active, fades out again on exit, and can be peeked at any time with the H key for a few
+    /// seconds (J is reserved for Journal). Journal usage is unaffected (enableAutoHide defaults false: always visible).
     /// </summary>
     public class VerticalHazardExposureGauge : MonoBehaviour
     {
@@ -102,24 +102,77 @@ namespace Project.UI
             EnsureBuilt();
         }
 
+        private void OnDisable()
+        {
+            // Menu/loading toggles in player builds often kill FadeRoutine mid-lerp and leave the
+            // Hazards panel stuck visible after the HUD comes back.
+            if (!enableAutoHide || canvasGroup == null)
+                return;
+
+            if (fadeRoutine != null)
+            {
+                StopCoroutine(fadeRoutine);
+                fadeRoutine = null;
+            }
+
+            SnapAutoHideAlpha(ResolveDesiredAutoHideAlpha());
+        }
+
+        private void OnEnable()
+        {
+            if (!enableAutoHide || canvasGroup == null)
+                return;
+
+            SnapAutoHideAlpha(ResolveDesiredAutoHideAlpha());
+        }
+
         private void Update()
         {
             if (!enableAutoHide || canvasGroup == null)
                 return;
 
-            if (GameSession.HasStarted && !MainMenuController.BlocksGameplayHud
-                && Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
+            if (MainMenuController.BlocksGameplayHud)
             {
+                manualPeekTimer = 0f;
+                if (fadeRoutine != null)
+                {
+                    StopCoroutine(fadeRoutine);
+                    fadeRoutine = null;
+                }
+
+                SnapAutoHideAlpha(0f);
+                return;
+            }
+
+            if (GameSession.HasStarted
+                && Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
+            {
+                // H peeks Hazards — J is reserved for Journal.
                 manualPeekTimer = ManualPeekDuration;
                 FadeTo(1f);
             }
 
             if (manualPeekTimer > 0f)
             {
-                manualPeekTimer -= Time.deltaTime;
+                manualPeekTimer -= Time.unscaledDeltaTime;
                 if (manualPeekTimer <= 0f && !hasActiveHazard)
                     FadeTo(0f);
             }
+        }
+
+        private float ResolveDesiredAutoHideAlpha()
+        {
+            if (manualPeekTimer > 0f || hasActiveHazard)
+                return 1f;
+            return 0f;
+        }
+
+        private void SnapAutoHideAlpha(float alpha)
+        {
+            canvasGroup.alpha = alpha;
+            bool interactive = alpha > 0.01f;
+            canvasGroup.blocksRaycasts = interactive;
+            canvasGroup.interactable = interactive;
         }
 
         private void FadeTo(float target)
@@ -129,9 +182,7 @@ namespace Project.UI
 
             if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
             {
-                canvasGroup.alpha = target;
-                canvasGroup.blocksRaycasts = target > 0.01f;
-                canvasGroup.interactable = target > 0.01f;
+                SnapAutoHideAlpha(target);
                 fadeRoutine = null;
                 return;
             }
@@ -155,19 +206,12 @@ namespace Project.UI
 
             while (t < FadeDuration)
             {
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime;
                 canvasGroup.alpha = Mathf.Lerp(start, target, Mathf.Clamp01(t / FadeDuration));
                 yield return null;
             }
 
-            canvasGroup.alpha = target;
-
-            if (target <= 0.01f)
-            {
-                canvasGroup.blocksRaycasts = false;
-                canvasGroup.interactable = false;
-            }
-
+            SnapAutoHideAlpha(target);
             fadeRoutine = null;
         }
 
@@ -343,7 +387,7 @@ namespace Project.UI
                     canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
 
                 // Starts hidden — Refresh() fades it in the moment a real hazard becomes active,
-                // and the J key can peek it early (see Update()).
+                // and the H key can peek it early (see Update()).
                 canvasGroup.alpha = 0f;
                 canvasGroup.interactable = false;
                 canvasGroup.blocksRaycasts = false;

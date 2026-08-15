@@ -166,7 +166,7 @@ namespace Project.UI
                 containerRoot.gameObject.SetActive(visible);
 
             if (zoneEntryBanner != null && !visible)
-                zoneEntryBanner.gameObject.SetActive(false);
+                zoneEntryBanner.DismissImmediate();
         }
 
         /// <summary>Pin cluster to bottom-left of screen with a fixed edge gap.</summary>

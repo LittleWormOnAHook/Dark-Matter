@@ -34,25 +34,45 @@ namespace Project.Crafting
 
         private void Awake()
         {
+            // Match ItemPickup trigger size (sphere radius 0.45).
+            const float MatchItemPickupRadius = 0.45f;
             Collider collider = GetComponent<Collider>();
             if (collider == null)
             {
-                BoxCollider box = gameObject.AddComponent<BoxCollider>();
-                box.isTrigger = true;
+                SphereCollider sphere = gameObject.AddComponent<SphereCollider>();
+                sphere.isTrigger = true;
+                sphere.radius = MatchItemPickupRadius;
                 return;
             }
 
             collider.isTrigger = true;
+            if (collider is SphereCollider existingSphere)
+                existingSphere.radius = Mathf.Max(existingSphere.radius, MatchItemPickupRadius);
+            else if (collider is BoxCollider box)
+            {
+                float diameter = MatchItemPickupRadius * 2f;
+                box.size = new Vector3(
+                    Mathf.Max(box.size.x, diameter),
+                    Mathf.Max(box.size.y, diameter),
+                    Mathf.Max(box.size.z, diameter));
+            }
+            else if (collider is CapsuleCollider capsule)
+            {
+                capsule.radius = Mathf.Max(capsule.radius, MatchItemPickupRadius);
+                capsule.height = Mathf.Max(capsule.height, MatchItemPickupRadius * 2f);
+            }
         }
 
         private void OnEnable()
         {
             WorldUseController.Register(this);
+            PickupProximityDotUI.RegisterRecipe(this);
         }
 
         private void OnDisable()
         {
             WorldUseController.Unregister(this);
+            PickupProximityDotUI.UnregisterRecipe(this);
         }
 
         private void Start()
@@ -106,11 +126,11 @@ namespace Project.Crafting
                 && !IsFocusedRecipe(context))
                 return -1f;
 
-            if (learned || !playerInRange || !GameSession.HasStarted)
+            if (learned || !GameSession.HasStarted)
                 return -1f;
 
             float distance = Vector3.Distance(context.PlayerPosition, transform.position);
-            if (distance > interactRange)
+            if (distance > Mathf.Min(interactRange, WorldUseController.MaxPickupDistance))
                 return -1f;
 
             return 92f - distance;
@@ -129,7 +149,16 @@ namespace Project.Crafting
 
         public bool TryLearn()
         {
-            if (!playerInRange || learned || !GameSession.HasStarted || string.IsNullOrEmpty(recipeId))
+            if (learned || !GameSession.HasStarted || string.IsNullOrEmpty(recipeId))
+                return false;
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                return false;
+
+            float distance = Vector3.Distance(player.transform.position, transform.position);
+            float maxRange = Mathf.Min(interactRange, WorldUseController.MaxPickupDistance);
+            if (distance > maxRange && !playerInRange)
                 return false;
 
             if (craftingManager == null)
@@ -137,9 +166,7 @@ namespace Project.Crafting
 
             if (craftingManager == null)
             {
-                GameObject player = PlayerLocator.FindPlayerObject();
-                if (player != null)
-                    craftingManager = player.GetComponent<CraftingManager>() ?? player.AddComponent<CraftingManager>();
+                craftingManager = player.GetComponent<CraftingManager>() ?? player.AddComponent<CraftingManager>();
             }
 
             if (craftingManager == null)
@@ -173,6 +200,7 @@ namespace Project.Crafting
             learned = true;
             playerInRange = false;
             uiManager?.HideInteractionPrompt();
+            PickupProximityDotUI.NotifyRecipeCollected(this);
 
             if (showToast)
             {

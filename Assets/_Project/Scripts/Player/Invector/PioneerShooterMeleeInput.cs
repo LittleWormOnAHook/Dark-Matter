@@ -5,6 +5,7 @@ using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Player;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,13 +20,18 @@ namespace Project.Player.Invector
     public class PioneerShooterMeleeInput : vShooterMeleeInput
     {
         private const float MouseLookScale = 0.1f;
-        private const float ScrollUnitsPerNotch = 120f;
+        /// <summary>Mouse-wheel notches to travel the full min↔max zoom range.</summary>
+        private const float ScrollNotchesFullRange = 3f;
+        private const int UiZoomRestoreFrames = 12;
 
         [Header("Pioneer Camera Zoom")]
-        [SerializeField] private float scrollZoomNotchScale = 0.75f;
-        [SerializeField] private float runtimeMinCameraDistance = 2.5f;
+        [SerializeField] private float runtimeMinCameraDistance = 1.6f;
         [SerializeField] private float runtimeMaxCameraDistance = 12f;
-        [SerializeField] private float runtimeDefaultCameraDistance = 5.5f;
+        [SerializeField] private float runtimeDefaultCameraDistance = 1.6f;
+        [SerializeField, Tooltip("How much closer Aiming pulls vs free-look preferred zoom.")]
+        private float aimZoomPullInMeters = 0.35f;
+        [SerializeField, Tooltip("Extra follow distance while sprinting (slight pull-out only).")]
+        private float sprintZoomOutMeters = 0.85f;
 
         private PioneerInvectorInputBridge _inputBridge;
         private EquipmentController _equipment;
@@ -34,6 +40,11 @@ namespace Project.Player.Invector
         /// <summary>Scroll zoom the player chose — preserved across aim/culling so ChangeState cannot wipe it.</summary>
         private float _preferredCameraZoom = -1f;
         private bool _wasAimingCameraLastFrame;
+        private bool _wasUiBlockingLastFrame;
+        private bool _wasSprintingLastFrame;
+        private int _uiZoomRestoreFramesRemaining;
+        private float _lockedAimZoom = -1f;
+        private Coroutine _startZoomRoutine;
 
         protected override void Start()
         {
@@ -42,6 +53,67 @@ namespace Project.Player.Invector
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
             SyncPioneerCursorState();
+
+            if (GameSession.HasStarted)
+                ApplyStartZoomIn();
+        }
+
+        private void OnEnable()
+        {
+            GameSession.GameStarted += HandleGameStartedZoom;
+            if (GameSession.HasStarted)
+                HandleGameStartedZoom();
+        }
+
+        private void OnDisable()
+        {
+            GameSession.GameStarted -= HandleGameStartedZoom;
+            if (_startZoomRoutine != null)
+            {
+                StopCoroutine(_startZoomRoutine);
+                _startZoomRoutine = null;
+            }
+        }
+
+        /// <summary>
+        /// Expedition start: pull third-person follow distance all the way in (min zoom).
+        /// </summary>
+        private void HandleGameStartedZoom()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (_startZoomRoutine != null)
+                StopCoroutine(_startZoomRoutine);
+            _startZoomRoutine = StartCoroutine(ApplyStartZoomInWhenReady());
+        }
+
+        private IEnumerator ApplyStartZoomInWhenReady()
+        {
+            // Wait until Invector camera Init has run (tpCamera + currentState).
+            for (int i = 0; i < 8 && (tpCamera == null || tpCamera.currentState == null); i++)
+                yield return null;
+
+            ApplyStartZoomIn();
+            // One more frame — loading handoff / ChangeState can rewrite distance after MarkStarted.
+            yield return null;
+            ApplyStartZoomIn();
+            _startZoomRoutine = null;
+        }
+
+        private void ApplyStartZoomIn()
+        {
+            _preferredCameraZoom = runtimeMinCameraDistance;
+            if (tpCamera == null)
+                return;
+
+            EnsureRuntimeZoomState();
+            if (tpCamera.currentState != null)
+                tpCamera.currentState.defaultDistance = runtimeMinCameraDistance;
+            if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
+                tpCamera.lerpState.defaultDistance = runtimeMinCameraDistance;
+
+            tpCamera.ForceSetZoomDistance(runtimeMinCameraDistance);
         }
 
         protected override void Update()
@@ -322,15 +394,35 @@ namespace Project.Player.Invector
                 // Binocular FOV zoom is owned by OpticsController — don't also change follow distance.
                 bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
                 if (!opticsOwnsScroll)
-                {
-                    float scroll = Mouse.current.scroll.ReadValue().y / ScrollUnitsPerNotch * scrollZoomNotchScale;
-                    if (Mathf.Abs(scroll) > 0.001f)
-                    {
-                        tpCamera.Zoom(scroll);
-                        RememberPreferredZoom();
-                    }
-                }
+                    ApplyMouseWheelZoom();
             }
+        }
+
+        private void ApplyMouseWheelZoom()
+        {
+            if (tpCamera == null || IsAimCameraStateName(tpCamera.currentStateName))
+                return;
+
+            float raw = Mouse.current.scroll.ReadValue().y;
+            if (Mathf.Abs(raw) < 0.01f)
+                return;
+
+            // One physical wheel tick = one zoom step across the full range in ~3 ticks.
+            int direction = raw > 0f ? 1 : -1;
+            float step = (runtimeMaxCameraDistance - runtimeMinCameraDistance) / ScrollNotchesFullRange;
+            float current = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : GetPreferredZoom();
+            float next = Mathf.Clamp(
+                current - direction * step,
+                runtimeMinCameraDistance,
+                runtimeMaxCameraDistance);
+
+            ApplyFreeLookZoomRange(tpCamera.currentState);
+            if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
+                ApplyFreeLookZoomRange(tpCamera.lerpState);
+
+            tpCamera.ForceSetZoomDistance(next);
+            _preferredCameraZoom = next;
+            _lockedAimZoom = -1f;
         }
 
         /// <summary>
@@ -366,15 +458,30 @@ namespace Project.Player.Invector
                 return;
 
             float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
-            if (zoom >= runtimeMinCameraDistance)
+            if (zoom >= runtimeMinCameraDistance - 0.05f)
                 _preferredCameraZoom = Mathf.Clamp(zoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
         }
 
         private float GetPreferredZoom()
         {
-            if (_preferredCameraZoom >= runtimeMinCameraDistance)
+            if (_preferredCameraZoom >= runtimeMinCameraDistance - 0.05f)
                 return Mathf.Clamp(_preferredCameraZoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
             return runtimeDefaultCameraDistance;
+        }
+
+        private float GetGameplayFollowZoom()
+        {
+            float preferred = GetPreferredZoom();
+            bool sprinting = cc != null && cc.isSprinting && cc.input.sqrMagnitude > 0.01f && !IsAimingActive;
+            if (sprinting)
+            {
+                return Mathf.Clamp(
+                    preferred + Mathf.Max(0f, sprintZoomOutMeters),
+                    runtimeMinCameraDistance,
+                    runtimeMaxCameraDistance);
+            }
+
+            return preferred;
         }
 
         /// <summary>
@@ -386,15 +493,27 @@ namespace Project.Player.Invector
             if (tpCamera?.currentState == null)
                 return;
 
+            bool uiBlocking = _playerController != null && _playerController.BlocksCombatInput;
             bool aiming = IsAimCameraStateName(tpCamera.currentStateName);
 
-            if (!aiming && tpCamera.CurrentZoom >= runtimeMinCameraDistance)
+            // Journal / inventory / map can shove follow distance out. Do NOT bake that into preferred.
+            if (uiBlocking)
             {
-                // Track live free-look zoom so aim / ChangeState cannot permanently wipe it.
-                _preferredCameraZoom = Mathf.Clamp(
-                    tpCamera.CurrentZoom,
-                    runtimeMinCameraDistance,
-                    runtimeMaxCameraDistance);
+                _wasUiBlockingLastFrame = true;
+                _uiZoomRestoreFramesRemaining = UiZoomRestoreFrames;
+                return;
+            }
+
+            if (_wasUiBlockingLastFrame)
+            {
+                _wasUiBlockingLastFrame = false;
+                RestorePreferredZoom(force: true);
+            }
+
+            if (_uiZoomRestoreFramesRemaining > 0)
+            {
+                _uiZoomRestoreFramesRemaining--;
+                RestorePreferredZoom(force: true);
             }
 
             // Only repair a permanently broken zoom (e.g. optics left near-zero).
@@ -403,34 +522,85 @@ namespace Project.Player.Invector
                 && tpCamera.CurrentZoom < runtimeMinCameraDistance - 0.01f
                 && tpCamera.distance < runtimeMinCameraDistance - 0.01f)
             {
-                tpCamera.ForceSetZoomDistance(GetPreferredZoom());
+                tpCamera.ForceSetZoomDistance(GetGameplayFollowZoom());
                 return;
             }
 
             if (aiming)
             {
+                if (!_wasAimingCameraLastFrame || _lockedAimZoom < runtimeMinCameraDistance - 0.05f)
+                    LockAimZoomOnce();
+
                 _wasAimingCameraLastFrame = true;
+                // Do NOT ForceSet every frame — that fought Invector Slerp and caused aim zoom jitter.
                 return;
             }
 
+            _lockedAimZoom = -1f;
+
             // Free-look only: enable scroll zoom range without mutating Aim list assets via lerpState.
-            // lerpState is a live reference into CameraStateList — only touch it when it is also free-look,
-            // otherwise FixedUpdate Slerp copies useZoom=false from Default every physics tick and kills zoom.
             ApplyFreeLookZoomRange(tpCamera.currentState);
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
                 ApplyFreeLookZoomRange(tpCamera.lerpState);
 
-            // One-shot restore when leaving aim — do not fight intentional scroll-in every frame.
+            // One-shot restore when leaving aim — pull back to the player's scroll preference.
             if (_wasAimingCameraLastFrame)
             {
                 _wasAimingCameraLastFrame = false;
-                float preferred = GetPreferredZoom();
-                if (_preferredCameraZoom >= runtimeMinCameraDistance
-                    && tpCamera.CurrentZoom + 0.05f < preferred)
-                {
-                    tpCamera.ForceSetZoomDistance(preferred);
-                }
+                RestorePreferredZoom(force: true);
             }
+
+            // Slight sprint pull-out only (never jump to max distance).
+            bool sprinting = cc != null && cc.isSprinting && cc.input.sqrMagnitude > 0.01f;
+            if (sprinting || _wasSprintingLastFrame)
+            {
+                float target = GetGameplayFollowZoom();
+                if (Mathf.Abs(tpCamera.CurrentZoom - target) > 0.04f)
+                    tpCamera.ForceSetZoomDistance(target);
+            }
+
+            _wasSprintingLastFrame = sprinting;
+        }
+
+        private void LockAimZoomOnce()
+        {
+            if (tpCamera?.currentState == null || !IsAimCameraStateName(tpCamera.currentStateName))
+                return;
+
+            float preferred = GetPreferredZoom();
+            _lockedAimZoom = Mathf.Clamp(
+                preferred - Mathf.Max(0.05f, aimZoomPullInMeters),
+                runtimeMinCameraDistance,
+                runtimeMaxCameraDistance);
+
+            // Pin Aim to a single follow distance via defaultDistance. useZoom=false avoids
+            // Clamp(currentZoom) fighting Slerp (jitter) and never collapses free-look min/max.
+            vThirdPersonCameraState state = tpCamera.currentState;
+            state.useZoom = false;
+            state.defaultDistance = _lockedAimZoom;
+            if (state.fov > 0f && state.fov < 48f)
+                state.fov = 52f;
+
+            tpCamera.ForceSetZoomDistance(_lockedAimZoom);
+        }
+
+        private void SoftenAimCameraDistance()
+        {
+            LockAimZoomOnce();
+        }
+
+        private void RestorePreferredZoom(bool force)
+        {
+            if (tpCamera == null)
+                return;
+
+            // Always restore the player's scroll preference — never a UI-bloated follow distance.
+            float preferred = GetPreferredZoom();
+            if (_preferredCameraZoom < runtimeMinCameraDistance - 0.05f)
+                preferred = runtimeDefaultCameraDistance;
+
+            if (force || Mathf.Abs(tpCamera.CurrentZoom - preferred) > 0.05f)
+                tpCamera.ForceSetZoomDistance(preferred);
         }
 
         private void ApplyFreeLookZoomRange(vThirdPersonCameraState state)

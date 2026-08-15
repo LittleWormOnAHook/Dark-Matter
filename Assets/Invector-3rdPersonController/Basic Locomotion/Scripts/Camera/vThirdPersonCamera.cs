@@ -505,19 +505,25 @@ namespace Invector.vCamera
             }
 
             // Pioneer: Aim/Scope may set a close follow distance. Free-look states keep the
-            // player's scroll zoom instead of resetting to the authored default (~2m).
-            // Authored Default has useZoom=false, so do NOT key off useZoom here.
+            // player's scroll zoom instead of resetting / jumping out (old <2.5 → 5.5 bump
+            // felt like "sprint zooms all the way out" when leaving Strafe/Aim).
             if (state != null)
             {
                 if (IsPioneerAimCameraState(state.Name))
                 {
                     currentZoom = state.defaultDistance;
                 }
-                else if (currentZoom < 2.5f)
+                else
                 {
-                    currentZoom = state.defaultDistance >= 2.5f ? state.defaultDistance : 5.5f;
+                    float min = Mathf.Max(0.5f, state.minDistance);
+                    float max = Mathf.Max(min + 0.1f, state.maxDistance);
+                    if (currentZoom < min - 0.01f || currentZoom > max + 0.01f)
+                        currentZoom = Mathf.Clamp(
+                            currentZoom > 0.01f ? currentZoom : state.defaultDistance,
+                            min,
+                            max);
+                    // else keep currentZoom (player scroll preference across Default/Crouch/Strafing)
                 }
-                // else keep currentZoom (player scroll preference across Default/Crouch/Strafing)
             }
 
             if (currentState.cameraMode == TPCameraMode.FixedAngle)
@@ -679,10 +685,25 @@ namespace Invector.vCamera
         /// </summary>
         public void ForceSetZoomDistance(float zoom)
         {
+            // Always honor Pioneer free-look scroll range. Collapsed Aiming min==max from older
+            // soften logic made ForceSet clamp every zoom to a single value (felt like "no zoom").
+            const float PioneerMin = 1.5f;
+            const float PioneerMax = 12f;
+
             if (currentState != null && !IsPioneerAimCameraState(currentState.Name))
                 EnsurePioneerZoomState(currentState);
-            float min = currentState != null ? Mathf.Max(2.5f, currentState.minDistance) : 2.5f;
-            float max = currentState != null ? Mathf.Max(12f, currentState.maxDistance) : 12f;
+
+            float min = PioneerMin;
+            float max = PioneerMax;
+            if (currentState != null && !IsPioneerAimCameraState(currentState.Name))
+            {
+                min = Mathf.Max(PioneerMin, currentState.minDistance);
+                max = Mathf.Max(min + 0.25f, currentState.maxDistance, PioneerMax);
+                currentState.minDistance = min;
+                currentState.maxDistance = max;
+                currentState.useZoom = true;
+            }
+
             float clamped = Mathf.Clamp(zoom, min, max);
             currentZoom = clamped;
             distance = clamped;
@@ -705,9 +726,10 @@ namespace Invector.vCamera
                 return;
 
             // Free-look third-person zoom only. Do not mutate Aim/Scope authored distances.
-            const float MinDist = 2.5f;
+            // Floors match PioneerShooterMeleeInput (~1.5–12); do not hard-floor at 2.5.
+            const float MinDist = 1.5f;
             const float MaxDist = 12f;
-            const float DefaultDist = 5.5f;
+            const float DefaultDist = 2.5f;
 
             float baseDistance = distance >= MinDist
                 ? distance

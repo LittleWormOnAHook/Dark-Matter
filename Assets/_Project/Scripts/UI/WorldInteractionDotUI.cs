@@ -13,6 +13,7 @@ namespace Project.UI
 {
     /// <summary>
     /// Colored proximity dots for Press-E interactables (NPCs, stations, loot, pets, etc.).
+    /// Blueprint scroll dots are owned by PickupProximityDotUI.
     /// </summary>
     public class WorldInteractionDotUI : MonoBehaviour
     {
@@ -81,7 +82,6 @@ namespace Project.UI
             ScanCraftingStations();
             ScanBuildingPanels();
             ScanLootBags();
-            ScanRecipePickups();
             ScanPetAdoptables();
             ScanInjuredRecoverables();
             ScanEchoEntities();
@@ -147,22 +147,6 @@ namespace Project.UI
                     continue;
 
                 ShowDot(bag, bag.transform, verticalWorldOffset, ProximityDotStyle.LootColor);
-            }
-        }
-
-        private void ScanRecipePickups()
-        {
-            RecipePickup[] pickups = SceneComponentCache.GetAll<RecipePickup>();
-            for (int i = 0; i < pickups.Length; i++)
-            {
-                RecipePickup pickup = pickups[i];
-                if (pickup == null || pickup.IsLearned)
-                    continue;
-
-                if (!IsWithinRange(pickup.transform.position, pickup.InteractRange))
-                    continue;
-
-                ShowDot(pickup, pickup.transform, verticalWorldOffset, ProximityDotStyle.RecipeColor);
             }
         }
 

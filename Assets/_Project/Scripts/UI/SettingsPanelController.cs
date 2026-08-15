@@ -10,7 +10,7 @@ namespace Project.UI
     public class SettingsPanelController : MonoBehaviour
     {
         private const float WindowWidth = 440f;
-        private const float WindowHeight = 520f;
+        private const float WindowHeight = 560f;
         private const float HeaderHeight = 36f;
         private const float FooterHeight = 44f;
 
@@ -18,6 +18,7 @@ namespace Project.UI
         private Slider masterSlider;
         private Slider musicSlider;
         private Slider sfxSlider;
+        private Slider uiScaleSlider;
         private Toggle postProcessingToggle;
         private Toggle rayTracingToggle;
         private Toggle minimapToggle;
@@ -28,6 +29,7 @@ namespace Project.UI
         private TextMeshProUGUI masterValueLabel;
         private TextMeshProUGUI musicValueLabel;
         private TextMeshProUGUI sfxValueLabel;
+        private TextMeshProUGUI uiScaleValueLabel;
         private TextMeshProUGUI graphicsAdvisoryLabel;
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
@@ -91,6 +93,12 @@ namespace Project.UI
 
             CreateSectionTitle(scrollContent, "Gameplay");
             minimapToggle = MenuUiBuilder.CreateCircleToggleRow(scrollContent, "Minimap", GameSettings.MinimapEnabled);
+            uiScaleSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "UI Scale", GameSettings.UiScale, out uiScaleValueLabel);
+            uiScaleSlider.minValue = GameSettings.UiScaleMin;
+            uiScaleSlider.maxValue = GameSettings.UiScaleMax;
+            uiScaleSlider.wholeNumbers = false;
+            uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
+            UpdatePercentLabel(uiScaleValueLabel, GameSettings.UiScale);
 
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             buttonRow.transform.SetParent(window.transform, false);
@@ -141,6 +149,12 @@ namespace Project.UI
                 GameSettings.SetSfxVolume(value);
                 GameAudioManager.Instance?.RefreshVolumes();
                 UpdatePercentLabel(sfxValueLabel, value);
+            });
+            uiScaleSlider.onValueChanged.RemoveAllListeners();
+            uiScaleSlider.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetUiScale(value);
+                UpdatePercentLabel(uiScaleValueLabel, value);
             });
             postProcessingToggle.onValueChanged.RemoveAllListeners();
             postProcessingToggle.onValueChanged.AddListener(value =>
@@ -309,6 +323,7 @@ namespace Project.UI
             GameSettings.Save();
             GameAudioManager.Instance?.RefreshVolumes();
             PostProcessingController.Instance?.ApplyFromSettings();
+            UiScaleApplier.ApplyFromSettings();
             Close();
         }
 
@@ -317,6 +332,9 @@ namespace Project.UI
             masterSlider.SetValueWithoutNotify(GameSettings.MasterVolume);
             musicSlider.SetValueWithoutNotify(GameSettings.MusicVolume);
             sfxSlider.SetValueWithoutNotify(GameSettings.SfxVolume);
+            uiScaleSlider.minValue = GameSettings.UiScaleMin;
+            uiScaleSlider.maxValue = GameSettings.UiScaleMax;
+            uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
             postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
             minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
@@ -329,6 +347,7 @@ namespace Project.UI
             UpdatePercentLabel(masterValueLabel, GameSettings.MasterVolume);
             UpdatePercentLabel(musicValueLabel, GameSettings.MusicVolume);
             UpdatePercentLabel(sfxValueLabel, GameSettings.SfxVolume);
+            UpdatePercentLabel(uiScaleValueLabel, GameSettings.UiScale);
         }
 
         private void PopulateDropdowns()

@@ -30,8 +30,10 @@ namespace Project.Interaction
         private const float AimBonus = 500f;
         private const float MaxPickupAimRadius = 0.72f;
         private const float PickupIntentAimRadius = 1.45f;
-        private const float PickupIntentDistanceMultiplier = 2.5f;
+        private const float PickupIntentDistanceMultiplier = 1f;
         private const float MinRegisteredUsePriority = 70f;
+        /// <summary>Hard cap for item/blueprint pickup + proximity dots (~3 grid cells).</summary>
+        public const float MaxPickupDistance = 3f;
 
         /// <summary>Normalized screen offset used when the forward aim point is off-screen.</summary>
         private static readonly Vector2 PickupAimScreenOffset = new Vector2(0f, 0f);
@@ -45,11 +47,11 @@ namespace Project.Interaction
         private const float CraftingStationAimRadius = 1.25f;
         private const float BuildingControlPanelAimRadius = 1.25f;
         private const float QuestGiverAimRadius = 1.25f;
-        private const float RecipePickupScanRange = 8f;
+        private const float RecipePickupScanRange = MaxPickupDistance;
 
         private static readonly List<IWorldUsable> RegisteredUsables = new List<IWorldUsable>();
 
-        [SerializeField] private float useRange = 4f;
+        [SerializeField] private float useRange = MaxPickupDistance;
 
         private ResourceGatherer gatherer;
         private InventorySystem inventory;
@@ -212,7 +214,7 @@ namespace Project.Interaction
             if (Physics.Raycast(viewRay, out RaycastHit hit, gatherer != null ? gatherer.gatherRange : useRange, aimMask, QueryTriggerInteraction.Collide))
                 aimHit = hit;
 
-            float range = gatherer != null ? gatherer.pickupRange : useRange;
+            float range = ResolvePickupRange(gatherer, useRange);
             WorldUseContext context = new WorldUseContext(
                 transform,
                 transform.position,
@@ -596,6 +598,19 @@ namespace Project.Interaction
             pickup = null;
             inPickupRange = false;
 
+            // Near dotted highlight wins: only that item can be collected until it is gone,
+            // then the next-closest gets the dot and becomes the focus.
+            if (PickupProximityDotUI.TryGetPrimaryNearPickup(out ItemPickup dotted))
+            {
+                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.transform.position);
+                if (dottedDistance <= range)
+                {
+                    pickup = dotted;
+                    inPickupRange = true;
+                    return true;
+                }
+            }
+
             LayerMask itemMask = context.Gatherer != null ? context.Gatherer.itemLayer : Physics.DefaultRaycastLayers;
             float intentRange = range * PickupIntentDistanceMultiplier;
             if (Physics.Raycast(context.ViewRay, out RaycastHit hit, intentRange, itemMask, QueryTriggerInteraction.Collide))
@@ -619,19 +634,32 @@ namespace Project.Interaction
         {
             pickup = null;
             inInteractRange = false;
+            float range = MaxPickupDistance;
+
+            if (PickupProximityDotUI.TryGetPrimaryNearRecipe(out RecipePickup dotted))
+            {
+                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.transform.position);
+                if (dottedDistance <= range && dottedDistance <= dotted.InteractRange)
+                {
+                    pickup = dotted;
+                    inInteractRange = true;
+                    return true;
+                }
+            }
 
             if (Physics.Raycast(
                     context.ViewRay,
                     out RaycastHit hit,
-                    RecipePickupScanRange,
+                    range,
                     Physics.DefaultRaycastLayers,
                     QueryTriggerInteraction.Collide))
             {
                 RecipePickup rayPickup = hit.collider.GetComponentInParent<RecipePickup>();
                 if (rayPickup != null && !rayPickup.IsLearned)
                 {
+                    float distance = Vector3.Distance(context.PlayerPosition, rayPickup.transform.position);
                     pickup = rayPickup;
-                    inInteractRange = Vector3.Distance(context.PlayerPosition, pickup.transform.position) <= pickup.InteractRange;
+                    inInteractRange = distance <= Mathf.Min(range, rayPickup.InteractRange);
                     return true;
                 }
             }
@@ -645,22 +673,29 @@ namespace Project.Interaction
                     continue;
 
                 float distance = Vector3.Distance(context.PlayerPosition, candidate.transform.position);
-                if (distance > candidate.InteractRange * PickupIntentDistanceMultiplier)
+                float candidateRange = Mathf.Min(range, candidate.InteractRange);
+                if (distance > candidateRange)
                     continue;
 
                 Vector3 aimPoint = candidate.transform.position + Vector3.up * 0.35f;
-                bool candidateInRange = distance <= candidate.InteractRange;
-                float aimRadius = candidateInRange ? MaxPickupAimRadius : PickupIntentAimRadius;
-                float score = ScorePickupAim(context.ViewRay, aimPoint, distance, candidate.InteractRange, aimRadius);
+                float score = ScorePickupAim(context.ViewRay, aimPoint, distance, candidateRange, MaxPickupAimRadius);
                 if (score <= bestScore)
                     continue;
 
                 bestScore = score;
                 pickup = candidate;
-                inInteractRange = candidateInRange;
+                inInteractRange = true;
             }
 
             return pickup != null;
+        }
+
+        public static float ResolvePickupRange(ResourceGatherer gatherer, float fallbackRange)
+        {
+            float raw = gatherer != null ? gatherer.pickupRange : fallbackRange;
+            if (raw <= 0.01f)
+                raw = MaxPickupDistance;
+            return Mathf.Min(raw, MaxPickupDistance);
         }
 
         public static float GetPickupAimHeight(Transform playerTransform)
@@ -833,7 +868,7 @@ namespace Project.Interaction
         {
             pickup = null;
             inPickupRange = false;
-            float range = gatherer != null ? gatherer.pickupRange : fallbackRange;
+            float range = ResolvePickupRange(gatherer, fallbackRange);
             Vector3 rangeOrigin = playerPosition ?? viewRay.origin;
             float intentRange = range * PickupIntentDistanceMultiplier;
             ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude);
@@ -1145,7 +1180,7 @@ namespace Project.Interaction
                 aimHit = hit;
             }
 
-            float range = gatherer != null ? gatherer.pickupRange : useRange;
+            float range = ResolvePickupRange(gatherer, useRange);
             return new WorldUseContext(
                 transform,
                 transform.position,

@@ -452,6 +452,9 @@ namespace Project.UI
 
             ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
             toolbar?.SetGameplayVisible(false);
+
+            // Builds often pause/toggle canvas mid-banner; never leave ENTERING ZONE over the menu.
+            FindAnyObjectByType<ExposureZoneEntryBannerUI>(FindObjectsInactive.Include)?.DismissImmediate();
         }
 
         private void DestroyLegacyEnvironmentStatusBar()
@@ -764,7 +767,6 @@ namespace Project.UI
                    candidate.name == "SaveSlotsPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
-                   candidate.name == "ExposureZoneEntryBanner" ||
                    candidate.name == "PetPanel";
         }
 
