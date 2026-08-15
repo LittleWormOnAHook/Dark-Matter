@@ -8,6 +8,7 @@ namespace Project.PPT
     public sealed class PptManager : MonoBehaviour
     {
         public static PptManager Instance { get; private set; }
+        private const string SessionStartKeywordQuestId = "session_start";
 
         [SerializeField] private PptRegistry registryAsset;
 
@@ -42,6 +43,12 @@ namespace Project.PPT
         {
             zoneCatalog.Refresh();
             registryIndex.IndexSceneObjects();
+            EnsureSessionStartKeywords();
+        }
+
+        public void EnsureSessionStartKeywords()
+        {
+            LogSessionStartKeywords();
         }
 
         public void RefreshCatalog()
@@ -217,6 +224,32 @@ namespace Project.PPT
 
             registryIndex.LoadRegistry(loaded);
             directionResolver = new PptDirectionResolver(registryIndex, zoneCatalog);
+        }
+
+        private void LogSessionStartKeywords()
+        {
+            PptRegistry registry = registryAsset;
+            if (registry == null)
+                registry = Resources.Load<PptRegistry>(PptRegistry.DefaultResourcePath);
+
+            if (registry?.KeywordSources == null)
+                return;
+
+            for (int s = 0; s < registry.KeywordSources.Length; s++)
+            {
+                PptKeywordSource source = registry.KeywordSources[s];
+                if (source?.QuestRules == null)
+                    continue;
+
+                for (int r = 0; r < source.QuestRules.Length; r++)
+                {
+                    PptKeywordSourceRule rule = source.QuestRules[r];
+                    if (rule == null || !string.Equals(rule.QuestId, SessionStartKeywordQuestId, StringComparison.Ordinal))
+                        continue;
+
+                    PptKeywordLog.LogMany(rule.KeywordIdsOnAccept, "Camp briefing");
+                }
+            }
         }
 
         private struct RuntimeEntry

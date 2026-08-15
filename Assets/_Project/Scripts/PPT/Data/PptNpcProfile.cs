@@ -1,3 +1,4 @@
+using Project.Survival.World;
 using UnityEngine;
 
 namespace Project.PPT
@@ -49,7 +50,7 @@ namespace Project.PPT
         public PptKnowledgeScope KnowledgeScope => knowledgeScope;
         public string[] KnownPptIds => knownPptIds;
         public string[] ExcludedPptIds => excludedPptIds;
-        public Project.Survival.World.IoSurfaceRegionId HomeRegion => homeRegion;
+        public IoSurfaceRegionId HomeRegion => homeRegion;
         public float PreciseDirectionChance => preciseDirectionChance;
         public float UnknownChance => unknownChance;
         public bool PreferReferToOtherNpc => preferReferToOtherNpc;

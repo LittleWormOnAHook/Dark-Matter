@@ -101,6 +101,8 @@ GameObject:
   - component: {fileID: 2841007684520905715}
   - component: {fileID: 1807180375650227577}
   - component: {fileID: 4817518794054468074}
+  - component: {fileID: 5128391048273641001}
+  - component: {fileID: 5128391048273641002}
   m_Layer: 0
   m_Name: QuestGiver_PioneerGuide
   m_TagString: Untagged
@@ -184,3 +186,34 @@ MonoBehaviour:
   questBoardIntro: Pick a quest below to accept, track progress, or claim rewards.
   idleAnimatorController: {fileID: 9100000, guid: f1c8e4a27b3d94f5a8c2e1d0b9f8a7c6, type: 2}
   idleStateName: Idle
+--- !u!114 &5128391048273641001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4426641130086696993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98c5d7814b0142b983d55e0ae8f99c06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.PPT.PptNpcInteractor
+  npcId: pioneer_guide
+  profile: {fileID: 11400000, guid: 251cf7e2c11e4e64abee4f32ef5d6387, type: 2}
+  interactRange: 3.5
+  holdDurationSeconds: 0.75
+  holdPromptText: Hold E — Ask for directions
+--- !u!114 &5128391048273641002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4426641130086696993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a5ed8534b884ffa8d2a3c59e34087ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.PPT.PptNpcGestureController
+  animator: {fileID: 0}
+  visualRoot: {fileID: 945909461392504379}

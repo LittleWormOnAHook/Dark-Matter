@@ -27,6 +27,17 @@ namespace Project.PPT
 
         public string NpcId => npcId;
         public PptNpcProfile Profile => profile;
+        public string SpeakerDisplayName
+        {
+            get
+            {
+                if (questGiver != null && !string.IsNullOrWhiteSpace(questGiver.DisplayName))
+                    return questGiver.DisplayName;
+                if (profile != null && !string.IsNullOrWhiteSpace(profile.DisplayName))
+                    return profile.DisplayName;
+                return npcId;
+            }
+        }
         public float HoldDurationSeconds => holdDurationSeconds;
         public string HoldPromptText => holdPromptText;
         public bool IsHoldActive => holdActive;
@@ -123,9 +134,7 @@ namespace Project.PPT
 
         private void ShowDirectionFeedback(PptDirectionResult result)
         {
-            string speaker = profile != null && !string.IsNullOrWhiteSpace(profile.DisplayName)
-                ? profile.DisplayName
-                : npcId;
+            string speaker = SpeakerDisplayName;
 
             QuestGiverDialogUI.Show(speaker, result.Phrase, null);
 

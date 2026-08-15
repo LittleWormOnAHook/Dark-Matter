@@ -37,9 +37,11 @@ namespace Project.PPT
             lineRenderer.numCapVertices = 4;
             lineRenderer.numCornerVertices = 4;
             lineRenderer.positionCount = 0;
-            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            lineRenderer.startColor = SurvivalPioneerUiPalette.PositiveGreen;
-            lineRenderer.endColor = SurvivalPioneerUiPalette.PositiveGreen;
+            Material tracerMaterial = CreateTracerMaterial();
+            if (tracerMaterial != null)
+                lineRenderer.material = tracerMaterial;
+            lineRenderer.startColor = DarkMatterGenesisUiPalette.PositiveGreen;
+            lineRenderer.endColor = DarkMatterGenesisUiPalette.PositiveGreen;
             lineRenderer.textureMode = LineTextureMode.Stretch;
 
             pathPoints = BuildTerrainHuggingPath(from, to);
@@ -128,6 +130,28 @@ namespace Project.PPT
             }
 
             return point;
+        }
+
+        private static Material CreateTracerMaterial()
+        {
+            Shader shader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Unlit/Color")
+                ?? Shader.Find("Hidden/Internal-Colored");
+            if (shader == null)
+                return null;
+
+            Material material = new Material(shader);
+            Color lime = DarkMatterGenesisUiPalette.PositiveGreen;
+            material.color = lime;
+            if (material.HasProperty("_UnlitColor"))
+                material.SetColor("_UnlitColor", lime);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", lime);
+            if (material.HasProperty("_Color"))
+                material.SetColor("_Color", lime);
+            return material;
         }
     }
 }

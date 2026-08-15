@@ -574,12 +574,11 @@ namespace Project.Core
         private static void ApplyPptKeywordSave(GameSaveData data)
         {
             if (data == null || data.version < 22)
-            {
                 Project.PPT.PptKeywordLog.Clear();
-                return;
-            }
+            else
+                Project.PPT.PptKeywordLog.ApplySave(data.pptKnownKeywordIds);
 
-            Project.PPT.PptKeywordLog.ApplySave(data.pptKnownKeywordIds);
+            Project.PPT.PptManager.Instance?.EnsureSessionStartKeywords();
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

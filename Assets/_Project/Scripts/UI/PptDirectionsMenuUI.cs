@@ -58,8 +58,8 @@ namespace Project.PPT
                 out RectTransform contentArea,
                 out Button closeButton);
 
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(shell.GetComponent<Image>(), 0.98f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(shell);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(shell.GetComponent<Image>(), 0.98f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(shell);
             titleText = MenuUiBuilder.GetShellTitleText(shell);
             closeButton.onClick.AddListener(Close);
 
@@ -73,7 +73,7 @@ namespace Project.PPT
             bodyText = body.GetComponent<TextMeshProUGUI>();
             bodyText.text = "Where do you need to go?";
             bodyText.fontSize = 28f;
-            bodyText.color = SurvivalPioneerUiPalette.BodyText;
+            bodyText.color = DarkMatterGenesisUiPalette.BodyText;
             ShiftUiTheme.Current?.ApplyFont(bodyText);
 
             GameObject choices = new GameObject("Choices", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -98,7 +98,6 @@ namespace Project.PPT
             moreRect.pivot = new Vector2(0.5f, 0f);
             moreRect.anchoredPosition = new Vector2(0f, 16f);
             moreButton.onClick.AddListener(NextPage);
-            SurvivalPioneerUiPalette.StylePrimaryButton(moreButton);
 
             overlayRoot.SetActive(false);
             built = true;
@@ -128,9 +127,7 @@ namespace Project.PPT
                 currentPage,
                 out int totalCount);
 
-            string speaker = profile != null && !string.IsNullOrWhiteSpace(profile.DisplayName)
-                ? profile.DisplayName
-                : currentInteractor.NpcId;
+            string speaker = currentInteractor.SpeakerDisplayName;
 
             titleText.text = speaker;
             bodyText.text = totalCount == 0
@@ -145,7 +142,6 @@ namespace Project.PPT
                     continue;
 
                 Button button = MenuUiBuilder.CreateButton(choicesRoot, entry.DisplayName, new Vector2(640f, 56f), 30f);
-                SurvivalPioneerUiPalette.StylePrimaryButton(button);
                 PptEntry captured = entry;
                 button.onClick.AddListener(() => OnChoice(captured));
             }
