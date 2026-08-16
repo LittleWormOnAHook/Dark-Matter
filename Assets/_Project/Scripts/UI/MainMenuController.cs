@@ -27,6 +27,7 @@ namespace Project.UI
         private GameObject menuPanel;
         private GameObject menuBackground;
         private SettingsPanelController settingsPanel;
+        private ControlsPanelController controlsPanel;
         private SaveSlotsPanelController saveSlotsPanel;
         private GameStartPopup gameStartPopup;
         private PlayerInput playerInput;
@@ -37,6 +38,7 @@ namespace Project.UI
         private Button saveButton;
         private Button loadButton;
         private Button settingsButton;
+        private Button controlsButton;
         private Button exitButton;
         private TextMeshProUGUI menuMessageLabel;
         private bool pauseOverlayActive;
@@ -73,6 +75,12 @@ namespace Project.UI
             // Back out one menu layer at a time. These sub-panel checks run regardless of whether a
             // game session has started, so Esc can close Settings/Save/Load from the true main menu
             // too, not just from the in-game pause menu.
+            if (controlsPanel != null && controlsPanel.IsOpen)
+            {
+                controlsPanel.HandleBack();
+                return;
+            }
+
             if (settingsPanel != null && settingsPanel.IsOpen)
             {
                 settingsPanel.Close();
@@ -218,6 +226,9 @@ namespace Project.UI
             settingsPanel = gameObject.AddComponent<SettingsPanelController>();
             settingsPanel.Build(canvasRoot);
 
+            controlsPanel = gameObject.AddComponent<ControlsPanelController>();
+            controlsPanel.Build(canvasRoot);
+
             saveSlotsPanel = gameObject.AddComponent<SaveSlotsPanelController>();
             saveSlotsPanel.Build(canvasRoot, this);
 
@@ -256,7 +267,7 @@ namespace Project.UI
             columnRect.anchorMax = new Vector2(0f, 0.5f);
             columnRect.pivot = new Vector2(0f, 0.5f);
             columnRect.anchoredPosition = new Vector2(72f, 0f);
-            columnRect.sizeDelta = new Vector2(280f, 420f);
+            columnRect.sizeDelta = new Vector2(280f, 480f);
 
             VerticalLayoutGroup layout = column.GetComponent<VerticalLayoutGroup>();
             layout.spacing = Mathf.RoundToInt(14f * MenuScale);
@@ -272,6 +283,7 @@ namespace Project.UI
             loadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Load", buttonSize, buttonFontSize);
             saveButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save", buttonSize, buttonFontSize);
             settingsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Settings", buttonSize, buttonFontSize);
+            controlsButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Controls", buttonSize, buttonFontSize);
             exitButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Quit", buttonSize, buttonFontSize);
 
             resumeButton.onClick.RemoveAllListeners();
@@ -284,6 +296,8 @@ namespace Project.UI
             saveButton.onClick.AddListener(OpenSave);
             settingsButton.onClick.RemoveAllListeners();
             settingsButton.onClick.AddListener(OpenSettings);
+            controlsButton.onClick.RemoveAllListeners();
+            controlsButton.onClick.AddListener(OpenControls);
             exitButton.onClick.RemoveAllListeners();
             exitButton.onClick.AddListener(ExitGame);
 
@@ -349,6 +363,7 @@ namespace Project.UI
             DestroyLegacyEnvironmentStatusBar();
 
             settingsPanel?.Close();
+            controlsPanel?.Close();
             saveSlotsPanel?.Close();
             ClearMenuMessage();
 
@@ -411,6 +426,7 @@ namespace Project.UI
             DestroyLegacyEnvironmentStatusBar();
 
             settingsPanel?.Close();
+            controlsPanel?.Close();
             saveSlotsPanel?.Close();
             ClearMenuMessage();
             FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
@@ -437,7 +453,7 @@ namespace Project.UI
 
         /// <summary>
         /// Hides the item/tool hotbars. Called whenever the main menu, pause menu, or any of their
-        /// sub-panels (Settings, Save/Load) are open — ShowMainMenu() already sweeps the hotbar away
+        /// sub-panels (Settings, Controls, Save/Load) are open — ShowMainMenu() already sweeps the hotbar away
         /// as part of HideGameplayUi(), but ShowPauseMenu() previously left it fully visible/interactable
         /// behind the pause overlay, and re-opening a sub-panel didn't re-assert it either.
         /// </summary>
@@ -630,6 +646,12 @@ namespace Project.UI
             settingsPanel?.Open();
         }
 
+        private void OpenControls()
+        {
+            HideHotbars();
+            controlsPanel?.Open();
+        }
+
         private void OpenLoad()
         {
             if (!GameSaveSystem.HasAnySaveFile)
@@ -764,6 +786,7 @@ namespace Project.UI
                    candidate.name == "MainMenuPanel" ||
                    candidate.name == "MainMenuBackground" ||
                    candidate.name == "SettingsPanel" ||
+                   candidate.name == "ControlsPanel" ||
                    candidate.name == "SaveSlotsPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
