@@ -25,6 +25,11 @@ MonoBehaviour:
   preferReferToOtherNpc: 0
   referNpcIds: []
   phraseSet: {fileID: 11400000, guid: 1b8f313541eb4c21ae08eada840231f5, type: 2}
+  pointGestureMode: 1
+  idleStateName: Sitting
   pointStateName: Point
+  upperBodyPointStateName: Point
   shrugStateName: Shrug
+  upperBodyLayerName: Upper Body
+  rotateVisualTowardBearing: 1
   gestureCrossFadeSeconds: 0.15

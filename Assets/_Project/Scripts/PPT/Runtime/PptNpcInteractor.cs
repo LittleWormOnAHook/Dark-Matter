@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using Project.Core;
 using Project.Interaction;
 using Project.Quests;
@@ -13,6 +15,8 @@ namespace Project.PPT
     [RequireComponent(typeof(Collider))]
     public sealed class PptNpcInteractor : MonoBehaviour, IHoldWorldUsable
     {
+        private const float PostPointFeedbackDelaySeconds = 1.5f;
+
         [SerializeField] private string npcId = "pioneer_guide";
         [SerializeField] private PptNpcProfile profile;
         [SerializeField] private float interactRange = 3.5f;
@@ -24,6 +28,7 @@ namespace Project.PPT
         private QuestGiverNpc questGiver;
         private bool holdActive;
         private float holdProgress;
+        private Coroutine directionChoiceRoutine;
 
         public string NpcId => npcId;
         public PptNpcProfile Profile => profile;
@@ -53,7 +58,7 @@ namespace Project.PPT
                 gestureController = gameObject.AddComponent<PptNpcGestureController>();
 
             if (profile != null)
-                gestureController.Configure(profile);
+                gestureController.Configure(profile, questGiver);
         }
 
         public float GetUsePriority(WorldUseContext context)
@@ -123,37 +128,77 @@ namespace Project.PPT
             holdProgress = 0f;
         }
 
-        public void HandleDirectionChoice(PptEntry entry)
+        /// <summary>
+        /// Resolves the place, plays turn+point while the menu stays open, then invokes
+        /// <paramref name="closeMenu"/>, waits 1.5s, and shows the spoken feedback.
+        /// </summary>
+        public IEnumerator RespondToDirectionChoice(PptEntry entry, Action closeMenu)
         {
             PptManager manager = PptManager.Instance;
             if (manager == null || entry == null)
-                return;
+            {
+                closeMenu?.Invoke();
+                yield break;
+            }
 
-            PptDirectionResult result = manager.ResolveDirection(npcId, entry, transform.position);
-            ShowDirectionFeedback(result);
+            questGiver?.SetVisualAnchorRestoreSuspended(true);
+
+            try
+            {
+                PptDirectionResult result = manager.ResolveDirection(npcId, entry, transform.position);
+
+                if (result.Kind == PptDirectionKind.Unknown)
+                {
+                    gestureController?.PlayShrug();
+                    closeMenu?.Invoke();
+                    yield return new WaitForSecondsRealtime(PostPointFeedbackDelaySeconds);
+                    ShowSpokenFeedback(result);
+                    yield break;
+                }
+
+                if (gestureController != null)
+                {
+                    yield return gestureController.PlayPointUntilStarted(
+                        result.BearingDegrees,
+                        result.AimPosition);
+                }
+
+                if (result.Kind == PptDirectionKind.Precise && result.SpawnTracer)
+                {
+                    PptTerrainDirectionTracer.Spawn(
+                        transform.position,
+                        result.AimPosition,
+                        PptTerrainDirectionTracer.DefaultVisibleSeconds);
+                }
+
+                closeMenu?.Invoke();
+                yield return new WaitForSecondsRealtime(PostPointFeedbackDelaySeconds);
+                ShowSpokenFeedback(result);
+            }
+            finally
+            {
+                questGiver?.SetVisualAnchorRestoreSuspended(false);
+            }
+
+            directionChoiceRoutine = null;
         }
 
-        private void ShowDirectionFeedback(PptDirectionResult result)
+        public void BeginDirectionChoiceResponse(PptEntry entry, Action closeMenu)
         {
-            string speaker = SpeakerDisplayName;
+            if (directionChoiceRoutine != null)
+                StopCoroutine(directionChoiceRoutine);
 
-            QuestGiverDialogUI.Show(speaker, result.Phrase, null, npcAnchor: transform);
+            directionChoiceRoutine = StartCoroutine(RespondToDirectionChoice(entry, closeMenu));
+        }
 
-            if (result.Kind == PptDirectionKind.Unknown)
-            {
-                gestureController?.PlayShrug();
-                return;
-            }
+        public void HandleDirectionChoice(PptEntry entry)
+        {
+            BeginDirectionChoiceResponse(entry, null);
+        }
 
-            if (result.Kind == PptDirectionKind.Precise && result.SpawnTracer)
-            {
-                gestureController?.PlayPoint(result.BearingDegrees);
-                PptTerrainDirectionTracer.Spawn(transform.position + Vector3.up * 1.2f, result.AimPosition);
-                return;
-            }
-
-            if (result.BearingDegrees > 0f || result.AimPosition != Vector3.zero)
-                gestureController?.PlayPoint(result.BearingDegrees);
+        private void ShowSpokenFeedback(PptDirectionResult result)
+        {
+            QuestGiverDialogUI.Show(SpeakerDisplayName, result.Phrase, null, npcAnchor: transform);
         }
 
         public void OpenDirectionsMenu()

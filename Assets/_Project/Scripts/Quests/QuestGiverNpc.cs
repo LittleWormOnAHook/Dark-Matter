@@ -40,11 +40,18 @@ namespace Project.Quests
         private Transform visualRoot;
         private Vector3 visualBaseLocalPosition;
         private Quaternion visualBaseLocalRotation;
+        private bool suspendVisualAnchorRestore;
 
         public string NpcId => npcId;
         public string DisplayName => displayName;
+        public string IdleAnimationStateName => idleStateName;
         public bool IsPlayerInRange => playerInRange;
         public QuestGiverOffer[] QuestOffers => questOffers;
+
+        public void SetVisualAnchorRestoreSuspended(bool suspended)
+        {
+            suspendVisualAnchorRestore = suspended;
+        }
 
         private void Awake()
         {
@@ -187,7 +194,7 @@ namespace Project.Quests
 
         private void RestoreVisualAnchor()
         {
-            if (!lockVisualTransform || visualRoot == null)
+            if (suspendVisualAnchorRestore || !lockVisualTransform || visualRoot == null)
                 return;
 
             visualRoot.localPosition = visualBaseLocalPosition;

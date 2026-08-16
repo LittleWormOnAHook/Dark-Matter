@@ -39,8 +39,13 @@ namespace Project.PPT
         [SerializeField] private PptDirectionPhraseSet phraseSet;
 
         [Header("Gesture")]
+        [SerializeField] private PptPointGestureMode pointGestureMode = PptPointGestureMode.FullBody;
+        [SerializeField] private string idleStateName = "Idle";
         [SerializeField] private string pointStateName = "Point";
+        [SerializeField] private string upperBodyPointStateName = "Point";
         [SerializeField] private string shrugStateName = "Shrug";
+        [SerializeField] private string upperBodyLayerName = "Upper Body";
+        [SerializeField] private bool rotateVisualTowardBearing = true;
         [SerializeField, Min(0.05f)] private float gestureCrossFadeSeconds = 0.15f;
 
         public string NpcId => npcId;
@@ -56,8 +61,13 @@ namespace Project.PPT
         public bool PreferReferToOtherNpc => preferReferToOtherNpc;
         public string[] ReferNpcIds => referNpcIds;
         public PptDirectionPhraseSet PhraseSet => phraseSet;
+        public PptPointGestureMode PointGestureMode => pointGestureMode;
+        public string IdleStateName => idleStateName;
         public string PointStateName => pointStateName;
+        public string UpperBodyPointStateName => upperBodyPointStateName;
         public string ShrugStateName => shrugStateName;
+        public string UpperBodyLayerName => upperBodyLayerName;
+        public bool RotateVisualTowardBearing => rotateVisualTowardBearing;
         public float GestureCrossFadeSeconds => gestureCrossFadeSeconds;
 
         public bool HasTalkOption(PptTalkOptions option)

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Project.Player;
 using Project.PPT;
@@ -23,6 +24,8 @@ namespace Project.UI
         private int currentPage;
         private CanvasGroup overlayCanvasGroup;
         private NpcDialogProximityFade proximityFade;
+        private Coroutine choiceRoutine;
+        private bool choiceInProgress;
 
         public static bool IsOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
 
@@ -56,7 +59,9 @@ namespace Project.UI
 
             currentInteractor = interactor;
             currentPage = 0;
+            choiceInProgress = false;
             RefreshPage();
+            SetChoicesInteractable(true);
             OpenOverlay();
         }
 
@@ -86,7 +91,12 @@ namespace Project.UI
             DarkMatterGenesisUiPalette.ApplyPanelShellBackground(shell.GetComponent<Image>(), 0.98f);
             DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(shell);
             titleText = MenuUiBuilder.GetShellTitleText(shell);
-            closeButton.onClick.AddListener(Close);
+            closeButton.onClick.AddListener(() =>
+            {
+                if (choiceInProgress)
+                    return;
+                Close();
+            });
 
             GameObject body = new GameObject("Body", typeof(RectTransform), typeof(TextMeshProUGUI));
             body.transform.SetParent(contentArea, false);
@@ -197,9 +207,48 @@ namespace Project.UI
 
         private void OnChoice(PptEntry entry)
         {
+            if (choiceInProgress || currentInteractor == null || entry == null)
+                return;
+
+            if (choiceRoutine != null)
+                StopCoroutine(choiceRoutine);
+
+            choiceRoutine = StartCoroutine(ChoiceSequence(entry));
+        }
+
+        private IEnumerator ChoiceSequence(PptEntry entry)
+        {
+            choiceInProgress = true;
+            SetChoicesInteractable(false);
+            proximityFade?.StopMonitoring();
+
             PptNpcInteractor interactor = currentInteractor;
-            Close();
-            interactor?.HandleDirectionChoice(entry);
+            if (interactor == null)
+            {
+                choiceInProgress = false;
+                Close();
+                yield break;
+            }
+
+            yield return interactor.RespondToDirectionChoice(entry, Close);
+            choiceInProgress = false;
+            choiceRoutine = null;
+        }
+
+        private void SetChoicesInteractable(bool interactable)
+        {
+            if (choicesRoot != null)
+            {
+                for (int i = 0; i < choicesRoot.childCount; i++)
+                {
+                    Button button = choicesRoot.GetChild(i).GetComponent<Button>();
+                    if (button != null)
+                        button.interactable = interactable;
+                }
+            }
+
+            if (moreButton != null)
+                moreButton.interactable = interactable;
         }
 
         private void NextPage()
@@ -224,6 +273,7 @@ namespace Project.UI
             if (overlayCanvasGroup != null)
                 overlayCanvasGroup.alpha = 1f;
 
+            // Keep choiceInProgress until ChoiceSequence finishes post-close wait.
             currentInteractor = null;
             currentPage = 0;
 
