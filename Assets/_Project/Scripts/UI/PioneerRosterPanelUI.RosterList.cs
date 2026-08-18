@@ -248,9 +248,8 @@ namespace Project.UI
         {
             bool selected = record.id == selectedPioneerId;
             bool inTrio = record.isInExpeditionTrio;
-            bool canJoin = roster.CanJoinTrio(record);
 
-            GameObject row = new GameObject($"Pioneer_{record.id}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+            GameObject row = new GameObject($"Pioneer_{record.id}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement), typeof(HorizontalLayoutGroup));
             row.transform.SetParent(parent, false);
 
             Image bg = row.GetComponent<Image>();
@@ -263,25 +262,59 @@ namespace Project.UI
                 DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(row);
 
             LayoutElement rowLayout = row.GetComponent<LayoutElement>();
-            rowLayout.minHeight = 48f;
+            rowLayout.minHeight = RosterPortraitSize + 16f;
+            rowLayout.preferredHeight = RosterPortraitSize + 16f;
+
+            HorizontalLayoutGroup rowGroup = row.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.padding = new RectOffset(6, 6, 5, 5);
+            rowGroup.spacing = 8f;
+            rowGroup.childAlignment = TextAnchor.MiddleLeft;
+            rowGroup.childControlWidth = true;
+            rowGroup.childControlHeight = true;
+            rowGroup.childForceExpandWidth = false;
+            // Keep portrait aspect — force-expand stretches the RawImage into an ellipse.
+            rowGroup.childForceExpandHeight = false;
+
+            RawImage photo = PioneerPortraitUi.CreateCircularPortrait(row.transform, RosterPortraitSize);
+            Image frame = PioneerPortraitUi.GetMaskImage(photo);
+            PioneerPortraitUi.ApplyPortrait(frame, photo, null, record);
 
             string starterTag = record.isStarterPick ? " [Starter]" : string.Empty;
             string trioTag = inTrio && subtitleOverride == null ? "  ·  TRIO" : string.Empty;
             string stateTag = record.WorkState == PioneerWorkState.Injured ? "  ·  INJURED" : string.Empty;
             string subtitle = subtitleOverride ?? $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}";
 
-            TextMeshProUGUI label = CreateLabel(row.transform, string.Empty, 11.5f, semiBold: selected);
-            label.color = canJoin ? DarkMatterGenesisUiPalette.BodyText : DarkMatterGenesisUiPalette.MutedText;
+            string nameHex = ColorUtility.ToHtmlStringRGB(
+                selected ? DarkMatterGenesisUiPalette.WarmOffWhite : DarkMatterGenesisUiPalette.RichFuchsia);
+            string goldHex = ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.Gold);
+            string secondaryBody = BuildRosterRowSecondaryBody(record, subtitle);
+
+            TextMeshProUGUI label = CreateLabel(row.transform, string.Empty, 12f, semiBold: selected);
+            label.color = DarkMatterGenesisUiPalette.Gold;
             label.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{record.displayName}</color>{starterTag}{trioTag}{stateTag}\n" +
-                subtitle;
-            Stretch(label.rectTransform, 8f, 4f);
+                $"<color=#{nameHex}>{PioneerUiLabels.GetDisplayName(record)}</color>" +
+                $"<color=#{goldHex}>{starterTag}{trioTag}{stateTag}</color>\n" +
+                secondaryBody;
+            LayoutElement labelLayout = label.GetComponent<LayoutElement>();
+            if (labelLayout != null)
+                labelLayout.flexibleWidth = 1f;
 
             SkilledPioneerRecord captured = record;
             row.GetComponent<Button>().onClick.AddListener(() => HandleRosterEntryClicked(captured));
 
             PioneerRosterRowDragHandler drag = row.AddComponent<PioneerRosterRowDragHandler>();
             drag.Configure(this, record.id);
+        }
+
+        private static string BuildRosterRowSecondaryBody(SkilledPioneerRecord record, string subtitleLine)
+        {
+            string goldHex = ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.Gold);
+            string statsLine =
+                $"Rad {record.radiationResistance:P0}  ·  Exp {record.expeditionEfficiency:P0}  ·  Syn {record.combatSynergy:P0}";
+
+            return
+                $"<color=#{goldHex}>{subtitleLine}</color>\n" +
+                $"<color=#{goldHex}>{statsLine}</color>";
         }
 
         private static void ClearChildren(Transform parent)
@@ -317,7 +350,7 @@ namespace Project.UI
             label.fontSize = 11.5f;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
-            label.color = DarkMatterGenesisUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.Gold;
             label.text = message;
         }
     }

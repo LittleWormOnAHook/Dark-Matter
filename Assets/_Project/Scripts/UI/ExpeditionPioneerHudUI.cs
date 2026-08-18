@@ -26,10 +26,6 @@ namespace Project.UI
         private static float ArcPadding => HudLayoutMetrics.Scaled(5f * SlotSizeScale);
         private static float TitleHeight => HudLayoutMetrics.Scaled(20f * TitleSizeScale);
 
-        private static Color EmptySlotColor => DarkMatterGenesisUiPalette.WithAlpha(
-            DarkMatterGenesisUiPalette.DarkNavy,
-            0.8f);
-
         private readonly SlotView[] slots = new SlotView[SlotCount];
         private readonly CompanionHealth[] subscribedHealth = new CompanionHealth[SlotCount];
         private readonly System.Action<float, float>[] healthHandlers = new System.Action<float, float>[SlotCount];
@@ -169,12 +165,12 @@ namespace Project.UI
             if (!uiBuilt)
                 return;
 
+            SubscribeToRoster();
             SubscribeToCompanionBridge();
+            SubscribeToExposureService();
 
             if (rosterBridge == null)
                 return;
-
-            SubscribeToExposureService();
 
             int count = rosterBridge.ActiveCompanions.Count;
             if (count != lastCompanionCount)
@@ -228,7 +224,7 @@ namespace Project.UI
 
             TextMeshProUGUI title = titleObject.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(title);
-            title.text = "PIONEERS";
+            title.text = "EXPEDITION TRIO";
             title.fontSize = HudLayoutMetrics.ScaledInt(13f * TitleSizeScale);
             title.fontStyle = FontStyles.Bold;
             title.alignment = TextAlignmentOptions.Center;
@@ -273,24 +269,19 @@ namespace Project.UI
                 DarkMatterGenesisUiPalette.PositiveGreen,
                 1f);
 
-            GameObject portraitObject = new GameObject("Portrait", typeof(RectTransform), typeof(Image), typeof(Mask));
-            portraitObject.transform.SetParent(portraitFrame.transform, false);
-            RectTransform portraitRect = portraitObject.GetComponent<RectTransform>();
-            portraitRect.anchorMin = new Vector2(0.5f, 0.5f);
-            portraitRect.anchorMax = new Vector2(0.5f, 0.5f);
-            portraitRect.pivot = new Vector2(0.5f, 0.5f);
-            portraitRect.sizeDelta = new Vector2(SlotDiameter, SlotDiameter);
+            GameObject portraitHost = new GameObject("PortraitHost", typeof(RectTransform));
+            portraitHost.transform.SetParent(portraitFrame.transform, false);
+            RectTransform portraitHostRect = portraitHost.GetComponent<RectTransform>();
+            portraitHostRect.anchorMin = new Vector2(0.5f, 0.5f);
+            portraitHostRect.anchorMax = new Vector2(0.5f, 0.5f);
+            portraitHostRect.pivot = new Vector2(0.5f, 0.5f);
+            portraitHostRect.sizeDelta = new Vector2(SlotDiameter, SlotDiameter);
 
-            Image portraitImage = portraitObject.GetComponent<Image>();
-            ApplyCircleSprite(portraitImage);
-            portraitImage.color = EmptySlotColor;
-            portraitImage.raycastTarget = false;
-
-            Mask mask = portraitObject.GetComponent<Mask>();
-            mask.showMaskGraphic = true;
+            RawImage photoImage = PioneerPortraitUi.CreateCircularPortrait(portraitHost.transform, SlotDiameter);
+            Image portraitImage = PioneerPortraitUi.GetMaskImage(photoImage);
 
             GameObject initialsObject = new GameObject("Initials", typeof(RectTransform));
-            initialsObject.transform.SetParent(portraitObject.transform, false);
+            initialsObject.transform.SetParent(photoImage.transform, false);
             RectTransform initialsRect = initialsObject.GetComponent<RectTransform>();
             initialsRect.anchorMin = Vector2.zero;
             initialsRect.anchorMax = Vector2.one;
@@ -318,6 +309,7 @@ namespace Project.UI
             return new SlotView
             {
                 PortraitImage = portraitImage,
+                PhotoImage = photoImage,
                 InitialsLabel = initialsLabel,
                 HealthTrack = healthTrack,
                 HealthFill = healthFill,
@@ -411,15 +403,19 @@ namespace Project.UI
 
             if (record == null)
             {
-                slot.PortraitImage.color = EmptySlotColor;
-                slot.InitialsLabel.text = string.Empty;
+                PioneerPortraitUi.ApplyPortrait(slot.PortraitImage, slot.PhotoImage, slot.InitialsLabel, null);
+                if (slot.InitialsLabel != null)
+                {
+                    slot.InitialsLabel.text = "+";
+                    slot.InitialsLabel.color = DarkMatterGenesisUiPalette.HotbarLabelText;
+                }
+
                 slot.HealthTrack.gameObject.SetActive(false);
                 slot.HealthFill.gameObject.SetActive(false);
                 return;
             }
 
-            slot.PortraitImage.color = PioneerCompanionVisualProfile.GetClassTint(record);
-            slot.InitialsLabel.text = BuildInitials(record.displayName);
+            PioneerPortraitUi.ApplyPortrait(slot.PortraitImage, slot.PhotoImage, slot.InitialsLabel, record);
             slot.HealthTrack.gameObject.SetActive(true);
             slot.HealthFill.gameObject.SetActive(true);
 
@@ -534,6 +530,9 @@ namespace Project.UI
                 return;
 
             roster = PioneerRosterManager.EnsureExists();
+            if (roster == null)
+                return;
+
             roster.OnTrioChanged += Refresh;
             roster.OnRosterChanged += Refresh;
             subscribedToRoster = true;
@@ -549,40 +548,6 @@ namespace Project.UI
                 subscribedHealth[i] = null;
                 healthHandlers[i] = null;
             }
-        }
-
-        private static void ApplyCircleSprite(Image image)
-        {
-            if (image == null)
-                return;
-
-            Sprite circle = ShiftUiTheme.CircleFilled;
-            if (circle != null)
-            {
-                image.sprite = circle;
-                image.type = Image.Type.Simple;
-                return;
-            }
-
-            MenuUiBuilder.ApplyUiSprite(image);
-        }
-
-        private static string BuildInitials(string displayName)
-        {
-            if (string.IsNullOrWhiteSpace(displayName))
-                return string.Empty;
-
-            string trimmed = displayName.Trim();
-            if (trimmed.Length == 1)
-                return trimmed.ToUpperInvariant();
-
-            int spaceIndex = trimmed.IndexOf(' ');
-            if (spaceIndex > 0 && spaceIndex < trimmed.Length - 1)
-                return $"{char.ToUpperInvariant(trimmed[0])}{char.ToUpperInvariant(trimmed[spaceIndex + 1])}";
-
-            return trimmed.Length >= 2
-                ? $"{char.ToUpperInvariant(trimmed[0])}{char.ToUpperInvariant(trimmed[1])}"
-                : char.ToUpperInvariant(trimmed[0]).ToString();
         }
 
         private void HandleAnyCompanionHealthChanged(CompanionHealth health, float current, float max)
@@ -619,6 +584,7 @@ namespace Project.UI
         private sealed class SlotView
         {
             public Image PortraitImage;
+            public RawImage PhotoImage;
             public TextMeshProUGUI InitialsLabel;
             public HalfCircleHealthBarGraphic HealthTrack;
             public HalfCircleHealthBarGraphic HealthFill;

@@ -173,7 +173,7 @@ namespace Project.UI
             trioDraft[slotIndex] = record.id;
             pendingTrioSlot = -1;
             selectedPioneerId = record.id;
-            CommitTrioDraft($"Assigned {record.displayName} to slot {slotIndex + 1}.");
+            CommitTrioDraft($"Assigned {PioneerUiLabels.GetDisplayName(record)} to slot {slotIndex + 1}.");
         }
 
         private void HandleTrioSlotClicked(int slotIndex)
@@ -241,7 +241,7 @@ namespace Project.UI
             SkilledPioneerRecord next = eligible[nextIndex];
             trioDraft[slotIndex] = next.id;
             pendingTrioSlot = -1;
-            CommitTrioDraft($"Cycled slot {slotIndex + 1} to {next.displayName}.");
+            CommitTrioDraft($"Cycled slot {slotIndex + 1} to {PioneerUiLabels.GetDisplayName(next)}.");
         }
 
         private List<SkilledPioneerRecord> GetEligibleTrioPioneers()
@@ -263,7 +263,7 @@ namespace Project.UI
             {
                 bool pending = pendingTrioSlot == i;
                 SkilledPioneerRecord assigned = roster.FindSkilledById(trioDraft[i]);
-                string slotName = assigned != null ? assigned.displayName : "Empty";
+                string slotName = assigned != null ? PioneerUiLabels.GetDisplayName(assigned) : "Empty";
                 trioSlotLabels[i].text = $"Slot {i + 1}\n{slotName}";
 
                 Image slotImage = trioSlotButtons[i].GetComponent<Image>();
@@ -272,6 +272,10 @@ namespace Project.UI
                     : assigned != null
                         ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.85f)
                         : DarkMatterGenesisUiPalette.SlotBackground;
+
+                trioSlotLabels[i].color = assigned != null || pending
+                    ? DarkMatterGenesisUiPalette.Gold
+                    : DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
             if (pendingTrioSlot < 0)
@@ -280,7 +284,7 @@ namespace Project.UI
                 trioStatusLabel.text = active == 0
                     ? "Drag or right-click companions into trio slots (1–3 active)."
                     : $"{active} companion(s) active. Right-click slots to unslot or transmute.";
-                trioStatusLabel.color = DarkMatterGenesisUiPalette.MutedText;
+                trioStatusLabel.color = DarkMatterGenesisUiPalette.Gold;
             }
         }
 
@@ -308,7 +312,7 @@ namespace Project.UI
                     ? record.assignedSkillIds[0]
                     : "None";
 
-                trioLoadoutLabels[i].text = $"Slot {i + 1} — {record.displayName}";
+                trioLoadoutLabels[i].text = $"Slot {i + 1} — {PioneerUiLabels.GetDisplayName(record)}";
                 SetTrioLoadoutButtonLabel(trioLoadoutWeaponButtons[i], "Wpn", weapon != null ? weapon.itemName : record.weaponItemId);
                 SetTrioLoadoutButtonLabel(trioLoadoutToolButtons[i], "Tool", tool != null ? tool.itemName : (string.IsNullOrEmpty(record.toolItemId) ? "None" : record.toolItemId));
                 SetTrioLoadoutButtonLabel(trioLoadoutSkillButtons[i], "Skl", skill);
@@ -335,7 +339,7 @@ namespace Project.UI
                         ? "Specs: —"
                         : $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)} · Lv {record.level}  ·  " +
                           $"Rad {record.radiationResistance:P0} · Exp {record.expeditionEfficiency:P0} · Syn {record.combatSynergy:P0}";
-                    trioSpecsLabels[i].color = DarkMatterGenesisUiPalette.MutedText;
+                    trioSpecsLabels[i].color = DarkMatterGenesisUiPalette.Gold;
                 }
 
                 if (trioBuffLabels[i] != null)
@@ -346,17 +350,17 @@ namespace Project.UI
                     string buffText = FormatBuffs(record?.buffs, record != null ? slot?.BuffTicks : null);
                     trioBuffLabels[i].text = $"Buffs: {buffText}";
                     trioBuffLabels[i].color = buffText == "—"
-                        ? DarkMatterGenesisUiPalette.MutedText
+                        ? DarkMatterGenesisUiPalette.Gold
                         : DarkMatterGenesisUiPalette.PositiveGreen;
                 }
 
-                Color debuffActiveColor = DarkMatterGenesisUiPalette.MutedText;
+                Color debuffActiveColor = DarkMatterGenesisUiPalette.Gold;
                 if (trioDebuffLabels[i] != null)
                 {
                     string debuffText = FormatTicks(record != null ? slot?.DebuffTicks : null);
                     trioDebuffLabels[i].text = $"Debuffs: {debuffText}";
                     debuffActiveColor = debuffText == "—"
-                        ? DarkMatterGenesisUiPalette.MutedText
+                        ? DarkMatterGenesisUiPalette.Gold
                         : DarkMatterGenesisUiPalette.WarningText;
                     if (!trioIsFlashing[i])
                         trioDebuffLabels[i].color = debuffActiveColor;

@@ -30,6 +30,8 @@ namespace Project.UI
         private Transform campListParent;
         private TextMeshProUGUI colonistSummaryLabel;
         private TextMeshProUGUI detailLabel;
+        private RawImage detailPortraitPhoto;
+        private Image detailPortraitFrame;
         private TextMeshProUGUI synergyHintLabel;
         private TextMeshProUGUI trioStatusLabel;
         private TextMeshProUGUI loadoutStatusLabel;
@@ -135,6 +137,8 @@ namespace Project.UI
             campListParent = null;
             colonistSummaryLabel = null;
             detailLabel = null;
+            detailPortraitPhoto = null;
+            detailPortraitFrame = null;
             synergyHintLabel = null;
             trioStatusLabel = null;
             loadoutStatusLabel = null;

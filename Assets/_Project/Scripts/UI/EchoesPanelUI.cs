@@ -104,7 +104,8 @@ namespace Project.UI
                     chronicleListParent,
                     $"{heading}  ·  {JournalPanelLayout.FormatAccentTitle(entry.echoName)}\n" +
                     $"{JournalPanelLayout.FormatHelper($"{dateLabel}  ·  {entry.classSummary}")}\n" +
-                    $"<color=#{ColorUtility.ToHtmlStringRGB(dispositionColor)}>{disposition}</color>  ·  {JournalPanelLayout.FormatHelper(entry.abilitySummary)}");
+                    $"<color=#{ColorUtility.ToHtmlStringRGB(dispositionColor)}>{disposition}</color>  ·  {JournalPanelLayout.FormatHelper(entry.abilitySummary)}",
+                    showEchoPortrait: true);
             }
 
             if (chronicleListParent.childCount == 0)
@@ -186,6 +187,10 @@ namespace Project.UI
 
             LayoutElement rowLayout = row.GetComponent<LayoutElement>();
             rowLayout.minHeight = JournalPanelLayout.RowMinHeight;
+
+            RawImage photo = PioneerPortraitUi.CreateCircularPortrait(row.transform, 28f);
+            Image frame = PioneerPortraitUi.GetMaskImage(photo);
+            PioneerPortraitUi.ApplySpriteOnly(frame, photo, PioneerPortraitResolver.ResolveEchoSpirit());
 
             TextMeshProUGUI nameLabel = CreateLabel(row.transform, record.displayName, JournalPanelLayout.BodyFontSize, semiBold: true);
             nameLabel.color = DarkMatterGenesisUiPalette.BodyText;
@@ -284,9 +289,9 @@ namespace Project.UI
             return content.transform;
         }
 
-        private void CreateCardRow(Transform parent, string text)
+        private void CreateCardRow(Transform parent, string text, bool showEchoPortrait = false)
         {
-            GameObject row = new GameObject("ChronicleRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            GameObject row = new GameObject("ChronicleRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(HorizontalLayoutGroup));
             row.transform.SetParent(parent, false);
             Image bg = row.GetComponent<Image>();
             JournalPanelLayout.StyleDenseCard(bg);
@@ -294,9 +299,30 @@ namespace Project.UI
             LayoutElement layout = row.GetComponent<LayoutElement>();
             layout.minHeight = JournalPanelLayout.CardMinHeight;
 
+            HorizontalLayoutGroup rowGroup = row.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.padding = new RectOffset(
+                (int)JournalPanelLayout.RowPaddingH,
+                (int)JournalPanelLayout.RowPaddingH,
+                (int)JournalPanelLayout.RowPaddingV,
+                (int)JournalPanelLayout.RowPaddingV);
+            rowGroup.spacing = 8f;
+            rowGroup.childAlignment = TextAnchor.UpperLeft;
+            rowGroup.childControlWidth = true;
+            rowGroup.childControlHeight = true;
+            rowGroup.childForceExpandWidth = false;
+            rowGroup.childForceExpandHeight = false;
+
+            if (showEchoPortrait)
+            {
+                RawImage photo = PioneerPortraitUi.CreateCircularPortrait(row.transform, 32f);
+                Image frame = PioneerPortraitUi.GetMaskImage(photo);
+                PioneerPortraitUi.ApplySpriteOnly(frame, photo, PioneerPortraitResolver.ResolveEchoSpirit());
+            }
+
             TextMeshProUGUI label = CreateLabel(row.transform, text, JournalPanelLayout.BodyFontSize);
             label.color = DarkMatterGenesisUiPalette.BodyText;
-            Stretch(label.rectTransform, JournalPanelLayout.RowPaddingH, JournalPanelLayout.RowPaddingV);
+            LayoutElement labelLayout = label.gameObject.AddComponent<LayoutElement>();
+            labelLayout.flexibleWidth = 1f;
         }
 
         private void CreateInfoRow(Transform parent, string text)
