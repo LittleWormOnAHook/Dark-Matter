@@ -3,6 +3,7 @@ using Project.Crafting;
 using Project.Data;
 using Project.Inventory;
 using Project.Progression;
+using Project.Shelter;
 using Project.Vehicles;
 using UnityEngine;
 
@@ -32,6 +33,7 @@ namespace Project.UI
             AppendWeaponLines(text, item);
             AppendToolLines(text, item);
             AppendVehicleLines(text, item);
+            AppendDeployableShelterLines(text, item);
             AppendAcLine(text, item);
             AppendProgressionLines(text, item);
             AppendCraftedItemLine(text, item);
@@ -218,6 +220,23 @@ namespace Project.UI
             text.AppendLine($"  Fuel Capacity: {Mathf.RoundToInt(HovercraftStorageState.DefaultMaxFuel)}");
             text.AppendLine($"  Fuel Remaining: {Mathf.RoundToInt(HovercraftStorageState.StoredFuel)}");
             text.AppendLine("<color=#8890A0><i>Right-click to Refuel or Deploy.</i></color>");
+        }
+
+        private static void AppendDeployableShelterLines(StringBuilder text, ItemData item)
+        {
+            if (!item.IsDeployableShelter)
+                return;
+
+            float remaining = QuoraShelterStorageState.HasStoredLifetime
+                ? QuoraShelterStorageState.StoredRemainingSeconds
+                : QuoraShelterStorageState.DefaultLifetimeSeconds;
+            int minutes = Mathf.FloorToInt(remaining / 60f);
+            int seconds = Mathf.FloorToInt(remaining % 60f);
+
+            text.AppendLine("<color=#A0A8B8>Temporary Shelter:</color>");
+            text.AppendLine($"  Deploy time: {minutes:00}:{seconds:00} remaining");
+            text.AppendLine($"  Deploy range: {QuoraShelterDeploymentUtility.DeployDistanceMeters:0.#}m");
+            text.AppendLine("<color=#8890A0><i>Right-click to Deploy.</i></color>");
         }
 
         private static void AppendAcLine(StringBuilder text, ItemData item)

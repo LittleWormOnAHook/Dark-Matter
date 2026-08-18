@@ -94,7 +94,7 @@ namespace Project.UI
             CreateAmmoSubmenuButton();
             CreateMenuButton("Refuel", () => Execute(itemActions?.TryRefuelVehicle(activeSlotIndex) ?? false));
             CreateMenuButton("Refill Mining Tool", () => Execute(itemActions?.TryRefillMiningTool(activeSlotIndex) ?? false));
-            CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeployVehicle(activeSlotIndex) ?? false));
+            CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeploy(activeSlotIndex) ?? false));
             CreateMenuButton("Split", () => Execute(itemActions?.TrySplit(activeSlotIndex) ?? false));
             CreateMenuButton("Drop", () => Execute(itemActions?.TryDrop(activeSlotIndex) ?? false));
 
@@ -300,14 +300,14 @@ namespace Project.UI
 
         private void UpdateButtonVisibility()
         {
-            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex));
+            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex) && !itemActions.CanDeployShelter(activeSlotIndex));
             SetButtonVisible("Install", itemActions.CanInstallStorageModule(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
             SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));
             SetButtonVisible("Refuel", itemActions.CanRefuelVehicle(activeSlotIndex));
             SetButtonVisible("Refill Mining Tool", itemActions.CanRefillMiningTool(activeSlotIndex));
-            SetButtonVisible("Deploy", itemActions.CanDeployVehicle(activeSlotIndex));
+            SetButtonVisible("Deploy", itemActions.CanDeploy(activeSlotIndex));
             SetButtonVisible("Split", itemActions.CanSplit(activeSlotIndex));
             SetButtonVisible("Drop", itemActions.CanDrop(activeSlotIndex));
         }

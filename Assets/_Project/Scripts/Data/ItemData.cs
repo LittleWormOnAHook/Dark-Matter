@@ -91,6 +91,9 @@ namespace Project.Data
 
         public bool IsVehicle => itemType == ItemType.Vehicle;
 
+        public bool IsDeployableShelter =>
+            deployedPrefab != null && (itemType == ItemType.Consumable || itemType == ItemType.Resource);
+
         [Header("Equipment")]
         public WeaponGrip weaponGrip = WeaponGrip.OneHanded;
         public GameObject heldPrefab;
