@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Project.Building;
+using Project.Companions;
 using Project.Data;
 using Project.Pioneers;
 using Project.Survival.Exposure;
@@ -71,6 +72,7 @@ namespace Project.UI
         private int pendingTrioSlot = -1;
         private readonly string[] trioDraft = new string[PioneerRosterManager.ExpeditionTrioSize];
         private ExposureStatusService subscribedExposureService;
+        private bool subscribedToCompanionHealth;
 
         public void EmbedIn(Transform parent)
         {
@@ -99,7 +101,28 @@ namespace Project.UI
             if (subscribedExposureService != null)
                 subscribedExposureService.OnSnapshotChanged += HandleExposureSnapshotChanged;
 
+            if (!subscribedToCompanionHealth)
+            {
+                CompanionHealth.AnyHealthChanged += HandleCompanionHealthChanged;
+                subscribedToCompanionHealth = true;
+            }
+
             Refresh();
+        }
+
+        private void HandleCompanionHealthChanged(CompanionHealth health, float current, float max)
+        {
+            if (panelRoot == null)
+                return;
+
+            RefreshTrioStatusPanels();
+
+            if (!string.IsNullOrEmpty(selectedPioneerId)
+                && health != null
+                && health.PioneerRecordId == selectedPioneerId)
+            {
+                RefreshDetailPanel();
+            }
         }
 
         public void Unembed()
@@ -113,6 +136,12 @@ namespace Project.UI
             if (subscribedExposureService != null)
                 subscribedExposureService.OnSnapshotChanged -= HandleExposureSnapshotChanged;
             subscribedExposureService = null;
+
+            if (subscribedToCompanionHealth)
+            {
+                CompanionHealth.AnyHealthChanged -= HandleCompanionHealthChanged;
+                subscribedToCompanionHealth = false;
+            }
 
             for (int i = 0; i < trioFlashRoutines.Length; i++)
             {

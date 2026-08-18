@@ -5,9 +5,24 @@ namespace Project.UI
 {
     internal static class MapUiSprites
     {
+        private const int HudRingTextureSize = 512;
+        private const float HudRingThickness = 18f;
+        private const float HudRingFeather = 3f;
+        private const int HudFillTextureSize = 256;
+        private const float HudFillFeather = 2f;
+
+        private const int HudHealthRingTextureSize = 512;
+        private const float HudHealthRingThickness = 36f;
+        private const float HudHealthRingFeather = 3f;
+        private const int HudViewportMaskSize = 512;
+        private const float HudViewportMaskFeather = 4f;
+
         private static Sprite arrowSprite;
         private static Sprite circleMaskSprite;
         private static Sprite circleRingSprite;
+        private static Sprite hudCircleRingSprite;
+        private static Sprite hudCircleFillSprite;
+        private static Sprite hudHealthRingSprite;
         private static Sprite portraitCircleMaskSprite;
         private static Sprite portraitCircleRingSprite;
         private static Sprite dotSprite;
@@ -27,7 +42,14 @@ namespace Project.UI
             get
             {
                 if (circleRingSprite == null)
-                    circleRingSprite = CreateCircleSprite(128, filled: false, ringThickness: 6f);
+                {
+                    circleRingSprite = CreateCircleSprite(
+                        256,
+                        filled: false,
+                        ringThickness: 12f,
+                        edgeFeather: 2.5f);
+                }
+
                 return circleRingSprite;
             }
         }
@@ -37,8 +59,71 @@ namespace Project.UI
             get
             {
                 if (circleMaskSprite == null)
-                    circleMaskSprite = CreateCircleSprite(128, filled: true);
+                {
+                    circleMaskSprite = CreateCircleSprite(
+                        HudViewportMaskSize,
+                        filled: true,
+                        edgeFeather: HudViewportMaskFeather,
+                        pixelsPerUnit: HudViewportMaskSize);
+                }
+
                 return circleMaskSprite;
+            }
+        }
+
+        /// <summary>Feathered annular ring for companion top-half health arcs.</summary>
+        public static Sprite HudHealthRing
+        {
+            get
+            {
+                if (hudHealthRingSprite == null)
+                {
+                    hudHealthRingSprite = CreateCircleSprite(
+                        HudHealthRingTextureSize,
+                        filled: false,
+                        ringThickness: HudHealthRingThickness,
+                        edgeFeather: HudHealthRingFeather,
+                        pixelsPerUnit: HudHealthRingTextureSize);
+                }
+
+                return hudHealthRingSprite;
+            }
+        }
+
+        /// <summary>Feathered ring for minimap border and other small HUD chrome (~130–160 px on screen).</summary>
+        public static Sprite HudCircleRing
+        {
+            get
+            {
+                if (hudCircleRingSprite == null)
+                {
+                    hudCircleRingSprite = CreateCircleSprite(
+                        HudRingTextureSize,
+                        filled: false,
+                        ringThickness: HudRingThickness,
+                        edgeFeather: HudRingFeather,
+                        pixelsPerUnit: HudRingTextureSize);
+                }
+
+                return hudCircleRingSprite;
+            }
+        }
+
+        /// <summary>Feathered filled disc for minimap edge buttons and small HUD dots.</summary>
+        public static Sprite HudCircleFill
+        {
+            get
+            {
+                if (hudCircleFillSprite == null)
+                {
+                    hudCircleFillSprite = CreateCircleSprite(
+                        HudFillTextureSize,
+                        filled: true,
+                        edgeFeather: HudFillFeather,
+                        pixelsPerUnit: HudFillTextureSize);
+                }
+
+                return hudCircleFillSprite;
             }
         }
 
@@ -117,6 +202,9 @@ namespace Project.UI
             DestroySprite(ref arrowSprite);
             DestroySprite(ref circleMaskSprite);
             DestroySprite(ref circleRingSprite);
+            DestroySprite(ref hudCircleRingSprite);
+            DestroySprite(ref hudCircleFillSprite);
+            DestroySprite(ref hudHealthRingSprite);
             DestroySprite(ref portraitCircleMaskSprite);
             DestroySprite(ref portraitCircleRingSprite);
             DestroySprite(ref dotSprite);
@@ -167,7 +255,8 @@ namespace Project.UI
             int size,
             bool filled,
             float ringThickness = 3f,
-            float edgeFeather = 1.5f)
+            float edgeFeather = 1.5f,
+            float pixelsPerUnit = 100f)
         {
             size = Mathf.Clamp(size, 8, 512);
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
@@ -196,7 +285,11 @@ namespace Project.UI
             }
 
             texture.Apply();
-            return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+            return Sprite.Create(
+                texture,
+                new Rect(0f, 0f, size, size),
+                new Vector2(0.5f, 0.5f),
+                pixelsPerUnit);
         }
 
         private static float SmoothEdgeAlpha(float edgeDistance, float feather)

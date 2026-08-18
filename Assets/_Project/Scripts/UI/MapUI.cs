@@ -30,7 +30,8 @@ namespace Project.UI
         private const float MinimapEdgeInset = 16f;
         private const float MinimapTitleBarHeight = 0f;
         private const float MinimapInfoPanelHeight = 24f;
-        private const float MinimapEdgeButtonSize = 22f;
+        private const float MinimapEdgeButtonSize = 24f;
+        private const float MinimapViewportInset = 4f;
         private const float MinMinimapSpan = 40f;
         private const float MaxMinimapSpan = 420f;
         private const float DefaultFullMapZoom = 5f;
@@ -41,6 +42,9 @@ namespace Project.UI
         private const float MapKeyHoldTapSeconds = 0.18f;
         private const float MinimapPlayerIconSize = 24f;
         private const float FullMapPlayerIconSize = 48f;
+
+        private static readonly Color MinimapRingColor =
+            DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.92f);
 
         private static readonly Color PlayerMapIconColor = new Color(0.95f, 0.18f, 0.18f, 1f);
 
@@ -127,8 +131,7 @@ namespace Project.UI
         {
             DetectSceneLayoutShells();
             EnsureMapProvider();
-            if (minimapRingSprite == null)
-                minimapRingSprite = ShiftUiTheme.CircleOutline ?? MapUiSprites.CircleRing;
+            minimapRingSprite = MapUiSprites.HudCircleRing;
         }
 
         private void DetectSceneLayoutShells()

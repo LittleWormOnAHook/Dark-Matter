@@ -21,10 +21,12 @@ namespace Project.UI
         private const float SlotSizeScale = 1.4f;
         private const float TitleSizeScale = 1.25f;
 
-        private static float SlotDiameter => HudLayoutMetrics.Scaled(54f * SlotSizeScale);
-        private static float SlotSpacing => HudLayoutMetrics.Scaled(8f * SlotSizeScale);
-        private static float ArcPadding => HudLayoutMetrics.Scaled(5f * SlotSizeScale);
-        private static float TitleHeight => HudLayoutMetrics.Scaled(20f * TitleSizeScale);
+        private static float SlotDiameter => RoundHudPixels(HudLayoutMetrics.Scaled(54f * SlotSizeScale));
+        private static float SlotSpacing => RoundHudPixels(HudLayoutMetrics.Scaled(8f * SlotSizeScale));
+        private static float ArcPadding => RoundHudPixels(HudLayoutMetrics.Scaled(5f * SlotSizeScale));
+        private static float TitleHeight => RoundHudPixels(HudLayoutMetrics.Scaled(20f * TitleSizeScale));
+
+        private static float RoundHudPixels(float value) => Mathf.Max(1f, Mathf.Round(value));
 
         private readonly SlotView[] slots = new SlotView[SlotCount];
         private readonly CompanionHealth[] subscribedHealth = new CompanionHealth[SlotCount];
@@ -52,7 +54,20 @@ namespace Project.UI
 
         public void EnsureBuilt(Transform layoutParent, float anchoredY)
         {
-            if (uiBuilt || layoutParent == null)
+            if (layoutParent == null)
+                return;
+
+            if (uiBuilt && slots[0]?.HealthFill is HalfCircleHealthBarGraphic)
+                return;
+
+            if (clusterRoot != null)
+            {
+                Destroy(clusterRoot.gameObject);
+                clusterRoot = null;
+                uiBuilt = false;
+            }
+
+            if (uiBuilt)
                 return;
 
             BuildCluster(layoutParent, anchoredY);
@@ -250,22 +265,24 @@ namespace Project.UI
             GameObject portraitFrame = new GameObject("PortraitFrame", typeof(RectTransform));
             portraitFrame.transform.SetParent(slotRoot.transform, false);
             RectTransform frameRect = portraitFrame.GetComponent<RectTransform>();
-            float frameSize = SlotDiameter + ArcPadding * 2f;
+            float frameSize = RoundHudPixels(SlotDiameter + ArcPadding * 2f);
             frameRect.anchorMin = new Vector2(0.5f, 1f);
             frameRect.anchorMax = new Vector2(0.5f, 1f);
             frameRect.pivot = new Vector2(0.5f, 1f);
-            frameRect.anchoredPosition = new Vector2(0f, 0f);
+            frameRect.anchoredPosition = Vector2.zero;
             frameRect.sizeDelta = new Vector2(frameSize, frameSize);
 
-            HalfCircleHealthBarGraphic healthTrack = CreateArcGraphic(
+            HalfCircleHealthBarGraphic healthTrack = CreateArcImage(
                 portraitFrame.transform,
                 "HealthTrack",
+                frameSize,
                 DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f),
                 1f);
 
-            HalfCircleHealthBarGraphic healthFill = CreateArcGraphic(
+            HalfCircleHealthBarGraphic healthFill = CreateArcImage(
                 portraitFrame.transform,
                 "HealthFill",
+                frameSize,
                 DarkMatterGenesisUiPalette.PositiveGreen,
                 1f);
 
@@ -373,26 +390,31 @@ namespace Project.UI
             subscribedToExposure = false;
         }
 
-        private static HalfCircleHealthBarGraphic CreateArcGraphic(
+        private static HalfCircleHealthBarGraphic CreateArcImage(
             Transform parent,
             string name,
+            float frameSize,
             Color color,
             float fill)
         {
+            const float supersample = 2f;
+
             GameObject arcObject = new GameObject(name, typeof(RectTransform), typeof(HalfCircleHealthBarGraphic));
             arcObject.transform.SetParent(parent, false);
             RectTransform arcRect = arcObject.GetComponent<RectTransform>();
-            arcRect.anchorMin = Vector2.zero;
-            arcRect.anchorMax = Vector2.one;
-            arcRect.offsetMin = Vector2.zero;
-            arcRect.offsetMax = Vector2.zero;
+            arcRect.anchorMin = new Vector2(0.5f, 0.5f);
+            arcRect.anchorMax = new Vector2(0.5f, 0.5f);
+            arcRect.pivot = new Vector2(0.5f, 0.5f);
+            arcRect.anchoredPosition = Vector2.zero;
+            arcRect.sizeDelta = new Vector2(frameSize * supersample, frameSize * supersample);
+            arcRect.localScale = Vector3.one / supersample;
 
-            HalfCircleHealthBarGraphic graphic = arcObject.GetComponent<HalfCircleHealthBarGraphic>();
-            graphic.color = color;
-            graphic.Thickness = HudLayoutMetrics.Scaled(4f * SlotSizeScale);
-            graphic.FillAmount = fill;
-            graphic.raycastTarget = false;
-            return graphic;
+            HalfCircleHealthBarGraphic bar = arcObject.GetComponent<HalfCircleHealthBarGraphic>();
+            bar.raycastTarget = false;
+            bar.Thickness = RoundHudPixels(5f);
+            bar.color = color;
+            bar.FillAmount = fill;
+            return bar;
         }
 
         private void ApplySlot(int slotIndex, SkilledPioneerRecord record)

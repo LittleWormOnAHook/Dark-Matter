@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Project.Building;
+using Project.Companions;
 using Project.Data;
 using Project.Pioneers;
 using Project.Survival.Exposure;
@@ -335,10 +336,14 @@ namespace Project.UI
 
                 if (trioSpecsLabels[i] != null)
                 {
+                    string healthLine = record == null
+                        ? "HP —"
+                        : CompanionHealthLookup.FormatHealthLine(record.id);
                     trioSpecsLabels[i].text = record == null
                         ? "Specs: —"
                         : $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)} · Lv {record.level}  ·  " +
-                          $"Rad {record.radiationResistance:P0} · Exp {record.expeditionEfficiency:P0} · Syn {record.combatSynergy:P0}";
+                          $"Rad {record.radiationResistance:P0} · Exp {record.expeditionEfficiency:P0} · Syn {record.combatSynergy:P0}\n" +
+                          healthLine;
                     trioSpecsLabels[i].color = DarkMatterGenesisUiPalette.Gold;
                 }
 

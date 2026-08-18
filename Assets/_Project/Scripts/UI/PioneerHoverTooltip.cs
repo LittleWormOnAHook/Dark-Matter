@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Text;
+using Project.Companions;
 using Project.Data;
 using Project.Pioneers;
 using TMPro;
@@ -223,6 +224,7 @@ namespace Project.UI
             sb.Append("Rad ").Append(record.radiationResistance.ToString("P0"))
                 .Append("  ·  Exp ").Append(record.expeditionEfficiency.ToString("P0"))
                 .Append("  ·  Syn ").Append(record.combatSynergy.ToString("P0")).Append('\n');
+            sb.Append(CompanionHealthLookup.FormatHealthLine(record.id)).Append('\n');
             sb.Append("Saturation ").Append(record.saturation.ToString("P0"));
             if (disposition != null)
                 sb.Append("  ·  Disposition ").Append(disposition);

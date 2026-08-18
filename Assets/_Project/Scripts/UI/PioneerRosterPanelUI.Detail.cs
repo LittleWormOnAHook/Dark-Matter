@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Project.Building;
+using Project.Companions;
 using Project.Data;
 using Project.Pioneers;
 using Project.Survival.Exposure;
@@ -49,6 +50,7 @@ namespace Project.UI
             detailLabel.text =
                 $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{PioneerUiLabels.GetDisplayName(record)}</color>\n" +
                 $"<color=#{goldHex}><size=115%>{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}</size></color>\n\n" +
+                $"<color=#{goldHex}>{CompanionHealthLookup.FormatHealthLine(record.id)}</color>\n" +
                 $"<color=#{goldHex}>Rad {record.radiationResistance:P0}  ·  Exp {record.expeditionEfficiency:P0}  ·  Syn {record.combatSynergy:P0}</color>\n" +
                 $"<color=#{goldHex}>Saturation {record.saturation:P0}  ·  Disposition {disposition}</color>\n" +
                 $"<color=#{goldHex}>{statusLine}</color>\n\n" +

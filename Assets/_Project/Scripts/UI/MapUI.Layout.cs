@@ -375,7 +375,13 @@ namespace Project.UI
             {
                 Transform manualCircle = minimapRoot.transform.Find("CircleAssembly");
                 if (manualCircle != null)
+                {
+                    ApplyMinimapViewportLayout(manualCircle);
                     ApplyMinimapRingBorderColor(manualCircle);
+                    Transform edgeControls = manualCircle.Find("EdgeControls");
+                    if (edgeControls != null)
+                        ApplyMinimapEdgeButtonSprites(edgeControls);
+                }
                 WireMinimapScanButton();
                 UpdateMinimapInfoPanel();
                 return;
@@ -389,10 +395,13 @@ namespace Project.UI
             if (circleAssembly == null)
                 return;
 
+            ApplyMinimapViewportLayout(circleAssembly);
             ApplyMinimapRingBorderColor(circleAssembly);
 
             if (circleAssembly.Find("EdgeControls") == null)
                 BuildMinimapEdgeControls(circleAssembly);
+            else
+                ApplyMinimapEdgeButtonSprites(circleAssembly.Find("EdgeControls"));
 
             Transform infoPanel = minimapRoot.transform.Find("InfoPanel");
             if (infoPanel == null)
@@ -444,7 +453,38 @@ namespace Project.UI
 
             Image ringImage = ring.GetComponent<Image>();
             if (ringImage != null)
-                ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
+            {
+                ringImage.sprite = MapUiSprites.HudCircleRing;
+                ringImage.color = MinimapRingColor;
+            }
+        }
+
+        private static void ApplyMinimapViewportLayout(Transform circleAssembly)
+        {
+            if (circleAssembly == null)
+                return;
+
+            Transform viewport = circleAssembly.Find("CircularViewport");
+            if (viewport is RectTransform viewportRect)
+            {
+                viewportRect.offsetMin = Vector2.one * MinimapViewportInset;
+                viewportRect.offsetMax = Vector2.one * -MinimapViewportInset;
+
+                Image maskImage = viewport.GetComponent<Image>();
+                if (maskImage != null)
+                {
+                    maskImage.sprite = MapUiSprites.CircleMask;
+                    maskImage.preserveAspect = true;
+                }
+            }
+
+            Transform ring = circleAssembly.Find("RingBorder");
+            Transform edgeControls = circleAssembly.Find("EdgeControls");
+            if (ring != null && viewport != null)
+                ring.SetSiblingIndex(viewport.GetSiblingIndex() + 1);
+
+            if (edgeControls != null)
+                edgeControls.SetAsLastSibling();
         }
 
         private void ApplyMinimapHoldZoomVisual(bool active)
@@ -459,9 +499,10 @@ namespace Project.UI
             if (minimapRingImage == null)
                 return;
 
+            minimapRingImage.sprite = MapUiSprites.HudCircleRing;
             minimapRingImage.color = active
                 ? DarkMatterGenesisUiPalette.Gold
-                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
+                : MinimapRingColor;
         }
 
         private void RemoveMinimapTitleBar()
@@ -519,12 +560,14 @@ namespace Project.UI
             rect.anchorMax = anchor;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = Vector2.one * MinimapEdgeButtonSize;
-            rect.anchoredPosition = anchoredPosition;
+            rect.anchoredPosition = new Vector2(
+                Mathf.Round(anchoredPosition.x),
+                Mathf.Round(anchoredPosition.y));
 
             Image image = buttonObject.AddComponent<Image>();
-            Sprite circleSprite = ShiftUiTheme.CircleFilled ?? MapUiSprites.Dot;
-            image.sprite = circleSprite;
+            image.sprite = MapUiSprites.HudCircleFill;
             image.type = Image.Type.Simple;
+            image.preserveAspect = true;
             image.color = new Color(0.12f, 0.16f, 0.22f, 0.94f);
             image.raycastTarget = true;
 
@@ -549,6 +592,32 @@ namespace Project.UI
             text.raycastTarget = false;
 
             return button;
+        }
+
+        private static void ApplyMinimapEdgeButtonSprites(Transform edgeControls)
+        {
+            if (edgeControls == null)
+                return;
+
+            for (int i = 0; i < edgeControls.childCount; i++)
+            {
+                Transform child = edgeControls.GetChild(i);
+                Image image = child.GetComponent<Image>();
+                if (image == null)
+                    continue;
+
+                image.sprite = MapUiSprites.HudCircleFill;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+
+                RectTransform rect = child as RectTransform;
+                if (rect != null)
+                {
+                    rect.sizeDelta = Vector2.one * MinimapEdgeButtonSize;
+                    Vector2 pos = rect.anchoredPosition;
+                    rect.anchoredPosition = new Vector2(Mathf.Round(pos.x), Mathf.Round(pos.y));
+                }
+            }
         }
 
         private TextMeshProUGUI CreateMinimapInfoPanel(Transform minimapParent)
@@ -766,28 +835,30 @@ namespace Project.UI
             aspect.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
             aspect.aspectRatio = 1f;
 
-            GameObject ringObject = new GameObject("RingBorder", typeof(RectTransform));
+            CreateCircularMapViewport(
+                circleAssembly.transform,
+                inset: MinimapViewportInset,
+                out minimapViewportRect,
+                out minimapContentRect,
+                out minimapMarkerLayer,
+                out minimapImage);
+
+            GameObject ringObject = new GameObject("RingBorder", typeof(RectTransform), typeof(Image));
             ringObject.transform.SetParent(circleAssembly.transform, false);
             RectTransform ringRect = ringObject.GetComponent<RectTransform>();
             ringRect.anchorMin = Vector2.zero;
             ringRect.anchorMax = Vector2.one;
             ringRect.offsetMin = Vector2.zero;
             ringRect.offsetMax = Vector2.zero;
-            Image ringImage = ringObject.AddComponent<Image>();
-            ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.CircleRing;
-            ringImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.95f);
+            Image ringImage = ringObject.GetComponent<Image>();
+            ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.HudCircleRing;
+            ringImage.color = MinimapRingColor;
             ringImage.raycastTarget = false;
             ringImage.preserveAspect = true;
-
-            CreateCircularMapViewport(
-                circleAssembly.transform,
-                inset: 8f,
-                out minimapViewportRect,
-                out minimapContentRect,
-                out minimapMarkerLayer,
-                out minimapImage);
+            minimapRingImage = ringImage;
 
             BuildMinimapEdgeControls(circleAssembly.transform);
+            ApplyMinimapViewportLayout(circleAssembly.transform);
 
             minimapPlayerIconRect = CreatePlayerArrow(minimapViewportRect, MinimapPlayerIconSize);
             minimapPlayerIconRect.SetAsLastSibling();

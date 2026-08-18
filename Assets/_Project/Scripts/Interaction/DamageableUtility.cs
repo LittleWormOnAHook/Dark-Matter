@@ -1,3 +1,5 @@
+using Project.Companions;
+using Project.Survival;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -8,6 +10,14 @@ namespace Project.Interaction
         {
             if (collider == null)
                 return null;
+
+            CompanionHealth companion = collider.GetComponentInParent<CompanionHealth>();
+            if (companion != null)
+                return companion;
+
+            SurvivalStats survival = collider.GetComponentInParent<SurvivalStats>();
+            if (survival != null)
+                return survival;
 
             if (collider.TryGetComponent(out IDamageable onCollider))
                 return onCollider;

@@ -3,7 +3,9 @@ using MalbersAnimations.Controller;
 using MalbersAnimations.Controller.AI;
 using Project.AI;
 using Project.Combat;
+using Project.Companions;
 using Project.Interaction;
+using Project.Survival;
 using UnityEngine;
 
 namespace Project.Creatures
@@ -364,14 +366,34 @@ namespace Project.Creatures
             if (!DMICreatureTargetResolver.IsValidSpitOrMeleeTarget(this, hitTransform))
                 return;
 
+            float damage = definition != null ? definition.meleeDamage : meleeDamage;
+            if (damage <= 0f)
+                return;
+
+            CompanionHealth companion = hitTransform.GetComponentInParent<CompanionHealth>();
+            if (companion != null && !companion.IsDead)
+            {
+                nextMeleeHitTime = Time.time + SampleMeleeInterval();
+                ((IDamageable)companion).TakeDamage(damage, gameObject, false);
+                return;
+            }
+
+            SurvivalStats survival = hitTransform.GetComponentInParent<SurvivalStats>();
+            if (survival != null)
+            {
+                nextMeleeHitTime = Time.time + SampleMeleeInterval();
+                ((IDamageable)survival).TakeDamage(damage, gameObject, false);
+                return;
+            }
+
             Collider hitCollider = hitTransform.GetComponent<Collider>();
             if (hitCollider == null)
                 hitCollider = hitTransform.GetComponentInChildren<Collider>();
             if (hitCollider == null)
                 hitCollider = hitTransform.GetComponentInParent<Collider>();
 
-            // Skip when Malbers already applied IMDamage (avoid double-hit).
-            if (hitTransform.GetComponentInParent<IMDamage>() != null)
+            // Skip when Malbers MDamageable already applied damage on this target (avoid double-hit).
+            if (hitTransform.GetComponentInParent<MDamageable>() != null)
                 return;
 
             IDamageable damageableTarget = null;
@@ -392,10 +414,6 @@ namespace Project.Creatures
             }
 
             if (damageableTarget == null)
-                return;
-
-            float damage = definition != null ? definition.meleeDamage : meleeDamage;
-            if (damage <= 0f)
                 return;
 
             nextMeleeHitTime = Time.time + SampleMeleeInterval();
