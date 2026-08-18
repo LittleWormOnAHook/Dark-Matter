@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 2 Hander
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: 2 Hander
-  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  icon: {fileID: 21300000, guid: 127f72d3dcd04ecfaf516a105e89611a, type: 3}
   worldPrefab: {fileID: 4368949753760633901, guid: e46114fb89a894f4dbb7ff7a92e6f74c, type: 3}
   maxStack: 1
   stableItemId: 12530f88-bb08-472f-99b8-0495e0a77466

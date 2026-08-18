@@ -18,6 +18,12 @@ namespace Project.UI
         IDragHandler,
         IEndDragHandler
     {
+        public enum SelectionHighlightMode
+        {
+            CircleGlow,
+            WeaponGoldBorder
+        }
+
         [Header("UI")]
         public Image iconImage;
         public TextMeshProUGUI amountText;
@@ -42,6 +48,8 @@ namespace Project.UI
         private Image selectionGlowImage;
         private Image ammoTypeIcon;
         private Color defaultBackgroundColor = DarkMatterGenesisUiPalette.SlotBackground;
+        private SelectionHighlightMode selectionHighlightMode = SelectionHighlightMode.CircleGlow;
+        private bool selectionVisualBuilt;
         private bool wasDragged;
         private bool isSelected;
         private bool isLocked;
@@ -111,7 +119,48 @@ namespace Project.UI
                 defaultBackgroundColor = backgroundImage.color;
             }
 
-            theme.EnsureSelectionGlow(transform, ref selectionGlowImage);
+            EnsureSelectionVisual(theme);
+        }
+
+        /// <summary>Weapon hotbar slots (1–4) use a thin gold sliced border instead of circle glow.</summary>
+        public void SetSelectionHighlightMode(SelectionHighlightMode mode)
+        {
+            if (selectionHighlightMode == mode && selectionVisualBuilt)
+                return;
+
+            selectionHighlightMode = mode;
+            DestroySelectionVisual();
+            ApplyShiftSlotVisuals();
+        }
+
+        private void DestroySelectionVisual()
+        {
+            DestroySelectionChild("SelectionGlow");
+            DestroySelectionChild("SelectionBorder");
+            selectionGlowImage = null;
+            selectionVisualBuilt = false;
+        }
+
+        private void DestroySelectionChild(string childName)
+        {
+            Transform child = transform.Find(childName);
+            if (child == null)
+                return;
+
+            DestroyImmediate(child.gameObject);
+        }
+
+        private void EnsureSelectionVisual(ShiftUiTheme theme)
+        {
+            if (selectionVisualBuilt || theme == null)
+                return;
+
+            if (selectionHighlightMode == SelectionHighlightMode.WeaponGoldBorder)
+                theme.EnsureWeaponSelectionBorder(transform, ref selectionGlowImage);
+            else
+                theme.EnsureSelectionGlow(transform, ref selectionGlowImage);
+
+            selectionVisualBuilt = true;
         }
 
         public void ApplyHudSlotMetrics(float? slotSizeOverride = null)

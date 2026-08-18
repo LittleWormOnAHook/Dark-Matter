@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DM_Frag_Grenade
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Frag Grenade
-  icon: {fileID: 21300000, guid: 072fabb08b4333748a030d028e0f9170, type: 3}
+  icon: {fileID: 21300000, guid: af576bb76bb95184786ef5ec9afa4767, type: 3}
   worldPrefab: {fileID: 4114710532576145009, guid: 639b2518bfb4a1d4dbdb3274562d45ba, type: 3}
   maxStack: 25
   stableItemId: 6d5136e4bf5450144b514355deefa152

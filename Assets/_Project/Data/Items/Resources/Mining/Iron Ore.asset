@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Iron Ore
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.MineHarvestItemData
   itemName: Iron Ore
-  icon: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  icon: {fileID: 21300000, guid: 8b49c2acc1e26f9429616ebf132b2ff0, type: 3}
   worldPrefab: {fileID: 2362679460734149828, guid: 0f7a6dcfc48e0fb40aa6815b7ca4a91a, type: 3}
   maxStack: 80
   stableItemId: 22d2fe71fa16cbc45901218ef6195945

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: weap_two_handed
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Two-Handed Sword
-  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  icon: {fileID: 21300000, guid: 1968a3948dbc2d8488006f6e410ee660, type: 3}
   worldPrefab: {fileID: 139706, guid: c5c45979905c4564694752a3c6ef4466, type: 3}
   maxStack: 10
   stableItemId: b06ccebe-804b-4fc2-948d-f5cf58073825

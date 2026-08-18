@@ -689,6 +689,8 @@ namespace Project.UI
             slotUI.SetAmmoState(ammoState);
             slotUI.ApplyHudSlotMetrics(HotbarSlotSize);
             slotUI.SetHudAmountPresentation(plainAmountText: true);
+            if (equipmentController != null && equipmentController.IsWeaponHotbarSlot(hotbarIndex))
+                slotUI.SetSelectionHighlightMode(InventorySlotUI.SelectionHighlightMode.WeaponGoldBorder);
             allSlots.Add(slotUI);
 
             string keyLabel = GetHotbarKeyLabel(hotbarIndex);

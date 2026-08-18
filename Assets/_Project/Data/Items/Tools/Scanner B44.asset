@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Scanner B44
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Scanner B44
-  icon: {fileID: 21300000, guid: dbd597d6b6f5d41489e5c685592fa72f, type: 3}
+  icon: {fileID: 21300000, guid: 0ad776632ec53404ab60b16513373665, type: 3}
   worldPrefab: {fileID: 6718250825363019083, guid: ead7ee15732a9334aa63d290bc1c9c35, type: 3}
   maxStack: 1
   stableItemId: fc0ba632-ac2a-4d15-9c71-f2d6a7ca16ef

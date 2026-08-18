@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: metal_scrap
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Metal Scrap
-  icon: {fileID: 21300000, guid: 0d9b8cb7aa0f5c4499823d0fb83f10ef, type: 3}
+  icon: {fileID: 21300000, guid: 82143bc813f4f8c4e8e04b08270894d5, type: 3}
   worldPrefab: {fileID: 6985637259469259357, guid: c2dc4a2c94dbc3b4084b1fc03f3907e0, type: 3}
   maxStack: 250
   stableItemId: bfa6c9e0-efc4-4018-83ca-7010ab68f498

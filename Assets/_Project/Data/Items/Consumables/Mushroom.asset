@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Mushroom
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Mushroom
-  icon: {fileID: 21300000, guid: 01f306e51ae729b4dbc6cd5279f0e6e7, type: 3}
+  icon: {fileID: 21300000, guid: c821ca1cadfc98342bc84ca7270f9ed3, type: 3}
   worldPrefab: {fileID: 4131714642898419157, guid: 8440a364416e8de41987b0616e833268, type: 3}
   maxStack: 100
   stableItemId: b70ede8b-33c6-49f1-9572-7b46ae13c6e6

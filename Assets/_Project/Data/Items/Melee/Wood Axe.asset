@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wood Axe
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Wood Axe
-  icon: {fileID: 21300000, guid: dca77b62c80990443bbf566ee2cad390, type: 3}
+  icon: {fileID: 21300000, guid: 86cc979c17019bc41a97eb30967f75da, type: 3}
   worldPrefab: {fileID: 8895491361252627488, guid: 3a94c5aff1402204aa32dc87c0174aa5, type: 3}
   maxStack: 10
   stableItemId: 822bbe99-0083-48dd-b2de-21f75d2fe15a

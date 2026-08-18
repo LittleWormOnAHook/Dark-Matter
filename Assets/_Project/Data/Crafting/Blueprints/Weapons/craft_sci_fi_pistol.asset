@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: craft_sci_fi_pistol
   displayName: Sci-Fi Pistol
   description: Fabricate a compact sci-fi sidearm from scrap.
-  icon: {fileID: 21300000, guid: 5c26b9424f5e78c43916d37cd1298bc1, type: 3}
+  icon: {fileID: 21300000, guid: bc13ca145bd87f4468d74480ca565478, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}

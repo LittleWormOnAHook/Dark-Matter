@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Sword of Fear
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Sword of Fear
-  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  icon: {fileID: 21300000, guid: 2ac048c076a547adbd4440753699e217, type: 3}
   worldPrefab: {fileID: 4680126041126540290, guid: 7b63861d174c6b548a074a238c03782f, type: 3}
   maxStack: 10
   stableItemId: 09029392-b739-498a-9b22-f4263ceb47d2

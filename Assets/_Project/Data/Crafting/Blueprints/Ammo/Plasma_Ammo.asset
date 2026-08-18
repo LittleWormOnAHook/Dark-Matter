@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Plasma T
   description: Plasma T ammo, standard Plasma ammo used by the UEA (United Earth
     Alliance)
-  icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
+  icon: {fileID: 21300000, guid: bb390ccc1029df54ea94ba72b724d1c1, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}

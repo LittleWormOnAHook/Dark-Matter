@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: survival_rifle
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Survival Rifle
-  icon: {fileID: 21300000, guid: f6cfffab8b48ab1498161d83bea40058, type: 3}
+  icon: {fileID: 21300000, guid: 402270a64d23f374c8658bbe2854ae96, type: 3}
   worldPrefab: {fileID: 9115999198717219269, guid: 1687c103af3d73b4f9728aee53ed763f, type: 3}
   maxStack: 1
   stableItemId: ff985dce-c001-4934-afb5-9f49cd86d06f

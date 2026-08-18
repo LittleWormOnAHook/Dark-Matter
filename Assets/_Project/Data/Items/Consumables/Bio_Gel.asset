@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Bio_Gel
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Bio Gel
-  icon: {fileID: 21300000, guid: 7fb82aeac8876524e880af5076600ae7, type: 3}
+  icon: {fileID: 21300000, guid: 3d006b4c693ea2d4ca81e5ca4f000562, type: 3}
   worldPrefab: {fileID: 238649986846978416, guid: b372bbba56f8d904c9f5dbac56d68206, type: 3}
   maxStack: 64
   stableItemId: bdaeea167dbb9204a95d18c225c6e962

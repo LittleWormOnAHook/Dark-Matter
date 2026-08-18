@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Forest Stew
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Forest Stew
-  icon: {fileID: 21300000, guid: b586aac0c3622d942b364a52cd65a8dd, type: 3}
+  icon: {fileID: 21300000, guid: 2c9dcfc1c29aa2940b2a10764e246029, type: 3}
   worldPrefab: {fileID: 2734508350160940930, guid: 384df1eec02a41c4bba654007c9a5b60, type: 3}
   maxStack: 32
   stableItemId: e873f928-50c8-4c78-83ed-7fa769b2fe6c

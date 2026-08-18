@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Plasma
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Plasma
-  icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
+  icon: {fileID: 21300000, guid: 716e93269ab36e24c8ef14d14911a71d, type: 3}
   worldPrefab: {fileID: 804081226953012427, guid: d8699172f4ee6f04084ce2c62c49bf08, type: 3}
   maxStack: 999
   stableItemId: a5e3de4e-5188-4129-9d86-fba6f375e5e6

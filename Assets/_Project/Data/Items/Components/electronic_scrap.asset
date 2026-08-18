@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: electronic_scrap
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Electronic Scrap
-  icon: {fileID: 21300000, guid: 549b5e6077411c342aea22845f36d5d5, type: 3}
+  icon: {fileID: 21300000, guid: cfa1dde8c0fd42e4f89fb8abd61bf482, type: 3}
   worldPrefab: {fileID: 963315121044446319, guid: 470e4d2a36952f6499c7b1650bc58955, type: 3}
   maxStack: 250
   stableItemId: 9b3863f1-64ee-4096-9aeb-a82d73746fea

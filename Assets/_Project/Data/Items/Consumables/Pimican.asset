@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Pimican
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Pimican
-  icon: {fileID: 21300000, guid: 46c9e222084fcb8479b61a014526b5c0, type: 3}
+  icon: {fileID: 21300000, guid: 09072cbd1fabfd9428413cd8b38a0c2f, type: 3}
   worldPrefab: {fileID: 6593471414594757965, guid: a28746ace5aa6724db9ad0406fc5b64f, type: 3}
   maxStack: 100
   stableItemId: f7d311cd-e653-4187-a30f-726c2ad99fee

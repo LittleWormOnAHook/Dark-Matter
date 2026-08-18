@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Red Lilly
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Red Lilly
-  icon: {fileID: 21300000, guid: 5d917045e4105534195697e70b823762, type: 3}
+  icon: {fileID: 21300000, guid: ff62b493e556f284690b6665a06db207, type: 3}
   worldPrefab: {fileID: 7022529065963280668, guid: 0aef6f19a0d28bb44ac95e397c4aa5d7, type: 3}
   maxStack: 100
   stableItemId: 26913859-22a7-4818-9488-ae8b70816b70

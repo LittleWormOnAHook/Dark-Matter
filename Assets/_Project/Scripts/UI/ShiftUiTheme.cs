@@ -220,5 +220,45 @@ namespace Project.UI
             glowImage.enabled = false;
             return glowImage;
         }
+
+        /// <summary>
+        /// Thin feathered gold border for weapon hotbar slots (keys 1–4). Uses the sliced panel frame, not circle glow.
+        /// </summary>
+        public Image EnsureWeaponSelectionBorder(Transform slotTransform, ref Image borderImage)
+        {
+            if (borderImage != null)
+                return borderImage;
+
+            Transform existing = slotTransform.Find("SelectionBorder");
+            if (existing != null)
+            {
+                borderImage = existing.GetComponent<Image>();
+                if (borderImage != null)
+                    return borderImage;
+            }
+
+            GameObject borderObject = new GameObject("SelectionBorder", typeof(RectTransform));
+            borderObject.transform.SetParent(slotTransform, false);
+            borderObject.transform.SetAsLastSibling();
+
+            RectTransform borderRect = borderObject.GetComponent<RectTransform>();
+            borderRect.anchorMin = Vector2.zero;
+            borderRect.anchorMax = Vector2.one;
+            borderRect.offsetMin = Vector2.zero;
+            borderRect.offsetMax = Vector2.zero;
+
+            borderImage = borderObject.AddComponent<Image>();
+            Sprite frame = panelFrame != null ? panelFrame : panelFrameBig;
+            if (frame != null)
+            {
+                borderImage.sprite = frame;
+                borderImage.type = Image.Type.Sliced;
+            }
+
+            borderImage.color = DarkMatterGenesisUiPalette.WithAlpha(highlightColor, 0.15f);
+            borderImage.raycastTarget = false;
+            borderImage.enabled = false;
+            return borderImage;
+        }
     }
 }

@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: Bio_Gel
   displayName: Bio Gel
   description: A compound created from extracted plant material and liquid Oxygen
-  icon: {fileID: 21300000, guid: 7fb82aeac8876524e880af5076600ae7, type: 3}
+  icon: {fileID: 21300000, guid: f57bcd5fd723bb24db489df06c3f9689, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: f02b2658b1dcabd4daf8fdb0d9bd91c1, type: 2}
