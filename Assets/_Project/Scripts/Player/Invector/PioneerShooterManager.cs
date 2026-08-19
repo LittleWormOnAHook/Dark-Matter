@@ -56,6 +56,7 @@ namespace Project.Player.Invector
             }
 
             PioneerInvectorRecoilUtility.ApplyShooterManagerDefaults(this);
+            PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, this);
             SuppressNativeRecoil();
             UpdateTotalAmmo();
         }

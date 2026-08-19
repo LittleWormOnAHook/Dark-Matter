@@ -1,6 +1,7 @@
 using Invector.vCharacterController;
 using Invector.vShooter;
 using Invector;
+using Invector.IK;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
@@ -34,6 +35,12 @@ namespace Project.Player.Invector
         [SerializeField, Tooltip("Extra follow distance while sprinting (slight pull-out only).")]
         private float sprintZoomOutMeters = 0.85f;
 
+        [Header("Meshy Aim Snap")]
+        [SerializeField, Tooltip("Snap ranged aim IK/arm alignment for Meshy Visual swaps instead of the slow VBOT-tuned drift.")]
+        private bool meshySnapAim = true;
+        [SerializeField, Tooltip("Only snap when a Visual/ humanoid child is present on this prefab.")]
+        private bool meshySnapAimRequiresVisual = true;
+
         private PioneerInvectorInputBridge _inputBridge;
         private EquipmentController _equipment;
         private PlayerController _playerController;
@@ -53,6 +60,7 @@ namespace Project.Player.Invector
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
+            PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, shooterManager);
             SyncPioneerCursorState();
 
             if (GameSession.HasStarted)
@@ -709,6 +717,123 @@ namespace Project.Player.Invector
                 isScopeView);
 
             animator.SetLayerWeight(shotLayer, weight);
+        }
+
+        protected override bool CanRotateAimArm()
+        {
+            if (!ShouldUseMeshySnapAim())
+                return base.CanRotateAimArm();
+
+            if (cc == null || !IsAiming || !aimConditions)
+                return false;
+
+            return cc.IsAnimatorTag("Upperbody Pose");
+        }
+
+        protected override void AlignArmToAimPosition(bool isUsingLeftHand = false)
+        {
+            if (!ShouldUseMeshySnapAim())
+            {
+                base.AlignArmToAimPosition(isUsingLeftHand);
+                return;
+            }
+
+            if (!shooterManager)
+                return;
+
+            if (leftArmAim == null)
+                leftArmAim = new vArmAimAlign(leftUpperArm, leftLowerArm, leftHand);
+            if (rightArmAim == null)
+                rightArmAim = new vArmAimAlign(rightUpperArm, rightLowerArm, rightHand);
+
+            vArmAimAlign arm = isUsingLeftHand ? leftArmAim : rightArmAim;
+            armAlignmentWeight = IsAiming && aimConditions && CanRotateAimArm() ? 1f : 0f;
+
+            if (!CurrentActiveWeapon)
+                return;
+
+            if (!shooterManager.isShooting)
+                arm.UpdateDefaultAlignment();
+            else
+                arm.RestoreToLastAlignment();
+
+            arm.smoothIKAlignmentPoint = shooterManager.smoothIKAlignmentPoint;
+            arm.aimReference = CurrentActiveWeapon.aimReference;
+            arm.smooth = shooterManager.smoothArmIKRotation;
+            arm.maxVerticalAligmentAngle = shooterManager.maxVerticalAimAngle;
+            arm.maxHorizontalAligmentAngle = shooterManager.maxHorizontalAimAngle;
+            if (shooterManager.showCheckAimGizmos)
+                arm.DrawBones(Color.blue);
+
+            arm.AlignToArmToPosition(
+                targetArmAlignmentPosition,
+                armAlignmentWeight,
+                CurrentActiveWeapon.alignRightUpperArmToAim,
+                CurrentActiveWeapon.alignRightHandToAim);
+
+            if (shooterManager.showCheckAimGizmos)
+                arm.DrawHelpers(Color.green);
+        }
+
+        protected override void UpdateIKAdjust(bool isUsingLeftHand)
+        {
+            base.UpdateIKAdjust(isUsingLeftHand);
+
+            if (!ShouldUseMeshySnapAim() || !IsAiming || IsIgnoreIK || CurrentActiveWeapon == null)
+                return;
+
+            if (isEquipping || isReloading || cc == null || cc.customAction)
+                return;
+
+            weaponIKWeight = 1f;
+        }
+
+        protected override void UpdateArmsIK(bool isUsingLeftHand = false)
+        {
+            base.UpdateArmsIK(isUsingLeftHand);
+
+            if (!ShouldUseMeshySnapAim() || !IsAiming || IsIgnoreIK || CurrentActiveWeapon == null)
+                return;
+
+            if (isEquipping || isReloading || cc == null || cc.customAction)
+                return;
+
+            supportIKWeight = 1f;
+        }
+
+        protected override void ApplyOffsetToTargetBone(IKOffsetTransform iKOffset, Transform target, bool isValidIK)
+        {
+            if (!ShouldUseMeshySnapAim() || !IsAiming)
+            {
+                base.ApplyOffsetToTargetBone(iKOffset, target, isValidIK);
+                return;
+            }
+
+            if (target == null)
+                return;
+
+            try
+            {
+                target.localPosition = isValidIK && iKOffset != null ? iKOffset.position : Vector3.zero;
+                target.localRotation = isValidIK && iKOffset != null
+                    ? Quaternion.Euler(iKOffset.eulerAngles)
+                    : Quaternion.identity;
+            }
+            catch
+            {
+                Debug.LogWarning("[PioneerShooterMeleeInput] Can't apply Meshy snap IK offset.", this);
+            }
+        }
+
+        private bool ShouldUseMeshySnapAim()
+        {
+            if (!meshySnapAim || shooterManager == null || CurrentActiveWeapon == null)
+                return false;
+
+            if (!meshySnapAimRequiresVisual)
+                return true;
+
+            return PioneerInvectorMeshyAimSnapUtility.HasMeshyVisualRoot(gameObject);
         }
 
         private static Vector2 ReadMoveVector()

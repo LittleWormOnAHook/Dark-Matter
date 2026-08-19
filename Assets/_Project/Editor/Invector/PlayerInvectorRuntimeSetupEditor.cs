@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using Invector.vCharacterController;
+using Invector.vShooter;
 using Project.Player.Invector;
 using UnityEditor;
 using UnityEngine;
@@ -39,6 +40,11 @@ namespace Project.EditorTools.Invector
             Camera gameplayCamera = PlayerInvectorRuntimeSetup.ResolveGameplayCamera(root, shooterInput);
             if (headTrack != null && gameplayCamera != null)
                 headTrack.cameraMain = gameplayCamera;
+
+            vShooterManager shooterManager = root.GetComponent<vShooterManager>();
+            PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(root, shooterManager);
+            if (shooterManager != null)
+                EditorUtility.SetDirty(shooterManager);
 
             EditorUtility.SetDirty(root);
         }

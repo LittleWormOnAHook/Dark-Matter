@@ -24,17 +24,17 @@ namespace Project.Player.Invector
             RestoreRagdollSettings(root);
 
             int remounted = EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(root);
-            if (EnemyInvectorRagdollRigRepair.HasUsableRagdollUnderAvatar(root))
-                return remounted;
 
 #if UNITY_EDITOR
-            remounted = TryRestoreRagdollFromTemplate(root);
-            if (remounted > 0)
-                return remounted;
-
-            remounted = EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(root);
+            if (!EnemyInvectorRagdollRigRepair.HasUsableRagdollUnderAvatar(root))
+            {
+                remounted = TryRestoreRagdollFromTemplate(root);
+                if (remounted <= 0)
+                    remounted = EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(root);
+            }
 #endif
 
+            EnemyInvectorRagdollRigRepair.TryStripOrphanArmaturePhysics(root);
             return remounted;
         }
 

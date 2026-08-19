@@ -42,7 +42,7 @@ namespace Project.EditorTools
                 EditorGUIUtility.PingObject(prefab);
             }
 
-            Debug.Log($"[Player Prefab Creator] Repaired {path} (BodySnaps, animation-only death, ragdoll strip).");
+            Debug.Log($"[Player Prefab Creator] Repaired {path} (BodySnaps, ragdoll remount, frozen VBOT physics strip).");
         }
 
         [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, 13)]

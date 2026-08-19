@@ -1,5 +1,11 @@
 using System.Collections.Generic;
+using Invector;
+using Invector.vMelee;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Project.AI.Invector
 {
@@ -66,6 +72,136 @@ namespace Project.AI.Invector
         }
 
         /// <summary>
+        /// Removes rigidbodies, joints, and colliders that live outside the active humanoid hips hierarchy
+        /// (e.g. frozen 3D Model/VBOT_* after a Meshy visual swap). Body hitBox triggers on the hidden stock
+        /// armature are stripped; weapon Drawn_/Holstered_ colliders are preserved.
+        /// </summary>
+        public static int TryStripOrphanArmaturePhysics(GameObject root)
+        {
+            if (root == null)
+                return 0;
+
+#if UNITY_EDITOR
+            GuardEditorSelectionBeforePlayerStrip(root);
+#endif
+
+            Transform hips = ResolveAvatarHips(root);
+            if (hips == null)
+                return 0;
+
+            Rigidbody rootBody = root.GetComponent<Rigidbody>();
+            var orphanTransforms = new HashSet<Transform>();
+
+            Rigidbody[] allBodies = root.GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < allBodies.Length; i++)
+            {
+                Rigidbody body = allBodies[i];
+                if (body == null || body == rootBody)
+                    continue;
+
+                Transform bone = body.transform;
+                if (bone == hips || bone.IsChildOf(hips))
+                    continue;
+
+                if (ShouldPreserveOrphanPhysicsNode(bone))
+                    continue;
+
+                orphanTransforms.Add(bone);
+            }
+
+            Collider[] allColliders = root.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < allColliders.Length; i++)
+            {
+                Collider collider = allColliders[i];
+                if (collider == null)
+                    continue;
+
+                Transform bone = collider.transform;
+                if (bone == root.transform)
+                    continue;
+
+                if (bone == hips || bone.IsChildOf(hips))
+                    continue;
+
+                if (ShouldPreserveOrphanPhysicsNode(bone))
+                    continue;
+
+                orphanTransforms.Add(bone);
+            }
+
+            int stripped = 0;
+            foreach (Transform orphan in orphanTransforms)
+            {
+                if (orphan == null)
+                    continue;
+
+                StripPhysicsComponents(orphan.gameObject);
+                stripped++;
+            }
+
+            stripped += StripHiddenStockArmaturePhysics(root);
+            CleanupOrphanInvectorSideEffects(root);
+
+#if UNITY_EDITOR
+            ScheduleEditorSelectionRecovery();
+#endif
+
+            return stripped;
+        }
+
+        /// <summary>
+        /// After stripping frozen VBOT physics, remove or rewire Invector behaviours that still reference
+        /// destroyed colliders/hitboxes (foot steps + melee attack objects on the stock armature).
+        /// </summary>
+        public static void CleanupOrphanInvectorSideEffects(GameObject root)
+        {
+            if (root == null)
+                return;
+
+#if UNITY_EDITOR
+            GuardEditorSelectionBeforePlayerStrip(root);
+#endif
+
+            CleanupBrokenFootStepTriggers(root);
+            CleanupBrokenMeleeAttackObjects(root);
+            RewireFootStepTriggers(root);
+        }
+
+        /// <summary>
+        /// After a Meshy visual swap the stock Invector armature stays in bind pose under 3D Model/Armature.
+        /// Strip its physics even when general orphan detection skipped body hitBox nodes.
+        /// </summary>
+        private static int StripHiddenStockArmaturePhysics(GameObject root)
+        {
+            Transform stockArmature = root.transform.Find("3D Model/Armature");
+            if (stockArmature == null)
+                return 0;
+
+            int stripped = 0;
+            Transform[] nodes = stockArmature.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                Transform node = nodes[i];
+                if (node == null || IsUnderWeaponVisualNode(node))
+                    continue;
+
+                bool hasPhysics =
+                    node.GetComponent<Rigidbody>() != null ||
+                    node.GetComponent<Collider>() != null ||
+                    node.GetComponent<CharacterJoint>() != null ||
+                    node.GetComponent<global::Invector.vMelee.vHitBox>() != null;
+
+                if (!hasPhysics)
+                    continue;
+
+                StripPhysicsComponents(node.gameObject);
+                stripped++;
+            }
+
+            return stripped;
+        }
+
+        /// <summary>
         /// Copies orphan bone physics onto matching avatar bones. Returns how many bones received physics.
         /// </summary>
         public static int TryRemountOrphanRagdollOntoAvatar(GameObject root)
@@ -74,7 +210,10 @@ namespace Project.AI.Invector
                 return 0;
 
             if (HasUsableRagdollUnderAvatar(root))
+            {
+                TryStripOrphanArmaturePhysics(root);
                 return CountBoneRigidbodiesUnderAvatarHips(root);
+            }
 
             Animator animator = root.GetComponentInChildren<Animator>(true);
             Transform hips = ResolveAvatarHips(root);
@@ -473,8 +612,62 @@ namespace Project.AI.Invector
             destJoint.connectedMassScale = sourceJoint.connectedMassScale;
         }
 
+        private static bool IsUnderWeaponVisualNode(Transform node)
+        {
+            Transform cur = node;
+            while (cur != null)
+            {
+                string name = cur.name;
+                if (name.Equals("3D Model", System.StringComparison.Ordinal))
+                    return false;
+
+                if (name.StartsWith("Drawn_", System.StringComparison.Ordinal) ||
+                    name.StartsWith("Holstered_", System.StringComparison.Ordinal) ||
+                    name.StartsWith("PioneerVisual_", System.StringComparison.Ordinal) ||
+                    name.Equals("WeaponHolders", System.StringComparison.Ordinal) ||
+                    name.Equals("RightHandlers", System.StringComparison.Ordinal) ||
+                    name.Equals("LeftHandlers", System.StringComparison.Ordinal) ||
+                    name.Equals("HandgunHolder", System.StringComparison.Ordinal) ||
+                    name.Equals("RifleHolder", System.StringComparison.Ordinal) ||
+                    name.Equals("meleeHandler", System.StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("defaultHandler", System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (cur.GetComponent<global::Invector.vMelee.vMeleeWeapon>() != null ||
+                    cur.GetComponent<global::Invector.vShooter.vShooterWeapon>() != null)
+                    return true;
+
+                cur = cur.parent;
+            }
+
+            return false;
+        }
+
+        private static bool ShouldPreserveOrphanPhysicsNode(Transform node)
+        {
+            if (node == null)
+                return false;
+
+            if (node.GetComponent<global::Invector.vCharacterController.vHeadTrackSensor>() != null)
+                return true;
+
+            if (node.name.Equals("HeadTrackSensor", System.StringComparison.Ordinal))
+                return true;
+
+            return IsUnderWeaponVisualNode(node);
+        }
+
         private static void StripPhysicsComponents(GameObject source)
         {
+            if (source == null)
+                return;
+
+            if (source.GetComponent<global::Invector.vCharacterController.vHeadTrackSensor>() != null)
+                return;
+            global::Invector.vMelee.vHitBox hitBox = source.GetComponent<global::Invector.vMelee.vHitBox>();
+            if (hitBox != null)
+                DestroyComponent(hitBox);
+
             CharacterJoint joint = source.GetComponent<CharacterJoint>();
             if (joint != null)
                 DestroyComponent(joint);
@@ -496,10 +689,329 @@ namespace Project.AI.Invector
             if (component == null)
                 return;
 
-            // Must be immediate: Awake remount is followed by physics-cache refresh /
-            // LoadBodyPart in the same frame. Deferred Destroy would leave orphan RBs
+#if UNITY_EDITOR
+            ClearEditorSelectionIfReferences(component);
+            if (EditorApplication.isPlaying)
+            {
+                Object.Destroy(component);
+                return;
+            }
+#endif
+
+            // Must be immediate in edit-mode prefab repair: Awake remount is followed by physics-cache
+            // refresh / LoadBodyPart in the same frame. Deferred Destroy would leave orphan RBs
             // in GetComponentsInChildren and ReleaseForRagdoll would wake the wrong armature.
             Object.DestroyImmediate(component);
         }
+
+        private static void CleanupBrokenFootStepTriggers(GameObject root)
+        {
+            Transform hips = ResolveAvatarHips(root);
+            vFootStepTrigger[] triggers = root.GetComponentsInChildren<vFootStepTrigger>(true);
+            for (int i = 0; i < triggers.Length; i++)
+            {
+                vFootStepTrigger trigger = triggers[i];
+                if (trigger == null)
+                    continue;
+
+                if (hips != null && trigger.transform.IsChildOf(hips))
+                {
+                    EnsureFootStepCollider(trigger);
+                    continue;
+                }
+
+                if (IsUnderStockArmature(trigger.transform, root) || trigger.GetComponent<Collider>() == null)
+                    DestroyComponent(trigger);
+            }
+        }
+
+        private static void CleanupBrokenMeleeAttackObjects(GameObject root)
+        {
+            vMeleeAttackObject[] attackObjects = root.GetComponentsInChildren<vMeleeAttackObject>(true);
+            for (int i = 0; i < attackObjects.Length; i++)
+            {
+                vMeleeAttackObject attackObject = attackObjects[i];
+                if (attackObject == null)
+                    continue;
+
+                bool onStockArmature = IsUnderStockArmature(attackObject.transform, root);
+                bool hasLiveHitBox = false;
+                if (attackObject.hitBoxes != null)
+                {
+                    for (int h = attackObject.hitBoxes.Count - 1; h >= 0; h--)
+                    {
+                        if (attackObject.hitBoxes[h] == null)
+                            attackObject.hitBoxes.RemoveAt(h);
+                        else
+                            hasLiveHitBox = true;
+                    }
+                }
+
+                if (onStockArmature || !hasLiveHitBox)
+                    DestroyComponent(attackObject);
+            }
+        }
+
+        private static void RewireFootStepTriggers(GameObject root)
+        {
+            vFootStep footStep = root.GetComponentInChildren<vFootStep>(true);
+            if (footStep == null)
+                return;
+
+            EnsureAnimatedFootStepTriggers(root, footStep);
+
+            Transform hips = ResolveAvatarHips(root);
+            vFootStepTrigger left = FindUsableFootStepTrigger(root, hips, true);
+            vFootStepTrigger right = FindUsableFootStepTrigger(root, hips, false);
+
+            if (left != null)
+                footStep.leftFootTrigger = left;
+            if (right != null)
+                footStep.rightFootTrigger = right;
+        }
+
+        private static void EnsureAnimatedFootStepTriggers(GameObject root, vFootStep footStep)
+        {
+            if (footStep == null)
+                return;
+
+            Animator animator = root.GetComponentInChildren<Animator>(true);
+            if (animator == null || !animator.isHuman)
+                return;
+
+            Transform leftFoot = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform rightFoot = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+
+            vFootStepTrigger left = EnsureFootStepTriggerOnBone(leftFoot, "leftFoot_trigger");
+            vFootStepTrigger right = EnsureFootStepTriggerOnBone(rightFoot, "rightFoot_trigger");
+
+            if (left != null)
+                footStep.leftFootTrigger = left;
+            if (right != null)
+                footStep.rightFootTrigger = right;
+        }
+
+        private static vFootStepTrigger EnsureFootStepTriggerOnBone(Transform footBone, string triggerName)
+        {
+            if (footBone == null)
+                return null;
+
+            vFootStepTrigger[] existing = footBone.GetComponentsInChildren<vFootStepTrigger>(true);
+            for (int i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] != null)
+                {
+                    EnsureFootStepCollider(existing[i]);
+                    return existing[i];
+                }
+            }
+
+            var triggerObject = new GameObject(triggerName);
+            triggerObject.tag = "Ignore Ragdoll";
+            int ignoreLayer = LayerMask.NameToLayer("Ignore Raycast");
+            if (ignoreLayer >= 0)
+                triggerObject.layer = ignoreLayer;
+            triggerObject.transform.SetParent(footBone, false);
+
+            vFootStepTrigger created = triggerObject.AddComponent<vFootStepTrigger>();
+            EnsureFootStepCollider(created);
+            return created;
+        }
+
+        private static void EnsureFootStepCollider(vFootStepTrigger trigger)
+        {
+            if (trigger == null)
+                return;
+
+            SphereCollider sphere = trigger.GetComponent<SphereCollider>();
+            if (sphere == null)
+                sphere = trigger.gameObject.AddComponent<SphereCollider>();
+
+            sphere.radius = 0.1f;
+            sphere.isTrigger = true;
+        }
+
+        private static vFootStepTrigger FindUsableFootStepTrigger(GameObject root, Transform hips, bool leftFoot)
+        {
+            string needle = leftFoot ? "left" : "right";
+            vFootStepTrigger best = null;
+            vFootStepTrigger[] triggers = root.GetComponentsInChildren<vFootStepTrigger>(true);
+            for (int i = 0; i < triggers.Length; i++)
+            {
+                vFootStepTrigger trigger = triggers[i];
+                if (trigger == null || trigger.GetComponent<Collider>() == null)
+                    continue;
+
+                if (hips != null && !trigger.transform.IsChildOf(hips))
+                    continue;
+
+                string name = trigger.name;
+                if (name.IndexOf(needle, System.StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                best = trigger;
+                if (hips != null && trigger.transform.IsChildOf(hips))
+                    return trigger;
+            }
+
+            return best;
+        }
+
+        private static bool IsUnderStockArmature(Transform node, GameObject root)
+        {
+            if (node == null || root == null)
+                return false;
+
+            Transform stockArmature = root.transform.Find("3D Model/Armature");
+            if (stockArmature == null)
+                return false;
+
+            return node == stockArmature || node.IsChildOf(stockArmature);
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Clears stale Inspector selection before VBOT physics strip destroys stock-armature components.
+        /// Call from player bootstrap Awake and prefab repair pipelines.
+        /// </summary>
+        public static void GuardEditorSelectionBeforePlayerStrip(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            Transform stockArmature = root.transform.Find("3D Model/Armature");
+            if (stockArmature != null && SelectionReferencesHierarchy(stockArmature.gameObject))
+            {
+                ClearEditorSelection();
+                return;
+            }
+
+            if (EditorApplication.isPlaying && SelectionReferencesHierarchy(root))
+                ClearEditorSelection();
+        }
+
+        private static void ClearEditorSelectionIfReferences(Object target)
+        {
+            if (target == null)
+                return;
+
+            GameObject gameObject = target is Component component ? component.gameObject : target as GameObject;
+            if (gameObject == null)
+                return;
+
+            if (SelectionReferencesGameObject(gameObject))
+                ClearEditorSelection();
+        }
+
+        private static bool SelectionReferencesGameObject(GameObject target)
+        {
+            if (target == null)
+                return false;
+
+            if (Selection.activeGameObject == target)
+                return true;
+
+            Object[] selected = Selection.objects;
+            if (selected == null)
+                return false;
+
+            for (int i = 0; i < selected.Length; i++)
+            {
+                Object obj = selected[i];
+                if (obj == null)
+                    return true;
+
+                if (obj == target)
+                    return true;
+
+                if (obj is Component component && component != null && component.gameObject == target)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool SelectionReferencesHierarchy(GameObject root)
+        {
+            if (root == null)
+                return false;
+
+            if (Selection.activeGameObject != null &&
+                IsSameHierarchy(root, Selection.activeGameObject))
+            {
+                return true;
+            }
+
+            Object[] selected = Selection.objects;
+            if (selected == null)
+                return false;
+
+            for (int i = 0; i < selected.Length; i++)
+            {
+                Object obj = selected[i];
+                if (obj == null)
+                    return true;
+
+                if (obj is GameObject gameObject && IsSameHierarchy(root, gameObject))
+                    return true;
+
+                if (obj is Component component && component != null && IsSameHierarchy(root, component.gameObject))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsSameHierarchy(GameObject root, GameObject candidate)
+        {
+            if (root == null || candidate == null)
+                return false;
+
+            return candidate == root || candidate.transform.IsChildOf(root.transform);
+        }
+
+        private static void ClearEditorSelection()
+        {
+            Selection.activeObject = null;
+            Selection.activeGameObject = null;
+            Selection.objects = System.Array.Empty<Object>();
+            ActiveEditorTracker.sharedTracker.isLocked = false;
+            ActiveEditorTracker.sharedTracker.ForceRebuild();
+        }
+
+        private static void ScheduleEditorSelectionRecovery()
+        {
+            EditorApplication.delayCall += RecoverStaleEditorSelection;
+        }
+
+        private static void RecoverStaleEditorSelection()
+        {
+            Object[] selected = Selection.objects;
+            if (selected != null)
+            {
+                for (int i = 0; i < selected.Length; i++)
+                {
+                    if (selected[i] != null)
+                        continue;
+
+                    ClearEditorSelection();
+                    return;
+                }
+            }
+
+            if (Selection.activeObject == null && Selection.activeGameObject == null)
+                return;
+
+            try
+            {
+                if (Selection.activeObject != null && Selection.activeObject.name == null)
+                    ClearEditorSelection();
+            }
+            catch (MissingReferenceException)
+            {
+                ClearEditorSelection();
+            }
+        }
+#endif
     }
 }

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Invector.vCharacterController;
 using Invector.vCamera;
+using Invector.vShooter;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -23,6 +24,9 @@ namespace Project.Player.Invector
             Camera gameplayCamera = ResolveGameplayCamera(root, shooterInput);
             if (headTrack != null && gameplayCamera != null)
                 headTrack.cameraMain = gameplayCamera;
+
+            vShooterManager shooterManager = root.GetComponent<vShooterManager>();
+            PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(root, shooterManager);
         }
 
         /// <summary>
