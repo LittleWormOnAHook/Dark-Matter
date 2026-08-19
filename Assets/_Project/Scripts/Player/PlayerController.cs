@@ -68,6 +68,7 @@ namespace Project.Player
         private bool _questDialogOpen;
         private bool _lootDialogOpen;
         private bool _buildingControlOpen;
+        private bool _shelterSessionOpen;
         private bool _opticsOpen;
         private bool _teleportPhaseLocked;
         private bool _gameplayPaused;
@@ -107,6 +108,7 @@ namespace Project.Player
         public bool IsQuestDialogOpen => _questDialogOpen;
         public bool IsLootDialogOpen => _lootDialogOpen;
         public bool IsBuildingControlOpen => _buildingControlOpen;
+        public bool IsShelterSessionOpen => _shelterSessionOpen;
         public bool IsOpticsOpen => _opticsOpen;
         /// <summary>True while binoculars freeze Invector follow distance and pin the camera to the eye.</summary>
         public bool IsBinocularCameraFrozen => _opticsOpen && _opticsPushCameraForward;
@@ -118,7 +120,7 @@ namespace Project.Player
                   && _invectorBootstrap.ThirdPersonController.input.sqrMagnitude > 0.01f
                 : _sprintInput && _moveInput.sqrMagnitude > 0.01f && _character != null && !_character.IsCrouched();
         public bool BlocksCombatInput =>
-            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked || IsGameplayPaused;
+            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _opticsOpen || _teleportPhaseLocked || IsGameplayPaused;
         public bool IsGameplayPaused => _gameplayPaused || !GameSession.HasStarted;
         public float CameraYaw => _cameraYaw;
         public float LastLookYawDelta { get; private set; }
@@ -326,6 +328,15 @@ namespace Project.Player
         public void SetBuildingControlOpen(bool open)
         {
             _buildingControlOpen = open;
+            ApplyCursorState();
+
+            if (open)
+                StopPlayerMovement();
+        }
+
+        public void SetShelterSessionOpen(bool open)
+        {
+            _shelterSessionOpen = open;
             ApplyCursorState();
 
             if (open)
@@ -678,11 +689,16 @@ namespace Project.Player
             _questDialogOpen = false;
             _lootDialogOpen = false;
             _buildingControlOpen = false;
+            _shelterSessionOpen = false;
             _gameplayPaused = false;
 
-            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
+            PlayerInput playerInput = GetComponent<PlayerInput>();
             if (playerInput != null)
+            {
                 playerInput.enabled = true;
+                if (UsesInvectorMotor())
+                    PlayerInvectorRuntimeSetup.SuppressForeignPlayerInputs(playerInput);
+            }
 
             ApplyCursorState();
         }
@@ -710,8 +726,9 @@ namespace Project.Player
         /// </summary>
         public void ApplyCursorState()
         {
+            // Shelter session keeps cursor locked for orbit look; hold-E menu frees it via building control / menu UI.
             bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
-                              _buildingControlOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f;
+                              _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f;
 
             if (_opticsOpen)
             {
@@ -729,7 +746,7 @@ namespace Project.Player
                 Cursor.visible = false;
             }
 
-            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen))
+            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen))
                 StopPlayerMovement();
         }
 
@@ -746,7 +763,7 @@ namespace Project.Player
             if (IsGameplayPaused)
                 return;
 
-            if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen && !_buildingControlOpen)
+            if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen && !_buildingControlOpen && !_shelterSessionOpen)
                 _lookInput = context.ReadValue<Vector2>();
         }
 
@@ -789,7 +806,7 @@ namespace Project.Player
             if (_survivalStats != null && _survivalStats.IsDead)
                 return;
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _opticsOpen || _teleportPhaseLocked)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _opticsOpen || _teleportPhaseLocked)
                 return;
 
             // Press E feedback — same clip as UI buttons (GameAudioProfile.buttonClickClips / keyPress).
@@ -833,7 +850,7 @@ namespace Project.Player
                 return;
             }
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _teleportPhaseLocked || IsGameplayPaused)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _teleportPhaseLocked || IsGameplayPaused)
             {
                 StopPlayerMovement();
                 return;
@@ -860,7 +877,7 @@ namespace Project.Player
             if (HasVisibleUiBlockingInput())
                 return;
 
-            if (!_journalOpen && !_mapOpen && !_lootDialogOpen && !_questDialogOpen && !_buildingControlOpen && !_gameplayPaused)
+            if (!_journalOpen && !_mapOpen && !_lootDialogOpen && !_questDialogOpen && !_buildingControlOpen && !_shelterSessionOpen && !_gameplayPaused)
                 return;
 
             EnsureGameplayInputReady();
@@ -882,6 +899,9 @@ namespace Project.Player
                 return true;
 
             if (HovercraftInteractMenuUI.IsOpen)
+                return true;
+
+            if (QuoraShelterMenuUI.IsOpen)
                 return true;
 
             if (CraftingUI.IsAnyStandaloneOpen)
@@ -908,7 +928,7 @@ namespace Project.Player
                 return;
             }
 
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || IsGameplayPaused || _character == null || _character.cameraTransform == null)
             {
                 ApplyOpticsCameraFov();
                 ApplyBinocularEyePose();
@@ -925,7 +945,7 @@ namespace Project.Player
 
         private void PollLookInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || IsGameplayPaused)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || IsGameplayPaused)
                 return;
 
             if (Mouse.current == null)
@@ -938,7 +958,7 @@ namespace Project.Player
 
         private void HandleCrouchInput()
         {
-            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _teleportPhaseLocked || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
+            if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _teleportPhaseLocked || IsGameplayPaused || _survivalStats != null && _survivalStats.IsDead)
                 return;
 
             bool wantCrouch = _crouchInput;

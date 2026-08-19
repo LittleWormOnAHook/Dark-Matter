@@ -2059,9 +2059,13 @@ namespace Project.Player.Invector
 
             if (_sharedEmptyClickClip == null)
             {
+                _sharedEmptyClickClip = Resources.Load<AudioClip>("Audio/EmptyClip_A");
 #if UNITY_EDITOR
-                _sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(
-                    "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3");
+                if (_sharedEmptyClickClip == null)
+                {
+                    _sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(
+                        "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3");
+                }
 #endif
             }
 

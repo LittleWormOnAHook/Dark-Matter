@@ -30,7 +30,7 @@ namespace Project.Player.Invector
         [SerializeField] private float runtimeMaxCameraDistance = 12f;
         [SerializeField] private float runtimeDefaultCameraDistance = 1.6f;
         [SerializeField, Tooltip("How much closer Aiming pulls vs free-look preferred zoom.")]
-        private float aimZoomPullInMeters = 0.35f;
+        private float aimZoomPullInMeters = 0.55f;
         [SerializeField, Tooltip("Extra follow distance while sprinting (slight pull-out only).")]
         private float sprintZoomOutMeters = 0.85f;
 
@@ -194,8 +194,30 @@ namespace Project.Player.Invector
 
         protected override void LateUpdate()
         {
+            if (tpCamera == null)
+            {
+                PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
+                FindCamera();
+            }
+
             base.LateUpdate();
             SyncPioneerCursorState();
+        }
+
+        protected override void CheckAimConditions()
+        {
+            if (tpCamera == null)
+            {
+                PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
+                FindCamera();
+                if (tpCamera == null)
+                {
+                    aimConditions = false;
+                    return;
+                }
+            }
+
+            base.CheckAimConditions();
         }
 
         public override void ReloadInput()
@@ -580,8 +602,17 @@ namespace Project.Player.Invector
             vThirdPersonCameraState state = tpCamera.currentState;
             state.useZoom = false;
             state.defaultDistance = _lockedAimZoom;
-            if (state.fov > 0f && state.fov < 48f)
-                state.fov = 52f;
+
+            // Narrow FOV on aim (zoom in). Old logic bumped low FOV up to 52 and felt like zoom-out.
+            if (state.fov > 0.01f)
+            {
+                float aimFovMultiplier = 0.88f;
+                ItemData weapon = _equipment != null ? _equipment.EquippedItem : null;
+                if (weapon != null && weapon.aimFovMultiplier > 0.01f)
+                    aimFovMultiplier = weapon.aimFovMultiplier;
+
+                state.fov = Mathf.Clamp(state.fov * aimFovMultiplier, 34f, state.fov);
+            }
 
             tpCamera.ForceSetZoomDistance(_lockedAimZoom);
         }

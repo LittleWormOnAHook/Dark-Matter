@@ -1,3 +1,4 @@
+using System.Collections;
 using Project.Core;
 using Project.Interaction;
 using Project.Player;
@@ -22,6 +23,7 @@ namespace Project.Player.Invector
         private MeleeCombatController _melee;
         private RangedCombatController _ranged;
         private PioneerInvectorInputBridge _invectorInput;
+        private Coroutine _activateRoutine;
 
         private void Awake()
         {
@@ -37,20 +39,47 @@ namespace Project.Player.Invector
 
         private void OnEnable()
         {
-            GameSession.GameStarted += EnsureGameplayInputActive;
+            GameSession.GameStarted += ScheduleEnsureGameplayInputActive;
 
             if (_playerInput != null)
                 _playerInput.onActionTriggered += HandleAction;
 
-            EnsureGameplayInputActive();
+            ScheduleEnsureGameplayInputActive();
         }
 
         private void OnDisable()
         {
-            GameSession.GameStarted -= EnsureGameplayInputActive;
+            GameSession.GameStarted -= ScheduleEnsureGameplayInputActive;
 
             if (_playerInput != null)
                 _playerInput.onActionTriggered -= HandleAction;
+
+            if (_activateRoutine != null)
+            {
+                StopCoroutine(_activateRoutine);
+                _activateRoutine = null;
+            }
+        }
+
+        private void ScheduleEnsureGameplayInputActive()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (_activateRoutine != null)
+                StopCoroutine(_activateRoutine);
+
+            _activateRoutine = StartCoroutine(EnsureGameplayInputActiveWhenReady());
+        }
+
+        private IEnumerator EnsureGameplayInputActiveWhenReady()
+        {
+            // PioneerPlayerInputBinder runs before PlayerInput.OnEnable (execution order -250 vs 0).
+            // Yield so PlayerInput finishes its own enable/activate pass before we touch ActivateInput.
+            yield return null;
+
+            _activateRoutine = null;
+            EnsureGameplayInputActive();
         }
 
         private void EnsureGameplayInputActive()
@@ -58,7 +87,18 @@ namespace Project.Player.Invector
             if (_playerInput == null || !GameSession.HasStarted)
                 return;
 
-            _playerInput.enabled = true;
+            if (MainMenuController.BlocksGameplayHud)
+                return;
+
+            if (_playerController != null && _playerController.IsGameplayPaused)
+                return;
+
+            if (!_playerInput.isActiveAndEnabled)
+                return;
+
+            if (_playerInput.inputIsActive)
+                return;
+
             _playerInput.ActivateInput();
         }
 

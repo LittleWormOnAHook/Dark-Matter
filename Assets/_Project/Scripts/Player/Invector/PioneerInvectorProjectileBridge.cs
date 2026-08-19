@@ -72,7 +72,9 @@ namespace Project.Player.Invector
             // double-deals damage.
             invectorWeapon.projectile = null;
 
-            ItemData weaponItem = _equipment.EquippedItem;
+            ItemData weaponItem = _equipment.DrawnWeaponItem != null
+                ? _equipment.DrawnWeaponItem
+                : _equipment.EquippedItem;
 
             // Mining tools own continuous Fire-hold beam audio/VFX via DMIMiningController.
             // Strip Invector pulse shot FX immediately and never spawn combat projectiles/sounds.

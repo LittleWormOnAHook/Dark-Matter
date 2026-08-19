@@ -1,22 +1,27 @@
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.UI;
+using Invector.vShooter;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Project.Player.Invector
 {
-        /// <summary>
-        /// Owns the R key (Input System): tap &lt;0.2s reloads, hold ≥0.2s never reloads,
-        /// hold ≥2s opens Mode Switch (tap R again to close). Pref Laser / LaserSight only show while aiming.
-        /// </summary>
-        [DisallowMultipleComponent]
-        [RequireComponent(typeof(PioneerInvectorBootstrap))]
-        public class WeaponModeSwitchController : MonoBehaviour
-        {
+    /// <summary>
+    /// Owns the R key (Input System): tap &lt;0.2s reloads, hold ≥0.2s never reloads,
+    /// hold ≥1.2s opens Mode Switch (tap R again to close). Pref Laser / LaserSight only show while aiming.
+    /// Aim lasers are driven muzzle→reticle (world space) so they match the crosshair — never barrel-only vLaserSight.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(PioneerInvectorBootstrap))]
+    [DefaultExecutionOrder(620)]
+    public class WeaponModeSwitchController : MonoBehaviour
+    {
         private const float MaxReloadTapSeconds = 0.2f;
-        private const float HoldSecondsToOpen = 2f;
+        private const float HoldSecondsToOpen = 1.2f;
+        private const float AimLaserMaxRange = 80f;
 
         private const string DrawnSurvivalRifleName = "Drawn_Survival_Rifle";
         private const string DrawnSciFiPistolName = "Drawn_Sci_Fi_Pistol";
@@ -30,6 +35,7 @@ namespace Project.Player.Invector
         private EquipmentController equipment;
         private PlayerController playerController;
         private PioneerShooterMeleeInput shooterInput;
+        private PioneerInvectorWeaponBridge weaponBridge;
         private bool holdingReload;
         private bool openedMenuThisHold;
         private float holdStartUnscaled;
@@ -39,6 +45,10 @@ namespace Project.Player.Invector
         private bool pistolLaserSightEnabled;
         private bool pistolLaserBeamEnabled;
         private bool lastAppliedAiming;
+
+        private LineRenderer activeAimLaserLine;
+        private SpriteRenderer activeAimLaserSight;
+        private Transform activeAimLaserRoot;
 
         /// <summary>Survival Rifle LaserSight (Rifles submenu).</summary>
         public bool LaserSightEnabled => rifleLaserSightEnabled;
@@ -54,6 +64,7 @@ namespace Project.Player.Invector
             equipment = GetComponent<EquipmentController>();
             playerController = GetComponent<PlayerController>();
             shooterInput = GetComponent<PioneerShooterMeleeInput>();
+            weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
             // Default OFF — lasers start deactivated until the player enables them.
             rifleLaserSightEnabled = PlayerPrefs.GetInt(PrefRifleLaserSight, 0) != 0;
             rifleLaserBeamEnabled = PlayerPrefs.GetInt(PrefRifleLaserBeam, 0) != 0;
@@ -75,6 +86,9 @@ namespace Project.Player.Invector
             if (equipment != null)
                 equipment.OnSelectedHotbarChanged -= HandleHotbarChanged;
             CancelHold();
+            // Do NOT walk the full player hierarchy here — Player_Invector is huge and
+            // domain reload OnDisable would freeze the editor for minutes.
+            ClearActiveAimLaser();
         }
 
         private void Start()
@@ -92,6 +106,19 @@ namespace Project.Player.Invector
 
             lastAppliedAiming = aiming;
             ApplyLaserModes();
+        }
+
+        private void LateUpdate()
+        {
+            if (!lastAppliedAiming || activeAimLaserRoot == null)
+                return;
+
+            // Hitscan pulse owns the stack briefly while firing — don't fight it.
+            HitscanBeamMuzzleFollow pulse = activeAimLaserRoot.GetComponent<HitscanBeamMuzzleFollow>();
+            if (pulse != null && pulse.enabled)
+                return;
+
+            UpdateActiveAimLaserToReticle();
         }
 
         private void HandleHotbarChanged(int _)
@@ -236,15 +263,32 @@ namespace Project.Player.Invector
             bool aiming = forceAiming ?? IsPlayerAiming();
             lastAppliedAiming = aiming;
 
-            ApplyLaserStack(
-                FindDrawnWeapon(DrawnSurvivalRifleName, IsSurvivalRifle),
-                rifleLaserBeamEnabled && aiming,
-                rifleLaserSightEnabled && aiming);
+            // Prefer scoped disables on known drawn weapon roots — never scan the full
+            // Player_Invector hierarchy (domain reload Awake would freeze the editor).
+            DisableLaserStacksOnKnownWeapons();
+            ClearActiveAimLaser();
 
-            ApplyLaserStack(
-                FindDrawnWeapon(DrawnSciFiPistolName, IsSciFiPistol),
-                pistolLaserBeamEnabled && aiming,
-                pistolLaserSightEnabled && aiming);
+            if (!aiming)
+                return;
+
+            ItemData drawn = equipment != null ? equipment.DrawnWeaponItem : null;
+            if (drawn == null)
+                return;
+
+            if (IsSciFiPistol(drawn))
+            {
+                BindActiveAimLaser(
+                    FindDrawnWeapon(DrawnSciFiPistolName, IsSciFiPistol),
+                    pistolLaserBeamEnabled,
+                    pistolLaserSightEnabled);
+            }
+            else if (IsSurvivalRifle(drawn))
+            {
+                BindActiveAimLaser(
+                    FindDrawnWeapon(DrawnSurvivalRifleName, IsSurvivalRifle),
+                    rifleLaserBeamEnabled,
+                    rifleLaserSightEnabled);
+            }
         }
 
         private bool IsPlayerAiming()
@@ -256,19 +300,168 @@ namespace Project.Player.Invector
             return shooterInput != null && shooterInput.IsAimingActive;
         }
 
-        private static void ApplyLaserStack(Transform drawn, bool beamEnabled, bool sightEnabled)
+        private void BindActiveAimLaser(Transform drawn, bool beamEnabled, bool sightEnabled)
         {
+            if (drawn == null || (!beamEnabled && !sightEnabled))
+                return;
+
+            if (!TryResolveLaserStack(drawn, out LineRenderer laserLine, out SpriteRenderer laserSight, out Transform laserRoot))
+                return;
+
+            activeAimLaserRoot = laserRoot;
+            activeAimLaserLine = laserLine;
+            activeAimLaserSight = laserSight;
+
+            // Barrel-forward Invector sight fights reticle alignment — keep it off while we own aim.
+            vLaserSight laserSightDriver = laserRoot != null ? laserRoot.GetComponent<vLaserSight>() : null;
+            if (laserSightDriver != null)
+                laserSightDriver.enabled = false;
+
+            if (activeAimLaserLine != null)
+            {
+                activeAimLaserLine.useWorldSpace = true;
+                activeAimLaserLine.positionCount = 2;
+                activeAimLaserLine.enabled = beamEnabled;
+            }
+
+            if (activeAimLaserSight != null)
+                activeAimLaserSight.enabled = sightEnabled;
+
+            if (beamEnabled || sightEnabled)
+                UpdateActiveAimLaserToReticle();
+        }
+
+        private void UpdateActiveAimLaserToReticle()
+        {
+            if (activeAimLaserRoot == null)
+                return;
+
+            Camera cam = playerController != null ? playerController.GameplayCamera : null;
+            if (cam == null)
+                cam = Camera.main;
+            if (cam == null)
+                return;
+
+            Vector3 origin = activeAimLaserRoot.position;
+            Vector3 direction = RangedFireSolver.ResolveMuzzleToReticleDirection(
+                cam,
+                origin,
+                AimLaserMaxRange,
+                out float aimDistance);
+            Vector3 endPoint = origin + direction * Mathf.Max(aimDistance, 0.5f);
+
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, AimLaserMaxRange, ~0, QueryTriggerInteraction.Ignore))
+                endPoint = hit.point;
+
+            if (activeAimLaserLine != null && activeAimLaserLine.enabled)
+            {
+                activeAimLaserLine.useWorldSpace = true;
+                activeAimLaserLine.positionCount = 2;
+                activeAimLaserLine.SetPosition(0, origin);
+                activeAimLaserLine.SetPosition(1, endPoint);
+            }
+
+            if (activeAimLaserSight != null && activeAimLaserSight.enabled)
+            {
+                activeAimLaserSight.transform.position = endPoint;
+                Vector3 toCam = cam.transform.position - endPoint;
+                if (toCam.sqrMagnitude > 0.0001f)
+                    activeAimLaserSight.transform.rotation = Quaternion.LookRotation(-toCam.normalized, Vector3.up);
+            }
+        }
+
+        private void ClearActiveAimLaser()
+        {
+            if (activeAimLaserLine != null)
+                activeAimLaserLine.enabled = false;
+            if (activeAimLaserSight != null)
+                activeAimLaserSight.enabled = false;
+
+            activeAimLaserLine = null;
+            activeAimLaserSight = null;
+            activeAimLaserRoot = null;
+        }
+
+        private void DisableLaserStacksOnKnownWeapons()
+        {
+            DisableLaserStacksUnder(FindNamedChild(DrawnSciFiPistolName));
+            DisableLaserStacksUnder(FindNamedChild(DrawnSurvivalRifleName));
+
+            if (equipment == null)
+                return;
+
+            ItemData drawn = equipment.DrawnWeaponItem ?? equipment.EquippedItem;
             if (drawn == null)
                 return;
 
-            if (!TryResolveLaserStack(drawn, out LineRenderer laserLine, out SpriteRenderer laserSight))
+            GameObject slot = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(transform, drawn);
+            if (slot != null)
+                DisableLaserStacksUnder(slot.transform);
+
+            if (weaponBridge != null)
+            {
+                GameObject visual = weaponBridge.TryGetWeaponInstance(drawn);
+                if (visual != null)
+                    DisableLaserStacksUnder(visual.transform);
+            }
+        }
+
+        private void DisableLaserStacksUnder(Transform root)
+        {
+            if (root == null)
                 return;
 
-            if (laserLine != null)
-                laserLine.enabled = beamEnabled;
+            LineRenderer[] lines = root.GetComponentsInChildren<LineRenderer>(true);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                LineRenderer line = lines[i];
+                if (line == null || line.gameObject == null)
+                    continue;
+                if (!line.gameObject.name.Equals("Laser", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-            if (laserSight != null)
-                laserSight.enabled = sightEnabled;
+                line.enabled = false;
+                vLaserSight sight = line.GetComponent<vLaserSight>();
+                if (sight != null)
+                    sight.enabled = false;
+            }
+
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform t = transforms[i];
+                if (t == null || !t.name.Equals("laserSight", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (t.TryGetComponent(out SpriteRenderer sr))
+                    sr.enabled = false;
+            }
+        }
+
+        private Transform FindNamedChild(string exactName)
+        {
+            if (string.IsNullOrEmpty(exactName))
+                return null;
+
+            // Shallow-first search without allocating every Transform under the player.
+            Transform direct = transform.Find(exactName);
+            if (direct != null)
+                return direct;
+
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                if (child != null && child.name.Equals(exactName, System.StringComparison.OrdinalIgnoreCase))
+                    return child;
+
+                if (child == null)
+                    continue;
+
+                Transform nested = child.Find(exactName);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
         }
 
         private void OpenModeSwitchMenu()
@@ -289,37 +482,44 @@ namespace Project.Player.Invector
                     GameObject drawnSlot = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(transform, active);
                     if (drawnSlot != null)
                         return drawnSlot.transform;
+
+                    if (weaponBridge != null)
+                    {
+                        GameObject visual = weaponBridge.TryGetWeaponInstance(active);
+                        if (visual != null)
+                            return visual.transform;
+                    }
                 }
             }
 
-            Transform[] all = GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < all.Length; i++)
-            {
-                Transform t = all[i];
-                if (t != null && t.name.Equals(drawnObjectName, System.StringComparison.OrdinalIgnoreCase))
-                    return t;
-            }
-
-            return null;
+            return FindNamedChild(drawnObjectName);
         }
 
         private static bool TryResolveLaserStack(
             Transform drawn,
             out LineRenderer laserLine,
-            out SpriteRenderer laserSight)
+            out SpriteRenderer laserSight,
+            out Transform laserRoot)
         {
             laserLine = null;
             laserSight = null;
+            laserRoot = null;
             if (drawn == null)
                 return false;
 
             Transform laser = FindChildRecursive(drawn, "Laser");
             if (laser != null)
+            {
+                laserRoot = laser;
                 laserLine = laser.GetComponent<LineRenderer>();
+            }
 
             Transform sight = FindChildRecursive(drawn, "laserSight");
             if (sight != null)
+            {
+                sight.gameObject.SetActive(true);
                 laserSight = sight.GetComponent<SpriteRenderer>();
+            }
 
             return laserLine != null || laserSight != null;
         }

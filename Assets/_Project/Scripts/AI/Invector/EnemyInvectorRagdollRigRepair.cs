@@ -180,6 +180,71 @@ namespace Project.AI.Invector
             return CountBoneRigidbodiesUnderAvatarHips(root);
         }
 
+        /// <summary>
+        /// When orphan VBOT physics were stripped, copy bone rigidbodies/joints from a template
+        /// humanoid (e.g. Player_Invector) onto the target Meshy avatar bones.
+        /// </summary>
+        public static int TryCopyRagdollFromTemplateAvatar(GameObject root, GameObject templateRoot)
+        {
+            if (root == null || templateRoot == null)
+                return 0;
+
+            if (HasUsableRagdollUnderAvatar(root))
+                return CountBoneRigidbodiesUnderAvatarHips(root);
+
+            Animator targetAnimator = root.GetComponentInChildren<Animator>(true);
+            Animator templateAnimator = templateRoot.GetComponentInChildren<Animator>(true);
+            Transform targetHips = ResolveAvatarHips(root);
+
+            if (targetAnimator == null || templateAnimator == null ||
+                !targetAnimator.isHuman || !templateAnimator.isHuman || targetHips == null)
+                return 0;
+
+            var boneMap = new Dictionary<Transform, Transform>();
+            foreach (HumanBodyBones humanBone in System.Enum.GetValues(typeof(HumanBodyBones)))
+            {
+                if (humanBone == HumanBodyBones.LastBone)
+                    continue;
+
+                Transform sourceBone = templateAnimator.GetBoneTransform(humanBone);
+                Transform destinationBone = targetAnimator.GetBoneTransform(humanBone);
+                if (sourceBone == null || destinationBone == null)
+                    continue;
+
+                Rigidbody sourceBody = sourceBone.GetComponent<Rigidbody>();
+                if (sourceBody == null)
+                    continue;
+
+                EnsureRigidbodyCopy(destinationBone.gameObject, sourceBody);
+                EnsureColliderCopies(destinationBone.gameObject, sourceBone.gameObject);
+                boneMap[sourceBone] = destinationBone;
+            }
+
+            foreach (KeyValuePair<Transform, Transform> pair in boneMap)
+            {
+                CharacterJoint sourceJoint = pair.Key.GetComponent<CharacterJoint>();
+                if (sourceJoint == null)
+                    continue;
+
+                Rigidbody connectedDestination = null;
+                if (sourceJoint.connectedBody != null &&
+                    boneMap.TryGetValue(sourceJoint.connectedBody.transform, out Transform connectedDestTransform))
+                {
+                    connectedDestination = connectedDestTransform.GetComponent<Rigidbody>();
+                }
+
+                EnsureCharacterJointCopy(
+                    pair.Value.gameObject,
+                    sourceJoint,
+                    connectedDestination,
+                    pair.Key,
+                    pair.Value);
+            }
+
+            EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(root);
+            return CountBoneRigidbodiesUnderAvatarHips(root);
+        }
+
         private static Transform ResolveAvatarHips(GameObject root)
         {
             if (root == null)

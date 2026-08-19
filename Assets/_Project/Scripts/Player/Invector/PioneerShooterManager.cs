@@ -92,9 +92,10 @@ namespace Project.Player.Invector
             if (_ammoState == null)
                 _ammoState = GetComponent<WeaponAmmoState>();
 
-            // Mining shares the handgun Invector prefab. With isInfinityAmmo, Invector keeps
-            // "succeeding" shots and will PlayOneShot(fireClip) before our projectile bridge can
-            // clear it — which sounds like the pistol Standard round when plasma is empty.
+            // Mining shares the handgun Invector prefab. Never call Invector Shoot for mining —
+            // DMIMiningController owns continuous beam audio/VFX and empty-charge clicks.
+            // base.Shoot would still run ShotEffect (fireClip / anim shot pulse) at fireRate 12
+            // and sounds like pistol gunfire whether plasma is empty or charged.
             ItemData drawn = _equipment != null ? _equipment.DrawnWeaponItem : null;
             if (drawn != null && drawn.isMiningTool)
             {
@@ -108,10 +109,9 @@ namespace Project.Player.Invector
                 }
 
                 if (_ammoState != null && _ammoState.GetActiveLoadedAmmo() <= 0)
-                {
                     GetComponent<PioneerInvectorAmmoBridge>()?.PlayDryFireClick();
-                    return;
-                }
+
+                return;
             }
 
             base.Shoot(aimPosition, applyHipfirePrecision, scopeViewMode);
