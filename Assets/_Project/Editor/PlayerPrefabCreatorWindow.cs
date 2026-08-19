@@ -45,6 +45,39 @@ namespace Project.EditorTools
             Debug.Log($"[Player Prefab Creator] Repaired {path} (BodySnaps, ragdoll remount, frozen VBOT physics strip).");
         }
 
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Dedup Player_v7 Weapon Holders", false, 15)]
+        public static void DedupPlayerV7WeaponHolders()
+        {
+            const string path = PlayerV7WeaponHolderDedupUtility.DefaultPlayerV7Path;
+            if (!EditorUtility.DisplayDialog(
+                    "Dedup Player_v7 Weapon Holders",
+                    "Creates/uses Player_v7_backup.prefab, removes duplicate Visual holder trees, " +
+                    "strips hidden VBOT armature, then runs Repair Player_v7.\n\nProceed?",
+                    "Dedup + Repair",
+                    "Cancel"))
+            {
+                return;
+            }
+
+            if (!PlayerV7WeaponHolderDedupUtility.DedupAndRepair(path, out PlayerV7WeaponHolderDedupUtility.DedupReport report))
+            {
+                EditorUtility.DisplayDialog("Player Prefab Creator", $"Dedup failed for {path}. See Console.", "OK");
+                return;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null)
+            {
+                Selection.activeObject = prefab;
+                EditorGUIUtility.PingObject(prefab);
+            }
+
+            EditorUtility.DisplayDialog(
+                "Player Prefab Creator",
+                "Player_v7 dedup complete.\n\n" + report,
+                "OK");
+        }
+
         [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, 13)]
         public static void Open()
         {

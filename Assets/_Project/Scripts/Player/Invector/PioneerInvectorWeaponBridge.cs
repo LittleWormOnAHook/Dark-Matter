@@ -702,9 +702,9 @@ namespace Project.Player.Invector
             }
 
             if (slot.drawnInstance == null)
-                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", item);
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", item);
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", item);
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);
 
             // Ranged weapons must have both authored slots. If either one is missing,
             // do not fall back to the old generated InvectorWeapon_* holster flow.
@@ -750,11 +750,11 @@ namespace Project.Player.Invector
 
             if (slot.drawnInstance == null)
             {
-                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", item);
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", item);
                 slot.cachedMuzzle = null;
             }
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", item);
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);
 
             if (slot.drawnInstance == null && slot.holsteredInstance == null)
             {
@@ -936,22 +936,140 @@ namespace Project.Player.Invector
             return null;
         }
 
-        private static GameObject FindNamedSlotInstance(Transform root, string prefix, ItemData item)
+        private static GameObject FindNamedSlotInstance(
+            PioneerInvectorWeaponBridge bridge,
+            Transform root,
+            string prefix,
+            ItemData item)
         {
-            if (item == null || string.IsNullOrEmpty(prefix))
+            if (item == null || string.IsNullOrEmpty(prefix) || root == null)
                 return null;
+
+            GameObject serialized = ResolveSerializedSlotInstance(bridge, item, prefix);
+            if (serialized != null && serialized.transform.IsChildOf(root))
+                return serialized;
 
             string itemName = MakeSafeSlotName(item.itemName, item.name);
             string assetName = MakeSafeSlotName(item.name, item.itemName);
-            Transform match = FindChildTransformByName(root, prefix + itemName);
-            if (match == null && assetName != itemName)
-                match = FindChildTransformByName(root, prefix + assetName);
-            if (match == null && !string.IsNullOrWhiteSpace(item.itemName))
-                match = FindChildTransformByName(root, prefix + item.itemName);
-            if (match == null && !string.IsNullOrWhiteSpace(item.name))
-                match = FindChildTransformByName(root, prefix + item.name);
+            string[] slotNames = BuildSlotNameCandidates(prefix, itemName, assetName, item);
 
-            return match != null ? match.gameObject : null;
+            Transform visual = root.Find("Visual");
+            if (visual != null)
+            {
+                for (int i = 0; i < slotNames.Length; i++)
+                {
+                    Transform preferred = FindWeaponSlotUnderVisual(visual, slotNames[i]);
+                    if (preferred != null)
+                        return preferred.gameObject;
+                }
+            }
+
+            for (int i = 0; i < slotNames.Length; i++)
+            {
+                Transform match = FindChildTransformByName(root, slotNames[i]);
+                if (match != null)
+                    return match.gameObject;
+            }
+
+            return null;
+        }
+
+        private static GameObject ResolveSerializedSlotInstance(
+            PioneerInvectorWeaponBridge bridge,
+            ItemData item,
+            string prefix)
+        {
+            if (bridge == null || item == null)
+                return null;
+
+            bool drawn = prefix.Equals("Drawn_", StringComparison.Ordinal);
+            RangedWeaponSlot ranged = bridge.FindSerializedRangedSlot(item);
+            if (ranged != null)
+                return drawn ? ranged.drawnInstance : ranged.holsteredInstance;
+
+            MeleeWeaponSlot melee = bridge.FindSerializedMeleeSlot(item);
+            if (melee != null)
+                return drawn ? melee.drawnInstance : melee.holsteredInstance;
+
+            return null;
+        }
+
+        private static string[] BuildSlotNameCandidates(
+            string prefix,
+            string itemName,
+            string assetName,
+            ItemData item)
+        {
+            var names = new List<string>(4);
+            AddSlotNameCandidate(names, prefix + itemName);
+            if (assetName != itemName)
+                AddSlotNameCandidate(names, prefix + assetName);
+            if (!string.IsNullOrWhiteSpace(item.itemName))
+                AddSlotNameCandidate(names, prefix + item.itemName);
+            if (!string.IsNullOrWhiteSpace(item.name))
+                AddSlotNameCandidate(names, prefix + item.name);
+
+            return names.ToArray();
+        }
+
+        private static void AddSlotNameCandidate(List<string> names, string candidate)
+        {
+            if (string.IsNullOrEmpty(candidate))
+                return;
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (names[i].Equals(candidate, StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+
+            names.Add(candidate);
+        }
+
+        private static Transform FindWeaponSlotUnderVisual(Transform visualRoot, string slotName)
+        {
+            if (visualRoot == null || string.IsNullOrEmpty(slotName))
+                return null;
+
+            Transform[] all = visualRoot.GetComponentsInChildren<Transform>(true);
+            Transform best = null;
+            int bestScore = int.MinValue;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform t = all[i];
+                if (t == null || !t.name.Equals(slotName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                int score = ScoreVisualWeaponSlotPath(t);
+                if (score > bestScore)
+                {
+                    best = t;
+                    bestScore = score;
+                }
+            }
+
+            return best;
+        }
+
+        private static int ScoreVisualWeaponSlotPath(Transform slotTransform)
+        {
+            int score = 0;
+            Transform walk = slotTransform;
+            while (walk != null)
+            {
+                if (walk.name.Equals("RightHandlers", StringComparison.Ordinal))
+                    score += 40;
+                else if (walk.name.Equals("Handlers", StringComparison.Ordinal))
+                    score += 20;
+                else if (walk.name.Equals("RightHand", StringComparison.Ordinal))
+                    score += 10;
+                else if (walk.name.Equals("R_Hand", StringComparison.Ordinal))
+                    score += 5;
+
+                walk = walk.parent;
+            }
+
+            return score;
         }
 
         public static void ApplyItemStatsToInstance(ItemData item, GameObject instance)
@@ -961,12 +1079,18 @@ namespace Project.Player.Invector
 
         public static GameObject FindPreloadedDrawnSlot(Transform root, ItemData item)
         {
-            return FindNamedSlotInstance(root, "Drawn_", item);
+            PioneerInvectorWeaponBridge bridge = root != null
+                ? root.GetComponent<PioneerInvectorWeaponBridge>()
+                : null;
+            return FindNamedSlotInstance(bridge, root, "Drawn_", item);
         }
 
         public static GameObject FindPreloadedHolsteredSlot(Transform root, ItemData item)
         {
-            return FindNamedSlotInstance(root, "Holstered_", item);
+            PioneerInvectorWeaponBridge bridge = root != null
+                ? root.GetComponent<PioneerInvectorWeaponBridge>()
+                : null;
+            return FindNamedSlotInstance(bridge, root, "Holstered_", item);
         }
 
         public static string MakeSafeSlotName(string preferred, string fallback)
@@ -1047,9 +1171,9 @@ namespace Project.Player.Invector
                 return;
 
             if (slot.drawnInstance == null)
-                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", slot.item);
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", slot.item);
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", slot.item);
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", slot.item);
         }
 
         private void ResolveRangedSlotInstances(RangedWeaponSlot slot)
@@ -1058,9 +1182,9 @@ namespace Project.Player.Invector
                 return;
 
             if (slot.drawnInstance == null)
-                slot.drawnInstance = FindNamedSlotInstance(transform, "Drawn_", slot.item);
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", slot.item);
             if (slot.holsteredInstance == null)
-                slot.holsteredInstance = FindNamedSlotInstance(transform, "Holstered_", slot.item);
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", slot.item);
         }
 
         private void CaptureAuthoredSlots<TSlot>(IReadOnlyList<TSlot> slots)
@@ -1444,6 +1568,141 @@ namespace Project.Player.Invector
             return false;
         }
 
+        private const string MiningScanConeResourcesPath = "VFX/Scan Cone";
+
+        /// <summary>
+        /// Ensures a scan cone VFX exists on the mining tool muzzle with mesh + no physics colliders.
+        /// Stays inactive until <see cref="DMIMiningResourceScanner"/> enables it during F-scan.
+        /// </summary>
+        private static void EnsureMiningScanCone(GameObject invectorInstance, Transform visual)
+        {
+            if (invectorInstance == null)
+                return;
+
+            Transform parent = ResolveMiningScanConeParent(invectorInstance, visual);
+            Transform existing = FindTransformNamed(invectorInstance.transform, "Scan Cone");
+            GameObject cone;
+
+            if (existing != null)
+            {
+                cone = existing.gameObject;
+                if (cone.transform.parent != parent)
+                {
+                    cone.transform.SetParent(parent, false);
+                    cone.transform.localPosition = Vector3.zero;
+                    cone.transform.localRotation = Quaternion.identity;
+                }
+            }
+            else
+            {
+                GameObject prefab = Resources.Load<GameObject>(MiningScanConeResourcesPath);
+                if (prefab == null)
+                    return;
+
+                cone = UnityEngine.Object.Instantiate(prefab, parent, false);
+                cone.name = "Scan Cone";
+                cone.transform.localPosition = Vector3.zero;
+                cone.transform.localRotation = Quaternion.identity;
+            }
+
+            PrepareMiningScanConeInstance(cone);
+            DisableLegacyScanCones(invectorInstance.transform, cone.transform);
+        }
+
+        private static void DisableLegacyScanCones(Transform weaponRoot, Transform activeCone)
+        {
+            if (weaponRoot == null)
+                return;
+
+            Transform[] children = weaponRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || child == activeCone)
+                    continue;
+
+                if (!child.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        private static Transform ResolveMiningScanConeParent(GameObject invectorInstance, Transform visual)
+        {
+            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null)
+                    continue;
+
+                if (child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase)
+                    || child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase)
+                    || child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                {
+                    return child;
+                }
+            }
+
+            if (visual != null)
+                return visual;
+
+            return invectorInstance.transform;
+        }
+
+        private static Transform FindTransformNamed(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrEmpty(objectName))
+                return null;
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child != null && child.name.Equals(objectName, StringComparison.OrdinalIgnoreCase))
+                    return child;
+            }
+
+            return null;
+        }
+
+        private static void PrepareMiningScanConeInstance(GameObject cone)
+        {
+            if (cone == null)
+                return;
+
+            MeshFilter meshFilter = cone.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh == null)
+            {
+                GameObject prefab = Resources.Load<GameObject>(MiningScanConeResourcesPath);
+                if (prefab != null)
+                {
+                    MeshFilter sourceFilter = prefab.GetComponent<MeshFilter>();
+                    if (sourceFilter != null)
+                        meshFilter.sharedMesh = sourceFilter.sharedMesh;
+                }
+            }
+
+            Collider[] colliders = cone.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider != null)
+                    collider.enabled = false;
+            }
+
+            Renderer[] renderers = cone.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null)
+                    renderer.enabled = false;
+            }
+
+            cone.SetActive(false);
+        }
+
         /// <summary>
         /// DM Mining Tool mesh is authored along local +X, while Invector aims along weapon +Z.
         /// Rotate the Pioneer visual so barrel shares the aim axis, keep a stable MiningBeamMuzzle
@@ -1460,6 +1719,7 @@ namespace Project.Player.Invector
             // Keep the authored visual pose — do not rewrite localPosition/euler (that moved the
             // mining pistol in-hand). Only ensure the beam muzzle exists and is bound.
             EnsureMiningBeamMuzzle(invectorInstance, visual, weaponRoot);
+            EnsureMiningScanCone(invectorInstance, visual);
 
             if (item.weaponGrip == WeaponGrip.TwoHanded)
                 AlignMiningLeftHandIk(invectorInstance, visual, weaponRoot);

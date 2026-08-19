@@ -15,22 +15,26 @@ namespace Project.Interaction
     /// <summary>
     /// Hold Fire to mine ResourceNodes with a continuous soft-locked red laser, muzzle sparks, and pass-based grants.
     /// Mining tools drain a 0–100% Plasma Fuel charge tank while Fire is held.
-    /// Sustained fire overheats after 10s (glowing red emission + smoke puff), then 3s cooloff before mining resumes.
+    /// Sustained fire overheats after 10s (red base-color heat tint + smoke puff), then 3s cooloff before mining resumes.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(600)]
     public class DMIMiningController : MonoBehaviour
     {
         private const float ProgressRetainSeconds = 4f;
-        /// <summary>Resource soft-lock / mining interaction range (meters). Shared with multi-tool F-scan.</summary>
+        /// <summary>Resource soft-lock / mining interaction range (meters).</summary>
         public const float MaxMineDistance = 6f;
+        /// <summary>F-scan identify range (meters). Wider than mining so scan works before colliders push the tool away.</summary>
+        public const float MaxScanDistance = 10f;
+        /// <summary>Minimum horizontal distance (meters) from a resource center required to start/maintain F-scan.</summary>
+        public const float MinScanStandoffDistance = 3f;
         /// <summary>Visual laser + hit FX range when not locked on a resource (meters).</summary>
         private const float MaxBeamVisualDistance = 50f;
         private const float OverheatSeconds = 10f;
         private const float CooloffSeconds = 3f;
-        private const float OverheatEmissionIntensity = 4.5f;
-        private const float OverheatVisualIntensityMultiplier = 2f;
-        private const float OverheatBaseMapBlend = 0.85f;
+        private const float OverheatBaseMapBlend = 0.92f;
+        private const float OverheatVisualIntensityMultiplier = 2.5f;
+        private const float HdrpOverheatTintBoost = 1.35f;
         private const string HitSparksPrefabPath = "Assets/_Project/Prefabs/Combat/VFX/SparksLong.prefab";
         private const string DefaultHitEffectPrefabPath = "Assets/_Project/Prefabs/Particles/Hit Effect Laser.prefab";
         private const string OverheatSmokePrefabPath = "Assets/PolygonNature/FX/FX_Prefabs/Smoke_Light_FX.prefab";
@@ -39,12 +43,9 @@ namespace Project.Interaction
         private const string DefaultContinuousLoopResourcesPath = "Audio/continuous_beam_1";
         private const float EmptyChargeSoundCooldown = 0.45f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
-        private static readonly Color OverheatTint = new Color(1f, 0.18f, 0.08f, 1f);
-        private static readonly Color OverheatEmission = new Color(1f, 0.12f, 0.04f, 1f);
+        private static readonly Color OverheatTint = new Color(1f, 0.22f, 0.08f, 1f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
-        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly int EmissiveColorId = Shader.PropertyToID("_EmissiveColor");
 
         [Header("Acquire")]
         [Tooltip("Layers used when acquiring / soft-locking ResourceNodes for mining.")]
@@ -109,9 +110,6 @@ namespace Project.Interaction
         private GameObject heatVisualRoot;
         private Renderer[] heatRenderers;
         private Color[] heatBaseColors;
-        private Color[] heatBaseEmissions;
-        private bool[] heatHadEmission;
-        private bool heatEmissionKeywordsEnabled;
         private MaterialPropertyBlock heatPropertyBlock;
 
         private void Awake()
@@ -133,6 +131,7 @@ namespace Project.Interaction
         {
             StopAllMiningFx(playStopSound: false);
             RestoreHeatTint();
+            MiningToolResourceCollisionUtility.ClearIgnoredResource();
         }
 
         private void OnDestroy()
@@ -387,40 +386,30 @@ namespace Project.Interaction
                 return;
 
             heatVisualRoot = visual;
-            heatEmissionKeywordsEnabled = false;
             heatPropertyBlock ??= new MaterialPropertyBlock();
 
             if (visual == null)
             {
                 heatRenderers = System.Array.Empty<Renderer>();
                 heatBaseColors = System.Array.Empty<Color>();
-                heatBaseEmissions = System.Array.Empty<Color>();
-                heatHadEmission = System.Array.Empty<bool>();
                 return;
             }
 
             Renderer[] found = visual.GetComponentsInChildren<Renderer>(true);
             var list = new System.Collections.Generic.List<Renderer>(found.Length);
             var colors = new System.Collections.Generic.List<Color>(found.Length);
-            var emissions = new System.Collections.Generic.List<Color>(found.Length);
-            var hadEmission = new System.Collections.Generic.List<bool>(found.Length);
             for (int i = 0; i < found.Length; i++)
             {
                 Renderer renderer = found[i];
-                if (renderer == null || renderer is ParticleSystemRenderer)
+                if (renderer == null || renderer is ParticleSystemRenderer || renderer is LineRenderer)
                     continue;
 
                 list.Add(renderer);
                 colors.Add(ReadRendererBaseColor(renderer));
-                Color emission = ReadRendererEmission(renderer, out bool hasEmission);
-                emissions.Add(emission);
-                hadEmission.Add(hasEmission);
             }
 
             heatRenderers = list.ToArray();
             heatBaseColors = colors.ToArray();
-            heatBaseEmissions = emissions.ToArray();
-            heatHadEmission = hadEmission.ToArray();
         }
 
         private Color ReadRendererBaseColor(Renderer renderer)
@@ -439,29 +428,14 @@ namespace Project.Interaction
             return Color.white;
         }
 
-        private static Color ReadRendererEmission(Renderer renderer, out bool hasEmissionProperty)
+        private static bool IsHdrpShader(Shader shader)
         {
-            hasEmissionProperty = false;
-            if (renderer == null)
-                return Color.black;
+            if (shader == null)
+                return false;
 
-            Material mat = renderer.sharedMaterial;
-            if (mat == null)
-                return Color.black;
-
-            if (mat.HasProperty(EmissionColorId))
-            {
-                hasEmissionProperty = true;
-                return mat.GetColor(EmissionColorId);
-            }
-
-            if (mat.HasProperty(EmissiveColorId))
-            {
-                hasEmissionProperty = true;
-                return mat.GetColor(EmissiveColorId);
-            }
-
-            return Color.black;
+            string name = shader.name;
+            return name.StartsWith("HDRP/", StringComparison.Ordinal)
+                   || name.StartsWith("Hidden/HDRP", StringComparison.Ordinal);
         }
 
         private void ApplyHeatTint(ItemData tool, float heat01)
@@ -472,6 +446,7 @@ namespace Project.Interaction
 
             heatPropertyBlock ??= new MaterialPropertyBlock();
             heat01 = Mathf.Clamp01(heat01);
+            float baseMapBlend = Mathf.Clamp01(heat01 * OverheatBaseMapBlend * OverheatVisualIntensityMultiplier);
 
             for (int i = 0; i < heatRenderers.Length; i++)
             {
@@ -480,53 +455,23 @@ namespace Project.Interaction
                     continue;
 
                 Color baseColor = i < heatBaseColors.Length ? heatBaseColors[i] : Color.white;
-                float baseMapBlend = Mathf.Clamp01(heat01 * OverheatBaseMapBlend * OverheatVisualIntensityMultiplier);
-                Color tinted = Color.Lerp(baseColor, OverheatTint, baseMapBlend);
+                Color tintTarget = OverheatTint;
+                Material sharedMat = renderer.sharedMaterial;
+                if (sharedMat != null && IsHdrpShader(sharedMat.shader))
+                    tintTarget *= HdrpOverheatTintBoost;
 
-                Color baseEmission = i < heatBaseEmissions.Length ? heatBaseEmissions[i] : Color.black;
-                bool authoredEmission = i < heatHadEmission.Length && heatHadEmission[i];
-                Color glow = OverheatEmission * (heat01 * OverheatEmissionIntensity * OverheatVisualIntensityMultiplier);
-                // Preserve authored emission when cooling; otherwise fade toward black.
-                Color emissionRest = authoredEmission ? baseEmission : Color.black;
-                Color emission = Color.Lerp(emissionRest, glow, heat01);
+                Color tinted = Color.Lerp(baseColor, tintTarget, baseMapBlend);
 
-                heatPropertyBlock.Clear();
-                heatPropertyBlock.SetColor(BaseColorId, tinted);
-                heatPropertyBlock.SetColor(ColorId, tinted);
-                heatPropertyBlock.SetColor(EmissionColorId, emission);
-                heatPropertyBlock.SetColor(EmissiveColorId, emission);
-                renderer.SetPropertyBlock(heatPropertyBlock);
-            }
-
-            // Enable URP emission keywords once when heat appears (materials[] allocates instances).
-            if (heat01 > 0.01f && !heatEmissionKeywordsEnabled)
-            {
-                for (int i = 0; i < heatRenderers.Length; i++)
-                    EnsureRendererEmissionEnabled(heatRenderers[i], enable: true);
-                heatEmissionKeywordsEnabled = true;
-            }
-        }
-
-        private static void EnsureRendererEmissionEnabled(Renderer renderer, bool enable)
-        {
-            if (renderer == null || !enable)
-                return;
-
-            // Touching .materials instantiates unique mats so _EMISSION can be enabled without
-            // mutating shared assets. Instances are cleaned up with the weapon GameObject.
-            Material[] mats = renderer.materials;
-            if (mats == null)
-                return;
-
-            for (int i = 0; i < mats.Length; i++)
-            {
-                Material mat = mats[i];
-                if (mat == null)
-                    continue;
-
-                mat.EnableKeyword("_EMISSION");
-                if (mat.HasProperty("_EmissionColor") || mat.HasProperty(EmissionColorId))
-                    mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                int materialCount = renderer.sharedMaterials != null && renderer.sharedMaterials.Length > 0
+                    ? renderer.sharedMaterials.Length
+                    : 1;
+                for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                {
+                    renderer.GetPropertyBlock(heatPropertyBlock, materialIndex);
+                    heatPropertyBlock.SetColor(BaseColorId, tinted);
+                    heatPropertyBlock.SetColor(ColorId, tinted);
+                    renderer.SetPropertyBlock(heatPropertyBlock, materialIndex);
+                }
             }
         }
 
@@ -535,30 +480,22 @@ namespace Project.Interaction
             if (heatRenderers == null)
                 return;
 
-            heatPropertyBlock ??= new MaterialPropertyBlock();
             for (int i = 0; i < heatRenderers.Length; i++)
             {
                 Renderer renderer = heatRenderers[i];
                 if (renderer == null)
                     continue;
 
-                Color baseColor = i < heatBaseColors.Length ? heatBaseColors[i] : Color.white;
-                Color baseEmission = i < heatBaseEmissions.Length ? heatBaseEmissions[i] : Color.black;
-
-                heatPropertyBlock.Clear();
-                heatPropertyBlock.SetColor(BaseColorId, baseColor);
-                heatPropertyBlock.SetColor(ColorId, baseColor);
-                heatPropertyBlock.SetColor(EmissionColorId, baseEmission);
-                heatPropertyBlock.SetColor(EmissiveColorId, baseEmission);
-                renderer.SetPropertyBlock(heatPropertyBlock);
+                int materialCount = renderer.sharedMaterials != null && renderer.sharedMaterials.Length > 0
+                    ? renderer.sharedMaterials.Length
+                    : 1;
+                for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                    renderer.SetPropertyBlock(null, materialIndex);
             }
 
             heatVisualRoot = null;
             heatRenderers = null;
             heatBaseColors = null;
-            heatBaseEmissions = null;
-            heatHadEmission = null;
-            heatEmissionKeywordsEnabled = false;
         }
 
         /// <summary>
@@ -967,6 +904,7 @@ namespace Project.Interaction
                         lockPoint = hit.point;
                         lockDirection = aimDir.normalized;
                         hasLock = true;
+                        MiningToolResourceCollisionUtility.PushIgnoredResource(node, transform);
                     }
                 }
             }
@@ -984,10 +922,11 @@ namespace Project.Interaction
         /// <summary>
         /// Finds the reticle ray hit on this specific mineral node, else a safe collider approximation.
         /// </summary>
-        private static bool TryGetLockPointOnNode(
+        public static bool TryGetLockPointOnNode(
             ResourceNode node,
             Vector3 aimOrigin,
             Vector3 aimDir,
+            float maxDistance,
             out Vector3 point)
         {
             point = default;
@@ -997,7 +936,7 @@ namespace Project.Interaction
             RaycastHit[] hits = Physics.RaycastAll(
                 aimOrigin,
                 aimDir,
-                MaxMineDistance,
+                maxDistance,
                 ~0,
                 QueryTriggerInteraction.Ignore);
 
@@ -1020,7 +959,7 @@ namespace Project.Interaction
             if (found)
                 return true;
 
-            Vector3 fallbackReference = aimOrigin + aimDir * Mathf.Min(MaxMineDistance, 2f);
+            Vector3 fallbackReference = aimOrigin + aimDir * Mathf.Min(maxDistance, 2f);
             Collider[] colliders = node.GetComponentsInChildren<Collider>();
             float closestSqrDistance = float.MaxValue;
             bool hasColliderFallback = false;
@@ -1031,8 +970,6 @@ namespace Project.Interaction
                 if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
                     continue;
 
-                // Unity rejects ClosestPoint on non-convex MeshColliders. Those colliders must
-                // stay non-convex so the mining reticle can raycast their mineral surface.
                 Vector3 candidate = SupportsClosestPoint(collider)
                     ? collider.ClosestPoint(fallbackReference)
                     : collider.bounds.ClosestPoint(fallbackReference);
@@ -1050,6 +987,18 @@ namespace Project.Interaction
 
             point = ResolveNodePoint(node);
             return true;
+        }
+
+        /// <summary>
+        /// Finds the reticle ray hit on this specific mineral node, else a safe collider approximation.
+        /// </summary>
+        private static bool TryGetLockPointOnNode(
+            ResourceNode node,
+            Vector3 aimOrigin,
+            Vector3 aimDir,
+            out Vector3 point)
+        {
+            return TryGetLockPointOnNode(node, aimOrigin, aimDir, MaxMineDistance, out point);
         }
 
         private static bool SupportsClosestPoint(Collider collider)
@@ -1111,8 +1060,11 @@ namespace Project.Interaction
 
         private void ClearLock()
         {
+            ResourceNode previous = lockedNode;
             hasLock = false;
             lockedNode = null;
+            if (previous != null)
+                MiningToolResourceCollisionUtility.PopIgnoredResource(previous);
         }
 
         private void EnsureVisuals()
