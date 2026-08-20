@@ -1316,6 +1316,7 @@ MonoBehaviour:
   runtimeDefaultCameraDistance: 1.6
   aimZoomPullInMeters: 0.55
   sprintZoomOutMeters: 0.85
+  aimMinCameraDistance: 0.78
   meshySnapAim: 1
   meshySnapAimRequiresVisual: 1
 --- !u!114 &6755861738323253669
