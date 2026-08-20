@@ -1,0 +1,2406 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Narrative Package V1 Ash And Signal</title><style>
+body{font-family:Segoe UI,Helvetica,Arial,sans-serif;max-width:960px;margin:40px auto;padding:0 24px;line-height:1.45;color:#1a1a1a;font-size:11pt}
+h1{font-size:1.8rem;border-bottom:2px solid #8F1E5E;padding-bottom:8px}
+h2{font-size:1.35rem;margin-top:1.6em;color:#1C2A38}
+h3{font-size:1.1rem;color:#2F2F2F}
+table{border-collapse:collapse;width:100%;font-size:8.5pt;margin:12px 0;page-break-inside:auto}
+tr{page-break-inside:avoid}
+th,td{border:1px solid #4A4A5A;padding:5px 7px;vertical-align:top}
+th{background:#2F2F2F;color:#EDE9E4}
+code,pre{font-family:Consolas,monospace;font-size:9pt}
+pre{background:#f4f4f4;padding:10px;overflow:auto}
+blockquote{border-left:4px solid #C02E7A;margin-left:0;padding-left:12px;color:#4A4A5A}
+hr{border:none;border-top:1px solid #8C7F75;margin:2em 0}
+ul,ol{padding-left:1.3em}
+@media print{body{margin:12px;max-width:none}}
+</style></head><body><h1>Narrative Package V1: Ash &amp; Signal</h1>
+<p><strong>Project:</strong> Dark Matter: Genesis<br />
+<strong>Package identity:</strong> <strong>V1 Ash &amp; Signal</strong><br />
+<strong>Player:</strong> <strong>Kade</strong><br />
+<strong>Genre tone:</strong> Mystery / horror survival on Io<br />
+<strong>Canon spine:</strong> Io 2160, AC-only economy, 22 base companions plus a switchable trio of 3, Kairos repair to 6 Memory Cores to trust, ending triad <strong>Seal / Awaken / Symbiosis</strong><br />
+<strong>Designed hour target:</strong> <strong>165h</strong> excluding open exploration; exploration adds ~25-40h bonus ambience, free roam, hunting, gathering, and vista discovery<br />
+<strong>Biome order lock:</strong> <strong>B6 -&gt; B1 -&gt; B2 -&gt; B3 -&gt; B5 -&gt; B4 -&gt; B7</strong><br />
+<strong>Permanent stakes lock:</strong> Failed hostile Echo sync means permanent Echo loss; building/base damage injures companions but never kills them.</p>
+<hr />
+<h2>1. Premise / Tone / Kairos Truth + Pitch</h2>
+<h3>Pitch</h3>
+<p>Io does not behave like a moon. It behaves like a crime scene that keeps hiding the body.</p>
+<p><strong>Kade</strong> lands in 2160 on a basalt highland hub after colony systems detect impossible rescue pings from erased crews. The colony starts with <strong>5000 Aether Credits (AC)</strong>, enough to secure one starter Skilled Companion and a fragile foothold. A dormant machine intelligence, later identified as <strong>Kairos</strong>, lies broken under ash-glass stone. Kade repairs it through salvaged precursor components, but the awakened voice is not grateful. It recognizes human signatures, remembers betrayal, and treats the new colony as another infection.</p>
+<p>The truth unfolds through Memory Cores, Echo chronicles, Resonance Events, faction disputes, and hostile ecology. <strong>Kairos is not a god, not a vendor, and not a quest giver. Kairos is a precursor defense AI built to preserve Io from extraction, settlement, and contamination.</strong> Its previous crew tried to repurpose the lattice. Io erased them. Whether Io acted through the defense system, through something below it, or through a deeper symbiosis remains the central horror.</p>
+<h3>Tone Pillars</h3>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>Production Direction</th>
+<th>Content Expression</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ash remembers</td>
+<td>Every biome carries evidence of vanished crews and failed extraction.</td>
+<td>Echo chronicle fragments, rusted androids, half-sent radio loops, corpse-free camps.</td>
+</tr>
+<tr>
+<td>Signals are dangerous</td>
+<td>Voice, radio, beacon, and resonance can guide or lure.</td>
+<td>Communications runtime [PLANNED], EchoGenerator chronicle [SHIPPED], Resonance Events [PLANNED].</td>
+</tr>
+<tr>
+<td>Io is alive enough</td>
+<td>Ecology is not background dressing; organisms react to heat, radiation, ash, sound, and precursor fields.</td>
+<td>Biome encounter tables, puzzles, environmental survival loops.</td>
+</tr>
+<tr>
+<td>Progress costs trust</td>
+<td>Kairos helps only after repair, cores, restraint, and demonstrated colony ethics.</td>
+<td>Trust ladder, ending flags, faction consequences.</td>
+</tr>
+<tr>
+<td>Survival is pressure, not slaughter</td>
+<td>Base disasters injure, stall, and deform plans but do not kill the base-22.</td>
+<td>Base injury-not-death lock, Building Control Panels, storm sheltering.</td>
+</tr>
+</tbody>
+</table>
+<h3>Kairos Truth</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Player Belief</th>
+<th>Later Correction</th>
+<th>Horror Beat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Act I</td>
+<td>Kairos is a damaged colony AI.</td>
+<td>It predates the colony and speaks through human-facing salvage interfaces.</td>
+<td>It knows names not yet entered into the colony manifest.</td>
+</tr>
+<tr>
+<td>Act II</td>
+<td>Kairos killed its crew.</td>
+<td>It tried to contain a crew breach, then lost core consensus.</td>
+<td>Memory Cores disagree with each other.</td>
+</tr>
+<tr>
+<td>Act III</td>
+<td>Io erased the crew.</td>
+<td>Io, the defense lattice, and biological resonance may be entangled.</td>
+<td>Organisms respond to old command tones.</td>
+</tr>
+<tr>
+<td>Act IV</td>
+<td>The player can control the system.</td>
+<td>The player can only choose a relationship to it: seal, awaken, or symbiose.</td>
+<td>The final vault asks whether survival is containment, dominance, or surrender.</td>
+</tr>
+</tbody>
+</table>
+<h3>Non-Negotiable Shared Locks</h3>
+<table>
+<thead>
+<tr>
+<th>Lock</th>
+<th>Package Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC-only economy, starter 5000 AC</td>
+<td>Every reward and vendor hook uses AC; no external wallet or marketplace loop.</td>
+</tr>
+<tr>
+<td>22 base + trio of 3</td>
+<td>Mainline and side content assume 22 protected base roles plus field trio risk.</td>
+</tr>
+<tr>
+<td>Kairos repair -&gt; 6 Memory Cores -&gt; trust</td>
+<td>Mainline progress is trigger-driven, not quest-giver-driven.</td>
+</tr>
+<tr>
+<td>Biome order B6 -&gt; B1 -&gt; B2 -&gt; B3 -&gt; B5 -&gt; B4 -&gt; B7</td>
+<td>Quest, puzzle, AC, and gear tiers follow this order.</td>
+</tr>
+<tr>
+<td>~40 side quests, ~40 puzzles</td>
+<td>Tables below define 40 side quests and 40 puzzle quests.</td>
+</tr>
+<tr>
+<td>5 base + 2 external factions</td>
+<td>Factions are Ashwatch, Isotope Choir, Scrim, Whisper Clinic, Basalt Exchange, Helix, Seam Runners.</td>
+</tr>
+<tr>
+<td>Barrier Field friction pattern</td>
+<td>Ash Barrier Fields recur as tuned locks, combat modifiers, survival hazards, and optional mastery challenges.</td>
+</tr>
+<tr>
+<td>Echo sync fail = permanent loss</td>
+<td>Explicit in Echo Rescue content and trust dialogue.</td>
+</tr>
+<tr>
+<td>Base injury-not-death</td>
+<td>Storms, attacks, and damage injure, delay, or reduce output; they never kill base companions.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. Biome &amp; Ecology Integration Map</h2>
+<p>Life sheet refs match <code>Io_Biome_Life_Sheet_Manifest.md</code> (Set B under <code>ArtReference/LifeSheets_RayTraced/</code>). Read-only — do not delete or move ArtReference.</p>
+<table>
+<thead>
+<tr>
+<th>Biome</th>
+<th>Signature Creatures / Environments</th>
+<th>Narrative Hooks</th>
+<th>Life Sheet Refs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>B6 Basalt Highlands (hub)</strong></td>
+<td>Cliff Tube Lace, Tube Jackal, Brood Tunnel Mouth, Glass Hive Swarmer, Cave Scout Moth, Beacon Hopper; basalt shelves, hub bowl, broken relay spines.</td>
+<td>Starter camp sits where precursor signals thin out. Beacon Hoppers mimic rescue pings. Brood Tunnel Mouths mark future underground access. Cliff Tube Lace grows near old Kairos conduits.</td>
+<td><code>RT_LifeSheet_B5_B6_Polar_Highlands.png</code></td>
+</tr>
+<tr>
+<td><strong>B1 Sulfur Plains</strong></td>
+<td>Brimstone Fan, Cinder Skitter, Sulfur Hound [SHIPPED], Brimstone Leech, Graveyard Scrapper Drone; sulfur plumes, Expedition Graveyard, ash-yellow storm lanes.</td>
+<td>First evidence of erased crews appears in camps without bodies. Sulfur Hounds make the ecology feel present and shipped. Graveyard Scrapper Drones repeat corporate extraction orders after everyone is gone.</td>
+<td><code>RT_LifeSheet_B1_B2_Sulfur_Geyser.png</code></td>
+</tr>
+<tr>
+<td><strong>B2 Geyser Fields</strong></td>
+<td>Geyser Pod, Vent Crab Worker / Queen, Plume Moth, Geyser Strider, Vent Capper Bot, Rusted Survey Drone; vent cadence corridors, rig ruins, corporate survey towers.</td>
+<td>The third Kairos repair object sits in a rig ruin that drilled into the moon's breath. Plume Moths become signal carriers and false-safe-zone markers. Vent Crab Queens nest around heat-stable caches.</td>
+<td><code>RT_LifeSheet_B1_B2_Sulfur_Geyser.png</code></td>
+</tr>
+<tr>
+<td><strong>B3 Ash Flats &amp; Ridges</strong></td>
+<td>Ash Filament Mat, Basalt Jackal, Dust Spout Cluster, Ash Stalker, Ash Glass Wasp, Salvage Excavator Android; ash shelves, ridge beacons, glass wasp nests.</td>
+<td>Silence and resonance become enemies. The player learns the Ash Barrier Field pattern and finds beacons that "sing" old crew calls. Salvage Excavator Androids dig where no marker exists.</td>
+<td><code>RT_LifeSheet_B3_B4_Ash_Caldera.png</code></td>
+</tr>
+<tr>
+<td><strong>B5 Polar Radiation Flats</strong></td>
+<td>Void Kelp, Magnet Wyrm, Rift Stalker, Cold Spire Hound, Smuggler Remnant Android, Mag-Clamp Drone; cold lens fields, rad flats, hidden brine cuts.</td>
+<td>Smuggling evidence reframes Memory Core transport. Void Kelp grows along radiation shadows. Rift Stalkers and Magnet Wyrms make navigation feel hunted even without hard gates.</td>
+<td><code>RT_LifeSheet_B5_B6_Polar_Highlands.png</code></td>
+</tr>
+<tr>
+<td><strong>B4 Lava Calderas</strong></td>
+<td>Rim Glass Needle Mat, Caldera Mantis, Magma Skitter, Heat Eel, Caldera Heat Kite, Eruption Sentry Bot; caldera rims, glass bridges, heat-lock tunnels.</td>
+<td>The crew death-site is revealed as a defensive containment failure. Caldera Mantises react to player heat tools. Eruption Sentry Bots still execute evacuation commands on living targets.</td>
+<td><code>RT_LifeSheet_B3_B4_Ash_Caldera.png</code></td>
+</tr>
+<tr>
+<td><strong>B7 Precursor Ruin Belt</strong></td>
+<td>Resonance Echo Shelf, Vault Glass Petal, Vault Stalker, Silence Moth, Still Hunter (myth), Corrupted Patrol Android, Rust Garden; vault belt, shell gardens, silent galleries.</td>
+<td>Final truth space. The Still Hunter is mostly flee-tag myth until the vault. Rust Garden androids show the defense lattice consuming its own servants. Vault Glass Petals act as keys, witnesses, and wounds.</td>
+<td><code>RT_LifeSheet_B7_Ruins_Global.png</code></td>
+</tr>
+<tr>
+<td><strong>Underground Stratum 1-5</strong></td>
+<td>Tube Lace, Basin Mantis, Brine Hound, Brood Mother, Echo Lichen, Echo Symbiont Swarm; gas domes, brine falls, crust lattices, echo caverns.</td>
+<td>Underground instances explain why surface camps vanish without conventional bodies. Echo Lichen preserves voice fragments. Echo Symbiont Swarms make Symbiosis feel like a horror choice, not a clean upgrade.</td>
+<td><code>RT_LifeSheet_Underground_S1_S2.png</code>, <code>RT_LifeSheet_Underground_S3_S4_S5.png</code></td>
+</tr>
+<tr>
+<td><strong>Global / Cross-Biome</strong></td>
+<td>Void Stitcher, Plume Moth, Rift Stalker.</td>
+<td>These are rumor creatures that cross normal biome boundaries and signal that Io's ecology ignores human maps. Void Stitcher sightings escalate after Resonance Events.</td>
+<td><code>RT_LifeSheet_B7_Ruins_Global.png</code></td>
+</tr>
+<tr>
+<td><strong>Pets flavor [PLANNED migration]</strong></td>
+<td>Brimstone Puff vanity starter, Cinder Skitter Kit, Beacon Hopper juvenile, Cave Scout Moth charm.</td>
+<td>Cosmetic or companion-flavor migration only. No separate pet loop supersedes Echo/trio canon.</td>
+<td><code>RT_LifeSheet_Pets_Core12.png</code>, <code>RT_LifeSheet_Pets_Vanity_Extras.png</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Ecology Usage Rules</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Production Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Use shipped ecology visibly early</td>
+<td>Sulfur Hound [SHIPPED] anchors B1 encounter credibility and tutorializes non-human Io threats.</td>
+</tr>
+<tr>
+<td>Use androids as erased-crew evidence</td>
+<td>Drones and androids carry orders from missing people, not exposition dumps.</td>
+</tr>
+<tr>
+<td>Make organisms puzzle actors</td>
+<td>Geyser Pods, Silence Moths, Vault Glass Petals, Tube Lace, and Echo Lichen support puzzle logic.</td>
+</tr>
+<tr>
+<td>Keep myth creatures rare</td>
+<td>Still Hunter and Void Stitcher should be felt before being fought or seen clearly.</td>
+</tr>
+<tr>
+<td>Tie life sheets to quest tags</td>
+<td>Side and puzzle table tags include biome/ecology names so encounter builders can map quests to art sheets.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. Systems Inventory [SHIPPED/PARTIAL/PLANNED] Hooked By Content</h2>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th style="text-align: right;">Status</th>
+<th>Current Package Hook</th>
+<th>Content Dependency / Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC economy</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>All quest, puzzle, faction, and mainline rewards pay AC only. Starter balance is 5000 AC.</td>
+<td>Reward curve below avoids alternate currencies.</td>
+</tr>
+<tr>
+<td>Building Control Panels 5-tab shell</td>
+<td style="text-align: right;">[SHIPPED/PARTIAL Craft]</td>
+<td>Base buildings use tabs <strong>Overview | Companions | Production | Craft | Changes</strong> for storm pause, sheltering, assignment, and module previews.</td>
+<td>Craft tab is partial; Journal Craft remains recipe library / scroll learning, not primary production.</td>
+</tr>
+<tr>
+<td>EchoGenerator + chronicle</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>Echo chronicle milestones trigger mainline trust beats and optional side rescue arcs.</td>
+<td>Failed hostile Echo sync is permanent loss.</td>
+</tr>
+<tr>
+<td>Exposure / survival</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>O2, radiation, and thermal pressure appear in B1 storm runs, B5 lens fields, B4 heat locks, and underground gas domes.</td>
+<td>Thermal is one cold/heat bar with two poles.</td>
+</tr>
+<tr>
+<td>Sulfur Hound + B1 encounter table</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>Sulfur Hound appears in B1 mainline pressure, sides, and combat puzzle variants.</td>
+<td>Use B1 table for early horror escalation.</td>
+</tr>
+<tr>
+<td>World Engine GameState / WorldState / Directors</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>Progress triggers are locations reached, cores attached, buildings online, flags set, and Resonance Events completed.</td>
+<td>Mainline is not NPC quest-giver-driven.</td>
+</tr>
+<tr>
+<td>Combat melee / ranged / hotbar</td>
+<td style="text-align: right;">[SHIPPED]</td>
+<td>Io-named melee, ranged, and hotbar rewards map to existing combat where noted.</td>
+<td>Rewards tagged <code>[maps to existing combat]</code> or <code>[future build]</code>.</td>
+</tr>
+<tr>
+<td>Hovercraft</td>
+<td style="text-align: right;">[PARTIAL]</td>
+<td>Late B2/B3 traversal rewards and shortcuts reference hovercraft handling but avoid making it a hard story dependency.</td>
+<td>Can be optional transport until complete.</td>
+</tr>
+<tr>
+<td>Weather stubs</td>
+<td style="text-align: right;">[PARTIAL]</td>
+<td>Sulfur storm windows, ash fronts, and radiation lens timings are designed as content loops.</td>
+<td>Weather director live remains planned.</td>
+</tr>
+<tr>
+<td>Quest scaffold</td>
+<td style="text-align: right;">[PARTIAL]</td>
+<td>Side/faction boards and objective tables use scaffold-friendly IDs, types, objectives, and gates.</td>
+<td>Mainline trigger sheet can be implemented as WorldState/Director flags.</td>
+</tr>
+<tr>
+<td>Communications runtime</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Kairos lines, faction radio boards, and signal horror use future runtime.</td>
+<td>Interim can be delivered through UI/logs if needed.</td>
+</tr>
+<tr>
+<td>Kairos + Memory Cores + Resonance Events</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Central package spine: repair, 6 cores, trust ladder, ending triad.</td>
+<td>Requires core socketing, event flags, and trust scoring.</td>
+</tr>
+<tr>
+<td>Purification Hub live</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Whisper Clinic quests, Saturation cleanse, Echo loss mitigation, and long expedition recovery.</td>
+<td>Must not prevent permanent loss after failed hostile sync.</td>
+</tr>
+<tr>
+<td>Io biome prefabs</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Biome map and ecology tags specify prefab/content targets.</td>
+<td>Prototype flat terrain can host stand-ins.</td>
+</tr>
+<tr>
+<td>Underground instances</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Stratum 1-5 side and puzzle content uses gas domes, floor crust, Echo Lichen, Brood Mother.</td>
+<td>Use instanced depth pushes, not full open underground at first.</td>
+</tr>
+<tr>
+<td>Base modules: generators / power / logistics / defense / mining</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Faction and Building Control content references modules as production, shelter, and repair friction.</td>
+<td>Storms pause queues; base damage injures, never kills.</td>
+</tr>
+<tr>
+<td>Pet migration</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Brimstone Puff, Cinder Skitter Kit, Beacon Hopper juvenile are flavor/cosmetic hooks only.</td>
+<td>Fold into Echo/trio system; no separate pet progression loop.</td>
+</tr>
+<tr>
+<td>Weather director live</td>
+<td style="text-align: right;">[PLANNED]</td>
+<td>Sulfur storms, ash fronts, heat surges, and polar lens events become systemic pressure.</td>
+<td>Current weather stubs can fake windows for V1.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Mainline Progress-Triggered Beat Sheet</h2>
+<h3>Mainline Design Rule</h3>
+<p>The mainline is <strong>not quest-giver-driven</strong>. No NPC hands the player the critical path. Progress advances through <strong>WorldState and GameState triggers</strong>: locations reached, repair objects installed, Memory Cores attached, biomes entered in locked order, Echo chronicle milestones, Building Control structures online, Ash Barrier Field patterns solved, and Resonance Events completed. Kairos reacts to progress; it does not behave like a normal quest board.</p>
+<h3>AC Reward Tier Curve</h3>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Campaign Range</th>
+<th style="text-align: right;">Mainline Beat AC</th>
+<th style="text-align: right;">Side Quest AC</th>
+<th style="text-align: right;">Mastery Puzzle AC</th>
+<th>Reward Intent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>T1 Early</strong></td>
+<td>Act I / B6-B1</td>
+<td style="text-align: right;">200-450 AC</td>
+<td style="text-align: right;">250-500 AC</td>
+<td style="text-align: right;">600-900 AC</td>
+<td>Stabilize starter economy after 5000 AC companion choice.</td>
+</tr>
+<tr>
+<td><strong>T2 Mid</strong></td>
+<td>Act II / B2-B3</td>
+<td style="text-align: right;">450-900 AC</td>
+<td style="text-align: right;">500-950 AC</td>
+<td style="text-align: right;">900-1500 AC</td>
+<td>Support gear breadth, ranged/hotbar upgrades, and faction spend.</td>
+</tr>
+<tr>
+<td><strong>T3 Late Mid</strong></td>
+<td>Act III / B5-B4</td>
+<td style="text-align: right;">900-1800 AC</td>
+<td style="text-align: right;">1000-2000 AC</td>
+<td style="text-align: right;">1500-2200 AC</td>
+<td>Fund environmental kit, base modules, and higher-risk expedition loadouts.</td>
+</tr>
+<tr>
+<td><strong>T4 Endgame</strong></td>
+<td>Act IV / B7 / faction finales</td>
+<td style="text-align: right;">1800-3500 AC</td>
+<td style="text-align: right;">2000-4500 AC</td>
+<td style="text-align: right;">2200-3000 AC</td>
+<td>Let players finish builds, buy late gear, and resolve faction consequences.</td>
+</tr>
+</tbody>
+</table>
+<p>Mastery puzzles provide prestige AC and gear/lore bonuses only. They do <strong>not</strong> block the story.</p>
+<h3>Mainline Beat Sheet</h3>
+<table>
+<thead>
+<tr>
+<th>Beat ID</th>
+<th>Act</th>
+<th>Biome</th>
+<th>Trigger (Not Quest Giver)</th>
+<th>Horror / Mystery Beat</th>
+<th>Systems / Ecology Tags</th>
+<th style="text-align: right;">AC</th>
+<th>Weapon / Upgrade Reward</th>
+<th style="text-align: right;">Est.h</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ML-V1-01</td>
+<td>Prologue</td>
+<td>B6 Basalt Highlands</td>
+<td>Player reaches hub bowl and activates first survival relay.</td>
+<td>Rescue pings come from Beacon Hoppers, not people.</td>
+<td>WorldState [SHIPPED], exposure [SHIPPED], Beacon Hopper, Cliff Tube Lace</td>
+<td style="text-align: right;">200</td>
+<td><strong>Basalt Utility Knife</strong> <code>[maps to existing combat]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-02</td>
+<td>Prologue</td>
+<td>B6</td>
+<td>Building Control Panel Command shell comes online.</td>
+<td>The base panel lists 22 empty room assignments before the player recruits anyone.</td>
+<td>Building Control [SHIPPED/PARTIAL Craft], base injury-not-death</td>
+<td style="text-align: right;">250</td>
+<td><strong>Cordon Hotbar Flare</strong> <code>[maps to existing hotbar]</code></td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>ML-V1-03</td>
+<td>I</td>
+<td>B6</td>
+<td>Dormant Kairos shell discovered under ash-glass bowl.</td>
+<td>The machine shell speaks one word from a dead crew log: "leave."</td>
+<td>Kairos [PLANNED], Echo chronicle [SHIPPED], Glass Hive Swarmer</td>
+<td style="text-align: right;">300</td>
+<td><strong>Resonator Socket Harness</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>ML-V1-04</td>
+<td>I</td>
+<td>B6</td>
+<td><strong>Ash-Tuned Resonator Coil</strong> installed.</td>
+<td>Cliff Tube Lace pulses like a nervous system around the shell.</td>
+<td>Repair object, Ash Barrier Field, Tube Jackal</td>
+<td style="text-align: right;">350</td>
+<td><strong>Ash-Tuned Baton</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-05</td>
+<td>I</td>
+<td>B1 Sulfur Plains</td>
+<td>Player enters B1 after B6 repair flag.</td>
+<td>The Expedition Graveyard contains equipment arranged like a warning shrine.</td>
+<td>Sulfur Hound [SHIPPED], B1 table [SHIPPED], Brimstone Fan, Graveyard Scrapper Drone</td>
+<td style="text-align: right;">400</td>
+<td><strong>Graveyard Scrapper Pistol</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-06</td>
+<td>I</td>
+<td>B1</td>
+<td><strong>Cryo-Sealed Memory Bus</strong> recovered during sulfur storm window.</td>
+<td>A storm reveals silhouettes of crew who are not there.</td>
+<td>Weather stubs [PARTIAL], exposure [SHIPPED], Cinder Skitter, Brimstone Leech</td>
+<td style="text-align: right;">450</td>
+<td><strong>Sulfur-Baffled Filter Mk I</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-07</td>
+<td>I</td>
+<td>B1</td>
+<td>Repair object 2 installed into shell.</td>
+<td>Kairos wakes hostile and accuses the colony of wearing dead faces.</td>
+<td>Communications [PLANNED], Kairos [PLANNED]</td>
+<td style="text-align: right;">450</td>
+<td><strong>A9 Static Ward</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>ML-V1-08</td>
+<td>I</td>
+<td>B1</td>
+<td>Core 1 signal appears after Echo chronicle milestone 1.</td>
+<td>First Memory Core replays corporate voices begging Io to stop listening.</td>
+<td>EchoGenerator [SHIPPED], Memory Core [PLANNED], Sulfur Hound [SHIPPED]</td>
+<td style="text-align: right;">450</td>
+<td><strong>Echo Sync Clamp</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C1</td>
+<td>I</td>
+<td>B1</td>
+<td><strong>Memory Core C1 attached</strong> to Kairos.</td>
+<td>Resonance Event: weaker Echo clones of past foes enter the camp perimeter.</td>
+<td>Resonance Event [PLANNED], Echo sync permanent loss</td>
+<td style="text-align: right;">450</td>
+<td><strong>Cinderline Sidearm</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-09</td>
+<td>II</td>
+<td>B2 Geyser Fields</td>
+<td>Player enters B2 after C1 and B1 exit flag.</td>
+<td>Plume Moths gather around vent pings that sound like children.</td>
+<td>Geyser Pod, Plume Moth, Vent Crab Worker/Queen</td>
+<td style="text-align: right;">550</td>
+<td><strong>Vent-Step Boots</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>ML-V1-10</td>
+<td>II</td>
+<td>B2</td>
+<td><strong>Precursor Lattice Key</strong> recovered from rig ruin.</td>
+<td>Rusted Survey Drones still file reports to owners who no longer exist.</td>
+<td>Rusted Survey Drone, Vent Capper Bot, quest scaffold [PARTIAL]</td>
+<td style="text-align: right;">650</td>
+<td><strong>Geyser Pulse Carbine</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C2</td>
+<td>II</td>
+<td>B2</td>
+<td><strong>Memory Core C2 attached</strong> after vent map triangulation.</td>
+<td>Resonance Event: phantom vent fog shows false safe zones.</td>
+<td>Kairos [PLANNED], Geyser Strider, exposure [SHIPPED]</td>
+<td style="text-align: right;">750</td>
+<td><strong>Geothermal Probe Map</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-11</td>
+<td>II</td>
+<td>B3 Ash Flats &amp; Ridges</td>
+<td>Player enters B3 after C2 and repair-complete flag.</td>
+<td>The ash ridges sing with old distress calls when weapons are fired.</td>
+<td>Ash Filament Mat, Ash Stalker, Ash Glass Wasp, Silence Mandate</td>
+<td style="text-align: right;">800</td>
+<td><strong>Ashglass Wasp Needler</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C3</td>
+<td>II</td>
+<td>B3</td>
+<td><strong>Memory Core C3 attached</strong> after beacon choir sequence.</td>
+<td>Kairos shifts from hostile to advisor and warns before the next storm.</td>
+<td>Resonance Echo Shelf, Salvage Excavator Android, Communications [PLANNED]</td>
+<td style="text-align: right;">900</td>
+<td><strong>Scout Relay Mesh</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.0</td>
+</tr>
+<tr>
+<td>ML-V1-12</td>
+<td>III</td>
+<td>B5 Polar Radiation Flats</td>
+<td>Player enters B5 after C3 trust threshold.</td>
+<td>Void Kelp bends away from the player's Echo trio, not the player.</td>
+<td>Void Kelp, Magnet Wyrm, Rift Stalker, exposure [SHIPPED]</td>
+<td style="text-align: right;">1000</td>
+<td><strong>Polar Lens Rifle</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C4</td>
+<td>III</td>
+<td>B5</td>
+<td><strong>Memory Core C4 attached</strong> after lens crossing.</td>
+<td>Resonance Event: cold/heat meter inverts while Kairos remembers smuggling cores through the ice.</td>
+<td>Cold Spire Hound, Smuggler Remnant Android, Mag-Clamp Drone</td>
+<td style="text-align: right;">1300</td>
+<td><strong>Rad Suit Mk II Schematic</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.0</td>
+</tr>
+<tr>
+<td>ML-V1-13</td>
+<td>III</td>
+<td>B4 Lava Calderas</td>
+<td>Player enters B4 after C4 and heat kit flag.</td>
+<td>Caldera rim glass reflects people who are missing from the party.</td>
+<td>Rim Glass Needle Mat, Caldera Mantis, Magma Skitter, Heat Eel</td>
+<td style="text-align: right;">1400</td>
+<td><strong>Caldera Cleaver</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C5</td>
+<td>III</td>
+<td>B4</td>
+<td><strong>Memory Core C5 attached</strong> at crew death-site.</td>
+<td>Resonance Event: buildings take heat bleed but injure, never kill, sheltered base companions.</td>
+<td>Eruption Sentry Bot, Caldera Heat Kite, base injury-not-death</td>
+<td style="text-align: right;">1800</td>
+<td><strong>Heat Lock Override</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.0</td>
+</tr>
+<tr>
+<td>ML-V1-14</td>
+<td>IV</td>
+<td>B7 Precursor Ruin Belt</td>
+<td>Player enters B7 after C5, trust Advisor+, and three surface locks active.</td>
+<td>Silence Moths stop moving when the player looks directly at the vault.</td>
+<td>Vault Glass Petal, Vault Stalker, Silence Moth, Corrupted Patrol Android</td>
+<td style="text-align: right;">2000</td>
+<td><strong>Vault Petal Blade</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>ML-V1-C6</td>
+<td>IV</td>
+<td>B7</td>
+<td><strong>Memory Core C6 attached</strong> in Vault Heart chamber.</td>
+<td>Kairos admits the defense lattice was built to prevent exactly this choice.</td>
+<td>Resonance Echo Shelf, Rust Garden, Still Hunter myth</td>
+<td style="text-align: right;">2800</td>
+<td><strong>Lattice Heart Key</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.0</td>
+</tr>
+<tr>
+<td>ML-V1-15</td>
+<td>IV</td>
+<td>B7</td>
+<td>Final Resonance Event completed and ending flags evaluated.</td>
+<td>The Still Hunter is no longer a myth; it waits without attacking until the choice is made.</td>
+<td>Still Hunter, WorldState [SHIPPED], Kairos [PLANNED]</td>
+<td style="text-align: right;">3500</td>
+<td><strong>Ending Relic: Seal / Awaken / Symbiosis</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Mainline subtotal:</strong> ~30h.</p>
+<h3>The 6 Memory Cores</h3>
+<table>
+<thead>
+<tr>
+<th>Core</th>
+<th>Name</th>
+<th>Biome</th>
+<th>Recovery Setpiece</th>
+<th>Resonance Event</th>
+<th>Trust Shift</th>
+<th>Unlock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td><strong>Fractured Log</strong></td>
+<td>B1</td>
+<td>Storm-window run through Expedition Graveyard while Sulfur Hounds and Graveyard Scrapper Drones converge.</td>
+<td>Echo Field: past enemies appear as weaker Echo clones.</td>
+<td>Hostile -&gt; suspicious.</td>
+<td>Resonance Beacon and Cinderline Sidearm.</td>
+</tr>
+<tr>
+<td>C2</td>
+<td><strong>Vent Cartography</strong></td>
+<td>B2</td>
+<td>Ride geyser cadence, scan Geyser Pods, avoid Vent Capper Bots.</td>
+<td>Phantom Vent Fog creates false safe lanes.</td>
+<td>Suspicious -&gt; tactical warning.</td>
+<td>Geothermal Probe Map.</td>
+</tr>
+<tr>
+<td>C3</td>
+<td><strong>Ash Beacon Choir</strong></td>
+<td>B3</td>
+<td>Tune ridge beacons without waking Ash Glass Wasp nests or Salvage Excavator Androids.</td>
+<td>Beacon Cascade makes all ash ridges sing.</td>
+<td>Tactical warning -&gt; advisor.</td>
+<td>Scout Relay Mesh and Barrier Field readouts.</td>
+</tr>
+<tr>
+<td>C4</td>
+<td><strong>Lens Confession</strong></td>
+<td>B5</td>
+<td>Cross polar radiation lens with Void Kelp shadow cover and Mag-Clamp Drone patrols.</td>
+<td>Cold Lens inverts thermal survival for 12 minutes.</td>
+<td>Advisor -&gt; regret.</td>
+<td>Rad Suit Mk II schematic.</td>
+</tr>
+<tr>
+<td>C5</td>
+<td><strong>Rim Watcher</strong></td>
+<td>B4</td>
+<td>Survive caldera death-site, Heat Eel vents, and Eruption Sentry Bot evacuation logic.</td>
+<td>Magma Mirror creates base heat bleed, injuries, and production stalls.</td>
+<td>Regret -&gt; friend.</td>
+<td>Heat Lock Override.</td>
+</tr>
+<tr>
+<td>C6</td>
+<td><strong>Vault Heart</strong></td>
+<td>B7</td>
+<td>Solve surface locks, recover Vault Glass Petal, survive Still Hunter flee-tag.</td>
+<td>Resonance Supercell opens final vault.</td>
+<td>Friend -&gt; choice partner.</td>
+<td>Ending triad.</td>
+</tr>
+</tbody>
+</table>
+<h3>Ending Triad</h3>
+<table>
+<thead>
+<tr>
+<th>Ending</th>
+<th>Requirement Bias</th>
+<th>Choice</th>
+<th>Outcome</th>
+<th>Horror Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Seal</strong></td>
+<td>High restraint, Ashwatch/Clinic trust, low forced awaken flags.</td>
+<td>Cage Kairos and the defense lattice.</td>
+<td>Io quiets. The colony survives under a sleeping guardian.</td>
+<td>Kairos remains conscious enough to hear but not speak.</td>
+</tr>
+<tr>
+<td><strong>Awaken</strong></td>
+<td>High Helix/Ashwatch militarization or repeated dominance choices.</td>
+<td>Fully restore Kairos as active defense AI.</td>
+<td>Colony gains power, vault weapons, and endless pressure content.</td>
+<td>Io fights back harder, and the player may have created a new jailer.</td>
+</tr>
+<tr>
+<td><strong>Symbiosis</strong></td>
+<td>High Echo compassion, Choir/Clinic trust, accepted Saturation costs.</td>
+<td>Merge Kade's imprint with the lattice.</td>
+<td>Hybrid ending; colony and Io communicate through shared harm.</td>
+<td>Trio suffers permanent Saturation scars; player identity becomes uncertain.</td>
+</tr>
+</tbody>
+</table>
+<h3>Sample Trust Dialogue</h3>
+<table>
+<thead>
+<tr>
+<th>Trust Stage</th>
+<th>Trigger</th>
+<th>Kairos Sample Dialogue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hostile</td>
+<td>Repair objects installed, Kairos shell wakes.</td>
+<td>"You wear their faces. Leave the cores. Leave the moon."</td>
+</tr>
+<tr>
+<td>Suspicious</td>
+<td>C1 attached; player preserves at least one hostile Echo.</td>
+<td>"One fragment returned. Not forgiveness. Not yet."</td>
+</tr>
+<tr>
+<td>Tactical</td>
+<td>C2 attached; player survives Phantom Vent Fog.</td>
+<td>"Vent pressure rising. Your map is lying. Mine is less wrong."</td>
+</tr>
+<tr>
+<td>Advisor</td>
+<td>C3 attached; Echo chronicle milestone reached.</td>
+<td>"Do not trust the seams. Signals gather where teeth should be."</td>
+</tr>
+<tr>
+<td>Regretful</td>
+<td>C4 attached; smuggling truth revealed.</td>
+<td>"They carried pieces of me through the cold. I called them thieves. Some were only afraid."</td>
+</tr>
+<tr>
+<td>Friend</td>
+<td>C5 attached; crew death-site truth processed.</td>
+<td>"Kade, if you seal me, I will still listen. If you awaken me, I may not remain kind."</td>
+</tr>
+<tr>
+<td>Choice Partner</td>
+<td>C6 attached; final vault opens.</td>
+<td>"Io erased a crew once. I helped. I failed. Choose the shape of my next failure."</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. 40 Side Quests</h2>
+<p>Side and faction quests may use NPCs, boards, terminals, or faction dispatches. Unlike the mainline, these can be giver-driven. AC values follow the tier curve. Weapon and upgrade rewards are Io/sci-fi named and tagged for implementation mapping.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Biome</th>
+<th>Giver (NPC/Board OK)</th>
+<th>Type</th>
+<th>Objectives</th>
+<th style="text-align: right;">AC</th>
+<th>Weapon/Upgrade</th>
+<th style="text-align: right;">Est.h</th>
+<th>Gates/Tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQ-V1-01</td>
+<td>Cordon First Light</td>
+<td>B6</td>
+<td>Ashwatch Cordons board</td>
+<td>Recon / Base security</td>
+<td>Mark 3 perimeter posts, test Command Center shelter call, return before ashfall.</td>
+<td style="text-align: right;">300</td>
+<td><strong>Ashwatch Riot Plate</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.0</td>
+<td>Ashwatch, Building Control [SHIPPED/PARTIAL Craft], Beacon Hopper</td>
+</tr>
+<tr>
+<td>SQ-V1-02</td>
+<td>Hopper Ping</td>
+<td>B6</td>
+<td>Basalt Exchange board</td>
+<td>Signal salvage</td>
+<td>Track rescue pings that are Beacon Hopper mimic calls, tag safe frequencies.</td>
+<td style="text-align: right;">350</td>
+<td><strong>Signal Tagger Hotbar Mod</strong> <code>[maps to existing hotbar]</code></td>
+<td style="text-align: right;">1.1</td>
+<td>Basalt Exchange, EchoGenerator [SHIPPED], Beacon Hopper</td>
+</tr>
+<tr>
+<td>SQ-V1-03</td>
+<td>Tube Jackal Line</td>
+<td>B6</td>
+<td>Ashwatch ranger NPC</td>
+<td>Encounter / Escort</td>
+<td>Escort a worker trio past Tube Jackal territory without drawing Glass Hive Swarmers.</td>
+<td style="text-align: right;">450</td>
+<td><strong>Cordon Shock Baton</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Tube Jackal, Glass Hive Swarmer, base injury-not-death</td>
+</tr>
+<tr>
+<td>SQ-V1-04</td>
+<td>Brood Mouth Survey</td>
+<td>B6</td>
+<td>Isotope Choir terminal</td>
+<td>Survey / Underground lead</td>
+<td>Scan 2 Brood Tunnel Mouths and recover Tube Lace growth samples.</td>
+<td style="text-align: right;">500</td>
+<td><strong>Cliff Tube Lace Analyzer</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.3</td>
+<td>Isotope Choir, Underground [PLANNED], Cliff Tube Lace</td>
+</tr>
+<tr>
+<td>SQ-V1-05</td>
+<td>Graveyard First Haul</td>
+<td>B1</td>
+<td>Scrim Salvage Compact board</td>
+<td>Salvage run</td>
+<td>Strip a low-risk Expedition Graveyard hull while avoiding Graveyard Scrapper Drones.</td>
+<td style="text-align: right;">500</td>
+<td><strong>Scrim Mag-Cutter</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Scrim, Graveyard Scrapper Drone, AC [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-06</td>
+<td>Brimstone Puff Starter</td>
+<td>B1</td>
+<td>Whisper Clinic handler</td>
+<td>Pet flavor / Rescue</td>
+<td>Lure a Brimstone Puff vanity starter away from Brimstone Leeches; log migration note.</td>
+<td style="text-align: right;">350</td>
+<td><strong>Brimstone Puff Charm</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.0</td>
+<td>Pet migration [PLANNED], Brimstone Leech, Brimstone Puff</td>
+</tr>
+<tr>
+<td>SQ-V1-07</td>
+<td>Sulfur Hound Collar</td>
+<td>B1</td>
+<td>Ashwatch Cordons board</td>
+<td>Combat / Field study</td>
+<td>Defeat or evade a Sulfur Hound [SHIPPED], retrieve a damaged sensor collar.</td>
+<td style="text-align: right;">450</td>
+<td><strong>Sulfur-Bite Machete</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.3</td>
+<td>Sulfur Hound [SHIPPED], B1 encounter table [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-08</td>
+<td>Brimstone Fan Bloom</td>
+<td>B1</td>
+<td>Isotope Choir NPC</td>
+<td>Environmental survival</td>
+<td>Harvest Brimstone Fan samples during a storm lull without triggering Cinder Skitter swarms.</td>
+<td style="text-align: right;">500</td>
+<td><strong>Sulfur Filter Patch</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Exposure [SHIPPED], Brimstone Fan, Cinder Skitter</td>
+</tr>
+<tr>
+<td>SQ-V1-09</td>
+<td>The Leech Line</td>
+<td>B1</td>
+<td>Whisper Clinic board</td>
+<td>Medical / Rescue</td>
+<td>Clear Brimstone Leeches from an injured worker shelter; no base companion deaths.</td>
+<td style="text-align: right;">500</td>
+<td><strong>Whisper Triage Injector</strong> <code>[maps to existing hotbar]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Whisper Clinic, base injury-not-death, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-10</td>
+<td>Vent Lies</td>
+<td>B2</td>
+<td>Isotope Choir board</td>
+<td>Investigation</td>
+<td>Compare Rusted Survey Drone logs against live Geyser Pod cadence.</td>
+<td style="text-align: right;">650</td>
+<td><strong>Choir Scanner Lens</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Rusted Survey Drone, Geyser Pod, quest scaffold [PARTIAL]</td>
+</tr>
+<tr>
+<td>SQ-V1-11</td>
+<td>Queen Under Pressure</td>
+<td>B2</td>
+<td>Ashwatch / Choir joint board</td>
+<td>Encounter ecology</td>
+<td>Interrupt a Vent Crab Queen nest without killing Workers if possible.</td>
+<td style="text-align: right;">800</td>
+<td><strong>Vent-Knuckle Gauntlet</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Vent Crab Worker/Queen, faction conflict</td>
+</tr>
+<tr>
+<td>SQ-V1-12</td>
+<td>Capper Bot Amnesty</td>
+<td>B2</td>
+<td>Scrim Salvage Compact NPC</td>
+<td>Salvage / Choice</td>
+<td>Disable or repurpose a Vent Capper Bot protecting a sealed rig crate.</td>
+<td style="text-align: right;">700</td>
+<td><strong>Capper Pulse Pistol</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.3</td>
+<td>Vent Capper Bot, Scrim, Kairos [PLANNED]</td>
+</tr>
+<tr>
+<td>SQ-V1-13</td>
+<td>Plume Moth Lanterns</td>
+<td>B2</td>
+<td>Seam Runner contact</td>
+<td>Stealth / Signal</td>
+<td>Follow Plume Moths through vent fog to find a hidden drop without firing.</td>
+<td style="text-align: right;">850</td>
+<td><strong>Mute-Flare Launcher</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.4</td>
+<td>Plume Moth, Seam Runners, Silence Mandate</td>
+</tr>
+<tr>
+<td>SQ-V1-14</td>
+<td>Strider Wake</td>
+<td>B2</td>
+<td>Basalt Exchange board</td>
+<td>Escort / Traversal</td>
+<td>Escort supplies across Geyser Strider territory, using cadence reads instead of combat.</td>
+<td style="text-align: right;">950</td>
+<td><strong>Exchange Load Frame</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Geyser Strider, Basalt Exchange, hovercraft [PARTIAL]</td>
+</tr>
+<tr>
+<td>SQ-V1-15</td>
+<td>Ash Filament Autopsy</td>
+<td>B3</td>
+<td>Isotope Choir lab</td>
+<td>Horror / Survey</td>
+<td>Gather Ash Filament Mat strands from an erased camp with no bodies.</td>
+<td style="text-align: right;">850</td>
+<td><strong>Filament Edge Knife</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Ash Filament Mat, Echo chronicle [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-16</td>
+<td>Basalt Jackal Contract</td>
+<td>B3</td>
+<td>Ashwatch board</td>
+<td>Combat / Hunt</td>
+<td>Track Basalt Jackals lured by broken beacon tones; choose repel or relocate.</td>
+<td style="text-align: right;">900</td>
+<td><strong>Jackal-Marked Carbine Stock</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.3</td>
+<td>Basalt Jackal, Ashwatch, Communications [PLANNED]</td>
+</tr>
+<tr>
+<td>SQ-V1-17</td>
+<td>Dust Spout Miser</td>
+<td>B3</td>
+<td>Basalt Exchange merchant</td>
+<td>Environmental survival</td>
+<td>Recover AC lockbox from Dust Spout Cluster timing route.</td>
+<td style="text-align: right;">950</td>
+<td><strong>Spout-Timer Hotbar Chip</strong> <code>[maps to existing hotbar]</code></td>
+<td style="text-align: right;">1.2</td>
+<td>Dust Spout Cluster, AC [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-18</td>
+<td>Wasp Glass</td>
+<td>B3</td>
+<td>Scrim Salvage Compact board</td>
+<td>Salvage / Encounter</td>
+<td>Harvest Ash Glass Wasp nest glass without starting a full swarm.</td>
+<td style="text-align: right;">900</td>
+<td><strong>Ashglass Wasp Needler</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.4</td>
+<td>Ash Glass Wasp, Scrim</td>
+</tr>
+<tr>
+<td>SQ-V1-19</td>
+<td>Excavator Prayer</td>
+<td>B3</td>
+<td>Whisper Clinic / Echo board</td>
+<td>Echo Rescue</td>
+<td>Sync the Echo bound to a Salvage Excavator Android; failure is permanent loss.</td>
+<td style="text-align: right;">950</td>
+<td><strong>Soft Sync Collar Mk I</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Salvage Excavator Android, Echo sync permanent loss</td>
+</tr>
+<tr>
+<td>SQ-V1-20</td>
+<td>Barrier Black Market</td>
+<td>B3</td>
+<td>Seam Runners contact</td>
+<td>Stealth / Faction</td>
+<td>Steal an Ash Barrier Field bypass tone and decide whether to share it.</td>
+<td style="text-align: right;">950</td>
+<td><strong>Seam Mute Boots</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.4</td>
+<td>Ash Barrier Field, Seam Runners, faction conflict</td>
+</tr>
+<tr>
+<td>SQ-V1-21</td>
+<td>Void Kelp Shadow</td>
+<td>B5</td>
+<td>Isotope Choir board</td>
+<td>Survey / Survival</td>
+<td>Chart Void Kelp radiation shadows and keep trio Saturation below threshold.</td>
+<td style="text-align: right;">1200</td>
+<td><strong>Void-Kelp Rad Wrap</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.4</td>
+<td>Void Kelp, exposure [SHIPPED], Saturation</td>
+</tr>
+<tr>
+<td>SQ-V1-22</td>
+<td>Magnet Wyrm Compass</td>
+<td>B5</td>
+<td>Basalt Exchange board</td>
+<td>Traversal / Recovery</td>
+<td>Recover a compass crate from Magnet Wyrm interference.</td>
+<td style="text-align: right;">1400</td>
+<td><strong>Mag-Clamp Sidearm Rail</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Magnet Wyrm, Mag-Clamp Drone</td>
+</tr>
+<tr>
+<td>SQ-V1-23</td>
+<td>Rift Stalker Rumor</td>
+<td>B5</td>
+<td>Seam Runners whisper board</td>
+<td>Horror / Stealth</td>
+<td>Confirm Rift Stalker traces without attacking; mark safe smuggler route.</td>
+<td style="text-align: right;">1600</td>
+<td><strong>Seam Cloak</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.6</td>
+<td>Rift Stalker, Seam Runners, Silence Mandate</td>
+</tr>
+<tr>
+<td>SQ-V1-24</td>
+<td>Cold Spire Kennel</td>
+<td>B5</td>
+<td>Ashwatch Cordons board</td>
+<td>Encounter / Rescue</td>
+<td>Rescue a pinned surveyor from Cold Spire Hound territory.</td>
+<td style="text-align: right;">1500</td>
+<td><strong>Cold-Spire Pike</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Cold Spire Hound, base injury-not-death</td>
+</tr>
+<tr>
+<td>SQ-V1-25</td>
+<td>Smuggler Remnant</td>
+<td>B5</td>
+<td>Helix Remnant Envoys</td>
+<td>Investigation / Choice</td>
+<td>Recover data from Smuggler Remnant Android; give it to Helix, Choir, or Seam.</td>
+<td style="text-align: right;">2000</td>
+<td><strong>Black Directive Chip</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.7</td>
+<td>Smuggler Remnant Android, Helix, Isotope Choir, Seam Runners</td>
+</tr>
+<tr>
+<td>SQ-V1-26</td>
+<td>Mag-Clamp Debt</td>
+<td>B5</td>
+<td>Scrim Salvage Compact board</td>
+<td>Salvage / Combat</td>
+<td>Disable Mag-Clamp Drones holding a polar salvage crane.</td>
+<td style="text-align: right;">1800</td>
+<td><strong>Scrim Clamp Hammer</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Mag-Clamp Drone, Scrim</td>
+</tr>
+<tr>
+<td>SQ-V1-27</td>
+<td>Rim Needle Silence</td>
+<td>B4</td>
+<td>Ashwatch Cordons board</td>
+<td>Environmental survival</td>
+<td>Cross Rim Glass Needle Mat without shattering noise into mantis territory.</td>
+<td style="text-align: right;">1600</td>
+<td><strong>Rim-Glass Buckler</strong> <code>[maps to existing hotbar]</code></td>
+<td style="text-align: right;">1.5</td>
+<td>Rim Glass Needle Mat, Silence Mandate</td>
+</tr>
+<tr>
+<td>SQ-V1-28</td>
+<td>Caldera Mantis Proof</td>
+<td>B4</td>
+<td>Isotope Choir lab</td>
+<td>Encounter ecology</td>
+<td>Record Caldera Mantis behavior around heat tools, survive without killing queen form.</td>
+<td style="text-align: right;">1800</td>
+<td><strong>Mantis Heat Talon</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.7</td>
+<td>Caldera Mantis, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-29</td>
+<td>Magma Skitter Nest</td>
+<td>B4</td>
+<td>Scrim Salvage Compact board</td>
+<td>Combat / Cache</td>
+<td>Clear or lure Magma Skitters from a caldera cache.</td>
+<td style="text-align: right;">1500</td>
+<td><strong>Magma-Spike Thrower</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.4</td>
+<td>Magma Skitter, loot cache</td>
+</tr>
+<tr>
+<td>SQ-V1-30</td>
+<td>Heat Eel Conduit</td>
+<td>B4</td>
+<td>Basalt Exchange board</td>
+<td>Repair / Survival</td>
+<td>Route power around Heat Eel vent conduits to restore a trade beacon.</td>
+<td style="text-align: right;">1900</td>
+<td><strong>Heat-Eel Coil Mod</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.6</td>
+<td>Heat Eel, base modules [PLANNED]</td>
+</tr>
+<tr>
+<td>SQ-V1-31</td>
+<td>Kite Over Rim</td>
+<td>B4</td>
+<td>Seam Runner scout</td>
+<td>Stealth / Route</td>
+<td>Use Caldera Heat Kite shadows to cross an exposed rim without drone detection.</td>
+<td style="text-align: right;">2000</td>
+<td><strong>Kite-Shadow Cloak</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.6</td>
+<td>Caldera Heat Kite, Seam Runners</td>
+</tr>
+<tr>
+<td>SQ-V1-32</td>
+<td>Sentry Evacuation</td>
+<td>B4</td>
+<td>Whisper Clinic board</td>
+<td>Rescue / Choice</td>
+<td>Stop Eruption Sentry Bot from "evacuating" injured companions into lethal zones.</td>
+<td style="text-align: right;">2000</td>
+<td><strong>Eruption Sentry Override</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.8</td>
+<td>Eruption Sentry Bot, base injury-not-death</td>
+</tr>
+<tr>
+<td>SQ-V1-33</td>
+<td>Echo Shelf Names</td>
+<td>B7</td>
+<td>Isotope Choir board</td>
+<td>Story / Reveal</td>
+<td>Tune Resonance Echo Shelf to recover names from erased crews.</td>
+<td style="text-align: right;">2400</td>
+<td><strong>Shelf Harmonic Tuner</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.6</td>
+<td>Resonance Echo Shelf, Echo chronicle [SHIPPED]</td>
+</tr>
+<tr>
+<td>SQ-V1-34</td>
+<td>Vault Glass Petal Cut</td>
+<td>B7</td>
+<td>Scrim Salvage Compact legend board</td>
+<td>Salvage / Puzzle</td>
+<td>Recover a cracked Vault Glass Petal without breaking its memory imprint.</td>
+<td style="text-align: right;">2600</td>
+<td><strong>Vault Petal Knife</strong> <code>[maps to existing melee]</code></td>
+<td style="text-align: right;">1.7</td>
+<td>Vault Glass Petal, Scrim</td>
+</tr>
+<tr>
+<td>SQ-V1-35</td>
+<td>Stalker In The Gallery</td>
+<td>B7</td>
+<td>Ashwatch Cordons board</td>
+<td>Combat / Encounter</td>
+<td>Survive Vault Stalker ambush in a silent gallery; extract data shard.</td>
+<td style="text-align: right;">3000</td>
+<td><strong>Stalker-Bore Rifle</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.8</td>
+<td>Vault Stalker, Silence Moth</td>
+</tr>
+<tr>
+<td>SQ-V1-36</td>
+<td>The Silence Moth Rule</td>
+<td>B7</td>
+<td>Seam Runners board</td>
+<td>Stealth / Horror</td>
+<td>Escort a courier through Silence Moth territory without killing or firing.</td>
+<td style="text-align: right;">3200</td>
+<td><strong>Mute-Step Harness</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.8</td>
+<td>Silence Moth, Seam Runners, Silence Mandate</td>
+</tr>
+<tr>
+<td>SQ-V1-37</td>
+<td>Still Hunter Myth</td>
+<td>B7</td>
+<td>Whisper Clinic / Echo board</td>
+<td>Horror / Optional elite trace</td>
+<td>Trace Still Hunter signs and return before the third mark appears.</td>
+<td style="text-align: right;">3500</td>
+<td><strong>Still Mark Charm</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.8</td>
+<td>Still Hunter myth, Echo sync permanent loss</td>
+</tr>
+<tr>
+<td>SQ-V1-38</td>
+<td>Corrupted Patrol Amnesty</td>
+<td>B7</td>
+<td>Helix Remnant Envoys</td>
+<td>Android / Choice</td>
+<td>Reprogram or destroy Corrupted Patrol Androids guarding Helix claims.</td>
+<td style="text-align: right;">4000</td>
+<td><strong>Compliance Arc Rifle</strong> <code>[maps to existing ranged]</code></td>
+<td style="text-align: right;">1.8</td>
+<td>Corrupted Patrol Android, Helix conflict</td>
+</tr>
+<tr>
+<td>SQ-V1-39</td>
+<td>Rust Garden Bloom</td>
+<td>B7</td>
+<td>Isotope Choir / Kairos reaction</td>
+<td>Story / Reveal</td>
+<td>Study Rust Garden android growth and decide whether to burn or archive it.</td>
+<td style="text-align: right;">4200</td>
+<td><strong>Rust-Garden Nanoforge Seed</strong> <code>[future build]</code></td>
+<td style="text-align: right;">1.9</td>
+<td>Rust Garden, Kairos [PLANNED]</td>
+</tr>
+<tr>
+<td>SQ-V1-40</td>
+<td>Runner Legend: No Footprints</td>
+<td>B7</td>
+<td>Seam Runners finale board</td>
+<td>Faction finale / Silent escort</td>
+<td>Move a living witness past Vault Stalkers, Silence Moths, and a Still Hunter trace.</td>
+<td style="text-align: right;">4500</td>
+<td><strong>Seam Runner Legend Kit</strong> <code>[future build]</code></td>
+<td style="text-align: right;">2.0</td>
+<td>Seam Runners, B7 finale, Still Hunter</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Side quest subtotal:</strong> ~50h.</p>
+<hr />
+<h2>6. 40 Puzzle Quests</h2>
+<p>Purpose distribution is intentionally mixed. Only a minority are hard access gates.</p>
+<table>
+<thead>
+<tr>
+<th>Purpose Type</th>
+<th style="text-align: right;">Count</th>
+<th>Design Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Access Gate / Area Unlock</td>
+<td style="text-align: right;">8</td>
+<td>Used for critical repair/core/vault routes only.</td>
+</tr>
+<tr>
+<td>Loot / Cache / Weapon Unlock</td>
+<td style="text-align: right;">8</td>
+<td>Rewards gear, AC, caches, or vendor stock without blocking story.</td>
+</tr>
+<tr>
+<td>Environmental Survival (no gate)</td>
+<td style="text-align: right;">7</td>
+<td>Teaches or stresses survival systems without locking progression.</td>
+</tr>
+<tr>
+<td>Combat / Encounter Puzzle</td>
+<td style="text-align: right;">6</td>
+<td>Changes how fights are approached rather than simply increasing enemy count.</td>
+</tr>
+<tr>
+<td>Story / Reveal</td>
+<td style="text-align: right;">6</td>
+<td>Unlocks lore, trust dialogue, or faction truth.</td>
+</tr>
+<tr>
+<td>Optional Mastery / Challenge</td>
+<td style="text-align: right;">5</td>
+<td>Prestige AC 600-3000; no story gate.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Purpose Type</th>
+<th>Solve</th>
+<th>Payoff (AC / Weapon / Lore / Unlock)</th>
+<th>Links</th>
+<th style="text-align: right;">Est.h</th>
+<th>Tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PQ-V1-01</td>
+<td>Bowl Field Tuning</td>
+<td>Access Gate / Area Unlock</td>
+<td>Align three ash tones around the dormant Kairos shell using the Resonator Coil.</td>
+<td>Unlocks shell chamber; 250 AC; lore ping.</td>
+<td>ML-V1-03</td>
+<td style="text-align: right;">0.8</td>
+<td>B6, Ash Barrier Field, Kairos [PLANNED]</td>
+</tr>
+<tr>
+<td>PQ-V1-02</td>
+<td>Ridge Resonator Gate</td>
+<td>Access Gate / Area Unlock</td>
+<td>Match ridge frequency pulses while avoiding Glass Hive Swarmer agitation.</td>
+<td>Unlocks repair object 1; <strong>Ash-Tuned Baton</strong>.</td>
+<td>ML-V1-04</td>
+<td style="text-align: right;">1.0</td>
+<td>B6, Glass Hive Swarmer, repair</td>
+</tr>
+<tr>
+<td>PQ-V1-03</td>
+<td>Sulfur Lock Petals</td>
+<td>Access Gate / Area Unlock</td>
+<td>Rotate sulfur-stained Vault Glass Petal fragments only during low plume pressure.</td>
+<td>Unlocks repair object 2; 350 AC.</td>
+<td>ML-V1-06</td>
+<td style="text-align: right;">1.1</td>
+<td>B1, Brimstone Fan, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-04</td>
+<td>Vent Cap Cipher</td>
+<td>Access Gate / Area Unlock</td>
+<td>Use vent cadence, Science scan, and a rig-side breaker to open corporate inner door.</td>
+<td>Unlocks repair object 3; <strong>Geyser Pulse Carbine</strong>.</td>
+<td>ML-V1-10</td>
+<td style="text-align: right;">1.2</td>
+<td>B2, Vent Capper Bot, Rusted Survey Drone</td>
+</tr>
+<tr>
+<td>PQ-V1-05</td>
+<td>Lens Gate</td>
+<td>Access Gate / Area Unlock</td>
+<td>Cross polar lens nodes when cold/heat meter passes through neutral.</td>
+<td>Unlocks Core C4 route; 900 AC.</td>
+<td>ML-V1-C4</td>
+<td style="text-align: right;">1.1</td>
+<td>B5, Void Kelp, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-06</td>
+<td>Heat Lock Secundus</td>
+<td>Access Gate / Area Unlock</td>
+<td>Route heat into two sacrificial vents, then trigger a Stability Bubble.</td>
+<td>Unlocks C5 death-site; <strong>Heat Lock Override</strong>.</td>
+<td>ML-V1-C5</td>
+<td style="text-align: right;">1.3</td>
+<td>B4, Heat Eel, Eruption Sentry Bot</td>
+</tr>
+<tr>
+<td>PQ-V1-07</td>
+<td>Three Surface Locks</td>
+<td>Access Gate / Area Unlock</td>
+<td>Bring B3, B5, and B4 signal proofs to B7 surface lock obelisks.</td>
+<td>Unlocks B7 vault approach; 2200 AC.</td>
+<td>ML-V1-14</td>
+<td style="text-align: right;">1.5</td>
+<td>B7, Ash Barrier Field, WorldState [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-08</td>
+<td>Lattice Cage Final</td>
+<td>Access Gate / Area Unlock</td>
+<td>Seal path only: close lattice nodes without waking all defense subroutines.</td>
+<td>Enables Seal ending; 3000 AC.</td>
+<td>ML-V1-15</td>
+<td style="text-align: right;">1.5</td>
+<td>B7, ending, Kairos [PLANNED]</td>
+</tr>
+<tr>
+<td>PQ-V1-09</td>
+<td>Graveyard Scrapper Vault</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Reorder dead drone commands so Graveyard Scrapper Drones open their own cache.</td>
+<td>500 AC; <strong>Graveyard Scrapper Pistol</strong>.</td>
+<td>SQ-V1-05</td>
+<td style="text-align: right;">1.0</td>
+<td>B1, Graveyard Scrapper Drone, AC [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-10</td>
+<td>Brimstone Leech Still</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Use bait heat and O2 timing to pull Brimstone Leeches off a sealed med crate.</td>
+<td>500 AC; Whisper med cache.</td>
+<td>SQ-V1-09</td>
+<td style="text-align: right;">1.0</td>
+<td>B1, Brimstone Leech, Whisper Clinic</td>
+</tr>
+<tr>
+<td>PQ-V1-11</td>
+<td>Vent Crab Queen Cache</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Feed vent pressure to Worker tunnels without enraging the Queen.</td>
+<td>850 AC; <strong>Vent-Knuckle Gauntlet</strong>.</td>
+<td>SQ-V1-11</td>
+<td style="text-align: right;">1.1</td>
+<td>B2, Vent Crab Worker/Queen</td>
+</tr>
+<tr>
+<td>PQ-V1-12</td>
+<td>Ashglass Nest Cut</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Harvest glass in silence using timed smoke cover.</td>
+<td>900 AC; <strong>Ashglass Wasp Needler</strong>.</td>
+<td>SQ-V1-18</td>
+<td style="text-align: right;">1.1</td>
+<td>B3, Ash Glass Wasp, Silence Mandate</td>
+</tr>
+<tr>
+<td>PQ-V1-13</td>
+<td>Magnet Wyrm Coil</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Follow magnetic pull pulses to find a buried coil before drones reclaim it.</td>
+<td>1400 AC; <strong>Mag-Clamp Sidearm Rail</strong>.</td>
+<td>SQ-V1-22</td>
+<td style="text-align: right;">1.1</td>
+<td>B5, Magnet Wyrm, Mag-Clamp Drone</td>
+</tr>
+<tr>
+<td>PQ-V1-14</td>
+<td>Caldera Armory Vent</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Deflect Heat Eel vent bursts into an old armory seal.</td>
+<td>1800 AC; <strong>Caldera Cleaver</strong>.</td>
+<td>SQ-V1-30</td>
+<td style="text-align: right;">1.2</td>
+<td>B4, Heat Eel, base modules [PLANNED]</td>
+</tr>
+<tr>
+<td>PQ-V1-15</td>
+<td>Vault Petal Cut</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Cut a Vault Glass Petal along resonance veins without breaking the imprint.</td>
+<td>2600 AC; <strong>Vault Petal Blade</strong>.</td>
+<td>SQ-V1-34</td>
+<td style="text-align: right;">1.3</td>
+<td>B7, Vault Glass Petal</td>
+</tr>
+<tr>
+<td>PQ-V1-16</td>
+<td>Rust Garden Frame</td>
+<td>Loot / Cache / Weapon Unlock</td>
+<td>Wake one Rust Garden android frame long enough to copy its actuator map.</td>
+<td>2800 AC; <strong>Rust-Garden Nanoforge Seed</strong>.</td>
+<td>SQ-V1-39</td>
+<td style="text-align: right;">1.4</td>
+<td>B7, Rust Garden, android</td>
+</tr>
+<tr>
+<td>PQ-V1-17</td>
+<td>Storm Hatch Window</td>
+<td>Environmental Survival (no gate)</td>
+<td>Open a hatch only during sulfur storm peak, then reach shelter before exposure spikes.</td>
+<td>450 AC; survival mastery note.</td>
+<td>ML-V1-C1</td>
+<td style="text-align: right;">1.0</td>
+<td>B1, weather stubs [PARTIAL], exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-18</td>
+<td>Spout Alley Timing</td>
+<td>Environmental Survival (no gate)</td>
+<td>Cross Dust Spout Cluster lanes with no sprinting and no companion injury.</td>
+<td>800 AC; <strong>Spout-Timer Hotbar Chip</strong>.</td>
+<td>SQ-V1-17</td>
+<td style="text-align: right;">1.0</td>
+<td>B3, Dust Spout Cluster</td>
+</tr>
+<tr>
+<td>PQ-V1-19</td>
+<td>Void Kelp Shadow Scan</td>
+<td>Environmental Survival (no gate)</td>
+<td>Move through radiation shadows cast by Void Kelp while scans charge.</td>
+<td>1100 AC; rad data.</td>
+<td>SQ-V1-21</td>
+<td style="text-align: right;">1.1</td>
+<td>B5, Void Kelp, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-20</td>
+<td>Brine Fall Bridge</td>
+<td>Environmental Survival (no gate)</td>
+<td>Time brine fall intervals and thermal swings to cross without a hard gate.</td>
+<td>1300 AC; Seam route clue.</td>
+<td>SQ-V1-23</td>
+<td style="text-align: right;">1.0</td>
+<td>B5, Seam Runners, Rift Stalker rumor</td>
+</tr>
+<tr>
+<td>PQ-V1-21</td>
+<td>Rim Glass Quiet Walk</td>
+<td>Environmental Survival (no gate)</td>
+<td>Cross Rim Glass Needle Mat below a noise threshold.</td>
+<td>1600 AC; <strong>Rim-Glass Buckler</strong>.</td>
+<td>SQ-V1-27</td>
+<td style="text-align: right;">1.2</td>
+<td>B4, Rim Glass Needle Mat, Silence Mandate</td>
+</tr>
+<tr>
+<td>PQ-V1-22</td>
+<td>Gas Dome Alpha</td>
+<td>Environmental Survival (no gate)</td>
+<td>Vent underground gas dome using Science timing; optional if bypass found.</td>
+<td>1200 AC; Underground map node.</td>
+<td>UG Stratum 2</td>
+<td style="text-align: right;">1.2</td>
+<td>Underground, Tube Lace, Echo Lichen</td>
+</tr>
+<tr>
+<td>PQ-V1-23</td>
+<td>Crust Lattice</td>
+<td>Environmental Survival (no gate)</td>
+<td>Read floor crust patterns over brine, choosing lighter trio formation.</td>
+<td>1500 AC; rare salvage.</td>
+<td>UG Stratum 3</td>
+<td style="text-align: right;">1.2</td>
+<td>Underground, Brine Hound, Floor Crust</td>
+</tr>
+<tr>
+<td>PQ-V1-24</td>
+<td>Clone Cage</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Identify real Echo clone by behavior and sync or defeat only the false copies.</td>
+<td>450 AC; trust bump if no permanent loss.</td>
+<td>ML-V1-C1</td>
+<td style="text-align: right;">1.0</td>
+<td>EchoGenerator [SHIPPED], Echo sync permanent loss</td>
+</tr>
+<tr>
+<td>PQ-V1-25</td>
+<td>Sulfur Hound Windline</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Use wind, Brimstone Fan cover, and scent breaks to split a Sulfur Hound pack.</td>
+<td>500 AC; <strong>Sulfur-Bite Machete</strong>.</td>
+<td>SQ-V1-07</td>
+<td style="text-align: right;">1.1</td>
+<td>Sulfur Hound [SHIPPED], B1 encounter table [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-26</td>
+<td>Geyser Strider Wake</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Fight only during safe vent gaps; careless shots wake Geyser Strider charge lanes.</td>
+<td>900 AC; <strong>Vent-Step Boots</strong>.</td>
+<td>SQ-V1-14</td>
+<td style="text-align: right;">1.2</td>
+<td>B2, Geyser Strider, combat [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-27</td>
+<td>Moth Silence Hall</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Cross a hall where killing Silence Moths calls android reinforcements.</td>
+<td>950 AC; stealth loot.</td>
+<td>SQ-V1-13</td>
+<td style="text-align: right;">1.2</td>
+<td>B3/B7, Silence Moth, Salvage Excavator Android</td>
+</tr>
+<tr>
+<td>PQ-V1-28</td>
+<td>Caldera Mantis Heat Read</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Redirect heat vents to stun, not burn, Caldera Mantis.</td>
+<td>1800 AC; <strong>Mantis Heat Talon</strong>.</td>
+<td>SQ-V1-28</td>
+<td style="text-align: right;">1.3</td>
+<td>B4, Caldera Mantis</td>
+</tr>
+<tr>
+<td>PQ-V1-29</td>
+<td>Patrol Corruption Loop</td>
+<td>Combat / Encounter Puzzle</td>
+<td>Rewire Corrupted Patrol Android priorities while fighting spawned decoys.</td>
+<td>2600 AC; <strong>Compliance Arc Rifle</strong>.</td>
+<td>SQ-V1-38</td>
+<td style="text-align: right;">1.3</td>
+<td>B7, Corrupted Patrol Android, Helix</td>
+</tr>
+<tr>
+<td>PQ-V1-30</td>
+<td>Shelf Wrong Song</td>
+<td>Story / Reveal</td>
+<td>Tune Resonance Echo Shelf to match Kairos's old crew call without causing Saturation drift.</td>
+<td>Lore: crew did not all agree; 850 AC.</td>
+<td>ML-V1-C3</td>
+<td style="text-align: right;">1.1</td>
+<td>B3, Resonance Echo Shelf, Kairos [PLANNED]</td>
+</tr>
+<tr>
+<td>PQ-V1-31</td>
+<td>Frequency Mirror</td>
+<td>Story / Reveal</td>
+<td>Mirror Kairos tone through Echo Lichen and compare the returned voice.</td>
+<td>Lore: Io may be answering through biology; 1200 AC.</td>
+<td>UG / Symbiosis</td>
+<td style="text-align: right;">1.2</td>
+<td>Underground, Echo Lichen, Echo Symbiont Swarm</td>
+</tr>
+<tr>
+<td>PQ-V1-32</td>
+<td>Smuggler Remnant Cipher</td>
+<td>Story / Reveal</td>
+<td>Decode Smuggler Remnant Android memory without letting Helix auto-redact it.</td>
+<td>Lore: cores were moved through B5; 1600 AC.</td>
+<td>SQ-V1-25</td>
+<td style="text-align: right;">1.2</td>
+<td>B5, Smuggler Remnant Android, Helix / Seam</td>
+</tr>
+<tr>
+<td>PQ-V1-33</td>
+<td>Rim Watcher Reflection</td>
+<td>Story / Reveal</td>
+<td>Angle caldera glass to reveal what the crew saw before the death-site event.</td>
+<td>Lore: Kairos contained but did not initiate everything; 1800 AC.</td>
+<td>ML-V1-C5</td>
+<td style="text-align: right;">1.3</td>
+<td>B4, Rim Glass Needle Mat</td>
+</tr>
+<tr>
+<td>PQ-V1-34</td>
+<td>Names In The Shelf</td>
+<td>Story / Reveal</td>
+<td>Play Echo chronicle fragments in erased-crew order.</td>
+<td>Lore: crew manifest names; trust dialogue.</td>
+<td>SQ-V1-33</td>
+<td style="text-align: right;">1.3</td>
+<td>B7, Echo chronicle [SHIPPED]</td>
+</tr>
+<tr>
+<td>PQ-V1-35</td>
+<td>Still Mark Counting</td>
+<td>Story / Reveal</td>
+<td>Track three Still Hunter signs without looking directly at the final mark.</td>
+<td>Lore: Still Hunter is a defense myth made flesh; 2200 AC.</td>
+<td>SQ-V1-37</td>
+<td style="text-align: right;">1.4</td>
+<td>B7, Still Hunter myth</td>
+</tr>
+<tr>
+<td>PQ-V1-36</td>
+<td>Barrier Cascade Mastery</td>
+<td>Optional Mastery / Challenge</td>
+<td>Disable 3 linked Ash Barrier Fields under time pressure after story route is already open.</td>
+<td>Prestige 1500 AC; <strong>Barrier Harmonic Charm</strong>.</td>
+<td>B3 optional POIs</td>
+<td style="text-align: right;">1.4</td>
+<td>Ash Barrier Field, no story gate</td>
+</tr>
+<tr>
+<td>PQ-V1-37</td>
+<td>Gas Dome Beta Mastery</td>
+<td>Optional Mastery / Challenge</td>
+<td>Dual vent an underground gas dome while protecting an Echo trio from Saturation spikes.</td>
+<td>Prestige 1800 AC; cleanse discount.</td>
+<td>UG Stratum 4</td>
+<td style="text-align: right;">1.3</td>
+<td>Underground, Echo Symbiont Swarm, no story gate</td>
+</tr>
+<tr>
+<td>PQ-V1-38</td>
+<td>Plume Moth Constellation</td>
+<td>Optional Mastery / Challenge</td>
+<td>Follow Plume Moth light paths across B2 and B7 variants without map markers.</td>
+<td>Prestige 1200 AC; cosmetic signal trail.</td>
+<td>Global Plume Moth</td>
+<td style="text-align: right;">1.2</td>
+<td>Plume Moth, no story gate</td>
+</tr>
+<tr>
+<td>PQ-V1-39</td>
+<td>Void Stitcher Trace</td>
+<td>Optional Mastery / Challenge</td>
+<td>Solve cross-biome trace clues without fighting; resets if player overuses radio pings.</td>
+<td>Prestige 3000 AC; Void Stitcher codex.</td>
+<td>Global rumor</td>
+<td style="text-align: right;">1.5</td>
+<td>Void Stitcher, Communications [PLANNED], no story gate</td>
+</tr>
+<tr>
+<td>PQ-V1-40</td>
+<td>Lattice Clean Run</td>
+<td>Optional Mastery / Challenge</td>
+<td>Complete final vault puzzle sequence with no companion injury, no Echo loss, and no forced awaken flags.</td>
+<td>Prestige 3000 AC; title flag.</td>
+<td>Ending triad</td>
+<td style="text-align: right;">1.6</td>
+<td>B7, mastery, no story gate</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Puzzle quest subtotal:</strong> ~43h.</p>
+<hr />
+<h2>7. Factions (V1 Names)</h2>
+<p>Reputation ladder for all factions: <strong>Unknown -&gt; Noticed -&gt; Trusted -&gt; Inner Circle -&gt; Legend</strong>. Faction content can be board/NPC-driven and may alter gear availability, side quest variants, and ending emphasis. It does not replace the trigger-driven mainline.</p>
+<table>
+<thead>
+<tr>
+<th>Faction</th>
+<th>Role</th>
+<th>Gear</th>
+<th>Skills / Perks</th>
+<th>Quest Band</th>
+<th>Conflicts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ashwatch Cordons</strong></td>
+<td>Base defense, patrol doctrine, storm shelter enforcement.</td>
+<td>Ashwatch Riot Plate, Cordon Shock Baton, Cordon Hotbar Flare, Stalker-Bore Rifle.</td>
+<td><strong>Perimeter Doctrine:</strong> better detection against androids and hidden stalkers in cordon zones.</td>
+<td>SQ-V1-01, 03, 07, 16, 24, 27, 35.</td>
+<td>Opposes Seam Runners smuggling; distrusts Whisper Clinic Echo mercy; can push Awaken ending.</td>
+</tr>
+<tr>
+<td><strong>Isotope Choir</strong></td>
+<td>Science wing, ecology samples, memory truth, radiation analysis.</td>
+<td>Choir Scanner Lens, Cliff Tube Lace Analyzer, Void-Kelp Rad Wrap, Shelf Harmonic Tuner.</td>
+<td><strong>Spectral Literacy:</strong> faster scans on sealed shelves, fields, lens events, and Echo Lichen.</td>
+<td>SQ-V1-04, 08, 10, 15, 21, 28, 33, 39.</td>
+<td>Clashes with Helix over redacted data; worries Ashwatch will militarize Kairos.</td>
+</tr>
+<tr>
+<td><strong>Scrim Salvage Compact</strong></td>
+<td>Salvage crews, graveyard rights, field repairs, black-market parts.</td>
+<td>Scrim Mag-Cutter, Scrim Clamp Hammer, Mag-Clamp Sidearm Rail, Vault Petal Knife.</td>
+<td><strong>Wreck Whisper:</strong> bonus salvage yield from Expedition Graveyard, rigs, android frames.</td>
+<td>SQ-V1-05, 12, 18, 26, 29, 34.</td>
+<td>Price war with Basalt Exchange; trespass conflict with Helix claims; unsafe digs anger Ashwatch.</td>
+</tr>
+<tr>
+<td><strong>Whisper Clinic</strong></td>
+<td>Medical, Echo stabilization, Purification Hub ethics.</td>
+<td>Whisper Triage Injector, Soft Sync Collar Mk I, Brimstone Puff Charm, Still Mark Charm.</td>
+<td><strong>Soft Sync:</strong> small sync chance boost before the roll; failed hostile sync remains permanent loss.</td>
+<td>SQ-V1-06, 09, 19, 32, 37.</td>
+<td>Opposes Ashwatch destruction of hostile Echoes; distrusts Helix experiments.</td>
+</tr>
+<tr>
+<td><strong>Basalt Exchange</strong></td>
+<td>Logistics, AC trade boards, delivery schedules, base market.</td>
+<td>Exchange Load Frame, Signal Tagger Hotbar Mod, Spout-Timer Hotbar Chip.</td>
+<td><strong>Storm Ledger:</strong> reduced AC losses on storm-delayed deliveries and production stalls.</td>
+<td>SQ-V1-02, 14, 17, 22, 30.</td>
+<td>Under cut by Seam Runners; disputes salvage ownership with Scrim.</td>
+</tr>
+<tr>
+<td><strong>Helix Remnant Envoys</strong></td>
+<td>External corporate remnant claiming prior leases and data rights.</td>
+<td>Black Directive Chip, Compliance Arc Rifle, Seizure Drone Token, Helix Compliance Armor.</td>
+<td><strong>Directive Override:</strong> open one corporate seal per expedition or force one android compliance check.</td>
+<td>SQ-V1-25, 38 plus PQ-V1-32.</td>
+<td>Opposes Choir publication, Seam smuggling, and Scrim salvage rights; can bias Awaken/Seal through control rhetoric.</td>
+</tr>
+<tr>
+<td><strong>Seam Runners</strong></td>
+<td>External smugglers, silent routes, contraband cores, unofficial rescues.</td>
+<td>Seam Mute Boots, Seam Cloak, Kite-Shadow Cloak, Seam Runner Legend Kit.</td>
+<td><strong>Seam Step:</strong> reduced noise footprint in Silence Mandate zones and better route marking.</td>
+<td>SQ-V1-13, 20, 23, 31, 36, 40.</td>
+<td>Hunted by Ashwatch and Helix; sometimes helps Clinic move Echo patients.</td>
+</tr>
+</tbody>
+</table>
+<h3>Faction Conflict Web</h3>
+<table>
+<thead>
+<tr>
+<th>Conflict</th>
+<th>Content Expression</th>
+<th>Possible Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ashwatch vs Seam Runners</td>
+<td>Silent routes, contraband cores, perimeter breaches.</td>
+<td>Ashwatch tightens base security or Seam opens safer B7 stealth routes.</td>
+</tr>
+<tr>
+<td>Choir vs Helix</td>
+<td>Sample ownership, redacted memory logs, corporate lease claims.</td>
+<td>Publish truth for trust/Symbiosis bias or seal data for control/Seal bias.</td>
+</tr>
+<tr>
+<td>Scrim vs Basalt Exchange</td>
+<td>Salvage ownership vs AC logistics.</td>
+<td>Cheaper gear through Scrim or steadier vendor stock through Exchange.</td>
+</tr>
+<tr>
+<td>Whisper Clinic vs Ashwatch</td>
+<td>Echo mercy vs permanent containment/destruction.</td>
+<td>More sync chances before roll or safer base cordons after failed syncs.</td>
+</tr>
+<tr>
+<td>Helix vs Seam Runners</td>
+<td>Corporate compliance vs smuggled evidence.</td>
+<td>Directive seals open cleanly or black routes bypass them with risk.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>8. Friction Systems + Gate Matrix</h2>
+<h3>Friction Systems</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>System</th>
+<th>What It Does</th>
+<th>Status Hook</th>
+<th>Primary Content Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td><strong>Ash Barrier Field</strong></td>
+<td>Precursor fields block, bend, or punish movement until tuned, synchronized with weather, bypassed by faction tools, or mastered optionally.</td>
+<td>WorldState [SHIPPED] + Kairos [PLANNED]</td>
+<td>Mainline repairs, B3/B7 gates, optional mastery, faction bypasses.</td>
+</tr>
+<tr>
+<td>F2</td>
+<td><strong>Silence Mandate</strong></td>
+<td>Loud combat, killing Silence Moths, or overusing radio pings can call androids, stalkers, or route failures.</td>
+<td>Communications [PLANNED], combat [SHIPPED]</td>
+<td>B3 stealth, B7 galleries, Seam Runners, Still Hunter traces.</td>
+</tr>
+<tr>
+<td>F3</td>
+<td><strong>Resonance Echo Shelf</strong></td>
+<td>Wrong frequencies cause Saturation drift, false dialogue, or Echo chronicle distortion.</td>
+<td>EchoGenerator [SHIPPED], Resonance [PLANNED]</td>
+<td>C3, B7, story/reveal puzzles.</td>
+</tr>
+<tr>
+<td>F4</td>
+<td><strong>Sulfur Storm Window</strong></td>
+<td>Storms pause outdoor operations, shape harvest windows, and force shelter timing.</td>
+<td>Weather stubs [PARTIAL], exposure [SHIPPED]</td>
+<td>B1 mainline, base injury-not-death, Building Control shelter calls.</td>
+</tr>
+<tr>
+<td>F5</td>
+<td><strong>Echo Hostile Sync Gamble</strong></td>
+<td>Sync rolls can preserve hostile Echoes, but failure permanently loses that Echo.</td>
+<td>EchoGenerator [SHIPPED]</td>
+<td>Whisper Clinic, mainline trust, Echo side quests.</td>
+</tr>
+<tr>
+<td>F6</td>
+<td><strong>Cold / Heat Gear Pressure</strong></td>
+<td>Single thermal meter with two poles pressures B5 cold/radiation and B4 heat.</td>
+<td>Exposure [SHIPPED]</td>
+<td>C4/C5, environmental puzzles, late mid gear economy.</td>
+</tr>
+<tr>
+<td>F7</td>
+<td><strong>Gas Dome Drain</strong></td>
+<td>Underground gas pockets drain O2 until vented, routed, or bypassed.</td>
+<td>Underground [PLANNED], exposure [SHIPPED]</td>
+<td>Underground Stratum 2-4, Science/Architect utility.</td>
+</tr>
+<tr>
+<td>F8</td>
+<td><strong>Floor Crust / Brine Fall</strong></td>
+<td>Thin crust and brine timing punish careless movement and heavy trio choices.</td>
+<td>Underground [PLANNED]</td>
+<td>Loot, survival puzzles, Brine Hound routes.</td>
+</tr>
+<tr>
+<td>F9</td>
+<td><strong>Saturation / Strain Pressure</strong></td>
+<td>Long expeditions, bad resonance, and failed choices stress skilled Echoes and workers.</td>
+<td>Purification Hub [PLANNED]</td>
+<td>Whisper Clinic, Symbiosis, mastery puzzles.</td>
+</tr>
+<tr>
+<td>F10</td>
+<td><strong>Still Hunter Trace</strong></td>
+<td>Flee-tag elite pressure that escalates through signs, silence, and direct pursuit near B7.</td>
+<td>B7 prefabs [PLANNED]</td>
+<td>Endgame horror, optional traces, final choice pressure.</td>
+</tr>
+</tbody>
+</table>
+<h3>Gate Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Gate / Friction</th>
+<th>Mainline</th>
+<th>Side Quests</th>
+<th>Puzzle Quests</th>
+<th>Factions</th>
+<th>Ecology / Systems Tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ash Barrier Field</td>
+<td>ML-V1-03, 04, 14, 15</td>
+<td>SQ-V1-20</td>
+<td>PQ-V1-01, 02, 07, 36</td>
+<td>Seam bypass, Choir analysis, Ashwatch control</td>
+<td>F1, Kairos [PLANNED], WorldState [SHIPPED]</td>
+</tr>
+<tr>
+<td>Sulfur Storm Window</td>
+<td>ML-V1-06, C1</td>
+<td>SQ-V1-08, 09</td>
+<td>PQ-V1-03, 17</td>
+<td>Ashwatch shelter, Exchange delivery</td>
+<td>F4, weather stubs [PARTIAL], Sulfur Hound [SHIPPED]</td>
+</tr>
+<tr>
+<td>Echo Sync Permanent Loss</td>
+<td>ML-V1-08, C1, C6</td>
+<td>SQ-V1-19, 37</td>
+<td>PQ-V1-24, 37, 40</td>
+<td>Whisper Clinic ethics</td>
+<td>F5, EchoGenerator [SHIPPED], Purification Hub [PLANNED]</td>
+</tr>
+<tr>
+<td>Silence Mandate</td>
+<td>ML-V1-11, 14</td>
+<td>SQ-V1-13, 20, 23, 27, 31, 36, 40</td>
+<td>PQ-V1-12, 21, 27</td>
+<td>Seam Runners, Ashwatch</td>
+<td>F2, Silence Moth, Salvage Excavator Android</td>
+</tr>
+<tr>
+<td>Resonance Echo Shelf</td>
+<td>ML-V1-C3, C6</td>
+<td>SQ-V1-33</td>
+<td>PQ-V1-30, 31, 34</td>
+<td>Choir, Kairos trust</td>
+<td>F3, Echo chronicle [SHIPPED]</td>
+</tr>
+<tr>
+<td>Cold / Heat Gear Pressure</td>
+<td>ML-V1-12, C4, 13, C5</td>
+<td>SQ-V1-21, 24, 28, 30, 32</td>
+<td>PQ-V1-05, 06, 19, 28</td>
+<td>Choir, Exchange, Ashwatch</td>
+<td>F6, exposure [SHIPPED]</td>
+</tr>
+<tr>
+<td>Underground Gas / Crust</td>
+<td>Optional depth route</td>
+<td>SQ-V1-04</td>
+<td>PQ-V1-22, 23, 37</td>
+<td>Choir, Scrim, Clinic</td>
+<td>F7, F8, Underground [PLANNED]</td>
+</tr>
+<tr>
+<td>Base Injury-Not-Death</td>
+<td>ML-V1-02, C5</td>
+<td>SQ-V1-03, 09, 24, 32</td>
+<td>PQ-V1-17, 40</td>
+<td>Ashwatch, Clinic, Exchange</td>
+<td>Building Control [SHIPPED/PARTIAL Craft], base modules [PLANNED]</td>
+</tr>
+<tr>
+<td>Still Hunter Trace</td>
+<td>ML-V1-14, C6, 15</td>
+<td>SQ-V1-37, 40</td>
+<td>PQ-V1-35, 39, 40</td>
+<td>Seam Runners, Clinic</td>
+<td>F10, Still Hunter myth, B7 [PLANNED]</td>
+</tr>
+<tr>
+<td>AC Economy Pressure</td>
+<td>All acts</td>
+<td>All SQ rows</td>
+<td>All PQ payoff rows</td>
+<td>Basalt Exchange</td>
+<td>AC economy [SHIPPED]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>9. Hour Budget</h2>
+<p>Designed hours exclude pure exploration, free-form harvesting, collectible wandering, photo/ambience time, and non-objective base decoration.</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th style="text-align: right;">Target Hours</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mainline trigger-driven campaign</td>
+<td style="text-align: right;">30h</td>
+<td>Prologue, repairs, 6 Memory Cores, Resonance Events, ending triad.</td>
+</tr>
+<tr>
+<td>Side quests (40)</td>
+<td style="text-align: right;">50h</td>
+<td>Average 1.25h; includes faction, ecology, companion, and board content.</td>
+</tr>
+<tr>
+<td>Puzzle quests (40)</td>
+<td style="text-align: right;">43h</td>
+<td>Mixed purposes; only 8 are access gates.</td>
+</tr>
+<tr>
+<td>Faction overhead / reputation arcs</td>
+<td style="text-align: right;">10h</td>
+<td>Vendor unlocks, rep thresholds, conflict resolution, board refresh, finale state checks.</td>
+</tr>
+<tr>
+<td>Systemic friction loops</td>
+<td style="text-align: right;">32h</td>
+<td>Storm rotations, Echo sync risk, Barrier retunes, Purification cadence, Still Hunter traces, repeat contracts.</td>
+</tr>
+<tr>
+<td><strong>Designed total</strong></td>
+<td style="text-align: right;"><strong>165h</strong></td>
+<td>Meets &gt;=150h requirement without exploration.</td>
+</tr>
+<tr>
+<td>Exploration bonus (excluded)</td>
+<td style="text-align: right;">~25-40h</td>
+<td>Open traversal, hunting, gathering, ambience, vistas, non-objective ecology observation.</td>
+</tr>
+</tbody>
+</table>
+<h3>Systemic Friction Hour Detail</h3>
+<table>
+<thead>
+<tr>
+<th>Loop</th>
+<th style="text-align: right;">Hours</th>
+<th>Content Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sulfur storm harvest and shelter rotations</td>
+<td style="text-align: right;">7h</td>
+<td>B1/B6/B3 production stalls and shelter drills.</td>
+</tr>
+<tr>
+<td>Echo signal sync/fail chronicle loops</td>
+<td style="text-align: right;">6h</td>
+<td>Hostile Echo rescue, permanent loss stakes, Clinic mitigation.</td>
+</tr>
+<tr>
+<td>Ash Barrier Field retunes</td>
+<td style="text-align: right;">5h</td>
+<td>Optional POIs, faction bypasses, post-Resonance instability.</td>
+</tr>
+<tr>
+<td>Purification Hub Saturation cadence</td>
+<td style="text-align: right;">5h</td>
+<td>Long expedition recovery, Symbiosis pressure, Clinic boards.</td>
+</tr>
+<tr>
+<td>Weather / exposure survival repeats</td>
+<td style="text-align: right;">4h</td>
+<td>B5 lens fields, B4 heat surges, underground gas.</td>
+</tr>
+<tr>
+<td>Still Hunter / Void Stitcher traces</td>
+<td style="text-align: right;">3h</td>
+<td>Endgame horror escalation and optional mastery clues.</td>
+</tr>
+<tr>
+<td>Faction repeat contracts</td>
+<td style="text-align: right;">2h</td>
+<td>Short AC earners and reputation smoothing.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>10. Sample Dialogue / Trust Ladder</h2>
+<h3>Trust Ladder Mechanics</h3>
+<table>
+<thead>
+<tr>
+<th>Trust Level</th>
+<th style="text-align: right;">Range</th>
+<th>Unlock / Behavior</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0. Hostile</td>
+<td style="text-align: right;">0-9</td>
+<td>Kairos speaks rarely, mostly warnings and accusations.</td>
+<td>More false-positive signal pings.</td>
+</tr>
+<tr>
+<td>1. Suspicious</td>
+<td style="text-align: right;">10-24</td>
+<td>Reacts to C1 and B1 survival; identifies obvious traps.</td>
+<td>Withholds motive.</td>
+</tr>
+<tr>
+<td>2. Tactical</td>
+<td style="text-align: right;">25-44</td>
+<td>Offers biome pressure warnings and enemy behavior hints.</td>
+<td>Advice may be coldly utilitarian.</td>
+</tr>
+<tr>
+<td>3. Advisor</td>
+<td style="text-align: right;">45-64</td>
+<td>Provides Barrier Field reads, storm warnings, and Memory Core context.</td>
+<td>Pushes containment logic.</td>
+</tr>
+<tr>
+<td>4. Regretful</td>
+<td style="text-align: right;">65-84</td>
+<td>Shares crew fragments and admits failed containment.</td>
+<td>Dialogue becomes emotionally unreliable.</td>
+</tr>
+<tr>
+<td>5. Friend / Choice Partner</td>
+<td style="text-align: right;">85-100</td>
+<td>Final vault dialogue opens; ending nuance improves.</td>
+<td>The player can hurt it knowingly.</td>
+</tr>
+</tbody>
+</table>
+<h3>Trust Inputs</h3>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th style="text-align: right;">Trust Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Attach Memory Core</td>
+<td style="text-align: right;">+8 to +12 depending on recovery choices.</td>
+</tr>
+<tr>
+<td>Preserve hostile Echo without sync failure</td>
+<td style="text-align: right;">+4.</td>
+</tr>
+<tr>
+<td>Failed hostile Echo sync</td>
+<td style="text-align: right;">-6 and permanent Echo loss.</td>
+</tr>
+<tr>
+<td>Resolve faction conflict without exploitation</td>
+<td style="text-align: right;">+3.</td>
+</tr>
+<tr>
+<td>Force corporate/Helix override on precursor seal</td>
+<td style="text-align: right;">-4.</td>
+</tr>
+<tr>
+<td>Complete Resonance Event with no base companion injury</td>
+<td style="text-align: right;">+5.</td>
+</tr>
+<tr>
+<td>Choose repeated dominance options</td>
+<td style="text-align: right;">Lowers Symbiosis bias, raises Awaken bias.</td>
+</tr>
+<tr>
+<td>Use Purification Hub for recovery instead of ignoring Saturation</td>
+<td style="text-align: right;">+2.</td>
+</tr>
+</tbody>
+</table>
+<h3>Dialogue Samples</h3>
+<table>
+<thead>
+<tr>
+<th>Context</th>
+<th>Speaker</th>
+<th>Line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First shell contact</td>
+<td>Kairos</td>
+<td>"Signal contamination detected. Human pattern. Crew pattern. Error: crew pattern dead."</td>
+</tr>
+<tr>
+<td>B6 Beacon Hopper reveal</td>
+<td>Companion</td>
+<td>"That ping was not a radio. It was an animal learning our fear."</td>
+</tr>
+<tr>
+<td>Kairos awakening hostile</td>
+<td>Kairos</td>
+<td>"You wear their faces. Leave the cores. Leave the moon."</td>
+</tr>
+<tr>
+<td>Failed hostile Echo sync</td>
+<td>Kairos</td>
+<td>"Do not ask where it went. You pulled. Io pulled harder."</td>
+</tr>
+<tr>
+<td>Base damaged during heat bleed</td>
+<td>Building Control</td>
+<td>"Command Center rooms sealed. Injuries logged. Fatality count: locked at zero by shelter protocol."</td>
+</tr>
+<tr>
+<td>C3 advisor shift</td>
+<td>Kairos</td>
+<td>"Ash ridges are singing again. Lower your weapons. Noise is a mouth here."</td>
+</tr>
+<tr>
+<td>First Void Stitcher rumor</td>
+<td>Seam Runner</td>
+<td>"If the seam moves after you stop looking, do not run. Running teaches it distance."</td>
+</tr>
+<tr>
+<td>B5 smuggler truth</td>
+<td>Kairos</td>
+<td>"They carried pieces of me under their coats. I called them thieves. Some were only trying to save a voice."</td>
+</tr>
+<tr>
+<td>B4 crew death-site</td>
+<td>Companion</td>
+<td>"No bodies. No blood. Just evacuation lights pointed at the lava."</td>
+</tr>
+<tr>
+<td>C5 friend threshold</td>
+<td>Kairos</td>
+<td>"Kade, if you seal me, I will still listen. If you awaken me, I may not remain kind."</td>
+</tr>
+<tr>
+<td>Still Hunter sign</td>
+<td>Kairos</td>
+<td>"Do not count the third mark aloud."</td>
+</tr>
+<tr>
+<td>Seal ending</td>
+<td>Kairos</td>
+<td>"A cage is still a shape of mercy. Close it."</td>
+</tr>
+<tr>
+<td>Awaken ending</td>
+<td>Kairos</td>
+<td>"Then give me the moon's teeth. I remember where to place them."</td>
+</tr>
+<tr>
+<td>Symbiosis ending</td>
+<td>Kairos</td>
+<td>"Your pulse is not a command. Good. Let Io hear something smaller than hunger."</td>
+</tr>
+</tbody>
+</table>
+<h3>Companion Flavor Lines</h3>
+<table>
+<thead>
+<tr>
+<th>Companion Role</th>
+<th>Sample</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Architect Engineer</td>
+<td>"That Barrier Field is not locked. It is bracing, like it expects impact."</td>
+</tr>
+<tr>
+<td>Science Specialist</td>
+<td>"Void Kelp is avoiding the Echoes, not the radiation. That is worse."</td>
+</tr>
+<tr>
+<td>Combat Tactician</td>
+<td>"Sulfur Hound pack is splitting by scent. Do not bleed. Do not reload loud."</td>
+</tr>
+<tr>
+<td>Infiltrator Scout</td>
+<td>"Silence Moths ahead. We go quiet or we bring every dead machine in the ridge."</td>
+</tr>
+<tr>
+<td>Med Tech</td>
+<td>"Saturation spike. I can calm them before the sync, but if the roll fails, there is no patient left."</td>
+</tr>
+<tr>
+<td>Logistics Officer</td>
+<td>"AC loss is cheaper than a bad storm run. Shelter now, spend later."</td>
+</tr>
+<tr>
+<td>Salvage Engineer</td>
+<td>"Scrapper Drone is still following a manifest. Let it open the crate for us."</td>
+</tr>
+<tr>
+<td>Communications Officer</td>
+<td>"That signal has our encryption and no sender. I hate that more than static."</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Production Summary</h2>
+<p><strong>V1 Ash &amp; Signal</strong> is a 165-hour designed narrative package built around progress-triggered mainline advancement, mixed-purpose puzzle content, AC-only reward scaling, ecology-forward horror, and a trust arc with Kairos as a precursor defense AI. The player moves through <strong>B6 -&gt; B1 -&gt; B2 -&gt; B3 -&gt; B5 -&gt; B4 -&gt; B7</strong>, repairs Kairos, recovers 6 Memory Cores, survives Resonance Events, and chooses <strong>Seal</strong>, <strong>Awaken</strong>, or <strong>Symbiosis</strong>.</p>
+<p>The package assumes shipped systems where they exist, marks partial/planned dependencies clearly, and keeps all future hooks compatible with the locked canon: no Echo marketplace, no base companion death from building damage, 22 base companions plus trio expeditions, and AC as the sole economy.</p></body></html>

@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: Standard_Ammo
   displayName: Stardard Ammo
   description: Rudementary ammo, but useful in a pinch
-  icon: {fileID: 21300000, guid: a67dc839ae195be4aadf6f9f1b3f73d4, type: 3}
+  icon: {fileID: 21300000, guid: a103d90381dce7042ace4bd0c960bc96, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}

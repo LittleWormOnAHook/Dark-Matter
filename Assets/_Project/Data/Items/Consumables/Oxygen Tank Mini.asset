@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Oxygen Tank Mini
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Oxygen Tank Mini
-  icon: {fileID: 21300000, guid: 578fdc783e6974c49abf8ee38900b9ad, type: 3}
+  icon: {fileID: 21300000, guid: 2be7a02353c847249b06f451e4d8566c, type: 3}
   worldPrefab: {fileID: 6413809825698787981, guid: 9acad1f1859090d4a9812763bef001af, type: 3}
   maxStack: 100
   stableItemId: 6973449b-0fcb-48c1-9af2-e3128298102a

@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: forest_stew
   displayName: Forest Stew
   description: A hearty stew from foraged ingredients.
-  icon: {fileID: 21300000, guid: b586aac0c3622d942b364a52cd65a8dd, type: 3}
+  icon: {fileID: 21300000, guid: dad780fbd2d8d8546bef72eee9d0531c, type: 3}
   stationType: 0
   ingredients:
   - item: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}

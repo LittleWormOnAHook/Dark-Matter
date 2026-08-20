@@ -5,23 +5,23 @@ namespace Project.UI
 {
     public static class QuestUiPalette
     {
-        public static readonly Color InProgressText = SurvivalPioneerUiPalette.Gold;
-        public static readonly Color InProgressBackground = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.92f);
+        public static readonly Color InProgressText = DarkMatterGenesisUiPalette.Gold;
+        public static readonly Color InProgressBackground = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.92f);
 
-        public static readonly Color ReadyToTurnInText = SurvivalPioneerUiPalette.Gold;
-        public static readonly Color ReadyToTurnInBackground = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.72f);
+        public static readonly Color ReadyToTurnInText = DarkMatterGenesisUiPalette.Gold;
+        public static readonly Color ReadyToTurnInBackground = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.72f);
 
-        public static readonly Color TurnedInText = SurvivalPioneerUiPalette.PositiveGreen;
-        public static readonly Color TurnedInBackground = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.85f);
+        public static readonly Color TurnedInText = DarkMatterGenesisUiPalette.PositiveGreen;
+        public static readonly Color TurnedInBackground = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.85f);
 
-        public static readonly Color AvailableText = SurvivalPioneerUiPalette.BodyText;
-        public static readonly Color MutedText = SurvivalPioneerUiPalette.MutedText;
+        public static readonly Color AvailableText = DarkMatterGenesisUiPalette.BodyText;
+        public static readonly Color MutedText = DarkMatterGenesisUiPalette.MutedText;
 
         public static Color GetTitleColor(QuestStatus status, ShiftUiTheme theme)
         {
             return status switch
             {
-                QuestStatus.Active => SurvivalPioneerUiPalette.WarmOffWhite,
+                QuestStatus.Active => DarkMatterGenesisUiPalette.WarmOffWhite,
                 QuestStatus.Completed => ReadyToTurnInText,
                 QuestStatus.TurnedIn => TurnedInText,
                 QuestStatus.Available => theme != null ? theme.secondaryTextColor : AvailableText,
@@ -46,8 +46,8 @@ namespace Project.UI
             if (selected)
             {
                 return theme != null
-                    ? SurvivalPioneerUiPalette.WithAlpha(theme.primaryColor, 0.28f)
-                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.28f);
+                    ? DarkMatterGenesisUiPalette.WithAlpha(theme.primaryColor, 0.28f)
+                    : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.28f);
             }
 
             return status switch
@@ -55,7 +55,7 @@ namespace Project.UI
                 QuestStatus.Active => InProgressBackground,
                 QuestStatus.Completed => ReadyToTurnInBackground,
                 QuestStatus.TurnedIn => TurnedInBackground,
-                _ => SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.95f)
+                _ => DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.95f)
             };
         }
 
@@ -67,7 +67,7 @@ namespace Project.UI
             if (complete)
                 return TurnedInText;
 
-            return SurvivalPioneerUiPalette.BodyText;
+            return DarkMatterGenesisUiPalette.BodyText;
         }
 
         public static string GetStatusLabel(QuestStatus status)

@@ -29,11 +29,14 @@ namespace Project.Interaction
         private const float OverheatSeconds = 10f;
         private const float CooloffSeconds = 3f;
         private const float OverheatEmissionIntensity = 4.5f;
+        private const float OverheatVisualIntensityMultiplier = 2f;
+        private const float OverheatBaseMapBlend = 0.85f;
         private const string HitSparksPrefabPath = "Assets/_Project/Prefabs/Combat/VFX/SparksLong.prefab";
         private const string DefaultHitEffectPrefabPath = "Assets/_Project/Prefabs/Particles/Hit Effect Laser.prefab";
         private const string OverheatSmokePrefabPath = "Assets/PolygonNature/FX/FX_Prefabs/Smoke_Light_FX.prefab";
         private const string DefaultContinuousLoopPath =
             "Assets/Laser Weapons Sound Pack/Free/continuous_beam_1.wav";
+        private const string DefaultContinuousLoopResourcesPath = "Audio/continuous_beam_1";
         private const float EmptyChargeSoundCooldown = 0.45f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
         private static readonly Color OverheatTint = new Color(1f, 0.18f, 0.08f, 1f);
@@ -191,6 +194,9 @@ namespace Project.Interaction
 
             ResolveMuzzle();
             TryBindWeaponLaserStack();
+            // Fallback beam must exist when the held mining mesh has no authored Laser stack
+            // (DM Mining Tool / Mining Pistol has muzzle tip only). Rebuild if missing.
+            EnsureVisuals();
             // Prefer the authored Laser transform (under muzzle) so the beam starts on that stack.
             Vector3 origin = laserRoot != null
                 ? laserRoot.position
@@ -474,11 +480,12 @@ namespace Project.Interaction
                     continue;
 
                 Color baseColor = i < heatBaseColors.Length ? heatBaseColors[i] : Color.white;
-                Color tinted = Color.Lerp(baseColor, OverheatTint, heat01 * 0.85f);
+                float baseMapBlend = Mathf.Clamp01(heat01 * OverheatBaseMapBlend * OverheatVisualIntensityMultiplier);
+                Color tinted = Color.Lerp(baseColor, OverheatTint, baseMapBlend);
 
                 Color baseEmission = i < heatBaseEmissions.Length ? heatBaseEmissions[i] : Color.black;
                 bool authoredEmission = i < heatHadEmission.Length && heatHadEmission[i];
-                Color glow = OverheatEmission * (heat01 * OverheatEmissionIntensity);
+                Color glow = OverheatEmission * (heat01 * OverheatEmissionIntensity * OverheatVisualIntensityMultiplier);
                 // Preserve authored emission when cooling; otherwise fade toward black.
                 Color emissionRest = authoredEmission ? baseEmission : Color.black;
                 Color emission = Color.Lerp(emissionRest, glow, heat01);
@@ -715,14 +722,11 @@ namespace Project.Interaction
             if (renderer != null)
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;
-                Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
-                    ?? Shader.Find("Particles/Standard Unlit")
-                    ?? Shader.Find("Sprites/Default");
-                if (shader != null)
-                {
-                    Material mat = new Material(shader) { color = new Color(0.6f, 0.6f, 0.62f, 0.55f) };
+                Material mat = CreateHdrpSafeUnlitMaterial(
+                    new Color(0.6f, 0.6f, 0.62f, 0.55f),
+                    "DM_MiningSmoke (Runtime)");
+                if (mat != null)
                     renderer.sharedMaterial = mat;
-                }
             }
 
             ps.Play(true);
@@ -1128,15 +1132,55 @@ namespace Project.Interaction
                 laserLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 laserLine.receiveShadows = false;
                 laserLine.numCapVertices = 4;
-                Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
-                laserLine.material = new Material(shader) { color = LaserRed };
                 laserLine.startColor = LaserRed;
                 laserLine.endColor = new Color(LaserRed.r, LaserRed.g, LaserRed.b, 0.55f);
                 laserLine.enabled = false;
                 usingWeaponLaserStack = false;
+                laserRoot = null;
+            }
+
+            // HDRP player builds strip URP Unlit — never leave a null/invalid LineRenderer material.
+            if (laserLine != null &&
+                (laserLine.sharedMaterial == null ||
+                 laserLine.sharedMaterial.shader == null ||
+                 !laserLine.sharedMaterial.shader.isSupported))
+            {
+                Material mat = CreateHdrpSafeUnlitMaterial(LaserRed, "DM_MiningLaserLine (Runtime)");
+                if (mat != null)
+                    laserLine.material = mat;
             }
 
             EnsureHitSparksInstance();
+        }
+
+        /// <summary>
+        /// LineRenderer / particle materials for this HDRP project. URP Unlit Shader.Find fails in
+        /// player builds and leaves the mining beam invisible when plasma charge is draining.
+        /// </summary>
+        private static Material CreateHdrpSafeUnlitMaterial(Color color, string materialName)
+        {
+            Shader shader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color")
+                ?? Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply");
+            if (shader == null)
+                return null;
+
+            Material mat = new Material(shader)
+            {
+                name = materialName,
+                hideFlags = HideFlags.HideAndDontSave,
+                color = color
+            };
+
+            if (mat.HasProperty("_UnlitColor"))
+                mat.SetColor("_UnlitColor", color);
+            if (mat.HasProperty("_BaseColor"))
+                mat.SetColor("_BaseColor", color);
+            if (mat.HasProperty("_Color"))
+                mat.SetColor("_Color", color);
+
+            return mat;
         }
 
         /// <summary>
@@ -1415,8 +1459,10 @@ namespace Project.Interaction
             if (continuousLoopFallback != null)
                 return;
 
+            continuousLoopFallback = Resources.Load<AudioClip>(DefaultContinuousLoopResourcesPath);
 #if UNITY_EDITOR
-            continuousLoopFallback = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultContinuousLoopPath);
+            if (continuousLoopFallback == null)
+                continuousLoopFallback = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultContinuousLoopPath);
 #endif
         }
 

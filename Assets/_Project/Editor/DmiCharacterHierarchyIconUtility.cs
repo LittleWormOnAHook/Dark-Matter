@@ -83,7 +83,7 @@ namespace Project.EditorTools
             return cachedOverlayIcon;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Root + "Art/Apply DMI Hierarchy Icons To Characters")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Art/Apply DMI Hierarchy Icons To Characters")]
         public static void ApplyFromMenu()
         {
             cachedOverlayIcon = null;

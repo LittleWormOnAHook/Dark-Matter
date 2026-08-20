@@ -107,7 +107,7 @@ namespace Project.EditorTools
             EditorApplication.projectWindowItemOnGUI += DrawFolderColor;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Project + "Refresh Folder Colors", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Refresh Folder Colors", false, 20)]
         public static void RefreshFolderColors()
         {
             EditorApplication.RepaintProjectWindow();

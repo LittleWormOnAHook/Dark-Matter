@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: herbal_medpack
   displayName: Herbal Medpack
   description: Combine herbs into a medpack.
-  icon: {fileID: 21300000, guid: d2c85206e194a924da24cbcea4d5e618, type: 3}
+  icon: {fileID: 21300000, guid: 96a931d2183922642a52f77910981007, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}

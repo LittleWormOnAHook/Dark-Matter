@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Plasma
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Plasma
-  icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
+  icon: {fileID: 21300000, guid: 716e93269ab36e24c8ef14d14911a71d, type: 3}
   worldPrefab: {fileID: 804081226953012427, guid: d8699172f4ee6f04084ce2c62c49bf08, type: 3}
   maxStack: 999
   stableItemId: a5e3de4e-5188-4129-9d86-fba6f375e5e6
@@ -55,8 +55,8 @@ MonoBehaviour:
   weaponAccuracy: 78
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.18
-  recoilVertical: 0
-  recoilHorizontal: 0
+  recoilVertical: 1.05
+  recoilHorizontal: 0.48
   recoilFireRateScale: 0
   fireRate: 0
   magazineSize: 0
@@ -81,6 +81,13 @@ MonoBehaviour:
   ammoType: 1
   ammoPerPickup: 50
   ammoPickupGrant: 50
+  ammoRecoilProfile:
+    pistolCameraVertical: 3.6
+    pistolCameraHorizontal: 0.95
+    pistolAnimationWeight: 0.45
+    rifleCameraVertical: 5.4
+    rifleCameraHorizontal: 1.45
+    rifleAnimationWeight: 0.24
   isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0

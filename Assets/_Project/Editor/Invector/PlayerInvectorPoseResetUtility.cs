@@ -21,7 +21,7 @@ namespace Project.EditorTools.Invector
         private const string SourceInvectorPrefabPath =
             "Assets/Invector-3rdPersonController/Shooter/Prefabs/Player/vShooterMelee_NoInventory.prefab";
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Reset Player_Invector T-Pose & Weapon Slots", false, 126)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Reset Player_Invector T-Pose & Weapon Slots", false, 126)]
         public static void ResetPlayerInvectorPoseAndWeaponSlots()
         {
             if (!EditorUtility.DisplayDialog(

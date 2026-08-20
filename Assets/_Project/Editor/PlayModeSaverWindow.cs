@@ -11,7 +11,7 @@ namespace Project.EditorTools
         private PlayModeEditPersistence.PlayModeSaveScope saveScope =
             PlayModeEditPersistence.PlayModeSaveScope.AllOpenScenes;
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayModeSaverWindow, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverWindow, false, 1)]
         public static void Open()
         {
             PlayModeSaverWindow window = GetWindow<PlayModeSaverWindow>("Play Mode Saver");
@@ -19,25 +19,25 @@ namespace Project.EditorTools
             window.Show();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayModeSaverSaveNow, false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveNow, false, 2)]
         public static void SaveNowFromMenu()
         {
             PlayModeEditPersistence.SaveNow();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayModeSaverSaveNow, true)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveNow, true)]
         public static bool SaveNowFromMenuValidate()
         {
             return EditorApplication.isPlaying;
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayModeSaverSaveAndExit, false, 3)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveAndExit, false, 3)]
         public static void SaveAndExitFromMenu()
         {
             PlayModeEditPersistence.SaveAndExitPlayMode();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayModeSaverSaveAndExit, true)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveAndExit, true)]
         public static bool SaveAndExitFromMenuValidate()
         {
             return EditorApplication.isPlaying;

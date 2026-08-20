@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Project.Core
 {
     /// <summary>
-    /// Applies PC / console quality defaults on boot and tier-specific LOD/post overrides.
+    /// Applies PC / macOS / console quality defaults on boot and tier-specific LOD/post overrides.
     /// </summary>
     public static class PlatformGraphicsBootstrap
     {
@@ -44,11 +44,36 @@ namespace Project.Core
 
         public static void ApplyTierOverrides(int qualityLevel)
         {
-            bool lowTier = qualityLevel == PlatformGraphicsProfile.LowQualityIndex;
+            qualityLevel = Mathf.Clamp(qualityLevel, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
 
-            QualitySettings.maximumLODLevel = lowTier ? 1 : 0;
-            QualitySettings.lodBias = lowTier ? 1.5f : 2f;
-            QualitySettings.shadowDistance = lowTier ? 30f : 40f;
+            switch (qualityLevel)
+            {
+                case PlatformGraphicsProfile.PerformanceTierIndex:
+                    QualitySettings.maximumLODLevel = 2;
+                    QualitySettings.lodBias = 1.2f;
+                    QualitySettings.shadowDistance = 25f;
+                    break;
+                case PlatformGraphicsProfile.BalancedTierIndex:
+                    QualitySettings.maximumLODLevel = 1;
+                    QualitySettings.lodBias = 1.5f;
+                    QualitySettings.shadowDistance = 30f;
+                    break;
+                case PlatformGraphicsProfile.QualityTierIndex:
+                    QualitySettings.maximumLODLevel = 0;
+                    QualitySettings.lodBias = 1.8f;
+                    QualitySettings.shadowDistance = 35f;
+                    break;
+                case PlatformGraphicsProfile.UltraTierIndex:
+                    QualitySettings.maximumLODLevel = 0;
+                    QualitySettings.lodBias = 2f;
+                    QualitySettings.shadowDistance = 50f;
+                    break;
+                default:
+                    QualitySettings.maximumLODLevel = 0;
+                    QualitySettings.lodBias = 2f;
+                    QualitySettings.shadowDistance = 40f;
+                    break;
+            }
 
             PostProcessingController.Instance?.ApplyFromSettings();
         }

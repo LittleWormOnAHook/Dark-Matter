@@ -12,7 +12,7 @@ namespace Project.EditorTools
     {
         private const string PioneerScenePath = ProjectAssetPaths.MainScene;
 
-        [MenuItem(SurvivalPioneerEditorMenus.Combat + "Update All Enemy Prefabs And Scene", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Update All Enemy Prefabs And Scene", false, 20)]
         public static void UpdateAllEnemyPrefabsAndScene()
         {
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EnemiesData);

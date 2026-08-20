@@ -64,6 +64,7 @@ namespace Project.UI
 
             return EnemyLootDialogUI.IsDialogOpen ||
                    QuestGiverDialogUI.IsDialogOpen ||
+                   PptDirectionsMenuUI.IsOpen ||
                    BuildingControlPanelUI.IsOpen ||
                    WeaponModeSwitchMenuUI.IsOpen ||
                    CraftingUI.IsAnyStandaloneOpen;
@@ -89,6 +90,7 @@ namespace Project.UI
             InventoryUI.CloseAnyOpenInventory();
             PetUI.CloseAnyOpenPet();
             QuestGiverDialogUI.CloseAnyOpenQuestDialog();
+            PptDirectionsMenuUI.CloseAnyOpen();
             BuildingControlPanelUI.CloseAnyOpenBuildingControl();
             WeaponModeSwitchMenuUI.HideAny();
             CraftingUI.CloseAnyOpenStandalone();

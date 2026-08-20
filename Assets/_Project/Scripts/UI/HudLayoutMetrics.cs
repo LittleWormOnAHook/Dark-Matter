@@ -13,8 +13,8 @@ namespace Project.UI
         /// <summary>User-facing slot size boost applied on top of scaled slot metrics.</summary>
         public const float SlotDisplayBoost = 1.69f;
 
-        /// <summary>Icons render at 70% of slot area (30% smaller than full bleed).</summary>
-        public const float InventoryIconScale = 0.7f;
+        /// <summary>Icons render at 95% of slot area — inset matches sliced frame inner grey holder.</summary>
+        public const float InventoryIconScale = 0.95f;
 
         public static float Scaled(float value) => value * HudScale;
 

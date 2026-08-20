@@ -504,7 +504,7 @@ Identity recap
 --------------
 Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
-Echoes; recover Memory Cores for Aether-9 → Resonance Events; materialize,
+Echoes; recover Memory Cores for Kairos → Resonance Events; materialize,
 craft, and maintain buildings; survive O2 norm + four biome pressures.
 
 Classes (locked names)
@@ -577,24 +577,24 @@ A5. Neural Echoes & procedural generation
   Progression is local roster / save only — no marketplace trading of Echoes.
 
 
-A6. Aether-9, Memory Cores & Resonance Events
+A6. Kairos, Memory Cores & Resonance Events
 ---------------------------------------------
-  Aether-9 is a SPECIAL prologue intelligence — not a generic mission-control bot and not
+  Kairos is a SPECIAL prologue intelligence — not a generic mission-control bot and not
   a human companion. He is an idle machine / probe shell containing an embedded
-  ancient alien Neural Echo who calls himself Aether-9.
+  ancient alien Neural Echo who calls himself Kairos.
 
   PROLOGUE DISCOVERY
     Player finds the dormant machine early (prologue). Interacting loads a repair
     quest: recover 3 objects that restore the machine enough to awaken.
 
   AWAKENING
-    Once repaired, Aether-9 comes online slightly hostile / angry. He recounts
+    Once repaired, Kairos comes online slightly hostile / angry. He recounts
     that his group was killed by something sinister on Io; they had collected
     Memory Cores once housed in this machine. Without those cores he cannot
     function well or remember much of Io’s past.
 
   MEMORY CORES → RESONANCE EVENTS
-    Find core → recovery setpiece → attach / slot into Aether-9 → Resonance Event
+    Find core → recovery setpiece → attach / slot into Kairos → Resonance Event
     (10–15 min world change) + story fragment + unlocks.
     May spike storms, damage Command Center, injure base companions, spawn Echo
     opportunities. Repeat per core (design target: at least 3 primary cores).
@@ -602,12 +602,12 @@ A6. Aether-9, Memory Cores & Resonance Events
   TRUST LADDER (communications)
     Angry / hostile → wary → advisor (mission tips, status help) → friend who
     radios in unprompted and eventually relays chats with other companions.
-    Colony Ops / expedition crew handle radio queries until Aether-9 is awake
+    Colony Ops / expedition crew handle radio queries until Kairos is awake
     and advisory-unlocked. Personality-flavored Aether voice is a later comms
     phase; do not treat him as day-one channel traffic.
 
   RELATIONSHIP TO ECHOES
-    Aether-9 IS an Echo sealed in a machine — distinct from rescueable surface
+    Kairos IS an Echo sealed in a machine — distinct from rescueable surface
     Echoes that join the companion roster. He is the mystery hub for Memory Cores
     and Resonance progression.
 
@@ -741,9 +741,9 @@ B3. NOT STARTED — vision systems still planned
   [~] Live sulfur storm scheduler (B4 #4) — Command Center room fill still pending
   [ ] Building materialization / placement / maintenance pipeline
   [ ] Medical Facility / Science Labs as full production buildings
-  [ ] Aether-9 idle machine + 3-part repair quest + awaken / trust arc
+  [ ] Kairos idle machine + 3-part repair quest + awaken / trust arc
   [ ] Memory Core attach + Resonance Events (story + world change)
-  [ ] Trust-gated Aether-9 advisory radio (after awake; Ops until then)
+  [ ] Trust-gated Kairos advisory radio (after awake; Ops until then)
   [ ] Purification Hub Saturation/Strain gameplay depth
 
 
@@ -760,7 +760,7 @@ B4. Near-term roadmap priority (order of value)
   5. Command Center aggregate sim + injury/heal loop
   6. Fold pet into Echo/trio companion presentation
   7. Materialization pipeline + wire Building Control to real facilities
-  8. Aether-9 Intelligence service / cores / first Resonance Events
+  8. Kairos Intelligence service / cores / first Resonance Events
   9. Io biome pass + console polish
 
 
@@ -790,7 +790,7 @@ Architecture phases A–D complete. Survey: Assets/_Project/Features + Documenta
       Presentation (vista banner), Communications intent
   [~] `DirectorTriggerBridge` forwards quest/roster/session + storm/simulation command triggers
   [~] WorldState fields not yet persisted into GameSaveData (runtime read model only)
-  [ ] Aether-9 Intelligence service, Memory Core Resonance Events, full director logic
+  [ ] Kairos Intelligence service, Memory Core Resonance Events, full director logic
   [ ] LLM / cloud conversation (Communications Phase 9+)
 
   Manual smoke (Play Mode):

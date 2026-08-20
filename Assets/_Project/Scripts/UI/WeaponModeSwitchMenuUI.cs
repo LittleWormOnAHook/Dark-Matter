@@ -361,8 +361,8 @@ namespace Project.UI
                 return;
 
             image.color = on
-                ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DeepMagenta, 0.95f)
-                : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.9f);
+                ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DeepMagenta, 0.95f)
+                : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.9f);
         }
 
         private static void CreateCategoryButton(Transform parent, string label, System.Action onClick)
@@ -397,7 +397,7 @@ namespace Project.UI
             text.fontSize = 17f;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
-            text.color = SurvivalPioneerUiPalette.Gold;
+            text.color = DarkMatterGenesisUiPalette.Gold;
             text.raycastTarget = false;
 
             LayoutElement layout = titleObject.AddComponent<LayoutElement>();
@@ -413,7 +413,7 @@ namespace Project.UI
 
             Image panelImage = panel.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panelImage);
-            panelImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PanelBackground, 0.98f);
+            panelImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PanelBackground, 0.98f);
             panelImage.raycastTarget = true;
 
             RectTransform panelRect = panel.GetComponent<RectTransform>();

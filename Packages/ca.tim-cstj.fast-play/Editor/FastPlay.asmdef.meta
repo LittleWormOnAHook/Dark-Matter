@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f5d44bdfd1bdd0146a52f8b00ff759ce
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 353186
+  packageName: Fast Play
+  packageVersion: 1.0.1
+  assetPath: Packages/ca.tim-cstj.fast-play/Editor/FastPlay.asmdef
+  uploadId: 883896

@@ -23,6 +23,7 @@ namespace Project.UI
         private RectTransform listRoot;
         private QuestManager questManager;
         private CanvasGroup canvasGroup;
+        private PlayerController cachedPlayer;
         private bool built;
         private bool gameplayVisible = true;
         private Vector2 lastCanvasSize;
@@ -267,10 +268,12 @@ namespace Project.UI
             return canvasGroup != null && canvasGroup.alpha > 0.01f;
         }
 
-        private static bool ShouldHideForBlockingUi()
+        private bool ShouldHideForBlockingUi()
         {
-            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
-            return player != null && player.BlocksCombatInput;
+            if (cachedPlayer == null)
+                cachedPlayer = PlayerLocator.FindPlayerController();
+
+            return cachedPlayer != null && cachedPlayer.BlocksCombatInput;
         }
 
         private void OnEnable()
@@ -385,8 +388,8 @@ namespace Project.UI
             layout.childForceExpandHeight = false;
 
             Color titleColor = progress.status == QuestStatus.Completed
-                ? SurvivalPioneerUiPalette.Gold
-                : SurvivalPioneerUiPalette.WarmOffWhite;
+                ? DarkMatterGenesisUiPalette.Gold
+                : DarkMatterGenesisUiPalette.WarmOffWhite;
             TextMeshProUGUI title = CreateLine(
                 block.transform,
                 FormatThreeWordsPerLine(definition.title),
@@ -420,7 +423,7 @@ namespace Project.UI
                     objectiveText.lineSpacing = -12f;
                     objectiveText.paragraphSpacing = -6f;
                     objectiveText.margin = Vector4.zero;
-                    objectiveText.color = SurvivalPioneerUiPalette.BodyText;
+                    objectiveText.color = DarkMatterGenesisUiPalette.BodyText;
 
                     LayoutElement objectiveLayout = objectiveText.gameObject.AddComponent<LayoutElement>();
                     objectiveLayout.minHeight = 0f;
@@ -438,7 +441,7 @@ namespace Project.UI
                 turnIn.alignment = TextAlignmentOptions.TopRight;
                 turnIn.lineSpacing = -10f;
                 turnIn.margin = new Vector4(0f, 1f, 0f, 0f);
-                turnIn.color = SurvivalPioneerUiPalette.RichFuchsia;
+                turnIn.color = DarkMatterGenesisUiPalette.RichFuchsia;
             }
             else if (progress.status == QuestStatus.Active)
             {
@@ -451,7 +454,7 @@ namespace Project.UI
                 statusLine.alignment = TextAlignmentOptions.TopRight;
                 statusLine.lineSpacing = -10f;
                 statusLine.margin = new Vector4(0f, 1f, 0f, 0f);
-                statusLine.color = SurvivalPioneerUiPalette.Gold;
+                statusLine.color = DarkMatterGenesisUiPalette.Gold;
             }
         }
 

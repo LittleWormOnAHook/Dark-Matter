@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72ce693bf3464fda9ce0521ad20eeb7b, type: 3}
+  m_Name: PptEntry_SulfurDunes
+  m_EditorClassIdentifier: 
+  pptId: place_sulfur_dunes
+  type: 1
+  displayName: The Sulfur Dunes
+  aliases:
+  - sulfur dunes
+  - the sulfur dunes
+  keywordTags:
+  - sulfur
+  - dunes
+  mapMarkerDiscoveryId: place_sulfur_dunes
+  questLocationId: 
+  npcId: 
+  authoredWorldPosition: {x: -80, y: 2, z: 60}
+  hasAuthoredWorldPosition: 1
+  surfaceRegion: 1
+  exposureZoneTag: 
+  questObjectiveTargetId: 
+  requiresDiscovery: 0

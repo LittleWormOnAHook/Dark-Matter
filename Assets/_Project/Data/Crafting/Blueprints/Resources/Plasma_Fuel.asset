@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Plasma Fuel
   description: Refined plasma fuel cell. Refuels the hovercraft and powers building
     generators.
-  icon: {fileID: 21300000, guid: 9f6df918dd228d04fa74f3010f07c3ce, type: 3}
+  icon: {fileID: 21300000, guid: 6de10d3bd69388a48904a4e6af7f3364, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}

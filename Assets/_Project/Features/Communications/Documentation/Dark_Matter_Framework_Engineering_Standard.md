@@ -137,7 +137,7 @@ Game State API (Phase 1+): `Assets/_Project/Features/GameState/`.
 
 ## 15. UI
 
-- Colors: `SurvivalPioneerUiPalette` and `ShiftUiTheme` only for new UI.
+- Colors: `DarkMatterGenesisUiPalette` and `ShiftUiTheme` only for new UI.
 - Radio / subtitle chrome follows Dark Navy panels, Slate borders, Warm Off-White text, Rich Fuchsia accents (see `.cursor/rules/survival-pioneer-ui-palette.mdc`).
 
 ## 16. Assembly definitions
@@ -160,5 +160,5 @@ Game State API (Phase 1+): `Assets/_Project/Features/GameState/`.
 
 - Highest engineering authority: `Assets/_Project/Documentation/Architecture/Dark_Matter_Framework_2.0_High_Level_Architecture_v1.0.md` (**frozen** — change only via versioned HLA revisions).
 - WoOS stack: World → Simulation → Intelligence → Experience → Presentation → Player.
-- Communications is **Presentation**, not Intelligence. Directors + Aether-9 live in the **Intelligence** layer.
+- Communications is **Presentation**, not Intelligence. Directors + Kairos live in the **Intelligence** layer.
 - New cross-cutting modules: `Features/<Name>/` per HLA §13. Do not contradict HLA without an explicit version bump.

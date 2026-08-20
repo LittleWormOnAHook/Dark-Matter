@@ -8,7 +8,7 @@ namespace Project.Features.WorldState
         public StoryProgressSnapshot Story { get; set; } = StoryProgressSnapshot.Empty;
         public PlanetEvolutionSnapshot Planet { get; set; } = PlanetEvolutionSnapshot.Empty;
         public ColonyEvolutionSnapshot Colony { get; set; } = ColonyEvolutionSnapshot.Empty;
-        public Aether9Snapshot Aether9 { get; set; } = Aether9Snapshot.Empty;
+        public KairosSnapshot Kairos { get; set; } = KairosSnapshot.Empty;
         public SimulationSnapshot Simulation { get; set; } = SimulationSnapshot.Empty;
         public ThreatSnapshot Threat { get; set; } = ThreatSnapshot.Empty;
         public ExperienceSnapshot Experience { get; set; } = ExperienceSnapshot.Empty;
@@ -22,7 +22,7 @@ namespace Project.Features.WorldState
                 Story,
                 Planet,
                 Colony,
-                Aether9,
+                Kairos,
                 Simulation,
                 Threat,
                 Experience,

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8340c72149d845f09710d658e2b3ed14, type: 3}
+  m_Name: PptNpcProfile_PioneerGuide
+  m_EditorClassIdentifier: 
+  npcId: pioneer_guide
+  displayName: Pioneer Guide
+  talkOptions: 9
+  directionChoicesPerPage: 3
+  knowledgeScope: 1
+  knownPptIds: []
+  excludedPptIds: []
+  homeRegion: 1
+  preciseDirectionChance: 0.2
+  unknownChance: 0.15
+  preferReferToOtherNpc: 0
+  referNpcIds: []
+  phraseSet: {fileID: 11400000, guid: 1b8f313541eb4c21ae08eada840231f5, type: 2}
+  pointGestureMode: 1
+  idleStateName: Sitting
+  pointStateName: Point
+  upperBodyPointStateName: Point
+  shrugStateName: Shrug
+  upperBodyLayerName: Upper Body
+  rotateVisualTowardBearing: 1
+  gestureCrossFadeSeconds: 0.15

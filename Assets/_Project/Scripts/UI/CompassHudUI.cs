@@ -247,7 +247,7 @@ namespace Project.UI
             borderRect.offsetMax = Vector2.zero;
             Image border = borderObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(border);
-            border.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.3f);
+            border.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.3f);
             border.raycastTarget = false;
 
             // Punches out a fully transparent middle so only the BorderThickness-px gold ring is
@@ -262,7 +262,7 @@ namespace Project.UI
             backgroundRect.offsetMax = new Vector2(-BorderThickness, -BorderThickness);
             Image background = backgroundObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(background);
-            background.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0f);
+            background.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0f);
             background.raycastTarget = false;
 
             GameObject markerLayerObject = new GameObject("MarkerLayer", typeof(RectTransform));
@@ -297,7 +297,7 @@ namespace Project.UI
 
             Image pointerImage = pointerObject.AddComponent<Image>();
             pointerImage.sprite = MapUiSprites.PlayerArrow;
-            pointerImage.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            pointerImage.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             pointerImage.raycastTarget = false;
 
             GameObject readoutObject = new GameObject("HeadingReadout", typeof(RectTransform));
@@ -315,7 +315,7 @@ namespace Project.UI
             ApplyLabelFont(headingReadout, semiBold: true);
             headingReadout.fontSize = CardinalLabelFontSize;
             headingReadout.alignment = TextAlignmentOptions.Top;
-            headingReadout.color = SurvivalPioneerUiPalette.Gold;
+            headingReadout.color = DarkMatterGenesisUiPalette.Gold;
             headingReadout.text = "000";
             headingReadout.raycastTarget = false;
         }
@@ -345,8 +345,8 @@ namespace Project.UI
                 Image line = lineObject.AddComponent<Image>();
                 MenuUiBuilder.ApplyUiSprite(line);
                 line.color = isCardinal
-                    ? SurvivalPioneerUiPalette.Gold
-                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.WarmOffWhite, 0.6f);
+                    ? DarkMatterGenesisUiPalette.Gold
+                    : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.WarmOffWhite, 0.6f);
                 line.raycastTarget = false;
 
                 GameObject labelObject = new GameObject("Label", typeof(RectTransform));
@@ -362,7 +362,7 @@ namespace Project.UI
                 ApplyLabelFont(label, semiBold: isCardinal);
                 label.fontSize = isCardinal ? CardinalLabelFontSize : TickLabelFontSize;
                 label.alignment = TextAlignmentOptions.Center;
-                label.color = isCardinal ? SurvivalPioneerUiPalette.Gold : SurvivalPioneerUiPalette.MutedText;
+                label.color = isCardinal ? DarkMatterGenesisUiPalette.Gold : DarkMatterGenesisUiPalette.MutedText;
                 label.text = isCardinal ? CardinalLabel(angle) : Mathf.RoundToInt(angle).ToString();
                 label.raycastTarget = false;
 
@@ -419,7 +419,7 @@ namespace Project.UI
             ApplyLabelFont(distanceLabel, semiBold: false);
             distanceLabel.fontSize = MarkerDistanceFontSize;
             distanceLabel.alignment = TextAlignmentOptions.Center;
-            distanceLabel.color = SurvivalPioneerUiPalette.MutedText;
+            distanceLabel.color = DarkMatterGenesisUiPalette.MutedText;
             distanceLabel.raycastTarget = false;
 
             return new MarkerEntry

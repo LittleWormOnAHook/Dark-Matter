@@ -5,6 +5,7 @@ using Project.Data;
 using Project.Progression;
 using Project.UI;
 using Project.Vehicles;
+using Project.Shelter;
 using UnityEngine;
 
 namespace Project.Inventory
@@ -154,6 +155,19 @@ namespace Project.Inventory
             return plasmaFuel != null && inventory.CountItem(plasmaFuel) > 0;
         }
 
+        public bool TryDeploy(int slotIndex)
+        {
+            if (TryDeployVehicle(slotIndex))
+                return true;
+
+            return TryDeployShelter(slotIndex);
+        }
+
+        public bool CanDeploy(int slotIndex)
+        {
+            return CanDeployVehicle(slotIndex) || CanDeployShelter(slotIndex);
+        }
+
         /// <summary>Spawns the stored vehicle near the player and removes the item from the inventory.
         /// Right-click action for the Hovercraft inventory item.</summary>
         public bool TryDeployVehicle(int slotIndex)
@@ -177,6 +191,46 @@ namespace Project.Inventory
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
             return item != null && item.IsVehicle && item.deployedPrefab != null;
+        }
+
+        /// <summary>Deploys a temporary Quora Shelter 5m in front of the player.</summary>
+        public bool TryDeployShelter(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            ItemData deployItem = ResolveDeployableShelterItem(item);
+            if (deployItem == null)
+                return false;
+
+            Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
+            bool deployed = QuoraShelterDeploymentUtility.TryDeploy(inventory, deployItem, playerTransform, out string message);
+            if (!string.IsNullOrEmpty(message))
+                PickupToastUI.Show(message);
+
+            if (deployed)
+                GameAudioManager.Instance?.PlayItemEquip();
+
+            return deployed;
+        }
+
+        public bool CanDeployShelter(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            return ResolveDeployableShelterItem(item) != null;
+        }
+
+        private static ItemData ResolveDeployableShelterItem(ItemData item)
+        {
+            if (item == null)
+                return null;
+
+            if (item.IsDeployableShelter)
+                return item;
+
+            if (!string.Equals(item.itemName, "Quora Shelter", System.StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            ItemData canonical = ItemRegistry.Resolve("Quora Shelter");
+            return canonical != null && canonical.IsDeployableShelter ? canonical : null;
         }
 
         /// <summary>Right-click action on Plasma Fuel: consume one cell into the drawn/equipped mining tool charge tank.</summary>

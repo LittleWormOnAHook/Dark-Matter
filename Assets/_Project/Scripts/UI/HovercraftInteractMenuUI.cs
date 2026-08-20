@@ -73,8 +73,8 @@ namespace Project.UI
 
             Image panelImage = menuPanel.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panelImage);
-            panelImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(menuPanel);
+            panelImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.96f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(menuPanel);
 
             RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -123,7 +123,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(label);
             label.text = text;
             label.fontSize = 16f;
-            label.color = SurvivalPioneerUiPalette.MutedText;
+            label.color = DarkMatterGenesisUiPalette.MutedText;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
             return label;
@@ -140,6 +140,7 @@ namespace Project.UI
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetBuildingControlOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonHovercraftMenu, true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -219,6 +220,7 @@ namespace Project.UI
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetBuildingControlOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonHovercraftMenu, false);
         }
     }
 }

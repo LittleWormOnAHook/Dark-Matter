@@ -37,7 +37,7 @@ namespace Project.UI
 
             Image widgetBg = widget.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(widgetBg);
-            widgetBg.color = SurvivalPioneerUiPalette.PanelBackground;
+            widgetBg.color = DarkMatterGenesisUiPalette.PanelBackground;
 
             VerticalLayoutGroup layout = widget.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(14, 14, 10, 10);
@@ -69,7 +69,7 @@ namespace Project.UI
             ApplyConnectedVisual(true);
 
             statusLabel = CreateLine(statusRow.transform, "CONNECTED", 13f, FontStyles.Bold);
-            statusLabel.color = SurvivalPioneerUiPalette.ConnectedGreen;
+            statusLabel.color = DarkMatterGenesisUiPalette.ConnectedGreen;
 
             acLabel = CreateLine(widget.transform, "AC —", 14f);
             echoesLabel = CreateLine(widget.transform, "Echoes —", 14f);
@@ -121,13 +121,13 @@ namespace Project.UI
 
             connectedIcon.sprite = ResolveConnectedStatusSprite(ShiftUiTheme.Current);
             connectedIcon.color = connected
-                ? SurvivalPioneerUiPalette.ConnectedGreen
-                : SurvivalPioneerUiPalette.MutedText;
+                ? DarkMatterGenesisUiPalette.ConnectedGreen
+                : DarkMatterGenesisUiPalette.MutedText;
 
             if (statusLabel != null)
                 statusLabel.color = connected
-                    ? SurvivalPioneerUiPalette.ConnectedGreen
-                    : SurvivalPioneerUiPalette.MutedText;
+                    ? DarkMatterGenesisUiPalette.ConnectedGreen
+                    : DarkMatterGenesisUiPalette.MutedText;
         }
 
         private static Sprite ResolveConnectedStatusSprite(ShiftUiTheme theme)
@@ -157,7 +157,7 @@ namespace Project.UI
             label.text = text;
             label.fontSize = fontSize;
             label.fontStyle = style;
-            label.color = SurvivalPioneerUiPalette.BodyText;
+            label.color = DarkMatterGenesisUiPalette.BodyText;
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.raycastTarget = false;
             return label;

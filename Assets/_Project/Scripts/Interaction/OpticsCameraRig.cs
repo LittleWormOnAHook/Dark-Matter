@@ -1,13 +1,16 @@
 using Project.Data;
 using Project.Player;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Rendering.Universal;
 
 namespace Project.Interaction
 {
     /// <summary>
-    /// Dedicated optics camera rendering to a RenderTexture for masked UI display.
-    /// Blacks out the gameplay camera while active so only the masked RT is visible.
+    /// Optics view helper. Under URP: dedicated camera → RenderTexture for masked UI.
+    /// Under HDRP: passthrough mode (zoom + UI frame on the live gameplay camera) — a second
+    /// HDRP camera writing an RT into a Canvas RawImage crashes in DrawRawMesh / D3D12.
     /// </summary>
     public class OpticsCameraRig : MonoBehaviour
     {
@@ -24,28 +27,57 @@ namespace Project.Interaction
         private PlayerController playerController;
         private bool isActive;
         private bool mainCameraBlackedOut;
+        private bool passthroughMode;
         private LayerMask storedCullingMask;
         private CameraClearFlags storedClearFlags;
         private Color storedBackgroundColor;
+        private HDAdditionalCameraData.ClearColorMode storedHdClearColorMode;
+        private Color storedHdBackgroundColorHdr;
+        private bool storedHdClearMode;
 
         public RenderTexture RenderTexture => renderTexture;
         public bool IsActive => isActive;
         public bool IsMainCameraBlackedOut => mainCameraBlackedOut;
-        public bool IsOutputReady => renderTexture != null && opticsCamera != null;
-        public bool HasValidOutput => isActive && IsOutputReady && opticsCamera.enabled;
-        public Camera OpticsCamera => opticsCamera;
+        public bool IsPassthroughMode => passthroughMode;
+        public bool IsOutputReady => passthroughMode
+            ? sourceCamera != null || ResolveSourceCamera(null) != null
+            : renderTexture != null && opticsCamera != null;
+        public bool HasValidOutput => isActive && IsOutputReady && (passthroughMode || (opticsCamera != null && opticsCamera.enabled));
+        public Camera OpticsCamera => passthroughMode ? ResolveSourceCamera(sourceCamera) : opticsCamera;
+
+        private static bool IsHdrpActive()
+        {
+            RenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline;
+            return pipeline is HDRenderPipelineAsset;
+        }
 
         public void Initialize(PlayerController controller, Camera mainCamera)
         {
             playerController = controller;
             sourceCamera = ResolveSourceCamera(mainCamera);
-            EnsureRigRoot();
-            EnsureCamera();
+            passthroughMode = IsHdrpActive();
+            if (!passthroughMode)
+            {
+                EnsureRigRoot();
+                EnsureCamera();
+            }
+            else
+            {
+                DisableOffscreenRig();
+            }
         }
 
         public bool EnsureOutputReady()
         {
             sourceCamera = ResolveSourceCamera(sourceCamera);
+            passthroughMode = IsHdrpActive();
+
+            if (passthroughMode)
+            {
+                DisableOffscreenRig();
+                return sourceCamera != null;
+            }
+
             EnsureRigRoot();
             EnsureCamera();
 
@@ -57,10 +89,20 @@ namespace Project.Interaction
 
         public bool Activate(ToolType toolType)
         {
-            if (!EnsureOutputReady() || opticsCamera == null)
+            if (!EnsureOutputReady())
                 return false;
 
             isActive = true;
+
+            if (passthroughMode)
+            {
+                // Live gameplay camera + UI scope frame. No RT / no blackout (HDRP-safe).
+                return HasValidOutput;
+            }
+
+            if (opticsCamera == null)
+                return false;
+
             rigRoot.gameObject.SetActive(true);
             opticsCamera.enabled = true;
             BlackoutMainCamera();
@@ -88,6 +130,14 @@ namespace Project.Interaction
 
         public void SetFieldOfView(float fov)
         {
+            if (passthroughMode)
+            {
+                Camera cam = ResolveSourceCamera(sourceCamera);
+                if (cam != null)
+                    cam.fieldOfView = fov;
+                return;
+            }
+
             if (opticsCamera != null)
                 opticsCamera.fieldOfView = fov;
         }
@@ -97,8 +147,27 @@ namespace Project.Interaction
             if (!isActive)
                 return;
 
+            if (passthroughMode)
+            {
+                // Re-apply after Invector FixedUpdate FOV reset so scroll zoom sticks.
+                if (playerController != null)
+                    playerController.ApplyOpticsCameraFov();
+                else
+                    SetFieldOfView(GetFallbackPassthroughFov());
+                return;
+            }
+
             sourceCamera = ResolveSourceCamera(sourceCamera);
             SyncFromSource(immediate: false);
+        }
+
+        private float GetFallbackPassthroughFov()
+        {
+            if (playerController != null)
+                return playerController.OpticsZoomFov;
+
+            Camera cam = ResolveSourceCamera(sourceCamera);
+            return cam != null ? cam.fieldOfView : 40f;
         }
 
         private void SyncFromSource(bool immediate)
@@ -128,6 +197,9 @@ namespace Project.Interaction
 
         private void BlackoutMainCamera()
         {
+            if (passthroughMode)
+                return;
+
             sourceCamera = ResolveSourceCamera(sourceCamera);
             if (sourceCamera == null || mainCameraBlackedOut)
                 return;
@@ -136,6 +208,19 @@ namespace Project.Interaction
             storedCullingMask = blackoutCamera.cullingMask;
             storedClearFlags = blackoutCamera.clearFlags;
             storedBackgroundColor = blackoutCamera.backgroundColor;
+
+            if (blackoutCamera.TryGetComponent(out HDAdditionalCameraData hdData))
+            {
+                storedHdClearColorMode = hdData.clearColorMode;
+                storedHdBackgroundColorHdr = hdData.backgroundColorHDR;
+                storedHdClearMode = true;
+                hdData.clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
+                hdData.backgroundColorHDR = Color.black;
+            }
+            else
+            {
+                storedHdClearMode = false;
+            }
 
             blackoutCamera.cullingMask = 0;
             blackoutCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -155,9 +240,17 @@ namespace Project.Interaction
             target.cullingMask = storedCullingMask;
             target.clearFlags = storedClearFlags;
             target.backgroundColor = storedBackgroundColor;
+
+            if (storedHdClearMode && target.TryGetComponent(out HDAdditionalCameraData hdData))
+            {
+                hdData.clearColorMode = storedHdClearColorMode;
+                hdData.backgroundColorHDR = storedHdBackgroundColorHdr;
+            }
+
             target.enabled = true;
             mainCameraBlackedOut = false;
             blackoutCamera = null;
+            storedHdClearMode = false;
         }
 
         private Camera ResolveSourceCamera(Camera fallback)
@@ -173,6 +266,25 @@ namespace Project.Interaction
                 return fallback;
 
             return Camera.main;
+        }
+
+        private void DisableOffscreenRig()
+        {
+            if (opticsCamera != null)
+            {
+                opticsCamera.targetTexture = null;
+                opticsCamera.enabled = false;
+            }
+
+            if (rigRoot != null)
+                rigRoot.gameObject.SetActive(false);
+
+            if (renderTexture != null)
+            {
+                renderTexture.Release();
+                Destroy(renderTexture);
+                renderTexture = null;
+            }
         }
 
         private void EnsureRigRoot()
@@ -204,19 +316,30 @@ namespace Project.Interaction
                 opticsCamera.clearFlags = sourceCamera.clearFlags;
                 opticsCamera.backgroundColor = sourceCamera.backgroundColor;
                 opticsCamera.allowHDR = sourceCamera.allowHDR;
-                opticsCamera.allowMSAA = sourceCamera.allowMSAA;
+                opticsCamera.allowMSAA = false;
             }
             else
             {
                 opticsCamera.clearFlags = CameraClearFlags.Skybox;
+                opticsCamera.allowMSAA = false;
             }
 
             opticsCamera.depth = sourceCamera != null ? sourceCamera.depth + 1f : 10f;
             if (!isActive)
                 opticsCamera.enabled = false;
 
-            // RT cameras must be Base in URP. Copying Overlay from the gameplay stack
-            // prevents the optics view from rendering into the masked RawImage.
+            ConfigurePipelineCameraDataUrp();
+            EnsureRenderTexture();
+            opticsCamera.targetTexture = renderTexture;
+        }
+
+        private void ConfigurePipelineCameraDataUrp()
+        {
+            // URP-only path. Never attach UniversalAdditionalCameraData while HDRP is active.
+            HDAdditionalCameraData leftoverHd = opticsCamera.GetComponent<HDAdditionalCameraData>();
+            if (leftoverHd != null)
+                Destroy(leftoverHd);
+
             UniversalAdditionalCameraData opticsData = opticsCamera.GetComponent<UniversalAdditionalCameraData>();
             if (opticsData == null)
                 opticsData = opticsCamera.gameObject.AddComponent<UniversalAdditionalCameraData>();
@@ -227,9 +350,6 @@ namespace Project.Interaction
             {
                 opticsData.renderPostProcessing = sourceData.renderPostProcessing;
             }
-
-            EnsureRenderTexture();
-            opticsCamera.targetTexture = renderTexture;
         }
 
         private void EnsureRenderTexture()

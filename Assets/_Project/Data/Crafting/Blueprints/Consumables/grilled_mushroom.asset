@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: grilled_mushroom
   displayName: Grilled Mushroom
   description: Cook mushrooms over the fire.
-  icon: {fileID: 21300000, guid: 01f306e51ae729b4dbc6cd5279f0e6e7, type: 3}
+  icon: {fileID: 21300000, guid: 917e4adf022d36f47902a108fcbb3c0d, type: 3}
   stationType: 0
   ingredients:
   - item: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}

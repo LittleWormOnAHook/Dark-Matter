@@ -14,6 +14,7 @@ namespace Project.Features.GameState
         public ResearchSnapshot Research { get; }
         public CrewSnapshot Crew { get; }
         public BuildingSnapshot Buildings { get; }
+        public PptKnowledgeSnapshot PptKnowledge { get; }
 
         public GameStateSnapshot(
             long capturedAtUtcTicks,
@@ -25,7 +26,8 @@ namespace Project.Features.GameState
             ColonySnapshot colony = null,
             ResearchSnapshot research = null,
             CrewSnapshot crew = null,
-            BuildingSnapshot buildings = null)
+            BuildingSnapshot buildings = null,
+            PptKnowledgeSnapshot pptKnowledge = default)
         {
             CapturedAtUtcTicks = capturedAtUtcTicks;
             Player = player ?? PlayerSnapshot.Empty;
@@ -37,6 +39,9 @@ namespace Project.Features.GameState
             Research = research ?? ResearchSnapshot.Empty;
             Crew = crew ?? CrewSnapshot.Empty;
             Buildings = buildings ?? BuildingSnapshot.Empty;
+            PptKnowledge = pptKnowledge.KnownKeywordCount == 0 && (pptKnowledge.RecentKeywordIds == null || pptKnowledge.RecentKeywordIds.Length == 0)
+                ? PptKnowledgeSnapshot.Empty
+                : pptKnowledge;
         }
     }
 }

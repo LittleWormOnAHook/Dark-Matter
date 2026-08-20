@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Cooked Mushroom
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Cooked Mushroom
-  icon: {fileID: 21300000, guid: 01f306e51ae729b4dbc6cd5279f0e6e7, type: 3}
+  icon: {fileID: 21300000, guid: 5c412efd80648ab43a3dc50cf461525d, type: 3}
   worldPrefab: {fileID: 4131714642898419157, guid: 8440a364416e8de41987b0616e833268, type: 3}
   maxStack: 100
   stableItemId: 89ec9c38-b571-436b-b04b-27f56b2c8c6e

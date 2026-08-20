@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Project.Building;
+using Project.Companions;
 using Project.Data;
 using Project.Pioneers;
 using Project.Survival.Exposure;
@@ -21,9 +22,12 @@ namespace Project.UI
             if (record == null)
             {
                 detailLabel.text = "Select a skilled companion from the roster.";
+                PioneerPortraitUi.ApplyPortrait(detailPortraitFrame, detailPortraitPhoto, null, null);
                 synergyHintLabel.text = BuildTrioSynergySummary();
                 return;
             }
+
+            PioneerPortraitUi.ApplyPortrait(detailPortraitFrame, detailPortraitPhoto, null, record);
 
             string traits = PioneerTraitUtility.FormatTraitList(record.traitIds);
             string passives = PioneerTraitUtility.FormatTraitList(record.passiveAbilityIds);
@@ -34,15 +38,28 @@ namespace Project.UI
                 ? PioneerTraitUtility.GetDispositionLabel(record.Disposition)
                 : "N/A";
 
+            string statusLine = record.isInExpeditionTrio
+                ? "Status: Expedition Trio"
+                : record.WorkState == PioneerWorkState.Injured
+                    ? "Status: Injured"
+                    : "Status: In Roster";
+
+            string goldHex = ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.Gold);
+            string headerHex = ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.HighlightText);
+
             detailLabel.text =
-                $"<color=#{ColorUtility.ToHtmlStringRGB(SurvivalPioneerUiPalette.RichFuchsia)}>{record.displayName}</color>\n" +
-                $"{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}\n\n" +
-                $"Rad {record.radiationResistance:P0}  ·  Exp {record.expeditionEfficiency:P0}  ·  Syn {record.combatSynergy:P0}\n" +
-                $"Saturation {record.saturation:P0}  ·  Disposition {disposition}\n\n" +
-                $"Traits: {traits}\n" +
-                $"Passives: {passives}\n" +
-                $"Learned skills: {skills}\n\n" +
-                (string.IsNullOrEmpty(record.backstory) ? string.Empty : record.backstory);
+                $"<color=#{ColorUtility.ToHtmlStringRGB(DarkMatterGenesisUiPalette.RichFuchsia)}>{PioneerUiLabels.GetDisplayName(record)}</color>\n" +
+                $"<color=#{goldHex}><size=115%>{SkilledPioneerClassUtility.ToDisplayName(record.pioneerClass)}  ·  Lv {record.level}</size></color>\n\n" +
+                $"<color=#{goldHex}>{CompanionHealthLookup.FormatHealthLine(record.id)}</color>\n" +
+                $"<color=#{goldHex}>Rad {record.radiationResistance:P0}  ·  Exp {record.expeditionEfficiency:P0}  ·  Syn {record.combatSynergy:P0}</color>\n" +
+                $"<color=#{goldHex}>Saturation {record.saturation:P0}  ·  Disposition {disposition}</color>\n" +
+                $"<color=#{goldHex}>{statusLine}</color>\n\n" +
+                $"<color=#{headerHex}>Traits</color>\n<color=#{goldHex}>{traits}</color>\n\n" +
+                $"<color=#{headerHex}>Passives</color>\n<color=#{goldHex}>{passives}</color>\n\n" +
+                $"<color=#{headerHex}>Learned skills</color>\n<color=#{goldHex}>{skills}</color>\n\n" +
+                (string.IsNullOrEmpty(record.backstory)
+                    ? string.Empty
+                    : $"<color=#{headerHex}>Profile</color>\n<color=#{goldHex}>{record.backstory}</color>");
 
             synergyHintLabel.text = GetClassSynergyHint(record.pioneerClass) + "\n" + BuildTrioSynergySummary();
         }
@@ -219,7 +236,7 @@ namespace Project.UI
             return pioneerClass switch
             {
                 SkilledPioneerClass.ArchitectEngineer => "Class synergy: Portable Purification Field stabilizes hostile Echo saturation.",
-                SkilledPioneerClass.ScienceSpecialist => "Class synergy: Analysis link amplifies Aether-9 scans and core archive gains.",
+                SkilledPioneerClass.ScienceSpecialist => "Class synergy: Analysis link amplifies Kairos scans and core archive gains.",
                 SkilledPioneerClass.CombatTactician => "Class synergy: Hold line protects the trio during echo rescue setpieces.",
                 SkilledPioneerClass.InfiltratorScout => "Class synergy: Vent burst timing detects Echo signals near hazards.",
                 SkilledPioneerClass.MedTech => "Class synergy: Field triage stabilizes injured companions after sulfur exposure.",

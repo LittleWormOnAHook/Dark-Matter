@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Hovercraft
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Hovercraft
-  icon: {fileID: 21300000, guid: f4b1ce246a818ad4090b32650bd37605, type: 3}
+  icon: {fileID: 21300000, guid: 5dbda513cac77524c82eb2e18836dfac, type: 3}
   worldPrefab: {fileID: 1162998952699059992, guid: c49cd8e15bd9f8b41964d8a86d6e5509, type: 3}
   maxStack: 1
   stableItemId: 13cdd0e0-5eaf-480f-b6db-b3bd7a9e058a

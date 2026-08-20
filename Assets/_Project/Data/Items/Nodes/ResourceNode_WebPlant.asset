@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01714840b54be944c9c632ced45360c6, type: 3}
+  m_Name: ResourceNode_WebPlant
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ResourceNodeDefinition
+  displayName: Web Plant
+  nodeKind: 1
+  designerNotes: 
+  resourceItem: {fileID: 11400000, guid: 8759c1d61f5d64d44b04b86927574895, type: 2}
+  itemIcon: {fileID: 21300000, guid: 1ddfa7fda707b0946b8d98b7456cba88, type: 3}
+  interactionMode: 1
+  requiredTool: {fileID: 0}
+  requireMiningLaser: 0
+  holdPromptText: "Hold E \u2014 Harvest"
+  durationSeconds: 3.06
+  waves: 1
+  dropMin: 10
+  dropMax: 20
+  lastWaveDropScale: 1
+  holdInteractRange: 3.5
+  meshTemplate: {fileID: 6889095523044260113, guid: f951eea85a5e6a34db66ae4b8f93a757, type: 3}
+  lootFlyModel: {fileID: 4556512016624447390, guid: 8326826fc8689f542bd08574e3f6d892, type: 3}
+  lootTint: {r: 0.75, g: 0.82, b: 0.28, a: 1}
+  nodePrefab: {fileID: 2822174043025564091, guid: 1bba22b5db9e72342b0f502fdc014afb, type: 3}
+  itemMaxStack: 1
+  itemTooltip: 
+  lootYieldClip: {fileID: 8300000, guid: b4eaf873d3e992740b25da529c631b63, type: 3}
+  lootGrantClip: {fileID: 8300000, guid: 7075ea4e7af71e84aa83e2d3a30c24f4, type: 3}

@@ -128,6 +128,8 @@ namespace Project.Creatures
             trigger.isTrigger = true;
             trigger.radius = projectileRadius;
 
+            projectile.ConfigureHitRadius(projectileRadius);
+
             Rigidbody body = projectileRoot.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;

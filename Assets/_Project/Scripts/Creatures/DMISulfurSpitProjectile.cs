@@ -12,6 +12,8 @@ namespace Project.Creatures
     [DisallowMultipleComponent]
     public class DMISulfurSpitProjectile : MonoBehaviour
     {
+        private static readonly Collider[] ProximityOverlapBuffer = new Collider[12];
+
         [SerializeField] private float speed = 18f;
         [SerializeField] private float lifetime = 4f;
         [SerializeField] private float damage = 10f;
@@ -21,11 +23,17 @@ namespace Project.Creatures
         private float expiresAt;
         private bool consumed;
         private bool launched;
+        private float hitRadius = 0.35f;
 
         public void Configure(float projectileSpeed, float projectileLifetime)
         {
             speed = projectileSpeed;
             lifetime = projectileLifetime;
+        }
+
+        public void ConfigureHitRadius(float radius)
+        {
+            hitRadius = Mathf.Max(0.05f, radius);
         }
 
         public void Launch(Vector3 launchDirection, float launchDamage, GameObject launchSource)
@@ -85,22 +93,43 @@ namespace Project.Creatures
             }
 
             transform.position += direction * (speed * Time.deltaTime);
+            TryProximityHit();
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void TryProximityHit()
+        {
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                transform.position,
+                hitRadius,
+                ProximityOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Collide);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider other = ProximityOverlapBuffer[i];
+                if (other == null)
+                    continue;
+
+                if (TryConsumeHit(other))
+                    return;
+            }
+        }
+
+        private bool TryConsumeHit(Collider other)
         {
             if (consumed || !launched || other == null)
-                return;
+                return false;
 
             if (IsOwnerHit(other))
-                return;
+                return false;
 
             DMICreatureBridge sourceBridge = source != null
                 ? source.GetComponentInParent<DMICreatureBridge>()
                 : null;
             if (sourceBridge != null &&
                 DMICreatureTargetResolver.IsAllyCreature(sourceBridge, other.transform))
-                return;
+                return false;
 
             IDamageable damageable = DamageableUtility.GetDamageable(other);
             if (damageable == null)
@@ -117,11 +146,10 @@ namespace Project.Creatures
             }
 
             if (damageable == null)
-                return;
+                return false;
 
-            // Belt-and-suspenders: resolved damageable still belongs to caster.
             if (IsOwnerDamageable(damageable))
-                return;
+                return false;
 
             consumed = true;
             CombatHitResolver.ApplyDirectHit(
@@ -132,6 +160,12 @@ namespace Project.Creatures
                 false,
                 source);
             Destroy(gameObject);
+            return true;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            TryConsumeHit(other);
         }
 
         private bool IsOwnerHit(Collider other)

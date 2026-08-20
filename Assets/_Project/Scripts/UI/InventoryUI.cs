@@ -210,7 +210,7 @@ namespace Project.UI
             if (!needsFill && preservePanelChrome)
                 return;
 
-            SurvivalPioneerUiPalette.ApplyPanelShellBackground(panelBackgroundImage, 0.94f);
+            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(panelBackgroundImage, 0.94f);
             panelBackgroundImage.enabled = true;
 
             if (panelBorderOutline == null)
@@ -219,13 +219,13 @@ namespace Project.UI
             if (panelBorderOutline == null && inventoryPanel != null)
             {
                 panelBorderOutline = inventoryPanel.AddComponent<Outline>();
-                panelBorderOutline.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+                panelBorderOutline.effectColor = DarkMatterGenesisUiPalette.PanelBorder;
                 panelBorderOutline.effectDistance = new Vector2(2f, -2f);
                 panelBorderOutline.useGraphicAlpha = true;
             }
             else if (panelBorderOutline != null && !preservePanelChrome)
             {
-                panelBorderOutline.effectColor = SurvivalPioneerUiPalette.PanelBorder;
+                panelBorderOutline.effectColor = DarkMatterGenesisUiPalette.PanelBorder;
                 panelBorderOutline.effectDistance = new Vector2(2f, -2f);
             }
         }
@@ -689,6 +689,8 @@ namespace Project.UI
             slotUI.SetAmmoState(ammoState);
             slotUI.ApplyHudSlotMetrics(HotbarSlotSize);
             slotUI.SetHudAmountPresentation(plainAmountText: true);
+            if (equipmentController != null && equipmentController.IsWeaponHotbarSlot(hotbarIndex))
+                slotUI.SetSelectionHighlightMode(InventorySlotUI.SelectionHighlightMode.WeaponGoldBorder);
             allSlots.Add(slotUI);
 
             string keyLabel = GetHotbarKeyLabel(hotbarIndex);
@@ -808,7 +810,7 @@ namespace Project.UI
             keyLabel.fontSize = HudLayoutMetrics.ScaledInt(14f);
             keyLabel.fontStyle = FontStyles.Bold;
             keyLabel.alignment = TextAlignmentOptions.TopLeft;
-            keyLabel.color = SurvivalPioneerUiPalette.HotbarLabelText;
+            keyLabel.color = DarkMatterGenesisUiPalette.HotbarLabelText;
         }
 
         public void RefreshUI()

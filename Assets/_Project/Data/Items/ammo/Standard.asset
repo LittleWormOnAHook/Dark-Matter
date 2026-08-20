@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Standard
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Standard
-  icon: {fileID: 21300000, guid: a67dc839ae195be4aadf6f9f1b3f73d4, type: 3}
+  icon: {fileID: 21300000, guid: 7e8766f78f3b1ce48849815fa0542a31, type: 3}
   worldPrefab: {fileID: 6983711435863115270, guid: 896e540aff9514c4bbc30dc9078ae405, type: 3}
   maxStack: 999
   stableItemId: ed0a2d18-862e-41aa-9853-2d7b8b86501b
@@ -55,8 +55,8 @@ MonoBehaviour:
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
-  recoilVertical: 0
-  recoilHorizontal: 0
+  recoilVertical: 0.72
+  recoilHorizontal: 0.32
   recoilFireRateScale: 0
   fireRate: 0
   magazineSize: 0
@@ -81,6 +81,13 @@ MonoBehaviour:
   ammoType: 0
   ammoPerPickup: 50
   ammoPickupGrant: 50
+  ammoRecoilProfile:
+    pistolCameraVertical: 2.8
+    pistolCameraHorizontal: 0.75
+    pistolAnimationWeight: 0.38
+    rifleCameraVertical: 4.2
+    rifleCameraHorizontal: 1.1
+    rifleAnimationWeight: 0.18
   isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0

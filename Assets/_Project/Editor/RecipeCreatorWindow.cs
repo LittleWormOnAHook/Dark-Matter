@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// </summary>
     public class RecipeCreatorWindow : EditorWindow
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Recipe Creator", false, 100)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Recipe Creator", false, 100)]
         public static void Open()
         {
             BlueprintCraftingManagerWindow.OpenBlueprintsTab();

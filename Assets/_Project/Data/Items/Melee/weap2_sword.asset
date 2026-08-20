@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: weap2_sword
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: weap2_sword
-  icon: {fileID: 21300000, guid: 4638050222352034880def4aac84f246, type: 3}
+  icon: {fileID: 21300000, guid: 70f5fc43b0a14194bcd23e47d9d2d514, type: 3}
   worldPrefab: {fileID: 156012, guid: 875da639eb8d24e41b892b65cab27b5f, type: 3}
   maxStack: 10
   stableItemId: 4e9eb7f4-1ad9-4a86-a6c8-c585de680d4b

@@ -36,7 +36,7 @@ All surface/subsurface runs follow the same **six-phase loop**; biomes change wh
 
 | Phase | Player job | Systems involved |
 |-------|------------|------------------|
-| **Brief** | Pick trio, gear, route, weather window | Roster, Journal map, Colony Ops / Aether-9 comms |
+| **Brief** | Pick trio, gear, route, weather window | Roster, Journal map, Colony Ops / Kairos comms |
 | **Approach** | Traverse from base or drop point to biome edge | Foot, deployable vehicle (if zone allows), cave breach |
 | **Operate** | Biome-specific verbs (see §4) | Exposure, weather, combat, scan |
 | **Discover** | POI, sample, signal, core fragment | Quest, Echo generator, research |
@@ -176,7 +176,7 @@ Shelter, volatile seeps, minerals, and ore scattered on **surface main map** and
 - Night lighting + Jupiter glow on horizon; aurora-like rad shimmer at poles.  
 - **B3 Ash Flats** may get minor thermal swing (optional polish); **B5 is the primary night-cycle teaching biome**.  
 - **B4 Calderas** stay **heat extreme** day and night; night only slightly cools **rim** zones — core/lava unchanged.  
-- Colony Ops / Aether-9 can radio **polar night warnings** when B5 expeditions are planned.
+- Colony Ops / Kairos can radio **polar night warnings** when B5 expeditions are planned.
 
 **Gear gates (B4 & B5 — foot only):**
 
@@ -251,7 +251,7 @@ Director picks a **weighted region** when spawning; no biome has a static “alw
 | B6 Highlands | High early | Tutorial / first rescues near hub |
 | B1–B3 | Medium | Mid-early roster fill |
 | B5 Polar | High during B5 story arc | Rad/cold rescue setpieces |
-| B4 Calderas | High post-B5 | Aether-9 mystery escalation |
+| B4 Calderas | High post-B5 | Kairos mystery escalation |
 | B7 Ruins | High post–Memory Core | Special / rare dispositions |
 | Colony safe radius | **Zero** | Never inside Command Center perimeter |
 
@@ -268,7 +268,7 @@ When a Resonance Event fires (GDD A6): director enters **Echo Storm** mode for 1
 
 #### Comms
 
-Colony Ops / Aether-9 (when unlocked): *“Anomalous Echo trace flagged in [region] — Scout recommended.”* — reflects director spawn, not scripted POI.
+Colony Ops / Kairos (when unlocked): *“Anomalous Echo trace flagged in [region] — Scout recommended.”* — reflects director spawn, not scripted POI.
 
 ---
 
@@ -362,7 +362,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | **Visual** | Lava lakes, obsidian rim, eruption plumes, heat shimmer |
 | **Survival** | Extreme heat pole; lava instant-kill; tremor knockback — **foot only, heat-tier suit required** |
 | **Resources** | Obsidian, heat cells, caldera salts, rare melt-lens shards |
-| **Story** | Aether-9 crew death site candidates; “something watched from the rim” |
+| **Story** | Kairos crew death site candidates; “something watched from the rim” |
 | **Gameplay** | **Route + Time** — heat-shadow paths; eruption windows for rare nodes |
 
 **Signature activities**
@@ -430,13 +430,13 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | **Visual** | Non-human geometry, teal Aether glow, silent zones |
 | **Survival** | Radiation + Saturation drift; android patrols |
 | **Resources** | Aether samples, core fragments, precursor alloys |
-| **Story** | Memory Core sites; Aether-9 memory gaps; Still Hunter traces |
+| **Story** | Memory Core sites; Kairos memory gaps; Still Hunter traces |
 | **Gameplay** | **Scan + Stabilize + Clear** — puzzle combat hybrid |
 
 **Signature activities**
 - **Vault approach** — align three surface locks to open Stratum 5 gate.
 - **Android dig** — Rust Garden nest on corrupted expedition tech.
-- **Core fragment recovery** — leads to Aether-9 repair / Resonance arc.
+- **Core fragment recovery** — leads to Kairos repair / Resonance arc.
 - **Silent escort** — no combat noise or Echo Lichen triggers alarm.
 
 **Trio synergy:** Specialist scan puzzles; Infiltrator silent route; Tactician android clear.
@@ -498,7 +498,7 @@ B6 Highlands (hub) → B1 Plains → B2 Geysers → B3 Ash Flats
 | Order | Region | Why first |
 |-------|--------|-----------|
 | **1** | **B5 Polar** | Teaches **rad + cold + night cycle**; feeds **Purification Hub** and rad inoculation craft; isotope-rush / smuggling lore sets up corporate failure themes |
-| **2** | **B4 Calderas** | **Escalation** — extreme heat, Aether-9 crew death-site candidates, caldera mystery; player arrives with rad/cold lessons and colony science unlocked |
+| **2** | **B4 Calderas** | **Escalation** — extreme heat, Kairos crew death-site candidates, caldera mystery; player arrives with rad/cold lessons and colony science unlocked |
 
 Player can still **stumble unprepared** into either region; guided quests, Ops radio, and gear checks push **B5 → B4**. After the polar arc, the **ExperienceDirector** raises spawn weights toward B4/B7 (not fixed biome spawns).
 
@@ -584,7 +584,7 @@ Designed for **single-player commanding a trio**, not co-op.
 | **E3** | B3 + B4 + Timed verb polish | Thermal/volcano HUD |
 | **E4** | B5 + rad relay gameplay | Inoculation loop |
 | **E5** | Underground pairing (Stratum 1–3) | Underground architecture P0–P3 |
-| **E6** | B7 + Memory Core activities | Aether-9 arc (B4 #8) |
+| **E6** | B7 + Memory Core activities | Kairos arc (B4 #8) |
 | **E7** | Director activity weighting + biome unlock mask | WorldState persistence |
 | **E8** | Io Buggy (6-wheel) deploy/pack + env resistance profile | Vehicle deploy zones on E1/E1b |
 

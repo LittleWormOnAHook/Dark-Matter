@@ -54,7 +54,7 @@ namespace Project.EditorTools.Optics
             serializedObject.ApplyModifiedProperties();
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Optics + "Select Crosshair Library")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Select Crosshair Library")]
         public static void SelectLibraryAsset()
         {
             OpticsCrosshairLibrary library = AssetDatabase.LoadAssetAtPath<OpticsCrosshairLibrary>(

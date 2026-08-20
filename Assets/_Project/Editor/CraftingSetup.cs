@@ -30,7 +30,7 @@ namespace Project.EditorTools
                 new[] { ("Rock", 3) }, "Medpack", 1)
         };
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Wire Scene Stations")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Wire Scene Stations")]
         public static void WireCraftingStations()
         {
             EnsureFolders();
@@ -57,7 +57,7 @@ namespace Project.EditorTools
             Debug.Log("Crafting setup complete. Press E at Cooking/Workbench stations, find blueprint scrolls near the Recipe Book, and use Journal > Craft / Blueprints tabs.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Blueprints")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Blueprints")]
         public static void CreateCraftingContentOnly()
         {
             EnsureFolders();
@@ -241,12 +241,12 @@ namespace Project.EditorTools
         }
 
         
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Seed Starter Recipes", false, 200)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Recipes", false, 200)]
         private static void SeedStarterRecipesLegacy() => CreateCraftingContentOnly();
 
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Recipe Registry", false, 201)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Recipe Registry", false, 201)]
         private static void SyncRecipeRegistryLegacy() => SyncRecipeRegistryFromDataFolder();
-        [MenuItem(SurvivalPioneerEditorMenus.Crafting + "Sync Blueprint Registry")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Registry")]
         public static void SyncRecipeRegistryFromDataFolder()
         {
             EnsureFolders();

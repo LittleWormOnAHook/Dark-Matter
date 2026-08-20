@@ -89,7 +89,7 @@ namespace Project.UI
             levelLabel.fontSize = 19.5f * HudLayoutMetrics.HudScale;
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            levelLabel.color = SurvivalPioneerUiPalette.Gold;
+            levelLabel.color = DarkMatterGenesisUiPalette.Gold;
             levelLabel.raycastTarget = false;
             levelLabel.margin = new Vector4(6f, 0f, 0f, 0f);
             levelLabel.overflowMode = TextOverflowModes.Overflow;
@@ -104,7 +104,7 @@ namespace Project.UI
             trackRect.offsetMax = new Vector2(-6f, 0f);
             Image trackImage = trackObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(trackImage);
-            trackImage.color = SurvivalPioneerUiPalette.SlateGray;
+            trackImage.color = DarkMatterGenesisUiPalette.SlateGray;
             trackImage.raycastTarget = false;
 
             GameObject fillObject = new GameObject("XpFill", typeof(RectTransform), typeof(Image));
@@ -117,7 +117,7 @@ namespace Project.UI
             xpFillRect.offsetMax = Vector2.zero;
             xpFill = fillObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(xpFill);
-            xpFill.color = SurvivalPioneerUiPalette.Gold;
+            xpFill.color = DarkMatterGenesisUiPalette.Gold;
             xpFill.raycastTarget = false;
             xpFill.preserveAspect = false;
 
@@ -133,7 +133,7 @@ namespace Project.UI
             xpCountLabel.fontSize = 11f * HudLayoutMetrics.HudScale;
             xpCountLabel.fontStyle = FontStyles.Bold;
             xpCountLabel.alignment = TextAlignmentOptions.Center;
-            xpCountLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            xpCountLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             xpCountLabel.raycastTarget = false;
             xpCountLabel.overflowMode = TextOverflowModes.Ellipsis;
             xpCountLabel.textWrappingMode = TextWrappingModes.NoWrap;

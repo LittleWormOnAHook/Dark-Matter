@@ -7,16 +7,24 @@ namespace Project.Core
     {
         public static GameObject FindPlayerObject()
         {
-            GameObject tagged = GameObject.FindWithTag("Player");
-            if (tagged != null)
-                return tagged;
+            Transform cached = PlayerReference.Transform;
+            if (cached != null)
+                return cached.gameObject;
 
-            PlayerController controller = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
-            return controller != null ? controller.gameObject : null;
+            Transform resolved = PlayerReference.ResolveTransform();
+            return resolved != null ? resolved.gameObject : null;
         }
 
         public static PlayerController FindPlayerController()
         {
+            Transform cached = PlayerReference.Transform;
+            if (cached != null)
+            {
+                PlayerController onCached = cached.GetComponent<PlayerController>();
+                if (onCached != null)
+                    return onCached;
+            }
+
             GameObject player = FindPlayerObject();
             return player != null ? player.GetComponent<PlayerController>() : null;
         }

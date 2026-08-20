@@ -67,14 +67,14 @@ namespace Project.UI
             new TabDef("Achievements", JournalWindowId.Achievements)
         };
 
-        private static readonly Color ActiveTabColor = SurvivalPioneerUiPalette.ActiveTabBackground;
-        private static readonly Color HoverTabColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.22f);
-        private static readonly Color InactiveTabColor = SurvivalPioneerUiPalette.InactiveTabBackground;
+        private static readonly Color ActiveTabColor = DarkMatterGenesisUiPalette.ActiveTabBackground;
+        private static readonly Color HoverTabColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.22f);
+        private static readonly Color InactiveTabColor = DarkMatterGenesisUiPalette.InactiveTabBackground;
         /// <summary>Hover / selected / highlighted tab labels — Warm Off-White.</summary>
-        private static readonly Color ActiveLabelColor = SurvivalPioneerUiPalette.WarmOffWhite;
-        private static readonly Color HoverLabelColor = SurvivalPioneerUiPalette.WarmOffWhite;
+        private static readonly Color ActiveLabelColor = DarkMatterGenesisUiPalette.WarmOffWhite;
+        private static readonly Color HoverLabelColor = DarkMatterGenesisUiPalette.WarmOffWhite;
         /// <summary>Idle (unused) tab labels — Gold.</summary>
-        private static readonly Color InactiveLabelColor = SurvivalPioneerUiPalette.Gold;
+        private static readonly Color InactiveLabelColor = DarkMatterGenesisUiPalette.Gold;
 
         private readonly List<TabEntry> tabs = new List<TabEntry>(Tabs.Length);
         private readonly Dictionary<JournalWindowId, TabEntry> tabsById = new Dictionary<JournalWindowId, TabEntry>();
@@ -97,9 +97,9 @@ namespace Project.UI
             if (railBg == null)
                 railBg = gameObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(railBg);
-            railBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.96f);
+            railBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.96f);
             railBg.raycastTarget = true;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(2f, -2f));
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(2f, -2f));
 
             GameObject tabRow = new GameObject("TabRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             tabRow.transform.SetParent(transform, false);
@@ -211,7 +211,7 @@ namespace Project.UI
             Image bg = tabObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(bg);
             bg.color = InactiveTabColor;
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(tabObject);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(tabObject);
 
             Button button = tabObject.GetComponent<Button>();
             button.targetGraphic = bg;

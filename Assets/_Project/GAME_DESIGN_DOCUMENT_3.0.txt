@@ -41,7 +41,7 @@ REVISION NOTES (changes from prior draft) — HISTORICAL ONLY
   + Cold/Heat: single combined thermal stress meter (cold ↔ heat poles)
   + Controls: keyboard-mouse + controller schemes (PC / console)
   + Journal tabs expanded: Pet/companions, Skills, Craft, Recipes, Echos
-  + Aether-9 shares quest duty with small portion of side quest givers
+  + Kairos shares quest duty with small portion of side quest givers
   + Story: failed human/alien expeditions left tech and materials on Io
   + Section 16: Unity 6 + URP project rules (PC/consoles, combat/AI/engineering)
   + Platforms (GDD 5.0 lock): PC primary + consoles; no mobile ship target
@@ -58,7 +58,7 @@ Year 2160. Dark Matter: Genesis is a semi-low-poly survival + light base-builder
 Jupiter's moon Io. You lead up to 25 companions: up to 22 work at base while you
 take a trio of 3 on expeditions. You rescue procedurally generated Neural
 Echoes (named, upgraded specialists—thought to be imprints of previous failed
-expeditions), recover Memory Cores for the ancient probe Aether-9, materialize,
+expeditions), recover Memory Cores for the ancient probe Kairos, materialize,
 craft, and maintain buildings from resources, and survive harsh biomes.
 Roster progression is local save only.
 
@@ -90,7 +90,7 @@ AC economy (some legacy currency field names remain), map, save/load, pet/AI
 follower system with small skills, enemy AI, loot container system, main menu,
 journal hub, editor tools (Unity).
 
-NOT BUILT YET: Io biomes, 25-companion roster, trio system, Aether-9 probe,
+NOT BUILT YET: Io biomes, 25-companion roster, trio system, Kairos probe,
 memory cores, Resonance Events, procedural Echo generator, Command Center and
 other sim systems, sulfur storm base logic, building materialization pipeline,
 four biome exposure meters beyond oxygen tuning.
@@ -115,7 +115,7 @@ ONE-LINE PITCH
 --------------
 Lead 25 companions on Io: trio expeditions face oxygen and biome/environment
 hazards; 22 base companion workers shelter during sulfur storms and resume if
-unharmed and/or healed; rescue procedural Echoes; slot Aether-9 memory cores
+unharmed and/or healed; rescue procedural Echoes; slot Kairos memory cores
 for world-changing Resonance Events; spend Aether Credits on base and roster.
 
 CORE PILLARS
@@ -130,7 +130,7 @@ CORE PILLARS
   3. Procedural Neural Echoes — unique names, stats, abilities; local roster
      progression only (no marketplace trading)
 
-  4. Aether-9 + Memory Cores + Resonance Events — story + dynamic world
+  4. Kairos + Memory Cores + Resonance Events — story + dynamic world
 
   5. Light materialization building — spend resources, prefab appears + VFX;
      craft and maintain structures over time
@@ -157,11 +157,11 @@ TONE
 ----
 Harsh survival + sci-fi mystery. Sci-fi HUD.
 
-QUEST HUB: AETHER-9
+QUEST HUB: KAIROS
 -------------------
 Ancient weathered probe from early colonization. Glitchy synth voice, short
 bursts. Not a human companion (prototype currently uses Companion Guide — replace).
-Aether-9 handles main mystery arc; a small portion of side quests and tasks
+Kairos handles main mystery arc; a small portion of side quests and tasks
 use other givers.
 
 MYSTERY ARC (8–12 MEMORY CORES)
@@ -310,7 +310,7 @@ DISCOVERY
 ---------
   Infiltrator Scout detects Echo Signals (holographic glitches) near vents,
   calderas, caves. Player can also scan.
-  Memory cores slotted into Aether-9 amplify scan range.
+  Memory cores slotted into Kairos amplify scan range.
   Resonance Events may spawn Echo Storms (more signals + more hazards).
 
 RESCUE SETPIECE
@@ -359,7 +359,7 @@ PROCEDURAL GENERATION (AT INTEGRATION)
     3–5 stats: Radiation Resistance, Expedition Efficiency, Combat Synergy,
                Durability, Anomaly Affinity
     1–2 active + 1–2 passive from curated pool (~15–20 abilities total)
-    Backstory fragment for Aether-9 archive
+    Backstory fragment for Kairos archive
     Visual: material tint + modular attachments (no unique mesh per Echo)
 
 ABILITY POOL SEEDS
@@ -371,12 +371,12 @@ ABILITY POOL SEEDS
 
 
 ================================================================================
-SECTION 7 — AETHER-9, MEMORY CORES & RESONANCE EVENTS
+SECTION 7 — KAIROS, MEMORY CORES & RESONANCE EVENTS
 ================================================================================
 
 FLOW
 ----
-  Find core → recovery setpiece (not pure fetch) → slot into Aether-9 →
+  Find core → recovery setpiece (not pure fetch) → slot into Kairos →
   RESONANCE EVENT (10–15 min world change) + story fragment + unlocks
 
 CORE RECOVERY (NOT FETCH QUESTS)
@@ -532,7 +532,7 @@ DONE — REUSE & EXTEND
   [x] Melee combat, weapon hitboxes, block, charge attack
   [x] Inventory 24 + hotbar 10 + toolbar 2 (scanner, binoculars)
   [x] Crafting, recipes, scroll pickups, stations
-  [x] Quest system + quest giver companion (reflavor to Aether-9 + side givers)
+  [x] Quest system + quest giver companion (reflavor to Kairos + side givers)
   [x] AC HUD + save (clean leftover legacy currency naming when touching UI)
   [x] Map, optics/scanner, pet/AI follower (MIGRATE → Echo/trio companion fold)
   [x] Save/load (5 slots, inventory, quests, equipment)
@@ -549,7 +549,7 @@ NOT STARTED — VISION SYSTEMS
   [ ] Command Center + 22 companion aggregate sim + sulfur shelter
   [ ] 25 cap roster + trio selection
   [ ] Procedural Echo generator + rescue setpieces
-  [ ] Aether-9 probe + memory cores + Resonance Events
+  [ ] Kairos probe + memory cores + Resonance Events
   [ ] Building materialization + maintenance pipeline
   [ ] Medical Facility, Science Labs gameplay
   [ ] Aether Credits economy polish (AC-only UI/save)
@@ -595,7 +595,7 @@ PHASE 4 — PROCEDURAL ECHOES & RESCUE (3–4 weeks)
   [ ] Echo Reclamation Chamber
   [ ] Permanent Echo loss on failed rescue
 
-PHASE 5 — AETHER-9 & RESONANCE (3–4 weeks)
+PHASE 5 — KAIROS & RESONANCE (3–4 weeks)
   [ ] Probe quest hub + memory cores + side quest givers
   [ ] 2–3 Resonance Events
   [ ] Core setpieces + building unlocks

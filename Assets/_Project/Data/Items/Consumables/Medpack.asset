@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Medpack
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Medpack
-  icon: {fileID: 21300000, guid: d2c85206e194a924da24cbcea4d5e618, type: 3}
+  icon: {fileID: 21300000, guid: e0bae73f5947f394ab17207e4d9a3eee, type: 3}
   worldPrefab: {fileID: 2390687514921563628, guid: 9ac363e9d2ed1be41abf62c0520f89cc, type: 3}
   maxStack: 100
   stableItemId: ae3671bf-3f1b-47ea-8516-cb00d175043b

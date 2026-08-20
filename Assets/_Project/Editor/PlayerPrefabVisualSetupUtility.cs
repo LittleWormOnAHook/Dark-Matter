@@ -4,6 +4,7 @@ using Invector.vCharacterController;
 using Project.AI.Invector;
 using Project.Data;
 using Project.EditorTools.Invector;
+using Project.Player.Invector;
 using UnityEditor;
 using UnityEngine;
 
@@ -145,6 +146,7 @@ namespace Project.EditorTools
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
+                Selection.activeObject = null;
             }
 
             return AssetDatabase.LoadAssetAtPath<GameObject>(outputPath);
@@ -183,6 +185,7 @@ namespace Project.EditorTools
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
+                Selection.activeObject = null;
             }
         }
 
@@ -217,6 +220,7 @@ namespace Project.EditorTools
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
+                Selection.activeObject = null;
             }
         }
 
@@ -225,12 +229,24 @@ namespace Project.EditorTools
             if (root == null)
                 return;
 
-            // Same path as Corrupt Patrol: refresh BodySnaps bone targets → parent holders onto
-            // live Meshy/T-pose humanoid bones → repair weapon visuals → edit-mode bind pose.
+            EditorLayoutGuard.BeforeDestroySceneObject(root);
+
             EnemyInvectorBodySnapSetupEditor.ConfigureEditor(root);
             EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
+
+            int remounted = PlayerInvectorRagdollSetup.RepairSeparatedRagdoll(root);
+            if (remounted > 0)
+            {
+                Debug.Log(
+                    $"[PlayerPrefabVisualSetup] Remounted orphan ragdoll onto avatar ({remounted} bone rigidbodies).",
+                    root);
+            }
+
+            PlayerInvectorRuntimeSetupEditor.WireRuntimeReferences(root);
             EnemyInvectorSetupUtility.RepairWeaponSlotVisuals(root);
             RepairEditModeAnimator(root);
+
+            EditorLayoutGuard.ScheduleInspectorRecovery();
         }
 
         public static void AttachVisualModel(GameObject root, GameObject visualSource, string visualChildName)
@@ -308,12 +324,6 @@ namespace Project.EditorTools
                     "Check FBX Humanoid mapping. Visual remains nested; stock body stays hidden.",
                     root);
             }
-            else
-            {
-                EnemyInvectorBodySnapSetupEditor.ConfigureEditor(root);
-                EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
-            }
-
             EnemyInvectorSetupUtility.RepairWeaponSlotVisuals(root);
         }
 

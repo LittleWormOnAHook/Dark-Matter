@@ -14,7 +14,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class EnemyShooterLayerPatcher
     {
-        [MenuItem(SurvivalPioneerEditorMenus.RebuildEnemyControllerFromShooterMelee)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RebuildEnemyControllerFromShooterMelee)]
         private static void RebuildSelected()
         {
             AnimatorController target = Selection.activeObject as AnimatorController;
@@ -53,7 +53,7 @@ namespace Project.EditorTools
                 "OK");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.RebuildEnemyControllerFromShooterMelee, true)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RebuildEnemyControllerFromShooterMelee, true)]
         private static bool RebuildSelectedValidate() =>
             Selection.activeObject is AnimatorController;
     }

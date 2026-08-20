@@ -37,7 +37,7 @@ namespace Project.EditorTools.Companions
         private string newAssetDisplayName = string.Empty;
         private CompanionOrigin? lastSuggestedOrigin;
 
-        [MenuItem(SurvivalPioneerEditorMenus.CompanionPrefabTool, false, 5)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CompanionPrefabTool, false, 5)]
         public static void Open()
         {
             GetWindow<CompanionPrefabToolWindow>("Companion Prefab Tool");

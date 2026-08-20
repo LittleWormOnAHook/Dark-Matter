@@ -24,6 +24,7 @@ namespace Project.Player.Invector
     {
         private const string ShellDropClipPath = "Assets/Audio/Player Weapons/shellDrop1.wav";
         private const string SharedEmptyClickClipPath = "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3";
+        private const string SharedEmptyClickResourcesPath = "Audio/EmptyClip_A";
 
         [Header("Empty Reload Deny")]
         [SerializeField] private AudioClip emptyReloadDenyClip;
@@ -281,8 +282,10 @@ namespace Project.Player.Invector
             if (sharedEmptyClickClip != null)
                 return;
 
+            sharedEmptyClickClip = Resources.Load<AudioClip>(SharedEmptyClickResourcesPath);
 #if UNITY_EDITOR
-            sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(SharedEmptyClickClipPath);
+            if (sharedEmptyClickClip == null)
+                sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(SharedEmptyClickClipPath);
 #endif
         }
 

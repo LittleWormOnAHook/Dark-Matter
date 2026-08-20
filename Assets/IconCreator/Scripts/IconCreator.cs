@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -217,12 +219,14 @@ public class IconCreator : MonoBehaviour {
         }
         set {
             Count = value;
+#if UNITY_EDITOR
             if (count != 0) {
                 EditorUtility.DisplayProgressBar ("Icon Creator", "Creating icon number " + count + " of " + modelsToCreateIconsFrom.Length, count / ((float)modelsToCreateIconsFrom.Length));
             }
             else {
                 EditorUtility.ClearProgressBar ();
             }
+#endif
         }
     }
 
@@ -255,10 +259,14 @@ public class IconCreator : MonoBehaviour {
         }
 
         if (modelsToCreateIconsFrom.Length == 0) {
+#if UNITY_EDITOR
             EditorUtility.DisplayDialog ("No models found!", "You must have at least one model in the models to create icons from list.", "Ok");
+#endif
         }
         else if(useOutline && outlineColors.Length == 0) {
+#if UNITY_EDITOR
             EditorUtility.DisplayDialog("No outline colours!", "When using outline you must at least have 1 outline colour.", "Ok");
+#endif
         }
         else {
             for (int j = 0; j < modelsToCreateIconsFrom.Length; j++) {
@@ -279,12 +287,14 @@ public class IconCreator : MonoBehaviour {
         useForeground = useForeground;
         currentIndex = currentIndex;
 
+#if UNITY_EDITOR
         System.Reflection.Assembly assembly = typeof(UnityEditor.EditorWindow).Assembly;
         System.Type type = assembly.GetType ("UnityEditor.InspectorWindow");
         EditorWindow inspectorWindow = EditorWindow.GetWindow (type);
         inspectorWindow.Focus ();
 
         AssetDatabase.Refresh ();
+#endif
 
         count = 0;
     }
@@ -502,7 +512,9 @@ public class IconCreator : MonoBehaviour {
             Directory.CreateDirectory (Application.dataPath + "/GeneratedIcons/" + (doubleQuality ? iconSizeX / 2 : iconSizeX).ToString () + "x" + (doubleQuality ? iconSizeY / 2 : iconSizeY).ToString () + "/" + (useOutline ? currentOutlineColor.colorName : "Transparent"));
         }
         File.WriteAllBytes (Path.Combine (Application.dataPath + "/GeneratedIcons/" + (doubleQuality ? iconSizeX / 2 : iconSizeX).ToString () + "x" + (doubleQuality ? iconSizeY / 2 : iconSizeY).ToString () + "/" + (useOutline ? currentOutlineColor.colorName : "Transparent"), currentModel.name + ".png"), icon.EncodeToPNG ());
+#if UNITY_EDITOR
         EditorUtility.ClearProgressBar ();
+#endif
     }
 
     public void OnValidate() {

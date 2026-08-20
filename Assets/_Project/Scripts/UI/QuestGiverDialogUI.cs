@@ -35,11 +35,19 @@ namespace Project.UI
         private TextMeshProUGUI questActionButtonLabel;
         private Button abandonQuestButton;
         private TextMeshProUGUI abandonQuestButtonLabel;
+        private Button directionsButton;
+        private TextMeshProUGUI directionsButtonLabel;
+        private Button boardDirectionsButton;
+        private TextMeshProUGUI boardDirectionsButtonLabel;
         private bool abandonConfirmPending;
         private Action onClosed;
+        private Action onDirectionsRequested;
         private bool built;
         private IList<QuestBoardEntry> currentEntries;
         private int selectedEntryIndex = -1;
+        private CanvasGroup overlayCanvasGroup;
+        private NpcDialogProximityFade proximityFade;
+        private Transform npcAnchor;
 
         public static QuestGiverDialogUI Instance => instance;
 
@@ -53,7 +61,7 @@ namespace Project.UI
 
         public static QuestGiverDialogUI EnsureExists(Transform canvasRoot)
         {
-            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null))
+            if (instance != null && instance.built && (instance.questListScroll == null || instance.abandonQuestButton == null || instance.boardDirectionsButton == null))
             {
                 instance.TeardownInternal();
                 instance = null;
@@ -130,9 +138,17 @@ namespace Project.UI
             questActionButtonLabel = null;
             abandonQuestButton = null;
             abandonQuestButtonLabel = null;
+            directionsButton = null;
+            directionsButtonLabel = null;
+            boardDirectionsButton = null;
+            boardDirectionsButtonLabel = null;
             abandonConfirmPending = false;
+            onDirectionsRequested = null;
             currentEntries = null;
             selectedEntryIndex = -1;
+            overlayCanvasGroup = null;
+            proximityFade = null;
+            npcAnchor = null;
 
             if (instance == this)
                 instance = null;
@@ -140,24 +156,36 @@ namespace Project.UI
             Destroy(gameObject);
         }
 
-        public static void Show(string speakerName, string message, Action closedCallback = null, string primaryLabel = "Continue")
+        public static void Show(
+            string speakerName,
+            string message,
+            Action closedCallback = null,
+            string primaryLabel = "Continue",
+            Action directionsCallback = null,
+            Transform npcAnchor = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel);
+            dialog.PresentSimple(speakerName, message, closedCallback, primaryLabel, directionsCallback, npcAnchor);
         }
 
-        public static void ShowQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback = null)
+        public static void ShowQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback = null,
+            Action directionsCallback = null,
+            Transform npcAnchor = null)
         {
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             QuestGiverDialogUI dialog = EnsureExists(canvas.transform);
-            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback);
+            dialog.PresentQuestBoard(speakerName, introMessage, entries, closedCallback, directionsCallback, npcAnchor);
         }
 
         private void Build(Transform canvasRoot)
@@ -171,6 +199,12 @@ namespace Project.UI
 
             overlayRoot = MenuUiBuilder.CreateFullScreenPanel(transform, "DialogOverlay", new Color(0f, 0f, 0f, 0.5f), blockRaycasts: true);
             overlayRoot.transform.SetAsLastSibling();
+            overlayCanvasGroup = overlayRoot.GetComponent<CanvasGroup>();
+            if (overlayCanvasGroup == null)
+                overlayCanvasGroup = overlayRoot.AddComponent<CanvasGroup>();
+            proximityFade = GetComponent<NpcDialogProximityFade>();
+            if (proximityFade == null)
+                proximityFade = gameObject.AddComponent<NpcDialogProximityFade>();
 
             dialogPanel = MenuUiBuilder.CreateCenteredModalShell(
                 overlayRoot.transform,
@@ -223,6 +257,11 @@ namespace Project.UI
             primaryButton = CreateButton(simpleContentRoot.transform, "Close", theme, out primaryButtonLabel);
             primaryButton.onClick.RemoveAllListeners();
             primaryButton.onClick.AddListener(Close);
+
+            directionsButton = CreateButton(simpleContentRoot.transform, "Ask for Directions", theme, out directionsButtonLabel);
+            directionsButton.onClick.RemoveAllListeners();
+            directionsButton.onClick.AddListener(HandleDirectionsClicked);
+            directionsButton.gameObject.SetActive(false);
         }
 
         private void BuildBoardContent(RectTransform contentArea, ShiftUiTheme theme)
@@ -260,14 +299,14 @@ namespace Project.UI
             leftDescriptionText.textWrappingMode = TextWrappingModes.Normal;
             leftObjectivesText = CreateText(leftPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             leftObjectivesText.textWrappingMode = TextWrappingModes.Normal;
-            leftObjectivesText.color = SurvivalPioneerUiPalette.BodyText;
+            leftObjectivesText.color = DarkMatterGenesisUiPalette.BodyText;
 
             GameObject rightPanel = CreatePanel(splitRow.transform, "QuestProgressPanel", flexibleWidth: 1f);
             rightStatusText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
             rightProgressText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             rightProgressText.textWrappingMode = TextWrappingModes.Normal;
             rightXpText = CreateText(rightPanel.transform, string.Empty, theme, 18f, FontStyles.Bold);
-            rightXpText.color = SurvivalPioneerUiPalette.Gold;
+            rightXpText.color = DarkMatterGenesisUiPalette.Gold;
             rightRewardsText = CreateText(rightPanel.transform, string.Empty, theme, 16f, FontStyles.Normal);
             rightRewardsText.textWrappingMode = TextWrappingModes.Normal;
 
@@ -283,6 +322,11 @@ namespace Project.UI
             actionRowElement.minHeight = 48f;
             actionRowElement.preferredHeight = 48f;
 
+            boardDirectionsButton = CreateButton(actionRow.transform, "Ask for Directions", theme, out boardDirectionsButtonLabel);
+            boardDirectionsButton.onClick.RemoveAllListeners();
+            boardDirectionsButton.onClick.AddListener(HandleDirectionsClicked);
+            boardDirectionsButton.gameObject.SetActive(false);
+
             questActionButton = CreateButton(actionRow.transform, "Accept", theme, out questActionButtonLabel);
             questActionButton.onClick.RemoveAllListeners();
             questActionButton.onClick.AddListener(HandleQuestActionClicked);
@@ -292,7 +336,7 @@ namespace Project.UI
             abandonQuestButton.onClick.AddListener(HandleAbandonClicked);
             Image abandonImage = abandonQuestButton.GetComponent<Image>();
             if (abandonImage != null)
-                abandonImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+                abandonImage.color = DarkMatterGenesisUiPalette.DeepMagenta;
             abandonQuestButton.gameObject.SetActive(false);
 
             boardContentRoot.SetActive(false);
@@ -304,7 +348,7 @@ namespace Project.UI
             listColumn.transform.SetParent(parent, false);
 
             Image columnBg = listColumn.GetComponent<Image>();
-            columnBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.95f);
+            columnBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.95f);
 
             LayoutElement columnLayout = listColumn.GetComponent<LayoutElement>();
             columnLayout.flexibleWidth = 0.38f;
@@ -375,7 +419,7 @@ namespace Project.UI
             panel.transform.SetParent(parent, false);
 
             Image bg = panel.GetComponent<Image>();
-            bg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.92f);
+            bg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.92f);
 
             LayoutElement layout = panel.GetComponent<LayoutElement>();
             if (preferredHeight > 0f)
@@ -400,21 +444,38 @@ namespace Project.UI
             return panel;
         }
 
-        private void PresentSimple(string speakerName, string message, Action closedCallback, string primaryLabel)
+        private void PresentSimple(
+            string speakerName,
+            string message,
+            Action closedCallback,
+            string primaryLabel,
+            Action directionsCallback,
+            Transform anchor)
         {
             onClosed = closedCallback;
+            onDirectionsRequested = directionsCallback;
+            npcAnchor = anchor;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             bodyText.text = message ?? string.Empty;
             simpleContentRoot.SetActive(true);
             boardContentRoot.SetActive(false);
             primaryButtonLabel.text = string.IsNullOrEmpty(primaryLabel) ? "Continue" : primaryLabel;
             primaryButton.interactable = true;
+            ApplyDirectionsButtons();
             OpenOverlay();
         }
 
-        private void PresentQuestBoard(string speakerName, string introMessage, IList<QuestBoardEntry> entries, Action closedCallback)
+        private void PresentQuestBoard(
+            string speakerName,
+            string introMessage,
+            IList<QuestBoardEntry> entries,
+            Action closedCallback,
+            Action directionsCallback,
+            Transform anchor)
         {
             onClosed = closedCallback;
+            onDirectionsRequested = directionsCallback;
+            npcAnchor = anchor;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             currentEntries = entries;
             selectedEntryIndex = entries != null && entries.Count > 0 ? 0 : -1;
@@ -452,8 +513,26 @@ namespace Project.UI
                     abandonQuestButton.gameObject.SetActive(false);
             }
 
+            ApplyDirectionsButtons();
             RefreshQuestListLayout();
             OpenOverlay();
+        }
+
+        private void ApplyDirectionsButtons()
+        {
+            bool showDirections = onDirectionsRequested != null;
+
+            if (directionsButton != null)
+            {
+                directionsButton.gameObject.SetActive(showDirections);
+                directionsButton.interactable = showDirections;
+            }
+
+            if (boardDirectionsButton != null)
+            {
+                boardDirectionsButton.gameObject.SetActive(showDirections);
+                boardDirectionsButton.interactable = showDirections;
+            }
         }
 
         private void RefreshQuestListLayout()
@@ -590,6 +669,16 @@ namespace Project.UI
             callback.Invoke();
         }
 
+        private void HandleDirectionsClicked()
+        {
+            if (onDirectionsRequested == null)
+                return;
+
+            Action callback = onDirectionsRequested;
+            Close();
+            callback.Invoke();
+        }
+
         private void HandleAbandonClicked()
         {
             if (currentEntries == null || selectedEntryIndex < 0 || selectedEntryIndex >= currentEntries.Count)
@@ -625,6 +714,7 @@ namespace Project.UI
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(true);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -632,6 +722,11 @@ namespace Project.UI
             overlayRoot.transform.SetAsLastSibling();
             EnforceQuestDialogLayout();
             UiFrontLayer.BringLayerToFront(transform.parent);
+
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
+            proximityFade?.BeginMonitoring(npcAnchor, overlayCanvasGroup, Close);
         }
 
         private void EnforceQuestDialogLayout()
@@ -665,16 +760,25 @@ namespace Project.UI
 
         private void Close()
         {
+            proximityFade?.StopMonitoring();
+
             if (overlayRoot != null)
                 overlayRoot.SetActive(false);
+
+            if (overlayCanvasGroup != null)
+                overlayCanvasGroup.alpha = 1f;
+
+            npcAnchor = null;
 
             ClearQuestPicker();
             currentEntries = null;
             selectedEntryIndex = -1;
             abandonConfirmPending = false;
+            onDirectionsRequested = null;
 
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetQuestDialogOpen(false);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonQuestDialog, false);
 
             Action callback = onClosed;
             onClosed = null;
@@ -709,7 +813,7 @@ namespace Project.UI
 
             Image image = buttonObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.ButtonNormal;
+            image.color = DarkMatterGenesisUiPalette.ButtonNormal;
             image.raycastTarget = true;
 
             Button button = buttonObject.AddComponent<Button>();

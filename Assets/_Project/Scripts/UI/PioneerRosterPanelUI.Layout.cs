@@ -17,6 +17,13 @@ namespace Project.UI
     // Split out of PioneerRosterPanelUI.cs — pure "build the hierarchy" code, no gameplay state.
     public partial class PioneerRosterPanelUI
     {
+        internal const float RosterPortraitSize = 56f;
+        private const float DetailPortraitSize = 112f;
+        private const float CondensedControlHeight = 36f;
+        private const float CondensedTrioSlotHeight = 40f;
+        private const float CondensedTrioLoadoutRowHeight = 40f;
+        private const float DetailSubpanelMinHeight = 220f;
+
         private void EnsureBuilt(Transform parent)
         {
             if (panelRoot != null)
@@ -36,10 +43,10 @@ namespace Project.UI
 
             // Left side now hosts the four grouped browser columns (Class / Echoes / Trio / Camp
             // Building) requested alongside the existing detail+loadout+trio-picker on the right.
-            GameObject leftColumn = CreateColumn(panelRoot.transform, flexibleWidth: 0.60f);
+            GameObject leftColumn = CreateColumn(panelRoot.transform, flexibleWidth: 0.58f);
             BuildLeftColumn(leftColumn.transform);
 
-            GameObject rightColumn = CreateColumn(panelRoot.transform, flexibleWidth: 0.40f);
+            GameObject rightColumn = CreateColumn(panelRoot.transform, flexibleWidth: 0.42f);
             BuildRightColumn(rightColumn.transform);
         }
 
@@ -62,7 +69,7 @@ namespace Project.UI
             columnsRow.transform.SetParent(parent, false);
             LayoutElement columnsRowLayout = columnsRow.GetComponent<LayoutElement>();
             columnsRowLayout.flexibleHeight = 1f;
-            columnsRowLayout.minHeight = 220f;
+            columnsRowLayout.minHeight = 280f;
 
             HorizontalLayoutGroup columnsLayout = columnsRow.GetComponent<HorizontalLayoutGroup>();
             columnsLayout.spacing = 5f;
@@ -78,11 +85,11 @@ namespace Project.UI
 
             GameObject colonistRow = new GameObject("ColonistSummary", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             colonistRow.transform.SetParent(parent, false);
-            colonistRow.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.98f);
+            colonistRow.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.98f);
             colonistRow.GetComponent<LayoutElement>().minHeight = 52f;
 
             colonistSummaryLabel = CreateLabel(colonistRow.transform, string.Empty, JournalPanelLayout.SecondaryFontSize);
-            colonistSummaryLabel.color = SurvivalPioneerUiPalette.BodyText;
+            colonistSummaryLabel.color = DarkMatterGenesisUiPalette.BodyText;
             Stretch(colonistSummaryLabel.rectTransform, 10f, 8f);
         }
 
@@ -106,18 +113,18 @@ namespace Project.UI
             columnGroup.childForceExpandHeight = false;
 
             TextMeshProUGUI subHeader = CreateLabel(column.transform, title, 12.5f, semiBold: true);
-            subHeader.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            subHeader.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             subHeader.alignment = TextAlignmentOptions.TopLeft;
 
             GameObject scrollObject = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement), typeof(Image));
             scrollObject.transform.SetParent(column.transform, false);
             LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
             scrollLayout.flexibleHeight = 1f;
-            scrollLayout.minHeight = 220f;
+            scrollLayout.minHeight = 260f;
 
             Image scrollBg = scrollObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.ScrollBackground;
+            scrollBg.color = DarkMatterGenesisUiPalette.ScrollBackground;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
             viewport.transform.SetParent(scrollObject.transform, false);
@@ -125,7 +132,7 @@ namespace Project.UI
             Stretch(viewportRect);
             viewportRect.offsetMin = new Vector2(3f, 3f);
             viewportRect.offsetMax = new Vector2(-3f, -3f);
-            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.35f);
+            viewport.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.35f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
@@ -137,8 +144,8 @@ namespace Project.UI
             contentRect.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 4f;
-            contentLayout.padding = new RectOffset(3, 3, 3, 3);
+            contentLayout.spacing = 6f;
+            contentLayout.padding = new RectOffset(4, 4, 4, 4);
             contentLayout.childControlWidth = true;
             contentLayout.childForceExpandWidth = true;
             content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -147,6 +154,7 @@ namespace Project.UI
             scroll.viewport = viewportRect;
             scroll.content = contentRect;
             scroll.horizontal = false;
+            scroll.scrollSensitivity = 28f;
 
             return content.transform;
         }
@@ -154,7 +162,7 @@ namespace Project.UI
         private void BuildRightColumn(Transform parent)
         {
             VerticalLayoutGroup layout = parent.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = JournalPanelLayout.SectionSpacing;
+            layout.spacing = 6f;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
@@ -163,58 +171,163 @@ namespace Project.UI
             TextMeshProUGUI header = CreateLabel(parent, "COMPANION DETAIL", JournalPanelLayout.HeaderFontSize, semiBold: true);
             JournalPanelLayout.ApplyHeaderStyle(header);
 
-            Transform scrollContent = BuildScrollableContentArea(parent, flexibleHeight: 1f, minHeight: 300f);
+            // Enlarged selected-companion subpanel (portrait + full info) — owns the upper right.
+            BuildDetailSubpanel(parent);
 
-            GameObject detailHost = new GameObject("DetailHost", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-            detailHost.transform.SetParent(scrollContent, false);
-            detailHost.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
+            synergyHintLabel = CreateWrappingLabel(parent, string.Empty, JournalPanelLayout.SecondaryFontSize);
+            synergyHintLabel.color = DarkMatterGenesisUiPalette.Gold;
+            LayoutElement synergyLayout = synergyHintLabel.GetComponent<LayoutElement>();
+            if (synergyLayout != null)
+            {
+                synergyLayout.minHeight = 28f;
+                synergyLayout.preferredHeight = 28f;
+            }
+
+            // Condensed Loadout / Expedition Trio / Trio Loadouts — scrollable lower stack.
+            Transform controlsScroll = BuildScrollableContentArea(parent, flexibleHeight: 0.85f, minHeight: 180f);
+            BuildCondensedControls(controlsScroll);
+        }
+
+        private void BuildDetailSubpanel(Transform parent)
+        {
+            GameObject detailHost = new GameObject("DetailHost", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup));
+            detailHost.transform.SetParent(parent, false);
+            detailHost.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.92f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(detailHost);
+
             LayoutElement detailLayout = detailHost.GetComponent<LayoutElement>();
-            detailLayout.minHeight = 80f;
+            detailLayout.minHeight = DetailSubpanelMinHeight;
+            detailLayout.flexibleHeight = 1.35f;
             detailLayout.flexibleWidth = 1f;
 
             VerticalLayoutGroup detailHostLayout = detailHost.GetComponent<VerticalLayoutGroup>();
-            detailHostLayout.padding = JournalPanelLayout.RowPaddingRect;
+            detailHostLayout.padding = new RectOffset(10, 10, 10, 10);
+            detailHostLayout.spacing = 8f;
             detailHostLayout.childControlWidth = true;
             detailHostLayout.childControlHeight = true;
             detailHostLayout.childForceExpandWidth = true;
             detailHostLayout.childForceExpandHeight = false;
 
-            ContentSizeFitter detailHostFitter = detailHost.GetComponent<ContentSizeFitter>();
-            detailHostFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            detailHostFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            GameObject detailHeaderRow = new GameObject("DetailHeaderRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            detailHeaderRow.transform.SetParent(detailHost.transform, false);
+            LayoutElement detailHeaderLayout = detailHeaderRow.GetComponent<LayoutElement>();
+            detailHeaderLayout.minHeight = DetailPortraitSize + 8f;
+            detailHeaderLayout.flexibleHeight = 1f;
+            HorizontalLayoutGroup detailHeaderGroup = detailHeaderRow.GetComponent<HorizontalLayoutGroup>();
+            detailHeaderGroup.spacing = 12f;
+            detailHeaderGroup.childAlignment = TextAnchor.UpperLeft;
+            detailHeaderGroup.childControlWidth = true;
+            detailHeaderGroup.childControlHeight = true;
+            detailHeaderGroup.childForceExpandWidth = false;
+            // Keep portrait aspect — force-expand stretches the RawImage into an ellipse.
+            detailHeaderGroup.childForceExpandHeight = false;
 
-            detailLabel = CreateWrappingLabel(detailHost.transform, "Select a skilled companion from the roster.", JournalPanelLayout.BodyFontSize);
-            detailLabel.color = SurvivalPioneerUiPalette.BodyText;
+            detailPortraitPhoto = PioneerPortraitUi.CreateCircularPortrait(detailHeaderRow.transform, DetailPortraitSize);
+            detailPortraitFrame = PioneerPortraitUi.GetMaskImage(detailPortraitPhoto);
 
-            synergyHintLabel = CreateWrappingLabel(scrollContent, string.Empty, JournalPanelLayout.SecondaryFontSize);
-            synergyHintLabel.color = SurvivalPioneerUiPalette.MutedText;
+            // Scrollable info column beside the large portrait so long traits/backstory stay readable.
+            Transform infoScroll = BuildNestedScrollContent(detailHeaderRow.transform, flexibleWidth: 1f, flexibleHeight: 1f, minHeight: DetailPortraitSize);
+            detailLabel = CreateWrappingLabel(infoScroll, "Select a skilled companion from the roster.", JournalPanelLayout.BodyFontSize + 1f);
+            detailLabel.color = DarkMatterGenesisUiPalette.BodyText;
+            LayoutElement detailLabelLayout = detailLabel.GetComponent<LayoutElement>();
+            if (detailLabelLayout != null)
+            {
+                detailLabelLayout.flexibleWidth = 1f;
+                detailLabelLayout.minHeight = DetailPortraitSize;
+            }
+        }
 
+        /// <summary>
+        /// Nested scroll used inside the enlarged companion-detail subpanel (info beside portrait).
+        /// </summary>
+        private Transform BuildNestedScrollContent(Transform parent, float flexibleWidth, float flexibleHeight, float minHeight)
+        {
+            GameObject scrollObject = new GameObject("DetailInfoScroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement), typeof(Image));
+            scrollObject.transform.SetParent(parent, false);
+            LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
+            scrollLayout.flexibleWidth = flexibleWidth;
+            scrollLayout.flexibleHeight = flexibleHeight;
+            scrollLayout.minHeight = minHeight;
+            scrollLayout.minWidth = 120f;
+
+            Image scrollBg = scrollObject.GetComponent<Image>();
+            scrollBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.35f);
+            scrollBg.raycastTarget = true;
+
+            GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
+            viewport.transform.SetParent(scrollObject.transform, false);
+            RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+            Stretch(viewportRect);
+            viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
+
+            GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
+
+            VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
+            contentLayout.spacing = 0f;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+            contentLayout.childForceExpandWidth = true;
+            contentLayout.childForceExpandHeight = false;
+
+            ContentSizeFitter contentFitter = content.GetComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect scroll = scrollObject.GetComponent<ScrollRect>();
+            scroll.viewport = viewportRect;
+            scroll.content = contentRect;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 22f;
+
+            return content.transform;
+        }
+
+        private void BuildCondensedControls(Transform scrollContent)
+        {
             TextMeshProUGUI loadoutHeader = CreateSectionHeader(scrollContent, "Loadout");
+            ShrinkSectionHeader(loadoutHeader);
 
             GameObject loadoutRow = new GameObject("LoadoutSlots", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             loadoutRow.transform.SetParent(scrollContent, false);
-            loadoutRow.GetComponent<LayoutElement>().minHeight = 64f;
+            loadoutRow.GetComponent<LayoutElement>().minHeight = CondensedControlHeight;
+            loadoutRow.GetComponent<LayoutElement>().preferredHeight = CondensedControlHeight;
             HorizontalLayoutGroup loadoutLayout = loadoutRow.GetComponent<HorizontalLayoutGroup>();
-            loadoutLayout.spacing = 6f;
+            loadoutLayout.spacing = 4f;
             loadoutLayout.childControlWidth = true;
             loadoutLayout.childForceExpandWidth = true;
             loadoutLayout.childControlHeight = true;
             loadoutLayout.childForceExpandHeight = true;
 
-            weaponSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "WeaponSlot", "Weapon\n—", CycleWeaponLoadout, out weaponSlotLabel);
-            toolSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "ToolSlot", "Tool\n—", CycleToolLoadout, out toolSlotLabel);
-            skillSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "SkillSlot", "Skill\n—", CycleSkillLoadout, out skillSlotLabel);
+            weaponSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "WeaponSlot", "Weapon\n—", CycleWeaponLoadout, out weaponSlotLabel, CondensedControlHeight, 11f);
+            toolSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "ToolSlot", "Tool\n—", CycleToolLoadout, out toolSlotLabel, CondensedControlHeight, 11f);
+            skillSlotButton = CreateLoadoutSlotButton(loadoutRow.transform, "SkillSlot", "Skill\n—", CycleSkillLoadout, out skillSlotLabel, CondensedControlHeight, 11f);
 
-            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a companion to edit loadout.", JournalPanelLayout.SecondaryFontSize);
-            loadoutStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
+            loadoutStatusLabel = CreateWrappingLabel(scrollContent, "Select a companion to edit loadout.", 11f);
+            loadoutStatusLabel.color = DarkMatterGenesisUiPalette.Gold;
+            LayoutElement loadoutStatusLayout = loadoutStatusLabel.GetComponent<LayoutElement>();
+            if (loadoutStatusLayout != null)
+            {
+                loadoutStatusLayout.minHeight = 18f;
+                loadoutStatusLayout.preferredHeight = 18f;
+            }
 
             TextMeshProUGUI trioHeader = CreateSectionHeader(scrollContent, "Expedition Trio");
+            ShrinkSectionHeader(trioHeader);
 
             GameObject trioRow = new GameObject("TrioSlots", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             trioRow.transform.SetParent(scrollContent, false);
-            trioRow.GetComponent<LayoutElement>().minHeight = 72f;
+            trioRow.GetComponent<LayoutElement>().minHeight = CondensedTrioSlotHeight;
+            trioRow.GetComponent<LayoutElement>().preferredHeight = CondensedTrioSlotHeight;
             HorizontalLayoutGroup trioLayout = trioRow.GetComponent<HorizontalLayoutGroup>();
-            trioLayout.spacing = 6f;
+            trioLayout.spacing = 4f;
             trioLayout.childControlWidth = true;
             trioLayout.childForceExpandWidth = true;
             trioLayout.childControlHeight = true;
@@ -223,13 +336,34 @@ namespace Project.UI
             for (int i = 0; i < PioneerRosterManager.ExpeditionTrioSize; i++)
                 CreateTrioSlotButton(trioRow.transform, i);
 
-            trioStatusLabel = CreateWrappingLabel(scrollContent, string.Empty, 12f);
-            trioStatusLabel.color = SurvivalPioneerUiPalette.MutedText;
+            trioStatusLabel = CreateWrappingLabel(scrollContent, string.Empty, 11f);
+            trioStatusLabel.color = DarkMatterGenesisUiPalette.Gold;
+            LayoutElement trioStatusLayout = trioStatusLabel.GetComponent<LayoutElement>();
+            if (trioStatusLayout != null)
+            {
+                trioStatusLayout.minHeight = 16f;
+                trioStatusLayout.preferredHeight = 16f;
+            }
 
-            CreateSectionHeader(scrollContent, "Trio Loadouts");
+            TextMeshProUGUI trioLoadoutsHeader = CreateSectionHeader(scrollContent, "Trio Loadouts");
+            ShrinkSectionHeader(trioLoadoutsHeader);
 
             for (int i = 0; i < PioneerRosterManager.ExpeditionTrioSize; i++)
                 CreateTrioLoadoutMiniPanel(scrollContent, i);
+        }
+
+        private static void ShrinkSectionHeader(TextMeshProUGUI header)
+        {
+            if (header == null)
+                return;
+
+            header.fontSize = 13f;
+            LayoutElement layout = header.GetComponent<LayoutElement>();
+            if (layout == null)
+                return;
+
+            layout.minHeight = 16f;
+            layout.preferredHeight = 16f;
         }
 
         /// <summary>
@@ -246,7 +380,7 @@ namespace Project.UI
 
             Image scrollBg = scrollObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(scrollBg);
-            scrollBg.color = SurvivalPioneerUiPalette.ScrollBackground;
+            scrollBg.color = DarkMatterGenesisUiPalette.ScrollBackground;
 
             GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
             viewport.transform.SetParent(scrollObject.transform, false);
@@ -254,7 +388,7 @@ namespace Project.UI
             Stretch(viewportRect);
             viewportRect.offsetMin = new Vector2(4f, 4f);
             viewportRect.offsetMax = new Vector2(-4f, -4f);
-            viewport.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.25f);
+            viewport.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.25f);
 
             GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
@@ -266,8 +400,8 @@ namespace Project.UI
             contentRect.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 10f;
-            contentLayout.padding = new RectOffset(6, 6, 6, 10);
+            contentLayout.spacing = 5f;
+            contentLayout.padding = new RectOffset(4, 4, 4, 6);
             contentLayout.childControlWidth = true;
             contentLayout.childControlHeight = true;
             contentLayout.childForceExpandWidth = true;
@@ -330,9 +464,9 @@ namespace Project.UI
         {
             GameObject host = new GameObject($"TrioLoadout_{slotIndex + 1}", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(ContentSizeFitter));
             host.transform.SetParent(parent, false);
-            host.GetComponent<Image>().color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.94f);
+            host.GetComponent<Image>().color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.94f);
             LayoutElement hostElement = host.GetComponent<LayoutElement>();
-            hostElement.minHeight = 148f;
+            hostElement.minHeight = 88f;
             hostElement.flexibleWidth = 1f;
 
             ContentSizeFitter hostFitter = host.GetComponent<ContentSizeFitter>();
@@ -340,15 +474,21 @@ namespace Project.UI
             hostFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             VerticalLayoutGroup hostLayout = host.AddComponent<VerticalLayoutGroup>();
-            hostLayout.padding = new RectOffset(8, 8, 6, 8);
-            hostLayout.spacing = 6;
+            hostLayout.padding = new RectOffset(6, 6, 4, 4);
+            hostLayout.spacing = 3;
             hostLayout.childControlWidth = true;
             hostLayout.childForceExpandWidth = true;
             hostLayout.childControlHeight = true;
             hostLayout.childForceExpandHeight = false;
 
-            trioLoadoutLabels[slotIndex] = CreateWrappingLabel(host.transform, $"Slot {slotIndex + 1} — Empty", 12f, semiBold: true);
-            trioLoadoutLabels[slotIndex].color = SurvivalPioneerUiPalette.WarmOffWhite;
+            trioLoadoutLabels[slotIndex] = CreateWrappingLabel(host.transform, $"Slot {slotIndex + 1} — Empty", 11f, semiBold: true);
+            trioLoadoutLabels[slotIndex].color = DarkMatterGenesisUiPalette.WarmOffWhite;
+            LayoutElement titleLayout = trioLoadoutLabels[slotIndex].GetComponent<LayoutElement>();
+            if (titleLayout != null)
+            {
+                titleLayout.minHeight = 14f;
+                titleLayout.preferredHeight = 14f;
+            }
 
             Button hostButton = host.AddComponent<Button>();
             hostButton.transition = Selectable.Transition.None;
@@ -359,9 +499,11 @@ namespace Project.UI
 
             GameObject row = new GameObject("LoadoutRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             row.transform.SetParent(host.transform, false);
-            row.GetComponent<LayoutElement>().minHeight = 68f;
+            LayoutElement rowElement = row.GetComponent<LayoutElement>();
+            rowElement.minHeight = CondensedTrioLoadoutRowHeight;
+            rowElement.preferredHeight = CondensedTrioLoadoutRowHeight;
             HorizontalLayoutGroup rowLayout = row.GetComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 6f;
+            rowLayout.spacing = 4f;
             rowLayout.childControlWidth = true;
             rowLayout.childForceExpandWidth = true;
             rowLayout.childControlHeight = true;
@@ -373,28 +515,34 @@ namespace Project.UI
                 "Weapon",
                 "Wpn\n—",
                 () => CycleTrioSlotWeapon(capturedSlot),
-                out _);
+                out _,
+                CondensedTrioLoadoutRowHeight,
+                10f);
             trioLoadoutToolButtons[slotIndex] = CreateLoadoutSlotButton(
                 row.transform,
                 "Tool",
                 "Tool\n—",
                 () => CycleTrioSlotTool(capturedSlot),
-                out _);
+                out _,
+                CondensedTrioLoadoutRowHeight,
+                10f);
             trioLoadoutSkillButtons[slotIndex] = CreateLoadoutSlotButton(
                 row.transform,
                 "Skill",
                 "Skl\n—",
                 () => CycleTrioSlotSkill(capturedSlot),
-                out _);
+                out _,
+                CondensedTrioLoadoutRowHeight,
+                10f);
 
-            trioSpecsLabels[slotIndex] = CreateWrappingLabel(host.transform, "Specs: —", 11f);
-            trioSpecsLabels[slotIndex].color = SurvivalPioneerUiPalette.MutedText;
+            trioSpecsLabels[slotIndex] = CreateWrappingLabel(host.transform, "Specs: —", 10f);
+            trioSpecsLabels[slotIndex].color = DarkMatterGenesisUiPalette.Gold;
 
-            trioBuffLabels[slotIndex] = CreateWrappingLabel(host.transform, "Buffs: —", 11f);
-            trioBuffLabels[slotIndex].color = SurvivalPioneerUiPalette.MutedText;
+            trioBuffLabels[slotIndex] = CreateWrappingLabel(host.transform, "Buffs: —", 10f);
+            trioBuffLabels[slotIndex].color = DarkMatterGenesisUiPalette.Gold;
 
-            trioDebuffLabels[slotIndex] = CreateWrappingLabel(host.transform, "Debuffs: —", 11f);
-            trioDebuffLabels[slotIndex].color = SurvivalPioneerUiPalette.MutedText;
+            trioDebuffLabels[slotIndex] = CreateWrappingLabel(host.transform, "Debuffs: —", 10f);
+            trioDebuffLabels[slotIndex].color = DarkMatterGenesisUiPalette.Gold;
         }
 
         private void CreateTrioSlotButton(Transform parent, int slotIndex)
@@ -404,17 +552,18 @@ namespace Project.UI
 
             Image slotImage = slotObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(slotImage);
-            slotImage.color = SurvivalPioneerUiPalette.SlotBackground;
-            SurvivalPioneerUiPalette.StylePrimaryButton(slotObject.GetComponent<Button>(), slotImage);
+            slotImage.color = DarkMatterGenesisUiPalette.SlotBackground;
+            DarkMatterGenesisUiPalette.StylePrimaryButton(slotObject.GetComponent<Button>(), slotImage);
 
             LayoutElement slotLayout = slotObject.GetComponent<LayoutElement>();
             slotLayout.flexibleWidth = 1f;
-            slotLayout.minHeight = 64f;
+            slotLayout.minHeight = CondensedTrioSlotHeight;
+            slotLayout.preferredHeight = CondensedTrioSlotHeight;
 
-            trioSlotLabels[slotIndex] = CreateLabel(slotObject.transform, $"Slot {slotIndex + 1}\nEmpty", 12f, semiBold: true);
+            trioSlotLabels[slotIndex] = CreateLabel(slotObject.transform, $"Slot {slotIndex + 1}\nEmpty", 11f, semiBold: true);
             trioSlotLabels[slotIndex].alignment = TextAlignmentOptions.Center;
-            trioSlotLabels[slotIndex].color = SurvivalPioneerUiPalette.WarmOffWhite;
-            Stretch(trioSlotLabels[slotIndex].rectTransform, 6f, 6f);
+            trioSlotLabels[slotIndex].color = DarkMatterGenesisUiPalette.WarmOffWhite;
+            Stretch(trioSlotLabels[slotIndex].rectTransform, 4f, 3f);
 
             int capturedSlot = slotIndex;
             Button button = slotObject.GetComponent<Button>();
@@ -433,24 +582,42 @@ namespace Project.UI
             UnityEngine.Events.UnityAction onClick,
             out TextMeshProUGUI label)
         {
+            return CreateLoadoutSlotButton(parent, objectName, defaultText, onClick, out label, -1f, 12f);
+        }
+
+        private Button CreateLoadoutSlotButton(
+            Transform parent,
+            string objectName,
+            string defaultText,
+            UnityEngine.Events.UnityAction onClick,
+            out TextMeshProUGUI label,
+            float minHeight,
+            float fontSize)
+        {
             GameObject slotObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
             slotObject.transform.SetParent(parent, false);
 
             Image slotImage = slotObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(slotImage);
-            slotImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.92f);
+            slotImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.92f);
 
             Button button = slotObject.GetComponent<Button>();
-            SurvivalPioneerUiPalette.StylePrimaryButton(button, slotImage);
+            DarkMatterGenesisUiPalette.StylePrimaryButton(button, slotImage);
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(onClick);
 
-            slotObject.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            LayoutElement slotLayout = slotObject.GetComponent<LayoutElement>();
+            slotLayout.flexibleWidth = 1f;
+            if (minHeight > 0f)
+            {
+                slotLayout.minHeight = minHeight;
+                slotLayout.preferredHeight = minHeight;
+            }
 
-            label = CreateLabel(slotObject.transform, defaultText, 12f, semiBold: true);
+            label = CreateLabel(slotObject.transform, defaultText, fontSize, semiBold: true);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = SurvivalPioneerUiPalette.WarmOffWhite;
-            Stretch(label.rectTransform, 6f, 6f);
+            label.color = DarkMatterGenesisUiPalette.WarmOffWhite;
+            Stretch(label.rectTransform, 4f, 3f);
             return button;
         }
 

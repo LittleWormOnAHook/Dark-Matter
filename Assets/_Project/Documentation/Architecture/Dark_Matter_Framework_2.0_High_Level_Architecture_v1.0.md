@@ -80,7 +80,7 @@ People do not remember code. They remember how a game **made them feel**. This s
 |-------|------|
 | **World** | The planet exists — biomes, weather, resources, POIs |
 | **Simulation** | The world lives off-screen — colony, companions, incidents |
-| **Intelligence** | The world thinks — directors, Aether-9, decisions |
+| **Intelligence** | The world thinks — directors, Kairos, decisions |
 | **Experience** | The world feels — pacing, silence, tension, relief, wonder |
 | **Presentation** | The world communicates — radio, UI, audio, visuals |
 | **Player** | Participation, not control — the player enters a running world |
@@ -93,7 +93,7 @@ Most Unity projects are built **player-in → systems-out**. Dark Matter is buil
 2. **Living world** — Systems continue whether the player watches or not
 3. **Believable experiences** — Interacting systems create belief, not just mechanics
 4. **Read-model clarity** — GameState (momentary) and WorldState (evolutionary) are explicit snapshots
-5. **Intelligence orchestration** — Directors and Aether-9 evaluate state and emit intents
+5. **Intelligence orchestration** — Directors and Kairos evaluate state and emit intents
 6. **Experience design in architecture** — Pacing, silence, and player emotional estimation are first-class
 7. **Offline-first, AI-optional** — Rule-based systems ship first; LLM providers are swappable
 8. **Editor-first velocity** — Tooling is a competitive pillar
@@ -228,7 +228,7 @@ Each pillar: **Purpose → Responsibilities → Inputs → Outputs → Dependenc
 
 ## 2.6 Intelligence Layer
 
-**Purpose:** The world **thinks**. Not a single framework folder — an architectural layer composing Directors and Aether-9.
+**Purpose:** The world **thinks**. Not a single framework folder — an architectural layer composing Directors and Kairos.
 
 **Contains:**
 
@@ -240,7 +240,7 @@ EventDirector
 WeatherDirector
 EconomyDirector
 ExperienceDirector
-Aether-9 Framework
+Kairos Framework
 AIDirector (future, optional)
 DirectorOrchestrator
 ```
@@ -250,9 +250,9 @@ DirectorOrchestrator
 **Inputs:** WorldState, GameState, simulation/story events  
 **Outputs:** Commands to gameplay adapters, experience intents, presentation intents (transmissions, UI alerts)  
 **Dependencies:** WorldState, Core  
-**Future expansion:** `Features/Directors/`, `Features/Aether9/`
+**Future expansion:** `Features/Directors/`, `Features/Kairos/`
 
-**Note:** Aether-9 is **world intelligence**, not Story. Story Director sets chapter gates; Aether-9 holds knowledge, lore, cores, and advisory commentary.
+**Note:** Kairos is **world intelligence**, not Story. Story Director sets chapter gates; Kairos holds knowledge, lore, cores, and advisory commentary.
 
 ---
 
@@ -305,7 +305,7 @@ Example:
 - Player radios — nobody answers
 - Companion doesn't speak
 - Storms drown transmission
-- Aether-9 waits
+- Kairos waits
 
 That is Experience, not missing content.
 
@@ -354,14 +354,14 @@ Audio Framework (music, SFX, radio DSP, mix)
 
 ---
 
-## 2.9 Aether-9 Framework (Intelligence)
+## 2.9 Kairos Framework (Intelligence)
 
 **Purpose:** The world's central **knowledge intelligence** — memory cores, lore, archive, codex, unlocks, hints, advisory commentary. Lives inside the Intelligence layer.
 
 **Responsibilities:** Memory Core restoration, lore archive, codex, blueprint/knowledge unlocks, exploration hints, story commentary (advisory mode), knowledge database, future AI grounding.
 
 **Inputs:** WorldState, Story Director gates, discovery events  
-**Outputs:** Unlock events, hint intents → Presentation (Communications), WorldState Aether-9 fields  
+**Outputs:** Unlock events, hint intents → Presentation (Communications), WorldState Kairos fields  
 **Dependencies:** Story data, WorldState, Presentation (delivery), Simulation (incident context — does not run sim)
 
 **Not:** An NPC MonoBehaviour with dialogue glued on. Not Story. Not Presentation.
@@ -475,7 +475,7 @@ flowchart TB
     ED[EconomyDirector]
     XD[ExperienceDirector]
     EvD[EventDirector]
-    A9[Aether-9]
+    A9[Kairos]
     Pres[Presentation Framework]
 
     WS --> Orch
@@ -526,7 +526,7 @@ flowchart LR
 | **World** | Biomes, POIs, weather schedule, map | Relationships, quest state |
 | **Simulation** | Schedules, needs, jobs, incidents | Authored chapters, radio DSP |
 | **Story (data)** | Quest/chapter definitions, flags | Runtime adjudication (Directors) |
-| **Intelligence** | Director eval, Aether-9 knowledge, intents | Direct inventory mutation |
+| **Intelligence** | Director eval, Kairos knowledge, intents | Direct inventory mutation |
 | **Experience** | Pacing, silence, density, player feel estimates | Quest canon, incident facts |
 | **Presentation** | Radio queue, HUD, audio mix, UI | Lore authority, pacing logic |
 | **Generation** | Procedural pipelines | Runtime quest adjudication |
@@ -557,7 +557,7 @@ GameStateService.GetSnapshot()      ← momentary truth
     ↓
 WorldStateService.GetSnapshot()     ← evolutionary truth
     ↓
-Intelligence Layer (Directors + Aether-9 → intents)
+Intelligence Layer (Directors + Kairos → intents)
     ↓
 Experience Framework (pacing, silence, emotional estimation → experience intents)
     ↓
@@ -573,7 +573,7 @@ Core Save (checkpoints — not every snapshot)
 | Model | Question | Consumers |
 |-------|----------|-----------|
 | **GameStateSnapshot** | What is true right now? | HUD, ContextBuilder, Experience telemetry |
-| **WorldStateSnapshot** | Where is the world in its evolution? | Intelligence, Experience, Aether-9 |
+| **WorldStateSnapshot** | Where is the world in its evolution? | Intelligence, Experience, Kairos |
 | **ExperienceSnapshot** | How has the session felt? (densities, estimates) | ExperienceDirector |
 | **GameSaveData** | What persists across sessions? | Core save only |
 
@@ -652,7 +652,7 @@ WorldState = **evolution of the world itself**, not momentary vitals.
 | Human Expansion | outposts, population |
 | Planet Awareness | world reactivity scalar |
 | Environment Crisis | sulfur storm phase |
-| Aether-9 State | dormant → advisory → trusted |
+| Kairos State | dormant → advisory → trusted |
 | Experience Telemetry | time-since-relief, densities (feeds ExperienceSnapshot) |
 
 ## 7.2 Shape (conceptual)
@@ -663,7 +663,7 @@ WorldStateSnapshot
 ├── Story: StoryProgressSnapshot
 ├── Planet: PlanetEvolutionSnapshot
 ├── Colony: ColonyEvolutionSnapshot
-├── Aether9: Aether9Snapshot
+├── Kairos: KairosSnapshot
 ├── Simulation: SimulationSnapshot
 ├── Threat: ThreatSnapshot
 ├── Experience: ExperienceSnapshot
@@ -693,7 +693,7 @@ WorldStateSnapshot
 | **ExperienceDirector** | Pacing, silence, densities, player emotional estimation |
 | **EventDirector** | Dynamic incidents between beats |
 | **AIDirector** (future) | Tactical suggestions — optional, last |
-| **Aether-9** | Knowledge, cores, lore, hints, unlocks (Intelligence, not Story) |
+| **Kairos** | Knowledge, cores, lore, hints, unlocks (Intelligence, not Story) |
 
 ## 8.2 Evaluation order (locked)
 
@@ -708,7 +708,7 @@ StoryDirector
   → AIDirector (optional)
 ```
 
-Aether-9 participates within Intelligence eval — consulted by Story and Experience; emits knowledge/hint intents to Presentation.
+Kairos participates within Intelligence eval — consulted by Story and Experience; emits knowledge/hint intents to Presentation.
 
 ExperienceDirector runs **before** EventDirector — shapes feel and silence before presentation.
 
@@ -721,19 +721,19 @@ ExperienceDirector runs **before** EventDirector — shapes feel and silence bef
 
 ---
 
-# 9. Aether-9 Framework (Intelligence)
+# 9. Kairos Framework (Intelligence)
 
 See §2.9. Key relationship shift in v1.0:
 
 - **Was conceptualized as:** Story-adjacent narrative system
 - **v1.0 position:** Intelligence layer — the world's knowledge brain
-- **Presentation:** Communications delivers Aether-9 speech; Aether-9 does not own the radio stack
+- **Presentation:** Communications delivers Kairos speech; Kairos does not own the radio stack
 
 ```mermaid
 flowchart LR
     WS[WorldState]
     SD[StoryDirector]
-    A9[Aether-9]
+    A9[Kairos]
     XD[ExperienceDirector]
     Pres[Presentation]
 
@@ -786,7 +786,7 @@ See §2.11. Menu path: `Dark Matter: Genesis / Dark Matter / <Framework> / …`
 4. **Compile always green**
 5. **Document mapping** in TDB `Framework_Folder_Mapping.md`
 
-**Priority order:** WorldState → Directors → Story adapters → Simulation → Aether-9 → Generation → Experience → Gameplay splits when needed.
+**Priority order:** WorldState → Directors → Story adapters → Simulation → Kairos → Generation → Experience → Gameplay splits when needed.
 
 ---
 
@@ -839,7 +839,7 @@ Every feature — framework module, game system, editor tool, or content pipelin
 | **Meaningful Agency** | Choices with consequences — not button clicks |
 | **Believability** | Systems behave consistently so the world feels like it exists beyond the player's presence |
 
-**Believability** is the north star: not realism — **consistency**. Weather, companions, creatures, Aether-9, Echoes, android patrols may be simplified, but they must behave coherently enough that the player believes the world continues when they look away.
+**Believability** is the north star: not realism — **consistency**. Weather, companions, creatures, Kairos, Echoes, android patrols may be simplified, but they must behave coherently enough that the player believes the world continues when they look away.
 
 **Feature gate rule:**
 
@@ -862,7 +862,7 @@ Every feature — framework module, game system, editor tool, or content pipelin
 | Presentation | Partial | `Scripts/UI/`, `Scripts/Audio/`; Communications **docs only** |
 | GameState API | Designed — not on disk | Planned `Features/GameState/` |
 | WorldState | Designed — not on disk | Planned `Features/WorldState/` |
-| Aether-9 | Planned | Flag / story — no Features module yet |
+| Kairos | Planned | Flag / story — no Features module yet |
 | Generation | Partial | Legacy `EchoGenerator` only; `Features/Generation/` not started |
 | Editor | Strong | `Assets/_Project/Editor/` |
 
@@ -881,7 +881,7 @@ Progress truth: [World_Engine_Disk_Status.md](World_Engine_Disk_Status.md) · GD
 
 **Changelog:**
 
-- **v1.0** — Initial ratification. Living World Architecture. WoOS stack: World → Simulation → Intelligence → Experience → Presentation → Player. Experience Framework with silence, density, player emotional estimation. Aether-9 positioned in Intelligence layer. Presentation layer (Communications + UI + Audio). Design Pillars including Believability and Meaningful Agency.
+- **v1.0** — Initial ratification. Living World Architecture. WoOS stack: World → Simulation → Intelligence → Experience → Presentation → Player. Experience Framework with silence, density, player emotional estimation. Kairos positioned in Intelligence layer. Presentation layer (Communications + UI + Audio). Design Pillars including Believability and Meaningful Agency.
 - **Appendix A disk correction (July 22, 2026)** — Implementation map updated: GameState / Directors / Communications Runtime marked designed-not-on-disk. HLA body remains frozen; see World_Engine_Disk_Status.md.
 
 ---

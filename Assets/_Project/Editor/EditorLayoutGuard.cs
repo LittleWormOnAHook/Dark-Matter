@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Player.Invector;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -9,36 +10,114 @@ namespace Project.EditorTools
     /// Manual recovery tools for broken Inspector windows and stale selection after Play Mode.
     /// Auto hooks are intentionally minimal to avoid editor instability.
     /// </summary>
+    [InitializeOnLoad]
     public static class EditorLayoutGuard
     {
         private static bool deferredRecoveryScheduled;
 
-        [InitializeOnLoadMethod]
-        private static void RegisterPlayModeRecovery()
+        static EditorLayoutGuard()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
+            if (state == PlayModeStateChange.ExitingEditMode)
+            {
+                PrepareInspectorForPlayMode();
+                return;
+            }
+
+            if (state == PlayModeStateChange.EnteredPlayMode)
+            {
+                EditorApplication.delayCall += RestoreInspectorAfterPlayMode;
+                return;
+            }
+
             if (state != PlayModeStateChange.ExitingPlayMode)
                 return;
 
             ScheduleInspectorRecovery();
         }
 
+        private static void PrepareInspectorForPlayMode()
+        {
+            ClearPlayerStockArmatureSelectionInLoadedScenes();
+            ClearSelectionOnly();
+            ActiveEditorTracker.sharedTracker.isLocked = true;
+            DestroyAllActiveEditors(forceRebuild: false);
+            CloseInspectorWindow();
+        }
+
+        private static void RestoreInspectorAfterPlayMode()
+        {
+            ActiveEditorTracker.sharedTracker.isLocked = false;
+            RecoverStaleInspectorState(silent: true, aggressive: true);
+        }
+
+        private static void CloseInspectorWindow()
+        {
+            EditorWindow inspector = EditorWindow.GetWindow(typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.InspectorWindow"), false, null, false);
+            if (inspector != null)
+                inspector.Close();
+        }
+
+        private static void DestroyAllActiveEditors(bool forceRebuild = true)
+        {
+            Editor[] editors = ActiveEditorTracker.sharedTracker.activeEditors;
+            if (editors == null)
+                return;
+
+            for (int i = editors.Length - 1; i >= 0; i--)
+            {
+                Editor editor = editors[i];
+                if (editor != null)
+                    Object.DestroyImmediate(editor);
+            }
+
+            if (forceRebuild)
+                ActiveEditorTracker.sharedTracker.ForceRebuild();
+        }
+
+        private static void ClearPlayerStockArmatureSelectionInLoadedScenes()
+        {
+            PioneerInvectorBootstrap[] bootstraps =
+                Object.FindObjectsByType<PioneerInvectorBootstrap>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < bootstraps.Length; i++)
+            {
+                PioneerInvectorBootstrap bootstrap = bootstraps[i];
+                if (bootstrap == null)
+                    continue;
+
+                if (SelectionReferencesHierarchy(bootstrap.gameObject))
+                {
+                    ClearSelectionAndRebuildInspectors();
+                    return;
+                }
+
+                Transform stockArmature = bootstrap.transform.Find("3D Model/Armature");
+                if (stockArmature == null)
+                    continue;
+
+                if (SelectionReferencesHierarchy(stockArmature.gameObject))
+                {
+                    ClearSelectionAndRebuildInspectors();
+                    return;
+                }
+            }
+        }
+
         private static void RunDeferredInspectorRecovery()
         {
             deferredRecoveryScheduled = false;
 
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            if (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
                 return;
 
-            if (HasStaleInspectorTargets())
-                ClearSelectionOnly();
+            RecoverStaleInspectorState(silent: true, aggressive: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Fix Failed Editor Windows", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Fix Failed Editor Windows", false, 0)]
         public static void CloseFailedEditorWindowsMenu()
         {
             int closed = CloseFailedEditorWindows();
@@ -48,13 +127,13 @@ namespace Project.EditorTools
                 : "No failed editor windows or stale Inspector state found.");
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Clear Stale Selection", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear Stale Selection", false, 1)]
         public static void ClearStaleSelectionMenu()
         {
             RecoverStaleInspectorState(silent: false, aggressive: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Maintenance + "Reset Editor Layout", false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reset Editor Layout", false, 2)]
         public static void ResetEditorLayout()
         {
             CloseFailedEditorWindows();

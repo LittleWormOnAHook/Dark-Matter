@@ -51,6 +51,7 @@ namespace Project.UI
             PioneerRosterDragState.SourceTrioSlot = -1;
             canvasGroup.alpha = 0.55f;
             canvasGroup.blocksRaycasts = false;
+            PioneerHoverTooltip.HideAny();
             panel?.OnDragStarted(pioneerId);
         }
 

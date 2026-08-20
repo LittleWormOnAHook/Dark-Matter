@@ -16,6 +16,7 @@ namespace Project.UI
         private const float DotSize = 7f;
         private const float FallbackPickupRange = 4f;
         private const float ReticleSmoothSpeed = 22f;
+        private const float AimSampleInterval = 0.1f;
 
         private static readonly Color IdleColor = new Color(0.92f, 0.96f, 1f, 0.95f);
         private static readonly Color TargetColor = new Color(0.45f, 1f, 0.75f, 0.98f);
@@ -25,8 +26,12 @@ namespace Project.UI
         private WorldUseController useController;
         private ResourceGatherer gatherer;
         private Camera worldCamera;
+        private PlayerController cachedPlayer;
+        private SurvivalStats cachedSurvival;
         private Vector2 reticlePosition;
         private bool reticleInitialized;
+        private float nextAimSampleTime;
+        private bool hasAimedPickup;
 
         private void Awake()
         {
@@ -45,8 +50,9 @@ namespace Project.UI
             }
 
             UpdateReticlePosition();
+            SampleAimedPickupIfDue();
             dotRect.gameObject.SetActive(true);
-            dotImage.color = HasAimedPickup() ? TargetColor : IdleColor;
+            dotImage.color = hasAimedPickup ? TargetColor : IdleColor;
         }
 
         private void UpdateReticlePosition()
@@ -79,6 +85,15 @@ namespace Project.UI
             dotRect.anchoredPosition = reticlePosition;
         }
 
+        private void SampleAimedPickupIfDue()
+        {
+            if (Time.unscaledTime < nextAimSampleTime)
+                return;
+
+            nextAimSampleTime = Time.unscaledTime + AimSampleInterval;
+            hasAimedPickup = HasAimedPickup();
+        }
+
         private bool ShouldShow()
         {
             if (!GameSession.HasStarted)
@@ -87,11 +102,11 @@ namespace Project.UI
             if (PlayerVehicleState.IsMounted)
                 return false;
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            PlayerController player = ResolvePlayer();
             if (player != null && player.BlocksCombatInput)
                 return false;
 
-            SurvivalStats survivalStats = FindAnyObjectByType<SurvivalStats>();
+            SurvivalStats survivalStats = ResolveSurvival();
             if (survivalStats != null && survivalStats.IsDead)
                 return false;
 
@@ -116,12 +131,37 @@ namespace Project.UI
                 playerTransform.position);
         }
 
+        private PlayerController ResolvePlayer()
+        {
+            if (cachedPlayer != null)
+                return cachedPlayer;
+
+            cachedPlayer = PlayerLocator.FindPlayerController();
+            return cachedPlayer;
+        }
+
+        private SurvivalStats ResolveSurvival()
+        {
+            if (cachedSurvival != null)
+                return cachedSurvival;
+
+            PlayerController player = ResolvePlayer();
+            if (player != null)
+                cachedSurvival = player.GetComponent<SurvivalStats>();
+
+            return cachedSurvival;
+        }
+
         private Transform ResolvePlayerTransform()
         {
             if (useController != null)
                 return useController.transform;
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            Transform cached = PlayerReference.Transform;
+            if (cached != null)
+                return cached;
+
+            PlayerController player = ResolvePlayer();
             return player != null ? player.transform : null;
         }
 
@@ -131,18 +171,22 @@ namespace Project.UI
             resourceGatherer = gatherer;
 
             if (useController == null)
-                useController = FindAnyObjectByType<WorldUseController>();
+            {
+                PlayerController player = ResolvePlayer();
+                if (player != null)
+                    useController = player.GetComponent<WorldUseController>();
+            }
 
             if (useController != null && resourceGatherer == null)
                 resourceGatherer = useController.GetComponent<ResourceGatherer>();
 
             if (camera == null)
             {
-                PlayerController player = FindAnyObjectByType<PlayerController>();
+                PlayerController player = ResolvePlayer();
                 if (player != null && player.GameplayCamera != null)
                     camera = player.GameplayCamera;
                 else
-                    camera = Camera.main;
+                    camera = PlayerReference.ResolveCamera();
             }
 
             worldCamera = camera;

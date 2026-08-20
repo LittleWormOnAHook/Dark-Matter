@@ -41,6 +41,13 @@ TagManager:
   - Recipe
   - Walkable
   - FxTemporaire
+  - Bullet
+  - PW - Nature
+  - PW - Prop
+  - PW - Building
+  - Synty Medium Farm
+  - Synty Tree
+  - Synty Small Farm
   layers:
   - Default
   - TransparentFX
@@ -55,16 +62,16 @@ TagManager:
   - CompanionAI
   - Triggers
   - StopMove
-  - 
+  - PW_VFX
   - HeadTrack
   - BodyPart
   - BlockAIRayCast
   - Pushable
   - CoverPoint
-  - 
+  - PW_Object_Small
   - Animal
-  - 
-  - 
+  - PW_Object_Medium
+  - PW_Object_Large
   - 
   - 
   - 
@@ -80,4 +87,20 @@ TagManager:
     locked: 0
   m_RenderingLayers:
   - Default
-  m_MigratedRenderPipelines: []
+  - InteriorOnly
+  - ExteriorOnly
+  - LampsOnly
+  - ReflectionsOnly
+  - Light Layer 5
+  - Light Layer 6
+  - Light Layer 7
+  - Decal Layer default
+  - Decal Layer 1
+  - Decal Layer 2
+  - Decal Layer 3
+  - Decal Layer 4
+  - Decal Layer 5
+  - Decal Layer 6
+  - Decal Layer 7
+  m_MigratedRenderPipelines:
+  - UnityEngine.Rendering.HighDefinition.HDRenderPipeline

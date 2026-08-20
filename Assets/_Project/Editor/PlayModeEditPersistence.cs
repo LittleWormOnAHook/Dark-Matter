@@ -18,7 +18,7 @@ namespace Project.EditorTools
         private const string EnabledPrefKey = "SurvivalPioneer.PlayModeEditPersistence.Enabled";
         private const string ForcedDisableMigrationKey = "SurvivalPioneer.PlayModeEditPersistence.ForcedOff.v1";
         private const string SnapshotFileName = "play-mode-snapshot.json";
-        private const string MenuPath = SurvivalPioneerEditorMenus.Maintenance + "Persist Play Mode Edits";
+        private const string MenuPath = DarkMatterGenesisEditorMenus.Maintenance + "Persist Play Mode Edits";
         private static readonly string[] PriorityAssetScanRoots =
         {
             "Assets/_Project/Data",

@@ -85,7 +85,8 @@ namespace Project.Interaction
 
             // Marker detect + fog reveal start at 40m, then +skill ranks.
             float range = MapFogOfWar.GetScanRevealRadius();
-            float duration = Mathf.Max(0.2f, activeProfile.sweepDuration);
+            // 50% slower than profile (half speed → 2× duration).
+            float duration = Mathf.Max(0.2f, activeProfile.sweepDuration) * 2f;
             Vector3 origin = ResolvePlayerSweepOrigin();
 
             ClearPostScanHighlights();
@@ -225,7 +226,7 @@ namespace Project.Interaction
             {
                 name = "ScannerSweepDiscMat",
                 hideFlags = HideFlags.DontSave,
-                color = SurvivalPioneerUiPalette.Gold
+                color = DarkMatterGenesisUiPalette.Gold
             };
 
             ApplySweepMaterialDefaults(sweepMaterial);
@@ -290,7 +291,7 @@ namespace Project.Interaction
 
             // Scan disc fill at ~80% alpha (slight fade as the pulse finishes).
             float overallAlpha = Mathf.Lerp(0.80f, 0.55f, pulseT);
-            Color gold = SurvivalPioneerUiPalette.Gold;
+            Color gold = DarkMatterGenesisUiPalette.Gold;
 
             Vector3 centerSurface = SampleTopologyPoint(
                 center + Vector3.up * TopologyProbeHeight,
@@ -331,7 +332,7 @@ namespace Project.Interaction
             if (material == null)
                 return;
 
-            Color gold = SurvivalPioneerUiPalette.Gold;
+            Color gold = DarkMatterGenesisUiPalette.Gold;
             gold.a = 1f;
             Color grid = Color.Lerp(gold, Color.white, 0.35f);
             grid.a = 1f;

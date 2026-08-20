@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.Core;
+using Project.Interaction;
 using Project.Map;
 using Project.Player;
 using Project.Vehicles;
@@ -29,14 +30,21 @@ namespace Project.UI
         private const float MinimapEdgeInset = 16f;
         private const float MinimapTitleBarHeight = 0f;
         private const float MinimapInfoPanelHeight = 24f;
-        private const float MinimapEdgeButtonSize = 22f;
+        private const float MinimapEdgeButtonSize = 24f;
+        private const float MinimapViewportInset = 4f;
         private const float MinMinimapSpan = 40f;
         private const float MaxMinimapSpan = 420f;
         private const float DefaultFullMapZoom = 5f;
         private const float MinFullMapZoom = 1f;
         private const float MaxFullMapZoom = 8f;
+        private const float FullMapScrollNotchesFullRange = 3f;
+        private const float MinimapScrollNotchesFullRange = 4f;
+        private const float MapKeyHoldTapSeconds = 0.18f;
         private const float MinimapPlayerIconSize = 24f;
         private const float FullMapPlayerIconSize = 48f;
+
+        private static readonly Color MinimapRingColor =
+            DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.92f);
 
         private static readonly Color PlayerMapIconColor = new Color(0.95f, 0.18f, 0.18f, 1f);
 
@@ -58,6 +66,7 @@ namespace Project.UI
         [SerializeField] private Transform playerTransform;
 
         public bool PreservesManualLayout => preserveManualLayout;
+        public static bool IsMinimapScrollZoomActive { get; private set; }
 
         private PlayerController playerController;
         private RectTransform minimapRootRect;
@@ -93,6 +102,10 @@ namespace Project.UI
         private Canvas rootCanvas;
         private float nextMinimapRefreshTime;
         private float nextMarkerRefreshTime;
+        private int lastMinimapInfoRange = int.MinValue;
+        private bool lastMinimapInfoScanning;
+        private static JournalPanelUI cachedJournalPanel;
+        private static ScannerSweepController cachedScannerSweep;
         private const float MarkerRefreshInterval = 0.25f;
         private const float MinimapRefreshInterval = 0.05f;
         private const int MaxMinimapMarkers = 128;
@@ -109,13 +122,16 @@ namespace Project.UI
         private GameObject fullMapTitleBar;
         private GameObject fullMapLegendRoot;
         private Vector2 fullMapPanOffset;
+        private bool isMapKeyHeld;
+        private bool scrolledMinimapDuringHold;
+        private float mapKeyHoldStartUnscaled;
+        private Image minimapRingImage;
 
         private void Awake()
         {
             DetectSceneLayoutShells();
             EnsureMapProvider();
-            if (minimapRingSprite == null)
-                minimapRingSprite = ShiftUiTheme.CircleOutline ?? MapUiSprites.CircleRing;
+            minimapRingSprite = MapUiSprites.HudCircleRing;
         }
 
         private void DetectSceneLayoutShells()
@@ -148,6 +164,8 @@ namespace Project.UI
 
             if (fullMapOpen)
                 CloseFullMap();
+
+            EndMapKeyHold(openFullMapOnTap: false);
         }
 
         private void HandleFogUpdated()
@@ -185,6 +203,7 @@ namespace Project.UI
             if (MapFogOfWar.Instance != null)
                 MapFogOfWar.Instance.FogUpdated -= HandleFogUpdated;
 
+            EndMapKeyHold(openFullMapOnTap: false);
             ClearMarkerIcons(minimapMarkerIcons);
             ClearMarkerIcons(fullMapMarkerIcons);
             uiBuilt = false;
@@ -242,14 +261,23 @@ namespace Project.UI
                 CloseFullMap();
             }
 
-            if (!fullMapOpen || Mouse.current == null)
+            SyncMapKeyHold();
+
+            if (fullMapOpen && Mouse.current != null)
+            {
+                UpdateFullMapMarkerTooltip();
+
+                float scroll = Mouse.current.scroll.ReadValue().y;
+                if (Mathf.Abs(scroll) > 0.01f)
+                {
+                    int direction = scroll > 0f ? 1 : -1;
+                    SetFullMapZoom(fullMapZoom + direction * GetFullMapZoomStep());
+                }
+
                 return;
+            }
 
-            UpdateFullMapMarkerTooltip();
-
-            float scroll = Mouse.current.scroll.ReadValue().y;
-            if (Mathf.Abs(scroll) > 0.01f)
-                SetFullMapZoom(fullMapZoom + scroll * 0.0015f);
+            TryMinimapScrollZoom();
         }
 
         public void OnToggleMap(InputAction.CallbackContext context)
@@ -257,17 +285,10 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
-            if (!context.performed)
-                return;
-
-            try
-            {
-                ToggleFullMap();
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogException(ex);
-            }
+            if (context.started || context.performed)
+                BeginMapKeyHold();
+            else if (context.canceled)
+                EndMapKeyHold(openFullMapOnTap: true);
         }
 
         public static void ApplyMinimapEnabled(bool enabled)
@@ -296,7 +317,7 @@ namespace Project.UI
         {
             bool journalOpen = IsJournalOpen();
             bool minimapVisible = GameSettings.MinimapEnabled && GameSession.HasStarted && !journalOpen;
-            if (minimapRoot != null)
+            if (minimapRoot != null && minimapRoot.activeSelf != minimapVisible)
                 minimapRoot.SetActive(minimapVisible);
 
             SetCompassVisible(minimapVisible);
@@ -305,12 +326,16 @@ namespace Project.UI
                 return;
 
             bool showFullMapOverlay = fullMapOpen && GameSession.HasStarted;
-
-            fullMapOverlay.SetActive(showFullMapOverlay);
+            if (fullMapOverlay.activeSelf != showFullMapOverlay)
+                fullMapOverlay.SetActive(showFullMapOverlay);
 
             // Journal Map tab already labels the section; keep "World Map" only for standalone open.
             if (fullMapTitleBar != null)
-                fullMapTitleBar.SetActive(showFullMapOverlay && !openedViaNavigator);
+            {
+                bool showTitle = showFullMapOverlay && !openedViaNavigator;
+                if (fullMapTitleBar.activeSelf != showTitle)
+                    fullMapTitleBar.SetActive(showTitle);
+            }
         }
 
         public static void CloseAnyOpenMap()
@@ -328,8 +353,10 @@ namespace Project.UI
             if (navigator != null && navigator.IsAnyOpen)
                 return true;
 
-            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-            return journal != null && journal.IsOpen;
+            if (cachedJournalPanel == null)
+                cachedJournalPanel = FindAnyObjectByType<JournalPanelUI>();
+
+            return cachedJournalPanel != null && cachedJournalPanel.IsOpen;
         }
 
         public void OpenMapFullscreen()
@@ -347,6 +374,7 @@ namespace Project.UI
             if (fullMapOverlay != null)
                 fullMapOverlay.transform.SetAsLastSibling();
 
+            RefreshFullMapFrameLayout();
             fullMapZoom = DefaultFullMapZoom;
             UpdateFullMapZoomLabel();
             CenterFullMapOnPlayer();
@@ -435,6 +463,7 @@ namespace Project.UI
             PauseForFullMap(fullMapOpen);
             if (fullMapOpen)
             {
+                RefreshFullMapFrameLayout();
                 fullMapZoom = DefaultFullMapZoom;
                 UpdateFullMapZoomLabel();
                 CenterFullMapOnPlayer();
@@ -469,6 +498,119 @@ namespace Project.UI
             GameplayHudVisibility.RefreshGameplayHud();
         }
 
+        private void SyncMapKeyHold()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            bool pressed = keyboard.mKey.isPressed;
+            if (pressed && !isMapKeyHeld)
+                BeginMapKeyHold();
+            else if (!pressed && isMapKeyHeld)
+                EndMapKeyHold(openFullMapOnTap: true);
+        }
+
+        private void BeginMapKeyHold()
+        {
+            if (isMapKeyHeld)
+                return;
+
+            isMapKeyHeld = true;
+            scrolledMinimapDuringHold = false;
+            mapKeyHoldStartUnscaled = Time.unscaledTime;
+            RefreshMinimapScrollZoomActive();
+        }
+
+        private void EndMapKeyHold(bool openFullMapOnTap)
+        {
+            if (!isMapKeyHeld)
+                return;
+
+            bool usedMinimapZoom = scrolledMinimapDuringHold
+                || (IsMinimapScrollZoomActive
+                    && Time.unscaledTime - mapKeyHoldStartUnscaled >= MapKeyHoldTapSeconds);
+            isMapKeyHeld = false;
+            scrolledMinimapDuringHold = false;
+            RefreshMinimapScrollZoomActive();
+
+            if (!openFullMapOnTap || usedMinimapZoom)
+                return;
+
+            try
+            {
+                ToggleFullMap();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        private void RefreshMinimapScrollZoomActive()
+        {
+            bool active = isMapKeyHeld && CanZoomMinimapWithHold();
+            if (IsMinimapScrollZoomActive == active)
+            {
+                if (active)
+                    UpdateMinimapInfoPanel("Hold M  |  Scroll to zoom");
+                return;
+            }
+
+            IsMinimapScrollZoomActive = active;
+            ApplyMinimapHoldZoomVisual(active);
+            if (active)
+            {
+                UpdateMinimapInfoPanel("Hold M  |  Scroll to zoom");
+            }
+            else
+            {
+                lastMinimapInfoRange = int.MinValue;
+                UpdateMinimapInfoPanel();
+            }
+        }
+
+        private bool CanZoomMinimapWithHold()
+        {
+            if (fullMapOpen || IsJournalOpen())
+                return false;
+
+            if (!GameSettings.MinimapEnabled)
+                return false;
+
+            if (minimapRoot == null || !minimapRoot.activeSelf)
+                return false;
+
+            if (playerController != null && playerController.IsOpticsOpen)
+                return false;
+
+            return true;
+        }
+
+        private void TryMinimapScrollZoom()
+        {
+            RefreshMinimapScrollZoomActive();
+            if (!IsMinimapScrollZoomActive || Mouse.current == null)
+                return;
+
+            float scroll = Mouse.current.scroll.ReadValue().y;
+            if (Mathf.Abs(scroll) < 0.01f)
+                return;
+
+            int direction = scroll > 0f ? 1 : -1;
+            ApplyMinimapScrollZoom(direction);
+            scrolledMinimapDuringHold = true;
+        }
+
+        private void RefreshFullMapFrameLayout()
+        {
+            if (preserveManualLayout || !applyRuntimeLayout)
+                return;
+
+            Canvas.ForceUpdateCanvases();
+            EnsureFullMapChromeLayout();
+        }
+
         private static void PauseForFullMap(bool pause)
         {
             Cursor.lockState = pause ? CursorLockMode.None : CursorLockMode.Locked;
@@ -477,6 +619,8 @@ namespace Project.UI
             PlayerController player = FindAnyObjectByType<PlayerController>();
             if (player != null)
                 player.SetMapOpen(pause);
+
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonStandaloneMap, pause);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Project.EditorTools.UiLayout
 {
     public static class PanelUiResetUtility
     {
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Reset Map UI To Default Layout", false, 120)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map UI To Default Layout", false, 120)]
         public static void ResetMapUiToDefaults()
         {
             if (!ConfirmReset(
@@ -20,7 +20,7 @@ namespace Project.EditorTools.UiLayout
             PerformMapUiReset(showCompletionDialog: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Reset Enemy Loot Dialog UI To Default Layout", false, 121)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Enemy Loot Dialog UI To Default Layout", false, 121)]
         public static void ResetEnemyLootDialogUiToDefaults()
         {
             if (!ConfirmReset(
@@ -33,7 +33,7 @@ namespace Project.EditorTools.UiLayout
             PerformEnemyLootDialogReset(showCompletionDialog: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Reset Quest Giver Dialog UI To Default Layout", false, 122)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Quest Giver Dialog UI To Default Layout", false, 122)]
         public static void ResetQuestGiverDialogUiToDefaults()
         {
             if (!ConfirmReset(
@@ -46,7 +46,7 @@ namespace Project.EditorTools.UiLayout
             PerformQuestGiverDialogReset(showCompletionDialog: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Reset Journal UI To Default Layout", false, 123)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Journal UI To Default Layout", false, 123)]
         public static void ResetJournalUiToDefaults()
         {
             if (!ConfirmReset(
@@ -57,7 +57,7 @@ namespace Project.EditorTools.UiLayout
             PerformJournalUiReset(showCompletionDialog: true);
         }
 
-        [MenuItem(SurvivalPioneerEditorMenus.Ui + "Reset Map & Loot UI To Default Layout", false, 123)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map & Loot UI To Default Layout", false, 123)]
         public static void ResetMapAndLootUiToDefaults()
         {
             if (!ConfirmReset(

@@ -75,7 +75,7 @@ W0 Data  →  W1 Map shell  →  W2 First regions (B6/B1/B2) + pets start
 | GDD B4 #4 Living-world / WeatherDirector | W2+ (storms, geyser surges) |
 | GDD B4 #6 Pet fold (Pet Bay, retire placeholders) | W2 pet content |
 | GDD B4 #3 World seed / WorldState | W7 director tuning |
-| GDD B4 #8 Aether-9 / Memory Cores | W6 B7 vault fiction |
+| GDD B4 #8 Kairos / Memory Cores | W6 B7 vault fiction |
 | Main map + instance pipeline (W1) | All regional content |
 
 ---

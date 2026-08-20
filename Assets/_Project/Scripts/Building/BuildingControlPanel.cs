@@ -65,8 +65,15 @@ namespace Project.Building
             playerInRange = IsPlayerNearby();
         }
 
+        private const float ProximityCheckInterval = 0.2f;
+        private float nextProximityCheckTime;
+
         private void Update()
         {
+            if (Time.unscaledTime < nextProximityCheckTime)
+                return;
+
+            nextProximityCheckTime = Time.unscaledTime + ProximityCheckInterval;
             RefreshProximityState();
         }
 

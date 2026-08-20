@@ -94,7 +94,7 @@ namespace Project.UI
             CreateAmmoSubmenuButton();
             CreateMenuButton("Refuel", () => Execute(itemActions?.TryRefuelVehicle(activeSlotIndex) ?? false));
             CreateMenuButton("Refill Mining Tool", () => Execute(itemActions?.TryRefillMiningTool(activeSlotIndex) ?? false));
-            CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeployVehicle(activeSlotIndex) ?? false));
+            CreateMenuButton("Deploy", () => Execute(itemActions?.TryDeploy(activeSlotIndex) ?? false));
             CreateMenuButton("Split", () => Execute(itemActions?.TrySplit(activeSlotIndex) ?? false));
             CreateMenuButton("Drop", () => Execute(itemActions?.TryDrop(activeSlotIndex) ?? false));
 
@@ -186,8 +186,37 @@ namespace Project.UI
 
             RectTransform mainRect = menuPanel.GetComponent<RectTransform>();
             RectTransform submenuRect = ammoSubmenuPanel.GetComponent<RectTransform>();
-            submenuRect.position = mainRect.position + new Vector3(mainRect.rect.width, 0f, 0f);
+            Transform equipAmmoButton = menuPanel.transform.Find("EquipAmmoContextButton");
+            RectTransform alignRow = equipAmmoButton != null
+                ? equipAmmoButton.GetComponent<RectTransform>()
+                : mainRect;
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(mainRect);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(submenuRect);
+            PositionFlyoutBeside(mainRect, submenuRect, alignRow);
             ClampToScreen(submenuRect);
+        }
+
+        /// <summary>
+        /// Places a flyout flush to the anchor panel's right edge in world space so UI scale
+        /// does not separate submenu buttons from the parent menu.
+        /// </summary>
+        private static void PositionFlyoutBeside(RectTransform anchorPanel, RectTransform flyoutPanel, RectTransform alignRow)
+        {
+            if (anchorPanel == null || flyoutPanel == null)
+                return;
+
+            Vector3[] anchorCorners = new Vector3[4];
+            anchorPanel.GetWorldCorners(anchorCorners);
+
+            RectTransform row = alignRow != null ? alignRow : anchorPanel;
+            Vector3[] rowCorners = new Vector3[4];
+            row.GetWorldCorners(rowCorners);
+
+            float rightX = anchorCorners[2].x;
+            float topY = rowCorners[1].y;
+            Vector3 pos = flyoutPanel.position;
+            flyoutPanel.position = new Vector3(rightX, topY, pos.z);
         }
 
         private void HideAmmoSubmenu()
@@ -271,14 +300,14 @@ namespace Project.UI
 
         private void UpdateButtonVisibility()
         {
-            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex));
+            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex) && !itemActions.CanDeployShelter(activeSlotIndex));
             SetButtonVisible("Install", itemActions.CanInstallStorageModule(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
             SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));
             SetButtonVisible("Refuel", itemActions.CanRefuelVehicle(activeSlotIndex));
             SetButtonVisible("Refill Mining Tool", itemActions.CanRefillMiningTool(activeSlotIndex));
-            SetButtonVisible("Deploy", itemActions.CanDeployVehicle(activeSlotIndex));
+            SetButtonVisible("Deploy", itemActions.CanDeploy(activeSlotIndex));
             SetButtonVisible("Split", itemActions.CanSplit(activeSlotIndex));
             SetButtonVisible("Drop", itemActions.CanDrop(activeSlotIndex));
         }

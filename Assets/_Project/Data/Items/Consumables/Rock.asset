@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Rock
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Rock
-  icon: {fileID: 21300000, guid: d7761b4edf06de84785b982fb39b7644, type: 3}
+  icon: {fileID: 21300000, guid: cbb427ca4bdcb7843ab0d554c4d6bde4, type: 3}
   worldPrefab: {fileID: 5619850679824680986, guid: 459355b2e160a3d47a28bfb73b986db0, type: 3}
   maxStack: 500
   stableItemId: 71a7f3b6-07ea-4781-891f-9185e630323d

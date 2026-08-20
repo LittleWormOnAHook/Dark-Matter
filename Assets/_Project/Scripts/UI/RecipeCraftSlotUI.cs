@@ -12,9 +12,9 @@ namespace Project.UI
     public class RecipeCraftSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         private static readonly Color ReadyTint = new Color(0.22f, 0.32f, 0.26f, 0.95f);
-        private static readonly Color NotReadyTint = SurvivalPioneerUiPalette.SlotBackground;
+        private static readonly Color NotReadyTint = DarkMatterGenesisUiPalette.SlotBackground;
         private static readonly Color HoverTint = new Color(0.28f, 0.38f, 0.32f, 0.98f);
-        private static readonly Color HoverNotReadyTint = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.35f);
+        private static readonly Color HoverNotReadyTint = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.35f);
 
         private static float SlotSize => HudLayoutMetrics.InventorySlotSize(96f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;

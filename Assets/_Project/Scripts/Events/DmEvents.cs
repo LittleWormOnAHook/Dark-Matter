@@ -38,7 +38,7 @@ namespace Project.Events
         [Header("Scanner")]
         [SerializeField] private bool visibleToScanner = true;
         [SerializeField] private string scanLabel = "IO Ancient Cache";
-        [SerializeField] private Color scanColor = SurvivalPioneerUiPalette.Gold;
+        [SerializeField] private Color scanColor = DarkMatterGenesisUiPalette.Gold;
 
         [Header("Lifecycle")]
         [Tooltip("When empty, only stop interaction — keep the opened chest mesh in the world.")]

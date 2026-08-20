@@ -67,10 +67,10 @@ MonoBehaviour:
   - Name: Aiming
     forward: -1
     right: 0.3
-    defaultDistance: 1.5
-    maxDistance: 1.5
-    minDistance: 0.25
-    height: 1.7
+    defaultDistance: 2.35
+    maxDistance: 2.6
+    minDistance: 2
+    height: 1.55
     smooth: 10
     smoothDamp: 2
     xMouseSensitivity: 1
@@ -82,7 +82,7 @@ MonoBehaviour:
     rotationOffSet: {x: 8, y: 0, z: 0}
     cullingHeight: 1.5
     cullingMinDist: 0.1
-    fov: 35
+    fov: 52
     useZoom: 0
     fixedAngle: {x: 0, y: 0}
     lookPoints: []
@@ -90,10 +90,10 @@ MonoBehaviour:
   - Name: CrouchingAiming
     forward: -1
     right: 0.35
-    defaultDistance: 1.5
-    maxDistance: 1.5
-    minDistance: 0.25
-    height: 1.5
+    defaultDistance: 2.35
+    maxDistance: 2.6
+    minDistance: 2
+    height: 1.35
     smooth: 10
     smoothDamp: 2
     xMouseSensitivity: 1
@@ -105,7 +105,7 @@ MonoBehaviour:
     rotationOffSet: {x: 8, y: 0, z: 0}
     cullingHeight: 1.5
     cullingMinDist: 0.1
-    fov: 45
+    fov: 54
     useZoom: 0
     fixedAngle: {x: 0, y: 0}
     lookPoints: []

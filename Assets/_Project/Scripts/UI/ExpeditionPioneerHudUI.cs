@@ -21,14 +21,12 @@ namespace Project.UI
         private const float SlotSizeScale = 1.4f;
         private const float TitleSizeScale = 1.25f;
 
-        private static float SlotDiameter => HudLayoutMetrics.Scaled(54f * SlotSizeScale);
-        private static float SlotSpacing => HudLayoutMetrics.Scaled(8f * SlotSizeScale);
-        private static float ArcPadding => HudLayoutMetrics.Scaled(5f * SlotSizeScale);
-        private static float TitleHeight => HudLayoutMetrics.Scaled(20f * TitleSizeScale);
+        private static float SlotDiameter => RoundHudPixels(HudLayoutMetrics.Scaled(54f * SlotSizeScale));
+        private static float SlotSpacing => RoundHudPixels(HudLayoutMetrics.Scaled(8f * SlotSizeScale));
+        private static float ArcPadding => RoundHudPixels(HudLayoutMetrics.Scaled(5f * SlotSizeScale));
+        private static float TitleHeight => RoundHudPixels(HudLayoutMetrics.Scaled(20f * TitleSizeScale));
 
-        private static Color EmptySlotColor => SurvivalPioneerUiPalette.WithAlpha(
-            SurvivalPioneerUiPalette.DarkNavy,
-            0.8f);
+        private static float RoundHudPixels(float value) => Mathf.Max(1f, Mathf.Round(value));
 
         private readonly SlotView[] slots = new SlotView[SlotCount];
         private readonly CompanionHealth[] subscribedHealth = new CompanionHealth[SlotCount];
@@ -56,7 +54,20 @@ namespace Project.UI
 
         public void EnsureBuilt(Transform layoutParent, float anchoredY)
         {
-            if (uiBuilt || layoutParent == null)
+            if (layoutParent == null)
+                return;
+
+            if (uiBuilt && slots[0]?.HealthFill is HalfCircleHealthBarGraphic)
+                return;
+
+            if (clusterRoot != null)
+            {
+                Destroy(clusterRoot.gameObject);
+                clusterRoot = null;
+                uiBuilt = false;
+            }
+
+            if (uiBuilt)
                 return;
 
             BuildCluster(layoutParent, anchoredY);
@@ -169,12 +180,12 @@ namespace Project.UI
             if (!uiBuilt)
                 return;
 
+            SubscribeToRoster();
             SubscribeToCompanionBridge();
+            SubscribeToExposureService();
 
             if (rosterBridge == null)
                 return;
-
-            SubscribeToExposureService();
 
             int count = rosterBridge.ActiveCompanions.Count;
             if (count != lastCompanionCount)
@@ -228,11 +239,11 @@ namespace Project.UI
 
             TextMeshProUGUI title = titleObject.AddComponent<TextMeshProUGUI>();
             TmpUiHelper.ApplyDefaultFont(title);
-            title.text = "PIONEERS";
+            title.text = "EXPEDITION TRIO";
             title.fontSize = HudLayoutMetrics.ScaledInt(13f * TitleSizeScale);
             title.fontStyle = FontStyles.Bold;
             title.alignment = TextAlignmentOptions.Center;
-            title.color = SurvivalPioneerUiPalette.HotbarLabelText;
+            title.color = DarkMatterGenesisUiPalette.HotbarLabelText;
             title.raycastTarget = false;
         }
 
@@ -254,43 +265,40 @@ namespace Project.UI
             GameObject portraitFrame = new GameObject("PortraitFrame", typeof(RectTransform));
             portraitFrame.transform.SetParent(slotRoot.transform, false);
             RectTransform frameRect = portraitFrame.GetComponent<RectTransform>();
-            float frameSize = SlotDiameter + ArcPadding * 2f;
+            float frameSize = RoundHudPixels(SlotDiameter + ArcPadding * 2f);
             frameRect.anchorMin = new Vector2(0.5f, 1f);
             frameRect.anchorMax = new Vector2(0.5f, 1f);
             frameRect.pivot = new Vector2(0.5f, 1f);
-            frameRect.anchoredPosition = new Vector2(0f, 0f);
+            frameRect.anchoredPosition = Vector2.zero;
             frameRect.sizeDelta = new Vector2(frameSize, frameSize);
 
-            HalfCircleHealthBarGraphic healthTrack = CreateArcGraphic(
+            HalfCircleHealthBarGraphic healthTrack = CreateArcImage(
                 portraitFrame.transform,
                 "HealthTrack",
-                SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SlateGray, 0.55f),
+                frameSize,
+                DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.55f),
                 1f);
 
-            HalfCircleHealthBarGraphic healthFill = CreateArcGraphic(
+            HalfCircleHealthBarGraphic healthFill = CreateArcImage(
                 portraitFrame.transform,
                 "HealthFill",
-                SurvivalPioneerUiPalette.PositiveGreen,
+                frameSize,
+                DarkMatterGenesisUiPalette.PositiveGreen,
                 1f);
 
-            GameObject portraitObject = new GameObject("Portrait", typeof(RectTransform), typeof(Image), typeof(Mask));
-            portraitObject.transform.SetParent(portraitFrame.transform, false);
-            RectTransform portraitRect = portraitObject.GetComponent<RectTransform>();
-            portraitRect.anchorMin = new Vector2(0.5f, 0.5f);
-            portraitRect.anchorMax = new Vector2(0.5f, 0.5f);
-            portraitRect.pivot = new Vector2(0.5f, 0.5f);
-            portraitRect.sizeDelta = new Vector2(SlotDiameter, SlotDiameter);
+            GameObject portraitHost = new GameObject("PortraitHost", typeof(RectTransform));
+            portraitHost.transform.SetParent(portraitFrame.transform, false);
+            RectTransform portraitHostRect = portraitHost.GetComponent<RectTransform>();
+            portraitHostRect.anchorMin = new Vector2(0.5f, 0.5f);
+            portraitHostRect.anchorMax = new Vector2(0.5f, 0.5f);
+            portraitHostRect.pivot = new Vector2(0.5f, 0.5f);
+            portraitHostRect.sizeDelta = new Vector2(SlotDiameter, SlotDiameter);
 
-            Image portraitImage = portraitObject.GetComponent<Image>();
-            ApplyCircleSprite(portraitImage);
-            portraitImage.color = EmptySlotColor;
-            portraitImage.raycastTarget = false;
-
-            Mask mask = portraitObject.GetComponent<Mask>();
-            mask.showMaskGraphic = true;
+            RawImage photoImage = PioneerPortraitUi.CreateCircularPortrait(portraitHost.transform, SlotDiameter);
+            Image portraitImage = PioneerPortraitUi.GetMaskImage(photoImage);
 
             GameObject initialsObject = new GameObject("Initials", typeof(RectTransform));
-            initialsObject.transform.SetParent(portraitObject.transform, false);
+            initialsObject.transform.SetParent(photoImage.transform, false);
             RectTransform initialsRect = initialsObject.GetComponent<RectTransform>();
             initialsRect.anchorMin = Vector2.zero;
             initialsRect.anchorMax = Vector2.one;
@@ -302,7 +310,7 @@ namespace Project.UI
             initialsLabel.fontSize = HudLayoutMetrics.ScaledInt(16f * SlotSizeScale);
             initialsLabel.fontStyle = FontStyles.Bold;
             initialsLabel.alignment = TextAlignmentOptions.Center;
-            initialsLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            initialsLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             initialsLabel.raycastTarget = false;
 
             GameObject stripObject = new GameObject("ModifierStrip", typeof(RectTransform), typeof(ExposureModifierMicroStrip));
@@ -318,6 +326,7 @@ namespace Project.UI
             return new SlotView
             {
                 PortraitImage = portraitImage,
+                PhotoImage = photoImage,
                 InitialsLabel = initialsLabel,
                 HealthTrack = healthTrack,
                 HealthFill = healthFill,
@@ -381,26 +390,31 @@ namespace Project.UI
             subscribedToExposure = false;
         }
 
-        private static HalfCircleHealthBarGraphic CreateArcGraphic(
+        private static HalfCircleHealthBarGraphic CreateArcImage(
             Transform parent,
             string name,
+            float frameSize,
             Color color,
             float fill)
         {
+            const float supersample = 2f;
+
             GameObject arcObject = new GameObject(name, typeof(RectTransform), typeof(HalfCircleHealthBarGraphic));
             arcObject.transform.SetParent(parent, false);
             RectTransform arcRect = arcObject.GetComponent<RectTransform>();
-            arcRect.anchorMin = Vector2.zero;
-            arcRect.anchorMax = Vector2.one;
-            arcRect.offsetMin = Vector2.zero;
-            arcRect.offsetMax = Vector2.zero;
+            arcRect.anchorMin = new Vector2(0.5f, 0.5f);
+            arcRect.anchorMax = new Vector2(0.5f, 0.5f);
+            arcRect.pivot = new Vector2(0.5f, 0.5f);
+            arcRect.anchoredPosition = Vector2.zero;
+            arcRect.sizeDelta = new Vector2(frameSize * supersample, frameSize * supersample);
+            arcRect.localScale = Vector3.one / supersample;
 
-            HalfCircleHealthBarGraphic graphic = arcObject.GetComponent<HalfCircleHealthBarGraphic>();
-            graphic.color = color;
-            graphic.Thickness = HudLayoutMetrics.Scaled(4f * SlotSizeScale);
-            graphic.FillAmount = fill;
-            graphic.raycastTarget = false;
-            return graphic;
+            HalfCircleHealthBarGraphic bar = arcObject.GetComponent<HalfCircleHealthBarGraphic>();
+            bar.raycastTarget = false;
+            bar.Thickness = RoundHudPixels(5f);
+            bar.color = color;
+            bar.FillAmount = fill;
+            return bar;
         }
 
         private void ApplySlot(int slotIndex, SkilledPioneerRecord record)
@@ -411,15 +425,19 @@ namespace Project.UI
 
             if (record == null)
             {
-                slot.PortraitImage.color = EmptySlotColor;
-                slot.InitialsLabel.text = string.Empty;
+                PioneerPortraitUi.ApplyPortrait(slot.PortraitImage, slot.PhotoImage, slot.InitialsLabel, null);
+                if (slot.InitialsLabel != null)
+                {
+                    slot.InitialsLabel.text = "+";
+                    slot.InitialsLabel.color = DarkMatterGenesisUiPalette.HotbarLabelText;
+                }
+
                 slot.HealthTrack.gameObject.SetActive(false);
                 slot.HealthFill.gameObject.SetActive(false);
                 return;
             }
 
-            slot.PortraitImage.color = PioneerCompanionVisualProfile.GetClassTint(record);
-            slot.InitialsLabel.text = BuildInitials(record.displayName);
+            PioneerPortraitUi.ApplyPortrait(slot.PortraitImage, slot.PhotoImage, slot.InitialsLabel, record);
             slot.HealthTrack.gameObject.SetActive(true);
             slot.HealthFill.gameObject.SetActive(true);
 
@@ -483,8 +501,8 @@ namespace Project.UI
             float normalized = max > 0.01f ? current / max : 0f;
             slot.HealthFill.FillAmount = normalized;
             slot.HealthFill.color = normalized <= 0.3f
-                ? SurvivalPioneerUiPalette.DangerRed
-                : SurvivalPioneerUiPalette.PositiveGreen;
+                ? DarkMatterGenesisUiPalette.DangerRed
+                : DarkMatterGenesisUiPalette.PositiveGreen;
         }
 
         private CompanionHealth FindCompanionHealth(string pioneerRecordId)
@@ -534,6 +552,9 @@ namespace Project.UI
                 return;
 
             roster = PioneerRosterManager.EnsureExists();
+            if (roster == null)
+                return;
+
             roster.OnTrioChanged += Refresh;
             roster.OnRosterChanged += Refresh;
             subscribedToRoster = true;
@@ -549,40 +570,6 @@ namespace Project.UI
                 subscribedHealth[i] = null;
                 healthHandlers[i] = null;
             }
-        }
-
-        private static void ApplyCircleSprite(Image image)
-        {
-            if (image == null)
-                return;
-
-            Sprite circle = ShiftUiTheme.CircleFilled;
-            if (circle != null)
-            {
-                image.sprite = circle;
-                image.type = Image.Type.Simple;
-                return;
-            }
-
-            MenuUiBuilder.ApplyUiSprite(image);
-        }
-
-        private static string BuildInitials(string displayName)
-        {
-            if (string.IsNullOrWhiteSpace(displayName))
-                return string.Empty;
-
-            string trimmed = displayName.Trim();
-            if (trimmed.Length == 1)
-                return trimmed.ToUpperInvariant();
-
-            int spaceIndex = trimmed.IndexOf(' ');
-            if (spaceIndex > 0 && spaceIndex < trimmed.Length - 1)
-                return $"{char.ToUpperInvariant(trimmed[0])}{char.ToUpperInvariant(trimmed[spaceIndex + 1])}";
-
-            return trimmed.Length >= 2
-                ? $"{char.ToUpperInvariant(trimmed[0])}{char.ToUpperInvariant(trimmed[1])}"
-                : char.ToUpperInvariant(trimmed[0]).ToString();
         }
 
         private void HandleAnyCompanionHealthChanged(CompanionHealth health, float current, float max)
@@ -619,6 +606,7 @@ namespace Project.UI
         private sealed class SlotView
         {
             public Image PortraitImage;
+            public RawImage PhotoImage;
             public TextMeshProUGUI InitialsLabel;
             public HalfCircleHealthBarGraphic HealthTrack;
             public HalfCircleHealthBarGraphic HealthFill;

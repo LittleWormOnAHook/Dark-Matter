@@ -72,7 +72,7 @@ public class ProjectileAmmoCreatorWindow : EditorWindow
 
     private Vector2 scroll;
 
-    [MenuItem(SurvivalPioneerEditorMenus.ProjectileAmmoCreator, false, 20)]
+    [MenuItem(DarkMatterGenesisEditorMenus.ProjectileAmmoCreator, false, 20)]
     public static void ShowWindow()
     {
         GetWindow<ProjectileAmmoCreatorWindow>("Projectile + Ammo Creator").minSize = new Vector2(460, 640);

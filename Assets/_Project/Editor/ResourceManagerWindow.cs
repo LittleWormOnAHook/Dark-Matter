@@ -170,7 +170,7 @@ namespace Project.EditorTools
         private string statusMessage = string.Empty;
         private MessageType statusType = MessageType.Info;
 
-        [MenuItem(SurvivalPioneerEditorMenus.ResourceManager, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ResourceManager, false, 1)]
         public static void Open()
         {
             GetWindow<ResourceManagerWindow>("Resource Manager").minSize = new Vector2(480f, 700f);

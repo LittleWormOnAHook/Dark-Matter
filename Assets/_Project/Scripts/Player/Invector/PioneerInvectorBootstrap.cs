@@ -12,6 +12,7 @@ using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using ECM2;
 
 namespace Project.Player.Invector
@@ -48,6 +49,7 @@ namespace Project.Player.Invector
         private void Awake()
         {
             Instance = this;
+            PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
             PlayerReference.Register(transform, GetComponentInChildren<Camera>());
             ThirdPersonController = GetComponent<vThirdPersonController>();
             ShooterInput = GetComponent<PioneerShooterMeleeInput>();
@@ -63,6 +65,12 @@ namespace Project.Player.Invector
                 PioneerInvectorShooterLayers.ApplyToShooterManager(ShooterManager);
                 ShooterManager.onEquipWeapon.AddListener(HandleShooterWeaponEquipped);
             }
+
+            PlayerInvectorRagdollSetup.RepairSeparatedRagdoll(gameObject);
+
+            PlayerInput playerInput = GetComponent<PlayerInput>();
+            if (playerInput != null)
+                PlayerInvectorRuntimeSetup.SuppressForeignPlayerInputs(playerInput);
 
             SnapWeaponContainersToLocalBones();
 
@@ -176,6 +184,7 @@ namespace Project.Player.Invector
             yield return null;
             yield return new WaitForFixedUpdate();
 
+            PlayerInvectorRuntimeSetup.Apply(gameObject);
             StripLegacyEcm2Motor();
             EnsureInvectorPhysicsReady();
             _physicsInitialized = true;

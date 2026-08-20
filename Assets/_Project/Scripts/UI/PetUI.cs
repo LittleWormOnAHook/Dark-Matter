@@ -362,7 +362,7 @@ namespace Project.UI
             _scrollLayoutElement.minHeight = S(220f, PanelScale);
 
             Image gridBg = gridObj.AddComponent<Image>();
-            gridBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.PanelBackground, 0.55f);
+            gridBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PanelBackground, 0.55f);
 
             GridLayoutGroup grid = gridObj.AddComponent<GridLayoutGroup>();
             float slotSize = S(72f, PanelScale);
@@ -404,6 +404,8 @@ namespace Project.UI
             CameraController camera = FindAnyObjectByType<CameraController>();
             if (camera != null)
                 camera.SetInventoryOpen(pause);
+
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonPetPanel, pause);
         }
     }
 }

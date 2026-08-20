@@ -16,7 +16,7 @@ namespace Project.Progression
 
             if (!LevelUnlockUtility.CanAccess(progression, skill.requiredPlayerLevel))
             {
-                error = $"Requires level {skill.requiredPlayerLevel}.";
+                error = LevelUnlockUtility.FormatLevelRequiredMessage(skill.requiredPlayerLevel);
                 return false;
             }
 

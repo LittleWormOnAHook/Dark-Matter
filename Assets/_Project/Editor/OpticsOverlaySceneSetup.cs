@@ -14,7 +14,7 @@ public static class OpticsOverlaySceneSetup
 {
     private const string CanvasName = "OpticsOverlayCanvas";
 
-    [MenuItem(SurvivalPioneerEditorMenus.Optics + "Rebuild Scene Optics Overlay Canvas")]
+    [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Rebuild Scene Optics Overlay Canvas")]
     public static void RebuildSceneCanvasFromMenu()
     {
         int result = RebuildSceneCanvas();

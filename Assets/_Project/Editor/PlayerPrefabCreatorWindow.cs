@@ -24,7 +24,28 @@ namespace Project.EditorTools
         private Vector2 listScroll;
         private Vector2 editorScroll;
 
-        [MenuItem(SurvivalPioneerEditorMenus.PlayerPrefabCreator, false, 13)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Repair Player_v7 Prefab", false, 14)]
+        public static void RepairPlayerV7Prefab()
+        {
+            const string path = "Assets/_Project/Prefabs/Players/Player_v7.prefab";
+            if (!PlayerPrefabVisualSetupUtility.RepairVisualAtPath(path))
+            {
+                EditorUtility.DisplayDialog("Player Prefab Creator", $"Could not repair {path}.", "OK");
+                return;
+            }
+
+            AssetDatabase.SaveAssets();
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null)
+            {
+                Selection.activeObject = prefab;
+                EditorGUIUtility.PingObject(prefab);
+            }
+
+            Debug.Log($"[Player Prefab Creator] Repaired {path} (BodySnaps, ragdoll remount, frozen VBOT physics strip).");
+        }
+
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, 13)]
         public static void Open()
         {
             PlayerPrefabCreatorWindow window = GetWindow<PlayerPrefabCreatorWindow>("Player Prefab Creator");

@@ -27,7 +27,8 @@ namespace Project.UI
         private Image backgroundImage;
         private Image fillImage;
         private EnemyHealth boundHealth;
-        private float boundPriority = float.NegativeInfinity;
+        private EnemyHealth engagementCandidate;
+        private float engagementCandidateTime = float.PositiveInfinity;
         private bool built;
 
         public static EngagedEnemyHealthHud Instance => instance;
@@ -106,7 +107,7 @@ namespace Project.UI
             nameLabel.alignment = TextAlignmentOptions.Center;
             nameLabel.fontSize = 16f;
             nameLabel.fontStyle = FontStyles.Bold;
-            nameLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            nameLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             nameLabel.raycastTarget = false;
             nameLabel.text = string.Empty;
             TmpUiHelper.TryApplyOutline(nameLabel, 0.2f, Color.black);
@@ -116,14 +117,14 @@ namespace Project.UI
 
             backgroundImage = barObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(backgroundImage);
-            backgroundImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.CharcoalGray, 0.9f);
+            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.9f);
             backgroundImage.raycastTarget = false;
 
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform));
             fillObject.transform.SetParent(barObject.transform, false);
             fillImage = fillObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(fillImage);
-            fillImage.color = SurvivalPioneerUiPalette.DeepMagenta;
+            fillImage.color = DarkMatterGenesisUiPalette.DeepMagenta;
             fillImage.type = Image.Type.Filled;
             fillImage.fillMethod = Image.FillMethod.Horizontal;
             fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -139,17 +140,12 @@ namespace Project.UI
             SetVisible(false);
         }
 
-        public void ShowOrUpdate(EnemyHealth health, string displayName, float current, float max)
-        {
-            ShowOrUpdate(health, displayName, current, max, Time.time);
-        }
-
-        public void ShowOrUpdate(
+        /// <summary>Player damage always takes over the HUD from any other enemy.</summary>
+        public void ShowFromPlayerDamage(
             EnemyHealth health,
             string displayName,
             float current,
-            float max,
-            float priority)
+            float max)
         {
             if (health == null || health.IsDead)
             {
@@ -158,10 +154,98 @@ namespace Project.UI
             }
 
             EnsureBuilt(transform.parent);
+            ClearEngagementCandidate();
+            BindAndPresent(health, displayName, current, max);
+        }
 
-            if (boundHealth != null && boundHealth != health && priority + 0.01f < boundPriority)
+        /// <summary>
+        /// Engagement is sticky: first enemy to aggro claims the bar until the player damages another.
+        /// </summary>
+        public void UpdateFromEngagement(
+            EnemyHealth health,
+            string displayName,
+            float current,
+            float max,
+            float firstEngagedAt)
+        {
+            if (health == null || health.IsDead)
+            {
+                ReleaseEngagementCandidate(health);
+                ClearIf(health);
+                return;
+            }
+
+            EnsureBuilt(transform.parent);
+
+            if (boundHealth == health)
+            {
+                if (nameLabel != null)
+                    nameLabel.text = string.IsNullOrWhiteSpace(displayName) ? "Enemy" : displayName;
+
+                ApplyHealth(current, max);
+                SetVisible(true);
+                return;
+            }
+
+            // Another enemy already owns the bar — engagement alone cannot steal focus.
+            if (boundHealth != null && boundHealth != health)
                 return;
 
+            if (engagementCandidate == null || firstEngagedAt < engagementCandidateTime)
+            {
+                engagementCandidate = health;
+                engagementCandidateTime = firstEngagedAt;
+            }
+
+            if (engagementCandidate != health)
+                return;
+
+            BindAndPresent(health, displayName, current, max);
+        }
+
+        public void UpdateHealthIfBound(EnemyHealth health, float current, float max)
+        {
+            if (health == null || boundHealth != health)
+                return;
+
+            ApplyHealth(current, max);
+        }
+
+        public void ReleaseEngagementCandidate(EnemyHealth health)
+        {
+            if (health == null || engagementCandidate != health)
+                return;
+
+            engagementCandidate = null;
+            engagementCandidateTime = float.PositiveInfinity;
+        }
+
+        public void ClearIf(EnemyHealth health)
+        {
+            if (health != null && boundHealth != health)
+            {
+                ReleaseEngagementCandidate(health);
+                return;
+            }
+
+            ClearEngagementCandidate();
+            UnbindHealth();
+            SetVisible(false);
+        }
+
+        public void Clear()
+        {
+            ClearEngagementCandidate();
+            UnbindHealth();
+            SetVisible(false);
+        }
+
+        private void BindAndPresent(
+            EnemyHealth health,
+            string displayName,
+            float current,
+            float max)
+        {
             if (boundHealth != health)
             {
                 UnbindHealth();
@@ -169,8 +253,6 @@ namespace Project.UI
                 boundHealth.HealthChanged += HandleHealthChanged;
                 boundHealth.Died += HandleBoundDied;
             }
-
-            boundPriority = priority;
 
             if (nameLabel != null)
                 nameLabel.text = string.IsNullOrWhiteSpace(displayName) ? "Enemy" : displayName;
@@ -180,19 +262,10 @@ namespace Project.UI
             transform.SetAsLastSibling();
         }
 
-        public void ClearIf(EnemyHealth health)
+        private void ClearEngagementCandidate()
         {
-            if (health != null && boundHealth != health)
-                return;
-
-            UnbindHealth();
-            SetVisible(false);
-        }
-
-        public void Clear()
-        {
-            UnbindHealth();
-            SetVisible(false);
+            engagementCandidate = null;
+            engagementCandidateTime = float.PositiveInfinity;
         }
 
         private void HandleHealthChanged(float current, float max)
@@ -226,7 +299,6 @@ namespace Project.UI
             boundHealth.HealthChanged -= HandleHealthChanged;
             boundHealth.Died -= HandleBoundDied;
             boundHealth = null;
-            boundPriority = float.NegativeInfinity;
         }
 
         private void SetVisible(bool visible)

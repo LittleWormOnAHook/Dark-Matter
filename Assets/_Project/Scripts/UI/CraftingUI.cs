@@ -426,14 +426,14 @@ namespace Project.UI
                         statusText.text =
                             $"{JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending scroll(s)  ·  " +
                             $"{recipes.Count} learned  ·  Craft at a cooking pot or workbench.";
-                        statusText.color = SurvivalPioneerUiPalette.Gold;
+                        statusText.color = DarkMatterGenesisUiPalette.Gold;
                     }
                     else
                     {
                         statusText.text =
                             $"{JournalPanelLayout.FormatGoldValue(recipes.Count.ToString())} learned  ·  " +
                             "Visit a cooking pot or workbench to craft.";
-                        statusText.color = SurvivalPioneerUiPalette.Gold;
+                        statusText.color = DarkMatterGenesisUiPalette.Gold;
                     }
                 }
                 else if (recipes.Count == 0)
@@ -447,7 +447,7 @@ namespace Project.UI
                         (pendingScrolls > 0
                             ? $"{pendingScrolls} pending scroll(s)  ·  Approach a station to craft."
                             : "Approach a cooking pot or workbench to craft.");
-                    statusText.color = SurvivalPioneerUiPalette.Gold;
+                    statusText.color = DarkMatterGenesisUiPalette.Gold;
                 }
                 else
                 {
@@ -466,7 +466,7 @@ namespace Project.UI
                     if (pendingScrolls > 0)
                         baseStatus += $"  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending scroll(s)";
                     statusText.text = baseStatus;
-                    statusText.color = SurvivalPioneerUiPalette.Gold;
+                    statusText.color = DarkMatterGenesisUiPalette.Gold;
                 }
             }
 
@@ -475,7 +475,7 @@ namespace Project.UI
                 learnedSectionLabel.text = recipes.Count > 0
                     ? $"Learned Blueprints  ·  {JournalPanelLayout.FormatGoldValue(recipes.Count.ToString())}"
                     : "Learned Blueprints";
-                learnedSectionLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+                learnedSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
             if (scrollSectionLabel != null)
@@ -483,7 +483,7 @@ namespace Project.UI
                 scrollSectionLabel.text = pendingScrolls > 0
                     ? $"Pending Scrolls  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())}"
                     : "Pending Scrolls";
-                scrollSectionLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+                scrollSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
             if (recipes.Count == 0)
@@ -568,7 +568,7 @@ namespace Project.UI
                 if (scrollHintText != null)
                 {
                     scrollHintText.text = "Collect blueprints in the world to fill these slots.";
-                    scrollHintText.color = SurvivalPioneerUiPalette.Gold;
+                    scrollHintText.color = DarkMatterGenesisUiPalette.Gold;
                 }
                 return;
             }
@@ -579,7 +579,7 @@ namespace Project.UI
                 scrollHintText.text = pending.Count > 0
                     ? "Right-click a scroll, then click Learn to confirm."
                     : "Collect blueprints in the world to fill these slots.";
-                scrollHintText.color = SurvivalPioneerUiPalette.Gold;
+                scrollHintText.color = DarkMatterGenesisUiPalette.Gold;
             }
 
             for (int i = 0; i < pending.Count; i++)
@@ -668,12 +668,12 @@ namespace Project.UI
             if (panelBackground != null)
                 panelBackground.color = embedded
                     ? new Color(0f, 0f, 0f, 0f)
-                    : SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.82f);
+                    : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.82f);
 
             if (recipeScrollBackground != null)
                 recipeScrollBackground.color = embedded
-                    ? SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.35f)
-                    : SurvivalPioneerUiPalette.ScrollBackground;
+                    ? DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.35f)
+                    : DarkMatterGenesisUiPalette.ScrollBackground;
 
             if (headerObject != null)
                 headerObject.SetActive(!embedded && !standaloneOpen);
@@ -777,7 +777,7 @@ namespace Project.UI
             else
             {
                 MenuUiBuilder.ApplyUiSprite(windowBg);
-                windowBg.color = SurvivalPioneerUiPalette.PanelBackground;
+                windowBg.color = DarkMatterGenesisUiPalette.PanelBackground;
             }
 
             VerticalLayoutGroup windowLayout = standaloneWindowRoot.AddComponent<VerticalLayoutGroup>();
@@ -849,7 +849,7 @@ namespace Project.UI
             panelRt.anchoredPosition = Vector2.zero;
 
             panelBackground = craftPanel.AddComponent<Image>();
-            panelBackground.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.82f);
+            panelBackground.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.82f);
 
             VerticalLayoutGroup panelLayoutGroup = craftPanel.AddComponent<VerticalLayoutGroup>();
             panelLayout = panelLayoutGroup;
@@ -864,15 +864,15 @@ namespace Project.UI
             headerObject = new GameObject("Header", typeof(RectTransform));
             headerObject.transform.SetParent(craftPanel.transform, false);
             headerLabel = CreateText(headerObject.transform, "Blueprints", JournalPanelLayout.HeaderFontSize + 4f, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-            headerLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            headerLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             statusText = CreateText(craftPanel.transform, "Use a cooking pot or workbench to craft.", JournalPanelLayout.BodyFontSize, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
-            statusText.color = SurvivalPioneerUiPalette.Gold;
+            statusText.color = DarkMatterGenesisUiPalette.Gold;
 
             JournalPanelLayout.CreateSectionDivider(craftPanel.transform);
 
             scrollSectionLabel = CreateText(craftPanel.transform, "Pending Scrolls", JournalPanelLayout.HeaderFontSize, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-            scrollSectionLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            scrollSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             GameObject scrollRowHost = new GameObject("RecipeScrollSlots", typeof(RectTransform));
             scrollRowHost.transform.SetParent(craftPanel.transform, false);
@@ -936,12 +936,12 @@ namespace Project.UI
             recipeScrollSlotsParent = slotsContent.transform;
 
             scrollHintText = CreateText(craftPanel.transform, "Collect blueprints in the world to fill these slots.", JournalPanelLayout.SecondaryFontSize, FontStyles.Italic, TextAlignmentOptions.MidlineLeft);
-            scrollHintText.color = SurvivalPioneerUiPalette.Gold;
+            scrollHintText.color = DarkMatterGenesisUiPalette.Gold;
 
             JournalPanelLayout.CreateSectionDivider(craftPanel.transform);
 
             learnedSectionLabel = CreateText(craftPanel.transform, "Learned Blueprints", JournalPanelLayout.HeaderFontSize, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-            learnedSectionLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            learnedSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             GameObject emptyHost = new GameObject("EmptyStateHost", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             emptyHost.transform.SetParent(craftPanel.transform, false);
@@ -967,7 +967,7 @@ namespace Project.UI
             recipeScrollLayoutElement.minHeight = S(220f);
 
             recipeScrollBackground = scrollObj.AddComponent<Image>();
-            recipeScrollBackground.color = SurvivalPioneerUiPalette.ScrollBackground;
+            recipeScrollBackground.color = DarkMatterGenesisUiPalette.ScrollBackground;
             recipeScrollBackground.raycastTarget = true;
 
             ScrollRect scroll = scrollObj.AddComponent<ScrollRect>();
@@ -1031,7 +1031,7 @@ namespace Project.UI
             text.text = value;
             text.fontSize = fontSize;
             text.fontStyle = style;
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             text.alignment = alignment;
             text.textWrappingMode = TextWrappingModes.Normal;
             return text;

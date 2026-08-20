@@ -52,8 +52,8 @@ namespace Project.UI
 
             Image panelBg = panelRoot.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panelBg);
-            panelBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.9f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(panelRoot.gameObject, new Vector2(1.2f, -1.2f));
+            panelBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.9f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(panelRoot.gameObject, new Vector2(1.2f, -1.2f));
 
             VerticalLayoutGroup group = panelRoot.GetComponent<VerticalLayoutGroup>();
             group.padding = new RectOffset(14, 14, 12, 12);
@@ -70,8 +70,8 @@ namespace Project.UI
             CreateDivider(panelRoot);
 
             shieldBar = new VehicleStatSegmentBar(panelRoot, VehicleStatIconKind.Shield, "Shield", new Color(0.32f, 0.70f, 0.95f, 1f), this);
-            healthBar = new VehicleStatSegmentBar(panelRoot, VehicleStatIconKind.Hull, "Hull", SurvivalPioneerUiPalette.DangerRed, this, showCriticalPill: true);
-            fuelBar = new VehicleStatSegmentBar(panelRoot, VehicleStatIconKind.Fuel, "Fuel", SurvivalPioneerUiPalette.Gold, this);
+            healthBar = new VehicleStatSegmentBar(panelRoot, VehicleStatIconKind.Hull, "Hull", DarkMatterGenesisUiPalette.DangerRed, this, showCriticalPill: true);
+            fuelBar = new VehicleStatSegmentBar(panelRoot, VehicleStatIconKind.Fuel, "Fuel", DarkMatterGenesisUiPalette.Gold, this);
 
             CreateDivider(panelRoot);
             BuildFooter(panelRoot);
@@ -96,8 +96,8 @@ namespace Project.UI
             group.childForceExpandWidth = true;
             group.childForceExpandHeight = false;
 
-            CreateLabel(header.transform, "VESSEL", 10f, FontStyles.Normal, SurvivalPioneerUiPalette.MutedText, 14f);
-            vesselNameLabel = CreateLabel(header.transform, "Hovercraft", 18f, FontStyles.Bold, SurvivalPioneerUiPalette.BodyText, 24f);
+            CreateLabel(header.transform, "VESSEL", 10f, FontStyles.Normal, DarkMatterGenesisUiPalette.MutedText, 14f);
+            vesselNameLabel = CreateLabel(header.transform, "Hovercraft", 18f, FontStyles.Bold, DarkMatterGenesisUiPalette.BodyText, 24f);
         }
 
         private void BuildFooter(Transform parent)
@@ -137,10 +137,10 @@ namespace Project.UI
             columnGroup.childForceExpandWidth = true;
             columnGroup.childForceExpandHeight = false;
 
-            TextMeshProUGUI captionLabel = CreateLabel(column.transform, caption, 9f, FontStyles.Bold, SurvivalPioneerUiPalette.MutedText, 12f);
+            TextMeshProUGUI captionLabel = CreateLabel(column.transform, caption, 9f, FontStyles.Bold, DarkMatterGenesisUiPalette.MutedText, 12f);
             captionLabel.alignment = valueAlignment == TextAlignmentOptions.MidlineRight ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.MidlineLeft;
 
-            valueLabel = CreateLabel(column.transform, "—", 14f, FontStyles.Bold, SurvivalPioneerUiPalette.BodyText, 18f);
+            valueLabel = CreateLabel(column.transform, "—", 14f, FontStyles.Bold, DarkMatterGenesisUiPalette.BodyText, 18f);
             valueLabel.alignment = valueAlignment;
 
             return column;
@@ -179,7 +179,7 @@ namespace Project.UI
 
             Image image = divider.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(image);
-            image.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.RichFuchsia, 0.32f);
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.32f);
             image.raycastTarget = false;
         }
 

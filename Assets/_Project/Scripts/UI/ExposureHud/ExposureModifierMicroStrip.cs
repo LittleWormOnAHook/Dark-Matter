@@ -49,8 +49,8 @@ namespace Project.UI
                 ? isBuff ? "+" : "−"
                 : tick.IconGlyph;
             label.color = isBuff
-                ? SurvivalPioneerUiPalette.PositiveGreen
-                : SurvivalPioneerUiPalette.DeepMagenta;
+                ? DarkMatterGenesisUiPalette.PositiveGreen
+                : DarkMatterGenesisUiPalette.DeepMagenta;
         }
 
         private void EnsureBuilt()

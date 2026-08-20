@@ -394,10 +394,12 @@ namespace Project.Combat
 
             Shader shader = ResolveLegacyParticleShader(blend);
             if (shader == null)
+                shader = Shader.Find("Project/SmokeParticle");
+            if (shader == null)
                 shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended");
 
             Material material = new Material(shader);
-            material.name = "VolumetricSmokeParticle_Legacy";
+            material.name = "VolumetricSmokeParticle";
             ApplyLegacyTint(material, tint);
             material.SetTexture("_MainTex", GetSoftParticleTexture());
             return material;
@@ -414,6 +416,16 @@ namespace Project.Combat
                 return null;
 
             Material clone = new Material(sourceMaterial);
+            // Prefer dual-pipeline Project/SmokeParticle when the Resources mat is still legacy.
+            Shader projectSmoke = Shader.Find("Project/SmokeParticle");
+            if (projectSmoke != null &&
+                (clone.shader == null ||
+                 clone.shader.name.StartsWith("Legacy Shaders/", System.StringComparison.Ordinal) ||
+                 clone.shader.name.StartsWith("Particles/", System.StringComparison.Ordinal)))
+            {
+                clone.shader = projectSmoke;
+            }
+
             ApplyLegacyTint(clone, tint);
 
             if (clone.HasProperty("_MainTex") && clone.GetTexture("_MainTex") == null)
@@ -424,6 +436,13 @@ namespace Project.Combat
 
         private static Shader ResolveLegacyParticleShader(LegacyParticleBlend blend)
         {
+            if (blend == LegacyParticleBlend.AlphaBlended)
+            {
+                Shader project = Shader.Find("Project/SmokeParticle");
+                if (project != null)
+                    return project;
+            }
+
             string shaderName = blend switch
             {
                 LegacyParticleBlend.AdditiveSoft => "Legacy Shaders/Particles/Additive (Soft)",

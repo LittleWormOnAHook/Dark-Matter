@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: Pimican_recipe
   displayName: Pemican
   description: Pemican has unique qualities
-  icon: {fileID: 21300000, guid: 46c9e222084fcb8479b61a014526b5c0, type: 3}
+  icon: {fileID: 21300000, guid: abfe5b2fdc6e69d4bb395479443ef856, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}

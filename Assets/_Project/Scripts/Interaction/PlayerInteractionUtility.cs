@@ -23,14 +23,17 @@ namespace Project.Interaction
 
         public static bool TryGetPlayerPosition(out Vector3 position)
         {
-            GameObject player = PlayerLocator.FindPlayerObject();
+            Transform player = PlayerReference.Transform;
+            if (player == null)
+                player = PlayerReference.ResolveTransform();
+
             if (player == null)
             {
                 position = default;
                 return false;
             }
 
-            position = player.transform.position;
+            position = player.position;
             return true;
         }
 

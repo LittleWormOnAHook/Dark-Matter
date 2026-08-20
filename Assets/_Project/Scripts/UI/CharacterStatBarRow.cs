@@ -157,8 +157,8 @@ namespace Project.UI
 
             Image iconBg = iconObject.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(iconBg);
-            iconBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.88f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(iconObject, new Vector2(1f, -1f));
+            iconBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(iconObject, new Vector2(1f, -1f));
             iconBackgroundOut = iconBg;
 
             GameObject glyphObject = new GameObject("Glyph", typeof(RectTransform));
@@ -171,7 +171,7 @@ namespace Project.UI
             glyphLabel.text = glyph;
             glyphLabel.fontSize = 11f;
             glyphLabel.alignment = TextAlignmentOptions.Center;
-            glyphLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            glyphLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             glyphLabel.raycastTarget = false;
         }
 
@@ -218,7 +218,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(nameLabelOut);
             nameLabelOut.fontSize = 13f;
             nameLabelOut.alignment = TextAlignmentOptions.MidlineLeft;
-            nameLabelOut.color = SurvivalPioneerUiPalette.BodyText;
+            nameLabelOut.color = DarkMatterGenesisUiPalette.BodyText;
             nameLabelOut.text = statName;
             nameLabelOut.overflowMode = TextOverflowModes.Overflow;
             nameLabelOut.textWrappingMode = TextWrappingModes.NoWrap;
@@ -233,7 +233,7 @@ namespace Project.UI
             TmpUiHelper.ApplyDefaultFont(valueLabelOut);
             valueLabelOut.fontSize = 13f;
             valueLabelOut.alignment = TextAlignmentOptions.MidlineRight;
-            valueLabelOut.color = SurvivalPioneerUiPalette.BodyText;
+            valueLabelOut.color = DarkMatterGenesisUiPalette.BodyText;
             valueLabelOut.raycastTarget = false;
 
             GameObject track = new GameObject("Track", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
@@ -244,7 +244,7 @@ namespace Project.UI
 
             Image trackImage = track.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(trackImage);
-            trackImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.38f);
+            trackImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.38f);
 
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillObject.transform.SetParent(track.transform, false);

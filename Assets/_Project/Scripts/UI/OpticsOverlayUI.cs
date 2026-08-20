@@ -22,6 +22,8 @@ namespace Project.UI
         private static readonly int EdgeSoftnessId = Shader.PropertyToID("_EdgeSoftness");
         private static readonly int ScannerFuzzId = Shader.PropertyToID("_ScannerFuzz");
         private static readonly int TintId = Shader.PropertyToID("_Tint");
+        private static readonly int PassthroughId = Shader.PropertyToID("_Passthrough");
+        private const int PassthroughMaskResolution = 512;
 
         private GameObject overlayRoot;
         private GameObject binocularRoot;
@@ -31,6 +33,9 @@ namespace Project.UI
         private TextMeshProUGUI hintLabel;
         private Image scannerTint;
         private Image viewportBackground;
+        private Image passthroughVignetteImage;
+        private Image binocularCircleMaskImage;
+        private RectTransform binocularCircleMaskRect;
         private Image binocularOuterImage;
         private Image binocularFrameImage;
         private Image binocularInnerImage;
@@ -39,10 +44,17 @@ namespace Project.UI
         private Image scannerReticleImage;
         private RawImage viewportImage;
         private Material viewportMaterial;
+        private Texture2D passthroughMaskTexture;
+        private Sprite passthroughMaskSprite;
+        private bool passthroughMaskBuiltForScanner;
+        private float passthroughMaskBuiltAspect = -1f;
         private readonly List<RectTransform> markerPool = new List<RectTransform>();
         private static OpticsOverlayUI instance;
         private bool uiBuilt;
         private bool isVisible;
+        private bool passthroughMode;
+        private bool sceneAuthoredOverlay;
+        private TextMeshProUGUI scanningPopupLabel;
         private float scannerHalfWidthPixels = 420f;
         private float scannerHalfHeightPixels = 250f;
         private float markerActivePulseBase = 0.7f;
@@ -152,6 +164,12 @@ namespace Project.UI
             viewportImage = viewportObject.GetComponent<RawImage>();
             viewportImage.material = viewportMaterial;
             viewportImage.raycastTarget = false;
+            viewportImage.enabled = false;
+
+            // HDRP-safe look-through mask: UI Image sprite (never RawImage — DrawRawMesh crash).
+            passthroughVignetteImage = CreateStretchImage(overlayRoot.transform, "PassthroughVignette", null);
+            passthroughVignetteImage.color = Color.white;
+            passthroughVignetteImage.enabled = false;
 
             binocularRoot = new GameObject("BinocularOverlay", typeof(RectTransform));
             binocularRoot.transform.SetParent(overlayRoot.transform, false);
@@ -200,6 +218,10 @@ namespace Project.UI
             if (!uiBuilt)
                 return;
 
+            // Never overwrite scene-authored BinocularOverlay / ScannerOverlay stacks.
+            if (sceneAuthoredOverlay)
+                return;
+
             OpticsCrosshairLibrary library = OpticsUiSprites.Current;
             if (library == null)
                 return;
@@ -217,6 +239,10 @@ namespace Project.UI
                 library.binocularScopeInnerGlowLayer,
                 OpticsUiSprites.BinocularScopeInnerGlow);
 
+            // Triangle overlay (ScopeFull / Triangle3Split) stays off.
+            if (binocularFrameImage != null)
+                binocularFrameImage.enabled = false;
+
             OpticsCrosshairLibrary.ApplyImageLayer(
                 scannerMaskFrameImage,
                 library.scannerMaskFrameLayer,
@@ -233,6 +259,9 @@ namespace Project.UI
                 scannerTint,
                 library.scannerTintOverlayLayer,
                 null);
+
+            if (passthroughMode && scannerMaskFrameImage != null)
+                scannerMaskFrameImage.enabled = false;
 
             if (viewportBackground != null && library.viewport != null)
             {
@@ -302,6 +331,7 @@ namespace Project.UI
             viewportBackground = existingRoot.transform.Find("ViewportBackground")?.GetComponent<Image>();
             viewportImage = existingRoot.transform.Find("OpticsViewport")?.GetComponent<RawImage>();
             viewportMaterial = viewportImage != null ? viewportImage.material : null;
+            passthroughVignetteImage = existingRoot.transform.Find("PassthroughVignette")?.GetComponent<Image>();
             binocularRoot = existingRoot.transform.Find("BinocularOverlay")?.gameObject;
             scannerRoot = existingRoot.transform.Find("ScannerOverlay")?.gameObject;
             markerLayer = existingRoot.transform.Find("ScannerMarkers") as RectTransform;
@@ -315,8 +345,25 @@ namespace Project.UI
             scannerFrameImage = existingRoot.transform.Find("ScannerOverlay/ScannerFrame")?.GetComponent<Image>();
             scannerReticleImage = existingRoot.transform.Find("ScannerOverlay/ScannerReticle")?.GetComponent<Image>();
 
-            if (viewportBackground == null || viewportImage == null || binocularRoot == null || scannerRoot == null)
+            if (binocularRoot == null || scannerRoot == null)
                 return false;
+
+            if (passthroughVignetteImage == null && overlayRoot != null)
+            {
+                // Optional leftover — keep disabled for scene-authored stacks.
+                Transform vignette = overlayRoot.transform.Find("PassthroughVignette");
+                if (vignette != null)
+                    passthroughVignetteImage = vignette.GetComponent<Image>();
+            }
+
+            if (passthroughVignetteImage != null)
+                passthroughVignetteImage.enabled = false;
+
+            if (viewportImage != null)
+            {
+                viewportImage.enabled = false;
+                viewportImage.texture = null;
+            }
 
             // Scene/play-mode leftovers often keep the overlay visible with wrong sprites.
             overlayRoot.SetActive(false);
@@ -329,8 +376,17 @@ namespace Project.UI
 
             uiBuilt = true;
             isVisible = false;
-            ApplyLibraryPresentation(forceRebuildStyles: true);
+            sceneAuthoredOverlay = true;
+            // Preserve scene-authored BinocularOverlay / ScannerOverlay children — do not restyle.
+            SuppressRuntimeBinocularCircleMask();
+            BindScanningPopup(existingRoot.transform);
             return true;
+        }
+
+        public void SetPassthroughMode(bool enabled)
+        {
+            passthroughMode = enabled;
+            ApplyPassthroughVisibility();
         }
 
         public void BindRenderTexture(RenderTexture texture)
@@ -338,16 +394,196 @@ namespace Project.UI
             if (viewportImage == null)
                 return;
 
-            viewportImage.texture = texture;
-            viewportImage.enabled = texture != null;
+            // HDRP passthrough: never enable RawImage (Canvas DrawRawMesh / D3D12 crash).
+            if (passthroughMode || texture == null)
+            {
+                viewportImage.texture = null;
+                viewportImage.enabled = false;
+                ApplyPassthroughVisibility();
+                return;
+            }
 
-            if (viewportMaterial != null && texture != null)
+            viewportImage.texture = texture;
+            viewportImage.color = Color.white;
+            viewportImage.enabled = true;
+
+            if (viewportMaterial != null)
             {
                 if (viewportMaterial.HasProperty("_MainTex"))
                     viewportMaterial.SetTexture("_MainTex", texture);
                 if (viewportMaterial.HasProperty("_BaseMap"))
                     viewportMaterial.SetTexture("_BaseMap", texture);
             }
+
+            ApplyPassthroughVisibility();
+        }
+
+        private void ApplyPassthroughVisibility()
+        {
+            // Never draw RawImage under HDRP passthrough.
+            if (viewportImage != null && passthroughMode)
+            {
+                viewportImage.texture = null;
+                viewportImage.enabled = false;
+            }
+            else if (viewportImage != null)
+            {
+                viewportImage.enabled = viewportImage.texture != null;
+            }
+
+            if (viewportBackground != null)
+            {
+                Color c = viewportBackground.color;
+                c.a = passthroughMode ? 0f : Mathf.Max(c.a, 0.85f);
+                if (!passthroughMode && c.a < 0.01f)
+                    c.a = 0.92f;
+                viewportBackground.color = c;
+                viewportBackground.enabled = !passthroughMode;
+            }
+
+            bool scanner = scannerRoot != null && scannerRoot.activeSelf;
+            // Scene-authored optics UI owns the look-through frame — skip generated vignette.
+            if (sceneAuthoredOverlay)
+            {
+                if (passthroughVignetteImage != null)
+                    passthroughVignetteImage.enabled = false;
+                return;
+            }
+
+            RefreshPassthroughVignette(scanner);
+        }
+
+        private void RefreshPassthroughVignette(bool scanner)
+        {
+            if (passthroughVignetteImage == null && overlayRoot != null)
+            {
+                passthroughVignetteImage = CreateStretchImage(overlayRoot.transform, "PassthroughVignette", null);
+                passthroughVignetteImage.color = Color.white;
+            }
+
+            if (passthroughVignetteImage == null)
+                return;
+
+            if (!passthroughMode || !isVisible)
+            {
+                passthroughVignetteImage.enabled = false;
+                return;
+            }
+
+            EnsurePassthroughMaskSprite(scanner);
+            if (passthroughMaskSprite == null)
+            {
+                passthroughVignetteImage.enabled = false;
+                return;
+            }
+
+            passthroughVignetteImage.sprite = passthroughMaskSprite;
+            passthroughVignetteImage.material = null; // default UI material — HDRP-safe
+            passthroughVignetteImage.type = Image.Type.Simple;
+            passthroughVignetteImage.preserveAspect = false;
+            passthroughVignetteImage.color = Color.white;
+            passthroughVignetteImage.raycastTarget = false;
+            passthroughVignetteImage.enabled = true;
+
+            // Under scope/crosshair art, above clear game view. Never cover binocular layers.
+            if (binocularRoot != null && !scanner)
+                passthroughVignetteImage.transform.SetSiblingIndex(binocularRoot.transform.GetSiblingIndex());
+            else if (scannerRoot != null && scanner)
+                passthroughVignetteImage.transform.SetSiblingIndex(scannerRoot.transform.GetSiblingIndex());
+            else if (viewportImage != null)
+                passthroughVignetteImage.transform.SetSiblingIndex(viewportImage.transform.GetSiblingIndex() + 1);
+        }
+
+        private void EnsurePassthroughMaskSprite(bool scanner)
+        {
+            // Prefer overlay canvas aspect (Game view) over Screen (can differ in the Editor).
+            float aspect = 1.777f;
+            if (overlayRoot != null && overlayRoot.transform is RectTransform overlayRect && overlayRect.rect.height > 1f)
+                aspect = overlayRect.rect.width / Mathf.Max(1f, overlayRect.rect.height);
+            else if (Screen.height > 0)
+                aspect = Screen.width / (float)Mathf.Max(1, Screen.height);
+
+            bool needsRebuild = passthroughMaskSprite == null
+                || passthroughMaskBuiltForScanner != scanner
+                || Mathf.Abs(passthroughMaskBuiltAspect - aspect) > 0.01f;
+
+            if (!needsRebuild)
+                return;
+
+            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+            OpticsViewportPresentation viewportSettings = library != null ? library.viewport : null;
+            // Slightly larger default hole so the circular “looking through” read is obvious.
+            float radius = viewportSettings != null ? viewportSettings.binocularRadius : 0.38f;
+            if (radius < 0.2f)
+                radius = 0.38f;
+            float halfW = viewportSettings != null ? viewportSettings.scannerRectHalfWidth : 0.4f;
+            float halfH = viewportSettings != null ? viewportSettings.scannerRectHalfHeight : 0.24f;
+            float softness = scanner
+                ? Mathf.Max(0.02f, viewportSettings != null ? viewportSettings.scannerEdgeSoftness : 0.02f)
+                : Mathf.Max(0.03f, viewportSettings != null ? viewportSettings.binocularEdgeSoftness : 0.03f);
+
+            if (passthroughMaskTexture == null)
+            {
+                passthroughMaskTexture = new Texture2D(
+                    PassthroughMaskResolution,
+                    PassthroughMaskResolution,
+                    TextureFormat.RGBA32,
+                    false)
+                {
+                    name = "OpticsPassthroughMask",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+
+            Color32[] pixels = new Color32[PassthroughMaskResolution * PassthroughMaskResolution];
+            float inv = 1f / (PassthroughMaskResolution - 1);
+            for (int y = 0; y < PassthroughMaskResolution; y++)
+            {
+                float v = y * inv;
+                float cy = v - 0.5f;
+                for (int x = 0; x < PassthroughMaskResolution; x++)
+                {
+                    float u = x * inv;
+                    float cx = (u - 0.5f) * aspect;
+                    float outside;
+
+                    if (scanner)
+                    {
+                        float edgeX = Mathf.Abs(cx) - halfW;
+                        float edgeY = Mathf.Abs(cy) - halfH;
+                        float edge = Mathf.Max(edgeX, edgeY);
+                        outside = Mathf.SmoothStep(-softness, softness, edge);
+                    }
+                    else
+                    {
+                        float dist = Mathf.Sqrt(cx * cx + cy * cy);
+                        outside = Mathf.SmoothStep(radius - softness, radius + softness, dist);
+                    }
+
+                    byte a = (byte)Mathf.Clamp(Mathf.RoundToInt(outside * 255f), 0, 255);
+                    pixels[y * PassthroughMaskResolution + x] = new Color32(0, 0, 0, a);
+                }
+            }
+
+            passthroughMaskTexture.SetPixels32(pixels);
+            passthroughMaskTexture.Apply(false, false);
+
+            if (passthroughMaskSprite != null)
+                DestroyOverlayObject(passthroughMaskSprite);
+
+            passthroughMaskSprite = Sprite.Create(
+                passthroughMaskTexture,
+                new Rect(0f, 0f, PassthroughMaskResolution, PassthroughMaskResolution),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0,
+                SpriteMeshType.FullRect);
+            passthroughMaskSprite.name = scanner ? "OpticsScannerVignette" : "OpticsBinocularVignette";
+
+            passthroughMaskBuiltForScanner = scanner;
+            passthroughMaskBuiltAspect = aspect;
         }
 
         public void SetVisible(bool visible, ToolType toolType)
@@ -361,7 +597,12 @@ namespace Project.UI
             isVisible = visible;
             overlayRoot.SetActive(visible);
             if (!visible)
+            {
+                if (passthroughVignetteImage != null)
+                    passthroughVignetteImage.enabled = false;
+                SetScanningPopupVisible(false);
                 return;
+            }
 
             overlayRoot.transform.SetAsLastSibling();
 
@@ -372,10 +613,41 @@ namespace Project.UI
             if (scannerRoot != null)
                 scannerRoot.SetActive(scanner);
 
+            if (sceneAuthoredOverlay && !scanner)
+                SuppressRuntimeBinocularCircleMask();
+
+            if (!scanner && !sceneAuthoredOverlay)
+                FitBinocularOverlayToCircle();
+
+            // Scene-authored stacks: only toggle roots — leave child Images as the user set them.
+            if (!sceneAuthoredOverlay && !scanner)
+            {
+                if (binocularOuterImage != null)
+                    binocularOuterImage.enabled = true;
+                if (binocularFrameImage != null)
+                    binocularFrameImage.enabled = false;
+                if (binocularInnerImage != null)
+                    binocularInnerImage.enabled = true;
+            }
+
             if (markerLayer != null)
                 markerLayer.gameObject.SetActive(scanner);
 
+            // Authored binocular/scanner art replaces our generated vignette.
+            if (passthroughVignetteImage != null)
+                passthroughVignetteImage.enabled = false;
+
+            if (viewportImage != null && passthroughMode)
+            {
+                viewportImage.texture = null;
+                viewportImage.enabled = false;
+            }
+
+            if (viewportBackground != null && passthroughMode)
+                viewportBackground.enabled = false;
+
             ApplyViewportMode(scanner);
+            SetScanningPopupVisible(scanner);
 
             OpticsCrosshairLibrary library = OpticsUiSprites.Current;
             OpticsModeLabelSettings modeSettings = library != null ? library.modeLabel : null;
@@ -398,12 +670,224 @@ namespace Project.UI
                     : new Color(0.992f, 0.71f, 0.29f, 1f);
                 hintLabel.fontSize = hintSettings != null ? hintSettings.fontSize : 20f;
                 hintLabel.text = scanner
-                    ? hintSettings != null ? hintSettings.scannerHint : "[RMB] Close  |  [Scroll] Zoom  |  POI glow active"
+                    ? "[RMB] Close  |  [MMB] Sweep"
                     : hintSettings != null ? hintSettings.binocularHint : "[RMB] Close  |  [Scroll] Zoom";
             }
 
             if (!scanner)
                 ClearScannerMarkers();
+        }
+
+        private void BindScanningPopup(Transform root)
+        {
+            if (root == null)
+                return;
+
+            Transform existing = root.Find("ScanningPopup");
+            if (existing != null)
+            {
+                scanningPopupLabel = existing.GetComponent<TextMeshProUGUI>()
+                    ?? existing.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (scanningPopupLabel != null)
+                    scanningPopupLabel.gameObject.SetActive(false);
+                return;
+            }
+
+            EnsureScanningPopup();
+        }
+
+        private void EnsureScanningPopup()
+        {
+            if (scanningPopupLabel != null || overlayRoot == null)
+                return;
+
+            GameObject popup = new GameObject("ScanningPopup", typeof(RectTransform));
+            popup.transform.SetParent(overlayRoot.transform, false);
+            RectTransform rect = popup.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.78f);
+            rect.anchorMax = new Vector2(0.5f, 0.78f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(420f, 64f);
+
+            scanningPopupLabel = popup.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(scanningPopupLabel);
+            ShiftUiTheme theme = ShiftUiTheme.Current;
+            if (theme != null)
+                theme.ApplyFont(scanningPopupLabel, semiBold: true);
+            scanningPopupLabel.fontSize = 36f;
+            scanningPopupLabel.fontStyle = FontStyles.Bold;
+            scanningPopupLabel.alignment = TextAlignmentOptions.Center;
+            scanningPopupLabel.color = DarkMatterGenesisUiPalette.Gold;
+            scanningPopupLabel.text = "SCANNING";
+            scanningPopupLabel.raycastTarget = false;
+            popup.SetActive(false);
+        }
+
+        private void SetScanningPopupVisible(bool visible)
+        {
+            EnsureScanningPopup();
+            if (scanningPopupLabel == null)
+                return;
+
+            scanningPopupLabel.text = "SCANNING";
+            scanningPopupLabel.gameObject.SetActive(visible);
+            if (visible)
+                scanningPopupLabel.transform.SetAsLastSibling();
+        }
+
+        private void LateUpdate()
+        {
+            if (sceneAuthoredOverlay || !isVisible || binocularRoot == null || !binocularRoot.activeSelf)
+                return;
+
+            FitBinocularOverlayToCircle();
+        }
+
+        /// <summary>
+        /// Crosshair/scope art as a centered square; full-screen aspect-correct circular hole mask drawn on top.
+        /// Skipped for scene-authored overlays so editor layout, scale, and child active states are preserved.
+        /// </summary>
+        private void FitBinocularOverlayToCircle()
+        {
+            if (sceneAuthoredOverlay)
+            {
+                SuppressRuntimeBinocularCircleMask();
+                return;
+            }
+
+            RectTransform root = binocularRoot != null ? binocularRoot.transform as RectTransform : null;
+            if (root == null)
+                return;
+
+            RectTransform parent = root.parent as RectTransform;
+            if (parent == null)
+                return;
+
+            float parentW = parent.rect.width;
+            float parentH = parent.rect.height;
+            if (parentW < 1f || parentH < 1f)
+                return;
+
+            root.anchorMin = Vector2.zero;
+            root.anchorMax = Vector2.one;
+            root.pivot = new Vector2(0.5f, 0.5f);
+            root.offsetMin = Vector2.zero;
+            root.offsetMax = Vector2.zero;
+            root.sizeDelta = Vector2.zero;
+            root.anchoredPosition = Vector2.zero;
+            root.localScale = Vector3.one;
+            root.localEulerAngles = Vector3.zero;
+
+            // Root image must not fight the circular hole mask.
+            Image rootImage = binocularRoot.GetComponent<Image>();
+            if (rootImage != null)
+            {
+                rootImage.enabled = false;
+                rootImage.raycastTarget = false;
+            }
+
+            float side = Mathf.Min(parentW, parentH);
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                RectTransform child = root.GetChild(i) as RectTransform;
+                if (child == null)
+                    continue;
+
+                string childName = child.name;
+                if (childName.IndexOf("BinocularCircleMask", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+
+                bool isAuthoredMask = childName.IndexOf("mask", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                if (isAuthoredMask)
+                {
+                    // Authored mask is replaced by the aspect-correct top mask.
+                    child.gameObject.SetActive(false);
+                    continue;
+                }
+
+                // Scope / crosshair: centered square so sprites stay circular and behind the hole mask.
+                child.gameObject.SetActive(true);
+                child.localScale = Vector3.one;
+                child.localEulerAngles = Vector3.zero;
+                child.anchorMin = new Vector2(0.5f, 0.5f);
+                child.anchorMax = new Vector2(0.5f, 0.5f);
+                child.pivot = new Vector2(0.5f, 0.5f);
+                child.anchoredPosition = Vector2.zero;
+                child.sizeDelta = new Vector2(side, side);
+
+                AspectRatioFitter legacyFitter = child.GetComponent<AspectRatioFitter>();
+                if (legacyFitter != null)
+                    legacyFitter.enabled = false;
+
+                Image image = child.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.preserveAspect = true;
+                    image.type = Image.Type.Simple;
+                    image.enabled = true;
+                }
+            }
+
+            EnsureBinocularCircleMask(root, side);
+            if (binocularCircleMaskRect != null)
+                binocularCircleMaskRect.SetAsLastSibling();
+        }
+
+        private void EnsureBinocularCircleMask(RectTransform root, float side)
+        {
+            if (binocularCircleMaskImage == null)
+            {
+                Transform existing = root.Find("BinocularCircleMask");
+                if (existing != null)
+                {
+                    binocularCircleMaskRect = existing as RectTransform;
+                    binocularCircleMaskImage = existing.GetComponent<Image>();
+                }
+            }
+
+            if (binocularCircleMaskImage == null)
+            {
+                GameObject maskObject = new GameObject("BinocularCircleMask", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                maskObject.transform.SetParent(root, false);
+                binocularCircleMaskRect = maskObject.GetComponent<RectTransform>();
+                binocularCircleMaskImage = maskObject.GetComponent<Image>();
+                binocularCircleMaskImage.raycastTarget = false;
+                binocularCircleMaskImage.color = Color.white;
+            }
+
+            // Full-screen plate; hole is baked with screen aspect so it stays circular.
+            binocularCircleMaskRect.anchorMin = Vector2.zero;
+            binocularCircleMaskRect.anchorMax = Vector2.one;
+            binocularCircleMaskRect.offsetMin = Vector2.zero;
+            binocularCircleMaskRect.offsetMax = Vector2.zero;
+            binocularCircleMaskRect.localScale = Vector3.one;
+
+            EnsurePassthroughMaskSprite(scanner: false);
+            binocularCircleMaskImage.sprite = passthroughMaskSprite;
+            binocularCircleMaskImage.type = Image.Type.Simple;
+            binocularCircleMaskImage.preserveAspect = false;
+            binocularCircleMaskImage.enabled = true;
+            binocularCircleMaskImage.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// Hide runtime-generated circular mask when the scene owns binocular presentation.
+        /// </summary>
+        private void SuppressRuntimeBinocularCircleMask()
+        {
+            if (binocularRoot == null)
+                return;
+
+            Transform existing = binocularRoot.transform.Find("BinocularCircleMask");
+            if (existing == null)
+                return;
+
+            Image maskImage = existing.GetComponent<Image>();
+            if (maskImage != null)
+                maskImage.enabled = false;
+
+            existing.gameObject.SetActive(false);
         }
 
         private void ApplyViewportMode(bool scanner)
@@ -754,6 +1238,12 @@ namespace Project.UI
         {
             if (viewportMaterial != null)
                 DestroyOverlayObject(viewportMaterial);
+
+            if (passthroughMaskSprite != null)
+                DestroyOverlayObject(passthroughMaskSprite);
+
+            if (passthroughMaskTexture != null)
+                DestroyOverlayObject(passthroughMaskTexture);
 
             if (instance == this)
                 instance = null;

@@ -91,6 +91,9 @@ namespace Project.Data
 
         public bool IsVehicle => itemType == ItemType.Vehicle;
 
+        public bool IsDeployableShelter =>
+            deployedPrefab != null && (itemType == ItemType.Consumable || itemType == ItemType.Resource);
+
         [Header("Equipment")]
         public WeaponGrip weaponGrip = WeaponGrip.OneHanded;
         public GameObject heldPrefab;
@@ -158,7 +161,7 @@ namespace Project.Data
         public float recoilVertical;
         [Tooltip("Horizontal camera recoil kick magnitude (half-range of ±drift). 0 falls back to grip defaults.")]
         public float recoilHorizontal;
-        [Tooltip("When fireRate exceeds this value, recoil scales down. 0 uses default 4.5.")]
+        [Tooltip("When fireRate exceeds this value, recoil scales down. 0 uses default 4.5. Ammo: pistol-base recoil; rifles scale automatically.")]
         public float recoilFireRateScale = 4.5f;
         public float fireRate = 4f;
         public int magazineSize = 30;
@@ -194,6 +197,8 @@ namespace Project.Data
         public AmmoType ammoType = AmmoType.Gunpowder;
         public int ammoPerPickup = 20;
         public float ammoPickupGrant = 20f;
+        [Tooltip("Camera + animation recoil per weapon grip. Author here so ammo type drives kick for any compatible weapon.")]
+        public DmAmmoRecoilProfile ammoRecoilProfile;
 
         [Header("Projectile Behavior")]
         [Tooltip("Straight-line hitscan beam resolved instantly on fire (e.g. lasers) instead of a traveling physical projectile.")]

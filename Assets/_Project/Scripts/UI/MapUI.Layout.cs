@@ -29,6 +29,41 @@ namespace Project.UI
             rect.localScale = Vector3.one;
         }
 
+        private void LayoutSquareFullMapFrame(RectTransform mapFrameRect)
+        {
+            if (mapFrameRect == null)
+                return;
+
+            const float pad = 12f;
+            float headerReserve = FullMapHeaderHeight + 4f;
+            float legendReserve = FullMapLegendWidth + 16f;
+            Vector2 panelSize = fullMapPanelRect != null ? fullMapPanelRect.rect.size : Vector2.zero;
+
+            if (panelSize.x < 64f || panelSize.y < 64f)
+            {
+                mapFrameRect.anchorMin = Vector2.zero;
+                mapFrameRect.anchorMax = Vector2.one;
+                mapFrameRect.pivot = new Vector2(0.5f, 0.5f);
+                mapFrameRect.anchoredPosition = Vector2.zero;
+                mapFrameRect.sizeDelta = Vector2.zero;
+                mapFrameRect.offsetMin = new Vector2(pad, pad);
+                mapFrameRect.offsetMax = new Vector2(-legendReserve, -headerReserve);
+                return;
+            }
+
+            float availableWidth = Mathf.Max(64f, panelSize.x - pad - legendReserve);
+            float availableHeight = Mathf.Max(64f, panelSize.y - headerReserve - pad);
+            float side = Mathf.Min(availableWidth, availableHeight);
+            float left = pad + (availableWidth - side) * 0.5f;
+            float bottom = pad + (availableHeight - side) * 0.5f;
+
+            mapFrameRect.anchorMin = Vector2.zero;
+            mapFrameRect.anchorMax = Vector2.zero;
+            mapFrameRect.pivot = Vector2.zero;
+            mapFrameRect.anchoredPosition = new Vector2(left, bottom);
+            mapFrameRect.sizeDelta = new Vector2(side, side);
+        }
+
         private void EnsureUiBuilt()
         {
             if (uiBuilt)
@@ -247,12 +282,7 @@ namespace Project.UI
 
             Transform mapFrame = panel.Find("MapFrame");
             if (mapFrame is RectTransform mapFrameRect)
-            {
-                mapFrameRect.anchorMin = Vector2.zero;
-                mapFrameRect.anchorMax = Vector2.one;
-                mapFrameRect.offsetMin = new Vector2(12f, 12f);
-                mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
-            }
+                LayoutSquareFullMapFrame(mapFrameRect);
 
             EnsureFullMapLegend();
 
@@ -345,7 +375,13 @@ namespace Project.UI
             {
                 Transform manualCircle = minimapRoot.transform.Find("CircleAssembly");
                 if (manualCircle != null)
+                {
+                    ApplyMinimapViewportLayout(manualCircle);
                     ApplyMinimapRingBorderColor(manualCircle);
+                    Transform edgeControls = manualCircle.Find("EdgeControls");
+                    if (edgeControls != null)
+                        ApplyMinimapEdgeButtonSprites(edgeControls);
+                }
                 WireMinimapScanButton();
                 UpdateMinimapInfoPanel();
                 return;
@@ -359,10 +395,13 @@ namespace Project.UI
             if (circleAssembly == null)
                 return;
 
+            ApplyMinimapViewportLayout(circleAssembly);
             ApplyMinimapRingBorderColor(circleAssembly);
 
             if (circleAssembly.Find("EdgeControls") == null)
                 BuildMinimapEdgeControls(circleAssembly);
+            else
+                ApplyMinimapEdgeButtonSprites(circleAssembly.Find("EdgeControls"));
 
             Transform infoPanel = minimapRoot.transform.Find("InfoPanel");
             if (infoPanel == null)
@@ -414,7 +453,56 @@ namespace Project.UI
 
             Image ringImage = ring.GetComponent<Image>();
             if (ringImage != null)
-                ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
+            {
+                ringImage.sprite = MapUiSprites.HudCircleRing;
+                ringImage.color = MinimapRingColor;
+            }
+        }
+
+        private static void ApplyMinimapViewportLayout(Transform circleAssembly)
+        {
+            if (circleAssembly == null)
+                return;
+
+            Transform viewport = circleAssembly.Find("CircularViewport");
+            if (viewport is RectTransform viewportRect)
+            {
+                viewportRect.offsetMin = Vector2.one * MinimapViewportInset;
+                viewportRect.offsetMax = Vector2.one * -MinimapViewportInset;
+
+                Image maskImage = viewport.GetComponent<Image>();
+                if (maskImage != null)
+                {
+                    maskImage.sprite = MapUiSprites.CircleMask;
+                    maskImage.preserveAspect = true;
+                }
+            }
+
+            Transform ring = circleAssembly.Find("RingBorder");
+            Transform edgeControls = circleAssembly.Find("EdgeControls");
+            if (ring != null && viewport != null)
+                ring.SetSiblingIndex(viewport.GetSiblingIndex() + 1);
+
+            if (edgeControls != null)
+                edgeControls.SetAsLastSibling();
+        }
+
+        private void ApplyMinimapHoldZoomVisual(bool active)
+        {
+            if (minimapRingImage == null && minimapRoot != null)
+            {
+                Transform ring = minimapRoot.transform.Find("CircleAssembly/RingBorder");
+                if (ring != null)
+                    minimapRingImage = ring.GetComponent<Image>();
+            }
+
+            if (minimapRingImage == null)
+                return;
+
+            minimapRingImage.sprite = MapUiSprites.HudCircleRing;
+            minimapRingImage.color = active
+                ? DarkMatterGenesisUiPalette.Gold
+                : MinimapRingColor;
         }
 
         private void RemoveMinimapTitleBar()
@@ -472,12 +560,14 @@ namespace Project.UI
             rect.anchorMax = anchor;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = Vector2.one * MinimapEdgeButtonSize;
-            rect.anchoredPosition = anchoredPosition;
+            rect.anchoredPosition = new Vector2(
+                Mathf.Round(anchoredPosition.x),
+                Mathf.Round(anchoredPosition.y));
 
             Image image = buttonObject.AddComponent<Image>();
-            Sprite circleSprite = ShiftUiTheme.CircleFilled ?? MapUiSprites.Dot;
-            image.sprite = circleSprite;
+            image.sprite = MapUiSprites.HudCircleFill;
             image.type = Image.Type.Simple;
+            image.preserveAspect = true;
             image.color = new Color(0.12f, 0.16f, 0.22f, 0.94f);
             image.raycastTarget = true;
 
@@ -502,6 +592,32 @@ namespace Project.UI
             text.raycastTarget = false;
 
             return button;
+        }
+
+        private static void ApplyMinimapEdgeButtonSprites(Transform edgeControls)
+        {
+            if (edgeControls == null)
+                return;
+
+            for (int i = 0; i < edgeControls.childCount; i++)
+            {
+                Transform child = edgeControls.GetChild(i);
+                Image image = child.GetComponent<Image>();
+                if (image == null)
+                    continue;
+
+                image.sprite = MapUiSprites.HudCircleFill;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+
+                RectTransform rect = child as RectTransform;
+                if (rect != null)
+                {
+                    rect.sizeDelta = Vector2.one * MinimapEdgeButtonSize;
+                    Vector2 pos = rect.anchoredPosition;
+                    rect.anchoredPosition = new Vector2(Mathf.Round(pos.x), Mathf.Round(pos.y));
+                }
+            }
         }
 
         private TextMeshProUGUI CreateMinimapInfoPanel(Transform minimapParent)
@@ -719,28 +835,30 @@ namespace Project.UI
             aspect.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
             aspect.aspectRatio = 1f;
 
-            GameObject ringObject = new GameObject("RingBorder", typeof(RectTransform));
+            CreateCircularMapViewport(
+                circleAssembly.transform,
+                inset: MinimapViewportInset,
+                out minimapViewportRect,
+                out minimapContentRect,
+                out minimapMarkerLayer,
+                out minimapImage);
+
+            GameObject ringObject = new GameObject("RingBorder", typeof(RectTransform), typeof(Image));
             ringObject.transform.SetParent(circleAssembly.transform, false);
             RectTransform ringRect = ringObject.GetComponent<RectTransform>();
             ringRect.anchorMin = Vector2.zero;
             ringRect.anchorMax = Vector2.one;
             ringRect.offsetMin = Vector2.zero;
             ringRect.offsetMax = Vector2.zero;
-            Image ringImage = ringObject.AddComponent<Image>();
-            ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.CircleRing;
-            ringImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.SoftBeigeGray, 0.95f);
+            Image ringImage = ringObject.GetComponent<Image>();
+            ringImage.sprite = minimapRingSprite != null ? minimapRingSprite : MapUiSprites.HudCircleRing;
+            ringImage.color = MinimapRingColor;
             ringImage.raycastTarget = false;
             ringImage.preserveAspect = true;
-
-            CreateCircularMapViewport(
-                circleAssembly.transform,
-                inset: 8f,
-                out minimapViewportRect,
-                out minimapContentRect,
-                out minimapMarkerLayer,
-                out minimapImage);
+            minimapRingImage = ringImage;
 
             BuildMinimapEdgeControls(circleAssembly.transform);
+            ApplyMinimapViewportLayout(circleAssembly.transform);
 
             minimapPlayerIconRect = CreatePlayerArrow(minimapViewportRect, MinimapPlayerIconSize);
             minimapPlayerIconRect.SetAsLastSibling();
@@ -787,11 +905,7 @@ namespace Project.UI
 
             GameObject mapFrame = new GameObject("MapFrame", typeof(RectTransform));
             mapFrame.transform.SetParent(panelObject.transform, false);
-            RectTransform mapFrameRect = mapFrame.GetComponent<RectTransform>();
-            mapFrameRect.anchorMin = Vector2.zero;
-            mapFrameRect.anchorMax = Vector2.one;
-            mapFrameRect.offsetMin = new Vector2(12f, 12f);
-            mapFrameRect.offsetMax = new Vector2(-(FullMapLegendWidth + 16f), -(FullMapHeaderHeight + 4f));
+            LayoutSquareFullMapFrame(mapFrame.GetComponent<RectTransform>());
             Image mapFrameBg = mapFrame.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(mapFrameBg);
             mapFrameBg.color = new Color(0.04f, 0.06f, 0.08f, 0.98f);
@@ -849,13 +963,13 @@ namespace Project.UI
             CreateHeaderZoomControls(
                 headerObject.transform,
                 out fullMapZoomLabel,
-                () => SetFullMapZoom(fullMapZoom - 0.25f),
+                () => SetFullMapZoom(fullMapZoom - GetFullMapZoomStep()),
                 () =>
                 {
                     SetFullMapZoom(DefaultFullMapZoom);
                     CenterFullMapOnPlayer();
                 },
-                () => SetFullMapZoom(fullMapZoom + 0.25f));
+                () => SetFullMapZoom(fullMapZoom + GetFullMapZoomStep()));
 
             fullMapCloseButton = MenuUiBuilder.CreateCircleCloseButton(headerObject.transform, 28f);
             RectTransform closeRect = fullMapCloseButton.GetComponent<RectTransform>();
@@ -905,8 +1019,8 @@ namespace Project.UI
 
             Image legendBg = legend.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(legendBg);
-            legendBg.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.94f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(legend, new Vector2(1f, -1f));
+            legendBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.94f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(legend, new Vector2(1f, -1f));
 
             VerticalLayoutGroup layout = legend.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(10, 10, 10, 10);
@@ -918,26 +1032,26 @@ namespace Project.UI
             layout.childAlignment = TextAnchor.UpperLeft;
 
             TextMeshProUGUI title = CreateLegendLabel(legend.transform, "Legend", JournalPanelLayout.HeaderFontSize, FontStyles.Bold);
-            title.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            title.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             TextMeshProUGUI subtitle = CreateLegendLabel(legend.transform, "Terrain · POI · Icons", JournalPanelLayout.CaptionFontSize, FontStyles.Italic);
-            subtitle.color = SurvivalPioneerUiPalette.MutedText;
+            subtitle.color = DarkMatterGenesisUiPalette.MutedText;
 
             CreateLegendEntry(legend.transform, PlayerMapIconColor, "You (facing)");
-            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.Gold, "Quest giver");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.Gold, "Quest giver");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Resource), "Resource / node");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Consumable), "Consumable");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Tool), "Tool / gear");
             CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.MeleeWeapon), "Weapon cache");
             CreateLegendEntry(legend.transform, new Color(1f, 0.85f, 0.2f, 1f), "Point of interest");
-            CreateLegendEntry(legend.transform, SurvivalPioneerUiPalette.SoftBeigeGray, "Undiscovered (scan)");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.SoftBeigeGray, "Undiscovered (scan)");
 
             TextMeshProUGUI tip = CreateLegendLabel(
                 legend.transform,
                 "Use Scan on the minimap to reveal nearby markers.",
                 JournalPanelLayout.CaptionFontSize,
                 FontStyles.Normal);
-            tip.color = SurvivalPioneerUiPalette.MutedText;
+            tip.color = DarkMatterGenesisUiPalette.MutedText;
             tip.textWrappingMode = TextWrappingModes.Normal;
         }
 
@@ -968,7 +1082,7 @@ namespace Project.UI
             swatchLayout.flexibleWidth = 0f;
 
             TextMeshProUGUI text = CreateLegendLabel(row.transform, label, JournalPanelLayout.SecondaryFontSize, FontStyles.Normal);
-            text.color = SurvivalPioneerUiPalette.BodyText;
+            text.color = DarkMatterGenesisUiPalette.BodyText;
             LayoutElement textLayout = text.gameObject.AddComponent<LayoutElement>();
             textLayout.flexibleWidth = 1f;
         }

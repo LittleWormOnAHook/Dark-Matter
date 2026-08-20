@@ -3,6 +3,7 @@ using Project.CameraFx;
 using Project.Core;
 using Project.Player;
 using Project.Player.Invector;
+using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -150,7 +151,8 @@ namespace Project.Vehicles
             if (_player.IsGameplayPaused)
                 return false;
 
-            return !_player.IsMapOpen && !_player.IsInventoryOpen && !_player.IsJournalOpen;
+            return !_player.IsMapOpen && !_player.IsInventoryOpen && !_player.IsJournalOpen
+                && !MapUI.IsMinimapScrollZoomActive;
         }
 
         /// <summary>

@@ -133,12 +133,12 @@ namespace Project.UI
             headerGroup.childForceExpandWidth = true;
             headerGroup.spacing = 6f;
 
-            nameLabel = CreateLabel(header.transform, statName, 13f, TextAlignmentOptions.MidlineLeft, SurvivalPioneerUiPalette.BodyText, true);
+            nameLabel = CreateLabel(header.transform, statName, 13f, TextAlignmentOptions.MidlineLeft, DarkMatterGenesisUiPalette.BodyText, true);
 
             if (showCriticalPill)
                 criticalPill = CreateCriticalPill(header.transform, out criticalPillGroup);
 
-            percentLabel = CreateLabel(header.transform, "0%", 13f, TextAlignmentOptions.MidlineRight, SurvivalPioneerUiPalette.WarmOffWhite, false);
+            percentLabel = CreateLabel(header.transform, "0%", 13f, TextAlignmentOptions.MidlineRight, DarkMatterGenesisUiPalette.WarmOffWhite, false);
             LayoutElement percentLayout = percentLabel.gameObject.AddComponent<LayoutElement>();
             percentLayout.minWidth = 40f;
             percentLayout.preferredWidth = 40f;
@@ -341,8 +341,8 @@ namespace Project.UI
             // Deliberately skip MenuUiBuilder.ApplyUiSprite here — it applies the shared 9-sliced
             // panel-frame sprite, whose corner radius reads as basically circular at this ~30px
             // square size. Leaving the sprite unset draws a flat, sharp-cornered square instead.
-            chipImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.9f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(badge, new Vector2(1f, -1f));
+            chipImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.9f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(badge, new Vector2(1f, -1f));
 
             GameObject glyphObject = new GameObject("Glyph", typeof(RectTransform), typeof(Image));
             glyphObject.transform.SetParent(badge.transform, false);
@@ -385,7 +385,7 @@ namespace Project.UI
 
             Image pillImage = pill.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(pillImage);
-            pillImage.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DeepMagenta, 0.9f);
+            pillImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DeepMagenta, 0.9f);
 
             pillGroup = pill.GetComponent<CanvasGroup>();
 
@@ -400,7 +400,7 @@ namespace Project.UI
             text.fontSize = 9f;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
-            text.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            text.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             text.raycastTarget = false;
 
             pill.SetActive(false);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Core;
 using Project.Interaction;
 using Project.Map;
+using Project.PPT;
 using Project.Progression;
 using Project.UI;
 using UnityEngine;
@@ -39,10 +40,18 @@ namespace Project.Quests
         private Transform visualRoot;
         private Vector3 visualBaseLocalPosition;
         private Quaternion visualBaseLocalRotation;
+        private bool suspendVisualAnchorRestore;
 
         public string NpcId => npcId;
+        public string DisplayName => displayName;
+        public string IdleAnimationStateName => idleStateName;
         public bool IsPlayerInRange => playerInRange;
         public QuestGiverOffer[] QuestOffers => questOffers;
+
+        public void SetVisualAnchorRestoreSuspended(bool suspended)
+        {
+            suspendVisualAnchorRestore = suspended;
+        }
 
         private void Awake()
         {
@@ -65,8 +74,15 @@ namespace Project.Quests
             marker.ConfigureQuestGiver(displayName);
         }
 
+        private const float ProximityCheckInterval = 0.2f;
+        private float nextProximityCheckTime;
+
         private void Update()
         {
+            if (Time.unscaledTime < nextProximityCheckTime)
+                return;
+
+            nextProximityCheckTime = Time.unscaledTime + ProximityCheckInterval;
             RefreshProximityState();
         }
 
@@ -178,7 +194,7 @@ namespace Project.Quests
 
         private void RestoreVisualAnchor()
         {
-            if (!lockVisualTransform || visualRoot == null)
+            if (suspendVisualAnchorRestore || !lockVisualTransform || visualRoot == null)
                 return;
 
             visualRoot.localPosition = visualBaseLocalPosition;
@@ -284,7 +300,7 @@ namespace Project.Quests
             List<QuestBoardEntry> entries = BuildQuestBoardEntries();
             if (entries.Count == 0)
             {
-                ShowDialogue("I don't have any quests for you right now.");
+                ShowDialogue("I don't have any quests for you right now.", directionsCallback: ResolveDirectionsCallback());
                 return true;
             }
 
@@ -293,7 +309,9 @@ namespace Project.Quests
                 displayName,
                 questBoardIntro,
                 entries,
-                null);
+                null,
+                ResolveDirectionsCallback(),
+                transform);
 
             return true;
         }
@@ -523,16 +541,32 @@ namespace Project.Quests
             return $"{promptText} — {label}";
         }
 
-        private void ShowDialogue(string message, Action onContinue = null, string buttonLabel = "Continue")
+        private void ShowDialogue(
+            string message,
+            Action onContinue = null,
+            string buttonLabel = "Continue",
+            Action directionsCallback = null)
         {
             if (string.IsNullOrEmpty(message))
                 return;
 
             uiManager?.HideInteractionPrompt();
-            QuestGiverDialogUI.Show(displayName, message, () =>
-            {
-                onContinue?.Invoke();
-            }, buttonLabel);
+            QuestGiverDialogUI.Show(
+                displayName,
+                message,
+                () => onContinue?.Invoke(),
+                buttonLabel,
+                directionsCallback ?? ResolveDirectionsCallback(),
+                transform);
+        }
+
+        private Action ResolveDirectionsCallback()
+        {
+            PptNpcInteractor interactor = GetComponent<PptNpcInteractor>();
+            if (interactor == null || !interactor.OffersDirections)
+                return null;
+
+            return interactor.OpenDirectionsMenu;
         }
 
         private static int GetQuestXpReward(QuestDefinition quest)

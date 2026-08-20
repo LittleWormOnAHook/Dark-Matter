@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Spear of Fate
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Spear of Fate
-  icon: {fileID: 21300000, guid: 457ae65c93476f941995ed72db3d86cb, type: 3}
+  icon: {fileID: 21300000, guid: 62cf256ecce41e54fae2a91f6b452bda, type: 3}
   worldPrefab: {fileID: 4286136864832538557, guid: aab565988cb820c4bbd38d5220084171, type: 3}
   maxStack: 10
   stableItemId: 458a0731-c885-475a-9552-fe1d2905025b

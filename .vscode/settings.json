@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Survival Pioneer.slnx",
+    "dotnet.defaultSolution": "Dark Matter Genesis.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

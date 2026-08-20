@@ -28,6 +28,7 @@ A Features module is shipped only when its `.cs` / `.asmdef` files exist under `
 | `CompanionSystemsBootstrap` Features chain | **Wired:** GameState → WorldState → Directors |
 | Smoke F9 / F10 / F11 | **Present** (`DarkMatterSmokeDriver`) |
 | `Features/Communications` Runtime | **Absent** (Run 2) |
+| PPT People / Places / Things | **Phase 1 on disk** — `Scripts/PPT` runtime + `Resources/PPT` sample registry + GERALD Hold E. Adapter: `Features/PPT` |
 | `Features/Experience` / `Generation` | **Absent** |
 | `Scripts/Survival/Exposure/` | Present |
 | `EchoGenerator` + chronicle + building ops save | Present |
@@ -53,4 +54,4 @@ Safe Mode: see [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md).
 - Communications Phase 9+ LLM / cloud conversation  
 - Full Io biomes / ecology prefabs / pet migration (design docs present; runtime deferred to GDD B4 #9 / W0–W8)
 - **Exception:** Sulfur Hound prototype is on disk — Malbers AC + DMI brain (`Prefabs/Creatures/Sulfur_Hound.prefab`) + B1 `SurfaceEncounterTable_B1_SulfurPlains` Lifeform entry
-- Aether-9 story arc
+- Kairos story arc

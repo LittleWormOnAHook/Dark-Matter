@@ -17,7 +17,7 @@ MonoBehaviour:
   description: Pack expansion module. Crafting installs it immediately and unlocks
     the next locked inventory row. Requires a one-time-use blueprint found in the
     world.
-  icon: {fileID: 21300000, guid: 87659ae3b00c1174cb502ce5f5604634, type: 3}
+  icon: {fileID: 21300000, guid: 86de61a45ec2b814ba2046dd37778605, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}

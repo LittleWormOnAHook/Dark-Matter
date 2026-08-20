@@ -134,7 +134,8 @@ namespace Project.Crafting
                     pickupObject.transform.position = basePosition + right * (i - 1.5f) * 0.65f;
                 }
 
-                EnsureTriggerCollider(pickupObject, new Vector3(0.5f, 0.5f, 0.5f));
+                // Match ItemPickup trigger size (sphere radius 0.45).
+                EnsureTriggerCollider(pickupObject, sphereRadius: 0.45f);
 
                 RecipePickup pickup = pickupObject.GetComponent<RecipePickup>();
                 if (pickup == null)
@@ -151,7 +152,7 @@ namespace Project.Crafting
             }
         }
 
-        private static void EnsureTriggerCollider(GameObject target, Vector3 boxSize)
+        private static void EnsureTriggerCollider(GameObject target, float sphereRadius)
         {
             if (target == null)
                 return;
@@ -164,15 +165,26 @@ namespace Project.Crafting
                     continue;
 
                 collider.isTrigger = true;
-                if (collider is BoxCollider existingBox)
-                    existingBox.size = boxSize;
+                if (collider is SphereCollider sphere)
+                {
+                    sphere.radius = Mathf.Max(sphere.radius, sphereRadius);
+                    return;
+                }
 
-                return;
+                if (collider is BoxCollider box)
+                {
+                    float diameter = sphereRadius * 2f;
+                    box.size = new Vector3(
+                        Mathf.Max(box.size.x, diameter),
+                        Mathf.Max(box.size.y, diameter),
+                        Mathf.Max(box.size.z, diameter));
+                    return;
+                }
             }
 
-            BoxCollider box = target.AddComponent<BoxCollider>();
-            box.size = boxSize;
-            box.isTrigger = true;
+            SphereCollider added = target.AddComponent<SphereCollider>();
+            added.radius = sphereRadius;
+            added.isTrigger = true;
         }
 
         private static void EnsurePlayerCraftingManager()

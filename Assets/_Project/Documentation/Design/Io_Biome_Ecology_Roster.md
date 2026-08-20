@@ -138,7 +138,7 @@ Shared tables — home biome sets spawn **weight bias**, not exclusivity.
 
 ### 3.5 Void Stitcher *(moon-wide — deadly stealth striker)*
 
-> **Design intent:** One creepy organism the player learns to fear on **any** biome. Not the Still Hunter (myth flee encounter) — the Stitcher **fights**, **kills**, and **vanishes**. Colony Ops / Aether-9 comms: *"Do not trust the seams."*
+> **Design intent:** One creepy organism the player learns to fear on **any** biome. Not the Still Hunter (myth flee encounter) — the Stitcher **fights**, **kills**, and **vanishes**. Colony Ops / Kairos comms: *"Do not trust the seams."*
 
 | Field | Detail |
 |-------|--------|
@@ -148,7 +148,7 @@ Shared tables — home biome sets spawn **weight bias**, not exclusivity.
 | **Habitat** | Heat shimmer, mineral film, crack shadows, wade-pool edges, ash lee — anywhere a **seam** exists. Director max **1 active** per expedition |
 | **Behavior** | **Stealth / route / clear** — hidden until trigger: player isolation, companion down, low health, or standing on reflective crust >2 s. **0.5 s** glass-stress audio telegraph → **fast lunge** (high damage, brief stagger). Disengages into seam if blocked or trio focuses fire |
 | **Pressure** | Sulfur haze and heat shimmer **improve** camouflage; tremor **forces** one surface reveal per swarm; resonance supercell doubles spawn weight |
-| **Harvest** | Seam needle → unique armor mod / Aether-9 codex entry (first kill only per save bias) |
+| **Harvest** | Seam needle → unique armor mod / Kairos codex entry (first kill only per save bias) |
 | **Trio** | Scout sense widens telegraph window; Tactician body-block lunge; Med Tech revive target after strike — **never** send one companion alone on wounded extract |
 | **Prototype** | deferred — `legacy creature AI`, ambush preset + custom seam-hide shader; **not** humanoid/android |
 
@@ -1119,7 +1119,7 @@ See §3.1 — caldera updraft migrant.
 | Field | Detail |
 |-------|--------|
 | **Tier** | common |
-| **Biome** | B4 Aether-9 crew death site candidates |
+| **Biome** | B4 Kairos crew death site candidates |
 | **Visual** | Heat-shielded corporate sentry; half-buried in ash |
 | **Habitat** | 1 per story POI |
 | **Behavior** | **Clear / scan** — logs story; drops crew tag |
@@ -1525,7 +1525,7 @@ See §3.2 — B7 elevated weight post–Memory Core.
 | **Habitat** | 0–1 director myth spawn per playthrough bias |
 | **Behavior** | **Route** — fleeing encounter; drops myth tag only; no farm |
 | **Pressure** | Resonance supercell only |
-| **Harvest** | Still Hunter trace → codex / Aether-9 reaction |
+| **Harvest** | Still Hunter trace → codex / Kairos reaction |
 | **Trio** | No combat recommended — escape verb |
 | **Prototype** | deferred — scripted chase |
 

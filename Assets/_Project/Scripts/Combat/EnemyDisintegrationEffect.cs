@@ -364,6 +364,8 @@ namespace Project.Combat
 
         private void HideHealthBar()
         {
+            EngagedEnemyHealthHud.Instance?.ClearIf(health);
+
             FloatingTargetHealthBar[] bars = FindObjectsByType<FloatingTargetHealthBar>();
             for (int i = 0; i < bars.Length; i++)
             {

@@ -9,9 +9,20 @@ namespace Project.UI
 {
     /// <summary>
     /// Center-screen zone entry banner. Visible for 3 seconds then fades out.
+    /// Uses unscaled Update timing (not a coroutine on this object) so menu/loading
+    /// canvas toggles — especially in player builds — cannot leave the banner stuck
+    /// at full opacity with no fade running.
     /// </summary>
     public class ExposureZoneEntryBannerUI : MonoBehaviour
     {
+        private enum Phase
+        {
+            Idle,
+            FadeIn,
+            Hold,
+            FadeOut
+        }
+
         private const float HoldSeconds = 3f;
         private const float FadeInSeconds = 0.25f;
         private const float FadeOutSeconds = 0.45f;
@@ -21,8 +32,11 @@ namespace Project.UI
         private TextMeshProUGUI zoneLabel;
         private Image accentBar;
         private ExposureReceiver boundReceiver;
-        private Coroutine sequenceRoutine;
         private bool built;
+        private bool suppressEnableHide;
+        private Phase phase = Phase.Idle;
+        private float phaseElapsed;
+        private Coroutine deferredHideRoutine;
 
         public void EnsureBuilt(Transform canvasRoot)
         {
@@ -46,33 +60,46 @@ namespace Project.UI
             root.sizeDelta = new Vector2(HudLayoutMetrics.Scaled(420f), HudLayoutMetrics.Scaled(92f));
             root.anchoredPosition = new Vector2(0f, HudLayoutMetrics.Scaled(48f));
 
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            canvasGroup = gameObject.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0f;
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
 
-            Image panel = gameObject.AddComponent<Image>();
+            Image panel = gameObject.GetComponent<Image>();
+            if (panel == null)
+                panel = gameObject.AddComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(panel);
-            panel.color = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.DarkNavy, 0.92f);
-            SurvivalPioneerUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(1f, -1f));
+            panel.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.92f);
+            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(gameObject, new Vector2(1f, -1f));
 
-            GameObject accentObject = new GameObject("Accent", typeof(RectTransform), typeof(Image));
-            accentObject.transform.SetParent(transform, false);
-            RectTransform accentRect = accentObject.GetComponent<RectTransform>();
-            accentRect.anchorMin = new Vector2(0.08f, 1f);
-            accentRect.anchorMax = new Vector2(0.92f, 1f);
-            accentRect.pivot = new Vector2(0.5f, 1f);
-            accentRect.sizeDelta = new Vector2(0f, 3f);
-            accentRect.anchoredPosition = new Vector2(0f, -2f);
-            accentBar = accentObject.GetComponent<Image>();
+            Transform existingAccent = transform.Find("Accent");
+            if (existingAccent != null)
+            {
+                accentBar = existingAccent.GetComponent<Image>();
+            }
+            else
+            {
+                GameObject accentObject = new GameObject("Accent", typeof(RectTransform), typeof(Image));
+                accentObject.transform.SetParent(transform, false);
+                RectTransform accentRect = accentObject.GetComponent<RectTransform>();
+                accentRect.anchorMin = new Vector2(0.08f, 1f);
+                accentRect.anchorMax = new Vector2(0.92f, 1f);
+                accentRect.pivot = new Vector2(0.5f, 1f);
+                accentRect.sizeDelta = new Vector2(0f, 3f);
+                accentRect.anchoredPosition = new Vector2(0f, -2f);
+                accentBar = accentObject.GetComponent<Image>();
+            }
+
             MenuUiBuilder.ApplyUiSprite(accentBar);
-            accentBar.color = SurvivalPioneerUiPalette.RichFuchsia;
+            accentBar.color = DarkMatterGenesisUiPalette.RichFuchsia;
 
-            headingLabel = CreateLabel("Heading", "ENTERING ZONE", 13f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(48f)));
-            headingLabel.color = SurvivalPioneerUiPalette.MutedText;
+            headingLabel = FindOrCreateLabel("Heading", "ENTERING ZONE", 13f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(48f)));
+            headingLabel.color = DarkMatterGenesisUiPalette.MutedText;
 
-            zoneLabel = CreateLabel("ZoneName", "UNKNOWN", 24f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(18f)));
-            zoneLabel.color = SurvivalPioneerUiPalette.WarmOffWhite;
+            zoneLabel = FindOrCreateLabel("ZoneName", "UNKNOWN", 24f, FontStyles.Bold, new Vector2(0f, HudLayoutMetrics.Scaled(18f)));
+            zoneLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             gameObject.SetActive(false);
             built = true;
@@ -107,9 +134,106 @@ namespace Project.UI
             boundReceiver = null;
         }
 
+        /// <summary>Force-dismiss for HUD hide, menu, loading, or vehicle mount.</summary>
+        public void DismissImmediate()
+        {
+            phase = Phase.Idle;
+            phaseElapsed = 0f;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 0f;
+
+            if (deferredHideRoutine != null)
+            {
+                StopCoroutine(deferredHideRoutine);
+                deferredHideRoutine = null;
+            }
+
+            if (gameObject.activeSelf)
+            {
+                suppressEnableHide = true;
+                gameObject.SetActive(false);
+                suppressEnableHide = false;
+            }
+        }
+
+        private void OnEnable()
+        {
+            // Parent canvas/HUD re-enabled us after a menu/loading toggle. If we are not mid-show,
+            // hide again so a killed fade cannot leave a stuck full-alpha toast.
+            if (!suppressEnableHide && built && phase == Phase.Idle)
+                QueueHideSelf();
+        }
+
+        private void OnDisable()
+        {
+            // Stopping mid-fade without clearing alpha is the build stuck-banner path.
+            phase = Phase.Idle;
+            phaseElapsed = 0f;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 0f;
+            if (deferredHideRoutine != null)
+            {
+                StopCoroutine(deferredHideRoutine);
+                deferredHideRoutine = null;
+            }
+        }
+
+        private void Update()
+        {
+            if (!built || phase == Phase.Idle || canvasGroup == null)
+                return;
+
+            // Menu / loading: never keep the toast over chrome that blocks gameplay HUD.
+            if (MainMenuController.BlocksGameplayHud || !GameSession.HasStarted)
+            {
+                DismissImmediate();
+                return;
+            }
+
+            float dt = Time.unscaledDeltaTime;
+            if (dt <= 0f)
+                dt = 1f / 60f;
+            phaseElapsed += dt;
+
+            switch (phase)
+            {
+                case Phase.FadeIn:
+                {
+                    float t = Mathf.Clamp01(phaseElapsed / FadeInSeconds);
+                    canvasGroup.alpha = t;
+                    if (t >= 1f)
+                    {
+                        canvasGroup.alpha = 1f;
+                        phase = Phase.Hold;
+                        phaseElapsed = 0f;
+                    }
+                    break;
+                }
+                case Phase.Hold:
+                    canvasGroup.alpha = 1f;
+                    if (phaseElapsed >= HoldSeconds)
+                    {
+                        phase = Phase.FadeOut;
+                        phaseElapsed = 0f;
+                    }
+                    break;
+                case Phase.FadeOut:
+                {
+                    float t = Mathf.Clamp01(phaseElapsed / FadeOutSeconds);
+                    canvasGroup.alpha = 1f - t;
+                    if (t >= 1f)
+                        FinishAndHide();
+                    break;
+                }
+            }
+        }
+
         private void HandleZoneEntered(ExposureZoneVolume zone)
         {
             if (!GameSession.HasStarted || zone?.Profile == null)
+                return;
+
+            if (MainMenuController.BlocksGameplayHud)
                 return;
 
             string zoneName = zone.Profile.displayName;
@@ -122,44 +246,67 @@ namespace Project.UI
 
         private void Show(string zoneName, Color accentColor)
         {
-            if (!built)
+            if (!built || zoneLabel == null || accentBar == null || canvasGroup == null)
                 return;
-
-            if (sequenceRoutine != null)
-                StopCoroutine(sequenceRoutine);
 
             zoneLabel.text = zoneName.ToUpperInvariant();
             accentBar.color = accentColor;
             transform.SetAsLastSibling();
-            gameObject.SetActive(true);
-            sequenceRoutine = StartCoroutine(BannerSequence());
+
+            phase = Phase.FadeIn;
+            phaseElapsed = 0f;
+            canvasGroup.alpha = 0f;
+
+            suppressEnableHide = true;
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+            suppressEnableHide = false;
         }
 
-        private IEnumerator BannerSequence()
+        private void FinishAndHide()
         {
-            canvasGroup.alpha = 0f;
-            float elapsed = 0f;
-            while (elapsed < FadeInSeconds)
+            phase = Phase.Idle;
+            phaseElapsed = 0f;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 0f;
+            if (gameObject.activeSelf)
+                gameObject.SetActive(false);
+        }
+
+        private void QueueHideSelf()
+        {
+            if (!isActiveAndEnabled)
             {
-                elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = Mathf.Clamp01(elapsed / FadeInSeconds);
-                yield return null;
+                if (canvasGroup != null)
+                    canvasGroup.alpha = 0f;
+                return;
             }
 
-            canvasGroup.alpha = 1f;
-            yield return new WaitForSecondsRealtime(HoldSeconds);
+            if (deferredHideRoutine != null)
+                StopCoroutine(deferredHideRoutine);
+            deferredHideRoutine = StartCoroutine(HideSelfEndOfFrame());
+        }
 
-            elapsed = 0f;
-            while (elapsed < FadeOutSeconds)
+        private IEnumerator HideSelfEndOfFrame()
+        {
+            yield return null;
+            deferredHideRoutine = null;
+            if (phase != Phase.Idle)
+                yield break;
+            DismissImmediate();
+        }
+
+        private TextMeshProUGUI FindOrCreateLabel(string name, string text, float fontSize, FontStyles style, Vector2 anchoredPosition)
+        {
+            Transform existing = transform.Find(name);
+            if (existing != null)
             {
-                elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / FadeOutSeconds);
-                yield return null;
+                TextMeshProUGUI existingLabel = existing.GetComponent<TextMeshProUGUI>();
+                if (existingLabel != null)
+                    return existingLabel;
             }
 
-            canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
-            sequenceRoutine = null;
+            return CreateLabel(name, text, fontSize, style, anchoredPosition);
         }
 
         private TextMeshProUGUI CreateLabel(string name, string text, float fontSize, FontStyles style, Vector2 anchoredPosition)

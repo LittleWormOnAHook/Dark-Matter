@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: craft_survival_rifle
   displayName: Survival Rifle
   description: Assemble a two-handed survival rifle from salvaged parts.
-  icon: {fileID: 21300000, guid: 9baee211bd60651469d72603acf60f9e, type: 3}
+  icon: {fileID: 21300000, guid: 78f32e269cfff4845a360f6c9f183ace, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Binnos 250
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Binoculars 250
-  icon: {fileID: 21300000, guid: ab8bf710661f67d49bed63e4c8d99116, type: 3}
+  icon: {fileID: 21300000, guid: 7637ce91c40611a49a662bba47d3dbd5, type: 3}
   worldPrefab: {fileID: 1758933096871503508, guid: c42505d280d5b404d9f0b660c09f49d6, type: 3}
   maxStack: 1
   stableItemId: 793aab17-ea45-4712-8020-d42de7874262
@@ -134,5 +134,5 @@ MonoBehaviour:
   requiredLevelToUse: 1
   requiredLevelToPickup: 1
   tooltipDescription: "Compact binoculars for Io ridge watches. Tool range 8 m; optics
-    zoom FOV ~38\xB0 (scroll to 18\u201355\xB0). Press [B], then RMB for optics overlay."
+    zoom FOV ~38\xB0 (scroll to 18\u201355\xB0). Press [V], then RMB for optics overlay."
   unlocksInventoryStorageRow: 0

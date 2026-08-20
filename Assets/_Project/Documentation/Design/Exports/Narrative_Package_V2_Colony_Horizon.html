@@ -1,0 +1,1845 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Narrative Package V2 Colony Horizon</title><style>
+body{font-family:Segoe UI,Helvetica,Arial,sans-serif;max-width:960px;margin:40px auto;padding:0 24px;line-height:1.45;color:#1a1a1a;font-size:11pt}
+h1{font-size:1.8rem;border-bottom:2px solid #8F1E5E;padding-bottom:8px}
+h2{font-size:1.35rem;margin-top:1.6em;color:#1C2A38}
+h3{font-size:1.1rem;color:#2F2F2F}
+table{border-collapse:collapse;width:100%;font-size:8.5pt;margin:12px 0;page-break-inside:auto}
+tr{page-break-inside:avoid}
+th,td{border:1px solid #4A4A5A;padding:5px 7px;vertical-align:top}
+th{background:#2F2F2F;color:#EDE9E4}
+code,pre{font-family:Consolas,monospace;font-size:9pt}
+pre{background:#f4f4f4;padding:10px;overflow:auto}
+blockquote{border-left:4px solid #C02E7A;margin-left:0;padding-left:12px;color:#4A4A5A}
+hr{border:none;border-top:1px solid #8C7F75;margin:2em 0}
+ul,ol{padding-left:1.3em}
+@media print{body{margin:12px;max-width:none}}
+</style></head><body><h1>Narrative Package V2 - Colony Horizon</h1>
+<p><strong>Project:</strong> Dark Matter: Genesis<br />
+<strong>Package identity:</strong> <strong>V2 Colony Horizon</strong><br />
+<strong>Player:</strong> <strong>Kade</strong><br />
+<strong>Tone:</strong> Hope / colony-builder / competent survival / earned legacy<br />
+<strong>Designed hour target:</strong> <strong>170 hours</strong> excluding exploration, free roam, harvesting drift, build decoration, and post-ending sandbox<br />
+<strong>Canon locks:</strong> Io 2160, Aether Credits only, starter <strong>5000 AC</strong>, 22 base companions + expedition trio, Kairos repair -&gt; 6 Memory Cores -&gt; trust, biome order <strong>B6 -&gt; B1 -&gt; B2 -&gt; B3 -&gt; B5 -&gt; B4 -&gt; B7</strong>, Echo fail permanent, base injury-not-death.</p>
+<hr />
+<h2>1. Premise, Tone, And Kairos Truth</h2>
+<p><strong>Kade</strong> does not come to Io to win a war against the moon. Kade comes to prove that people can build a future where every previous expedition failed.</p>
+<p>The first colony horizon is a fragile line: a pressure shell, a storm shelter, a Building Control Panel that barely boots, and a roster of survivors who need reasons to keep working. The fantasy is not domination. It is <strong>construction under schedule pressure</strong>: raising habs before sulfur storms, routing power through colony Barrier Fields, restoring production queues, rescuing Echoes before sync collapse, and watching a hostile world become legible one building at a time.</p>
+<p><strong>Kairos is not an enemy AI.</strong> It is a lost expedition archive. Its Memory Cores are not loot containers or superweapons; they are people, crew imprints, field journals, unfinished promises, and names preserved badly by a machine that has been alone too long. Repairing Kairos wakes a grieving witness. Restoring all six cores gives the colony enough truth to choose what kind of future it deserves.</p>
+<p><strong>Endings:</strong></p>
+<ul>
+<li><strong>Build:</strong> Ratify a colony charter and remain on Io. Kairos becomes the Colony Voice, an advisor bound by public trust.</li>
+<li><strong>Evacuate:</strong> Leave with the restored cores and names. Io stays dangerous, but the expedition stops being erased.</li>
+<li><strong>Seed:</strong> Plant a hybrid Echo-colony legacy. The colony accepts ongoing Resonance/Saturation costs to create something neither Earth nor old Io intended.</li>
+</ul>
+<p><strong>Hopeful dialogue rule:</strong> Even fear lines should point toward agency: shelter, repair, witness, vote, seed, carry names forward.</p>
+<hr />
+<h2>2. Biome And Ecology Integration Map</h2>
+<h3>2.1 Biome Progression</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Biome</th>
+<th>Role In V2 Colony Horizon</th>
+<th>Ecology And Encounter Use</th>
+<th>Content Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B6</td>
+<td><strong>Basalt Highlands</strong></td>
+<td>Hub, landing zone, first BCP shell, first colony ring, companion base.</td>
+<td>Cliff Tube Lace, Tube Jackal, Brood Tunnel Mouth, Glass Hive Swarmer, Cave Scout Moth, Beacon Hopper; Brimstone Puff pet migration hook.</td>
+<td>[PLANNED] biome, [SHIPPED] BCP shell hooks</td>
+</tr>
+<tr>
+<td>B1</td>
+<td><strong>Sulfur Plains</strong></td>
+<td>First storm shelter pressure, Core 1, proof that base injury is not death.</td>
+<td>Sulfur Hound [SHIPPED], Brimstone Fan, Cinder Skitter, Brimstone Leech, Graveyard Scrapper Drone, sulfur storm behavior, B1 ecology table [SHIPPED].</td>
+<td>[SHIPPED] Sulfur Hound + B1 table, [PARTIAL] weather stubs</td>
+</tr>
+<tr>
+<td>B2</td>
+<td><strong>Geyser Fields</strong></td>
+<td>Greenhouse repairs, vent timing, C2 fertility systems.</td>
+<td>Vent Crab Worker/Queen, Plume Moth, Geyser Pod, Geyser Strider, Vent Capper Bot, Rusted Survey Drone.</td>
+<td>[PLANNED] biome, [PARTIAL] hovercraft traversal</td>
+</tr>
+<tr>
+<td>B3</td>
+<td><strong>Ash Flats &amp; Ridges</strong></td>
+<td>Waystations, beacons, Barrier Field routing, caravan weather schedules.</td>
+<td>Basalt Jackal, Dust Spout Cluster, Ash Stalker, Ash Glass Wasp, Salvage Excavator Android, Claim Jumpers (H6).</td>
+<td>[PLANNED] biome</td>
+</tr>
+<tr>
+<td>B5</td>
+<td><strong>Polar Radiation Flats</strong></td>
+<td>Radiation/cold survival, Core 4, Void ecology, Freeboot Relief arrival.</td>
+<td>Void Kelp, Magnet Wyrm, Rift Stalker, Cold Spire Hound, Smuggler Remnant Android, Mag-Clamp Drone.</td>
+<td>[PLANNED] biome, [SHIPPED] exposure base</td>
+</tr>
+<tr>
+<td>B4</td>
+<td><strong>Lava Calderas</strong></td>
+<td>Heat survival, memorial forge, Core 5, geothermal modules.</td>
+<td>Caldera Mantis, Heat Eel, Magma Skitter, Caldera Heat Kite, Eruption Sentry Bot, Rim Glass Needle Mat.</td>
+<td>[PLANNED] biome</td>
+</tr>
+<tr>
+<td>B7</td>
+<td><strong>Precursor Ruin Belt</strong></td>
+<td>Final archive, C6 charter vault, ending triad.</td>
+<td>Vault Stalker, Silence Moth, Still Hunter (myth), Resonance Echo Shelf, Rust Garden, Corrupted Patrol Android, Void Stitcher (global).</td>
+<td>[PLANNED] biome</td>
+</tr>
+</tbody>
+</table>
+<h3>2.2 Underground Strata</h3>
+<table>
+<thead>
+<tr>
+<th>Stratum</th>
+<th>Name</th>
+<th>Use</th>
+<th>Ecology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UG Stratum 1</td>
+<td>Upper Lava Tubes</td>
+<td>First cellar routes and BCP utility runs.</td>
+<td>Tube Lace, Tube Jackal, Cinder Tunnel Skitter, Rust Garden.</td>
+</tr>
+<tr>
+<td>UG Stratum 2</td>
+<td>Mid Galleries</td>
+<td>Gas dome and greenhouse support puzzles.</td>
+<td>Glass Kelp, Rift Skimmer, Glass Hive Swarmer, Brood Tunnel Warden.</td>
+</tr>
+<tr>
+<td>UG Stratum 3</td>
+<td>Deep Volatile Basins</td>
+<td>Risk/reward farms and survival puzzles with no hard gate.</td>
+<td>Brine Fan, Basin Mantis, Brine Hound, Lamprey Spire Colony.</td>
+</tr>
+<tr>
+<td>UG Stratum 4</td>
+<td>Geothermal Roots</td>
+<td>Combat setpieces and heat loot.</td>
+<td>Heat Eel, Magma Phase Crawler, Silicate Mirror Bloom.</td>
+</tr>
+<tr>
+<td>UG Stratum 5</td>
+<td>Resonance Vaults</td>
+<td>B7 precursor support route and Seed ending prep.</td>
+<td>Echo Lichen, Vault Stalker, Echo Symbiont Swarm, Corrupted Patrol Android.</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Required Organism Roster</h3>
+<p>Use the real ecology names in quests, puzzles, combat tables, life sheets, and codex text:</p>
+<ul>
+<li><strong>Shipped ecology:</strong> Sulfur Hound [SHIPPED].</li>
+<li><strong>Surface fauna:</strong> Vent Crabs, Plume Moth, Basalt Jackal, Dust Spout, Caldera Mantis, Heat Eel, Void Kelp, Magnet Wyrm, Rift Stalker.</li>
+<li><strong>Underground fauna:</strong> Tube Jackal, Brood Tunnel, Glass Hive, Vault Stalker, Silence Moth, Still Hunter, Void Stitcher, Rust Garden.</li>
+<li><strong>Synthetic families:</strong> androids <strong>A1-A10</strong>, humanoids <strong>H1-H7</strong>, machines <strong>M1-M7</strong>, flyers <strong>F1-F8</strong>.</li>
+<li><strong>Pets:</strong> Brimstone Puff + core12 pet roster [PLANNED], folded into the Echo/trio framework as migration work.</li>
+</ul>
+<h3>2.4 Life Sheet References</h3>
+<p>Durable art/design references (read-only — never delete/move):</p>
+<table>
+<thead>
+<tr>
+<th>Sheet</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manifest</td>
+<td><code>Assets/_Project/Documentation/Design/Io_Biome_Life_Sheet_Manifest.md</code></td>
+</tr>
+<tr>
+<td>Plan</td>
+<td><code>Assets/_Project/Documentation/Design/Io_Biome_Life_Image_Sheet_Plan.md</code></td>
+</tr>
+<tr>
+<td>Set A PBR</td>
+<td><code>Assets/_Project/Documentation/Design/ArtReference/LifeSheets/</code></td>
+</tr>
+<tr>
+<td>Set B RT</td>
+<td><code>Assets/_Project/Documentation/Design/ArtReference/LifeSheets_RayTraced/</code> (<code>RT_LifeSheet_B1_B2_Sulfur_Geyser.png</code>, <code>…B3_B4_Ash_Caldera.png</code>, <code>…B5_B6_Polar_Highlands.png</code>, <code>…B7_Ruins_Global.png</code>, underground + threats + pets sheets)</td>
+</tr>
+</tbody>
+</table>
+<p>V2 uses them as ecology vocabulary and encounter composition references.</p>
+<hr />
+<h2>3. Systems Inventory Hooked By Content</h2>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Status</th>
+<th>V2 Content Hook</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aether Credits (AC)</td>
+<td>[SHIPPED]</td>
+<td>Starter <strong>5000 AC</strong>; all quest, puzzle, vendor, upgrade, and faction rewards use AC only.</td>
+</tr>
+<tr>
+<td>Building Control Panel shell</td>
+<td>[SHIPPED]</td>
+<td>Every major colony structure has an in-world E terminal with Overview, Companions, Production, Craft, Changes tabs.</td>
+</tr>
+<tr>
+<td>BCP Craft / Changes tabs</td>
+<td>[PARTIAL]</td>
+<td>V2 quests teach production queues, module changes, and repair schedules through BCP tasks.</td>
+</tr>
+<tr>
+<td>EchoGenerator / chronicle</td>
+<td>[SHIPPED]</td>
+<td>Echo names, core memories, trust dialogue, and permanent fail stakes.</td>
+</tr>
+<tr>
+<td>Exposure</td>
+<td>[SHIPPED]</td>
+<td>Cold/heat, radiation, sulfur storms, shelter timing, B5/B4 survival planning.</td>
+</tr>
+<tr>
+<td>Sulfur Hound + B1 table</td>
+<td>[SHIPPED]</td>
+<td>First reliable predator table; used in B1 storm escort and shelter perimeter encounters.</td>
+</tr>
+<tr>
+<td>World Engine spine</td>
+<td>[SHIPPED]</td>
+<td>World -&gt; Simulation -&gt; Intelligence -&gt; Experience -&gt; Presentation -&gt; Player supports triggered mainline beats.</td>
+</tr>
+<tr>
+<td>Combat / hotbar</td>
+<td>[SHIPPED]</td>
+<td>Named weapons map to current melee/ranged/hotbar behaviors where possible.</td>
+</tr>
+<tr>
+<td>Weather stubs</td>
+<td>[PARTIAL]</td>
+<td>V2 treats weather as schedule: storm building, peak, dissipating, clear windows.</td>
+</tr>
+<tr>
+<td>Hovercraft</td>
+<td>[PARTIAL]</td>
+<td>Used as later logistics/traversal fiction, not required for Act I gates.</td>
+</tr>
+<tr>
+<td>Quest scaffold</td>
+<td>[PARTIAL]</td>
+<td>Mainline advances via progress triggers; sides/factions can use NPCs and boards.</td>
+</tr>
+<tr>
+<td>Pets legacy</td>
+<td>[PARTIAL]</td>
+<td>Brimstone Puff and core12 migrate into Echo/trio companion design.</td>
+</tr>
+<tr>
+<td>Kairos / cores / Resonance</td>
+<td>[PLANNED]</td>
+<td>Six Memory Cores restore people and trigger settlement-scale events.</td>
+</tr>
+<tr>
+<td>Communications</td>
+<td>[PLANNED]</td>
+<td>Beacon Homestead, Scout Relay Mesh, and later colony scheduling.</td>
+</tr>
+<tr>
+<td>Purification Hub live</td>
+<td>[PLANNED]</td>
+<td>Saturation cleansing, Hearth Clinic, Seed ending cost management.</td>
+</tr>
+<tr>
+<td>Biomes</td>
+<td>[PLANNED]</td>
+<td>V2 content assumes biome implementation in locked order.</td>
+</tr>
+<tr>
+<td>Underground</td>
+<td>[PLANNED]</td>
+<td>UG Strata 1-5 support farms, caches, combat hives, and B7 archive routes.</td>
+</tr>
+<tr>
+<td>Modules</td>
+<td>[PLANNED]</td>
+<td>Generators, power grids, automated gather/logistics, communications, defense, mining.</td>
+</tr>
+<tr>
+<td>Pet migration</td>
+<td>[PLANNED]</td>
+<td>Fold pets into Echo/trio roster instead of separate pet loop.</td>
+</tr>
+<tr>
+<td>Weather Director</td>
+<td>[PLANNED]</td>
+<td>Required to make weather windows, storm shelter mandates, and scheduled colony fantasy live.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. AC, Weapons, And Upgrade Curve</h2>
+<h3>4.1 AC Scale Curve</h3>
+<p>The economy stays AC-only. Rewards climb from early hundreds to late thousands so upgrades feel meaningful without replacing scavenging, crafting, or BCP production.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Coverage</th>
+<th style="text-align: right;">Mainline AC</th>
+<th style="text-align: right;">Side AC</th>
+<th style="text-align: right;">Puzzle AC</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1</td>
+<td>Act I, B6-B1</td>
+<td style="text-align: right;">200-450</td>
+<td style="text-align: right;">250-500</td>
+<td style="text-align: right;">150-450</td>
+<td>Establish shelter, BCP basics, starter tool upgrades.</td>
+</tr>
+<tr>
+<td>T2</td>
+<td>Act II, B2-B3</td>
+<td style="text-align: right;">450-900</td>
+<td style="text-align: right;">500-950</td>
+<td style="text-align: right;">350-900</td>
+<td>Greenhouse, beacons, caravan logistics, first named weapons.</td>
+</tr>
+<tr>
+<td>T3</td>
+<td>Act III, B5-B4</td>
+<td style="text-align: right;">900-1800</td>
+<td style="text-align: right;">1000-2000</td>
+<td style="text-align: right;">800-1800</td>
+<td>Radiation/heat survival, advanced kits, faction conflicts.</td>
+</tr>
+<tr>
+<td>T4</td>
+<td>Act IV, B7/finales</td>
+<td style="text-align: right;">1800-3500</td>
+<td style="text-align: right;">2000-4500</td>
+<td style="text-align: right;">1500-3000</td>
+<td>Charter, endings, prestige gear, colony-scale choices.</td>
+</tr>
+<tr>
+<td>Mastery</td>
+<td>Optional puzzle mastery</td>
+<td style="text-align: right;">N/A</td>
+<td style="text-align: right;">N/A</td>
+<td style="text-align: right;">600-3000</td>
+<td>Prestige AC, cosmetics, weapon kits, and mastery tags.</td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 Named Weapons And Upgrade Kits</h3>
+<p><strong>Existing combat mapping:</strong> map named rewards to current combat/hotbar surfaces first: melee weapon stats, projectile/hotbar item data, stamina/tension costs, and inventory equip slots.<br />
+<strong>Future combat mapping:</strong> later systems can add unique animations, elemental behaviors, companion combo perks, and faction mod sockets without renaming the rewards.</p>
+<table>
+<thead>
+<tr>
+<th>Reward</th>
+<th>Tier</th>
+<th>Mapping</th>
+<th>Source Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Horizon Shield</strong></td>
+<td>T1</td>
+<td>Existing block/parry or defensive equip mapping; future Guard rally aura.</td>
+<td>Horizon Guard SQs</td>
+</tr>
+<tr>
+<td><strong>Shelter Flare</strong></td>
+<td>T1</td>
+<td>Hotbar consumable; future shelter path ping.</td>
+<td>B1 storm quests</td>
+</tr>
+<tr>
+<td><strong>Lens Spade</strong></td>
+<td>T1-T2</td>
+<td>Tool/harvest weapon; future agri node bonus.</td>
+<td>Green Lens</td>
+</tr>
+<tr>
+<td><strong>Rivet Gun</strong></td>
+<td>T1-T2</td>
+<td>Ranged/hotbar projectile mapping; future construction stagger.</td>
+<td>Rebuild Guild</td>
+</tr>
+<tr>
+<td><strong>Beacon Rifle</strong></td>
+<td>T2</td>
+<td>Existing ranged mapping; future waypoint tagging.</td>
+<td>B3 Guard</td>
+</tr>
+<tr>
+<td><strong>Crane-Link</strong></td>
+<td>T2</td>
+<td>Utility weapon/tool; future heavy object manipulation.</td>
+<td>Rebuild Guild</td>
+</tr>
+<tr>
+<td><strong>Hearth Injector</strong></td>
+<td>T2</td>
+<td>Hotbar support item; future companion triage perk.</td>
+<td>Hearth Clinic</td>
+</tr>
+<tr>
+<td><strong>Mute Cart Rig</strong></td>
+<td>T2-T3</td>
+<td>Stealth logistics tool; future convoy noise suppression.</td>
+<td>Freeboot Relief</td>
+</tr>
+<tr>
+<td><strong>Radglass Carbine</strong></td>
+<td>T3</td>
+<td>Ranged weapon; future radiation venting mod.</td>
+<td>B5 puzzle/cache</td>
+</tr>
+<tr>
+<td><strong>Geothermal Maul</strong></td>
+<td>T3</td>
+<td>Heavy melee mapping; future heat-charge swings.</td>
+<td>B4 memorial forge</td>
+</tr>
+<tr>
+<td><strong>Vault-Cut Spear</strong></td>
+<td>T4</td>
+<td>Melee reach weapon; future Precursor armor break.</td>
+<td>B7 vault</td>
+</tr>
+<tr>
+<td><strong>Charter Sidearm</strong></td>
+<td>T4</td>
+<td>Ranged prestige weapon; future ending-based mod.</td>
+<td>C6/ending</td>
+</tr>
+<tr>
+<td><strong>Upgrade Kit: Field Mk I</strong></td>
+<td>T1</td>
+<td>+baseline damage/durability.</td>
+<td>Early sides/puzzles</td>
+</tr>
+<tr>
+<td><strong>Upgrade Kit: Shelter Mk II</strong></td>
+<td>T2</td>
+<td>+survival utility, storm resistance, or reload safety.</td>
+<td>B1-B3</td>
+</tr>
+<tr>
+<td><strong>Upgrade Kit: Resonance Mk III</strong></td>
+<td>T3</td>
+<td>+core-linked effects, exposure tolerance.</td>
+<td>B5-B4</td>
+</tr>
+<tr>
+<td><strong>Upgrade Kit: Horizon Mk IV</strong></td>
+<td>T4</td>
+<td>+prestige stat package and ending visual.</td>
+<td>B7/finales</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. Mainline Progress-Triggered Beat Sheet</h2>
+<p>Mainline beats advance through <strong>progress triggers</strong>, not quest givers. Triggers include locations reached, repairs completed, cores restored, biomes stabilized, buildings online, Echo milestones, and Resonance Events. NPCs can comment, but they do not hand out the spine.</p>
+<table>
+<thead>
+<tr>
+<th>Beat</th>
+<th>Act</th>
+<th>Trigger</th>
+<th>Biome</th>
+<th>Content</th>
+<th style="text-align: right;">AC</th>
+<th>Weapon / Kit</th>
+<th>Core / Resonance</th>
+<th>Trust Dialogue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ML-01 First Horizon</td>
+<td>I</td>
+<td>Player reaches B6 landing ridge and activates first BCP Overview.</td>
+<td>B6</td>
+<td>Establish hab shell, starter 5000 AC noted, assign first base worker.</td>
+<td style="text-align: right;">200</td>
+<td>Field Mk I kit</td>
+<td>None</td>
+<td>"One panel lit. That is how a horizon starts."</td>
+</tr>
+<tr>
+<td>ML-02 Shelter Law</td>
+<td>I</td>
+<td>Command Center storm shelter comes online.</td>
+<td>B6 -&gt; B1</td>
+<td>Storm shelter tutorial, base injury-not-death rule, B1 access.</td>
+<td style="text-align: right;">250</td>
+<td>Shelter Flare</td>
+<td>None</td>
+<td>"People bend in storms. Buildings must bend first."</td>
+</tr>
+<tr>
+<td>ML-03 Coupler Repair</td>
+<td>I</td>
+<td>Habitat Power Coupler installed through BCP Changes.</td>
+<td>B6</td>
+<td>Repair object 1; Horizon Barrier pattern introduced.</td>
+<td style="text-align: right;">300</td>
+<td>Rivet Gun</td>
+<td>Kairos stirs</td>
+<td>"Do not build on their graves."</td>
+</tr>
+<tr>
+<td>ML-04 Gyro Recovery</td>
+<td>I</td>
+<td>Storm Shelter Gyro recovered during B1 weather window.</td>
+<td>B1</td>
+<td>Repair object 2; Sulfur Hound pressure around shelter.</td>
+<td style="text-align: right;">350</td>
+<td>Horizon Shield</td>
+<td>Kairos hostile night</td>
+<td>"You came back before the peak. That matters."</td>
+</tr>
+<tr>
+<td>ML-05 Warm-Boot Prism</td>
+<td>I</td>
+<td>Archive Warm-Boot Prism installed after B2 vent sync.</td>
+<td>B2</td>
+<td>Repair object 3; Kairos speaks clearly.</td>
+<td style="text-align: right;">450</td>
+<td>Lens Spade</td>
+<td>Archive repair complete</td>
+<td>"They were going to stay. Why did you come to finish dying?"</td>
+</tr>
+<tr>
+<td>ML-06 Core 1: Founders' Roll</td>
+<td>I</td>
+<td>First Memory Core recovered from B1 roll vault.</td>
+<td>B1</td>
+<td>Save workers, read names, allied Echo phantoms aid harvest.</td>
+<td style="text-align: right;">450</td>
+<td>Shelter Mk II kit</td>
+<td>C1 Resonance Beacon</td>
+<td>"Read the roll aloud."</td>
+</tr>
+<tr>
+<td>ML-07 Greenhouse Schema</td>
+<td>II</td>
+<td>Greenhouse module online in B2 Production tab.</td>
+<td>B2</td>
+<td>Fertility Mist event, crop trial, vent farming.</td>
+<td style="text-align: right;">650</td>
+<td>Nutrient Scanner</td>
+<td>C2 Greenhouse Schema</td>
+<td>"They mapped life onto poison."</td>
+</tr>
+<tr>
+<td>ML-08 Beacon Homestead</td>
+<td>II</td>
+<td>Three B3 waystations powered.</td>
+<td>B3</td>
+<td>Scout Relay Mesh, caravan schedule, ash ridge map clarity.</td>
+<td style="text-align: right;">800</td>
+<td>Beacon Rifle</td>
+<td>C3 Waystation Lights</td>
+<td>"Homes need lights, not silence."</td>
+</tr>
+<tr>
+<td>ML-09 Advisor Trust</td>
+<td>II</td>
+<td>Three cores/major Echo milestones restored.</td>
+<td>B3</td>
+<td>Kairos shifts from antagonist to advisor.</td>
+<td style="text-align: right;">900</td>
+<td>Field Mk II kit</td>
+<td>Trust Stage: Advisor</td>
+<td>"Ash gale building. Move harvest inside before it has a cost."</td>
+</tr>
+<tr>
+<td>ML-10 Cold Promise</td>
+<td>III</td>
+<td>B5 habitat uplift plus rad suit installed.</td>
+<td>B5</td>
+<td>Polar camp recovery, Freeboot Relief arrival, Void Kelp survey.</td>
+<td style="text-align: right;">1200</td>
+<td>Radglass Carbine</td>
+<td>C4 Warm Bubble</td>
+<td>"Smugglers stole names. Steal them back."</td>
+</tr>
+<tr>
+<td>ML-11 Hearth Of The Rim</td>
+<td>III</td>
+<td>B4 geothermal stabilizer attached to colony grid.</td>
+<td>B4</td>
+<td>Memorial forge, heat relay, grief-to-industry beat.</td>
+<td style="text-align: right;">1600</td>
+<td>Geothermal Maul</td>
+<td>C5 Stability Bubble</td>
+<td>"Mourn, then heat the forges."</td>
+</tr>
+<tr>
+<td>ML-12 Charter Vault</td>
+<td>IV</td>
+<td>B7 Barrier Field opened by restored power grid.</td>
+<td>B7</td>
+<td>Three locks, precursor archive, C6 recovery.</td>
+<td style="text-align: right;">2200</td>
+<td>Vault-Cut Spear</td>
+<td>C6 Charter Vault</td>
+<td>"Write the next charter, or leave with the names."</td>
+</tr>
+<tr>
+<td>ML-13 Charter Vote</td>
+<td>IV</td>
+<td>Six cores restored and BCP colony Overview reaches quorum.</td>
+<td>B7 / Base</td>
+<td>Charter UI opens: Build / Evacuate / Seed.</td>
+<td style="text-align: right;">3000</td>
+<td>Charter Sidearm</td>
+<td>Final Resonance</td>
+<td>"Hope is a system. Vote it into shape."</td>
+</tr>
+<tr>
+<td>ML-14 Build Ending</td>
+<td>IV</td>
+<td>Player chooses Build, colony defenses and production online.</td>
+<td>Base</td>
+<td>Ratify permanent colony; Kairos becomes Colony Voice.</td>
+<td style="text-align: right;">3500</td>
+<td>Horizon Mk IV kit</td>
+<td>Build resonance</td>
+<td>"Then we stay, and we make staying worthy."</td>
+</tr>
+<tr>
+<td>ML-15 Evacuate Ending</td>
+<td>IV</td>
+<td>Player chooses Evacuate, cores secured and launch route clear.</td>
+<td>B7 -&gt; B6</td>
+<td>Leave with names, prevent erasure.</td>
+<td style="text-align: right;">3500</td>
+<td>Charter Mk IV kit</td>
+<td>Evacuation archive</td>
+<td>"Carry us where the sulfur cannot reach."</td>
+</tr>
+<tr>
+<td>ML-16 Seed Ending</td>
+<td>IV</td>
+<td>Player chooses Seed, Purification Hub accepts Saturation cost.</td>
+<td>UG5 / B7</td>
+<td>Hybrid Echo-colony planted; ongoing legacy.</td>
+<td style="text-align: right;">3500</td>
+<td>Resonance Mk IV kit</td>
+<td>Seed resonance</td>
+<td>"Not ghosts. Not settlers. A third promise."</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Mainline subtotal:</strong> 32h designed.</p>
+<hr />
+<h2>6. Side Quests - 40</h2>
+<p>Side and faction quests may use NPCs, faction boards, BCP work orders, companion prompts, and colony notices. AC follows the T1-T4 curve. Weapon rewards include named gear or upgrade kits where appropriate.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Tier</th>
+<th>Title</th>
+<th>Biome</th>
+<th>Giver / Board</th>
+<th>Objectives</th>
+<th>Ecology / Systems</th>
+<th>Reward</th>
+<th style="text-align: right;">Est.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQ-V2-01</td>
+<td>T1</td>
+<td>Wall Raising</td>
+<td>B6</td>
+<td>Horizon Guard board</td>
+<td>Place 3 cordon posts through BCP Changes and assign workers in Companions tab.</td>
+<td>BCP shell [SHIPPED], modules [PLANNED]</td>
+<td>300 AC, Horizon Shield</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-02</td>
+<td>T1</td>
+<td>Shelter Drill</td>
+<td>B1</td>
+<td>Horizon Guard</td>
+<td>Move 4 workers to Command Center before storm Peak.</td>
+<td>Weather stubs [PARTIAL], Sulfur Hound [SHIPPED]</td>
+<td>350 AC, Shelter Flare x2</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+<tr>
+<td>SQ-V2-03</td>
+<td>T1</td>
+<td>Friendly Fire Check</td>
+<td>B6</td>
+<td>Horizon Guard / Hearth Clinic</td>
+<td>Sync a frightened Echo while guards hold fire.</td>
+<td>EchoGenerator [SHIPPED], Echo fail permanent</td>
+<td>400 AC, Field Mk I kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-04</td>
+<td>T2</td>
+<td>Ridge Patrol</td>
+<td>B3</td>
+<td>Horizon Guard</td>
+<td>Mark 5 waystations and repel Basalt Jackal ambushes.</td>
+<td>Basalt Jackal [PLANNED], combat [SHIPPED]</td>
+<td>700 AC, Beacon Rifle</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-05</td>
+<td>T2</td>
+<td>Barrier Power Share</td>
+<td>B3</td>
+<td>Horizon Guard</td>
+<td>Route BCP Production power into a Horizon Barrier segment.</td>
+<td>Barrier Field, BCP Craft/Changes [PARTIAL]</td>
+<td>850 AC, Shelter Mk II kit</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-06</td>
+<td>T3</td>
+<td>Guard Legend</td>
+<td>B4</td>
+<td>Horizon Guard</td>
+<td>Escort memorial banners through Caldera Mantis territory.</td>
+<td>Caldera Mantis [PLANNED], exposure [SHIPPED]</td>
+<td>1600 AC, Guard Banner mod</td>
+<td style="text-align: right;">1.8h</td>
+</tr>
+<tr>
+<td>SQ-V2-07</td>
+<td>T1</td>
+<td>Seed Trial</td>
+<td>B2</td>
+<td>Green Lens Collective</td>
+<td>Harvest during a Dissipating weather window and seed the first test bed.</td>
+<td>Weather-as-schedule, Plume Moth [PLANNED]</td>
+<td>450 AC, Lens Spade</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-08</td>
+<td>T2</td>
+<td>Nutrient Map</td>
+<td>B2</td>
+<td>Green Lens board</td>
+<td>Sample 5 vent-fed nodes without overharvesting.</td>
+<td>Vent Crabs, Dust Spout [PLANNED]</td>
+<td>650 AC, Nutrient Scanner</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>SQ-V2-09</td>
+<td>T3</td>
+<td>Polar Sprout</td>
+<td>B5</td>
+<td>Green Lens</td>
+<td>Grow one cold crop under radiation pressure.</td>
+<td>Void Kelp, exposure [SHIPPED]</td>
+<td>1400 AC, Seedvault Case</td>
+<td style="text-align: right;">1.5h</td>
+</tr>
+<tr>
+<td>SQ-V2-10</td>
+<td>T2</td>
+<td>IP Or Open</td>
+<td>B6</td>
+<td>Green Lens / Helix</td>
+<td>Choose whether greenhouse schema stays open-source or licensed.</td>
+<td>Faction conflict, AC-only economy</td>
+<td>750 AC, rep fork</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>SQ-V2-11</td>
+<td>T2</td>
+<td>Bloom Night</td>
+<td>B3</td>
+<td>Green Lens</td>
+<td>Harvest a Resonance bloom while Dust Spouts move across the ridge.</td>
+<td>Resonance [PLANNED], Dust Spout</td>
+<td>900 AC, Shelter Mk II kit</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-12</td>
+<td>T4</td>
+<td>Collective Finale</td>
+<td>B7</td>
+<td>Green Lens</td>
+<td>Add a flora protection clause to the charter vote.</td>
+<td>B7 [PLANNED], Charter UI [PLANNED]</td>
+<td>2500 AC, Horizon Mk IV kit</td>
+<td style="text-align: right;">1.5h</td>
+</tr>
+<tr>
+<td>SQ-V2-13</td>
+<td>T1</td>
+<td>Hab From Wreck</td>
+<td>B1</td>
+<td>Rebuild Guild</td>
+<td>Convert a wreck into a hab frame with Production and Changes tabs.</td>
+<td>BCP [SHIPPED]/[PARTIAL]</td>
+<td>450 AC, Rivet Gun</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-14</td>
+<td>T2</td>
+<td>Crane Rescue</td>
+<td>B2</td>
+<td>Rebuild Guild</td>
+<td>Recover a Crane-Link from a geyser pit.</td>
+<td>Vent timing, Heat Eel</td>
+<td>700 AC, Crane-Link</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-15</td>
+<td>T2</td>
+<td>Scaffold War</td>
+<td>B3</td>
+<td>Rebuild Guild</td>
+<td>Clear Tube Jackals from disputed scaffold piles without wrecking supplies.</td>
+<td>Tube Jackal [PLANNED], combat [SHIPPED]</td>
+<td>800 AC, Hab Patch kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-16</td>
+<td>T3</td>
+<td>Crust Foundation</td>
+<td>UG3</td>
+<td>Rebuild Guild</td>
+<td>Mark safe brine crust for underground cellar farms.</td>
+<td>Magnet Wyrm, UG [PLANNED]</td>
+<td>1300 AC, Resonance Mk III kit</td>
+<td style="text-align: right;">1.5h</td>
+</tr>
+<tr>
+<td>SQ-V2-17</td>
+<td>T2</td>
+<td>Materials Court</td>
+<td>B6</td>
+<td>Rebuild / Caravan</td>
+<td>Mediate access to salvage and common storage.</td>
+<td>Quest scaffold [PARTIAL]</td>
+<td>600 AC, rep fork</td>
+<td style="text-align: right;">0.9h</td>
+</tr>
+<tr>
+<td>SQ-V2-18</td>
+<td>T3</td>
+<td>Guild Legend</td>
+<td>B4</td>
+<td>Rebuild Guild</td>
+<td>Build a geothermal memorial forge from a death-site.</td>
+<td>Heat Eel, memorial pressure</td>
+<td>1800 AC, Geothermal Maul</td>
+<td style="text-align: right;">1.7h</td>
+</tr>
+<tr>
+<td>SQ-V2-19</td>
+<td>T1</td>
+<td>Print A Name</td>
+<td>B6</td>
+<td>Hearth Clinic</td>
+<td>Reveal an Echo chronicle name and print a colony tag.</td>
+<td>Echo chronicle [SHIPPED]</td>
+<td>350 AC, Name Tag Printer</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>SQ-V2-20</td>
+<td>T1</td>
+<td>Ryn's Hab</td>
+<td>B6</td>
+<td>Ryn / Hearth</td>
+<td>Let Architect Ryn solve a habitability flaw in BCP Overview.</td>
+<td>Companion trio, BCP shell</td>
+<td>450 AC, Ryn bond, Field Mk I kit</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-21</td>
+<td>T1</td>
+<td>Nova's Storm Triage</td>
+<td>B1</td>
+<td>Nova / Hearth</td>
+<td>Treat injured workers during storm Peak; no base deaths.</td>
+<td>Exposure [SHIPPED], base injury-not-death</td>
+<td>500 AC, Hearth Injector</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+<tr>
+<td>SQ-V2-22</td>
+<td>T3</td>
+<td>Calder's Care</td>
+<td>B5</td>
+<td>Calder / Hearth</td>
+<td>Treat isotope exposure and choose public/private case notes.</td>
+<td>Radiation, Void Kelp</td>
+<td>1200 AC, Resonance Mk III kit</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-23</td>
+<td>T2</td>
+<td>Mira's Waylight</td>
+<td>B3</td>
+<td>Mira Storm / Hearth</td>
+<td>Light a scout beacon chain without drawing Rift Stalkers.</td>
+<td>Rift Stalker [PLANNED]</td>
+<td>850 AC, Beacon charm</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-24</td>
+<td>T2</td>
+<td>Hub Debt</td>
+<td>B6</td>
+<td>Hearth Clinic</td>
+<td>Cleanse 4 Saturation cases in Purification Hub prototype flow.</td>
+<td>Purification Hub [PLANNED]</td>
+<td>900 AC, Named Sync perk</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-25</td>
+<td>T1</td>
+<td>Commons Open</td>
+<td>B6</td>
+<td>Caravan Commons</td>
+<td>Found the shared market and post first AC ledger.</td>
+<td>AC [SHIPPED]</td>
+<td>300 AC, Commons Pack</td>
+<td style="text-align: right;">0.8h</td>
+</tr>
+<tr>
+<td>SQ-V2-26</td>
+<td>T1</td>
+<td>Storm Schedule</td>
+<td>B1</td>
+<td>Caravan Commons</td>
+<td>Deliver supplies before Peak or delay safely through shelter.</td>
+<td>Weather stubs [PARTIAL]</td>
+<td>450 AC, Schedule Slate</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-27</td>
+<td>T2</td>
+<td>Vent Caravan</td>
+<td>B2</td>
+<td>Caravan Commons</td>
+<td>Escort freight across Dust Spout alley.</td>
+<td>Dust Spout, Vent Crabs</td>
+<td>650 AC, Shelter Mk II kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-28</td>
+<td>T2</td>
+<td>Ridge Freight</td>
+<td>B3</td>
+<td>Caravan Commons</td>
+<td>Move freight past humanoid H2 raiders without losing crates.</td>
+<td>H1-H3 humanoids [PLANNED]</td>
+<td>850 AC, Shared Manifest perk</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-29</td>
+<td>T3</td>
+<td>Polar Chain</td>
+<td>B5</td>
+<td>Caravan Commons</td>
+<td>Maintain a cold chain shipment to Green Lens crops.</td>
+<td>Exposure, Void Kelp</td>
+<td>1500 AC, Storm Ledger</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-30</td>
+<td>T3</td>
+<td>Commons Legend</td>
+<td>B4</td>
+<td>Caravan Commons</td>
+<td>Escort heat-proof convoy to the memorial forge.</td>
+<td>Caldera Mantis, Heat Eel</td>
+<td>1900 AC, vendor stock unlock</td>
+<td style="text-align: right;">1.6h</td>
+</tr>
+<tr>
+<td>SQ-V2-31</td>
+<td>T2</td>
+<td>Continuity Offer</td>
+<td>B2</td>
+<td>Helix Continuity Mission</td>
+<td>Accept, refuse, or restrict Helix funding for greenhouse IP.</td>
+<td>External faction conflict</td>
+<td>700 AC, Lease Stylus</td>
+<td style="text-align: right;">0.8h</td>
+</tr>
+<tr>
+<td>SQ-V2-32</td>
+<td>T2</td>
+<td>Audit Greenhouse</td>
+<td>B2</td>
+<td>Helix</td>
+<td>Complete an audit without damaging live crops.</td>
+<td>Greenhouse Schema [PLANNED]</td>
+<td>900 AC, Audit Drone</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>SQ-V2-33</td>
+<td>T2</td>
+<td>Echo As Asset</td>
+<td>B6</td>
+<td>Helix / Hearth</td>
+<td>Decide whether Echo imprints can be classified as property.</td>
+<td>Cores-are-people</td>
+<td>950 AC, ending lean</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>SQ-V2-34</td>
+<td>T2</td>
+<td>Grant Gate Trial</td>
+<td>B3</td>
+<td>Helix</td>
+<td>Fund one upgrade, then handle dependency strings.</td>
+<td>BCP Changes [PARTIAL]</td>
+<td>950 AC, Grant Gate perk</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-35</td>
+<td>T4</td>
+<td>Continuity Ultimatum</td>
+<td>B7</td>
+<td>Helix</td>
+<td>Add, reject, or rewrite Helix charter terms.</td>
+<td>Charter Vote [PLANNED]</td>
+<td>3000 AC, Charter Sidearm mod</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>SQ-V2-36</td>
+<td>T3</td>
+<td>Grey Seeds</td>
+<td>B5</td>
+<td>Freeboot Relief</td>
+<td>Accept contraband seeds for sick workers.</td>
+<td>Void Kelp, Freeboot conflict</td>
+<td>1200 AC, Grey Seed Pouch</td>
+<td style="text-align: right;">0.8h</td>
+</tr>
+<tr>
+<td>SQ-V2-37</td>
+<td>T1</td>
+<td>Relief Run</td>
+<td>B1</td>
+<td>Freeboot Relief</td>
+<td>Smuggle meds through a sulfur storm without Guard panic.</td>
+<td>Sulfur Hound [SHIPPED], weather [PARTIAL]</td>
+<td>500 AC, Relief Cloak</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-38</td>
+<td>T2</td>
+<td>Mute Cart</td>
+<td>B3</td>
+<td>Freeboot Relief</td>
+<td>Deliver supplies past Guard sensors.</td>
+<td>Barrier Field, H2 patrols</td>
+<td>900 AC, Mute Cart Rig</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>SQ-V2-39</td>
+<td>T3</td>
+<td>Barrier Mercy</td>
+<td>B3</td>
+<td>Freeboot / Guard</td>
+<td>Open Horizon Field briefly for refugees.</td>
+<td>Colony Barrier, faction conflict</td>
+<td>1800 AC, Grey Bloom perk</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+<tr>
+<td>SQ-V2-40</td>
+<td>T4</td>
+<td>Freeboot Legend</td>
+<td>B7</td>
+<td>Freeboot Relief</td>
+<td>Escort a charter witness past Vault Stalkers.</td>
+<td>Vault Stalker, B7</td>
+<td>4500 AC, Vault-Cut Spear</td>
+<td style="text-align: right;">1.8h</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Side quest subtotal:</strong> 52h designed.</p>
+<hr />
+<h2>7. Puzzle Quests - 40 Mixed Purpose</h2>
+<p>Required purpose distribution:</p>
+<ul>
+<li><strong>Access Gate:</strong> 8, a minority.</li>
+<li><strong>Loot/Cache/Weapon:</strong> 8.</li>
+<li><strong>Environmental Survival no gate:</strong> 7.</li>
+<li><strong>Combat/Encounter:</strong> 6.</li>
+<li><strong>Story/Reveal:</strong> 6.</li>
+<li><strong>Optional Mastery:</strong> 5.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Tier</th>
+<th>Purpose Type</th>
+<th>Title</th>
+<th>Biome</th>
+<th>Solve Pattern</th>
+<th>Ecology / Setpiece</th>
+<th>Reward</th>
+<th style="text-align: right;">Est.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PQ-V2-01</td>
+<td>T1</td>
+<td>Access Gate</td>
+<td>Pad Field</td>
+<td>B6</td>
+<td>Route BCP power to a Horizon Barrier field.</td>
+<td>Android A1 maintenance units</td>
+<td>250 AC, Field Mk I kit</td>
+<td style="text-align: right;">0.9h</td>
+</tr>
+<tr>
+<td>PQ-V2-02</td>
+<td>T1</td>
+<td>Story/Reveal</td>
+<td>Coupler Lattice</td>
+<td>B6</td>
+<td>Align habitat coupler symbols to expedition initials.</td>
+<td>Kairos first grief fragments</td>
+<td>300 AC, Ryn trust</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-03</td>
+<td>T1</td>
+<td>Environmental Survival no gate</td>
+<td>Gyro Storm Lock</td>
+<td>B1</td>
+<td>Open wreck only between Peak and Dissipating storm phases.</td>
+<td>Sulfur Hound patrol [SHIPPED]</td>
+<td>350 AC, Shelter Flare</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-04</td>
+<td>T2</td>
+<td>Story/Reveal</td>
+<td>Prism Vent Choir</td>
+<td>B2</td>
+<td>Sync three geyser tones to wake archive audio.</td>
+<td>Plume Moth swarm, Vent Crabs</td>
+<td>650 AC, Lens Spade mod</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-05</td>
+<td>T1</td>
+<td>Access Gate</td>
+<td>Roll Vault</td>
+<td>B1</td>
+<td>Hold worker pressure plates while shelter siren cycles.</td>
+<td>C1 Founders' Roll</td>
+<td>450 AC, Shelter Mk II kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-06</td>
+<td>T1</td>
+<td>Loot/Cache/Weapon</td>
+<td>Phantom Ally Cache</td>
+<td>B1</td>
+<td>Guide allied Echo phantoms to buried harvest crates.</td>
+<td>EchoGenerator [SHIPPED]</td>
+<td>400 AC, Horizon Shield mod</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-07</td>
+<td>T2</td>
+<td>Access Gate</td>
+<td>Greenhouse Seals</td>
+<td>B2</td>
+<td>Balance contamination seals before agri module opens.</td>
+<td>Heat Eel vent channels</td>
+<td>750 AC, Nutrient Scanner</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-08</td>
+<td>T2</td>
+<td>Environmental Survival no gate</td>
+<td>Fertility Valves</td>
+<td>B2</td>
+<td>Tune valves to avoid crop burn during Fertility Mist.</td>
+<td>Plume Moth pollination hazard</td>
+<td>700 AC, seed cache</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-09</td>
+<td>T2</td>
+<td>Access Gate</td>
+<td>Waystation Triad</td>
+<td>B3</td>
+<td>Power three beacons in ridge order.</td>
+<td>Basalt Jackal pressure</td>
+<td>850 AC, Beacon Rifle</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-10</td>
+<td>T3</td>
+<td>Environmental Survival no gate</td>
+<td>Warm Bubble Calibrator</td>
+<td>B5</td>
+<td>Balance cold/heat poles around a temporary habitat bubble.</td>
+<td>Void Kelp radiation pockets</td>
+<td>1100 AC, Radglass mod</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-11</td>
+<td>T3</td>
+<td>Access Gate</td>
+<td>Lens Habitat Gate</td>
+<td>B5</td>
+<td>Pair rad pulse timing with habitat uplift.</td>
+<td>Magnet Wyrm tremor intervals</td>
+<td>1400 AC, Resonance Mk III kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-12</td>
+<td>T3</td>
+<td>Story/Reveal</td>
+<td>Memorial Forge Lock</td>
+<td>B4</td>
+<td>Heat-lock a forge using recovered death-site names.</td>
+<td>Caldera Mantis pressure</td>
+<td>1700 AC, Geothermal Maul</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>PQ-V2-13</td>
+<td>T4</td>
+<td>Access Gate</td>
+<td>Charter Locks A</td>
+<td>B7</td>
+<td>Solve three surface locks tied to C1-C3 testimony.</td>
+<td>Vault Stalker patrols</td>
+<td>2200 AC, Vault-Cut Spear</td>
+<td style="text-align: right;">1.5h</td>
+</tr>
+<tr>
+<td>PQ-V2-14</td>
+<td>T4</td>
+<td>Access Gate</td>
+<td>Charter Locks B</td>
+<td>B7</td>
+<td>Solve C4-C6 locks and prepare charter vote conditions.</td>
+<td>Glass Hive resonance</td>
+<td>2600 AC, Horizon Mk IV kit</td>
+<td style="text-align: right;">1.5h</td>
+</tr>
+<tr>
+<td>PQ-V2-15</td>
+<td>T4</td>
+<td>Story/Reveal</td>
+<td>Charter Seal</td>
+<td>B7</td>
+<td>Align Build/Evacuate/Seed clauses with restored people.</td>
+<td>Kairos final truth</td>
+<td>3000 AC, Charter Sidearm</td>
+<td style="text-align: right;">1.6h</td>
+</tr>
+<tr>
+<td>PQ-V2-16</td>
+<td>T3</td>
+<td>Environmental Survival no gate</td>
+<td>Gas Dome Farm</td>
+<td>UG2</td>
+<td>Vent gases into a safe agri mix.</td>
+<td>Heat Eel, Tube Jackal</td>
+<td>1200 AC, agri module kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-17</td>
+<td>T3</td>
+<td>Loot/Cache/Weapon</td>
+<td>Dual Dome Cache</td>
+<td>UG2</td>
+<td>Sync two gas domes to uncover rare seed crates.</td>
+<td>Plume Moth larvae</td>
+<td>1300 AC, Seedvault upgrade</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-18</td>
+<td>T3</td>
+<td>Environmental Survival no gate</td>
+<td>Crust Terrace</td>
+<td>UG3</td>
+<td>Mark safe brine crust without triggering collapse.</td>
+<td>Magnet Wyrm tremors</td>
+<td>1200 AC, cellar plan</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-19</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Flooded Hydro Cache</td>
+<td>UG3</td>
+<td>Wade hydroponics route by pressure rhythm.</td>
+<td>Void Kelp roots</td>
+<td>900 AC, Hearth Injector cache</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-20</td>
+<td>T2</td>
+<td>Environmental Survival no gate</td>
+<td>Rockfall Terrace</td>
+<td>UG1</td>
+<td>Drop controlled rockfall into future farm terraces.</td>
+<td>Tube Jackal routes</td>
+<td>800 AC, building materials</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-21</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Guard Armory Code</td>
+<td>B6</td>
+<td>Decode Guard trust keypad after shelter drills.</td>
+<td>Horizon Guard HQ</td>
+<td>900 AC, Beacon Rifle mod</td>
+<td style="text-align: right;">0.8h</td>
+</tr>
+<tr>
+<td>PQ-V2-22</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Cleanroom Bloom</td>
+<td>B2</td>
+<td>Sterilize grow beds in correct order.</td>
+<td>Vent Crabs in ducts</td>
+<td>850 AC, Lens Spade upgrade</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-23</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Guild Crane Puzzle</td>
+<td>B1</td>
+<td>Reverse Crane-Link polarity to open a sealed crate.</td>
+<td>Rebuild yard</td>
+<td>800 AC, Rivet Gun upgrade</td>
+<td style="text-align: right;">0.9h</td>
+</tr>
+<tr>
+<td>PQ-V2-24</td>
+<td>T2</td>
+<td>Story/Reveal</td>
+<td>Name Door</td>
+<td>B6</td>
+<td>Use printed Echo name tags as keys.</td>
+<td>Hearth Clinic, Echo chronicle</td>
+<td>750 AC, Named Sync record</td>
+<td style="text-align: right;">0.9h</td>
+</tr>
+<tr>
+<td>PQ-V2-25</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Commons Freezer</td>
+<td>B6</td>
+<td>Re-power freezer through storm-safe grid.</td>
+<td>Caravan Commons</td>
+<td>900 AC, cold-chain kit</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-26</td>
+<td>T2</td>
+<td>Story/Reveal</td>
+<td>Helix Lease Seal</td>
+<td>B2</td>
+<td>Break or validate lease clauses in a stylus cipher.</td>
+<td>Helix Mission</td>
+<td>950 AC, Continuity documents</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-27</td>
+<td>T2</td>
+<td>Loot/Cache/Weapon</td>
+<td>Freeboot False Wall</td>
+<td>B3</td>
+<td>Move Mute Cart through an ash-cut wall.</td>
+<td>Freeboot Relief</td>
+<td>900 AC, Mute Cart Rig mod</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-28</td>
+<td>T3</td>
+<td>Access Gate</td>
+<td>Barrier Grid</td>
+<td>B3</td>
+<td>Disable three linked Horizon Barrier fields.</td>
+<td>Rift Stalker in field gaps</td>
+<td>1600 AC, route unlock</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+<tr>
+<td>PQ-V2-29</td>
+<td>T3</td>
+<td>Combat/Encounter</td>
+<td>Power Ethics</td>
+<td>B3</td>
+<td>Choose power siphon route while H3 raiders attack.</td>
+<td>Humanoids H1-H3</td>
+<td>1500 AC, Resonance Mk III kit</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>PQ-V2-30</td>
+<td>T2</td>
+<td>Optional Mastery</td>
+<td>Beacon Harmony</td>
+<td>B3</td>
+<td>Tune friendly frequencies without overloading beacons.</td>
+<td>Silence Moth teaser</td>
+<td>900 AC prestige, beacon cosmetic</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-31</td>
+<td>T3</td>
+<td>Environmental Survival no gate</td>
+<td>Void Kelp Survey</td>
+<td>B5</td>
+<td>Scan live Void Kelp without exceeding exposure thresholds.</td>
+<td>Void Kelp, Still Hunter shadow</td>
+<td>1300 AC, rad filter</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-32</td>
+<td>T2</td>
+<td>Optional Mastery</td>
+<td>Pulse Ride</td>
+<td>B2</td>
+<td>Ride geyser pulse cycles for a shortcut medal.</td>
+<td>Dust Spout, flyers F1-F3</td>
+<td>600 AC prestige, movement badge</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-33</td>
+<td>T2</td>
+<td>Optional Mastery</td>
+<td>Spout Alley</td>
+<td>B2</td>
+<td>Cross a Dust Spout lane without shelter use.</td>
+<td>Dust Spout</td>
+<td>700 AC prestige, plume decal</td>
+<td style="text-align: right;">1.0h</td>
+</tr>
+<tr>
+<td>PQ-V2-34</td>
+<td>T2</td>
+<td>Combat/Encounter</td>
+<td>Multi-Breach Hab</td>
+<td>B3</td>
+<td>Repair three breaches while Basalt Jackals attack.</td>
+<td>Basalt Jackal</td>
+<td>950 AC, Shelter Mk II kit</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-35</td>
+<td>T3</td>
+<td>Combat/Encounter</td>
+<td>Cover Relay</td>
+<td>B4</td>
+<td>Rebuild cover relays during Caldera Mantis waves.</td>
+<td>Caldera Mantis, Heat Eel</td>
+<td>1600 AC, Geothermal mod</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-36</td>
+<td>T4</td>
+<td>Combat/Encounter</td>
+<td>Android Rehab Cipher</td>
+<td>B7</td>
+<td>Reprogram or scrap android A8-A10 under fire.</td>
+<td>Androids A8-A10, machines M6-M7</td>
+<td>2200 AC, android frame</td>
+<td style="text-align: right;">1.3h</td>
+</tr>
+<tr>
+<td>PQ-V2-37</td>
+<td>T4</td>
+<td>Optional Mastery</td>
+<td>Silent Refugee Path</td>
+<td>B7</td>
+<td>Mark a quiet route past Vault Stalkers with no alarm.</td>
+<td>Vault Stalker, Silence Moth</td>
+<td>2500 AC prestige, stealth charm</td>
+<td style="text-align: right;">1.1h</td>
+</tr>
+<tr>
+<td>PQ-V2-38</td>
+<td>T3</td>
+<td>Optional Mastery</td>
+<td>Crust Lottery Farm</td>
+<td>UG3</td>
+<td>Solve a perfect safe lattice for bonus farm yield.</td>
+<td>Magnet Wyrm, Rust Garden roots</td>
+<td>3000 AC prestige, farm cosmetic</td>
+<td style="text-align: right;">1.2h</td>
+</tr>
+<tr>
+<td>PQ-V2-39</td>
+<td>T3</td>
+<td>Combat/Encounter</td>
+<td>Dual Faction Barrier</td>
+<td>B3</td>
+<td>Use Guard and Freeboot tools while Rift Stalkers breach.</td>
+<td>Rift Stalker</td>
+<td>1800 AC, Grey Bloom perk</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+<tr>
+<td>PQ-V2-40</td>
+<td>T4</td>
+<td>Combat/Encounter</td>
+<td>Legacy Cage</td>
+<td>B7</td>
+<td>Hold off Glass Hive and Void Stitcher while Evacuate seal opens.</td>
+<td>Glass Hive, Void Stitcher</td>
+<td>3000 AC, Charter Mk IV kit</td>
+<td style="text-align: right;">1.4h</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Puzzle subtotal:</strong> 45h designed.</p>
+<hr />
+<h2>8. Factions V2</h2>
+<h3>Horizon Guard</h3>
+<ul>
+<li><strong>Role:</strong> Colony security, storm shelter discipline, wall rings, Barrier Field ethics.</li>
+<li><strong>Gear:</strong> Horizon Shield, Beacon Rifle, Shelter Flare, Guard Banner mod.</li>
+<li><strong>Skills:</strong> Shelter Rally, defensive regroup, escort discipline.</li>
+<li><strong>Quest identity:</strong> Protect workers without turning the colony into a bunker.</li>
+<li><strong>Conflicts:</strong> Freeboot Relief over smuggling and refugee access; Rebuild Guild over unsafe scaffolds; Helix over privatized security.</li>
+</ul>
+<h3>Green Lens Collective</h3>
+<ul>
+<li><strong>Role:</strong> Science, agriculture, vent greenhouse work, ecology observation.</li>
+<li><strong>Gear:</strong> Lens Spade, Nutrient Scanner, Seedvault Case.</li>
+<li><strong>Skills:</strong> Bloom Read, weather-window crop prediction, contamination reads.</li>
+<li><strong>Quest identity:</strong> Turn poisonous landscapes into food systems without pretending Io is harmless.</li>
+<li><strong>Conflicts:</strong> Helix wants schema ownership; Caravan Commons wants wider food access.</li>
+</ul>
+<h3>Rebuild Guild</h3>
+<ul>
+<li><strong>Role:</strong> Salvage-to-construction, hab conversion, BCP Changes tab work, module install.</li>
+<li><strong>Gear:</strong> Rivet Gun, Crane-Link, Hab Patch kit.</li>
+<li><strong>Skills:</strong> Fast Frame, salvage yield, structural repair.</li>
+<li><strong>Quest identity:</strong> Builders learning to stop thinking like scrappers.</li>
+<li><strong>Conflicts:</strong> Horizon Guard over safety; Caravan Commons over stockpiles.</li>
+</ul>
+<h3>Hearth Clinic</h3>
+<ul>
+<li><strong>Role:</strong> Medical care, Echo ethics, Purification Hub, no-base-death fiction.</li>
+<li><strong>Gear:</strong> Hearth Injector, Name Tag Printer, Triage Cart.</li>
+<li><strong>Skills:</strong> Named Sync, faster Echo stabilization when chronicle names are restored.</li>
+<li><strong>Quest identity:</strong> People are not resources, including Memory Cores and Echoes.</li>
+<li><strong>Conflicts:</strong> Helix classifies imprints as IP; Guard sometimes sees Echoes as threats.</li>
+</ul>
+<h3>Caravan Commons</h3>
+<ul>
+<li><strong>Role:</strong> Logistics, AC market ledgers, weather schedules, convoy work.</li>
+<li><strong>Gear:</strong> Commons Pack, Schedule Slate, Storm Ledger.</li>
+<li><strong>Skills:</strong> Shared Manifest, carry capacity, convoy timing.</li>
+<li><strong>Quest identity:</strong> A colony becomes real when people trust the same ledger.</li>
+<li><strong>Conflicts:</strong> Rebuild over materials priority; Guard over risky schedule windows.</li>
+</ul>
+<h3>Helix Continuity Mission</h3>
+<ul>
+<li><strong>Role:</strong> External corporate visitors, funding, contracts, continuity claims.</li>
+<li><strong>Gear:</strong> Continuity Suit, Audit Drone, Lease Stylus.</li>
+<li><strong>Skills:</strong> Grant Gate, funded upgrades with strings attached.</li>
+<li><strong>Quest identity:</strong> Offers stability at the cost of ownership.</li>
+<li><strong>Conflicts:</strong> Green Lens over greenhouse IP; Hearth Clinic over Echo personhood; final charter clauses.</li>
+</ul>
+<h3>Freeboot Relief</h3>
+<ul>
+<li><strong>Role:</strong> External smugglers turned aid runners, contraband medicine, refugee mercy.</li>
+<li><strong>Gear:</strong> Relief Cloak, Mute Cart Rig, Grey Seed Pouch.</li>
+<li><strong>Skills:</strong> Grey Bloom, quiet routes, nonstandard crop nodes.</li>
+<li><strong>Quest identity:</strong> Law bends when people are outside the Barrier Field.</li>
+<li><strong>Conflicts:</strong> Horizon Guard over access; Helix over unlicensed supplies; ally to Hearth Clinic.</li>
+</ul>
+<hr />
+<h2>9. Friction And Gate Matrix</h2>
+<p>Colony Horizon uses friction to schedule hope, not stall it. The best gates ask the player to build, shelter, route, repair, vote, or take responsibility.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Friction / Gate</th>
+<th>Primary Pattern</th>
+<th>Emphasis</th>
+<th>Content Using It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td><strong>Colony Barrier Field</strong></td>
+<td>Power route / BCP repair / faction access choice</td>
+<td>Expansion corridors open when colony infrastructure earns them.</td>
+<td>ML-03, ML-12, SQ-05, SQ-39, PQ-01, PQ-28</td>
+</tr>
+<tr>
+<td>F2</td>
+<td><strong>Weather Window Cadence</strong></td>
+<td>Building -&gt; Peak -&gt; Dissipating -&gt; Clear</td>
+<td>Weather is a schedule; quests can be delayed, sheltered, or timed.</td>
+<td>SQ-02, SQ-07, SQ-26, PQ-03, PQ-08</td>
+</tr>
+<tr>
+<td>F3</td>
+<td><strong>Storm Shelter Mandate</strong></td>
+<td>Workers must reach Command Center during Peak.</td>
+<td>Base injury-not-death; poor planning injures, does not kill base-22.</td>
+<td>ML-02, SQ-02, SQ-21</td>
+</tr>
+<tr>
+<td>F4</td>
+<td><strong>Building Control Panel Tabs</strong></td>
+<td>Overview, Companions, Production, Craft, Changes</td>
+<td>Colony construction fantasy lives in in-world terminals.</td>
+<td>ML-01, ML-07, SQ-01, SQ-13</td>
+</tr>
+<tr>
+<td>F5</td>
+<td><strong>Echo Sync Stakes</strong></td>
+<td>Timed sync / name restore / permanent fail</td>
+<td>Echo fail is permanent; retry means future content changes.</td>
+<td>SQ-03, SQ-19, PQ-24</td>
+</tr>
+<tr>
+<td>F6</td>
+<td><strong>Exposure Thresholds</strong></td>
+<td>Cold/heat/radiation load</td>
+<td>B5/B4 do not only gate by item; they demand habitat planning.</td>
+<td>ML-10, ML-11, SQ-09, PQ-10</td>
+</tr>
+<tr>
+<td>F7</td>
+<td><strong>Gas Dome / Vent Farm</strong></td>
+<td>Valve timing and O2/agri mix</td>
+<td>Survival puzzle with production payoff.</td>
+<td>ML-07, PQ-16, PQ-17</td>
+</tr>
+<tr>
+<td>F8</td>
+<td><strong>Brine Crust Risk</strong></td>
+<td>Safe path mapping / tremor timing</td>
+<td>Optional survival and farm expansion, usually no hard gate.</td>
+<td>SQ-16, PQ-18, PQ-38</td>
+</tr>
+<tr>
+<td>F9</td>
+<td><strong>Strain / Saturation</strong></td>
+<td>Workload, Purification Hub, Echo cost</td>
+<td>Hope has a maintenance cost, especially in Seed ending.</td>
+<td>SQ-24, ML-16</td>
+</tr>
+<tr>
+<td>F10</td>
+<td><strong>Memorial Pressure</strong></td>
+<td>Death-site respect / morale events</td>
+<td>Old expedition deaths become colony practices, not loot flavor.</td>
+<td>ML-11, SQ-06, SQ-18, PQ-12</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>10. Hour Budget</h2>
+<p>Designed hours exclude exploration, optional harvesting drift, base decoration, free roam, and post-ending sandbox.</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th style="text-align: right;">Hours</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mainline progress-triggered story</td>
+<td style="text-align: right;">32</td>
+</tr>
+<tr>
+<td>Side quests (40)</td>
+<td style="text-align: right;">52</td>
+</tr>
+<tr>
+<td>Puzzle quests (40)</td>
+<td style="text-align: right;">45</td>
+</tr>
+<tr>
+<td>Faction reputation overhead</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr>
+<td>Systemic repeatables: shelter drills, weather windows, BCP production, Echo sync, Barrier reroutes, memorial events</td>
+<td style="text-align: right;">29</td>
+</tr>
+<tr>
+<td><strong>Designed total excluding exploration</strong></td>
+<td style="text-align: right;"><strong>170</strong></td>
+</tr>
+<tr>
+<td>Exploration / free roam / building decoration bonus</td>
+<td style="text-align: right;"><strong>25-45 bonus</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> V2 Colony Horizon lands in the requested <strong>165-175 designed hour</strong> range and clears the 150h minimum without counting exploration.</p>
+<hr />
+<h2>11. Sample Dialogue</h2>
+<h3>Kairos - Waking Hostile</h3>
+<blockquote>
+<p>"Do not route power through that wall. They sealed it while singing because the storm had already taken the roof. You do not get to call their graves infrastructure."</p>
+</blockquote>
+<h3>Kairos - First Trust Shift</h3>
+<blockquote>
+<p>"One name restored. One less person buried under a file hash. Keep going, builder."</p>
+</blockquote>
+<h3>Kairos - Advisor State</h3>
+<blockquote>
+<p>"Ash gale building west of Ridge 7. Move the harvest inside. Tell the Caravan Commons they have forty minutes if they want pride, twenty if they want people safe."</p>
+</blockquote>
+<h3>Kairos - Core 6</h3>
+<blockquote>
+<p>"The charter was never finished. They argued until the last shelter door closed. That is not failure. That is a colony trying to be honest before it was ready."</p>
+</blockquote>
+<h3>Horizon Guard</h3>
+<blockquote>
+<p>"A wall is not a threat. It is a promise that the worker behind it gets to sleep."</p>
+</blockquote>
+<h3>Green Lens Collective</h3>
+<blockquote>
+<p>"Nothing here is barren. It is just speaking in chemistry we have not earned yet."</p>
+</blockquote>
+<h3>Rebuild Guild</h3>
+<blockquote>
+<p>"Scrap is what you call a thing before somebody needs it. Give me a panel and a crew."</p>
+</blockquote>
+<h3>Hearth Clinic</h3>
+<blockquote>
+<p>"No more unnamed patients. Not Echoes, not cores, not the ones who wake up scared and useful."</p>
+</blockquote>
+<h3>Caravan Commons</h3>
+<blockquote>
+<p>"The ledger is not greed. It is how we prove the last crate went to a person, not a rumor."</p>
+</blockquote>
+<h3>Helix Continuity Mission</h3>
+<blockquote>
+<p>"We can protect your colony from collapse. All we ask is continuity of ownership, terminology, and future yield."</p>
+</blockquote>
+<h3>Freeboot Relief</h3>
+<blockquote>
+<p>"Call it smuggling when everyone is inside the field. Call it medicine when someone is still outside."</p>
+</blockquote>
+<h3>Build Ending</h3>
+<blockquote>
+<p>Kairos: "Then we stay. Not because Io softened. Because you wrote rules strong enough to hold people through the next storm."</p>
+</blockquote>
+<h3>Evacuate Ending</h3>
+<blockquote>
+<p>Kairos: "Take the names. Leave the buildings if you must. A colony can fail and still save its people from erasure."</p>
+</blockquote>
+<h3>Seed Ending</h3>
+<blockquote>
+<p>Kairos: "Not ghosts. Not settlers. A third promise. Feed it carefully."</p>
+</blockquote>
+<hr />
+<h2>12. Phase 5 Legacy And Implementation Notes</h2>
+<ul>
+<li>V2 should inherit Phase 5 legacy content as emotional archaeology, not as a competing canon layer.</li>
+<li>All economy text says <strong>Aether Credits / AC</strong> only.</li>
+<li>Journal Craft remains recipe library / scroll learning; production lives in Building Control Panels.</li>
+<li>Building Control Panels must remain central: Overview for status, Companions for assignments, Production for queues, Craft for recipes, Changes for modules and upgrades.</li>
+<li>Weather Director [PLANNED] is the major missing scheduler for storm shelter mandates and weather-window quest design.</li>
+<li>Kairos, six cores, Resonance Events, Communications, Purification Hub live behavior, biomes, underground, modules, and pet migration are [PLANNED].</li>
+<li>AC, EchoGenerator/chronicle, exposure, Sulfur Hound+B1 table, World Engine spine, BCP shell, combat, and hotbar are [SHIPPED] surfaces to build around.</li>
+<li>Weather stubs, BCP Craft/Changes, hovercraft, quest scaffold, and pets legacy are [PARTIAL] and should be connected carefully rather than treated as finished.</li>
+</ul></body></html>

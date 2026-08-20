@@ -32,16 +32,16 @@ namespace Project.UI
         }
 
         public static bool IsReady => Current != null;
-        public static Color PrimaryColor => Current != null ? Current.primaryColor : SurvivalPioneerUiPalette.RichFuchsia;
+        public static Color PrimaryColor => Current != null ? Current.primaryColor : DarkMatterGenesisUiPalette.RichFuchsia;
         public static Color SlotBackgroundTint => Current != null
             ? Current.slotBackgroundTint
-            : SurvivalPioneerUiPalette.SlotBackground;
-        public static Color NegativeColor => Current != null ? Current.negativeColor : SurvivalPioneerUiPalette.DangerRed;
-        public static Color AccentColor => Current != null ? Current.accentColor : SurvivalPioneerUiPalette.RichFuchsia;
-        public static Color HighlightColor => Current != null ? Current.highlightColor : SurvivalPioneerUiPalette.Gold;
-        public static Color MutedTextColor => Current != null ? Current.mutedTextColor : SurvivalPioneerUiPalette.MutedText;
-        public static Color BodyTextColor => Current != null ? Current.bodyTextColor : SurvivalPioneerUiPalette.BodyText;
-        public static Color PanelHeaderColor => Current != null ? Current.panelHeaderColor : SurvivalPioneerUiPalette.PanelHeader;
+            : DarkMatterGenesisUiPalette.SlotBackground;
+        public static Color NegativeColor => Current != null ? Current.negativeColor : DarkMatterGenesisUiPalette.DangerRed;
+        public static Color AccentColor => Current != null ? Current.accentColor : DarkMatterGenesisUiPalette.RichFuchsia;
+        public static Color HighlightColor => Current != null ? Current.highlightColor : DarkMatterGenesisUiPalette.Gold;
+        public static Color MutedTextColor => Current != null ? Current.mutedTextColor : DarkMatterGenesisUiPalette.MutedText;
+        public static Color BodyTextColor => Current != null ? Current.bodyTextColor : DarkMatterGenesisUiPalette.BodyText;
+        public static Color PanelHeaderColor => Current != null ? Current.panelHeaderColor : DarkMatterGenesisUiPalette.PanelHeader;
         public static Sprite ConnectedStatusSprite => Current?.connectedStatusSprite;
         public static TMP_FontAsset RegularFont => Current?.regularFont;
         public static TMP_FontAsset SemiBoldFont => Current?.semiBoldFont ?? Current?.regularFont;
@@ -60,17 +60,17 @@ namespace Project.UI
         }
 
         [Header("Colors")]
-        public Color primaryColor = SurvivalPioneerUiPalette.RichFuchsia;
-        public Color backgroundColor = SurvivalPioneerUiPalette.PanelBackground;
-        public Color negativeColor = SurvivalPioneerUiPalette.DangerRed;
-        public Color secondaryTextColor = SurvivalPioneerUiPalette.BodyText;
-        public Color slotBackgroundTint = SurvivalPioneerUiPalette.SlotBackground;
-        public Color selectionGlowColor = SurvivalPioneerUiPalette.WithAlpha(SurvivalPioneerUiPalette.Gold, 0.85f);
-        public Color accentColor = SurvivalPioneerUiPalette.RichFuchsia;
-        public Color highlightColor = SurvivalPioneerUiPalette.Gold;
-        public Color mutedTextColor = SurvivalPioneerUiPalette.MutedText;
-        public Color bodyTextColor = SurvivalPioneerUiPalette.BodyText;
-        public Color panelHeaderColor = SurvivalPioneerUiPalette.PanelHeader;
+        public Color primaryColor = DarkMatterGenesisUiPalette.RichFuchsia;
+        public Color backgroundColor = DarkMatterGenesisUiPalette.PanelBackground;
+        public Color negativeColor = DarkMatterGenesisUiPalette.DangerRed;
+        public Color secondaryTextColor = DarkMatterGenesisUiPalette.BodyText;
+        public Color slotBackgroundTint = DarkMatterGenesisUiPalette.SlotBackground;
+        public Color selectionGlowColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.85f);
+        public Color accentColor = DarkMatterGenesisUiPalette.RichFuchsia;
+        public Color highlightColor = DarkMatterGenesisUiPalette.Gold;
+        public Color mutedTextColor = DarkMatterGenesisUiPalette.MutedText;
+        public Color bodyTextColor = DarkMatterGenesisUiPalette.BodyText;
+        public Color panelHeaderColor = DarkMatterGenesisUiPalette.PanelHeader;
 
         [Header("Status Icons")]
         public Sprite connectedStatusSprite;
@@ -219,6 +219,46 @@ namespace Project.UI
             glowImage.raycastTarget = false;
             glowImage.enabled = false;
             return glowImage;
+        }
+
+        /// <summary>
+        /// Thin feathered gold border for weapon hotbar slots (keys 1–4). Uses the sliced panel frame, not circle glow.
+        /// </summary>
+        public Image EnsureWeaponSelectionBorder(Transform slotTransform, ref Image borderImage)
+        {
+            if (borderImage != null)
+                return borderImage;
+
+            Transform existing = slotTransform.Find("SelectionBorder");
+            if (existing != null)
+            {
+                borderImage = existing.GetComponent<Image>();
+                if (borderImage != null)
+                    return borderImage;
+            }
+
+            GameObject borderObject = new GameObject("SelectionBorder", typeof(RectTransform));
+            borderObject.transform.SetParent(slotTransform, false);
+            borderObject.transform.SetAsLastSibling();
+
+            RectTransform borderRect = borderObject.GetComponent<RectTransform>();
+            borderRect.anchorMin = Vector2.zero;
+            borderRect.anchorMax = Vector2.one;
+            borderRect.offsetMin = Vector2.zero;
+            borderRect.offsetMax = Vector2.zero;
+
+            borderImage = borderObject.AddComponent<Image>();
+            Sprite frame = panelFrame != null ? panelFrame : panelFrameBig;
+            if (frame != null)
+            {
+                borderImage.sprite = frame;
+                borderImage.type = Image.Type.Sliced;
+            }
+
+            borderImage.color = DarkMatterGenesisUiPalette.WithAlpha(highlightColor, 0.15f);
+            borderImage.raycastTarget = false;
+            borderImage.enabled = false;
+            return borderImage;
         }
     }
 }
