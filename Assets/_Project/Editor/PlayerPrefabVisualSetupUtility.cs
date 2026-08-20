@@ -229,8 +229,6 @@ namespace Project.EditorTools
             if (root == null)
                 return;
 
-            EditorLayoutGuard.BeforeDestroySceneObject(root);
-
             EnemyInvectorBodySnapSetupEditor.ConfigureEditor(root);
             EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
 
@@ -245,8 +243,6 @@ namespace Project.EditorTools
             PlayerInvectorRuntimeSetupEditor.WireRuntimeReferences(root);
             EnemyInvectorSetupUtility.RepairWeaponSlotVisuals(root);
             RepairEditModeAnimator(root);
-
-            EditorLayoutGuard.ScheduleInspectorRecovery();
         }
 
         public static void AttachVisualModel(GameObject root, GameObject visualSource, string visualChildName)

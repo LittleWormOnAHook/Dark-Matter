@@ -709,6 +709,25 @@ namespace Invector.vCamera
             distance = clamped;
         }
 
+        /// <summary>
+        /// Pioneer: set follow-distance target without snapping <see cref="distance"/> so
+        /// CameraMovement can lerp (avoids ADS jitter from ForceSet vs cull).
+        /// </summary>
+        public void SetZoomTarget(float zoom)
+        {
+            const float PioneerMin = 0.5f;
+            const float PioneerMax = 12f;
+            float min = PioneerMin;
+            float max = PioneerMax;
+            if (currentState != null)
+            {
+                min = Mathf.Max(PioneerMin, currentState.minDistance);
+                max = Mathf.Max(min + 0.05f, currentState.maxDistance, PioneerMax);
+            }
+
+            currentZoom = Mathf.Clamp(zoom, min, max);
+        }
+
         /// <summary>Pioneer: read-only scroll zoom target for _Project scripts.</summary>
         public float CurrentZoom => currentZoom;
 

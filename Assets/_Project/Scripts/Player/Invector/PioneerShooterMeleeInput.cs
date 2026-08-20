@@ -22,8 +22,8 @@ namespace Project.Player.Invector
     public class PioneerShooterMeleeInput : vShooterMeleeInput
     {
         private const float MouseLookScale = 0.1f;
-        /// <summary>Mouse-wheel notches to travel the full min↔max zoom range.</summary>
-        private const float ScrollNotchesFullRange = 3f;
+        /// <summary>Discrete mouse-wheel zoom stops from min to max follow distance.</summary>
+        private const int ZoomClickLevels = 10;
         private const int UiZoomRestoreFrames = 12;
 
         [Header("Pioneer Camera Zoom")]
@@ -34,6 +34,8 @@ namespace Project.Player.Invector
         private float aimZoomPullInMeters = 0.55f;
         [SerializeField, Tooltip("Extra follow distance while sprinting (slight pull-out only).")]
         private float sprintZoomOutMeters = 0.85f;
+        [SerializeField, Tooltip("Closest follow distance allowed while aiming (ADS). Can be below scroll min.")]
+        private float aimMinCameraDistance = 0.78f;
 
         [Header("Meshy Aim Snap")]
         [SerializeField, Tooltip("Snap ranged aim IK/arm alignment for Meshy Visual swaps instead of the slow VBOT-tuned drift.")]
@@ -52,6 +54,7 @@ namespace Project.Player.Invector
         private bool _wasSprintingLastFrame;
         private int _uiZoomRestoreFramesRemaining;
         private float _lockedAimZoom = -1f;
+        private float _lastArmedCameraZoom = -1f;
         private Coroutine _startZoomRoutine;
 
         protected override void Start()
@@ -210,6 +213,7 @@ namespace Project.Player.Invector
 
             base.LateUpdate();
             SyncPioneerCursorState();
+            PinAimFollowDistance();
         }
 
         protected override void CheckAimConditions()
@@ -439,14 +443,14 @@ namespace Project.Player.Invector
             if (Mathf.Abs(raw) < 0.01f)
                 return;
 
-            // One physical wheel tick = one zoom step across the full range in ~3 ticks.
+            // One physical wheel tick = one of 10 discrete follow-distance levels.
             int direction = raw > 0f ? 1 : -1;
-            float step = (runtimeMaxCameraDistance - runtimeMinCameraDistance) / ScrollNotchesFullRange;
+            float range = runtimeMaxCameraDistance - runtimeMinCameraDistance;
+            float step = range / (ZoomClickLevels - 1);
             float current = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : GetPreferredZoom();
-            float next = Mathf.Clamp(
-                current - direction * step,
-                runtimeMinCameraDistance,
-                runtimeMaxCameraDistance);
+            int currentLevel = Mathf.RoundToInt((current - runtimeMinCameraDistance) / step);
+            int nextLevel = Mathf.Clamp(currentLevel - direction, 0, ZoomClickLevels - 1);
+            float next = runtimeMinCameraDistance + nextLevel * step;
 
             ApplyFreeLookZoomRange(tpCamera.currentState);
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
@@ -560,13 +564,14 @@ namespace Project.Player.Invector
 
             if (aiming)
             {
-                if (!_wasAimingCameraLastFrame || _lockedAimZoom < runtimeMinCameraDistance - 0.05f)
+                if (!_wasAimingCameraLastFrame || _lockedAimZoom < aimMinCameraDistance - 0.05f)
                     LockAimZoomOnce();
 
                 _wasAimingCameraLastFrame = true;
-                // Do NOT ForceSet every frame — that fought Invector Slerp and caused aim zoom jitter.
                 return;
             }
+
+            TrackArmedCameraZoom();
 
             _lockedAimZoom = -1f;
 
@@ -599,30 +604,105 @@ namespace Project.Player.Invector
             if (tpCamera?.currentState == null || !IsAimCameraStateName(tpCamera.currentStateName))
                 return;
 
-            float preferred = GetPreferredZoom();
-            _lockedAimZoom = Mathf.Clamp(
-                preferred - Mathf.Max(0.05f, aimZoomPullInMeters),
-                runtimeMinCameraDistance,
-                runtimeMaxCameraDistance);
+            ItemData weapon = ResolveAimZoomWeaponItem();
 
-            // Pin Aim to a single follow distance via defaultDistance. useZoom=false avoids
-            // Clamp(currentZoom) fighting Slerp (jitter) and never collapses free-look min/max.
+            float currentDistance = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            float armedBaseline = _lastArmedCameraZoom > aimMinCameraDistance
+                ? _lastArmedCameraZoom
+                : currentDistance;
+
+            if (armedBaseline < aimMinCameraDistance)
+                armedBaseline = Mathf.Max(aimMinCameraDistance, GetPreferredZoom());
+
+            _lockedAimZoom = GetWeaponAimTargetDistance(weapon, armedBaseline);
+
             vThirdPersonCameraState state = tpCamera.currentState;
-            state.useZoom = false;
-            state.defaultDistance = _lockedAimZoom;
+            // Keep useZoom so CameraMovement lerps toward currentZoom instead of
+            // Slerping defaultDistance from the Aim list asset (that fight jittered ADS).
+            state.useZoom = true;
+            state.minDistance = aimMinCameraDistance;
+            state.maxDistance = Mathf.Max(_lockedAimZoom + 0.25f, aimMinCameraDistance);
 
-            // Narrow FOV on aim (zoom in). Old logic bumped low FOV up to 52 and felt like zoom-out.
-            if (state.fov > 0.01f)
+            float baselineFov = GetArmedBaselineFov();
+            float aimFovMultiplier = GetWeaponAimFovMultiplier(weapon);
+            state.fov = Mathf.Clamp(baselineFov * aimFovMultiplier, 34f, baselineFov);
+
+            tpCamera.SetZoomTarget(_lockedAimZoom);
+        }
+
+        private void TrackArmedCameraZoom()
+        {
+            if (tpCamera == null || CurrentActiveWeapon == null)
+                return;
+
+            float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            if (zoom >= aimMinCameraDistance - 0.05f)
+                _lastArmedCameraZoom = zoom;
+        }
+
+        private void PinAimFollowDistance()
+        {
+            if (tpCamera?.currentState == null || !IsAimCameraStateName(tpCamera.currentStateName))
+                return;
+
+            if (_lockedAimZoom < aimMinCameraDistance - 0.01f)
+                return;
+
+            // Correct target only — do not snap distance (ForceSet fought wall-cull lerp).
+            float live = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            if (live > _lockedAimZoom + 0.12f)
+                tpCamera.SetZoomTarget(_lockedAimZoom);
+        }
+
+        private ItemData ResolveAimZoomWeaponItem()
+        {
+            if (_equipment == null)
+                return null;
+
+            ItemData drawn = _equipment.DrawnWeaponItem;
+            if (drawn != null && drawn.IsRangedWeapon)
+                return drawn;
+
+            return _equipment.EquippedItem;
+        }
+
+        private float GetWeaponAimTargetDistance(ItemData weapon, float armedDistance)
+        {
+            armedDistance = Mathf.Max(armedDistance, aimMinCameraDistance);
+
+            if (weapon != null && weapon.weaponGrip == WeaponGrip.TwoHanded)
             {
-                float aimFovMultiplier = 0.88f;
-                ItemData weapon = _equipment != null ? _equipment.EquippedItem : null;
-                if (weapon != null && weapon.aimFovMultiplier > 0.01f)
-                    aimFovMultiplier = weapon.aimFovMultiplier;
-
-                state.fov = Mathf.Clamp(state.fov * aimFovMultiplier, 34f, state.fov);
+                return Mathf.Clamp(
+                    armedDistance * 0.68f,
+                    aimMinCameraDistance,
+                    armedDistance - 0.1f);
             }
 
-            tpCamera.ForceSetZoomDistance(_lockedAimZoom);
+            if (weapon != null && EquipmentController.IsRangedWeaponItem(weapon))
+            {
+                return Mathf.Clamp(
+                    armedDistance * 0.82f,
+                    aimMinCameraDistance,
+                    armedDistance - 0.08f);
+            }
+
+            return Mathf.Clamp(
+                armedDistance - Mathf.Max(0.12f, aimZoomPullInMeters * 0.35f),
+                aimMinCameraDistance,
+                armedDistance - 0.05f);
+        }
+
+        private static float GetWeaponAimFovMultiplier(ItemData weapon)
+        {
+            if (weapon != null && weapon.aimFovMultiplier > 0.01f)
+                return weapon.aimFovMultiplier;
+
+            return 0.78f;
+        }
+
+        private static float GetArmedBaselineFov()
+        {
+            return 60f;
         }
 
         private void SoftenAimCameraDistance()

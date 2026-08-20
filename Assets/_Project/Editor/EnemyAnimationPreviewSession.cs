@@ -41,10 +41,9 @@ namespace Project.EditorTools
             EnemyAnimationBuilder.BuiltAnimationSet builtSet = EnemyAnimationSetupUtility.RebuildAnimationTree(definition);
             if (!EnemyAnimationSetupUtility.ApplyAnimationToGameObject(previewRoot, definition, builtSet))
             {
-                EditorLayoutGuard.BeforeDestroySceneObject(previewRoot);
+                Selection.activeObject = null;
                 Object.DestroyImmediate(previewRoot);
                 previewRoot = null;
-                EditorLayoutGuard.ScheduleInspectorRecovery();
                 Debug.LogWarning("Enemy animation preview failed to apply animator setup.");
                 return false;
             }
@@ -97,10 +96,9 @@ namespace Project.EditorTools
 
             if (previewRoot != null)
             {
-                EditorLayoutGuard.BeforeDestroySceneObject(previewRoot);
+                Selection.activeObject = null;
                 Object.DestroyImmediate(previewRoot);
                 previewRoot = null;
-                EditorLayoutGuard.ScheduleInspectorRecovery();
             }
         }
 

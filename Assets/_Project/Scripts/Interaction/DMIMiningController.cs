@@ -24,10 +24,10 @@ namespace Project.Interaction
         private const float ProgressRetainSeconds = 4f;
         /// <summary>Resource soft-lock / mining interaction range (meters).</summary>
         public const float MaxMineDistance = 6f;
-        /// <summary>F-scan identify range (meters). Wider than mining so scan works before colliders push the tool away.</summary>
-        public const float MaxScanDistance = 10f;
+        /// <summary>F-scan identify range (meters).</summary>
+        public const float MaxScanDistance = 6f;
         /// <summary>Minimum horizontal distance (meters) from a resource center required to start/maintain F-scan.</summary>
-        public const float MinScanStandoffDistance = 3f;
+        public const float MinScanStandoffDistance = 2f;
         /// <summary>Visual laser + hit FX range when not locked on a resource (meters).</summary>
         private const float MaxBeamVisualDistance = 50f;
         private const float OverheatSeconds = 10f;

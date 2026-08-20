@@ -282,14 +282,61 @@ namespace Project.Rendering
 
         /// <summary>
         /// Ensures slot caches exist. Returns false when there is nothing to drive.
+        /// Rebuilds when the renderer loses materials so cached indices cannot go stale.
         /// </summary>
         private bool EnsureCachesReady(bool force)
         {
-            if (!force && cachesReady && slots != null && slots.Length > 0 && targetRenderer != null)
+            if (!force && cachesReady && slots != null && slots.Length > 0 && targetRenderer != null
+                && SlotsMatchRenderer())
                 return true;
 
             RebuildCaches();
             return targetRenderer != null && slots != null && slots.Length > 0;
+        }
+
+        private bool SlotsMatchRenderer()
+        {
+            if (targetRenderer == null || slots == null || slots.Length == 0)
+                return false;
+
+            Material[] shared = targetRenderer.sharedMaterials;
+            if (shared == null || shared.Length == 0)
+                return false;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                int materialIndex = slots[i].materialIndex;
+                if (materialIndex < 0 || materialIndex >= shared.Length || shared[materialIndex] == null)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool HasMaterialSlot(int materialIndex)
+        {
+            if (targetRenderer == null)
+                return false;
+
+            Material[] shared = targetRenderer.sharedMaterials;
+            return shared != null && materialIndex >= 0 && materialIndex < shared.Length;
+        }
+
+        /// <summary>
+        /// Mining F-scan cone: pulse unlit alpha after
+        /// <see cref="Project.Interaction.MiningScanConeVisualUtility"/> swaps in HDRP Unlit.
+        /// </summary>
+        public void ConfigureForScanCone()
+        {
+            pulseAlpha = true;
+            alphaPulseTarget = AlphaPulseTarget.BaseColorAlpha;
+            alphaPulseMin = 0.55f;
+            alphaPulseMax = 1f;
+            alphaPulseSpeed = 1.35f;
+            pulseEmission = false;
+            scrollBaseMap = false;
+            useMaterialPropertyBlock = true;
+            RebuildCaches();
         }
 
         /// <summary>Force cache rebuild (e.g. after swapping materials at runtime).</summary>
@@ -369,18 +416,23 @@ namespace Project.Rendering
             if (useMaterialPropertyBlock)
             {
                 propertyBlock ??= new MaterialPropertyBlock();
+                bool clearedIndexedSlot = false;
                 if (slots != null)
                 {
                     for (int i = 0; i < slots.Length; i++)
                     {
+                        int materialIndex = slots[i].materialIndex;
+                        if (!HasMaterialSlot(materialIndex))
+                            continue;
+
                         propertyBlock.Clear();
-                        targetRenderer.SetPropertyBlock(null, slots[i].materialIndex);
+                        targetRenderer.SetPropertyBlock(null, materialIndex);
+                        clearedIndexedSlot = true;
                     }
                 }
-                else
-                {
+
+                if (!clearedIndexedSlot)
                     targetRenderer.SetPropertyBlock(null);
-                }
             }
         }
 
@@ -391,6 +443,9 @@ namespace Project.Rendering
             for (int i = 0; i < slots.Length; i++)
             {
                 SlotCache slot = slots[i];
+                if (!HasMaterialSlot(slot.materialIndex))
+                    continue;
+
                 targetRenderer.GetPropertyBlock(propertyBlock, slot.materialIndex);
 
                 if (pulseAlpha)

@@ -1630,6 +1630,9 @@ namespace Project.Player.Invector
 
         private static Transform ResolveMiningScanConeParent(GameObject invectorInstance, Transform visual)
         {
+            Transform miningToolMuzzle = null;
+            Transform fallbackMuzzle = null;
+
             Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
             for (int i = 0; i < children.Length; i++)
             {
@@ -1637,18 +1640,46 @@ namespace Project.Player.Invector
                 if (child == null)
                     continue;
 
-                if (child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase)
-                    || child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase)
-                    || child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                if (!child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase)
+                    && !child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase)
+                    && !child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
                 {
-                    return child;
+                    continue;
                 }
+
+                if (IsUnderDrawnMiningTool(child))
+                    miningToolMuzzle = child;
+                else if (fallbackMuzzle == null)
+                    fallbackMuzzle = child;
             }
+
+            if (miningToolMuzzle != null)
+                return miningToolMuzzle;
+
+            if (fallbackMuzzle != null)
+                return fallbackMuzzle;
 
             if (visual != null)
                 return visual;
 
             return invectorInstance.transform;
+        }
+
+        private static bool IsUnderDrawnMiningTool(Transform node)
+        {
+            Transform walk = node;
+            while (walk != null)
+            {
+                if (walk.name.Equals("Drawn_DM_Mining_Tool", StringComparison.OrdinalIgnoreCase)
+                    || walk.name.Equals("Drawn_Mining_Tool", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                walk = walk.parent;
+            }
+
+            return false;
         }
 
         private static Transform FindTransformNamed(Transform root, string objectName)
@@ -1691,6 +1722,8 @@ namespace Project.Player.Invector
                 if (collider != null)
                     collider.enabled = false;
             }
+
+            MiningScanConeVisualUtility.EnsureScanConeMaterials(cone);
 
             Renderer[] renderers = cone.GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; i++)

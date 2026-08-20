@@ -165,9 +165,8 @@ namespace Project.EditorTools
             if (applied)
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
 
-            EditorLayoutGuard.BeforeDestroySceneObject(prefabRoot);
+            Selection.activeObject = null;
             PrefabUtility.UnloadPrefabContents(prefabRoot);
-            EditorLayoutGuard.ScheduleInspectorRecovery();
 
             GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefabAsset != null)
@@ -255,7 +254,7 @@ namespace Project.EditorTools
             if (openStage != null && openStage.assetPath == prefabPath)
                 StageUtility.GoToMainStage();
 
-            EditorLayoutGuard.ClearStaleSelection();
+            Selection.activeObject = null;
         }
 
         private static float ComputeRunSpeedThreshold(EnemyDefinition definition)

@@ -51,9 +51,8 @@ namespace Project.EditorTools
             ApplyGameplayComponents(root, definition);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-            EditorLayoutGuard.BeforeDestroySceneObject(root);
+            Selection.activeObject = null;
             Object.DestroyImmediate(root);
-            EditorLayoutGuard.ScheduleInspectorRecovery();
 
             return prefab;
         }

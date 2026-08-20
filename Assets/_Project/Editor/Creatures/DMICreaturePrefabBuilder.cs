@@ -111,9 +111,8 @@ namespace Project.EditorTools.Creatures
             }
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-            EditorLayoutGuard.BeforeDestroySceneObject(instance);
+            Selection.activeObject = null;
             Object.DestroyImmediate(instance);
-            EditorLayoutGuard.ScheduleInspectorRecovery();
 
             if (definition != null)
             {
@@ -281,9 +280,8 @@ namespace Project.EditorTools.Creatures
                 agent.angularSpeed = definition.brainProfile.agentAngularSpeed;
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-            EditorLayoutGuard.BeforeDestroySceneObject(root);
+            Selection.activeObject = null;
             Object.DestroyImmediate(root);
-            EditorLayoutGuard.ScheduleInspectorRecovery();
 
             definition.v2AnimatorController = controller;
             if (definition.buildTrack != DMICreatureBuildTrack.MeshyNativeV2A)

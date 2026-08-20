@@ -121,10 +121,10 @@ namespace Project.EditorTools.UiLayout
 
         private void OnSelectionChanged()
         {
-            if (EditorLayoutGuard.HasStaleInspectorTargets())
+            if (HasMissingSelectionObjects())
             {
                 selectedRect = null;
-                EditorLayoutGuard.RecoverStaleInspectorState(silent: true, aggressive: false);
+                Selection.objects = System.Array.Empty<Object>();
                 Repaint();
                 return;
             }
@@ -146,7 +146,7 @@ namespace Project.EditorTools.UiLayout
             catch (MissingReferenceException)
             {
                 selectedRect = null;
-                EditorLayoutGuard.ClearSelectionAndRebuildInspectors();
+                Selection.activeObject = null;
                 return;
             }
 
@@ -158,6 +158,21 @@ namespace Project.EditorTools.UiLayout
                 rootCanvas = rect.GetComponentInParent<Canvas>();
 
             Repaint();
+        }
+
+        private static bool HasMissingSelectionObjects()
+        {
+            Object[] selected = Selection.objects;
+            if (selected == null || selected.Length == 0)
+                return false;
+
+            for (int i = 0; i < selected.Length; i++)
+            {
+                if (selected[i] == null)
+                    return true;
+            }
+
+            return false;
         }
 
         private void OnGUI()
@@ -952,7 +967,7 @@ namespace Project.EditorTools.UiLayout
             }
             catch (MissingReferenceException)
             {
-                EditorLayoutGuard.ClearSelectionAndRebuildInspectors();
+                Selection.activeObject = null;
                 return;
             }
 
