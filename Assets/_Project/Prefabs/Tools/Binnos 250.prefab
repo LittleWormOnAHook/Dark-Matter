@@ -38,11 +38,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1421786569423316527, guid: 2db4011d05f120c41a9b8fb12faa0b0a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.171
+      value: 0.124
       objectReference: {fileID: 0}
     - target: {fileID: 1421786569423316527, guid: 2db4011d05f120c41a9b8fb12faa0b0a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.944
+      value: 1.859
       objectReference: {fileID: 0}
     - target: {fileID: 1421786569423316527, guid: 2db4011d05f120c41a9b8fb12faa0b0a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -126,6 +126,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1647350935022736156}
     m_Modifications:
+    - target: {fileID: -9157046535042691772, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -7227129179611170996, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+    - target: {fileID: -5019285127898950673, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d208e03174641adbba0c385732c372b, type: 2}
+    - target: {fileID: -4129729777073481290, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d208e03174641adbba0c385732c372b, type: 2}
+    - target: {fileID: -2503773499937780492, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -7227129179611170996, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+    - target: {fileID: 5972892561190043328, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d208e03174641adbba0c385732c372b, type: 2}
     - target: {fileID: 8128668236925612103, guid: 33a694d721cc13942b02b0c6cb1e6360, type: 3}
       propertyPath: m_Name
       value: Binnocular
