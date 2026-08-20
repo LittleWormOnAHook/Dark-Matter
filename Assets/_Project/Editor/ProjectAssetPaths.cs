@@ -142,6 +142,7 @@ namespace Project.EditorTools
         public const string HumanoidEnemyPrefab = PrefabsCombatEnemies + "/HumanoidEnemy_Invector.prefab";
         public const string GongoPrefab = PrefabsCombatEnemies + "/Gongo.prefab";
         public const string SparksLongPrefab = PrefabsCombatVfx + "/SparksLong.prefab";
+        public const string EnemyLootBagPrefab = PrefabsCombat + "/EnemyLootBag.prefab";
         /// <summary>Default one-shot when mine/harvest loot arrives at the player.</summary>
         public const string LootCompleteVfxPrefab = PrefabsParticles + "/Flash Effect 1.prefab";
         public const string AudioPickUp = "Assets/Audio/Pickups/pickUp.wav";

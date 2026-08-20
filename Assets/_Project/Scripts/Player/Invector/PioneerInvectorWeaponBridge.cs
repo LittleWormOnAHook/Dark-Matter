@@ -1560,7 +1560,8 @@ namespace Project.Player.Invector
         {
             while (t != null)
             {
-                if (t.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
+                if (t.name.Equals("Scan Cone Field", StringComparison.OrdinalIgnoreCase)
+                    || t.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
                     return true;
                 t = t.parent;
             }
@@ -1568,118 +1569,22 @@ namespace Project.Player.Invector
             return false;
         }
 
-        private const string MiningScanConeResourcesPath = "VFX/Scan Cone";
-
         /// <summary>
-        /// Ensures a scan cone VFX exists on the mining tool muzzle with mesh + no physics colliders.
-        /// Stays inactive until <see cref="DMIMiningResourceScanner"/> enables it during F-scan.
+        /// Leaves the authored Scan Cone Field on the mining muzzle inactive until
+        /// <see cref="DMIMiningResourceScanner"/> enables it during F-scan.
         /// </summary>
         private static void EnsureMiningScanCone(GameObject invectorInstance, Transform visual)
         {
             if (invectorInstance == null)
                 return;
 
-            Transform parent = ResolveMiningScanConeParent(invectorInstance, visual);
-            Transform existing = FindTransformNamed(invectorInstance.transform, "Scan Cone");
-            GameObject cone;
+            Transform field = FindTransformNamed(invectorInstance.transform, "Scan Cone Field");
+            if (field != null)
+                field.gameObject.SetActive(false);
 
-            if (existing != null)
-            {
-                cone = existing.gameObject;
-                if (cone.transform.parent != parent)
-                {
-                    cone.transform.SetParent(parent, false);
-                    cone.transform.localPosition = Vector3.zero;
-                    cone.transform.localRotation = Quaternion.identity;
-                }
-            }
-            else
-            {
-                GameObject prefab = Resources.Load<GameObject>(MiningScanConeResourcesPath);
-                if (prefab == null)
-                    return;
-
-                cone = UnityEngine.Object.Instantiate(prefab, parent, false);
-                cone.name = "Scan Cone";
-                cone.transform.localPosition = Vector3.zero;
-                cone.transform.localRotation = Quaternion.identity;
-            }
-
-            PrepareMiningScanConeInstance(cone);
-            DisableLegacyScanCones(invectorInstance.transform, cone.transform);
-        }
-
-        private static void DisableLegacyScanCones(Transform weaponRoot, Transform activeCone)
-        {
-            if (weaponRoot == null)
-                return;
-
-            Transform[] children = weaponRoot.GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform child = children[i];
-                if (child == null || child == activeCone)
-                    continue;
-
-                if (!child.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                child.gameObject.SetActive(false);
-            }
-        }
-
-        private static Transform ResolveMiningScanConeParent(GameObject invectorInstance, Transform visual)
-        {
-            Transform miningToolMuzzle = null;
-            Transform fallbackMuzzle = null;
-
-            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform child = children[i];
-                if (child == null)
-                    continue;
-
-                if (!child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase)
-                    && !child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase)
-                    && !child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                if (IsUnderDrawnMiningTool(child))
-                    miningToolMuzzle = child;
-                else if (fallbackMuzzle == null)
-                    fallbackMuzzle = child;
-            }
-
-            if (miningToolMuzzle != null)
-                return miningToolMuzzle;
-
-            if (fallbackMuzzle != null)
-                return fallbackMuzzle;
-
-            if (visual != null)
-                return visual;
-
-            return invectorInstance.transform;
-        }
-
-        private static bool IsUnderDrawnMiningTool(Transform node)
-        {
-            Transform walk = node;
-            while (walk != null)
-            {
-                if (walk.name.Equals("Drawn_DM_Mining_Tool", StringComparison.OrdinalIgnoreCase)
-                    || walk.name.Equals("Drawn_Mining_Tool", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                walk = walk.parent;
-            }
-
-            return false;
+            Transform legacy = FindTransformNamed(invectorInstance.transform, "Scan Cone");
+            if (legacy != null)
+                legacy.gameObject.SetActive(false);
         }
 
         private static Transform FindTransformNamed(Transform root, string objectName)
@@ -1696,44 +1601,6 @@ namespace Project.Player.Invector
             }
 
             return null;
-        }
-
-        private static void PrepareMiningScanConeInstance(GameObject cone)
-        {
-            if (cone == null)
-                return;
-
-            MeshFilter meshFilter = cone.GetComponent<MeshFilter>();
-            if (meshFilter != null && meshFilter.sharedMesh == null)
-            {
-                GameObject prefab = Resources.Load<GameObject>(MiningScanConeResourcesPath);
-                if (prefab != null)
-                {
-                    MeshFilter sourceFilter = prefab.GetComponent<MeshFilter>();
-                    if (sourceFilter != null)
-                        meshFilter.sharedMesh = sourceFilter.sharedMesh;
-                }
-            }
-
-            Collider[] colliders = cone.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider collider = colliders[i];
-                if (collider != null)
-                    collider.enabled = false;
-            }
-
-            MiningScanConeVisualUtility.EnsureScanConeMaterials(cone);
-
-            Renderer[] renderers = cone.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer renderer = renderers[i];
-                if (renderer != null)
-                    renderer.enabled = false;
-            }
-
-            cone.SetActive(false);
         }
 
         /// <summary>

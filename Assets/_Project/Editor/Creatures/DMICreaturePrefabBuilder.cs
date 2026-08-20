@@ -9,6 +9,7 @@ using Project.Combat;
 using Project.Core;
 using Project.Creatures;
 using Project.Data;
+using Project.EditorTools;
 using UnityEditor;
 using UnityEngine;
 
@@ -1277,6 +1278,8 @@ namespace Project.EditorTools.Creatures
             SetSerializedField(lootable, "lootItemPool", definition.lootItemPool);
             SetSerializedField(lootable, "lootUnlootedLifetime", definition.lootRespawnDelay);
             SetSerializedField(lootable, "lootInteractRange", definition.lootInteractRange);
+            GameObject bagPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectAssetPaths.EnemyLootBagPrefab);
+            SetSerializedField(lootable, "lootBagPrefab", bagPrefab);
         }
 
         private static Transform FindChildRecursive(Transform parent, string childName)

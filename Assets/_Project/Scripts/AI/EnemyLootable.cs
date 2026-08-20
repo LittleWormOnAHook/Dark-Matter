@@ -31,6 +31,16 @@ namespace Project.AI
         [SerializeField] private float lootInteractRange = 2.75f;
         [SerializeField] private string promptText = "Press E to loot bag";
 
+        [Header("Loot Bag Prefab")]
+        public const string DefaultLootBagPrefabPath = "Assets/_Project/Prefabs/Combat/EnemyLootBag.prefab";
+
+        [Tooltip("Instanced bag dropped after disintegration.")]
+        [SerializeField] private GameObject lootBagPrefab;
+        [Tooltip("Optional mesh override for this enemy's bag. Applied in Edit Mode onto spawned instances.")]
+        [SerializeField] private Mesh dropMesh;
+        [Tooltip("Optional albedo texture override for this enemy's bag.")]
+        [SerializeField] private Texture dropTexture;
+
         private readonly List<QuestRewardDefinition> remainingLoot = new List<QuestRewardDefinition>();
 
         private EnemyHealth health;
@@ -45,6 +55,25 @@ namespace Project.AI
         private void Awake()
         {
             health = GetComponent<EnemyHealth>();
+            ResolveLootBagPrefabReference();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (lootBagPrefab == null)
+            {
+                lootBagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(DefaultLootBagPrefabPath);
+            }
+        }
+#endif
+
+        private void ResolveLootBagPrefabReference()
+        {
+            if (lootBagPrefab != null)
+                return;
+
+            lootBagPrefab = Resources.Load<GameObject>("Combat/EnemyLootBag");
         }
 
         private void OnEnable()
@@ -78,6 +107,17 @@ namespace Project.AI
             lootItemPool = definition.lootItemPool ?? Array.Empty<ItemData>();
             lootUnlootedLifetime = definition.lootRespawnDelay;
             lootInteractRange = definition.lootInteractRange;
+            lootBagPrefab = definition.lootBagPrefab;
+            if (lootBagPrefab == null)
+                ResolveLootBagPrefabReference();
+#if UNITY_EDITOR
+            if (lootBagPrefab == null)
+                lootBagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(DefaultLootBagPrefabPath);
+#endif
+            if (definition.lootBagMesh != null)
+                dropMesh = definition.lootBagMesh;
+            if (definition.lootBagTexture != null)
+                dropTexture = definition.lootBagTexture;
         }
 
         public void TrySpawnLootBag(Vector3 worldPosition)
@@ -96,7 +136,10 @@ namespace Project.AI
                 lootInteractRange,
                 promptText,
                 lootUnlootedLifetime,
-                lootedBagDissolveDelay);
+                lootedBagDissolveDelay,
+                lootBagPrefab,
+                dropMesh,
+                dropTexture);
 
             if (bag == null)
             {

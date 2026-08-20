@@ -120,6 +120,10 @@ MonoBehaviour:
   iconSprite: {fileID: 21300000, guid: 322b6998307a623449a7f76cee354a69, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
+  keepRegisteredWhenDisabled: 0
+  requiresScanDiscovery: 1
+  discoveryId: 
+  requiresFogReveal: 1
 --- !u!1 &799122672810519144
 GameObject:
   m_ObjectHideFlags: 0

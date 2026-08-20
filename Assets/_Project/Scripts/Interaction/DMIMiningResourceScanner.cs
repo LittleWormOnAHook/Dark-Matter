@@ -29,23 +29,18 @@ namespace Project.Interaction
         private const float ToastCooldownSeconds = 1.25f;
         private const float ScanLoopVolume = 0.4f;
         private const float ScanLoopPitch = 1.18f;
-        private const string ScanConeObjectName = "Scan Cone";
-        private const string ScanConePrefabResourcesPath = "VFX/Scan Cone";
+        private const string ScanConeFieldObjectName = "Scan Cone Field";
         private const string ScanLoopResourcesPath = "Audio/Mining_Resource_Scan_Loop";
         private const string ScanLoopAssetPath =
             "Assets/_Project/Resources/Audio/Mining_Resource_Scan_Loop.wav";
 
-        private const float ScanConeMeshHeight = 1.47f;
         private const float ScanLockBreakDegrees = 18f;
-        private static readonly Vector3 ScanConeBaseScale = new Vector3(1.41f, 1.41f, 1.41f);
-
-        private static Mesh cachedScanConeMesh;
 
         private static readonly Color ScanOutlineColor = new Color(0.45f, 0.85f, 1f, 1f);
 
         [SerializeField] private LayerMask resourceLayer = ~0;
         [SerializeField] private float acquireRayRadius = 0.45f;
-        [Tooltip("Optional. If empty, uses Scan Cone under Drawn_DM_Mining_Tool/muzzle on Player_v7.")]
+        [Tooltip("Optional. If empty, uses Scan Cone Field under Drawn_DM_Mining_Tool/renderer/muzzle.")]
         [SerializeField] private GameObject scanCone;
         [Tooltip("Optional override. Prefer Mining Resource Scan Audio on DM_Mining_Tool ItemData. Else Resources/Audio/Mining_Resource_Scan_Loop.")]
         [SerializeField] private AudioClip scanLoopClip;
@@ -68,7 +63,6 @@ namespace Project.Interaction
         private OutlineController addedOutlineController;
         private WorldNodeProgressBar progressBar;
         private Transform muzzleTransform;
-        private Transform scanConeHomeParent;
         private AudioSource scanAudio;
         private AudioClip cachedDefaultScanLoop;
         private float nextToastTime;
@@ -550,74 +544,27 @@ namespace Project.Interaction
         private GameObject ResolveScanCone()
         {
             if (scanCone != null)
-            {
-                if (scanCone.activeInHierarchy || !scanCone.activeSelf)
-                {
-                    if (IsPreferredScanConeTransform(scanCone.transform))
-                        return scanCone;
-
-                    scanCone = null;
-                }
-                else
-                {
-                    scanCone = null;
-                }
-            }
+                return scanCone;
 
             Transform drawnTool = FindDrawnMiningTool();
             if (drawnTool != null)
             {
-                Transform muzzleParent = ResolveScanConeParent(drawnTool);
-                GameObject onTool = FindScanConeOnParent(muzzleParent);
+                Transform onTool = FindChildNamed(drawnTool, ScanConeFieldObjectName);
                 if (onTool != null)
                 {
-                    scanCone = onTool;
-                    scanConeHomeParent = muzzleParent;
-                    PrepareScanConeInstance(scanCone);
+                    scanCone = onTool.gameObject;
                     return scanCone;
                 }
             }
 
-            Transform fallback = FindChildNamed(transform, ScanConeObjectName);
-            if (fallback != null && IsPreferredScanConeTransform(fallback))
+            Transform fallback = FindChildNamed(transform, ScanConeFieldObjectName);
+            if (fallback != null)
             {
                 scanCone = fallback.gameObject;
-                scanConeHomeParent = fallback.parent;
-                PrepareScanConeInstance(scanCone);
                 return scanCone;
             }
 
             return null;
-        }
-
-        private static GameObject FindScanConeOnParent(Transform muzzleParent)
-        {
-            if (muzzleParent == null)
-                return null;
-
-            Transform onMuzzle = muzzleParent.Find(ScanConeObjectName);
-            if (onMuzzle == null)
-                onMuzzle = FindChildNamed(muzzleParent, ScanConeObjectName);
-
-            return onMuzzle != null ? onMuzzle.gameObject : null;
-        }
-
-        private bool IsPreferredScanConeTransform(Transform coneTransform)
-        {
-            if (coneTransform == null)
-                return false;
-
-            ResolveMuzzle();
-            if (muzzleTransform != null && coneTransform.IsChildOf(muzzleTransform))
-                return true;
-
-            Transform parent = coneTransform.parent;
-            if (parent == null)
-                return false;
-
-            return parent.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase)
-                   || parent.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase)
-                   || parent.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase);
         }
 
         private Transform FindDrawnMiningTool()
@@ -660,78 +607,9 @@ namespace Project.Interaction
             return null;
         }
 
-        private Transform ResolveScanConeParent(Transform drawnTool)
-        {
-            ResolveMuzzle();
-            if (muzzleTransform != null)
-                return muzzleTransform;
-
-            if (drawnTool != null)
-            {
-                Transform renderer = FindChildNamed(drawnTool, "renderer");
-                if (renderer != null)
-                    return renderer;
-
-                return drawnTool;
-            }
-
-            return transform;
-        }
-
         private void UpdateScanVisuals()
         {
-            GameObject cone = ResolveScanCone();
-            if (cone == null)
-                return;
-
             SetScanConeVisible(true);
-            AimScanConeAtTarget(cone);
-        }
-
-        private void AimScanConeAtTarget(GameObject cone)
-        {
-            if (cone == null || scanTarget == null)
-                return;
-
-            ResolveMuzzle();
-            Transform coneTransform = cone.transform;
-            Vector3 origin = muzzleTransform != null ? muzzleTransform.position : coneTransform.position;
-            Vector3 toTarget = scanPoint - origin;
-            float distance = toTarget.magnitude;
-            if (distance < 0.05f)
-                return;
-
-            Vector3 direction = toTarget / distance;
-
-            EnsureScanConeDetached(coneTransform);
-
-            // ScanCone_MiningTool mesh: narrow tip at +Y, wide base at -Y — base should face the resource.
-            Quaternion aimRotation = Quaternion.FromToRotation(Vector3.down, direction);
-            float lengthScale = Mathf.Max(0.35f, distance / ScanConeMeshHeight);
-            Vector3 stretchScale = new Vector3(
-                ScanConeBaseScale.x,
-                ScanConeBaseScale.y * lengthScale,
-                ScanConeBaseScale.z);
-            float scaledHeight = ScanConeMeshHeight * stretchScale.y;
-
-            coneTransform.rotation = aimRotation;
-            coneTransform.localScale = stretchScale;
-
-            // Keep the narrow tip at the muzzle; wide opening reaches toward scanPoint.
-            Vector3 tipOffset = coneTransform.up * (scaledHeight * 0.5f);
-            coneTransform.position = origin - tipOffset;
-        }
-
-        private void EnsureScanConeDetached(Transform coneTransform)
-        {
-            if (coneTransform == null || coneTransform.parent == null)
-                return;
-
-            if (scanConeHomeParent == null)
-                scanConeHomeParent = coneTransform.parent;
-
-            if (coneTransform.parent == scanConeHomeParent)
-                coneTransform.SetParent(null, true);
         }
 
         private void SetScanConeVisible(bool visible)
@@ -740,97 +618,16 @@ namespace Project.Interaction
             if (cone == null)
                 return;
 
-            PrepareScanConeInstance(cone);
-
             if (cone.activeSelf != visible)
                 cone.SetActive(visible);
 
-            Renderer[] renderers = cone.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer renderer = renderers[i];
-                if (renderer == null)
-                    continue;
-
+            MeshRenderer renderer = cone.GetComponent<MeshRenderer>();
+            if (renderer != null)
                 renderer.enabled = visible;
-                if (visible)
-                {
-                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    renderer.receiveShadows = false;
-                }
-            }
 
             DMIMaterialPulseScroll pulse = cone.GetComponent<DMIMaterialPulseScroll>();
             if (pulse != null)
                 pulse.enabled = visible;
-
-            if (!visible)
-                ResetScanConeLocalTransform(cone.transform);
-        }
-
-        private void ResetScanConeLocalTransform(Transform coneTransform)
-        {
-            if (coneTransform == null)
-                return;
-
-            if (scanConeHomeParent != null)
-            {
-                coneTransform.SetParent(scanConeHomeParent, false);
-                scanConeHomeParent = null;
-            }
-
-            coneTransform.localPosition = Vector3.zero;
-            coneTransform.localRotation = Quaternion.identity;
-            coneTransform.localScale = ScanConeBaseScale;
-        }
-
-        private static void PrepareScanConeInstance(GameObject cone)
-        {
-            if (cone == null)
-                return;
-
-            MeshFilter meshFilter = cone.GetComponent<MeshFilter>();
-            if (meshFilter != null && meshFilter.sharedMesh == null)
-            {
-                Mesh mesh = ResolveScanConeMesh();
-                if (mesh != null)
-                    meshFilter.sharedMesh = mesh;
-            }
-
-            Collider[] colliders = cone.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider collider = colliders[i];
-                if (collider != null)
-                    collider.enabled = false;
-            }
-
-            MiningScanConeVisualUtility.EnsureScanConeMaterials(cone);
-
-            // Authored on Player_v7 under Drawn_DM_Mining_Tool/muzzle — keep off until F-scan enables renderer.
-            Renderer[] renderers = cone.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer renderer = renderers[i];
-                if (renderer != null && !cone.activeInHierarchy)
-                    renderer.enabled = false;
-            }
-        }
-
-        private static Mesh ResolveScanConeMesh()
-        {
-            if (cachedScanConeMesh != null)
-                return cachedScanConeMesh;
-
-            GameObject prefab = Resources.Load<GameObject>(ScanConePrefabResourcesPath);
-            if (prefab != null)
-            {
-                MeshFilter meshFilter = prefab.GetComponent<MeshFilter>();
-                if (meshFilter != null)
-                    cachedScanConeMesh = meshFilter.sharedMesh;
-            }
-
-            return cachedScanConeMesh;
         }
 
         /// <summary>

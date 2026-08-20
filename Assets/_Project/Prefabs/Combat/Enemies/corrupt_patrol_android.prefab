@@ -7821,7 +7821,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyHealthBarPresenter
   showFloatingHealthBar: 1
-  hideUntilDamaged: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
 --- !u!114 &6111056903177349731
 MonoBehaviour:
@@ -7848,6 +7847,9 @@ MonoBehaviour:
   lootedBagDissolveDelay: 2
   lootInteractRange: 2.75
   promptText: Press E to loot bag
+  lootBagPrefab: {fileID: 5070942837361520457, guid: 171f2890153a93c4c9421280816d02de, type: 3}
+  dropMesh: {fileID: 0}
+  dropTexture: {fileID: 0}
 --- !u!114 &8114977446898365933
 MonoBehaviour:
   m_ObjectHideFlags: 0

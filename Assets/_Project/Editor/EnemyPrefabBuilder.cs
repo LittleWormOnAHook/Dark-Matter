@@ -243,6 +243,14 @@ namespace Project.EditorTools
             SetSerializedField(lootable, "lootUnlootedLifetime", definition.lootRespawnDelay);
             SetSerializedField(lootable, "lootedBagDissolveDelay", 2f);
             SetSerializedField(lootable, "lootInteractRange", definition.lootInteractRange);
+            GameObject bagPrefab = definition.lootBagPrefab != null
+                ? definition.lootBagPrefab
+                : AssetDatabase.LoadAssetAtPath<GameObject>(ProjectAssetPaths.EnemyLootBagPrefab);
+            SetSerializedField(lootable, "lootBagPrefab", bagPrefab);
+            if (definition.lootBagMesh != null)
+                SetSerializedField(lootable, "dropMesh", definition.lootBagMesh);
+            if (definition.lootBagTexture != null)
+                SetSerializedField(lootable, "dropTexture", definition.lootBagTexture);
         }
 
         private static void ConfigurePatrolPoints(GameObject root, EnemyAiController ai, EnemyDefinition definition)

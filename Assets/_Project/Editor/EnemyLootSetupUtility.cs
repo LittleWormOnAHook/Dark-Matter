@@ -110,6 +110,11 @@ namespace Project.EditorTools
             definition.enableLoot = true;
             definition.lootRespawnDelay = 20f;
             definition.lootInteractRange = 2.75f;
+            if (definition.lootBagPrefab == null)
+            {
+                definition.lootBagPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    ProjectAssetPaths.EnemyLootBagPrefab);
+            }
 
             if (definition.acDropMin <= 0 && definition.acDropMax <= 0)
             {

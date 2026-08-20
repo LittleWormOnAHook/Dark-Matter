@@ -13,8 +13,10 @@ namespace Project.Combat
 {
     /// <summary>
     /// World loot bag dropped after an enemy disintegrates. Dissolves after 20s unlooted or 2s after looting.
+    /// Edit the prefab mesh/texture in the Inspector — those visuals are instanced on drop.
     /// </summary>
     [DisallowMultipleComponent]
+    [ExecuteAlways]
     public class EnemyLootBag : MonoBehaviour, IWorldUsable, IEnemyLootProvider
     {
         private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
@@ -31,6 +33,16 @@ namespace Project.Combat
         [SerializeField] private Color dissolveEdgeColor = new Color(0.85f, 0.55f, 0.15f, 1f);
         [SerializeField] private bool enableVolumetricSmoke = false;
         [SerializeField] private float volumetricSmokeLinger = 1.2f;
+
+        [Header("Dropped Visual (Edit Mode)")]
+        [Tooltip("MeshFilter to drive. Empty = first MeshFilter in children.")]
+        [SerializeField] private MeshFilter visualMeshFilter;
+        [Tooltip("Renderer to drive. Empty = first MeshRenderer in children.")]
+        [SerializeField] private MeshRenderer visualRenderer;
+        [Tooltip("Optional mesh override applied in the Editor and on spawned instances.")]
+        [SerializeField] private Mesh dropMesh;
+        [Tooltip("Optional albedo texture override applied in the Editor and on spawned instances.")]
+        [SerializeField] private Texture dropTexture;
 
         private readonly List<QuestRewardDefinition> remainingLoot = new List<QuestRewardDefinition>();
 
@@ -61,18 +73,24 @@ namespace Project.Combat
             float range,
             string interactPrompt,
             float unlootedLifetimeSeconds = 20f,
-            float lootedDissolveDelaySeconds = 2f)
+            float lootedDissolveDelaySeconds = 2f,
+            GameObject lootBagPrefab = null,
+            Mesh meshOverride = null,
+            Texture textureOverride = null)
         {
             if (lootOwner == null || loot == null || loot.Count == 0)
                 return null;
 
             Vector3 spawnPosition = SnapToGround(worldPosition);
+            GameObject bagObject = InstantiateBag(lootBagPrefab, spawnPosition);
+            if (bagObject == null)
+                return null;
 
-            GameObject bagObject = new GameObject("EnemyLootBag");
-            bagObject.transform.position = spawnPosition;
-            bagObject.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            EnemyLootBag bag = bagObject.GetComponent<EnemyLootBag>();
+            if (bag == null)
+                bag = bagObject.AddComponent<EnemyLootBag>();
 
-            EnemyLootBag bag = bagObject.AddComponent<EnemyLootBag>();
+            bag.ApplyVisualOverrides(meshOverride, textureOverride);
             bag.Initialize(
                 lootOwner,
                 loot,
@@ -82,6 +100,27 @@ namespace Project.Combat
                 unlootedLifetimeSeconds,
                 lootedDissolveDelaySeconds);
             return bag;
+        }
+
+        private static GameObject InstantiateBag(GameObject lootBagPrefab, Vector3 spawnPosition)
+        {
+            GameObject prefab = lootBagPrefab;
+            if (prefab == null)
+                prefab = Resources.Load<GameObject>("Combat/EnemyLootBag");
+
+            if (prefab == null)
+            {
+                Debug.LogWarning(
+                    "[EnemyLootBag] Missing loot bag prefab. Assign " +
+                    EnemyLootable.DefaultLootBagPrefabPath + " on EnemyLootable.");
+                return null;
+            }
+
+            GameObject bagObject = Instantiate(prefab);
+            bagObject.name = "EnemyLootBag";
+            bagObject.transform.position = spawnPosition;
+            bagObject.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            return bagObject;
         }
 
         private static Vector3 SnapToGround(Vector3 worldPosition)
@@ -122,7 +161,10 @@ namespace Project.Combat
                 return;
             }
 
-            BuildVisual();
+            EnsureVisualBindings();
+            if (visualRenderer == null)
+                BuildVisual();
+            ApplyAuthoredVisual();
             StartIdleSmoke();
             expireTime = Time.time + Mathf.Max(1f, unlootedLifetime);
             initialized = true;
@@ -320,6 +362,81 @@ namespace Project.Combat
             volumetricSmokeEmitter = null;
         }
 
+        public void ApplyVisualOverrides(Mesh meshOverride, Texture textureOverride)
+        {
+            if (meshOverride != null)
+                dropMesh = meshOverride;
+            if (textureOverride != null)
+                dropTexture = textureOverride;
+
+            ApplyAuthoredVisual();
+        }
+
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
+                ApplyAuthoredVisual();
+        }
+
+        private void OnValidate()
+        {
+            ApplyAuthoredVisual();
+        }
+
+        private void ApplyAuthoredVisual()
+        {
+            EnsureVisualBindings();
+            if (visualMeshFilter == null && visualRenderer == null)
+                return;
+
+            if (dropMesh != null && visualMeshFilter != null)
+                visualMeshFilter.sharedMesh = dropMesh;
+
+            if (dropTexture != null && visualRenderer != null)
+                ApplyTextureToRenderer(visualRenderer, dropTexture);
+        }
+
+        private void EnsureVisualBindings()
+        {
+            if (visualMeshFilter == null)
+                visualMeshFilter = GetComponentInChildren<MeshFilter>(true);
+            if (visualRenderer == null)
+                visualRenderer = GetComponentInChildren<MeshRenderer>(true);
+            if (visualRenderer != null)
+                bagRenderer = visualRenderer;
+        }
+
+        private static void ApplyTextureToRenderer(MeshRenderer renderer, Texture texture)
+        {
+            if (renderer == null || texture == null)
+                return;
+
+            Material shared = renderer.sharedMaterial;
+            if (shared == null)
+                return;
+
+            Material material = shared;
+            if (!Application.isPlaying)
+            {
+                // Prefab/edit mode: write onto the assigned material so Inspector changes stick.
+            }
+            else
+            {
+                material = renderer.material;
+            }
+
+            if (material.HasProperty("_BaseColorMap"))
+                material.SetTexture("_BaseColorMap", texture);
+            if (material.HasProperty("_UnlitColorMap"))
+                material.SetTexture("_UnlitColorMap", texture);
+            if (material.HasProperty("_BaseMap"))
+                material.SetTexture("_BaseMap", texture);
+            if (material.HasProperty("_MainTex"))
+                material.SetTexture("_MainTex", texture);
+            material.mainTexture = texture;
+            renderer.sharedMaterial = material;
+        }
+
         private void BuildVisual()
         {
             GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -333,11 +450,19 @@ namespace Project.Combat
                 Destroy(primitiveCollider);
 
             bagRenderer = visual.GetComponent<MeshRenderer>();
+            visualRenderer = bagRenderer;
+            visualMeshFilter = visual.GetComponent<MeshFilter>();
             if (bagRenderer != null)
             {
-                Material bagMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                bagMaterial.color = new Color(0.42f, 0.28f, 0.14f, 1f);
-                bagMaterial.SetFloat("_Smoothness", 0.2f);
+                Shader shader = Shader.Find("HDRP/Lit") ?? Shader.Find("HDRP/Unlit") ?? Shader.Find("Sprites/Default");
+                Material bagMaterial = shader != null ? new Material(shader) : new Material(Shader.Find("Hidden/InternalErrorShader"));
+                bagMaterial.name = "DM_EnemyLootBag (Runtime)";
+                Color bagColor = new Color(0.42f, 0.28f, 0.14f, 1f);
+                bagMaterial.color = bagColor;
+                if (bagMaterial.HasProperty("_BaseColor"))
+                    bagMaterial.SetColor("_BaseColor", bagColor);
+                if (bagMaterial.HasProperty("_UnlitColor"))
+                    bagMaterial.SetColor("_UnlitColor", bagColor);
                 bagRenderer.sharedMaterial = bagMaterial;
             }
 
@@ -385,6 +510,13 @@ namespace Project.Combat
 
             DetachVolumetricSmoke();
         }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            EnsureVisualBindings();
+        }
+#endif
 
         private void OpenLootDialog()
         {

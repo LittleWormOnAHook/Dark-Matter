@@ -183,6 +183,12 @@ namespace Project.AI
         public ItemData[] lootItemPool = System.Array.Empty<ItemData>();
         public float lootRespawnDelay = 20f;
         public float lootInteractRange = 2.75f;
+        [Tooltip("Instanced bag prefab dropped after this enemy dies.")]
+        public GameObject lootBagPrefab;
+        [Tooltip("Optional mesh override for the dropped bag visual (Edit Mode).")]
+        public Mesh lootBagMesh;
+        [Tooltip("Optional albedo texture override for the dropped bag visual (Edit Mode).")]
+        public Texture lootBagTexture;
 
         public void ApplyBehaviorPreset(EnemyBehaviorPreset preset)
         {
