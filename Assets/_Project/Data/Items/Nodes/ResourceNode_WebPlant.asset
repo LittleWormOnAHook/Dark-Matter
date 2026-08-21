@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ResourceNodeDefinition
   displayName: Web Plant
   nodeKind: 1
-  designerNotes: 
+  designerNotes: Visual stand-in uses Brimestone Fan Plant mesh until original Web Plant model is recovered.
   resourceItem: {fileID: 11400000, guid: 8759c1d61f5d64d44b04b86927574895, type: 2}
   itemIcon: {fileID: 21300000, guid: 1ddfa7fda707b0946b8d98b7456cba88, type: 3}
   interactionMode: 1
@@ -27,8 +27,8 @@ MonoBehaviour:
   dropMax: 20
   lastWaveDropScale: 1
   holdInteractRange: 3.5
-  meshTemplate: {fileID: 6889095523044260113, guid: f951eea85a5e6a34db66ae4b8f93a757, type: 3}
-  lootFlyModel: {fileID: 4556512016624447390, guid: 8326826fc8689f542bd08574e3f6d892, type: 3}
+  meshTemplate: {fileID: 7179250259705487515, guid: 3fd775ea895111045bdfe04d66e90421, type: 3}
+  lootFlyModel: {fileID: 4556512016624447390, guid: 993dac5f6f603944ab56d7bc2a5731a3, type: 3}
   lootTint: {r: 0.75, g: 0.82, b: 0.28, a: 1}
   nodePrefab: {fileID: 2822174043025564091, guid: 1bba22b5db9e72342b0f502fdc014afb, type: 3}
   itemMaxStack: 1
