@@ -493,14 +493,46 @@ namespace Project.UI
 
         private void RefreshMenuButtonStates()
         {
+            bool hasContinueSave = GameSaveSystem.HasContinueSave;
+
             if (newGameButton != null)
+            {
                 newGameButton.gameObject.SetActive(!pauseOverlayActive);
+                SetMenuButtonLabel(newGameButton, hasContinueSave ? "Continue Expedition" : "New Expedition");
+                newGameButton.onClick.RemoveAllListeners();
+                newGameButton.onClick.AddListener(hasContinueSave ? ContinueExpedition : StartNewGame);
+            }
+
             if (resumeButton != null)
                 resumeButton.gameObject.SetActive(pauseOverlayActive);
             if (saveButton != null)
                 saveButton.interactable = GameSession.HasStarted;
             if (loadButton != null)
                 loadButton.interactable = GameSaveSystem.HasAnySaveFile;
+        }
+
+        private static void SetMenuButtonLabel(Button button, string label)
+        {
+            if (button == null)
+                return;
+
+            TextMeshProUGUI text = button.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+                text.text = label;
+        }
+
+        private void ContinueExpedition()
+        {
+            if (!GameSaveSystem.TryLoadContinueExpedition(out string message))
+            {
+                ShowMenuMessage(message);
+                RefreshMenuButtonStates();
+                return;
+            }
+
+            saveSlotsPanel?.Close();
+            ClearMenuMessage();
+            LoadIntoExpedition();
         }
 
         public void SaveToSlot(int slotIndex)

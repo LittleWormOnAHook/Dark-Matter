@@ -320,11 +320,37 @@ namespace Project.UI
 
         private void ApplySettings()
         {
+            // Capture dropdown/toggle values that may not have fired onValueChanged yet.
+            if (qualityDropdown != null)
+                GameSettings.SetQualityLevel(qualityDropdown.value);
+            if (resolutionDropdown != null)
+                GameSettings.SetResolutionIndex(resolutionDropdown.value);
+            if (fullscreenToggle != null)
+                GameSettings.SetFullscreen(fullscreenToggle.isOn);
+            if (vsyncToggle != null)
+                GameSettings.SetVSync(vsyncToggle.isOn);
+            if (rayTracingToggle != null)
+                GameSettings.SetRayTracingEnabled(rayTracingToggle.isOn);
+            if (postProcessingToggle != null)
+                GameSettings.SetPostProcessingEnabled(postProcessingToggle.isOn);
+            if (minimapToggle != null)
+                GameSettings.SetMinimapEnabled(minimapToggle.isOn);
+            if (masterSlider != null)
+                GameSettings.SetMasterVolume(masterSlider.value);
+            if (musicSlider != null)
+                GameSettings.SetMusicVolume(musicSlider.value);
+            if (sfxSlider != null)
+                GameSettings.SetSfxVolume(sfxSlider.value);
+            if (uiScaleSlider != null)
+                GameSettings.SetUiScale(uiScaleSlider.value);
+
             GameSettings.Save();
             GameAudioManager.Instance?.RefreshVolumes();
             PostProcessingController.Instance?.ApplyFromSettings();
             UiScaleApplier.ApplyFromSettings();
+            MapUI.ApplyMinimapEnabled(GameSettings.MinimapEnabled);
             Close();
+            SettingsSceneReloader.ReloadAfterApply();
         }
 
         private void SyncControlsFromSettings()
