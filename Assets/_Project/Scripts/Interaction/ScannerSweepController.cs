@@ -218,8 +218,8 @@ namespace Project.Interaction
             sweepMeshRenderer.enabled = false;
 
             Shader shader = Shader.Find("Project/ScannerSweepDisc")
+                ?? Shader.Find("HDRP/Unlit")
                 ?? Shader.Find("Sprites/Default")
-                ?? Shader.Find("Universal Render Pipeline/Unlit")
                 ?? Shader.Find("Unlit/Color");
 
             sweepMaterial = new Material(shader)

@@ -1061,7 +1061,9 @@ namespace Project.EditorTools.Creatures
                 return existing;
             }
 
-            Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
+            Shader unlitShader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
             Material duplicate = unlitShader != null
                 ? new Material(unlitShader)
                 : new Material(source);
@@ -1106,7 +1108,9 @@ namespace Project.EditorTools.Creatures
             if (mat == null)
                 return;
 
-            Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
+            Shader unlitShader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
             if (unlitShader != null && mat.shader != unlitShader)
                 mat.shader = unlitShader;
 

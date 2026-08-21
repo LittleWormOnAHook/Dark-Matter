@@ -410,9 +410,10 @@ public class OutlineController : MonoBehaviour
         if (sharedOutlineMaterial != null)
             return sharedOutlineMaterial;
 
-        Shader shader = Shader.Find("Hidden/Internal-Colored");
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Unlit");
+        Shader shader = Shader.Find("Hidden/Internal-Colored")
+            ?? Shader.Find("HDRP/Unlit")
+            ?? Shader.Find("Sprites/Default")
+            ?? Shader.Find("Unlit/Color");
         if (shader == null)
             return null;
 

@@ -65,11 +65,19 @@ namespace Project.Interaction
                 Renderer rend = go.GetComponent<Renderer>();
                 if (rend != null)
                 {
-                    Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                    Shader shader = Shader.Find("HDRP/Lit")
+                        ?? Shader.Find("HDRP/Unlit")
+                        ?? Shader.Find("Sprites/Default")
+                        ?? Shader.Find("Standard");
                     if (shader != null)
                     {
                         Color color = tint ?? new Color(0.82f, 0.72f, 0.35f, 1f);
-                        rend.material = new Material(shader) { color = color };
+                        Material mat = new Material(shader) { color = color };
+                        if (mat.HasProperty("_BaseColor"))
+                            mat.SetColor("_BaseColor", color);
+                        if (mat.HasProperty("_UnlitColor"))
+                            mat.SetColor("_UnlitColor", color);
+                        rend.material = mat;
                     }
                 }
 

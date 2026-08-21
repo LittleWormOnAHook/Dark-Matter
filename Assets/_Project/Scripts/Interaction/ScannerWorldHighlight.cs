@@ -72,15 +72,20 @@ namespace Project.Interaction
 
         private static Material CreateGlowMaterial()
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Color");
+            Shader shader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
 
+            Color glow = new Color(0.3f, 0.95f, 0.75f, 0.75f);
             Material material = new Material(shader)
             {
                 name = "ScannerGlowBillboard",
-                color = new Color(0.3f, 0.95f, 0.75f, 0.75f)
+                color = glow
             };
+            if (material.HasProperty("_UnlitColor"))
+                material.SetColor("_UnlitColor", glow);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", glow);
 
             if (material.HasProperty("_Surface"))
             {

@@ -618,12 +618,24 @@ namespace Project.Inventory
                 Renderer renderer = droppedObject.GetComponent<Renderer>();
                 if (renderer != null)
                 {
-                    Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                    Shader shader = Shader.Find("HDRP/Lit")
+                        ?? Shader.Find("HDRP/Unlit")
+                        ?? Shader.Find("Sprites/Default")
+                        ?? Shader.Find("Standard");
                     if (shader != null)
                     {
                         Material material = new Material(shader);
-                        material.mainTexture = item.icon.texture;
+                        if (material.HasProperty("_BaseColorMap"))
+                            material.SetTexture("_BaseColorMap", item.icon.texture);
+                        else if (material.HasProperty("_BaseMap"))
+                            material.SetTexture("_BaseMap", item.icon.texture);
+                        else
+                            material.mainTexture = item.icon.texture;
                         material.color = Color.white;
+                        if (material.HasProperty("_BaseColor"))
+                            material.SetColor("_BaseColor", Color.white);
+                        if (material.HasProperty("_UnlitColor"))
+                            material.SetColor("_UnlitColor", Color.white);
                         renderer.sharedMaterial = material;
                     }
                 }

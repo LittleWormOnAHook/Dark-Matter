@@ -176,13 +176,18 @@ namespace Project.Combat
                 return sharedSmokeTemplate;
             }
 
-            shader = Shader.Find("Universal Render Pipeline/Unlit");
+            shader = Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
             if (shader == null)
                 return null;
 
             sharedSmokeTemplate = new Material(shader);
-            sharedSmokeTemplate.SetFloat("_Surface", 1f);
-            sharedSmokeTemplate.SetFloat("_Blend", 0f);
+            if (sharedSmokeTemplate.HasProperty("_Surface"))
+            {
+                sharedSmokeTemplate.SetFloat("_Surface", 1f);
+                sharedSmokeTemplate.SetFloat("_Blend", 0f);
+            }
             sharedSmokeTemplate.SetOverrideTag("RenderType", "Transparent");
             sharedSmokeTemplate.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             return sharedSmokeTemplate;

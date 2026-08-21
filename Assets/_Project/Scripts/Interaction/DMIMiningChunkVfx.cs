@@ -31,13 +31,19 @@ namespace Project.Interaction
                 Renderer rend = go.GetComponent<Renderer>();
                 if (rend != null)
                 {
-                    Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                    Shader shader = Shader.Find("HDRP/Lit")
+                        ?? Shader.Find("HDRP/Unlit")
+                        ?? Shader.Find("Sprites/Default")
+                        ?? Shader.Find("Standard");
                     if (shader != null)
                     {
-                        rend.material = new Material(shader)
-                        {
-                            color = new Color(0.55f, 0.42f, 0.28f, 1f)
-                        };
+                        Color chunkColor = new Color(0.55f, 0.42f, 0.28f, 1f);
+                        Material mat = new Material(shader) { color = chunkColor };
+                        if (mat.HasProperty("_BaseColor"))
+                            mat.SetColor("_BaseColor", chunkColor);
+                        if (mat.HasProperty("_UnlitColor"))
+                            mat.SetColor("_UnlitColor", chunkColor);
+                        rend.material = mat;
                     }
                 }
             }

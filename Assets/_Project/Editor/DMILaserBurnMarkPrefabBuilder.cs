@@ -180,12 +180,14 @@ namespace Project.EditorTools
             string path = MatFolder + "/" + name + ".mat";
             Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
 
-            // Particles Unlit respects texture alpha cleanly for soft discs.
-            Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            // HDRP Unlit respects texture alpha cleanly for soft discs.
+            Shader shader = Shader.Find("HDRP/Unlit");
             if (shader == null)
                 shader = Shader.Find("Particles/Standard Unlit");
             if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Unlit");
+                shader = Shader.Find("Sprites/Default");
+            if (shader == null)
+                shader = Shader.Find("Unlit/Color");
 
             if (mat == null)
             {
