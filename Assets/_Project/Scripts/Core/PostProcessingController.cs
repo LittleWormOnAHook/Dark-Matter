@@ -15,6 +15,32 @@ namespace Project.Core
         private Volume globalVolume;
         private UniversalAdditionalCameraData cameraData;
 
+        public static PostProcessingController EnsureExists()
+        {
+            if (Instance != null)
+                return Instance;
+
+            PostProcessingController existing = FindAnyObjectByType<PostProcessingController>();
+            if (existing != null)
+                return existing;
+
+            GameObject host = new GameObject(nameof(PostProcessingController));
+            return host.AddComponent<PostProcessingController>();
+        }
+
+        /// <summary>
+        /// Re-binds the volume profile after a settings-driven scene reload.
+        /// Current tip uses a shared profile; HDRP runtime clone rebuild can replace this later.
+        /// </summary>
+        public void RebuildRuntimeProfile()
+        {
+            ResolveVolumeProfile();
+            EnsureGlobalVolume();
+            if (globalVolume != null && volumeProfile != null)
+                globalVolume.profile = volumeProfile;
+            BindMainCamera();
+        }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

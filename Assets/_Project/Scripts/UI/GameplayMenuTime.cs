@@ -24,6 +24,7 @@ namespace Project.UI
         public const string ReasonWeaponModeSwitch = "WeaponModeSwitch";
         public const string ReasonPetPanel = "PetPanel";
         public const string ReasonStandaloneMap = "StandaloneMap";
+        public const string ReasonQuoraShelterMenu = "QuoraShelterMenu";
 
         private static readonly HashSet<string> pauseReasons = new HashSet<string>();
         private static readonly HashSet<string> slowReasons = new HashSet<string>();

@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
   pioneerId: named_thorne_7x
   displayName: Lava-Phased Thorne-7X
+  portrait: {fileID: 21300000, guid: efff7dde9acf16b488ecb98df1f1ab34, type: 3}
   origin: 0
+  nonHumanKind: 0
+  recruitmentPitch: 
   pioneerClass: 2
   startLevel: 1
   radiationResistance: 0.58
@@ -32,8 +35,12 @@ MonoBehaviour:
   preferredWeaponItemId: 
   preferredToolItemId: 
   overrideDefaultFollowMode: 0
+  overrideDefaultWorldAmbientMode: 0
   behavior:
     followMode: 0
+    followBehaviorMode: 0
+    worldAmbientMode: 1
+    worldIdleJob: 0
     wanderPaceScale: 0.3
     walkSpeed: 4.4
     runSpeed: 8.5

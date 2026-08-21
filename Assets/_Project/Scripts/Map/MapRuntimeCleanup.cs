@@ -1,5 +1,6 @@
 using Project.UI;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,10 +15,24 @@ namespace Project.Map
         /// </summary>
         internal static bool IsQuittingPlayMode { get; private set; }
 
+        /// <summary>
+        /// True while a scene unload/load is in progress (settings reload, etc.).
+        /// </summary>
+        internal static bool IsSceneTransitioning { get; private set; }
+
+        internal static bool ShouldBlockRuntimeMapSpawns =>
+            !Application.isPlaying || IsQuittingPlayMode || IsSceneTransitioning;
+
+        internal static void NotifySceneTransitionStarted()
+        {
+            IsSceneTransitioning = true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             IsQuittingPlayMode = false;
+            IsSceneTransitioning = false;
             MapRegistry.Clear();
             MapUiSprites.ResetCache();
             OpticsUiSprites.ResetCache();
@@ -30,6 +45,9 @@ namespace Project.Map
 
             Application.quitting -= HandleApplicationQuitting;
             Application.quitting += HandleApplicationQuitting;
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
 
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
@@ -44,6 +62,11 @@ namespace Project.Map
                 return;
 
             OpticsOverlayUI.CleanupStaleRuntimeObjects();
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            IsSceneTransitioning = false;
         }
 
         private static void HandleApplicationQuitting()

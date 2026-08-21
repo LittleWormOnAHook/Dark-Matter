@@ -10,27 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7693b9365b31d6b4fa098be012daeff6, type: 3}
-  m_Name: named_mira_storm
+  m_Name: named_nova_hale
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
-  pioneerId: named_mira_storm
-  displayName: Crystalized Mira Storm
-  portrait: {fileID: 21300000, guid: 9570bf874755676499e236cc18a42290, type: 3}
-  origin: 0
+  pioneerId: starter_nova
+  displayName: Ash-Bound Nova Hale
+  origin: 1
   nonHumanKind: 0
   recruitmentPitch: 
-  pioneerClass: 3
+  pioneerClass: 4
   startLevel: 1
-  radiationResistance: 0.54
-  expeditionEfficiency: 0.73
-  combatSynergy: 0.51
-  saturation: 0.22
-  backstory: Crystal vent scout imprint.
+  radiationResistance: 0.56
+  expeditionEfficiency: 0.54
+  combatSynergy: 0.49
+  saturation: 0.15
+  backstory: Field medic imprint from a sulfur-storm triage crew.
   traitIds:
-  - vent_burst
+  - field_triage
   passiveAbilityIds:
-  - synergy_link
+  - injury_stabilize
   learnedSkills:
-  - forage
+  - sanitize
   buffs: []
   preferredWeaponItemId: 
   preferredToolItemId: 
@@ -38,9 +37,6 @@ MonoBehaviour:
   overrideDefaultWorldAmbientMode: 0
   behavior:
     followMode: 0
-    followBehaviorMode: 0
-    worldAmbientMode: 1
-    worldIdleJob: 0
     wanderPaceScale: 0.3
     walkSpeed: 4.4
     runSpeed: 8.5
@@ -58,3 +54,4 @@ MonoBehaviour:
     rangedPreferredDistance: 7
     losSearchRadius: 1.5
     formationDriftDegreesPerSecond: 2.8
+  portrait: {fileID: 21300000, guid: 9be17a82e6e118c4ca0aef8f2079feb0, type: 3}

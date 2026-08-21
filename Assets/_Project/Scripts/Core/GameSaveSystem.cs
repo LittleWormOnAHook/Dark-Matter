@@ -22,10 +22,13 @@ namespace Project.Core
     public static class GameSaveSystem
     {
         public const int SlotCount = 5;
+        public const int ContinueSlotIndex = 0;
         public const int CurrentSaveVersion = 22;
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
+
+        public static bool HasContinueSave => HasSaveInSlot(ContinueSlotIndex);
 
         public static bool HasAnySaveFile
         {
@@ -39,6 +42,17 @@ namespace Project.Core
 
                 return File.Exists(LegacySaveFilePath);
             }
+        }
+
+        /// <summary>Persists the active expedition to the continue slot before a settings reload.</summary>
+        public static bool TrySaveContinueExpedition(out string message)
+        {
+            return TrySave(ContinueSlotIndex, null, out message);
+        }
+
+        public static bool TryLoadContinueExpedition(out string message)
+        {
+            return TryLoad(ContinueSlotIndex, out message);
         }
 
         private static string LegacySaveFilePath =>

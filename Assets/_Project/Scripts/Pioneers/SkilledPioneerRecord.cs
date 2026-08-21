@@ -8,6 +8,10 @@ namespace Project.Pioneers
     {
         public string id;
         public string displayName;
+        /// <summary>Named catalog asset id when this record was created from a NamedPioneerDefinition.</summary>
+        public string catalogPioneerId;
+        /// <summary>Jr. silhouette badge id for procedural / unnamed recruits (UI title + portrait).</summary>
+        public string jrSilhouetteId;
         public SkilledPioneerClass pioneerClass;
         public int level = 1;
         public float radiationResistance = 0.5f;
@@ -95,6 +99,7 @@ namespace Project.Pioneers
             {
                 id = definition.ResolvedId,
                 displayName = definition.displayName,
+                catalogPioneerId = definition.ResolvedId,
                 pioneerClass = definition.pioneerClass,
                 level = definition.startLevel,
                 radiationResistance = definition.radiationResistance,
@@ -137,6 +142,8 @@ namespace Project.Pioneers
     {
         public string id;
         public string displayName;
+        public string catalogPioneerId;
+        public string jrSilhouetteId;
         public int pioneerClass;
         public int level;
         public float radiationResistance;
@@ -169,6 +176,8 @@ namespace Project.Pioneers
             {
                 id = record.id,
                 displayName = record.displayName,
+                catalogPioneerId = record.catalogPioneerId,
+                jrSilhouetteId = record.jrSilhouetteId,
                 pioneerClass = (int)record.pioneerClass,
                 level = record.level,
                 radiationResistance = record.radiationResistance,
@@ -201,6 +210,8 @@ namespace Project.Pioneers
             {
                 id = id,
                 displayName = displayName,
+                catalogPioneerId = catalogPioneerId,
+                jrSilhouetteId = jrSilhouetteId,
                 pioneerClass = (SkilledPioneerClass)Mathf.Clamp(pioneerClass, 0, maxClass),
                 level = level,
                 radiationResistance = radiationResistance,

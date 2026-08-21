@@ -33,6 +33,12 @@ namespace Project.Core
 
         public static bool HasSaveFile => GameSaveSystem.HasAnySaveFile;
 
+        /// <summary>Re-reads every setting from PlayerPrefs and applies them (used after settings scene reload).</summary>
+        public static void ReloadFromPlayerPrefs()
+        {
+            Load();
+        }
+
         public static void Load()
         {
             MasterVolume = PlayerPrefs.GetFloat(MasterVolumeKey, 1f);

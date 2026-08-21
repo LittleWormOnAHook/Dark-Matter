@@ -8,6 +8,9 @@ namespace Project.Pioneers
         public string pioneerId;
         public string displayName;
 
+        [Tooltip("Optional unique portrait sprite for journal / HUD colony ID badges.")]
+        public Sprite portrait;
+
         [Tooltip("Not every companion is a rescued Echo — Expedition companions start with the " +
             "player, Support Ship companions join later via a story/quest trigger. This drives when " +
             "PioneerRosterManager grants them and which prefabs the Companion Prefab Tool generates.")]

@@ -161,7 +161,6 @@ namespace Project.PPT
         {
             Shader shader = Shader.Find("HDRP/Unlit")
                 ?? Shader.Find("Sprites/Default")
-                ?? Shader.Find("Universal Render Pipeline/Unlit")
                 ?? Shader.Find("Unlit/Color")
                 ?? Shader.Find("Hidden/Internal-Colored");
             if (shader == null)

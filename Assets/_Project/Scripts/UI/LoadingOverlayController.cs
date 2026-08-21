@@ -34,7 +34,8 @@ namespace Project.UI
         private enum LoadingMode
         {
             Boot,
-            GameStart
+            GameStart,
+            SettingsReload
         }
 
         private struct GatedCameraState
@@ -80,6 +81,9 @@ namespace Project.UI
         private static LoadingOverlayController activeInstance;
         private static LoadingMode pendingMode = LoadingMode.Boot;
         private static Action pendingCompletion;
+        private static string pendingStatusText;
+        private static float pendingSimulatedLoadSeconds = -1f;
+        private static bool suppressNextBootOverlay;
         private static GameObject earlyBlackoutHost;
         private static readonly List<GatedCameraState> gatedCameras = new List<GatedCameraState>(8);
 
@@ -117,6 +121,9 @@ namespace Project.UI
             activeInstance = null;
             pendingMode = LoadingMode.Boot;
             pendingCompletion = null;
+            pendingStatusText = null;
+            pendingSimulatedLoadSeconds = -1f;
+            suppressNextBootOverlay = false;
             earlyBlackoutHost = null;
             gatedCameras.Clear();
         }
@@ -128,6 +135,12 @@ namespace Project.UI
         {
             if (!Application.isPlaying)
                 return;
+
+            if (suppressNextBootOverlay)
+            {
+                bootPending = false;
+                return;
+            }
 
             bootPending = true;
             // Kill world SFX immediately — Invector footsteps/reloads ignore timeScale and will
@@ -143,8 +156,23 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
+            if (suppressNextBootOverlay)
+            {
+                suppressNextBootOverlay = false;
+                bootPending = false;
+                EnsureEarlyBlackout();
+                GateGameplayCameras(true);
+                return;
+            }
+
             GateGameplayCameras(true);
             EnsureExists();
+        }
+
+        /// <summary>Skips the full boot loader on the next scene load (settings Apply reload).</summary>
+        public static void SuppressNextBootOverlay()
+        {
+            suppressNextBootOverlay = true;
         }
 
         public static void EnsureExists()
@@ -200,6 +228,43 @@ namespace Project.UI
             pendingMode = LoadingMode.GameStart;
             pendingCompletion = onComplete;
             Create();
+        }
+
+        /// <summary>
+        /// Short loading pass while graphics settings are applied via scene reload.
+        /// </summary>
+        public static void ShowForSettingsReload(Action onComplete)
+        {
+            if (!Application.isPlaying)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            EnsureOpaqueCover();
+
+            if (activeInstance != null)
+            {
+                activeInstance.mode = LoadingMode.SettingsReload;
+                activeInstance.onCompleted = onComplete;
+                return;
+            }
+
+            pendingStatusText = "Applying settings...";
+            pendingSimulatedLoadSeconds = 2f;
+            pendingMode = LoadingMode.SettingsReload;
+            pendingCompletion = onComplete;
+            Create();
+        }
+
+        /// <summary>Removes the early blackout veil after a settings reload restore completes.</summary>
+        public static void ReleaseOpaqueCover()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            GateGameplayCameras(false);
+            DestroyEarlyBlackout();
         }
 
         private static void Create()
@@ -309,6 +374,12 @@ namespace Project.UI
             onCompleted = pendingCompletion;
             pendingMode = LoadingMode.Boot;
             pendingCompletion = null;
+
+            if (pendingSimulatedLoadSeconds > 0f)
+            {
+                simulatedLoadSeconds = pendingSimulatedLoadSeconds;
+                pendingSimulatedLoadSeconds = -1f;
+            }
 
             activeInstance = this;
             bootPending = true;
@@ -711,7 +782,8 @@ namespace Project.UI
             blockRect.sizeDelta = new Vector2(760f, 74f);
 
             TextMeshProUGUI label = CreateProgressLabel(block.transform, "LoadingLabel", TextAlignmentOptions.MidlineLeft);
-            label.text = "Loading Genesis...";
+            label.text = string.IsNullOrEmpty(pendingStatusText) ? "Loading Genesis..." : pendingStatusText;
+            pendingStatusText = null;
             label.fontSize = 24f;
             label.characterSpacing = 6f;
             label.color = DarkMatterGenesisUiPalette.BodyText;
@@ -801,7 +873,8 @@ namespace Project.UI
                 // Boot only: if in-scene bootstrap is still catching up, hold short of full instead of
                 // handing off to a menu that is not ready yet. The grace cap keeps a checkpoint that
                 // never arrives from parking the player on a 92% bar forever.
-                bool ready = mode != LoadingMode.Boot
+                bool ready = mode == LoadingMode.SettingsReload
+                             || mode != LoadingMode.Boot
                              || AreBootstrapCheckpointsReady()
                              || elapsed >= window + CheckpointGraceSeconds;
                 ApplyProgress(ready ? timeProgress : Mathf.Min(timeProgress, ProgressCeilingBeforeHandoff));

@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
   pioneerId: starter_ryn
   displayName: Pyroclast Ryn Vale
+  portrait: {fileID: 21300000, guid: c77f2f89c39cef84281be5d3d7c6fb30, type: 3}
+  origin: 0
+  nonHumanKind: 0
+  recruitmentPitch: 
   pioneerClass: 0
   startLevel: 1
   radiationResistance: 0.5
@@ -29,17 +33,22 @@ MonoBehaviour:
   - patchwork
   buffs:
   - label: Shield Drone
-    description: A tethered drone absorbs incoming hazard pressure before it reaches the wearer.
+    description: A tethered drone absorbs incoming hazard pressure before it reaches
+      the wearer.
     radiationResistanceBonus: 0
     expeditionEfficiencyBonus: 0
     combatSynergyBonus: 0.04
     moveSpeedBonus: 0
     debuffResistance: 0.15
-  preferredWeaponItemId:
-  preferredToolItemId:
+  preferredWeaponItemId: 
+  preferredToolItemId: 
   overrideDefaultFollowMode: 0
+  overrideDefaultWorldAmbientMode: 0
   behavior:
     followMode: 0
+    followBehaviorMode: 0
+    worldAmbientMode: 1
+    worldIdleJob: 0
     wanderPaceScale: 0
     walkSpeed: 0
     runSpeed: 0

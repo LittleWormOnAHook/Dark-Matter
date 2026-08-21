@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Invector;
 using Invector.vCharacterController.vActions;
 using Invector.vMelee;
 using Invector.vShooter;

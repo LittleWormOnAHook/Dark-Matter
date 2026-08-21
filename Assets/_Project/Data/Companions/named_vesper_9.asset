@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
   pioneerId: named_vesper_9
   displayName: Crystalized Vesper-9
+  portrait: {fileID: 21300000, guid: d82217b7201c6e74494cfc1fcb292803, type: 3}
   origin: 0
+  nonHumanKind: 0
+  recruitmentPitch: 
   pioneerClass: 1
   startLevel: 1
   radiationResistance: 0.66
@@ -32,8 +35,12 @@ MonoBehaviour:
   preferredWeaponItemId: 
   preferredToolItemId: 
   overrideDefaultFollowMode: 0
+  overrideDefaultWorldAmbientMode: 0
   behavior:
     followMode: 0
+    followBehaviorMode: 0
+    worldAmbientMode: 1
+    worldIdleJob: 0
     wanderPaceScale: 0.3
     walkSpeed: 4.4
     runSpeed: 8.5
