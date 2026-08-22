@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="express_appointments.xml" />
+        <include domain="sharedpref" path="express_inspections.xml" />
+        <include domain="file" path="autosave/" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="express_appointments.xml" />
+        <include domain="sharedpref" path="express_inspections.xml" />
+        <include domain="file" path="autosave/" />
+    </device-transfer>
+</data-extraction-rules>
