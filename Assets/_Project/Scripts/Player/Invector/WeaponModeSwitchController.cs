@@ -253,6 +253,37 @@ namespace Project.Player.Invector
             ApplyLaserModes();
         }
 
+        /// <summary>
+        /// Clears hold-R Mode Switch prefs and runtime laser/hold state for a fresh expedition.
+        /// </summary>
+        public static void ClearPersistedStatesForNewGame()
+        {
+            PlayerPrefs.DeleteKey(PrefRifleLaserSight);
+            PlayerPrefs.DeleteKey(PrefRifleLaserBeam);
+            PlayerPrefs.DeleteKey(PrefPistolLaserSight);
+            PlayerPrefs.DeleteKey(PrefPistolLaserBeam);
+            PlayerPrefs.Save();
+
+            WeaponModeSwitchMenuUI.HideAny();
+
+            WeaponModeSwitchController[] controllers =
+                Object.FindObjectsByType<WeaponModeSwitchController>(FindObjectsInactive.Include);
+            for (int i = 0; i < controllers.Length; i++)
+                controllers[i]?.ResetForNewGame();
+        }
+
+        private void ResetForNewGame()
+        {
+            CancelHold();
+            rifleLaserSightEnabled = false;
+            rifleLaserBeamEnabled = false;
+            pistolLaserSightEnabled = false;
+            pistolLaserBeamEnabled = false;
+            lastAppliedAiming = false;
+            ClearActiveAimLaser();
+            ApplyLaserModes(forceAiming: false);
+        }
+
         public void ApplyLaserModes()
         {
             ApplyLaserModes(forceAiming: null);

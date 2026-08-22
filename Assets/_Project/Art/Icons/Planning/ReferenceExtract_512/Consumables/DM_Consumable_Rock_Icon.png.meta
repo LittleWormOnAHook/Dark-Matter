@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: b0f11c70-a0b6-ce8d-a51d-ee428c3e5f83
+TextureImporter:
+  spritePixelsToUnits: 512
+  textureType: 8
+  spriteMode: 1
+  maxTextureSize: 4096
+  mipmaps:
+    enableMipMap: 0

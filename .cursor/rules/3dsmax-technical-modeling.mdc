@@ -1,0 +1,23 @@
+---
+description: Expert MAXScript and Python guidelines for procedural 3D modeling and scene generation in 3ds Max.
+globs: "*.ms,*.mcr,*.py"
+alwaysApply: false
+---
+
+# 3ds Max Technical & Modeling Rules
+
+## 1. Code Standards & Safety
+- Write robust, modular, and error-checked MAXScript (`.ms`, `.mcr`) or 3ds Max Python API code.
+- Always wrap procedural mesh creation in `undo off` and `redraw off` blocks to maximize performance during heavy iteration.
+- Clean up temporary variables and clear selection arrays at the start and end of scripts to avoid memory leaks or viewport clutter.
+
+## 2. Procedural Geometry & Complexity Management
+- When building complex structures, break them down into modular components (e.g., base mesh, primary details, secondary paneling, fasteners).
+- Explicitly define vertex, edge, and polygon indices when manipulating sub-objects via MeshOps or PolyOps.
+- Enforce clean topology principles: favor quad-dominant modeling where applicable, prevent overlapping vertices by using appropriate tolerance thresholds (e.g., `welldist`), and avoid zero-length edges or flipped normals.
+- Implement explicit naming conventions for all generated nodes (e.g., `Prefix_ModelName_ID`).
+
+## 3. Modifiers & Hierarchy Stack
+- Build modifier stacks logically from bottom to top: Skin/Morph -> Edit Poly/Mesh -> Symmetry/Turbosmooth -> UVW Map.
+- Never collapse stacks destructively unless explicitly requested, allowing non-destructive adjustments to parameters like segment counts or noise scales.
+- Group related objects using `dummy` helpers or hierarchical parent-child linking to maintain an organized Scene Explorer.

@@ -13,7 +13,11 @@ namespace Project.UI
         public static Transform Get(Transform canvasRoot)
         {
             if (layerRect != null)
+            {
+                if (!layerRect.gameObject.activeSelf)
+                    layerRect.gameObject.SetActive(true);
                 return layerRect;
+            }
 
             GameObject layerObject = new GameObject("UiFrontLayer", typeof(RectTransform));
             layerObject.transform.SetParent(canvasRoot, false);

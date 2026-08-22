@@ -1,0 +1,37 @@
+---
+description: Blender 5.2 MCP modeling pipeline for Dark Matter: Genesis — geometry-first, Unity-oriented exports.
+globs: "*.blend,*.py"
+alwaysApply: false
+---
+
+# Blender Modeling Pipeline (Dark Matter: Genesis)
+
+Prefer **Blender 5.2** + **Blender MCP** (`harveyxiacn/blender-mcp`) for new 3D asset work from Cursor. Keep existing 3ds Max rules; do not delete or contradict them — use Max only when the user asks.
+
+## Connection
+
+- Blender: `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe` (5.2.x LTS)
+- Addon: **Blender MCP** (`blender_mcp_addon`) — View3D sidebar **MCP** tab → **Start Server** (port **9876**; `auto_start` preferred)
+- Cursor MCP server: `blender` → `uv run --directory C:\Users\Teabagger\.cursor\tools\blender-mcp blender-mcp`
+- Before modeling tools: confirm the Blender addon TCP listener is up (Start Server / auto_start)
+
+## Geometry-first (default)
+
+- Build mesh / topology / naming **before** materials, textures, or PBR unless the user explicitly asks for texturing / PBR hooks.
+- Prefer clean quad-dominant topology, sensible origin/pivots, and clear object names (`GEO_`, `CTRL_`, `HELP_` prefixes when useful).
+- Avoid Poly Haven / Sketchfab / generative texture downloads unless requested.
+- Do not invent full shader graphs for “looks finished” — leave materials minimal or none until asked.
+- For organic / image-to-3D blockouts, follow **Voxel Fusion** in `blender-aaa-scifi-pipeline.mdc` (intersecting primitives → join → voxel remesh ~0.03 → Subsurf+Displace → Decimate ~15% → optional PBR hooks).
+
+## Game / Unity alignment
+
+- Target Unity 6 + URP import: meters scale, forward −Y or project convention as already used in `_Project` assets.
+- Prefer export-ready hierarchy; keep high/low or LOD naming explicit when doing AAA-style blockouts (`_high` / `_low`).
+- Sci-fi / Io survival look: semi-low-poly to mid-poly; favor readable silhouettes over dense subdivision unless asked.
+
+## Agent workflow
+
+1. Ensure Blender is running with MCP server started (sidebar **MCP** → Start Server).
+2. Use Blender MCP tools (activate skill groups as needed: modeling first; materials/style only when asked).
+3. Checkpoint before destructive ops when the MCP checkpoint tools are available.
+4. Export (glTF/FBX) only when the user wants files in the Unity project; place under `Assets/_Project/` with matching `.meta` on commit per project Unity rules.

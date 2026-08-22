@@ -1,16 +1,18 @@
-using Project.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Project.CameraFx
 {
     /// <summary>
-    /// Applies trauma shake for rendering only via SRP begin/end camera callbacks.
-    /// Built-in OnPreCull/OnPostRender never fire under URP, and Invector FixedUpdate
-    /// posing would wipe LateUpdate offsets — so we nudge the camera transform just
-    /// before cull and restore after render.
+    /// Applies trauma shake on the gameplay camera.
+    /// HDRP builds <c>HDCamera</c> matrices from the transform before
+    /// <see cref="RenderPipelineManager.beginCameraRendering"/>, so offsets applied
+    /// there never appear on screen. We apply in <see cref="LateUpdate"/> (after Invector
+    /// FixedUpdate posing) and revert in <see cref="OnEndCameraRendering"/> after HDRP
+    /// has already sampled the shaken transform.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(1000)]
     [RequireComponent(typeof(Camera))]
     public class CameraShakeListener : MonoBehaviour
     {
@@ -26,7 +28,7 @@ namespace Project.CameraFx
         /// <summary>True when an offset was applied for the current camera render.</summary>
         public bool HasAppliedRenderOffset => _appliedForRender;
 
-        /// <summary>Last position offset applied in beginCameraRendering (debug / tests).</summary>
+        /// <summary>Last position offset applied before HDRP sampled the camera (debug / tests).</summary>
         public Vector3 LastRenderPositionOffset => _renderPositionOffset;
 
         /// <summary>
@@ -94,37 +96,21 @@ namespace Project.CameraFx
             _shakeActive = active;
         }
 
-        private void SubscribeRenderCallbacks()
+        private void LateUpdate()
         {
-            if (_subscribed)
-                return;
-
-            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
-            _subscribed = true;
-        }
-
-        private void UnsubscribeRenderCallbacks()
-        {
-            if (!_subscribed)
-                return;
-
-            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
-            _subscribed = false;
-        }
-
-        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
-        {
-            if (!_shakeActive || _camera == null || camera != _camera || !_camera.enabled)
+            if (!_shakeActive || _camera == null || !_camera.enabled || !isActiveAndEnabled)
                 return;
 
             CameraShakeService service = CameraShakeService.Instance;
-            if (service == null || service.ActiveListener != this)
+            if (service == null)
                 return;
 
-            // Ensure any leftover offset from a skipped end callback is cleared first.
-            RevertRenderOffset();
+            // Stay bound even if another listener briefly stole/cleared the slot.
+            if (service.ActiveListener != this)
+                service.SetActiveListener(this);
+
+            // Clear any leftover offset without subtracting if Invector already reposed us.
+            DiscardAppliedOffsetTracking();
 
             service.SampleShake(out Vector3 positionOffset, out Vector3 eulerOffset);
             if (positionOffset.sqrMagnitude < 0.0000001f && eulerOffset.sqrMagnitude < 0.0000001f)
@@ -139,6 +125,25 @@ namespace Project.CameraFx
             _renderRotationOffset = rotOffset;
             _appliedForRender = true;
             DebugLastAppliedPositionMagnitude = positionOffset.magnitude;
+        }
+
+        private void SubscribeRenderCallbacks()
+        {
+            if (_subscribed)
+                return;
+
+            // Only end-camera: used to restore a clean transform after HDRP sampled LateUpdate offsets.
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+            _subscribed = true;
+        }
+
+        private void UnsubscribeRenderCallbacks()
+        {
+            if (!_subscribed)
+                return;
+
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+            _subscribed = false;
         }
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -157,6 +162,11 @@ namespace Project.CameraFx
             Transform t = transform;
             t.position -= _renderPositionOffset;
             t.rotation = t.rotation * Quaternion.Inverse(_renderRotationOffset);
+            DiscardAppliedOffsetTracking();
+        }
+
+        private void DiscardAppliedOffsetTracking()
+        {
             _appliedForRender = false;
             _renderPositionOffset = Vector3.zero;
             _renderRotationOffset = Quaternion.identity;

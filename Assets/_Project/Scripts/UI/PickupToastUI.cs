@@ -33,7 +33,9 @@ namespace Project.UI
             if (string.IsNullOrEmpty(message))
                 return;
 
-            Canvas canvas = FindAnyObjectByType<Canvas>();
+            Canvas canvas = MainMenuController.ResolveMainCanvas();
+            if (canvas == null)
+                canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
@@ -46,6 +48,12 @@ namespace Project.UI
         {
             GameAudioManager.Instance?.PlayInventoryItemClick();
             Show("Inventory full");
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
         }
 
         private void Build(Transform canvasRootTransform)
@@ -82,13 +90,38 @@ namespace Project.UI
 
         private void Present(string message)
         {
+            if (canvasRoot == null)
+            {
+                Canvas canvas = MainMenuController.ResolveMainCanvas() ?? FindAnyObjectByType<Canvas>();
+                canvasRoot = canvas != null ? canvas.transform : null;
+            }
+
+            // Main menu hides gameplay HUD children — reactivate toast + front layer before coroutines.
+            UiFrontLayer.ReparentToFront(transform, canvasRoot);
+            EnsureActiveForPresentation();
+
             ApplyToastAnchor();
             label.text = message;
             if (activeRoutine != null)
                 StopCoroutine(activeRoutine);
 
             activeRoutine = StartCoroutine(AnimateToast());
-            UiFrontLayer.ReparentToFront(transform, canvasRoot);
+        }
+
+        private void EnsureActiveForPresentation()
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                    current.gameObject.SetActive(true);
+
+                Canvas canvas = current.GetComponent<Canvas>();
+                if (canvas != null && canvas.isRootCanvas)
+                    break;
+
+                current = current.parent;
+            }
         }
 
         private void ApplyToastAnchor()

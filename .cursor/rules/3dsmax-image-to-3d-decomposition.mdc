@@ -1,0 +1,21 @@
+---
+description: Image-to-3D visual decomposition — anti-primitive compounds, ProBoolean fusion, volumetric blending, silhouette carving.
+globs: "*.ms,*.mcr,*.py"
+alwaysApply: false
+---
+
+# Image-to-3D Visual Decomposition Rules
+
+## 1. Geometric Decomposition (Anti-Primitive Rule)
+- Never generate a standalone primitive (box, sphere, cylinder) as a final component.
+- Always decompose reference shapes into a clustered compound hierarchy of intersecting primitives.
+- Use `ProBoolean` compound objects programmatically to fuse (`Union`), subtract (`Sub`), or intersect shapes to match the complex silhouettes found in the reference image.
+
+## 2. Procedural Sculpting & Volumetric Blending
+- **Voxel/Volume Merging:** To mimic organic or organic-mechanical sculpting, bridge primitive joints by converting compound shapes into a unified volume. Apply a `Vol. Select` or `VertexPaint` modifier combined with soft selection to smooth transitions.
+- **Sub-D Sculpting:** Convert base composite meshes to `Editable Poly`, run random localized face subdivisions, and use `polyOp.moveVerts` or structural noise modifiers (`SpaceWarp` or `Noise` modifier with low scale/high strength) to sculpt high-poly surface organic imperfections.
+- **Displacement Maps:** Utilize mathematical cellular, perlin, or wood noise maps assigned to a high-density `Displace` modifier to procedurally simulate complex panel greebles or chiseled sci-fi indentations without writing thousands of lines of individual poly coordinates.
+
+## 3. Surface Carving & Silhouette Matching
+- When parsing an image description, extract the major silhouette (Silhouette A) and minor cutout details (Cutouts B, C).
+- Script automated slice planes (`polyOp.slice`) or boolean cutting matrices to carve intricate paths, panel splits, and wire channels directly into the high-poly blended forms.

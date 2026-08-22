@@ -1,44 +1,64 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+#if UNITY_RENDER_PIPELINE_HDRP
+using UnityEngine.Rendering.HighDefinition;
+#endif
+#if UNITY_RENDER_PIPELINE_UNIVERSAL
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace Project.Core
 {
+    /// <summary>
+    /// Applies master post-processing toggle and per-effect overrides from <see cref="GameSettings"/>.
+    /// Supports HDRP (primary) with URP fallback.
+    /// </summary>
     public class PostProcessingController : MonoBehaviour
     {
         public static PostProcessingController Instance { get; private set; }
 
-        [SerializeField] private VolumeProfile volumeProfile;
+        private const float RuntimeVolumePriority = 10000f;
+        private const float FallbackBloomIntensityBaseline = 0.234f;
+
+        [SerializeField] private VolumeProfile volumeProfileTemplate;
         [SerializeField] private bool createVolumeOnAwake = true;
 
         private Volume globalVolume;
-        private UniversalAdditionalCameraData cameraData;
+        private VolumeProfile runtimeVolumeProfile;
+#if UNITY_RENDER_PIPELINE_HDRP
+        private float baselineBloomIntensity = FallbackBloomIntensityBaseline;
+        private int baselineFogType = 1;
+#endif
+        private bool baselineValuesCached;
+#if UNITY_RENDER_PIPELINE_UNIVERSAL
+        private UniversalAdditionalCameraData urpCameraData;
+#endif
 
-        public static PostProcessingController EnsureExists()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapAfterSceneLoad()
         {
-            if (Instance != null)
-                return Instance;
+            if (!Application.isPlaying)
+                return;
 
-            PostProcessingController existing = FindAnyObjectByType<PostProcessingController>();
-            if (existing != null)
-                return existing;
-
-            GameObject host = new GameObject(nameof(PostProcessingController));
-            return host.AddComponent<PostProcessingController>();
+            EnsureExists();
+            Instance?.ApplyFromSettings();
         }
 
-        /// <summary>
-        /// Re-binds the volume profile after a settings-driven scene reload.
-        /// Current tip uses a shared profile; HDRP runtime clone rebuild can replace this later.
-        /// </summary>
-        public void RebuildRuntimeProfile()
+        public static void EnsureExists()
         {
-            ResolveVolumeProfile();
-            EnsureGlobalVolume();
-            if (globalVolume != null && volumeProfile != null)
-                globalVolume.profile = volumeProfile;
-            BindMainCamera();
+            if (!Application.isPlaying)
+                return;
+
+            if (Instance != null)
+                return;
+
+            if (FindAnyObjectByType<PostProcessingController>() != null)
+                return;
+
+            GameObject bootstrap = new GameObject("PostProcessingController");
+            bootstrap.AddComponent<PostProcessingController>();
         }
 
         private void Awake()
@@ -52,9 +72,9 @@ namespace Project.Core
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            ResolveVolumeProfile();
+            ResolveVolumeProfileTemplate();
             EnsureAudioListener();
-            EnsureGlobalVolume();
+            EnsureRuntimeGlobalVolume();
             BindMainCamera();
             ApplyFromSettings();
 
@@ -69,25 +89,39 @@ namespace Project.Core
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            baselineValuesCached = false;
             EnsureAudioListener();
             BindMainCamera();
             ApplyFromSettings();
+        }
+
+        public void RebuildRuntimeProfile()
+        {
+            if (volumeProfileTemplate == null)
+                ResolveVolumeProfileTemplate();
+
+            if (volumeProfileTemplate == null)
+                return;
+
+            if (runtimeVolumeProfile != null)
+                Destroy(runtimeVolumeProfile);
+
+            runtimeVolumeProfile = Instantiate(volumeProfileTemplate);
+            baselineValuesCached = false;
+            EnsureRuntimeGlobalVolume();
+
+            if (globalVolume != null)
+                globalVolume.profile = runtimeVolumeProfile;
         }
 
         public void ApplyFromSettings()
         {
             BindMainCamera();
             GameplayAudioUtility.EnsureListenerOnCamera(Camera.main);
-            bool enabled = GameSettings.PostProcessingEnabled;
 
-            if (cameraData != null)
-                cameraData.renderPostProcessing = enabled;
-
-            if (globalVolume != null)
-            {
-                globalVolume.enabled = enabled;
-                globalVolume.weight = enabled ? 1f : 0f;
-            }
+            bool masterEnabled = GameSettings.PostProcessingEnabled;
+            ApplyCameraPostProcessing(masterEnabled);
+            ApplyVolumeSettings(masterEnabled);
         }
 
         public void SetPostProcessingEnabled(bool enabled)
@@ -96,45 +130,236 @@ namespace Project.Core
             ApplyFromSettings();
         }
 
-        private void ResolveVolumeProfile()
+        private void ApplyCameraPostProcessing(bool masterEnabled)
         {
-            if (volumeProfile != null)
+#if UNITY_RENDER_PIPELINE_HDRP
+            Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                Camera camera = cameras[i];
+                if (camera == null)
+                    continue;
+
+                HDAdditionalCameraData hdCameraData = camera.GetComponent<HDAdditionalCameraData>();
+                if (hdCameraData == null)
+                    continue;
+
+                hdCameraData.renderPostProcessing = masterEnabled;
+            }
+#endif
+#if UNITY_RENDER_PIPELINE_UNIVERSAL
+            if (urpCameraData != null)
+                urpCameraData.renderPostProcessing = masterEnabled;
+#endif
+        }
+
+        private void ApplyVolumeSettings(bool masterEnabled)
+        {
+            if (globalVolume != null)
+            {
+                globalVolume.enabled = true;
+                globalVolume.weight = masterEnabled ? 1f : 0f;
+
+                if (runtimeVolumeProfile != null)
+                    ApplyProfileOverrides(runtimeVolumeProfile, masterEnabled);
+            }
+
+            VolumeProfile defaultProfile = ResolveHdrpDefaultVolumeProfile();
+            if (defaultProfile != null)
+                ApplyProfileOverrides(defaultProfile, masterEnabled);
+
+            Volume[] volumes = FindObjectsByType<Volume>(FindObjectsInactive.Include);
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                Volume volume = volumes[i];
+                if (volume == null || volume.profile == null || volume == globalVolume)
+                    continue;
+
+                ApplyProfileOverrides(volume.profile, masterEnabled);
+            }
+        }
+
+        private void ApplyProfileOverrides(VolumeProfile profile, bool masterEnabled)
+        {
+            if (profile == null)
                 return;
 
-            volumeProfile = Resources.Load<VolumeProfile>("PostProcessing/SampleSceneProfile");
-#if UNITY_EDITOR
-            if (volumeProfile == null)
+            CacheBaselineValues(profile);
+
+            IReadOnlyList<VolumeComponent> components = profile.components;
+            for (int i = 0; i < components.Count; i++)
             {
-                volumeProfile = UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                VolumeComponent component = components[i];
+                if (component == null)
+                    continue;
+
+                string componentTypeName = component.GetType().Name;
+                if (!IsManagedPostEffect(componentTypeName))
+                    continue;
+
+                bool effectEnabled = masterEnabled && GameSettings.IsPostEffectEnabled(componentTypeName);
+                component.active = effectEnabled;
+
+#if UNITY_RENDER_PIPELINE_HDRP
+                if (componentTypeName == "Bloom" && component is Bloom bloom)
+                    ApplyBloomIntensity(bloom, effectEnabled);
+#endif
+            }
+
+            ApplyFogSettings(profile, masterEnabled);
+        }
+
+        private void CacheBaselineValues(VolumeProfile profile)
+        {
+            if (baselineValuesCached || profile == null)
+                return;
+
+#if UNITY_RENDER_PIPELINE_HDRP
+            if (profile.TryGet(out Bloom bloom) && bloom.intensity.overrideState)
+                baselineBloomIntensity = bloom.intensity.value;
+            else
+                baselineBloomIntensity = FallbackBloomIntensityBaseline;
+
+            if (profile.TryGet(out VisualEnvironment visualEnvironment) && visualEnvironment.fogType.overrideState)
+                baselineFogType = visualEnvironment.fogType.value;
+#endif
+
+            baselineValuesCached = true;
+        }
+
+#if UNITY_RENDER_PIPELINE_HDRP
+        private void ApplyBloomIntensity(Bloom bloom, bool bloomEnabled)
+        {
+            if (bloom == null || !bloomEnabled)
+                return;
+
+            float multiplier = 1f + GameSettings.BloomIntensity;
+            bloom.intensity.Override(Mathf.Max(0f, baselineBloomIntensity * multiplier));
+        }
+#endif
+
+        private void ApplyFogSettings(VolumeProfile profile, bool masterEnabled)
+        {
+            if (profile == null)
+                return;
+
+#if UNITY_RENDER_PIPELINE_HDRP
+            bool fogEnabled = masterEnabled && GameSettings.FogEnabled;
+
+            if (profile.TryGet(out Fog fog))
+            {
+                fog.active = fogEnabled;
+                fog.enabled.Override(fogEnabled);
+            }
+
+            if (profile.TryGet(out VisualEnvironment visualEnvironment))
+            {
+                visualEnvironment.fogType.Override(fogEnabled ? baselineFogType : 0);
+            }
+#else
+            _ = masterEnabled;
+#endif
+        }
+
+        private static bool IsManagedPostEffect(string componentTypeName)
+        {
+            return componentTypeName switch
+            {
+                "Bloom" => true,
+                "Fog" => true,
+                "VisualEnvironment" => true,
+                "MotionBlur" => true,
+                "DepthOfField" => true,
+                "AmbientOcclusion" => true,
+                "ScreenSpaceAmbientOcclusion" => true,
+                "ColorAdjustments" => true,
+                "LiftGammaGain" => true,
+                "SplitToning" => true,
+                "Tonemapping" => true,
+                "WhiteBalance" => true,
+                "Vignette" => true,
+                "RayTracingSettings" => true,
+                "ChromaticAberration" => true,
+                "FilmGrain" => true,
+                "LensDistortion" => true,
+                "PaniniProjection" => true,
+                _ => false,
+            };
+        }
+
+        private void ResolveVolumeProfileTemplate()
+        {
+            if (volumeProfileTemplate != null)
+                return;
+
+            VolumeProfile defaultProfile = ResolveHdrpDefaultVolumeProfile();
+            if (defaultProfile != null)
+            {
+                volumeProfileTemplate = defaultProfile;
+                return;
+            }
+
+            volumeProfileTemplate = Resources.Load<VolumeProfile>("PostProcessing/SampleSceneProfile");
+#if UNITY_EDITOR
+            if (volumeProfileTemplate == null)
+            {
+                volumeProfileTemplate = UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                    "Assets/HDRPDefaultResources/DefaultSettingsVolumeProfile.asset");
+            }
+
+            if (volumeProfileTemplate == null)
+            {
+                volumeProfileTemplate = UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
                     "Assets/Settings/SampleSceneProfile.asset");
             }
 #endif
         }
 
-        private void EnsureGlobalVolume()
+        private static VolumeProfile ResolveHdrpDefaultVolumeProfile()
         {
-            if (!createVolumeOnAwake || volumeProfile == null)
+#if UNITY_RENDER_PIPELINE_HDRP && UNITY_6000_0_OR_NEWER
+            HDRPDefaultVolumeProfileSettings defaultSettings =
+                GraphicsSettings.GetRenderPipelineSettings<HDRPDefaultVolumeProfileSettings>();
+            if (defaultSettings != null && defaultSettings.volumeProfile != null)
+                return defaultSettings.volumeProfile;
+#endif
+            return null;
+        }
+
+        private void EnsureRuntimeGlobalVolume()
+        {
+            if (!createVolumeOnAwake || volumeProfileTemplate == null)
                 return;
 
-            globalVolume = FindAnyObjectByType<Volume>();
-            if (globalVolume != null && globalVolume.isGlobal)
-                return;
+            if (runtimeVolumeProfile == null)
+                runtimeVolumeProfile = Instantiate(volumeProfileTemplate);
 
-            GameObject volumeObject = new GameObject("GlobalPostProcessingVolume");
-            volumeObject.transform.SetParent(transform);
-            globalVolume = volumeObject.AddComponent<Volume>();
-            globalVolume.isGlobal = true;
-            globalVolume.priority = 10f;
-            globalVolume.profile = volumeProfile;
+            if (globalVolume == null)
+            {
+                GameObject volumeObject = new GameObject("GlobalPostProcessingVolume");
+                volumeObject.transform.SetParent(transform);
+                globalVolume = volumeObject.AddComponent<Volume>();
+                globalVolume.isGlobal = true;
+                globalVolume.priority = RuntimeVolumePriority;
+            }
+
+            globalVolume.profile = runtimeVolumeProfile;
         }
 
         private void BindMainCamera()
         {
             Camera mainCamera = Camera.main;
             if (mainCamera == null)
+            {
+#if UNITY_RENDER_PIPELINE_UNIVERSAL
+                urpCameraData = null;
+#endif
                 return;
+            }
 
-            cameraData = mainCamera.GetUniversalAdditionalCameraData();
+#if UNITY_RENDER_PIPELINE_UNIVERSAL
+            urpCameraData = mainCamera.GetComponent<UniversalAdditionalCameraData>();
+#endif
         }
 
         private static void EnsureAudioListener()

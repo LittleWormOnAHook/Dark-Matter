@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Pioneers.NamedPioneerDefinition
   pioneerId: named_voss_nyx
   displayName: Echo-Bound Voss Nyx
+  portrait: {fileID: 21300000, guid: 284669acc4ac7e54cb77b9aca4cfdad7, type: 3}
+  origin: 0
+  nonHumanKind: 0
+  recruitmentPitch: 
   pioneerClass: 3
   startLevel: 1
   radiationResistance: 0.57
@@ -27,3 +31,30 @@ MonoBehaviour:
   - echo_reverb
   learnedSkills:
   - forage
+  buffs: []
+  preferredWeaponItemId: 
+  preferredToolItemId: 
+  overrideDefaultFollowMode: 0
+  overrideDefaultWorldAmbientMode: 0
+  behavior:
+    followMode: 0
+    followBehaviorMode: 0
+    worldAmbientMode: 1
+    worldIdleJob: 0
+    wanderPaceScale: 0.3
+    walkSpeed: 4.4
+    runSpeed: 8.5
+    catchUpSpeed: 8.5
+    catchUpDistance: 5.5
+    maxFollowDistance: 14
+    stopDistance: 0.45
+    formationHeadingSmoothTime: 0.45
+    walkAnimationSpeed: 0.7
+    runAnimationSpeed: 0.9
+    walkSpeedReference: 4.4
+    runSpeedReference: 8.5
+    combatTetherRadius: 6.5
+    preferredCombatDistance: 2.4
+    rangedPreferredDistance: 7
+    losSearchRadius: 1.5
+    formationDriftDegreesPerSecond: 2.8

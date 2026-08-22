@@ -8,9 +8,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_Project/Scenes/Genesis_HDRP_Test.unity
     guid: 96ddd5f61897ec74089fc4a4104012c4
-  - enabled: 0
-    path: Assets/_Project/Scenes/Dark Matter Genesis v1.57.unity
-    guid: 76da7dabff09117478ac31c7a38ebdea
   - enabled: 1
     path: Assets/_Project/Scenes/Dark Matter Genesis v1.6.unity
     guid: 768903efaa566714d91723cbddedcd64

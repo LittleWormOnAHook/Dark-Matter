@@ -9,127 +9,318 @@ namespace Project.UI
 {
     public class SettingsPanelController : MonoBehaviour
     {
-        private const float WindowWidth = 440f;
-        private const float WindowHeight = 560f;
-        private const float HeaderHeight = 36f;
-        private const float FooterHeight = 44f;
+        private const float HeaderHeight = 48f;
+        private const float FooterHeight = 52f;
+
+        private static readonly int[] FrameRateOptions = { -1, 30, 60, 120, 144 };
+        private static readonly string[] FrameRateLabels = { "Unlimited", "30 FPS", "60 FPS", "120 FPS", "144 FPS" };
 
         private GameObject panelRoot;
         private Slider masterSlider;
         private Slider musicSlider;
         private Slider sfxSlider;
         private Slider uiScaleSlider;
+        private Slider bloomIntensitySlider;
+        private GameObject bloomIntensityRow;
         private Toggle postProcessingToggle;
+        private Toggle bloomToggle;
+        private Toggle fogToggle;
+        private Toggle motionBlurToggle;
+        private Toggle depthOfFieldToggle;
+        private Toggle ambientOcclusionToggle;
+        private Toggle colorGradingToggle;
+        private Toggle vignetteToggle;
         private Toggle rayTracingToggle;
         private Toggle minimapToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
+        private Toggle dlssToggle;
         private Dropdown qualityDropdown;
         private Dropdown resolutionDropdown;
+        private Dropdown frameRateDropdown;
+        private Dropdown dlssQualityDropdown;
+        private GameObject dlssQualityRow;
         private TextMeshProUGUI masterValueLabel;
         private TextMeshProUGUI musicValueLabel;
         private TextMeshProUGUI sfxValueLabel;
         private TextMeshProUGUI uiScaleValueLabel;
+        private TextMeshProUGUI bloomIntensityValueLabel;
         private TextMeshProUGUI graphicsAdvisoryLabel;
+        private System.Action closedCallback;
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
+        public void SetClosedCallback(System.Action callback)
+        {
+            closedCallback = callback;
+        }
+
         public void Build(Transform parent)
         {
+            // Rebuild if a prior play-mode / nested-canvas build left an empty shell.
             if (panelRoot != null)
-                return;
+            {
+                if (panelRoot)
+                {
+                    if (panelRoot.transform.childCount > 0)
+                        return;
 
-            panelRoot = MenuUiBuilder.CreateFullScreenPanel(
+                    Object.Destroy(panelRoot);
+                }
+
+                panelRoot = null;
+            }
+
+            // Root-level overlay locked at 90% so MainCanvas UI Scale never warps Settings.
+            Transform settingsCanvas = UiScaleApplier.EnsureLockedOverlayCanvas(
                 parent,
+                UiScaleApplier.LockedSettingsCanvasName,
+                sortingOrderBoost: 50);
+
+            // Drop any leftover empty SettingsPanel shells from nested-canvas builds.
+            for (int i = settingsCanvas.childCount - 1; i >= 0; i--)
+            {
+                Transform child = settingsCanvas.GetChild(i);
+                if (child != null && child.name == "SettingsPanel")
+                    Object.Destroy(child.gameObject);
+            }
+
+            // Opaque full-screen navy so main-menu buttons do not ghost through.
+            panelRoot = MenuUiBuilder.CreateFullScreenPanel(
+                settingsCanvas,
                 "SettingsPanel",
-                DarkMatterGenesisUiPalette.WithAlpha(Color.black, 0.82f),
+                DarkMatterGenesisUiPalette.PanelBackground,
                 blockRaycasts: true);
 
-            GameObject window = new GameObject("SettingsWindow", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-            window.transform.SetParent(panelRoot.transform, false);
+            panelRoot.transform.localScale = Vector3.one;
 
-            Image windowImage = window.GetComponent<Image>();
-            MenuUiBuilder.ApplyUiSprite(windowImage);
-            DarkMatterGenesisUiPalette.ApplyPanelShellBackground(windowImage, 0.98f);
-            DarkMatterGenesisUiPalette.ApplyFuchsiaTrim(window);
+            Image panelImage = panelRoot.GetComponent<Image>();
+            if (panelImage != null)
+            {
+                panelImage.sprite = null;
+                panelImage.type = Image.Type.Simple;
+                panelImage.color = DarkMatterGenesisUiPalette.PanelBackground;
+            }
 
-            RectTransform windowRect = window.GetComponent<RectTransform>();
-            windowRect.anchorMin = new Vector2(0.5f, 0.5f);
-            windowRect.anchorMax = new Vector2(0.5f, 0.5f);
-            windowRect.pivot = new Vector2(0.5f, 0.5f);
-            windowRect.sizeDelta = new Vector2(WindowWidth, WindowHeight);
+            VerticalLayoutGroup rootLayout = panelRoot.AddComponent<VerticalLayoutGroup>();
+            rootLayout.padding = new RectOffset(56, 56, 36, 28);
+            rootLayout.spacing = 18;
+            rootLayout.childAlignment = TextAnchor.UpperLeft;
+            rootLayout.childControlWidth = true;
+            rootLayout.childControlHeight = true;
+            rootLayout.childForceExpandWidth = true;
+            rootLayout.childForceExpandHeight = false;
 
-            VerticalLayoutGroup windowLayout = window.GetComponent<VerticalLayoutGroup>();
-            windowLayout.padding = new RectOffset(12, 12, 10, 10);
-            windowLayout.spacing = 6;
-            windowLayout.childAlignment = TextAnchor.UpperCenter;
-            windowLayout.childControlWidth = true;
-            windowLayout.childControlHeight = true;
-            windowLayout.childForceExpandWidth = true;
-            windowLayout.childForceExpandHeight = false;
-
-            TextMeshProUGUI title = MenuUiBuilder.CreateTitle(window.transform, "Settings", 22f);
-            title.alignment = TextAlignmentOptions.Center;
-            LayoutElement titleLayout = title.GetComponent<LayoutElement>();
+            TextMeshProUGUI title = MenuUiBuilder.CreateTitle(panelRoot.transform, "SETTINGS", 34f);
+            title.alignment = TextAlignmentOptions.TopLeft;
+            title.color = DarkMatterGenesisUiPalette.BodyText;
+            LayoutElement titleLayout = title.gameObject.GetComponent<LayoutElement>();
+            if (titleLayout == null)
+                titleLayout = title.gameObject.AddComponent<LayoutElement>();
             titleLayout.minHeight = HeaderHeight;
             titleLayout.preferredHeight = HeaderHeight;
             titleLayout.flexibleHeight = 0f;
 
-            Transform scrollContent = BuildScrollArea(window.transform);
+            GameObject bodyRow = new GameObject("Body", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            bodyRow.transform.SetParent(panelRoot.transform, false);
+            LayoutElement bodyLayoutElement = bodyRow.GetComponent<LayoutElement>();
+            bodyLayoutElement.flexibleHeight = 1f;
+            bodyLayoutElement.minHeight = 420f;
 
-            CreateSectionTitle(scrollContent, "Audio");
-            masterSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "Master Volume", GameSettings.MasterVolume, out masterValueLabel);
-            musicSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "Music Volume", GameSettings.MusicVolume, out musicValueLabel);
-            sfxSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "SFX Volume", GameSettings.SfxVolume, out sfxValueLabel);
+            HorizontalLayoutGroup bodyLayout = bodyRow.GetComponent<HorizontalLayoutGroup>();
+            bodyLayout.spacing = 28;
+            bodyLayout.padding = new RectOffset(0, 0, 4, 0);
+            bodyLayout.childAlignment = TextAnchor.UpperLeft;
+            bodyLayout.childControlWidth = true;
+            bodyLayout.childControlHeight = true;
+            bodyLayout.childForceExpandWidth = true;
+            bodyLayout.childForceExpandHeight = true;
 
-            CreateSectionTitle(scrollContent, "Graphics");
-            qualityDropdown = MenuUiBuilder.CreateDropdownRow(scrollContent, "Quality");
-            resolutionDropdown = MenuUiBuilder.CreateDropdownRow(scrollContent, "Resolution");
-            fullscreenToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Fullscreen", GameSettings.Fullscreen);
-            vsyncToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "VSync", GameSettings.VSync);
-            rayTracingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Ray Tracing", GameSettings.RayTracingEnabled);
-            postProcessingToggle = MenuUiBuilder.CreateToggleRow(scrollContent, "Post Processing", GameSettings.PostProcessingEnabled);
-            graphicsAdvisoryLabel = CreateAdvisoryLabel(scrollContent);
+            Transform leftColumn = CreateColumn(bodyRow.transform, "LeftColumn");
+            Transform middleColumn = CreateMiddleColumn(bodyRow.transform);
+            Transform rightColumn = CreateColumn(bodyRow.transform, "RightColumn");
 
-            CreateSectionTitle(scrollContent, "Gameplay");
-            minimapToggle = MenuUiBuilder.CreateCircleToggleRow(scrollContent, "Minimap", GameSettings.MinimapEnabled);
-            uiScaleSlider = MenuUiBuilder.CreateSliderRow(scrollContent, "UI Scale", GameSettings.UiScale, out uiScaleValueLabel);
+            // Left — VIDEO / GAMEPLAY
+            CreateSectionTitle(leftColumn, "Video");
+            vsyncToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "V-Sync", GameSettings.VSync);
+            fullscreenToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "Fullscreen", GameSettings.Fullscreen);
+            resolutionDropdown = MenuUiBuilder.CreateDropdownRow(leftColumn, "Screen Resolution");
+            frameRateDropdown = MenuUiBuilder.CreateDropdownRow(leftColumn, "Framerate Lock");
+
+            if (DlssSettingsApplier.IsDlssUiAvailable())
+            {
+                dlssToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "DLSS", GameSettings.DlssEnabled);
+                dlssQualityDropdown = MenuUiBuilder.CreateDropdownRow(leftColumn, "DLSS Quality");
+                dlssQualityRow = dlssQualityDropdown.transform.parent.gameObject;
+                dlssQualityDropdown.ClearOptions();
+                dlssQualityDropdown.AddOptions(new List<string>(DlssSettingsApplier.QualityDropdownLabels));
+            }
+
+            CreateSectionTitle(leftColumn, "Gameplay");
+            minimapToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "Minimap", GameSettings.MinimapEnabled);
+            uiScaleSlider = MenuUiBuilder.CreateSliderRow(leftColumn, "UI Scale", GameSettings.UiScale, out uiScaleValueLabel);
             uiScaleSlider.minValue = GameSettings.UiScaleMin;
             uiScaleSlider.maxValue = GameSettings.UiScaleMax;
             uiScaleSlider.wholeNumbers = false;
             uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
             UpdatePercentLabel(uiScaleValueLabel, GameSettings.UiScale);
 
+            // Middle — AUDIO
+            CreateSectionTitle(middleColumn, "Audio");
+            masterSlider = MenuUiBuilder.CreateSliderRow(middleColumn, "Master Volume", GameSettings.MasterVolume, out masterValueLabel);
+            musicSlider = MenuUiBuilder.CreateSliderRow(middleColumn, "Music Volume", GameSettings.MusicVolume, out musicValueLabel);
+            sfxSlider = MenuUiBuilder.CreateSliderRow(middleColumn, "SFX Volume", GameSettings.SfxVolume, out sfxValueLabel);
+
+            // Right — GRAPHICS / POST PROCESSING
+            CreateSectionTitle(rightColumn, "Graphics");
+            qualityDropdown = MenuUiBuilder.CreateDropdownRow(rightColumn, "Overall Quality");
+
+            CreateSectionTitle(rightColumn, "Post Processing");
+            postProcessingToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Post Processing", GameSettings.PostProcessingEnabled);
+            rayTracingToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Ray Tracing", GameSettings.RayTracingEnabled);
+            bloomToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Bloom", GameSettings.BloomEnabled);
+            fogToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Fog", GameSettings.FogEnabled);
+            motionBlurToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Motion Blur", GameSettings.MotionBlurEnabled);
+            depthOfFieldToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Depth of Field", GameSettings.DepthOfFieldEnabled);
+            ambientOcclusionToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Ambient Occlusion", GameSettings.AmbientOcclusionEnabled);
+            colorGradingToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Color Grading", GameSettings.ColorGradingEnabled);
+            vignetteToggle = MenuUiBuilder.CreateToggleRow(rightColumn, "Vignette", GameSettings.VignetteEnabled);
+
+            bloomIntensityRow = MenuUiBuilder.CreateSliderRow(
+                    rightColumn,
+                    "Bloom Intensity",
+                    GameSettings.BloomIntensity,
+                    out bloomIntensityValueLabel)
+                .transform.parent.gameObject;
+            bloomIntensitySlider = bloomIntensityRow.GetComponentInChildren<Slider>();
+            bloomIntensitySlider.minValue = 0f;
+            bloomIntensitySlider.maxValue = 1f;
+            bloomIntensitySlider.wholeNumbers = false;
+            UpdateBloomIntensityLabel(GameSettings.BloomIntensity);
+
+            graphicsAdvisoryLabel = CreateAdvisoryLabel(rightColumn);
+
+            // Footer — Back / Save (centered under middle column area)
             GameObject buttonRow = new GameObject("ButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            buttonRow.transform.SetParent(window.transform, false);
+            buttonRow.transform.SetParent(panelRoot.transform, false);
             LayoutElement buttonRowLayout = buttonRow.GetComponent<LayoutElement>();
             buttonRowLayout.minHeight = FooterHeight;
             buttonRowLayout.preferredHeight = FooterHeight;
             buttonRowLayout.flexibleHeight = 0f;
 
             HorizontalLayoutGroup buttonLayout = buttonRow.GetComponent<HorizontalLayoutGroup>();
-            buttonLayout.spacing = 10;
+            buttonLayout.spacing = 16;
             buttonLayout.childAlignment = TextAnchor.MiddleCenter;
             buttonLayout.childControlWidth = false;
             buttonLayout.childForceExpandWidth = false;
 
-            Button applyButton = MenuUiBuilder.CreateButton(
+            Button backButton = MenuUiBuilder.CreateButton(
                 buttonRow.transform,
-                "Apply",
-                new Vector2(120f, 32f),
-                15f);
-            applyButton.onClick.RemoveAllListeners();
-            applyButton.onClick.AddListener(ApplySettings);
+                "Back",
+                new Vector2(180f, 36f),
+                16f);
+            backButton.onClick.RemoveAllListeners();
+            backButton.onClick.AddListener(Close);
 
-            // Pinned to the panel root so it stays fixed top-right outside the modal layout.
-            MenuUiBuilder.CreateTopRightBackButton(
-                panelRoot.transform,
-                Close,
-                width: 88f,
-                height: 30f,
-                fontSize: 14f,
-                inset: 14f);
+            Button saveButton = MenuUiBuilder.CreateButton(
+                buttonRow.transform,
+                "Save",
+                new Vector2(180f, 36f),
+                16f);
+            saveButton.onClick.RemoveAllListeners();
+            saveButton.onClick.AddListener(ApplySettings);
 
+            WireControlListeners();
+            PopulateDropdowns();
+            SyncControlsFromSettings();
+            UpdateBloomIntensityRowVisibility(GameSettings.BloomEnabled);
+            UpdateDlssControlsVisibility();
+            UiScaleApplier.RefreshSettingsPanelScale();
+            panelRoot.SetActive(false);
+        }
+
+        private static Transform CreateMiddleColumn(Transform parent)
+        {
+            GameObject column = new GameObject(
+                "MiddleColumn",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(VerticalLayoutGroup),
+                typeof(LayoutElement));
+            column.transform.SetParent(parent, false);
+
+            Image image = column.GetComponent<Image>();
+            image.sprite = null;
+            image.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.55f);
+            image.raycastTarget = false;
+
+            VerticalLayoutGroup layout = column.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(14, 14, 10, 10);
+            layout.spacing = 5;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            LayoutElement columnLayout = column.GetComponent<LayoutElement>();
+            columnLayout.flexibleWidth = 0.95f;
+            columnLayout.minWidth = 240f;
+            return column.transform;
+        }
+
+        public void Open()
+        {
+            EnsurePanelBuilt();
+            if (panelRoot == null)
+                return;
+
+            SyncControlsFromSettings();
+            panelRoot.SetActive(true);
+            panelRoot.transform.SetAsLastSibling();
+            if (panelRoot.transform.parent != null)
+                panelRoot.transform.parent.SetAsLastSibling();
+
+            Canvas.ForceUpdateCanvases();
+            RectTransform panelRect = panelRoot.GetComponent<RectTransform>();
+            if (panelRect != null)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(panelRect);
+
+            UiScaleApplier.ApplyFromSettings();
+        }
+
+        private void EnsurePanelBuilt()
+        {
+            if (panelRoot != null && panelRoot && panelRoot.transform.childCount > 0)
+                return;
+
+            if (panelRoot != null && panelRoot)
+                Object.Destroy(panelRoot);
+            panelRoot = null;
+
+            Transform canvasRoot = transform;
+            Canvas hostCanvas = GetComponent<Canvas>();
+            if (hostCanvas != null)
+                canvasRoot = hostCanvas.transform;
+            else
+            {
+                Canvas main = MainMenuController.ResolveMainCanvas();
+                if (main != null)
+                    canvasRoot = main.transform;
+            }
+
+            Build(canvasRoot);
+        }
+
+        public void Close()
+        {
+            if (panelRoot != null)
+                panelRoot.SetActive(false);
+            closedCallback?.Invoke();
+        }
+
+        private void WireControlListeners()
+        {
             masterSlider.onValueChanged.RemoveAllListeners();
             masterSlider.onValueChanged.AddListener(value =>
             {
@@ -160,52 +351,140 @@ namespace Project.UI
             postProcessingToggle.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetPostProcessingEnabled(value);
-                PostProcessingController.Instance?.ApplyFromSettings();
+                MenuUiBuilder.RefreshToggleVisual(postProcessingToggle);
+            });
+            bloomToggle.onValueChanged.RemoveAllListeners();
+            bloomToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetBloomEnabled(value);
+                UpdateBloomIntensityRowVisibility(value);
+                MenuUiBuilder.RefreshToggleVisual(bloomToggle);
+            });
+            fogToggle.onValueChanged.RemoveAllListeners();
+            fogToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetFogEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(fogToggle);
+            });
+            bloomIntensitySlider.onValueChanged.RemoveAllListeners();
+            bloomIntensitySlider.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetBloomIntensity(value);
+                UpdateBloomIntensityLabel(value);
+            });
+            motionBlurToggle.onValueChanged.RemoveAllListeners();
+            motionBlurToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetMotionBlurEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(motionBlurToggle);
+            });
+            depthOfFieldToggle.onValueChanged.RemoveAllListeners();
+            depthOfFieldToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetDepthOfFieldEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(depthOfFieldToggle);
+            });
+            ambientOcclusionToggle.onValueChanged.RemoveAllListeners();
+            ambientOcclusionToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetAmbientOcclusionEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(ambientOcclusionToggle);
+            });
+            colorGradingToggle.onValueChanged.RemoveAllListeners();
+            colorGradingToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetColorGradingEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(colorGradingToggle);
+            });
+            vignetteToggle.onValueChanged.RemoveAllListeners();
+            vignetteToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetVignetteEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(vignetteToggle);
             });
             minimapToggle.onValueChanged.RemoveAllListeners();
             minimapToggle.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetMinimapEnabled(value);
                 MapUI.ApplyMinimapEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(minimapToggle);
             });
             fullscreenToggle.onValueChanged.RemoveAllListeners();
-            fullscreenToggle.onValueChanged.AddListener(GameSettings.SetFullscreen);
+            fullscreenToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetFullscreen(value);
+                MenuUiBuilder.RefreshToggleVisual(fullscreenToggle);
+            });
             vsyncToggle.onValueChanged.RemoveAllListeners();
-            vsyncToggle.onValueChanged.AddListener(GameSettings.SetVSync);
+            vsyncToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetVSync(value);
+                MenuUiBuilder.RefreshToggleVisual(vsyncToggle);
+            });
             rayTracingToggle.onValueChanged.RemoveAllListeners();
             rayTracingToggle.onValueChanged.AddListener(value =>
             {
                 GameSettings.SetRayTracingEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(rayTracingToggle);
                 RefreshGraphicsAdvisory();
             });
             qualityDropdown.onValueChanged.RemoveAllListeners();
             qualityDropdown.onValueChanged.AddListener(value =>
             {
-                GameSettings.SetQualityLevel(value);
+                GameSettings.PreviewQualityLevel(value);
+                SyncGraphicsTogglesFromSettings();
                 RefreshGraphicsAdvisory();
             });
             resolutionDropdown.onValueChanged.RemoveAllListeners();
             resolutionDropdown.onValueChanged.AddListener(GameSettings.SetResolutionIndex);
+            frameRateDropdown.onValueChanged.RemoveAllListeners();
+            frameRateDropdown.onValueChanged.AddListener(index =>
+            {
+                int frameRate = GetFrameRateFromDropdownIndex(index);
+                GameSettings.SetTargetFrameRate(frameRate);
+            });
 
-            PopulateDropdowns();
-            SyncControlsFromSettings();
-            panelRoot.SetActive(false);
+            if (dlssToggle != null)
+            {
+                dlssToggle.onValueChanged.RemoveAllListeners();
+                dlssToggle.onValueChanged.AddListener(value =>
+                {
+                    GameSettings.SetDlssEnabled(value);
+                    UpdateDlssControlsVisibility();
+                    RefreshGraphicsAdvisory();
+                });
+            }
+
+            if (dlssQualityDropdown != null)
+            {
+                dlssQualityDropdown.onValueChanged.RemoveAllListeners();
+                dlssQualityDropdown.onValueChanged.AddListener(GameSettings.SetDlssQualityDropdownIndex);
+            }
         }
 
-        public void Open()
+        private static Transform CreateColumn(Transform parent, string name)
         {
-            if (panelRoot == null)
-                return;
+            GameObject column = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(VerticalLayoutGroup),
+                typeof(LayoutElement));
+            column.transform.SetParent(parent, false);
 
-            SyncControlsFromSettings();
-            panelRoot.SetActive(true);
-            panelRoot.transform.SetAsLastSibling();
-        }
+            VerticalLayoutGroup layout = column.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(4, 4, 0, 0);
+            layout.spacing = 5;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-        public void Close()
-        {
-            if (panelRoot != null)
-                panelRoot.SetActive(false);
+            LayoutElement columnLayout = column.GetComponent<LayoutElement>();
+            columnLayout.flexibleWidth = 1f;
+            columnLayout.minWidth = 260f;
+
+            return column.transform;
         }
 
         private static Transform BuildScrollArea(Transform window)
@@ -238,7 +517,7 @@ namespace Project.UI
             GameObject content = new GameObject(
                 "Content",
                 typeof(RectTransform),
-                typeof(VerticalLayoutGroup),
+                typeof(HorizontalLayoutGroup),
                 typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
             RectTransform contentRect = content.GetComponent<RectTransform>();
@@ -248,10 +527,10 @@ namespace Project.UI
             contentRect.anchoredPosition = Vector2.zero;
             contentRect.sizeDelta = Vector2.zero;
 
-            VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
+            HorizontalLayoutGroup contentLayout = content.GetComponent<HorizontalLayoutGroup>();
             contentLayout.padding = new RectOffset(6, 6, 4, 8);
-            contentLayout.spacing = 6;
-            contentLayout.childAlignment = TextAnchor.UpperCenter;
+            contentLayout.spacing = 16;
+            contentLayout.childAlignment = TextAnchor.UpperLeft;
             contentLayout.childControlWidth = true;
             contentLayout.childControlHeight = true;
             contentLayout.childForceExpandWidth = true;
@@ -320,37 +599,77 @@ namespace Project.UI
 
         private void ApplySettings()
         {
-            // Capture dropdown/toggle values that may not have fired onValueChanged yet.
-            if (qualityDropdown != null)
-                GameSettings.SetQualityLevel(qualityDropdown.value);
-            if (resolutionDropdown != null)
-                GameSettings.SetResolutionIndex(resolutionDropdown.value);
-            if (fullscreenToggle != null)
-                GameSettings.SetFullscreen(fullscreenToggle.isOn);
-            if (vsyncToggle != null)
-                GameSettings.SetVSync(vsyncToggle.isOn);
-            if (rayTracingToggle != null)
-                GameSettings.SetRayTracingEnabled(rayTracingToggle.isOn);
-            if (postProcessingToggle != null)
-                GameSettings.SetPostProcessingEnabled(postProcessingToggle.isOn);
-            if (minimapToggle != null)
-                GameSettings.SetMinimapEnabled(minimapToggle.isOn);
-            if (masterSlider != null)
-                GameSettings.SetMasterVolume(masterSlider.value);
-            if (musicSlider != null)
-                GameSettings.SetMusicVolume(musicSlider.value);
-            if (sfxSlider != null)
-                GameSettings.SetSfxVolume(sfxSlider.value);
-            if (uiScaleSlider != null)
-                GameSettings.SetUiScale(uiScaleSlider.value);
-
+            PushPanelValuesToGameSettings();
             GameSettings.Save();
-            GameAudioManager.Instance?.RefreshVolumes();
+            GameSettings.ApplyAll();
+            PostProcessingController.EnsureExists();
+            PostProcessingController.Instance?.RebuildRuntimeProfile();
             PostProcessingController.Instance?.ApplyFromSettings();
-            UiScaleApplier.ApplyFromSettings();
-            MapUI.ApplyMinimapEnabled(GameSettings.MinimapEnabled);
+            GameAudioManager.Instance?.RefreshVolumes();
             Close();
             SettingsSceneReloader.ReloadAfterApply();
+        }
+
+        private void PushPanelValuesToGameSettings()
+        {
+            GameSettings.SetMasterVolume(masterSlider.value);
+            GameSettings.SetMusicVolume(musicSlider.value);
+            GameSettings.SetSfxVolume(sfxSlider.value);
+            GameSettings.SetUiScale(uiScaleSlider.value);
+            GameSettings.SetPostProcessingEnabled(postProcessingToggle.isOn);
+            GameSettings.SetBloomEnabled(bloomToggle.isOn);
+            GameSettings.SetBloomIntensity(bloomIntensitySlider.value);
+            GameSettings.SetFogEnabled(fogToggle.isOn);
+            GameSettings.SetMotionBlurEnabled(motionBlurToggle.isOn);
+            GameSettings.SetDepthOfFieldEnabled(depthOfFieldToggle.isOn);
+            GameSettings.SetAmbientOcclusionEnabled(ambientOcclusionToggle.isOn);
+            GameSettings.SetColorGradingEnabled(colorGradingToggle.isOn);
+            GameSettings.SetVignetteEnabled(vignetteToggle.isOn);
+            GameSettings.SetMinimapEnabled(minimapToggle.isOn);
+            MapUI.ApplyMinimapEnabled(minimapToggle.isOn);
+            GameSettings.SetFullscreen(fullscreenToggle.isOn);
+            GameSettings.SetVSync(vsyncToggle.isOn);
+            GameSettings.SetRayTracingEnabled(rayTracingToggle.isOn);
+            GameSettings.SetTargetFrameRate(GetFrameRateFromDropdownIndex(frameRateDropdown.value));
+            GameSettings.SetQualityLevel(qualityDropdown.value, persistPreference: true, applyTierEffectPresets: false);
+            GameSettings.SetResolutionIndex(resolutionDropdown.value);
+            if (dlssToggle != null)
+                GameSettings.SetDlssEnabled(dlssToggle.isOn);
+            if (dlssQualityDropdown != null)
+                GameSettings.SetDlssQualityDropdownIndex(dlssQualityDropdown.value);
+        }
+
+        private void SyncGraphicsTogglesFromSettings()
+        {
+            postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
+            bloomToggle.SetIsOnWithoutNotify(GameSettings.BloomEnabled);
+            fogToggle.SetIsOnWithoutNotify(GameSettings.FogEnabled);
+            bloomIntensitySlider.SetValueWithoutNotify(GameSettings.BloomIntensity);
+            UpdateBloomIntensityLabel(GameSettings.BloomIntensity);
+            UpdateBloomIntensityRowVisibility(GameSettings.BloomEnabled);
+            motionBlurToggle.SetIsOnWithoutNotify(GameSettings.MotionBlurEnabled);
+            depthOfFieldToggle.SetIsOnWithoutNotify(GameSettings.DepthOfFieldEnabled);
+            ambientOcclusionToggle.SetIsOnWithoutNotify(GameSettings.AmbientOcclusionEnabled);
+            colorGradingToggle.SetIsOnWithoutNotify(GameSettings.ColorGradingEnabled);
+            vignetteToggle.SetIsOnWithoutNotify(GameSettings.VignetteEnabled);
+            rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);
+            RefreshAllToggleVisuals();
+        }
+
+        private void RefreshAllToggleVisuals()
+        {
+            MenuUiBuilder.RefreshToggleVisual(postProcessingToggle);
+            MenuUiBuilder.RefreshToggleVisual(bloomToggle);
+            MenuUiBuilder.RefreshToggleVisual(fogToggle);
+            MenuUiBuilder.RefreshToggleVisual(motionBlurToggle);
+            MenuUiBuilder.RefreshToggleVisual(depthOfFieldToggle);
+            MenuUiBuilder.RefreshToggleVisual(ambientOcclusionToggle);
+            MenuUiBuilder.RefreshToggleVisual(colorGradingToggle);
+            MenuUiBuilder.RefreshToggleVisual(vignetteToggle);
+            MenuUiBuilder.RefreshToggleVisual(fullscreenToggle);
+            MenuUiBuilder.RefreshToggleVisual(vsyncToggle);
+            MenuUiBuilder.RefreshToggleVisual(rayTracingToggle);
+            MenuUiBuilder.RefreshToggleVisual(minimapToggle);
         }
 
         private void SyncControlsFromSettings()
@@ -362,12 +681,30 @@ namespace Project.UI
             uiScaleSlider.maxValue = GameSettings.UiScaleMax;
             uiScaleSlider.SetValueWithoutNotify(GameSettings.UiScale);
             postProcessingToggle.SetIsOnWithoutNotify(GameSettings.PostProcessingEnabled);
+            bloomToggle.SetIsOnWithoutNotify(GameSettings.BloomEnabled);
+            fogToggle.SetIsOnWithoutNotify(GameSettings.FogEnabled);
+            bloomIntensitySlider.SetValueWithoutNotify(GameSettings.BloomIntensity);
+            UpdateBloomIntensityLabel(GameSettings.BloomIntensity);
+            UpdateBloomIntensityRowVisibility(GameSettings.BloomEnabled);
+            motionBlurToggle.SetIsOnWithoutNotify(GameSettings.MotionBlurEnabled);
+            depthOfFieldToggle.SetIsOnWithoutNotify(GameSettings.DepthOfFieldEnabled);
+            ambientOcclusionToggle.SetIsOnWithoutNotify(GameSettings.AmbientOcclusionEnabled);
+            colorGradingToggle.SetIsOnWithoutNotify(GameSettings.ColorGradingEnabled);
+            vignetteToggle.SetIsOnWithoutNotify(GameSettings.VignetteEnabled);
             minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
             rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);
-            qualityDropdown.SetValueWithoutNotify(QualitySettings.GetQualityLevel());
+            qualityDropdown.SetValueWithoutNotify(GameSettings.QualityLevel);
             resolutionDropdown.SetValueWithoutNotify(GameSettings.GetCurrentResolutionIndex());
+            frameRateDropdown.SetValueWithoutNotify(GetFrameRateDropdownIndex(GameSettings.TargetFrameRate));
+            if (dlssToggle != null)
+                dlssToggle.SetIsOnWithoutNotify(GameSettings.DlssEnabled);
+            if (dlssQualityDropdown != null)
+                dlssQualityDropdown.SetValueWithoutNotify(
+                    DlssSettingsApplier.GetQualityDropdownIndex(GameSettings.DlssQualityIndex));
+            UpdateDlssControlsVisibility();
+            RefreshAllToggleVisuals();
             RefreshGraphicsAdvisory();
 
             UpdatePercentLabel(masterValueLabel, GameSettings.MasterVolume);
@@ -385,13 +722,32 @@ namespace Project.UI
             List<string> resolutionLabels = new List<string>();
             foreach (Resolution resolution in Screen.resolutions)
                 resolutionLabels.Add($"{resolution.width} x {resolution.height}");
-
             resolutionDropdown.AddOptions(resolutionLabels);
+
+            frameRateDropdown.ClearOptions();
+            frameRateDropdown.AddOptions(new List<string>(FrameRateLabels));
+        }
+
+        private static int GetFrameRateDropdownIndex(int frameRate)
+        {
+            for (int i = 0; i < FrameRateOptions.Length; i++)
+            {
+                if (FrameRateOptions[i] == frameRate)
+                    return i;
+            }
+
+            return 0;
+        }
+
+        private static int GetFrameRateFromDropdownIndex(int index)
+        {
+            index = Mathf.Clamp(index, 0, FrameRateOptions.Length - 1);
+            return FrameRateOptions[index];
         }
 
         private static void CreateSectionTitle(Transform parent, string title)
         {
-            TextMeshProUGUI label = MenuUiBuilder.CreateTitle(parent, title, 15f);
+            TextMeshProUGUI label = MenuUiBuilder.CreateTitle(parent, title.ToUpperInvariant(), 15f);
             label.alignment = TextAlignmentOptions.MidlineLeft;
             label.color = DarkMatterGenesisUiPalette.Gold;
 
@@ -439,5 +795,32 @@ namespace Project.UI
             if (label != null)
                 label.text = $"{Mathf.RoundToInt(value * 100f)}%";
         }
+
+        private void UpdateBloomIntensityLabel(float normalizedBoost)
+        {
+            if (bloomIntensityValueLabel == null)
+                return;
+
+            int boostPercent = Mathf.RoundToInt(normalizedBoost * 100f);
+            bloomIntensityValueLabel.text = boostPercent <= 0 ? "Default" : $"+{boostPercent}%";
+        }
+
+        private void UpdateBloomIntensityRowVisibility(bool bloomEnabled)
+        {
+            if (bloomIntensityRow != null)
+                bloomIntensityRow.SetActive(bloomEnabled);
+        }
+
+        private void UpdateDlssControlsVisibility()
+        {
+            bool available = DlssSettingsApplier.IsDlssUiAvailable();
+            if (dlssToggle != null)
+                dlssToggle.transform.parent.gameObject.SetActive(available);
+
+            bool showQuality = available && dlssToggle != null && dlssToggle.isOn;
+            if (dlssQualityRow != null)
+                dlssQualityRow.SetActive(showQuality);
+        }
+
     }
 }

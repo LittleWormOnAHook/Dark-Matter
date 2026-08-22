@@ -36,12 +36,20 @@ namespace Project.UI
                 ? $"+{amount} XP"
                 : $"+{amount} XP  ({sourceLabel})";
 
-            Canvas canvas = FindAnyObjectByType<Canvas>();
+            Canvas canvas = MainMenuController.ResolveMainCanvas();
+            if (canvas == null)
+                canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
 
             XpToastUI toast = EnsureExists(canvas.transform);
             toast.Present(message);
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
         }
 
         private void Build(Transform canvasRootTransform)
@@ -78,13 +86,37 @@ namespace Project.UI
 
         private void Present(string message)
         {
+            if (canvasRoot == null)
+            {
+                Canvas canvas = MainMenuController.ResolveMainCanvas() ?? FindAnyObjectByType<Canvas>();
+                canvasRoot = canvas != null ? canvas.transform : null;
+            }
+
+            UiFrontLayer.ReparentToFront(transform, canvasRoot);
+            EnsureActiveForPresentation();
+
             ApplyToastAnchor();
             label.text = message;
             if (activeRoutine != null)
                 StopCoroutine(activeRoutine);
 
             activeRoutine = StartCoroutine(AnimateToast());
-            UiFrontLayer.ReparentToFront(transform, canvasRoot);
+        }
+
+        private void EnsureActiveForPresentation()
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                    current.gameObject.SetActive(true);
+
+                Canvas canvas = current.GetComponent<Canvas>();
+                if (canvas != null && canvas.isRootCanvas)
+                    break;
+
+                current = current.parent;
+            }
         }
 
         private void ApplyToastAnchor()

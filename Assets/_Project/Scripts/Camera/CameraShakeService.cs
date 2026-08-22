@@ -93,9 +93,17 @@ namespace Project.CameraFx
 
         private void Update()
         {
+            EnsureActiveGameplayListener();
+
             float dt = Time.deltaTime;
             if (dt <= 0f)
+            {
+                // Still accept sustained trauma while paused so menu/debug probes work with unscaled systems.
+                if (_sustainedTrauma > 0.0001f)
+                    _trauma = Mathf.Max(_trauma, Mathf.Clamp01(_sustainedTrauma * Mathf.Max(0f, globalIntensity)));
+                _sustainedTrauma = 0f;
                 return;
+            }
 
             // Sustained sources (continuous rumble) refresh each frame; decay still applies to spikes.
             if (_sustainedTrauma > 0.0001f)
@@ -108,6 +116,28 @@ namespace Project.CameraFx
 
             _trauma = Mathf.Max(0f, _trauma - traumaDecayPerSecond * dt);
             _directionalKick = Vector3.Lerp(_directionalKick, Vector3.zero, 1f - Mathf.Exp(-traumaDecayPerSecond * 1.8f * dt));
+        }
+
+        /// <summary>
+        /// Rebinds to the live player / main camera when the previous listener was disabled
+        /// (optics handoff, duplicate inactive prefab cameras, shelter/vehicle swaps).
+        /// </summary>
+        private void EnsureActiveGameplayListener()
+        {
+            if (_activeListener != null && _activeListener.isActiveAndEnabled)
+            {
+                Camera listenerCamera = _activeListener.GetComponent<Camera>();
+                if (listenerCamera != null && listenerCamera.enabled && listenerCamera.gameObject.activeInHierarchy)
+                    return;
+            }
+
+            Camera cam = PlayerReference.ResolveCamera();
+            if (cam == null)
+                cam = Camera.main;
+            if (cam == null)
+                return;
+
+            CameraShakeListener.EnsureOn(cam);
         }
 
         public void SetActiveListener(CameraShakeListener listener)

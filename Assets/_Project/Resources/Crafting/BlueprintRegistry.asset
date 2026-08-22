@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: BlueprintRegistry
   m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeRegistry
   recipes:
+  - {fileID: 11400000, guid: 62a31f191bb29f040b771e2970fe107c, type: 2}
   - {fileID: 11400000, guid: 360d23995ae26304ba0fcb6265d730d0, type: 2}
   - {fileID: 11400000, guid: c5897f2d60094f94e994831c87afdb91, type: 2}
   - {fileID: 11400000, guid: 64b5819526fb4672b6123d492a3fd71a, type: 2}
+  - {fileID: 11400000, guid: 8fee721e73987bf4d9cecb5601c9505b, type: 2}
   - {fileID: 11400000, guid: 8c51eb11f7564c04d922509a3ed6a482, type: 2}
   - {fileID: 11400000, guid: 8d1c075036ca5514fb696d40589aef31, type: 2}
   - {fileID: 11400000, guid: 7a60c2e1cd162634c89632bdc463369c, type: 2}
@@ -24,4 +26,3 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3ecf4df5061728394a5b6c7d8e9f0123, type: 2}
   - {fileID: 11400000, guid: 4af6079405d3b644781824aad30083b5, type: 2}
   - {fileID: 11400000, guid: 4fd05e061728394a5b6c7d8e9f012345, type: 2}
-  - {fileID: 11400000, guid: 62a31f191bb29f040b771e2970fe107c, type: 2}

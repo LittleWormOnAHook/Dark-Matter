@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.9178658
+      value: -24.676186
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.37
+      value: 0.3997676
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.768746
+      value: 19.510971
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.w
@@ -51,6 +51,10 @@ PrefabInstance:
     - target: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_Name
       value: ResourceNode_Boulder_IronOre
+      objectReference: {fileID: 0}
+    - target: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 3494562891156023188}
   - component: {fileID: 5879821449702494297}
   - component: {fileID: 6999980221876179446}
+  - component: {fileID: 847336128667187126}
   m_Layer: 0
   m_Name: Bio_Gel_World
   m_TagString: Untagged
@@ -172,3 +173,38 @@ MonoBehaviour:
   scannerFalloffDistance: 50
   scannerOnlyOutline: 1
   outlineMaterial: {fileID: 2100000, guid: 2f499b8a5d65441e94d14563299301ff, type: 2}
+--- !u!114 &847336128667187126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238649986846978416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e86ead99e453b448836eb544933c0f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMIMaterialPulseScroll
+  targetRenderer: {fileID: 4297201374923360725}
+  materialIndices: 
+  useMaterialPropertyBlock: 1
+  pulseAlpha: 0
+  alphaPulseTarget: 0
+  alphaPulseMin: 0.25
+  alphaPulseMax: 1
+  alphaPulseSpeed: 1
+  pulseEmission: 1
+  emissionPulseMin: 0.35
+  emissionPulseMax: 0.72
+  emissionPulseSpeed: 1.5
+  fallbackEmissionTint: {r: 1, g: 0, b: 0.908898, a: 1}
+  ensureEmissionKeyword: 1
+  scrollBaseMap: 0
+  baseMapScrollSpeed: {x: 0.1, y: 0}
+  scrollEmissionMap: 1
+  emissionMapScrollSpeed: {x: 0.13, y: 0.13}
+  scrollNormalMap: 0
+  normalMapScrollSpeed: {x: 0, y: 0}
+  useUnscaledTime: 0
+  phaseOffset: 0
+  previewInEditMode: 0

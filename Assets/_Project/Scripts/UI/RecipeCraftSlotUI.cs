@@ -15,25 +15,34 @@ namespace Project.UI
         private static readonly Color NotReadyTint = DarkMatterGenesisUiPalette.SlotBackground;
         private static readonly Color HoverTint = new Color(0.28f, 0.38f, 0.32f, 0.98f);
         private static readonly Color HoverNotReadyTint = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.35f);
+        private static readonly Color SelectedTint = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.55f);
+        private static readonly Color ProgressOverlayColor = new Color(0.05f, 0.08f, 0.12f, 0.72f);
+        private static readonly Color ProgressFillColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.85f);
 
         private static float SlotSize => HudLayoutMetrics.InventorySlotSize(96f);
         private static float IconInset => SlotSize * (1f - HudLayoutMetrics.InventoryIconScale) * 0.5f;
 
         private Image backgroundImage;
         private Image iconImage;
+        private Image progressOverlay;
+        private Image progressFill;
         private TextMeshProUGUI amountText;
+        private Outline selectionOutline;
 
         private RecipeDefinition recipe;
         private InventorySystem inventory;
         private bool canCraft;
-        private Action onCraftRequested;
+        private bool selected;
+        private Action onSelected;
 
-        public void Setup(RecipeDefinition recipeDefinition, bool craftable, InventorySystem inventorySystem, Action craftHandler)
+        public RecipeDefinition Recipe => recipe;
+
+        public void Setup(RecipeDefinition recipeDefinition, bool craftable, InventorySystem inventorySystem, Action selectedHandler)
         {
             recipe = recipeDefinition;
             inventory = inventorySystem;
             canCraft = craftable;
-            onCraftRequested = craftHandler;
+            onSelected = selectedHandler;
             EnsureBuilt();
 
             Sprite icon = recipe?.DisplayIcon;
@@ -48,31 +57,64 @@ namespace Project.UI
                 amountText.text = showAmount ? recipe.outputAmount.ToString() : string.Empty;
             }
 
-            backgroundImage.color = canCraft ? ReadyTint : NotReadyTint;
+            SetCraftProgress(0f);
+            RefreshBackgroundColor(hovered: false);
+        }
+
+        public void SetSelected(bool isSelected)
+        {
+            selected = isSelected;
+            if (selectionOutline != null)
+                selectionOutline.enabled = isSelected;
+            RefreshBackgroundColor(hovered: false);
+        }
+
+        /// <summary>0 = idle, 0–1 = craft progress (radial fills as craft completes).</summary>
+        public void SetCraftProgress(float progress01)
+        {
+            EnsureBuilt();
+            float t = Mathf.Clamp01(progress01);
+            bool show = t > 0.001f;
+            if (progressOverlay != null)
+                progressOverlay.gameObject.SetActive(show);
+            if (progressFill != null)
+            {
+                progressFill.gameObject.SetActive(show);
+                progressFill.fillAmount = t;
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left || !canCraft)
+            if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
-            onCraftRequested?.Invoke();
+            onSelected?.Invoke();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (backgroundImage != null)
-                backgroundImage.color = canCraft ? HoverTint : HoverNotReadyTint;
-
+            RefreshBackgroundColor(hovered: true);
             RecipeHoverTooltip.Instance?.Show(recipe, inventory, eventData.position);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (backgroundImage != null)
-                backgroundImage.color = canCraft ? ReadyTint : NotReadyTint;
-
+            RefreshBackgroundColor(hovered: false);
             RecipeHoverTooltip.HideAny();
+        }
+
+        private void RefreshBackgroundColor(bool hovered)
+        {
+            if (backgroundImage == null)
+                return;
+
+            if (selected)
+                backgroundImage.color = SelectedTint;
+            else if (hovered)
+                backgroundImage.color = canCraft ? HoverTint : HoverNotReadyTint;
+            else
+                backgroundImage.color = canCraft ? ReadyTint : NotReadyTint;
         }
 
         private void EnsureBuilt()
@@ -92,6 +134,13 @@ namespace Project.UI
                 theme.ApplySlotFrame(backgroundImage);
             else
                 backgroundImage.color = NotReadyTint;
+
+            selectionOutline = gameObject.GetComponent<Outline>();
+            if (selectionOutline == null)
+                selectionOutline = gameObject.AddComponent<Outline>();
+            selectionOutline.effectColor = DarkMatterGenesisUiPalette.Gold;
+            selectionOutline.effectDistance = new Vector2(2f, -2f);
+            selectionOutline.enabled = false;
 
             float slotSize = SlotSize;
             LayoutElement layout = gameObject.GetComponent<LayoutElement>();
@@ -131,6 +180,37 @@ namespace Project.UI
             amountText.enableAutoSizing = true;
             amountText.fontSizeMin = 7f;
             amountText.fontSizeMax = Mathf.Max(8f, HudLayoutMetrics.ScaledInt(11f));
+
+            GameObject overlayObj = new GameObject("CraftProgressOverlay", typeof(RectTransform));
+            overlayObj.transform.SetParent(transform, false);
+            StretchFull(overlayObj.GetComponent<RectTransform>());
+            progressOverlay = overlayObj.AddComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(progressOverlay);
+            progressOverlay.color = ProgressOverlayColor;
+            progressOverlay.raycastTarget = false;
+            overlayObj.SetActive(false);
+
+            GameObject fillObj = new GameObject("CraftProgressFill", typeof(RectTransform));
+            fillObj.transform.SetParent(transform, false);
+            StretchFull(fillObj.GetComponent<RectTransform>());
+            progressFill = fillObj.AddComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(progressFill);
+            progressFill.color = ProgressFillColor;
+            progressFill.type = Image.Type.Filled;
+            progressFill.fillMethod = Image.FillMethod.Radial360;
+            progressFill.fillOrigin = (int)Image.Origin360.Top;
+            progressFill.fillClockwise = true;
+            progressFill.fillAmount = 0f;
+            progressFill.raycastTarget = false;
+            fillObj.SetActive(false);
+        }
+
+        private static void StretchFull(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
         }
     }
 }

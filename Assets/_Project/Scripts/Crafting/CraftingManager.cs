@@ -180,8 +180,15 @@ namespace Project.Crafting
 
         public bool CanCraft(RecipeDefinition recipe, InventorySystem inventory)
         {
+            return CanCraft(recipe, inventory, 1);
+        }
+
+        public bool CanCraft(RecipeDefinition recipe, InventorySystem inventory, int amount)
+        {
             if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
                 return false;
+
+            amount = Mathf.Max(1, amount);
 
             if (!IsDiscovered(recipe.ResolvedId))
                 return false;
@@ -196,20 +203,105 @@ namespace Project.Crafting
             if (!LevelUnlockUtility.CanAccess(progression, craftLevel))
                 return false;
 
-            if (!HasIngredients(recipe, inventory))
+            if (!HasIngredients(recipe, inventory, amount))
                 return false;
 
             // Storage modules install on craft and do not need an empty bag slot.
             if (recipe.outputItem.IsInventoryStorageModule)
-                return inventory.CanUnlockNextStorageRow();
+                return amount == 1 && inventory.CanUnlockNextStorageRow();
 
-            return inventory.HasSpaceInMainInventory(recipe.outputItem, recipe.outputAmount);
+            int totalOutput = recipe.outputAmount * amount;
+            return inventory.HasSpaceInMainInventory(recipe.outputItem, totalOutput);
+        }
+
+        public bool HasIngredients(RecipeDefinition recipe, InventorySystem inventory, int amount)
+        {
+            if (recipe == null || inventory == null || recipe.ingredients == null)
+                return false;
+
+            amount = Mathf.Max(1, amount);
+
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                RecipeIngredient ingredient = recipe.ingredients[i];
+                if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
+                    continue;
+
+                if (CountItem(ingredient.item, inventory) < ingredient.amount * amount)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>Max times this recipe can be crafted with current ingredients and bag space.</summary>
+        public int GetMaxCraftCount(RecipeDefinition recipe, InventorySystem inventory)
+        {
+            if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
+                return 0;
+
+            if (!IsDiscovered(recipe.ResolvedId))
+                return 0;
+
+            if (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value)
+                return 0;
+
+            int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
+                recipe.requiredPlayerLevel,
+                recipe.outputItem);
+            if (!LevelUnlockUtility.CanAccess(PlayerProgressionManager.EnsureExists(), craftLevel))
+                return 0;
+
+            if (recipe.outputItem.IsInventoryStorageModule)
+                return inventory.CanUnlockNextStorageRow() && HasIngredients(recipe, inventory, 1) ? 1 : 0;
+
+            int maxByIngredients = int.MaxValue;
+            if (recipe.ingredients != null)
+            {
+                for (int i = 0; i < recipe.ingredients.Count; i++)
+                {
+                    RecipeIngredient ingredient = recipe.ingredients[i];
+                    if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
+                        continue;
+
+                    int have = CountItem(ingredient.item, inventory);
+                    maxByIngredients = Mathf.Min(maxByIngredients, have / ingredient.amount);
+                }
+            }
+
+            if (maxByIngredients == int.MaxValue)
+                maxByIngredients = 99;
+
+            // Cap by free slots roughly using output stack size.
+            int maxBySpace = 0;
+            for (int count = 1; count <= Mathf.Min(99, maxByIngredients); count++)
+            {
+                if (!inventory.HasSpaceInMainInventory(recipe.outputItem, recipe.outputAmount * count))
+                    break;
+                maxBySpace = count;
+            }
+
+            return Mathf.Clamp(Mathf.Min(maxByIngredients, maxBySpace), 0, 99);
+        }
+
+        /// <summary>Seconds to craft one unit of this recipe: 3s × recipe tier.</summary>
+        public static float GetCraftDurationSeconds(RecipeDefinition recipe)
+        {
+            int tier = recipe != null ? Mathf.Max(1, recipe.recipeTier) : 1;
+            return 3f * tier;
         }
 
         public bool TryCraft(RecipeDefinition recipe, InventorySystem inventory)
         {
+            return TryCraft(recipe, inventory, 1);
+        }
+
+        public bool TryCraft(RecipeDefinition recipe, InventorySystem inventory, int amount)
+        {
             if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
                 return false;
+
+            amount = Mathf.Max(1, amount);
 
             int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
                 recipe.requiredPlayerLevel,
@@ -220,7 +312,7 @@ namespace Project.Crafting
                 return false;
             }
 
-            if (!CanCraft(recipe, inventory))
+            if (!CanCraft(recipe, inventory, amount))
                 return false;
 
             List<(ItemData item, int amount)> removedIngredients = new List<(ItemData, int)>();
@@ -231,13 +323,14 @@ namespace Project.Crafting
                 if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
                     continue;
 
-                if (!inventory.RemoveItem(ingredient.item, ingredient.amount))
+                int removeAmount = ingredient.amount * amount;
+                if (!inventory.RemoveItem(ingredient.item, removeAmount))
                 {
                     RollbackRemovedIngredients(inventory, removedIngredients);
                     return false;
                 }
 
-                removedIngredients.Add((ingredient.item, ingredient.amount));
+                removedIngredients.Add((ingredient.item, removeAmount));
             }
 
             if (recipe.outputItem.IsInventoryStorageModule)
@@ -250,8 +343,9 @@ namespace Project.Crafting
             }
             else
             {
-                int added = inventory.AddItemToMainInventory(recipe.outputItem, recipe.outputAmount);
-                if (added < recipe.outputAmount)
+                int totalOutput = recipe.outputAmount * amount;
+                int added = inventory.AddItemToMainInventory(recipe.outputItem, totalOutput);
+                if (added < totalOutput)
                 {
                     if (added > 0)
                         inventory.RemoveItem(recipe.outputItem, added);
@@ -263,11 +357,11 @@ namespace Project.Crafting
 
             OnCrafted?.Invoke(recipe);
 
-            int craftXp = Mathf.Max(5, 8 + recipe.recipeTier * 4);
+            int craftXp = Mathf.Max(5, 8 + recipe.recipeTier * 4) * amount;
             ProgressionRewardGranter.GrantXp(craftXp, XpSource.Craft, $"craft:{recipe.ResolvedId}", "Craft");
 
             QuestManager questManager = QuestManager.Instance ?? FindAnyObjectByType<QuestManager>();
-            questManager?.NotifyItemCrafted(recipe.outputItem, recipe.outputAmount);
+            questManager?.NotifyItemCrafted(recipe.outputItem, recipe.outputAmount * amount);
 
             return true;
         }

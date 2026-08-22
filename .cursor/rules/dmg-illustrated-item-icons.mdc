@@ -1,0 +1,81 @@
+---
+description: Mandatory illustrated DMG item icons for every new ItemData, blueprint, and inventory pickup
+alwaysApply: true
+---
+
+# Dark Matter Illustrated Item Icons
+
+When creating **new** items, pickups, inventory entries, blueprints, or any `ItemData` / recipe that shows an inventory icon:
+
+## Mandatory
+
+- **Every new item must ship a unique illustrated icon** in the isometric cream art style (warm off-white `#EDE9E4` glyph, thick dark-navy `#1C2A38` strokes, internal shading, dark-navy rounded tile, baked rarity ring per tier).
+- **Do not** reuse third-party placeholders (`icons8`, `Survival Flat Icons`, legacy `Ammo_*.png`, Invector paths outside `_Project/Art/Icons/`).
+- **Do not** wire Phase 2 bulk icon reassignment unless explicitly requested — create art for the **new** item only.
+
+## Style reference
+
+| Asset | Path |
+|-------|------|
+| Plan + rarity tables | `Assets/_Project/Art/Icons/Planning/DMG_Unified_Item_Icon_Plan_v1.md` |
+| Preview sheet (attach on every AI gen) | `Assets/_Project/Art/Icons/Planning/DMG_Item_Icon_Sheet_Preview_v1.png` |
+| Prompt templates | `Assets/_Project/Art/Icons/Planning/generate_illustrated_icons.py` |
+
+Style anchor (prepend to every generation prompt):
+
+> Dark Matter Genesis game item icon, exactly 512×512, isometric 2.5D illustrated. Cream off-white (#EDE9E4) with thick dark navy (#1C2A38) strokes and internal shadow/highlight shading — NOT flat silhouette. Dark navy rounded-square tile.
+
+## Naming & folders
+
+- **Filename:** `DM_<Category>_<Slug>_Icon.png`
+- **Root:** `Assets/_Project/Art/Icons/<CategoryFolder>/`
+- **Slug:** PascalCase words → `Snake_Case` (e.g. `Sci-Fi Pistol` → `Sci_Fi_Pistol`)
+- **Blueprint icons:** `Blueprints/DM_Blueprint_<Slug>_Icon.png` — overlay from output item art; never redraw glyph separately
+
+| ItemType / role | Category prefix | Folder |
+|-----------------|-----------------|--------|
+| Consumable | `DM_Consumable_` | `Consumables/` |
+| Resource (mining) | `DM_Resource_` | `Resources/Mining/` |
+| Resource (harvest) | `DM_Resource_` | `Resources/Harvest/` |
+| Resource (other) | `DM_Resource_` | `Resources/` |
+| MeleeWeapon | `DM_Melee_` | `Melee/` |
+| RangedWeapon | `DM_Ranged_` | `Ranged/` |
+| Ammo | `DM_Ammo_` | `Ammo/` |
+| Tool | `DM_Tool_` | `Tools/` |
+| Throwable | `DM_Throwable_` | `Throwables/` |
+| Vehicle | `DM_Vehicle_` | `Vehicles/` |
+| Module | `DM_Module_` | `Modules/` |
+| Operations item | `DM_Ops_` | `Operations/` |
+| Blueprint | `DM_Blueprint_` | `Blueprints/` |
+
+## Rarity tier (baked ring in PNG)
+
+Assign tier per plan **§7** (items) and **§8b** (blueprints follow output item). Default heuristics when not listed:
+
+| Tier | Ring | When |
+|------|------|------|
+| Common | Slate Gray `#4A4A5A` — **4 px** ring (same width all tiers) | Starter loot, bulk resources, basic consumables |
+| Rare | Steel blue `#4A7FB5` — **4 px** ring | Crafted mid-tier, sidearms, L2–5 gates |
+| UltraRare | Purple `#9B59B6` — **4 px** ring | `requiredLevel*` ≥ 6, mining tool, storage module |
+| Unique | Gold `#D4A017` — **4 px** ring + corner ticks | Deployables, vehicles, single-purpose progression |
+
+Append tier suffix to AI prompt (see `generate_illustrated_icons.py` rarity notes).
+
+## Pipeline (human + agent)
+
+1. **Plan** — Pick category, slug, filename, rarity (plan §7/§8b or heuristics above).
+2. **Generate** — Cursor `GenerateImage` (512×512), attach preview sheet PNG; use prompt from `generate_illustrated_icons.py`.
+3. **Install** — Copy to `Planning/Source/<slug>.png`, then:
+   - `python Assets/_Project/Art/Icons/Planning/process_illustrated_icons.py --from-dir Planning/Source`
+   - Or `install_illustrated_batch.py` for batch cache copies
+4. **Blueprint** — If crafting blueprint: `python process_illustrated_icons.py --blueprints-only`
+5. **Wire** — Assign `ItemData.icon` sprite; Unity import: PPU **512**, 512 max size, uncompressed (plan §4).
+6. **Validate** — Unity menu **Tools → Dark Matter Genesis → Art → Create Icon For Selected ItemData**; fix console warnings before commit.
+
+## Editor helper
+
+Use **Tools → Dark Matter Genesis → Art → Create Icon For Selected ItemData** on the `ItemData` asset — copies checklist, logs slug path, opens plan doc. AI generation runs outside Unity (Cursor agent workflow).
+
+## Commits
+
+Stage new PNG + `.meta`, updated `ItemData`, and blueprint assets together (`unity-commit-include-assets` rule). No commit while Unity console has errors.

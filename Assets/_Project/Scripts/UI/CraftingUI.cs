@@ -27,7 +27,10 @@ namespace Project.UI
         private const float PanelScale = 0.85f * 1.25f;
         private const int RecipeGridColumns = 5;
         private const float StandaloneWindowWidth = 720f;
-        private const float StandaloneWindowHeight = 480f;
+        private const float StandaloneWindowHeight = 700f;
+        private const int CraftingUiChromeVersion = 4;
+        private int builtChromeVersion;
+        private int standaloneChromeVersion;
         /// <summary>Journal craft slots — larger than HUD inventory cells so learned blueprints read clearly.</summary>
         private static float RecipeSlotSize => HudLayoutMetrics.InventorySlotSize(96f);
 
@@ -51,6 +54,20 @@ namespace Project.UI
         private Transform emptyStateHost;
         private TextMeshProUGUI statusText;
         private TextMeshProUGUI learnedSectionLabel;
+
+        private GameObject craftDetailPanel;
+        private TextMeshProUGUI craftDetailTitle;
+        private TextMeshProUGUI craftDetailMeta;
+        private TextMeshProUGUI craftDetailIngredients;
+        private TextMeshProUGUI craftAmountValueLabel;
+        private Slider craftAmountSlider;
+        private Button craftConfirmButton;
+        private TextMeshProUGUI craftConfirmLabel;
+
+        private RecipeDefinition selectedRecipe;
+        private RecipeCraftSlotUI selectedSlotUi;
+        private Coroutine craftRoutine;
+        private bool isCrafting;
 
         private readonly List<RecipeCraftSlotUI> recipeCraftSlots = new List<RecipeCraftSlotUI>();
         private readonly List<RecipeScrollSlotUI> scrollSlots = new List<RecipeScrollSlotUI>();
@@ -95,6 +112,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            CancelActiveCraft();
             ReleaseStandaloneInput();
             UnbindSystems();
         }
@@ -121,6 +139,7 @@ namespace Project.UI
         {
             presentationMode = mode;
             ApplyPresentationChrome();
+            RefreshCraftDetailPanel();
         }
 
         /// <summary>
@@ -212,6 +231,8 @@ namespace Project.UI
             if (!standaloneOpen && !craftPanelEmbedded)
                 return;
 
+            CancelActiveCraft();
+            ClearRecipeSelection();
             HideStandaloneWindowShell();
 
             if (craftPanel == null)
@@ -412,8 +433,12 @@ namespace Project.UI
             }
 
             bool libraryMode = presentationMode == CraftingUiPresentationMode.Library;
-            IReadOnlyList<RecipeDefinition> recipes = craftingManager.GetDiscoveredRecipes();
+            // Production panel only lists blueprints for the active station (Cooking vs Workbench).
+            IReadOnlyList<RecipeDefinition> recipes = libraryMode || !craftingManager.CurrentStation.HasValue
+                ? craftingManager.GetDiscoveredRecipes()
+                : craftingManager.GetDiscoveredRecipes(craftingManager.CurrentStation);
             int pendingScrolls = craftingManager.GetPendingBlueprintScrolls().Count;
+            int totalLearned = craftingManager.GetDiscoveredRecipes().Count;
 
             if (statusText != null)
             {
@@ -424,7 +449,7 @@ namespace Project.UI
                     else if (pendingScrolls > 0)
                     {
                         statusText.text =
-                            $"{JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending scroll(s)  ·  " +
+                            $"{JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending blueprint(s)  ·  " +
                             $"{recipes.Count} learned  ·  Craft at a cooking pot or workbench.";
                         statusText.color = DarkMatterGenesisUiPalette.Gold;
                     }
@@ -443,9 +468,9 @@ namespace Project.UI
                 else if (!craftingManager.CurrentStation.HasValue)
                 {
                     statusText.text =
-                        $"{JournalPanelLayout.FormatGoldValue(recipes.Count.ToString())} learned  ·  " +
+                        $"{JournalPanelLayout.FormatGoldValue(totalLearned.ToString())} learned  ·  " +
                         (pendingScrolls > 0
-                            ? $"{pendingScrolls} pending scroll(s)  ·  Approach a station to craft."
+                            ? $"{pendingScrolls} pending blueprint(s)  ·  Approach a station to craft."
                             : "Approach a cooking pot or workbench to craft.");
                     statusText.color = DarkMatterGenesisUiPalette.Gold;
                 }
@@ -453,18 +478,21 @@ namespace Project.UI
                 {
                     CraftingStationType station = craftingManager.CurrentStation.Value;
                     string stationLabel = station == CraftingStationType.Cooking ? "Cooking" : "Workbench";
-                    int craftableAtStation = 0;
-                    for (int i = 0; i < recipes.Count; i++)
+                    int readyNow = 0;
+                    if (inventorySystem != null)
                     {
-                        if (recipes[i] != null && recipes[i].stationType == station)
-                            craftableAtStation++;
+                        for (int i = 0; i < recipes.Count; i++)
+                        {
+                            if (recipes[i] != null && craftingManager.CanCraft(recipes[i], inventorySystem, 1))
+                                readyNow++;
+                        }
                     }
 
-                    string baseStatus = craftableAtStation > 0
-                        ? $"{stationLabel} station  ·  {JournalPanelLayout.FormatGoldValue(craftableAtStation.ToString())} ready to craft  ·  {recipes.Count} learned"
-                        : $"{stationLabel} station  ·  {recipes.Count} learned  ·  none craftable here yet";
+                    string baseStatus = recipes.Count > 0
+                        ? $"{stationLabel} station  ·  {JournalPanelLayout.FormatGoldValue(readyNow.ToString())} ready  ·  {recipes.Count} for this station"
+                        : $"{stationLabel} station  ·  no learned blueprints for this station";
                     if (pendingScrolls > 0)
-                        baseStatus += $"  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending scroll(s)";
+                        baseStatus += $"  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())} pending blueprint(s)";
                     statusText.text = baseStatus;
                     statusText.color = DarkMatterGenesisUiPalette.Gold;
                 }
@@ -472,17 +500,18 @@ namespace Project.UI
 
             if (learnedSectionLabel != null)
             {
+                string sectionTitle = libraryMode ? "Learned Blueprints" : "Station Blueprints";
                 learnedSectionLabel.text = recipes.Count > 0
-                    ? $"Learned Blueprints  ·  {JournalPanelLayout.FormatGoldValue(recipes.Count.ToString())}"
-                    : "Learned Blueprints";
+                    ? $"{sectionTitle}  ·  {JournalPanelLayout.FormatGoldValue(recipes.Count.ToString())}"
+                    : sectionTitle;
                 learnedSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
             if (scrollSectionLabel != null)
             {
                 scrollSectionLabel.text = pendingScrolls > 0
-                    ? $"Pending Scrolls  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())}"
-                    : "Pending Scrolls";
+                    ? $"Pending Blueprints  ·  {JournalPanelLayout.FormatGoldValue(pendingScrolls.ToString())}"
+                    : "Pending Blueprints";
                 scrollSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             }
 
@@ -492,13 +521,19 @@ namespace Project.UI
                     recipeScrollObject.SetActive(false);
 
                 ShowEmptyState(
-                    "No crafts unlocked",
-                    pendingScrolls > 0
-                        ? "You have unread blueprint scrolls waiting above."
-                        : "Collect one-time blueprint scrolls in the world to unlock recipes.",
-                    pendingScrolls > 0
-                        ? "Right-click a scroll → Learn, then craft at a station."
-                        : "Cooking pots and workbenches unlock once you learn matching blueprints.");
+                    libraryMode ? "No crafts unlocked" : "Nothing for this station",
+                    libraryMode
+                        ? (pendingScrolls > 0
+                            ? "You have unread blueprint scrolls waiting above."
+                            : "Collect one-time blueprint scrolls in the world to unlock recipes.")
+                        : (pendingScrolls > 0
+                            ? "No learned blueprints match this station yet."
+                            : "Learn blueprints that use this station, then return to craft."),
+                    libraryMode
+                        ? (pendingScrolls > 0
+                            ? "Right-click a scroll → Learn, then craft at a station."
+                            : "Cooking pots and workbenches unlock once you learn matching blueprints.")
+                        : "Cooking pots craft food; workbenches craft gear and modules.");
                 return;
             }
 
@@ -508,6 +543,29 @@ namespace Project.UI
 
             foreach (RecipeDefinition recipe in recipes)
                 CreateRecipeSlot(recipe);
+
+            // Keep selection if the recipe is still in the list; otherwise clear.
+            if (selectedRecipe != null)
+            {
+                RecipeCraftSlotUI match = null;
+                for (int i = 0; i < recipeCraftSlots.Count; i++)
+                {
+                    if (recipeCraftSlots[i] != null && recipeCraftSlots[i].Recipe == selectedRecipe)
+                    {
+                        match = recipeCraftSlots[i];
+                        break;
+                    }
+                }
+
+                if (match != null)
+                    SelectRecipe(selectedRecipe, match);
+                else
+                    ClearRecipeSelection();
+            }
+            else
+            {
+                RefreshCraftDetailPanel();
+            }
 
             if (recipeListContentRect != null)
                 LayoutRebuilder.ForceRebuildLayoutImmediate(recipeListContentRect);
@@ -634,16 +692,305 @@ namespace Project.UI
                 && inventorySystem != null
                 && craftingManager.CanCraft(recipe, inventorySystem);
             RecipeDefinition capturedRecipe = recipe;
+            RecipeCraftSlotUI capturedSlot = slotUi;
             slotUi.Setup(recipe, canCraft, inventorySystem, () =>
             {
-                if (!productionMode)
-                    return;
-
-                if (craftingManager != null && inventorySystem != null && craftingManager.TryCraft(capturedRecipe, inventorySystem))
-                    RefreshRecipeList();
+                SelectRecipe(capturedRecipe, capturedSlot);
             });
 
+            if (selectedRecipe != null && selectedRecipe == recipe)
+            {
+                selectedSlotUi = slotUi;
+                slotUi.SetSelected(true);
+            }
+
             recipeCraftSlots.Add(slotUi);
+        }
+
+        private void SelectRecipe(RecipeDefinition recipe, RecipeCraftSlotUI slotUi)
+        {
+            if (isCrafting)
+                return;
+
+            if (selectedSlotUi != null && selectedSlotUi != slotUi)
+                selectedSlotUi.SetSelected(false);
+
+            selectedRecipe = recipe;
+            selectedSlotUi = slotUi;
+            if (selectedSlotUi != null)
+                selectedSlotUi.SetSelected(true);
+
+            RefreshCraftDetailPanel();
+        }
+
+        private void ClearRecipeSelection()
+        {
+            if (selectedSlotUi != null)
+            {
+                selectedSlotUi.SetCraftProgress(0f);
+                selectedSlotUi.SetSelected(false);
+            }
+
+            selectedRecipe = null;
+            selectedSlotUi = null;
+            RefreshCraftDetailPanel();
+        }
+
+        private void RefreshCraftDetailPanel()
+        {
+            bool productionMode = presentationMode == CraftingUiPresentationMode.Production;
+            bool show = productionMode && craftDetailPanel != null;
+            if (craftDetailPanel != null)
+                craftDetailPanel.SetActive(show);
+
+            if (!show)
+                return;
+
+            if (selectedRecipe == null)
+            {
+                if (craftDetailTitle != null)
+                    craftDetailTitle.text = "Select a blueprint";
+                if (craftDetailMeta != null)
+                    craftDetailMeta.text = "Click an icon above to craft.";
+                if (craftDetailIngredients != null)
+                    craftDetailIngredients.text = string.Empty;
+                if (craftAmountSlider != null)
+                {
+                    craftAmountSlider.minValue = 1f;
+                    craftAmountSlider.maxValue = 1f;
+                    craftAmountSlider.SetValueWithoutNotify(1f);
+                    craftAmountSlider.interactable = false;
+                }
+                if (craftAmountValueLabel != null)
+                    craftAmountValueLabel.text = "1";
+                if (craftConfirmButton != null)
+                    craftConfirmButton.interactable = false;
+                if (craftConfirmLabel != null)
+                    craftConfirmLabel.text = "Craft";
+                return;
+            }
+
+            int tier = Mathf.Max(1, selectedRecipe.recipeTier);
+            float duration = CraftingManager.GetCraftDurationSeconds(selectedRecipe);
+            int maxCount = craftingManager != null && inventorySystem != null
+                ? Mathf.Max(0, craftingManager.GetMaxCraftCount(selectedRecipe, inventorySystem))
+                : 0;
+            bool canAny = maxCount > 0
+                && craftingManager != null
+                && inventorySystem != null
+                && craftingManager.CanCraft(selectedRecipe, inventorySystem, 1);
+
+            if (craftDetailTitle != null)
+            {
+                craftDetailTitle.text = !string.IsNullOrEmpty(selectedRecipe.displayName)
+                    ? selectedRecipe.displayName
+                    : selectedRecipe.name;
+            }
+
+            if (craftDetailMeta != null)
+            {
+                int previewAmount = craftAmountSlider != null
+                    ? Mathf.Max(1, Mathf.RoundToInt(craftAmountSlider.value))
+                    : 1;
+                string timeLabel = previewAmount > 1
+                    ? $"{duration:0.#}s each  ·  {duration * previewAmount:0.#}s total"
+                    : $"{duration:0.#}s each";
+                craftDetailMeta.text =
+                    $"Tier {tier}  ·  {timeLabel}  ·  " +
+                    (selectedRecipe.outputAmount > 1
+                        ? $"{selectedRecipe.outputAmount}x output"
+                        : "1x output");
+                craftDetailMeta.color = DarkMatterGenesisUiPalette.Gold;
+            }
+
+            if (craftDetailIngredients != null)
+                craftDetailIngredients.text = BuildIngredientsSummary(selectedRecipe);
+
+            ConfigureAmountSlider(maxCount, canAny);
+
+            if (craftConfirmButton != null)
+                craftConfirmButton.interactable = !isCrafting && canAny;
+            if (craftConfirmLabel != null)
+                craftConfirmLabel.text = isCrafting ? "Crafting…" : "Craft";
+        }
+
+        private void ConfigureAmountSlider(int maxCount, bool canAny)
+        {
+            if (craftAmountSlider == null)
+                return;
+
+            int max = Mathf.Max(1, maxCount);
+            int previous = Mathf.Max(1, Mathf.RoundToInt(craftAmountSlider.value));
+            int current = Mathf.Clamp(previous, 1, max);
+
+            craftAmountSlider.wholeNumbers = true;
+            craftAmountSlider.minValue = 1f;
+            craftAmountSlider.maxValue = max;
+            craftAmountSlider.SetValueWithoutNotify(current);
+            craftAmountSlider.interactable = !isCrafting && canAny && max > 1;
+            if (craftAmountValueLabel != null)
+                craftAmountValueLabel.text = current.ToString();
+        }
+
+        private static string BuildIngredientsSummary(RecipeDefinition recipe)
+        {
+            if (recipe?.ingredients == null || recipe.ingredients.Count == 0)
+                return "No ingredients";
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                RecipeIngredient ingredient = recipe.ingredients[i];
+                if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
+                    continue;
+
+                if (sb.Length > 0)
+                    sb.Append("  ·  ");
+                sb.Append(ingredient.amount);
+                sb.Append('×');
+                sb.Append(ingredient.item.itemName);
+            }
+
+            return sb.Length > 0 ? sb.ToString() : "No ingredients";
+        }
+
+        private void HandleCraftAmountChanged(float value)
+        {
+            if (craftAmountSlider == null)
+                return;
+
+            int min = Mathf.RoundToInt(craftAmountSlider.minValue);
+            int max = Mathf.Max(min, Mathf.RoundToInt(craftAmountSlider.maxValue));
+            int stepped = Mathf.Clamp(Mathf.RoundToInt(value), min, max);
+
+            if (!Mathf.Approximately(craftAmountSlider.value, stepped))
+                craftAmountSlider.SetValueWithoutNotify(stepped);
+
+            if (craftAmountValueLabel != null)
+                craftAmountValueLabel.text = stepped.ToString();
+
+            UpdateCraftDetailTimeLabel(stepped);
+        }
+
+        private void UpdateCraftDetailTimeLabel(int amount)
+        {
+            if (craftDetailMeta == null || selectedRecipe == null)
+                return;
+
+            int tier = Mathf.Max(1, selectedRecipe.recipeTier);
+            float duration = CraftingManager.GetCraftDurationSeconds(selectedRecipe);
+            amount = Mathf.Max(1, amount);
+            string timeLabel = amount > 1
+                ? $"{duration:0.#}s each  ·  {duration * amount:0.#}s total"
+                : $"{duration:0.#}s each";
+            craftDetailMeta.text =
+                $"Tier {tier}  ·  {timeLabel}  ·  " +
+                (selectedRecipe.outputAmount > 1
+                    ? $"{selectedRecipe.outputAmount}x output"
+                    : "1x output");
+            craftDetailMeta.color = DarkMatterGenesisUiPalette.Gold;
+        }
+
+        private void HandleCraftConfirmClicked()
+        {
+            if (isCrafting || selectedRecipe == null || craftingManager == null || inventorySystem == null)
+                return;
+
+            if (presentationMode != CraftingUiPresentationMode.Production)
+                return;
+
+            int amount = GetSelectedCraftAmount();
+
+            if (!craftingManager.CanCraft(selectedRecipe, inventorySystem, amount))
+            {
+                PickupToastUI.Show("Cannot craft — check ingredients, station, or inventory space.");
+                RefreshCraftDetailPanel();
+                return;
+            }
+
+            if (craftRoutine != null)
+                StopCoroutine(craftRoutine);
+            craftRoutine = StartCoroutine(RunCraftRoutine(selectedRecipe, amount));
+        }
+
+        private int GetSelectedCraftAmount()
+        {
+            if (craftAmountSlider == null)
+                return 1;
+
+            int min = Mathf.RoundToInt(craftAmountSlider.minValue);
+            int max = Mathf.Max(min, Mathf.RoundToInt(craftAmountSlider.maxValue));
+            return Mathf.Clamp(Mathf.RoundToInt(craftAmountSlider.value), min, max);
+        }
+
+        private IEnumerator RunCraftRoutine(RecipeDefinition recipe, int amount)
+        {
+            isCrafting = true;
+            RefreshCraftDetailPanel();
+
+            float durationPerItem = CraftingManager.GetCraftDurationSeconds(recipe);
+            RecipeCraftSlotUI slot = selectedSlotUi;
+            int crafted = 0;
+            amount = Mathf.Max(1, amount);
+
+            for (int i = 0; i < amount; i++)
+            {
+                float elapsed = 0f;
+                while (elapsed < durationPerItem)
+                {
+                    if (recipe == null || selectedRecipe != recipe)
+                    {
+                        slot?.SetCraftProgress(0f);
+                        isCrafting = false;
+                        craftRoutine = null;
+                        RefreshCraftDetailPanel();
+                        yield break;
+                    }
+
+                    elapsed += Time.unscaledDeltaTime;
+                    float itemProgress = Mathf.Clamp01(elapsed / durationPerItem);
+                    slot?.SetCraftProgress((i + itemProgress) / amount);
+                    yield return null;
+                }
+
+                bool success = craftingManager != null
+                    && inventorySystem != null
+                    && craftingManager.TryCraft(recipe, inventorySystem, 1);
+
+                if (!success)
+                {
+                    slot?.SetCraftProgress(0f);
+                    isCrafting = false;
+                    craftRoutine = null;
+                    PickupToastUI.Show(crafted > 0
+                        ? $"Crafted {crafted}, then stopped — ingredients or space changed."
+                        : "Craft failed — ingredients or space changed.");
+                    RefreshRecipeList();
+                    yield break;
+                }
+
+                crafted++;
+                slot?.SetCraftProgress((float)crafted / amount);
+            }
+
+            slot?.SetCraftProgress(0f);
+            isCrafting = false;
+            craftRoutine = null;
+            RefreshRecipeList();
+        }
+
+        private void CancelActiveCraft()
+        {
+            if (craftRoutine != null)
+            {
+                StopCoroutine(craftRoutine);
+                craftRoutine = null;
+            }
+
+            if (selectedSlotUi != null)
+                selectedSlotUi.SetCraftProgress(0f);
+
+            isCrafting = false;
         }
 
         private void ApplyPresentationChrome()
@@ -758,9 +1105,25 @@ namespace Project.UI
 
         private void EnsureStandaloneWindow(Transform overlayParent)
         {
-            if (standaloneWindowRoot != null || overlayParent == null)
+            if (overlayParent == null)
                 return;
 
+            if (standaloneWindowRoot != null && standaloneChromeVersion == CraftingUiChromeVersion)
+            {
+                ApplyStandaloneWindowSize();
+                return;
+            }
+
+            if (standaloneWindowRoot != null)
+            {
+                Destroy(standaloneWindowRoot);
+                standaloneWindowRoot = null;
+                standaloneWindowRect = null;
+                standaloneContentParent = null;
+                standaloneTitleLabel = null;
+            }
+
+            standaloneChromeVersion = CraftingUiChromeVersion;
             ShiftUiTheme theme = ShiftUiTheme.Current;
 
             standaloneWindowRoot = new GameObject("CraftingWindow", typeof(RectTransform));
@@ -801,19 +1164,36 @@ namespace Project.UI
             closeRow.transform.SetParent(standaloneWindowRoot.transform, false);
             HorizontalLayoutGroup closeLayout = closeRow.AddComponent<HorizontalLayoutGroup>();
             closeLayout.childAlignment = TextAnchor.MiddleRight;
+            closeLayout.spacing = Si(8f);
             closeLayout.childControlWidth = false;
-            closeLayout.childForceExpandWidth = true;
+            closeLayout.childControlHeight = false;
+            closeLayout.childForceExpandWidth = false;
+            closeLayout.childForceExpandHeight = false;
             LayoutElement closeRowLayout = closeRow.AddComponent<LayoutElement>();
-            closeRowLayout.minHeight = S(32f);
-            closeRowLayout.preferredHeight = S(32f);
+            closeRowLayout.minHeight = S(30f);
+            closeRowLayout.preferredHeight = S(30f);
+            closeRowLayout.flexibleWidth = 1f;
 
-            MenuUiBuilder.CreateCircleCloseButton(closeRow.transform, S(32f), () => CloseStandalonePanel());
+            // Spacer so the Close button stays right-aligned without stretching into an oval.
+            GameObject spacer = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
+            spacer.transform.SetParent(closeRow.transform, false);
+            LayoutElement spacerLayout = spacer.GetComponent<LayoutElement>();
+            spacerLayout.flexibleWidth = 1f;
+            spacerLayout.minWidth = 0f;
+
+            Button closeButton = MenuUiBuilder.CreateButton(
+                closeRow.transform,
+                "Close",
+                new Vector2(S(78f), S(28f)),
+                S(13f));
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(() => CloseStandalonePanel());
 
             GameObject contentHost = new GameObject("CraftContentHost", typeof(RectTransform));
             contentHost.transform.SetParent(standaloneWindowRoot.transform, false);
             LayoutElement contentLayout = contentHost.AddComponent<LayoutElement>();
             contentLayout.flexibleHeight = 1f;
-            contentLayout.minHeight = S(400f);
+            contentLayout.minHeight = S(520f);
             standaloneContentParent = contentHost.transform;
 
             windowBg.raycastTarget = true;
@@ -823,8 +1203,15 @@ namespace Project.UI
 
         private void EnsurePanelBuilt()
         {
-            if (isBuilt && craftPanel != null && recipeListParent != null && recipeListScrollRect != null)
+            if (isBuilt
+                && builtChromeVersion == CraftingUiChromeVersion
+                && craftPanel != null
+                && recipeListParent != null
+                && recipeListScrollRect != null
+                && craftDetailPanel != null)
+            {
                 return;
+            }
 
             if (craftPanel != null)
             {
@@ -832,8 +1219,10 @@ namespace Project.UI
                 craftPanel = null;
             }
 
+            craftDetailPanel = null;
             BuildPanel();
             isBuilt = true;
+            builtChromeVersion = CraftingUiChromeVersion;
         }
 
         private void BuildPanel()
@@ -871,7 +1260,7 @@ namespace Project.UI
 
             JournalPanelLayout.CreateSectionDivider(craftPanel.transform);
 
-            scrollSectionLabel = CreateText(craftPanel.transform, "Pending Scrolls", JournalPanelLayout.HeaderFontSize, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            scrollSectionLabel = CreateText(craftPanel.transform, "Pending Blueprints", JournalPanelLayout.HeaderFontSize, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             scrollSectionLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
 
             GameObject scrollRowHost = new GameObject("RecipeScrollSlots", typeof(RectTransform));
@@ -1019,7 +1408,96 @@ namespace Project.UI
             scroll.content = contentRt;
             recipeListParent = content.transform;
 
+            BuildCraftDetailPanel(craftPanel.transform);
+
             craftPanel.SetActive(false);
+        }
+
+        private void BuildCraftDetailPanel(Transform parent)
+        {
+            craftDetailPanel = new GameObject("CraftDetailPanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            craftDetailPanel.transform.SetParent(parent, false);
+
+            LayoutElement detailLayoutElement = craftDetailPanel.GetComponent<LayoutElement>();
+            detailLayoutElement.minHeight = S(168f);
+            detailLayoutElement.preferredHeight = S(168f);
+            detailLayoutElement.flexibleHeight = 0f;
+
+            Image detailBg = craftDetailPanel.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(detailBg);
+            detailBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 0.72f);
+            detailBg.raycastTarget = true;
+
+            VerticalLayoutGroup detailLayout = craftDetailPanel.GetComponent<VerticalLayoutGroup>();
+            detailLayout.padding = new RectOffset(Si(10f), Si(10f), Si(8f), Si(8f));
+            detailLayout.spacing = Si(4f);
+            detailLayout.childAlignment = TextAnchor.UpperLeft;
+            detailLayout.childControlWidth = true;
+            detailLayout.childControlHeight = true;
+            detailLayout.childForceExpandWidth = true;
+            detailLayout.childForceExpandHeight = false;
+
+            craftDetailTitle = CreateText(
+                craftDetailPanel.transform,
+                "Select a blueprint",
+                JournalPanelLayout.HeaderFontSize,
+                FontStyles.Bold,
+                TextAlignmentOptions.MidlineLeft);
+            craftDetailTitle.color = DarkMatterGenesisUiPalette.WarmOffWhite;
+
+            craftDetailMeta = CreateText(
+                craftDetailPanel.transform,
+                "Click an icon above to craft.",
+                JournalPanelLayout.SecondaryFontSize,
+                FontStyles.Normal,
+                TextAlignmentOptions.MidlineLeft);
+            craftDetailMeta.color = DarkMatterGenesisUiPalette.Gold;
+
+            craftDetailIngredients = CreateText(
+                craftDetailPanel.transform,
+                string.Empty,
+                JournalPanelLayout.SecondaryFontSize,
+                FontStyles.Normal,
+                TextAlignmentOptions.MidlineLeft);
+            craftDetailIngredients.color = DarkMatterGenesisUiPalette.BodyText;
+
+            craftAmountSlider = MenuUiBuilder.CreateSliderRow(
+                craftDetailPanel.transform,
+                "Amount",
+                1f,
+                out craftAmountValueLabel,
+                handleWidth: 20f,
+                handleHeight: 24f);
+            craftAmountSlider.minValue = 1f;
+            craftAmountSlider.maxValue = 1f;
+            craftAmountSlider.wholeNumbers = true;
+            craftAmountSlider.navigation = new Navigation { mode = Navigation.Mode.None };
+            craftAmountSlider.SetValueWithoutNotify(1f);
+            craftAmountSlider.onValueChanged.RemoveAllListeners();
+            craftAmountSlider.onValueChanged.AddListener(HandleCraftAmountChanged);
+
+            GameObject buttonRow = new GameObject("CraftButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            buttonRow.transform.SetParent(craftDetailPanel.transform, false);
+            LayoutElement buttonRowLayout = buttonRow.GetComponent<LayoutElement>();
+            buttonRowLayout.minHeight = S(36f);
+            buttonRowLayout.preferredHeight = S(36f);
+
+            HorizontalLayoutGroup buttonLayout = buttonRow.GetComponent<HorizontalLayoutGroup>();
+            buttonLayout.childAlignment = TextAnchor.MiddleRight;
+            buttonLayout.childControlWidth = false;
+            buttonLayout.childForceExpandWidth = false;
+            buttonLayout.spacing = Si(8f);
+
+            craftConfirmButton = MenuUiBuilder.CreateButton(
+                buttonRow.transform,
+                "Craft",
+                new Vector2(S(140f), S(32f)),
+                JournalPanelLayout.BodyFontSize);
+            craftConfirmButton.onClick.RemoveAllListeners();
+            craftConfirmButton.onClick.AddListener(HandleCraftConfirmClicked);
+            craftConfirmLabel = craftConfirmButton.GetComponentInChildren<TextMeshProUGUI>(true);
+
+            craftDetailPanel.SetActive(false);
         }
 
         private static TextMeshProUGUI CreateText(Transform parent, string value, float fontSize, FontStyles style, TextAlignmentOptions alignment)

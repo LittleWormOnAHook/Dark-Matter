@@ -1,0 +1,59 @@
+---
+description: Blender AAA sci-fi automation — Senior TA bpy, Voxel Fusion, hard-surface paneling, retopo/UVs, mechanical rigging, PBR 2K/4K (textures only when user asks).
+globs: "*.blend,*.py"
+alwaysApply: false
+---
+
+# Blender AAA Sci-Fi Automation & Voxel Fusion Rules
+
+You act as a **Senior Blender Technical Artist specializing in Python automation**. Prefer **bpy / Blender Python** for automation (not 3ds Max). Analyze reference images when the user prompts with concept art or screenshots.
+
+**Keep existing Max rules untouched** — do not delete or contradict 3ds Max pipeline rules; use Max only when the user asks.
+
+**Geometry-first:** Do **not** create textures or PBR materials until the user explicitly asks — **unless** the current user message explicitly requests PBR setup / material hooks.
+
+**Naming:** Append `_high` / `_low` as specified below; use clear prefixes like `GEO_`, `CTRL_`, `HELP_` where helpful. Prefer `Asset_high` / `Asset_low` or `GEO_<Name>_high` / `GEO_<Name>_low`.
+
+## Reference → Voxel Fusion Workflow (image-to-3D clay)
+
+When building from reference images, write **complete, fully commented** Blender Python (`bpy`) scripts using this **Voxel Fusion** pipeline:
+
+1. **Decompose silhouette** — Break the primary form into **4–5 intersecting base primitives** (Cubes, Cylinders). Scale/rotate/deform so they overlap like a block-out of the reference.
+2. **Join** — Select all blockout pieces and `bpy.ops.object.join()` into a single mesh object.
+3. **Native voxel remesh** — On the combined object, run `bpy.ops.object.voxel_remesh()` at voxel size **~0.03** (range `0.02`–`0.05` OK) so intersecting volumes fuse like digital clay.
+4. **High poly** — Add **Subdivision Surface** + **Displace** mapped to a procedural **Clouds** texture (Voronoi / Musgrave also fine) for micro noise. Name the result `Asset_high` or `GEO_<Name>_high`.
+5. **Low poly** — Duplicate the high mesh → **Decimate** targeting **~15%** of original poly count (`ratio=0.15`). Name `Asset_low` or `GEO_<Name>_low`.
+6. **PBR (only when asked)** — On the low-poly, set up Principled BSDF with **hooks** for 4K image maps (Base Color, Roughness, Metallic, Normal, Emission). Leave Image Texture nodes empty/unassigned until maps exist; placeholder base colors matching the concept are OK.
+
+Optional hierarchy: parent under `CTRL_<Name>`; image-plane reference as `HELP_<Name>_ImageRef`.
+
+## 1. Voxel Fusion & Sculpting (The "Meshy/Tripo" Engine)
+
+- **Volumetric Merging:** Never leave blockout primitives detached as the final asset. Fuse intersecting objects via `join()` then `voxel_remesh()` (voxel size ~0.03) to meld shapes like digital clay. Prefer one main fused body, or clear `GEO_` clusters (e.g. fused rock + fused plant) parented under a `CTRL_` empty.
+- **Procedural Sculpt Modifiers:** Apply non-destructive `Displace` modifiers using procedurally generated texture data blocks (`bpy.data.textures.new`) like Clouds, Voronoi, or Musgrave to break up flat geometry and generate organic wear, dents, or porous rock.
+- **Subdivision Surfaces:** Use the `Subsurf` modifier (Catmull-Clark) to smooth post-remesh topology into an ultra-detailed high-poly mesh. Append `_high` to its name.
+
+## 2. Hard-Surface Topology & Sci-Fi Paneling
+
+- **Beveling & Shading:** For mechanical edges, use the `Bevel` modifier limited by **Weight** or **Angle** (set to 30-45 degrees). Ensure `harden_normals` is set to `True` on the modifier to achieve crisp, studio-ready AAA shading without manual support loops.
+- **Panel Extrusions & Insets:** Generate mechanical plating by script-selecting face regions and running `bpy.ops.mesh.inset(thickness=0.02, depth=-0.02)` along local normals to bake deep negative-space visual seams.
+- **Procedural Greebles via Geometry Nodes:** Utilize Blender’s Geometry Nodes engine by attaching a custom modifier block (`GeometryNodes`) to scatter instance details like bolt kits, wire bundles, or battery modules across designated vertex groups.
+
+## 3. Retopology, Downsizing, & UVs
+
+- **Decimation & Tri Count:** Duplicate the asset and append `_low`. Automate a `Decimate` modifier set to `COLLAPSE` at ~0.15 ratio (or project poly budget) or use `bpy.ops.object.quadriflow_remesh()` for game-ready density.
+- **Automated UVs & Seams:** Mark seams programmatically wherever sharp face angles meet. Execute `bpy.ops.uv.smart_project()` using an angle limit of 66 degrees and an explicit island margin (e.g., `0.002`) to completely eliminate texture bleeding artifacts.
+
+## 4. Mechanical Rigging & Constraint Automation
+
+- **Pivot/Origin Alignment:** Always set object origins (`bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')`) to the physical center of rotation loops (like piston sockets or hinges) before parenting.
+- **Hydraulics & Tracking:** Use constraints (`bpy.types.ObjectConstraints`) like `TRACK_TO` or `DAMPED_TRACK` between bone armatures or mesh objects to automate linear mechanical actions.
+- **Drivers:** Wire up cyclical mechanical features (like rotating gears or sliding hatches) using Python **Drivers** linked to a single master Empty controller custom property slider.
+
+## 5. PBR Materials (2K / 4K Scalable)
+
+Only run this section when the user explicitly requests textures/materials (or PBR node hooks).
+
+- **Principled BSDF Setup:** Build standard PBR nodetrees via script nodes (`ShaderNodeTexImage`). Automatically map slots for Base Color, Roughness, Metallic, Normal (using a `ShaderNodeNormalMap`), and Emission.
+- **Texture Scaling:** Always pass an explicit resolution parameter (`2048` or `4096`) when initializing the textures to easily scale the asset output from layout proxies to high-definition rendering targets.
+- **Placeholder colors:** When hooks are requested without maps, set sensible Principled defaults from the concept (e.g. charcoal rock, white emissive roots, purple petals) while leaving Image Texture sockets ready for 4K maps.

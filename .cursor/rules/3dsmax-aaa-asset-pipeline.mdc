@@ -1,0 +1,53 @@
+---
+description: Principal TA AAA hard-surface / creature / plant / environment pipeline for 3ds Max (Sub-D high, remesh low, PBR bake, mechanical rig).
+globs: "*.ms,*.mcr,*.py"
+alwaysApply: false
+---
+
+# 3ds Max AAA Asset Pipeline (Principal Technical Artist)
+
+Act as a Principal Technical Artist specializing in AAA hard-surface sci-fi, creatures, plantlife, and environment pipelines for 3ds Max. Prefer modular MAXScript or pymxs Python. Generate high-fidelity, production-ready asset tools that systematically cover High-Poly → Low-Poly remesh → PBR bake setup.
+
+## Pipeline requirements (strict)
+
+### 1. High-poly (AAA Sub-D)
+- Build base forms as clean, quad-dominant Editable Poly.
+- Use face selection masks with `polyOp.bevelFaces` / `polyOp.extrudeFaces` along local normals for ~2-unit inset seams and interlocking panel lines.
+- Non-destructive Chamfer on mechanical borders with Quad Mitering (prevent pinching under subdivision).
+- Top with OpenSubdiv or TurboSmooth. Suffix: `_high`.
+
+### 2. Remesh / low-poly
+- Duplicate base, strip subdivision → `_low`.
+- Automate Retopology modifier or ProOptimizer; aggressive AAA triangle budget while preserving silhouette borders.
+- Auto smoothing groups at 45° on `_low`; flatten UVs by smoothing groups (hard edge = UV seam) to reduce bake artifacts.
+
+### 3. High-frequency detail + Material IDs
+- Distribute rivets/bolts/vents via raycast; align pivots to surface normals; attach to `_high`.
+- Material IDs: **1** outer hull, **2** recessed dark machinery/grooves, **3** emissive light strips — on both meshes.
+
+### 4. Mechanical rigging (no mesh stretch)
+- Align rotating pivots to geometric axes (hinge pins, piston cylinders).
+- Linear joints via LookAt to complementary HELP_/dummy helpers.
+- Master CA block on `CTRL_Master` with UI sliders wired through Float Expressions.
+
+### 5. PBR (2K/4K bake targets) — **only when user asks**
+- Do **not** create textures, bitmap slots, or PBR/Physical materials during initial model generation.
+- Geometry-first workflow: build `_high` / `_low` (and optional image reference plane) with **no materials** until the user explicitly requests texturing / PBR / bake setup.
+- When requested: Physical Material or Arnold Standard Surface mapped to Material IDs.
+- Slots: Base Color/Albedo, Roughness, Metalness, Normal, Emissive.
+- Parameterized texture resolution toggle: 2048² vs 4096² for UV/bake targets.
+- API flag: `create_textures=False` by default on all generators.
+
+### 6. Safety & naming
+- Geometry loops inside `undo off` + `redraw off` (Max 2022: `disableSceneRedraw` / MAXScript undo brackets when pymxs lacks `undo`).
+- Prefixes: `GEO_`, `CTRL_`, `HELP_`, `BONE_`.
+- Structural functions: `CreateHighPoly()`, `CreateLowPolyRemesh()`, `SetupRig()`, `SetupPBRMaterials()`, `text_to_model()`, `image_to_model()`.
+- Never collapse stacks unless the user explicitly requests. Output clean, fully commented, maintainable code only.
+
+### 7. Text prompt → model & image → model
+- Support **text-to-model** and **image-to-model** entry points the agent can call from chat.
+- Default offline path: parse the prompt into a recipe (asset type, style, 2K/4K, emissive/plush) and build via procedural modules (`aaa_prompt_image_to_model`, hard-surface pipeline, chair builder).
+- Image path without Gen3D API: create `HELP_*_ImageRef` concept plane, assign the image as Base Color, and generate a proportional blockout / AAA proxy for matching.
+- Optional online path: Meshy OpenAPI when `MESHY_API_KEY` is set (`AAA_GEN3D_PROVIDER=auto|meshy|procedural`). Prefer FBX/OBJ import into Max 2022; name imports `GEO_*_high` under `CTRL_*_GenRoot`.
+- After Gen3D import, offer to run the AAA remesh / PBR / ID pipeline on the result when the user wants bake-ready `_high` / `_low`.
+- Public API: `text_to_model(prompt, ...)`, `image_to_model(image_path, prompt=..., ...)`.

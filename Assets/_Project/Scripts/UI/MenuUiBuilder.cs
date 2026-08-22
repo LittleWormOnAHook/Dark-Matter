@@ -343,15 +343,28 @@ namespace Project.UI
             return titleBarObject;
         }
 
-        public static Slider CreateSliderRow(Transform parent, string label, float initialValue, out TextMeshProUGUI valueLabel)
+        public static Slider CreateSliderRow(
+            Transform parent,
+            string label,
+            float initialValue,
+            out TextMeshProUGUI valueLabel,
+            float handleWidth = 10f,
+            float handleHeight = 22f)
         {
+            const float TrackHeight = 20f;
+            float HandleWidth = Mathf.Max(4f, handleWidth);
+            // Only slightly taller than the gold track.
+            float HandleHeight = Mathf.Max(TrackHeight + 2f, handleHeight);
+
             GameObject row = new GameObject(label + "Row", typeof(RectTransform));
             row.transform.SetParent(parent, false);
 
             VerticalLayoutGroup rowLayout = row.AddComponent<VerticalLayoutGroup>();
             rowLayout.spacing = 2;
             rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
             rowLayout.childForceExpandWidth = true;
+            rowLayout.childForceExpandHeight = false;
 
             GameObject labelRow = new GameObject("LabelRow", typeof(RectTransform));
             labelRow.transform.SetParent(row.transform, false);
@@ -359,6 +372,11 @@ namespace Project.UI
             labelLayout.childAlignment = TextAnchor.MiddleLeft;
             labelLayout.childControlWidth = true;
             labelLayout.childForceExpandWidth = true;
+
+            LayoutElement labelRowLayout = labelRow.AddComponent<LayoutElement>();
+            labelRowLayout.minHeight = 18f;
+            labelRowLayout.preferredHeight = 18f;
+            labelRowLayout.flexibleHeight = 0f;
 
             TextMeshProUGUI nameLabel = CreateRowLabel(labelRow.transform, label, 14, TextAlignmentOptions.MidlineLeft);
             LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
@@ -377,32 +395,38 @@ namespace Project.UI
             slider.value = initialValue;
 
             LayoutElement sliderLayout = sliderObject.AddComponent<LayoutElement>();
-            sliderLayout.minHeight = 16f;
-            sliderLayout.preferredHeight = 16f;
+            sliderLayout.minHeight = HandleHeight;
+            sliderLayout.preferredHeight = HandleHeight;
+            sliderLayout.flexibleHeight = 0f;
 
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(sliderObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
-            ApplyUiSprite(backgroundImage);
+            backgroundImage.sprite = null;
+            backgroundImage.type = Image.Type.Simple;
             backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 1f);
+            backgroundImage.raycastTarget = true;
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.anchorMin = Vector2.zero;
-            backgroundRect.anchorMax = Vector2.one;
-            backgroundRect.offsetMin = Vector2.zero;
-            backgroundRect.offsetMax = Vector2.zero;
+            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(1f, 0.5f);
+            backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(0f, TrackHeight);
+            backgroundRect.anchoredPosition = Vector2.zero;
 
             GameObject fillArea = new GameObject("Fill Area", typeof(RectTransform));
             fillArea.transform.SetParent(sliderObject.transform, false);
             RectTransform fillAreaRect = fillArea.GetComponent<RectTransform>();
-            fillAreaRect.anchorMin = Vector2.zero;
-            fillAreaRect.anchorMax = Vector2.one;
-            fillAreaRect.offsetMin = new Vector2(6f, 0f);
-            fillAreaRect.offsetMax = new Vector2(-6f, 0f);
+            fillAreaRect.anchorMin = new Vector2(0f, 0.5f);
+            fillAreaRect.anchorMax = new Vector2(1f, 0.5f);
+            fillAreaRect.pivot = new Vector2(0.5f, 0.5f);
+            fillAreaRect.sizeDelta = new Vector2(-HandleWidth, TrackHeight);
+            fillAreaRect.anchoredPosition = Vector2.zero;
 
             GameObject fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fill.transform.SetParent(fillArea.transform, false);
             Image fillImage = fill.GetComponent<Image>();
-            ApplyUiSprite(fillImage);
+            fillImage.sprite = null;
+            fillImage.type = Image.Type.Simple;
             fillImage.color = DarkMatterGenesisUiPalette.Gold;
             RectTransform fillRect = fill.GetComponent<RectTransform>();
             fillRect.anchorMin = Vector2.zero;
@@ -413,80 +437,102 @@ namespace Project.UI
             GameObject handleSlideArea = new GameObject("Handle Slide Area", typeof(RectTransform));
             handleSlideArea.transform.SetParent(sliderObject.transform, false);
             RectTransform handleAreaRect = handleSlideArea.GetComponent<RectTransform>();
-            handleAreaRect.anchorMin = Vector2.zero;
-            handleAreaRect.anchorMax = Vector2.one;
-            handleAreaRect.offsetMin = Vector2.zero;
-            handleAreaRect.offsetMax = Vector2.zero;
+            handleAreaRect.anchorMin = new Vector2(0f, 0.5f);
+            handleAreaRect.anchorMax = new Vector2(1f, 0.5f);
+            handleAreaRect.pivot = new Vector2(0.5f, 0.5f);
+            handleAreaRect.sizeDelta = new Vector2(0f, HandleHeight);
+            handleAreaRect.anchoredPosition = Vector2.zero;
 
             GameObject handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
             handle.transform.SetParent(handleSlideArea.transform, false);
             Image handleImage = handle.GetComponent<Image>();
-            ApplyUiSprite(handleImage);
+            handleImage.sprite = null;
+            handleImage.type = Image.Type.Simple;
             handleImage.color = Color.white;
+            handleImage.raycastTarget = true;
             RectTransform handleRect = handle.GetComponent<RectTransform>();
-            handleRect.sizeDelta = new Vector2(12f, 12f);
+            handleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            handleRect.anchorMax = new Vector2(0.5f, 0.5f);
+            handleRect.pivot = new Vector2(0.5f, 0.5f);
+            handleRect.sizeDelta = new Vector2(HandleWidth, HandleHeight);
+            handleRect.anchoredPosition = Vector2.zero;
+
+            LayoutElement handleLayout = handle.AddComponent<LayoutElement>();
+            handleLayout.ignoreLayout = true;
+            handleLayout.minWidth = HandleWidth;
+            handleLayout.minHeight = HandleHeight;
+            handleLayout.preferredWidth = HandleWidth;
+            handleLayout.preferredHeight = HandleHeight;
 
             slider.fillRect = fillRect;
             slider.handleRect = handleRect;
             slider.targetGraphic = handleImage;
 
             LayoutElement rowLayoutElement = row.AddComponent<LayoutElement>();
-            rowLayoutElement.minHeight = 36f;
-            rowLayoutElement.preferredHeight = 36f;
+            rowLayoutElement.minHeight = 44f;
+            rowLayoutElement.preferredHeight = 44f;
+            rowLayoutElement.flexibleHeight = 0f;
             return slider;
         }
 
         public static Toggle CreateToggleRow(Transform parent, string label, bool initialValue)
         {
+            const float boxSize = 10f;
+
             GameObject row = new GameObject(label + "ToggleRow", typeof(RectTransform));
             row.transform.SetParent(parent, false);
 
             HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.spacing = 8;
+            layout.spacing = 10;
             layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            GameObject toggleObject = new GameObject("Toggle", typeof(RectTransform), typeof(Toggle));
+            TextMeshProUGUI nameLabel = CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
+            LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
+            nameLayout.flexibleWidth = 1f;
+            nameLayout.minWidth = 80f;
+
+            GameObject toggleObject = new GameObject("Toggle", typeof(RectTransform), typeof(Toggle), typeof(LayoutElement));
             toggleObject.transform.SetParent(row.transform, false);
             Toggle toggle = toggleObject.GetComponent<Toggle>();
             toggle.isOn = initialValue;
 
-            LayoutElement toggleLayout = toggleObject.AddComponent<LayoutElement>();
-            toggleLayout.minWidth = 20f;
-            toggleLayout.preferredWidth = 20f;
-            toggleLayout.minHeight = 20f;
-            toggleLayout.preferredHeight = 20f;
+            LayoutElement toggleLayout = toggleObject.GetComponent<LayoutElement>();
+            toggleLayout.minWidth = boxSize;
+            toggleLayout.preferredWidth = boxSize;
+            toggleLayout.minHeight = boxSize;
+            toggleLayout.preferredHeight = boxSize;
+            toggleLayout.flexibleWidth = 0f;
+            toggleLayout.flexibleHeight = 0f;
 
+            // Dark empty square; gold fill when on (matches old Settings — no TMP glyphs / font warnings).
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(toggleObject.transform, false);
             Image backgroundImage = background.GetComponent<Image>();
-            ApplyUiSprite(backgroundImage);
-            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 1f);
-            RectTransform backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.anchorMin = Vector2.zero;
-            backgroundRect.anchorMax = Vector2.one;
-            backgroundRect.offsetMin = Vector2.zero;
-            backgroundRect.offsetMax = Vector2.zero;
+            backgroundImage.sprite = null;
+            backgroundImage.type = Image.Type.Simple;
+            backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 1f);
+            StretchRectToFill(background.GetComponent<RectTransform>());
 
-            GameObject checkmark = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
-            checkmark.transform.SetParent(background.transform, false);
-            Image checkImage = checkmark.GetComponent<Image>();
-            ApplyUiSprite(checkImage);
-            checkImage.color = DarkMatterGenesisUiPalette.RichFuchsia;
-            RectTransform checkRect = checkmark.GetComponent<RectTransform>();
-            checkRect.anchorMin = new Vector2(0.15f, 0.15f);
-            checkRect.anchorMax = new Vector2(0.85f, 0.85f);
-            checkRect.offsetMin = Vector2.zero;
-            checkRect.offsetMax = Vector2.zero;
+            GameObject fill = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
+            fill.transform.SetParent(background.transform, false);
+            Image fillImage = fill.GetComponent<Image>();
+            fillImage.sprite = null;
+            fillImage.type = Image.Type.Simple;
+            fillImage.color = DarkMatterGenesisUiPalette.Gold;
+            StretchRectToFill(fill.GetComponent<RectTransform>());
 
-            toggle.graphic = checkImage;
+            toggle.graphic = fillImage;
             toggle.targetGraphic = backgroundImage;
+            RefreshToggleVisual(toggle);
 
-            CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
             rowLayout.minHeight = 26f;
             rowLayout.preferredHeight = 26f;
+            rowLayout.flexibleWidth = 1f;
             return toggle;
         }
 
@@ -565,28 +611,68 @@ namespace Project.UI
             return toggle;
         }
 
+        /// <summary>Syncs 10×10 tick boxes: empty charcoal when off, solid gold fill when on.</summary>
+        public static void RefreshToggleVisual(Toggle toggle)
+        {
+            if (toggle == null)
+                return;
+
+            if (toggle.graphic != null)
+            {
+                toggle.graphic.enabled = toggle.isOn;
+                toggle.graphic.gameObject.SetActive(true);
+                if (toggle.graphic is Image fillImage)
+                    fillImage.color = DarkMatterGenesisUiPalette.Gold;
+            }
+
+            Transform background = toggle.transform.Find("Background");
+            if (background != null && background.TryGetComponent(out Image backgroundImage))
+            {
+                backgroundImage.color = DarkMatterGenesisUiPalette.WithAlpha(
+                    DarkMatterGenesisUiPalette.CharcoalGray,
+                    1f);
+            }
+        }
+
         public static Dropdown CreateDropdownRow(Transform parent, string label)
         {
+            // ~30% smaller than the previous 170×24 control chrome.
+            const float dropdownWidth = 119f;
+            const float dropdownHeight = 17f;
+
             GameObject row = new GameObject(label + "DropdownRow", typeof(RectTransform));
             row.transform.SetParent(parent, false);
 
-            VerticalLayoutGroup layout = row.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 2;
+            HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 10;
+            layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
+            TextMeshProUGUI nameLabel = CreateRowLabel(row.transform, label, 14, TextAlignmentOptions.MidlineLeft);
+            LayoutElement nameLayout = nameLabel.gameObject.AddComponent<LayoutElement>();
+            nameLayout.flexibleWidth = 1f;
+            nameLayout.minWidth = 80f;
 
             GameObject dropdownObject = new GameObject("Dropdown", typeof(RectTransform), typeof(Image), typeof(Dropdown), typeof(LayoutElement));
             dropdownObject.transform.SetParent(row.transform, false);
             Image dropdownImage = dropdownObject.GetComponent<Image>();
-            ApplyUiSprite(dropdownImage);
-            dropdownImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 1f);
+            dropdownImage.sprite = null;
+            dropdownImage.type = Image.Type.Simple;
+            dropdownImage.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.CharcoalGray, 1f);
+            Outline dropdownOutline = dropdownObject.AddComponent<Outline>();
+            dropdownOutline.effectColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.BodyText, 0.45f);
+            dropdownOutline.effectDistance = new Vector2(1f, -1f);
             LayoutElement dropdownLayout = dropdownObject.GetComponent<LayoutElement>();
-            dropdownLayout.minHeight = 26f;
-            dropdownLayout.preferredHeight = 26f;
+            dropdownLayout.minHeight = dropdownHeight;
+            dropdownLayout.preferredHeight = dropdownHeight;
+            dropdownLayout.minWidth = dropdownWidth;
+            dropdownLayout.preferredWidth = dropdownWidth;
+            dropdownLayout.flexibleWidth = 0f;
             RectTransform dropdownRect = dropdownObject.GetComponent<RectTransform>();
-            dropdownRect.sizeDelta = new Vector2(0f, 26f);
+            dropdownRect.sizeDelta = new Vector2(dropdownWidth, dropdownHeight);
 
             Dropdown dropdown = dropdownObject.GetComponent<Dropdown>();
             dropdown.targetGraphic = dropdownImage;
@@ -595,16 +681,32 @@ namespace Project.UI
             labelObject.transform.SetParent(dropdownObject.transform, false);
             Text labelText = labelObject.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.color = DarkMatterGenesisUiPalette.BodyText;
-            labelText.alignment = TextAnchor.MiddleLeft;
+            labelText.color = Color.white;
+            labelText.alignment = TextAnchor.MiddleCenter;
             labelText.raycastTarget = false;
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
-            labelText.fontSize = 14;
-            labelRect.offsetMin = new Vector2(8f, 0f);
-            labelRect.offsetMax = new Vector2(-22f, 0f);
+            labelText.fontSize = 11;
+            labelRect.offsetMin = new Vector2(4f, 0f);
+            labelRect.offsetMax = new Vector2(-14f, 0f);
             dropdown.captionText = labelText;
+
+            GameObject arrowObject = new GameObject("Arrow", typeof(RectTransform));
+            arrowObject.transform.SetParent(dropdownObject.transform, false);
+            Text arrowText = arrowObject.AddComponent<Text>();
+            arrowText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            arrowText.text = "v";
+            arrowText.fontSize = 9;
+            arrowText.color = Color.white;
+            arrowText.alignment = TextAnchor.MiddleCenter;
+            arrowText.raycastTarget = false;
+            RectTransform arrowRect = arrowObject.GetComponent<RectTransform>();
+            arrowRect.anchorMin = new Vector2(1f, 0f);
+            arrowRect.anchorMax = new Vector2(1f, 1f);
+            arrowRect.pivot = new Vector2(1f, 0.5f);
+            arrowRect.sizeDelta = new Vector2(12f, 0f);
+            arrowRect.anchoredPosition = Vector2.zero;
 
             GameObject template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             template.transform.SetParent(dropdownObject.transform, false);
@@ -687,8 +789,9 @@ namespace Project.UI
             dropdown.itemText = itemLabel;
 
             LayoutElement rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.minHeight = 46f;
-            rowLayout.preferredHeight = 46f;
+            rowLayout.minHeight = 28f;
+            rowLayout.preferredHeight = 28f;
+            rowLayout.flexibleWidth = 1f;
             return dropdown;
         }
 

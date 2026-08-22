@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using Project.Audio;
 using Project.Core;
 using Project.Interaction;
+using Project.Inventory;
 using Project.Managers;
 using Project.Pioneers;
 using Project.Player;
+using Project.Player.Invector;
 using Project.Survival;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -34,6 +36,7 @@ namespace Project.UI
         private readonly List<GameObject> hiddenCanvasRoots = new List<GameObject>();
 
         private Button newGameButton;
+        private Button continueExpeditionButton;
         private Button resumeButton;
         private Button saveButton;
         private Button loadButton;
@@ -225,6 +228,7 @@ namespace Project.UI
 
             settingsPanel = gameObject.AddComponent<SettingsPanelController>();
             settingsPanel.Build(canvasRoot);
+            settingsPanel.SetClosedCallback(HandleSettingsClosed);
 
             controlsPanel = gameObject.AddComponent<ControlsPanelController>();
             controlsPanel.Build(canvasRoot);
@@ -233,6 +237,7 @@ namespace Project.UI
             saveSlotsPanel.Build(canvasRoot, this);
 
             RefreshMenuButtonStates();
+            UiScaleApplier.ApplyFromSettings();
         }
 
         private void BuildTitleBlock(Transform parent)
@@ -279,6 +284,7 @@ namespace Project.UI
             float buttonFontSize = 20f * MenuScale;
 
             resumeButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Continue", buttonSize, buttonFontSize);
+            continueExpeditionButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Continue Expedition", buttonSize, buttonFontSize);
             newGameButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "New Expedition", buttonSize, buttonFontSize);
             loadButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Load", buttonSize, buttonFontSize);
             saveButton = MenuUiBuilder.CreateTiltedMenuButton(column.transform, "Save", buttonSize, buttonFontSize);
@@ -288,6 +294,8 @@ namespace Project.UI
 
             resumeButton.onClick.RemoveAllListeners();
             resumeButton.onClick.AddListener(ResumeFromPause);
+            continueExpeditionButton.onClick.RemoveAllListeners();
+            continueExpeditionButton.onClick.AddListener(ContinueExpedition);
             newGameButton.onClick.RemoveAllListeners();
             newGameButton.onClick.AddListener(StartNewGame);
             loadButton.onClick.RemoveAllListeners();
@@ -302,6 +310,7 @@ namespace Project.UI
             exitButton.onClick.AddListener(ExitGame);
 
             resumeButton.gameObject.SetActive(false);
+            continueExpeditionButton.gameObject.SetActive(false);
         }
 
         private static TextMeshProUGUI CreateAnchoredMessageLabel(Transform parent)
@@ -375,6 +384,7 @@ namespace Project.UI
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
+            UiScaleApplier.ApplyFromSettings();
 
             // World stays paused and gameplay UI swept away, but the menu itself only appears once the
             // Loading Genesis overlay finishes fading — it re-runs this path on handoff.
@@ -495,14 +505,24 @@ namespace Project.UI
         {
             bool hasContinueSave = GameSaveSystem.HasContinueSave;
 
+            // Main menu: New Expedition always; Continue Expedition only when a continue save exists.
             if (newGameButton != null)
             {
                 newGameButton.gameObject.SetActive(!pauseOverlayActive);
-                SetMenuButtonLabel(newGameButton, hasContinueSave ? "Continue Expedition" : "New Expedition");
+                SetMenuButtonLabel(newGameButton, "New Expedition");
                 newGameButton.onClick.RemoveAllListeners();
-                newGameButton.onClick.AddListener(hasContinueSave ? ContinueExpedition : StartNewGame);
+                newGameButton.onClick.AddListener(StartNewGame);
             }
 
+            if (continueExpeditionButton != null)
+            {
+                continueExpeditionButton.gameObject.SetActive(!pauseOverlayActive && hasContinueSave);
+                SetMenuButtonLabel(continueExpeditionButton, "Continue Expedition");
+                continueExpeditionButton.onClick.RemoveAllListeners();
+                continueExpeditionButton.onClick.AddListener(ContinueExpedition);
+            }
+
+            // Pause overlay: Resume (unpause), not continue-from-save.
             if (resumeButton != null)
                 resumeButton.gameObject.SetActive(pauseOverlayActive);
             if (saveButton != null)
@@ -594,6 +614,11 @@ namespace Project.UI
 
         private void StartNewGame()
         {
+            // Fresh expedition: clear hold-R mode prefs / lasers and holster any drawn weapon.
+            WeaponModeSwitchController.ClearPersistedStatesForNewGame();
+            EquipmentController equipment = UnityEngine.Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+            equipment?.HolsterWeapon();
+
             if (menuBackground != null)
                 menuBackground.SetActive(false);
             if (menuPanel != null)
@@ -675,7 +700,20 @@ namespace Project.UI
         private void OpenSettings()
         {
             HideHotbars();
+            // Hide tilted menu buttons so they cannot ghost through Settings.
+            if (menuPanel != null)
+                menuPanel.SetActive(false);
             settingsPanel?.Open();
+        }
+
+        private void HandleSettingsClosed()
+        {
+            // Restore main/pause menu chrome when Settings closes without a scene reload.
+            if (menuPanel == null)
+                return;
+
+            if (!GameSession.HasStarted || pauseOverlayActive)
+                menuPanel.SetActive(true);
         }
 
         private void OpenControls()
@@ -822,7 +860,10 @@ namespace Project.UI
                    candidate.name == "SaveSlotsPanel" ||
                    candidate.name == "StartPopupPanel" ||
                    candidate.name == "StartScreenBlackBackground" ||
-                   candidate.name == "PetPanel";
+                   candidate.name == "PetPanel" ||
+                   candidate.name == "UiFrontLayer" ||
+                   candidate.name == "PickupToastUI" ||
+                   candidate.name == "XpToastUI";
         }
 
         private void SetGameWorldPaused(bool paused)

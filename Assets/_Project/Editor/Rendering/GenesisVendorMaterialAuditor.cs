@@ -104,7 +104,7 @@ namespace Project.EditorTools.Rendering
                 return "HDRP/Unlit shader not found.";
 
             var unique = new HashSet<Material>();
-            var renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include);
             foreach (Renderer r in renderers)
             {
                 Material[] mats = r.sharedMaterials;

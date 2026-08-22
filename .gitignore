@@ -37,3 +37,19 @@ Assets/LocalAgent_*.txt.meta
 *.unitypackage
 "Assets/Audio/QP01 0016 Thunderstorm.wav"
 "Assets/Audio/QP01 0016 Thunderstorm.wav.meta"
+
+# Local dumps and generated (stay on disk, out of git)
+/Assets/_Recovery/
+/Assets/PROTOFACTOR/
+/Assets/PROTOFACTOR.meta
+/Assets/Gaia User Data/
+/Assets/Gaia User Data.meta
+/Assets/Procedural Worlds/Packages - Install/
+*.CellSupportData.bytes
+*.CellData.bytes
+*.CellOptionalData.bytes
+
+/Assets/Procedural Worlds/Packages - Install.meta
+/Assets/Procedural Worlds/Packages - Cache/
+/Assets/Procedural Worlds/Packages - Cache.meta
+/Assets/Dark Matter Genesis v1.56/
