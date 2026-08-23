@@ -13,7 +13,7 @@ namespace Project.EditorTools
     {
         private const string ObsoleteTypeToken = "ItemDataCreatorWindow";
         private const string ObsoleteTitleToken = "Item Data Creator";
-        private const string PrefKey = "DM.LayoutCleanup.ItemDataCreator.v2";
+        private const string PrefKey = "DM.LayoutCleanup.ItemDataCreator.v3";
 
         static ObsoleteEditorWindowLayoutCleanup()
         {

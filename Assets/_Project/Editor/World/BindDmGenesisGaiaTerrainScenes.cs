@@ -1,0 +1,77 @@
+﻿using System.Collections.Generic;
+using System.IO;
+using Gaia;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>
+/// Gaia looks for terrain scenes next to TerrainScenes.asset. The 16 DM Genesis
+/// tiles live under Sessions/DM Genesis/Terrain Scenes, so storage must live there
+/// and Terrain Loader Manager must point at that asset.
+/// </summary>
+[InitializeOnLoad]
+public static class BindDmGenesisGaiaTerrainScenes
+{
+    const string SessionStorage = "Assets/Gaia User Data/Sessions/DM Genesis/TerrainScenes.asset";
+    const string ScenesDir = "Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes";
+
+    static BindDmGenesisGaiaTerrainScenes()
+    {
+        EditorApplication.delayCall += BindIfNeeded;
+    }
+
+    [MenuItem("Dark Matter Genesis/World/Bind Gaia DM Genesis Terrain Scenes")]
+    public static void BindIfNeeded()
+    {
+        if (!Directory.Exists(ScenesDir) || !File.Exists(SessionStorage))
+        {
+            return;
+        }
+
+        TerrainSceneStorage storage = AssetDatabase.LoadAssetAtPath<TerrainSceneStorage>(SessionStorage);
+        if (storage == null)
+        {
+            Debug.LogWarning("Bind Gaia terrains: missing " + SessionStorage);
+            return;
+        }
+
+        storage.m_terrainTilesX = 4;
+        storage.m_terrainTilesZ = 4;
+        storage.m_terrainTilesSize = 2048;
+        storage.m_useFloatingPointFix = true;
+        storage.m_terrainLoadingEnabled = true;
+        storage.m_pos00X = -4096d;
+        storage.m_pos00Z = -4096d;
+        if (storage.m_terrainScenes == null)
+        {
+            storage.m_terrainScenes = new List<TerrainScene>();
+        }
+
+        storage.m_terrainScenes.RemoveAll(scene =>
+            scene == null ||
+            string.IsNullOrEmpty(scene.m_scenePath) ||
+            !scene.m_scenePath.Replace('\\', '/').Contains("Sessions/DM Genesis/Terrain Scenes"));
+
+        TerrainLoaderManager tlm = Object.FindFirstObjectByType<TerrainLoaderManager>();
+        if (tlm != null)
+        {
+            tlm.TerrainSceneStorage = storage;
+            tlm.LoadStorageData();
+            EditorUtility.SetDirty(tlm);
+        }
+
+        int expected = Directory.GetFiles(ScenesDir, "Terrain_*.unity").Length;
+        int bound = storage.m_terrainScenes.Count;
+        if (bound < expected)
+        {
+            Debug.LogWarning("Bind Gaia terrains: storage has " + bound + " scenes, folder has " + expected + ".");
+        }
+        else
+        {
+            Debug.Log("Bound " + bound + " DM Genesis terrain scenes to Terrain Loader Manager.");
+        }
+
+        EditorUtility.SetDirty(storage);
+        AssetDatabase.SaveAssets();
+    }
+}

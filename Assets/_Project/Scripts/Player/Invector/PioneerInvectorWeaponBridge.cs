@@ -71,6 +71,8 @@ namespace Project.Player.Invector
         private readonly Dictionary<GameObject, AuthoredSlotTransform> _authoredSlotTransforms = new();
         private ItemData _activeItem;
         private bool _startupWeaponLayoutReady;
+        private Coroutine _drawHolsterRoutine;
+        private Animator _animator;
 
         private struct AuthoredSlotTransform
         {
@@ -433,7 +435,7 @@ namespace Project.Player.Invector
             if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
                 return;
 
-            RefreshEquippedWeapon();
+            RefreshEquippedWeaponWithDrawHolsterAnim();
         }
 
         private void HandleInventoryChanged()
@@ -534,6 +536,130 @@ namespace Project.Player.Invector
                 FinalizeStartupWeaponLayout();
             else
                 RefreshEquippedWeapon();
+        }
+
+        private void RefreshEquippedWeaponWithDrawHolsterAnim()
+        {
+            PioneerAnimationPlanSettings settings = PioneerAnimationPlanSettings.Resolve(gameObject);
+            if (settings == null || !settings.enableDrawHolsterAnims)
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            if (_holsterPreviewActive || !NeedsWeaponVisualRefreshAfterInventoryChange())
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            PioneerShooterMeleeInput input = GetComponent<PioneerShooterMeleeInput>();
+            if (input != null && (input.IsAimingActive || input.isReloading || input.isEquipping))
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            ItemData incomingDrawn = _equipment != null && _equipment.IsWeaponDrawn
+                ? _equipment.DrawnWeaponItem
+                : null;
+            ItemData animItem = incomingDrawn != null
+                ? incomingDrawn
+                : (_activeItem != null ? _activeItem : (_equipment != null ? _equipment.EquippedItem : null));
+
+            if (animItem == null || (!animItem.IsRangedWeapon && animItem.itemType != ItemType.MeleeWeapon))
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            if (_drawHolsterRoutine != null)
+                StopCoroutine(_drawHolsterRoutine);
+
+            _drawHolsterRoutine = StartCoroutine(DrawHolsterThenRefresh(animItem));
+        }
+
+        private IEnumerator DrawHolsterThenRefresh(ItemData animItem)
+        {
+            Animator animator = ResolveWeaponAnimator();
+            string stateName = IsTwoHandHolsterItem(animItem) ? "HighBack" : "LowBack";
+            float delay = ResolveDrawHolsterDelay(animator, stateName);
+
+            if (animator != null && animator.enabled && animator.gameObject.activeInHierarchy)
+            {
+                int layer = animator.GetLayerIndex("UpperBody");
+                if (layer >= 0)
+                    animator.CrossFade(stateName, 0.25f, layer);
+                else
+                    animator.CrossFade(stateName, 0.25f);
+            }
+
+            if (delay > 0f)
+                yield return new WaitForSeconds(delay);
+
+            RefreshEquippedWeapon();
+            _drawHolsterRoutine = null;
+        }
+
+        private Animator ResolveWeaponAnimator()
+        {
+            if (_animator != null)
+                return _animator;
+
+            PioneerShooterMeleeInput input = GetComponent<PioneerShooterMeleeInput>();
+            if (input != null && input.animator != null)
+                _animator = input.animator;
+            else
+                _animator = GetComponent<Animator>();
+
+            if (_animator == null)
+                _animator = GetComponentInChildren<Animator>(true);
+
+            return _animator;
+        }
+
+        private static bool IsTwoHandHolsterItem(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (item.weaponGrip == WeaponGrip.TwoHanded || item.IsTwoHanded)
+                return true;
+
+            string holder = ResolveHolsterHolderName(item);
+            if (!string.IsNullOrEmpty(holder) &&
+                holder.Equals("RifleHolder", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            string socket = ResolveHolsterSocketName(item);
+            return !string.IsNullOrEmpty(socket) &&
+                   (socket.Equals("Spine", StringComparison.OrdinalIgnoreCase) ||
+                    socket.Equals("Spine2", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static float ResolveDrawHolsterDelay(Animator animator, string stateName)
+        {
+            const float fallback = 0.3f;
+            if (animator == null || animator.runtimeAnimatorController == null || string.IsNullOrEmpty(stateName))
+                return fallback;
+
+            AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+            if (clips == null)
+                return fallback;
+
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AnimationClip clip = clips[i];
+                if (clip == null || string.IsNullOrEmpty(clip.name))
+                    continue;
+
+                if (clip.name.IndexOf(stateName, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                return Mathf.Clamp(clip.length * 0.35f, 0.2f, 0.4f);
+            }
+
+            return fallback;
         }
 
         public void RefreshEquippedWeapon()

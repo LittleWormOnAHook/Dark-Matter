@@ -162,6 +162,7 @@ namespace Project.Interaction
         private void OnEnable()
         {
             ResourceIdentificationRegistry.Changed += OnIdentificationChanged;
+            EnsureInteractionVolume();
 
             if (interactionMode != ResourceNodeInteractionMode.HoldHarvest)
                 return;
@@ -203,9 +204,7 @@ namespace Project.Interaction
         private void OnDestroy()
         {
             PickupProximityDotUI.UnregisterHarvestNode(this);
-
-            if (holdProgressBar != null)
-                Destroy(holdProgressBar.gameObject);
+            SetHoldProgressBarVisible(false);
         }
 
         private void EnsureHarvestMapMarker()
@@ -331,7 +330,7 @@ namespace Project.Interaction
             if (resourceItem == null || context.Gatherer == null)
                 return -1f;
 
-            float distance = Vector3.Distance(context.PlayerPosition, transform.position);
+            float distance = DistanceToClosestPoint(context.PlayerPosition);
             if (distance > holdInteractRange)
                 return -1f;
 
@@ -342,8 +341,9 @@ namespace Project.Interaction
                     return 92f - distance;
             }
 
-            float aimDist = WorldUseController.GetViewRayDistance(context.ViewRay, GetNodeCenter());
-            if (aimDist > 1.1f)
+            // Reach is measured to the surface. Aim accepts a collider hit or a tight AABB graze
+            // (no 1.1m center slop — scaled rocks were unusable or falsely selected).
+            if (!IsViewAimedAtNode(context.ViewRay))
                 return -1f;
 
             return 85f - distance;
@@ -367,7 +367,7 @@ namespace Project.Interaction
             if (interactionMode != ResourceNodeInteractionMode.HoldHarvest
                 || resourceItem == null
                 || context.Gatherer == null
-                || Vector3.Distance(context.PlayerPosition, transform.position) > holdInteractRange)
+                || DistanceToClosestPoint(context.PlayerPosition) > holdInteractRange)
             {
                 return false;
             }
@@ -449,7 +449,7 @@ namespace Project.Interaction
             if (!holdActive || context.Gatherer == null || resourceItem == null)
                 return false;
 
-            if (Vector3.Distance(context.PlayerPosition, transform.position) > holdInteractRange)
+            if (DistanceToClosestPoint(context.PlayerPosition) > holdInteractRange)
             {
                 CancelHold(context);
                 progress01 = Mathf.Clamp01(holdProgress);
@@ -498,11 +498,7 @@ namespace Project.Interaction
         {
             holdActive = false;
             holdRetainUntil = Time.time + 4f;
-            float retained = Mathf.Clamp01(holdProgress);
-            if (retained > 0.01f)
-                UpdateHoldProgressBar(context, retained);
-            else
-                SetHoldProgressBarVisible(false);
+            SetHoldProgressBarVisible(false);
         }
 
         private int RollWaveYield(int min, int max, bool isLastWave)
@@ -595,16 +591,15 @@ namespace Project.Interaction
 
         private static AudioClip s_breakStoneClip;
         private static AudioClip s_harvestYieldClip;
-        private const string BuiltinBreakStoneClipPath = "Assets/Audio/Others/Break Stone.wav";
-        private const string BuiltinHarvestYieldClipPath = "Assets/Audio/Others/Break Wood Effect.wav";
+        private const string BuiltinBreakStoneClipPath = "Audio/Break Stone";
+        private const string BuiltinHarvestYieldClipPath = "Audio/Break Wood Effect";
 
-        private static AudioClip LoadBuiltinClip(ref AudioClip cache, string path)
+        private static AudioClip LoadBuiltinClip(ref AudioClip cache, string resourcesPath)
         {
             if (cache != null)
                 return cache;
-#if UNITY_EDITOR
-            cache = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
-#endif
+
+            cache = Resources.Load<AudioClip>(resourcesPath);
             return cache;
         }
 
@@ -614,6 +609,106 @@ namespace Project.Interaction
             if (rend != null)
                 return rend.bounds.center;
             return transform.position + Vector3.up * 0.4f;
+        }
+
+        /// <summary>
+        /// Preferred interaction collider: the runtime-fitted root box, else any child collider.
+        /// </summary>
+        public Collider GetInteractionCollider()
+        {
+            BoxCollider rootBox = GetComponent<BoxCollider>();
+            if (rootBox != null && rootBox.enabled)
+                return rootBox;
+
+            Collider[] cols = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < cols.Length; i++)
+            {
+                Collider col = cols[i];
+                if (col != null && col.enabled && col.gameObject.activeInHierarchy)
+                    return col;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Closest world point on this node's colliders, else the renderer AABB.
+        /// Use for reach / standoff so non-uniform scale and Visual-only plants work.
+        /// </summary>
+        public Vector3 GetClosestPoint(Vector3 worldPoint)
+        {
+            Collider[] cols = GetComponentsInChildren<Collider>(true);
+            float bestSqr = float.MaxValue;
+            Vector3 best = transform.position;
+            bool found = false;
+
+            for (int i = 0; i < cols.Length; i++)
+            {
+                Collider col = cols[i];
+                if (col == null || !col.enabled || !col.gameObject.activeInHierarchy)
+                    continue;
+
+                Vector3 candidate = SupportsClosestPoint(col)
+                    ? col.ClosestPoint(worldPoint)
+                    : col.bounds.ClosestPoint(worldPoint);
+                float sqr = (candidate - worldPoint).sqrMagnitude;
+                if (sqr >= bestSqr)
+                    continue;
+
+                bestSqr = sqr;
+                best = candidate;
+                found = true;
+            }
+
+            if (found)
+                return best;
+
+            Renderer rend = GetComponentInChildren<Renderer>();
+            if (rend != null)
+                return rend.bounds.ClosestPoint(worldPoint);
+
+            return transform.position;
+        }
+
+        private float DistanceToClosestPoint(Vector3 worldPoint)
+        {
+            return Vector3.Distance(worldPoint, GetClosestPoint(worldPoint));
+        }
+
+        private const float AimAabbMarginMeters = 0.35f;
+
+        private bool IsViewAimedAtNode(Ray viewRay)
+        {
+            Collider[] cols = GetComponentsInChildren<Collider>(true);
+            float maxDist = holdInteractRange + 8f;
+            for (int i = 0; i < cols.Length; i++)
+            {
+                Collider col = cols[i];
+                if (col == null || !col.enabled)
+                    continue;
+                if (col.Raycast(viewRay, out _, maxDist))
+                    return true;
+            }
+
+            Renderer rend = GetComponentInChildren<Renderer>();
+            Bounds aabb = rend != null
+                ? rend.bounds
+                : new Bounds(GetNodeCenter(), Vector3.one * 0.5f);
+            aabb.Expand(AimAabbMarginMeters * 2f);
+            return aabb.IntersectRay(viewRay);
+        }
+
+        private static bool SupportsClosestPoint(Collider collider)
+        {
+            if (collider is BoxCollider || collider is SphereCollider || collider is CapsuleCollider)
+                return true;
+            return collider is MeshCollider mesh && mesh.convex;
+        }
+
+        private void EnsureInteractionVolume()
+        {
+            if (GetComponent<ResourceNodeInteractionVolume>() == null)
+                gameObject.AddComponent<ResourceNodeInteractionVolume>();
         }
 
         private void EnsureHoldProgressBar()
@@ -653,11 +748,7 @@ namespace Project.Interaction
 
             PickupProximityDotUI.NotifyHarvested(this);
 
-            if (holdProgressBar != null)
-            {
-                Destroy(holdProgressBar.gameObject);
-                holdProgressBar = null;
-            }
+            SetHoldProgressBarVisible(false);
 
             // Return mining burn marks to the pool before Destroy so they are not orphaned in world space.
             DMILaserBurnMarkHost burnHost = GetComponent<DMILaserBurnMarkHost>();

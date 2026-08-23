@@ -39,6 +39,9 @@ namespace Project.UI
         private RectTransform expeditionPioneerRect;
         private readonly Vector3[] rectCorners = new Vector3[4];
         private int lastMiningChargePercent = -1;
+        private Texture2D cachedCrosshairTex;
+        private bool uguiCrosshairResolved;
+        private bool uguiCrosshairPresent;
 
         private void Awake()
         {
@@ -195,6 +198,10 @@ namespace Project.UI
             if (!showCrosshair || !ShouldShowHud(out _))
                 return;
 
+            // Skip IMGUI when a live UGUI crosshair already exists (optics / HUD image).
+            if (HasUguiCrosshair())
+                return;
+
             float centerX = Screen.width * 0.5f;
             float centerY = Screen.height * 0.5f;
             float spreadScale = IsAimingForHud() ? 0.75f : 1f;
@@ -205,6 +212,28 @@ namespace Project.UI
             DrawCrosshairLine(new Rect(centerX + gap, centerY - crosshairThickness * 0.5f, size, crosshairThickness));
             DrawCrosshairLine(new Rect(centerX - crosshairThickness * 0.5f, centerY - gap - size, crosshairThickness, size));
             DrawCrosshairLine(new Rect(centerX - crosshairThickness * 0.5f, centerY + gap, crosshairThickness, size));
+        }
+
+        private bool HasUguiCrosshair()
+        {
+            if (uguiCrosshairResolved)
+                return uguiCrosshairPresent;
+
+            uguiCrosshairResolved = true;
+            Graphic[] graphics = FindObjectsByType<Graphic>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (graphic == null || !graphic.isActiveAndEnabled)
+                    continue;
+                if (graphic.gameObject.name.IndexOf("crosshair", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    uguiCrosshairPresent = true;
+                    break;
+                }
+            }
+
+            return uguiCrosshairPresent;
         }
 
         private bool ShouldShowHud(out ItemData weapon)
@@ -234,7 +263,9 @@ namespace Project.UI
         {
             Color previous = GUI.color;
             GUI.color = crosshairColor;
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            if (cachedCrosshairTex == null)
+                cachedCrosshairTex = Texture2D.whiteTexture;
+            GUI.DrawTexture(rect, cachedCrosshairTex);
             GUI.color = previous;
         }
 

@@ -26,7 +26,7 @@ namespace Project.Interaction
         public const float MaxMineDistance = 6f;
         /// <summary>F-scan identify range (meters).</summary>
         public const float MaxScanDistance = 6f;
-        /// <summary>Minimum horizontal distance (meters) from a resource center required to start/maintain F-scan.</summary>
+        /// <summary>Minimum distance (meters) from a resource surface (closest point) required to start/maintain F-scan. Prevents standing inside the volume.</summary>
         public const float MinScanStandoffDistance = 2f;
         /// <summary>Visual laser + hit FX range when not locked on a resource (meters).</summary>
         private const float MaxBeamVisualDistance = 50f;
@@ -66,6 +66,9 @@ namespace Project.Interaction
         [SerializeField] private AudioClip continuousStartFallback;
         [Tooltip("Fallback stop one-shot if ItemData.continuousStopSound is empty.")]
         [SerializeField] private AudioClip continuousStopFallback;
+        [Tooltip("Cached HDRP unlit for laser line / particle fallbacks. Found once in Awake if empty.")]
+        [SerializeField] private Shader hdrpUnlitShader;
+        private static Shader s_cachedHdrpUnlitShader;
 
         private EquipmentController equipment;
         private ResourceGatherer gatherer;
@@ -114,6 +117,7 @@ namespace Project.Interaction
 
         private void Awake()
         {
+            CacheHdrpUnlitShader();
             equipment = GetComponent<EquipmentController>();
             gatherer = GetComponent<ResourceGatherer>();
             player = GetComponent<PlayerController>();
@@ -832,7 +836,7 @@ namespace Project.Interaction
 
             if (hasLock && lockedNode != null)
             {
-                float nodeDist = Vector3.Distance(transform.position, ResolveNodePoint(lockedNode));
+                float nodeDist = DistanceToNodeSurface(lockedNode);
                 if (nodeDist > MaxMineDistance)
                 {
                     lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
@@ -868,7 +872,7 @@ namespace Project.Interaction
                 out hit,
                 MaxMineDistance,
                 resourceLayer,
-                QueryTriggerInteraction.Ignore);
+                QueryTriggerInteraction.Collide);
 
             if (!acquired)
             {
@@ -879,7 +883,7 @@ namespace Project.Interaction
                     out hit,
                     MaxMineDistance,
                     resourceLayer,
-                    QueryTriggerInteraction.Ignore);
+                    QueryTriggerInteraction.Collide);
             }
 
             if (acquired)
@@ -907,6 +911,10 @@ namespace Project.Interaction
                         MiningToolResourceCollisionUtility.PushIgnoredResource(node, transform);
                     }
                 }
+            }
+            else
+            {
+                TryAcquireFromNearbyNodes(aimOrigin, aimDir, tool);
             }
         }
 
@@ -938,7 +946,7 @@ namespace Project.Interaction
                 aimDir,
                 maxDistance,
                 ~0,
-                QueryTriggerInteraction.Ignore);
+                QueryTriggerInteraction.Collide);
 
             float bestDist = float.MaxValue;
             bool found = false;
@@ -1021,12 +1029,90 @@ namespace Project.Interaction
             return node.transform.position;
         }
 
+        private float DistanceToNodeSurface(ResourceNode node)
+        {
+            if (node == null)
+                return float.MaxValue;
+            return Vector3.Distance(transform.position, node.GetClosestPoint(transform.position));
+        }
+
+        /// <summary>
+        /// First-acquire fallback when ray/sphere miss (non-uniform mesh colliders).
+        /// Tries TryGetLockPointOnNode on nearby LaserMine nodes.
+        /// </summary>
+        private void TryAcquireFromNearbyNodes(Vector3 aimOrigin, Vector3 aimDir, ItemData tool)
+        {
+            Collider[] nearby = Physics.OverlapSphere(
+                transform.position,
+                MaxMineDistance,
+                resourceLayer,
+                QueryTriggerInteraction.Collide);
+            if (nearby == null || nearby.Length == 0)
+                return;
+
+            ItemData drawnTool = ResolveDrawnMiningTool();
+            float breakDegrees = Mathf.Max(5f, tool != null ? tool.miningLockBreakDegrees : 25f);
+            float bestAngle = breakDegrees;
+            ResourceNode bestNode = null;
+            Vector3 bestPoint = default;
+
+            for (int i = 0; i < nearby.Length; i++)
+            {
+                if (nearby[i] == null)
+                    continue;
+
+                ResourceNode node = nearby[i].GetComponentInParent<ResourceNode>();
+                if (node == null || node.resourceItem == null)
+                    continue;
+                if (node.interactionMode != ResourceNodeInteractionMode.LaserMine)
+                    continue;
+                if (DistanceToNodeSurface(node) > MaxMineDistance)
+                    continue;
+                if (!node.AllowsMiningToolIgnoringIdentification(drawnTool))
+                    continue;
+                if (!TryGetLockPointOnNode(node, aimOrigin, aimDir, out Vector3 point))
+                    continue;
+
+                Vector3 toPoint = point - aimOrigin;
+                if (toPoint.sqrMagnitude < 0.0001f)
+                    continue;
+
+                float angle = Vector3.Angle(aimDir, toPoint);
+                if (angle > bestAngle)
+                    continue;
+
+                bestAngle = angle;
+                bestNode = node;
+                bestPoint = point;
+            }
+
+            if (bestNode == null)
+                return;
+
+            if (!bestNode.IsResourceIdentified)
+            {
+                MaybeToastScanRequired();
+                return;
+            }
+
+            if (!bestNode.AllowsMiningTool(drawnTool))
+                return;
+
+            lockedNode = bestNode;
+            lockPoint = bestPoint;
+            lockDirection = (bestPoint - aimOrigin).sqrMagnitude > 0.0001f
+                ? (bestPoint - aimOrigin).normalized
+                : aimDir.normalized;
+            hasLock = true;
+            MiningToolResourceCollisionUtility.PushIgnoredResource(bestNode, transform);
+        }
+
         private void TickMining(ItemData tool)
         {
             if (lockedNode == null || gatherer == null)
                 return;
 
-            if (Vector3.Distance(transform.position, ResolveNodePoint(lockedNode)) > MaxMineDistance)
+            if (DistanceToNodeSurface(lockedNode) > MaxMineDistance)
             {
                 lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
                 ClearLock();
@@ -1109,12 +1195,33 @@ namespace Project.Interaction
         /// LineRenderer / particle materials for this HDRP project. URP Unlit Shader.Find fails in
         /// player builds and leaves the mining beam invisible when plasma charge is draining.
         /// </summary>
-        private static Material CreateHdrpSafeUnlitMaterial(Color color, string materialName)
+        private void CacheHdrpUnlitShader()
         {
-            Shader shader = Shader.Find("HDRP/Unlit")
+            if (hdrpUnlitShader == null)
+                hdrpUnlitShader = FindHdrpUnlitShader();
+            if (hdrpUnlitShader != null)
+                s_cachedHdrpUnlitShader = hdrpUnlitShader;
+        }
+
+        private static Shader FindHdrpUnlitShader()
+        {
+            return Shader.Find("HDRP/Unlit")
                 ?? Shader.Find("Sprites/Default")
                 ?? Shader.Find("Unlit/Color")
                 ?? Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply");
+        }
+
+        private static Shader ResolveHdrpUnlitShader()
+        {
+            if (s_cachedHdrpUnlitShader != null)
+                return s_cachedHdrpUnlitShader;
+            s_cachedHdrpUnlitShader = FindHdrpUnlitShader();
+            return s_cachedHdrpUnlitShader;
+        }
+
+        private static Material CreateHdrpSafeUnlitMaterial(Color color, string materialName)
+        {
+            Shader shader = ResolveHdrpUnlitShader();
             if (shader == null)
                 return null;
 

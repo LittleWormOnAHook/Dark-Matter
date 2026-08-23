@@ -21,6 +21,8 @@ namespace Project.AI.Invector
         [SerializeField] private bool staggerOnCritical = true;
         [Tooltip("Non-crit soft hits use Invector TriggerReaction / animator flinch instead of ActiveRagdoll.")]
         [SerializeField] private bool preferAnimatorSoftHits = true;
+        [Tooltip("Map HitDirection to Invector HitAngle degrees (0 / 90 / -90 / 180) instead of 0/1/2/3.")]
+        [SerializeField] private bool enableEnemyDirectionalHits = true;
         [Tooltip("Horizontal impulse applied on crit knockdown (meters/sec feel). Keep low for a natural tip.")]
         [SerializeField] private float knockdownImpulse = 0.28f;
         [Tooltip("Soft-ragdoll impulse when Prefer Animator Soft Hits is off.")]
@@ -248,11 +250,21 @@ namespace Project.AI.Invector
 
             if (sourceDamage != null && sourceDamage.sender != null && HasAnimatorParam(animator, "HitDirection"))
             {
-                Vector3 toSender = sourceDamage.sender.position - transform.position;
-                float angle = Vector3.SignedAngle(transform.forward, toSender, Vector3.up);
-                int hitDir = angle > 45f ? 1 : angle < -45f ? 3 : 0;
-                if (Mathf.Abs(angle) > 135f)
-                    hitDir = 2;
+                int hitDir;
+                if (enableEnemyDirectionalHits)
+                {
+                    // Invector HitAngle: 0 front, 90 right, -90 left, 180 back.
+                    hitDir = (int)transform.HitAngle(sourceDamage.sender.position);
+                }
+                else
+                {
+                    Vector3 toSender = sourceDamage.sender.position - transform.position;
+                    float angle = Vector3.SignedAngle(transform.forward, toSender, Vector3.up);
+                    hitDir = angle > 45f ? 1 : angle < -45f ? 3 : 0;
+                    if (Mathf.Abs(angle) > 135f)
+                        hitDir = 2;
+                }
+
                 animator.SetInteger("HitDirection", hitDir);
             }
 

@@ -5,13 +5,75 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/_Project/Scenes/Genesis_HDRP_Test.unity
-    guid: 96ddd5f61897ec74089fc4a4104012c4
   - enabled: 1
     path: Assets/_Project/Scenes/Dark Matter Genesis v1.6.unity
     guid: 768903efaa566714d91723cbddedcd64
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_0_0-20260823
+      - 024958.unity
+    guid: d218148dfa57b0347a33a736a998f3af
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_0_1-20260823
+      - 024958.unity
+    guid: ecbefc3c47dca4742b64df2bbd1e7d65
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_0_2-20260823
+      - 024958.unity
+    guid: 43c4e392667183a45ae7236f63f4cec7
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_0_3-20260823
+      - 024958.unity
+    guid: 2f1b57ee04a55a84d80fa528c676f758
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_1_0-20260823
+      - 024958.unity
+    guid: 208c5b87643afb14a93907e4ce75f7b1
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_1_1-20260823
+      - 024958.unity
+    guid: 7f478f476f45768418141acab49e3a77
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_1_2-20260823
+      - 024958.unity
+    guid: cd4ae376a99c8b64680c7c9ecf8810e7
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_1_3-20260823
+      - 024958.unity
+    guid: 986bad336f07dea49aab6e3ad2c19b75
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_2_0-20260823
+      - 024958.unity
+    guid: 4e9dc1c314853f24490c59d6d83a2bfb
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_2_1-20260823
+      - 024958.unity
+    guid: 6e24206f8605f724499b56ba5e1cd8c0
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_2_2-20260823
+      - 024958.unity
+    guid: 691446c0d19038744acd26e4637006e7
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_2_3-20260823
+      - 024958.unity
+    guid: 45ce63bcf29ab844a9f6d2ff73c4eeee
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_3_0-20260823
+      - 024958.unity
+    guid: 685c6f3397b836a429fff20e6ce6c409
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_3_1-20260823
+      - 024958.unity
+    guid: 95883f8a8b7458c41b942eb9a7022285
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_3_2-20260823
+      - 024958.unity
+    guid: 18b9ea84539a4e9449032e3f9c3f4510
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_3_3-20260823
+      - 024958.unity
+    guid: 67b24979461940f428a31a373be08a26
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 6e057c20afe52a74a94e01fae3a1c27a, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: a35dce2a4a614b24da424ecc1655e41b, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

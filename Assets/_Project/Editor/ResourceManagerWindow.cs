@@ -1533,10 +1533,8 @@ namespace Project.EditorTools
 
         private static void EnsureMineralMeshCollider(GameObject root)
         {
-            BoxCollider[] boxes = root.GetComponentsInChildren<BoxCollider>(true);
-            for (int i = 0; i < boxes.Length; i++)
-                Object.DestroyImmediate(boxes[i]);
-
+            // Keep existing BoxColliders. Non-convex mesh colliders miss rays on
+            // non-uniform scale; the fitted root box is the interaction volume.
             MeshCollider mesh = root.GetComponentInChildren<MeshCollider>(true);
             if (mesh == null)
             {
@@ -1552,6 +1550,36 @@ namespace Project.EditorTools
             {
                 mesh.convex = false;
                 mesh.isTrigger = false;
+            }
+
+            EnsureFittedInteractionBox(root, isTrigger: true);
+        }
+
+        private static void EnsureFittedInteractionBox(GameObject root, bool isTrigger)
+        {
+            if (root == null)
+                return;
+
+            Renderer rend = root.GetComponentInChildren<Renderer>();
+            BoxCollider box = root.GetComponent<BoxCollider>();
+            if (box == null)
+                box = root.AddComponent<BoxCollider>();
+
+            box.isTrigger = isTrigger;
+            if (rend != null)
+            {
+                Bounds b = rend.bounds;
+                box.center = root.transform.InverseTransformPoint(b.center);
+                Vector3 lossy = root.transform.lossyScale;
+                box.size = new Vector3(
+                    SafeDiv(b.size.x, lossy.x),
+                    SafeDiv(b.size.y, lossy.y),
+                    SafeDiv(b.size.z, lossy.z)) + Vector3.one * 0.05f;
+            }
+            else if (box.size.sqrMagnitude < 0.0001f)
+            {
+                box.size = Vector3.one;
+                box.center = Vector3.zero;
             }
         }
 

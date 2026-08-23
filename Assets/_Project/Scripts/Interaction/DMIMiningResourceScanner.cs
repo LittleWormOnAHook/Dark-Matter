@@ -185,7 +185,7 @@ namespace Project.Interaction
             if (node == null || !IsScanStandoffOk(node))
                 return false;
 
-            if (Vector3.Distance(transform.position, node.GetNodeCenter()) > DMIMiningController.MaxScanDistance)
+            if (Vector3.Distance(transform.position, node.GetClosestPoint(transform.position)) > DMIMiningController.MaxScanDistance)
                 return false;
 
             Vector3 aimDir = ResolveAimDirection(out Vector3 aimOrigin);
@@ -219,12 +219,10 @@ namespace Project.Interaction
             if (node == null)
                 return false;
 
-            Vector3 delta = node.GetNodeCenter() - transform.position;
-            delta.y = 0f;
-            float distSq = delta.sqrMagnitude;
-            float minSq = DMIMiningController.MinScanStandoffDistance * DMIMiningController.MinScanStandoffDistance;
-            float maxSq = DMIMiningController.MaxScanDistance * DMIMiningController.MaxScanDistance;
-            return distSq >= minSq && distSq <= maxSq;
+            // Closest-point distance: 2m means "do not stand inside" the volume, 6m is max lock.
+            float dist = Vector3.Distance(transform.position, node.GetClosestPoint(transform.position));
+            return dist >= DMIMiningController.MinScanStandoffDistance
+                && dist <= DMIMiningController.MaxScanDistance;
         }
 
         private void BeginScan(ResourceNode node, Vector3 point)
@@ -361,7 +359,7 @@ namespace Project.Interaction
                         effectiveMask,
                         QueryTriggerInteraction.Collide))
                 {
-                    return false;
+                    return TryAcquireFromNearbyNodes(aimOrigin, aimDir, out node, out point);
                 }
 
                 found = true;
@@ -371,13 +369,67 @@ namespace Project.Interaction
             if (node == null || node.resourceItem == null)
                 return false;
 
+            float surfaceDist = Vector3.Distance(transform.position, node.GetClosestPoint(transform.position));
             if (Vector3.Distance(transform.position, bestHit.point) > DMIMiningController.MaxScanDistance
-                && Vector3.Distance(transform.position, node.GetNodeCenter()) > DMIMiningController.MaxScanDistance)
+                && surfaceDist > DMIMiningController.MaxScanDistance)
             {
                 return false;
             }
 
             point = bestHit.point;
+            return true;
+        }
+
+        private bool TryAcquireFromNearbyNodes(Vector3 aimOrigin, Vector3 aimDir, out ResourceNode node, out Vector3 point)
+        {
+            node = null;
+            point = default;
+
+            Collider[] nearby = Physics.OverlapSphere(
+                transform.position,
+                DMIMiningController.MaxScanDistance,
+                resourceLayer & ~(1 << 2),
+                QueryTriggerInteraction.Collide);
+            if (nearby == null || nearby.Length == 0)
+                return false;
+
+            float bestAngle = 25f;
+            ResourceNode bestNode = null;
+            Vector3 bestPoint = default;
+
+            for (int i = 0; i < nearby.Length; i++)
+            {
+                if (nearby[i] == null)
+                    continue;
+
+                ResourceNode candidate = nearby[i].GetComponentInParent<ResourceNode>();
+                if (candidate == null || candidate.resourceItem == null)
+                    continue;
+                if (Vector3.Distance(transform.position, candidate.GetClosestPoint(transform.position))
+                    > DMIMiningController.MaxScanDistance)
+                    continue;
+                if (!DMIMiningController.TryGetLockPointOnNode(
+                        candidate, aimOrigin, aimDir, DMIMiningController.MaxScanDistance, out Vector3 lockPoint))
+                    continue;
+
+                Vector3 toPoint = lockPoint - aimOrigin;
+                if (toPoint.sqrMagnitude < 0.0001f)
+                    continue;
+
+                float angle = Vector3.Angle(aimDir, toPoint);
+                if (angle > bestAngle)
+                    continue;
+
+                bestAngle = angle;
+                bestNode = candidate;
+                bestPoint = lockPoint;
+            }
+
+            if (bestNode == null)
+                return false;
+
+            node = bestNode;
+            point = bestPoint;
             return true;
         }
 

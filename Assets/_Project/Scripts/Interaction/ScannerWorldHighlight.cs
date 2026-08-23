@@ -15,6 +15,41 @@ namespace Project.Interaction
         private Material glowMaterial;
         private Transform poolRoot;
         private bool poolBuilt;
+        [SerializeField] private Shader glowShader;
+        private static Shader s_cachedGlowShader;
+
+        private void Awake()
+        {
+            CacheGlowShader();
+        }
+
+        private void OnEnable()
+        {
+            CacheGlowShader();
+        }
+
+        private void CacheGlowShader()
+        {
+            if (glowShader == null)
+                glowShader = FindGlowShader();
+            if (glowShader != null)
+                s_cachedGlowShader = glowShader;
+        }
+
+        private static Shader FindGlowShader()
+        {
+            return Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
+        }
+
+        private static Shader ResolveGlowShader()
+        {
+            if (s_cachedGlowShader != null)
+                return s_cachedGlowShader;
+            s_cachedGlowShader = FindGlowShader();
+            return s_cachedGlowShader;
+        }
 
         public void SetActive(bool active)
         {
@@ -72,9 +107,7 @@ namespace Project.Interaction
 
         private static Material CreateGlowMaterial()
         {
-            Shader shader = Shader.Find("HDRP/Unlit")
-                ?? Shader.Find("Sprites/Default")
-                ?? Shader.Find("Unlit/Color");
+            Shader shader = ResolveGlowShader();
 
             Color glow = new Color(0.3f, 0.95f, 0.75f, 0.75f);
             Material material = new Material(shader)

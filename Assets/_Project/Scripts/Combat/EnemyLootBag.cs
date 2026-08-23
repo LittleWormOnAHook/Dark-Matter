@@ -43,6 +43,11 @@ namespace Project.Combat
         [SerializeField] private Mesh dropMesh;
         [Tooltip("Optional albedo texture override applied in the Editor and on spawned instances.")]
         [SerializeField] private Texture dropTexture;
+        [Header("Shaders (cached)")]
+        [SerializeField] private Shader bagShader;
+        [SerializeField] private Shader dissolveShader;
+        private static Shader s_cachedBagShader;
+        private static Shader s_cachedDissolveShader;
 
         private readonly List<QuestRewardDefinition> remainingLoot = new List<QuestRewardDefinition>();
 
@@ -374,8 +379,43 @@ namespace Project.Combat
 
         private void OnEnable()
         {
+            CacheShaders();
             if (!Application.isPlaying)
                 ApplyAuthoredVisual();
+        }
+
+        private void CacheShaders()
+        {
+            if (bagShader == null)
+            {
+                bagShader = Shader.Find("HDRP/Lit")
+                    ?? Shader.Find("HDRP/Unlit")
+                    ?? Shader.Find("Sprites/Default");
+            }
+            if (dissolveShader == null)
+                dissolveShader = Shader.Find("Project/EnemyDisintegrate");
+            if (bagShader != null)
+                s_cachedBagShader = bagShader;
+            if (dissolveShader != null)
+                s_cachedDissolveShader = dissolveShader;
+        }
+
+        private static Shader ResolveBagShader()
+        {
+            if (s_cachedBagShader != null)
+                return s_cachedBagShader;
+            s_cachedBagShader = Shader.Find("HDRP/Lit")
+                ?? Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default");
+            return s_cachedBagShader;
+        }
+
+        private static Shader ResolveDissolveShader()
+        {
+            if (s_cachedDissolveShader != null)
+                return s_cachedDissolveShader;
+            s_cachedDissolveShader = Shader.Find("Project/EnemyDisintegrate");
+            return s_cachedDissolveShader;
         }
 
         private void OnValidate()
@@ -454,7 +494,7 @@ namespace Project.Combat
             visualMeshFilter = visual.GetComponent<MeshFilter>();
             if (bagRenderer != null)
             {
-                Shader shader = Shader.Find("HDRP/Lit") ?? Shader.Find("HDRP/Unlit") ?? Shader.Find("Sprites/Default");
+                Shader shader = ResolveBagShader();
                 Material bagMaterial = shader != null ? new Material(shader) : new Material(Shader.Find("Hidden/InternalErrorShader"));
                 bagMaterial.name = "DM_EnemyLootBag (Runtime)";
                 Color bagColor = new Color(0.42f, 0.28f, 0.14f, 1f);
@@ -485,7 +525,7 @@ namespace Project.Combat
             if (dissolveMaterial != null)
                 return;
 
-            Shader shader = Shader.Find("Project/EnemyDisintegrate");
+            Shader shader = ResolveDissolveShader();
             if (shader == null)
                 return;
 

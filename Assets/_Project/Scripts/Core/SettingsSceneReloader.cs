@@ -16,6 +16,13 @@ namespace Project.Core
         private static bool pendingReturnToMainMenu;
         private static bool pendingMenuSettingsReload;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnDomainReload()
+        {
+            pendingReturnToMainMenu = false;
+            pendingMenuSettingsReload = false;
+        }
+
         /// <summary>Called from <see cref="SettingsPanelController"/> after settings are saved.</summary>
         public static void ReloadAfterApply()
         {
@@ -74,6 +81,20 @@ namespace Project.Core
             PostProcessingController.Instance?.ApplyFromSettings();
         }
 
+        private static void TryShowSettingsAppliedToast()
+        {
+            Canvas canvas = MainMenuController.ResolveMainCanvas();
+            if (canvas == null)
+                canvas = Object.FindAnyObjectByType<Canvas>();
+            if (canvas == null)
+                return;
+
+            if (PickupToastUI.EnsureExists(canvas.transform) == null)
+                return;
+
+            PickupToastUI.Show("Settings applied. Progress saved.");
+        }
+
         private sealed class MainMenuReturnRunner : MonoBehaviour
         {
             public static void EnsureRunner()
@@ -105,7 +126,7 @@ namespace Project.Core
                 menu?.ShowMainMenu();
 
                 LoadingOverlayController.ReleaseOpaqueCover();
-                PickupToastUI.Show("Settings applied. Progress saved.");
+                TryShowSettingsAppliedToast();
                 Destroy(gameObject);
             }
         }

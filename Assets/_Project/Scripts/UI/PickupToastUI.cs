@@ -2,6 +2,7 @@ using System.Collections;
 using Project.Audio;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project.UI
 {
@@ -16,15 +17,46 @@ namespace Project.UI
         private Transform canvasRoot;
         private Vector2 restAnchoredPosition;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            instance = null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void HookSceneUnload()
+        {
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        private static void OnSceneUnloaded(Scene _)
+        {
+            instance = null;
+        }
+
         public static PickupToastUI EnsureExists(Transform canvasRootTransform)
         {
+            if (canvasRootTransform == null)
+                return null;
+
+            // Unity fake-null: destroyed objects compare equal to null.
+            if (instance == null)
+                instance = null;
+            else if (!instance)
+                instance = null;
+
             if (instance != null)
+            {
+                instance.EnsureActiveForPresentation();
                 return instance;
+            }
 
             GameObject host = new GameObject("PickupToastUI", typeof(RectTransform));
             host.transform.SetParent(canvasRootTransform, false);
             instance = host.AddComponent<PickupToastUI>();
             instance.Build(canvasRootTransform);
+            instance.EnsureActiveForPresentation();
             return instance;
         }
 
@@ -39,8 +71,24 @@ namespace Project.UI
             if (canvas == null)
                 return;
 
+            ActivateParentChain(canvas.transform);
+
             PickupToastUI toast = EnsureExists(canvas.transform);
+            if (toast == null)
+                return;
+
+            toast.EnsureActiveForPresentation();
             toast.Present(message);
+        }
+
+        private static void ActivateParentChain(Transform current)
+        {
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                    current.gameObject.SetActive(true);
+                current = current.parent;
+            }
         }
 
         /// <summary>Click + center fade toast used when a world pickup / gather cannot fit in inventory.</summary>

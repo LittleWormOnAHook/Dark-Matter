@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.ItemData
   itemName: Quora Shelter
   icon: {fileID: 21300000, guid: 6ce7a11be9ab170448da76614169b487, type: 3}
-  worldPrefab: {fileID: 170598, guid: d39eb7fdfc7cc4b4ba472bd562193eb3, type: 3}
+  worldPrefab: {fileID: 5590124727653140618, guid: 896b4ed8564e08b43963f11ec039d336, type: 3}
   maxStack: 1
   stableItemId: 2c99136a5a15f274293913ad040e6dde
   itemType: 1

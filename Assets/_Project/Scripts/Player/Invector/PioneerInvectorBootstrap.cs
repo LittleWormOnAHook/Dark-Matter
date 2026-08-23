@@ -83,6 +83,9 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerInvectorSurvivalBridge>() == null)
                 gameObject.AddComponent<PioneerInvectorSurvivalBridge>();
 
+            if (GetComponent<PioneerAnimationPlanSettings>() == null)
+                gameObject.AddComponent<PioneerAnimationPlanSettings>();
+
             if (GetComponent<PioneerInvectorDeathRagdoll>() == null)
                 gameObject.AddComponent<PioneerInvectorDeathRagdoll>();
 

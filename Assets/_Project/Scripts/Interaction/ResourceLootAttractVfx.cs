@@ -23,6 +23,42 @@ namespace Project.Interaction
         private bool _committed;
         private AudioClip _grantClip;
         private float _grantVolume = 0.95f;
+        [SerializeField] private Shader fallbackOrbShader;
+        private static Shader s_cachedFallbackOrbShader;
+
+        private void Awake()
+        {
+            CacheFallbackOrbShader();
+        }
+
+        private void OnEnable()
+        {
+            CacheFallbackOrbShader();
+        }
+
+        private void CacheFallbackOrbShader()
+        {
+            if (fallbackOrbShader == null)
+                fallbackOrbShader = FindFallbackOrbShader();
+            if (fallbackOrbShader != null)
+                s_cachedFallbackOrbShader = fallbackOrbShader;
+        }
+
+        private static Shader FindFallbackOrbShader()
+        {
+            return Shader.Find("HDRP/Lit")
+                ?? Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Standard");
+        }
+
+        private static Shader ResolveFallbackOrbShader()
+        {
+            if (s_cachedFallbackOrbShader != null)
+                return s_cachedFallbackOrbShader;
+            s_cachedFallbackOrbShader = FindFallbackOrbShader();
+            return s_cachedFallbackOrbShader;
+        }
 
         /// <param name="prefabOverride">
         /// Optional fly model. Prefer node.lootAttractPrefab, else item.worldPrefab.
@@ -65,10 +101,7 @@ namespace Project.Interaction
                 Renderer rend = go.GetComponent<Renderer>();
                 if (rend != null)
                 {
-                    Shader shader = Shader.Find("HDRP/Lit")
-                        ?? Shader.Find("HDRP/Unlit")
-                        ?? Shader.Find("Sprites/Default")
-                        ?? Shader.Find("Standard");
+                    Shader shader = ResolveFallbackOrbShader();
                     if (shader != null)
                     {
                         Color color = tint ?? new Color(0.82f, 0.72f, 0.35f, 1f);

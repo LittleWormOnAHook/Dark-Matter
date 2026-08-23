@@ -41,6 +41,10 @@ namespace Project.Inventory
         private SurvivalStats survivalStats;
         private EquipmentController equipment;
 
+        [Header("Drop Visual Fallback")]
+        [SerializeField] private Shader dropGhostShader;
+        private static Shader s_cachedDropGhostShader;
+
         // Consecutive drop spacing — keep rapid drops from stacking on one spot.
         private Vector3 lastDropSettledPosition;
         private Vector3 lastDropPlayerPosition;
@@ -59,6 +63,36 @@ namespace Project.Inventory
 
             survivalStats = GetComponent<SurvivalStats>();
             equipment = GetComponent<EquipmentController>();
+            CacheDropGhostShader();
+        }
+
+        private void OnEnable()
+        {
+            CacheDropGhostShader();
+        }
+
+        private void CacheDropGhostShader()
+        {
+            if (dropGhostShader == null)
+                dropGhostShader = FindDropGhostShader();
+            if (dropGhostShader != null)
+                s_cachedDropGhostShader = dropGhostShader;
+        }
+
+        private static Shader FindDropGhostShader()
+        {
+            return Shader.Find("HDRP/Lit")
+                ?? Shader.Find("HDRP/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Standard");
+        }
+
+        private static Shader ResolveDropGhostShader()
+        {
+            if (s_cachedDropGhostShader != null)
+                return s_cachedDropGhostShader;
+            s_cachedDropGhostShader = FindDropGhostShader();
+            return s_cachedDropGhostShader;
         }
 
         public void EnsureSlotCounts(int mainSize, int hotbar, int toolbar, int unlockedMain = -1)
@@ -547,14 +581,34 @@ namespace Project.Inventory
 
             StripNonPickupBehaviours(droppedObject);
 
+            // ItemPickup has [RequireComponent(typeof(Collider))]. Incomplete world
+            // prefabs (MeshFilter+MeshRenderer only, e.g. box2) fail AddComponent and
+            // leave a ghost drop. Fit a trigger collider before attaching pickup.
+            EnsureDroppedPhysicsAndPickup(droppedObject);
+
             ItemPickup pickup = droppedObject.GetComponent<ItemPickup>();
             if (pickup == null)
                 pickup = droppedObject.GetComponentInChildren<ItemPickup>();
             if (pickup == null)
+            {
+                if (droppedObject.GetComponent<Collider>() == null
+                    && droppedObject.GetComponentInChildren<Collider>(true) == null)
+                {
+                    SphereCollider trigger = droppedObject.AddComponent<SphereCollider>();
+                    trigger.isTrigger = true;
+                    trigger.radius = 0.45f;
+                }
+
                 pickup = droppedObject.AddComponent<ItemPickup>();
+            }
+
+            if (pickup == null)
+            {
+                Object.Destroy(droppedObject);
+                return false;
+            }
 
             pickup.PrepareForWorldDrop(item, amount);
-            EnsureDroppedPhysicsAndPickup(droppedObject);
 
             // Re-assert after pickup prep so PrepareForWorldDrop cannot drift visuals.
             if (prefab != null)
@@ -618,10 +672,7 @@ namespace Project.Inventory
                 Renderer renderer = droppedObject.GetComponent<Renderer>();
                 if (renderer != null)
                 {
-                    Shader shader = Shader.Find("HDRP/Lit")
-                        ?? Shader.Find("HDRP/Unlit")
-                        ?? Shader.Find("Sprites/Default")
-                        ?? Shader.Find("Standard");
+                    Shader shader = ResolveDropGhostShader();
                     if (shader != null)
                     {
                         Material material = new Material(shader);

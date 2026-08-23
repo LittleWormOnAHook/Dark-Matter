@@ -776,27 +776,59 @@ namespace Project.Player.Invector
 
         protected override void UpdateShooterAnimations()
         {
+            float onlyArmsBefore = onlyArmsLayerWeight;
             base.UpdateShooterAnimations();
 
-            if (shooterManager == null || shotLayer < 0 || CurrentActiveWeapon == null)
-                return;
-
-            ItemData weaponItem = _equipment != null ? _equipment.DrawnWeaponItem : null;
-            ItemData ammoItem = null;
-            if (_equipment != null)
+            if (shooterManager != null && shotLayer >= 0 && CurrentActiveWeapon != null)
             {
-                WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
-                if (ammoState != null)
-                    ammoItem = ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
+                ItemData weaponItem = _equipment != null ? _equipment.DrawnWeaponItem : null;
+                ItemData ammoItem = null;
+                if (_equipment != null)
+                {
+                    WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+                    if (ammoState != null)
+                        ammoItem = ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
+                }
+
+                bool isScopeView = IsAiming && isUsingScopeView;
+                float weight = PioneerInvectorRecoilUtility.ResolveShotAnimationWeight(
+                    weaponItem,
+                    ammoItem,
+                    isScopeView);
+
+                animator.SetLayerWeight(shotLayer, weight);
             }
 
-            bool isScopeView = IsAiming && isUsingScopeView;
-            float weight = PioneerInvectorRecoilUtility.ResolveShotAnimationWeight(
-                weaponItem,
-                ammoItem,
-                isScopeView);
+            ApplyUnarmedHangWhenDrawn(onlyArmsBefore);
+        }
 
-            animator.SetLayerWeight(shotLayer, weight);
+        /// <summary>
+        /// One-hand ranged hangs unarmed (OnlyArms 0, UpperBody_ID 0) until ADS / fire / reload / equip.
+        /// Two-hand rifles keep the armed pose unless <see cref="PioneerAnimationPlanSettings.includeTwoHandRangedInHang"/>.
+        /// </summary>
+        private void ApplyUnarmedHangWhenDrawn(float onlyArmsBefore)
+        {
+            if (!ShouldUseOneHandHang())
+                return;
+
+            if (shooterManager == null || animator == null)
+                return;
+
+            onlyArmsLayerWeight = Mathf.Lerp(
+                onlyArmsBefore,
+                0f,
+                shooterManager.onlyArmsSpeed * vTime.fixedDeltaTime);
+            animator.SetLayerWeight(onlyArmsLayer, onlyArmsLayerWeight);
+            animator.SetFloat(vAnimatorParameters.UpperBody_ID, 0f);
+        }
+
+        private bool IsTwoHandRangedDrawn()
+        {
+            ItemData item = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            if (item != null && item.IsRangedWeapon && item.weaponGrip == WeaponGrip.TwoHanded)
+                return true;
+
+            return shooterManager != null && shooterManager.GetUpperBodyID() == 2;
         }
 
         protected override bool CanRotateAimArm()
@@ -870,15 +902,105 @@ namespace Project.Player.Invector
 
         protected override void UpdateArmsIK(bool isUsingLeftHand = false)
         {
+            if (ShouldDetachLeftSupportHand())
+            {
+                DetachLeftSupportHand(isUsingLeftHand);
+                return;
+            }
+
             base.UpdateArmsIK(isUsingLeftHand);
 
-            if (!ShouldUseMeshySnapAim() || !IsAiming || IsIgnoreIK || CurrentActiveWeapon == null)
+            if (!ShouldUseMeshySnapAim() || IsIgnoreIK || CurrentActiveWeapon == null)
+                return;
+
+            if (!IsAiming && !IsFiringWeapon())
                 return;
 
             if (isEquipping || isReloading || cc == null || cc.customAction)
                 return;
 
             supportIKWeight = 1f;
+            SnapLeftSupportHand(isUsingLeftHand);
+        }
+
+        private bool ShouldUseOneHandHang()
+        {
+            PioneerAnimationPlanSettings settings = PioneerAnimationPlanSettings.Resolve(gameObject);
+            if (settings == null || !settings.enableUnarmedHangWhenDrawn)
+                return false;
+
+            if (CurrentActiveWeapon == null)
+                return false;
+
+            if (IsTwoHandRangedDrawn() && !settings.includeTwoHandRangedInHang)
+                return false;
+
+            if (IsAiming || IsFiringWeapon() || isReloading || isEquipping)
+                return false;
+
+            return true;
+        }
+
+        private bool IsFiringWeapon()
+        {
+            return shooterManager != null && shooterManager.isShooting;
+        }
+
+        /// <summary>
+        /// One-hand hang: drop left-hand support IK (grip / leftHandIK) so the arm hangs free.
+        /// Rifles keep two-hand grip because hang is off for them.
+        /// </summary>
+        private bool ShouldDetachLeftSupportHand()
+        {
+            return ShouldUseOneHandHang();
+        }
+
+        private void DetachLeftSupportHand(bool isUsingLeftHand)
+        {
+            if (animator == null)
+                return;
+
+            if (LeftIK == null || !LeftIK.isValidBones)
+                LeftIK = new vIKSolver(animator, AvatarIKGoal.LeftHand);
+            if (RightIK == null || !RightIK.isValidBones)
+                RightIK = new vIKSolver(animator, AvatarIKGoal.RightHand);
+
+            vIKSolver targetIK = isUsingLeftHand ? RightIK : LeftIK;
+            float outSpeed = shooterManager != null ? shooterManager.armIKSmoothOut : 20f;
+            supportIKWeight = Mathf.Lerp(supportIKWeight, 0f, outSpeed * vTime.fixedDeltaTime);
+            IsSupportHandIKEnabled = false;
+
+            if (targetIK == null)
+                return;
+
+            targetIK.SetIKWeight(0f);
+            if (shooterManager != null && shooterManager.CurrentWeaponIK)
+                targetIK.AnimationToIK();
+        }
+
+        /// <summary>Resnap support hand to the weapon handIKTarget / GripPoint while aiming or firing.</summary>
+        private void SnapLeftSupportHand(bool isUsingLeftHand)
+        {
+            if (CurrentActiveWeapon == null || CurrentActiveWeapon.handIKTargetOffset == null || animator == null)
+                return;
+
+            if (LeftIK == null || !LeftIK.isValidBones)
+                LeftIK = new vIKSolver(animator, AvatarIKGoal.LeftHand);
+            if (RightIK == null || !RightIK.isValidBones)
+                RightIK = new vIKSolver(animator, AvatarIKGoal.RightHand);
+
+            vIKSolver targetIK = isUsingLeftHand ? RightIK : LeftIK;
+            if (targetIK == null)
+                return;
+
+            float curve = shooterManager != null && shooterManager.armIKCurve != null
+                ? shooterManager.armIKCurve.Evaluate(1f)
+                : 1f;
+            targetIK.SetIKWeight(curve);
+            targetIK.SetIKPosition(CurrentActiveWeapon.handIKTargetOffset.position);
+            targetIK.SetIKRotation(CurrentActiveWeapon.handIKTargetOffset.rotation);
+            if (shooterManager != null && shooterManager.CurrentWeaponIK)
+                targetIK.AnimationToIK();
         }
 
         protected override void ApplyOffsetToTargetBone(IKOffsetTransform iKOffset, Transform target, bool isValidIK)

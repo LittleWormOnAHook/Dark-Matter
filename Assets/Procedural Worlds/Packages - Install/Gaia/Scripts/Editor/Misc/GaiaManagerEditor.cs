@@ -1,4 +1,4 @@
-﻿using Gaia.Internal;
+using Gaia.Internal;
 using Gaia.Pipeline;
 using Gaia.Pipeline.HDRP;
 using Gaia.Pipeline.URP;
@@ -555,13 +555,6 @@ namespace Gaia
 
                 Terrain currentTerrain = Terrain.activeTerrain;
 
-                if (currentTerrain == null || currentTerrain.terrainData == null)
-                {
-                    Debug.LogError("Gaia ran into an issue when evaluating the current world size: The active terrain in the scene and / or its terrain data is NULL. Please close the Gaia Manager, select a terrain that is active and has a terrain data object associated with it, and click the small refresh / reload button next to 'Existing World Size' in the Gaia Manager.");
-                    return;
-                }
-
-
                 if (GaiaUtils.HasDynamicLoadedTerrains())
                 {
                     m_existing_world_xDimension = TerrainLoaderManager.Instance.TerrainSceneStorage.m_terrainTilesX * TerrainLoaderManager.Instance.TerrainSceneStorage.m_terrainTilesSize;
@@ -572,6 +565,10 @@ namespace Gaia
                 }
                 else
                 {
+                    if (currentTerrain == null || currentTerrain.terrainData == null)
+                    {
+                        return;
+                    }
                     BoundsDouble boundsDouble = new BoundsDouble();
                     TerrainHelper.GetTerrainBounds(ref boundsDouble, true);
                     m_existing_world_xDimension = Mathd.RoundToInt(boundsDouble.size.x);
