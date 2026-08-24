@@ -21,9 +21,12 @@ namespace Project.Map
         public const float FogOverlayAlpha = 0.95f;
         public const float RevealThreshold = 0.35f;
 
+        /// <summary>Master toggle for map FOW overlay + reveal stamps. Off until re-enabled.</summary>
+        public static bool SystemEnabled { get; set; }
+
         public static MapFogOfWar Instance { get; private set; }
 
-        [SerializeField] private int fogResolution = 256;
+        [SerializeField] private int fogResolution = 2048;
         [SerializeField] private float walkStampIntervalMeters = 0.75f;
         [SerializeField] private float textureUploadInterval = 0.12f;
 
@@ -94,7 +97,7 @@ namespace Project.Map
 
         private void LateUpdate()
         {
-            if (!GameSession.HasStarted || !fullyInitialized)
+            if (!SystemEnabled || !GameSession.HasStarted || !fullyInitialized)
                 return;
 
             if (mapProvider == null)
@@ -117,7 +120,7 @@ namespace Project.Map
             mapProvider?.RefreshWorldBounds();
             EnsureBuffers();
             EnsurePlayer();
-            if (playerTransform != null)
+            if (SystemEnabled && playerTransform != null)
                 RevealCircle(playerTransform.position, WalkRevealRadiusMeters, edgeSoftnessMeters: 1.5f);
             UploadTexture();
         }
@@ -134,10 +137,7 @@ namespace Project.Map
 
         private void EnsureBuffers()
         {
-            int res = Mathf.Clamp(fogResolution, 64, 1024);
-            if (mapProvider != null && mapProvider.MapTexture != null)
-                res = Mathf.Clamp(mapProvider.MapTexture.width, 64, 1024);
-
+            int res = ResolveFogResolution();
             fogResolution = res;
             int count = res * res;
 
@@ -167,8 +167,27 @@ namespace Project.Map
             textureDirty = false;
         }
 
+        private int ResolveFogResolution()
+        {
+            int target = fogResolution;
+            if (mapProvider != null && mapProvider.MapTexture != null)
+                target = Mathf.Max(target, mapProvider.MapTexture.width);
+
+            float worldSpan = mapProvider != null
+                ? Mathf.Max(mapProvider.WorldBounds.size.x, mapProvider.WorldBounds.size.z)
+                : WorldMapProvider.MultiTerrainWorldSizeMeters;
+
+            if (worldSpan > 7000f)
+                target = Mathf.Max(target, 2048);
+
+            return Mathf.Clamp(target, 64, 4096);
+        }
+
         public void RevealCircle(Vector3 worldPosition, float radiusMeters, float edgeSoftnessMeters = 2f)
         {
+            if (!SystemEnabled)
+                return;
+
             if (!fullyInitialized)
                 EnsureBuffers();
 
@@ -228,12 +247,18 @@ namespace Project.Map
 
         public void RevealScanAt(Vector3 worldPosition)
         {
+            if (!SystemEnabled)
+                return;
+
             RevealCircle(worldPosition, GetScanRevealRadius(), edgeSoftnessMeters: 5f);
             UploadTexture();
         }
 
         public bool IsWorldRevealed(Vector3 worldPosition, float threshold = RevealThreshold)
         {
+            if (!SystemEnabled)
+                return true;
+
             if (!fullyInitialized || revealMask == null || mapProvider == null)
                 return false;
 
@@ -299,6 +324,9 @@ namespace Project.Map
 
         public void ApplySave(byte[] savedMask, int savedResolution)
         {
+            if (!SystemEnabled)
+                return;
+
             EnsureBuffers();
 
             if (savedMask == null || savedMask.Length == 0)
@@ -310,7 +338,6 @@ namespace Project.Map
             }
             else
             {
-                // Nearest-neighbor resample from older resolution.
                 int srcRes = savedResolution > 0
                     ? savedResolution
                     : Mathf.RoundToInt(Mathf.Sqrt(savedMask.Length));

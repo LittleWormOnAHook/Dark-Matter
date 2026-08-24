@@ -25,7 +25,7 @@ namespace Project.UI
     {
         private const float DefaultMinimapSize = 147f;
         private const float DefaultMinimapWorldSpan = 96f;
-        private const float ReferenceTerrainSpan = 512f;
+        private const float ReferenceTerrainSpan = WorldMapProvider.MultiTerrainWorldSizeMeters;
         private const float MinimapScreenDownShift = 0f;
         private const float MinimapEdgeInset = 16f;
         private const float MinimapTitleBarHeight = 0f;

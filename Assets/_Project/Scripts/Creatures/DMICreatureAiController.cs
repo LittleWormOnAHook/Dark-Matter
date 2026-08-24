@@ -13,6 +13,7 @@ namespace Project.Creatures
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyHealth))]
+    [DefaultExecutionOrder(-400)]
     public class DMICreatureAiController : MonoBehaviour
     {
         public enum CreatureAiState
@@ -99,6 +100,9 @@ namespace Project.Creatures
         private void Awake()
         {
             CacheReferences();
+            if (agent != null)
+                NavMeshAgentSafeBoot.PrepareAgent(gameObject, navMeshSampleRadius > 0.01f ? navMeshSampleRadius : 12f);
+
             if (bridge != null && bridge.Definition != null)
                 ConfigureFromDefinition(bridge.Definition);
             else if (brainProfile != null)

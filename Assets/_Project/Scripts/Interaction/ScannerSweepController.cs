@@ -109,7 +109,8 @@ namespace Project.Interaction
                 UpdateSweepDiscVisual(origin, currentRadius, t);
 
                 // Soft fog reveal grows with the pulse.
-                MapFogOfWar.Instance?.RevealCircle(origin, currentRadius, edgeSoftnessMeters: 5f);
+                if (MapFogOfWar.SystemEnabled)
+                    MapFogOfWar.Instance?.RevealCircle(origin, currentRadius, edgeSoftnessMeters: 5f);
 
                 int hitCount = Physics.OverlapSphereNonAlloc(
                     origin,
@@ -130,7 +131,8 @@ namespace Project.Interaction
                 yield return null;
             }
 
-            MapFogOfWar.Instance?.RevealScanAt(origin);
+            if (MapFogOfWar.SystemEnabled)
+                MapFogOfWar.Instance?.RevealScanAt(origin);
 
             if (sweepMeshRenderer != null)
                 sweepMeshRenderer.enabled = false;

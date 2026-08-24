@@ -533,6 +533,12 @@ namespace Project.Core
 
         private static byte[] BuildFogOfWarSave(out int resolution)
         {
+            if (!MapFogOfWar.SystemEnabled)
+            {
+                resolution = 0;
+                return null;
+            }
+
             MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
             if (fog == null)
             {
@@ -547,6 +553,9 @@ namespace Project.Core
 
         private static void ApplyFogOfWarSave(GameSaveData data)
         {
+            if (!MapFogOfWar.SystemEnabled)
+                return;
+
             MapFogOfWar fog = MapFogOfWar.EnsureExists();
             if (fog == null)
                 return;

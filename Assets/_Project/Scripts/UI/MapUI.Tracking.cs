@@ -18,8 +18,11 @@ namespace Project.UI
     {
         private void HandleMapTextureReady()
         {
+            SyncMinimapSpanFromWorldBounds();
             MapFogOfWar.EnsureExists()?.RebindAfterMapRefresh();
             ApplyMapTexture();
+            if (fullMapOpen)
+                CenterFullMapOnPlayer();
         }
 
         public void SyncMinimapSpanFromWorldBounds()
@@ -231,14 +234,14 @@ namespace Project.UI
             {
                 minimapFogImage.texture = fogTexture;
                 minimapFogImage.color = Color.white;
-                minimapFogImage.enabled = true;
+                minimapFogImage.enabled = MapFogOfWar.SystemEnabled;
             }
 
             if (fullMapFogImage != null)
             {
                 fullMapFogImage.texture = fogTexture;
                 fullMapFogImage.color = Color.white;
-                fullMapFogImage.enabled = true;
+                fullMapFogImage.enabled = MapFogOfWar.SystemEnabled;
             }
         }
 

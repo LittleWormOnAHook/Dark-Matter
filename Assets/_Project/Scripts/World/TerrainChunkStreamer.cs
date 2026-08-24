@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Unity.AI.Navigation;
 using UnityEngine;
 
 namespace Project.World
@@ -196,6 +197,23 @@ namespace Project.World
 
             if (chunk.Collider != null && chunk.Collider.enabled != on)
                 chunk.Collider.enabled = on;
+
+            NavMeshSurface surface = chunk.Terrain != null
+                ? chunk.Terrain.GetComponent<NavMeshSurface>()
+                : null;
+            if (surface != null && surface.navMeshData != null)
+            {
+                if (on)
+                {
+                    if (!surface.isActiveAndEnabled)
+                        surface.enabled = true;
+                    surface.AddData();
+                }
+                else
+                {
+                    surface.RemoveData();
+                }
+            }
 
             if (chunk.Terrain != null)
             {

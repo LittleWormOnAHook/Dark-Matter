@@ -53,13 +53,9 @@ namespace Project.Creatures
             if (agent == null)
                 return;
 
-            if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
-            {
+            NavMeshAgentSafeBoot.PrepareAgent(instance, 12f);
+            if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, 12f, NavMesh.AllAreas))
                 agent.Warp(hit.position);
-                return;
-            }
-
-            agent.Warp(worldPosition);
         }
     }
 }

@@ -23,7 +23,9 @@ namespace Project.Core
         private const float FallbackBloomIntensityBaseline = 0.234f;
 
         [SerializeField] private VolumeProfile volumeProfileTemplate;
-        [SerializeField] private bool createVolumeOnAwake = true;
+        // Scene volumes (BOTD Post Processing) are the play-mode source of truth.
+        // Do not spawn a competing high-priority GlobalPostProcessingVolume.
+        [SerializeField] private bool createVolumeOnAwake = false;
 
         private Volume globalVolume;
         private VolumeProfile runtimeVolumeProfile;
@@ -155,28 +157,16 @@ namespace Project.Core
 
         private void ApplyVolumeSettings(bool masterEnabled)
         {
-            if (globalVolume != null)
-            {
-                globalVolume.enabled = true;
-                globalVolume.weight = masterEnabled ? 1f : 0f;
+            // Only touch a volume this controller created. Never clone/stomp
+            // BOTD or other scene profiles via Volume.profile.
+            if (globalVolume == null)
+                return;
 
-                if (runtimeVolumeProfile != null)
-                    ApplyProfileOverrides(runtimeVolumeProfile, masterEnabled);
-            }
+            globalVolume.enabled = true;
+            globalVolume.weight = masterEnabled ? 1f : 0f;
 
-            VolumeProfile defaultProfile = ResolveHdrpDefaultVolumeProfile();
-            if (defaultProfile != null)
-                ApplyProfileOverrides(defaultProfile, masterEnabled);
-
-            Volume[] volumes = FindObjectsByType<Volume>(FindObjectsInactive.Include);
-            for (int i = 0; i < volumes.Length; i++)
-            {
-                Volume volume = volumes[i];
-                if (volume == null || volume.profile == null || volume == globalVolume)
-                    continue;
-
-                ApplyProfileOverrides(volume.profile, masterEnabled);
-            }
+            if (runtimeVolumeProfile != null)
+                ApplyProfileOverrides(runtimeVolumeProfile, masterEnabled);
         }
 
         private void ApplyProfileOverrides(VolumeProfile profile, bool masterEnabled)

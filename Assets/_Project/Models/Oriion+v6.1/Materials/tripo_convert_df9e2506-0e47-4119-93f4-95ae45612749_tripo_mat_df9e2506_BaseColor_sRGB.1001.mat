@@ -308,7 +308,7 @@ Material:
     - _SPECULAR_ROTATION: 0
     - _SPECULAR_ROUGHNESS: 1
     - _SPECULAR_WEIGHT: 0
-    - _Smoothness: 0.27
+    - _Smoothness: 0.3
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0
     - _SpecularAAScreenSpaceVariance: 0.1

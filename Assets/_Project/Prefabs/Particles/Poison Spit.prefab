@@ -52,6 +52,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 19800000, guid: 542e04bb0e49c4b66937d1aac62c6c13, type: 3}
+      propertyPath: lengthInSec
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 19800004, guid: 542e04bb0e49c4b66937d1aac62c6c13, type: 3}
+      propertyPath: lengthInSec
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 19800004, guid: 542e04bb0e49c4b66937d1aac62c6c13, type: 3}
       propertyPath: InitialModule.startSize.scalar
       value: 1
@@ -113,15 +121,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -33.790802
+      value: -30.878496
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.789
+      value: 0.0000032355567
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.31
+      value: -13.15396
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -173,7 +181,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 19800000, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: lengthInSec
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 19800000, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: InitialModule.maxNumParticles
@@ -213,7 +221,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 19800002, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: lengthInSec
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 19800002, guid: 75030f760c02b427fb1b815acd05db9d, type: 3}
       propertyPath: InitialModule.rotation3D

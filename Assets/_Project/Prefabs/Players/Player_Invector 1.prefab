@@ -2143,9 +2143,14 @@ MonoBehaviour:
     lastTimeTheButtonWasPressed: 0
     inButtomTimer: 0
   shooterManager: {fileID: 0}
-  scrollZoomNotchScale: 0.75
   runtimeMinCameraDistance: 2
   runtimeMaxCameraDistance: 15
+  runtimeDefaultCameraDistance: 1.6
+  aimZoomPullInMeters: 0.55
+  sprintZoomOutMeters: 0.85
+  aimMinCameraDistance: 0.78
+  meshySnapAim: 1
+  meshySnapAimRequiresVisual: 1
 --- !u!114 &6755861738323253669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2193,6 +2198,7 @@ MonoBehaviour:
   unlockedMainSlots: 20
   hotbarSize: 10
   toolbarSize: 2
+  dropGhostShader: {fileID: 0}
 --- !u!114 &7332195947425146993
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2318,6 +2324,7 @@ MonoBehaviour:
   opticsEyeOffset: {x: 0, y: 0.08, z: 0.12}
   opticsFallbackHeadHeight: 1.65
   opticsBodyTurnSpeed: 18
+  hidePlayerMeshInBinoculars: 1
   aimShoulderOffset: 0.55
   aimFollowDistance: 4.2
   aimCameraLerpSpeed: 10

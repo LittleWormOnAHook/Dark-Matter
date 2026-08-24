@@ -826,7 +826,7 @@ GameObject:
   m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &468602
 Transform:
   m_ObjectHideFlags: 0
@@ -2155,6 +2155,9 @@ MonoBehaviour:
   runtimeDefaultCameraDistance: 1.6
   aimZoomPullInMeters: 0.55
   sprintZoomOutMeters: 0.85
+  aimMinCameraDistance: 0.78
+  meshySnapAim: 1
+  meshySnapAimRequiresVisual: 1
 --- !u!114 &6755861738323253669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2202,6 +2205,7 @@ MonoBehaviour:
   unlockedMainSlots: 20
   hotbarSize: 10
   toolbarSize: 2
+  dropGhostShader: {fileID: 0}
 --- !u!114 &7332195947425146993
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83721,6 +83725,7 @@ GameObject:
   - component: {fileID: 7642025349644069721}
   - component: {fileID: 718470392790918396}
   - component: {fileID: 8796717540603662727}
+  - component: {fileID: 6863506425198869201}
   m_Layer: 0
   m_Name: Scan Cone
   m_TagString: Untagged
@@ -83883,6 +83888,41 @@ MonoBehaviour:
   useUnscaledTime: 0
   phaseOffset: 0
   previewInEditMode: 1
+--- !u!114 &6863506425198869201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8705647031310484090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8233d90336aea43098adf6dbabd606a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.ProBuilder::UnityEngine.ProBuilder.ProBuilderMesh
+  m_MeshFormatVersion: 0
+  m_Faces: []
+  m_SharedVertices: []
+  m_SharedTextures: []
+  m_Positions: []
+  m_Textures0: []
+  m_Textures2: []
+  m_Textures3: []
+  m_Tangents: []
+  m_Colors: []
+  m_UnwrapParameters:
+    m_HardAngle: 88
+    m_PackMargin: 20
+    m_AngleError: 8
+    m_AreaError: 15
+  m_PreserveMeshAssetOnDestroy: 0
+  assetGuid: 
+  m_Mesh: {fileID: 0}
+  m_VersionIndex: 0
+  m_IsSelectable: 1
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!1 &8792345005293859831
 GameObject:
   m_ObjectHideFlags: 0

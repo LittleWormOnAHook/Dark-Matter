@@ -16,17 +16,25 @@ namespace Project.Map
         private const string FakeMapResourcePath = "UI/FakeMap";
         private const string FakeMapAssetPath = "Assets/_Project/Textures/UI/FakeMap.png";
 
+        /// <summary>Gaia DM Genesis: 4×4 tiles × 2048 m ≈ 8.19 km playable span.</summary>
+        public const float MultiTerrainWorldSizeMeters = 8192f;
+        public static readonly Vector3 MultiTerrainWorldOrigin = new Vector3(-4096f, 0f, -4096f);
+
         public static WorldMapProvider Instance { get; private set; }
 
         [SerializeField] private Terrain terrain;
         [SerializeField] private bool useTerrainBounds = true;
-        [SerializeField] private Vector2 manualWorldSize = new Vector2(512f, 512f);
-        [SerializeField] private Vector3 manualWorldOrigin = Vector3.zero;
+        [Tooltip("When enabled, map UVs use the full Gaia 4×4 terrain span even if only nearby tiles are loaded.")]
+        [SerializeField] private bool useGaiaMultiTerrainBounds = true;
+        [SerializeField] private Vector2 manualWorldSize = new Vector2(MultiTerrainWorldSizeMeters, MultiTerrainWorldSizeMeters);
+        [SerializeField] private Vector3 manualWorldOrigin = MultiTerrainWorldOrigin;
         [SerializeField] private int mapTextureResolution = 512;
         [SerializeField] private Texture2D mapTextureOverride;
         [SerializeField] private bool buildTerrainTextureAtRuntime = true;
         [Tooltip("When a terrain exists, bake the live terrain map instead of the static FakeMap texture.")]
-        [SerializeField] private bool preferTerrainGeneratedMap = true;
+        [SerializeField] private bool preferTerrainGeneratedMap = false;
+        [Tooltip("Pull map texture from hierarchy MAP art (WorldMapArtReference) when no override is assigned.")]
+        [SerializeField] private bool useMapArtReference = true;
         [Tooltip("Render a top-down camera snapshot of the terrain (matches in-scene look). Falls back to height/splat bake.")]
         [SerializeField] private bool useCameraTerrainSnapshot = true;
         [Tooltip("Flip baked map V so terrain +Z (north) aligns with UI up.")]
@@ -63,6 +71,7 @@ namespace Project.Map
 
             Instance = this;
             EnsureTerrainReference();
+            TryApplyMapArtReference();
             RefreshWorldBounds();
 
             if (mapTextureOverride == null && !ShouldPreferTerrainGeneratedMap())
@@ -538,14 +547,40 @@ namespace Project.Map
 
         private void ResolveBounds()
         {
+            if (useGaiaMultiTerrainBounds)
+            {
+                Vector3 flatSize = new Vector3(MultiTerrainWorldSizeMeters, 100f, MultiTerrainWorldSizeMeters);
+                WorldBounds = new Bounds(MultiTerrainWorldOrigin + flatSize * 0.5f, flatSize);
+                return;
+            }
+
             if (useTerrainBounds && TryResolveTerrainBounds(out Bounds terrainBounds))
             {
                 WorldBounds = terrainBounds;
                 return;
             }
 
-            Vector3 flatSize = new Vector3(manualWorldSize.x, 100f, manualWorldSize.y);
-            WorldBounds = new Bounds(manualWorldOrigin + flatSize * 0.5f, flatSize);
+            Vector3 manualSize = new Vector3(manualWorldSize.x, 100f, manualWorldSize.y);
+            WorldBounds = new Bounds(manualWorldOrigin + manualSize * 0.5f, manualSize);
+        }
+
+        private void TryApplyMapArtReference()
+        {
+            if (!useMapArtReference)
+                return;
+
+            WorldMapArtReference artReference = WorldMapArtReference.FindInScene();
+            if (artReference == null)
+                return;
+
+            if (mapTextureOverride == null && artReference.TryGetMapTexture(out Texture2D artTexture))
+            {
+                mapTextureOverride = artTexture;
+                preferTerrainGeneratedMap = false;
+                buildTerrainTextureAtRuntime = false;
+            }
+
+            invertMapVertical = artReference.InvertMapVertical;
         }
 
         private bool TryResolveTerrainBounds(out Bounds combinedBounds)
@@ -693,7 +728,10 @@ namespace Project.Map
             if (maxDimension > 1400f)
                 scaled = Mathf.Max(scaled, 768);
 
-            return Mathf.Clamp(scaled, 128, 1024);
+            if (maxDimension > 7000f)
+                scaled = Mathf.Max(scaled, 2048);
+
+            return Mathf.Clamp(scaled, 128, 4096);
         }
 
         private static bool IsDedicatedMapTexture(Texture2D texture)
