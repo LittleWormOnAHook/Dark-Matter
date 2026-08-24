@@ -114,6 +114,16 @@ fun AppointmentsScreen(
         appointments = store.getAll()
     }
 
+    fun persistAppointment(appointment: Appointment) {
+        store.save(appointment)
+        val inspection = inspectionStore.saveFromAppointment(appointment)
+        if (appointment.inspectionId != inspection.id) {
+            store.save(appointment.copy(inspectionId = inspection.id))
+        }
+        refresh()
+        onInspectionLinked(inspection.id)
+    }
+
     val filteredAppointments = remember(appointments, searchQuery) {
         if (searchQuery.isBlank()) appointments
         else appointments.filter { apt ->
@@ -135,19 +145,10 @@ fun AppointmentsScreen(
                 showEditor = false
                 editingAppointment = null
                 editorQuickNotes = null
-            },
-            onSave = { appointment ->
-                store.save(appointment)
-                val inspection = inspectionStore.saveFromAppointment(appointment)
-                if (appointment.inspectionId != inspection.id) {
-                    store.save(appointment.copy(inspectionId = inspection.id))
-                }
-                refresh()
-                onInspectionLinked(inspection.id)
-                showEditor = false
-                editingAppointment = null
-                editorQuickNotes = null
                 quickAddText = ""
+            },
+            onAutoSave = { appointment ->
+                persistAppointment(appointment)
             }
         )
         return
