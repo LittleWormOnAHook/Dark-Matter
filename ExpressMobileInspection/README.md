@@ -45,12 +45,12 @@ Android app for **Express Mobile Service** (904-514-2885). Schedule customer job
 
 ## Install on your phone
 
-### Shareable install link (v2.2.3) — send this to anyone
+### Shareable install link (v2.5.13) — send this to anyone
 
-**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.3/ExpressMobileInspection.apk)**
+**[Download Express Mobile Inspection](https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.13/ExpressMobileInspection.apk)**
 
 ```
-https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.2.3/ExpressMobileInspection.apk
+https://github.com/LittleWormOnAHook/Dark-Matter/releases/download/express-inspection-v2.5.13/ExpressMobileInspection.apk
 ```
 
 All app releases: [GitHub Releases (express-inspection)](https://github.com/LittleWormOnAHook/Dark-Matter/releases?q=express-inspection)
