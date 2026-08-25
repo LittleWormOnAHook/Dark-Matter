@@ -72,6 +72,54 @@ EditorBuildSettings:
     path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Terrain_3_3-20260823
       - 024958.unity
     guid: 67b24979461940f428a31a373be08a26
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_0_0.unity
+    guid: 232ace6ca296d724c8b37b3ed6f51092
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_0_1.unity
+    guid: 5f6ff123c9ed581449b54442ecf2e13b
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_0_2.unity
+    guid: d91c533552233a94488a7d9513e02b8d
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_0_3.unity
+    guid: 857b13e65b968aa45a9ddc21d6b2d4aa
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_1_0.unity
+    guid: dd0d0795528983d49933591a78a53acd
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_1_1.unity
+    guid: c9c5733629b09794393a5e5a80a442f3
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_1_2.unity
+    guid: d09e6d960e3b4b042b9a1d7b053d6eb7
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_1_3.unity
+    guid: f429ac946800a7b46acd82b5325c0834
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_2_0.unity
+    guid: 7e2e81d5528816f42af6f3cb3702a985
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_2_1.unity
+    guid: 1d8e614e66f6cb3429b14a15e0ef4856
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_2_2.unity
+    guid: b7ff31c760881d740aba25a3724d417a
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_2_3.unity
+    guid: f55b78768f98c3e429abda3627c03994
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_3_0.unity
+    guid: 802235d831aafd14bb2420ea0763658b
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_3_1.unity
+    guid: e87c90946c769fb4a87f7cec02d72bc3
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_3_2.unity
+    guid: 8e180a9bc3dd86f4ea5c0a641fa71be4
+  - enabled: 1
+    path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_3_3.unity
+    guid: fce4542da63cdf04d854b07d8307eaa9
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 6e057c20afe52a74a94e01fae3a1c27a, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}

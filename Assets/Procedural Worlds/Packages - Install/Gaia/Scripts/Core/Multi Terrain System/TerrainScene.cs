@@ -262,25 +262,28 @@ namespace Gaia
                             break;
                         }
 
+                        Terrain cachedTerrain = null;
                         foreach (GameObject go in scene.GetRootGameObjects())
                         {
                             go.SetActive(true);
                             Terrain terrain = go.GetComponent<Terrain>();
                             if (terrain != null)
                             {
-                                //reactivate terrain / trees in case if culled
-                                terrain.drawTreesAndFoliage = true;
                                 terrain.drawHeightmap = true;
+                                terrain.drawTreesAndFoliage = !Application.isPlaying;
                                 m_terrainObj = go;
-                                CheckForStitching(terrain);
+                                cachedTerrain = terrain;
+                                if (!Application.isPlaying)
+                                {
+                                    CheckForStitching(terrain);
+                                }
                             }
                         }
-                        //Is this a regular scene that just came out of cache and the Impostor is still loaded? Remove it!
-                        if (!isImpostor && m_impostorLoadState == LoadState.Loaded)
-                        {
-                            ReplaceImpostor();
-                        }
                         loadState = LoadState.Loaded;
+                        if (!isImpostor)
+                        {
+                            FinishRegularWake(cachedTerrain);
+                        }
                     }
                     //we still need to process force removal requests
                     if (referenceList.Count <= 0 && scene.isLoaded && m_forceSceneRemove)
@@ -829,15 +832,19 @@ namespace Gaia
                 if (terrain != null)
                 {
                     m_terrainObj = go;
+                    if (Application.isPlaying)
+                    {
+                        terrain.drawTreesAndFoliage = false;
+                    }
                 }
                 go.SetActive(true);
+                if (terrain != null)
+                {
+                    terrain.drawHeightmap = true;
+                }
             }
             m_regularLoadState = LoadState.Loaded;
-            ReplaceImpostor();
-            if (terrain != null)
-            {
-                CheckForStitching(terrain);
-            }
+            FinishRegularWake(terrain);
 #endif
         }
 
@@ -882,6 +889,26 @@ namespace Gaia
             {
                 TerrainHelper.TryStitch(terrain, StitchDirection.South);
             }
+        }
+
+        public void FinishStaggeredWake(Terrain terrain)
+        {
+            ReplaceImpostor();
+            if (terrain != null)
+            {
+                CheckForStitching(terrain);
+            }
+        }
+
+        private void FinishRegularWake(Terrain terrain)
+        {
+            if (Application.isPlaying && TerrainLoaderManager.Instance != null)
+            {
+                TerrainLoaderManager.Instance.BeginStaggeredTerrainWake(this, terrain);
+                return;
+            }
+
+            FinishStaggeredWake(terrain);
         }
 
         private void ReplaceImpostor()

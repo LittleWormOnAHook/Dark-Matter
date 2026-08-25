@@ -39,6 +39,7 @@ namespace Project.World
         private readonly List<Chunk> _chunks = new List<Chunk>(16);
         private readonly List<int> _order = new List<int>(16);
         private readonly HashSet<int> _active = new HashSet<int>();
+        private readonly HashSet<int> _navMeshAdded = new HashSet<int>();
         private float _nextUpdate;
         private static readonly Regex GridName = new Regex(@"(\d+)[_\-](\d+)", RegexOptions.Compiled);
 
@@ -71,6 +72,16 @@ namespace Project.World
         private void OnEnable()
         {
             _nextUpdate = 0f;
+        }
+
+        private void OnDisable()
+        {
+            ReleaseAllNavMeshData();
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseAllNavMeshData();
         }
 
         private void LateUpdate()
@@ -198,28 +209,57 @@ namespace Project.World
             if (chunk.Collider != null && chunk.Collider.enabled != on)
                 chunk.Collider.enabled = on;
 
-            NavMeshSurface surface = chunk.Terrain != null
-                ? chunk.Terrain.GetComponent<NavMeshSurface>()
-                : null;
-            if (surface != null && surface.navMeshData != null)
-            {
-                if (on)
-                {
-                    if (!surface.isActiveAndEnabled)
-                        surface.enabled = true;
-                    surface.AddData();
-                }
-                else
-                {
-                    surface.RemoveData();
-                }
-            }
+            SetChunkNavMesh(chunk, on);
 
             if (chunk.Terrain != null)
             {
                 chunk.Terrain.drawHeightmap = on;
                 chunk.Terrain.drawTreesAndFoliage = on;
             }
+        }
+
+        private void SetChunkNavMesh(Chunk chunk, bool on)
+        {
+            if (chunk == null || chunk.Terrain == null)
+                return;
+
+            NavMeshSurface surface = chunk.Terrain.GetComponent<NavMeshSurface>();
+            if (surface == null || surface.navMeshData == null)
+                return;
+
+            int id = surface.GetInstanceID();
+            if (on)
+            {
+                if (!surface.isActiveAndEnabled)
+                    surface.enabled = true;
+                if (!_navMeshAdded.Contains(id))
+                {
+                    surface.AddData();
+                    _navMeshAdded.Add(id);
+                }
+            }
+            else if (_navMeshAdded.Remove(id))
+            {
+                surface.RemoveData();
+            }
+        }
+
+        private void ReleaseAllNavMeshData()
+        {
+            for (int i = 0; i < _chunks.Count; i++)
+            {
+                Chunk chunk = _chunks[i];
+                if (chunk == null || chunk.Terrain == null)
+                    continue;
+
+                NavMeshSurface surface = chunk.Terrain.GetComponent<NavMeshSurface>();
+                if (surface == null)
+                    continue;
+
+                surface.RemoveData();
+            }
+
+            _navMeshAdded.Clear();
         }
 
         private void RefreshNeighborsIfNeeded()

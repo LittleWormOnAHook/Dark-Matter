@@ -14,6 +14,7 @@ namespace Project.Vehicles
 {
     /// <summary>
     /// Handles boarding: hide player/trio, disable motors, restore on exit.
+    /// The Player_v7 root rides with the craft so TLM unloads the mount tiles.
     /// </summary>
     [DisallowMultipleComponent]
     public class HovercraftOccupancy : MonoBehaviour
@@ -27,6 +28,10 @@ namespace Project.Vehicles
         private readonly List<Collider> _disabledColliders = new List<Collider>(16);
 
         private PlayerController _mountedPlayer;
+        private Transform _mountedRoot;
+        private Rigidbody _mountedBody;
+        private bool _mountedBodyWasKinematic;
+        private bool _mountedBodyDetectCollisions;
         private CompanionRosterBridge _companionBridge;
         private bool _isOccupied;
         private Vector3 _savedPlayerWorldScale = Vector3.one;
@@ -77,15 +82,44 @@ namespace Project.Vehicles
             return true;
         }
 
+        private void LateUpdate()
+        {
+            if (!_isOccupied || _mountedRoot == null)
+                return;
+
+            Transform holder = ResolveHolder();
+            if (_mountedRoot.parent != holder)
+                _mountedRoot.SetParent(holder, false);
+
+            _mountedRoot.localPosition = Vector3.zero;
+            _mountedRoot.localRotation = Quaternion.identity;
+        }
+
         private void HidePlayer(PlayerController player)
         {
             if (player.TryGetComponent(out PioneerInvectorWeaponBridge weaponBridge))
                 weaponBridge.PrepareForVehicleBoarding();
 
-            Transform holder = hiddenCrewHolder != null ? hiddenCrewHolder : transform;
-            _savedPlayerWorldScale = player.transform.lossyScale;
-            player.transform.SetParent(holder, true);
-            player.transform.localPosition = Vector3.zero;
+            Transform holder = ResolveHolder();
+            _mountedRoot = ResolveRideRoot(player);
+            _savedPlayerWorldScale = _mountedRoot.lossyScale;
+            _mountedRoot.SetParent(holder, false);
+            _mountedRoot.localPosition = Vector3.zero;
+            _mountedRoot.localRotation = Quaternion.identity;
+            _mountedRoot.localScale = Vector3.one;
+
+            _mountedBody = _mountedRoot.GetComponent<Rigidbody>();
+            if (_mountedBody == null)
+                _mountedBody = player.GetComponent<Rigidbody>();
+            if (_mountedBody != null)
+            {
+                _mountedBodyWasKinematic = _mountedBody.isKinematic;
+                _mountedBodyDetectCollisions = _mountedBody.detectCollisions;
+                _mountedBody.linearVelocity = Vector3.zero;
+                _mountedBody.angularVelocity = Vector3.zero;
+                _mountedBody.isKinematic = true;
+                _mountedBody.detectCollisions = false;
+            }
 
             _deactivatedChildren.Clear();
             for (int i = 0; i < player.transform.childCount; i++)
@@ -119,6 +153,9 @@ namespace Project.Vehicles
             DisableBehaviour(player.GetComponent<PioneerShooterMeleeInput>());
             DisableBehaviour(player.GetComponent<vHeadTrack>());
             DisableBehaviour(player.GetComponent<vRagdoll>());
+            PioneerTerrainRescue[] rescues = _mountedRoot.GetComponentsInChildren<PioneerTerrainRescue>(true);
+            for (int r = 0; r < rescues.Length; r++)
+                DisableBehaviour(rescues[r]);
             DisableBehaviour(player.GetComponent<PioneerTerrainRescue>());
             DisableBehaviour(player.GetComponent<vShooterManager>());
             DisableBehaviour(player.GetComponent<vMeleeManager>());
@@ -150,9 +187,18 @@ namespace Project.Vehicles
 
         private void RestorePlayer(PlayerController player, Vector3 worldPosition, Quaternion worldRotation)
         {
-            player.transform.SetParent(null, true);
-            player.transform.SetPositionAndRotation(worldPosition, worldRotation);
-            player.transform.localScale = _savedPlayerWorldScale;
+            if (_mountedBody != null)
+            {
+                _mountedBody.isKinematic = _mountedBodyWasKinematic;
+                _mountedBody.detectCollisions = _mountedBodyDetectCollisions;
+                _mountedBody.linearVelocity = Vector3.zero;
+                _mountedBody.angularVelocity = Vector3.zero;
+            }
+
+            Transform root = _mountedRoot != null ? _mountedRoot : player.transform;
+            root.SetParent(null, true);
+            root.SetPositionAndRotation(worldPosition, worldRotation);
+            root.localScale = _savedPlayerWorldScale;
 
             for (int i = 0; i < _deactivatedChildren.Count; i++)
             {
@@ -172,7 +218,7 @@ namespace Project.Vehicles
                     _disabledBehaviours[i].enabled = true;
             }
 
-            if (player.TryGetComponent(out Rigidbody body))
+            if (player.TryGetComponent(out Rigidbody body) && body != _mountedBody)
             {
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;
@@ -196,6 +242,40 @@ namespace Project.Vehicles
             _deactivatedChildren.Clear();
             _disabledColliders.Clear();
             _disabledBehaviours.Clear();
+            _mountedRoot = null;
+            _mountedBody = null;
+        }
+
+        private Transform ResolveHolder()
+        {
+            if (hiddenCrewHolder != null)
+                return hiddenCrewHolder;
+
+            Transform existing = transform.Find("HiddenCrewHolder");
+            if (existing != null)
+            {
+                hiddenCrewHolder = existing;
+                return hiddenCrewHolder;
+            }
+
+            GameObject go = new GameObject("HiddenCrewHolder");
+            hiddenCrewHolder = go.transform;
+            hiddenCrewHolder.SetParent(transform, false);
+            hiddenCrewHolder.localPosition = new Vector3(0f, 0.8f, 0f);
+            return hiddenCrewHolder;
+        }
+
+        private static Transform ResolveRideRoot(PlayerController player)
+        {
+            GameObject named = GameObject.Find("Player_v7");
+            if (named != null)
+                return named.transform;
+
+            Transform t = player.transform;
+            if (t.root != null && t.root.CompareTag("Player"))
+                return t.root;
+
+            return t;
         }
 
         private void HideCompanions(PlayerController player)

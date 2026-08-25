@@ -868,23 +868,31 @@ namespace Gaia
                 range = m_lastNonZeroLoadingRange > 0 ? m_lastNonZeroLoadingRange : 2;
             }
 
+            if (GetImpostorLoadingRange() < 1000)
+            {
+                m_sceneViewImpostorLoadingBounds.extents = new Vector3Double(3500, 3500, 3500);
+            }
+
+            m_cacheInRuntime = true;
+            m_unloadUnusedAssetsRuntime = false;
+
             GameObject player = FindRuntimePlayer();
             GameObject cameraGo = FindRuntimeCamera();
+            GameObject origin = player != null ? player : cameraGo;
 
-            RequestRuntimeTilesAround(player, range);
-            RequestRuntimeTilesAround(cameraGo, range);
+            RequestRuntimeTilesAround(origin, range);
 
-            if (player == null && m_runtimeFollowTarget != null)
+            if (m_runtimeFollowTarget != null && m_runtimeFollowTarget != origin)
             {
                 RemoveAllReferencesOfGameObject(m_runtimeFollowTarget);
             }
-            if (cameraGo == null && m_runtimeCameraTarget != null)
+            if (m_runtimeCameraTarget != null && m_runtimeCameraTarget != origin)
             {
                 RemoveAllReferencesOfGameObject(m_runtimeCameraTarget);
             }
 
-            m_runtimeFollowTarget = player;
-            m_runtimeCameraTarget = cameraGo;
+            m_runtimeFollowTarget = origin;
+            m_runtimeCameraTarget = origin;
         }
 
         private static GameObject FindRuntimePlayer()
@@ -924,16 +932,157 @@ namespace Gaia
 
         private void RequestRuntimeTilesAround(GameObject requester, double range)
         {
-            if (requester == null || !requester.activeInHierarchy)
+            if (requester == null || !requester.activeInHierarchy || m_terrainSceneStorage == null)
             {
                 return;
             }
 
             Vector3 pos = requester.transform.position;
+
+            // Four nearest regular tiles around the player. Impostors cover the rest.
+            double tile = m_terrainSceneStorage.m_terrainTilesSize > 0 ? m_terrainSceneStorage.m_terrainTilesSize : 2048;
+            int tx = GetTerrainX(pos.x);
+            int tz = GetTerrainZ(pos.z);
+            double cx = m_terrainSceneStorage.m_pos00X + tx * tile + tile * 0.5;
+            double cz = m_terrainSceneStorage.m_pos00Z + tz * tile + tile * 0.5;
             BoundsDouble regular = new BoundsDouble(
+                new Vector3Double(cx, pos.y, cz),
+                new Vector3Double(tile * 0.75, tile, tile * 0.75));
+
+            double impostorRange = GetImpostorLoadingRange();
+            if (impostorRange < 1000)
+            {
+                impostorRange = 3500;
+            }
+            BoundsDouble impostor = new BoundsDouble(
                 new Vector3Double(pos.x, pos.y, pos.z),
-                new Vector3Double(range * 2.0, range * 2.0, range * 2.0));
-            UpdateTerrainLoadState(regular, null, requester);
+                new Vector3Double(impostorRange * 2.0, impostorRange * 2.0, impostorRange * 2.0));
+            Camera cam = null;
+            if (Camera.main != null && Camera.main.isActiveAndEnabled)
+            {
+                cam = Camera.main;
+            }
+            UpdateTerrainLoadState(regular, impostor, requester, 0, 0, 0, 0, cam);
+            AddNearestRegularTiles(requester, pos, tx, tz, cam, 4);
+        }
+
+        private void AddNearestRegularTiles(GameObject requester, Vector3 pos, int tx, int tz, Camera cam, int maxRegular)
+        {
+            if (requester == null || m_terrainSceneStorage == null || m_terrainSceneStorage.m_terrainScenes == null)
+            {
+                return;
+            }
+
+            List<TerrainScene> extras = new List<TerrainScene>();
+            for (int i = 0; i < m_terrainSceneStorage.m_terrainScenes.Count; i++)
+            {
+                TerrainScene ts = m_terrainSceneStorage.m_terrainScenes[i];
+                if (ts == null || (ts.m_xCoord == tx && ts.m_zCoord == tz))
+                {
+                    continue;
+                }
+                extras.Add(ts);
+            }
+
+            extras.Sort((a, b) =>
+            {
+                float dax = pos.x - (float)a.m_bounds.center.x;
+                float daz = pos.z - (float)a.m_bounds.center.z;
+                float dbx = pos.x - (float)b.m_bounds.center.x;
+                float dbz = pos.z - (float)b.m_bounds.center.z;
+                return (dax * dax + daz * daz).CompareTo(dbx * dbx + dbz * dbz);
+            });
+
+            int extraSlots = maxRegular - 1;
+            HashSet<TerrainScene> kept = new HashSet<TerrainScene>();
+            for (int i = 0; i < extras.Count && i < extraSlots; i++)
+            {
+                TerrainScene ts = extras[i];
+                kept.Add(ts);
+                float dx = pos.x - (float)ts.m_bounds.center.x;
+                float dz = pos.z - (float)ts.m_bounds.center.z;
+                AddToTerrainSceneActionQueue(ts, ReferenceChange.AddRegularReference, requester, Mathf.Sqrt(dx * dx + dz * dz), false, cam);
+            }
+
+            PrefetchLookAheadTile(requester, pos, extras, kept, cam);
+        }
+
+        private void PrefetchLookAheadTile(GameObject requester, Vector3 pos, List<TerrainScene> extras, HashSet<TerrainScene> kept, Camera cam)
+        {
+            Vector3 dir = Vector3.zero;
+            if (cam != null)
+            {
+                dir = cam.transform.forward;
+            }
+            else if (requester != null)
+            {
+                dir = requester.transform.forward;
+            }
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.01f)
+            {
+                return;
+            }
+            dir.Normalize();
+
+            TerrainScene best = null;
+            float bestDot = 0.35f;
+            for (int i = 0; i < extras.Count; i++)
+            {
+                TerrainScene ts = extras[i];
+                if (ts == null || kept.Contains(ts))
+                {
+                    continue;
+                }
+
+                Vector3 to = new Vector3((float)ts.m_bounds.center.x - pos.x, 0f, (float)ts.m_bounds.center.z - pos.z);
+                if (to.sqrMagnitude < 1f)
+                {
+                    continue;
+                }
+                float d = Vector3.Dot(dir, to.normalized);
+                if (d > bestDot)
+                {
+                    bestDot = d;
+                    best = ts;
+                }
+            }
+
+            if (best == null)
+            {
+                return;
+            }
+
+            float dx = pos.x - (float)best.m_bounds.center.x;
+            float dz = pos.z - (float)best.m_bounds.center.z;
+            AddToTerrainSceneActionQueue(best, ReferenceChange.AddRegularReference, requester, Mathf.Sqrt(dx * dx + dz * dz), false, cam);
+        }
+
+        public void BeginStaggeredTerrainWake(TerrainScene terrainScene, Terrain terrain)
+        {
+            if (!isActiveAndEnabled)
+            {
+                if (terrainScene != null)
+                {
+                    terrainScene.FinishStaggeredWake(terrain);
+                }
+                return;
+            }
+            StartCoroutine(StaggeredTerrainWake(terrainScene, terrain));
+        }
+
+        private IEnumerator StaggeredTerrainWake(TerrainScene terrainScene, Terrain terrain)
+        {
+            yield return null;
+            if (terrain != null)
+            {
+                terrain.drawTreesAndFoliage = true;
+            }
+            yield return null;
+            if (terrainScene != null)
+            {
+                terrainScene.FinishStaggeredWake(terrain);
+            }
         }
 
         /// <summary>
@@ -1958,6 +2107,13 @@ namespace Gaia
                 return;
             }
 
+#if UNITY_EDITOR
+            if (EditorKeepFourTerrainsAndImpostors())
+            {
+                return;
+            }
+#endif
+
             if (m_centerSceneViewLoadingOn == CenterSceneViewLoadingOn.WorldOrigin)
             {
                 UpdateTerrainLoadState(m_sceneViewOriginLoadingBounds, m_sceneViewImpostorLoadingBounds);
@@ -1966,6 +2122,66 @@ namespace Gaia
             {
                 UpdateTerrainLoadState(m_sceneViewCameraLoadingBounds, m_sceneViewImpostorLoadingBounds);
             }
+        }
+
+        /// <summary>
+        /// Editor: keep the 4 nearest regular tiles around Player_v7 and leave impostors loaded.
+        /// Play/build still streams from the live player position (including after a save load).
+        /// </summary>
+        public bool EditorKeepFourTerrainsAndImpostors()
+        {
+            if (Application.isPlaying || m_terrainSceneStorage == null || m_terrainSceneStorage.m_terrainScenes == null)
+            {
+                return false;
+            }
+
+            GameObject player = GameObject.Find("Player_v7");
+            if (player == null)
+            {
+                return false;
+            }
+
+            Vector3 pos = player.transform.position;
+            List<TerrainScene> ordered = m_terrainSceneStorage.m_terrainScenes
+                .Where(ts => ts != null)
+                .OrderBy(ts =>
+                {
+                    float dx = pos.x - (float)ts.m_bounds.center.x;
+                    float dz = pos.z - (float)ts.m_bounds.center.z;
+                    return dx * dx + dz * dz;
+                })
+                .ToList();
+
+            HashSet<TerrainScene> keepRegular = new HashSet<TerrainScene>();
+            for (int i = 0; i < ordered.Count && keepRegular.Count < 4; i++)
+            {
+                keepRegular.Add(ordered[i]);
+            }
+
+            for (int i = 0; i < m_terrainSceneStorage.m_terrainScenes.Count; i++)
+            {
+                TerrainScene ts = m_terrainSceneStorage.m_terrainScenes[i];
+                if (ts == null)
+                {
+                    continue;
+                }
+
+                if (keepRegular.Contains(ts))
+                {
+                    ts.AddRegularReference(player);
+                }
+                else
+                {
+                    ts.RemoveAllRegularReferences(true);
+                }
+
+                if (!string.IsNullOrEmpty(ts.m_impostorScenePath))
+                {
+                    ts.AddImpostorReference(player);
+                }
+            }
+
+            return true;
         }
 
         public void RefreshTerrainsWithCurrentData()

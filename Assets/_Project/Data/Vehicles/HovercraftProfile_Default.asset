@@ -28,15 +28,15 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   rayLength: 16
-  forwardThrust: 8500
+  forwardThrust: 15000
   reverseThrust: 4200
   strafeThrust: 6200
   yawTorque: 6400
-  maxForwardSpeed: 40
-  maxReverseSpeed: 25
-  maxStrafeSpeed: 14
+  maxForwardSpeed: 500
+  maxReverseSpeed: 200
+  maxStrafeSpeed: 200
   forwardSteerThreshold: 0.15
-  boosterMultiplier: 3
+  boosterMultiplier: 10
   linearDrag: 1.2
   angularDrag: 2.5
   turbulenceBaseAmplitude: 0.015
