@@ -67,7 +67,8 @@ namespace Project.UI
                    PptDirectionsMenuUI.IsOpen ||
                    BuildingControlPanelUI.IsOpen ||
                    WeaponModeSwitchMenuUI.IsOpen ||
-                   CraftingUI.IsAnyStandaloneOpen;
+                   CraftingUI.IsAnyStandaloneOpen ||
+                   WalkerDrillInteractMenuUI.IsOpen;
         }
 
         private static void RefreshInvectorInputLocks()
@@ -94,6 +95,7 @@ namespace Project.UI
             BuildingControlPanelUI.CloseAnyOpenBuildingControl();
             WeaponModeSwitchMenuUI.HideAny();
             CraftingUI.CloseAnyOpenStandalone();
+            WalkerDrillInteractMenuUI.CloseAny();
             Object.FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
         }
     }
