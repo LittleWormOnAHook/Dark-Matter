@@ -1226,6 +1226,10 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(vehicleBoardPrompt))
                 return vehicleBoardPrompt;
 
+            string walkerDrillPrompt = DMWalkerDrillUsable.TryGetPrompt(context);
+            if (!string.IsNullOrEmpty(walkerDrillPrompt))
+                return walkerDrillPrompt;
+
             if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
                 && itemInRange
                 && itemPickup != null
