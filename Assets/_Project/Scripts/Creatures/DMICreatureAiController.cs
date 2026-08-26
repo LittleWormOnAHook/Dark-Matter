@@ -92,6 +92,7 @@ namespace Project.Creatures
         private int patrolIndex;
         private int patrolDirection = 1;
         private float nextHearingAggroTime;
+        private bool groundSettled;
 
         public CreatureAiState State => state;
         public float CurrentSpeed => currentSpeed;
@@ -100,20 +101,12 @@ namespace Project.Creatures
         private void Awake()
         {
             CacheReferences();
-            if (agent != null)
-                NavMeshAgentSafeBoot.PrepareAgent(gameObject, navMeshSampleRadius > 0.01f ? navMeshSampleRadius : 12f);
+            StripNavMeshAgent();
 
             if (bridge != null && bridge.Definition != null)
                 ConfigureFromDefinition(bridge.Definition);
             else if (brainProfile != null)
                 ConfigureFromBrainProfile(brainProfile);
-
-            if (agent != null)
-            {
-                agent.speed = walkSpeed;
-                agent.stoppingDistance = stopDistance;
-                agent.updateRotation = true;
-            }
 
             TryBindAssignedPatrolPath();
         }
@@ -121,6 +114,8 @@ namespace Project.Creatures
         private void OnEnable()
         {
             CacheReferences();
+            groundSettled = false;
+            TrySnapSelfToGround();
             homePosition = transform.position;
             isDead = false;
             TryBindAssignedPatrolPath();
@@ -135,6 +130,12 @@ namespace Project.Creatures
             EnemyNoiseEvents.OnNoise += HandleNoise;
 
             EnterState(CreatureAiState.Idle);
+        }
+
+        private void Start()
+        {
+            TrySnapSelfToGround();
+            homePosition = transform.position;
         }
 
         private void OnDisable()
@@ -155,6 +156,16 @@ namespace Project.Creatures
         {
             if (isDead)
                 return;
+
+            if (!groundSettled)
+            {
+                TrySnapSelfToGround();
+                if (groundSettled)
+                {
+                    homePosition = transform.position;
+                    SnapPatrolPointsToGround();
+                }
+            }
 
             RefreshThreat();
             switch (state)
@@ -249,15 +260,6 @@ namespace Project.Creatures
             allowRangedSpit = profile.allowRangedSpit;
             meleeHitInterval = profile.meleeHitInterval;
 
-            if (agent != null)
-            {
-                agent.speed = walkSpeed;
-                agent.stoppingDistance = stopDistance;
-                agent.angularSpeed = profile.agentAngularSpeed > 0.01f
-                    ? Mathf.Min(profile.agentAngularSpeed, 200f)
-                    : DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
-            }
-
             animationDriver?.ConfigureAttackLock(profile.meleeAttackLockDuration);
             emissionDriver?.ConfigureAttackPulseDuration(profile.meleeAttackLockDuration);
         }
@@ -269,40 +271,55 @@ namespace Project.Creatures
             patrolMode = mode;
             patrolIndex = 0;
             patrolDirection = 1;
+            SnapPatrolPointsToGround();
             if (patrolPoints != null && patrolPoints.Length > 0)
                 movementMode = DMICreatureMovementMode.Patrol;
         }
 
-        /// <summary>Assign Path Creator for Patrol and register with bezier anchors.</summary>
+        /// <summary>Assign Path Creator for patrol and register with bezier anchors. No-op if both are null (keeps wander).</summary>
         public void SetPatrolPath(PathCreator path, DMIPathFollowProvider provider = null)
         {
             patrolPath = path;
             patrolPathProvider = provider;
-            if (path != null || provider != null)
-                movementMode = DMICreatureMovementMode.Patrol;
             TryBindAssignedPatrolPath();
         }
 
         public PathCreator PatrolPath => patrolPath;
         public DMIPathFollowProvider PatrolPathProvider => patrolPathProvider;
 
+        /// <summary>
+        /// Follow a Path Creator only when one is assigned on this AI, provided, or this creature
+        /// is parented under one. Does not search the scene for a random path (keeps wander).
+        /// Wired component: <see cref="PathCreator"/> via <see cref="patrolPath"/> /
+        /// <see cref="DMIPathFollowProvider"/> / parent Path Creator.
+        /// </summary>
         private void TryBindAssignedPatrolPath()
         {
-            if (movementMode != DMICreatureMovementMode.Patrol)
-                return;
+            PathCreator assigned = patrolPath;
+            if (assigned == null)
+            {
+                PathCreator parentPath = GetComponentInParent<PathCreator>();
+                if (parentPath != null && parentPath.gameObject != gameObject)
+                    assigned = parentPath;
+            }
 
             DMIPathFollowProvider provider = patrolPathProvider;
             if (provider == null)
-                provider = DMIPathFollowBinding.Resolve((Object)patrolPath ?? patrolPathProvider);
+                provider = DMIPathFollowBinding.Resolve((Object)assigned);
+
+            if (provider == null && assigned == null)
+                return;
 
             if (provider == null)
                 return;
 
             patrolPathProvider = provider;
             if (patrolPath == null)
-                patrolPath = provider.PathCreator;
+                patrolPath = assigned != null ? assigned : provider.PathCreator;
 
-            provider.TryAssignCreature(this);
+            // Assigned/parented Path Creator wins over wander only when the path actually binds.
+            if (provider.TryAssignCreature(this))
+                movementMode = DMICreatureMovementMode.Patrol;
         }
 
         private void CacheReferences()
@@ -313,8 +330,7 @@ namespace Project.Creatures
                 spitAttack = GetComponent<DMISulfurSpitAttack>();
             if (health == null)
                 health = GetComponent<EnemyHealth>();
-            if (agent == null)
-                agent = GetComponent<NavMeshAgent>() ?? GetComponentInChildren<NavMeshAgent>(true);
+            agent = null;
             if (animationDriver == null)
                 animationDriver = GetComponent<DMICreatureAnimationDriver>()
                                  ?? GetComponentInChildren<DMICreatureAnimationDriver>(true);
@@ -340,11 +356,7 @@ namespace Project.Creatures
                 float angle = (Mathf.PI * 2f * i) / count;
                 Vector3 candidate = homePosition
                                    + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * patrolRadius;
-                if (agent != null
-                    && NavMesh.SamplePosition(candidate, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
-                    patrolPoints[i] = hit.position;
-                else
-                    patrolPoints[i] = candidate;
+                patrolPoints[i] = EnemyGroundUtility.ComputeCreatureGroundPosition(transform, candidate);
             }
 
             patrolIndex = 0;
@@ -721,36 +733,20 @@ namespace Project.Creatures
         {
             Vector3 random = homePosition + Random.insideUnitSphere * wanderRadius;
             random.y = homePosition.y;
-            if (agent != null && NavMesh.SamplePosition(random, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
-                return hit.position;
-            return random;
+            return EnemyGroundUtility.ComputeCreatureGroundPosition(transform, random);
         }
 
         private void MoveToward(Vector3 worldTarget, float speed)
         {
-            if (agent != null && agent.isOnNavMesh)
-            {
-                agent.isStopped = false;
-                float moveScale = 1f;
-                if (agent.desiredVelocity.sqrMagnitude > 0.01f)
-                    moveScale = DMILocomotionFacing.FacingMoveScale(transform, agent.desiredVelocity);
-
-                agent.speed = speed * moveScale;
-                agent.angularSpeed = DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
-                if ((agent.destination - worldTarget).sqrMagnitude > 0.25f)
-                    agent.SetDestination(worldTarget);
-                return;
-            }
-
             Vector3 flat = worldTarget;
             flat.y = transform.position.y;
             Vector3 delta = flat - transform.position;
             if (delta.sqrMagnitude < 0.0001f)
                 return;
 
-            float moveScaleFallback = DMILocomotionFacing.FacingMoveScale(transform, delta);
-            Vector3 step = delta.normalized * (speed * moveScaleFallback * Time.deltaTime);
-            transform.position += step;
+            float moveScale = DMILocomotionFacing.FacingMoveScale(transform, delta);
+            Vector3 next = transform.position + delta.normalized * (speed * moveScale * Time.deltaTime);
+            EnemyGroundUtility.SnapCreatureToGround(transform, next);
             FaceToward(flat);
         }
 
@@ -761,11 +757,22 @@ namespace Project.Creatures
 
         private void StopAgent()
         {
-            if (agent == null || !agent.isOnNavMesh)
-                return;
+            // Transform locomotion only — NavMeshAgent is stripped for DMI creatures.
+        }
 
-            agent.isStopped = true;
-            agent.ResetPath();
+        private void StripNavMeshAgent()
+        {
+            agent = null;
+            NavMeshAgent found = GetComponent<NavMeshAgent>() ?? GetComponentInChildren<NavMeshAgent>(true);
+            if (found != null)
+            {
+                found.enabled = false;
+                Destroy(found);
+            }
+
+            NavMeshAgentSafeBoot boot = GetComponent<NavMeshAgentSafeBoot>();
+            if (boot != null)
+                Destroy(boot);
         }
 
         private bool HasArrived(Vector3 target)
@@ -785,13 +792,26 @@ namespace Project.Creatures
             currentSpeed = speed;
         }
 
+        private void TrySnapSelfToGround()
+        {
+            if (EnemyGroundUtility.TrySnapCreatureToGround(transform, transform.position))
+                groundSettled = true;
+        }
+
+        private void SnapPatrolPointsToGround()
+        {
+            if (patrolPoints == null)
+                return;
+
+            for (int i = 0; i < patrolPoints.Length; i++)
+                patrolPoints[i] = EnemyGroundUtility.ComputeCreatureGroundPosition(transform, patrolPoints[i]);
+        }
+
         private void HandleDeath()
         {
             isDead = true;
             StopAgent();
             SetSpeed(0f);
-            if (agent != null)
-                agent.enabled = false;
             animationDriver?.PlayDeath();
             emissionDriver?.NotifyDeath();
             audioDriver?.NotifyDeath();

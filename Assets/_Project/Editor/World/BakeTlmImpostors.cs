@@ -12,6 +12,7 @@ using UnityEngine.SceneManagement;
 /// Bakes TLM impostor scenes for the 16 DM Genesis tiles. Does not use Gaia Pro
 /// Create Impostors (that path assumed tiles lived in v1.6 and wiped it).
 /// Menu: Dark Matter Genesis / World / Bake TLM Impostors
+/// LOD0 uses a 1024 albedo + baked normal + AO mask. Mesh grids stay 128/64/32.
 /// </summary>
 public static class BakeTlmImpostors
 {
@@ -19,6 +20,7 @@ public static class BakeTlmImpostors
     const string ScenesDir = "Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes";
     const string AssetDir = ScenesDir + "/Impostors";
     const double ImpostorRangeMeters = 3500d;
+    const int Lod0TextureSize = 1024;
     static readonly int[] LodGrids = { 128, 64, 32 };
     static readonly float[] LodScreens = { 0.12f, 0.04f, 0.008f };
     static readonly Regex GridName = new Regex(@"Terrain_(\d+)_(\d+)", RegexOptions.Compiled);
@@ -117,10 +119,10 @@ public static class BakeTlmImpostors
         EditorUtility.SetDirty(storage);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Bake TLM Impostors: wrote " + baked + " Impostor_x_y scenes. TLM impostor range " + ImpostorRangeMeters + "m. Do not run Gaia Create Impostors.");
+        Debug.Log("Bake TLM Impostors: wrote " + baked + " Impostor_x_y scenes with 1024 albedo/normal/AO. TLM impostor range " + ImpostorRangeMeters + "m.");
         EditorUtility.DisplayDialog(
             "Bake TLM Impostors",
-            "Wrote " + baked + " impostor scenes next to the tiles.\nImpostor range set to " + ImpostorRangeMeters + "m.\nKeep v1.6 open; Gaia Create Impostors was not used.",
+            "Wrote " + baked + " impostor scenes.\nLOD0 textures: 1024 albedo + normal + AO.\nImpostor range " + ImpostorRangeMeters + "m.\nGaia Create Impostors was not used.",
             "OK");
     }
 
@@ -162,35 +164,56 @@ public static class BakeTlmImpostors
         if (!AssetDatabase.IsValidFolder(meshFolder))
             AssetDatabase.CreateFolder(AssetDir, stem);
 
-        Texture2D colorMap = BakeColorMap(data, 256);
-        string texPath = meshFolder + "/Color.png";
-        File.WriteAllBytes(texPath, colorMap.EncodeToPNG());
+        float[,] heights = SampleHeights(data, Lod0TextureSize);
+
+        Texture2D colorMap = BakeColorMap(data, Lod0TextureSize);
+        WriteTexture(meshFolder + "/Color.png", colorMap, TextureImporterType.Default, true);
         Object.DestroyImmediate(colorMap);
-        AssetDatabase.ImportAsset(texPath);
-        TextureImporter importer = AssetImporter.GetAtPath(texPath) as TextureImporter;
-        if (importer != null)
-        {
-            importer.sRGBTexture = true;
-            importer.mipmapEnabled = true;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.SaveAndReimport();
-        }
-        Texture2D importedTex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+
+        Texture2D normalMap = BakeNormalMap(data, heights, Lod0TextureSize);
+        WriteTexture(meshFolder + "/Normal.png", normalMap, TextureImporterType.NormalMap, false);
+        Object.DestroyImmediate(normalMap);
+
+        Texture2D aoMap = BakeAoMap(data, heights, Lod0TextureSize);
+        WriteTexture(meshFolder + "/AO.png", aoMap, TextureImporterType.Default, false);
+        Texture2D maskMap = BakeMaskMap(aoMap);
+        WriteTexture(meshFolder + "/Mask.png", maskMap, TextureImporterType.Default, false);
+        Object.DestroyImmediate(aoMap);
+        Object.DestroyImmediate(maskMap);
+
+        AssetDatabase.ImportAsset(meshFolder + "/Color.png");
+        AssetDatabase.ImportAsset(meshFolder + "/Normal.png");
+        AssetDatabase.ImportAsset(meshFolder + "/AO.png");
+        AssetDatabase.ImportAsset(meshFolder + "/Mask.png");
+
+        Texture2D importedColor = AssetDatabase.LoadAssetAtPath<Texture2D>(meshFolder + "/Color.png");
+        Texture2D importedNormal = AssetDatabase.LoadAssetAtPath<Texture2D>(meshFolder + "/Normal.png");
+        Texture2D importedMask = AssetDatabase.LoadAssetAtPath<Texture2D>(meshFolder + "/Mask.png");
 
         Shader lit = Shader.Find("HDRP/Lit");
         if (lit == null)
             lit = Shader.Find("Hidden/HDRP/FallbackError");
         Material mat = new Material(lit);
         mat.name = stem + "_Lit";
-        if (importedTex != null)
+        AssignTex(mat, importedColor, "_BaseColorMap", "_BaseMap", "_MainTex");
+        if (importedNormal != null)
         {
-            if (mat.HasProperty("_BaseColorMap"))
-                mat.SetTexture("_BaseColorMap", importedTex);
-            if (mat.HasProperty("_BaseMap"))
-                mat.SetTexture("_BaseMap", importedTex);
-            if (mat.HasProperty("_MainTex"))
-                mat.SetTexture("_MainTex", importedTex);
+            AssignTex(mat, importedNormal, "_NormalMap", "_BumpMap");
+            if (mat.HasProperty("_NormalScale"))
+                mat.SetFloat("_NormalScale", 1f);
+            if (mat.HasProperty("_BumpScale"))
+                mat.SetFloat("_BumpScale", 1f);
+            mat.EnableKeyword("_NORMALMAP");
         }
+        if (importedMask != null)
+        {
+            AssignTex(mat, importedMask, "_MaskMap");
+            mat.EnableKeyword("_MASKMAP");
+        }
+        if (mat.HasProperty("_Metallic"))
+            mat.SetFloat("_Metallic", 0f);
+        if (mat.HasProperty("_Smoothness"))
+            mat.SetFloat("_Smoothness", 0.18f);
         AssetDatabase.CreateAsset(mat, meshFolder + "/Lit.mat");
 
         Mesh[] lodMeshes = new Mesh[LodGrids.Length];
@@ -226,6 +249,8 @@ public static class BakeTlmImpostors
         }
 
         LODGroup group = root.AddComponent<LODGroup>();
+        group.fadeMode = LODFadeMode.CrossFade;
+        group.animateCrossFading = true;
         group.SetLODs(lods);
         group.RecalculateBounds();
 
@@ -237,6 +262,33 @@ public static class BakeTlmImpostors
         entry.m_impostorScenePath = impostorScenePath;
         AddToBuildSettings(impostorScenePath);
         return true;
+    }
+
+    static void AssignTex(Material mat, Texture tex, params string[] names)
+    {
+        if (mat == null || tex == null)
+            return;
+        for (int i = 0; i < names.Length; i++)
+        {
+            if (mat.HasProperty(names[i]))
+                mat.SetTexture(names[i], tex);
+        }
+    }
+
+    static void WriteTexture(string assetPath, Texture2D tex, TextureImporterType type, bool sRGB)
+    {
+        File.WriteAllBytes(assetPath, tex.EncodeToPNG());
+        AssetDatabase.ImportAsset(assetPath);
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer == null)
+            return;
+        importer.textureType = type;
+        importer.sRGBTexture = sRGB;
+        importer.mipmapEnabled = true;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.maxTextureSize = Lod0TextureSize;
+        importer.npotScale = TextureImporterNPOTScale.None;
+        importer.SaveAndReimport();
     }
 
     static void AddToBuildSettings(string scenePath)
@@ -261,6 +313,7 @@ public static class BakeTlmImpostors
         int vertsX = grid + 1;
         Vector3[] verts = new Vector3[vertsX * vertsX];
         Vector2[] uvs = new Vector2[verts.Length];
+        Vector4[] tangents = new Vector4[verts.Length];
         int[] tris = new int[grid * grid * 6];
 
         for (int z = 0; z < vertsX; z++)
@@ -273,6 +326,7 @@ public static class BakeTlmImpostors
                 float h = data.GetInterpolatedHeight(u, v);
                 verts[i] = new Vector3(u * size.x, h, v * size.z);
                 uvs[i] = new Vector2(u, v);
+                tangents[i] = new Vector4(1f, 0f, 0f, 1f);
             }
         }
 
@@ -296,11 +350,11 @@ public static class BakeTlmImpostors
         mesh.vertices = verts;
         mesh.uv = uvs;
         mesh.triangles = tris;
+        mesh.tangents = tangents;
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         return mesh;
     }
-
 
     static Texture2D GetReadableLayerTexture(Texture2D src)
     {
@@ -336,6 +390,22 @@ public static class BakeTlmImpostors
                 Object.DestroyImmediate(pair.Value);
         }
         ReadableLayerCache.Clear();
+    }
+
+    static float[,] SampleHeights(TerrainData data, int res)
+    {
+        float[,] h = new float[res, res];
+        int last = res - 1;
+        for (int y = 0; y < res; y++)
+        {
+            float v = y / (float)last;
+            for (int x = 0; x < res; x++)
+            {
+                float u = x / (float)last;
+                h[y, x] = data.GetInterpolatedHeight(u, v);
+            }
+        }
+        return h;
     }
 
     static Texture2D BakeColorMap(TerrainData data, int res)
@@ -389,5 +459,96 @@ public static class BakeTlmImpostors
         }
         tex.Apply(false, false);
         return tex;
+    }
+
+    static Texture2D BakeNormalMap(TerrainData data, float[,] heights, int res)
+    {
+        Vector3 size = data.size;
+        float stepX = size.x / (res - 1);
+        float stepZ = size.z / (res - 1);
+        Texture2D tex = new Texture2D(res, res, TextureFormat.RGBA32, false, true);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        int last = res - 1;
+        for (int y = 0; y < res; y++)
+        {
+            int y0 = Mathf.Max(0, y - 1);
+            int y1 = Mathf.Min(last, y + 1);
+            for (int x = 0; x < res; x++)
+            {
+                int x0 = Mathf.Max(0, x - 1);
+                int x1 = Mathf.Min(last, x + 1);
+                float dx = (heights[y, x1] - heights[y, x0]) / Mathf.Max(0.0001f, (x1 - x0) * stepX);
+                float dz = (heights[y1, x] - heights[y0, x]) / Mathf.Max(0.0001f, (y1 - y0) * stepZ);
+                Vector3 n = new Vector3(-dx, 1f, -dz).normalized;
+                // Heightfield tangent +X, bitangent +Z, normal +Y -> tangent-space normal.
+                Vector3 ts = new Vector3(n.x, n.z, n.y);
+                tex.SetPixel(x, y, new Color(ts.x * 0.5f + 0.5f, ts.y * 0.5f + 0.5f, ts.z * 0.5f + 0.5f, 1f));
+            }
+        }
+        tex.Apply(false, false);
+        return tex;
+    }
+
+    static Texture2D BakeAoMap(TerrainData data, float[,] heights, int res)
+    {
+        Vector3 size = data.size;
+        Texture2D tex = new Texture2D(res, res, TextureFormat.RGB24, false, true);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        int last = res - 1;
+        Vector2Int[] dirs =
+        {
+            new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1),
+            new Vector2Int(1, 1), new Vector2Int(-1, 1), new Vector2Int(1, -1), new Vector2Int(-1, -1)
+        };
+        int steps = 8;
+        float worldPerTexel = size.x / last;
+        for (int y = 0; y < res; y++)
+        {
+            for (int x = 0; x < res; x++)
+            {
+                float h = heights[y, x];
+                float vis = 0f;
+                for (int d = 0; d < dirs.Length; d++)
+                {
+                    float maxRise = 0f;
+                    int sx = dirs[d].x;
+                    int sy = dirs[d].y;
+                    float diag = Mathf.Sqrt(sx * sx + sy * sy);
+                    for (int s = 1; s <= steps; s++)
+                    {
+                        int px = Mathf.Clamp(x + sx * s, 0, last);
+                        int py = Mathf.Clamp(y + sy * s, 0, last);
+                        float dist = s * diag * worldPerTexel;
+                        float rise = (heights[py, px] - h) / Mathf.Max(dist, 0.001f);
+                        if (rise > maxRise)
+                            maxRise = rise;
+                    }
+                    vis += 1f - Mathf.Clamp01(maxRise * 6f);
+                }
+                float ao = Mathf.Lerp(0.28f, 1f, vis / dirs.Length);
+                tex.SetPixel(x, y, new Color(ao, ao, ao, 1f));
+            }
+        }
+        tex.Apply(false, false);
+        return tex;
+    }
+
+    static Texture2D BakeMaskMap(Texture2D ao)
+    {
+        int w = ao.width;
+        int h = ao.height;
+        Texture2D mask = new Texture2D(w, h, TextureFormat.RGBA32, false, true);
+        mask.wrapMode = TextureWrapMode.Clamp;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                float g = ao.GetPixel(x, y).g;
+                // HDRP mask: R metallic, G AO, B detail, A smoothness
+                mask.SetPixel(x, y, new Color(0f, g, 0f, 0.18f));
+            }
+        }
+        mask.Apply(false, false);
+        return mask;
     }
 }

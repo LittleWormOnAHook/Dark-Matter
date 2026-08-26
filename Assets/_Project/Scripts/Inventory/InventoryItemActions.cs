@@ -6,6 +6,7 @@ using Project.Progression;
 using Project.UI;
 using Project.Vehicles;
 using Project.Shelter;
+using Project.World;
 using UnityEngine;
 
 namespace Project.Inventory
@@ -160,12 +161,15 @@ namespace Project.Inventory
             if (TryDeployVehicle(slotIndex))
                 return true;
 
+            if (TryDeployWalkerDrill(slotIndex))
+                return true;
+
             return TryDeployShelter(slotIndex);
         }
 
         public bool CanDeploy(int slotIndex)
         {
-            return CanDeployVehicle(slotIndex) || CanDeployShelter(slotIndex);
+            return CanDeployVehicle(slotIndex) || CanDeployWalkerDrill(slotIndex) || CanDeployShelter(slotIndex);
         }
 
         /// <summary>Spawns the stored vehicle near the player and removes the item from the inventory.
@@ -191,6 +195,50 @@ namespace Project.Inventory
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
             return item != null && item.IsVehicle && item.deployedPrefab != null;
+        }
+
+        /// <summary>Spawns the stored Walker Drill near the player. Not a vehicle — no Refuel.</summary>
+        public bool TryDeployWalkerDrill(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            ItemData deployItem = ResolveWalkerDrillItem(item);
+            if (deployItem == null)
+                return false;
+
+            Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
+            bool deployed = WalkerDrillDeploymentUtility.TryDeploy(inventory, deployItem, playerTransform, out string message);
+            if (!string.IsNullOrEmpty(message))
+                PickupToastUI.Show(message);
+
+            if (deployed)
+                GameAudioManager.Instance?.PlayItemEquip();
+
+            return deployed;
+        }
+
+        public bool CanDeployWalkerDrill(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            // Show Deploy even if deployedPrefab YAML is a broken fileID; TryDeploy resolves/toasts.
+            return ResolveWalkerDrillItem(item) != null;
+        }
+
+        private static ItemData ResolveWalkerDrillItem(ItemData item)
+        {
+            if (item == null || item.IsVehicle)
+                return null;
+
+            if (item.IsWalkerDrill)
+                return item;
+
+            if (!string.Equals(item.itemName, "Walker Drill", System.StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.name, "Walker Drill", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            ItemData canonical = ItemRegistry.Resolve("Walker Drill");
+            return canonical != null && canonical.IsWalkerDrill && !canonical.IsVehicle ? canonical : null;
         }
 
         /// <summary>Deploys a temporary Quora Shelter 5m in front of the player.</summary>

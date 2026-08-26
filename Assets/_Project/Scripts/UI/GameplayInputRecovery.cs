@@ -1,3 +1,4 @@
+using System.Collections;
 using Project.Core;
 using Project.Interaction;
 using Project.Player;
@@ -23,7 +24,7 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
-            // Inventory (and other menu reasons) may leave timeScale at 0/0.2 — clear our holds,
+            // Inventory (and other menu reasons) may leave timeScale at 0/0.2. Clear our holds,
             // but never stomp a hard main-menu / boot pause.
             GameplayMenuTime.ClearAll();
 
@@ -54,6 +55,19 @@ namespace Project.UI
             RefreshInvectorInputLocks();
 
             GameplayHudVisibility.RefreshGameplayHud();
+            QueueCursorRestore();
+        }
+
+        /// <summary>
+        /// Relock the cursor after a menu closes. Runs this frame and the next so a UI click
+        /// in the Game view cannot leave Cursor.lockState at None.
+        /// </summary>
+        public static void QueueCursorRestore()
+        {
+            if (!Application.isPlaying || !GameSession.HasStarted)
+                return;
+
+            CursorRestoreRunner.Kick();
         }
 
         private static bool HasVisibleUiBlockingInput()
@@ -68,7 +82,9 @@ namespace Project.UI
                    BuildingControlPanelUI.IsOpen ||
                    WeaponModeSwitchMenuUI.IsOpen ||
                    CraftingUI.IsAnyStandaloneOpen ||
-                   WalkerDrillInteractMenuUI.IsOpen;
+                   WalkerDrillInteractMenuUI.IsOpen ||
+                   HovercraftInteractMenuUI.IsOpen ||
+                   QuoraShelterMenuUI.IsOpen;
         }
 
         private static void RefreshInvectorInputLocks()
@@ -96,7 +112,54 @@ namespace Project.UI
             WeaponModeSwitchMenuUI.HideAny();
             CraftingUI.CloseAnyOpenStandalone();
             WalkerDrillInteractMenuUI.CloseAny();
+            HovercraftInteractMenuUI.CloseAny();
             Object.FindAnyObjectByType<OpticsController>()?.CloseOpticsIfActive();
+        }
+
+        private sealed class CursorRestoreRunner : MonoBehaviour
+        {
+            private static CursorRestoreRunner instance;
+            private int token;
+
+            public static void Kick()
+            {
+                if (instance == null)
+                {
+                    GameObject go = new GameObject("GameplayCursorRestore");
+                    Object.DontDestroyOnLoad(go);
+                    instance = go.AddComponent<CursorRestoreRunner>();
+                }
+
+                instance.token++;
+                instance.StartCoroutine(instance.RestoreAfterUiClick(instance.token));
+            }
+
+            private IEnumerator RestoreAfterUiClick(int generation)
+            {
+                ApplyIfIdle();
+                yield return null;
+                if (generation != token)
+                    yield break;
+                ApplyIfIdle();
+            }
+
+            private static void ApplyIfIdle()
+            {
+                if (HasVisibleUiBlockingInput())
+                    return;
+
+                PlayerController player = PlayerLocator.FindPlayerController();
+                if (player != null)
+                {
+                    if (player.IsGameplayPaused)
+                        return;
+                    player.ApplyCursorState();
+                    return;
+                }
+
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
     }
 }

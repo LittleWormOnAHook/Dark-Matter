@@ -209,11 +209,11 @@ namespace Project.Vehicles
                 yield return null;
             }
 
-            cameraRig?.Deactivate();
-            turret?.Deactivate();
-
             if (occupancy != null && occupancy.IsOccupied)
                 occupancy.TryExit(player);
+
+            cameraRig?.Deactivate();
+            turret?.Deactivate();
 
             vehicleAudio?.PlayExit();
             _mountedPlayer = null;

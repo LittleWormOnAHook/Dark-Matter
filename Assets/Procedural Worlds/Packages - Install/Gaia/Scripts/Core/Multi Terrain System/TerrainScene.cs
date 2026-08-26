@@ -613,11 +613,26 @@ namespace Gaia
             //Make sure that loading again is allowed
             loadRequested = false;
 
-            //If this is not a request to unload an impostor, but the scene would have one that is referenced, we must not unload this scene until the impostor scene is loaded in.
-            if (!isImpostor && !String.IsNullOrEmpty(m_impostorScenePath) && m_impostorReferences.Count >= 1 && m_impostorLoadState != LoadState.Loaded)
+            // Keep the real tile until the matching impostor is loaded (and faded in during play).
+            if (!isImpostor && !String.IsNullOrEmpty(m_impostorScenePath) && m_impostorReferences.Count >= 1)
             {
-                //Force an update on the impostor, since it should be able to load in now with the regular scene having no references anymore.
-                UpdateLoadState(m_impostorReferences, ref m_impostorLoadState, ref m_impostorLoadRequested, ref m_impostorUnloadRequested, true);
+                if (m_impostorLoadState != LoadState.Loaded)
+                {
+                    UpdateLoadState(m_impostorReferences, ref m_impostorLoadState, ref m_impostorLoadRequested, ref m_impostorUnloadRequested, true);
+                    return;
+                }
+#if UNITY_EDITOR
+                Scene impostorForFade = Application.isPlaying
+                    ? SceneManager.GetSceneByPath(m_impostorScenePath)
+                    : EditorSceneManager.GetSceneByPath(m_impostorScenePath);
+#else
+                Scene impostorForFade = SceneManager.GetSceneByPath(m_impostorScenePath);
+#endif
+                if (Application.isPlaying && !TerrainImpostorFader.IsFullyVisible(impostorForFade))
+                {
+                    TerrainImpostorFader.FadeIn(impostorForFade);
+                    return;
+                }
             }
 
             if (Profiler.GetTotalReservedMemoryLong() < m_loadCacheTreshold && !m_forceSceneRemove && TerrainLoaderManager.Instance.CachingAllowed())
@@ -858,10 +873,13 @@ namespace Gaia
                 go.SetActive(true);
             }
             m_impostorLoadState = LoadState.Loaded;
-            //Make sure the regular scene has not been loaded in the meantime due to a race condition. If it has, remove the impostor right away.
             if (m_regularReferences.Count >= 1 && m_regularLoadState == LoadState.Loaded)
             {
                 ReplaceImpostor();
+            }
+            else if (Application.isPlaying)
+            {
+                TerrainImpostorFader.FadeIn(scene);
             }
 #endif
         }
@@ -914,16 +932,44 @@ namespace Gaia
         private void ReplaceImpostor()
         {
 #if GAIA_2023
-            if (!String.IsNullOrEmpty(m_impostorScenePath) && m_impostorLoadState == LoadState.Loaded)
+            if (String.IsNullOrEmpty(m_impostorScenePath) || m_impostorLoadState != LoadState.Loaded)
             {
-#if UNITY_EDITOR
-                Scene impostorScene = EditorSceneManager.GetSceneByPath(m_impostorScenePath);
-#else
-                Scene impostorScene = SceneManager.GetSceneByPath(m_impostorScenePath);
-#endif
-                UnloadScene(impostorScene, ref m_impostorLoadRequested, ref m_impostorUnloadRequested, ref m_impostorLoadState, true, true);
+                return;
             }
+#if UNITY_EDITOR
+            Scene impostorScene = Application.isPlaying
+                ? SceneManager.GetSceneByPath(m_impostorScenePath)
+                : EditorSceneManager.GetSceneByPath(m_impostorScenePath);
+#else
+            Scene impostorScene = SceneManager.GetSceneByPath(m_impostorScenePath);
 #endif
+            if (Application.isPlaying && TerrainImpostorFader.FadeOutThen(impostorScene, UnloadImpostorImmediate))
+            {
+                return;
+            }
+            UnloadImpostorImmediate();
+#endif
+        }
+
+        private void UnloadImpostorImmediate()
+        {
+            if (String.IsNullOrEmpty(m_impostorScenePath))
+            {
+                return;
+            }
+#if UNITY_EDITOR
+            Scene impostorScene = Application.isPlaying
+                ? SceneManager.GetSceneByPath(m_impostorScenePath)
+                : EditorSceneManager.GetSceneByPath(m_impostorScenePath);
+#else
+            Scene impostorScene = SceneManager.GetSceneByPath(m_impostorScenePath);
+#endif
+            if (!impostorScene.IsValid())
+            {
+                m_impostorLoadState = LoadState.Unloaded;
+                return;
+            }
+            UnloadScene(impostorScene, ref m_impostorLoadRequested, ref m_impostorUnloadRequested, ref m_impostorLoadState, true, true);
         }
 
 

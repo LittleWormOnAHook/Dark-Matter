@@ -97,6 +97,7 @@ namespace Invector
         {
             var obj = Instantiate(particleObject, footStepObject.sender.position, footStepObject.sender.rotation);
             obj.transform.SetParent(vObjectContainer.root, true);
+            Project.Effects.DustTrackLifetime.RegisterSpawned(obj);
         }
         /// <summary>
         /// Spawn Step Mark effect

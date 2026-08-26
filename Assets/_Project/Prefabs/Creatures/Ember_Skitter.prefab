@@ -42,7 +42,6 @@ GameObject:
   - component: {fileID: 982956526118904332}
   - component: {fileID: 8052240756632435587}
   - component: {fileID: 6481925539747984724}
-  - component: {fileID: 1457336097028233148}
   - component: {fileID: 7521059187900982871}
   - component: {fileID: 8258377160371575453}
   - component: {fileID: 2339421206213293430}
@@ -101,7 +100,7 @@ CapsuleCollider:
   m_Radius: 0.418
   m_Height: 1.15
   m_Direction: 1
-  m_Center: {x: -0.0050806403, y: 0.54, z: 0.011292085}
+  m_Center: {x: -0.0050806403, y: 0.49, z: 0.011292085}
 --- !u!114 &6481925539747984724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,28 +114,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.PioneerInvectorDamageReceiver
   applyToChildren: 1
---- !u!195 &1457336097028233148
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993423207139465029}
-  m_Enabled: 0
-  m_AgentTypeID: 0
-  m_Radius: 0.4
-  m_Speed: 2
-  m_Acceleration: 12
-  avoidancePriority: 50
-  m_AngularSpeed: 900
-  m_StoppingDistance: 0.4
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 1.2
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
 --- !u!114 &7521059187900982871
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -237,7 +214,7 @@ MonoBehaviour:
   bridge: {fileID: 1683736815284602034}
   spitAttack: {fileID: 2339421206213293430}
   health: {fileID: 7521059187900982871}
-  agent: {fileID: 1457336097028233148}
+  agent: {fileID: 0}
   animationDriver: {fileID: 8566861391203876273}
   emissionDriver: {fileID: 763881868744182807}
   audioDriver: {fileID: 577232620878430147}
@@ -289,7 +266,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Creatures.DMICreatureAnimationDriver
   animator: {fileID: 2039895402423666603}
-  navAgent: {fileID: 1457336097028233148}
+  navAgent: {fileID: 0}
   idleStateName: Idle
   walkStateName: Walk
   runStateName: Run
@@ -651,7 +628,7 @@ MonoBehaviour:
   alphaPulseSpeed: 1.42
   pulseEmission: 1
   emissionPulseMin: 0.35
-  emissionPulseMax: 57.27
+  emissionPulseMax: 204.3
   emissionPulseSpeed: 0.2
   fallbackEmissionTint: {r: 1, g: 1, b: 1, a: 1}
   ensureEmissionKeyword: 1

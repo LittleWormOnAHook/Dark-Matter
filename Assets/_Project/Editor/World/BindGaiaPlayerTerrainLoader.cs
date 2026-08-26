@@ -1,4 +1,4 @@
-﻿using Gaia;
+using Gaia;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,8 +19,8 @@ public static class BindGaiaPlayerTerrainLoader
         {
             follow = player.AddComponent<PioneerGaiaTerrainFollow>();
         }
-        follow.loadRange = 2500f;
+        follow.loadRange = 1800f;
         EditorUtility.SetDirty(player);
-        Debug.Log("Player_v7 will load Gaia tiles within 2500m at play.");
+        Debug.Log("Player_v7 will load Gaia tiles within 1800m at play.");
     }
 }

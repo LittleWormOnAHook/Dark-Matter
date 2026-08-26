@@ -60,7 +60,7 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// Journal tabs: Inventory → full pause; every other journal window → 20% slow-mo.
+        /// Journal tabs: Inventory = full pause; every other journal window = 20% slow-mo.
         /// </summary>
         public static void SyncJournal(bool open, JournalWindowId? window)
         {
@@ -88,7 +88,7 @@ namespace Project.UI
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
 
-            // Hard pause owned by main menu / boot — do not fight it when we have no reasons.
+            // Hard pause owned by main menu / boot. Do not fight it when we have no reasons.
             if (pauseReasons.Count == 0 && slowReasons.Count == 0)
             {
                 PlayerController player = PlayerLocator.FindPlayerController();
@@ -97,6 +97,10 @@ namespace Project.UI
 
                 if (!Mathf.Approximately(Time.timeScale, 1f))
                     Time.timeScale = 1f;
+
+                // Menus often apply cursor while timeScale is still 0, then unpause.
+                // Relock after time is restored, and again next frame so a UI click does not eat it.
+                GameplayInputRecovery.QueueCursorRestore();
                 return;
             }
 
@@ -104,11 +108,13 @@ namespace Project.UI
             {
                 if (!Mathf.Approximately(Time.timeScale, 0f))
                     Time.timeScale = 0f;
+                PlayerLocator.FindPlayerController()?.ApplyCursorState();
                 return;
             }
 
             if (!Mathf.Approximately(Time.timeScale, SlowMotionScale))
                 Time.timeScale = SlowMotionScale;
+            PlayerLocator.FindPlayerController()?.ApplyCursorState();
         }
     }
 }

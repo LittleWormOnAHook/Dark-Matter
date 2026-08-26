@@ -300,7 +300,7 @@ namespace Project.UI
 
         private void UpdateButtonVisibility()
         {
-            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex) && !itemActions.CanDeployShelter(activeSlotIndex));
+            SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex) && !itemActions.CanDeployShelter(activeSlotIndex) && !itemActions.CanDeployWalkerDrill(activeSlotIndex));
             SetButtonVisible("Install", itemActions.CanInstallStorageModule(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));

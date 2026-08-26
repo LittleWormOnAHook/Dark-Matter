@@ -1,5 +1,6 @@
 using Project.Core;
 using Project.Interaction;
+using Project.Inventory;
 using Project.Player;
 using Project.World;
 using TMPro;
@@ -23,6 +24,7 @@ namespace Project.UI
         private Button startMiningButton;
         private Button stopMiningButton;
         private Button collectResourcesButton;
+        private Button storeButton;
         private Transform canvasRoot;
 
         private DMWalkerDrillUsable activeUsable;
@@ -115,6 +117,10 @@ namespace Project.UI
             collectResourcesButton.onClick.RemoveAllListeners();
             collectResourcesButton.onClick.AddListener(OnCollectResourcesClicked);
 
+            storeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Store in Inventory", new Vector2(240f, 40f), 17f);
+            storeButton.onClick.RemoveAllListeners();
+            storeButton.onClick.AddListener(OnStoreClicked);
+
             Button closeButton = MenuUiBuilder.CreateButton(menuPanel.transform, "Close", new Vector2(240f, 34f), 15f);
             closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Hide);
@@ -143,13 +149,16 @@ namespace Project.UI
             menuRoot.SetActive(true);
             menuRoot.transform.SetAsLastSibling();
 
-            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
-            player?.SetBuildingControlOpen(true);
-            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonWalkerDrillMenu, true);
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
+            ApplyMenuInput(true);
             RefreshLabels();
+        }
+
+        private void LateUpdate()
+        {
+            if (!IsOpen)
+                return;
+
+            ApplyMenuInput(true);
         }
 
         private void Update()
@@ -180,8 +189,11 @@ namespace Project.UI
             DMWalkerDrillController controller = activeUsable.DrillController;
             bool mining = controller != null && controller.IsMining;
             bool spinning = controller != null && controller.IsSpinning;
+            bool retracting = controller != null && controller.IsRetracting;
 
-            if (spinning)
+            if (retracting)
+                statusText.text = "Status: Retracting...";
+            else if (spinning)
                 statusText.text = "Status: Mining (spinning)";
             else if (mining)
                 statusText.text = "Status: Starting drill...";
@@ -189,8 +201,10 @@ namespace Project.UI
                 statusText.text = "Status: Idle";
 
             startMiningButton.interactable = !mining;
-            stopMiningButton.interactable = mining;
-            collectResourcesButton.interactable = true;
+            stopMiningButton.interactable = mining && !retracting;
+            collectResourcesButton.interactable = !retracting;
+            if (storeButton != null)
+                storeButton.interactable = !mining;
         }
 
         private void OnStartMiningClicked()
@@ -211,6 +225,20 @@ namespace Project.UI
             PickupToastUI.Show("Collect Resources — coming soon.");
         }
 
+        private void OnStoreClicked()
+        {
+            if (activeUsable == null)
+                return;
+
+            InventorySystem inventory = PlayerLocator.FindPlayerObject()?.GetComponent<InventorySystem>();
+            bool stored = activeUsable.TryStoreFromMenu(inventory, out string message);
+            if (!string.IsNullOrEmpty(message))
+                PickupToastUI.Show(message);
+
+            if (stored)
+                Hide();
+        }
+
         public void Hide()
         {
             activeUsable = null;
@@ -218,9 +246,35 @@ namespace Project.UI
             if (menuRoot != null)
                 menuRoot.SetActive(false);
 
-            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
-            player?.SetBuildingControlOpen(false);
-            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonWalkerDrillMenu, false);
+            ApplyMenuInput(false);
+        }
+
+        private static void ApplyMenuInput(bool menuOpen)
+        {
+            PlayerController player = PlayerLocator.FindPlayerController();
+            if (player == null)
+                player = Object.FindAnyObjectByType<PlayerController>();
+
+            player?.SetBuildingControlOpen(menuOpen);
+            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonWalkerDrillMenu, menuOpen);
+
+            if (menuOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else if (player != null)
+            {
+                player.ApplyCursorState();
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
+            if (!menuOpen)
+                GameplayInputRecovery.QueueCursorRestore();
         }
 
         private static Vector3 GetPlayerPosition()

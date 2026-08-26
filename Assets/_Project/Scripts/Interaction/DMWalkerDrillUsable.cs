@@ -1,5 +1,7 @@
 using Project.Core;
+using Project.Data;
 using Project.Interaction;
+using Project.Inventory;
 using Project.Player;
 using Project.UI;
 using Project.World;
@@ -21,6 +23,8 @@ namespace Project.Interaction
         [Header("References")]
         [SerializeField] private DMWalkerDrillController drillController;
         [SerializeField] private Collider interactCollider;
+        [Tooltip("Walker Drill ItemData used by 'Store in Inventory'. Falls back to ItemRegistry.Resolve(\"Walker Drill\") when empty.")]
+        [SerializeField] private ItemData walkerDrillItem;
 
         private const float ProximityCheckInterval = 0.15f;
         private float nextProximityCheckTime;
@@ -131,6 +135,26 @@ namespace Project.Interaction
             WalkerDrillInteractMenuUI menu = WalkerDrillInteractMenuUI.EnsureExists(canvas.transform);
             menu.Show(this);
             return true;
+        }
+
+        public void SetWalkerDrillItem(ItemData item)
+        {
+            walkerDrillItem = item;
+        }
+
+        /// <summary>Called by WalkerDrillInteractMenuUI's "Store in Inventory" button.</summary>
+        public bool TryStoreFromMenu(InventorySystem inventory, out string message)
+        {
+            ItemData item = ResolveWalkerDrillItem();
+            return WalkerDrillDeploymentUtility.TryStore(drillController, inventory, item, out message);
+        }
+
+        private ItemData ResolveWalkerDrillItem()
+        {
+            if (walkerDrillItem != null)
+                return walkerDrillItem;
+
+            return ItemRegistry.Resolve("Walker Drill");
         }
 
         public void EnsureInteractionCollider()

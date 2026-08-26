@@ -53,3 +53,6 @@ Assets/LocalAgent_*.txt.meta
 /Assets/Procedural Worlds/Packages - Cache/
 /Assets/Procedural Worlds/Packages - Cache.meta
 /Assets/Dark Matter Genesis v1.56/
+
+# Local splat backups (moved out of Assets so Unity does not import them)
+/_TerrainSplatBackups/

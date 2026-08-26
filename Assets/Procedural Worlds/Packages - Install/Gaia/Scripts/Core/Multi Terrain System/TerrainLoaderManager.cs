@@ -70,9 +70,9 @@ namespace Gaia
         public int m_originTargetTileZ;
         public bool m_showOriginLoadingBounds;
         public bool m_showOriginTerrainBoxes;
-        public CacheSizePreset m_cacheMemoryThresholdPreset = CacheSizePreset._4GB;
-        public long m_cacheMemoryThreshold = 4294967296;
-        public long m_cacheKeepAliveTime = 300000;
+        public CacheSizePreset m_cacheMemoryThresholdPreset = CacheSizePreset._2GB;
+        public long m_cacheMemoryThreshold = 2147483648;
+        public long m_cacheKeepAliveTime = 30000;
         public bool m_cacheInRuntime = true;
         public bool m_cacheInEditor = true;
         public int m_terrainLoadingTresholdMS = 100;
@@ -874,7 +874,7 @@ namespace Gaia
             }
 
             m_cacheInRuntime = true;
-            m_unloadUnusedAssetsRuntime = false;
+            m_unloadUnusedAssetsRuntime = true;
 
             GameObject player = FindRuntimePlayer();
             GameObject cameraGo = FindRuntimeCamera();
@@ -939,7 +939,7 @@ namespace Gaia
 
             Vector3 pos = requester.transform.position;
 
-            // Four nearest regular tiles around the player. Impostors cover the rest.
+            // Four nearest regular tiles around the player so corners and edges stay real. Impostors cover the rest.
             double tile = m_terrainSceneStorage.m_terrainTilesSize > 0 ? m_terrainSceneStorage.m_terrainTilesSize : 2048;
             int tx = GetTerrainX(pos.x);
             int tz = GetTerrainZ(pos.z);
@@ -995,6 +995,17 @@ namespace Gaia
 
             int extraSlots = maxRegular - 1;
             HashSet<TerrainScene> kept = new HashSet<TerrainScene>();
+            TerrainScene current = null;
+            for (int i = 0; i < m_terrainSceneStorage.m_terrainScenes.Count; i++)
+            {
+                TerrainScene ts = m_terrainSceneStorage.m_terrainScenes[i];
+                if (ts != null && ts.m_xCoord == tx && ts.m_zCoord == tz)
+                {
+                    current = ts;
+                    kept.Add(ts);
+                    break;
+                }
+            }
             for (int i = 0; i < extras.Count && i < extraSlots; i++)
             {
                 TerrainScene ts = extras[i];
@@ -1004,7 +1015,33 @@ namespace Gaia
                 AddToTerrainSceneActionQueue(ts, ReferenceChange.AddRegularReference, requester, Mathf.Sqrt(dx * dx + dz * dz), false, cam);
             }
 
-            PrefetchLookAheadTile(requester, pos, extras, kept, cam);
+            // Drop leftovers immediately. Cache keep-alive was leaving 2 extra Loaded tiles after travel.
+            PruneRegularTilesToKeepSet(requester, kept);
+        }
+
+        private void PruneRegularTilesToKeepSet(GameObject requester, HashSet<TerrainScene> keep)
+        {
+            if (m_terrainSceneStorage == null || m_terrainSceneStorage.m_terrainScenes == null || keep == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < m_terrainSceneStorage.m_terrainScenes.Count; i++)
+            {
+                TerrainScene ts = m_terrainSceneStorage.m_terrainScenes[i];
+                if (ts == null || keep.Contains(ts))
+                {
+                    continue;
+                }
+
+                ts.RemoveRegularReference(requester, 0, true);
+                ts.RemoveRegularReference(gameObject, 0, true);
+                if (ts.RegularReferences.Count == 0 &&
+                    (ts.m_regularLoadState == LoadState.Loaded || ts.m_regularLoadState == LoadState.Cached))
+                {
+                    ts.RemoveRegularReference(requester, 0, true);
+                }
+            }
         }
 
         private void PrefetchLookAheadTile(GameObject requester, Vector3 pos, List<TerrainScene> extras, HashSet<TerrainScene> kept, Camera cam)

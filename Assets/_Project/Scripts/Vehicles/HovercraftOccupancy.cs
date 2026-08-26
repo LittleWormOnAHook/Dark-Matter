@@ -6,6 +6,7 @@ using Invector.vShooter;
 using Project.Companions;
 using Project.Inventory;
 using Project.Player;
+using Project.UI;
 using Project.Player.Invector;
 using UnityEngine;
 using UnityEngine.AI;
@@ -62,6 +63,8 @@ namespace Project.Vehicles
             HidePlayer(player);
             HideCompanions(player);
             PlayerVehicleState.RegisterMount(GetComponent<HovercraftController>(), player);
+            player.ApplyCursorState();
+            GameplayInputRecovery.QueueCursorRestore();
             return true;
         }
 
@@ -238,6 +241,9 @@ namespace Project.Vehicles
 
             if (player.TryGetComponent(out PioneerInvectorWeaponBridge weaponBridge))
                 weaponBridge.ScheduleRestoreAfterVehicleExit();
+
+            player.EnsureGameplayInputReady();
+            GameplayInputRecovery.QueueCursorRestore();
 
             _deactivatedChildren.Clear();
             _disabledColliders.Clear();

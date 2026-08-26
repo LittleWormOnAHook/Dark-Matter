@@ -221,6 +221,8 @@ namespace Project.UI
             PlayerController player = FindAnyObjectByType<PlayerController>();
             player?.SetBuildingControlOpen(false);
             GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonHovercraftMenu, false);
+            player?.ApplyCursorState();
+            GameplayInputRecovery.QueueCursorRestore();
         }
     }
 }

@@ -14,7 +14,8 @@ namespace Project.Data
         Ammo,
         Tool,
         Quest,
-        Vehicle
+        Vehicle,
+        WorldDeployable
     }
 
     public enum ComponentCategory
@@ -86,13 +87,26 @@ namespace Project.Data
         public ItemType itemType = ItemType.Consumable;
 
         [Header("Deployable / Vehicle")]
-        [Tooltip("Prefab spawned into the world when this item is 'Deployed' from the inventory (e.g. a stored hovercraft). Only relevant for ItemType.Vehicle.")]
+        [Tooltip("Prefab spawned into the world when this item is 'Deployed' from the inventory (e.g. a stored hovercraft). Used by Vehicle, WorldDeployable, and deployable shelters.")]
         public GameObject deployedPrefab;
 
         public bool IsVehicle => itemType == ItemType.Vehicle;
 
+        public bool IsWorldDeployable => itemType == ItemType.WorldDeployable;
+
+        /// <summary>
+        /// Walker Drill inventory item. Dedicated WorldDeployable type — not Vehicle (Vehicle would show Refuel).
+        /// </summary>
+        public bool IsWalkerDrill =>
+            itemType == ItemType.WorldDeployable
+            || (!IsVehicle
+                && !string.IsNullOrEmpty(itemName)
+                && string.Equals(itemName, "Walker Drill", System.StringComparison.OrdinalIgnoreCase));
+
         public bool IsDeployableShelter =>
-            deployedPrefab != null && (itemType == ItemType.Consumable || itemType == ItemType.Resource);
+            deployedPrefab != null
+            && (itemType == ItemType.Consumable || itemType == ItemType.Resource)
+            && !IsWalkerDrill;
 
         [Header("Equipment")]
         public WeaponGrip weaponGrip = WeaponGrip.OneHanded;

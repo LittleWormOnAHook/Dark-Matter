@@ -1,6 +1,5 @@
 using Project.AI;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace Project.Creatures
 {
@@ -21,13 +20,12 @@ namespace Project.Creatures
             if (prefab == null)
                 return null;
 
-            if (snapToGround)
-                worldPosition = EnemyGroundUtility.SnapPositionToGround(worldPosition);
-
             GameObject instance = Object.Instantiate(prefab, worldPosition, rotation, parent);
             instance.name = prefab.name;
 
-            WarmNavMeshAgent(instance, worldPosition);
+            if (snapToGround)
+                EnemyGroundUtility.SnapCreatureToGround(instance.transform, instance.transform.position);
+
             return instance;
         }
 
@@ -42,20 +40,6 @@ namespace Project.Creatures
             Vector3 pos = center + new Vector3(disk.x, 0f, disk.y);
             float yaw = Random.Range(0f, 360f);
             return Spawn(prefab, pos, Quaternion.Euler(0f, yaw, 0f), parent, snapToGround);
-        }
-
-        private static void WarmNavMeshAgent(GameObject instance, Vector3 worldPosition)
-        {
-            if (instance == null)
-                return;
-
-            NavMeshAgent agent = instance.GetComponent<NavMeshAgent>();
-            if (agent == null)
-                return;
-
-            NavMeshAgentSafeBoot.PrepareAgent(instance, 12f);
-            if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, 12f, NavMesh.AllAreas))
-                agent.Warp(hit.position);
         }
     }
 }
