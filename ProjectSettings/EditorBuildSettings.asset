@@ -120,6 +120,54 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes/Impostor_3_3.unity
     guid: fce4542da63cdf04d854b07d8307eaa9
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_0_0_Content.unity
+    guid: d745958af52d45e38f462dab7c868c6c
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_1_0_Content.unity
+    guid: ecef82e82b8c4bfeacaec44a6bdb8e00
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_2_0_Content.unity
+    guid: c994af8d769a485a9268bc21d18041fb
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_3_0_Content.unity
+    guid: 294e4367ffeb4cd180e11e4977c087b1
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_0_1_Content.unity
+    guid: 158998a7cd1a4a7cbddb223ca3ecbefd
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_1_1_Content.unity
+    guid: 7c849499732441368068be4f3f3da809
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_2_1_Content.unity
+    guid: 9a4a8dfe60dc4b02bc4bbb7e17602e66
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_3_1_Content.unity
+    guid: cc273959506c470a87b9b7c9c8c95fe8
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_0_2_Content.unity
+    guid: 8e822855e1294666a558c4eb6c759df1
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_1_2_Content.unity
+    guid: e9a76caddc09475382ba4decc8f26826
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_2_2_Content.unity
+    guid: 541131990d8c4ab7b549824f5f8d7762
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_3_2_Content.unity
+    guid: cc0b7528498345eb87ac8d125ec1992a
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_0_3_Content.unity
+    guid: 46b1460ff5bd4f268bca4b6c34fbc82d
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_1_3_Content.unity
+    guid: c2b820ba23e74160ae2d234632764f3c
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_2_3_Content.unity
+    guid: 62f49bab6a1544199c894aef5856fa78
+  - enabled: 1
+    path: Assets/_Project/Scenes/Terrain_3_3_Content.unity
+    guid: f87175cf85f142c7a220b035a1938247
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 6e057c20afe52a74a94e01fae3a1c27a, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
