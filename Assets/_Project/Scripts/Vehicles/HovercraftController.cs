@@ -22,6 +22,9 @@ namespace Project.Vehicles
         [SerializeField] private HovercraftUsable usable;
         [SerializeField] private HovercraftFuelSystem fuelSystem;
 
+        [Header("Mouse Steer")]
+        [SerializeField] private float mouseSteerSensitivity = 0.12f;
+
         [Header("Audio Clips (optional overrides)")]
         [Tooltip("Looping engine clip for this prefab. Drag an imported MP3/WAV/OGG AudioClip from the Project window. Uses Hovercraft Profile when empty.")]
         [SerializeField] private AudioClip engineRunningClip;
@@ -41,6 +44,7 @@ namespace Project.Vehicles
         private bool _descendInput;
         private bool _boosterInput;
         private bool _wasBoosterInput;
+        private bool _mouseSteerHeld;
         private PlayerController _mountedPlayer;
         private bool _isExiting;
         private Coroutine _exitRoutine;
@@ -146,7 +150,7 @@ namespace Project.Vehicles
             }
 
             if (physicsDriver != null)
-                physicsDriver.SetDriveInput(driveInput, verticalInput, boosterActive);
+                physicsDriver.SetDriveInput(driveInput, verticalInput, boosterActive, _mouseSteerHeld);
         }
 
         public bool TryEnter(PlayerController player)
@@ -248,23 +252,33 @@ namespace Project.Vehicles
             }
 
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null)
-                return;
-
             float lateral = 0f;
             float forward = 0f;
-            if (keyboard.aKey.isPressed)
-                lateral -= 1f;
-            if (keyboard.dKey.isPressed)
-                lateral += 1f;
-            if (keyboard.wKey.isPressed)
-                forward += 1f;
-            if (keyboard.sKey.isPressed)
-                forward -= 1f;
+            if (keyboard != null)
+            {
+                if (keyboard.aKey.isPressed)
+                    lateral -= 1f;
+                if (keyboard.dKey.isPressed)
+                    lateral += 1f;
+                if (keyboard.wKey.isPressed)
+                    forward += 1f;
+                if (keyboard.sKey.isPressed)
+                    forward -= 1f;
+
+                _ascendInput = keyboard.upArrowKey.isPressed;
+                _descendInput = keyboard.downArrowKey.isPressed;
+            }
+
+            _mouseSteerHeld = false;
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.rightButton.isPressed)
+            {
+                _mouseSteerHeld = true;
+                float yaw = mouse.delta.ReadValue().x * mouseSteerSensitivity;
+                lateral = Mathf.Clamp(lateral + yaw, -1f, 1f);
+            }
 
             _moveInput = Vector2.ClampMagnitude(new Vector2(lateral, forward), 1f);
-            _ascendInput = keyboard.upArrowKey.isPressed;
-            _descendInput = keyboard.downArrowKey.isPressed;
         }
 
         private float ResolveVerticalInput()
@@ -286,6 +300,9 @@ namespace Project.Vehicles
         public void OnLook(InputAction.CallbackContext context)
         {
             if (!IsOccupied || _isExiting || turret == null || _mountedPlayer == null || _mountedPlayer.BlocksCombatInput)
+                return;
+
+            if (Mouse.current != null && Mouse.current.rightButton.isPressed)
                 return;
 
             turret.ApplyLookInput(context.ReadValue<Vector2>());

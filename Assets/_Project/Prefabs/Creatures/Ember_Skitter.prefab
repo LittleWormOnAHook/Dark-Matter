@@ -98,7 +98,7 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.418
-  m_Height: 1.15
+  m_Height: 1.05
   m_Direction: 1
   m_Center: {x: -0.0050806403, y: 0.49, z: 0.011292085}
 --- !u!114 &6481925539747984724
@@ -214,7 +214,6 @@ MonoBehaviour:
   bridge: {fileID: 1683736815284602034}
   spitAttack: {fileID: 2339421206213293430}
   health: {fileID: 7521059187900982871}
-  agent: {fileID: 0}
   animationDriver: {fileID: 8566861391203876273}
   emissionDriver: {fileID: 763881868744182807}
   audioDriver: {fileID: 577232620878430147}

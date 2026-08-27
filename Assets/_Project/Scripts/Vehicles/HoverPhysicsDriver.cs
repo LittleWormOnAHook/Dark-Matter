@@ -25,6 +25,7 @@ namespace Project.Vehicles
         private float _currentDriveRoll;
         private float _forwardDriveTimer;
         private bool _isOccupied;
+        private bool _steerWithYaw;
 
         public HovercraftProfile Profile => profile;
         public bool IsOccupied => _isOccupied;
@@ -32,6 +33,9 @@ namespace Project.Vehicles
         public float CurrentSpeedRatio { get; private set; }
         public float TurbulenceAmplitude { get; private set; }
         public bool BoosterActive => _boosterActive;
+
+        /// <summary>Planar stick magnitude (0-1). Boost is reported separately.</summary>
+        public float CurrentThrottle => Mathf.Clamp01(_moveInput.magnitude);
 
         /// <summary>Current visual drive pitch (degrees) applied to the mesh root.</summary>
         public float CurrentDrivePitch => _currentDrivePitch;
@@ -152,11 +156,12 @@ namespace Project.Vehicles
             }
         }
 
-        public void SetDriveInput(Vector2 moveInput, float verticalInput, bool boosterActive)
+        public void SetDriveInput(Vector2 moveInput, float verticalInput, bool boosterActive, bool steerWithYaw = false)
         {
             _moveInput = Vector2.ClampMagnitude(moveInput, 1f);
             _verticalInput = Mathf.Clamp(verticalInput, -1f, 1f);
             _boosterActive = boosterActive;
+            _steerWithYaw = steerWithYaw;
         }
 
         public void SetOccupied(bool occupied)
@@ -174,6 +179,7 @@ namespace Project.Vehicles
             _moveInput = Vector2.zero;
             _verticalInput = 0f;
             _boosterActive = false;
+            _steerWithYaw = false;
             _targetAltitudeAboveGround = profile.parkedAltitudeAboveGround;
 
             if (_rigidbody == null || _rigidbody.isKinematic)
@@ -352,7 +358,7 @@ namespace Project.Vehicles
         {
             float forwardInput = _moveInput.y;
             float lateralInput = _moveInput.x;
-            bool steeringWithThrottle = Mathf.Abs(forwardInput) >= profile.forwardSteerThreshold;
+            bool steeringWithThrottle = _steerWithYaw || Mathf.Abs(forwardInput) >= profile.forwardSteerThreshold;
 
             if (Mathf.Abs(forwardInput) >= 0.01f)
             {

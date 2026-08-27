@@ -30,7 +30,6 @@ namespace Project.Creatures
         [SerializeField] private DMICreatureBridge bridge;
         [SerializeField] private DMISulfurSpitAttack spitAttack;
         [SerializeField] private EnemyHealth health;
-        [SerializeField] private NavMeshAgent agent;
         [SerializeField] private DMICreatureAnimationDriver animationDriver;
         [SerializeField] private DMICreatureEmissionDriver emissionDriver;
         [SerializeField] private DMICreatureAudioDriver audioDriver;
@@ -330,7 +329,6 @@ namespace Project.Creatures
                 spitAttack = GetComponent<DMISulfurSpitAttack>();
             if (health == null)
                 health = GetComponent<EnemyHealth>();
-            agent = null;
             if (animationDriver == null)
                 animationDriver = GetComponent<DMICreatureAnimationDriver>()
                                  ?? GetComponentInChildren<DMICreatureAnimationDriver>(true);
@@ -762,7 +760,6 @@ namespace Project.Creatures
 
         private void StripNavMeshAgent()
         {
-            agent = null;
             NavMeshAgent found = GetComponent<NavMeshAgent>() ?? GetComponentInChildren<NavMeshAgent>(true);
             if (found != null)
             {

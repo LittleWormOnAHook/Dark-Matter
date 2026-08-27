@@ -16,8 +16,8 @@ namespace Project.World
         public const string SpinState = "Spin";
 
         private const float AudioVolume = 0.7f;
-        private const float RetractSpeed = -0.5f;
-        private const float RetractAudioPitch = 0.5f;
+        private const float RetractPlaybackRate = 0.125f;
+        private const float RetractAudioPitch = 0.125f;
         private const float RetractDoneNormalized = 0.02f;
 
         [Header("References")]
@@ -139,36 +139,30 @@ namespace Project.World
             phase = MiningPhase.Retracting;
             StopAudio();
 
-            float clipLength = GetMoveClipLength();
-            float maxWait = clipLength * 2f + 0.25f;
+            float clipLength = Mathf.Max(0.05f, GetMoveClipLength());
+            float maxWait = clipLength / RetractPlaybackRate + 0.25f;
+            float n = Mathf.Clamp(startNormalizedTime, RetractDoneNormalized, 1f);
 
             if (drillAnimator != null)
-                drillAnimator.speed = RetractSpeed;
-            PlayMoveStateAt(startNormalizedTime);
+                drillAnimator.speed = 0f;
 
+            PlayMoveStateAt(n);
             PlayMoveAudio(pitch: RetractAudioPitch, loopIfShorterThan: maxWait);
 
-            int moveHash = Animator.StringToHash(MoveState);
-            bool reachedMove = false;
             float elapsed = 0f;
-            while (elapsed < maxWait)
+            while (elapsed < maxWait && n > RetractDoneNormalized)
             {
                 if (phase != MiningPhase.Retracting)
                     yield break;
 
+                n -= Time.deltaTime * RetractPlaybackRate / clipLength;
+                if (n < 0f)
+                    n = 0f;
+
                 if (drillAnimator != null)
                 {
-                    AnimatorStateInfo current = drillAnimator.GetCurrentAnimatorStateInfo(0);
-                    if (current.shortNameHash == moveHash)
-                    {
-                        reachedMove = true;
-                        if (UnwrapNormalized(current.normalizedTime) <= RetractDoneNormalized)
-                            break;
-                    }
-                    else if (reachedMove)
-                    {
-                        break;
-                    }
+                    drillAnimator.speed = 0f;
+                    PlayMoveStateAt(Mathf.Max(n, RetractDoneNormalized));
                 }
 
                 elapsed += Time.deltaTime;

@@ -1,9 +1,11 @@
+using QFX.SFX;
 using UnityEngine;
 
 namespace Project.Vehicles
 {
     /// <summary>
     /// Scales up to four thruster particle systems with planar speed and boost state.
+    /// Also drives child QFX SFX_EngineController engines from hover throttle.
     /// </summary>
     [DisallowMultipleComponent]
     public class HovercraftThrusterVfx : MonoBehaviour
@@ -26,6 +28,7 @@ namespace Project.Vehicles
         private ParticleSystem.MainModule[] _mainModules;
         private ParticleSystem.EmissionModule[] _emissionModules;
         private bool _modulesCached;
+        private SFX_EngineController[] _qfxEngines;
 
         private void Awake()
         {
@@ -36,6 +39,7 @@ namespace Project.Vehicles
                 occupancy = GetComponent<HovercraftOccupancy>();
 
             CacheParticleModules();
+            CacheQfxEngines();
         }
 
         public void Configure(
@@ -53,6 +57,7 @@ namespace Project.Vehicles
 
             _modulesCached = false;
             CacheParticleModules();
+            CacheQfxEngines();
         }
 
         private void Update()
@@ -62,14 +67,17 @@ namespace Project.Vehicles
 
             CacheParticleModules();
 
-            bool active = occupancy == null || occupancy.IsOccupied;
+            bool active = occupancy != null && occupancy.IsOccupied;
             float speedRatio = physicsDriver.CurrentSpeedRatio;
-            bool boosting = physicsDriver.BoosterActive && speedRatio > 0.01f;
+            float throttle = physicsDriver.CurrentThrottle;
+            bool boosting = physicsDriver.BoosterActive && throttle > 0.01f;
             float boostMultiplier = boosting ? ResolveBoostMultiplier() : 1f;
+            float drive = Mathf.Max(speedRatio, throttle);
             float emissionRate = active
-                ? Mathf.Lerp(idleEmissionRate, maxEmissionRate, speedRatio) * boostMultiplier
+                ? Mathf.Lerp(idleEmissionRate, maxEmissionRate, drive) * boostMultiplier
                 : 0f;
-            float startSpeed = Mathf.Lerp(startSpeedRange.x, startSpeedRange.y, speedRatio) * (boosting ? 1.15f : 1f);
+            float startSpeed = Mathf.Lerp(startSpeedRange.x, startSpeedRange.y, drive) * (boosting ? 1.15f : 1f);
+            DriveQfxEngines(active, throttle, speedRatio, boosting);
 
             for (int i = 0; i < thrusterParticles.Length && i < MaxThrusters; i++)
             {
@@ -94,6 +102,34 @@ namespace Project.Vehicles
                 if (_mainModules != null && i < _mainModules.Length)
                     _mainModules[i].startSpeed = startSpeed;
             }
+        }
+
+        private void DriveQfxEngines(bool active, float throttle, float speedRatio, bool boosting)
+        {
+            if (_qfxEngines == null)
+                CacheQfxEngines();
+            if (_qfxEngines == null || _qfxEngines.Length == 0)
+                return;
+
+            float power = 0f;
+            if (active)
+            {
+                power = Mathf.Max(throttle, speedRatio * 0.35f);
+                if (boosting)
+                    power = Mathf.Clamp01(power * boostEmissionMultiplier);
+            }
+
+            for (int i = 0; i < _qfxEngines.Length; i++)
+            {
+                SFX_EngineController engine = _qfxEngines[i];
+                if (engine != null)
+                    engine.SetPower(power);
+            }
+        }
+
+        private void CacheQfxEngines()
+        {
+            _qfxEngines = GetComponentsInChildren<SFX_EngineController>(true);
         }
 
         private float ResolveBoostMultiplier()

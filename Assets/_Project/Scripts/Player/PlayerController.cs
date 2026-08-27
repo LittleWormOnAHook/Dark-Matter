@@ -920,6 +920,8 @@ namespace Project.Player
 
         private void LateUpdate()
         {
+            ApplyCursorState();
+
             if (UsesInvectorMotor())
             {
                 ApplyCursorState();

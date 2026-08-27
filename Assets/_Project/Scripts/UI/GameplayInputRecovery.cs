@@ -5,6 +5,7 @@ using Project.Player;
 using Project.Player.Invector;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Project.UI
 {
@@ -66,6 +67,8 @@ namespace Project.UI
         {
             if (!Application.isPlaying || !GameSession.HasStarted)
                 return;
+            if (CursorRestoreRunner.IsTearingDown)
+                return;
 
             CursorRestoreRunner.Kick();
         }
@@ -119,14 +122,44 @@ namespace Project.UI
         private sealed class CursorRestoreRunner : MonoBehaviour
         {
             private static CursorRestoreRunner instance;
+            private static bool tearingDown;
             private int token;
+
+            public static bool IsTearingDown => tearingDown || !Application.isPlaying;
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            private static void ResetStatics()
+            {
+                instance = null;
+                tearingDown = false;
+            }
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+            private static void HookSceneTeardown()
+            {
+                SceneManager.sceneUnloaded -= OnSceneUnloaded;
+                SceneManager.sceneUnloaded += OnSceneUnloaded;
+            }
+
+            private static void OnSceneUnloaded(Scene scene)
+            {
+                // Additive Gaia tile unloads must not disable cursor restore.
+                if (Application.isPlaying)
+                    return;
+
+                tearingDown = true;
+                instance = null;
+            }
 
             public static void Kick()
             {
+                if (IsTearingDown)
+                    return;
+
                 if (instance == null)
                 {
                     GameObject go = new GameObject("GameplayCursorRestore");
-                    Object.DontDestroyOnLoad(go);
+                    go.hideFlags = HideFlags.HideAndDontSave;
                     instance = go.AddComponent<CursorRestoreRunner>();
                 }
 
@@ -134,13 +167,21 @@ namespace Project.UI
                 instance.StartCoroutine(instance.RestoreAfterUiClick(instance.token));
             }
 
+            private void OnDestroy()
+            {
+                if (instance == this)
+                    instance = null;
+            }
+
             private IEnumerator RestoreAfterUiClick(int generation)
             {
                 ApplyIfIdle();
                 yield return null;
-                if (generation != token)
+                if (this == null || generation != token)
                     yield break;
                 ApplyIfIdle();
+                if (generation == token && instance == this)
+                    Destroy(gameObject);
             }
 
             private static void ApplyIfIdle()

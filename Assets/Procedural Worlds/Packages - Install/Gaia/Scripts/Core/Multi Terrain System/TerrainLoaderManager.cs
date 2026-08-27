@@ -62,7 +62,7 @@ namespace Gaia
         public GaiaLoadingScreen m_loadingScreen;
 #endif
         public bool m_assumeGridLayout = true;
-        public bool m_unloadUnusedAssetsRuntime = true;
+        public bool m_unloadUnusedAssetsRuntime = false;
         public bool m_unloadUnusedAssetsEditor = true;
         public bool m_autoTerrainStitching = true;
         public bool m_assembliesAreReloading = false;
@@ -874,7 +874,7 @@ namespace Gaia
             }
 
             m_cacheInRuntime = true;
-            m_unloadUnusedAssetsRuntime = true;
+            m_unloadUnusedAssetsRuntime = false;
 
             GameObject player = FindRuntimePlayer();
             GameObject cameraGo = FindRuntimeCamera();

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MalbersAnimations;
 using MalbersAnimations.Controller;
 using MalbersAnimations.Controller.AI;
@@ -12,7 +13,7 @@ namespace Project.Creatures
 {
     /// <summary>
     /// Runtime glue between Malbers Animal Controller and Dark Matter combat/encounter systems.
-    /// Malbers owns locomotion/modes/brain; DMI owns target pick, IDamageable damage, death → loot.
+    /// Malbers owns locomotion/modes/brain; DMI owns target pick, IDamageable damage, death â†’ loot.
     /// </summary>
     [DisallowMultipleComponent]
     public class DMICreatureBridge : MonoBehaviour
@@ -47,6 +48,8 @@ namespace Project.Creatures
         private bool syncingFromMalbersDamage;
         private Transform currentThreat;
 
+        internal static readonly List<DMICreatureBridge> Live = new List<DMICreatureBridge>(64);
+
         public DMICreatureDefinition Definition => definition;
         public MAnimal Animal => animal;
         public MAnimalBrain Brain => brain;
@@ -62,13 +65,16 @@ namespace Project.Creatures
         {
             CacheReferences();
             attackTriggers = GetComponentsInChildren<MAttackTrigger>(true);
-            // Definition is CM authority — re-apply at runtime so prefab bake drift cannot disagree.
+            // Definition is CM authority â€” re-apply at runtime so prefab bake drift cannot disagree.
             if (definition != null)
                 ConfigureFromDefinition(definition);
         }
 
         private void OnEnable()
         {
+            if (!Live.Contains(this))
+                Live.Add(this);
+
             CacheReferences();
             BindHealthEvents(true);
             BindMalbersDamageEvents(true);
@@ -78,6 +84,8 @@ namespace Project.Creatures
 
         private void OnDisable()
         {
+            Live.Remove(this);
+
             BindHealthEvents(false);
             BindMalbersDamageEvents(false);
             BindAttackTriggers(false);
@@ -212,7 +220,7 @@ namespace Project.Creatures
 
             currentThreat = threat;
 
-            // Malbers V1 only — V2-A has no MAnimalAIControl.
+            // Malbers V1 only â€” V2-A has no MAnimalAIControl.
             if (aiControl != null)
                 aiControl.SetTarget(threat, moveToTarget);
 
@@ -231,7 +239,7 @@ namespace Project.Creatures
             return DMICreatureTargetResolver.IsValidSpitOrMeleeTarget(this, threat);
         }
 
-        /// <summary>Called when something damages this creature — retarget the attacker if valid.</summary>
+        /// <summary>Called when something damages this creature â€” retarget the attacker if valid.</summary>
         public void NotifyDamagedBy(GameObject source)
         {
             if (source == null || deathHandled)
@@ -459,7 +467,7 @@ namespace Project.Creatures
             if (aiControl != null)
                 aiControl.enabled = false;
 
-            // Malbers MAnimal.OnDisable sets RB.linearVelocity — Unity 6 rejects that on kinematic bodies.
+            // Malbers MAnimal.OnDisable sets RB.linearVelocity â€” Unity 6 rejects that on kinematic bodies.
             PrepareRigidbodyForMalbersDisable();
 
             if (animal != null)

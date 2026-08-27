@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 #if UNITY_EDITOR
@@ -936,18 +936,13 @@ namespace Gaia
             {
                 return;
             }
-#if UNITY_EDITOR
-            Scene impostorScene = Application.isPlaying
-                ? SceneManager.GetSceneByPath(m_impostorScenePath)
-                : EditorSceneManager.GetSceneByPath(m_impostorScenePath);
-#else
-            Scene impostorScene = SceneManager.GetSceneByPath(m_impostorScenePath);
-#endif
-            if (Application.isPlaying && TerrainImpostorFader.FadeOutThen(impostorScene, UnloadImpostorImmediate))
-            {
-                return;
-            }
+            // Do not fade the impostor out on top of a live Terrain: Unity Terrain
+            // cannot alpha-fade, so the overlap z-fights. TLM also calls this every
+            // loaded tick, which restarted the fade and never unloaded.
+            bool wasForce = m_forceSceneRemove;
+            m_forceSceneRemove = true;
             UnloadImpostorImmediate();
+            m_forceSceneRemove = wasForce;
 #endif
         }
 
@@ -968,6 +963,17 @@ namespace Gaia
             {
                 m_impostorLoadState = LoadState.Unloaded;
                 return;
+            }
+            if (impostorScene.isLoaded)
+            {
+                GameObject[] roots = impostorScene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    if (roots[i] != null)
+                    {
+                        roots[i].SetActive(false);
+                    }
+                }
             }
             UnloadScene(impostorScene, ref m_impostorLoadRequested, ref m_impostorUnloadRequested, ref m_impostorLoadState, true, true);
         }

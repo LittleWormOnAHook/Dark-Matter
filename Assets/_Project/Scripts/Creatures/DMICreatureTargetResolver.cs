@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Project.Companions;
 using Project.Pet;
 using Project.Survival;
@@ -8,11 +8,16 @@ namespace Project.Creatures
 {
     /// <summary>
     /// Resolves combat targets for Malbers brains: player, owned pets, expedition companions,
-    /// and other DMI creatures — excluding allies that share this creature's id (e.g. Sulfur Hound packs).
+    /// and other DMI creatures, excluding allies that share this creature id.
+    /// Player/pets/companions are gathered once per frame. Other creatures use the live registry.
     /// </summary>
     public static class DMICreatureTargetResolver
     {
         private static readonly List<Transform> CandidateBuffer = new List<Transform>(32);
+        private static readonly List<Transform> PetsCache = new List<Transform>(8);
+        private static readonly List<Transform> CompanionsCache = new List<Transform>(8);
+        private static Transform PlayerCache;
+        private static int CacheFrame = -1;
 
         public static bool TryResolveThreat(
             DMICreatureBridge self,
@@ -26,14 +31,17 @@ namespace Project.Creatures
             if (self == null)
                 return false;
 
+            EnsureFrameCache();
+
             Vector3 origin = self.transform.position;
             float rangeSqr = senseRange > 0f ? senseRange * senseRange : float.MaxValue;
             string allyId = self.Definition != null ? self.Definition.creatureId : null;
 
             CandidateBuffer.Clear();
-            CollectPlayer(CandidateBuffer);
-            CollectPets(CandidateBuffer);
-            CollectCompanions(CandidateBuffer);
+            if (PlayerCache != null)
+                CandidateBuffer.Add(PlayerCache);
+            CandidateBuffer.AddRange(PetsCache);
+            CandidateBuffer.AddRange(CompanionsCache);
             CollectOtherCreatures(CandidateBuffer, self, allyId);
 
             Transform best = null;
@@ -102,45 +110,43 @@ namespace Project.Creatures
             return otherCreature != null && otherCreature != self;
         }
 
-        private static void CollectPlayer(List<Transform> buffer)
+        private static void EnsureFrameCache()
         {
-            GameObject player = GameObject.FindWithTag("Player");
-            if (player != null)
-                buffer.Add(player.transform);
-        }
+            if (CacheFrame == Time.frameCount)
+                return;
 
-        private static void CollectPets(List<Transform> buffer)
-        {
+            CacheFrame = Time.frameCount;
+
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            PlayerCache = player != null ? player.transform : null;
+
+            PetsCache.Clear();
             PetController[] pets = Object.FindObjectsByType<PetController>(FindObjectsInactive.Exclude);
             for (int i = 0; i < pets.Length; i++)
             {
                 PetController pet = pets[i];
                 if (pet == null || !pet.IsOwned || !pet.CompanionActive)
                     continue;
-
-                buffer.Add(pet.transform);
+                PetsCache.Add(pet.transform);
             }
-        }
 
-        private static void CollectCompanions(List<Transform> buffer)
-        {
+            CompanionsCache.Clear();
             CompanionHealth[] companions = Object.FindObjectsByType<CompanionHealth>(FindObjectsInactive.Exclude);
             for (int i = 0; i < companions.Length; i++)
             {
                 CompanionHealth companion = companions[i];
                 if (companion == null || companion.IsDead)
                     continue;
-
-                buffer.Add(companion.transform);
+                CompanionsCache.Add(companion.transform);
             }
         }
 
         private static void CollectOtherCreatures(List<Transform> buffer, DMICreatureBridge self, string allyId)
         {
-            DMICreatureBridge[] creatures = Object.FindObjectsByType<DMICreatureBridge>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < creatures.Length; i++)
+            List<DMICreatureBridge> live = DMICreatureBridge.Live;
+            for (int i = 0; i < live.Count; i++)
             {
-                DMICreatureBridge creature = creatures[i];
+                DMICreatureBridge creature = live[i];
                 if (creature == null || creature == self)
                     continue;
 

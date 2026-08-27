@@ -90,6 +90,8 @@ namespace Project.Vehicles
             if (!_isOccupied || _mountedRoot == null)
                 return;
 
+            _mountedPlayer?.ApplyCursorState();
+
             Transform holder = ResolveHolder();
             if (_mountedRoot.parent != holder)
                 _mountedRoot.SetParent(holder, false);

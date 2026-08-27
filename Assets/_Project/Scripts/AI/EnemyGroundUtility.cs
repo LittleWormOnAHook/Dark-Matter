@@ -126,6 +126,11 @@ namespace Project.AI
                 minY = Mathf.Min(minY, col.bounds.min.y);
             }
 
+            // Collider is the contact. Skinned localBounds is bind-pose AABB and often
+            // hangs below the posed feet, which lifts the whole creature on snap.
+            if (!float.IsPositiveInfinity(minY))
+                return Mathf.Max(0f, t.position.y - minY);
+
             Renderer[] renderers = t.GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; i++)
             {
