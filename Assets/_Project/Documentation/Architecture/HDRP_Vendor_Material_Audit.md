@@ -37,6 +37,31 @@ Generated: 2026-08-15 UTC (updated post Phase 6 pink/VFX pass)
 - **Fix:** `DMIMaterialPulseScroll` prefers `_EmissiveColor`, dual-writes secondary channel, uses `_BaseColorMap_ST` / `_EmissiveColorMap_ST`, enables `_EMISSIVE_COLOR`, respects `_UseEmissiveIntensity`.
 - Also updated `DMICreatureEmissionDriver` bind order for the same HDRP dual-property trap.
 
+### Nature Manufacture L.V.E Lava (2026-08-27)
+
+Built-in `Standard_Metalic_*` / `Standard_Specular_*` and legacy Lava River shaders in
+`Assets/NatureManufacture Assets/L.V.E- Lava and Volcano Environment/` are remapped to the
+vendor HDRP shaders already shipped in the same pack (no hand-port of Standard lighting).
+
+| Built-in shader (GUID) | HDRP replacement (GUID) | Materials |
+|------------------------|-------------------------|-----------|
+| `Standard_Metalic_Lava_UV_Free` (`3ef0cb5a…`) | `NM_Lit_Full_Triplanar_Cover_Lava` (`ce11364f…`) | Cliff / wall mats (`M_lava_wall_*`) |
+| `Standard_Metalic_Lava` (`4e059242…`) | `NM_Lit_Top_Cover_Lava` (`b5e90673…`) | Rock mats (`Lava_rocks_*`, `lava_rocks_*`) |
+| `Lava River Tesseled Vertex Color Flowmap` (`951e551e…`) | `NM Lava River Vertex Color Flowmap` (`bc527e08…`) or Tess (`224b8807…`) | `Lava_River_*_Flowmapping*` |
+| `Lava River Tesseled Vertex Color Flowmap Cheap` (`a078bba5…`) | Cheap / Cheap Tess HDRP river pair | `Lava_*_flow*`, cheap river mats |
+| `Lava River Tesseled Vertex Color Frozen` (`c0dfe728…`) | Frozen / Frozen Tess HDRP river pair | `*_Frozen*` |
+| `Lava River Tesseled Vertex Color` (`d5aff426…`) | `NM Lava River Vertex Color Frozen` (`32a65825…`) | `Lava_*_Vertex Color Only` |
+| `Vulcano Smoke` (`83adc62d…`) | `NM_Volcano Smoke` (`fe2bc831…`) | Particle smoke mats |
+
+Tool: `Tools/Dark Matter Genesis/HDRP/Convert L.V.E Lava Standard→HDRP (Dry Run|Apply)`.
+Offline batch: `python tools/remap_lve_lava_hdrp_materials.py`.
+
+Duplicate `.meta` GUID conflicts between Standard_* and NM_Lit_* were **not** found on disk
+(each shader file has a unique GUID). Pink materials were caused by Built-in shader references
+under HDRP, not duplicate metas.
+
+Ground / duplicate cliff mats already on embedded `HDRP/Lit` (`6e4ae406…`) were left unchanged.
+
 ### Remaining artist / tech reauthor (do not mass-convert)
 
 | Asset | Shader | Why left |
