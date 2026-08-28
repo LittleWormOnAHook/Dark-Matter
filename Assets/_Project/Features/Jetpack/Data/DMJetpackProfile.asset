@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e5da265fbb8694bbb25bae560e1d01, type: 3}
+  m_Name: DMJetpackProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
+  maxBoostSeconds: 8
+  releaseRegenBonusSeconds: 1
+  regenSecondsPerSecond: 0.35
+  fullThrustEndSeconds: 6
+  upwardThrustForce: 6
+  descendForce: 3
+  descendInputThreshold: 0.35
+  descendBrakeStrength: 0.9
+  verticalResponse: 2.5
+  hoverGravityScale: 0.1
+  boostDescendGravityScale: 0.7
+  fadeFallGravityScale: 0.18
+  freeFallGravityScale: 1
+  coastFallGravityScale: 0.65
+  releaseUpwardBleed: 6
+  jetpackAirSpeed: 3
+  defaultAirSpeed: 5
+  jetpackMoveSmoothTime: 0.28
+  animBlendGain: 1.4
+  animInputDeadzone: 0.12
+  flyAnimSpeed: 0.95
+  landCrossFadeSeconds: 0.15
+  thrusterAlphaMin: 0.1
+  thrusterAlphaMax: 1
+  thrusterPowerSmoothTime: 0.25
+  flareFactorMultiplier: 0.75
+  slowSparksFactorMultiplier: 0.7
+  fastSparksFactorMultiplier: 0.7
+  distortionFactorMultiplier: 0.75
+  particleSpeedMultiplier: 0.65
+  particleLifetimeMultiplier: 1.2

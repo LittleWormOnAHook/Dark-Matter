@@ -4,6 +4,7 @@ using Invector;
 using Invector.IK;
 using Project.Core;
 using Project.Data;
+using Project.Features.Jetpack;
 using Project.Inventory;
 using Project.Player;
 using Project.UI;
@@ -44,6 +45,7 @@ namespace Project.Player.Invector
         private bool meshySnapAimRequiresVisual = true;
 
         private PioneerInvectorInputBridge _inputBridge;
+        private DMJetpackInputBridge _jetpackInputBridge;
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private bool _miningScanAimHold;
@@ -61,6 +63,7 @@ namespace Project.Player.Invector
         {
             base.Start();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
+            _jetpackInputBridge = GetComponent<DMJetpackInputBridge>();
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, shooterManager);
@@ -384,8 +387,18 @@ namespace Project.Player.Invector
             if (!jumpInput.useInput || cc == null || !CanReadGameplayInput())
                 return;
 
+            if (_jetpackInputBridge != null && _jetpackInputBridge.TryHandleJumpPress())
+                return;
+
             if (Keyboard.current != null &&
                 Keyboard.current.spaceKey.wasPressedThisFrame &&
+                JumpConditions())
+            {
+                cc.Jump(true);
+            }
+
+            if (Gamepad.current != null &&
+                Gamepad.current.buttonSouth.wasPressedThisFrame &&
                 JumpConditions())
             {
                 cc.Jump(true);

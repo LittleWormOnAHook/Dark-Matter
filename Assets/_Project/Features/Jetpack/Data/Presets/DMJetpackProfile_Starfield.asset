@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e5da265fbb8694bbb25bae560e1d01, type: 3}
+  m_Name: DMJetpackProfile_Starfield
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
+  maxBoostSeconds: 8
+  releaseRegenBonusSeconds: 1
+  regenSecondsPerSecond: 0.35
+  fullThrustEndSeconds: 6
+  upwardThrustForce: 11
+  descendForce: 4
+  descendInputThreshold: 0.3
+  descendBrakeStrength: 0.8
+  verticalResponse: 3.5
+  hoverGravityScale: 0.12
+  boostDescendGravityScale: 0.8
+  fadeFallGravityScale: 0.25
+  freeFallGravityScale: 1
+  coastFallGravityScale: 0.6
+  releaseUpwardBleed: 4.5
+  jetpackAirSpeed: 3
+  defaultAirSpeed: 3
+  jetpackMoveSmoothTime: 0.18
+  animBlendGain: 1.45
+  animInputDeadzone: 0.08
+  flyAnimSpeed: 1
+  animStrafeThreshold: 0.5
+  landCrossFadeSeconds: 0.12
+  thrusterAlphaMin: 0.1
+  thrusterAlphaMax: 1
+  thrusterPowerSmoothTime: 0.18
+  flareFactorMultiplier: 0.9
+  slowSparksFactorMultiplier: 0.85
+  fastSparksFactorMultiplier: 0.85
+  distortionFactorMultiplier: 0.9
+  particleSpeedMultiplier: 0.75
+  particleLifetimeMultiplier: 1.1
