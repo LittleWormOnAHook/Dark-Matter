@@ -1,404 +1,584 @@
-# Io Lore Naming Master List
+# Io Lore Naming Master List (LNM)
 
+**Revision:** 2 — solar-system ores, Wiffle ration line, Io-prefix harvests, alien tier  
 **Status:** Design draft — promote to GDD **Appendix A2g** after review  
-**Authority:** GDD 5.0 (2160 Io, Aether Credits, four pressures, Aether-9), `Io_Biome_Ecology_Roster.md`, `ItemRegistry` (34 items on disk)  
-**Companion:** PPT = **People, Places, Things** (NPC directions / knowledge registry — Phase 1 designed, assets pending)  
-**Purpose:** One canonical rename table for player-facing copy, tooltips, PPT registry labels, and comms templates.
+**Authority:** GDD 5.0, `Io_Biome_Ecology_Roster.md`, `ItemRegistry` (34 items on disk)  
+**Companion:** PPT = **People, Places, Things** (directions / knowledge registry)
 
 ---
 
-## 1. Naming rules (locked for this pass)
+## 1. Naming rules (revision 2)
 
-| Rule | Detail |
-|------|--------|
-| **Setting voice** | United Earth Authority (UEA) expedition hardware + Io-native chemosynthetic biology. Year **2160**. |
-| **No Earth fantasy** | Retire forest / lily / sword-of-doom placeholder reads. No grass, deer, or photosynthesis flora names. |
-| **Three-name stack** | **Official designation** (inventory) · **Field nickname** (comms / veterans) · **PPT keyword** (short id for directions) |
-| **Biology** | Chemosynthetic, sulfur-silicon, resonance-fed — amber, teal, matte mineral, glass filament language. |
-| **Machines** | Corporate / military / precursor chassis — salvage, patrol, survey, smuggler remnant. |
-| **Echoes** | Keep locked format: `[Io Prefix] [Core Name] [Designation]` (see GDD A5). |
-| **Currency** | **Aether Credits (AC)** only — never alternate wallet names in UI. |
-| **Asset IDs** | `stableItemId` / file names may stay snake_case; **display names** in this doc are player-facing targets. |
-| **Comms speakers** | **Colony Ops** (default radio) → **Aether-9** (advisory unlock). |
+| Origin tag | Use for | Pattern | Example |
+|------------|---------|---------|---------|
+| **UEA** | Anything **brought to Io** — machines, weapons, ammo, tools, hardware, med kits, O₂, fuel, modules, vehicles, suit consumables | `UEA` + `[Mark / role]` | UEA Mark-7 Sidearm |
+| **Wiffle** | **Expedition ration containers** left in wrecks, camps, caches — familiar Earth food names in branded tins/pouches/tubes | `Wiffle` + `[familiar food]` | Wiffle Beef Soup |
+| **Io Native** | Foraged, harvested, or cooked from Io biology | `[Io prefix]` + `[familiar food word]` | Brimstone Leeks, Sulfur Needles |
+| **Solar Catalog** | All **ore and bulk mineral** types — named for **Solar System bodies** (real geology, UEA survey classification) | `[Body]` + `[mineral form]` | Martian Ferric Regolith |
+| **Alien** | Rare **non-Terran, non-Io** materials (precursor, resonance, vault) — small curated set | `[phenomenon]` + `[form]` | Resonance Lattice Dust |
+| **Field** | Improvised melee / local craft **not** UEA issue | `[place/threat]` + `[tool]` | Caldera Splitter |
 
-### Name pattern cheat sheet
+### Io-prefix palette (biology harvests & forage)
 
-| Category | Pattern | Example |
-|----------|---------|---------|
-| Ore / mineral | `[Element] + [Io form]` | Ferric Mass, Silicate Shard |
-| Flora harvest | `[Biome cue] + [structure]` | Brimstone Fan Frond |
-| Food | `[source organism] + [prep]` | Charred Cap Ration |
-| Med / O₂ | `UEA` or `Field` + `[function]` | UEA O₂ Reserve Canister |
-| UEA weapon | `UEA Mark-#` + `[role]` | UEA Mark-7 Sidearm |
-| Improvised melee | `[threat/place] + [tool]` | Caldera Splitter |
-| Ammo | `[tech] + [grade]` | Plasma-T Field Cartridge |
-| Building | `[function] + [nexus/array/hub]` | Strain Purification Array |
-| Place (PPT) | `[biome codename] + [landmark type]` | Yellowfall Relay Spire |
-| Weather (PPT) | Locked GDD A2b event names | Sulfur Storm, Resonance Supercell |
+Use one prefix + one **familiar** noun (vegetable, cut, tuber, bulb, rib, scale — player reads it instantly):
 
----
+`Brimstone` · `Sulfur` · `Vent` · `Ash` · `Basalt` · `Condensate` · `Geyser` · `Polar` · `Tube` · `Rim` · `Void`
 
-## 2. Inventory items — current disk (34 assets)
+Examples: **Brimstone Leeks**, **Sulfur Needles**, **Vent Kelp Ribbons**, **Ash Vale Tubers**.
 
-### 2.1 Consumables — food & rations
+### Solar System ore bodies (catalog)
 
-| Asset / `stableItemId` | Current name | **Lore display name** | Field nickname | PPT keyword | Tooltip one-liner |
-|------------------------|--------------|----------------------|----------------|-------------|-------------------|
-| `Mushroom` | Mushroom | **Brimstone Cap** | yellow-cap | `brimstone_cap` | Chemosynthetic fungus from sulfur seeps. Restores stamina. |
-| `Cooked Mushroom` | Cooked Mushroom | **Charred Brimstone Cap** | char-cap | `charred_cap` | Grilled over vent heat. Restores energy and stamina. |
-| `Forest Stew` | Forest Stew | **Lace-Vapor Broth** | lace stew | `lace_broth` | Highland tube-lace and cap fungus reduction. Restores health, energy, stamina. |
-| `Red Lilly` | Red Lilly | **Crimson Needle Bloom** | crimson bloom | `crimson_bloom` | Io forage bulb; sharp-sweet pulp. Energy and light stamina. |
-| `Pimican` | Pimican | **Condensate Ration Block** | cond-block | `ration_block` | Expedition pemmican analog — dense, shelf-stable. Major health restore. |
-| `Rock` | Rock | **Basalt Fragment** | shard | `basalt_shard` | Loose silicate rubble. Craft reagent; not food. |
+Mars · Luna · Mercury · Venus · Ceres · Vesta · Pallas · Europa · Ganymede · Io *(local Jovic)* · Titan · Enceladus · Asteroid Belt *(generic)*
 
-**Craft recipe display names (no separate ItemData yet):**
+Alien tier stays **small** — five types at ship target, expandable in DLC.
 
-| Recipe ID | Current | **Lore name** |
-|-----------|---------|---------------|
-| `grilled_mushroom` | Grilled Mushroom | **Charred Brimstone Cap** |
-| `forest_stew` | Forest Stew | **Lace-Vapor Broth** |
-| `Pemican_recipe` / `Pimican_recipe` | Pemican | **Condensate Ration Block** |
-| `stone_salve` | Stone Salve *(miswired)* | **Silicate Salve** *(needs ItemData)* |
+### Three-name stack (unchanged)
+
+**Display name** · **Field nickname** · **PPT keyword** (`snake_case`)
 
 ---
 
-### 2.2 Consumables — health, O₂, field kits
+## 2. Category index — every player-usable type
 
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Tooltip one-liner |
-|-------|---------|----------------------|----------------|-------------|-------------------|
-| `Medpack` | Medpack | **UEA Field Triage Seal** | triage seal | `triage_seal` | Standard expedition medfoam pack. Restores health. |
-| `herbal_medpack` (output) | Herbal Medpack | **Needle-Tuft Salve Kit** | tuft kit | `tuft_salve` | Sulfur-needle antiseptic + cap extract. Restores health. |
-| `Oxygen Tank` | Oxygen Tank | **UEA O₂ Reserve Canister** | O₂ can | `o2_canister` | Ten minutes of breathable mix at Io surface pressure. |
-| `Oxygen Tank Mini` | Oxygen Tank Mini | **Pocket Rebreather Ampule** | puff amp | `rebreather_amp` | Emergency O₂ bump for suit bypass. |
+| # | Category | `ItemType` | Origin mix | On disk | +5 new | Total target |
+|---|----------|------------|------------|---------|--------|--------------|
+| A | Solar System Ores & Minerals | Resource | Solar Catalog | 2 | 5 | 7 |
+| B | Alien & Precursor Materials | Resource | Alien | 0 | 5 | 5 |
+| C | Io Flora & Fauna Harvest | Resource | Io Native | 2 | 5 | 7 |
+| D | Expedition Ration Containers | Consumable | Wiffle | 0 | 5 | 5 |
+| E | Io-Foraged Food & Camp Cooking | Consumable | Io Native | 6 | 5 | 11 |
+| F | Health, Med & Field Kits | Consumable | UEA + Io | 2 | 5 | 7 |
+| G | O₂ & Breathables | Consumable | UEA | 2 | 5 | 7 |
+| H | Inoculations, Filters & Suit Gels | Consumable | UEA + Io | 0 | 5 | 5 |
+| I | Salvage & Craft Components | Resource | UEA salvage | 2 | 5 | 7 |
+| J | Fuel, Cells & Operations | Resource | UEA | 1 | 5 | 6 |
+| K | Melee Weapons | MeleeWeapon | UEA + Field | 7 | 5 | 12 |
+| L | Ranged Weapons | RangedWeapon | UEA | 3 | 5 | 8 |
+| M | Ammunition | Ammo | UEA | 4 | 5 | 9 |
+| N | Tools & Survey Gear | Tool | UEA | 2 | 5 | 7 |
+| O | Modules, Harness & Attachments | Resource | UEA | 1 | 5 | 6 |
+| P | Vehicles & Deployables | Vehicle | UEA | 1 | 5 | 6 |
+| Q | Throwables & Tactical Consumables | Consumable | UEA | 0 | 5 | 5 |
+| R | Quest, Access & Story Items | Quest | Mixed | 0 | 5 | 5 |
 
----
-
-### 2.3 Resources — mining (laser)
-
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `Iron Ore` | Iron Ore | **Ferric Extraction Mass** | ferric mass | `ferric_mass` | Keep science tone; laser-mined from boulders. |
-| `Silicate Ore` | Silicate Ore | **Silicate Shard Ore** | silicate | `silicate_ore` | Ceramics, abrasives, structural craft. |
-
----
-
-### 2.4 Resources — harvest (Hold-E)
-
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `Brimstone Blade` | Brimstone Blade | **Brimstone Fan Frond** | fan frond | `brimstone_frond` | Aligns with ecology **Brimstone Fan** flora. |
-| `Sulfur Needle Tuft` | Sulfur Needle Tuft | **Sulfur Needle Tuft** | needle tuft | `needle_tuft` | **Keep** — already Io-canonical. |
+**PPT** (People · Places · Things) — §8–10 unchanged in purpose; keywords refreshed in §11.
 
 ---
 
-### 2.5 Resources — scrap & operations
+## A. Solar System Ores & Minerals
 
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `metal_scrap` | Metal Scrap | **Wreckage Alloy Shred** | alloy shred | `alloy_shred` | Salvaged hull and rig plating. |
-| `electronic_scrap` | Electronic Scrap | **Salvage Circuit Slab** | circuit slab | `circuit_slab` | Dead drone and comms boards. |
-| `Plasma Fuel` | Plasma Fuel | **Plasma Fuel Cell** | plasma cell | `plasma_cell` | Hovercraft, generators, mining tool reload. |
+*Laser-mined boulders. UEA geological survey names — body of origin or closest spectral match.*
 
----
+### On disk (rehashed)
 
-### 2.6 Melee weapons
+| Asset | Was | **Lore name** | Body | PPT keyword |
+|-------|-----|---------------|------|-------------|
+| `Iron Ore` | Iron Ore | **Martian Ferric Regolith** | Mars | `ore_martian_ferric` |
+| `Silicate Ore` | Silicate Ore | **Lunar Anorthite Silicate** | Luna | `ore_lunar_anorthite` |
 
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `Sword of Fear` | Sword of Fear | **Rift-Cleaver Blade** | cleaver | `rift_cleaver` | Improvised officer blade; high crit. |
-| `Death Axe` | Death Axe | **Caldera Splitter** | splitter | `caldera_axe` | Heavy breaching axe. |
-| `Spear of Fate` | Spear of Fate | **Vent Pike** | vent pike | `vent_pike` | Reach weapon for skitter packs. |
-| `Wood Axe` | Wood Axe | **Field Breach Hatchet** | hatchet | `breach_hatchet` | No wood on Io — field tool name. |
-| `weap_two_handed` | Two-Handed Sword | **Heavy Breach Blade** | breach blade | `breach_blade` | Cannot block while equipped. |
-| `2 Hander` | 2 Hander | **Mortal Breach Blade** | mortal blade | `mortal_blade` | Veteran nickname for heavy breach blade. |
-| `weap2_sword` | weap2_sword | **UEA Cutlass Mark II** | cutlass | `uea_cutlass` | Standard issue side blade. |
+### +5 new (player-usable)
 
----
-
-### 2.7 Ranged weapons & tools
-
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `sci_fi_pistol` | Sci-Fi Pistol | **UEA Mark-7 Sidearm** | mark-seven | `mark7_sidearm` | One-hand aim/fire. |
-| `survival_rifle` | Survival Rifle | **UEA Expedition Carbine** | carbine | `expedition_carbine` | Two-hand rifle; plasma secondary feed. |
-| `DM_Mining_Tool` | DM Mining Tool | **DM-MT Laser Extractor** | laser MT | `dm_mining_tool` | **Keep DM prefix** per project rules. |
-| `Scanner B44` | Scanner B44 | **B44 Geological Survey Scanner** | B44 | `scanner_b44` | Ai Wars legacy hardware (2120–2121). |
-| `Binnos 250` | Binoculars 250 | **Mark-250 Optic Ranging Glass** | mark-250 | `optic_glass` | Long-range route scouting. |
+| **Lore name** | Body | Use | PPT keyword |
+|---------------|------|-----|-------------|
+| **Mercurian Magnetite Flakes** | Mercury | Conductors, magnetic craft | `ore_mercurian_magnetite` |
+| **Venusian Sulfur Cake** | Venus | Sulfur chemistry, filters | `ore_venusian_sulfur` |
+| **Ceres Carbonaceous Chondrite** | Ceres | Carbon composites, gel base | `ore_ceres_chondrite` |
+| **Europan Brine Evaporite** | Europa | Salt circuits, coolant precursors | `ore_europan_brine` |
+| **Vestan Nickel-Iron Ingot** | Vesta | High-grade alloy smelt input | `ore_vestan_nickel_iron` |
 
 ---
 
-### 2.8 Ammo
+## B. Alien & Precursor Materials
 
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `Standard` | Standard | **UEA Ballistic Coil Rounds** | coil rounds | `ballistic_coil` | Gunpowder-class ballistic ammo. |
-| `Plasma` | Plasma | **Plasma-T Field Cartridge** | plasma-T | `plasma_t` | UEA standard energy projectile (recipe lore). |
-| `Laser Pistol Ammo` | Laser Pistol Ammo | **Pulse Cell — Pistol Grade** | pistol pulse | `pulse_pistol` | Hitscan pistol feed. |
-| `Laser` / Laser Pulse | Laser Pulse | **Pulse Cell — Rifle Grade** | rifle pulse | `pulse_rifle` | Hitscan rifle / mining alias grade. |
+*Rare tier. Not Terran, not standard Io harvest — vault, resonance, precursor sites.*
 
-**Craft recipe display:**
+### +5 new (ship target — entire category)
 
-| Recipe | Current | **Lore name** |
-|--------|---------|---------------|
-| `Standard_Ammo` | Stardard Ammo | **UEA Ballistic Coil Rounds** |
-| `Plasma_Ammo` | Plasma T | **Plasma-T Field Cartridge** |
+| **Lore name** | Source | Use | PPT keyword |
+|---------------|--------|-----|-------------|
+| **Resonance Lattice Dust** | B7 / supercell | Aether research, elite ammo mod | `alien_resonance_dust` |
+| **Precursor Teal Filament** | Vault walls | Precursor alloy refine | `alien_teal_filament` |
+| **Void Seam Crystal** | Void Stitcher | Armor mod, codex | `alien_seam_crystal` |
+| **Aether Seep Resin** | S5 pools | Memory Core stabilizer craft | `alien_aether_resin` |
+| **Vault Glass Petal Shard** | B7 antechamber | Lock puzzles, optics | `alien_vault_petal` |
 
 ---
 
-### 2.9 Modules & vehicles
+## C. Io Flora & Fauna Harvest
 
-| Asset | Current | **Lore display name** | Field nickname | PPT keyword | Notes |
-|-------|---------|----------------------|----------------|-------------|-------|
-| `Increase Storage Module` | Increase Storage Module | **Harness Loadframe Expansion** | loadframe | `loadframe_mod` | +1 inventory row (10 slots). |
-| `Hovercraft` | Hovercraft | **UEA Skim-Pak Hover Sled** | skim-pak | `hover_sled` | Folded deployable surface transport. |
+*Hold-E gather. Familiar noun, Io prefix.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Brimstone Blade` | Brimstone Blade | **Brimstone Fan Fronds** | `harvest_brimstone_fronds` |
+| `Sulfur Needle Tuft` | Sulfur Needle Tuft | **Sulfur Needle Tuft** | `harvest_sulfur_needles` |
+
+### +5 new
+
+| **Lore name** | Familiar read | Use | PPT keyword |
+|---------------|---------------|-----|-------------|
+| **Brimstone Leek Stalks** | Leeks | Stew, filter mesh | `harvest_brimstone_leeks` |
+| **Vent Kelp Ribbons** | Kelp | Broth, insulation fiber | `harvest_vent_kelp` |
+| **Ash Vale Tubers** | Tubers | Starch paste, ration filler | `harvest_ash_tubers` |
+| **Condensate Pearl Pods** | Peas / pods | O₂ supplement chemistry | `harvest_condensate_pods` |
+| **Rim Glass Barley** | Barley | Abrasive, craft binder | `harvest_rim_glass_barley` |
 
 ---
 
-## 3. Planned consumables (GDD — not yet ItemData)
+## D. Expedition Ration Containers (Wiffle line)
 
-| Design item | **Lore display name** | Field nickname | PPT keyword | Function |
-|-------------|----------------------|----------------|-------------|----------|
-| Rad inoculation | **Rad-Shimmer Gel Dose** | rad gel | `rad_inoc` | B5 polar; extends safe rad window |
-| Thermal gel | **Heat-Routing Thermal Gel** | heat gel | `thermal_gel` | B4 caldera rim crossing |
-| Sulfur filter gel | **Brimstone Filter Gel Dose** | sulfur gel | `sulfur_inoc` | Sulfur plains / storm prep |
-| Stone / silicate salve | **Silicate Salve** | sil salve | `silicate_salve` | Craft output for `stone_salve` recipe |
-| Condensate vial | **SO₂ Condensate Vial** | cond vial | `condensate` | From B1 condensate mats |
-| Memory Core (item) | **Aether Memory Core** | core | `memory_core` | Aether-9 slot item — not tradeable |
-| Keycard / access | **Precursor Access Shard** | shard key | `access_shard` | B7 vault locks |
+*Familiar foods in **left-behind expedition packaging** — wrecks, camps, quartermaster caches. Not Io biology.*
+
+### +5 new (entire category — Wiffle brand)
+
+| **Lore name** | Container read | Effect (design target) | PPT keyword |
+|---------------|----------------|------------------------|-------------|
+| **Wiffle Beans** | Tin | Energy + light stamina | `wiffle_beans` |
+| **Wiffle Beef Soup** | Pouch | Health + energy | `wiffle_beef_soup` |
+| **Wiffle Chicken Tube** | Squeeze tube | Stamina | `wiffle_chicken_tube` |
+| **Wiffle Oat Pouch** | Foil pouch | Energy (long shelf) | `wiffle_oat_pouch` |
+| **Wiffle Coffee Bulb** | Bulb ampule | Stamina regen buff (short) | `wiffle_coffee_bulb` |
 
 ---
 
-## 4. Buildings, camp structures & attachment modules
+## E. Io-Foraged Food & Camp Cooking
 
-### 4.1 Major buildings (GDD A7 — rename subtitles optional)
+*Native ingredients prepared at camp fire / cooking station.*
 
-| GDD name | **Lore display name** | Comms shorthand | PPT keyword | PPT type |
-|----------|----------------------|-----------------|-------------|----------|
-| Command Center | **Founder's Command Nexus** | Command | `command_nexus` | Place |
-| Purification Hub | **Strain Purification Array** | Purification | `purification_array` | Place |
-| Geothermal Harvester | **Magma Tap Harvester** | Harvester | `geo_harvester` | Place |
-| Echo Reclamation Chamber | **Echo Reclamation Chamber** | Reclamation | `echo_reclamation` | Place |
-| Resonance Beacon | **Resonance Beacon** | Beacon | `resonance_beacon` | Place |
-| Probe Uplink | **Probe Uplink Spire** | Uplink | `probe_uplink` | Place |
-| Geothermal Stabilizer | **Tremor Stabilizer Ring** | Stabilizer | `geo_stabilizer` | Place |
-| Medical Facility | **UEA Medical Bay** | Med Bay | `medical_bay` | Place |
-| Science Labs | **Colony Science Annex** | Science | `science_annex` | Place |
-| Pet Bay | **Companion Stabilizer Bay** | Pet Bay | `pet_bay` | Place |
-| Building Control Panel | **Structure Control Terminal** | BCP | `bcp_terminal` | Thing |
-| IO Ancient Cache | **IO Ancient Cache** | Cache | `ancient_cache` | Thing |
-| Cache Lid | **Cache Lid** | Lid | `cache_lid` | Thing |
+### On disk (rehashed)
 
-### 4.2 Lite Building & attachment modules (planned)
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Mushroom` | Mushroom | **Brimstone Cap** | `food_brimstone_cap` |
+| `Cooked Mushroom` | Cooked Mushroom | **Charred Brimstone Cap** | `food_charred_cap` |
+| `Forest Stew` | Forest Stew | **Brimstone Leek & Cap Stew** | `food_leek_stew` |
+| `Red Lilly` | Red Lilly | **Sulfur Needle Bulbs** | `food_sulfur_bulbs` |
+| `Pimican` | Pimican | **Vent Kelp & Tuber Pemmican** | `food_vent_pemmican` |
+| `Rock` | Rock | **Basalt Fragment** *(craft, not food)* | `basalt_fragment` |
 
-| Module role | **Lore display name** | PPT keyword |
-|-------------|----------------------|-------------|
-| Generator | **Plasma Generator Pod** | `gen_pod` |
-| Power grid | **Camp Grid Relay** | `grid_relay` |
-| Auto gather | **Autonomous Gather Arm** | `gather_arm` |
-| Logistics | **Supply Crawler Hub** | `logistics_hub` |
-| Communications | **Surface Relay Mast** | `comms_mast` |
-| Defense | **Perimeter Sentry Pod** | `defense_pod` |
-| Mining | **Remote Mining Head** | `mining_head` |
-| Portable habitat | **Architect Seal Bubble** | `seal_bubble` |
+### +5 new
+
+| **Lore name** | Recipe / source | Effect (design target) | PPT keyword |
+|---------------|-----------------|------------------------|-------------|
+| **Geyser Strider Skewers** | Fauna drop + cook | Energy + stamina | `food_strider_skewers` |
+| **Condensate Onion Broth** | Condensate pods + cap | O₂ bump + energy | `food_condensate_broth` |
+| **Ash Vale Mash** | Ash tubers + mash | Health + energy | `food_ash_mash` |
+| **Polar Rim Tea** | Polar filament + water | Cold thermal resist (short) | `food_polar_tea` |
+| **Sulfur Needle Pickles** | Needle tuft brine jar | Sulfur resist (short) | `food_needle_pickles` |
+
+---
+
+## F. Health, Med & Field Kits
+
+*UEA issue + Io-native salves.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | Origin | PPT keyword |
+|-------|-----|---------------|--------|-------------|
+| `Medpack` | Medpack | **UEA Field Triage Seal** | UEA | `med_triage_seal` |
+| `herbal_medpack` | Herbal Medpack | **Sulfur Needle Salve Kit** | Io Native | `med_needle_salve` |
+
+### +5 new
+
+| **Lore name** | Origin | Effect (design target) | PPT keyword |
+|---------------|--------|------------------------|-------------|
+| **UEA Trauma Foam Cartridge** | UEA | Large health restore | `med_trauma_foam` |
+| **UEA Stim Slap Patch** | UEA | Stamina + minor health | `med_stim_patch` |
+| **UEA Coagulant Wrap** | UEA | Bleed stop + heal over time | `med_coagulant_wrap` |
+| **Brimstone Poultice Pack** | Io Native | HoT from leek + tuft craft | `med_brimstone_poultice` |
+| **UEA Antirad Syrette** | UEA | Rad exposure shave (not full inoc) | `med_antirad_syrette` |
+
+---
+
+## G. O₂ & Breathables
+
+*All UEA — shipped to Io.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Oxygen Tank` | Oxygen Tank | **UEA O₂ Reserve Canister** | `o2_reserve_can` |
+| `Oxygen Tank Mini` | Oxygen Tank Mini | **UEA Pocket Rebreather Ampule** | `o2_pocket_amp` |
+
+### +5 new
+
+| **Lore name** | Effect (design target) | PPT keyword |
+|---------------|------------------------|-------------|
+| **UEA O₂ Twin-Pack** | Two canisters, faster deploy | `o2_twin_pack` |
+| **UEA Suit Bypass Cartridge** | Emergency suit O₂ bridge | `o2_suit_bypass` |
+| **UEA SO₂ Scrubber Tablet** | Sulfur exposure scrub (minor) | `o2_scrubber_tablet` |
+| **UEA High-Pressure O₂ Flask** | Deep tube / low pressure zones | `o2_high_pressure` |
+| **UEA Condensate Infusion Bulb** | Small O₂ + condensate flavor fiction | `o2_condensate_bulb` |
+
+---
+
+## H. Inoculations, Filters & Suit Gels
+
+*UEA-manufactured doses; Io reagents in craft.*
+
+### +5 new (entire category)
+
+| **Lore name** | Pressure | Effect (design target) | PPT keyword |
+|---------------|----------|------------------------|-------------|
+| **UEA Rad-Shimmer Gel Dose** | Radiation | Extends safe rad window | `inoc_rad_gel` |
+| **UEA Heat-Routing Thermal Gel** | Thermal (heat) | Caldera rim crossing | `inoc_thermal_gel` |
+| **UEA Brimstone Filter Gel Dose** | Sulfur | Storm / plains prep | `inoc_sulfur_gel` |
+| **UEA Cold-Spike Balm Dose** | Thermal (cold) | Polar night prep | `inoc_cold_balm` |
+| **UEA Volcano Stress Wafer** | Volcano | Tremor / eruption buffer | `inoc_volcano_wafer` |
+
+---
+
+## I. Salvage & Craft Components
+
+*Wreckage from prior expeditions — still UEA / corporate hardware origin.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `metal_scrap` | Metal Scrap | **UEA Wreckage Alloy Shred** | `scrap_alloy_shred` |
+| `electronic_scrap` | Electronic Scrap | **UEA Salvage Circuit Slab** | `scrap_circuit_slab` |
+
+### +5 new
+
+| **Lore name** | Use | PPT keyword |
+|---------------|-----|-------------|
+| **UEA Hull Plate Fragment** | Heavy armor craft | `scrap_hull_plate` |
+| **UEA Capacitor Brick** | Energy weapons, fuel craft | `scrap_capacitor` |
+| **UEA Polymer Gasket Roll** | Seals, habitat modules | `scrap_gasket_roll` |
+| **UEA Optical Shred Bundle** | Scopes, scanners | `scrap_optical_shred` |
+| **UEA Hydraulic Piston Core** | Vehicles, excavator repair | `scrap_piston_core` |
+
+---
+
+## J. Fuel, Cells & Operations
+
+*UEA power logistics.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Plasma Fuel` | Plasma Fuel | **UEA Plasma Fuel Cell** | `fuel_plasma_cell` |
+
+### +5 new
+
+| **Lore name** | Use | PPT keyword |
+|---------------|-----|-------------|
+| **UEA Micro-Fusion Cell** | Building generators | `fuel_micro_fusion` |
+| **UEA Hover Sled Charge Pack** | Skim-Pak refill | `fuel_hover_pack` |
+| **UEA Mining Laser Charge Drum** | DM-MT bulk reload | `fuel_mining_drum` |
+| **UEA Emergency Generator Brick** | Camp outage bridge | `fuel_gen_brick` |
+| **UEA Ion Capacitor Flask** | Ion storm module shielding | `fuel_ion_flask` |
+
+---
+
+## K. Melee Weapons
+
+*UEA issue blades + field improvisations.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | Origin | PPT keyword |
+|-------|-----|---------------|--------|-------------|
+| `weap2_sword` | weap2_sword | **UEA Cutlass Mark II** | UEA | `melee_uea_cutlass` |
+| `Sword of Fear` | Sword of Fear | **Field Rift-Cleaver** | Field | `melee_rift_cleaver` |
+| `Death Axe` | Death Axe | **Field Caldera Splitter** | Field | `melee_caldera_splitter` |
+| `Spear of Fate` | Spear of Fate | **Field Vent Pike** | Field | `melee_vent_pike` |
+| `Wood Axe` | Wood Axe | **UEA Breach Hatchet Mark I** | UEA | `melee_breach_hatchet` |
+| `weap_two_handed` | Two-Handed Sword | **UEA Heavy Breach Blade** | UEA | `melee_heavy_breach` |
+| `2 Hander` | 2 Hander | **UEA Mortal Breach Blade** *(veteran name)* | UEA | `melee_mortal_breach` |
+
+### +5 new
+
+| **Lore name** | Origin | Role | PPT keyword |
+|---------------|--------|------|-------------|
+| **UEA Trench Knife Mark IV** | UEA | Fast light melee | `melee_trench_knife` |
+| **UEA Riot Baton Mark II** | UEA | Stun / CC melee | `melee_riot_baton` |
+| **Field Basalt Pick-Hammer** | Field | Armor shred, mining panic | `melee_basalt_pick` |
+| **UEA Engineering Maul** | UEA | Anti-android blunt | `melee_eng_maul` |
+| **Field Sulfur Hound Fang Glaive** | Field | Craft from hound drop | `melee_fang_glaive` |
+
+---
+
+## L. Ranged Weapons
+
+*All UEA — expedition issue.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `sci_fi_pistol` | Sci-Fi Pistol | **UEA Mark-7 Sidearm** | `ranged_mark7` |
+| `survival_rifle` | Survival Rifle | **UEA Expedition Carbine** | `ranged_carbine` |
+| `DM_Mining_Tool` | DM Mining Tool | **UEA DM-MT Laser Extractor** | `ranged_dm_mt` |
+
+### +5 new
+
+| **Lore name** | Role | PPT keyword |
+|---------------|------|-------------|
+| **UEA Mark-12 Scatter Pulser** | Shotgun / close android clear | `ranged_scatter_pulser` |
+| **UEA Longwatch DMR** | Marksman, weak-point android | `ranged_longwatch_dmr` |
+| **UEA Suppression LMG** | Sustained fire, hound packs | `ranged_suppression_lmg` |
+| **UEA Rivet Driver Sidearm** | Nail rivets; anti-Rust Garden | `ranged_rivet_driver` |
+| **UEA Resonance Dart Launcher** | Sticky trackers; Echo / vault ops | `ranged_dart_launcher` |
+
+---
+
+## M. Ammunition
+
+*All UEA manufacture.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Standard` | Standard | **UEA Ballistic Coil Rounds** | `ammo_ballistic_coil` |
+| `Plasma` | Plasma | **UEA Plasma-T Field Cartridge** | `ammo_plasma_t` |
+| `Laser Pistol Ammo` | Laser Pistol Ammo | **UEA Pulse Cell — Pistol Grade** | `ammo_pulse_pistol` |
+| `Laser` | Laser Pulse | **UEA Pulse Cell — Rifle Grade** | `ammo_pulse_rifle` |
+
+### +5 new
+
+| **Lore name** | Weapon feed | PPT keyword |
+|---------------|-------------|-------------|
+| **UEA Scatter Flechettes** | Scatter Pulser | `ammo_scatter_flechette` |
+| **UEA DMR Sabot Rounds** | Longwatch DMR | `ammo_dmr_sabot` |
+| **UEA Rivet Nails (100)** | Rivet Driver | `ammo_rivet_nails` |
+| **UEA Tracking Resonance Darts** | Dart Launcher | `ammo_resonance_dart` |
+| **UEA Incendiary Coil Rounds** | Carbine alt fire | `ammo_incendiary_coil` |
+
+---
+
+## N. Tools & Survey Gear
+
+*All UEA — shipped or legacy issue.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Scanner B44` | Scanner B44 | **UEA B44 Geological Survey Scanner** | `tool_scanner_b44` |
+| `Binnos 250` | Binoculars 250 | **UEA Mark-250 Optic Ranging Glass** | `tool_mark250_optics` |
+
+### +5 new
+
+| **Lore name** | Role | PPT keyword |
+|---------------|------|-------------|
+| **UEA Echo Signal Sniffer** | Echo / Memory Core ping | `tool_echo_sniffer` |
+| **UEA Thermal Survey Rod** | Heat shadow mapping (B4) | `tool_thermal_rod` |
+| **UEA Rad Compass Puck** | Polar pulse timing (B5) | `tool_rad_compass` |
+| **UEA Sample Vial Kit** | Science Specialist gather | `tool_sample_vials` |
+| **UEA Field Repair Multitool** | Salvage Engineer upkeep | `tool_repair_multitool` |
+
+---
+
+## O. Modules, Harness & Attachments
+
+*UEA camp / suit hardware.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Increase Storage Module` | Increase Storage Module | **UEA Harness Loadframe Expansion** | `mod_loadframe` |
+
+### +5 new
+
+| **Lore name** | Effect (design target) | PPT keyword |
+|---------------|------------------------|-------------|
+| **UEA O₂ Recycler Cartridge** | Slower O₂ drain | `mod_o2_recycler` |
+| **UEA Thermal Baffle Plate** | Thermal meter stability | `mod_thermal_baffle` |
+| **UEA Sulfur Filter Canister** | Sulfur saturation slow | `mod_sulfur_filter` |
+| **UEA Rad Liner Sheet** | Radiation exposure slow | `mod_rad_liner` |
+| **UEA Auto-Sort Harness Chip** | QoL inventory sort | `mod_autosort_chip` |
+
+---
+
+## P. Vehicles & Deployables
+
+*All UEA — brought to Io.*
+
+### On disk (rehashed)
+
+| Asset | Was | **Lore name** | PPT keyword |
+|-------|-----|---------------|-------------|
+| `Hovercraft` | Hovercraft | **UEA Skim-Pak Hover Sled** | `vehicle_skim_pak` |
+
+### +5 new
+
+| **Lore name** | Role | PPT keyword |
+|---------------|------|-------------|
+| **UEA Io Buggy Chassis Kit** | W8 ship vehicle (folded) | `vehicle_io_buggy` |
+| **UEA Cargo Sled Trailer** | Haul salvage from wrecks | `vehicle_cargo_sled` |
+| **UEA Deployable Survey Pylon** | Map reveal, comms boost | `deploy_survey_pylon` |
+| **UEA Portable Habitat Canister** | Architect seal bubble deploy | `deploy_habitat_can` |
+| **UEA Perimeter Mine Pod (non-lethal)** | CC trap, android slow | `deploy_mine_pod` |
+
+---
+
+## Q. Throwables & Tactical Consumables
+
+*UEA expedition tactical — new category.*
+
+### +5 new (entire category)
+
+| **Lore name** | Effect (design target) | PPT keyword |
+|---------------|------------------------|-------------|
+| **UEA Smoke Canister Mark I** | LOS block, jackal break | `throw_smoke_can` |
+| **UEA Arc Flash Grenade** | Android stagger | `throw_arc_flash` |
+| **UEA Sulfur Fog Candle** | Sulfur moth / wasp repel | `throw_sulfur_candle` |
+| **UEA Foam Wall Capsule** | Short cover deploy | `throw_foam_wall` |
+| **UEA Noise Lure Puck** | Draw patrol off path | `throw_noise_lure` |
+
+---
+
+## R. Quest, Access & Story Items
+
+*Mixed origin — not stackable vendor fodder.*
+
+### +5 new (entire category)
+
+| **Lore name** | Origin | Role | PPT keyword |
+|---------------|--------|------|-------------|
+| **UEA Crew Tag Band** | UEA | Story POI / B4 | `quest_crew_tag` |
+| **Precursor Access Shard** | Alien | B7 vault locks | `quest_access_shard` |
+| **Aether Memory Core** | Alien | Aether-9 slot | `quest_memory_core` |
+| **Smuggler Black-Market Chip** | UEA salvage | B5 cache quest | `quest_smuggler_chip` |
+| **Survey Data Spool** | UEA | B6 Lost Survey / pet quest | `quest_survey_spool` |
+
+---
+
+## 3. Craft recipe display names (rehashed)
+
+| Recipe ID | **Lore output name** | Notes |
+|-----------|---------------------|-------|
+| `grilled_mushroom` | **Charred Brimstone Cap** | |
+| `forest_stew` | **Brimstone Leek & Cap Stew** | Uses leeks + caps |
+| `Pemican_recipe` | **Vent Kelp & Tuber Pemmican** | |
+| `herbal_medpack` | **Sulfur Needle Salve Kit** | |
+| `stone_salve` | **Lunar Silicate Salve** | Needs ItemData; fix miswire |
+| `Standard_Ammo` | **UEA Ballistic Coil Rounds** | Fix miswire |
+| `Plasma_Ammo` | **UEA Plasma-T Field Cartridge** | |
+| `Plasma_Fuel` | **UEA Plasma Fuel Cell** | |
+| `craft_sci_fi_pistol` | **UEA Mark-7 Sidearm** | |
+| `craft_survival_rifle` | **UEA Expedition Carbine** | |
+| `increase_storage_module` | **UEA Harness Loadframe Expansion** | |
+
+---
+
+## 4. Buildings & camp (UEA / colony — subtitles)
+
+| GDD building | **Lore display** | PPT keyword |
+|--------------|------------------|-------------|
+| Command Center | **UEA Founder's Command Nexus** | `command_nexus` |
+| Purification Hub | **UEA Strain Purification Array** | `purification_array` |
+| Geothermal Harvester | **UEA Magma Tap Harvester** | `geo_harvester` |
+| Echo Reclamation Chamber | **UEA Echo Reclamation Chamber** | `echo_reclamation` |
+| Resonance Beacon | **UEA Resonance Beacon** | `resonance_beacon` |
+| Probe Uplink | **UEA Probe Uplink Spire** | `probe_uplink` |
+| Geothermal Stabilizer | **UEA Tremor Stabilizer Ring** | `geo_stabilizer` |
+| Medical Facility | **UEA Medical Bay** | `medical_bay` |
+| Science Labs | **UEA Science Annex** | `science_annex` |
+| Pet Bay | **UEA Companion Stabilizer Bay** | `pet_bay` |
 
 ---
 
 ## 5. PPT — People
 
-PPT registry entries use: `pptId`, `label`, `PptType.Person`, optional `npcId`, discovery keywords.
-
-| pptId | **Display label** | Role | Comms / lore notes |
-|-------|-------------------|------|-------------------|
-| `npc_pioneer_guide` | **Pioneer Guide** *(retire)* → **Quartermaster Vela** | Tutorial quest giver | Camp orientation; supply runs; directions hub |
-| `npc_colony_ops` | **Colony Ops** | Radio persona | Default query voice until Aether-9 advisory |
-| `npc_aether_9` | **Aether-9** | Ancient Echo machine | Prologue idle probe; Memory Core hub |
-| `npc_med_officer` | **Chief Med Tech Aris** | Medical Facility lead | Injury recovery, triage seal restock |
-| `npc_science_lead` | **Science Director Quill** | Science Annex | Samples, inoculations, pool analysis |
-| `npc_comms_officer` | **Relay Officer Vesper** | Communications | Uplink, Echo signal routing |
-| `npc_salvage_foreman` | **Salvage Foreman Calder** | Salvage yard | Wreck recovery, repair queues |
-| `npc_logistics_quarter` | **Quartermaster Routes Desk** | Logistics | AC vendor, resupply routes |
-| `npc_echo_reclamation` | **Reclamation Attendant** | Echo chamber | Pet stabilizer / Echo intake |
-| `class_architect` | **Architect Engineer** | Class anchor | Shields, habitat |
-| `class_science` | **Science Specialist** | Class anchor | Scan, inoculation |
-| `class_tactician` | **Combat Tactician** | Class anchor | Aggro, clear |
-| `class_scout` | **Infiltrator Scout** | Class anchor | Echo signals, routes |
-| `class_medtech` | **Med Tech** | Class anchor | Field triage |
-| `class_logistics` | **Logistics Officer** | Class anchor | Quartermaster |
-| `class_salvage` | **Salvage Engineer** | Class anchor | Upkeep, salvage |
-| `class_comms` | **Communications Officer** | Class anchor | Uplink matrix |
-
-**Neural Echoes:** use procedural names only — do not hand-author PPT Person rows per Echo; register runtime on rescue.
+| pptId | **Label** | Notes |
+|-------|-----------|-------|
+| `npc_pioneer_guide` | **Quartermaster Vela** | Replaces Pioneer Guide |
+| `npc_colony_ops` | **Colony Ops** | Default radio |
+| `npc_aether_9` | **Aether-9** | Advisory unlock |
+| `npc_med_officer` | **Chief Med Tech Aris** | |
+| `npc_science_lead` | **Science Director Quill** | |
+| `npc_comms_officer` | **Relay Officer Vesper** | |
+| `npc_salvage_foreman` | **Salvage Foreman Calder** | |
+| `npc_logistics_quarter` | **Quartermaster Routes Desk** | Stocks Wiffle line + UEA basics |
 
 ---
 
 ## 6. PPT — Places
 
-### 6.1 Surface biomes (B1–B7)
+### Biomes (codenames)
 
-| Biome ID | GDD name | **Expedition codename** | PPT keyword | Comms example |
-|----------|----------|------------------------|-------------|---------------|
-| B1 | Sulfur Plains | **Yellowfall Expanse** | `biome_b1` | "Yellowfall seeps are active." |
-| B2 | Geyser Fields | **Steamspire Basin** | `biome_b2` | "Steamspire vent cycle is tight." |
-| B3 | Ash Flats & Ridges | **Bronzeveil Flats** | `biome_b3` | "Bronzeveil visibility is down." |
-| B4 | Lava Calderas | **Obsidian Crown** | `biome_b4` | "Obsidian Crown rim is unstable." |
-| B5 | Polar Radiation Flats | **Aurora Shroud** | `biome_b5` | "Aurora Shroud night in six hours." |
-| B6 | Basalt Highlands | **Spiregate Highlands** | `biome_b6` | "Spiregate breach is marked." |
-| B7 | Precursor Ruin Belt | **Tealvault Ruins** | `biome_b7` | "Tealvault patrols are live." |
-| overlay | Expedition Graveyard | **Wreckfall Overlay** | `graveyard_overlay` | "Wreckfall scrapper activity." |
-| hub | Colony camp | **Founder's Perimeter** | `colony_hub` | "Return to Founder's Perimeter." |
+| ID | **Codename** | PPT keyword |
+|----|--------------|-------------|
+| B1 | Yellowfall Expanse | `biome_b1` |
+| B2 | Steamspire Basin | `biome_b2` |
+| B3 | Bronzeveil Flats | `biome_b3` |
+| B4 | Obsidian Crown | `biome_b4` |
+| B5 | Aurora Shroud | `biome_b5` |
+| B6 | Spiregate Highlands | `biome_b6` |
+| B7 | Tealvault Ruins | `biome_b7` |
+| Hub | Founder's Perimeter | `colony_hub` |
 
-### 6.2 Underground strata (S1–S5)
+### POI (+5 new place keywords)
 
-| Stratum | **Lore name** | PPT keyword |
-|---------|---------------|-------------|
-| S1 | **Upper Ember Tubes** | `stratum_s1` |
-| S2 | **Mid-Gallery Network** | `stratum_s2` |
-| S3 | **Brine Basin Depths** | `stratum_s3` |
-| S4 | **Geothermal Root Lenses** | `stratum_s4` |
-| S5 | **Resonance Vault Undercroft** | `stratum_s5` |
-
-### 6.3 Authored POI landmarks (world content)
-
-| Region | **Place name** | PPT keyword | Activity |
-|--------|----------------|-------------|----------|
-| B1 | **Condensate Seep Field** | `poi_condensate_seep` | Sample / O₂ chemistry |
-| B1 | **Fanbelt Harvest Lane** | `poi_fanbelt` | Brimstone fan harvest |
-| B2 | **Vent Crown Nest** | `poi_vent_nest` | Vent crab nest clear |
-| B2 | **Dead Rig Surveyor Loop** | `poi_dead_rig` | Rusted survey drone |
-| B3 | **Buried Beacon Trench** | `poi_buried_beacon` | Excavator android |
-| B4 | **Crew Tag Sentry Post** | `poi_crew_tag` | Aether-9 story death site |
-| B5 | **Smuggler Core Cache** | `poi_smuggler_cache` | Black-market android |
-| B6 | **Tutorial Breach Pad** | `poi_tutorial_breach` | Underground entry |
-| B6 | **Broodmouth Gate** | `poi_broodmouth` | Nest breach |
-| B7 | **Silent Corridor Antechamber** | `poi_silent_corridor` | Puzzle / no Stitcher |
-| B7 | **Vault Glass Petal Hall** | `poi_vault_petal` | Precursor lock |
-| Any | **Seam Shimmer Zone** | `poi_void_seam` | Void Stitcher spawn bias |
-| Colony | **Command Nexus Plaza** | `poi_command_plaza` | Hub spawn |
-| Colony | **Pet Stabilizer Bay** | `poi_pet_bay` | Pet repair / swap |
+| **Place** | Region | PPT keyword |
+|-----------|--------|-------------|
+| Wiffle Cache Trench | Graveyard overlay | `poi_wiffle_cache` |
+| Martian Ore Boulder Field | B1 | `poi_martian_boulder` |
+| Lunar Silicate Shelf | B6 | `poi_lunar_shelf` |
+| Europan Salt Pan | S3 | `poi_europan_pan` |
+| Teal Seep Shrine | B7 | `poi_teal_seep` |
 
 ---
 
 ## 7. PPT — Things
 
-### 7.1 Weather events (GDD A2b — **keep locked names**)
-
-| ID | **Display name** | PPT keyword |
-|----|------------------|-------------|
-| 01 | Sulfur Storm | `weather_sulfur_storm` |
-| 02 | Ion Lightning Storm | `weather_ion_lightning` |
-| 03 | Ash Gale | `weather_ash_gale` |
-| 04 | Dust Spout Cluster | `weather_dust_spout` |
-| 05 | Lava Flow Surge | `weather_lava_surge` |
-| 06 | Geyser Field Surge | `weather_geyser_surge` |
-| 07 | Caldera Eruption Column | `weather_caldera_eruption` |
-| 08 | Tremor Swarm | `weather_tremor_swarm` |
-| 09 | Jovian Radiation Pulse | `weather_rad_pulse` |
-| 10 | Resonance Supercell | `weather_resonance_supercell` |
-
-### 7.2 Environmental pressures (four + O₂)
-
-| System | **Display name** | PPT keyword |
-|--------|------------------|-------------|
-| Oxygen | **O₂ Reserve** | `pressure_o2` |
-| Radiation | **Radiation Exposure** | `pressure_rad` |
-| Thermal | **Thermal Stress** | `pressure_thermal` |
-| Volcano | **Volcanic Stress** | `pressure_volcano` |
-| Sulfur | **Sulfur Saturation** | `pressure_sulfur` |
-| Strain | **Neural Strain** | `strain_meter` |
-| Saturation | **Echo Saturation** | `saturation_meter` |
-
-### 7.3 Technology & systems
-
-| Thing | **Display name** | PPT keyword |
-|-------|------------------|-------------|
-| AC | **Aether Credits** | `aether_credits` |
-| Memory Core | **Aether Memory Core** | `memory_core` |
-| Resonance Event | **Resonance Event** | `resonance_event` |
-| Neural Echo | **Neural Echo** | `neural_echo` |
-| Building Control UI | **Structure Control Interface** | `bcp_ui` |
-| Journal Craft | **Recipe Archive** | `recipe_archive` |
-| Trio | **Expedition Trio** | `expedition_trio` |
-| Base 22 | **Camp Complement** | `base_roster` |
-| Hover deploy | **Skim-Pak Deploy** | `hover_deploy` |
-| Mining laser | **DM-MT Extractor Beam** | `mining_beam` |
-
-### 7.4 Threat families (for comms / journal)
-
-| Family | **Display label** | PPT keyword |
-|--------|-------------------|-------------|
-| Native fauna | **Io Lifeform** | `threat_lifeform` |
-| Android | **Machine Hostile** | `threat_android` |
-| Humanoid | **Expedition Remnant** | `threat_humanoid` |
-| Elite global | **Void Stitcher** | `threat_void_stitcher` |
-| Elite myth | **Still Hunter** | `threat_still_hunter` |
-| Machine-coral | **Rust Garden** | `threat_rust_garden` |
+Weather (GDD A2b locked): `weather_sulfur_storm` … `weather_resonance_supercell`  
+Pressures: `pressure_o2`, `pressure_rad`, `pressure_thermal`, `pressure_volcano`, `pressure_sulfur`  
+Economy: **Aether Credits** · `aether_credits`
 
 ---
 
-## 8. Ecology & pets (cross-reference — names already Io-canonical)
+## 8. Ecology cross-reference
 
-**Do not rename** entries in `Io_Biome_Ecology_Roster.md` unless a dedicated lore pass flags a conflict.  
-PPT keywords for creature directions use snake_case from roster name: e.g. `fauna_sulfur_hound`, `flora_brimstone_fan`, `pet_brimstone_puff`.
-
-| Category | Count | Doc section |
-|----------|-------|-------------|
-| Surface flora/fauna per biome | 40+ | Ecology roster §6 |
-| Android / humanoid / machine threats | 24 types | Ecology roster §4 |
-| Core expedition pets | 12 | Ecology roster §4.6.4 |
-| Vanity pets | 4+ | Ecology roster §4.6.5 |
+Creature / pet **display names** stay in `Io_Biome_Ecology_Roster.md`.  
+Harvest drops that become items use **§C** naming (e.g. hound sinew → future **Sulfur Hound Sinew Strip** if added).
 
 ---
 
-## 9. Vendors & economy labels
+## 9. Migration & implementation
 
-| Vendor context | **Display name** | Sells |
-|----------------|------------------|-------|
-| Camp quartermaster | **Founder's Supply Terminal** | Rations, O₂, triage seals, basic ammo |
-| Science annex shop | **Annex Reagent Counter** | Inoculations, sample kits |
-| Salvage foreman | **Wreckage Reclamation Desk** | Mods, repair mats |
-| Black market (B5) | **Shroud Cache Trader** *(POI-only)* | Illegal cores, magnetic ore |
-| AC HUD | **Aether Credits** | — |
+| Phase | Work |
+|-------|------|
+| 1 | Rename on-disk `ItemData` per §A–P on-disk tables |
+| 2 | Add `stableItemId` for all new §+5 entries as content phases land |
+| 3 | Wiffle line → wreck / quartermaster loot tables |
+| 4 | Solar ores → retarget `ResourceNodeDefinition` yield names |
+| 5 | Alien tier → B7 / supercell drop tables only |
+| 6 | PPT registry seed from §5–7 keywords |
 
----
-
-## 10. Migration checklist (implementation order)
-
-| Phase | Work | Owner |
-|-------|------|-------|
-| **1** | Apply §2 display names to `ItemData.itemName` + `tooltipDescription` | Content / engineering |
-| **2** | Fix miswired recipes (`stone_salve`, `Standard_Ammo` outputs) + add `Silicate Salve` ItemData | Engineering |
-| **3** | Seed `Resources/PPT/PptRegistry` with §5–7 keywords | PPT Phase 1 |
-| **4** | Wire Building Control `buildingDisplayName` to §4.1 | Level design |
-| **5** | Comms templates: Colony Ops uses codenames (§6.1) | Communications framework |
-| **6** | Promote this doc → GDD Appendix **A2g** after review | Design lead |
-
-### Spelling normalization
+### Spelling / retire list
 
 | Retire | Adopt |
 |--------|-------|
-| Pimican / Pemican | **Condensate Ration Block** |
-| Red Lilly | **Crimson Needle Bloom** |
-| Forest Stew | **Lace-Vapor Broth** |
-| Stardard Ammo | **UEA Ballistic Coil Rounds** |
-| Binnos 250 | **Mark-250 Optic Ranging Glass** |
+| Iron Ore | **Martian Ferric Regolith** |
+| Silicate Ore | **Lunar Anorthite Silicate** |
+| Forest Stew | **Brimstone Leek & Cap Stew** |
+| Red Lilly | **Sulfur Needle Bulbs** |
+| Pimican | **Vent Kelp & Tuber Pemmican** |
+| Sci-Fi Pistol | **UEA Mark-7 Sidearm** |
+| Generic “Plasma Fuel” | **UEA Plasma Fuel Cell** |
 
 ---
 
-## 11. Backup & authority map
+## 10. Expansion summary
 
-| Source | What it contributes |
-|--------|---------------------|
-| `GAME_DESIGN_DOCUMENT_5.0.txt` | Pressures, weather, buildings, economy, Echo format |
-| `Io_Biome_Ecology_Roster.md` | Creature / flora names (canonical) |
-| `Io_Biome_Exploration_Gameplay_Plan.md` | Biome verbs, gear gates, POI activities |
-| `Io_World_Content_Executive_Summary.md` | Ship scope, pet counts, phase order |
-| `ItemRegistry.asset` | 34 inventory items (§2) |
-| `RecipeRegistry.asset` | 11 craft recipes |
-| GDD 3.0 archive | Inoculation classes, building list |
-| `Plasma_Ammo.asset` description | **UEA (United Earth Authority)** ammo lore |
-| `DmEvents.cs` | **IO Ancient Cache** display string |
-| PPT design (referenced in `World_Engine_Disk_Status.md`) | People / Places / Things registry pattern |
+| Metric | Count |
+|--------|-------|
+| Player-usable categories | **18** (§2 index) |
+| New items proposed (+5 per category) | **90** |
+| On-disk items rehashed | **34** |
+| **Total named player-usable targets** | **~124** (34 rehashed + 90 new) |
 
 ---
 
-*Dark Matter Studios — Dark Matter: Genesis — Lore Naming (draft)*
+*Dark Matter Studios — Dark Matter: Genesis — LNM v2*
