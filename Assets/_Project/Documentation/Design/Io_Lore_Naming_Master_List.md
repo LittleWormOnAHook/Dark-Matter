@@ -1,6 +1,6 @@
 # Io Lore Naming Master List (LNM)
 
-**Revision:** 3 — short names (1–2 words); UEA exception  
+**Revision:** 3.1 — short names (1–2 words); UEA exception; basic Earth ore names  
 **Status:** Design draft — promote to GDD **Appendix A2g** after review  
 **Companion:** PPT = **People, Places, Things**
 
@@ -12,7 +12,7 @@
 |--------|--------|---------|---------|
 | **UEA** | **Long OK** | `UEA` + mark / role / full designation | UEA Mark-7 Sidearm |
 | **Wiffle** | 2 words | `Wiffle` + familiar food | Wiffle Beans |
-| **Solar** | 1–2 words | `[Body]` + `[ore/mineral]` | Martian Iron |
+| **Basic Ore** | 1–2 words | Standard **Earth ore / mineral** names | Iron Ore, Copper Ore |
 | **Io Native** | 1–2 words | `[prefix]` + `[familiar noun]` | Brimstone Leeks |
 | **Alien** | 1–2 words | `[phenomenon]` + `[form]` | Seam Crystal |
 | **Field** | 1–2 words | `[place/threat]` + `[tool]` | Vent Pike |
@@ -27,9 +27,11 @@
 
 `Brimstone` · `Sulfur` · `Vent` · `Ash` · `Basalt` · `Condensate` · `Geyser` · `Polar` · `Rim` · `Tube`
 
-### Solar bodies (ore catalog)
+### Basic ore naming
 
-Mars · Luna · Mercury · Venus · Ceres · Vesta · Europa · Titan · Io *(Jovic)*
+Laser-mined nodes use **familiar terrestrial geology names** — what miners and crafters already know from Earth. Mined **on Io**, classified with **Earth-standard ore labels** (not planet-of-origin names). One or two words: **Iron Ore**, **Silicate**, **Copper Ore**, **Titanium Ore**.
+
+Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 
 ---
 
@@ -37,7 +39,7 @@ Mars · Luna · Mercury · Venus · Ceres · Vesta · Europa · Titan · Io *(Jo
 
 | # | Category | Count | Origin |
 |---|----------|-------|--------|
-| A | Solar Ores | 7 | Solar |
+| A | Basic Ores | 7 | Basic Ore |
 | B | Alien Materials | 5 | Alien |
 | C | Io Harvest | 7 | Io Native |
 | D | Wiffle Rations | 5 | Wiffle |
@@ -60,19 +62,19 @@ Mars · Luna · Mercury · Venus · Ceres · Vesta · Europa · Titan · Io *(Jo
 
 ---
 
-## A. Solar Ores
+## A. Basic Ores
 
-*Laser-mined. Two-word body + mineral.*
+*Laser-mined boulders. Standard Earth ore names — 1–2 words.*
 
-| Name | Body | Use |
-|------|------|-----|
-| **Martian Iron** | Mars | Weapons, structural craft |
-| **Lunar Silicate** | Luna | Ceramics, abrasives |
-| **Mercury Flakes** | Mercury | Conductors, magnets |
-| **Venus Sulfur** | Venus | Filters, chemistry |
-| **Ceres Chondrite** | Ceres | Carbon composites |
-| **Europa Salt** | Europa | Coolant, circuits |
-| **Vesta Iron** | Vesta | High-grade alloy |
+| Name | Use |
+|------|-----|
+| **Iron Ore** | Weapons, structural craft, alloys |
+| **Silicate Ore** | Ceramics, abrasives, glass craft |
+| **Copper Ore** | Wiring, circuits, conductivity |
+| **Titanium Ore** | Armor, high-stress parts |
+| **Nickel Ore** | Alloys, magnets, batteries |
+| **Cobalt Ore** | Capacitors, energy craft |
+| **Aluminum Ore** | Light frames, hull panels |
 
 ---
 
@@ -362,4 +364,4 @@ Weather: GDD A2b locked names · Economy: **Aether Credits**
 
 ---
 
-*Dark Matter Studios — Dark Matter: Genesis — LNM v3*
+*Dark Matter Studios — Dark Matter: Genesis — LNM v3.1*
