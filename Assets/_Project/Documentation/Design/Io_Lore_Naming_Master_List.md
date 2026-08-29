@@ -1,6 +1,6 @@
 # Io Lore Naming Master List (LNM)
 
-**Revision:** 3.1 — short names (1–2 words); UEA exception; basic Earth ore names  
+**Revision:** 3.2 — UEA only on standard issue + select specials  
 **Status:** Design draft — promote to GDD **Appendix A2g** after review  
 **Companion:** PPT = **People, Places, Things**
 
@@ -17,11 +17,22 @@
 | **Alien** | 1–2 words | `[phenomenon]` + `[form]` | Seam Crystal |
 | **Field** | 1–2 words | `[place/threat]` + `[tool]` | Vent Pike |
 
-**Hard rule:** Non-UEA display names = **one or two words** max. No triple stacks like *Martian Ferric Regolith* or *Brimstone Leek & Cap Stew*.
+**Hard rule:** Non-UEA display names = **one or two words** max.
 
-**UEA rule:** Anything **brought to Io** — weapons, tools, ammo, med, O₂, fuel, scrap, modules, vehicles, buildings, throwables.
+**UEA rule (revised):** **Not** every Earth-made or shipped item gets `UEA`. Use **UEA** only for:
 
-**Disk-agnostic:** This list is the **design target**. Prototype asset names (`Forest Stew`, `Sword of Fear`, etc.) are not authority.
+| Use UEA | Do **not** use UEA |
+|---------|-------------------|
+| **Standard expedition issue** — kit you start with or get from quartermaster | **Wreck salvage** — alloy shred, circuit slabs, hull plates |
+| **Official UEA weapons & ammo** — Mark-7, Carbine, Coil Rounds, Plasma-T | **Third-party / found gear** — rivet driver, scatter pulser, cargo sled |
+| **Official survival** — O₂ Reserve Canister, Field Triage Seal | **Commercial / leftover** — Wiffle, stim patches, pocket rebreathers |
+| **Official inoculation doses** | **Io-native** food, harvest, salves |
+| **Select specials** — DM-MT, Longwatch DMR, Trauma Foam, Crew Tag | **Field improvised** — cleavers, pikes, picks |
+| **UEA buildings & colony structures** (Command Nexus, Medical Bay) | **Generic fuel cells** — Plasma Cell, Fusion Cell (crate loot) |
+
+When in doubt: if it’s **scavenged, branded elsewhere, or improvised**, drop `UEA`.
+
+**Disk-agnostic:** This list is the **design target**. Prototype asset names are not authority.
 
 ### Io-prefix palette
 
@@ -44,18 +55,18 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 | C | Io Harvest | 7 | Io Native |
 | D | Wiffle Rations | 5 | Wiffle |
 | E | Io Food | 11 | Io Native |
-| F | Health & Med | 7 | UEA + Io |
-| G | O₂ & Breathables | 7 | UEA |
+| F | Health & Med | 7 | UEA standard + Io + generic |
+| G | O₂ & Breathables | 7 | UEA standard + generic |
 | H | Inoculations & Gels | 5 | UEA |
-| I | Salvage & Components | 7 | UEA |
-| J | Fuel & Power | 6 | UEA |
-| K | Melee Weapons | 12 | UEA + Field |
-| L | Ranged Weapons | 8 | UEA |
-| M | Ammunition | 9 | UEA |
-| N | Tools | 7 | UEA |
-| O | Modules | 6 | UEA |
-| P | Vehicles & Deployables | 6 | UEA |
-| Q | Throwables | 5 | UEA |
+| I | Salvage & Components | 7 | Generic salvage |
+| J | Fuel & Power | 6 | Generic + UEA special |
+| K | Melee Weapons | 12 | UEA standard + Field |
+| L | Ranged Weapons | 8 | UEA standard + generic + special |
+| M | Ammunition | 9 | UEA standard + generic |
+| N | Tools | 7 | UEA issue + generic |
+| O | Modules | 6 | UEA standard + generic |
+| P | Vehicles & Deployables | 6 | UEA standard + generic |
+| Q | Throwables | 5 | Generic mil-surplus |
 | R | Quest & Access | 5 | Mixed |
 
 **Total player-usable names:** 124
@@ -149,8 +160,8 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 | **UEA Field Triage Seal** | UEA | Health restore |
 | **Needle Salve** | Io | Health restore |
 | **UEA Trauma Foam Cartridge** | UEA | Large heal |
-| **UEA Stim Slap Patch** | UEA | Stamina + minor heal |
-| **UEA Coagulant Wrap** | UEA | Bleed stop, HoT |
+| **UEA Stim Slap Patch** | UEA special | Stamina + minor heal |
+| **Coagulant Wrap** | Generic | Bleed stop, HoT |
 | **Brimstone Poultice** | Io | HoT salve |
 | **UEA Antirad Syrette** | UEA | Rad shave |
 
@@ -158,17 +169,15 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 
 ## G. O₂ & Breathables
 
-*All UEA — long names OK.*
-
-| Name | Effect (target) |
-|------|-----------------|
-| **UEA O₂ Reserve Canister** | 10 min O₂ |
-| **UEA Pocket Rebreather Ampule** | Emergency O₂ |
-| **UEA O₂ Twin-Pack** | Double deploy |
-| **UEA Suit Bypass Cartridge** | Suit bridge |
-| **UEA Scrubber Tablet** | Minor sulfur scrub |
-| **UEA High-Pressure O₂ Flask** | Deep tubes |
-| **UEA Condensate Infusion Bulb** | Small O₂ bump |
+| Name | Tag | Effect (target) |
+|------|-----|-----------------|
+| **UEA O₂ Reserve Canister** | UEA standard | 10 min O₂ |
+| **Pocket Rebreather** | Generic | Emergency O₂ |
+| **UEA O₂ Twin-Pack** | UEA standard | Double deploy |
+| **Suit Bypass** | Generic | Suit bridge |
+| **Scrubber Tablet** | Generic | Minor sulfur scrub |
+| **UEA High-Pressure Flask** | UEA special | Deep tubes |
+| **Condensate Bulb** | Generic | Small O₂ bump |
 
 ---
 
@@ -188,28 +197,30 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 
 ## I. Salvage & Components
 
+*Wreckage — no UEA prefix (mixed corporate / expedition origin).*
+
 | Name | Use |
 |------|-----|
-| **UEA Alloy Shred** | General craft |
-| **UEA Circuit Slab** | Electronics |
-| **UEA Hull Plate** | Armor |
-| **UEA Capacitor Brick** | Energy craft |
-| **UEA Gasket Roll** | Seals, habitat |
-| **UEA Optical Shred** | Scopes |
-| **UEA Piston Core** | Vehicles |
+| **Alloy Shred** | General craft |
+| **Circuit Slab** | Electronics |
+| **Hull Plate** | Armor |
+| **Capacitor Brick** | Energy craft |
+| **Gasket Roll** | Seals, habitat |
+| **Optical Shred** | Scopes |
+| **Piston Core** | Vehicles |
 
 ---
 
 ## J. Fuel & Power
 
-| Name | Use |
-|------|-----|
-| **UEA Plasma Fuel Cell** | Hover, mining, gens |
-| **UEA Micro-Fusion Cell** | Building power |
-| **UEA Hover Charge Pack** | Skim-Pak refill |
-| **UEA Mining Charge Drum** | DM-MT bulk |
-| **UEA Generator Brick** | Emergency power |
-| **UEA Ion Capacitor Flask** | Storm shielding |
+| Name | Tag | Use |
+|------|-----|-----|
+| **Plasma Cell** | Generic | Hover, mining, gens |
+| **Fusion Cell** | Generic | Building power |
+| **Hover Pack** | Generic | Skim-Pak refill |
+| **Mining Drum** | Generic | DM-MT bulk reload |
+| **Generator Brick** | Generic | Emergency power |
+| **UEA Ion Flask** | UEA special | Storm module shielding |
 
 ---
 
@@ -221,10 +232,10 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 | **Rift Cleaver** | Field | High crit |
 | **Caldera Axe** | Field | Heavy |
 | **Vent Pike** | Field | Reach |
-| **UEA Breach Hatchet Mark I** | UEA | Tool-weapon |
+| **Breach Hatchet** | Generic | Tool-weapon |
 | **UEA Heavy Breach Blade** | UEA | Two-hand |
-| **UEA Trench Knife Mark IV** | UEA | Fast |
-| **UEA Riot Baton Mark II** | UEA | Stun |
+| **UEA Trench Knife Mark IV** | UEA standard | Fast |
+| **Riot Baton** | Generic | Stun |
 | **Basalt Pick** | Field | Armor shred |
 | **UEA Engineering Maul** | UEA | Anti-android |
 | **Fang Glaive** | Field | Hound-drop craft |
@@ -234,96 +245,86 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 
 ## L. Ranged Weapons
 
-*All UEA.*
-
-| Name | Role |
-|------|------|
-| **UEA Mark-7 Sidearm** | Pistol |
-| **UEA Expedition Carbine** | Rifle |
-| **UEA DM-MT Laser Extractor** | Mining tool |
-| **UEA Mark-12 Scatter Pulser** | Shotgun |
-| **UEA Longwatch DMR** | Marksman |
-| **UEA Suppression LMG** | Sustained fire |
-| **UEA Rivet Driver Sidearm** | Anti-Rust Garden |
-| **UEA Resonance Dart Launcher** | Tracker / vault |
+| Name | Tag | Role |
+|------|-----|------|
+| **UEA Mark-7 Sidearm** | UEA standard | Pistol |
+| **UEA Expedition Carbine** | UEA standard | Rifle |
+| **UEA DM-MT Laser Extractor** | UEA special | Mining tool |
+| **Scatter Pulser** | Generic | Shotgun |
+| **UEA Longwatch DMR** | UEA special | Marksman |
+| **Suppression LMG** | Generic | Sustained fire |
+| **Rivet Driver** | Generic | Anti-Rust Garden |
+| **UEA Resonance Dart Launcher** | UEA special | Tracker / vault |
 
 ---
 
 ## M. Ammunition
 
-*All UEA.*
-
-| Name | Feed |
-|------|------|
-| **UEA Ballistic Coil Rounds** | Ballistic |
-| **UEA Plasma-T Field Cartridge** | Plasma |
-| **UEA Pulse Cell — Pistol Grade** | Pistol laser |
-| **UEA Pulse Cell — Rifle Grade** | Rifle laser |
-| **UEA Scatter Flechettes** | Scatter Pulser |
-| **UEA DMR Sabot Rounds** | Longwatch |
-| **UEA Rivet Nails (100)** | Rivet Driver |
-| **UEA Resonance Darts** | Dart Launcher |
-| **UEA Incendiary Coil Rounds** | Carbine alt |
+| Name | Tag | Feed |
+|------|-----|------|
+| **UEA Ballistic Coil Rounds** | UEA standard | Ballistic |
+| **UEA Plasma-T Cartridge** | UEA standard | Plasma |
+| **Pulse Pistol** | Generic | Pistol laser |
+| **Pulse Rifle** | Generic | Rifle laser |
+| **Scatter Flechettes** | Generic | Scatter Pulser |
+| **DMR Sabots** | Generic | Longwatch |
+| **Rivet Nails** | Generic | Rivet Driver |
+| **Resonance Darts** | Generic | Dart Launcher |
+| **Incendiary Rounds** | Generic | Carbine alt |
 
 ---
 
 ## N. Tools
 
-*All UEA.*
-
-| Name | Role |
-|------|------|
-| **UEA B44 Geological Survey Scanner** | Legacy survey |
-| **UEA Mark-250 Optic Ranging Glass** | Binoculars |
-| **UEA Echo Signal Sniffer** | Echo ping |
-| **UEA Thermal Survey Rod** | Heat mapping |
-| **UEA Rad Compass Puck** | Pulse timing |
-| **UEA Sample Vial Kit** | Science gather |
-| **UEA Field Repair Multitool** | Salvage upkeep |
+| Name | Tag | Role |
+|------|-----|------|
+| **UEA B44 Survey Scanner** | UEA issue | Legacy survey |
+| **UEA Mark-250 Optics** | UEA issue | Binoculars |
+| **UEA Echo Sniffer** | UEA special | Echo ping |
+| **Thermal Rod** | Generic | Heat mapping |
+| **Rad Compass** | Generic | Pulse timing |
+| **Sample Vials** | Generic | Science gather |
+| **Repair Multitool** | Generic | Salvage upkeep |
 
 ---
 
 ## O. Modules
 
-*All UEA.*
-
-| Name | Effect (target) |
-|------|-----------------|
-| **UEA Harness Loadframe Expansion** | +1 inventory row |
-| **UEA O₂ Recycler Cartridge** | Slower O₂ drain |
-| **UEA Thermal Baffle Plate** | Thermal stability |
-| **UEA Sulfur Filter Canister** | Sulfur slow |
-| **UEA Rad Liner Sheet** | Rad slow |
-| **UEA Auto-Sort Harness Chip** | Inventory QoL |
+| Name | Tag | Effect (target) |
+|------|-----|-----------------|
+| **UEA Loadframe Expansion** | UEA standard | +1 inventory row |
+| **O₂ Recycler** | Generic | Slower O₂ drain |
+| **Thermal Baffle** | Generic | Thermal stability |
+| **Sulfur Filter** | Generic | Sulfur slow |
+| **Rad Liner** | Generic | Rad slow |
+| **Autosort Chip** | Generic | Inventory QoL |
 
 ---
 
 ## P. Vehicles & Deployables
 
-*All UEA.*
-
-| Name | Role |
-|------|------|
-| **UEA Skim-Pak Hover Sled** | Surface transport |
-| **UEA Io Buggy Chassis Kit** | W8 vehicle |
-| **UEA Cargo Sled Trailer** | Salvage haul |
-| **UEA Deployable Survey Pylon** | Map / comms |
-| **UEA Portable Habitat Canister** | Seal bubble |
-| **UEA Perimeter Mine Pod** | CC trap |
+| Name | Tag | Role |
+|------|-----|------|
+| **UEA Skim-Pak** | UEA standard | Surface transport |
+| **Io Buggy Kit** | Generic | W8 vehicle |
+| **Cargo Sled** | Generic | Salvage haul |
+| **Survey Pylon** | Generic | Map / comms |
+| **Habitat Canister** | Generic | Seal bubble |
+| **Mine Pod** | Generic | CC trap |
 
 ---
 
 ## Q. Throwables
 
-*All UEA.*
+*Military surplus — generic names, no UEA.*
 
 | Name | Effect (target) |
 |------|-----------------|
-| **UEA Smoke Canister Mark I** | LOS block |
-| **UEA Arc Flash Grenade** | Android stagger |
-| **UEA Sulfur Fog Candle** | Insect repel |
-| **UEA Foam Wall Capsule** | Short cover |
-| **UEA Noise Lure Puck** | Draw patrol |
+| **Smoke Canister** | LOS block |
+| **Arc Grenade** | Android stagger |
+| **Sulfur Candle** | Insect repel |
+| **Foam Capsule** | Short cover |
+| **Noise Lure** | Draw patrol |
 
 ---
 
@@ -331,11 +332,11 @@ Exotic / non-terrestrial materials stay in **§B Alien Materials**.
 
 | Name | Origin | Role |
 |------|--------|------|
-| **UEA Crew Tag** | UEA | Story POI |
+| **Crew Tag** | UEA special | Story POI |
 | **Access Shard** | Alien | Vault lock |
 | **Memory Core** | Alien | Aether-9 |
-| **Smuggler Chip** | UEA salvage | B5 quest |
-| **Survey Spool** | UEA | B6 quest |
+| **Smuggler Chip** | Generic | B5 quest |
+| **Survey Spool** | Generic | B6 quest |
 
 ---
 
@@ -364,4 +365,4 @@ Weather: GDD A2b locked names · Economy: **Aether Credits**
 
 ---
 
-*Dark Matter Studios — Dark Matter: Genesis — LNM v3.1*
+*Dark Matter Studios — Dark Matter: Genesis — LNM v3.2*

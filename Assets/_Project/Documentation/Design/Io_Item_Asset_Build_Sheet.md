@@ -1,6 +1,7 @@
 # Io Item Asset Build Sheet
 
-**Companion:** `Io_Lore_Naming_Master_List.md` (LNM v3.1)  
+**Companion:** `Io_Lore_Naming_Master_List.md` (LNM v3.2)  
+**UEA column:** `UEA` = official standard/special issue only · `—` = generic / salvage / third-party (see LNM §1)
 **Purpose:** One row per player-usable item — everything needed to author the Unity asset.  
 **Legend:** `PROTOTYPE` = on disk under old name · `NEW` = not authored yet · `SHIP` = target v1 name applied
 
@@ -237,7 +238,7 @@ Register in `Resources/PPT/PptRegistry` when Phase 1 lands — `snake_case` id p
 
 | stableId | itemName | Status | Asset path | maxStack | use |
 |----------|----------|--------|------------|----------|-----|
-| `uea_plasma_cell` | UEA Plasma Fuel Cell | PROTOTYPE | `Operations/Plasma Fuel.asset` | 32 | Hover, gens, DM-MT reload |
+| `plasma_cell` | Plasma Cell | PROTOTYPE | `Operations/Plasma Fuel.asset` | 32 | Hover, gens, DM-MT reload |
 | `uea_fusion_cell` | UEA Micro-Fusion Cell | NEW | `Operations/UEA Fusion Cell.asset` | 16 | Building generators |
 | `uea_hover_pack` | UEA Hover Charge Pack | NEW | `Operations/UEA Hover Pack.asset` | 8 | Skim-Pak refill |
 | `uea_mining_drum` | UEA Mining Charge Drum | NEW | `Operations/UEA Mining Drum.asset` | 8 | DM-MT bulk reload |
