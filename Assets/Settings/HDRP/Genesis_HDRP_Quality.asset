@@ -301,7 +301,7 @@ MonoBehaviour:
       reflectionProbeTexLastValidCubeMip: 3
       reflectionProbeTexLastValidPlanarMip: 0
       reflectionProbeDecreaseResToFit: 1
-      skyReflectionSize: 256
+      skyReflectionSize: 512
       skyLightingOverrideLayerMask:
         serializedVersion: 2
         m_Bits: 0
@@ -369,7 +369,7 @@ MonoBehaviour:
       advancedUpscalersByPriority: 00
       advancedUpscalerNames:
       - DLSS
-      DLSSPerfQualitySetting: 2
+      DLSSPerfQualitySetting: 4
       DLSSInjectionPoint: 1
       TAAUInjectionPoint: 0
       STPInjectionPoint: 0
@@ -434,7 +434,7 @@ MonoBehaviour:
       ChromaticAberrationMaxSamples: 03000000060000000c000000
     lightSettings:
       useContactShadow:
-        m_Values: 000001
+        m_Values: 010101
         m_SchemaId:
           m_Id: With3Levels
     maximumLODLevel:
