@@ -38,6 +38,8 @@ Assets/LocalAgent_*.txt.meta
 *.unitypackage
 "Assets/Audio/QP01 0016 Thunderstorm.wav"
 "Assets/Audio/QP01 0016 Thunderstorm.wav.meta"
+"Assets/NatureManufacture Assets/L.V.E- Lava and Volcano Environment/"
+"Assets/NatureManufacture Assets/L.V.E- Lava and Volcano Environment.meta"
 
 # Local dumps and generated (stay on disk, out of git)
 /Assets/_Recovery/
