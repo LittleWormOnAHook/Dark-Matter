@@ -1,5 +1,6 @@
 using Project.Survival.Exposure;
 using Project.Data;
+using Project.Features.Jetpack;
 using Project.Inventory;
 using Project.Pioneers;
 using Project.Progression;
@@ -32,7 +33,9 @@ namespace Project.UI
         private CharacterStatBarRow energyBar;
         private CharacterStatBarRow staminaBar;
         private CharacterStatBarRow oxygenBar;
+        private CharacterStatBarRow jetBar;
         private CharacterStatBarRow meleeBar;
+        private DMJetpackController jetpack;
         private CharacterStatBarRow rangedBar;
         private CharacterStatBarRow accuracyBar;
         private CharacterEnvironmentSection environmentSection;
@@ -144,6 +147,8 @@ namespace Project.UI
             energyBar = null;
             staminaBar = null;
             oxygenBar = null;
+            jetBar = null;
+            jetpack = null;
             meleeBar = null;
             rangedBar = null;
             accuracyBar = null;
@@ -229,6 +234,8 @@ namespace Project.UI
                 staminaBar.SetUnavailable("Stamina");
                 oxygenBar.SetUnavailable("Oxygen");
             }
+
+            RefreshJetBar();
 
             ItemData weapon = equip != null ? equip.EquippedItem : null;
             bool hasMelee = weapon != null && weapon.itemType == ItemType.MeleeWeapon;
@@ -337,8 +344,8 @@ namespace Project.UI
             GameObject listHost = new GameObject("VitalsList", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             listHost.transform.SetParent(parent, false);
             LayoutElement listLayout = listHost.GetComponent<LayoutElement>();
-            // 7 rows: Health/Energy/Stamina/Oxygen + Melee/Ranged/Accuracy.
-            listLayout.minHeight = HudLayoutMetrics.Scaled(190f);
+            // 8 rows: Health/Energy/Stamina/Oxygen/Jet + Melee/Ranged/Accuracy.
+            listLayout.minHeight = HudLayoutMetrics.Scaled(215f);
 
             VerticalLayoutGroup rowsGroup = listHost.GetComponent<VerticalLayoutGroup>();
             rowsGroup.spacing = 4f;
@@ -351,6 +358,7 @@ namespace Project.UI
             energyBar = new CharacterStatBarRow(listHost.transform, "E", "Energy", DarkMatterGenesisUiPalette.RichFuchsia);
             staminaBar = new CharacterStatBarRow(listHost.transform, "S", "Stamina", DarkMatterGenesisUiPalette.RichFuchsia);
             oxygenBar = new CharacterStatBarRow(listHost.transform, "O", "Oxygen", DarkMatterGenesisUiPalette.RichFuchsia);
+            jetBar = new CharacterStatBarRow(listHost.transform, "J", "Jet Fuel", DarkMatterGenesisUiPalette.RichFuchsia);
             meleeBar = new CharacterStatBarRow(listHost.transform, "M", "Melee Damage", DarkMatterGenesisUiPalette.RichFuchsia);
             rangedBar = new CharacterStatBarRow(listHost.transform, "R", "Ranged Damage", DarkMatterGenesisUiPalette.RichFuchsia);
             accuracyBar = new CharacterStatBarRow(listHost.transform, "A", "Accuracy", DarkMatterGenesisUiPalette.Gold);
@@ -418,12 +426,28 @@ namespace Project.UI
             return column;
         }
 
-        private void Update()
+        private void RefreshJetBar()
         {
-            if (panelRoot == null || xpFillRect == null)
+            if (jetBar == null)
                 return;
 
-            if (Mathf.Approximately(displayedXpFill, targetXpFill))
+            if (jetpack == null)
+                jetpack = FindAnyObjectByType<DMJetpackController>();
+
+            if (jetpack != null && jetpack.MaxBoostSeconds > 0f)
+                jetBar.SetValues(jetpack.FuelRemaining, jetpack.MaxBoostSeconds);
+            else
+                jetBar.SetUnavailable("Jet Fuel");
+        }
+
+        private void Update()
+        {
+            if (panelRoot == null)
+                return;
+
+            RefreshJetBar();
+
+            if (xpFillRect == null || Mathf.Approximately(displayedXpFill, targetXpFill))
                 return;
 
             displayedXpFill = Mathf.MoveTowards(

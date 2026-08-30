@@ -11,7 +11,7 @@ Material:
   m_ShaderKeywords: _EMISSION _MASKAPPEARAXIS_DISTANCE _MASKAPPEARAXIS_NONE _MASKAPPEARINVERT_ON
     _NORMALMAP _SPECGLOSSMAP
   m_LightmapFlags: 1
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}

@@ -52,13 +52,15 @@ public static class BindDmGenesisGaiaTerrainScenes
             string.IsNullOrEmpty(scene.m_scenePath) ||
             !scene.m_scenePath.Replace('\\', '/').Contains("Sessions/DM Genesis/Terrain Scenes"));
 
-        TerrainLoaderManager tlm = Object.FindFirstObjectByType<TerrainLoaderManager>();
+        TerrainLoaderManager tlm = Object.FindAnyObjectByType<TerrainLoaderManager>();
         if (tlm != null)
         {
             tlm.TerrainSceneStorage = storage;
             tlm.LoadStorageData();
             EditorUtility.SetDirty(tlm);
         }
+
+        EnsureTerrainScenesInBuildSettings();
 
         int expected = Directory.GetFiles(ScenesDir, "Terrain_*.unity").Length;
         int bound = storage.m_terrainScenes.Count;
@@ -73,5 +75,49 @@ public static class BindDmGenesisGaiaTerrainScenes
 
         EditorUtility.SetDirty(storage);
         AssetDatabase.SaveAssets();
+    }
+
+    static void EnsureTerrainScenesInBuildSettings()
+    {
+        if (!Directory.Exists(ScenesDir))
+            return;
+
+        var scenePaths = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (string file in Directory.GetFiles(ScenesDir, "*.unity"))
+        {
+            string normalized = file.Replace('\\', '/');
+            int assetsIndex = normalized.IndexOf("Assets/", System.StringComparison.Ordinal);
+            if (assetsIndex >= 0)
+                scenePaths.Add(normalized.Substring(assetsIndex));
+        }
+
+        if (scenePaths.Count == 0)
+            return;
+
+        EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
+        var pathSet = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < current.Length; i++)
+        {
+            if (!string.IsNullOrEmpty(current[i].path))
+                pathSet.Add(current[i].path.Replace('\\', '/'));
+        }
+
+        var next = new List<EditorBuildSettingsScene>(current);
+        bool changed = false;
+        foreach (string scenePath in scenePaths)
+        {
+            if (pathSet.Contains(scenePath))
+                continue;
+
+            next.Add(new EditorBuildSettingsScene(scenePath, true));
+            pathSet.Add(scenePath);
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        EditorBuildSettings.scenes = next.ToArray();
+        Debug.Log("Added " + (next.Count - current.Length) + " Gaia terrain scenes to Build Settings.");
     }
 }

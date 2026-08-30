@@ -1698,13 +1698,14 @@ namespace Project.Interaction
                 ResolveNodePoint(lockedNode) + Vector3.up * 0.75f,
                 lockedNode.MiningPassProgress01,
                 $"{name}  {pass}/{total}",
-                ResolveCamera());
+                ResolveCamera(),
+                this);
         }
 
         private void SetProgressUiVisible(bool visible)
         {
             if (progressBar != null)
-                progressBar.SetVisible(visible);
+                progressBar.SetVisible(visible, this);
         }
     }
 }

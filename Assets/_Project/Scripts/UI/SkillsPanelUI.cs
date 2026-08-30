@@ -264,7 +264,7 @@ namespace Project.UI
             LayoutElement bodyLayout = popupBody.GetComponent<LayoutElement>();
             bodyLayout.flexibleHeight = 1f;
             bodyLayout.minHeight = 120f;
-            popupBody.text = "Select a category, then hover or click a skill hexagon to view details and spend skill points.";
+            popupBody.text = "Select a category, then hover or click a hex to spend points. Player-tree booster nodes extend jet fuel, thrust, and ground recovery.";
         }
 
         private void BuildCategoryTabs()

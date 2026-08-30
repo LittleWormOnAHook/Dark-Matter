@@ -1,10 +1,13 @@
 using Invector.vCharacterController;
 using Project.Combat;
 using Project.Core;
+using Project.Features.Jetpack;
+using Project.Features.Dash;
 using Project.Interaction;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
+using Project.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -26,6 +29,9 @@ namespace Project.Player.Invector
         private PioneerShooterMeleeInput _shooterInput;
         private DMIGrenadeCookController _grenadeCook;
         private vThirdPersonController _motor;
+        private DMJetpackAnimatorDriver _jetpackAnimator;
+        private DMLandingDirector _landing;
+        private DMDashController _dash;
         private bool _combatBlockedByUiPointer;
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
@@ -55,6 +61,9 @@ namespace Project.Player.Invector
             _grenadeCook = GetComponent<DMIGrenadeCookController>() ??
                            GetComponentInChildren<DMIGrenadeCookController>(true);
             _motor = GetComponent<vThirdPersonController>();
+            _jetpackAnimator = GetComponent<DMJetpackAnimatorDriver>();
+            _landing = GetComponent<DMLandingDirector>();
+            _dash = GetComponent<DMDashController>();
         }
 
         private void Update()
@@ -100,6 +109,21 @@ namespace Project.Player.Invector
                 return true;
 
             if (PlayerVehicleState.IsMounted)
+                return true;
+
+            if (_dash == null)
+                _dash = GetComponent<DMDashController>();
+
+            if (_dash != null && _dash.IsDashing)
+                return true;
+
+            if (_landing == null)
+                _landing = GetComponent<DMLandingDirector>();
+
+            if (_landing != null && _landing.IsLandingLocked)
+                return true;
+
+            if (_jetpackAnimator != null && _jetpackAnimator.IsLandingLocked)
                 return true;
 
             return false;

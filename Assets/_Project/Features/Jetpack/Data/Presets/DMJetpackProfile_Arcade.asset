@@ -28,9 +28,12 @@ MonoBehaviour:
   coastFallGravityScale: 0.9
   releaseUpwardBleed: 3
   jetpackAirSpeed: 4.75
+  jetpackPlanarResponse: 26
+  jetpackAirSmooth: 22
   defaultAirSpeed: 5
   jetpackMoveSmoothTime: 0.12
   animBlendGain: 1.6
+  animLeanStrength: 0.1
   animInputDeadzone: 0.06
   flyAnimSpeed: 1.15
   landCrossFadeSeconds: 0.08
@@ -43,3 +46,11 @@ MonoBehaviour:
   distortionFactorMultiplier: 1
   particleSpeedMultiplier: 1
   particleLifetimeMultiplier: 0.9
+  thrusterAudioSmooth: 0.12
+  thrusterLayer1: {fileID: 8300000, guid: 37946e82a3e82214a818fcec01f8fcb7, type: 3}
+  thrusterLayer1Volume: 0.55
+  thrusterLayer1Pitch: {x: 0.92, y: 1.04}
+  thrusterLayer2: {fileID: 8300000, guid: 1b3a23db3360e4940885eb9ef794391b, type: 3}
+  thrusterLayer2Volume: 0.4
+  thrusterLayer2Pitch: {x: 0.98, y: 1.12}
+  thrusterLayer2Start: 0.25

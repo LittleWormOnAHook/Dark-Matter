@@ -35,7 +35,7 @@ public static class BakeTlmImpostors
             return;
         }
 
-        TerrainLoaderManager tlm = Object.FindFirstObjectByType<TerrainLoaderManager>();
+        TerrainLoaderManager tlm = Object.FindAnyObjectByType<TerrainLoaderManager>();
         if (tlm == null)
         {
             EditorUtility.DisplayDialog("4 Terrains + Impostors", "No Terrain Loader Manager in the open scene.", "OK");
@@ -104,7 +104,7 @@ public static class BakeTlmImpostors
             }
         }
 
-        TerrainLoaderManager tlm = Object.FindFirstObjectByType<TerrainLoaderManager>();
+        TerrainLoaderManager tlm = Object.FindAnyObjectByType<TerrainLoaderManager>();
         if (tlm != null)
         {
             double regular = tlm.GetLoadingRange();

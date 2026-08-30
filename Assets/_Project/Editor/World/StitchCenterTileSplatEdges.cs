@@ -110,7 +110,7 @@ namespace Project.EditorTools.World
                     return found;
             }
 
-            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);
             for (int i = 0; i < terrains.Length; i++)
             {
                 if (terrains[i] == null || terrains[i].terrainData == null)
@@ -252,7 +252,7 @@ namespace Project.EditorTools.World
 
         private static void FlushLoadedTerrains()
         {
-            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);
             for (int i = 0; i < terrains.Length; i++)
             {
                 if (terrains[i] != null)

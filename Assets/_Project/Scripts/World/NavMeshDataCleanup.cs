@@ -18,7 +18,7 @@ namespace Project.World
             if (!Application.isPlaying)
                 return;
 
-            if (FindFirstObjectByType<NavMeshDataCleanup>(FindObjectsInactive.Include) != null)
+            if (FindAnyObjectByType<NavMeshDataCleanup>(FindObjectsInactive.Include) != null)
                 return;
 
             GameObject go = new GameObject("NavMeshDataCleanup");
@@ -39,9 +39,7 @@ namespace Project.World
 
         private static void Release()
         {
-            NavMeshSurface[] surfaces = FindObjectsByType<NavMeshSurface>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            NavMeshSurface[] surfaces = FindObjectsByType<NavMeshSurface>(FindObjectsInactive.Include);
             for (int i = 0; i < surfaces.Length; i++)
             {
                 if (surfaces[i] != null)

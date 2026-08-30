@@ -105,9 +105,7 @@ namespace Project.World
         {
             _probes.Clear();
 
-            DmChunkReflectionProbe[] found = FindObjectsByType<DmChunkReflectionProbe>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            DmChunkReflectionProbe[] found = FindObjectsByType<DmChunkReflectionProbe>(FindObjectsInactive.Include);
 
             for (int i = 0; i < found.Length; i++)
             {

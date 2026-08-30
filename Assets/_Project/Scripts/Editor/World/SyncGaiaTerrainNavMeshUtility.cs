@@ -20,7 +20,7 @@ namespace Project.EditorTools
         [MenuItem("Dark Matter Genesis/World/Sync NavMesh Surfaces To Gaia Terrains")]
         public static void SyncActiveSceneTerrains()
         {
-            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);
             int wired = 0;
             int missingBake = 0;
 

@@ -36,14 +36,22 @@ namespace Project.Features.Jetpack
         [Min(0f)] public float releaseUpwardBleed = 5f;
 
         [Header("Horizontal Movement")]
-        [Tooltip("Invector airSpeed while jetpack boost/fade is active.")]
+        [Tooltip("Target planar speed while jetpack boost is active (m/s).")]
         [Min(0.5f)] public float jetpackAirSpeed = 3.25f;
+        [Tooltip("How quickly boost steering snaps planar velocity toward WASD input.")]
+        [Min(1f)] public float jetpackPlanarResponse = 22f;
+        [Tooltip("Brief delay before steer direction catches new WASD input, then planar response takes over.")]
+        [Range(0.04f, 0.35f)] public float jetpackSteerInputSmoothTime = 0.11f;
+        [Tooltip("Invector airSmooth override during boost (higher = snappier input follow).")]
+        [Min(1f)] public float jetpackAirSmooth = 18f;
         [Tooltip("Restored airSpeed when not in jetpack boost/fade.")]
         [Min(0.5f)] public float defaultAirSpeed = 5f;
 
         [Header("Animation")]
         [Range(0.05f, 0.5f)] public float jetpackMoveSmoothTime = 0.22f;
         [Range(0.5f, 2.5f)] public float animBlendGain = 1.35f;
+        [Tooltip("Scales directional fly pose lean in the blend tree (0.1 = 10% of full tilt).")]
+        [Range(0.05f, 1f)] public float animLeanStrength = 0.1f;
         [Range(0f, 0.35f)] public float animInputDeadzone = 0.1f;
         [Range(0.5f, 2f)] public float flyAnimSpeed = 1f;
         [Range(0.25f, 0.85f)] public float animStrafeThreshold = 0.5f;
@@ -59,5 +67,40 @@ namespace Project.Features.Jetpack
         [Min(0.1f)] public float distortionFactorMultiplier = 0.85f;
         [Min(0.1f)] public float particleSpeedMultiplier = 0.7f;
         [Min(0.1f)] public float particleLifetimeMultiplier = 1.15f;
+
+        [Header("Thruster Audio")]
+        [Tooltip("How quickly volume/pitch catch thrust.")]
+        [Range(0.02f, 0.4f)] public float thrusterAudioSmooth = 0.12f;
+
+        [Header("Thruster Audio / Layer 1 (Rumble)")]
+        public AudioClip thrusterLayer1;
+        [Range(0f, 1f)] public float thrusterLayer1Volume = 0.55f;
+        public Vector2 thrusterLayer1Pitch = new Vector2(0.92f, 1.04f);
+
+        [Header("Thruster Audio / Layer 2 (Bright)")]
+        [Tooltip("Comes in as thrust rises.")]
+        public AudioClip thrusterLayer2;
+        [Range(0f, 1f)] public float thrusterLayer2Volume = 0.4f;
+        public Vector2 thrusterLayer2Pitch = new Vector2(0.98f, 1.12f);
+        [Range(0f, 1f)] public float thrusterLayer2Start = 0.25f;
+
+        // Back-compat aliases used by older assets.
+        public AudioClip thrusterLoop
+        {
+            get => thrusterLayer1;
+            set => thrusterLayer1 = value;
+        }
+
+        public float thrusterVolume
+        {
+            get => thrusterLayer1Volume;
+            set => thrusterLayer1Volume = value;
+        }
+
+        public Vector2 thrusterPitchRange
+        {
+            get => thrusterLayer1Pitch;
+            set => thrusterLayer1Pitch = value;
+        }
     }
 }

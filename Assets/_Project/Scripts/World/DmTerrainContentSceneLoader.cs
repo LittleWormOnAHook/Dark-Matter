@@ -7,6 +7,7 @@ namespace Project.World
     /// <summary>
     /// Loads companion Terrain_X_Y_Content scenes when matching regular Gaia terrain tiles load.
     /// Never pairs impostor, collider, or backup terrain scenes.
+    /// Only DmChunkProbe placeholders stay disabled; authored prefabs stay as saved.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-45)]
@@ -84,6 +85,7 @@ namespace Project.World
             if (existing.IsValid() && existing.isLoaded)
             {
                 _loadedContentScenes.Add(contentSceneName);
+                DisableContentSceneProbes(existing);
                 return;
             }
 
@@ -103,7 +105,47 @@ namespace Project.World
             {
                 _pendingLoads.Remove(contentSceneName);
                 _loadedContentScenes.Add(contentSceneName);
+                DisableContentSceneProbes(SceneManager.GetSceneByName(contentSceneName));
             };
+        }
+
+        public static void DisableContentSceneProbes(Scene contentScene)
+        {
+            if (!contentScene.IsValid() || !contentScene.isLoaded)
+                return;
+
+            GameObject[] roots = contentScene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+                DisableProbesUnder(roots[i]);
+        }
+
+        private static void DisableProbesUnder(GameObject go)
+        {
+            if (go == null)
+                return;
+
+            DmChunkReflectionProbe[] markers = go.GetComponentsInChildren<DmChunkReflectionProbe>(true);
+            for (int i = 0; i < markers.Length; i++)
+            {
+                DmChunkReflectionProbe marker = markers[i];
+                if (marker == null)
+                    continue;
+
+                ReflectionProbe probe = marker.GetComponent<ReflectionProbe>();
+                if (probe != null)
+                    probe.enabled = false;
+
+                marker.enabled = false;
+                marker.gameObject.SetActive(false);
+            }
+
+            if (go.name == "DmChunkProbe")
+            {
+                ReflectionProbe probe = go.GetComponent<ReflectionProbe>();
+                if (probe != null)
+                    probe.enabled = false;
+                go.SetActive(false);
+            }
         }
 
         private void TryUnloadContentForTerrainScene(Scene terrainScene)

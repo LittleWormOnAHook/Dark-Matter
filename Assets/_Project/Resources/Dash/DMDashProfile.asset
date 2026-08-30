@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4a1c3d6f0b42e5c8a7d3f2b4e6c0a3, type: 3}
+  m_Name: DMDashProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Dash.DMDashProfile
+  doubleTapWindow: 0.28
+  distance: 4.5
+  speed: 17.4
+  duration: 0.18
+  cooldown: 0.2
+  allowAirDash: 1
+  animationSpeed: 0
+  hologramColor: {r: 0.25, g: 0.85, b: 1, a: 0.42}
+  hologramEmission: 4
+  hologramMaterial: {fileID: 2100000, guid: 3173674e4cc2d7445a018b8f7d9a72a2, type: 2}
+  streakColor: {r: 0.55, g: 0.95, b: 1, a: 0.85}
+  streakCount: 30
+  streakLifetime: 0.22
+  streakSize: 0.08
+  streakStretch: 3.5
+  streakRadius: 1
+  streakMaterial: {fileID: 2100000, guid: 63d8fc1f0ade4d22a822f8cac686a3b9, type: 2}
+  streakPrefab: {fileID: 4794414913881438078, guid: cb77bc11d7d3be340b520d5c4f2a19a7, type: 3}
+  smokeColor: {r: 0.55, g: 0.62, b: 0.7, a: 0.45}
+  smokeCount: 43
+  smokeLifetime: 0.55
+  smokeSize: 0.7
+  smokeMaterial: {fileID: 2100000, guid: 9abd6c2e7a229c74fa3ba0ece6363f4c, type: 2}
+  smokePrefab: {fileID: 7818865290924522459, guid: 69396212cc237c8429a0b85fe1d8b7d1, type: 3}

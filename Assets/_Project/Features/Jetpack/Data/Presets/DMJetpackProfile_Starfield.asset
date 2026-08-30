@@ -12,25 +12,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e5da265fbb8694bbb25bae560e1d01, type: 3}
   m_Name: DMJetpackProfile_Starfield
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
-  maxBoostSeconds: 8
+  maxBoostSeconds: 6
   releaseRegenBonusSeconds: 1
   regenSecondsPerSecond: 0.35
-  fullThrustEndSeconds: 6
-  upwardThrustForce: 11
-  descendForce: 4
-  descendInputThreshold: 0.3
-  descendBrakeStrength: 0.8
-  verticalResponse: 3.5
+  fullThrustEndSeconds: 4
+  upwardThrustForce: 6
+  descendForce: 1
+  descendInputThreshold: 0.74
+  descendBrakeStrength: 1
+  verticalResponse: 8
   hoverGravityScale: 0.12
   boostDescendGravityScale: 0.8
-  fadeFallGravityScale: 0.25
-  freeFallGravityScale: 1
+  fadeFallGravityScale: 0.05
+  freeFallGravityScale: 0.05
   coastFallGravityScale: 0.6
   releaseUpwardBleed: 4.5
-  jetpackAirSpeed: 3
+  jetpackAirSpeed: 6
+  jetpackPlanarResponse: 14
+  jetpackSteerInputSmoothTime: 0.077
+  jetpackAirSmooth: 16
   defaultAirSpeed: 3
   jetpackMoveSmoothTime: 0.18
   animBlendGain: 1.45
+  animLeanStrength: 0.1
   animInputDeadzone: 0.08
   flyAnimSpeed: 1
   animStrafeThreshold: 0.5
@@ -41,6 +45,14 @@ MonoBehaviour:
   flareFactorMultiplier: 0.9
   slowSparksFactorMultiplier: 0.85
   fastSparksFactorMultiplier: 0.85
-  distortionFactorMultiplier: 0.9
-  particleSpeedMultiplier: 0.75
+  distortionFactorMultiplier: 2.32
+  particleSpeedMultiplier: 2.39
   particleLifetimeMultiplier: 1.1
+  thrusterAudioSmooth: 0.12
+  thrusterLayer1: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  thrusterLayer1Volume: 0.55
+  thrusterLayer1Pitch: {x: 0.5, y: 0.65}
+  thrusterLayer2: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  thrusterLayer2Volume: 0.4
+  thrusterLayer2Pitch: {x: 0.6, y: 0.75}
+  thrusterLayer2Start: 0.25

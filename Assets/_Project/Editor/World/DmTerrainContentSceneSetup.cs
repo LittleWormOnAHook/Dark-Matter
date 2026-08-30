@@ -2,6 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 #if UNITY_RENDER_PIPELINE_HDRP
 using UnityEngine.Rendering.HighDefinition;
@@ -119,7 +120,7 @@ public static class DmTerrainContentSceneSetup
         if (probe == null)
             probe = probeObject.AddComponent<ReflectionProbe>();
 
-        probe.mode = ReflectionProbeMode.Baked;
+        probe.mode = global::UnityEngine.Rendering.ReflectionProbeMode.Baked;
         probe.resolution = 128;
         probe.size = new Vector3(150f, 150f, 150f);
         probe.center = Vector3.zero;
@@ -130,7 +131,7 @@ public static class DmTerrainContentSceneSetup
         probe.renderDynamicObjects = false;
         probe.importance = 1;
         probe.intensity = 1f;
-        probe.clearFlags = ReflectionProbeClearFlags.Skybox;
+        probe.clearFlags = global::UnityEngine.Rendering.ReflectionProbeClearFlags.Skybox;
         probe.enabled = false;
 
 #if UNITY_RENDER_PIPELINE_HDRP

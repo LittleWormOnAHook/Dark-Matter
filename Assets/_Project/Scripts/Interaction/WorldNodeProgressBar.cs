@@ -7,8 +7,9 @@ using UnityEngine.UI;
 namespace Project.Interaction
 {
     /// <summary>
-    /// Center-screen harvest / mine / scan time slider. Shared HUD (singleton) so nodes no longer
+    /// Harvest / mine / scan time slider. Shared HUD (singleton) so nodes no longer
     /// float a world-space billboard above the resource. Sized like PickupToastUI.
+    /// Parked ~200px below screen center so it does not sit under the reticle.
     /// </summary>
     public class WorldNodeProgressBar : MonoBehaviour
     {
@@ -16,6 +17,7 @@ namespace Project.Interaction
         private const float BarHeight = 14f;
         private const float BarSideInset = 10f;
         private const float BarBottomInset = 6f;
+        private const float CenterOffsetY = -200f;
 
         private static WorldNodeProgressBar instance;
 
@@ -24,6 +26,7 @@ namespace Project.Interaction
         private Image _fill;
         private TextMeshProUGUI _label;
         private Transform _canvasRoot;
+        private object _owner;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -148,10 +151,25 @@ namespace Project.Interaction
             labelRect.offsetMax = new Vector2(-8f, -2f);
         }
 
-        public void SetVisible(bool visible)
+        public void SetVisible(bool visible, object owner = null)
         {
-            if (visible && !gameObject.activeSelf)
+            if (!visible
+                && _owner != null
+                && owner != null
+                && !ReferenceEquals(_owner, owner))
+            {
+                return;
+            }
+
+            if (!visible && (owner == null || ReferenceEquals(_owner, owner)))
+                _owner = null;
+
+            if (visible)
+            {
+                if (owner != null)
+                    _owner = owner;
                 EnsurePresented();
+            }
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = visible ? 1f : 0f;
@@ -162,12 +180,12 @@ namespace Project.Interaction
         /// <param name="worldPosition">Ignored. Kept so harvest / mine / scan callers stay unchanged.</param>
         /// <param name="fill01">Normalized mining/harvest time progress (0 = start, 1 = complete).</param>
         /// <param name="camera">Ignored. Screen HUD is canvas-anchored, not world-billboarded.</param>
-        public void UpdateBar(Vector3 worldPosition, float fill01, string label, Camera camera)
+        public void UpdateBar(Vector3 worldPosition, float fill01, string label, Camera camera, object owner = null)
         {
             if (EnsureExists() == null)
                 return;
 
-            SetVisible(true);
+            SetVisible(true, owner);
 
             float value = Mathf.Clamp01(fill01);
             if (_fill != null)
@@ -205,7 +223,7 @@ namespace Project.Interaction
             _root.anchorMin = new Vector2(0.5f, 0.5f);
             _root.anchorMax = new Vector2(0.5f, 0.5f);
             _root.pivot = new Vector2(0.5f, 0.5f);
-            _root.anchoredPosition = GameplayHudLayout.PickupToastAnchoredPosition;
+            _root.anchoredPosition = new Vector2(0f, CenterOffsetY);
             _root.sizeDelta = new Vector2(GameplayHudLayout.ToastWidth, PopupHeight);
         }
 

@@ -13,7 +13,6 @@ namespace Project.AI
     {
         [SerializeField] private float sampleRadius = 12f;
         [SerializeField] private float retrySeconds = 30f;
-        [SerializeField] private float retryInterval = 0.35f;
 
         private NavMeshAgent _agent;
         private float _deadline;
@@ -24,9 +23,7 @@ namespace Project.AI
             if (!Application.isPlaying)
                 return;
 
-            NavMeshAgent[] agents = FindObjectsByType<NavMeshAgent>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            NavMeshAgent[] agents = FindObjectsByType<NavMeshAgent>(FindObjectsInactive.Include);
 
             for (int i = 0; i < agents.Length; i++)
             {

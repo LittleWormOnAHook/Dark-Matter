@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2191024821309477643}
   - component: {fileID: 7355457004960861583}
   - component: {fileID: 2773577388402497587}
+  - component: {fileID: 2403013115995546325}
   m_Layer: 0
   m_Name: ResourceNode_SulfurNeedleTuft
   m_TagString: Untagged
@@ -29,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.83029, y: 0.83029, z: 0.83029}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8007208074277112867}
@@ -100,13 +101,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
   label: Sulfur Needle Tuft
   color: {r: 0.35, g: 0.85, b: 0.45, a: 1}
-  iconSprite: {fileID: 21300000, guid: d6fb7afc70cbbd04bb87b3b881ac0e22, type: 3}
+  iconSprite: {fileID: 21300000, guid: 637df8bece32ef847ac9db01367f1bdd, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
   keepRegisteredWhenDisabled: 0
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+--- !u!114 &2403013115995546325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3522438735827158173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7550bbc0ae7e7b4286d9edb5f41c6f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ScannableTarget
+  scanLabel: Needle Tuft
+  scanColor: {r: 1, g: 0.24059625, b: 0.19999999, a: 1}
+  requiresLineOfSight: 1
+  useCategoryOverride: 0
+  scanCategory: 1
+  hiddenFromScanner: 0
 --- !u!1001 &432099883820863181
 PrefabInstance:
   m_ObjectHideFlags: 0

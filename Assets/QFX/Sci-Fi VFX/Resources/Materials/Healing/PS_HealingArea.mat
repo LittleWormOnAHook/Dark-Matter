@@ -10,7 +10,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: 3f8221b3f69b4a4ca5a50c449d2097a1, type: 3}
   m_ShaderKeywords: _MAINTEXNOISE_UV _MASKAPPEARAXIS_Y _NOISEDISTORTION_ON _ROTATION_ON
   m_LightmapFlags: 0
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}

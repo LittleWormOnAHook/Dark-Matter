@@ -220,7 +220,7 @@ namespace Project.UI
                 return uguiCrosshairPresent;
 
             uguiCrosshairResolved = true;
-            Graphic[] graphics = FindObjectsByType<Graphic>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            Graphic[] graphics = FindObjectsByType<Graphic>(FindObjectsInactive.Exclude);
             for (int i = 0; i < graphics.Length; i++)
             {
                 Graphic graphic = graphics[i];

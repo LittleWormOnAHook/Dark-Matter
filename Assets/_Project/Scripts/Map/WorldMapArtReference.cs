@@ -18,9 +18,7 @@ namespace Project.Map
 
         public static WorldMapArtReference FindInScene()
         {
-            WorldMapArtReference[] references = FindObjectsByType<WorldMapArtReference>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            WorldMapArtReference[] references = FindObjectsByType<WorldMapArtReference>(FindObjectsInactive.Include);
             return references.Length > 0 ? references[0] : null;
         }
 

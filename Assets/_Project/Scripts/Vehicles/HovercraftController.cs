@@ -248,6 +248,7 @@ namespace Project.Vehicles
                 _moveInput = Vector2.zero;
                 _ascendInput = false;
                 _descendInput = false;
+                _mouseSteerHeld = false;
                 return;
             }
 

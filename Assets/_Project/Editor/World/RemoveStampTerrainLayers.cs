@@ -29,7 +29,7 @@ namespace Project.EditorTools.World
             }
 
             HashSet<TerrainData> datas = new HashSet<TerrainData>();
-            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);
             for (int i = 0; i < terrains.Length; i++)
             {
                 if (terrains[i] != null && terrains[i].terrainData != null)

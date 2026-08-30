@@ -1121,6 +1121,10 @@ namespace Gaia
 
                             foreach (GameObject go in terrainScene.RegularReferences)
                             {
+                                if (go == null)
+                                {
+                                    continue;
+                                }
                                 EditorGUILayout.BeginHorizontal();
                                 GUILayout.Space(20);
                                 m_editorUtils.Label(new GUIContent(go.name, m_editorUtils.GetTextValue("TerrainReferenceToolTip")));
@@ -1149,6 +1153,10 @@ namespace Gaia
 
                             foreach (GameObject go in terrainScene.ImpostorReferences)
                             {
+                                if (go == null)
+                                {
+                                    continue;
+                                }
                                 EditorGUILayout.BeginHorizontal();
                                 GUILayout.Space(20);
                                 m_editorUtils.Label(new GUIContent(go.name, m_editorUtils.GetTextValue("TerrainReferenceToolTip")));

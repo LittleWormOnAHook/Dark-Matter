@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.30000004
+      value: 0.30000007
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalScale.y
@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -26.374939
+      value: -7.5228043
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.42436504
+      value: -0.21
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.460592
+      value: 9.509339
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.w
@@ -75,6 +75,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2461175846404920175}
+    - targetCorrespondingSourceObject: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8519774022299882434}
   m_SourcePrefab: {fileID: 100100000, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
 --- !u!1 &6962984059100779314 stripped
 GameObject:
@@ -111,3 +114,24 @@ MonoBehaviour:
   lootTint: {r: 0.82, g: 0.72, b: 0.35, a: 1}
   lootYieldClipOverride: {fileID: 0}
   lootGrantClipOverride: {fileID: 0}
+--- !u!114 &8519774022299882434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6962984059100779314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6f7b2a3a0c3c2248b6e34f3890da87e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
+  label: Silicate Ore
+  color: {r: 1, g: 0.5023018, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  showOnMinimap: 1
+  showOnFullMap: 1
+  keepRegisteredWhenDisabled: 0
+  requiresScanDiscovery: 1
+  discoveryId: 
+  requiresFogReveal: 1

@@ -1,0 +1,139 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10ede25ccd6fd4e8e98a828e1f7c552d, type: 3}
+  m_Name: Stranger Lands
+  m_EditorClassIdentifier: 
+  contentType: 0
+  author: Rowlan
+  packName: Stranger Lands
+  id: https://assetstore.unity.com/packages/slug/222233
+  contents:
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: a2b5e5313ca18d84483736f03a25906b
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 7b5e52eec3e84664780e854297ae3747
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 564798d6fdab97a4eb3bfbd2fcf68b4e
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: abf27376484f3bd489dbfacb0a22f553
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 406274056b042ac469dfb4e97918f9a4
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 3ab4624cfb91fb3458c3efcc0b70ecd1
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 73dea0c2a038e904e9d3710b3b5f5544
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: ef8a9b25842214245aea593c91bbbb76
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 9537266e0c365664085d5a49e368e0a3
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 83aad17432c04dc4d894488794a5243f
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: d2e6f5c0660091b4fb624e34ebe9e60a
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: cde7382b39d6bf24eb2fa09107ac8c71
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 668eb40fe3a84bc49af5aeb1ede44458
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: bedbf06f6077fb14da61cd0c22545dcb
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: ed278f5103d87a34f8539426f435c03e
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 59078badc7ef477459897bead2e5b391
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: bef431c1e9afb9940afcd44da1518d32
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: aab88675f96407a48b2bcf6420b1c1cf
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: a64d1b90836948a49b93092b8be991eb
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 71f9240f8d1208749a60afb83bf18714
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: e8df569804c3c9148b209544e47a0beb
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: f3fae9b1cc4b67e49b75cecedbfcf73e
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 14028d85a78b68d469cc1a2480f61218
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 583c7350dd838b141a7b3492a5a4efd0
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 18b3bcc33034af44daf633d3812067a0
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 9460611fb6e896b44bc7c5a6159797df
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: f78cb0c0dd1314343823972c23104a66
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 5e3e5fd1ccee22e41888ad78b705852c
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 885f53bebc7d77d4295cf5a53ae06727
+  - prefab: {fileID: 0}
+    previewImage: {fileID: 0}
+    previewAsset: {fileID: 0}
+    stamp: 04e3712b0ce844e47bbabb4201a75e8c

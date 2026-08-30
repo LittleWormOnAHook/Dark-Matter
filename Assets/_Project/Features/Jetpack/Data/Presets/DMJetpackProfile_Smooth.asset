@@ -16,7 +16,7 @@ MonoBehaviour:
   releaseRegenBonusSeconds: 1
   regenSecondsPerSecond: 0.35
   fullThrustEndSeconds: 6
-  upwardThrustForce: 6
+  upwardThrustForce: 5
   descendForce: 3
   descendInputThreshold: 0.35
   descendBrakeStrength: 0.9
@@ -27,10 +27,14 @@ MonoBehaviour:
   freeFallGravityScale: 1
   coastFallGravityScale: 0.65
   releaseUpwardBleed: 6
-  jetpackAirSpeed: 3
+  jetpackAirSpeed: 4.25
+  jetpackPlanarResponse: 26
+  jetpackSteerInputSmoothTime: 0.11
+  jetpackAirSmooth: 16
   defaultAirSpeed: 5
   jetpackMoveSmoothTime: 0.28
   animBlendGain: 1.4
+  animLeanStrength: 0.1
   animInputDeadzone: 0.08
   flyAnimSpeed: 0.95
   landCrossFadeSeconds: 0.15
@@ -43,3 +47,11 @@ MonoBehaviour:
   distortionFactorMultiplier: 0.75
   particleSpeedMultiplier: 0.65
   particleLifetimeMultiplier: 1.2
+  thrusterAudioSmooth: 0.12
+  thrusterLayer1: {fileID: 8300000, guid: 37946e82a3e82214a818fcec01f8fcb7, type: 3}
+  thrusterLayer1Volume: 0.55
+  thrusterLayer1Pitch: {x: 0.92, y: 1.04}
+  thrusterLayer2: {fileID: 8300000, guid: 1b3a23db3360e4940885eb9ef794391b, type: 3}
+  thrusterLayer2Volume: 0.4
+  thrusterLayer2Pitch: {x: 0.98, y: 1.12}
+  thrusterLayer2Start: 0.25

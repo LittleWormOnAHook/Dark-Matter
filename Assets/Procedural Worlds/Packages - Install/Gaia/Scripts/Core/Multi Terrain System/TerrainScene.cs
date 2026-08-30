@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 #if UNITY_EDITOR
@@ -206,6 +206,10 @@ namespace Gaia
 
         public void UpdateLoadState(List<GameObject> referenceList, ref LoadState loadState, ref bool loadRequested, ref bool unLoadRequested, bool isImpostor, bool bypassThreshold = false)
         {
+            if (referenceList != null)
+            {
+                CheckForRelevance(referenceList);
+            }
             string scenePath = m_scenePath;
             if (isImpostor)
             {

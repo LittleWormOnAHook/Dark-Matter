@@ -888,8 +888,42 @@ namespace Project.UI
       foreach (Transform child in systemLogListParent)
         Destroy(child.gameObject);
 
+      CreateJournalLogCard(
+        systemLogListParent,
+        "Field Note",
+        "Jet Booster",
+        "Jump, then hold Space in the air to burn suit fuel. Fuel, thrust, and ground recovery rank up on the Player skill tree. The Character tab shows remaining jet fuel.",
+        DarkMatterGenesisUiPalette.RichFuchsia);
+
+      CreateJournalLogCard(
+        systemLogListParent,
+        "Field Note",
+        "Walker Drill",
+        "Store it in inventory and right-click Deploy. Approach and press E for Start, Stop, or Collect. Stop reverses the deploy animation.",
+        DarkMatterGenesisUiPalette.SoftBeigeGray);
+
+      CreateJournalLogCard(
+        systemLogListParent,
+        "Field Note",
+        "Hovercraft",
+        "Board to drive with WASD. Hold right mouse to yaw. Left mouse fires the turret. Sprint adds a short boost. Exiting restores on-foot look and cursor lock.",
+        DarkMatterGenesisUiPalette.RichFuchsia);
+
+      CreateJournalLogCard(
+        systemLogListParent,
+        "Field Note",
+        "Field Construction",
+        "Coming online: scan wrecks to learn blueprints, place a hologram ghost, then hold to materialize. Cancel the hold to stop the resource drain.",
+        DarkMatterGenesisUiPalette.SoftBeigeGray);
+
+      CreateJournalLogCard(
+        systemLogListParent,
+        "Field Note",
+        "Io Underground",
+        "The surface map's lower-right question mark marks a later underground passage map. Surface tiles stay the current play space.",
+        DarkMatterGenesisUiPalette.SoftBeigeGray);
+
       journalRoster ??= PioneerRosterManager.EnsureExists();
-      bool any = false;
       if (journalRoster != null)
       {
         for (int i = 0; i < journalRoster.EchoChronicle.Count; i++)
@@ -898,27 +932,15 @@ namespace Project.UI
           if (entry == null || !entry.simulationIncident)
             continue;
 
-          any = true;
           CreateJournalLogCard(
             systemLogListParent,
             "Colony Event",
             entry.echoName,
-            $"{entry.classSummary}  ·  {entry.abilitySummary}",
+            entry.classSummary + "  |  " + entry.abilitySummary,
             DarkMatterGenesisUiPalette.Gold);
         }
       }
-
-      if (!any)
-      {
-        JournalPanelLayout.CreateEmptyStateCard(
-          systemLogListParent,
-          ShiftUiTheme.Current,
-          "No system logs yet",
-          "Off-screen colony simulation incidents and facility strain events will appear here.",
-          "Keep the base running through sulfur storms to generate logs.");
-      }
     }
-
     private void CreateJournalLogCard(Transform parent, string heading, string title, string body, Color headingColor)
     {
       GameObject row = new GameObject("LogCard", typeof(RectTransform), typeof(Image), typeof(LayoutElement));

@@ -4,6 +4,8 @@ using System.Text;
 using UnityEditor;
 using UnityEditor.Rendering.HighDefinition;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace Project.EditorTools.Rendering
 {
@@ -322,9 +324,9 @@ namespace Project.EditorTools.Rendering
             {
                 if (mat.HasProperty("_AlphaCutoffEnable"))
                     mat.SetFloat("_AlphaCutoffEnable", 1f);
-                HDMaterial.SetAlphaClipping(mat, true);
+                UnityEngine.Rendering.HighDefinition.HDMaterial.SetAlphaClipping(mat, true);
                 if (mat.HasProperty("_Cutoff"))
-                    HDMaterial.SetAlphaCutoff(mat, mat.GetFloat("_Cutoff"));
+                    UnityEngine.Rendering.HighDefinition.HDMaterial.SetAlphaCutoff(mat, mat.GetFloat("_Cutoff"));
             }
 
             if (mat.HasProperty("_USEDYNAMICCOVERTSTATICMASKF"))
@@ -336,7 +338,9 @@ namespace Project.EditorTools.Rendering
             mat.SetShaderPassEnabled("TransparentDepthPostpass", false);
             mat.SetShaderPassEnabled("RayTracingPrepass", false);
 
-            HDMaterial.ValidateMaterial(mat);
+            HdrpGpuInstancingFixup.DisableInstancingIfIncompatible(mat);
+
+            UnityEngine.Rendering.HighDefinition.HDMaterial.ValidateMaterial(mat);
         }
 
         private static Shader LoadShaderByGuid(string guid)

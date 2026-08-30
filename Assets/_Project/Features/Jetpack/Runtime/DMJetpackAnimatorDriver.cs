@@ -5,7 +5,7 @@ namespace Project.Features.Jetpack
 {
     /// <summary>
     /// Drives the Jumps.fbx fly blend tree after jetpack ignition.
-    /// Jump animation plays until boost ignites; JetpackActive then crossfades into flight.
+    /// Landing (regular / Jetpack Land hero / high roll or get-up) is owned by DMLandingDirector.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
@@ -14,25 +14,26 @@ namespace Project.Features.Jetpack
         private static readonly int JetpackActive = Animator.StringToHash("JetpackActive");
         private static readonly int JetpackHorizontal = Animator.StringToHash("JetpackHorizontal");
         private static readonly int JetpackVertical = Animator.StringToHash("JetpackVertical");
-        private static readonly int JetpackLand = Animator.StringToHash("JetpackLand");
-        private static readonly int JetpackLandState = Animator.StringToHash("Jetpack Land");
 
         [SerializeField] private DMJetpackController jetpack;
         [SerializeField] private DMJetpackInputBridge inputBridge;
         [SerializeField] private DMJetpackProfile profile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private Animator animator;
+        private Project.Player.DMLandingDirector _landing;
 
         private float _smoothHorizontal;
         private float _smoothVertical;
         private float _horizontalVelocity;
         private float _verticalVelocity;
-        private bool _wasGrounded = true;
 
         private bool _hasJetpackActiveParam;
         private bool _hasJetpackHorizontalParam;
         private bool _hasJetpackVerticalParam;
-        private bool _hasJetpackLandParam;
+
+        public bool IsBoostLanding => false;
+        public bool IsHighFallRecovering => false;
+        public bool IsLandingLocked => false;
 
         private void Reset()
         {
@@ -57,6 +58,7 @@ namespace Project.Features.Jetpack
                 animator.enabled = true;
 
             CacheAnimatorParameters();
+            _landing = GetComponent<Project.Player.DMLandingDirector>();
         }
 
         private void CacheAnimatorParameters()
@@ -67,7 +69,6 @@ namespace Project.Features.Jetpack
             _hasJetpackActiveParam = HasParameter(JetpackActive);
             _hasJetpackHorizontalParam = HasParameter(JetpackHorizontal);
             _hasJetpackVerticalParam = HasParameter(JetpackVertical);
-            _hasJetpackLandParam = HasParameter(JetpackLand);
         }
 
         private void FixedUpdate()
@@ -75,19 +76,11 @@ namespace Project.Features.Jetpack
             if (animator == null || jetpack == null || motor == null)
                 return;
 
-            bool grounded = motor.isGrounded;
+            if (_landing == null)
+                _landing = GetComponent<Project.Player.DMLandingDirector>();
+            bool landingLocked = _landing != null && _landing.IsLandingLocked;
 
-            if (grounded && !_wasGrounded && jetpack.ShouldPlayJetpackLand)
-            {
-                if (_hasJetpackLandParam)
-                    animator.SetTrigger(JetpackLand);
-
-                jetpack.NotifyLanded();
-            }
-
-            _wasGrounded = grounded;
-
-            bool animActive = jetpack.IsJetpackAnimActive;
+            bool animActive = jetpack.IsJetpackAnimActive && !landingLocked;
 
             if (animActive)
             {
@@ -102,10 +95,12 @@ namespace Project.Features.Jetpack
                 _smoothVertical = Mathf.SmoothDamp(
                     _smoothVertical, move.y, ref _verticalVelocity, smoothTime);
 
+                float leanStrength = profile != null ? profile.animLeanStrength : 0.1f;
+
                 if (_hasJetpackHorizontalParam)
-                    animator.SetFloat(JetpackHorizontal, _smoothHorizontal);
+                    animator.SetFloat(JetpackHorizontal, _smoothHorizontal * leanStrength);
                 if (_hasJetpackVerticalParam)
-                    animator.SetFloat(JetpackVertical, _smoothVertical);
+                    animator.SetFloat(JetpackVertical, _smoothVertical * leanStrength);
             }
             else
             {
@@ -122,18 +117,6 @@ namespace Project.Features.Jetpack
 
             if (_hasJetpackActiveParam)
                 animator.SetBool(JetpackActive, animActive);
-        }
-
-        private bool IsInJetpackLandState()
-        {
-            if (animator.IsInTransition(0))
-            {
-                AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(0);
-                if (next.shortNameHash == JetpackLandState)
-                    return true;
-            }
-
-            return animator.GetCurrentAnimatorStateInfo(0).shortNameHash == JetpackLandState;
         }
 
         private bool HasParameter(int hash)

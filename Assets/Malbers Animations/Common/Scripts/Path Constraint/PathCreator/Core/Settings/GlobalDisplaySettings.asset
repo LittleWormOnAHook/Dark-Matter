@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46d5e8d803e252f4499b52e657f8e1a2, type: 3}
   m_Name: GlobalDisplaySettings
   m_EditorClassIdentifier: 
-  anchorSize: 5.27
+  anchorSize: 0.5
   controlSize: 29.34
   visibleBehindObjects: 0
   visibleWhenNotSelected: 1
   hideAutoControls: 1
-  anchor: {r: 1, g: 0.3726415, b: 0.3726415, a: 1}
+  anchor: {r: 0, g: 0.7162852, b: 1, a: 1}
   anchorHighlighted: {r: 0.735849, g: 0.03818085, b: 0.03818085, a: 1}
   anchorSelected: {r: 1, g: 1, b: 1, a: 1}
   control: {r: 0.35, g: 0.6, b: 1, a: 1}

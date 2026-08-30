@@ -781,13 +781,13 @@ namespace Project.Interaction
             }
 
             Vector3 anchor = scanPoint + Vector3.up * 0.75f;
-            progressBar.UpdateBar(anchor, pct, cachedProgressLabel, ResolveCamera());
+            progressBar.UpdateBar(anchor, pct, cachedProgressLabel, ResolveCamera(), this);
         }
 
         private void SetProgressUiVisible(bool visible)
         {
             if (progressBar != null)
-                progressBar.SetVisible(visible);
+                progressBar.SetVisible(visible, this);
         }
 
         private void PlayDeniedFeedback(string message)

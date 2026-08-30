@@ -39,7 +39,7 @@ namespace Project.World
         private readonly List<Chunk> _chunks = new List<Chunk>(16);
         private readonly List<int> _order = new List<int>(16);
         private readonly HashSet<int> _active = new HashSet<int>();
-        private readonly HashSet<int> _navMeshAdded = new HashSet<int>();
+        private readonly HashSet<EntityId> _navMeshAdded = new HashSet<EntityId>();
         private float _nextUpdate;
         private static readonly Regex GridName = new Regex(@"(\d+)[_\-](\d+)", RegexOptions.Compiled);
 
@@ -227,7 +227,7 @@ namespace Project.World
             if (surface == null || surface.navMeshData == null)
                 return;
 
-            int id = surface.GetInstanceID();
+            EntityId id = surface.GetEntityId();
             if (on)
             {
                 if (!surface.isActiveAndEnabled)

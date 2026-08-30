@@ -15,7 +15,13 @@ namespace Project.Progression
         RangedDamageFlat,
         ScanRangeFlat,
         MiningTier,
-        HarvestingTier
+        HarvestingTier,
+        JetFuelPercent,
+        JetThrustPercent,
+        JetRegenPercent,
+        DashSpeedPercent,
+        DashDistancePercent,
+        DashAirUnlock
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>

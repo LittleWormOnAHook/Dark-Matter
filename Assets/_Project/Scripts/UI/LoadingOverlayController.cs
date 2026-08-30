@@ -126,6 +126,7 @@ namespace Project.UI
             suppressNextBootOverlay = false;
             earlyBlackoutHost = null;
             gatedCameras.Clear();
+            ExpeditionSceneLoadProgress.Reset();
         }
 
         // Claimed before any Awake runs so MainMenuController can never win the race and flash its chrome.
@@ -217,6 +218,7 @@ namespace Project.UI
                 return;
             }
 
+            ExpeditionSceneLoadProgress.Begin();
             EnsureOpaqueCover();
 
             if (activeInstance != null)
@@ -859,30 +861,31 @@ namespace Project.UI
             // Wall clock, not Time.unscaledDeltaTime: during scene bootstrap a frame can take a full
             // second, and Unity clamps unscaled delta to Time.maximumDeltaTime, which stretched this
             // "6 second" window out to 15-20 real seconds.
-            float startedAt = Time.realtimeSinceStartup;
-            float window = Mathf.Max(0.5f, simulatedLoadSeconds);
             ApplyProgress(0f);
 
-            while (true)
+            if (mode == LoadingMode.GameStart)
             {
-                float elapsed = Time.realtimeSinceStartup - startedAt;
+                yield return RunGameStartSceneLoad();
+            }
+            else
+            {
+                float startedAt = Time.realtimeSinceStartup;
+                float window = Mathf.Max(0.5f, simulatedLoadSeconds);
 
-                // Bar is driven directly by the load window so screen time and fill stay in sync.
-                float timeProgress = Mathf.Clamp01(elapsed / window);
+                while (true)
+                {
+                    float elapsed = Time.realtimeSinceStartup - startedAt;
+                    float timeProgress = Mathf.Clamp01(elapsed / window);
+                    bool ready = mode == LoadingMode.SettingsReload
+                                 || AreBootstrapCheckpointsReady()
+                                 || elapsed >= window + CheckpointGraceSeconds;
+                    ApplyProgress(ready ? timeProgress : Mathf.Min(timeProgress, ProgressCeilingBeforeHandoff));
 
-                // Boot only: if in-scene bootstrap is still catching up, hold short of full instead of
-                // handing off to a menu that is not ready yet. The grace cap keeps a checkpoint that
-                // never arrives from parking the player on a 92% bar forever.
-                bool ready = mode == LoadingMode.SettingsReload
-                             || mode != LoadingMode.Boot
-                             || AreBootstrapCheckpointsReady()
-                             || elapsed >= window + CheckpointGraceSeconds;
-                ApplyProgress(ready ? timeProgress : Mathf.Min(timeProgress, ProgressCeilingBeforeHandoff));
+                    if (ready && timeProgress >= 1f)
+                        break;
 
-                if (ready && timeProgress >= 1f)
-                    break;
-
-                yield return null;
+                    yield return null;
+                }
             }
 
             ApplyProgress(1f);
@@ -901,6 +904,29 @@ namespace Project.UI
             yield return FadeCanvasGroup(blackVeilGroup, 1f, 0f, fadeInFromBlackSeconds, fadeAmbience: false);
 
             Destroy(gameObject);
+        }
+
+        private IEnumerator RunGameStartSceneLoad()
+        {
+            ExpeditionSceneLoadProgress.Begin();
+            float shown = 0f;
+
+            while (true)
+            {
+                float actual = ExpeditionSceneLoadProgress.GetProgress();
+                bool worldReady = ExpeditionSceneLoadProgress.IsReady();
+                float target = worldReady ? 1f : actual;
+                shown = Mathf.MoveTowards(shown, Mathf.Max(shown, target), Time.unscaledDeltaTime * 2.5f);
+
+                if (worldReady && shown >= 0.98f)
+                {
+                    ApplyProgress(1f);
+                    yield break;
+                }
+
+                ApplyProgress(worldReady ? shown : Mathf.Min(shown, ProgressCeilingBeforeHandoff));
+                yield return null;
+            }
         }
 
         private bool AreBootstrapCheckpointsReady()

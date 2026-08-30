@@ -731,13 +731,14 @@ namespace Project.Interaction
                 GetNodeCenter() + Vector3.up * 0.75f,
                 Mathf.Clamp01(progress01),
                 name,
-                cam);
+                cam,
+                this);
         }
 
         private void SetHoldProgressBarVisible(bool visible)
         {
             if (holdProgressBar != null)
-                holdProgressBar.SetVisible(visible);
+                holdProgressBar.SetVisible(visible, this);
         }
 
         private void FinishGatherAndDestroy()

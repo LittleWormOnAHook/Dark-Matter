@@ -26,7 +26,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
         public bool colliderEnabled;
     }
 
-    readonly Dictionary<int, OriginalQuality> m_originals = new Dictionary<int, OriginalQuality>();
+    readonly Dictionary<EntityId, OriginalQuality> m_originals = new Dictionary<EntityId, OriginalQuality>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureOnPlayer()
@@ -143,7 +143,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
 
     void RememberOriginal(Terrain terrain)
     {
-        int id = terrain.GetInstanceID();
+        int id = terrain.GetEntityId();
         if (m_originals.ContainsKey(id))
         {
             return;
@@ -161,7 +161,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
     void ApplyQuality(Terrain terrain, bool isHero, bool colliderOn)
     {
         OriginalQuality original;
-        if (!m_originals.TryGetValue(terrain.GetInstanceID(), out original))
+        if (!m_originals.TryGetValue(terrain.GetEntityId(), out original))
         {
             return;
         }
@@ -205,7 +205,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
         {
             Terrain terrain = terrains[i];
             OriginalQuality original;
-            if (terrain == null || !m_originals.TryGetValue(terrain.GetInstanceID(), out original))
+            if (terrain == null || !m_originals.TryGetValue(terrain.GetEntityId(), out original))
             {
                 continue;
             }

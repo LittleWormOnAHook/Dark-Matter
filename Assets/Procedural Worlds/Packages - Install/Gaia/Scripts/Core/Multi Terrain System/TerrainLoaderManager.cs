@@ -1230,6 +1230,16 @@ namespace Gaia
             m_assembliesAreReloading = false;
 
             SubscribeToAssemblyReloadEvents();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                if (m_terrainSceneStorage == null)
+                {
+                    LoadStorageData();
+                }
+                RefreshSceneViewLoadingRange();
+            }
+#endif
         }
 
         
