@@ -4,7 +4,10 @@
       "enabled": true
     },
     "netlify-skills": {
-      "enabled": true
+      "enabled": false
+    },
+    "google-drive": {
+      "enabled": false
     }
   }
 }

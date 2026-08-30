@@ -1,0 +1,45 @@
+---
+description: Dark Matter Genesis — canonical locks, authority stack, and Unity agent workflow essentials
+alwaysApply: true
+---
+
+# Dark Matter: Genesis — Core Agent Rules
+
+## Authority stack
+
+1. `.cursor/rules/` (always-applied project rules)
+2. `Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt` (GDD 5.0)
+3. `AGENTS.md`
+4. `.cursor/skills/` (additive only — see `skill-precedence.mdc`)
+
+**Disk truth before claiming shipped:** `Assets/_Project/Documentation/Architecture/World_Engine_Disk_Status.md`
+
+## Locked product identity (GDD 5.0)
+
+- **Platforms:** PC primary + consoles (PS5 / Xbox) only. No mobile or WebGL ship target.
+- **Economy:** **Aether Credits (AC) only**. No Pi marketplace, wallet, or third-party crypto loops.
+- **Setting:** Io 2160 — survival lite RPG, Lite Building base camp, companion-driven expeditions.
+- **Roster:** up to 22 base-camp companions; switchable trio of 3 on expeditions.
+- **Echoes / thermal / BCP:** Neural Echoes + Aether-9 Resonance Events; single cold/heat meter; Building Control Panels (Overview | Companions | Production | Craft | Changes). Journal Craft = recipe library only.
+- **Runtime:** The World Engine (WoOS) on Unity 6 + URP.
+
+## Engineering essentials
+
+- Code under `Assets/_Project/`; reuse existing combat, inventory, quest, save, companion, building systems.
+- **PC first**, then console parity: Input System (KBM + gamepad), scalable UI, solid frame pacing.
+- Prefer pooling, events, ScriptableObject config; minimize polling and heavy Update loops.
+- **DM / DMI naming** — no new Invector-branded identifiers in `_Project` (see `dm-naming-no-invector.mdc`).
+- **UI:** `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`).
+
+## Non-negotiable agent workflow
+
+- **No silent restore** — never checkout/reset/revert to older git or depot save points without explicit user confirmation in the current message.
+- **No forced Unity refresh** — do not call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks.
+- **After script/asset edits:** wait for compile + domain reload to finish, then check Unity console for **errors** before claiming done. See `unity-agent-workflow.mdc`.
+- **Before git commit:** Unity console must have no errors; stage scenes, prefabs, materials, terrain, and new assets with script changes. See `unity-agent-workflow.mdc`.
+
+## When you need more detail
+
+- Full GDD canon → `dark-matter-genesis-gdd.mdc` or GDD 5.0 file
+- Unity engineering patterns → `dark-matter-genesis-unity-urp.mdc`
+- Framework standard → `Assets/_Project/Features/Communications/Documentation/Dark_Matter_Framework_Engineering_Standard.md`

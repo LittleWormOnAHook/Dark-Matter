@@ -1,6 +1,7 @@
 ---
 description: Mandatory illustrated DMG item icons for every new ItemData, blueprint, and inventory pickup
-alwaysApply: true
+globs: Assets/_Project/Art/Icons/**,Assets/_Project/**/*ItemData*.asset,Assets/_Project/**/*Blueprint*.asset
+alwaysApply: false
 ---
 
 # Dark Matter Illustrated Item Icons

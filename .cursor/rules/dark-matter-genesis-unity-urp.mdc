@@ -1,7 +1,7 @@
 ---
 description: Dark Matter: Genesis Unity 6 + URP engineering rules for Assets/_Project
 globs: Assets/_Project/**/*
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Dark Matter: Genesis — Unity 6 + URP Project Rules

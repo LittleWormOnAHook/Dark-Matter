@@ -1,7 +1,7 @@
 ---
 description: Dark Matter: Genesis GDD — canonical direction for Unity work in Assets/_Project
 globs: Assets/_Project/**/*
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Dark Matter: Genesis — GDD Authority

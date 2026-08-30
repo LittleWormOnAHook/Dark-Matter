@@ -9,7 +9,7 @@ Imported Agent Skills under `.cursor/skills/` (including [badjano/skills](https:
 
 When a skill conflicts with any of the following, **project authority wins**:
 
-1. Always-applied rules in `.cursor/rules/`
+1. Always-applied rules in `.cursor/rules/` (start with `dark-matter-genesis-core.mdc`)
 2. `AGENTS.md` and the Dark Matter Framework Engineering Standard
 3. GDD 5.0 (`Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`) and related GDD rules
 
