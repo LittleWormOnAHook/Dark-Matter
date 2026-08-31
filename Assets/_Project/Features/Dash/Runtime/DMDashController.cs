@@ -3,6 +3,7 @@ using Invector.vCharacterController;
 using Project.Player;
 using Project.Progression;
 using Project.Vehicles;
+using Project.Features.Climb;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -41,6 +42,7 @@ namespace Project.Features.Dash
         private float _lastTapAt = -10f;
 
         public bool IsDashing => _dashing;
+        public Vector3 DashDirection => _dashDir;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnPlayer()
@@ -49,10 +51,11 @@ namespace Project.Features.Dash
                 return;
 
             GameObject player = GameObject.Find("Player_v7");
-            if (player == null || player.GetComponent<DMDashController>() != null)
+            if (player == null)
                 return;
-
-            player.AddComponent<DMDashController>();
+            if (player.GetComponent<DMDashController>() == null)
+                player.AddComponent<DMDashController>();
+            DMHangLegOverlay.Bind(player);
         }
 
         private void Awake()
@@ -70,6 +73,7 @@ namespace Project.Features.Dash
 
             CacheBodyRenderers();
             BuildVfx();
+            DMHangLegOverlay.Bind(gameObject);
         }
 
         private void OnDisable()
@@ -138,6 +142,8 @@ namespace Project.Features.Dash
         }
         private bool CanDash()
         {
+            if (!isActiveAndEnabled)
+                return false;
             if (profile == null || Time.unscaledTime < _readyAt)
                 return false;
             if (Time.timeScale <= 0f)
@@ -147,6 +153,10 @@ namespace Project.Features.Dash
 
             var landing = GetComponent<DMLandingDirector>();
             if (landing != null && landing.IsLandingLocked)
+                return false;
+
+            var climb = GetComponent<DMClimbController>();
+            if (climb != null && climb.IsClimbing)
                 return false;
 
             if (!AllowsAirDash() && motor != null && !motor.isGrounded)

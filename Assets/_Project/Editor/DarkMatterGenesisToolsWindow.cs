@@ -26,6 +26,12 @@ namespace Project.EditorTools
                 MessageType.None);
             EditorGUILayout.Space(8f);
 
+            DrawSection("Climb", new[]
+            {
+                (DarkMatterGenesisEditorMenus.Climb + "Build Climb Blend Tree", "8-way Protofactor climb blend on the player animator"),
+                (DarkMatterGenesisEditorMenus.Climb + "Spawn Climb Test Wall", "Place a Climbable test wall in front of Player_v7"),
+            });
+
             DrawSection("Project", new[]
             {
                 (DarkMatterGenesisEditorMenus.Project + "Project Structure", "Create core folder layout"),

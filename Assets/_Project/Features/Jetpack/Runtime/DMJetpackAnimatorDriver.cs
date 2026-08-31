@@ -14,6 +14,7 @@ namespace Project.Features.Jetpack
         private static readonly int JetpackActive = Animator.StringToHash("JetpackActive");
         private static readonly int JetpackHorizontal = Animator.StringToHash("JetpackHorizontal");
         private static readonly int JetpackVertical = Animator.StringToHash("JetpackVertical");
+        private static readonly int JetpackFlyState = Animator.StringToHash("Jetpack Fly");
 
         [SerializeField] private DMJetpackController jetpack;
         [SerializeField] private DMJetpackInputBridge inputBridge;
@@ -34,6 +35,23 @@ namespace Project.Features.Jetpack
         public bool IsBoostLanding => false;
         public bool IsHighFallRecovering => false;
         public bool IsLandingLocked => false;
+
+        /// <summary>Call on ignition so Jump does not pop through Falling before Fly.</summary>
+        public void NotifyBoostStarted()
+        {
+            if (animator == null)
+                animator = GetComponentInChildren<Animator>();
+            if (animator == null)
+                return;
+            if (!animator.enabled)
+                animator.enabled = true;
+            CacheAnimatorParameters();
+            if (_hasJetpackActiveParam)
+                animator.SetBool(JetpackActive, true);
+            if (animator.HasState(0, JetpackFlyState))
+                animator.CrossFadeInFixedTime(JetpackFlyState, 0.14f, 0, 0f);
+        }
+
 
         private void Reset()
         {
@@ -59,6 +77,7 @@ namespace Project.Features.Jetpack
 
             CacheAnimatorParameters();
             _landing = GetComponent<Project.Player.DMLandingDirector>();
+            Project.Player.DMHangLegOverlay.Bind(gameObject);
         }
 
         private void CacheAnimatorParameters()
@@ -69,6 +88,11 @@ namespace Project.Features.Jetpack
             _hasJetpackActiveParam = HasParameter(JetpackActive);
             _hasJetpackHorizontalParam = HasParameter(JetpackHorizontal);
             _hasJetpackVerticalParam = HasParameter(JetpackVertical);
+        }
+
+        private void Update()
+        {
+            ApplyActiveFlag();
         }
 
         private void FixedUpdate()
@@ -96,6 +120,8 @@ namespace Project.Features.Jetpack
                     _smoothVertical, move.y, ref _verticalVelocity, smoothTime);
 
                 float leanStrength = profile != null ? profile.animLeanStrength : 0.1f;
+                // Soften IdleFly superhero lock without rewriting the jetpack profile asset.
+                leanStrength = Mathf.Min(0.05f, leanStrength * 0.4f);
 
                 if (_hasJetpackHorizontalParam)
                     animator.SetFloat(JetpackHorizontal, _smoothHorizontal * leanStrength);
@@ -115,8 +141,18 @@ namespace Project.Features.Jetpack
                     animator.SetFloat(JetpackVertical, 0f);
             }
 
-            if (_hasJetpackActiveParam)
-                animator.SetBool(JetpackActive, animActive);
+            ApplyActiveFlag(animActive);
+        }
+
+        private void ApplyActiveFlag(bool? forced = null)
+        {
+            if (animator == null || jetpack == null || !_hasJetpackActiveParam)
+                return;
+            if (_landing == null)
+                _landing = GetComponent<Project.Player.DMLandingDirector>();
+            bool landingLocked = _landing != null && _landing.IsLandingLocked;
+            bool animActive = forced ?? (jetpack.IsJetpackAnimActive && !landingLocked);
+            animator.SetBool(JetpackActive, animActive);
         }
 
         private bool HasParameter(int hash)

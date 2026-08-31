@@ -55,7 +55,9 @@ namespace Project.Features.Jetpack
         /// <summary>Called from <see cref="PioneerShooterMeleeInput.JumpInput"/> before the normal jump.</summary>
         public bool TryHandleJumpPress()
         {
-            if (jetpack == null || !ReadJumpPressedThisFrame())
+            if (!isActiveAndEnabled || jetpack == null || !jetpack.isActiveAndEnabled)
+                return false;
+            if (!ReadJumpPressedThisFrame())
                 return false;
 
             return jetpack.TryIgniteBoostOnJumpPress();

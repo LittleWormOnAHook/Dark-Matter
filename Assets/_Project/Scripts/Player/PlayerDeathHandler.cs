@@ -1,3 +1,5 @@
+using System.Collections;
+using Invector.vCharacterController;
 using ECM2;
 using Project.Core;
 using Project.Interaction;
@@ -23,6 +25,12 @@ namespace Project.Player
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private bool spawnCaptured;
+        private Coroutine deathMenuRoutine;
+
+        private const float MenuAfterRagdollDownSeconds = 2f;
+        private const float MenuSafetyTimeoutSeconds = 5f;
+        private const float AssumeDownIfNoRagdollSeconds = 0.8f;
+        private const float RagdollDownSpeed = 1.25f;
 
         private void Awake()
         {
@@ -50,6 +58,7 @@ namespace Project.Player
             if (survivalStats == null)
                 return;
 
+            StopDeathMenuRoutine();
             CleanupDeathState();
             ResolveInvectorDeathRagdoll()?.ResetForRespawn();
 
@@ -79,6 +88,95 @@ namespace Project.Player
             survivalStats?.SetSimulationPaused(true);
             GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
             ResolveInvectorDeathRagdoll()?.ActivateDeathRagdoll();
+
+            StopDeathMenuRoutine();
+            deathMenuRoutine = StartCoroutine(ShowDeathMenuAfterRagdoll());
+        }
+
+        private void StopDeathMenuRoutine()
+        {
+            if (deathMenuRoutine == null)
+                return;
+            StopCoroutine(deathMenuRoutine);
+            deathMenuRoutine = null;
+        }
+
+        private IEnumerator ShowDeathMenuAfterRagdoll()
+        {
+            float startedAt = Time.unscaledTime;
+            float downAt = -1f;
+            ResolveInvectorBody(out vThirdPersonController controller, out vRagdoll ragdoll, out Animator animator);
+
+            while (true)
+            {
+                float now = Time.unscaledTime;
+                bool ragdollStarted = (ragdoll != null && ragdoll.isActive)
+                    || (controller != null && controller.ragdolled);
+                if (IsRagdollBodyDown(controller, ragdoll, animator) && downAt < 0f)
+                    downAt = now;
+                else if (downAt < 0f && !ragdollStarted && now - startedAt >= AssumeDownIfNoRagdollSeconds)
+                    downAt = now;
+
+                bool ready = downAt >= 0f && now - downAt >= MenuAfterRagdollDownSeconds;
+                bool timeout = now - startedAt >= MenuSafetyTimeoutSeconds;
+                if (ready || timeout)
+                    break;
+
+                yield return null;
+            }
+
+            deathMenuRoutine = null;
+            UIManager ui = FindAnyObjectByType<UIManager>();
+            if (ui != null)
+                ui.ShowDeathPopup();
+        }
+
+        private static bool IsRagdollBodyDown(
+            vThirdPersonController controller,
+            vRagdoll ragdoll,
+            Animator animator)
+        {
+            bool ragdollOn = (ragdoll != null && ragdoll.isActive)
+                || (controller != null && controller.ragdolled);
+            if (!ragdollOn)
+                return false;
+
+            Transform hips = null;
+            if (animator != null && animator.isHuman)
+                hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            if (hips == null && ragdoll != null)
+                hips = ragdoll.characterHips;
+            if (hips == null)
+                return ragdoll != null && !ragdoll.inStabilize;
+
+            Rigidbody hipBody = hips.GetComponent<Rigidbody>();
+            if (hipBody != null)
+                return hipBody.linearVelocity.magnitude <= RagdollDownSpeed;
+
+            return ragdoll == null || !ragdoll.inStabilize;
+        }
+
+        private void ResolveInvectorBody(
+            out vThirdPersonController controller,
+            out vRagdoll ragdoll,
+            out Animator animator)
+        {
+            controller = GetComponent<vThirdPersonController>();
+            ragdoll = GetComponent<vRagdoll>() ?? GetComponentInChildren<vRagdoll>(true);
+            animator = GetComponentInChildren<Animator>();
+            if (controller != null && ragdoll != null && animator != null)
+                return;
+
+            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            if (player == null || player == gameObject)
+                return;
+
+            if (controller == null)
+                controller = player.GetComponent<vThirdPersonController>();
+            if (ragdoll == null)
+                ragdoll = player.GetComponent<vRagdoll>() ?? player.GetComponentInChildren<vRagdoll>(true);
+            if (animator == null)
+                animator = player.GetComponentInChildren<Animator>();
         }
 
         private PioneerInvectorDeathRagdoll ResolveInvectorDeathRagdoll()

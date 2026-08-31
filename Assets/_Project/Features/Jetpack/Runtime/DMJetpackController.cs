@@ -24,6 +24,7 @@ namespace Project.Features.Jetpack
         [SerializeField] private DMJetpackProfile profile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private DMJetpackInputBridge inputBridge;
+        [SerializeField] private DMJetpackAnimatorDriver animatorDriver;
 
         private Rigidbody _rigidbody;
         private float _fuelRemaining;
@@ -33,8 +34,11 @@ namespace Project.Features.Jetpack
         private bool _wasBoosting;
         private bool _hadJetpackFlightThisAirtime;
         private float _heroLandHoldUntil = -1f;
+        private float _boostReleasedAt = -1f;
+        private bool _usedJetpackThisAir;
         private const float HeroLandHoldSeconds = 4f;
         private bool _wasGrounded = true;
+        private float _groundedStable;
         private bool _airSpeedOverridden;
         private bool _airSmoothOverridden;
         private bool _extraGravityOverridden;
@@ -70,6 +74,17 @@ namespace Project.Features.Jetpack
         public bool IsHeroLandArmed =>
             _hadJetpackFlightThisAirtime || IsHeroLandHoldActive;
 
+        public bool IsBoostingNow =>
+            Phase is DMJetpackPhase.BoostFull or DMJetpackPhase.BoostFade;
+
+        /// <summary>Seconds since Space/boost was released. 0 while still boosting.</summary>
+        public bool UsedJetpackThisAir => _usedJetpackThisAir;
+
+        public float SecondsSinceBoostReleased =>
+            !_usedJetpackThisAir || IsBoostingNow || _boostReleasedAt < 0f
+                ? 0f
+                : Time.unscaledTime - _boostReleasedAt;
+
         public bool IsJetpackAnimActive =>
             IsHeroLandArmed && motor != null && !motor.isGrounded;
 
@@ -93,6 +108,8 @@ namespace Project.Features.Jetpack
                 motor = GetComponent<vThirdPersonMotor>();
             if (inputBridge == null)
                 inputBridge = GetComponent<DMJetpackInputBridge>();
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<DMJetpackAnimatorDriver>();
 
             _rigidbody = motor != null ? motor.GetComponent<Rigidbody>() : GetComponent<Rigidbody>();
             RefillFuel();
@@ -143,7 +160,14 @@ namespace Project.Features.Jetpack
             _boostElapsed = 0f;
             _boostArmed = true;
             _hadJetpackFlightThisAirtime = true;
+            _usedJetpackThisAir = true;
+            _boostReleasedAt = -1f;
+            ArmHeroLandHold();
             SuppressJumpMotorState();
+            if (animatorDriver == null)
+                animatorDriver = GetComponent<DMJetpackAnimatorDriver>();
+            if (animatorDriver != null)
+                animatorDriver.NotifyBoostStarted();
         }
 
         /// <summary>Stop Invector jump arc / airborne locomotion from fighting jetpack thrust.</summary>
@@ -157,7 +181,13 @@ namespace Project.Features.Jetpack
 
         public void NotifyLanded()
         {
+            // A one-frame ground flicker must not clear hero-land for the real fall.
+            if (motor != null && !motor.isGrounded)
+                return;
+
             _hadJetpackFlightThisAirtime = false;
+            _usedJetpackThisAir = false;
+            _boostReleasedAt = -1f;
             _heroLandHoldUntil = -1f;
             _boostElapsed = 0f;
             _boostHeld = false;
@@ -180,6 +210,11 @@ namespace Project.Features.Jetpack
                 return;
 
             bool grounded = motor.isGrounded;
+            if (grounded)
+                _groundedStable += Time.fixedDeltaTime;
+            else
+                _groundedStable = 0f;
+
             if (grounded && !_wasGrounded)
             {
                 _boostArmed = false;
@@ -220,6 +255,7 @@ namespace Project.Features.Jetpack
 
             if (_wasBoosting && !wantsBoost)
             {
+                _boostReleasedAt = Time.unscaledTime;
                 ArmHeroLandHold();
                 _boostArmed = false;
                 ResetPlanarSteerState();
@@ -261,6 +297,7 @@ namespace Project.Features.Jetpack
                 if (_fuelRemaining <= 0f)
                 {
                     Phase = DMJetpackPhase.FreeFall;
+                    _boostReleasedAt = Time.unscaledTime;
                     ArmHeroLandHold();
                     RestoreAirSpeed();
                 }

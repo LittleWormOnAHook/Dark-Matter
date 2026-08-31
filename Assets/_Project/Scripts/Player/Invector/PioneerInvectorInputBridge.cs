@@ -3,6 +3,7 @@ using Project.Combat;
 using Project.Core;
 using Project.Features.Jetpack;
 using Project.Features.Dash;
+using Project.Features.Climb;
 using Project.Interaction;
 using Project.Survival;
 using Project.UI;
@@ -32,6 +33,7 @@ namespace Project.Player.Invector
         private DMJetpackAnimatorDriver _jetpackAnimator;
         private DMLandingDirector _landing;
         private DMDashController _dash;
+        private DMClimbController _climb;
         private bool _combatBlockedByUiPointer;
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
@@ -64,6 +66,7 @@ namespace Project.Player.Invector
             _jetpackAnimator = GetComponent<DMJetpackAnimatorDriver>();
             _landing = GetComponent<DMLandingDirector>();
             _dash = GetComponent<DMDashController>();
+            _climb = GetComponent<DMClimbController>();
         }
 
         private void Update()
@@ -115,6 +118,12 @@ namespace Project.Player.Invector
                 _dash = GetComponent<DMDashController>();
 
             if (_dash != null && _dash.IsDashing)
+                return true;
+
+            if (_climb == null)
+                _climb = GetComponent<DMClimbController>();
+
+            if (_climb != null && _climb.IsClimbing)
                 return true;
 
             if (_landing == null)

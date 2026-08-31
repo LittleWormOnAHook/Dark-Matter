@@ -48,6 +48,7 @@ TagManager:
   - Synty Medium Farm
   - Synty Tree
   - Synty Small Farm
+  - Climbable
   layers:
   - Default
   - TransparentFX
@@ -72,7 +73,7 @@ TagManager:
   - Animal
   - PW_Object_Medium
   - PW_Object_Large
-  - 
+  - Climbable
   - 
   - 
   - 

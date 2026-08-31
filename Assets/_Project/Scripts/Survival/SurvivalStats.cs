@@ -521,7 +521,11 @@ namespace Project.Survival
 
         public void ApplyDamage(float damage, string sourceName = null)
         {
-            if (damage <= 0f || IsDead || HasEnemyCombatImmunity)
+            if (damage <= 0f || IsDead)
+                return;
+
+            bool fromFall = string.Equals(sourceName, "fall", System.StringComparison.OrdinalIgnoreCase);
+            if (HasEnemyCombatImmunity && !fromFall)
                 return;
 
             lastDamageSource = string.IsNullOrWhiteSpace(sourceName) ? "unknown" : sourceName;
@@ -534,6 +538,23 @@ namespace Project.Survival
                 Die();
             else
                 NotifyStatsChanged(force: true);
+        }
+
+        /// <summary>
+        /// Lethal fall. Bypasses enemy combat immunity so a 20m drop still kills
+        /// during post-respawn grace. Other damage sources are unchanged.
+        /// </summary>
+        public void KillFromFall()
+        {
+            if (IsDead)
+                return;
+
+            lastDamageSource = "fall";
+            CurrentHealth = 0f;
+            lastHealthReductionTime = Time.time;
+            LastDamageTime = Time.time;
+            OnDamaged?.Invoke(9999f);
+            Die();
         }
 
         private void ApplyHealthRegen()
@@ -560,9 +581,14 @@ namespace Project.Survival
 
             PlayerDied?.Invoke();
 
-            UIManager ui = FindAnyObjectByType<UIManager>();
-            if (ui != null)
-                ui.ShowDeathPopup();
+            // Menu waits for ragdoll to settle. PlayerDeathHandler owns that delay.
+            // Keep an immediate fallback if this body has no death handler.
+            if (GetComponent<Project.Player.PlayerDeathHandler>() == null)
+            {
+                UIManager ui = FindAnyObjectByType<UIManager>();
+                if (ui != null)
+                    ui.ShowDeathPopup();
+            }
         }
     }
 }

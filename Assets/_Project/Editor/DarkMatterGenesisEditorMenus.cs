@@ -7,6 +7,7 @@ namespace Project.EditorTools
     {
         public const string Root = "Tools/Dark Matter Genesis/";
         public const string ToolsWindow = Root + "Tools Window";
+        public const string Climb = Root + "Climb/";
 
         public const string PrefabCreator = Root + "Prefab Creator/";
 

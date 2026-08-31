@@ -5,6 +5,7 @@ using Invector.IK;
 using Project.Core;
 using Project.Data;
 using Project.Features.Jetpack;
+using Project.Features.Climb;
 using Project.Inventory;
 using Project.Player;
 using Project.UI;
@@ -46,6 +47,7 @@ namespace Project.Player.Invector
 
         private PioneerInvectorInputBridge _inputBridge;
         private DMJetpackInputBridge _jetpackInputBridge;
+        private DMClimbController _climb;
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private bool _miningScanAimHold;
@@ -64,6 +66,7 @@ namespace Project.Player.Invector
             base.Start();
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
             _jetpackInputBridge = GetComponent<DMJetpackInputBridge>();
+            _climb = GetComponent<DMClimbController>();
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, shooterManager);
@@ -385,6 +388,12 @@ namespace Project.Player.Invector
         public override void JumpInput()
         {
             if (!jumpInput.useInput || cc == null || !CanReadGameplayInput())
+                return;
+
+            if (_climb == null)
+                _climb = GetComponent<DMClimbController>();
+
+            if (_climb != null && _climb.TryHandleJumpPress())
                 return;
 
             if (_jetpackInputBridge != null && _jetpackInputBridge.TryHandleJumpPress())

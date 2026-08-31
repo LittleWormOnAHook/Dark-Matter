@@ -37,7 +37,14 @@ namespace Project.Player.Invector
             }
 
             if (_controller.ragdolled)
+            {
+                if (_ragdoll != null)
+                {
+                    _ragdoll.keepRagdolled = true;
+                    _ragdoll.ignoreGetUpAnimation = true;
+                }
                 return;
+            }
 
             GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
 
@@ -74,9 +81,21 @@ namespace Project.Player.Invector
             if (_controller == null)
                 _controller = GetComponent<vThirdPersonController>();
             if (_ragdoll == null)
-                _ragdoll = GetComponent<vRagdoll>();
+                _ragdoll = GetComponent<vRagdoll>() ?? GetComponentInChildren<vRagdoll>(true);
             if (_survivalStats == null)
                 _survivalStats = GetComponent<SurvivalStats>();
+
+            if (_controller != null && _ragdoll != null)
+                return;
+
+            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            if (player == null || player == gameObject)
+                return;
+
+            if (_controller == null)
+                _controller = player.GetComponent<vThirdPersonController>();
+            if (_ragdoll == null)
+                _ragdoll = player.GetComponent<vRagdoll>() ?? player.GetComponentInChildren<vRagdoll>(true);
         }
 
         private IEnumerator EnsureDeathPresentation()
@@ -125,16 +144,20 @@ namespace Project.Player.Invector
 
         private void ForceRagdollActivation()
         {
-            if (_controller == null || _controller.ragdolled)
+            if (_controller == null)
                 return;
 
             if (_ragdoll != null)
             {
-                _ragdoll.ActivateRagdoll(null);
+                _ragdoll.keepRagdolled = true;
+                _ragdoll.ignoreGetUpAnimation = true;
+                if (!_ragdoll.isActive)
+                    _ragdoll.ActivateRagdoll(null, 999f);
                 return;
             }
 
-            _controller.onActiveRagdoll.Invoke(null);
+            if (!_controller.ragdolled)
+                _controller.onActiveRagdoll.Invoke(null);
         }
     }
 }

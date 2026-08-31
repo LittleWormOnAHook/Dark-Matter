@@ -1,0 +1,163 @@
+using UnityEngine;
+
+namespace Project.Features.Climb
+{
+    [CreateAssetMenu(menuName = "Dark Matter/Player/Climb Profile", fileName = "DMClimbProfile")]
+    public sealed class DMClimbProfile : ScriptableObject
+    {
+        [Header("Slope cutoffs (degrees from up)")]
+        [Tooltip("At or under this, the player walks/runs even if the mesh is Climbable. Matches Invector slopeLimit (75).")]
+        [Range(20f, 89f)]
+        public float walkMaxSlopeDeg = 75f;
+
+        [Tooltip("Must be steeper than walkMax to climb. Usually the same number.")]
+        [Range(20f, 89f)]
+        public float climbMinSlopeDeg = 75f;
+
+        [Tooltip("Past this, the face is too inverted to cling.")]
+        [Range(90f, 170f)]
+        public float climbMaxSlopeDeg = 115f;
+
+        [Header("Raycast distances")]
+        [Tooltip("Chest ray / spherecast that grabs a wall you are facing.")]
+        [Range(0.4f, 4f)]
+        public float attachRange = 1.4f;
+
+        [Tooltip("How far a climb-jump can reach another Climbable.")]
+        [Range(0.8f, 8f)]
+        public float climbJumpRange = 3f;
+
+        [Range(0.05f, 0.5f)]
+        public float probeRadius = 0.18f;
+
+        [Tooltip("Must face the wall at least this much (1 = dead-on).")]
+        [Range(0.15f, 1f)]
+        public float faceDotMin = 0.15f;
+
+        [Header("Attach")]
+        [Range(0.1f, 1.2f)]
+        public float standOff = 0.35f;
+
+        [Tooltip("Start climb only after a jump (second Space). First Space is the jump.")]
+        public bool startClimbNeedsAirborne = true;
+
+        [Tooltip("Start climb only while holding forward (W).")]
+        public bool startClimbNeedsForward = true;
+
+        [Header("Hand grab")]
+        [Tooltip("How far the wrist sits off the wall so fingers rest on the surface instead of through it.")]
+        [Range(0.02f, 0.25f)]
+        public float handPalmOffset = 0.11f;
+
+        [Tooltip("Left/right hand spacing on the wall.")]
+        [Range(0.08f, 0.4f)]
+        public float handSpread = 0.18f;
+
+        [Tooltip("Grab when airborne and a climbable is in attachRange. Off — start climb is second Space + forward.")]
+        public bool autoGrabInAir;
+
+        [Header("Motion")]
+        [Range(0.2f, 6f)]
+        public float moveSpeed = 2.6f;
+
+        [Range(0.01f, 0.5f)]
+        public float climbInputDamp = 0.1f;
+
+        [Header("Release / drop-to-hang")]
+        [Tooltip("Jump while climbing or hanging always lets go.")]
+        public bool jumpReleases = true;
+
+        [Tooltip("How hard jump-release pushes you off the wall.")]
+        [Range(0f, 6f)]
+        public float releasePush = 1.6f;
+
+        [Tooltip("Short climb-leap speed (m/s) along the climb direction.")]
+        [Range(2f, 12f)]
+        public float climbLeapSpeed = 7.2f;
+
+        [Tooltip("After one Space leap, WASD toward a Climbable snaps back. Seconds.")]
+        [Range(0.12f, 1.2f)]
+        public float climbLeapRegrab = 0.55f;
+
+        [Tooltip("E-drop shove away from the wall (m/s).")]
+        [Range(0.5f, 6f)]
+        public float dropPush = 2.4f;
+
+        [Tooltip("Must leave the wall this far before a NEW start-climb can stick. Leap regrab ignores this.")]
+        [Range(0.4f, 3f)]
+        public float detachBuffer = 1.15f;
+
+        [Tooltip("Unused auto-cling distance. Start climb is second Space + forward.")]
+        [Range(3f, 20f)]
+        public float highFallGrabMeters = 6f;
+
+        [Tooltip("Air steer time after an E-drop or hop.")]
+        [Range(0.2f, 2f)]
+        public float airControlSeconds = 0.95f;
+
+        [Tooltip("From a walkable lip, Jump (or S+E) hangs on the face below.")]
+        public bool dropToHang = true;
+
+        [Tooltip("How far below the lip we look for a climbable face.")]
+        [Range(0.4f, 4f)]
+        public float dropToHangRange = 1.8f;
+
+        [Header("Mantle")]
+        public bool enableMantle = true;
+
+        [Tooltip("W only starts a mantle when there is no climbable wall left above the hands.")]
+        public bool mantleRequiresOpenLip = true;
+
+        [Tooltip("Hand / lip height from the feet. Wall-above probes start at the chest under this.")]
+        [Range(0.9f, 1.6f)]
+        public float handHeight = 1.18f;
+
+        [Tooltip("How far over the lip the down-probe sits.")]
+        [Range(0.2f, 1.2f)]
+        public float mantleForward = 0.42f;
+
+        [Tooltip("How high above the hang the down-probe starts.")]
+        [Range(0.8f, 2.2f)]
+        public float mantleProbeUp = 1.5f;
+
+        [Tooltip("How far the lip/floor probe searches down.")]
+        [Range(0.6f, 2.4f)]
+        public float mantleProbeDown = 1.7f;
+
+        [Tooltip("0 = flush with the found top. Positive lifts the plant, negative sinks feet into the ledge.")]
+        [Range(-0.2f, 0.2f)]
+        public float mantlePlantHeight = 0.04f;
+
+        [Tooltip("Legacy alias. Ignored; plant uses mantlePlantHeight including 0 and negatives.")]
+        [Range(-0.2f, 0.2f)]
+        public float mantleStandPad = 0.04f;
+
+        [Tooltip("Seconds to lerp hang → lip → stand.")]
+        [Range(0.5f, 2.4f)]
+        public float mantleSeconds = 1.4f;
+
+        [Tooltip("Ignore fall-land / ragdoll this long after a mantle.")]
+        [Range(0.5f, 4f)]
+        public float mantleIgnoreLands = 2.6f;
+
+        [Header("Landing")]
+        [Tooltip("Shorter than this is a regular Invector hop. Mid drops and jetpack use hero / Jetpack Land.")]
+        [Range(0.5f, 8f)]
+        public float heroDropMeters = 2.6f;
+
+        [Tooltip("Fall this far or more (while falling) is death + retry/quit, unless jetpack grace applies.")]
+        [Range(8f, 80f)]
+        public float lethalDropMeters = 20f;
+
+        [Tooltip("After jetpack Space/boost is released, wait this many seconds before a lethal-height fall can kill. Still boosting, or land inside this window, is always hero.")]
+        [Range(0f, 20f)]
+        public float jetpackLethalDelay = 6f;
+
+        [Header("Surface")]
+        public string climbableLayerName = "Climbable";
+        public string climbableTag = "Climbable";
+
+        [Tooltip("Only these layers. 0 = resolve from climbableLayerName.")]
+        public LayerMask climbableLayers;
+    }
+}

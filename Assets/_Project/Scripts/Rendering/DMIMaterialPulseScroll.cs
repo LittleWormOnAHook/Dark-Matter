@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Project.Rendering
 {
@@ -374,7 +375,7 @@ namespace Project.Rendering
                     continue;
 
                 SlotCache slot = new SlotCache { materialIndex = mi };
-                CacheFromMaterial(mat, ref slot);
+                CacheFromMaterial(mat, ref slot, pulseEmission);
                 list.Add(slot);
             }
 
@@ -712,8 +713,13 @@ namespace Project.Rendering
                 return false;
 
             string name = shader.name;
-            return name.StartsWith("HDRP/", System.StringComparison.Ordinal)
-                   || name.StartsWith("Hidden/HDRP", System.StringComparison.Ordinal);
+            if (name.StartsWith("HDRP/", System.StringComparison.Ordinal)
+                || name.StartsWith("Hidden/HDRP", System.StringComparison.Ordinal)
+                || name.IndexOf("HDRP", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            return shader.FindPropertyIndex("_EmissiveColor") >= 0
+                   || shader.FindPropertyIndex("_EmissiveIntensity") >= 0;
         }
 
         private void ResolveRenderer()
@@ -728,7 +734,7 @@ namespace Project.Rendering
                 targetRenderer = GetComponent<Renderer>();
         }
 
-        private static void CacheFromMaterial(Material mat, ref SlotCache slot)
+        private static void CacheFromMaterial(Material mat, ref SlotCache slot, bool pulseEmissionOn)
         {
             bool hdrp = IsHdrpShader(mat.shader);
 
@@ -755,48 +761,9 @@ namespace Project.Rendering
                 slot.authoredCutoff = mat.GetFloat(GltfAlphaCutoffId);
             }
 
-            // Emission: prefer HDRP _EmissiveColor over legacy _EmissionColor.
-            // HDRP Lit exposes BOTH — binding _EmissionColor first made pulses drive the
-            // wrong channel while real emissive stayed static.
-            if (hdrp && TryBindColor(mat, EmissiveColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
-            {
-                slot.emissionKeyword = HdrpEmissiveColorKeyword;
-                if (mat.HasProperty(EmissionColorId))
-                {
-                    slot.hasSecondaryEmission = true;
-                    slot.secondaryEmissionPropId = EmissionColorId;
-                }
-
-                // When UseEmissiveIntensity is on, authored RGB is LDR and intensity is separate.
-                if (mat.HasProperty(UseEmissiveIntensityId)
-                    && mat.GetFloat(UseEmissiveIntensityId) > 0.5f
-                    && mat.HasProperty(EmissiveIntensityId))
-                {
-                    float intensity = mat.GetFloat(EmissiveIntensityId);
-                    slot.authoredEmission *= intensity;
-                }
-            }
-            else if (!hdrp && TryBindColor(mat, EmissionColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
-            {
-                slot.emissionKeyword = UrpEmissionKeyword;
-                if (mat.HasProperty(EmissiveColorId))
-                {
-                    slot.hasSecondaryEmission = true;
-                    slot.secondaryEmissionPropId = EmissiveColorId;
-                }
-            }
-            else if (TryBindColor(mat, EmissiveColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
-            {
-                slot.emissionKeyword = hdrp ? HdrpEmissiveColorKeyword : UrpEmissionKeyword;
-            }
-            else if (TryBindColor(mat, EmissionColorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
-            {
-                slot.emissionKeyword = UrpEmissionKeyword;
-            }
-            else if (TryBindColor(mat, GltfEmissiveFactorId, ref slot.hasEmission, ref slot.emissionPropId, ref slot.authoredEmission))
-            {
-                slot.emissionKeyword = GltfEmissiveKeyword;
-            }
+            BindEmission(mat, ref slot, hdrp);
+            if (!slot.hasEmission && pulseEmissionOn)
+                ForceBindHdrpEmission(mat, ref slot);
 
             if (slot.hasEmission)
                 slot.useAbsoluteEmissionIntensity = EmissionLuminance(slot.authoredEmission) < NearBlackLuminance;
@@ -826,6 +793,117 @@ namespace Project.Rendering
             {
                 // bound
             }
+        }
+
+        private static void BindEmission(Material mat, ref SlotCache slot, bool hdrp)
+        {
+            if (TryBindEmissionColor(mat, EmissiveColorId, "_EmissiveColor", ref slot))
+            {
+                slot.emissionKeyword = HdrpEmissiveColorKeyword;
+                if (MaterialHasProp(mat, EmissionColorId, "_EmissionColor"))
+                {
+                    slot.hasSecondaryEmission = true;
+                    slot.secondaryEmissionPropId = EmissionColorId;
+                }
+                BakeHdrpIntensityIntoColor(mat, ref slot);
+                return;
+            }
+
+            if (TryBindEmissionColor(mat, EmissionColorId, "_EmissionColor", ref slot))
+            {
+                slot.emissionKeyword = hdrp ? HdrpEmissiveColorKeyword : UrpEmissionKeyword;
+                if (MaterialHasProp(mat, EmissiveColorId, "_EmissiveColor"))
+                {
+                    slot.hasSecondaryEmission = true;
+                    slot.secondaryEmissionPropId = EmissiveColorId;
+                }
+                return;
+            }
+
+            if (TryBindEmissionColor(mat, GltfEmissiveFactorId, "emissiveFactor", ref slot))
+            {
+                slot.emissionKeyword = GltfEmissiveKeyword;
+                return;
+            }
+
+            Shader shader = mat.shader;
+            if (shader == null)
+                return;
+
+            int count = shader.GetPropertyCount();
+            for (int i = 0; i < count; i++)
+            {
+                if (shader.GetPropertyType(i) != ShaderPropertyType.Color)
+                    continue;
+                string propName = shader.GetPropertyName(i);
+                if (string.IsNullOrEmpty(propName))
+                    continue;
+                string lower = propName.ToLowerInvariant();
+                if (lower.IndexOf("emiss", System.StringComparison.Ordinal) < 0
+                    && lower.IndexOf("glow", System.StringComparison.Ordinal) < 0)
+                    continue;
+                if (lower.IndexOf("_st") >= 0 || lower.IndexOf("map") >= 0)
+                    continue;
+
+                int id = Shader.PropertyToID(propName);
+                slot.hasEmission = true;
+                slot.emissionPropId = id;
+                slot.authoredEmission = mat.HasProperty(id) ? mat.GetColor(id) : fallbackSafeBlack;
+                slot.emissionKeyword = hdrp ? HdrpEmissiveColorKeyword : UrpEmissionKeyword;
+                return;
+            }
+        }
+
+        private static readonly Color fallbackSafeBlack = new Color(0f, 0f, 0f, 1f);
+
+        private static bool TryBindEmissionColor(Material mat, int propId, string name, ref SlotCache slot)
+        {
+            if (!MaterialHasProp(mat, propId, name))
+                return false;
+            slot.hasEmission = true;
+            slot.emissionPropId = propId;
+            slot.authoredEmission = mat.HasProperty(propId) ? mat.GetColor(propId) : fallbackSafeBlack;
+            return true;
+        }
+
+        private static void BakeHdrpIntensityIntoColor(Material mat, ref SlotCache slot)
+        {
+            if (!MaterialHasProp(mat, UseEmissiveIntensityId, "_UseEmissiveIntensity"))
+                return;
+            if (mat.GetFloat(UseEmissiveIntensityId) <= 0.5f)
+                return;
+            if (!MaterialHasProp(mat, EmissiveIntensityId, "_EmissiveIntensity"))
+                return;
+            slot.authoredEmission *= mat.GetFloat(EmissiveIntensityId);
+        }
+
+        private static void ForceBindHdrpEmission(Material mat, ref SlotCache slot)
+        {
+            slot.hasEmission = true;
+            slot.emissionPropId = EmissiveColorId;
+            slot.emissionKeyword = HdrpEmissiveColorKeyword;
+            slot.authoredEmission = fallbackSafeBlack;
+            if (MaterialHasProp(mat, EmissionColorId, "_EmissionColor"))
+            {
+                slot.hasSecondaryEmission = true;
+                slot.secondaryEmissionPropId = EmissionColorId;
+            }
+            else
+            {
+                slot.hasSecondaryEmission = true;
+                slot.secondaryEmissionPropId = EmissionColorId;
+            }
+        }
+
+        private static bool MaterialHasProp(Material mat, int propId, string name)
+        {
+            if (mat == null)
+                return false;
+            if (mat.HasProperty(propId))
+                return true;
+            if (!string.IsNullOrEmpty(name) && mat.HasProperty(name))
+                return true;
+            return mat.shader != null && !string.IsNullOrEmpty(name) && mat.shader.FindPropertyIndex(name) >= 0;
         }
 
         private static bool TryBindColor(
