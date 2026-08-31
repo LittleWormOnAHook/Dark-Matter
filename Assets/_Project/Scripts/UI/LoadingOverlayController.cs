@@ -103,6 +103,7 @@ namespace Project.UI
         private int satisfiedCheckpoints;
         private int shownPercent = -1;
         private bool cameraGateReleased;
+        private bool useToolkit;
         private static readonly int AspectId = Shader.PropertyToID("_Aspect");
         private static readonly int UnscaledTimeId = Shader.PropertyToID("_UnscaledTime");
         private static readonly int SpaceColorId = Shader.PropertyToID("_SpaceColor");
@@ -386,8 +387,18 @@ namespace Project.UI
             activeInstance = this;
             bootPending = true;
 
-            DestroyEarlyBlackout();
-            BuildOverlay();
+            useToolkit = DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.EnsureExists();
+            if (useToolkit)
+            {
+                BuildOverlay();
+                DestroyEarlyBlackout();
+            }
+            else
+            {
+                DestroyEarlyBlackout();
+                BuildOverlay();
+            }
+
             GateGameplayCameras(true);
             StartCoroutine(RunLoadingSequence());
         }
@@ -398,11 +409,20 @@ namespace Project.UI
         {
             // Re-gate cameras that spawn mid-load (Invector tpCamera, etc.) so they cannot flash.
             // Throttled — FindObjectsByType every frame during boot was hammering the editor.
-            if (!cameraGateReleased && blackVeilGroup != null && blackVeilGroup.alpha > 0.99f
+            bool veilOpaque = useToolkit
+                ? DMUiToolkitLoadingOverlay.IsVeilOpaque
+                : blackVeilGroup != null && blackVeilGroup.alpha > 0.99f;
+            if (!cameraGateReleased && veilOpaque
                 && Time.unscaledTime >= nextCameraGateCheckUnscaled)
             {
                 nextCameraGateCheckUnscaled = Time.unscaledTime + 0.25f;
                 GateGameplayCameras(true);
+            }
+
+            if (useToolkit)
+            {
+                DMUiToolkitLoadingOverlay.Tick(Time.unscaledDeltaTime);
+                return;
             }
 
             // Soft glow pulse only when the DMI lettermark is enabled.
@@ -485,6 +505,9 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            if (useToolkit)
+                DMUiToolkitLoadingOverlay.Hide();
+
             if (activeInstance == this)
                 activeInstance = null;
 
@@ -501,6 +524,12 @@ namespace Project.UI
 
         private void ForceOpaqueCover()
         {
+            if (useToolkit)
+            {
+                DMUiToolkitLoadingOverlay.ForceOpaque();
+                return;
+            }
+
             if (blackVeilGroup != null)
                 blackVeilGroup.alpha = 1f;
             if (contentGroup != null)
@@ -509,6 +538,14 @@ namespace Project.UI
 
         private void BuildOverlay()
         {
+            if (useToolkit)
+            {
+                string status = string.IsNullOrEmpty(pendingStatusText) ? "Loading Genesis..." : pendingStatusText;
+                pendingStatusText = null;
+                DMUiToolkitLoadingOverlay.Show(status);
+                return;
+            }
+
             Canvas canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = OverlaySortingOrder;
@@ -947,6 +984,19 @@ namespace Project.UI
         {
             progress = Mathf.Clamp01(progress);
 
+            if (useToolkit)
+            {
+                DMUiToolkitLoadingOverlay.SetProgress(progress);
+                int toolkitPercent = Mathf.RoundToInt(progress * 100f);
+                if (toolkitPercent != shownPercent)
+                {
+                    shownPercent = toolkitPercent;
+                    DMUiToolkitLoadingOverlay.SetPercent(toolkitPercent);
+                }
+
+                return;
+            }
+
             if (progressFillRect != null)
                 progressFillRect.anchorMax = new Vector2(progress, 1f);
 
@@ -966,20 +1016,40 @@ namespace Project.UI
             float durationSeconds,
             bool fadeAmbience)
         {
-            if (group == null)
+            if (!useToolkit && group == null)
                 yield break;
 
             GameAudioManager audio = fadeAmbience ? GameAudioManager.Instance : null;
             float duration = Mathf.Max(0.05f, durationSeconds);
             float startedAt = Time.realtimeSinceStartup;
-            group.alpha = from;
+            if (useToolkit)
+            {
+                if (fadeAmbience)
+                    DMUiToolkitLoadingOverlay.SetContentOpacity(from);
+                else
+                    DMUiToolkitLoadingOverlay.SetVeilOpacity(from);
+            }
+            else
+            {
+                group.alpha = from;
+            }
 
             while (true)
             {
                 float elapsed = Time.realtimeSinceStartup - startedAt;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float alpha = Mathf.Lerp(from, to, t);
-                group.alpha = alpha;
+                if (useToolkit)
+                {
+                    if (fadeAmbience)
+                        DMUiToolkitLoadingOverlay.SetContentOpacity(alpha);
+                    else
+                        DMUiToolkitLoadingOverlay.SetVeilOpacity(alpha);
+                }
+                else
+                {
+                    group.alpha = alpha;
+                }
 
                 if (audio != null)
                 {
@@ -993,7 +1063,17 @@ namespace Project.UI
                 yield return null;
             }
 
-            group.alpha = to;
+            if (useToolkit)
+            {
+                if (fadeAmbience)
+                    DMUiToolkitLoadingOverlay.SetContentOpacity(to);
+                else
+                    DMUiToolkitLoadingOverlay.SetVeilOpacity(to);
+            }
+            else
+            {
+                group.alpha = to;
+            }
         }
 
         private void HandOffDestination()

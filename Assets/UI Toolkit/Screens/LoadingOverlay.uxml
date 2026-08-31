@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="LoadingOverlay.uss" />
+    <ui:VisualElement name="loading-root" class="dmg-loading-root" picking-mode="Position">
+        <ui:VisualElement name="veil" class="dmg-veil" picking-mode="Ignore" />
+        <ui:VisualElement name="content" class="dmg-loading-content" picking-mode="Ignore">
+            <ui:VisualElement name="space" class="dmg-space" picking-mode="Ignore" />
+            <ui:VisualElement name="stars" class="dmg-stars" picking-mode="Ignore" />
+            <ui:VisualElement name="blackhole" class="dmg-blackhole" picking-mode="Ignore" />
+            <ui:Label name="title" class="dmg-title" text="DARK MATTER : GENESIS" picking-mode="Ignore" />
+            <ui:VisualElement name="progress-block" class="dmg-progress-block" picking-mode="Ignore">
+                <ui:Label name="status" class="dmg-status" text="Loading Genesis..." picking-mode="Ignore" />
+                <ui:Label name="percent" class="dmg-percent" text="0%" picking-mode="Ignore" />
+                <ui:VisualElement name="progress-track" class="dmg-progress-track" picking-mode="Ignore">
+                    <ui:VisualElement name="progress-fill" class="dmg-progress-fill" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

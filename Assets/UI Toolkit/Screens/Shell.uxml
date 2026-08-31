@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:VisualElement name="dmg-shell-root" class="dmg-shell-root" picking-mode="Ignore" />
+</ui:UXML>

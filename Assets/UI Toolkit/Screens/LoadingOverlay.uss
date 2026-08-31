@@ -1,0 +1,9 @@
+/* Loading overlay extras on top of DarkMatterGenesis.uss. Isolated screen. */
+
+.dmg-loading-root {
+    /* Sort is on PanelSettings (32000); this just owns the full overlay. */
+}
+
+.dmg-blackhole {
+    opacity: 0.8;
+}

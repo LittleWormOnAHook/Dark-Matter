@@ -1,0 +1,197 @@
+/* Dark Matter Genesis UI Toolkit theme.
+   Colors from Assets/_Project/Scripts/UI/DarkMatterGenesisUiPalette.cs
+   Fonts: Shift Rajdhani TTF (same source as TMP). */
+
+:root {
+    --dmg-deep-magenta: rgb(143, 30, 94);
+    --dmg-rich-fuchsia: rgb(192, 46, 122);
+    --dmg-charcoal: rgb(47, 47, 47);
+    --dmg-slate: rgb(74, 74, 90);
+    --dmg-dark-navy: rgb(28, 42, 56);
+    --dmg-warm-off-white: rgb(237, 233, 228);
+    --dmg-soft-beige-gray: rgb(140, 127, 117);
+    --dmg-gold: rgb(212, 160, 23);
+    --dmg-prompt: rgb(242, 208, 86);
+}
+
+.dmg-shell-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf");
+}
+
+.dmg-loading-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgb(0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf");
+}
+
+.dmg-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(0, 0, 0);
+}
+
+.dmg-loading-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-space {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(3, 3, 5);
+}
+
+.dmg-stars {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.dmg-star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background-color: rgb(237, 233, 228);
+    border-radius: 50%;
+}
+
+.dmg-star--accent {
+    background-color: rgb(192, 46, 122);
+}
+
+.dmg-blackhole {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150px;
+    height: 150px;
+    margin-left: -175px;
+    margin-top: -175px;
+    background-image: resource("UI/LoadingGenesis_Blackhole");
+    -unity-background-scale-mode: scale-to-fit;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1200px;
+    height: 90px;
+    margin-left: -600px;
+    margin-top: -145px;
+    -unity-text-align: middle-center;
+    color: rgb(237, 233, 228);
+    font-size: 52px;
+    letter-spacing: 14px;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf");
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-progress-block {
+    position: absolute;
+    left: 50%;
+    bottom: 120px;
+    width: 760px;
+    height: 74px;
+    margin-left: -380px;
+}
+
+.dmg-status {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 120px;
+    height: 34px;
+    -unity-text-align: middle-left;
+    color: rgb(237, 233, 228);
+    font-size: 24px;
+    letter-spacing: 6px;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-percent {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 120px;
+    height: 34px;
+    -unity-text-align: middle-right;
+    color: rgb(212, 160, 23);
+    font-size: 22px;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-progress-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10px;
+    background-color: rgba(74, 74, 90, 0.9);
+    overflow: hidden;
+}
+
+.dmg-progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    height: 10px;
+    background-color: rgb(192, 46, 122);
+}
+
+.dmg-muted {
+    color: rgb(140, 127, 117);
+}
+
+.dmg-prompt {
+    color: rgb(242, 208, 86);
+}
+
+.dmg-gold {
+    color: rgb(212, 160, 23);
+}
+
+.dmg-header {
+    color: rgb(237, 233, 228);
+}
