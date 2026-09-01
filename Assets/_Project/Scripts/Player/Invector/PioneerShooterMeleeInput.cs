@@ -60,6 +60,7 @@ namespace Project.Player.Invector
         private float _lockedAimZoom = -1f;
         private float _lastArmedCameraZoom = -1f;
         private Coroutine _startZoomRoutine;
+        private static bool _loggedScrollStamp;
 
         protected override void Start()
         {
@@ -143,6 +144,7 @@ namespace Project.Player.Invector
 
             base.Update();
             SyncPioneerCursorState();
+            PollFollowCameraZoom();
         }
 
         /// <summary>
@@ -445,15 +447,45 @@ namespace Project.Player.Invector
 
             EnsureRuntimeZoomState();
             tpCamera.RotateCamera(x, y);
+        }
 
-            if (!lockCameraInput && Mouse.current != null)
+        /// <summary>
+        /// Poll follow-distance zoom every render frame. Shooter CameraInput is physics-gated
+        /// (updateIK false + Fixed animator), so wheel deltas were dropped while walking.
+        /// lockCameraInput stays mouse-look only. Keep useZoom true even when CameraInput skips.
+        /// </summary>
+        private void PollFollowCameraZoom()
+        {
+            if (!_loggedScrollStamp)
             {
-                // Binocular FOV zoom is owned by OpticsController — don't also change follow distance.
-                bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
-                bool minimapOwnsScroll = MapUI.IsMinimapScrollZoomActive;
-                if (!opticsOwnsScroll && !minimapOwnsScroll)
-                    ApplyMouseWheelZoom();
+                _loggedScrollStamp = true;
+                Debug.Log("DMCam 0831-scroll");
             }
+
+            if (tpCamera == null)
+                return;
+
+            // Optics / minimap / UI-pause early-outs. Do not gate on lockCameraInput.
+            if (!Application.isPlaying || !GameSession.HasStarted || Time.timeScale <= 0f)
+                return;
+
+            if (_inputBridge != null && _inputBridge.ShouldLockCameraInput())
+                return;
+
+            if (_playerController != null && _playerController.IsBinocularCameraFrozen)
+                return;
+
+            EnsureRuntimeZoomState();
+
+            if (Mouse.current == null)
+                return;
+
+            bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
+            bool minimapOwnsScroll = MapUI.IsMinimapScrollZoomActive;
+            if (opticsOwnsScroll || minimapOwnsScroll)
+                return;
+
+            ApplyMouseWheelZoom();
         }
 
         private void ApplyMouseWheelZoom()

@@ -49,7 +49,11 @@ namespace Project.Features.Jetpack
             if (_hasJetpackActiveParam)
                 animator.SetBool(JetpackActive, true);
             if (animator.HasState(0, JetpackFlyState))
-                animator.CrossFadeInFixedTime(JetpackFlyState, 0.14f, 0, 0f);
+            {
+                AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(0);
+                if (st.shortNameHash != JetpackFlyState)
+                    animator.CrossFadeInFixedTime(JetpackFlyState, 0.24f, 0);
+            }
         }
 
 

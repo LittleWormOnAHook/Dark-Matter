@@ -185,6 +185,21 @@ namespace Project.UI
 
         private void Update()
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (panelRoot != null && panelRoot.gameObject.activeSelf)
+                    panelRoot.gameObject.SetActive(false);
+
+                bool mountedUitk = PlayerVehicleState.IsMounted;
+                if (mountedUitk != wasMountedLastFrame)
+                {
+                    wasMountedLastFrame = mountedUitk;
+                    HandleMountStateChanged(mountedUitk);
+                }
+
+                return;
+            }
+
             if (!uiBuilt)
                 return;
 

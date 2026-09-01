@@ -14,7 +14,7 @@ namespace Project.UI
     public class DMUiToolkitConfig : ScriptableObject
     {
         public const string ResourcePath = "DMUiToolkitConfig";
-        public const string LogStamp = "DMUiToolkit 0831-shell";
+        public const string LogStamp = "DMUiToolkit 0831-hide";
 
         [Tooltip("When false, Loading overlay and future Toolkit screens stay on uGUI.")]
         public bool enabled = true;

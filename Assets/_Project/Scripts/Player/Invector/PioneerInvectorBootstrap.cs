@@ -50,6 +50,7 @@ namespace Project.Player.Invector
         {
             Instance = this;
             PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
+            DMCameraCollisionOverlay.EnsureOnCamera(gameObject);
             PlayerReference.Register(transform, GetComponentInChildren<Camera>());
             ThirdPersonController = GetComponent<vThirdPersonController>();
             ShooterInput = GetComponent<PioneerShooterMeleeInput>();

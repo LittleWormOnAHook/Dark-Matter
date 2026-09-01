@@ -1,0 +1,46 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="DialogueQuest.uss"/>
+    <ui:VisualElement name="dialogue-root" picking-mode="Position" class="dmg-dq-root">
+        <ui:VisualElement name="dialogue-veil" picking-mode="Position" class="dmg-dq-veil"/>
+        <ui:VisualElement name="dialogue-panel" picking-mode="Position" class="dmg-dq-panel">
+            <ui:VisualElement name="dialogue-header" picking-mode="Ignore" class="dmg-dq-header">
+                <ui:Label name="dialogue-title" text="Quest Giver" picking-mode="Ignore" class="dmg-dq-title"/>
+                <ui:Button name="dialogue-close" text="X" picking-mode="Position" class="dmg-dq-close"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="dialogue-simple" picking-mode="Position" class="dmg-dq-simple">
+                <ui:Label name="dialogue-body" text="NPC conversation" picking-mode="Ignore" class="dmg-dq-body"/>
+                <ui:VisualElement name="dialogue-simple-actions" picking-mode="Position" class="dmg-dq-actions">
+                    <ui:Button name="dialogue-directions" text="Ask for Directions" picking-mode="Position" class="dmg-dq-btn"/>
+                    <ui:Button name="dialogue-continue" text="Continue" picking-mode="Position" class="dmg-dq-btn"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="dialogue-board" picking-mode="Position" class="dmg-dq-board">
+                <ui:VisualElement name="dialogue-split" picking-mode="Position" class="dmg-dq-split">
+                    <ui:VisualElement name="dialogue-list-col" picking-mode="Position" class="dmg-dq-list-col">
+                        <ui:Label text="Quests" picking-mode="Ignore" class="dmg-dq-col-header"/>
+                        <ui:ScrollView name="dialogue-quest-scroll" picking-mode="Position" class="dmg-dq-scroll">
+                            <ui:VisualElement name="dialogue-quest-list" picking-mode="Position" class="dmg-dq-list"/>
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="dialogue-info" picking-mode="Ignore" class="dmg-dq-info">
+                        <ui:Label name="dialogue-quest-title" text="Select a quest" picking-mode="Ignore" class="dmg-dq-quest-title"/>
+                        <ui:Label name="dialogue-quest-desc" text="" picking-mode="Ignore" class="dmg-dq-copy"/>
+                        <ui:Label name="dialogue-quest-obj" text="" picking-mode="Ignore" class="dmg-dq-copy"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="dialogue-progress" picking-mode="Ignore" class="dmg-dq-progress">
+                        <ui:Label name="dialogue-quest-status" text="" picking-mode="Ignore" class="dmg-dq-status"/>
+                        <ui:Label name="dialogue-quest-progress" text="" picking-mode="Ignore" class="dmg-dq-copy"/>
+                        <ui:Label name="dialogue-quest-xp" text="" picking-mode="Ignore" class="dmg-dq-xp"/>
+                        <ui:Label name="dialogue-quest-rewards" text="" picking-mode="Ignore" class="dmg-dq-copy"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="dialogue-board-actions" picking-mode="Position" class="dmg-dq-actions">
+                    <ui:Button name="dialogue-board-directions" text="Ask for Directions" picking-mode="Position" class="dmg-dq-btn"/>
+                    <ui:Button name="dialogue-quest-action" text="Accept" picking-mode="Position" class="dmg-dq-btn"/>
+                    <ui:Button name="dialogue-abandon" text="Abandon Quest" picking-mode="Position" class="dmg-dq-btn dmg-dq-btn-abandon"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

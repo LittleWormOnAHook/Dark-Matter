@@ -23,13 +23,13 @@ namespace Project.Player
         private const float DashBlendIn = 0.04f;
         private const float DashBlendOut = 0.10f;
 
-        private const float HangDangleMeters = 0.07f;
-        private const float HangKneeBendDegrees = 12f;
-        private const float HangHipDropMeters = 0.02f;
-        private const float HangToePitchDegrees = 12f;
-        private const float HangBlendIn = 0.10f;
+        private const float HangDangleMeters = 0.025f;
+        private const float HangKneeBendDegrees = 4f;
+        private const float HangHipDropMeters = 0.006f;
+        private const float HangToePitchDegrees = 4f;
+        private const float HangBlendIn = 0.20f;
         private const float HangBlendOut = 0.16f;
-        private const float HangCoastWeight = 0.4f;
+        private const float HangCoastWeight = 0.22f;
 
         private enum Mode
         {
@@ -106,7 +106,7 @@ namespace Project.Player
 
         private void Start()
         {
-            Debug.Log("DMHang 0830-pose2");
+            Debug.Log("DMHang 0831-boost");
         }
 
         private void CacheRefs()

@@ -1,0 +1,22 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="LevelUp.uss"/>
+    <ui:VisualElement name="levelup-root" picking-mode="Ignore" class="dmg-lu-root">
+        <ui:VisualElement name="level-up" picking-mode="Ignore" class="dmg-lu-card">
+            <ui:Label name="level-up-header" text="LEVEL UP" picking-mode="Ignore" class="dmg-lu-header"/>
+            <ui:Label name="level-up-headline" text="You Leveled Up!" picking-mode="Ignore" class="dmg-lu-headline"/>
+            <ui:Label name="level-up-level" text="Level 2" picking-mode="Ignore" class="dmg-lu-level"/>
+            <ui:Label name="level-up-subtitle" text="+1 skill point" picking-mode="Ignore" class="dmg-lu-sub"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="require-level" picking-mode="Ignore" class="dmg-lu-card dmg-lu-require">
+            <ui:Label name="require-level-headline" text="Require Level" picking-mode="Ignore" class="dmg-lu-header"/>
+            <ui:Label name="require-level-value" text="5" picking-mode="Ignore" class="dmg-lu-level"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="achievement" picking-mode="Ignore" class="dmg-lu-card dmg-lu-ach">
+            <ui:Label name="achievement-header" text="ACHIEVEMENT UNLOCKED" picking-mode="Ignore" class="dmg-lu-header"/>
+            <ui:Label name="achievement-title" text="Title" picking-mode="Ignore" class="dmg-lu-headline"/>
+            <ui:Label name="achievement-desc" text="Description" picking-mode="Ignore" class="dmg-lu-sub"/>
+            <ui:Label name="achievement-xp" text="+50 XP" picking-mode="Ignore" class="dmg-lu-level"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

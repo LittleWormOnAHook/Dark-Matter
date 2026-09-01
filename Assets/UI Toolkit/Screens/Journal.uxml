@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="Journal.uss" />
+    <ui:VisualElement name="menu-root" class="dmg-menu-root" picking-mode="Ignore">
+        <ui:VisualElement name="menu-veil" class="dmg-menu-veil" picking-mode="Position" />
+        <ui:VisualElement name="menu-shell" class="dmg-menu-shell" picking-mode="Position">
+            <ui:VisualElement name="tab-rail" class="dmg-tab-rail" picking-mode="Position">
+                <ui:Button name="tab-journal" text="Journal (J)" picking-mode="Position" class="dmg-tab dmg-tab--active" />
+                <ui:Button name="tab-inventory" text="Inventory (I)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-map" text="Map (M)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-pet" text="Pet (F)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-companions" text="Companions (P)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-character" text="Character (U)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-blueprints" text="Blueprints (B)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-skills" text="Skills (T)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-echoes" text="Echoes (L)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-achievements" text="Achievements (A)" picking-mode="Position" class="dmg-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement name="menu-body" class="dmg-menu-body" picking-mode="Position">
+                <ui:VisualElement name="journal-body" class="dmg-journal-body" picking-mode="Position">
+                    <ui:VisualElement name="subtab-rail" class="dmg-subtab-rail" picking-mode="Position">
+                        <ui:Button name="subtab-quests" text="Quests" picking-mode="Position" class="dmg-subtab dmg-subtab--active" />
+                        <ui:Button name="subtab-chronicle" text="Chronicle" picking-mode="Position" class="dmg-subtab" />
+                        <ui:Button name="subtab-system" text="System Logs" picking-mode="Position" class="dmg-subtab" />
+                        <ui:Button name="subtab-game" text="Game Logs" picking-mode="Position" class="dmg-subtab" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="journal-content" class="dmg-journal-content" picking-mode="Position">
+                        <ui:VisualElement name="quests-panel" class="dmg-quests-panel" picking-mode="Position">
+                            <ui:ScrollView name="quest-list" class="dmg-scroll dmg-quest-list" picking-mode="Position" />
+                            <ui:VisualElement name="quest-detail" class="dmg-quest-detail" picking-mode="Position">
+                                <ui:Label name="quest-detail-title" text="No active quests" picking-mode="Ignore" class="dmg-quest-title" />
+                                <ui:Label name="quest-detail-body" text="Accept and complete quests with companions." picking-mode="Ignore" class="dmg-quest-body" />
+                                <ui:ScrollView name="quest-objectives" class="dmg-scroll dmg-quest-objectives" picking-mode="Position" />
+                                <ui:Button name="quest-abandon" text="Abandon Quest" picking-mode="Position" class="dmg-abandon-btn" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:ScrollView name="chronicle-panel" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                        <ui:ScrollView name="system-panel" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                        <ui:ScrollView name="game-logs-panel" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="inventory-body" class="dmg-inventory-body" picking-mode="Position">
+                    <ui:Label name="inventory-title" text="INVENTORY" picking-mode="Ignore" class="dmg-section-title" />
+                    <ui:ScrollView name="inventory-scroll" class="dmg-scroll dmg-inventory-scroll" picking-mode="Position">
+                        <ui:VisualElement name="inventory-grid" class="dmg-inv-grid" picking-mode="Position" />
+                    </ui:ScrollView>
+                    <ui:VisualElement name="inventory-storage-row" class="dmg-storage-row" picking-mode="Position"><ui:Label name="inventory-storage-label" text="Storage 20/40 unlocked  ·  Install Increase Storage Module to unlock the next 10-slot row." picking-mode="Ignore" class="dmg-hint" /><ui:Button name="inventory-storage-install" text="Install Storage Module" picking-mode="Position" class="dmg-learn-btn" /></ui:VisualElement><ui:Label name="inventory-hint" text="Drag between inventory slots and the HUD hotbar. Right-click for the item menu. Install storage modules here or from the context menu." picking-mode="Ignore" class="dmg-hint" />
+                </ui:VisualElement>
+                <ui:VisualElement name="map-body" class="dmg-map-body" picking-mode="Position">
+                    <ui:VisualElement name="map-viewport" class="dmg-map-viewport" picking-mode="Position">
+                        <ui:VisualElement name="map-image" class="dmg-map-image" picking-mode="Position">
+                            <ui:VisualElement name="map-fog" class="dmg-map-fog" picking-mode="Ignore" /><ui:VisualElement name="map-markers" class="dmg-map-markers" picking-mode="Ignore" />
+                            <ui:VisualElement name="map-player" class="dmg-map-player" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="map-title" text="MAP  ·  drag to pan  ·  wheel to zoom" picking-mode="Ignore" class="dmg-map-title" />
+                </ui:VisualElement>
+                <ui:VisualElement name="pet-body" class="dmg-panel-body" picking-mode="Position">
+                    <ui:Label name="pet-title" text="PETS" picking-mode="Ignore" class="dmg-section-title" />
+                    <ui:Label name="pet-summary" text="No pets befriended yet. Press E to Adopt near a wild pet." picking-mode="Ignore" class="dmg-hint" /><ui:VisualElement name="pet-toolbar-row" class="dmg-pet-toolbar-row" picking-mode="Position"><ui:VisualElement name="pet-toolbar-slot" class="dmg-pet-slot dmg-pet-toolbar-slot" picking-mode="Position"><ui:VisualElement name="pet-toolbar-icon" class="dmg-inv-icon" picking-mode="Ignore" /><ui:Label name="pet-toolbar-name" text="Empty" picking-mode="Ignore" class="dmg-pet-name" /></ui:VisualElement><ui:Label name="pet-toolbar-hint" text="Active slot — drag a pet here to assign, drag away to clear." picking-mode="Ignore" class="dmg-hint" /></ui:VisualElement>
+                    <ui:ScrollView name="pet-scroll" class="dmg-scroll dmg-inventory-scroll" picking-mode="Position">
+                        <ui:VisualElement name="pet-grid" class="dmg-inv-grid" picking-mode="Position" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+                <ui:VisualElement name="companions-body" class="dmg-split-body" picking-mode="Position">
+                    <ui:VisualElement name="companions-left" class="dmg-split-left" picking-mode="Position">
+                        <ui:Label name="companions-title" text="COMPANIONS" picking-mode="Ignore" class="dmg-section-title" />
+                        <ui:Label name="companions-summary" text="No skilled pioneers recruited yet." picking-mode="Ignore" class="dmg-hint" />
+                        <ui:ScrollView name="companions-list" class="dmg-scroll dmg-quest-list" picking-mode="Position" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="companions-right" class="dmg-split-right" picking-mode="Position">
+                        <ui:VisualElement name="companions-portrait" class="dmg-companion-portrait" picking-mode="Ignore"><ui:Label name="companions-portrait-initials" text="" picking-mode="Ignore" class="dmg-companion-initials" /></ui:VisualElement><ui:Label name="companions-detail" text="Select a skilled companion from the roster." picking-mode="Ignore" class="dmg-quest-body" /><ui:Label name="loadout-heading" text="Loadout" picking-mode="Ignore" class="dmg-gold-heading" /><ui:VisualElement name="loadout-row" class="dmg-loadout-row" picking-mode="Position"><ui:Button name="loadout-weapon" text="Weapon" picking-mode="Position" class="dmg-loadout-btn" /><ui:Button name="loadout-tool" text="Tool" picking-mode="Position" class="dmg-loadout-btn" /><ui:Button name="loadout-skill" text="Skill" picking-mode="Position" class="dmg-loadout-btn" /></ui:VisualElement><ui:Label name="loadout-status" text="Select a companion to edit loadout." picking-mode="Ignore" class="dmg-hint" />
+                        <ui:Label name="trio-heading" text="Expedition Trio" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:VisualElement name="trio-row" class="dmg-trio-row" picking-mode="Position">
+                            <ui:Button name="trio-slot-0" text="Slot 1" picking-mode="Position" class="dmg-trio-slot" />
+                            <ui:Button name="trio-slot-1" text="Slot 2" picking-mode="Position" class="dmg-trio-slot" />
+                            <ui:Button name="trio-slot-2" text="Slot 3" picking-mode="Position" class="dmg-trio-slot" />
+                        </ui:VisualElement>
+                        <ui:Label name="trio-hint" text="Drag a companion onto a trio slot, or select then click. Click an occupied slot to clear it." picking-mode="Ignore" class="dmg-hint" /><ui:Label name="camp-heading" text="At Camp" picking-mode="Ignore" class="dmg-gold-heading" /><ui:ScrollView name="camp-list" class="dmg-scroll dmg-camp-list" picking-mode="Position" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="character-body" class="dmg-split-body" picking-mode="Position">
+                    <ui:VisualElement name="character-left" class="dmg-split-left" picking-mode="Position">
+                        <ui:Label name="character-title" text="CHARACTER" picking-mode="Ignore" class="dmg-section-title" />
+                        <ui:Label name="character-level" text="Level 1" picking-mode="Ignore" class="dmg-quest-title" />
+                        <ui:VisualElement name="character-xp-track" class="dmg-xp-track" picking-mode="Ignore">
+                            <ui:VisualElement name="character-xp-fill" class="dmg-xp-fill" picking-mode="Ignore" />
+                            <ui:Label name="character-xp-count" text="0 / 100 XP" picking-mode="Ignore" class="dmg-xp-count" />
+                        </ui:VisualElement>
+                        <ui:Label name="character-vitals-heading" text="Vitals" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:VisualElement name="character-vitals" class="dmg-vitals" picking-mode="Ignore" />
+                        <ui:Label name="character-loadout" text="Loadout unavailable." picking-mode="Ignore" class="dmg-quest-body" />
+                        <ui:Label name="character-credits" text="Aether Credits: 0" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:Label name="character-unlocks" text="" picking-mode="Ignore" class="dmg-hint" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="character-right" class="dmg-split-right" picking-mode="Position">
+                        <ui:Label name="character-env-heading" text="Survivor" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:Label name="character-env-body" text="Temperature and hazard gauges stay on the HUD. This column tracks level, vitals, loadout, and unlocks." picking-mode="Ignore" class="dmg-quest-body" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="blueprints-body" class="dmg-split-body" picking-mode="Position">
+                    <ui:VisualElement name="blueprints-left" class="dmg-split-left" picking-mode="Position">
+                        <ui:Label name="blueprints-title" text="BLUEPRINTS" picking-mode="Ignore" class="dmg-section-title" />
+                        <ui:Label name="blueprints-summary" text="No learned blueprints yet." picking-mode="Ignore" class="dmg-hint" />
+                        <ui:Label name="pending-heading" text="Pending Blueprints" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:ScrollView name="blueprints-pending" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                        <ui:Label name="learned-heading" text="Learned Blueprints" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:ScrollView name="blueprints-learned" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="blueprints-right" class="dmg-split-right" picking-mode="Position">
+                        <ui:Label name="blueprints-detail" text="Select a pending scroll to learn, or a learned blueprint to inspect. Craft at a cooking pot or workbench." picking-mode="Ignore" class="dmg-quest-body" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="skills-body" class="dmg-split-body" picking-mode="Position">
+                    <ui:VisualElement name="skills-left" class="dmg-split-left" picking-mode="Position">
+                        <ui:Label name="skills-title" text="SKILL TREES" picking-mode="Ignore" class="dmg-section-title" />
+                        <ui:Label name="skills-summary" text="Level 1  ·  Skill Points 0" picking-mode="Ignore" class="dmg-hint" />
+                        <ui:VisualElement name="skills-cats" class="dmg-subtab-rail" picking-mode="Position">
+                            <ui:Button name="skill-cat-player" text="Player" picking-mode="Position" class="dmg-subtab dmg-subtab--active" />
+                            <ui:Button name="skill-cat-melee" text="Melee" picking-mode="Position" class="dmg-subtab" />
+                            <ui:Button name="skill-cat-pistols" text="Pistols" picking-mode="Position" class="dmg-subtab" />
+                            <ui:Button name="skill-cat-rifles" text="Rifles" picking-mode="Position" class="dmg-subtab" />
+                            <ui:Button name="skill-cat-survival" text="Survival" picking-mode="Position" class="dmg-subtab" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="skills-hex-scroll" class="dmg-scroll dmg-hex-scroll" picking-mode="Position"><ui:VisualElement name="skills-hex-host" class="dmg-hex-host" picking-mode="Position" /></ui:ScrollView><ui:ScrollView name="skills-list" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="skills-right" class="dmg-split-right" picking-mode="Position">
+                        <ui:Label name="skills-detail-title" text="Select a skill" picking-mode="Ignore" class="dmg-quest-title" />
+                        <ui:Label name="skills-detail-body" text="Category hex trees from the Player skill allocator." picking-mode="Ignore" class="dmg-quest-body" />
+                        <ui:Button name="skills-allocate" text="Allocate Point" picking-mode="Position" class="dmg-abandon-btn" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="echoes-body" class="dmg-panel-body" picking-mode="Position">
+                    <ui:Label name="echoes-title" text="ECHOES" picking-mode="Ignore" class="dmg-section-title" />
+                    <ui:Label name="echoes-chronicle-heading" text="Rescue Chronicle" picking-mode="Ignore" class="dmg-gold-heading" />
+                    <ui:ScrollView name="echoes-chronicle" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    <ui:Label name="echoes-buffs-heading" text="Companion Buffs" picking-mode="Ignore" class="dmg-gold-heading" />
+                    <ui:ScrollView name="echoes-buffs" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    <ui:Label name="echoes-signals-heading" text="Active Echo Signals" picking-mode="Ignore" class="dmg-gold-heading" />
+                    <ui:ScrollView name="echoes-signals" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                    <ui:Label name="echoes-disp-heading" text="Echo Dispositions" picking-mode="Ignore" class="dmg-gold-heading" />
+                    <ui:ScrollView name="echoes-dispositions" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                </ui:VisualElement>
+                <ui:VisualElement name="achievements-body" class="dmg-panel-body" picking-mode="Position">
+                    <ui:VisualElement name="achievements-cats" class="dmg-subtab-rail" picking-mode="Position" />
+                    <ui:Label name="achievements-summary" text="All  ·  0/0 unlocked" picking-mode="Ignore" class="dmg-hint" />
+                    <ui:ScrollView name="achievements-scroll" mode="Horizontal" class="dmg-scroll dmg-ach-scroll" picking-mode="Position">
+                        <ui:VisualElement name="achievements-grid" class="dmg-ach-grid" picking-mode="Position" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

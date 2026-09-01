@@ -38,12 +38,16 @@ namespace Project.UI
 
         public static void Show(Transform target, float progress01, string message)
         {
+            if (DMUiToolkitWorldMenus.TryShowTaming(target, progress01, message))
+                return;
+
             PetTamingProgressUI ui = EnsureExists();
             ui?.Present(target, progress01, message);
         }
 
         public static void Hide()
         {
+            DMUiToolkitWorldMenus.HideTaming();
             if (instance != null)
                 instance.gameObject.SetActive(false);
         }

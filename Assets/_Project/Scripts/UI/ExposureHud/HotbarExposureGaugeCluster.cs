@@ -99,7 +99,7 @@ namespace Project.UI
                 service.OnSnapshotChanged += HandleSnapshotChanged;
 
             uiBuilt = true;
-            SetGameplayVisible(!MainMenuController.BlocksGameplayHud);
+            SetGameplayVisible(!MainMenuController.BlocksGameplayHud && !DMUiToolkitHud.IsDriving);
             Refresh(ExposureStatusService.Current);
         }
 

@@ -1,2 +1,27 @@
 fileFormatVersion: 2
 guid: d2363b29a00dc904aa0b2a603f8532d2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - profile: {fileID: 11400000, guid: 4ca7f126a161ab746bf9827c4fd45a37, type: 2}
+  - physicsDriver: {instanceID: 0}
+  - occupancy: {instanceID: 0}
+  - cameraRig: {instanceID: 0}
+  - turret: {instanceID: 0}
+  - engineAudio: {instanceID: 0}
+  - vehicleAudio: {instanceID: 0}
+  - thrusterVfx: {instanceID: 0}
+  - usable: {instanceID: 0}
+  - fuelSystem: {instanceID: 0}
+  - engineRunningClip: {instanceID: 0}
+  - turretFireClip: {instanceID: 0}
+  - turretFireClip2: {instanceID: 0}
+  - boardClip: {instanceID: 0}
+  - exitClip: {instanceID: 0}
+  - boostClip: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

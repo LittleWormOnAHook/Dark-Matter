@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7c4e2b19f8d4e6a8c3b5d7e1f0a2c4b, type: 3}
   m_Name: DMClimbProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Climb.DMClimbProfile
-  walkMaxSlopeDeg: 75
-  climbMinSlopeDeg: 75
+  walkMaxSlopeDeg: 45
+  climbMinSlopeDeg: 45.8
   climbMaxSlopeDeg: 115
   attachRange: 2
   climbJumpRange: 5
@@ -23,13 +23,15 @@ MonoBehaviour:
   startClimbNeedsAirborne: 1
   startClimbNeedsForward: 1
   handPalmOffset: 0.11
-  handSpread: 0.18
+  handSpread: 0.29
   autoGrabInAir: 0
-  moveSpeed: 1.86
-  climbInputDamp: 0.1
+  moveSpeed: 0.83
+  climbShiftMul: 2.06
+  climbInputDamp: 0.22
   jumpReleases: 1
   releasePush: 1.6
-  climbLeapSpeed: 7.2
+  climbLeapSpeed: 3.02
+  clingHop: 3.1
   climbLeapRegrab: 0.55
   dropPush: 2.4
   detachBuffer: 1.15
@@ -39,15 +41,15 @@ MonoBehaviour:
   dropToHangRange: 1.8
   enableMantle: 1
   mantleRequiresOpenLip: 1
-  handHeight: 1.18
-  mantleForward: 0.3
+  handHeight: 1.24
+  mantleForward: 0.036
   mantleProbeUp: 1.5
   mantleProbeDown: 1.7
   mantlePlantHeight: -0.09
   mantleStandPad: 0.04
   mantleSeconds: 1.4
   mantleIgnoreLands: 2.6
-  heroDropMeters: 2.6
+  heroDropMeters: 4.04
   lethalDropMeters: 20
   jetpackLethalDelay: 3
   climbableLayerName: Climbable

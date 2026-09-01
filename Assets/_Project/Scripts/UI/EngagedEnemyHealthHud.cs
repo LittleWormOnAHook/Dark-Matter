@@ -301,8 +301,31 @@ namespace Project.UI
             boundHealth = null;
         }
 
+        public bool TryGetFocus(out string displayName, out float normalized)
+        {
+            displayName = string.Empty;
+            normalized = 0f;
+            if (boundHealth == null || boundHealth.IsDead)
+                return false;
+
+            displayName = nameLabel != null && !string.IsNullOrWhiteSpace(nameLabel.text)
+                ? nameLabel.text.Trim()
+                : "Enemy";
+            float max = boundHealth.MaxHealth;
+            normalized = max > 0f ? Mathf.Clamp01(boundHealth.CurrentHealth / max) : 0f;
+            return true;
+        }
+
+        public void ApplyToolkitVisibility()
+        {
+            SetVisible(boundHealth != null && !boundHealth.IsDead);
+        }
+
         private void SetVisible(bool visible)
         {
+            if (DMUiToolkitHud.IsDriving)
+                visible = false;
+
             // Never deactivate this host — SetActive(false) previously hid the HUD permanently
             // when Awake/EnsureBuilt raced, and left Instance pointing at a dead tree.
             if (!gameObject.activeSelf)

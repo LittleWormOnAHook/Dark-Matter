@@ -62,6 +62,8 @@ namespace Project.UI
         public void SetGameplayVisible(bool visible)
         {
             gameplayVisible = visible;
+            if (DMUiToolkitHud.IsDriving)
+                DMUiToolkitActiveQuest.SetGameplayVisible(visible);
             if (!gameObject.activeSelf)
                 gameObject.SetActive(true);
             ApplyPresentationVisible();
@@ -258,6 +260,9 @@ namespace Project.UI
                 && !ShouldHideForBlockingUi()
                 && !EnvironmentalCrisisHudMode.IsCrisisActive;
 
+            if (DMUiToolkitHud.IsDriving)
+                visible = false;
+
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
@@ -333,6 +338,13 @@ namespace Project.UI
 
         public void Refresh()
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                DMUiToolkitActiveQuest.Refresh();
+                ApplyPresentationVisible();
+                return;
+            }
+
             ApplyLockedLayout();
 
             if (listRoot == null)

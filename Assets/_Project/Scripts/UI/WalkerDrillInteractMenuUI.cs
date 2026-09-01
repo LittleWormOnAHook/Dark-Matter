@@ -29,7 +29,8 @@ namespace Project.UI
 
         private DMWalkerDrillUsable activeUsable;
 
-        public static bool IsOpen => instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf;
+        public static bool IsOpen => DMUiToolkitWorldMenus.IsDrillOpen
+            || (instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf);
 
         public static bool IsShowing(DMWalkerDrillUsable usable)
         {
@@ -55,6 +56,7 @@ namespace Project.UI
 
         public static void CloseAny()
         {
+            DMUiToolkitWorldMenus.HideDrill();
             instance?.Hide();
         }
 
@@ -144,6 +146,13 @@ namespace Project.UI
         {
             if (usable == null)
                 return;
+
+            if (DMUiToolkitWorldMenus.TryShowDrill(usable))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
 
             activeUsable = usable;
             menuRoot.SetActive(true);
@@ -241,6 +250,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitWorldMenus.HideDrill();
             activeUsable = null;
 
             if (menuRoot != null)

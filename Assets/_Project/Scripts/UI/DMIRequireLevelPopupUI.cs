@@ -38,6 +38,9 @@ namespace Project.UI
             if (requiredLevel < 2)
                 return;
 
+            if (DMUiToolkitLevelUp.TryShowRequireLevel(requiredLevel))
+                return;
+
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;

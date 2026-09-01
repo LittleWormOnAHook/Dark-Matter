@@ -1,0 +1,23 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="OpticsOverlay.uss"/>
+    <ui:VisualElement name="optics-root" picking-mode="Ignore" class="dmg-optics-root">
+        <ui:VisualElement name="optics-viewport" picking-mode="Ignore" class="dmg-optics-viewport" style="background-image: none;"/>
+        <ui:VisualElement name="optics-dim" picking-mode="Ignore" class="dmg-optics-dim" style="background-image: none;"/>
+        <ui:VisualElement name="optics-binocular" picking-mode="Ignore" class="dmg-optics-binocular">
+            <ui:VisualElement name="optics-scope-outer" picking-mode="Ignore" class="dmg-optics-scope-outer" style="background-image: none;"/>
+            <ui:VisualElement name="optics-scope-inner" picking-mode="Ignore" class="dmg-optics-scope-inner" style="background-image: none;"/>
+            <ui:VisualElement name="optics-crosshair-h" picking-mode="Ignore" class="dmg-optics-crosshair-h"/>
+            <ui:VisualElement name="optics-crosshair-v" picking-mode="Ignore" class="dmg-optics-crosshair-v"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="optics-scanner" picking-mode="Ignore" class="dmg-optics-scanner">
+            <ui:VisualElement name="optics-scanner-frame" picking-mode="Ignore" class="dmg-optics-scanner-frame" style="background-image: none;"/>
+            <ui:VisualElement name="optics-scanner-reticle" picking-mode="Ignore" class="dmg-optics-scanner-reticle" style="background-image: none;"/>
+            <ui:VisualElement name="optics-markers" picking-mode="Ignore" class="dmg-optics-markers"/>
+        </ui:VisualElement>
+        <ui:Label name="optics-mode" text="BINOCULARS" picking-mode="Ignore" class="dmg-optics-mode"/>
+        <ui:Label name="optics-hint" text="[RMB] Close  |  [Scroll] Zoom" picking-mode="Ignore" class="dmg-optics-hint"/>
+        <ui:Label name="optics-range" text="" picking-mode="Ignore" class="dmg-optics-range"/>
+        <ui:Label name="optics-scanning" text="SCANNING" picking-mode="Ignore" class="dmg-optics-scanning"/>
+    </ui:VisualElement>
+</ui:UXML>

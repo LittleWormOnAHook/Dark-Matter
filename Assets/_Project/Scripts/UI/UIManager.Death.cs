@@ -43,6 +43,8 @@ namespace Project.UI
 
         public void HideDeathPopup()
         {
+            DMUiToolkitDeath.Hide();
+
             Transform deathPanel = transform.Find("DeathPopupPanel");
             if (deathPanel != null)
                 deathPanel.gameObject.SetActive(false);
@@ -57,6 +59,9 @@ namespace Project.UI
 
         public void ShowDeathPopup()
         {
+            if (DMUiToolkitDeath.TryShow())
+                return;
+
             Transform existing = transform.Find("DeathPopupPanel");
             if (existing != null)
             {

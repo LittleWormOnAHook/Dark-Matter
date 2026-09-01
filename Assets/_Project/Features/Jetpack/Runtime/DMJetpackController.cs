@@ -251,6 +251,10 @@ namespace Project.Features.Jetpack
         {
             // Boost only after an explicit airborne jump press (2nd Space), then hold.
             // Holding Space from the ground jump must not auto-ignite on takeoff.
+            // After a coast this same air, holding Space again re-ignites (boost back down).
+            if (!_boostArmed && _boostHeld && _usedJetpackThisAir && _fuelRemaining > 0.01f)
+                BeginBoost();
+
             bool wantsBoost = _boostArmed && _boostHeld && _fuelRemaining > 0f;
 
             if (_wasBoosting && !wantsBoost)

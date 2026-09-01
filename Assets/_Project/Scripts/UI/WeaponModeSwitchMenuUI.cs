@@ -36,7 +36,8 @@ namespace Project.UI
         private int openedOnFrame = -1;
 
         public static bool IsOpen =>
-            instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf;
+            DMUiToolkitWorldMenus.IsWeaponOpen
+            || (instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf);
 
         public static WeaponModeSwitchMenuUI EnsureExists(Transform canvasRootTransform)
         {
@@ -73,6 +74,7 @@ namespace Project.UI
 
         public static void HideAny()
         {
+            DMUiToolkitWorldMenus.HideWeapon();
             instance?.Hide();
         }
 
@@ -171,6 +173,13 @@ namespace Project.UI
             if (modeController == null)
                 return;
 
+            if (DMUiToolkitWorldMenus.TryShowWeapon(modeController))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
+
             if (menuRoot == null)
                 Build();
 
@@ -197,6 +206,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitWorldMenus.HideWeapon();
             if (menuRoot != null)
                 menuRoot.SetActive(false);
 

@@ -18,6 +18,7 @@ namespace Project.UI
 
         public static void HideAny()
         {
+            DMUiToolkitPetChrome.HideTooltip();
             instance?.Hide();
         }
 
@@ -94,6 +95,12 @@ namespace Project.UI
 
         public void Show(PetController pet, Vector2 screenPosition)
         {
+            if (DMUiToolkitPetChrome.TryShowTooltip(pet, screenPosition))
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
             if (pet == null || titleText == null || bodyText == null)
                 return;
 
@@ -111,6 +118,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitPetChrome.HideTooltip();
             gameObject.SetActive(false);
         }
 

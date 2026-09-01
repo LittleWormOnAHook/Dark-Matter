@@ -1,0 +1,349 @@
+using Project.AI;
+using Project.Combat;
+using Project.Core;
+using Project.Data;
+using Project.Inventory;
+using Project.Player;
+using Project.Progression;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace Project.UI
+{
+    /// <summary>
+    /// UITK cutover for remaining live uGUI HUD pieces: bottom XP bar, ammo above stats,
+    /// and top focused enemy health. Bind/update lives here so popup/rolodex/hotbar
+    /// work in DMUiToolkitHud.cs is not rewritten.
+    /// </summary>
+    public partial class DMUiToolkitHud
+    {
+        private const string XpAmmoLogStamp = "DMUiToolkit 0901-xpammo";
+
+        private static bool xpAmmoStamped;
+
+        private VisualElement xpRoot;
+        private VisualElement xpTrack;
+        private VisualElement xpFill;
+        private Label xpLabel;
+        private Label ammoLabel;
+        private VisualElement enemyFocusRoot;
+        private Label enemyNameLabel;
+        private VisualElement enemyTrack;
+        private VisualElement enemyFill;
+        private bool xpAmmoHostsReady;
+        private bool xpAmmoUguiHidden;
+        private PlayerProgressionManager xpProgression;
+        private WeaponAmmoState xpAmmoState;
+
+        private void Update()
+        {
+            EnsureXpAmmoEnemyBound();
+            if (!gameplayVisible)
+            {
+                RestoreXpAmmoEnemyUgui();
+                return;
+            }
+
+            PullXpBar();
+            PullAmmoReadout();
+            PullEnemyFocus();
+            HideXpAmmoEnemyUgui();
+        }
+
+        private void EnsureXpAmmoEnemyBound()
+        {
+            if (document == null)
+                document = GetComponent<UIDocument>();
+            if (document == null)
+                return;
+
+            VisualElement root = document.rootVisualElement;
+            if (root == null)
+                return;
+
+            VisualElement hostParent = hudRoot != null ? hudRoot : root.Q<VisualElement>("hud-root") ?? root;
+
+            xpRoot = root.Q<VisualElement>("xp");
+            if (xpRoot == null)
+            {
+                CreateXpHost(hostParent);
+                xpRoot = hostParent.Q<VisualElement>("xp") ?? root.Q<VisualElement>("xp");
+            }
+
+            xpTrack = root.Q<VisualElement>("xp-track");
+            xpFill = root.Q<VisualElement>("xp-fill");
+            xpLabel = root.Q<Label>("xp-label");
+            if (xpRoot != null)
+            {
+                if (xpTrack == null)
+                    xpTrack = xpRoot.Q<VisualElement>("xp-track");
+                if (xpFill == null)
+                    xpFill = xpRoot.Q<VisualElement>("xp-fill");
+                if (xpLabel == null)
+                    xpLabel = xpRoot.Q<Label>("xp-label");
+            }
+
+            ammoLabel = root.Q<Label>("ammo");
+            if (ammoLabel == null)
+            {
+                CreateAmmoHost(hostParent);
+                ammoLabel = hostParent.Q<Label>("ammo") ?? root.Q<Label>("ammo");
+            }
+
+            enemyFocusRoot = root.Q<VisualElement>("enemy-focus");
+            if (enemyFocusRoot == null)
+            {
+                CreateEnemyFocusHost(hostParent);
+                enemyFocusRoot = hostParent.Q<VisualElement>("enemy-focus") ?? root.Q<VisualElement>("enemy-focus");
+            }
+
+            enemyNameLabel = root.Q<Label>("enemy-name");
+            enemyTrack = root.Q<VisualElement>("enemy-track");
+            enemyFill = root.Q<VisualElement>("enemy-fill");
+            if (enemyFocusRoot != null)
+            {
+                if (enemyNameLabel == null)
+                    enemyNameLabel = enemyFocusRoot.Q<Label>("enemy-name");
+                if (enemyTrack == null)
+                    enemyTrack = enemyFocusRoot.Q<VisualElement>("enemy-track");
+                if (enemyFill == null)
+                    enemyFill = enemyFocusRoot.Q<VisualElement>("enemy-fill");
+            }
+
+            xpAmmoHostsReady = xpRoot != null || ammoLabel != null || enemyFocusRoot != null;
+            if (xpAmmoHostsReady && !xpAmmoStamped)
+            {
+                xpAmmoStamped = true;
+                Debug.Log(XpAmmoLogStamp);
+            }
+        }
+
+        private static void CreateXpHost(VisualElement parent)
+        {
+            if (parent == null)
+                return;
+
+            VisualElement xp = new VisualElement { name = "xp" };
+            xp.AddToClassList("dmg-hud-xp");
+            xp.pickingMode = PickingMode.Ignore;
+
+            VisualElement track = new VisualElement { name = "xp-track" };
+            track.AddToClassList("dmg-hud-xp-track");
+            track.pickingMode = PickingMode.Ignore;
+
+            VisualElement fill = new VisualElement { name = "xp-fill" };
+            fill.AddToClassList("dmg-hud-xp-fill");
+            fill.pickingMode = PickingMode.Ignore;
+            fill.style.width = Length.Percent(62f);
+            track.Add(fill);
+
+            Label label = new Label("Lv 5    120 / 400 XP") { name = "xp-label" };
+            label.AddToClassList("dmg-hud-xp-label");
+            label.pickingMode = PickingMode.Ignore;
+
+            xp.Add(track);
+            xp.Add(label);
+            parent.Add(xp);
+        }
+
+        private static void CreateAmmoHost(VisualElement parent)
+        {
+            if (parent == null)
+                return;
+
+            Label ammo = new Label("STANDARD 12/30  (+48)") { name = "ammo" };
+            ammo.AddToClassList("dmg-hud-ammo");
+            ammo.pickingMode = PickingMode.Ignore;
+            parent.Add(ammo);
+        }
+
+        private static void CreateEnemyFocusHost(VisualElement parent)
+        {
+            if (parent == null)
+                return;
+
+            VisualElement focus = new VisualElement { name = "enemy-focus" };
+            focus.AddToClassList("dmg-hud-enemy-focus");
+            focus.pickingMode = PickingMode.Ignore;
+
+            Label name = new Label("Enemy Name") { name = "enemy-name" };
+            name.AddToClassList("dmg-hud-enemy-name");
+            name.pickingMode = PickingMode.Ignore;
+
+            VisualElement track = new VisualElement { name = "enemy-track" };
+            track.AddToClassList("dmg-hud-enemy-track");
+            track.pickingMode = PickingMode.Ignore;
+
+            VisualElement fill = new VisualElement { name = "enemy-fill" };
+            fill.AddToClassList("dmg-hud-enemy-fill");
+            fill.pickingMode = PickingMode.Ignore;
+            fill.style.width = Length.Percent(70f);
+            track.Add(fill);
+
+            focus.Add(name);
+            focus.Add(track);
+            parent.Add(focus);
+        }
+
+        private void PullXpBar()
+        {
+            if (xpFill == null && xpLabel == null)
+                return;
+
+            if (xpProgression == null)
+                xpProgression = PlayerProgressionManager.EnsureExists();
+
+            int level = xpProgression != null ? xpProgression.Level : 1;
+            int xpIntoLevel = xpProgression != null ? xpProgression.GetXpProgressInCurrentLevel() : 0;
+            int xpToNext = xpProgression != null ? xpProgression.GetXpRequiredForNextLevel() : 0;
+            float fill = xpProgression != null ? xpProgression.GetXpProgressNormalized() : 0f;
+
+            string text = xpToNext > 0
+                ? $"Lv {level}    {xpIntoLevel} / {xpToNext} XP"
+                : $"Lv {level}    MAX";
+
+            SetFill(xpFill, xpLabel, fill, text);
+            if (xpRoot != null)
+                xpRoot.style.display = DisplayStyle.Flex;
+        }
+
+        private void PullAmmoReadout()
+        {
+            if (ammoLabel == null)
+                return;
+
+            if (equipmentController == null)
+                BindInventoryEvents();
+
+            EquipmentController equipment = equipmentController;
+            if (equipment == null)
+                equipment = FindAnyObjectByType<EquipmentController>();
+
+            if (xpAmmoState == null && equipment != null)
+                xpAmmoState = equipment.GetComponent<WeaponAmmoState>();
+            if (xpAmmoState == null)
+                xpAmmoState = FindAnyObjectByType<WeaponAmmoState>();
+
+            ItemData weapon = null;
+            bool show = false;
+            if (equipment != null)
+            {
+                PlayerController player = equipment.GetComponent<PlayerController>();
+                if (player == null || !player.BlocksCombatInput)
+                {
+                    show = equipment.HasActiveRangedWeapon();
+                    if (show)
+                    {
+                        weapon = equipment.DrawnWeaponItem;
+                        show = weapon != null && weapon.IsRangedWeapon;
+                    }
+                }
+            }
+
+            if (!show)
+            {
+                ammoLabel.style.display = DisplayStyle.None;
+                return;
+            }
+
+            ammoLabel.style.display = DisplayStyle.Flex;
+
+            if (weapon.isMiningTool)
+            {
+                int percent = xpAmmoState != null
+                    ? xpAmmoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
+                    : 0;
+                ammoLabel.text = $"CHARGE {percent}%";
+                return;
+            }
+
+            int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
+            int loaded = xpAmmoState != null ? xpAmmoState.GetActiveLoadedAmmo() : 0;
+            int magazineSize = WeaponAmmoState.GetMagazineCapacity(weapon);
+            bool infiniteReserve = xpAmmoState != null && xpAmmoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
+            int reserve = !infiniteReserve && xpAmmoState != null
+                ? xpAmmoState.GetReserveAmmoCount(weaponHotbarSlot)
+                : 0;
+
+            if (!infiniteReserve && loaded <= 0 && reserve <= 0)
+            {
+                ammoLabel.text = "Empty 0/0";
+                return;
+            }
+
+            string ammoName = ResolveToolkitAmmoLabelName(weaponHotbarSlot);
+            if (infiniteReserve)
+                ammoLabel.text = $"{ammoName} {loaded}/{magazineSize}  (\u221e)";
+            else
+                ammoLabel.text = reserve > 0
+                    ? $"{ammoName} {loaded}/{magazineSize}  (+{reserve})"
+                    : $"{ammoName} {loaded}/{magazineSize}";
+        }
+
+        private string ResolveToolkitAmmoLabelName(int weaponHotbarSlot)
+        {
+            if (xpAmmoState == null)
+                return "STANDARD";
+
+            ItemData loadedAmmoItem = xpAmmoState.GetLoadedAmmoItem(weaponHotbarSlot);
+            if (loadedAmmoItem != null && !string.IsNullOrWhiteSpace(loadedAmmoItem.itemName))
+                return loadedAmmoItem.itemName.ToUpperInvariant();
+
+            AmmoType loadedType = xpAmmoState.GetLoadedAmmoType(weaponHotbarSlot);
+            return loadedType == AmmoType.Gunpowder ? "STANDARD" : loadedType.ToString().ToUpperInvariant();
+        }
+
+        private void PullEnemyFocus()
+        {
+            if (enemyFocusRoot == null)
+                return;
+
+            EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance
+                ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+
+            if (enemyHud != null && enemyHud.TryGetFocus(out string displayName, out float normalized)
+                && !DMUiToolkitMenus.IsOpen)
+            {
+                enemyFocusRoot.style.display = DisplayStyle.Flex;
+                if (enemyNameLabel != null)
+                    enemyNameLabel.text = displayName;
+                SetFill(enemyFill, null, normalized, null);
+                return;
+            }
+
+            enemyFocusRoot.style.display = DisplayStyle.None;
+        }
+
+        private void HideXpAmmoEnemyUgui()
+        {
+            HotbarXpHud xpHud = FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
+            if (xpHud != null && xpHud.gameObject.activeSelf)
+                xpHud.SetVisible(false);
+
+            EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance
+                ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+            enemyHud?.ApplyToolkitVisibility();
+
+            xpAmmoUguiHidden = true;
+        }
+
+        private void RestoreXpAmmoEnemyUgui()
+        {
+            if (!xpAmmoUguiHidden)
+                return;
+
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+            {
+                HotbarXpHud xpHud = FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
+                if (xpHud != null && GameSession.HasStarted && !MainMenuController.BlocksGameplayHud)
+                    xpHud.SetVisible(true);
+
+                EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance
+                    ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+                enemyHud?.ApplyToolkitVisibility();
+            }
+
+            xpAmmoUguiHidden = false;
+        }
+    }
+}

@@ -320,7 +320,9 @@ namespace Project.UI
             if (minimapRoot != null && minimapRoot.activeSelf != minimapVisible)
                 minimapRoot.SetActive(minimapVisible);
 
-            SetCompassVisible(minimapVisible);
+            bool uitkMinimap = DMUiToolkitMinimap.IsDriving;
+            SetCompassVisible(minimapVisible && !uitkMinimap);
+            ApplyUitkMinimapUguiHide(uitkMinimap && minimapVisible);
 
             if (fullMapOverlay == null)
                 return;

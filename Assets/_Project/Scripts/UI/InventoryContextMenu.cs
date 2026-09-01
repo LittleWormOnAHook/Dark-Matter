@@ -247,6 +247,13 @@ namespace Project.UI
         {
             ItemHoverTooltip.HideAny();
 
+            if (DMUiToolkitContext.TryShow(slotIndex, screenPosition, itemActions))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
+
             if (itemActions == null)
                 return;
 
@@ -279,6 +286,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitContext.Hide();
             activeSlotIndex = -1;
             HideAmmoSubmenu();
             if (menuRoot != null)

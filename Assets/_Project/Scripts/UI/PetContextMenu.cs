@@ -25,6 +25,7 @@ namespace Project.UI
                 return;
             }
 
+            DMUiToolkitPetChrome.HideAny();
             instance.Hide();
         }
 
@@ -118,6 +119,13 @@ namespace Project.UI
             if (pet == null || !pet.IsOwned)
                 return;
 
+            if (DMUiToolkitPetChrome.TryShowMenu(pet, screenPosition))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
+
             PetHoverTooltip.HideAny();
             activePet = pet;
             openedOnFrame = Time.frameCount;
@@ -145,6 +153,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitPetChrome.HideMenu();
             if (this == null)
                 return;
 

@@ -31,7 +31,8 @@ namespace Project.UI
     {
         Quests,
         Chronicle,
-        SystemLogs
+        SystemLogs,
+        GameLogs
     }
 
     private JournalContentSection journalSection = JournalContentSection.Quests;
@@ -41,6 +42,8 @@ namespace Project.UI
     private GameObject systemLogsRoot;
     private Transform chronicleListParent;
     private Transform systemLogListParent;
+    private GameObject gameLogsRoot;
+    private Transform gameLogListParent;
     private PioneerRosterManager journalRoster;
 
     private string selectedQuestId;
@@ -114,6 +117,9 @@ namespace Project.UI
         questManager.OnQuestCompleted += HandleQuestUpdated;
       }
 
+      DMGameLog.Changed -= HandleGameLogChanged;
+      DMGameLog.Changed += HandleGameLogChanged;
+
       RefreshQuestList();
     }
 
@@ -130,6 +136,8 @@ namespace Project.UI
         questManager.OnQuestUpdated -= HandleQuestUpdated;
         questManager.OnQuestCompleted -= HandleQuestUpdated;
       }
+
+      DMGameLog.Changed -= HandleGameLogChanged;
     }
 
     public void OnToggleJournal(InputAction.CallbackContext context)
@@ -398,8 +406,10 @@ namespace Project.UI
       questSplitRoot = null;
       chronicleRoot = null;
       systemLogsRoot = null;
+      gameLogsRoot = null;
       chronicleListParent = null;
       systemLogListParent = null;
+      gameLogListParent = null;
     }
 
     private void BuildUi()
@@ -683,6 +693,7 @@ namespace Project.UI
       CreateJournalSectionTab("Quests", JournalContentSection.Quests, theme);
       CreateJournalSectionTab("Chronicle", JournalContentSection.Chronicle, theme);
       CreateJournalSectionTab("System Logs", JournalContentSection.SystemLogs, theme);
+      CreateJournalSectionTab("Game Logs", JournalContentSection.GameLogs, theme);
 
       GameObject contentHost = new GameObject("JournalContentHost", typeof(RectTransform), typeof(LayoutElement));
       contentHost.transform.SetParent(parent, false);
@@ -716,6 +727,7 @@ namespace Project.UI
 
       chronicleRoot = CreateLogScrollPanel(contentHost.transform, "ChronicleScroll", out chronicleListParent);
       systemLogsRoot = CreateLogScrollPanel(contentHost.transform, "SystemLogsScroll", out systemLogListParent);
+      gameLogsRoot = CreateLogScrollPanel(contentHost.transform, "GameLogsScroll", out gameLogListParent);
 
       ApplyJournalSectionVisibility();
       RefreshJournalSectionTabs();
@@ -801,6 +813,8 @@ namespace Project.UI
         chronicleRoot.SetActive(journalSection == JournalContentSection.Chronicle);
       if (systemLogsRoot != null)
         systemLogsRoot.SetActive(journalSection == JournalContentSection.SystemLogs);
+      if (gameLogsRoot != null)
+        gameLogsRoot.SetActive(journalSection == JournalContentSection.GameLogs);
     }
 
     private void RefreshJournalSectionTabs()
@@ -816,7 +830,8 @@ namespace Project.UI
         bool active =
           (journalSection == JournalContentSection.Quests && child.name.StartsWith("Quests")) ||
           (journalSection == JournalContentSection.Chronicle && child.name.StartsWith("Chronicle")) ||
-          (journalSection == JournalContentSection.SystemLogs && child.name.StartsWith("System"));
+          (journalSection == JournalContentSection.SystemLogs && child.name.StartsWith("System")) ||
+          (journalSection == JournalContentSection.GameLogs && child.name.StartsWith("Game"));
 
         if (bg != null)
           bg.color = active
@@ -833,6 +848,8 @@ namespace Project.UI
         RefreshQuestListParents(questListParent, questDetailTitle, questDetailBody);
       else if (journalSection == JournalContentSection.Chronicle)
         RefreshChronicleList();
+      else if (journalSection == JournalContentSection.GameLogs)
+        RefreshGameLogList();
       else
         RefreshSystemLogList();
     }
@@ -941,6 +958,74 @@ namespace Project.UI
         }
       }
     }
+    private void HandleGameLogChanged()
+    {
+      if (journalSection == JournalContentSection.GameLogs)
+        RefreshGameLogList();
+    }
+
+    private void RefreshGameLogList()
+    {
+      if (gameLogListParent == null)
+        return;
+
+      foreach (Transform child in gameLogListParent)
+        Destroy(child.gameObject);
+
+      IReadOnlyList<DMGameLogEntry> entries = DMGameLog.Entries;
+      if (entries == null || entries.Count == 0)
+      {
+        JournalPanelLayout.CreateEmptyStateCard(
+          gameLogListParent,
+          ShiftUiTheme.Current,
+          "No game logs yet",
+          "Pickups, popups, radio, and conversations will appear here as you play.");
+        return;
+      }
+
+      for (int i = entries.Count - 1; i >= 0; i--)
+      {
+        DMGameLogEntry entry = entries[i];
+        CreateJournalLogCard(
+          gameLogListParent,
+          GameLogKindLabel(entry.Kind),
+          GameLogKindLabel(entry.Kind),
+          entry.Text,
+          GameLogKindColor(entry.Kind));
+      }
+    }
+
+    private static string GameLogKindLabel(DMGameLogKind kind)
+    {
+      switch (kind)
+      {
+        case DMGameLogKind.Pickup: return "Pickup";
+        case DMGameLogKind.Popup: return "Popup";
+        case DMGameLogKind.Radio: return "Radio";
+        case DMGameLogKind.Dialogue: return "Dialogue";
+        case DMGameLogKind.Prompt: return "Prompt";
+        default: return "Other";
+      }
+    }
+
+    private static Color GameLogKindColor(DMGameLogKind kind)
+    {
+      switch (kind)
+      {
+        case DMGameLogKind.Pickup:
+          return DarkMatterGenesisUiPalette.PositiveGreen;
+        case DMGameLogKind.Dialogue:
+        case DMGameLogKind.Radio:
+          return DarkMatterGenesisUiPalette.RichFuchsia;
+        case DMGameLogKind.Prompt:
+          return DarkMatterGenesisUiPalette.SoftBeigeGray;
+        case DMGameLogKind.Popup:
+          return DarkMatterGenesisUiPalette.Gold;
+        default:
+          return DarkMatterGenesisUiPalette.BodyText;
+      }
+    }
+
     private void CreateJournalLogCard(Transform parent, string heading, string title, string body, Color headingColor)
     {
       GameObject row = new GameObject("LogCard", typeof(RectTransform), typeof(Image), typeof(LayoutElement));

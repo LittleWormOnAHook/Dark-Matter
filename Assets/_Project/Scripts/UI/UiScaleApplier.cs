@@ -97,6 +97,8 @@ namespace Project.UI
                     }
                 }
             }
+
+            DMUiToolkitBootstrap.ApplyUiScale(scale);
         }
 
         private static bool IsScaleLockedCanvas(Canvas canvas)

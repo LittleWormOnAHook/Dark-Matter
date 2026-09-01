@@ -60,6 +60,10 @@ namespace Project.Features.Climb
         [Range(0.2f, 6f)]
         public float moveSpeed = 2.6f;
 
+        [Tooltip("Hold Shift while clinging to multiply crawl speed.")]
+        [Range(1f, 2.5f)]
+        public float climbShiftMul = 1.35f;
+
         [Range(0.01f, 0.5f)]
         public float climbInputDamp = 0.1f;
 
@@ -74,6 +78,10 @@ namespace Project.Features.Climb
         [Tooltip("Short climb-leap speed (m/s) along the climb direction.")]
         [Range(2f, 12f)]
         public float climbLeapSpeed = 7.2f;
+
+        [Tooltip("Cling Space-hop height (meters). Hold Space longer to go further, up to this.")]
+        [Range(0.5f, 12f)]
+        public float clingHop = 12f;
 
         [Tooltip("After one Space leap, WASD toward a Climbable snaps back. Seconds.")]
         [Range(0.12f, 1.2f)]
@@ -112,8 +120,8 @@ namespace Project.Features.Climb
         [Range(0.9f, 1.6f)]
         public float handHeight = 1.18f;
 
-        [Tooltip("How far over the lip the down-probe sits.")]
-        [Range(0.2f, 1.2f)]
+        [Tooltip("Meters onto the top from the lip hit. 0 plants on the lip. Negative pulls back toward the wall.")]
+        [Range(-0.5f, 1.2f)]
         public float mantleForward = 0.42f;
 
         [Tooltip("How high above the hang the down-probe starts.")]

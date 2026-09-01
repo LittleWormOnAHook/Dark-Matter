@@ -1,0 +1,38 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Hovercraft.uss"/>
+    <ui:VisualElement name="hovercraft-root" picking-mode="Ignore" class="dmg-hc-root">
+        <ui:VisualElement name="hovercraft-panel" picking-mode="Ignore" class="dmg-hc-panel">
+            <ui:Label name="hc-kicker" text="VESSEL" picking-mode="Ignore" class="dmg-hc-kicker"/>
+            <ui:Label name="hc-name" text="Hovercraft" picking-mode="Ignore" class="dmg-hc-name"/>
+            <ui:VisualElement picking-mode="Ignore" class="dmg-hc-div"/>
+            <ui:VisualElement name="hc-shield-row" picking-mode="Ignore" class="dmg-hc-row">
+                <ui:Label name="hc-shield-name" text="Shield" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                <ui:Label name="hc-shield-pct" text="100%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                <ui:VisualElement name="hc-shield-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hc-hull-row" picking-mode="Ignore" class="dmg-hc-row">
+                <ui:Label name="hc-hull-name" text="Hull" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                <ui:Label name="hc-hull-pct" text="100%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                <ui:Label name="hc-hull-crit" text="CRITICAL" picking-mode="Ignore" class="dmg-hc-crit"/>
+                <ui:VisualElement name="hc-hull-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hc-fuel-row" picking-mode="Ignore" class="dmg-hc-row">
+                <ui:Label name="hc-fuel-name" text="Fuel" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                <ui:Label name="hc-fuel-pct" text="100%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                <ui:VisualElement name="hc-fuel-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="dmg-hc-div"/>
+            <ui:VisualElement name="hc-footer" picking-mode="Ignore" class="dmg-hc-footer">
+                <ui:VisualElement picking-mode="Ignore" class="dmg-hc-foot-col">
+                    <ui:Label text="WEAPON" picking-mode="Ignore" class="dmg-hc-kicker"/>
+                    <ui:Label name="hc-weapon" text="Unarmed" picking-mode="Ignore" class="dmg-hc-foot-val"/>
+                </ui:VisualElement>
+                <ui:VisualElement picking-mode="Ignore" class="dmg-hc-foot-col dmg-hc-foot-right">
+                    <ui:Label text="SPEED" picking-mode="Ignore" class="dmg-hc-kicker dmg-hc-right"/>
+                    <ui:Label name="hc-speed" text="0 m/s" picking-mode="Ignore" class="dmg-hc-foot-val dmg-hc-right"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

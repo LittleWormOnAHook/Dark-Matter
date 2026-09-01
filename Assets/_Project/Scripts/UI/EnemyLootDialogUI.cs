@@ -26,16 +26,21 @@ namespace Project.UI
 
         public static EnemyLootDialogUI Instance => instance;
 
-        public static bool IsDialogOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
+        public static bool IsDialogOpen => DMUiToolkitWorldMenus.IsLootOpen
+            || (instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf);
 
         public static void CloseAnyOpenLoot()
         {
-            if (instance != null && IsDialogOpen)
+            DMUiToolkitWorldMenus.HideLoot();
+            if (instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf)
                 instance.Close();
         }
 
         public static void Show(IEnemyLootProvider lootProvider, string enemyName, string lootSummary)
         {
+            if (DMUiToolkitWorldMenus.TryShowLoot(lootProvider, enemyName, lootSummary))
+                return;
+
             Canvas canvas = ResolveGameplayCanvas();
             if (canvas == null || lootProvider == null)
                 return;

@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="PiReward.uss"/>
+    <ui:VisualElement name="pireward-root" picking-mode="Ignore" class="dmg-pi-root">
+        <ui:VisualElement name="pireward-card" picking-mode="Ignore" class="dmg-pi-card">
+            <ui:Label name="pireward-amount" text="+10 AC" picking-mode="Ignore" class="dmg-pi-amount"/>
+            <ui:Label name="pireward-source" text="Gathering" picking-mode="Ignore" class="dmg-pi-source"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

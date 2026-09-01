@@ -20,6 +20,7 @@ namespace Project.UI
 
         public static void HideAny()
         {
+            DMUiToolkitWorldMenus.HideLab();
             instance?.Hide();
         }
 
@@ -90,6 +91,13 @@ namespace Project.UI
         {
             if (panel == null || string.IsNullOrEmpty(pioneerId))
                 return;
+
+            if (DMUiToolkitWorldMenus.TryShowLab(panel, pioneerId, screenPosition))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
 
             ClearDynamicButtons();
             AddButton("Reassign", () => panel.TryReassignInjuredPioneer(pioneerId));
@@ -164,6 +172,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitWorldMenus.HideLab();
             if (menuRoot != null)
                 menuRoot.SetActive(false);
 

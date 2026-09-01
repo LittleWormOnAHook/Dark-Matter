@@ -1,0 +1,78 @@
+.dmg-lu-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-lu-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 440px;
+    margin-left: -220px;
+    margin-top: -120px;
+    padding: 0 0 16px 0;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(28, 42, 56, 0.94);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-lu-require {
+    width: 420px;
+    margin-left: -210px;
+    margin-top: -70px;
+    padding: 22px 28px;
+}
+
+.dmg-lu-ach {
+    width: 520px;
+    margin-left: -260px;
+    margin-top: 40px;
+    border-color: rgb(192, 46, 122);
+}
+
+.dmg-lu-header {
+    width: 100%;
+    height: 36px;
+    padding: 8px 16px 0 16px;
+    font-size: 14px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(47, 47, 47, 0.98);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-lu-headline {
+    margin-top: 14px;
+    font-size: 28px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.dmg-lu-level {
+    margin-top: 4px;
+    font-size: 22px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.dmg-lu-sub {
+    margin-top: 4px;
+    font-size: 16px;
+    color: rgb(140, 127, 117);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}

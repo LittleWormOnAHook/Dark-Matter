@@ -32,6 +32,7 @@ namespace Project.UI
 
         public static void HideAny()
         {
+            DMUiToolkitWorldMenus.HideItemTooltip();
             activeHoverSlot = null;
             if (instance == null)
                 return;
@@ -130,6 +131,12 @@ namespace Project.UI
                 return;
             }
 
+            if (DMUiToolkitWorldMenus.TryShowItemTooltip(item, amount, screenPosition))
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
             RecipeHoverTooltip.HideAny();
 
             titleText.text = ItemTooltipFormatter.BuildTitle(item);
@@ -148,6 +155,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitWorldMenus.HideItemTooltip();
             if (this == null)
                 return;
 

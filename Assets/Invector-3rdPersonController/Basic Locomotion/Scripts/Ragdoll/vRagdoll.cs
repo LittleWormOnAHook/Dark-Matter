@@ -218,17 +218,20 @@ namespace Invector.vCharacterController
 
         public virtual void RestoreRagdoll()
         {
+            keepRagdolled = false;
+            inStabilize = false;
             if (isActive)
             {
                 ChangeToHipsParent();
-                iChar.ResetRagdoll();
+                if (iChar != null)
+                    iChar.ResetRagdoll();
                 isActive = false;
                 state = RagdollState.animated;
-                inStabilize = false;
                 setKinematic(true); //disable gravity etc.
                 setCollider(true);
-                animator.enabled = true; //enable animation
             }
+            if (animator != null)
+                animator.enabled = true;
         }
 
         public void LoadBodyPart()

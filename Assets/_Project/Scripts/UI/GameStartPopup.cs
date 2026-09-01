@@ -90,6 +90,17 @@ namespace Project.UI
             HideOtherCanvasUi();
             HideRuntimeStartScreenUi();
 
+            if (DMUiToolkitGameStart.TryShow(this))
+            {
+                if (popupPanel != null)
+                    popupPanel.SetActive(false);
+                if (screenOverlay != null)
+                    screenOverlay.SetActive(false);
+                SetGameplayPaused(true);
+                return;
+            }
+
+
             if (screenOverlay != null)
             {
                 screenOverlay.SetActive(true);
@@ -138,6 +149,8 @@ namespace Project.UI
 
         public void HidePopup()
         {
+            DMUiToolkitGameStart.Hide();
+
             if (popupPanel != null)
                 popupPanel.SetActive(false);
 
@@ -147,6 +160,8 @@ namespace Project.UI
 
         public void OnStartGameClicked()
         {
+            DMUiToolkitGameStart.Hide();
+
             if (GameSession.HasStarted)
                 return;
 

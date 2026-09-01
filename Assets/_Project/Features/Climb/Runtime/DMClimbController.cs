@@ -17,6 +17,7 @@ namespace Project.Features.Climb
     public sealed class DMClimbController : MonoBehaviour
     {
         public const string ResourcesPath = "Climb/DMClimbProfile";
+        private const string BuildStamp = "DMClimb 0831-drop180";
 
         private static readonly int ClimbXHash = Animator.StringToHash("ClimbX");
         private static readonly int ClimbYHash = Animator.StringToHash("ClimbY");
@@ -64,6 +65,10 @@ namespace Project.Features.Climb
         private Vector3 _hopVel;
         private Vector2 _hopAxes;
         private float _hopUntil = -10f;
+        private float _hopChargeAt = -10f;
+        private bool _lipHang;
+        private float _lastClingFeetY;
+        private bool _hasClingFeetY;
         private float _leapArmedAt = -10f;
         private float _airControlUntil = -10f;
         private float _airApexY;
@@ -111,6 +116,19 @@ namespace Project.Features.Climb
                 ForceUnlock();
         }
 
+        /// <summary>Retry/death: unlock climb leftovers and stand world-up.</summary>
+        public void RestoreAfterDeathOrRetry()
+        {
+            _climbing = false;
+            _hopping = false;
+            _mantling = false;
+            _leapRegrab = false;
+            _motorOverridden = true;
+            ForceUnlock();
+            if (animator != null && !animator.enabled)
+                animator.enabled = true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnPlayer()
         {
@@ -149,6 +167,11 @@ namespace Project.Features.Climb
             IdleAnimator();
         }
 
+        private void Start()
+        {
+            Debug.Log(BuildStamp);
+        }
+
         private void OnDisable()
         {
             if (_climbing || _hopping || _motorOverridden)
@@ -172,9 +195,24 @@ namespace Project.Features.Climb
             if (_climbing)
             {
                 if (ReadInteractPressedThisFrame())
+                {
+                    _hopChargeAt = -10f;
                     DropFromClimb();
-                else if (ReadJumpPressedThisFrame() && Time.unscaledTime - _attachedAt > 0.08f)
-                    ClimbLeap();
+                    return;
+                }
+
+                if (ReadJumpHeld())
+                {
+                    if (_hopChargeAt < 0f)
+                        _hopChargeAt = Time.unscaledTime;
+                }
+                else if (_hopChargeAt > 0f)
+                {
+                    float held = Time.unscaledTime - _hopChargeAt;
+                    _hopChargeAt = -10f;
+                    if (Time.unscaledTime - _attachedAt > 0.08f)
+                        ClimbLeap(held);
+                }
                 return;
             }
 
@@ -219,8 +257,7 @@ namespace Project.Features.Climb
 
             if (_climbing)
             {
-                if (space && Time.unscaledTime - _attachedAt > 0.08f)
-                    ClimbLeap();
+                // Space is owned by Update: charge a cling hop, or mantle at a lip.
                 return true;
             }
 
@@ -420,7 +457,9 @@ namespace Project.Features.Climb
 
         private void FailsafeUnlocked()
         {
-            if (_climbing || _hopping)
+            if (_climbing || _hopping || _mantling)
+                return;
+            if (IsRagdollOrDead())
                 return;
 
             bool stuckKinematic = body != null && body.isKinematic;
@@ -429,6 +468,15 @@ namespace Project.Features.Climb
                 ForceUnlock();
             else if (_hasIsClimbing && animator != null && animator.GetBool(IsClimbingHash))
                 IdleAnimator();
+        }
+
+        private bool IsRagdollOrDead()
+        {
+            if (motor != null && (motor.ragdolled || motor.isDead))
+                return true;
+            if (landing != null && landing.IsHardFalling)
+                return true;
+            return false;
         }
 
         private static Vector3 Flatten(Vector3 v)
@@ -699,6 +747,9 @@ namespace Project.Features.Climb
         {
             _climbing = true;
             _hopping = false;
+            _lipHang = false;
+            _hopChargeAt = -10f;
+            _hasClingFeetY = false;
             _attachedAt = Time.unscaledTime;
             _stickLostAt = -10f;
             _leapRegrab = false;
@@ -806,57 +857,31 @@ namespace Project.Features.Climb
 
             if (!stuck)
             {
-                if (holdingW && TryMantle(_lastNormal))
-                    return;
                 if (holdingS && TryExitOntoGround())
                     return;
+                if (!holdingS && TryAutoMantle())
+                    return;
+                _lipHang = true;
                 if (_stickLostAt < 0f)
                     _stickLostAt = Time.unscaledTime;
 
-                if (holdingW)
+                Vector3 keep = transform.position;
+                if (_hasLastStick)
                 {
-                    Vector3 keep = transform.position;
-                    if (_hasLastStick)
-                    {
-                        float standOffLost = profile != null ? profile.standOff : 0.35f;
-                        Vector3 nFlatLost = Flatten(_lastNormal);
-                        keep.x = _lastStickHit.point.x + nFlatLost.x * standOffLost;
-                        keep.z = _lastStickHit.point.z + nFlatLost.z * standOffLost;
-                    }
-                    if (TryMantle(_lastNormal) || ForceMantleOverLip(_lastNormal))
-                        return;
-                    if (Time.unscaledTime - _stickLostAt < 0.85f)
-                    {
-                        Vector3 upAlong = Vector3.ProjectOnPlane(Vector3.up, _lastNormal);
-                        if (upAlong.sqrMagnitude < 0.001f)
-                            upAlong = Vector3.up;
-                        else
-                            upAlong.Normalize();
-                        keep += upAlong * ((profile != null ? profile.moveSpeed : 2.6f) * 0.35f * Time.fixedDeltaTime);
-                    }
-                    MoveBody(keep);
-                    if (TryMantle(_lastNormal) || ForceMantleOverLip(_lastNormal))
-                        return;
+                    float standOffLost = profile != null ? profile.standOff : 0.35f;
+                    Vector3 nFlatLost = Flatten(_lastNormal);
+                    keep.x = _lastStickHit.point.x + nFlatLost.x * standOffLost;
+                    keep.z = _lastStickHit.point.z + nFlatLost.z * standOffLost;
+                }
+                SnapLipHang(ref keep);
+                if (holdingS)
+                {
+                    Detach(addPlatformVelocity: true, faceAwayFromWall: true);
                     return;
                 }
-
-                if (holdingS || Time.unscaledTime - _stickLostAt >= 0.55f)
-                {
-                    // Overlapping a walkable lip + RestoreMotor is the instant pop.
-                    // Stay on the last hang unless they asked to drop (S).
-                    if (!holdingS && _hasLastStick)
-                    {
-                        Vector3 keepHang = transform.position;
-                        float standOffLost = profile != null ? profile.standOff : 0.35f;
-                        Vector3 nFlatLost = Flatten(_lastNormal);
-                        keepHang.x = _lastStickHit.point.x + nFlatLost.x * standOffLost;
-                        keepHang.z = _lastStickHit.point.z + nFlatLost.z * standOffLost;
-                        MoveBody(keepHang);
-                        return;
-                    }
-                    Detach(addPlatformVelocity: true);
-                    return;
-                }
+                MoveBody(keep);
+                FaceWall(_lastNormal);
+                WriteAnimator(Vector2.zero, 0f, climbing: true);
                 return;
             }
             _stickLostAt = -10f;
@@ -875,11 +900,18 @@ namespace Project.Features.Climb
 
             if (raw.y < -0.2f && TryExitOntoGround())
                 return;
-            if (raw.y > 0.02f && (!(profile != null && profile.mantleRequiresOpenLip) || !HasWallAbove(_lastNormal)))
+            if (!HasWallAbove(_lastNormal))
             {
-                if (TryMantle(_lastNormal) || ForceMantleOverLip(_lastNormal))
+                if (TryAutoMantle())
                     return;
-                raw.y = 0f;
+                _lipHang = true;
+                raw.y = Mathf.Min(raw.y, 0f);
+            }
+            else
+            {
+                _lipHang = false;
+                _lastClingFeetY = transform.position.y;
+                _hasClingFeetY = true;
             }
 
             float damp = profile != null ? profile.climbInputDamp : 0.1f;
@@ -890,12 +922,16 @@ namespace Project.Features.Climb
                 damp);
 
             float speed = profile != null ? profile.moveSpeed : 1.6f;
+            if (ReadShiftHeld())
+                speed *= profile != null ? profile.climbShiftMul : 1.35f;
             float standOff = profile != null ? profile.standOff : 0.35f;
             Vector3 desired = transform.position;
             desired.x = hit.point.x + normal.x * standOff;
             desired.z = hit.point.z + normal.z * standOff;
             desired.y = transform.position.y + _dampedClimbInput.y * speed * Time.fixedDeltaTime;
             desired += right * (_dampedClimbInput.x * speed * Time.fixedDeltaTime);
+            if (_lipHang)
+                SnapLipHang(ref desired);
 
             MoveBody(desired);
             FaceWall(normal);
@@ -911,13 +947,6 @@ namespace Project.Features.Climb
             float climbSpeed = new Vector2(_dampedClimbInput.x, _dampedClimbInput.y).magnitude * speed;
             WriteAnimator(new Vector2(_dampedClimbInput.x, _dampedClimbInput.y), climbSpeed, climbing: true);
             UpdateHandGrabTargets(clingNormal);
-
-            if (_dampedClimbInput.y > 0.05f && (!(profile != null && profile.mantleRequiresOpenLip) || !HasWallAbove(normal)))
-            {
-                if (TryMantle(normal) || ForceMantleOverLip(normal))
-                    return;
-                _dampedClimbInput.y = 0f;
-            }
         }
 
         private bool TryStickWall(Vector3 probeDir, float stickRange, float radius, out RaycastHit hit)
@@ -974,6 +1003,18 @@ namespace Project.Features.Climb
                 any = true;
             }
             return any;
+        }
+
+        private void SnapLipHang(ref Vector3 pos)
+        {
+            if (AtHandLip(_lastNormal, out RaycastHit lip))
+            {
+                float hh = profile != null ? profile.handHeight : 1.18f;
+                pos.y = lip.point.y - hh;
+                return;
+            }
+            if (_hasClingFeetY)
+                pos.y = _lastClingFeetY;
         }
 
         private bool AtHandLip(Vector3 wallNormal, out RaycastHit top)
@@ -1037,6 +1078,11 @@ namespace Project.Features.Climb
             return false;
         }
 
+        private bool TryAutoMantle()
+        {
+            return TryMantle(_lastNormal, requireUp: false) || ForceMantleOverLip(_lastNormal);
+        }
+
         private bool ForceMantleOverLip(Vector3 wallNormal)
         {
             // Climb start holds W. Never invent a ledge when the lip probe misses.
@@ -1051,22 +1097,26 @@ namespace Project.Features.Climb
             if (forward.sqrMagnitude < 0.001f)
                 forward = Flatten(transform.forward);
             float pad = MantlePlantPad;
-            Vector3 stand = top.point + forward * 0.16f;
+            float fwd = profile != null ? profile.mantleForward : 0f;
+            Vector3 stand = top.point + forward * fwd;
             stand.y = top.point.y + pad;
             BeginMantle(stand);
             return true;
         }
 
-        private bool TryMantle(Vector3 wallNormal)
+        private bool TryMantle(Vector3 wallNormal, bool requireUp = true)
         {
             if (profile != null && !profile.enableMantle)
                 return false;
             if (Time.unscaledTime - _attachedAt < 0.35f)
                 return false;
 
-            Vector2 raw = ReadClimbAxes();
-            if (raw.y <= 0f)
-                return false;
+            if (requireUp)
+            {
+                Vector2 raw = ReadClimbAxes();
+                if (raw.y <= 0f)
+                    return false;
+            }
             if (HasWallAbove(wallNormal))
                 return false;
 
@@ -1096,12 +1146,12 @@ namespace Project.Features.Climb
                 onto = Flatten(transform.forward);
 
             // Probe from hanging chest, out over the lip, down onto the top. Never search 2m above.
-            float capR = _capsule != null ? _capsule.radius : 0.26f;
-            float fwd = profile != null ? profile.mantleForward : 0.42f;
+            float fwd = profile != null ? profile.mantleForward : 0f;
             float up = profile != null ? profile.mantleProbeUp : 1.5f;
             float down = profile != null ? profile.mantleProbeDown : 1.7f;
             float pad = MantlePlantPad;
-            Vector3 probe = start + onto * fwd + Vector3.up * up;
+            float findFwd = Mathf.Max(0.28f, fwd);
+            Vector3 probe = start + onto * findFwd + Vector3.up * up;
             RaycastHit floor = default;
             bool haveFloor = SurfaceCast(probe, Vector3.down, down, 0.12f, out floor)
                 && Vector3.Angle(Vector3.up, floor.normal) <= 50f
@@ -1111,7 +1161,7 @@ namespace Project.Features.Climb
                 haveFloor = IsSaneMove(floor.point);
             if (haveFloor)
             {
-                stand = floor.point + onto * (capR + 0.1f);
+                stand = floor.point + onto * fwd;
                 stand.y = floor.point.y + pad;
             }
             else if (!IsSaneMove(stand) || stand.y > start.y + 1.55f)
@@ -1561,11 +1611,8 @@ namespace Project.Features.Climb
             SafeSetLinearVelocity(v);
         }
 
-        private void ClimbLeap()
+        private void ClimbLeap(float holdSeconds = 0f)
         {
-            if (TryMantle(_lastNormal))
-                return;
-
             Vector2 axes = ReadClimbAxes();
             if (axes.sqrMagnitude < 0.04f)
                 axes = Vector2.up;
@@ -1584,19 +1631,28 @@ namespace Project.Features.Climb
             leap += nFlat * 0.35f;
             leap.Normalize();
 
-            float speed = profile != null ? profile.climbLeapSpeed : 10f;
+            float maxHop = profile != null ? profile.clingHop : 12f;
+            float speedBase = profile != null ? profile.climbLeapSpeed : 7.2f;
             float window = profile != null ? profile.climbLeapRegrab : 0.45f;
+            float charge = Mathf.Clamp01(holdSeconds / 0.55f);
+            float dist = Mathf.Lerp(Mathf.Min(2f, maxHop * 0.22f), maxHop, charge);
+            float dur = Mathf.Lerp(0.18f, 0.7f, charge);
+            float speed = dist / Mathf.Max(dur, 0.12f);
+            if (speed < speedBase * 0.65f)
+                speed = speedBase * 0.65f;
 
             _lastWallPoint = transform.position;
             _lastWallNormal = _lastNormal;
             _climbing = false;
             _hopping = true;
+            _lipHang = false;
+            SnapWorldUp();
             _hopAxes = axes;
             _hopVel = leap * speed;
-            _hopUntil = Time.unscaledTime + 0.24f;
+            _hopUntil = Time.unscaledTime + dur;
             _leapRegrab = true;
-            _leapUntil = Time.unscaledTime + window;
-            _leapArmedAt = Time.unscaledTime + 0.16f;
+            _leapUntil = Time.unscaledTime + dur + window;
+            _leapArmedAt = Time.unscaledTime + 0.12f;
             _detachedAt = Time.unscaledTime;
             WriteAnimator(_hopAxes, speed * 0.15f, climbing: true);
             SetClimbLayerWeight(1f);
@@ -1606,7 +1662,7 @@ namespace Project.Features.Climb
         {
             _hopVel += Physics.gravity * 0.4f * Time.fixedDeltaTime;
             MoveBody(transform.position + _hopVel * Time.fixedDeltaTime);
-            FaceWall(_lastNormal);
+            SnapWorldUp();
             WriteAnimator(_hopAxes, 2.2f, climbing: true);
             SetClimbLayerWeight(1f);
 
@@ -1621,6 +1677,30 @@ namespace Project.Features.Climb
 
             _hopping = false;
             Vector3 leftover = _hopVel;
+            SnapWorldUp(faceAwayFromWall: drop);
+            if (!drop && TryJumpToWall(out RaycastHit grab))
+            {
+                Attach(grab);
+                return;
+            }
+            if (!drop && TryAutoMantle())
+                return;
+            if (!drop && _hasLastStick)
+            {
+                _climbing = true;
+                _lipHang = true;
+                Vector3 keep = transform.position;
+                float standOff = profile != null ? profile.standOff : 0.35f;
+                Vector3 nFlat = Flatten(_lastNormal);
+                keep.x = _lastStickHit.point.x + nFlat.x * standOff;
+                keep.z = _lastStickHit.point.z + nFlat.z * standOff;
+                SnapLipHang(ref keep);
+                MoveBody(keep);
+                FaceWall(_lastNormal);
+                WriteAnimator(Vector2.zero, 0f, climbing: true);
+                SetClimbLayerWeight(1f);
+                return;
+            }
             RestoreMotor();
             _airControlUntil = Time.unscaledTime + (profile != null ? profile.airControlSeconds : 0.95f);
             if (landing != null)
@@ -1652,7 +1732,7 @@ namespace Project.Features.Climb
             float push = profile != null ? profile.dropPush : 2.4f;
             float air = profile != null ? profile.airControlSeconds : 0.95f;
             Vector3 off = Flatten(_lastNormal) * push;
-            Detach(addPlatformVelocity: false);
+            Detach(addPlatformVelocity: false, faceAwayFromWall: true);
             _leapRegrab = false;
             _airControlUntil = Time.unscaledTime + air;
             if (body != null && !body.isKinematic)
@@ -1665,7 +1745,7 @@ namespace Project.Features.Climb
             }
         }
 
-        private void Detach(bool addPlatformVelocity)
+        private void Detach(bool addPlatformVelocity, bool faceAwayFromWall = false)
         {
             if (!_climbing && !_motorOverridden)
                 return;
@@ -1684,7 +1764,7 @@ namespace Project.Features.Climb
             _dampedClimbInput = Vector3.zero;
             _dampedClimbVel = Vector3.zero;
 
-            ApplyRotation(UprightFrom(Flatten(-_lastNormal)));
+            SnapWorldUp(faceAwayFromWall);
             RestoreMotor();
             IdleAnimator();
             if (landing != null)
@@ -1699,6 +1779,7 @@ namespace Project.Features.Climb
             _hopping = false;
             _anchor = null;
             _hasPrevAnchorPos = false;
+            SnapWorldUp();
             RestoreMotor();
             IdleAnimator();
         }
@@ -1807,6 +1888,40 @@ namespace Project.Features.Climb
                 body.MoveRotation(rot);
             else
                 transform.rotation = rot;
+        }
+
+        /// <summary>
+        /// Drop/leap/retry: stand world-up immediately. MoveRotation is deferred and
+        /// gets discarded when we unlock the kinematic body on the same frame.
+        /// Mantle already slerps to UprightFrom; this is a hard snap for off-wall exits.
+        /// Drop-off (faceAwayFromWall) yaws look along Flatten(_lastNormal) so the mesh
+        /// faces away from the wall. Camera is not retargeted.
+        /// </summary>
+        private void SnapWorldUp(bool faceAwayFromWall = false)
+        {
+            Vector3 f;
+            if (faceAwayFromWall)
+            {
+                f = Flatten(_lastNormal);
+                if (f.sqrMagnitude < 0.001f)
+                    f = Flatten(transform.forward);
+                if (f.sqrMagnitude < 0.001f)
+                    f = Vector3.forward;
+            }
+            else
+            {
+                f = transform.forward;
+                f.y = 0f;
+                if (f.sqrMagnitude < 0.001f)
+                    f = Flatten(-_lastNormal);
+                if (f.sqrMagnitude < 0.001f)
+                    f = Vector3.forward;
+            }
+            Quaternion rot = Quaternion.LookRotation(f.normalized, Vector3.up);
+            transform.rotation = rot;
+            if (body != null)
+                body.rotation = rot;
+            SafeZeroVelocity();
         }
 
         private void SetPlanarVelocity(Vector3 planar)
@@ -1964,6 +2079,25 @@ namespace Project.Features.Climb
             if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
                 return true;
             if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+                return true;
+            return false;
+        }
+
+        private static bool ReadJumpHeld()
+        {
+            if (Keyboard.current != null && Keyboard.current.spaceKey.isPressed)
+                return true;
+            if (Gamepad.current != null && Gamepad.current.buttonSouth.isPressed)
+                return true;
+            return false;
+        }
+
+        private static bool ReadShiftHeld()
+        {
+            if (Keyboard.current != null
+                && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed))
+                return true;
+            if (Gamepad.current != null && Gamepad.current.leftShoulder.isPressed)
                 return true;
             return false;
         }

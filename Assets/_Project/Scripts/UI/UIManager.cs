@@ -567,6 +567,14 @@ namespace Project.UI
 
         public void ShowInteractionPrompt(string message)
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                DMUiToolkitHud.ShowPrompt(message);
+                if (interactionPrompt != null)
+                    interactionPrompt.gameObject.SetActive(false);
+                return;
+            }
+
             EnsureInteractionPrompt();
             if (interactionPrompt == null)
                 return;
@@ -575,6 +583,7 @@ namespace Project.UI
             interactionPrompt.text = message;
             interactionPrompt.gameObject.SetActive(true);
             interactionPrompt.transform.SetAsLastSibling();
+            DMGameLog.Add(message, DMGameLogKind.Prompt);
         }
 
         public void ShowTimedInteractionPrompt(string message, float durationSeconds = 2.5f)
@@ -593,6 +602,7 @@ namespace Project.UI
 
         public void HideInteractionPrompt()
         {
+            DMUiToolkitHud.HidePrompt();
             if (interactionPrompt != null)
                 interactionPrompt.gameObject.SetActive(false);
         }

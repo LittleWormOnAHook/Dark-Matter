@@ -53,6 +53,9 @@ namespace Project.UI
             if (item == null)
                 return;
 
+            if (DMUiToolkitWorldMenus.TryShowScan(item))
+                return;
+
             Transform canvasRoot = ResolveGameplayCanvasRoot();
             if (canvasRoot == null)
                 return;

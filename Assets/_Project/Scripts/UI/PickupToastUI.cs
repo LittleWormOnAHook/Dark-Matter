@@ -65,6 +65,14 @@ namespace Project.UI
             if (string.IsNullOrEmpty(message))
                 return;
 
+            if (DMUiToolkitHud.IsDriving)
+            {
+                DMUiToolkitHud.ShowPopup(message);
+                return;
+            }
+
+            DMGameLog.Add(message, DMGameLog.KindFromPopupText(message));
+
             Canvas canvas = MainMenuController.ResolveMainCanvas();
             if (canvas == null)
                 canvas = FindAnyObjectByType<Canvas>();

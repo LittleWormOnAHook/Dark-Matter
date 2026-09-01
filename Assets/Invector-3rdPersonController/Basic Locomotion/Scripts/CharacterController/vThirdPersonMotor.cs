@@ -1600,6 +1600,13 @@ namespace Invector.vCharacterController
 
         protected virtual void CheckRagdoll()
         {
+            // DMLanding 0831-flop2: Player_v7 fall ragdoll is owned by DMLandingDirector.
+            // Invector auto-flop here zeros speed before bones simulate (upright bounce).
+            if (gameObject.name == "Player_v7")
+            {
+                return;
+            }
+
             if (ragdollVelocity == 0)
             {
                 return;

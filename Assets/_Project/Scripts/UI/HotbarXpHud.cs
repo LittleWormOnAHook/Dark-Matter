@@ -222,6 +222,9 @@ namespace Project.UI
             if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)
                 visible = false;
 
+            if (DMUiToolkitHud.IsDriving)
+                visible = false;
+
             gameObject.SetActive(visible);
             if (visible)
             {

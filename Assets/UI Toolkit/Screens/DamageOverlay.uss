@@ -1,0 +1,38 @@
+/* DMUiToolkit 0901-finish */
+.dmg-damage-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-damage-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-dmg-num {
+    position: absolute;
+    width: 120px;
+    height: 40px;
+    font-size: 28px;
+    color: rgb(242, 46, 31);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.dmg-dmg-crit {
+    color: rgb(255, 209, 31);
+}

@@ -36,6 +36,14 @@ namespace Project.UI
                 ? $"+{amount} XP"
                 : $"+{amount} XP  ({sourceLabel})";
 
+            if (DMUiToolkitHud.IsDriving)
+            {
+                DMUiToolkitHud.ShowPopup(message);
+                return;
+            }
+
+            DMGameLog.Add(message, DMGameLogKind.Popup);
+
             Canvas canvas = MainMenuController.ResolveMainCanvas();
             if (canvas == null)
                 canvas = FindAnyObjectByType<Canvas>();

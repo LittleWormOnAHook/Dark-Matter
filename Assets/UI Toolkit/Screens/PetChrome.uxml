@@ -1,0 +1,15 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="FloatingMenu.uss"/>
+    <ui:VisualElement name="pet-root" picking-mode="Ignore" class="dmg-fmenu-root">
+        <ui:VisualElement name="pet-dismiss" picking-mode="Position" class="dmg-fmenu-dismiss"/>
+        <ui:VisualElement name="pet-menu" picking-mode="Position" class="dmg-fmenu-panel">
+            <ui:Button name="pet-assign" text="Assign to Companion" picking-mode="Position" class="dmg-fmenu-btn"/>
+            <ui:Button name="pet-clear" text="Clear Companion" picking-mode="Position" class="dmg-fmenu-btn"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="pet-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
+            <ui:Label name="pet-tip-title" text="Pet" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
+            <ui:Label name="pet-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

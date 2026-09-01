@@ -1,0 +1,156 @@
+/* DMUiToolkit 0901-finish */
+.dmg-craft-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-craft-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.dmg-craft-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 640px;
+    height: 620px;
+    margin-left: -320px;
+    margin-top: -310px;
+    padding: 12px 14px;
+    background-color: rgba(28, 42, 56, 0.96);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+    flex-direction: column;
+}
+
+.dmg-craft-title {
+    height: 36px;
+    font-size: 22px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(47, 47, 47, 0.98);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-craft-status {
+    height: 24px;
+    margin-top: 6px;
+    font-size: 14px;
+    color: rgb(212, 160, 23);
+    -unity-text-align: middle-center;
+}
+
+.dmg-craft-list {
+    flex-grow: 1;
+    margin-top: 8px;
+    background-color: rgba(28, 42, 56, 0.88);
+    min-height: 220px;
+}
+
+.dmg-craft-row {
+    width: 100%;
+    height: 40px;
+    margin-bottom: 4px;
+    padding: 0 10px;
+    background-color: rgba(74, 74, 90, 0.55);
+    color: rgb(237, 233, 228);
+    font-size: 16px;
+    -unity-text-align: middle-left;
+}
+
+.dmg-craft-row-sel {
+    background-color: rgba(192, 46, 122, 0.28);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+}
+
+.dmg-craft-row-ready {
+    color: rgb(107, 199, 122);
+}
+
+.dmg-craft-detail {
+    margin-top: 8px;
+    padding: 8px 10px;
+    min-height: 110px;
+    background-color: rgba(47, 47, 47, 0.7);
+    flex-direction: column;
+}
+
+.dmg-craft-detail-title {
+    font-size: 18px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-craft-detail-meta {
+    margin-top: 4px;
+    font-size: 14px;
+    color: rgb(212, 160, 23);
+}
+
+.dmg-craft-detail-ings {
+    margin-top: 4px;
+    font-size: 14px;
+    color: rgb(140, 127, 117);
+    white-space: normal;
+}
+
+.dmg-craft-amount-row {
+    margin-top: 8px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.dmg-craft-amount-label {
+    width: 70px;
+    font-size: 14px;
+    color: rgb(140, 127, 117);
+}
+
+.dmg-craft-slider {
+    flex-grow: 1;
+    height: 24px;
+}
+
+.dmg-craft-amount-value {
+    width: 36px;
+    font-size: 16px;
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-center;
+}
+
+.dmg-craft-actions {
+    margin-top: 10px;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.dmg-craft-btn {
+    width: 160px;
+    height: 42px;
+    margin-left: 8px;
+    margin-right: 8px;
+    background-color: rgba(192, 46, 122, 0.95);
+    color: rgb(237, 233, 228);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.dmg-craft-btn-muted {
+    background-color: rgba(74, 74, 90, 0.82);
+}

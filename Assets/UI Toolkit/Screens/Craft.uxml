@@ -1,0 +1,26 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Craft.uss"/>
+    <ui:VisualElement name="craft-root" picking-mode="Position" class="dmg-craft-root">
+        <ui:VisualElement name="craft-veil" picking-mode="Position" class="dmg-craft-veil"/>
+        <ui:VisualElement name="craft-panel" picking-mode="Position" class="dmg-craft-panel">
+            <ui:Label name="craft-title" text="Crafting" picking-mode="Ignore" class="dmg-craft-title"/>
+            <ui:Label name="craft-status" text="" picking-mode="Ignore" class="dmg-craft-status"/>
+            <ui:ScrollView name="craft-list" picking-mode="Position" class="dmg-craft-list"/>
+            <ui:VisualElement name="craft-detail" picking-mode="Ignore" class="dmg-craft-detail">
+                <ui:Label name="craft-detail-title" text="Select a blueprint" picking-mode="Ignore" class="dmg-craft-detail-title"/>
+                <ui:Label name="craft-detail-meta" text="" picking-mode="Ignore" class="dmg-craft-detail-meta"/>
+                <ui:Label name="craft-detail-ings" text="" picking-mode="Ignore" class="dmg-craft-detail-ings"/>
+                <ui:VisualElement name="craft-amount-row" picking-mode="Ignore" class="dmg-craft-amount-row">
+                    <ui:Label name="craft-amount-label" text="Amount" picking-mode="Ignore" class="dmg-craft-amount-label"/>
+                    <ui:SliderInt name="craft-amount" low-value="1" high-value="1" picking-mode="Position" class="dmg-craft-slider"/>
+                    <ui:Label name="craft-amount-value" text="1" picking-mode="Ignore" class="dmg-craft-amount-value"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="craft-actions" picking-mode="Ignore" class="dmg-craft-actions">
+                <ui:Button name="craft-confirm" text="Craft" picking-mode="Position" class="dmg-craft-btn"/>
+                <ui:Button name="craft-close" text="Close" picking-mode="Position" class="dmg-craft-btn dmg-craft-btn-muted"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

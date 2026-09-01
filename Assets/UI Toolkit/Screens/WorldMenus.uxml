@@ -1,0 +1,92 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="WorldMenus.uss"/>
+    <Style src="FloatingMenu.uss"/>
+    <ui:VisualElement name="world-root" picking-mode="Ignore" class="dmg-wm-root">
+        <ui:VisualElement name="shelter-host" picking-mode="Position" class="dmg-wm-modal">
+            <ui:VisualElement name="shelter-veil" picking-mode="Position" class="dmg-hi-veil"/>
+            <ui:VisualElement name="shelter-panel" picking-mode="Position" class="dmg-hi-panel">
+                <ui:Label name="shelter-title" text="Quora Shelter" picking-mode="Ignore" class="dmg-hi-title"/>
+                <ui:Label name="shelter-timer" text="" picking-mode="Ignore" class="dmg-hi-body"/>
+                <ui:Button name="shelter-exit" text="Exit Shelter" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="shelter-store" text="Exit and Store" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="shelter-cancel" text="Cancel" picking-mode="Position" class="dmg-hi-btn dmg-hi-btn-muted"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="drill-host" picking-mode="Position" class="dmg-wm-modal">
+            <ui:VisualElement name="drill-veil" picking-mode="Position" class="dmg-hi-veil"/>
+            <ui:VisualElement name="drill-panel" picking-mode="Position" class="dmg-hi-panel">
+                <ui:Label name="drill-title" text="Walker Drill" picking-mode="Ignore" class="dmg-hi-title"/>
+                <ui:Label name="drill-status" text="Status: Idle" picking-mode="Ignore" class="dmg-hi-body"/>
+                <ui:Button name="drill-start" text="Start Mining" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="drill-stop" text="Stop Mining" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="drill-collect" text="Collect Resources" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="drill-store" text="Store in Inventory" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="drill-cancel" text="Cancel" picking-mode="Position" class="dmg-hi-btn dmg-hi-btn-muted"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="weapon-host" picking-mode="Position" class="dmg-wm-modal">
+            <ui:VisualElement name="weapon-veil" picking-mode="Position" class="dmg-hi-veil"/>
+            <ui:VisualElement name="weapon-panel" picking-mode="Position" class="dmg-fmenu-panel dmg-wm-weapon-panel">
+                <ui:Label name="weapon-title" text="Weapon Modes" picking-mode="Ignore" class="dmg-hi-title"/>
+                <ui:Button name="weapon-pistols" text="Pistols >" picking-mode="Position" class="dmg-fmenu-btn"/>
+                <ui:Button name="weapon-rifles" text="Rifles >" picking-mode="Position" class="dmg-fmenu-btn"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="weapon-pistols-sub" picking-mode="Position" class="dmg-fmenu-panel dmg-fmenu-flyout">
+                <ui:Button name="weapon-pistol-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
+                <ui:Button name="weapon-pistol-beam" text="Laser  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="weapon-rifles-sub" picking-mode="Position" class="dmg-fmenu-panel dmg-fmenu-flyout">
+                <ui:Button name="weapon-rifle-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
+                <ui:Button name="weapon-rifle-beam" text="Laser  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="loot-host" picking-mode="Position" class="dmg-wm-modal">
+            <ui:VisualElement name="loot-veil" picking-mode="Position" class="dmg-hi-veil"/>
+            <ui:VisualElement name="loot-panel" picking-mode="Position" class="dmg-wm-dialog">
+                <ui:Label name="loot-title" text="Loot" picking-mode="Ignore" class="dmg-hi-title"/>
+                <ui:Label name="loot-body" text="" picking-mode="Ignore" class="dmg-wm-dialog-body"/>
+                <ui:Button name="loot-next" text="Loot" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="loot-all" text="Loot All" picking-mode="Position" class="dmg-hi-btn"/>
+                <ui:Button name="loot-close" text="Close" picking-mode="Position" class="dmg-hi-btn dmg-hi-btn-muted"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="echo-host" picking-mode="Position" class="dmg-wm-modal">
+            <ui:VisualElement name="echo-veil" picking-mode="Position" class="dmg-gs-veil"/>
+            <ui:VisualElement name="echo-panel" picking-mode="Position" class="dmg-wm-dialog dmg-wm-echo">
+                <ui:Label name="echo-kicker" text="RESONANCE IMPRINT STABILIZED" picking-mode="Ignore" class="dmg-wm-kicker"/>
+                <ui:Label name="echo-name" text="Echo" picking-mode="Ignore" class="dmg-hi-title"/>
+                <ui:Label name="echo-body" text="" picking-mode="Ignore" class="dmg-wm-dialog-body"/>
+                <ui:Button name="echo-close" text="Integrate Echo" picking-mode="Position" class="dmg-hi-btn"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="scan-host" picking-mode="Ignore" class="dmg-wm-scan">
+            <ui:Label name="scan-name" text="Resource" picking-mode="Ignore" class="dmg-wm-scan-name"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="taming-host" picking-mode="Ignore" class="dmg-wm-tame">
+            <ui:VisualElement name="taming-bar" picking-mode="Ignore" class="dmg-wm-tame-bg">
+                <ui:VisualElement name="taming-fill" picking-mode="Ignore" class="dmg-wm-tame-fill"/>
+            </ui:VisualElement>
+            <ui:Label name="taming-label" text="" picking-mode="Ignore" class="dmg-wm-tame-label"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="item-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
+            <ui:Label name="item-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
+            <ui:Label name="item-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="pioneer-hover" picking-mode="Ignore" class="dmg-pioneer-hover">
+            <ui:VisualElement name="pioneer-hover-ring" picking-mode="Ignore" class="dmg-pioneer-hover-ring">
+                <ui:VisualElement name="pioneer-hover-portrait" picking-mode="Ignore" class="dmg-pioneer-hover-portrait">
+                    <ui:Label name="pioneer-hover-initials" text="" picking-mode="Ignore" class="dmg-pioneer-hover-initials"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="pioneer-hover-text" picking-mode="Ignore" class="dmg-pioneer-hover-text">
+                <ui:Label name="pioneer-hover-title" text="" picking-mode="Ignore" class="dmg-pioneer-hover-title"/>
+                <ui:Label name="pioneer-hover-body" text="" picking-mode="Ignore" class="dmg-pioneer-hover-body"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="pioneer-dismiss" picking-mode="Position" class="dmg-fmenu-dismiss"/>
+        <ui:VisualElement name="pioneer-menu" picking-mode="Position" class="dmg-fmenu-panel"/>
+        <ui:VisualElement name="lab-dismiss" picking-mode="Position" class="dmg-fmenu-dismiss"/>
+        <ui:VisualElement name="lab-menu" picking-mode="Position" class="dmg-fmenu-panel"/>
+    </ui:VisualElement>
+</ui:UXML>

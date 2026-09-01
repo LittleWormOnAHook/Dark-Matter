@@ -284,6 +284,16 @@ namespace Project.UI
                 return;
             }
 
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (hotbarParent != null)
+                    hotbarParent.gameObject.SetActive(false);
+
+                FindAnyObjectByType<ToolBarUI>()?.SetGameplayVisible(false);
+                EnsureSurvivalStatsHudVisible();
+                return;
+            }
+
             EnsureToolbar();
 
             if (hotbarParent != null)
@@ -349,6 +359,9 @@ namespace Project.UI
             CondensedSurvivalStatsHud statsHud = FindSurvivalStatsHud();
             if (statsHud == null)
                 return;
+
+            if (visible && DMUiToolkitHud.IsDriving)
+                visible = false;
 
             Transform statsTransform = statsHud.transform;
             statsTransform.gameObject.SetActive(visible);

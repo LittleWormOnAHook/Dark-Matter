@@ -51,11 +51,14 @@ namespace Project.UI
 
         public static QuestGiverDialogUI Instance => instance;
 
-        public static bool IsDialogOpen => instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf;
+        public static bool IsDialogOpen =>
+            DMUiToolkitDialogue.IsOpen
+            || (instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf);
 
         public static void CloseAnyOpenQuestDialog()
         {
-            if (instance != null && IsDialogOpen)
+            DMUiToolkitDialogue.Hide();
+            if (instance != null && instance.overlayRoot != null && instance.overlayRoot.activeSelf)
                 instance.Close();
         }
 
@@ -164,6 +167,9 @@ namespace Project.UI
             Action directionsCallback = null,
             Transform npcAnchor = null)
         {
+            if (DMUiToolkitDialogue.TryShowSimple(speakerName, message, closedCallback, primaryLabel, directionsCallback, npcAnchor))
+                return;
+
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
@@ -180,6 +186,9 @@ namespace Project.UI
             Action directionsCallback = null,
             Transform npcAnchor = null)
         {
+            if (DMUiToolkitDialogue.TryShowQuestBoard(speakerName, introMessage, entries, closedCallback, directionsCallback, npcAnchor))
+                return;
+
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;
@@ -457,6 +466,11 @@ namespace Project.UI
             npcAnchor = anchor;
             titleText.text = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
             bodyText.text = message ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                string speaker = string.IsNullOrEmpty(speakerName) ? "Quest Giver" : speakerName;
+                DMGameLog.Add(speaker + ": " + message, DMGameLogKind.Dialogue);
+            }
             simpleContentRoot.SetActive(true);
             boardContentRoot.SetActive(false);
             primaryButtonLabel.text = string.IsNullOrEmpty(primaryLabel) ? "Continue" : primaryLabel;

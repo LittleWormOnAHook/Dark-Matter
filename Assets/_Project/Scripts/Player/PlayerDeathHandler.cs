@@ -2,6 +2,7 @@ using System.Collections;
 using Invector.vCharacterController;
 using ECM2;
 using Project.Core;
+using Project.Features.Climb;
 using Project.Interaction;
 using Project.Player.Invector;
 using Project.Survival;
@@ -60,16 +61,30 @@ namespace Project.Player
 
             StopDeathMenuRoutine();
             CleanupDeathState();
-            ResolveInvectorDeathRagdoll()?.ResetForRespawn();
 
-            transform.SetPositionAndRotation(spawnPosition, spawnRotation);
-            if (character != null)
-                character.SetMovementDirection(Vector3.zero);
+            // Clear lethal/climb leftover BEFORE physics restore so landing
+            // cannot re-arm ragdoll on the same body.
+            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            if (player == null)
+                player = gameObject;
+            player.GetComponent<DMLandingDirector>()?.ResetForRespawn();
+            player.GetComponent<DMClimbController>()?.RestoreAfterDeathOrRetry();
 
             survivalStats.ResetStats();
             survivalStats.SetSimulationPaused(false);
             survivalStats.NotifyRevivedAfterRespawn(5f);
             GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
+
+            ResolveInvectorDeathRagdoll()?.ResetForRespawn();
+
+            Quaternion upright = spawnRotation;
+            Vector3 fwd = spawnRotation * Vector3.forward;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude > 0.001f)
+                upright = Quaternion.LookRotation(fwd.normalized, Vector3.up);
+            transform.SetPositionAndRotation(spawnPosition, upright);
+            if (character != null)
+                character.SetMovementDirection(Vector3.zero);
 
             ResetPlayerSystems();
             GameplayAudioUtility.EnsureListenerOnCamera(playerController != null ? playerController.GameplayCamera : null);

@@ -26,7 +26,8 @@ namespace Project.EditorTools
             "Enemy",
             "Building",
             "Animal",
-            "Dirt"
+            "Dirt",
+            "Climbable"
         };
 
         static EditorTagUtility()
@@ -115,6 +116,35 @@ namespace Project.EditorTools
             return tagsProperty != null && TagExists(tagsProperty, tag);
         }
 
+
+        public static int EnsureLayer(string layerName)
+        {
+            if (string.IsNullOrWhiteSpace(layerName))
+                return -1;
+
+            int existing = LayerMask.NameToLayer(layerName);
+            if (existing >= 0)
+                return existing;
+
+            SerializedObject tagManager = GetTagManager();
+            SerializedProperty layers = tagManager?.FindProperty("layers");
+            if (layers == null || !layers.isArray)
+                return -1;
+
+            for (int i = 8; i < layers.arraySize; i++)
+            {
+                SerializedProperty slot = layers.GetArrayElementAtIndex(i);
+                if (slot == null || !string.IsNullOrEmpty(slot.stringValue))
+                    continue;
+
+                slot.stringValue = layerName;
+                tagManager.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.SaveAssets();
+                return i;
+            }
+
+            return -1;
+        }
         public static void EnsureTag(string tag)
         {
             if (string.IsNullOrWhiteSpace(tag) || TagExists(tag))

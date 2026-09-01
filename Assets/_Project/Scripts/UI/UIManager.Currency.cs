@@ -100,6 +100,9 @@ namespace Project.UI
 
         private void ShowCurrencyPopup(string amountLine, string source)
         {
+            if (DMUiToolkitPiReward.TryShow(amountLine, source))
+                return;
+
             if (piRewardPopupPrefab != null && popupParent != null)
             {
                 GameObject popup = Instantiate(piRewardPopupPrefab, popupParent);

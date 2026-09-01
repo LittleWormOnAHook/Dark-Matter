@@ -1,0 +1,65 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Hazards.uss"/>
+    <ui:VisualElement name="hazards-root" picking-mode="Ignore" class="dmg-hz-root">
+        <ui:VisualElement name="hazards-cluster" picking-mode="Ignore" class="dmg-hz-cluster">
+            <ui:VisualElement name="thermal-panel" picking-mode="Ignore" class="dmg-hz-panel">
+                <ui:Label name="thermal-title" text="TEMPERATURE" picking-mode="Ignore" class="dmg-hz-title"/>
+                <ui:Label name="thermal-status" text="EVA NOMINAL" picking-mode="Ignore" class="dmg-hz-status"/>
+                <ui:VisualElement name="thermal-track" picking-mode="Ignore" class="dmg-hz-thermal-track">
+                    <ui:VisualElement name="thermal-fill" picking-mode="Ignore" class="dmg-hz-thermal-fill"/>
+                    <ui:VisualElement name="thermal-needle" picking-mode="Ignore" class="dmg-hz-needle"/>
+                </ui:VisualElement>
+                <ui:Label name="thermal-value" text="70 F" picking-mode="Ignore" class="dmg-hz-temp"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hazard-panel" picking-mode="Ignore" class="dmg-hz-panel">
+                <ui:Label name="hazard-title" text="HAZARDS" picking-mode="Ignore" class="dmg-hz-title"/>
+                <ui:Label name="hazard-severity" text="CLEAR" picking-mode="Ignore" class="dmg-hz-status"/>
+                <ui:VisualElement name="hazard-summary-track" picking-mode="Ignore" class="dmg-hz-summary-track">
+                    <ui:VisualElement name="hazard-summary-fill" picking-mode="Ignore" class="dmg-hz-summary-fill"/>
+                </ui:VisualElement>
+                <ui:Label name="hazard-percent" text="0%" picking-mode="Ignore" class="dmg-hz-muted"/>
+                <ui:VisualElement name="hazard-rows" picking-mode="Ignore" class="dmg-hz-rows">
+                    <ui:VisualElement name="hz-row-rad" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-rad-name" text="Radiation Flat" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-rad-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-rad-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hz-row-cold" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-cold-name" text="Cold Basin" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-cold-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-cold-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hz-row-heat" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-heat-name" text="Heat Vent" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-heat-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-heat-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hz-row-sulfur" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-sulfur-name" text="Sulfur Field" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-sulfur-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-sulfur-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hz-row-volcano" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-volcano-name" text="Volcano Caldera" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-volcano-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-volcano-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hz-row-shelter" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hz-shelter-name" text="Shelter Safe Zone" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:Label name="hz-shelter-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:VisualElement name="hz-shelter-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="hazard-ticks" picking-mode="Ignore" class="dmg-hz-ticks">
+            <ui:Label name="hazard-ticks-label" text="" picking-mode="Ignore" class="dmg-hz-ticks-label"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="zone-banner" picking-mode="Ignore" class="dmg-hz-banner">
+            <ui:VisualElement name="zone-banner-accent" picking-mode="Ignore" class="dmg-hz-banner-accent"/>
+            <ui:Label name="zone-banner-heading" text="ENTERING ZONE" picking-mode="Ignore" class="dmg-hz-banner-heading"/>
+            <ui:Label name="zone-banner-name" text="ZONE" picking-mode="Ignore" class="dmg-hz-banner-name"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

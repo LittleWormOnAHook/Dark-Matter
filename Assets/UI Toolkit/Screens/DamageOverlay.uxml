@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="DamageOverlay.uss"/>
+    <ui:VisualElement name="damage-root" picking-mode="Ignore" class="dmg-damage-root">
+        <ui:VisualElement name="damage-layer" picking-mode="Ignore" class="dmg-damage-layer"/>
+    </ui:VisualElement>
+</ui:UXML>

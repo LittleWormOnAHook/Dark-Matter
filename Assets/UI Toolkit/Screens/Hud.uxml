@@ -1,0 +1,142 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Hud.uss"/>
+    <ui:VisualElement name="hud-root" picking-mode="Ignore" class="dmg-hud-root">
+        <ui:VisualElement name="bars" picking-mode="Ignore" class="dmg-hud-bars" style="font-size: 16px; scale: 0.9 1;">
+            <ui:VisualElement name="bar-health" picking-mode="Ignore" class="dmg-hud-bar">
+                <ui:VisualElement name="bar-health-track" picking-mode="Ignore" class="dmg-hud-bar-track">
+                    <ui:VisualElement name="bar-health-fill" picking-mode="Ignore" class="dmg-hud-bar-fill dmg-hud-fill-health"/>
+                </ui:VisualElement>
+                <ui:Label name="bar-health-label" text="100" picking-mode="Ignore" class="dmg-hud-bar-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="bar-energy" picking-mode="Ignore" class="dmg-hud-bar">
+                <ui:VisualElement name="bar-energy-track" picking-mode="Ignore" class="dmg-hud-bar-track">
+                    <ui:VisualElement name="bar-energy-fill" picking-mode="Ignore" class="dmg-hud-bar-fill dmg-hud-fill-energy"/>
+                </ui:VisualElement>
+                <ui:Label name="bar-energy-label" text="100" picking-mode="Ignore" class="dmg-hud-bar-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="bar-stamina" picking-mode="Ignore" class="dmg-hud-bar">
+                <ui:VisualElement name="bar-stamina-track" picking-mode="Ignore" class="dmg-hud-bar-track">
+                    <ui:VisualElement name="bar-stamina-fill" picking-mode="Ignore" class="dmg-hud-bar-fill dmg-hud-fill-stamina"/>
+                </ui:VisualElement>
+                <ui:Label name="bar-stamina-label" text="100" picking-mode="Ignore" class="dmg-hud-bar-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="bar-oxygen" picking-mode="Ignore" class="dmg-hud-bar">
+                <ui:VisualElement name="bar-oxygen-track" picking-mode="Ignore" class="dmg-hud-bar-track">
+                    <ui:VisualElement name="bar-oxygen-fill" picking-mode="Ignore" class="dmg-hud-bar-fill dmg-hud-fill-oxygen"/>
+                </ui:VisualElement>
+                <ui:Label name="bar-oxygen-label" text="05:00" picking-mode="Ignore" class="dmg-hud-bar-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="hotbar" picking-mode="Ignore" class="dmg-hud-hotbar">
+            <ui:VisualElement name="hotbar-slot-0" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-0" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-0" text="1" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-1" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-1" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-1" text="2" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-2" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-2" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-2" text="3" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-3" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-3" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-3" text="4" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-4" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-4" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-4" text="5" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-5" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-5" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-5" text="6" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-6" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-6" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-6" text="7" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-7" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-7" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-7" text="8" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-8" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-8" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-8" text="9" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hotbar-slot-9" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="hotbar-icon-9" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="hotbar-key-9" text="0" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="tools" picking-mode="Ignore" class="dmg-hud-tools">
+            <ui:VisualElement name="tool-slot-0" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="tool-icon-0" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="tool-key-0" text="Z" picking-mode="Ignore" class="dmg-hud-slot-key" style="bottom: 0; right: 2px;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="tool-slot-1" picking-mode="Ignore" class="dmg-hud-slot">
+                <ui:VisualElement name="tool-icon-1" picking-mode="Ignore" class="dmg-hud-slot-icon"/>
+                <ui:Label name="tool-key-1" text="X" picking-mode="Ignore" class="dmg-hud-slot-key"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="companions" picking-mode="Ignore" class="dmg-hud-companions">
+            <ui:VisualElement name="companion-slot-0" picking-mode="Position" class="dmg-hud-companion">
+                <ui:VisualElement name="companion-health-0" picking-mode="Ignore" class="dmg-hud-companion-health"/>
+                <ui:VisualElement name="companion-icon-0" picking-mode="Ignore" class="dmg-hud-companion-icon"/>
+                <ui:Label name="companion-name-0" text="" picking-mode="Ignore" class="dmg-hud-companion-name"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="companion-slot-1" picking-mode="Position" class="dmg-hud-companion">
+                <ui:VisualElement name="companion-health-1" picking-mode="Ignore" class="dmg-hud-companion-health"/>
+                <ui:VisualElement name="companion-icon-1" picking-mode="Ignore" class="dmg-hud-companion-icon"/>
+                <ui:Label name="companion-name-1" text="" picking-mode="Ignore" class="dmg-hud-companion-name"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="companion-slot-2" picking-mode="Position" class="dmg-hud-companion">
+                <ui:VisualElement name="companion-health-2" picking-mode="Ignore" class="dmg-hud-companion-health"/>
+                <ui:VisualElement name="companion-icon-2" picking-mode="Ignore" class="dmg-hud-companion-icon"/>
+                <ui:Label name="companion-name-2" text="" picking-mode="Ignore" class="dmg-hud-companion-name"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Label name="prompt" text="Interaction prompt" picking-mode="Ignore" class="dmg-hud-prompt" style="font-size: 60px;"/>
+        <ui:VisualElement name="radio" picking-mode="Ignore" class="dmg-hud-radio">
+            <ui:Label name="radio-title" text="RADIO" picking-mode="Ignore" class="dmg-hud-radio-title"/>
+            <ui:Label name="radio-body" text="Radio transcript" picking-mode="Ignore" class="dmg-hud-radio-body"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="popups" picking-mode="Ignore" class="dmg-hud-popups" style="background-size: 100% 100%; -unity-background-scale-mode: scale-to-fit; background-image: none; -unity-slice-scale: 1px; -unity-text-generator: standard; -unity-background-image-tint-color: rgb(255, 0, 0); -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; background-color: rgba(99, 99, 99, 0); color: rgba(53, 53, 53, 0); font-size: 60px;">
+            <ui:VisualElement name="popup-template" picking-mode="Ignore" class="dmg-hud-popup" style="background-image: url(&quot;project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Textures/Border/Cut/Cut%20Frame%20Filled.png?fileID=21300000&amp;guid=dc2366542d8657842a8bf5378c77bee0&amp;type=3#Cut Frame Filled&quot;); background-size: 100% 100%; -unity-background-scale-mode: stretch-to-fill; background-color: rgba(28, 42, 56, 0.35); -unity-slice-left: 6; -unity-slice-top: 6; -unity-slice-right: 6; -unity-slice-bottom: 6; border-width: 2px; border-color: rgb(212, 160, 23); padding-left: 10px; padding-right: 10px; font-size: 40px;">
+                <ui:Label name="popup-template-text" text="Pickup / XP popup" picking-mode="Ignore" class="dmg-hud-popup-text" style="color: rgb(237, 233, 228); -unity-font-style: bold; opacity: 1; font-size: 40px; flex-grow: 1; -unity-text-align: middle-left;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="popup-preview-1" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 2" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 32px; color: rgb(237, 233, 228);"/></ui:VisualElement>
+            <ui:VisualElement name="popup-preview-2" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 3" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 23px; color: rgb(237, 233, 228);"/></ui:VisualElement>
+            <ui:VisualElement name="popup-preview-3" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 4" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 15px; color: rgb(237, 233, 228);"/></ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="xp" picking-mode="Ignore" class="dmg-hud-xp">
+            <ui:VisualElement name="xp-track" picking-mode="Ignore" class="dmg-hud-xp-track">
+                <ui:VisualElement name="xp-fill" picking-mode="Ignore" class="dmg-hud-xp-fill" style="width: 62%;"/>
+            </ui:VisualElement>
+            <ui:Label name="xp-label" text="Lv 5    120 / 400 XP" picking-mode="Ignore" class="dmg-hud-xp-label"/>
+        </ui:VisualElement>
+        <ui:Label name="ammo" text="STANDARD 12/30  (+48)" picking-mode="Ignore" class="dmg-hud-ammo"/>
+        <ui:VisualElement name="enemy-focus" picking-mode="Ignore" class="dmg-hud-enemy-focus" style="translate: 0 -23px;">
+            <ui:Label name="enemy-name" text="Enemy Name" picking-mode="Ignore" class="dmg-hud-enemy-name"/>
+            <ui:VisualElement name="enemy-track" picking-mode="Ignore" class="dmg-hud-enemy-track">
+                <ui:VisualElement name="enemy-fill" picking-mode="Ignore" class="dmg-hud-enemy-fill" style="width: 70%;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="minimap" picking-mode="Ignore" class="dmg-hud-minimap">
+            <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="dmg-hud-minimap-chrome"><ui:Button name="minimap-zoom-out" text="-" picking-mode="Position" class="dmg-hud-minimap-btn"/><ui:VisualElement name="minimap-frame" picking-mode="Ignore" class="dmg-hud-minimap-frame">
+                <ui:VisualElement name="minimap-view" picking-mode="Ignore" class="dmg-hud-minimap-view"/><ui:VisualElement name="minimap-fog" picking-mode="Ignore" class="dmg-hud-minimap-fog"/>
+                <ui:VisualElement name="minimap-player" picking-mode="Ignore" class="dmg-hud-minimap-player"/>
+            </ui:VisualElement><ui:Button name="minimap-zoom-in" text="+" picking-mode="Position" class="dmg-hud-minimap-btn"/></ui:VisualElement><ui:Button name="minimap-scan" text="Scan" picking-mode="Position" class="dmg-hud-minimap-scan"/>
+            <ui:VisualElement name="compass" picking-mode="Ignore" class="dmg-hud-compass">
+                <ui:VisualElement name="compass-strip" picking-mode="Ignore" class="dmg-hud-compass-strip">
+                    <ui:VisualElement name="compass-ticks" picking-mode="Ignore" class="dmg-hud-compass-ticks"/>
+                    <ui:VisualElement name="compass-markers" picking-mode="Ignore" class="dmg-hud-compass-markers"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="compass-pointer" picking-mode="Ignore" class="dmg-hud-compass-pointer"/>
+                <ui:Label name="compass-heading" text="000" picking-mode="Ignore" class="dmg-hud-compass-heading"/>
+                <ui:Label name="minimap-info" text="Range 96m  |  Scan: standby" picking-mode="Ignore" class="dmg-hud-minimap-info"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

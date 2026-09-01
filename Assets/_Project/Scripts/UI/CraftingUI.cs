@@ -124,6 +124,9 @@ namespace Project.UI
         {
             get
             {
+                if (DMUiToolkitCraft.IsOpen)
+                    return true;
+
                 CraftingUI ui = FindAnyObjectByType<CraftingUI>();
                 return ui != null && ui.standaloneOpen;
             }
@@ -131,8 +134,68 @@ namespace Project.UI
 
         public static void CloseAnyOpenStandalone()
         {
+            DMUiToolkitCraft.Hide();
             CraftingUI ui = FindAnyObjectByType<CraftingUI>();
             ui?.CloseStandalonePanel(clearStation: true);
+        }
+
+        public bool ToolkitIsCrafting => isCrafting;
+        public CraftingManager ToolkitCraftingManager
+        {
+            get
+            {
+                BindSystems();
+                return craftingManager;
+            }
+        }
+
+        public InventorySystem ToolkitInventory
+        {
+            get
+            {
+                BindSystems();
+                return inventorySystem;
+            }
+        }
+
+        public System.Collections.Generic.IReadOnlyList<RecipeDefinition> ToolkitGetRecipes()
+        {
+            BindSystems();
+            if (craftingManager == null)
+                return System.Array.Empty<RecipeDefinition>();
+
+            return !craftingManager.CurrentStation.HasValue
+                ? craftingManager.GetDiscoveredRecipes()
+                : craftingManager.GetDiscoveredRecipes(craftingManager.CurrentStation);
+        }
+
+        public void ToolkitHideUguiShell()
+        {
+            if (standaloneWindowRoot != null && standaloneWindowRoot.activeSelf)
+                standaloneWindowRoot.SetActive(false);
+
+            if (craftPanel != null && !craftPanelEmbedded && craftPanel.activeSelf)
+                craftPanel.SetActive(false);
+        }
+
+        public bool ToolkitTryCraft(RecipeDefinition recipe, int amount)
+        {
+            BindSystems();
+            if (isCrafting || recipe == null || craftingManager == null || inventorySystem == null)
+                return false;
+
+            selectedRecipe = recipe;
+            amount = Mathf.Max(1, amount);
+            if (!craftingManager.CanCraft(recipe, inventorySystem, amount))
+            {
+                PickupToastUI.Show("Cannot craft - check ingredients, station, or inventory space.");
+                return false;
+            }
+
+            if (craftRoutine != null)
+                StopCoroutine(craftRoutine);
+            craftRoutine = StartCoroutine(RunCraftRoutine(recipe, amount));
+            return true;
         }
 
         public void SetPresentationMode(CraftingUiPresentationMode mode)
@@ -159,6 +222,14 @@ namespace Project.UI
 
             craftingManager.CurrentStation = stationType;
             SetPresentationMode(CraftingUiPresentationMode.Production);
+
+            if (DMUiToolkitHud.IsDriving && DMUiToolkitCraft.TryShow(this))
+            {
+                standaloneOpen = true;
+                CaptureStandaloneInput();
+                ToolkitHideUguiShell();
+                return;
+            }
 
             Canvas canvas = GetComponent<Canvas>()
                 ?? GetComponentInParent<Canvas>()
@@ -194,6 +265,15 @@ namespace Project.UI
         {
             EnsurePanelBuilt();
             SetPresentationMode(CraftingUiPresentationMode.Production);
+
+            if (DMUiToolkitHud.IsDriving && DMUiToolkitCraft.TryShow(this))
+            {
+                standaloneOpen = true;
+                CaptureStandaloneInput();
+                BindSystems();
+                ToolkitHideUguiShell();
+                return;
+            }
             EnsureStandaloneWindow(overlayParent);
             ApplyStandaloneWindowSize();
 
@@ -228,6 +308,8 @@ namespace Project.UI
 
         public void CloseStandalonePanel(bool clearStation = true)
         {
+            DMUiToolkitCraft.Hide();
+
             if (!standaloneOpen && !craftPanelEmbedded)
                 return;
 

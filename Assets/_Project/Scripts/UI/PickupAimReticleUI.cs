@@ -40,6 +40,13 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (dotRect != null)
+                    dotRect.gameObject.SetActive(false);
+                return;
+            }
+
             if (dotRect == null || dotImage == null)
                 return;
 

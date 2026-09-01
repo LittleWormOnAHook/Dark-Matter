@@ -49,6 +49,9 @@ namespace Project.UI
             if (string.IsNullOrEmpty(title))
                 return;
 
+            if (DMUiToolkitLevelUp.TryShowAchievement(title, description, xpReward))
+                return;
+
             Canvas canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
                 return;

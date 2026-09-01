@@ -52,6 +52,13 @@ namespace Project.UI
 
         public void Refresh()
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (statusLabel != null && statusLabel.gameObject.activeSelf)
+                    statusLabel.gameObject.SetActive(false);
+                return;
+            }
+
             EnsureBuilt();
             if (boundStats == null)
                 boundStats = FindAnyObjectByType<SurvivalStats>();

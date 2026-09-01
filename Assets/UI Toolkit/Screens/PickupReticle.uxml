@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="PickupReticle.uss"/>
+    <ui:VisualElement name="reticle-root" picking-mode="Ignore" class="dmg-reticle-root">
+        <ui:VisualElement name="reticle-dot" picking-mode="Ignore" class="dmg-reticle-dot"/>
+    </ui:VisualElement>
+</ui:UXML>

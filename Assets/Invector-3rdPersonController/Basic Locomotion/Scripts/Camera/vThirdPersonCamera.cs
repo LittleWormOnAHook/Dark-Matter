@@ -915,7 +915,6 @@ namespace Invector.vCamera
             else
             {
                 distance = useSmooth ? Mathf.Lerp(distance, currentState.defaultDistance, lerpState.smooth * Time.fixedDeltaTime) : currentState.defaultDistance;
-                currentZoom = currentState.defaultDistance;
             }
 
             targetCamera.fieldOfView = currentState.fov;

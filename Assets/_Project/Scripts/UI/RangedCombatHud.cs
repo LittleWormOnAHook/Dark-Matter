@@ -170,9 +170,21 @@ namespace Project.UI
             if (!showAmmoCounter)
                 return;
 
+            if (DMUiToolkitHud.IsDriving)
+            {
+                SetAmmoLabelVisible(false);
+                return;
+            }
+
             if (!ShouldShowHud(out ItemData weapon))
             {
                 SetAmmoLabelVisible(false);
+                return;
+            }
+
+            if (ammoLabel == null || !ammoLabel.gameObject.activeSelf)
+            {
+                RefreshAmmoLabel();
                 return;
             }
 
@@ -301,6 +313,9 @@ namespace Project.UI
 
         private void SetAmmoLabelVisible(bool visible)
         {
+            if (visible && DMUiToolkitHud.IsDriving)
+                visible = false;
+
             if (ammoLabel != null)
                 ammoLabel.gameObject.SetActive(visible);
         }

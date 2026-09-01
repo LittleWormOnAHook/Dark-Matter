@@ -30,6 +30,7 @@ namespace Project.UI
                 return;
             }
 
+            DMUiToolkitWorldMenus.HidePioneer();
             instance.Hide();
         }
 
@@ -110,6 +111,13 @@ namespace Project.UI
             if (panel == null || string.IsNullOrEmpty(pioneerId))
                 return;
 
+            if (DMUiToolkitWorldMenus.TryShowPioneerRoster(panel, pioneerId, screenPosition))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
+
             ClearDynamicButtons();
             AddButton("Edit Loadout", () => panel.SelectPioneer(pioneerId));
             AddButton("Slot to Trio", () => panel.SlotPioneerToFirstEmpty(pioneerId));
@@ -128,6 +136,13 @@ namespace Project.UI
         {
             if (panel == null || slotIndex < 0 || slotIndex >= PioneerRosterManager.ExpeditionTrioSize)
                 return;
+
+            if (DMUiToolkitWorldMenus.TryShowPioneerTrio(panel, slotIndex, screenPosition))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
 
             ClearDynamicButtons();
             string assignedId = panel.GetTrioDraftId(slotIndex);
@@ -235,6 +250,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitWorldMenus.HidePioneer();
             // Guard destroyed hosts — calling transform on a destroyed MonoBehaviour throws
             // and was aborting LoadingOverlayController fade-in (black screen after load).
             if (this == null)

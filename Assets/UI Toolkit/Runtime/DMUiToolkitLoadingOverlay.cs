@@ -70,6 +70,7 @@ namespace Project.UI
 
             GameObject host = document.gameObject;
             host.SetActive(true);
+            document.enabled = true;
 
             root = document.rootVisualElement;
             if (root == null)
@@ -95,6 +96,7 @@ namespace Project.UI
 
             DMUiToolkitBootstrap.ApplyTheme(document, DMUiToolkitBootstrap.ThemeUssPath);
             DMUiToolkitBootstrap.ApplyTheme(document, DMUiToolkitBootstrap.LoadingUssPath);
+            RepairRuntimeLayout();
 
             if (statusLabel != null)
                 statusLabel.text = string.IsNullOrEmpty(statusText) ? "Loading Genesis..." : statusText;
@@ -106,7 +108,7 @@ namespace Project.UI
             SetPercent(0);
             BuildStars();
             showing = true;
-            DMUiToolkitBootstrap.Stamp("loading overlay active");
+            DMUiToolkitBootstrap.Stamp("loading overlay active (panel-sibling)");
         }
 
         public static void Hide()
@@ -114,8 +116,36 @@ namespace Project.UI
             showing = false;
             flyingStars = null;
 
-            if (document != null && document.gameObject != null)
-                document.gameObject.SetActive(false);
+            CollapseOverlayTree(document != null ? document.rootVisualElement : root);
+            ReleaseLoadingDocument(document);
+
+            DMUiToolkitBootstrap bootstrap = DMUiToolkitBootstrap.Instance;
+            if (bootstrap != null)
+            {
+                UIDocument fromBootstrap = bootstrap.LoadingDocument;
+                if (fromBootstrap != null && fromBootstrap != document)
+                    ReleaseLoadingDocument(fromBootstrap);
+
+                // Shell stays alive and transparent. Never deactivate UITK_Root / MainCanvas.
+                UIDocument shell = bootstrap.ShellDocument;
+                if (shell != null && shell.panelSettings != null)
+                {
+                    shell.panelSettings.clearColor = false;
+                    shell.panelSettings.colorClearValue = Color.clear;
+                }
+
+                VisualElement shellRoot = shell != null ? shell.rootVisualElement : null;
+                VisualElement stray = shellRoot != null ? shellRoot.Q("loading-root") : null;
+                if (stray != null)
+                {
+                    stray.style.display = DisplayStyle.None;
+                    stray.style.backgroundColor = Color.clear;
+                    stray.pickingMode = PickingMode.Ignore;
+                }
+            }
+
+            DMUiToolkitBootstrap.ReleaseLoadingClearColor();
+            DMUiToolkitBootstrap.DeactivateLoadingHosts();
 
             root = null;
             veil = null;
@@ -126,6 +156,74 @@ namespace Project.UI
             statusLabel = null;
             percentLabel = null;
             document = null;
+
+            DMUiToolkitBootstrap.Stamp("loading overlay hidden after load");
+        }
+
+        /// <summary>
+        /// Drop PanelSettings black-clear so the veil fade can actually reveal the menu/world.
+        /// Call under the still-opaque veil after cameras restore.
+        /// </summary>
+        public static void BeginReveal()
+        {
+            ReleasePanelClear(document);
+            DMUiToolkitBootstrap.ReleaseLoadingClearColor();
+
+            VisualElement panelRoot = document != null ? document.rootVisualElement : null;
+            if (panelRoot != null)
+                panelRoot.style.backgroundColor = Color.clear;
+            if (root != null)
+                root.style.backgroundColor = Color.clear;
+        }
+
+        private static void CollapseOverlayTree(VisualElement tree)
+        {
+            if (tree == null)
+                return;
+
+            tree.style.opacity = 0f;
+            tree.style.backgroundColor = Color.clear;
+            tree.style.display = DisplayStyle.None;
+            tree.pickingMode = PickingMode.Ignore;
+
+            VisualElement loadingRoot = tree.Q("loading-root");
+            if (loadingRoot != null && loadingRoot != tree)
+            {
+                loadingRoot.style.opacity = 0f;
+                loadingRoot.style.backgroundColor = Color.clear;
+                loadingRoot.style.display = DisplayStyle.None;
+                loadingRoot.pickingMode = PickingMode.Ignore;
+            }
+        }
+
+        private static void ReleaseLoadingDocument(UIDocument doc)
+        {
+            if (doc == null)
+                return;
+
+            ReleasePanelClear(doc);
+            CollapseOverlayTree(doc.rootVisualElement);
+            doc.panelSettings = null;
+            doc.enabled = false;
+
+            GameObject host = doc.gameObject;
+            if (host == null)
+                return;
+            if (host.name == DMUiToolkitBootstrap.RootName
+                || host.name == "MainCanvas"
+                || host.name == "OpticsOverlayCanvas")
+                return;
+
+            host.SetActive(false);
+        }
+
+        private static void ReleasePanelClear(UIDocument doc)
+        {
+            if (doc == null || doc.panelSettings == null)
+                return;
+
+            doc.panelSettings.clearColor = false;
+            doc.panelSettings.colorClearValue = Color.clear;
         }
 
         public static void SetProgress(float progress)
@@ -192,6 +290,97 @@ namespace Project.UI
             progressFill = tree.Q("progress-fill");
             statusLabel = tree.Q<Label>("status");
             percentLabel = tree.Q<Label>("percent");
+        }
+
+        /// <summary>
+        /// Visibility only while showing. USS / UXML own fonts, colors, and element layout.
+        /// Hide() is what removes the overlay after load.
+        /// </summary>
+        private static void RepairRuntimeLayout()
+        {
+            VisualElement panelRoot = document != null ? document.rootVisualElement : null;
+            if (panelRoot != null)
+            {
+                panelRoot.style.flexGrow = 1;
+                panelRoot.style.width = Length.Percent(100);
+                panelRoot.style.height = Length.Percent(100);
+                panelRoot.style.backgroundColor = Color.black;
+                panelRoot.style.display = DisplayStyle.Flex;
+                panelRoot.style.opacity = 1f;
+            }
+
+            StretchFull(root, Color.black);
+            StretchFull(veil, Color.black);
+            StretchFull(content, null);
+            StretchFull(starsRoot, null);
+
+            VisualElement space = root != null ? root.Q("space") : null;
+            StretchFull(space, new Color(3f / 255f, 3f / 255f, 5f / 255f, 1f));
+
+            if (root != null)
+            {
+                root.style.display = DisplayStyle.Flex;
+                root.style.opacity = 1f;
+            }
+
+            if (veil != null)
+            {
+                veil.style.display = DisplayStyle.Flex;
+                veil.style.opacity = 1f;
+            }
+
+            if (content != null)
+            {
+                content.style.display = DisplayStyle.Flex;
+                content.style.opacity = 1f;
+            }
+
+            if (blackhole == null && content != null)
+            {
+                blackhole = new VisualElement { name = "blackhole" };
+                blackhole.AddToClassList("dmg-blackhole");
+                blackhole.pickingMode = PickingMode.Ignore;
+                Label title = root != null ? root.Q<Label>("title") : null;
+                if (title != null)
+                    content.Insert(content.IndexOf(title), blackhole);
+                else
+                    content.Add(blackhole);
+            }
+
+            EnsureBlackholeSprite();
+        }
+
+        private static void EnsureBlackholeSprite()
+        {
+            if (blackhole == null)
+                return;
+
+            Sprite holeSprite = Resources.Load<Sprite>(LoadingOverlayController.BlackholeResourcePath);
+            if (holeSprite != null)
+            {
+                blackhole.style.backgroundImage = new StyleBackground(holeSprite);
+                return;
+            }
+
+            Texture2D holeTexture = Resources.Load<Texture2D>(LoadingOverlayController.BlackholeResourcePath);
+            if (holeTexture != null)
+                blackhole.style.backgroundImage = new StyleBackground(holeTexture);
+        }
+
+        private static void StretchFull(VisualElement element, Color? background)
+        {
+            if (element == null)
+                return;
+
+            element.style.position = Position.Absolute;
+            element.style.left = 0;
+            element.style.top = 0;
+            element.style.right = 0;
+            element.style.bottom = 0;
+            element.style.width = Length.Percent(100);
+            element.style.height = Length.Percent(100);
+            if (background.HasValue)
+                element.style.backgroundColor = background.Value;
         }
 
         private static void BuildFallbackTree(UIDocument doc)

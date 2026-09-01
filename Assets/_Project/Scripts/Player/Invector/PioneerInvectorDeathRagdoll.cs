@@ -67,10 +67,27 @@ namespace Project.Player.Invector
                 _ensureDeathRoutine = null;
             }
 
-            _ragdoll?.RestoreRagdoll();
+            EnsureReferences();
 
-            if (_controller != null && _controller.ragdolled)
-                _controller.ResetRagdoll();
+            if (_ragdoll != null)
+            {
+                _ragdoll.keepRagdolled = false;
+                _ragdoll.ignoreGetUpAnimation = false;
+                _ragdoll.RestoreRagdoll();
+            }
+
+            if (_controller != null)
+            {
+                if (_controller.ragdolled)
+                    _controller.ResetRagdoll();
+                _controller.lockMovement = false;
+                _controller.lockAnimMovement = false;
+                _controller.EnableGravityAndCollision();
+            }
+
+            Animator animator = GetComponentInChildren<Animator>();
+            if (animator != null)
+                animator.enabled = true;
 
             PioneerInvectorBootstrap bootstrap = GetComponent<PioneerInvectorBootstrap>();
             bootstrap?.EnsureInvectorPhysicsReady();

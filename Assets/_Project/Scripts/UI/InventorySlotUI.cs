@@ -586,6 +586,12 @@ namespace Project.UI
                 return;
             }
 
+            if (DMUiToolkitHud.TryDropOnSlot(eventData.position, source.slotIndex))
+                return;
+
+            if (DMUiToolkitHud.IsPointerOverHotbarOrTools(eventData.position))
+                return;
+
             // Dragged the item off the inventory panel entirely (no UI at all under the pointer,
             // meaning the drop landed on the game world view) — drop it, same as the right-click
             // "Drop" context menu action, for any item.

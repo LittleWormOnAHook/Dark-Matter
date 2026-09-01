@@ -1,9 +1,42 @@
-/* Loading overlay extras on top of DarkMatterGenesis.uss. Isolated screen. */
+/* Loading overlay extras on top of DarkMatterGenesis.uss. Isolated screen.
+   Edit THIS file for overlay-only look (title 65 / status 30 live here).
+   Theme-wide colors/layout: Themes/DarkMatterGenesis.uss.
+   UI Builder Save is sanitized (runtime mode, relative USS, required names).
+   Play does not strip font-size/color. */
 
 .dmg-loading-root {
     /* Sort is on PanelSettings (32000); this just owns the full overlay. */
+    background-color: rgb(0, 0, 0);
 }
 
 .dmg-blackhole {
+    width: 150px;
+    height: 150px;
+    max-width: 150px;
+    max-height: 150px;
     opacity: 0.8;
+    overflow: hidden;
+}
+
+.dmg-title {
+    left: 50%;
+    top: 50%;
+    margin-left: -600px;
+    margin-top: -145px;
+    height: 110px;
+    font-size: 65px;
+}
+
+.dmg-status {
+    height: 40px;
+    font-size: 30px;
+}
+
+.dmg-percent {
+    height: 40px;
+    font-size: 30px;
+}
+
+.dmg-progress-block {
+    height: 84px;
 }

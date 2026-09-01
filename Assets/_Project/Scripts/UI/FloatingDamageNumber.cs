@@ -35,6 +35,13 @@ namespace Project.UI
 
         public void Initialize(float damage, Vector3 worldPosition, Camera camera)
         {
+            if (DMUiToolkitDamage.TrySpawn(damage, worldPosition, damageColor))
+            {
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+                return;
+            }
+
             worldAnchor = worldPosition;
             worldCamera = camera != null ? camera : Camera.main;
             screenOffset = new Vector2(Random.Range(-18f, 18f), Random.Range(0f, 10f));

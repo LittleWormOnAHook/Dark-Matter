@@ -1,0 +1,29 @@
+/* DMUiToolkit 0901-finish */
+.dmg-reticle-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-reticle-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    left: 50%;
+    top: 50%;
+    margin-left: -4px;
+    margin-top: -4px;
+    background-color: rgba(235, 245, 255, 0.95);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(20, 28, 36, 0.7);
+}
+
+.dmg-reticle-hot {
+    background-color: rgba(115, 255, 191, 0.98);
+}

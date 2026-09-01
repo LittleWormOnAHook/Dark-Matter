@@ -33,6 +33,13 @@ namespace Project.UI
 
         private void Start()
         {
+            if (DMUiToolkitHud.IsDriving)
+            {
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+                return;
+            }
+
             StartCoroutine(AnimatePopup());
         }
 

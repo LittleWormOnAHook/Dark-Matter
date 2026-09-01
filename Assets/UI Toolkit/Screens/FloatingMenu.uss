@@ -1,0 +1,75 @@
+/* DMUiToolkit 0901-finish */
+.dmg-fmenu-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-fmenu-dismiss {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.dmg-fmenu-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200px;
+    padding: 8px;
+    background-color: rgba(20, 23, 31, 0.98);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+    flex-direction: column;
+}
+
+.dmg-fmenu-flyout {
+    width: 220px;
+}
+
+.dmg-fmenu-btn {
+    width: 100%;
+    height: 34px;
+    margin-top: 4px;
+    background-color: rgba(192, 46, 122, 0.95);
+    color: rgb(237, 233, 228);
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.dmg-fmenu-tip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 240px;
+    padding: 10px 12px;
+    background-color: rgba(28, 42, 56, 0.96);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    flex-direction: column;
+}
+
+.dmg-fmenu-tip-title {
+    font-size: 18px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-fmenu-tip-body {
+    margin-top: 4px;
+    font-size: 14px;
+    color: rgb(140, 127, 117);
+    white-space: normal;
+}

@@ -23,6 +23,9 @@ namespace Project.UI
 
         public static void Show(string echoDisplayName, string classLine, string abilitySummary, Action closedCallback = null)
         {
+            if (DMUiToolkitWorldMenus.TryShowEcho(echoDisplayName, classLine, abilitySummary, closedCallback))
+                return;
+
             Canvas canvas = ResolveCanvas();
             if (canvas == null)
                 return;

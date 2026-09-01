@@ -1,0 +1,197 @@
+.dmg-dq-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-dq-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dmg-dq-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 900px;
+    height: 520px;
+    margin-left: -450px;
+    margin-top: -260px;
+    flex-direction: column;
+    background-color: rgba(28, 42, 56, 0.96);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+}
+
+.dmg-dq-header {
+    height: 44px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(47, 47, 47, 0.98);
+    padding: 0 8px 0 16px;
+}
+
+.dmg-dq-title {
+    flex-grow: 1;
+    font-size: 22px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
+
+.dmg-dq-close {
+    width: 36px;
+    height: 32px;
+    margin-left: 8px;
+    background-color: rgba(192, 46, 122, 0.95);
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    font-size: 16px;
+}
+
+.dmg-dq-simple {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.dmg-dq-body {
+    flex-grow: 1;
+    font-size: 22px;
+    color: rgb(237, 233, 228);
+    white-space: normal;
+}
+
+.dmg-dq-board {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 12px;
+}
+
+.dmg-dq-split {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.dmg-dq-list-col {
+    width: 220px;
+    min-width: 220px;
+    flex-grow: 0;
+    margin-right: 12px;
+    padding: 8px;
+    background-color: rgba(28, 42, 56, 0.95);
+    flex-direction: column;
+}
+
+.dmg-dq-col-header {
+    height: 24px;
+    font-size: 18px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-dq-scroll {
+    flex-grow: 1;
+}
+
+.dmg-dq-list {
+    flex-direction: column;
+}
+
+.dmg-dq-quest-row {
+    height: 58px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    flex-direction: column;
+    background-color: rgba(47, 47, 47, 0.95);
+    border-width: 1px;
+    border-color: rgba(74, 74, 90, 0.6);
+}
+
+.dmg-dq-quest-row-title {
+    font-size: 16px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-dq-quest-row-status {
+    font-size: 13px;
+    color: rgb(212, 160, 23);
+}
+
+.dmg-dq-info {
+    flex-grow: 1;
+    margin-right: 12px;
+    padding: 12px;
+    background-color: rgba(47, 47, 47, 0.92);
+    flex-direction: column;
+}
+
+.dmg-dq-progress {
+    flex-grow: 1;
+    padding: 12px;
+    background-color: rgba(47, 47, 47, 0.92);
+    flex-direction: column;
+}
+
+.dmg-dq-quest-title {
+    font-size: 24px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.dmg-dq-copy {
+    font-size: 16px;
+    color: rgb(237, 233, 228);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.dmg-dq-status {
+    font-size: 18px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.dmg-dq-xp {
+    font-size: 18px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.dmg-dq-actions {
+    height: 48px;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.dmg-dq-btn {
+    height: 48px;
+    min-width: 160px;
+    margin-left: 10px;
+    background-color: rgba(192, 46, 122, 0.95);
+    color: rgb(237, 233, 228);
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+.dmg-dq-btn-abandon {
+    background-color: rgb(143, 30, 94);
+}

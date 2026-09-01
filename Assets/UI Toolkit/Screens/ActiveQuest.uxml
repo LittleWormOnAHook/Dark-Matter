@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="ActiveQuest.uss"/>
+    <ui:VisualElement name="quest-root" picking-mode="Ignore" class="dmg-quest-root">
+        <ui:VisualElement name="quest-list" picking-mode="Ignore" class="dmg-quest-list"/>
+    </ui:VisualElement>
+</ui:UXML>

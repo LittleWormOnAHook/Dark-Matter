@@ -52,6 +52,9 @@ namespace Project.UI
         private static OpticsOverlayUI instance;
         private bool uiBuilt;
         private bool isVisible;
+        internal ToolType ActiveToolType { get; private set; }
+        internal RenderTexture BoundRenderTexture { get; private set; }
+        internal bool IsPassthroughMode => passthroughMode;
         private bool passthroughMode;
         private bool sceneAuthoredOverlay;
         private TextMeshProUGUI scanningPopupLabel;
@@ -387,6 +390,9 @@ namespace Project.UI
         {
             passthroughMode = enabled;
             ApplyPassthroughVisibility();
+            if (passthroughMode)
+                BoundRenderTexture = null;
+            DMUiToolkitOpticsOverlay.SyncFromUgui(this);
         }
 
         public void BindRenderTexture(RenderTexture texture)
@@ -399,13 +405,16 @@ namespace Project.UI
             {
                 viewportImage.texture = null;
                 viewportImage.enabled = false;
+                BoundRenderTexture = null;
                 ApplyPassthroughVisibility();
+                DMUiToolkitOpticsOverlay.SyncFromUgui(this);
                 return;
             }
 
             viewportImage.texture = texture;
             viewportImage.color = Color.white;
             viewportImage.enabled = true;
+            BoundRenderTexture = texture;
 
             if (viewportMaterial != null)
             {
@@ -416,6 +425,7 @@ namespace Project.UI
             }
 
             ApplyPassthroughVisibility();
+            DMUiToolkitOpticsOverlay.SyncFromUgui(this);
         }
 
         private void ApplyPassthroughVisibility()
@@ -595,12 +605,14 @@ namespace Project.UI
             }
 
             isVisible = visible;
+            ActiveToolType = visible ? toolType : ToolType.None;
             overlayRoot.SetActive(visible);
             if (!visible)
             {
                 if (passthroughVignetteImage != null)
                     passthroughVignetteImage.enabled = false;
                 SetScanningPopupVisible(false);
+                DMUiToolkitOpticsOverlay.SyncFromUgui(this);
                 return;
             }
 
@@ -676,6 +688,8 @@ namespace Project.UI
 
             if (!scanner)
                 ClearScannerMarkers();
+
+            DMUiToolkitOpticsOverlay.SyncFromUgui(this);
         }
 
         private void BindScanningPopup(Transform root)
@@ -1006,6 +1020,9 @@ namespace Project.UI
                 if (label != null)
                     label.text = target.Label;
             }
+
+            DMUiToolkitOpticsOverlay.UpdateScannerMarkers(
+                worldCamera, targets, halfWidthPixels, halfHeightPixels);
         }
 
         public void ClearScannerMarkers()
@@ -1015,6 +1032,8 @@ namespace Project.UI
                 if (markerPool[i] != null)
                     markerPool[i].gameObject.SetActive(false);
             }
+
+            DMUiToolkitOpticsOverlay.ClearScannerMarkers();
         }
 
         private void EnsureMarkerPool(int requiredCount)

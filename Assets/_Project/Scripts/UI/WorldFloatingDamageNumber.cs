@@ -32,6 +32,9 @@ namespace Project.UI
             if (damage <= 0f)
                 return;
 
+            if (DMUiToolkitDamage.TrySpawn(damage, worldPosition, color))
+                return;
+
             GameObject root = PoolManager.Spawn(EnsureTemplate(), worldPosition, Quaternion.identity);
             if (root == null)
                 return;

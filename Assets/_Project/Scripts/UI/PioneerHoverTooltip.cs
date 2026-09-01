@@ -192,7 +192,7 @@ namespace Project.UI
             fadeRoutine = null;
         }
 
-        private static string BuildBody(SkilledPioneerRecord record)
+        public static string BuildBody(SkilledPioneerRecord record)
         {
             string traits = PioneerTraitUtility.FormatTraitList(record.traitIds);
             string passives = PioneerTraitUtility.FormatTraitList(record.passiveAbilityIds);

@@ -30,7 +30,8 @@ namespace Project.UI
 
         private HovercraftUsable activeUsable;
 
-        public static bool IsOpen => instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf;
+        public static bool IsOpen => DMUiToolkitHoverInteract.IsOpen
+            || (instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf);
 
         public static HovercraftInteractMenuUI EnsureExists(Transform canvasRootTransform)
         {
@@ -51,6 +52,7 @@ namespace Project.UI
 
         public static void CloseAny()
         {
+            DMUiToolkitHoverInteract.Hide();
             instance?.Hide();
         }
 
@@ -134,6 +136,14 @@ namespace Project.UI
             if (usable == null)
                 return;
 
+            if (DMUiToolkitHoverInteract.TryShow(usable))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
+
+
             activeUsable = usable;
             menuRoot.SetActive(true);
             menuRoot.transform.SetAsLastSibling();
@@ -213,6 +223,7 @@ namespace Project.UI
 
         public void Hide()
         {
+            DMUiToolkitHoverInteract.Hide();
             activeUsable = null;
 
             if (menuRoot != null)

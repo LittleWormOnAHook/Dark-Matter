@@ -46,7 +46,8 @@ namespace Project.UI
 
 
 
-        public static bool IsOpen => instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf;
+        public static bool IsOpen => DMUiToolkitWorldMenus.IsShelterOpen
+            || (instance != null && instance.menuRoot != null && instance.menuRoot.activeSelf);
 
 
 
@@ -85,11 +86,9 @@ namespace Project.UI
 
 
         public static void CloseAny()
-
         {
-
+            DMUiToolkitWorldMenus.HideShelter();
             instance?.Hide();
-
         }
 
 
@@ -237,12 +236,16 @@ namespace Project.UI
 
 
         public void Show(QuoraShelterController shelter)
-
         {
-
             if (shelter == null)
-
                 return;
+
+            if (DMUiToolkitWorldMenus.TryShowShelter(shelter))
+            {
+                if (menuRoot != null)
+                    menuRoot.SetActive(false);
+                return;
+            }
 
 
 
@@ -351,9 +354,8 @@ namespace Project.UI
 
 
         public void Hide()
-
         {
-
+            DMUiToolkitWorldMenus.HideShelter();
             activeShelter = null;
 
             if (menuRoot != null)

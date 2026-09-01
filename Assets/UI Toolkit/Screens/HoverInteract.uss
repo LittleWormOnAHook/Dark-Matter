@@ -1,0 +1,71 @@
+/* DMUiToolkit 0901-finish */
+.dmg-hi-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-hi-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.dmg-hi-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 280px;
+    margin-left: -140px;
+    margin-top: -150px;
+    padding: 16px 18px;
+    background-color: rgba(28, 42, 56, 0.96);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+    align-items: center;
+    flex-direction: column;
+}
+
+.dmg-hi-title {
+    height: 32px;
+    font-size: 22px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-hi-body {
+    height: 24px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: rgb(140, 127, 117);
+    -unity-text-align: middle-center;
+}
+
+.dmg-hi-btn {
+    width: 220px;
+    height: 40px;
+    margin-top: 8px;
+    background-color: rgba(192, 46, 122, 0.95);
+    color: rgb(237, 233, 228);
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+.dmg-hi-btn-muted {
+    height: 34px;
+    background-color: rgba(74, 74, 90, 0.82);
+    font-size: 15px;
+}

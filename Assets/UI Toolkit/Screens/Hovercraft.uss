@@ -1,0 +1,114 @@
+.dmg-hc-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-hc-panel {
+    position: absolute;
+    right: 30px;
+    bottom: 30px;
+    width: 300px;
+    padding: 12px 14px;
+    flex-direction: column;
+    background-color: rgba(28, 42, 56, 0.9);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+}
+
+.dmg-hc-kicker {
+    height: 14px;
+    font-size: 10px;
+    color: rgb(140, 127, 117);
+    -unity-font-style: bold;
+}
+
+.dmg-hc-name {
+    height: 24px;
+    font-size: 18px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-hc-div {
+    height: 1px;
+    margin: 8px 0;
+    background-color: rgba(192, 46, 122, 0.32);
+}
+
+.dmg-hc-row {
+    height: 46px;
+    margin-bottom: 4px;
+    flex-direction: column;
+}
+
+.dmg-hc-stat-name {
+    height: 16px;
+    font-size: 12px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-hc-stat-pct {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 16px;
+    font-size: 12px;
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-right;
+}
+
+.dmg-hc-crit {
+    position: absolute;
+    right: 48px;
+    top: 0;
+    height: 16px;
+    font-size: 10px;
+    color: rgb(235, 97, 82);
+    -unity-font-style: bold;
+}
+
+.dmg-hc-segs {
+    height: 14px;
+    margin-top: 4px;
+    flex-direction: row;
+}
+
+.dmg-seg {
+    flex-grow: 1;
+    height: 12px;
+    margin-right: 2px;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dmg-hc-footer {
+    height: 34px;
+    flex-direction: row;
+}
+
+.dmg-hc-foot-col {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.dmg-hc-foot-right {
+    align-items: flex-end;
+}
+
+.dmg-hc-foot-val {
+    height: 18px;
+    font-size: 14px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-hc-right {
+    -unity-text-align: middle-right;
+}

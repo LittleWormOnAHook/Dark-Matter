@@ -505,8 +505,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
-            if (useToolkit)
-                DMUiToolkitLoadingOverlay.Hide();
+            FinishLoadingVisuals();
 
             if (activeInstance == this)
                 activeInstance = null;
@@ -891,6 +890,8 @@ namespace Project.UI
 
         private IEnumerator RunLoadingSequence()
         {
+            try
+            {
             GameAudioManager.EnsureExists();
             GameAudioManager.SyncWorldAudioGate();
             GameAudioManager.Instance?.StartLoadingAmbience();
@@ -938,9 +939,67 @@ namespace Project.UI
             cameraGateReleased = true;
             GateGameplayCameras(false);
             yield return null;
+            if (useToolkit)
+                DMUiToolkitLoadingOverlay.BeginReveal();
             yield return FadeCanvasGroup(blackVeilGroup, 1f, 0f, fadeInFromBlackSeconds, fadeAmbience: false);
+            }
+            finally
+            {
+                FinishLoadingVisuals();
+                if (this != null && gameObject != null)
+                    Destroy(gameObject);
+            }
+        }
 
-            Destroy(gameObject);
+        /// <summary>
+        /// Tear down Toolkit + leftover uGUI loaders. Safe to call twice.
+        /// Does not disable MainCanvas / OpticsOverlayCanvas / UITK_Root.
+        /// </summary>
+        private void FinishLoadingVisuals()
+        {
+            if (useToolkit)
+                DMUiToolkitLoadingOverlay.Hide();
+
+            HideLeftoverUguiLoader();
+
+            if (!cameraGateReleased)
+            {
+                cameraGateReleased = true;
+                GateGameplayCameras(false);
+            }
+
+            bootPending = false;
+            if (activeInstance == this)
+                activeInstance = null;
+        }
+
+        private static void HideLeftoverUguiLoader()
+        {
+            DestroyEarlyBlackout();
+
+            Canvas[] canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas == null)
+                    continue;
+
+                string n = canvas.gameObject.name;
+                if (n == "MainCanvas" || n == "OpticsOverlayCanvas" || n == DMUiToolkitBootstrap.RootName)
+                    continue;
+                if (n != "LoadingGenesisOverlay" && n != "LoadingGenesisEarlyBlackout" && !n.StartsWith("LoadingGenesis"))
+                    continue;
+
+                CanvasGroup group = canvas.GetComponent<CanvasGroup>();
+                if (group != null)
+                {
+                    group.alpha = 0f;
+                    group.blocksRaycasts = false;
+                    group.interactable = false;
+                }
+
+                canvas.enabled = false;
+            }
         }
 
         private IEnumerator RunGameStartSceneLoad()

@@ -1,0 +1,15 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="HoverInteract.uss"/>
+    <ui:VisualElement name="hover-root" picking-mode="Position" class="dmg-hi-root">
+        <ui:VisualElement name="hover-veil" picking-mode="Position" class="dmg-hi-veil"/>
+        <ui:VisualElement name="hover-panel" picking-mode="Position" class="dmg-hi-panel">
+            <ui:Label name="hover-title" text="Hovercraft" picking-mode="Ignore" class="dmg-hi-title"/>
+            <ui:Label name="hover-fuel" text="Fuel: 0 / 0" picking-mode="Ignore" class="dmg-hi-body"/>
+            <ui:Button name="hover-enter" text="Enter" picking-mode="Position" class="dmg-hi-btn"/>
+            <ui:Button name="hover-refuel" text="Refuel" picking-mode="Position" class="dmg-hi-btn"/>
+            <ui:Button name="hover-store" text="Store in Inventory" picking-mode="Position" class="dmg-hi-btn"/>
+            <ui:Button name="hover-cancel" text="Cancel" picking-mode="Position" class="dmg-hi-btn dmg-hi-btn-muted"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
