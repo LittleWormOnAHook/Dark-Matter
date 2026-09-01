@@ -836,8 +836,9 @@ namespace Project.Interaction
             if (library == null || library.viewport == null)
                 return;
 
-            scannerViewportHalfWidthPixels = library.viewport.scannerHalfWidthPixels;
-            scannerViewportHalfHeightPixels = library.viewport.scannerHalfHeightPixels;
+            library.viewport.GetScannerMarkerHalfExtents(
+                out scannerViewportHalfWidthPixels,
+                out scannerViewportHalfHeightPixels);
         }
     }
 }

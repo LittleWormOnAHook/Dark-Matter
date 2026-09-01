@@ -1,7 +1,7 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="../Themes/DarkMatterGenesis.uss"/>
-    <Style src="WorldMenus.uss"/>
     <Style src="FloatingMenu.uss"/>
+    <Style src="WorldMenus.uss"/>
     <ui:VisualElement name="world-root" picking-mode="Ignore" class="dmg-wm-root">
         <ui:VisualElement name="shelter-host" picking-mode="Position" class="dmg-wm-modal">
             <ui:VisualElement name="shelter-veil" picking-mode="Position" class="dmg-hi-veil"/>
@@ -72,6 +72,10 @@
         <ui:VisualElement name="item-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
             <ui:Label name="item-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
             <ui:Label name="item-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="recipe-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
+            <ui:Label name="recipe-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
+            <ui:Label name="recipe-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
         </ui:VisualElement>
         <ui:VisualElement name="pioneer-hover" picking-mode="Ignore" class="dmg-pioneer-hover">
             <ui:VisualElement name="pioneer-hover-ring" picking-mode="Ignore" class="dmg-pioneer-hover-ring">

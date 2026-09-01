@@ -769,6 +769,7 @@ namespace Project.UI
                 selectedRecipePending = true;
                 ApplyBlueprintDetail();
             });
+            AttachBlueprintHover(row, recipe ?? RecipeRegistry.Resolve(recipeId), pendingScroll: true);
             return row;
         }
 
@@ -793,7 +794,18 @@ namespace Project.UI
                 selectedRecipePending = false;
                 RefreshBlueprints();
             };
+            AttachBlueprintHover(row, recipe, pendingScroll: false);
             return row;
+        }
+
+        private void AttachBlueprintHover(VisualElement target, RecipeDefinition recipe, bool pendingScroll)
+        {
+            if (target == null || recipe == null)
+                return;
+
+            target.RegisterCallback<PointerEnterEvent>(_ =>
+                DMUiToolkitWorldMenus.TryShowRecipeTooltip(recipe, CurrentPointerScreenPosition(), pendingScroll, boundInventory));
+            target.RegisterCallback<PointerLeaveEvent>(_ => DMUiToolkitWorldMenus.HideRecipeTooltip());
         }
 
         private void LearnPendingScroll(int index, string recipeId)
@@ -1176,17 +1188,14 @@ namespace Project.UI
 
             VisualElement icon = new VisualElement();
             icon.AddToClassList("dmg-ach-icon");
-            if (!hiddenLocked && definition.icon != null)
-            {
-                icon.style.backgroundImage = new StyleBackground(Background.FromSprite(definition.icon));
-                icon.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
+            if (!hiddenLocked)
+                DMUiToolkitStyle.TrySetSpriteBackground(icon, definition.icon, ScaleMode.ScaleToFit);
             else
-            {
-                icon.style.backgroundColor = hiddenLocked
-                    ? DarkMatterGenesisUiPalette.SlateGray
-                    : GetAchievementCategoryColor(definition.category);
-            }
+                DMUiToolkitStyle.ClearBackgroundImage(icon);
+
+            icon.style.backgroundColor = hiddenLocked || definition.icon == null
+                ? DarkMatterGenesisUiPalette.SlateGray
+                : GetAchievementCategoryColor(definition.category);
 
             slot.Add(icon);
             string title = hiddenLocked ? "???" : definition.title;

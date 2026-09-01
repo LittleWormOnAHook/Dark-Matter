@@ -23,10 +23,10 @@ namespace Project.Core
         public float volcano;
         public float hunger;
         public float thirst;
-        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
+        /// <summary>Legacy save JSON field name (pre-AC rename) — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piBalance;
         public float aetherCredits;
-        /// <summary>Legacy save field — migrated into <see cref="aetherCredits"/> on load.</summary>
+        /// <summary>Legacy save JSON field name (pre-AC rename) — migrated into <see cref="aetherCredits"/> on load.</summary>
         public float piWalletBalance;
         public bool starterPioneerSelected;
         public int workerCount;

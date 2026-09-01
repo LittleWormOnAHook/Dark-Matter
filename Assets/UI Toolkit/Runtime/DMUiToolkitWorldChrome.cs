@@ -38,6 +38,7 @@ namespace Project.UI
         private VisualElement barsLayer;
         private bool bound;
         private bool uguiHidden;
+        private bool lastGameplayWant;
         private float nextInteractScan;
         private Camera worldCamera;
         private Transform playerTransform;
@@ -107,9 +108,13 @@ namespace Project.UI
                 BindTree();
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
-            DMUiToolkitOverlayDocument.SetShown(root, want);
-            DMUiToolkitOverlayDocument.SetShown(dotsLayer, want);
-            DMUiToolkitOverlayDocument.SetShown(barsLayer, want);
+            if (want != lastGameplayWant)
+            {
+                lastGameplayWant = want;
+                DMUiToolkitOverlayDocument.SetShown(root, want);
+                DMUiToolkitOverlayDocument.SetShown(dotsLayer, want);
+                DMUiToolkitOverlayDocument.SetShown(barsLayer, want);
+            }
 
             if (!want)
             {
@@ -481,6 +486,9 @@ namespace Project.UI
 
         private void HideUguiCounterparts()
         {
+            if (uguiHidden)
+                return;
+
             HideNamedLayer("PickupProximityDots");
             HideNamedLayer("WorldInteractionDots");
             uguiHidden = true;

@@ -4,8 +4,7 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// UITK start-game briefing. ShowPopup / HidePopup / OnStartGameClicked still live on GameStartPopup.
-    /// DMUiToolkit 0901-finish
+    /// UITK start-game briefing host. Never shown — flow is boot loader → menu → expedition loader → game.
     /// </summary>
     [DefaultExecutionOrder(-373)]
     [DisallowMultipleComponent]
@@ -15,14 +14,9 @@ namespace Project.UI
 
         private UIDocument document;
         private VisualElement root;
-        private Label bodyLabel;
-        private Button startButton;
         private bool bound;
-        private bool wired;
-        private bool open;
-        private GameStartPopup source;
 
-        public static bool IsOpen => instance != null && instance.open;
+        public static bool IsOpen => false;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -55,16 +49,23 @@ namespace Project.UI
             return host;
         }
 
+        /// <summary>
+        /// Never show START GAME overlay. Auto-advance into the canonical begin sequence.
+        /// </summary>
         public static bool TryShow(GameStartPopup popup)
         {
             if (!DMUiToolkitConfig.IsEnabled)
                 return false;
 
-            DMUiToolkitGameStart host = EnsureHost();
-            if (host == null)
-                return false;
+            EnsureHost();
+            instance?.HideInternal();
 
-            host.ShowInternal(popup);
+            if (popup != null)
+            {
+                popup.HidePopup();
+                popup.OnStartGameClicked();
+            }
+
             return true;
         }
 
@@ -92,15 +93,6 @@ namespace Project.UI
                 instance = null;
         }
 
-        private void LateUpdate()
-        {
-            if (!bound)
-                BindTree();
-
-            if (open)
-                HideUgui();
-        }
-
         internal void BindTree()
         {
             if (document == null)
@@ -113,62 +105,13 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("gamestart-root") ?? tree;
-            bodyLabel = tree.Q<Label>("gamestart-body");
-            startButton = tree.Q<Button>("gamestart-start");
-            Wire();
-            if (!open)
-                DMUiToolkitOverlayDocument.SetShown(root, false);
+            HideInternal();
             bound = root != null;
-        }
-
-        private void Wire()
-        {
-            if (wired)
-                return;
-
-            if (startButton != null)
-                startButton.clicked += HandleStart;
-            wired = true;
-        }
-
-        private void ShowInternal(GameStartPopup popup)
-        {
-            BindTree();
-            source = popup;
-            if (bodyLabel != null && popup != null)
-                bodyLabel.text = popup.messageText ?? string.Empty;
-
-            DMUiToolkitOverlayDocument.SetShown(root, true);
-            open = true;
-            UnityEngine.Cursor.lockState = CursorLockMode.None;
-            UnityEngine.Cursor.visible = true;
         }
 
         private void HideInternal()
         {
-            open = false;
             DMUiToolkitOverlayDocument.SetShown(root, false);
-        }
-
-        private void HandleStart()
-        {
-            GameStartPopup popup = source != null
-                ? source
-                : Object.FindAnyObjectByType<GameStartPopup>(FindObjectsInactive.Include);
-            HideInternal();
-            popup?.OnStartGameClicked();
-        }
-
-        private static void HideUgui()
-        {
-            GameStartPopup popup = Object.FindAnyObjectByType<GameStartPopup>(FindObjectsInactive.Include);
-            if (popup == null)
-                return;
-
-            if (popup.popupPanel != null && popup.popupPanel.activeSelf)
-                popup.popupPanel.SetActive(false);
-            if (popup.screenOverlay != null && popup.screenOverlay.activeSelf)
-                popup.screenOverlay.SetActive(false);
         }
     }
 }

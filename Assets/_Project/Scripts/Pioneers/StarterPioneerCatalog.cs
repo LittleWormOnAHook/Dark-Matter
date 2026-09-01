@@ -20,7 +20,7 @@ namespace Project.Pioneers
 
     public static class StarterPioneerCatalog
     {
-        public const int StarterAcGrant = 5000;
+        public const int StarterAcGrant = 0;
 
         public static IReadOnlyList<StarterPioneerOffer> Offers => offers;
 
@@ -31,7 +31,7 @@ namespace Project.Pioneers
                 offerId = "starter_kael",
                 displayName = "Sulfur-Blooded Kael-9",
                 pioneerClass = SkilledPioneerClass.CombatTactician,
-                acCost = StarterAcGrant,
+                acCost = 0,
                 radiationResistance = 0.62f,
                 expeditionEfficiency = 0.48f,
                 combatSynergy = 0.74f,
@@ -46,7 +46,7 @@ namespace Project.Pioneers
                 offerId = "starter_lira",
                 displayName = "Rift-Touched Lira Prime",
                 pioneerClass = SkilledPioneerClass.InfiltratorScout,
-                acCost = StarterAcGrant,
+                acCost = 0,
                 radiationResistance = 0.55f,
                 expeditionEfficiency = 0.71f,
                 combatSynergy = 0.52f,
@@ -61,7 +61,7 @@ namespace Project.Pioneers
                 offerId = "starter_calder",
                 displayName = "Neural-Scarred Calder Sol",
                 pioneerClass = SkilledPioneerClass.ScienceSpecialist,
-                acCost = StarterAcGrant,
+                acCost = 0,
                 radiationResistance = 0.68f,
                 expeditionEfficiency = 0.64f,
                 combatSynergy = 0.46f,
@@ -76,7 +76,7 @@ namespace Project.Pioneers
                 offerId = "starter_ryn",
                 displayName = "Pyroclast Ryn Vale",
                 pioneerClass = SkilledPioneerClass.ArchitectEngineer,
-                acCost = StarterAcGrant,
+                acCost = 0,
                 radiationResistance = 0.5f,
                 expeditionEfficiency = 0.58f,
                 combatSynergy = 0.6f,
@@ -91,7 +91,7 @@ namespace Project.Pioneers
                 offerId = "starter_nova",
                 displayName = "Ash-Bound Nova Hale",
                 pioneerClass = SkilledPioneerClass.MedTech,
-                acCost = StarterAcGrant,
+                acCost = 0,
                 radiationResistance = 0.56f,
                 expeditionEfficiency = 0.54f,
                 combatSynergy = 0.49f,

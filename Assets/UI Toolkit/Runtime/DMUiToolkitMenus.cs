@@ -22,7 +22,10 @@ namespace Project.UI
     public partial class DMUiToolkitMenus : MonoBehaviour
     {
         public const string MenusName = "UITK_Menus";
+        /// <summary>Closed / idle — HUD (95) can draw hotbar above inventory when open.</summary>
         public const int MenusSort = 90;
+        /// <summary>Open journal shell — above shell (100) so tabs and body are visible.</summary>
+        public const int MenusOpenSort = 120;
         public const string JournalUxmlPath = "Assets/UI Toolkit/Screens/Journal.uxml";
         public const string JournalUssPath = "Assets/UI Toolkit/Screens/Journal.uss";
         public const string Stamp = "DMUiToolkit 0901-lag";
@@ -92,8 +95,17 @@ namespace Project.UI
         private readonly List<VisualElement> invIcons = new List<VisualElement>();
         private readonly List<Label> invAmounts = new List<Label>();
         private readonly List<VisualElement> markerPool = new List<VisualElement>();
+        private readonly List<InvSlotVisualCache> invSlotVisualCache = new List<InvSlotVisualCache>();
+
+        private struct InvSlotVisualCache
+        {
+            public ItemData Item;
+            public int Amount;
+            public bool Unlocked;
+        }
 
         private FullscreenUiNavigator boundNav;
+        private JournalPanelUI boundJournal;
         private InventorySystem boundInventory;
         private QuestManager boundQuests;
         private PioneerRosterManager boundRoster;
@@ -101,9 +113,21 @@ namespace Project.UI
         private Texture2D appliedMapTexture;
         private bool boundTree;
         private bool eventsHooked;
+        private bool gameplayFullyBound;
         private bool uguiHidden;
         private bool menusVisible;
         public static bool IsOpen => instance != null && instance.menusVisible;
+        public static bool IsInventoryOpen =>
+            instance != null && instance.menusVisible && instance.paintedWindow == JournalWindowId.Inventory;
+
+        /// <summary>True when UITK paints this journal tab instead of uGUI fullscreen hosts.</summary>
+        public static bool HandlesWindow(JournalWindowId windowId)
+        {
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return false;
+            return IsToolkitWindow(windowId);
+        }
+
         private JournalWindowId? paintedWindow;
         private JournalSection journalSection = JournalSection.Quests;
         private string selectedQuestId;
@@ -134,25 +158,38 @@ namespace Project.UI
 
         public static DMUiToolkitMenus EnsureHost()
         {
-            if (instance != null)
-                return instance;
-
-            UIDocument doc = DMUiToolkitOverlayDocument.Ensure(
-                MenusName,
-                JournalUxmlPath,
-                JournalUssPath,
-                MenusSort);
-            if (doc == null)
+            if (!DMUiToolkitConfig.IsEnabled)
                 return null;
 
-            DMUiToolkitMenus host = doc.GetComponent<DMUiToolkitMenus>();
-            if (host == null)
-                host = doc.gameObject.AddComponent<DMUiToolkitMenus>();
+            DMUiToolkitBootstrap.EnsureExists();
+            UIDocument hud = DMUiToolkitBootstrap.Instance != null
+                ? DMUiToolkitBootstrap.Instance.HudDocument
+                : null;
+            if (hud == null)
+                return null;
 
-            host.document = doc;
-            host.BindTree();
-            StampOnce("journal/inventory/map + remaining rail panels sibling ready (sort " + MenusSort + ")");
+            GameObject staleMenus = DMUiToolkitOverlayDocument.FindNamed(MenusName);
+            if (staleMenus != null && staleMenus != hud.gameObject)
+                staleMenus.SetActive(false);
+
+            DMUiToolkitMenus host = hud.GetComponent<DMUiToolkitMenus>();
+            if (host == null)
+                host = hud.gameObject.AddComponent<DMUiToolkitMenus>();
+
+            instance = host;
+            host.document = hud;
+            host.EnsureReady();
+            StampOnce("journal mounted on UITK_Hud panel (shared with gameplay HUD)");
             return host;
+        }
+
+        /// <summary>Push Toolkit journal visibility immediately when the uGUI navigator opens/closes.</summary>
+        public static void SyncFromNavigatorImmediate()
+        {
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            EnsureHost()?.SyncFromNavigator();
         }
 
         private void Awake()
@@ -198,8 +235,11 @@ namespace Project.UI
                 BindTree();
 
             HookEvents();
-            TryBindGameplay();
+            if (!gameplayFullyBound)
+                TryBindGameplay();
+            FlushPendingShow();
             SyncFromNavigator();
+            TickInventoryContextDismiss();
         }
 
         internal void BindTree()
@@ -209,12 +249,34 @@ namespace Project.UI
             if (document == null)
                 return;
 
-            VisualElement tree = document.rootVisualElement;
-            if (tree == null)
+            VisualElement hudRoot = document.rootVisualElement;
+            if (hudRoot == null)
+            {
+                boundTree = false;
                 return;
+            }
 
-            root = tree;
-            menuRoot = tree.Q<VisualElement>("menu-root") ?? tree;
+            menuRoot = hudRoot.Q<VisualElement>("menu-root");
+            if (menuRoot == null)
+            {
+                VisualTreeAsset journalTree = DMUiToolkitBootstrap.LoadUxml(JournalUxmlPath);
+                if (journalTree == null)
+                {
+                    boundTree = false;
+                    return;
+                }
+
+                TemplateContainer mounted = journalTree.Instantiate();
+                hudRoot.Add(mounted);
+                StretchOverlay(mounted);
+                menuRoot = mounted.Q<VisualElement>("menu-root") ?? mounted;
+                StretchOverlay(menuRoot);
+                menuRoot.BringToFront();
+                DMUiToolkitBootstrap.ApplyTheme(document, JournalUssPath);
+            }
+
+            root = menuRoot;
+            VisualElement tree = menuRoot;
             journalBody = tree.Q<VisualElement>("journal-body");
             inventoryBody = tree.Q<VisualElement>("inventory-body");
             mapBody = tree.Q<VisualElement>("map-body");
@@ -269,13 +331,32 @@ namespace Project.UI
 
             if (mapPlayer != null && MapUiSprites.PlayerArrow != null)
             {
-                mapPlayer.style.backgroundImage = new StyleBackground(Background.FromSprite(MapUiSprites.PlayerArrow));
-                mapPlayer.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                DMUiToolkitStyle.TrySetSpriteBackground(mapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 mapPlayer.style.backgroundColor = Color.clear;
             }
 
-            HideMenus();
+            BindInventoryStorage(tree);
+            BindInventoryHotbar(tree);
+
             boundTree = menuRoot != null;
+            DMUiToolkitInputHost.RegisterKeyRoot(menuRoot);
+
+            if (pendingShowWindow.HasValue)
+                FlushPendingShow();
+            else if (!menusVisible)
+                HideMenus();
+        }
+
+        private static void StretchOverlay(VisualElement element)
+        {
+            if (element == null)
+                return;
+
+            element.style.position = Position.Absolute;
+            element.style.left = 0;
+            element.style.top = 0;
+            element.style.right = 0;
+            element.style.bottom = 0;
         }
 
         private void BindSubtab(string name, JournalSection section, VisualElement tree)
@@ -308,6 +389,7 @@ namespace Project.UI
             if (boundNav != null)
             {
                 boundNav.OnActiveWindowChanged -= HandleActiveWindowChanged;
+                boundNav.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;
                 boundNav = null;
             }
 
@@ -336,19 +418,33 @@ namespace Project.UI
                 boundMap = null;
             }
 
+            boundJournal = null;
+            gameplayFullyBound = false;
             UnhookExtraGameplay();
         }
 
         private void TryBindGameplay()
         {
-            FullscreenUiNavigator nav = FullscreenUiNavigator.Instance;
+            if (boundJournal == null)
+                boundJournal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+
+            FullscreenUiNavigator nav = boundJournal != null && boundJournal.Navigator != null
+                ? boundJournal.Navigator
+                : FullscreenUiNavigator.Instance;
             if (nav != boundNav)
             {
                 if (boundNav != null)
+                {
                     boundNav.OnActiveWindowChanged -= HandleActiveWindowChanged;
+                    boundNav.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;
+                }
+
                 boundNav = nav;
                 if (boundNav != null)
+                {
                     boundNav.OnActiveWindowChanged += HandleActiveWindowChanged;
+                    boundNav.OnPauseGameplayChanged += HandleNavigatorPauseChanged;
+                }
             }
 
             if (boundInventory == null)
@@ -360,6 +456,8 @@ namespace Project.UI
                     boundInventory.OnInventoryChanged += RefreshInventory;
                 }
             }
+
+            EnsureBoundItemActions();
 
             if (boundQuests == null)
             {
@@ -394,6 +492,11 @@ namespace Project.UI
             }
 
             BindExtraGameplay();
+            gameplayFullyBound = boundNav != null
+                && boundInventory != null
+                && boundQuests != null
+                && boundRoster != null
+                && boundMap != null;
         }
 
         private void HandleActiveWindowChanged(JournalWindowId? windowId)
@@ -401,24 +504,56 @@ namespace Project.UI
             SyncFromNavigator();
         }
 
+        private void HandleNavigatorPauseChanged(bool paused)
+        {
+            SyncFromNavigator();
+        }
+
         private void SyncFromNavigator()
         {
-            FullscreenUiNavigator nav = boundNav != null ? boundNav : FullscreenUiNavigator.Instance;
-            JournalWindowId? window = nav != null && nav.IsAnyOpen ? nav.CurrentWindow : null;
-            bool toolkit = IsToolkitWindow(window)
-                && GameSession.HasStarted
-                && !DMUiToolkitLoadingOverlay.IsShowing;
-
-            if (!toolkit)
+            if (boundJournal == null)
             {
-                HideMenus();
-                paintedWindow = null;
-                if (uguiHidden)
-                    RestoreUguiWindows();
+                if ((Time.frameCount & 31) != 0)
+                    return;
+
+                boundJournal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+                if (boundJournal == null)
+                    return;
+            }
+
+            if (!boundJournal.IsOpen)
+            {
+                if (menusVisible)
+                {
+                    HideMenus();
+                    paintedWindow = null;
+                    if (uguiHidden)
+                        RestoreUguiWindows();
+                }
+
                 return;
             }
 
-            ShowMenus(window.Value);
+            JournalWindowId? window = boundJournal.ActiveJournalWindow;
+            if (!window.HasValue
+                || !IsToolkitWindow(window)
+                || !GameSession.HasStarted
+                || DMUiToolkitLoadingOverlay.IsShowing)
+            {
+                return;
+            }
+
+            if (menusVisible && paintedWindow == window.Value)
+            {
+                if (window.Value == JournalWindowId.Map)
+                    TickMapPlayer();
+                JournalPanelUI.EnsurePointerForOpenJournal();
+                if (!uguiHidden)
+                    HideUguiWindows(window.Value);
+                return;
+            }
+
+            ForceShow(window.Value);
             if (!uguiHidden)
                 HideUguiWindows(window.Value);
         }
@@ -431,17 +566,31 @@ namespace Project.UI
                 return;
 
             bool sameWindow = menusVisible && paintedWindow == window;
-            menusVisible = true;
-            menuRoot.pickingMode = PickingMode.Position;
-            DMUiToolkitOverlayDocument.SetShown(menuRoot, true);
-            if (root != null)
-                root.pickingMode = PickingMode.Position;
-
             if (sameWindow)
             {
                 if (window == JournalWindowId.Map)
                     TickMapPlayer();
                 return;
+            }
+
+            menusVisible = true;
+            menuRoot.pickingMode = PickingMode.Position;
+            DMUiToolkitOverlayDocument.SetShown(menuRoot, true);
+            if (document != null)
+            {
+                if (!document.gameObject.activeInHierarchy)
+                    document.gameObject.SetActive(true);
+                if (!document.enabled)
+                    document.enabled = true;
+            }
+
+            if (menuRoot != null && window != JournalWindowId.Inventory)
+                menuRoot.BringToFront();
+
+            if (root != null)
+            {
+                root.pickingMode = PickingMode.Position;
+                DMUiToolkitOverlayDocument.SetShown(root, true);
             }
 
             paintedWindow = window;
@@ -458,6 +607,7 @@ namespace Project.UI
             }
             else if (window == JournalWindowId.Inventory)
             {
+                SuppressLegacyInventoryPanel();
                 RefreshInventory();
             }
             else if (window == JournalWindowId.Map)
@@ -469,12 +619,21 @@ namespace Project.UI
             {
                 RefreshExtraPanel(window);
             }
+
+            JournalPanelUI.EnsurePointerForOpenJournal();
+            GameplayMenuTime.SyncJournal(true, window);
+            DMUiToolkitHud.RefreshMenuChrome();
         }
 
         private void HideMenus()
         {
             menusVisible = false;
             paintedWindow = null;
+            DMUiToolkitWorldMenus.HideItemTooltip();
+            DMUiToolkitWorldMenus.HideJournalTip();
+            DMUiToolkitPetChrome.HideTooltip();
+            DMUiToolkitContext.Hide();
+            HideInventoryContextMenu();
             if (menuRoot != null)
             {
                 menuRoot.pickingMode = PickingMode.Ignore;
@@ -483,6 +642,8 @@ namespace Project.UI
 
             if (root != null)
                 root.pickingMode = PickingMode.Ignore;
+
+            DMUiToolkitHud.RefreshMenuChrome();
         }
 
         private void PaintTabs(JournalWindowId active)
@@ -517,25 +678,27 @@ namespace Project.UI
             evt.StopPropagation();
             GameAudioManager.Instance?.PlayButtonClick();
 
-            FullscreenUiNavigator nav = FullscreenUiNavigator.Instance;
-            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-            if (nav == null)
+            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            if (journal == null)
+                return;
+
+            if (!journal.IsOpen)
             {
-                if (journal != null)
-                    journal.TryToggleTab(id);
+                journal.TryToggleTab(id);
+                ForceShow(id);
                 return;
             }
 
-            if (!nav.IsAnyOpen)
+            if (journal.ActiveJournalWindow == id)
             {
-                journal?.TryToggleTab(id);
+                JournalPanelUI.EnsurePointerForOpenJournal();
                 return;
             }
 
-            if (nav.CurrentWindow == id)
+            if (!journal.SwitchToTab(id))
                 return;
 
-            nav.SwitchToWindow(id);
+            ForceShow(id);
         }
 
         private void OnSubtabClicked(ClickEvent evt)
@@ -553,7 +716,9 @@ namespace Project.UI
         private void OnVeilClicked(ClickEvent evt)
         {
             evt.StopPropagation();
-            FindAnyObjectByType<JournalPanelUI>()?.ReleaseInputCapture();
+            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            journal?.ReleaseInputCapture();
+            HideMenus();
         }
 
         private void RefreshJournalContent()
@@ -918,8 +1083,14 @@ namespace Project.UI
             if (boundInventory == null)
                 return;
 
-            int count = Mathf.Max(0, boundInventory.inventorySize);
+            // Display is always a locked 10×5 main grid (50 cells); storage unlocks only enable cells.
+            int count = InventorySystem.DefaultTotalMainSlots;
+            if (boundInventory.inventorySize < count)
+                boundInventory.EnsureSlotCounts(count, boundInventory.hotbarSize, boundInventory.toolbarSize, boundInventory.unlockedMainSlots);
+
             EnsureInventorySlots(count);
+            // Force slot chrome refresh so locked/unlocked slate contrast reapplies after layout/style changes.
+            invSlotVisualCache.Clear();
 
             for (int i = 0; i < count; i++)
             {
@@ -927,25 +1098,63 @@ namespace Project.UI
                 VisualElement icon = invIcons[i];
                 Label amount = invAmounts[i];
                 bool unlocked = boundInventory.IsMainSlotUnlocked(i);
-                slot.EnableInClassList("dmg-inv-slot--locked", !unlocked);
 
                 InventorySystem.InventorySlot data = i < boundInventory.slots.Count
                     ? boundInventory.slots[i]
                     : null;
                 ItemData item = data != null && !data.IsEmpty ? data.item : null;
-                if (item != null && item.icon != null)
+                int stack = data != null ? data.amount : 0;
+
+                InvSlotVisualCache cache = i < invSlotVisualCache.Count
+                    ? invSlotVisualCache[i]
+                    : default;
+                bool unchanged = cache.Item == item && cache.Amount == stack && cache.Unlocked == unlocked;
+                if (unchanged && unlocked)
+                    continue;
+
+                if (i >= invSlotVisualCache.Count)
+                    invSlotVisualCache.Add(default);
+                invSlotVisualCache[i] = new InvSlotVisualCache { Item = item, Amount = stack, Unlocked = unlocked };
+
+                slot.EnableInClassList("dmg-inv-slot--locked", !unlocked);
+                if (!unlocked)
                 {
-                    icon.style.backgroundImage = new StyleBackground(Background.FromSprite(item.icon));
-                    icon.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-                    DMUiToolkitOverlayDocument.SetShown(icon, true);
+                    // Cover locked expansion rows with palette Soft Beige-Gray until unlocked.
+                    Color locked = DarkMatterGenesisUiPalette.SoftBeigeGray;
+                    slot.style.backgroundColor = locked;
+                    slot.style.borderTopColor = locked;
+                    slot.style.borderRightColor = locked;
+                    slot.style.borderBottomColor = locked;
+                    slot.style.borderLeftColor = locked;
+                    slot.style.unityBackgroundImageTintColor = locked;
+                    slot.style.opacity = 1f;
                 }
                 else
                 {
-                    icon.style.backgroundImage = StyleKeyword.None;
+                    slot.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(
+                        DarkMatterGenesisUiPalette.DarkNavy, 0.92f);
+                    Color unlockedBorder = DarkMatterGenesisUiPalette.WithAlpha(
+                        DarkMatterGenesisUiPalette.WarmOffWhite, 0.28f);
+                    slot.style.borderTopColor = unlockedBorder;
+                    slot.style.borderRightColor = unlockedBorder;
+                    slot.style.borderBottomColor = unlockedBorder;
+                    slot.style.borderLeftColor = unlockedBorder;
+                    slot.style.opacity = 1f;
+                }
+
+                if (item != null && item.icon != null)
+                {
+                    if (DMUiToolkitStyle.TrySetSpriteBackground(icon, item.icon, ScaleMode.ScaleToFit))
+                        DMUiToolkitOverlayDocument.SetShown(icon, true);
+                    else
+                        DMUiToolkitOverlayDocument.SetShown(icon, false);
+                }
+                else
+                {
+                    DMUiToolkitStyle.ClearBackgroundImage(icon);
                     DMUiToolkitOverlayDocument.SetShown(icon, false);
                 }
 
-                int stack = data != null ? data.amount : 0;
                 if (item != null && stack > 1)
                 {
                     amount.text = stack.ToString();
@@ -959,6 +1168,7 @@ namespace Project.UI
             }
 
             RefreshInventoryStorage();
+            RefreshInventoryHotbar();
         }
 
         private void EnsureInventorySlots(int count)
@@ -1009,9 +1219,8 @@ namespace Project.UI
             if (texture == null || texture == appliedMapTexture)
                 return;
 
-            mapImage.style.backgroundImage = new StyleBackground(texture);
-            mapImage.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            appliedMapTexture = texture;
+            if (DMUiToolkitStyle.TrySetTextureBackground(mapImage, texture, ScaleMode.ScaleToFit))
+                appliedMapTexture = texture;
             ApplyFullMapFog();
         }
 
@@ -1046,13 +1255,12 @@ namespace Project.UI
                     PlaceOnMap(dot, fitted, uv, 10f);
                     if (marker.IconSprite != null)
                     {
-                        dot.style.backgroundImage = new StyleBackground(Background.FromSprite(marker.IconSprite));
-                        dot.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                        DMUiToolkitStyle.TrySetSpriteBackground(dot, marker.IconSprite, ScaleMode.ScaleToFit);
                         dot.style.backgroundColor = Color.clear;
                     }
                     else
                     {
-                        dot.style.backgroundImage = StyleKeyword.None;
+                        DMUiToolkitStyle.ClearBackgroundImage(dot);
                         dot.style.backgroundColor = marker.Color;
                     }
 
@@ -1102,8 +1310,7 @@ namespace Project.UI
             if (!show)
                 return;
 
-            mapFog.style.backgroundImage = new StyleBackground(Background.FromTexture2D(fog.FogTexture));
-            mapFog.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+            DMUiToolkitStyle.TrySetTextureBackground(mapFog, fog.FogTexture, ScaleMode.StretchToFill);
             float viewW = mapImage.resolvedStyle.width;
             float viewH = mapImage.resolvedStyle.height;
             if (viewW <= 1f || viewH <= 1f)
@@ -1228,6 +1435,14 @@ namespace Project.UI
             HideUguiBehaviour<SkillsPanelUI>();
             HideUguiBehaviour<PioneerRosterPanelUI>();
             HideUguiBehaviour<PetUI>();
+            if (DMUiToolkitConfig.IsEnabled)
+                SuppressLegacyInventoryPanel();
+        }
+
+        private static void SuppressLegacyInventoryPanel()
+        {
+            InventoryUI inventoryUi = Object.FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include);
+            inventoryUi?.RestoreInventoryPanel();
         }
 
         private void HideUguiBehaviour<T>() where T : MonoBehaviour

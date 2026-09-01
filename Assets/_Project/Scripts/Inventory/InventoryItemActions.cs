@@ -451,6 +451,68 @@ namespace Project.Inventory
             return GetAmmoEquipOptions(slotIndex).Count > 0;
         }
 
+        /// <summary>Move a main-inventory stack into the first empty hotbar slot that accepts it (consumables, utilities).</summary>
+        public bool CanAddToHotbar(int slotIndex)
+        {
+            if (inventory == null || equipment == null)
+                return false;
+
+            if (slotIndex < 0 || slotIndex >= inventory.inventorySize)
+                return false;
+
+            if (!inventory.IsMainSlotUnlocked(slotIndex))
+                return false;
+
+            ItemData item = inventory.GetItemAt(slotIndex);
+            if (item == null || item.IsEquippable || item.itemType == ItemType.Tool)
+                return false;
+
+            return TryFindEmptyHotbarAbsoluteForItem(item, out _);
+        }
+
+        public bool TryAddToHotbar(int slotIndex)
+        {
+            if (inventory == null || equipment == null)
+                return false;
+
+            ItemData item = inventory.GetItemAt(slotIndex);
+            if (item == null || !TryFindEmptyHotbarAbsoluteForItem(item, out int destAbsolute))
+                return false;
+
+            if (!inventory.CanAcceptItemAt(destAbsolute, item, showLevelToast: true))
+                return false;
+
+            inventory.MoveOrMergeSlots(slotIndex, destAbsolute);
+            GameAudioManager.Instance?.PlayItemEquip();
+            return true;
+        }
+
+        private bool TryFindEmptyHotbarAbsoluteForItem(ItemData item, out int absoluteIndex)
+        {
+            absoluteIndex = -1;
+            if (inventory == null || equipment == null || item == null)
+                return false;
+
+            int hotbarStart = inventory.inventorySize;
+            for (int hotbarIndex = 0; hotbarIndex < inventory.hotbarSize; hotbarIndex++)
+            {
+                if (!equipment.CanPlaceItemInHotbarSlot(hotbarIndex, item))
+                    continue;
+
+                int candidate = hotbarStart + hotbarIndex;
+                if (candidate < 0 || candidate >= inventory.slots.Count)
+                    continue;
+
+                if (inventory.slots[candidate].IsEmpty)
+                {
+                    absoluteIndex = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>Eligible ranged weapons (currently in a hotbar slot) this ammo stack could be loaded into.</summary>
         public List<AmmoEquipOption> GetAmmoEquipOptions(int slotIndex)
         {

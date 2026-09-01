@@ -29,8 +29,10 @@ namespace Project.UI
         private VisualElement scopeOuter;
         private VisualElement scopeInner;
         private VisualElement scannerRoot;
-        private VisualElement scannerFrame;
-        private VisualElement scannerReticle;
+        private VisualElement scannerBorderTop;
+        private VisualElement scannerBorderBottom;
+        private VisualElement scannerBorderLeft;
+        private VisualElement scannerBorderRight;
         private VisualElement markersRoot;
         private Label modeLabel;
         private Label hintLabel;
@@ -215,8 +217,10 @@ namespace Project.UI
             scopeOuter = root.Q<VisualElement>("optics-scope-outer");
             scopeInner = root.Q<VisualElement>("optics-scope-inner");
             scannerRoot = root.Q<VisualElement>("optics-scanner");
-            scannerFrame = root.Q<VisualElement>("optics-scanner-frame");
-            scannerReticle = root.Q<VisualElement>("optics-scanner-reticle");
+            scannerBorderTop = root.Q<VisualElement>("optics-scanner-border-top");
+            scannerBorderBottom = root.Q<VisualElement>("optics-scanner-border-bottom");
+            scannerBorderLeft = root.Q<VisualElement>("optics-scanner-border-left");
+            scannerBorderRight = root.Q<VisualElement>("optics-scanner-border-right");
             markersRoot = root.Q<VisualElement>("optics-markers");
             modeLabel = root.Q<Label>("optics-mode");
             hintLabel = root.Q<Label>("optics-hint");
@@ -231,18 +235,16 @@ namespace Project.UI
         {
             SetBackground(scopeOuter, OpticsUiSprites.BinocularScopeOuter);
             SetBackground(scopeInner, OpticsUiSprites.BinocularScopeInnerGlow);
-            SetBackground(scannerFrame, OpticsUiSprites.ScannerHolographicGlow);
-            SetBackground(scannerReticle, OpticsUiSprites.ScannerHolographic);
             if (viewport != null && OpticsUiSprites.ViewportBackground != null)
                 SetBackground(viewport, OpticsUiSprites.ViewportBackground);
         }
 
         private static void SetBackground(VisualElement element, Sprite sprite)
         {
-            if (element == null || sprite == null)
+            if (element == null)
                 return;
 
-            element.style.backgroundImage = new StyleBackground(sprite);
+            DMUiToolkitStyle.TrySetSpriteBackground(element, sprite, ScaleMode.ScaleToFit);
         }
 
         private void ApplyState(bool show, ToolType type, bool passthroughMode, RenderTexture texture)
@@ -263,22 +265,20 @@ namespace Project.UI
             bool scanner = type == ToolType.Scanner;
             SetDisplay(binocularRoot, !scanner);
             SetDisplay(scannerRoot, scanner);
-            SetDisplay(scanningLabel, scanner);
-            if (scanningLabel != null)
-                scanningLabel.text = scanner ? "SCANNING" : string.Empty;
+            SetScannerBorderVisible(scanner);
+            SetDisplay(scanningLabel, false);
+            SetDisplay(modeLabel, !scanner);
 
             OpticsCrosshairLibrary library = OpticsUiSprites.Current;
             OpticsModeLabelSettings modeSettings = library != null ? library.modeLabel : null;
             OpticsHintLabelSettings hintSettings = library != null ? library.hintLabel : null;
 
-            if (modeLabel != null)
+            if (modeLabel != null && !scanner)
             {
-                modeLabel.text = scanner
-                    ? modeSettings != null ? modeSettings.scannerText : "SCANNER MODE"
-                    : modeSettings != null ? modeSettings.binocularText : "BINOCULARS";
-                modeLabel.style.color = scanner
-                    ? (modeSettings != null ? modeSettings.scannerColor : new Color(0.549f, 1f, 0.82f, 0.949f))
-                    : (modeSettings != null ? modeSettings.binocularColor : new Color(0.85f, 0.95f, 1f, 0.95f));
+                modeLabel.text = modeSettings != null ? modeSettings.binocularText : "BINOCULARS";
+                modeLabel.style.color = modeSettings != null
+                    ? modeSettings.binocularColor
+                    : new Color(0.85f, 0.95f, 1f, 0.95f);
             }
 
             if (hintLabel != null)
@@ -286,9 +286,41 @@ namespace Project.UI
                 hintLabel.text = scanner
                     ? "[RMB] Close  |  [MMB] Sweep"
                     : hintSettings != null ? hintSettings.binocularHint : "[RMB] Close  |  [Scroll] Zoom";
+                SetDisplay(hintLabel, true);
             }
 
             ApplyViewport(scanner);
+        }
+
+        private void SetScannerBorderVisible(bool show)
+        {
+            float borderWidth = ResolveScannerBorderWidthPixels();
+            ApplyScannerBorderWidth(borderWidth);
+            SetDisplay(scannerBorderTop, show);
+            SetDisplay(scannerBorderBottom, show);
+            SetDisplay(scannerBorderLeft, show);
+            SetDisplay(scannerBorderRight, show);
+        }
+
+        private static float ResolveScannerBorderWidthPixels()
+        {
+            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+            OpticsViewportPresentation viewport = library != null ? library.viewport : null;
+            return viewport != null && viewport.scannerBorderWidthPixels > 0f
+                ? viewport.scannerBorderWidthPixels
+                : 30f;
+        }
+
+        private void ApplyScannerBorderWidth(float borderWidth)
+        {
+            if (scannerBorderTop != null)
+                scannerBorderTop.style.height = borderWidth;
+            if (scannerBorderBottom != null)
+                scannerBorderBottom.style.height = borderWidth;
+            if (scannerBorderLeft != null)
+                scannerBorderLeft.style.width = borderWidth;
+            if (scannerBorderRight != null)
+                scannerBorderRight.style.width = borderWidth;
         }
 
         private void ApplyViewport(bool scanner)
@@ -301,18 +333,21 @@ namespace Project.UI
                 viewport.style.backgroundImage = StyleKeyword.None;
                 viewport.style.backgroundColor = Color.clear;
                 SetDisplay(viewport, false);
-                ApplyPassthroughDim(scanner);
+                if (scanner)
+                    SetDisplay(dim, false);
+                else
+                    ApplyPassthroughDim(scanner: false);
                 return;
             }
 
             SetDisplay(viewport, true);
             viewport.style.backgroundColor = Color.black;
-            viewport.style.backgroundImage = Background.FromRenderTexture(boundTexture);
+            DMUiToolkitStyle.TrySetRenderTextureBackground(viewport, boundTexture, ScaleMode.ScaleAndCrop);
             if (dim != null)
             {
                 dim.style.backgroundImage = StyleKeyword.None;
-                dim.style.backgroundColor = new Color(0f, 0f, 0f, 0.35f);
-                SetDisplay(dim, true);
+                dim.style.backgroundColor = scanner ? Color.clear : new Color(0f, 0f, 0f, 0.35f);
+                SetDisplay(dim, !scanner);
             }
         }
 
@@ -325,7 +360,7 @@ namespace Project.UI
             if (passthroughMask != null)
             {
                 dim.style.backgroundColor = Color.clear;
-                dim.style.backgroundImage = Background.FromTexture2D(passthroughMask);
+                DMUiToolkitStyle.TrySetTextureBackground(dim, passthroughMask, ScaleMode.StretchToFill);
                 SetDisplay(dim, true);
                 return;
             }
@@ -399,6 +434,20 @@ namespace Project.UI
         {
             if (markersRoot == null || worldCamera == null)
                 return;
+
+            if (halfWidthPixels <= 0f || halfHeightPixels <= 0f)
+            {
+                OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+                OpticsViewportPresentation viewport = library != null ? library.viewport : null;
+                if (viewport != null)
+                    viewport.GetScannerMarkerHalfExtents(out halfWidthPixels, out halfHeightPixels);
+                else
+                {
+                    float border = ResolveScannerBorderWidthPixels();
+                    halfWidthPixels = Screen.width * 0.5f - border;
+                    halfHeightPixels = Screen.height * 0.5f - border;
+                }
+            }
 
             EnsureMarkerPool(targets != null ? targets.Count : 0);
             Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);

@@ -51,6 +51,9 @@ namespace Project.UI
         private bool hostsVisible = true;
         private float nextViewRefreshTime;
         private float nextMarkerRefreshTime;
+        private float lastCompassHeading = float.NaN;
+        private float lastCompassStripWidth = -1f;
+        private string lastCompassHeadingText;
         private RenderTexture viewRt;
         private Texture lastBlitSource;
         private Vector2 lastBlitUv;
@@ -230,24 +233,17 @@ namespace Project.UI
 
         private void ApplyAuthoredPlaceholders()
         {
-            if (minimapFrame != null && MapUiSprites.HudCircleRing != null)
-            {
-                minimapFrame.style.backgroundImage = new StyleBackground(Background.FromSprite(MapUiSprites.HudCircleRing));
-                minimapFrame.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
+            if (minimapFrame != null)
+                DMUiToolkitStyle.TrySetSpriteBackground(minimapFrame, MapUiSprites.HudCircleRing, ScaleMode.ScaleToFit);
 
-            if (minimapPlayer != null && MapUiSprites.PlayerArrow != null)
+            if (minimapPlayer != null)
             {
-                minimapPlayer.style.backgroundImage = new StyleBackground(Background.FromSprite(MapUiSprites.PlayerArrow));
-                minimapPlayer.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                DMUiToolkitStyle.TrySetSpriteBackground(minimapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 minimapPlayer.style.backgroundColor = Color.clear;
             }
 
-            if (compassPointer != null && MapUiSprites.PlayerArrow != null)
-            {
-                compassPointer.style.backgroundImage = new StyleBackground(Background.FromSprite(MapUiSprites.PlayerArrow));
-                compassPointer.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
+            if (compassPointer != null)
+                DMUiToolkitStyle.TrySetSpriteBackground(compassPointer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
         }
 
         private void RefreshPresentation()
@@ -266,7 +262,8 @@ namespace Project.UI
 
             if (drive)
             {
-                HideUguiCounterparts(mapUi);
+                if (!uguiHidden)
+                    HideUguiCounterparts(mapUi);
                 if (Time.unscaledTime >= nextViewRefreshTime)
                 {
                     nextViewRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
@@ -290,11 +287,7 @@ namespace Project.UI
         private void SetHostVisible(bool visible)
         {
             if (hostsVisible == visible)
-            {
-                if (minimapHost != null)
-                    minimapHost.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
                 return;
-            }
 
             hostsVisible = visible;
             if (minimapHost != null)
@@ -341,10 +334,22 @@ namespace Project.UI
                 lastBlitSpan = uvSpan;
             }
 
-            minimapView.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
-            minimapView.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
+            if (!TrySetMinimapViewBackground(rt))
+                return;
+
             DMUiToolkitMenus.SetElementRotate(minimapView, facingYaw);
             BindMinimapFog(source, playerUv, uvSpan);
+        }
+
+        private bool TrySetMinimapViewBackground(RenderTexture rt)
+        {
+            if (minimapView == null)
+                return false;
+
+            if (!DMUiToolkitStyle.TrySetRenderTextureBackground(minimapView, rt, ScaleMode.ScaleAndCrop))
+                return false;
+
+            return true;
         }
 
         private void WireMinimapButtons()
@@ -411,8 +416,7 @@ namespace Project.UI
 
             RenderTexture rt = EnsureFogViewRt();
             BlitCrop(fog.FogTexture, rt, playerUv, uvSpan);
-            minimapFog.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
-            minimapFog.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
+            DMUiToolkitStyle.TrySetRenderTextureBackground(minimapFog, rt, ScaleMode.ScaleAndCrop);
             MapUI mapUi = ResolveMapUi();
             DMUiToolkitMenus.SetElementRotate(minimapFog, mapUi != null ? mapUi.MinimapFacingYaw : 0f);
         }
@@ -546,6 +550,15 @@ namespace Project.UI
                 stripWidth = GameplayHudLayout.CompassWidth;
             float halfWidth = stripWidth * 0.5f;
 
+            bool headingStable = !float.IsNaN(lastCompassHeading)
+                && Mathf.Abs(Mathf.DeltaAngle(heading, lastCompassHeading)) < 0.2f
+                && Mathf.Approximately(stripWidth, lastCompassStripWidth);
+            if (headingStable)
+                return;
+
+            lastCompassHeading = heading;
+            lastCompassStripWidth = stripWidth;
+
             for (int i = 0; i < ticks.Count; i++)
             {
                 CompassTick tick = ticks[i];
@@ -560,7 +573,14 @@ namespace Project.UI
             }
 
             if (compassHeading != null)
-                compassHeading.text = $"{Mathf.RoundToInt(NormalizeDegrees(heading)):000}";
+            {
+                string text = $"{Mathf.RoundToInt(NormalizeDegrees(heading)):000}";
+                if (!string.Equals(text, lastCompassHeadingText, System.StringComparison.Ordinal))
+                {
+                    lastCompassHeadingText = text;
+                    compassHeading.text = text;
+                }
+            }
         }
 
         private void RefreshCompassMarkers(MapUI mapUi)
@@ -614,12 +634,12 @@ namespace Project.UI
 
                     if (marker.IconSprite != null)
                     {
-                        entry.Icon.style.backgroundImage = new StyleBackground(Background.FromSprite(marker.IconSprite));
+                        DMUiToolkitStyle.TrySetSpriteBackground(entry.Icon, marker.IconSprite, ScaleMode.ScaleToFit);
                         entry.Icon.style.backgroundColor = Color.clear;
                     }
                     else
                     {
-                        entry.Icon.style.backgroundImage = StyleKeyword.None;
+                        DMUiToolkitStyle.ClearBackgroundImage(entry.Icon);
                         entry.Icon.style.backgroundColor = marker.Color;
                     }
 
@@ -675,7 +695,7 @@ namespace Project.UI
 
         private void HideUguiCounterparts(MapUI mapUi)
         {
-            if (mapUi == null)
+            if (uguiHidden || mapUi == null)
                 return;
 
             GameObject panel = mapUi.MinimapPanelObject;

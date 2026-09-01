@@ -31,6 +31,7 @@ namespace Project.UI
         private static readonly Color ShelterColor = ExposureHazardPresentation.ShelterColor;
 
         private static DMUiToolkitHazards instance;
+        private static Sprite thermalGradientSprite;
 
         private UIDocument document;
         private VisualElement root;
@@ -38,6 +39,7 @@ namespace Project.UI
         private VisualElement hazardPanel;
         private Label thermalStatus;
         private Label thermalValue;
+        private VisualElement thermalTrack;
         private VisualElement thermalFill;
         private VisualElement thermalNeedle;
         private Label hazardSeverity;
@@ -136,6 +138,8 @@ namespace Project.UI
                 instance = null;
         }
 
+        private bool uguiHidden;
+
         private void LateUpdate()
         {
             if (!bound)
@@ -143,7 +147,16 @@ namespace Project.UI
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
             DMUiToolkitOverlayDocument.SetShown(root, want);
-            HideUgui();
+
+            if (!DMUiToolkitHud.IsDriving)
+            {
+                uguiHidden = false;
+            }
+            else if (!uguiHidden)
+            {
+                HideUgui();
+                uguiHidden = true;
+            }
 
             if (!want)
             {
@@ -190,6 +203,7 @@ namespace Project.UI
             hazardPanel = tree.Q<VisualElement>("hazard-panel");
             thermalStatus = tree.Q<Label>("thermal-status");
             thermalValue = tree.Q<Label>("thermal-value");
+            thermalTrack = tree.Q<VisualElement>("thermal-track");
             thermalFill = tree.Q<VisualElement>("thermal-fill");
             thermalNeedle = tree.Q<VisualElement>("thermal-needle");
             hazardSeverity = tree.Q<Label>("hazard-severity");
@@ -219,6 +233,8 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.PopulateSegments(volcanoSegs, SegmentCount);
             DMUiToolkitOverlayDocument.PopulateSegments(shelterSegs, SegmentCount);
 
+            ApplyThermalGradientTrack();
+
             hazardAlpha = 0f;
             hazardAlphaTarget = 0f;
             ApplyHazardAlpha();
@@ -238,13 +254,17 @@ namespace Project.UI
                 thermalStatus.text = string.IsNullOrEmpty(snapshot.ThermalStatusLabel) ? "EVA NOMINAL" : snapshot.ThermalStatusLabel;
 
             if (thermalValue != null)
-                thermalValue.text = string.IsNullOrEmpty(snapshot.TemperatureText)
-                    ? $"{Mathf.RoundToInt(snapshot.DisplayTemperatureF)} F"
-                    : snapshot.TemperatureText.Replace("?", " ");
+            {
+                string text = string.IsNullOrEmpty(snapshot.TemperatureText)
+                    ? $"{Mathf.RoundToInt(snapshot.DisplayTemperatureF)}°F"
+                    : snapshot.TemperatureText.Replace("?", "°").Replace(" F", "°F");
+                thermalValue.text = text;
+            }
 
             float tempN = Mathf.Clamp01(snapshot.TemperatureGaugeNormalized);
+            // Legacy thermometer: full cold→hot gradient tube with needle only (no magenta fill).
             if (thermalFill != null)
-                thermalFill.style.height = Length.Percent(tempN * 100f);
+                thermalFill.style.display = DisplayStyle.None;
             if (thermalNeedle != null)
                 thermalNeedle.style.bottom = Length.Percent(tempN * 100f);
 
@@ -305,6 +325,30 @@ namespace Project.UI
                 return;
 
             hazardPanel.style.opacity = hazardAlpha;
+        }
+
+        private void ApplyThermalGradientTrack()
+        {
+            if (thermalTrack == null)
+                thermalTrack = thermalFill != null ? thermalFill.parent : root?.Q<VisualElement>("thermal-track");
+            if (thermalTrack == null)
+                return;
+
+            if (thermalGradientSprite == null)
+            {
+                thermalGradientSprite = GaugeGradientTexture.BuildVertical(new[]
+                {
+                    new Color(0.10f, 0.35f, 0.85f, 1f),
+                    new Color(0.12f, 0.65f, 0.78f, 1f),
+                    new Color(0.30f, 0.78f, 0.32f, 1f),
+                    new Color(0.95f, 0.72f, 0.15f, 1f),
+                    new Color(0.92f, 0.20f, 0.14f, 1f),
+                });
+            }
+
+            DMUiToolkitStyle.TrySetSpriteBackground(thermalTrack, thermalGradientSprite, ScaleMode.StretchToFill);
+            if (thermalFill != null)
+                thermalFill.style.display = DisplayStyle.None;
         }
 
         private void PullTicks(ExposureStatusSnapshot snapshot)

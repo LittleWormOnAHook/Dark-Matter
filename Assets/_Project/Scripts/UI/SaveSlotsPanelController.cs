@@ -97,6 +97,8 @@ namespace Project.UI
         {
             if (panelRoot != null)
                 panelRoot.SetActive(false);
+
+            menuController?.RestoreMenuAfterSubPanel();
         }
 
         private void OnBackClicked()

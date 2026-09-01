@@ -90,19 +90,6 @@
     background-color: rgb(192, 46, 122);
 }
 
-.dmg-blackhole {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 150px;
-    height: 150px;
-    margin-left: -175px;
-    margin-top: -175px;
-    background-image: resource("UI/LoadingGenesis_Blackhole");
-    -unity-background-scale-mode: scale-to-fit;
-    background-color: rgba(0, 0, 0, 0);
-}
-
 .dmg-title {
     position: absolute;
     left: 50%;

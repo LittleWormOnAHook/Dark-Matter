@@ -13,7 +13,6 @@ namespace Project.UI
     {
         private const int FlyingStarCount = 48;
         private const float StarTravelRadius = 1180f;
-        private const float BlackholeApproachScale = 0.02f;
 
         private struct FlyingStar
         {
@@ -32,13 +31,11 @@ namespace Project.UI
         private static VisualElement veil;
         private static VisualElement content;
         private static VisualElement starsRoot;
-        private static VisualElement blackhole;
         private static VisualElement progressFill;
         private static Label statusLabel;
         private static Label percentLabel;
         private static FlyingStar[] flyingStars;
         private static int shownPercent = -1;
-        private static Vector2 blackholeBaseSize = new Vector2(150f, 150f);
 
         public static bool IsShowing => showing;
 
@@ -151,7 +148,6 @@ namespace Project.UI
             veil = null;
             content = null;
             starsRoot = null;
-            blackhole = null;
             progressFill = null;
             statusLabel = null;
             percentLabel = null;
@@ -237,9 +233,10 @@ namespace Project.UI
 
         public static void SetPercent(int percent)
         {
-            if (percentLabel == null)
+            if (percentLabel == null || percent == shownPercent)
                 return;
 
+            shownPercent = percent;
             percentLabel.text = percent + "%";
         }
 
@@ -267,14 +264,6 @@ namespace Project.UI
                 return;
 
             UpdateFlyingStars(unscaledDelta);
-
-            if (blackhole != null)
-            {
-                float approach = 1f + BlackholeApproachScale
-                    * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 0.55f));
-                blackhole.style.width = blackholeBaseSize.x * approach;
-                blackhole.style.height = blackholeBaseSize.y * approach;
-            }
         }
 
         private static void Bind(VisualElement tree)
@@ -286,7 +275,6 @@ namespace Project.UI
             veil = tree.Q("veil");
             content = tree.Q("content");
             starsRoot = tree.Q("stars");
-            blackhole = tree.Q("blackhole");
             progressFill = tree.Q("progress-fill");
             statusLabel = tree.Q<Label>("status");
             percentLabel = tree.Q<Label>("percent");
@@ -334,37 +322,6 @@ namespace Project.UI
                 content.style.display = DisplayStyle.Flex;
                 content.style.opacity = 1f;
             }
-
-            if (blackhole == null && content != null)
-            {
-                blackhole = new VisualElement { name = "blackhole" };
-                blackhole.AddToClassList("dmg-blackhole");
-                blackhole.pickingMode = PickingMode.Ignore;
-                Label title = root != null ? root.Q<Label>("title") : null;
-                if (title != null)
-                    content.Insert(content.IndexOf(title), blackhole);
-                else
-                    content.Add(blackhole);
-            }
-
-            EnsureBlackholeSprite();
-        }
-
-        private static void EnsureBlackholeSprite()
-        {
-            if (blackhole == null)
-                return;
-
-            Sprite holeSprite = Resources.Load<Sprite>(LoadingOverlayController.BlackholeResourcePath);
-            if (holeSprite != null)
-            {
-                blackhole.style.backgroundImage = new StyleBackground(holeSprite);
-                return;
-            }
-
-            Texture2D holeTexture = Resources.Load<Texture2D>(LoadingOverlayController.BlackholeResourcePath);
-            if (holeTexture != null)
-                blackhole.style.backgroundImage = new StyleBackground(holeTexture);
         }
 
         private static void StretchFull(VisualElement element, Color? background)
@@ -414,10 +371,6 @@ namespace Project.UI
             stars.AddToClassList("dmg-stars");
             stars.pickingMode = PickingMode.Ignore;
 
-            VisualElement hole = new VisualElement { name = "blackhole" };
-            hole.AddToClassList("dmg-blackhole");
-            hole.pickingMode = PickingMode.Ignore;
-
             Label title = new Label("DARK MATTER : GENESIS") { name = "title" };
             title.AddToClassList("dmg-title");
             title.pickingMode = PickingMode.Ignore;
@@ -449,7 +402,6 @@ namespace Project.UI
 
             contentElement.Add(space);
             contentElement.Add(stars);
-            contentElement.Add(hole);
             contentElement.Add(title);
             contentElement.Add(progressBlock);
 

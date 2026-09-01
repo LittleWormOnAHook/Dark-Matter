@@ -42,6 +42,10 @@ namespace Project.UI
         private Image scannerMaskFrameImage;
         private Image scannerFrameImage;
         private Image scannerReticleImage;
+        private Image scannerBorderTop;
+        private Image scannerBorderBottom;
+        private Image scannerBorderLeft;
+        private Image scannerBorderRight;
         private RawImage viewportImage;
         private Material viewportMaterial;
         private Texture2D passthroughMaskTexture;
@@ -58,8 +62,8 @@ namespace Project.UI
         private bool passthroughMode;
         private bool sceneAuthoredOverlay;
         private TextMeshProUGUI scanningPopupLabel;
-        private float scannerHalfWidthPixels = 420f;
-        private float scannerHalfHeightPixels = 250f;
+        private float scannerHalfWidthPixels;
+        private float scannerHalfHeightPixels;
         private float markerActivePulseBase = 0.7f;
         private float markerPostScanPulseBase = 0.55f;
 
@@ -263,6 +267,9 @@ namespace Project.UI
                 library.scannerTintOverlayLayer,
                 null);
 
+            DisableLegacyScannerChrome();
+            ApplyScannerBorderPresentation(scannerRoot != null && scannerRoot.activeSelf);
+
             if (passthroughMode && scannerMaskFrameImage != null)
                 scannerMaskFrameImage.enabled = false;
 
@@ -287,10 +294,7 @@ namespace Project.UI
             }
 
             if (library.viewport != null)
-            {
-                scannerHalfWidthPixels = library.viewport.scannerHalfWidthPixels;
-                scannerHalfHeightPixels = library.viewport.scannerHalfHeightPixels;
-            }
+                library.viewport.GetScannerMarkerHalfExtents(out scannerHalfWidthPixels, out scannerHalfHeightPixels);
 
             if (library.scannerMarkers != null)
             {
@@ -465,6 +469,13 @@ namespace Project.UI
 
         private void RefreshPassthroughVignette(bool scanner)
         {
+            if (scanner)
+            {
+                if (passthroughVignetteImage != null)
+                    passthroughVignetteImage.enabled = false;
+                return;
+            }
+
             if (passthroughVignetteImage == null && overlayRoot != null)
             {
                 passthroughVignetteImage = CreateStretchImage(overlayRoot.transform, "PassthroughVignette", null);
@@ -659,7 +670,8 @@ namespace Project.UI
                 viewportBackground.enabled = false;
 
             ApplyViewportMode(scanner);
-            SetScanningPopupVisible(scanner);
+            SetScanningPopupVisible(false);
+            ApplyScannerBorderPresentation(scanner);
 
             OpticsCrosshairLibrary library = OpticsUiSprites.Current;
             OpticsModeLabelSettings modeSettings = library != null ? library.modeLabel : null;
@@ -667,12 +679,14 @@ namespace Project.UI
 
             if (modeLabel != null)
             {
-                modeLabel.color = scanner
-                    ? modeSettings != null ? modeSettings.scannerColor : new Color(0.549f, 1f, 0.82f, 0.949f)
-                    : modeSettings != null ? modeSettings.binocularColor : new Color(0.85f, 0.95f, 1f, 0.95f);
-                modeLabel.text = scanner
-                    ? modeSettings != null ? modeSettings.scannerText : "SCANNER MODE"
-                    : modeSettings != null ? modeSettings.binocularText : "BINOCULARS";
+                modeLabel.gameObject.SetActive(!scanner);
+                if (!scanner)
+                {
+                    modeLabel.color = modeSettings != null
+                        ? modeSettings.binocularColor
+                        : new Color(0.85f, 0.95f, 1f, 0.95f);
+                    modeLabel.text = modeSettings != null ? modeSettings.binocularText : "BINOCULARS";
+                }
             }
 
             if (hintLabel != null)
@@ -910,14 +924,12 @@ namespace Project.UI
             OpticsViewportPresentation viewportSettings = library != null ? library.viewport : null;
 
             if (viewportSettings != null)
-            {
-                scannerHalfWidthPixels = viewportSettings.scannerHalfWidthPixels;
-                scannerHalfHeightPixels = viewportSettings.scannerHalfHeightPixels;
-            }
+                viewportSettings.GetScannerMarkerHalfExtents(out scannerHalfWidthPixels, out scannerHalfHeightPixels);
             else
             {
-                scannerHalfWidthPixels = Screen.height * 0.4f * (Screen.width / (float)Mathf.Max(1, Screen.height));
-                scannerHalfHeightPixels = Screen.height * 0.24f;
+                float border = 30f;
+                scannerHalfWidthPixels = Screen.width * 0.5f - border;
+                scannerHalfHeightPixels = Screen.height * 0.5f - border;
             }
 
             if (viewportMaterial == null)
@@ -1199,6 +1211,146 @@ namespace Project.UI
             rect.anchorMax = Vector2.one;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
+        }
+
+        private void DisableLegacyScannerChrome()
+        {
+            if (scannerMaskFrameImage != null)
+                scannerMaskFrameImage.enabled = false;
+            if (scannerFrameImage != null)
+                scannerFrameImage.enabled = false;
+            if (scannerReticleImage != null)
+                scannerReticleImage.enabled = false;
+            if (scannerTint != null)
+                scannerTint.enabled = false;
+        }
+
+        private void ApplyScannerBorderPresentation(bool show)
+        {
+            if (scannerRoot == null)
+                return;
+
+            DisableLegacyScannerChrome();
+            EnsureScannerBorderImages();
+
+            float borderWidth = ResolveScannerBorderWidthPixels();
+            Color borderColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.PositiveGreen, 0.42f);
+
+            SetEdgeBorder(scannerBorderTop, show, borderWidth, borderColor, Edge.Top);
+            SetEdgeBorder(scannerBorderBottom, show, borderWidth, borderColor, Edge.Bottom);
+            SetEdgeBorder(scannerBorderLeft, show, borderWidth, borderColor, Edge.Left);
+            SetEdgeBorder(scannerBorderRight, show, borderWidth, borderColor, Edge.Right);
+        }
+
+        private enum Edge
+        {
+            Top,
+            Bottom,
+            Left,
+            Right
+        }
+
+        private static void SetEdgeBorder(Image image, bool show, float borderWidth, Color color, Edge edge)
+        {
+            if (image == null)
+                return;
+
+            image.enabled = show;
+            image.gameObject.SetActive(show);
+            if (!show)
+                return;
+
+            image.color = color;
+            RectTransform rect = image.rectTransform;
+            switch (edge)
+            {
+                case Edge.Top:
+                case Edge.Bottom:
+                    rect.sizeDelta = new Vector2(0f, borderWidth);
+                    break;
+                case Edge.Left:
+                case Edge.Right:
+                    rect.sizeDelta = new Vector2(borderWidth, 0f);
+                    break;
+            }
+        }
+
+        private float ResolveScannerBorderWidthPixels()
+        {
+            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+            OpticsViewportPresentation viewport = library != null ? library.viewport : null;
+            return viewport != null && viewport.scannerBorderWidthPixels > 0f
+                ? viewport.scannerBorderWidthPixels
+                : 30f;
+        }
+
+        private void EnsureScannerBorderImages()
+        {
+            if (scannerRoot == null)
+                return;
+
+            scannerBorderTop = EnsureScannerEdgeBorder("ScannerBorderTop", scannerBorderTop, top: true);
+            scannerBorderBottom = EnsureScannerEdgeBorder("ScannerBorderBottom", scannerBorderBottom, bottom: true);
+            scannerBorderLeft = EnsureScannerEdgeBorder("ScannerBorderLeft", scannerBorderLeft, left: true);
+            scannerBorderRight = EnsureScannerEdgeBorder("ScannerBorderRight", scannerBorderRight, right: true);
+        }
+
+        private Image EnsureScannerEdgeBorder(
+            string name,
+            Image existing,
+            bool top = false,
+            bool bottom = false,
+            bool left = false,
+            bool right = false)
+        {
+            if (existing != null)
+                return existing;
+
+            Transform found = scannerRoot.transform.Find(name);
+            if (found != null)
+                return found.GetComponent<Image>();
+
+            GameObject borderObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            borderObject.transform.SetParent(scannerRoot.transform, false);
+            RectTransform rect = borderObject.GetComponent<RectTransform>();
+            Image image = borderObject.GetComponent<Image>();
+            image.raycastTarget = false;
+            image.sprite = null;
+
+            if (top)
+            {
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(0f, ResolveScannerBorderWidthPixels());
+            }
+            else if (bottom)
+            {
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(0f, ResolveScannerBorderWidthPixels());
+            }
+            else if (left)
+            {
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(ResolveScannerBorderWidthPixels(), 0f);
+            }
+            else if (right)
+            {
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(1f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(ResolveScannerBorderWidthPixels(), 0f);
+            }
+
+            return image;
         }
 
         private static Image CreateStretchImage(Transform parent, string name, Sprite sprite)

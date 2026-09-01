@@ -25,12 +25,12 @@ namespace Project.UI
         public static Color PanelHeader => WithAlpha(CharcoalGray, 0.98f);
         public static Color PanelBorder => WithAlpha(SlateGray, 0.95f);
         public static Color SlotBackground => WithAlpha(SlateGray, 0.82f);
-        /// <summary>Locked inventory expansion slots — slightly darker than open slots.</summary>
-        public static Color LockedSlotBackground => WithAlpha(DarkNavy, 0.92f);
-        public static Color ButtonNormal => WithAlpha(RichFuchsia, 0.95f);
-        public static Color ButtonHighlighted => RichFuchsia;
-        public static Color ButtonPressed => WithAlpha(RichFuchsia, 0.72f);
-        public static Color ButtonDisabled => WithAlpha(SlateGray, 0.55f);
+        /// <summary>Locked inventory expansion slots: SoftBeigeGray cover until unlocked — slate until unlocked.</summary>
+        public static Color LockedSlotBackground => SoftBeigeGray;
+        public static Color ButtonNormal => WithAlpha(SlateGray, 0.75f);
+        public static Color ButtonHighlighted => WithAlpha(SlateGray, 0.9f);
+        public static Color ButtonPressed => WithAlpha(SlateGray, 0.55f);
+        public static Color ButtonDisabled => WithAlpha(SlateGray, 0.45f);
         public static Color BodyText => WithAlpha(WarmOffWhite, 0.96f);
         public static Color MutedText => WithAlpha(SoftBeigeGray, 0.95f);
         /// <summary>Selected links / interactive highlights only — never section headers or body copy.</summary>
@@ -41,7 +41,7 @@ namespace Project.UI
         public static Color InteractionPromptText => FromHex("#F2D056");
         public static Color HotbarLabelText => Gold;
         public static Color WarningText => RichFuchsia;
-        public static Color ActiveTabBackground => WithAlpha(RichFuchsia, 0.28f);
+        public static Color ActiveTabBackground => WithAlpha(SlateGray, 0.75f);
         public static Color InactiveTabBackground => WithAlpha(CharcoalGray, 0.92f);
         public static Color ScrollBackground => WithAlpha(DarkNavy, 0.88f);
 

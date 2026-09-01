@@ -194,6 +194,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Achievements",
+                    "type": "Button",
+                    "id": "a1a1a1a1-b1b1-4c1c-8d1d-111111111007",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -711,6 +720,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Echoes",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222007",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Achievements",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

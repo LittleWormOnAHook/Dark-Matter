@@ -56,6 +56,13 @@ namespace Project.UI
             if (rootRect == null)
                 return;
 
+            if (DMUiToolkitMenus.HandlesWindow(WindowId))
+            {
+                OnShow();
+                Refresh();
+                return;
+            }
+
             gameObject.SetActive(true);
             rootRect.gameObject.SetActive(true);
             OnShow();
@@ -66,6 +73,12 @@ namespace Project.UI
         {
             if (rootRect == null)
                 return;
+
+            if (DMUiToolkitMenus.HandlesWindow(WindowId))
+            {
+                OnHide();
+                return;
+            }
 
             OnHide();
             rootRect.gameObject.SetActive(false);

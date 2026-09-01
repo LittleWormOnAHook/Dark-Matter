@@ -90,30 +90,42 @@
     background-color: rgb(237, 233, 228);
 }
 
-.dmg-optics-scanner-frame {
+.dmg-optics-scanner-border {
     position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 900px;
-    height: 540px;
-    margin-left: -450px;
-    margin-top: -270px;
-    background-color: rgba(38, 242, 191, 0.08);
-    border-width: 2px;
-    border-color: rgba(38, 242, 191, 0.55);
-    -unity-background-scale-mode: scale-to-fit;
+    background-color: rgba(0, 0, 0, 0);
 }
 
-.dmg-optics-scanner-reticle {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 420px;
-    height: 420px;
-    margin-left: -210px;
-    margin-top: -210px;
-    background-color: rgba(255, 47, 0, 0.12);
-    -unity-background-scale-mode: scale-to-fit;
+.dmg-optics-scanner-border-top {
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 30px;
+    /* UITK does not support CSS linear-gradient as background-image (spams console). */
+    background-color: rgba(107, 199, 122, 0.28);
+}
+
+.dmg-optics-scanner-border-bottom {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 30px;
+    background-color: rgba(107, 199, 122, 0.28);
+}
+
+.dmg-optics-scanner-border-left {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background-color: rgba(107, 199, 122, 0.28);
+}
+
+.dmg-optics-scanner-border-right {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;
+    background-color: rgba(107, 199, 122, 0.28);
 }
 
 .dmg-optics-markers {

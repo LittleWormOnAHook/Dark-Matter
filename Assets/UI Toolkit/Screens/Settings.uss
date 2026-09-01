@@ -1,0 +1,151 @@
+/* AAA settings — four stacked section rows, even label/control columns */
+.dmg-settings-panel {
+    left: 3%;
+    top: 3%;
+    right: 3%;
+    bottom: 3%;
+    background-color: rgba(20, 28, 38, 0.98);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    padding: 22px 28px 16px 28px;
+}
+
+.dmg-settings-title {
+    color: rgb(237, 233, 228);
+    font-size: 38px;
+    letter-spacing: 8px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-settings-advisory {
+    color: rgb(140, 127, 117);
+    font-size: 13px;
+    margin-bottom: 12px;
+    white-space: normal;
+    max-width: 92%;
+}
+
+.dmg-settings-body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-bottom: 8px;
+}
+
+.dmg-settings-sections {
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+    padding-right: 4px;
+}
+
+.dmg-settings-section {
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 14px 16px 10px 16px;
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 1px;
+    border-color: rgba(74, 74, 90, 0.95);
+}
+
+.dmg-settings-section-header {
+    color: rgb(212, 160, 23);
+    font-size: 15px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(212, 160, 23, 0.55);
+}
+
+.dmg-settings-section-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.dmg-settings-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 38px;
+    margin-bottom: 6px;
+    width: 49%;
+    padding-left: 4px;
+    padding-right: 8px;
+}
+
+.dmg-settings-row--full {
+    width: 100%;
+}
+
+.dmg-settings-label {
+    width: 38%;
+    min-width: 120px;
+    max-width: 220px;
+    flex-shrink: 0;
+    color: rgb(237, 233, 228);
+    font-size: 14px;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.dmg-settings-slider {
+    flex-grow: 1;
+    height: 20px;
+    margin-left: 10px;
+    margin-right: 8px;
+}
+
+.dmg-settings-value {
+    min-width: 48px;
+    flex-shrink: 0;
+    color: rgba(237, 233, 228, 0.8);
+    font-size: 13px;
+    -unity-text-align: middle-right;
+    letter-spacing: 1px;
+}
+
+.dmg-settings-toggle {
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+.dmg-settings-dropdown {
+    flex-grow: 1;
+    margin-left: 10px;
+    min-height: 30px;
+    background-color: rgba(47, 47, 47, 0.95);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    color: rgb(237, 233, 228);
+}
+
+.dmg-settings-footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding-top: 10px;
+    border-top-width: 1px;
+    border-top-color: rgba(74, 74, 90, 0.9);
+}
+
+.dmg-settings-btn {
+    min-width: 160px;
+    height: 44px;
+    margin-left: 12px;
+    background-color: rgba(74, 74, 90, 0.75);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    color: rgb(237, 233, 228);
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.dmg-settings-btn--muted {
+    background-color: rgba(47, 47, 47, 0.95);
+    border-color: rgb(74, 74, 90);
+}

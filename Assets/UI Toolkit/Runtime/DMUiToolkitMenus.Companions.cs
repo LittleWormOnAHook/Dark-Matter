@@ -193,15 +193,11 @@ namespace Project.UI
                 return;
 
             Sprite sprite = PioneerPortraitResolver.Resolve(record);
-            if (sprite != null)
-            {
-                target.style.backgroundImage = new StyleBackground(Background.FromSprite(sprite));
-                target.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            if (DMUiToolkitStyle.TrySetSpriteBackground(target, sprite, ScaleMode.ScaleToFit))
                 target.style.backgroundColor = Color.clear;
-            }
             else
             {
-                target.style.backgroundImage = StyleKeyword.None;
+                DMUiToolkitStyle.ClearBackgroundImage(target);
                 target.style.backgroundColor = DarkMatterGenesisUiPalette.SlateGray;
             }
         }

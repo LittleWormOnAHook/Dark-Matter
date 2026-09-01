@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="MenuModal.uss" />
+    <ui:VisualElement name="controls-root" class="dmg-menu-modal-root" picking-mode="Position">
+        <ui:VisualElement name="controls-veil" class="dmg-menu-modal-veil" picking-mode="Position" />
+        <ui:VisualElement name="controls-panel" class="dmg-menu-modal-panel" picking-mode="Position">
+            <ui:Label name="controls-title" text="CONTROLS" class="dmg-menu-modal-title" picking-mode="Ignore" />
+            <ui:VisualElement name="controls-hub" class="dmg-menu-modal-body" picking-mode="Position">
+                <ui:Button name="controls-keyboard" text="Keyboard and Mouse" class="dmg-menu-modal-btn" picking-mode="Position" />
+                <ui:Button name="controls-gamepad" text="Controller" class="dmg-menu-modal-btn" picking-mode="Position" style="margin-top: 12px;" />
+            </ui:VisualElement>
+            <ui:ScrollView name="controls-scheme-body" class="dmg-menu-modal-body" picking-mode="Position" style="display: none;" />
+            <ui:VisualElement name="controls-footer" class="dmg-menu-modal-footer" picking-mode="Position">
+                <ui:Button name="controls-back" text="Back" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted" picking-mode="Position" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

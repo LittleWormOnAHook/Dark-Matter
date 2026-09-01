@@ -1,0 +1,208 @@
+/* DMUiToolkit main menu — boot / pause chrome. Hide hosts in C# when unused. */
+.dmg-mainmenu-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-mainmenu-background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(28, 42, 56);
+}
+
+.dmg-mainmenu-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-mainmenu-title-block {
+    position: absolute;
+    left: 48px;
+    top: 48px;
+    width: 520px;
+    flex-direction: column;
+}
+
+.dmg-mainmenu-title {
+    color: rgb(237, 233, 228);
+    font-size: 34px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-left;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+    margin-bottom: 4px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-subtitle {
+    color: rgb(140, 127, 117);
+    font-size: 16px;
+    letter-spacing: 3px;
+    -unity-text-align: upper-left;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-button-column {
+    position: absolute;
+    left: 72px;
+    top: 50%;
+    width: 280px;
+    margin-top: -240px;
+    flex-direction: column;
+}
+
+.dmg-mainmenu-btn {
+    width: 260px;
+    height: 48px;
+    margin-bottom: 14px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgba(74, 74, 90, 0.75);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    color: rgb(237, 233, 228);
+    font-size: 20px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+
+.dmg-mainmenu-btn:hover {
+    background-color: rgba(74, 74, 90, 0.75);
+    color: rgb(237, 233, 228);
+}
+
+.dmg-mainmenu-btn:disabled {
+    background-color: rgba(74, 74, 90, 0.55);
+    color: rgb(140, 127, 117);
+}
+
+.dmg-mainmenu-message {
+    position: absolute;
+    left: 72px;
+    top: 50%;
+    width: 420px;
+    margin-top: 20px;
+    color: rgb(212, 160, 23);
+    font-size: 16px;
+    -unity-text-align: upper-left;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-version {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    color: rgb(140, 127, 117);
+    font-size: 14px;
+    -unity-text-align: lower-left;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-wallet-preview {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    width: 260px;
+    padding: 14px;
+    background-color: rgba(28, 42, 56, 0.94);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    flex-direction: column;
+}
+
+.dmg-mainmenu-wallet-status-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.dmg-mainmenu-connected-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background-color: rgb(89, 217, 115);
+}
+
+.dmg-mainmenu-wallet-status {
+    color: rgb(89, 217, 115);
+    font-size: 13px;
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-wallet-line {
+    color: rgb(237, 233, 228);
+    font-size: 14px;
+    margin-bottom: 2px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-wallet-open {
+    height: 32px;
+    margin-top: 8px;
+    background-color: rgba(143, 30, 94, 0.92);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    color: rgb(212, 160, 23);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.dmg-mainmenu-env-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: 720px;
+    height: 48px;
+    margin-left: -360px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgba(28, 42, 56, 0.94);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-mainmenu-env-stat {
+    flex-grow: 1;
+    color: rgb(237, 233, 228);
+    font-size: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-mainmenu-env-stat--hazards {
+    font-size: 13px;
+    color: rgb(140, 127, 117);
+}
+
+.dmg-mainmenu-env-stat--safe {
+    color: rgb(107, 199, 122);
+}
+
+.dmg-mainmenu-env-stat--extreme {
+    color: rgb(143, 30, 94);
+}

@@ -73,8 +73,17 @@ namespace Project.UI
             CursorRestoreRunner.Kick();
         }
 
+        public static void CancelPendingCursorRestore()
+        {
+            CursorRestoreRunner.Cancel();
+        }
+
         private static bool HasVisibleUiBlockingInput()
         {
+            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            if (journal != null && journal.IsOpen)
+                return true;
+
             FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
             if (navigator != null && navigator.IsAnyOpen)
                 return true;
@@ -165,6 +174,16 @@ namespace Project.UI
 
                 instance.token++;
                 instance.StartCoroutine(instance.RestoreAfterUiClick(instance.token));
+            }
+
+            public static void Cancel()
+            {
+                if (instance == null)
+                    return;
+
+                instance.token++;
+                Object.Destroy(instance.gameObject);
+                instance = null;
             }
 
             private void OnDestroy()

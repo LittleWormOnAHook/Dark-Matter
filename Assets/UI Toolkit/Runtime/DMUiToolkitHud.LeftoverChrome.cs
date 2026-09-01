@@ -5,6 +5,7 @@ using Project.Core;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
+using Project.Interaction;
 using Project.Shelter;
 using Project.Survival;
 using UnityEngine;
@@ -234,8 +235,7 @@ namespace Project.UI
             Texture2D texture = EnsureOxygenVignetteTexture();
             if (texture == null)
                 return;
-            oxygenVignette.style.backgroundImage = new StyleBackground(Background.FromTexture2D(texture));
-            oxygenVignette.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+            DMUiToolkitStyle.TrySetTextureBackground(oxygenVignette, texture, ScaleMode.StretchToFill);
         }
 
         private static Texture2D EnsureOxygenVignetteTexture()
@@ -276,7 +276,7 @@ namespace Project.UI
                 return;
 
             QuoraShelterController shelter = QuoraShelterController.ActiveOccupiedShelter;
-            bool show = shelter != null && shelter.IsOccupied && !DMUiToolkitMenus.IsShelterOpen;
+            bool show = shelter != null && shelter.IsOccupied && !DMUiToolkitWorldMenus.IsShelterOpen;
             if (!show)
             {
                 shelterTimerRoot.style.display = DisplayStyle.None;

@@ -211,7 +211,7 @@ namespace Project.UI
                 {
                     if (slot.Icon != null)
                     {
-                        slot.Icon.style.backgroundImage = StyleKeyword.None;
+                        DMUiToolkitStyle.ClearBackgroundImage(slot.Icon);
                         slot.Icon.style.backgroundColor = Color.clear;
                     }
 
@@ -227,15 +227,11 @@ namespace Project.UI
                 Sprite sprite = PioneerPortraitResolver.Resolve(record);
                 if (slot.Icon != null)
                 {
-                    if (sprite != null)
-                    {
-                        slot.Icon.style.backgroundImage = new StyleBackground(Background.FromSprite(sprite));
-                        slot.Icon.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                    if (DMUiToolkitStyle.TrySetSpriteBackground(slot.Icon, sprite, ScaleMode.ScaleToFit))
                         slot.Icon.style.backgroundColor = Color.clear;
-                    }
                     else
                     {
-                        slot.Icon.style.backgroundImage = StyleKeyword.None;
+                        DMUiToolkitStyle.ClearBackgroundImage(slot.Icon);
                         slot.Icon.style.backgroundColor = DarkMatterGenesisUiPalette.SlateGray;
                     }
                 }

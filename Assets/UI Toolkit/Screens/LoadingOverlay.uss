@@ -9,15 +9,6 @@
     background-color: rgb(0, 0, 0);
 }
 
-.dmg-blackhole {
-    width: 150px;
-    height: 150px;
-    max-width: 150px;
-    max-height: 150px;
-    opacity: 0.8;
-    overflow: hidden;
-}
-
 .dmg-title {
     left: 50%;
     top: 50%;

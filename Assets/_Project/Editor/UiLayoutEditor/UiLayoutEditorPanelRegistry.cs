@@ -71,7 +71,7 @@ namespace Project.EditorTools.UiLayout
                 Description = "Center-screen zone entry popup (3s hold + fade)."
             },
             new UiPanelDefinition { Label = "Pickup Aim Reticle", Category = "HUD", SearchNames = new[] { "PickupAimReticle" }, ComponentType = typeof(PickupAimReticleUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "PiBalanceText", "CurrencyHudText" } },
+            new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "AcBalanceText", "PiBalanceText", "CurrencyHudText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Player Level HUD", Category = "HUD", SearchNames = new[] { "HotbarXpHud", "PlayerLevelHud" }, PlayModeOnly = true, Description = "Lv/XP readout under the hotbar. Built by HotbarXpHud." },
@@ -313,8 +313,6 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "XP Toast", Category = "Panels", SearchNames = new[] { "XpToastUI" }, ComponentType = typeof(XpToastUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Settings Panel", Category = "Panels", SearchNames = new[] { "SettingsWindow" }, ComponentType = typeof(SettingsPanelController), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Save/Load Slots Panel", Category = "Panels", SearchNames = new[] { "SaveSlotsWindow" }, ComponentType = typeof(SaveSlotsPanelController), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Main Menu Wallet Panel", Category = "Panels", SearchNames = new[] { "WalletWindow" }, ComponentType = typeof(MainMenuWalletPanelController), PlayModeOnly = true, Description = "Main-menu Wallet window: AC balance, marketplace shell, owned-pioneers tabs." },
-            new UiPanelDefinition { Label = "Main Menu Wallet Preview Widget", Category = "Panels", SearchNames = new[] { "WalletPreviewWidget" }, ComponentType = typeof(MainMenuWalletPreviewWidget), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Main Menu Environment Status Bar", Category = "Panels", SearchNames = new[] { "EnvironmentStatusBar" }, ComponentType = typeof(MainMenuEnvironmentStatusBar), PlayModeOnly = true },
 
             new UiPanelDefinition { Label = "Item Hover Tooltip", Category = "Mini Windows", SearchNames = new[] { "ItemHoverTooltip" }, PlayModeOnly = true, Description = "Runtime tooltip shown when hovering inventory slots." },
@@ -343,7 +341,7 @@ namespace Project.EditorTools.UiLayout
             {
                 Label = "AC Reward Popup Prefab",
                 Category = "Prefabs",
-                ComponentType = typeof(PiRewardPopup),
+                ComponentType = typeof(AcRewardPopup),
                 PrefabAssetPath = "Assets/_Project/Prefabs/UI/AcRewardPopup.prefab",
                 Description = "Animated scale/fade-in AC reward popup, instantiated from a prefab."
             },

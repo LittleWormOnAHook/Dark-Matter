@@ -38,7 +38,7 @@
     width: 520px;
     margin-left: -260px;
     margin-top: 40px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-lu-header {

@@ -364,7 +364,7 @@ namespace Project.Core
                     data.expeditionTrioIds,
                     data.colonistAggregate,
                     data.echoChronicle);
-                roster.ApplyLegacyPiBalanceMigration(data.piBalance);
+                roster.ApplyLegacyAcBalanceMigration(data.piBalance);
                 BuildingOperationRegistry.ApplySaveSnapshot(data.buildingOperations);
                 return;
             }
@@ -377,13 +377,13 @@ namespace Project.Core
                     data.workerCount,
                     data.starterPioneerSelected,
                     data.skilledPioneers);
-                roster.ApplyLegacyPiBalanceMigration(data.piBalance);
+                roster.ApplyLegacyAcBalanceMigration(data.piBalance);
                 roster.EnsureDefaultTrioIfNeededPublic();
                 return;
             }
 
             roster.ApplySave(0f, 0f, 0, false, null);
-            roster.ApplyLegacyPiBalanceMigration(data.piBalance);
+            roster.ApplyLegacyAcBalanceMigration(data.piBalance);
 
             if (ui != null)
                 ui.SetAetherCredits(roster.AetherCredits);

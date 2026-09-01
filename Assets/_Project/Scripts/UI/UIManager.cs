@@ -32,13 +32,15 @@ namespace Project.UI
         public TextMeshProUGUI oxygenText;
 
         [Header("Currency")]
-        public TextMeshProUGUI piBalanceText;
+        [UnityEngine.Serialization.FormerlySerializedAs("piBalanceText")]
+        public TextMeshProUGUI acBalanceText;
 
         [Header("Interaction Prompt")]
         public TextMeshProUGUI interactionPrompt;
 
         [Header("Popups")]
-        public GameObject piRewardPopupPrefab;
+        [UnityEngine.Serialization.FormerlySerializedAs("piRewardPopupPrefab")]
+        public GameObject acRewardPopupPrefab;
         public Transform popupParent;
 
         [Header("Combat UI")]
@@ -46,7 +48,7 @@ namespace Project.UI
         public Transform combatPopupParent;
 
         [Header("Layout")]
-        [Tooltip("When disabled, Pi balance and interaction prompt rects are not repositioned at Start.")]
+        [Tooltip("When disabled, AC balance and interaction prompt rects are not repositioned at Start.")]
         [SerializeField] private bool applyRuntimeHudLayout = true;
 
         private SurvivalStats survivalStats;
@@ -54,7 +56,8 @@ namespace Project.UI
         private float aetherCredits;
         private PlayerProgressionManager trackedProgression;
 
-        private InputAction characterToggleAction;
+        private readonly System.Collections.Generic.List<(InputAction action, System.Action<InputAction.CallbackContext> handler)> journalInputBindings =
+            new System.Collections.Generic.List<(InputAction, System.Action<InputAction.CallbackContext>)>(12);
 
         private int lastHealthDisplay = int.MinValue;
         private int lastEnergyDisplay = int.MinValue;
@@ -93,7 +96,7 @@ namespace Project.UI
             EnsureCraftingUi();
             EnsurePeakScreenUi();
             EnsureProgressionHud();
-            BindCharacterTabInput();
+            BindJournalInputActions();
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (roster != null)
@@ -117,6 +120,7 @@ namespace Project.UI
 
         private void HandleGameStarted()
         {
+            BindJournalInputActions();
             StartCoroutine(RefreshGameplayHudNextFrame());
         }
 
@@ -133,6 +137,9 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true))
+                return;
+
             GetJournalPanel()?.TryToggleJournal();
         }
 
@@ -141,7 +148,9 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
-            // C also opens Blueprints; tap B is primary (hold B = binoculars). Production crafting is station-only.
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                return;
+
             GetJournalPanel()?.OpenToBlueprintsTab();
         }
 
@@ -164,7 +173,14 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
-            GetJournalPanel()?.TryToggleTab(JournalWindowId.Recipes);
+            JournalPanelUI journal = GetJournalPanel();
+            if (journal != null && journal.IsOpen && journal.ActiveJournalWindow == JournalWindowId.Recipes)
+                return;
+
+            if (DMUiToolkitMenus.TrySwitchJournalTab(JournalWindowId.Recipes))
+                return;
+
+            journal?.SwitchToTab(JournalWindowId.Recipes);
         }
 
         /// <summary>Obsolete alias for <see cref="OnToggleBlueprints"/>.</summary>
@@ -175,12 +191,18 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers))
+                return;
+
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers);
         }
 
         public void OnToggleCharacter(InputAction.CallbackContext context)
         {
             if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
                 return;
 
             GetJournalPanel()?.OpenToCharacterTab();
@@ -191,6 +213,9 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills))
+                return;
+
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Skills);
         }
 
@@ -199,7 +224,68 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes))
+                return;
+
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Echoes);
+        }
+
+        public void OnToggleAchievements(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements))
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Achievements);
+        }
+
+        public void OnToggleInventory(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory))
+                return;
+
+            GetJournalPanel()?.OpenToInventoryTab();
+        }
+
+        public void OnToggleMap(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
+                return;
+
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+            {
+                GetJournalPanel()?.TryToggleMapTab();
+                return;
+            }
+
+            FindAnyObjectByType<MapUI>(FindObjectsInactive.Include)?.OnToggleMap(context);
+        }
+
+        public void OnTogglePets(InputAction.CallbackContext context)
+        {
+            if (!GameSession.HasStarted || !context.performed)
+                return;
+
+            if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet))
+                return;
+
+            GetJournalPanel()?.TryToggleTab(JournalWindowId.Pet);
+        }
+
+        public void OnUiCancel(InputAction.CallbackContext context)
+        {
+            if (!context.performed)
+                return;
+
+            GameplayKeyboardShortcuts.HandleEscapePressed();
         }
 
         private JournalPanelUI GetJournalPanel()
@@ -210,18 +296,59 @@ namespace Project.UI
             return journal;
         }
 
-        private void BindCharacterTabInput()
+        private void BindJournalInputActions()
         {
-            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>();
-            if (playerInput == null)
+            UnbindJournalInputActions();
+
+            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>(FindObjectsInactive.Include);
+            if (playerInput == null || playerInput.actions == null)
                 return;
 
-            characterToggleAction = playerInput.actions.FindAction("Character", false);
-            if (characterToggleAction == null)
+            BindJournalAction(playerInput, "Journal", OnToggleJournal);
+            BindJournalAction(playerInput, "Inventory", OnToggleInventory);
+            BindJournalAction(playerInput, "Map", OnToggleMap);
+            BindJournalAction(playerInput, "Craft", OnToggleCraft);
+            BindJournalAction(playerInput, "Blueprints", OnToggleBlueprints);
+            BindJournalAction(playerInput, "Pioneers", OnTogglePioneers);
+            BindJournalAction(playerInput, "Skills", OnToggleSkills);
+            BindJournalAction(playerInput, "Echoes", OnToggleEchoes);
+            BindJournalAction(playerInput, "Achievements", OnToggleAchievements);
+            BindJournalAction(playerInput, "Character", OnToggleCharacter);
+            BindJournalAction(playerInput, "Pets", OnTogglePets);
+
+            InputAction cancel = playerInput.actions.FindAction("Cancel", false);
+            if (cancel != null)
+            {
+                cancel.performed -= OnUiCancel;
+                cancel.performed += OnUiCancel;
+                journalInputBindings.Add((cancel, OnUiCancel));
+            }
+        }
+
+        private void BindJournalAction(
+            PlayerInput playerInput,
+            string actionName,
+            System.Action<InputAction.CallbackContext> handler)
+        {
+            InputAction action = playerInput.actions.FindAction(actionName, false);
+            if (action == null)
                 return;
 
-            characterToggleAction.performed -= OnToggleCharacter;
-            characterToggleAction.performed += OnToggleCharacter;
+            action.performed -= handler;
+            action.performed += handler;
+            journalInputBindings.Add((action, handler));
+        }
+
+        private void UnbindJournalInputActions()
+        {
+            for (int i = 0; i < journalInputBindings.Count; i++)
+            {
+                (InputAction action, System.Action<InputAction.CallbackContext> handler) entry = journalInputBindings[i];
+                if (entry.action != null)
+                    entry.action.performed -= entry.handler;
+            }
+
+            journalInputBindings.Clear();
         }
 
 
@@ -632,8 +759,7 @@ namespace Project.UI
             if (trackedProgression != null)
                 trackedProgression.OnLevelUp -= HandleProgressionLevelUp;
 
-            if (characterToggleAction != null)
-                characterToggleAction.performed -= OnToggleCharacter;
+            UnbindJournalInputActions();
 
             if (survivalStats != null)
                 survivalStats.OnStatsChanged -= UpdateSurvivalUI;

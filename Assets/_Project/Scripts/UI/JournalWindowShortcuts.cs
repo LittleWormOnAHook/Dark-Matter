@@ -12,7 +12,7 @@ namespace Project.UI
                 case JournalWindowId.JournalQuest: return 'J';
                 case JournalWindowId.Inventory: return 'I';
                 case JournalWindowId.Map: return 'M';
-                case JournalWindowId.Pet: return 'F';
+                case JournalWindowId.Pet: return 'K';
                 case JournalWindowId.Pioneers: return 'P';
                 case JournalWindowId.Character: return 'U';
                 case JournalWindowId.Recipes: return 'B'; // tap B; hold B is binoculars (ToolBarUI)
@@ -20,7 +20,7 @@ namespace Project.UI
                 // Craft tab removed from journal rail — C still opens Blueprints; tap B is primary.
                 case JournalWindowId.Craft: return null;
                 case JournalWindowId.Echoes: return 'L';
-                case JournalWindowId.Achievements: return 'A';
+                case JournalWindowId.Achievements: return 'G';
                 default: return null;
             }
         }

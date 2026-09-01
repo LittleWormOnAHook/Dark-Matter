@@ -81,11 +81,24 @@ namespace Project.UI
                 instance = null;
         }
 
+        private bool uguiReticleHidden;
+
         private void LateUpdate()
         {
             EnsureBuilt();
             bool driving = DMUiToolkitOverlayDocument.GameplayHudWanted();
-            HideUgui(driving);
+
+            if (!driving)
+            {
+                uguiReticleHidden = false;
+                RestoreUguiIfNeeded();
+            }
+            else if (!uguiReticleHidden)
+            {
+                HideUgui(true);
+                uguiReticleHidden = true;
+            }
+
             if (!driving)
             {
                 DMUiToolkitOverlayDocument.SetShown(reticle, false);
@@ -202,10 +215,13 @@ namespace Project.UI
                 if (child != null && child.gameObject.activeSelf)
                     child.gameObject.SetActive(false);
             }
-            else if (!ugui.enabled)
-            {
+        }
+
+        private static void RestoreUguiIfNeeded()
+        {
+            HovercraftTurretReticleUI ugui = FindAnyObjectByType<HovercraftTurretReticleUI>(FindObjectsInactive.Include);
+            if (ugui != null && !ugui.enabled)
                 ugui.enabled = true;
-            }
         }
     }
 }

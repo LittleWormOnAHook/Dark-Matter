@@ -235,7 +235,9 @@ namespace Project.Player
 
             if (jetpack != null && jetpack.IsJetpackAnimActive)
             {
-                _target = Mode.Boost;
+                // Jump / initial boost used to fold the torso and legs because Boost
+                // reused the wall-hang pose. Leave overlay off during jetpack.
+                _target = Mode.Off;
                 return;
             }
 

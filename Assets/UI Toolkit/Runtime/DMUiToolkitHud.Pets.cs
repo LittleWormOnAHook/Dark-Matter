@@ -98,7 +98,7 @@ namespace Project.UI
             {
                 if (petIcon != null)
                 {
-                    petIcon.style.backgroundImage = StyleKeyword.None;
+                    DMUiToolkitStyle.ClearBackgroundImage(petIcon);
                     petIcon.style.opacity = 0f;
                 }
 
@@ -111,15 +111,11 @@ namespace Project.UI
             Sprite icon = pet.InventoryIcon;
             if (petIcon != null)
             {
-                if (icon != null)
-                {
-                    petIcon.style.backgroundImage = new StyleBackground(Background.FromSprite(icon));
-                    petIcon.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                if (DMUiToolkitStyle.TrySetSpriteBackground(petIcon, icon, ScaleMode.ScaleToFit))
                     petIcon.style.opacity = 1f;
-                }
                 else
                 {
-                    petIcon.style.backgroundImage = StyleKeyword.None;
+                    DMUiToolkitStyle.ClearBackgroundImage(petIcon);
                     petIcon.style.opacity = 0f;
                 }
             }

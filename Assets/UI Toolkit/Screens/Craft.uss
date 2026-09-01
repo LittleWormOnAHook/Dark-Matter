@@ -33,7 +33,7 @@
     padding: 12px 14px;
     background-color: rgba(28, 42, 56, 0.96);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     flex-direction: column;
 }
 
@@ -74,9 +74,9 @@
 }
 
 .dmg-craft-row-sel {
-    background-color: rgba(192, 46, 122, 0.28);
+    background-color: rgba(74, 74, 90, 0.75);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-craft-row-ready {
@@ -145,7 +145,7 @@
     height: 42px;
     margin-left: 8px;
     margin-right: 8px;
-    background-color: rgba(192, 46, 122, 0.95);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
     font-size: 18px;
     -unity-font-style: bold;

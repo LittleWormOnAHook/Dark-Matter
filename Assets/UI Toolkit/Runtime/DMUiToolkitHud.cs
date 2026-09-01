@@ -48,12 +48,17 @@ namespace Project.UI
         private SurvivalStats survivalStats;
         private bool gameplayVisible;
         private bool uguiHidden;
+        private bool menuChromeApplied;
+        private bool lastMenuOpenChrome;
+        private bool lastHotbarOverlayChrome;
+        private bool lastInventoryOpenChrome;
         private Coroutine promptRoutine;
         private bool bound;
 
         private readonly List<BoundHudSlot> boundSlots = new List<BoundHudSlot>();
         private VisualElement hotbarHost;
         private VisualElement toolsHost;
+        private VisualElement barsHost;
         private InventorySystem inventorySystem;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
@@ -72,16 +77,16 @@ namespace Project.UI
         private string lastLoggedRadio;
 
         private const int PopupMaxVisible = 4;
-        private const float PopupHoldSeconds = 3.0f;
+        private const float PopupHoldSeconds = 1.2f;
         private const float PopupFadeSeconds = 0.35f;
-        private const float PopupFocusFontSize = 40f;
+        private const float PopupFocusFontSize = 30f;
         private const float DragThresholdPx = 8f;
-        private static readonly float[] PopupDepthFontSizes = { PopupFocusFontSize, 32f, 23f, 15f };
+        private static readonly float[] PopupDepthFontSizes = { PopupFocusFontSize, 10f, 10f, 10f };
         private static readonly float[] PopupDepthOpacities = { 1f, 0.78f, 0.56f, 0.40f };
 
         public static DMUiToolkitHud Instance => instance;
 
-        public static bool IsDriving
+        public static bool IsGameplayHudActive
         {
             get
             {
@@ -91,7 +96,21 @@ namespace Project.UI
                     return false;
                 if (!GameSession.HasStarted)
                     return false;
-                return instance != null && instance.isActiveAndEnabled && instance.bound;
+                if (MainMenuController.BlocksGameplayHud)
+                    return false;
+                if (DMUiToolkitLoadingOverlay.IsShowing)
+                    return false;
+                return instance != null && instance.isActiveAndEnabled;
+            }
+        }
+
+        public static bool IsDriving
+        {
+            get
+            {
+                if (!IsGameplayHudActive)
+                    return false;
+                return instance.bound;
             }
         }
 
@@ -266,7 +285,24 @@ namespace Project.UI
                 radioRoot.style.display = DisplayStyle.None;
 
             if (popupTemplate != null)
+            {
                 popupTemplate.style.display = DisplayStyle.None;
+                DMUiToolkitStyle.ClearBackgroundImage(popupTemplate);
+            }
+
+            if (popupsRoot != null)
+                DMUiToolkitStyle.ClearBackgroundImage(popupsRoot);
+
+            // Keep #enemy-focus visible in UI Builder. Hide the placeholder at runtime
+            // until PullEnemyFocus has a live target. Do not use USS display:none.
+            VisualElement enemyFocus = document != null && document.rootVisualElement != null
+                ? document.rootVisualElement.Q<VisualElement>("enemy-focus")
+                : null;
+            if (enemyFocus != null)
+                enemyFocus.style.display = DisplayStyle.None;
+            if (enemyFocusRoot != null)
+                enemyFocusRoot.style.display = DisplayStyle.None;
+            lastEnemyShown = false;
         }
 
         private void RefreshVisibility()
@@ -277,31 +313,80 @@ namespace Project.UI
                 && !MainMenuController.BlocksGameplayHud
                 && !DMUiToolkitLoadingOverlay.IsShowing;
 
-            if (hudRoot != null)
-                hudRoot.style.display = want ? DisplayStyle.Flex : DisplayStyle.None;
-
-            if (want && !gameplayVisible)
+            if (want != gameplayVisible)
             {
-                BindSurvival();
-                PullStats();
+                if (hudRoot != null)
+                    hudRoot.style.display = want ? DisplayStyle.Flex : DisplayStyle.None;
+
+                if (want)
+                {
+                    BindSurvival();
+                    PullStats();
+                    HideUguiCounterparts();
+                }
+                else
+                {
+                    RestoreUguiCounterparts();
+                }
+
+                gameplayVisible = want;
+                menuChromeApplied = false;
             }
-
-            gameplayVisible = want;
-
-            if (want)
+            else if (want && !uguiHidden)
+            {
                 HideUguiCounterparts();
-            else
-                RestoreUguiCounterparts();
+            }
 
             ApplyMenuOpenChrome();
         }
 
+        public static void RefreshMenuChrome()
+        {
+            if (instance != null)
+            {
+                instance.menuChromeApplied = false;
+                instance.ApplyMenuOpenChrome();
+            }
+        }
+
         private void ApplyMenuOpenChrome()
         {
-            bool hideChrome = gameplayVisible && DMUiToolkitMenus.IsOpen;
+            bool menuOpen = gameplayVisible && DMUiToolkitMenus.IsOpen;
+            bool inventoryOpen = gameplayVisible && DMUiToolkitMenus.IsInventoryOpen;
+            bool showHotbarOverlay = !menuOpen;
+
+            if (menuChromeApplied
+                && menuOpen == lastMenuOpenChrome
+                && showHotbarOverlay == lastHotbarOverlayChrome
+                && inventoryOpen == lastInventoryOpenChrome)
+                return;
+
+            menuChromeApplied = true;
+            lastMenuOpenChrome = menuOpen;
+            lastHotbarOverlayChrome = showHotbarOverlay;
+            lastInventoryOpenChrome = inventoryOpen;
+
             if (minimapHost != null)
-                minimapHost.style.display = hideChrome ? DisplayStyle.None : DisplayStyle.Flex;
-            if (hideChrome)
+                minimapHost.style.display = menuOpen ? DisplayStyle.None : DisplayStyle.Flex;
+
+            if (hotbarHost != null)
+            {
+                hotbarHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
+                hotbarHost.pickingMode = PickingMode.Ignore;
+            }
+
+            if (toolsHost != null)
+            {
+                toolsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
+                toolsHost.pickingMode = PickingMode.Ignore;
+            }
+
+            if (document != null && inventoryOpen)
+                document.sortingOrder = DMUiToolkitBootstrap.HudSortingOrder;
+            else if (document != null && !menuOpen)
+                document.sortingOrder = DMUiToolkitBootstrap.HudSortingOrder;
+
+            if (menuOpen)
             {
                 if (enemyFocusRoot != null)
                     enemyFocusRoot.style.display = DisplayStyle.None;
@@ -459,6 +544,19 @@ namespace Project.UI
             }
 
             toast.pickingMode = PickingMode.Ignore;
+            toast.style.backgroundColor = Color.clear;
+            toast.style.backgroundImage = StyleKeyword.None;
+            toast.style.borderTopWidth = 0;
+            toast.style.borderRightWidth = 0;
+            toast.style.borderBottomWidth = 0;
+            toast.style.borderLeftWidth = 0;
+            toast.style.borderTopColor = Color.clear;
+            toast.style.borderRightColor = Color.clear;
+            toast.style.borderBottomColor = Color.clear;
+            toast.style.borderLeftColor = Color.clear;
+            Label popupText = FindPopupText(toast);
+            if (popupText != null)
+                popupText.style.fontSize = PopupFocusFontSize;
             return toast;
         }
 
@@ -608,7 +706,7 @@ namespace Project.UI
             IStyle to = dest.style;
             CopyIfSet(from.backgroundImage, v => to.backgroundImage = v);
             CopyIfSet(from.unityBackgroundImageTintColor, v => to.unityBackgroundImageTintColor = v);
-            CopyIfSet(from.unityBackgroundScaleMode, v => to.unityBackgroundScaleMode = v);
+            CopyIfSet(from.backgroundSize, v => to.backgroundSize = v);
             to.unitySliceLeft = from.unitySliceLeft;
             to.unitySliceRight = from.unitySliceRight;
             to.unitySliceTop = from.unitySliceTop;
@@ -653,6 +751,12 @@ namespace Project.UI
         }
 
         private static void CopyIfSet(StyleBackground value, System.Action<StyleBackground> assign)
+        {
+            if (value.keyword != StyleKeyword.Null && value.keyword != StyleKeyword.Undefined)
+                assign(value);
+        }
+
+        private static void CopyIfSet(StyleBackgroundSize value, System.Action<StyleBackgroundSize> assign)
         {
             if (value.keyword != StyleKeyword.Null && value.keyword != StyleKeyword.Undefined)
                 assign(value);
@@ -746,6 +850,7 @@ namespace Project.UI
 
             hotbarHost = root.Q<VisualElement>("hotbar");
             toolsHost = root.Q<VisualElement>("tools");
+            barsHost = root.Q<VisualElement>("bars");
 
             int hotbarCount = 10;
             int toolCount = 2;
@@ -800,6 +905,7 @@ namespace Project.UI
             };
             slot.userData = bound;
             slot.RegisterCallback<PointerDownEvent>(OnSlotPointerDown);
+            slot.RegisterCallback<ContextClickEvent>(OnSlotContextClick);
             slot.RegisterCallback<PointerMoveEvent>(OnSlotPointerMove);
             slot.RegisterCallback<PointerUpEvent>(OnSlotPointerUp);
             slot.RegisterCallback<PointerCaptureOutEvent>(OnSlotPointerCaptureOut);
@@ -904,12 +1010,37 @@ namespace Project.UI
                     slotData = inventorySystem.slots[absoluteIndex];
 
                 bool empty = slotData == null || slotData.IsEmpty || slotData.item == null;
+                int stack = empty ? 0 : slotData.amount;
+                ItemData item = empty ? null : slotData.item;
+                if (bound.CachedItem == item && bound.CachedAmount == stack)
+                {
+                    bool selectedOnly = false;
+                    if (!empty && equipmentController != null && inventorySystem != null)
+                    {
+                        if (inventorySystem.IsToolbarIndex(absoluteIndex))
+                            selectedOnly = equipmentController.IsSelectedToolbarAbsoluteIndex(absoluteIndex);
+                        else if (equipmentController.IsWeaponHotbarSlot(absoluteIndex - inventorySystem.inventorySize))
+                            selectedOnly = equipmentController.IsActiveWeaponHotbarIndex(absoluteIndex);
+                        else
+                            selectedOnly = absoluteIndex == equipmentController.SelectedSlotIndex;
+                    }
+
+                    if (selectedOnly)
+                        bound.Slot.AddToClassList("dmg-hud-slot-selected");
+                    else
+                        bound.Slot.RemoveFromClassList("dmg-hud-slot-selected");
+                    continue;
+                }
+
+                bound.CachedItem = item;
+                bound.CachedAmount = stack;
+
                 if (bound.Icon != null)
                 {
-                    if (empty || slotData.item.icon == null)
-                        bound.Icon.style.backgroundImage = StyleKeyword.None;
+                    if (empty)
+                        DMUiToolkitStyle.ClearBackgroundImage(bound.Icon);
                     else
-                        bound.Icon.style.backgroundImage = new StyleBackground(Background.FromSprite(slotData.item.icon));
+                        DMUiToolkitStyle.TrySetSpriteBackground(bound.Icon, slotData.item.icon, ScaleMode.ScaleToFit);
                 }
 
                 if (bound.Amount != null)
@@ -1015,6 +1146,16 @@ namespace Project.UI
             if (UnityEngine.InputSystem.Pointer.current != null)
                 return UnityEngine.InputSystem.Pointer.current.position.ReadValue();
             return Vector2.zero;
+        }
+
+        private void OnSlotContextClick(ContextClickEvent evt)
+        {
+            BoundHudSlot bound = (evt.currentTarget as VisualElement)?.userData as BoundHudSlot;
+            if (bound == null)
+                return;
+
+            evt.StopImmediatePropagation();
+            HandleSlotClick(bound, 1);
         }
 
         private void OnSlotPointerDown(PointerDownEvent evt)
@@ -1129,8 +1270,7 @@ namespace Project.UI
 
             slotDragGhost.style.width = size;
             slotDragGhost.style.height = size;
-            slotDragGhost.style.backgroundImage = new StyleBackground(Background.FromSprite(slotData.item.icon));
-            slotDragGhost.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            DMUiToolkitStyle.TrySetSpriteBackground(slotDragGhost, slotData.item.icon, ScaleMode.ScaleToFit);
             slotDragGhost.style.opacity = 0.75f;
             VisualElement ghostParent = hudRoot != null ? hudRoot : bound.Slot.parent;
             ghostParent?.Add(slotDragGhost);
@@ -1200,6 +1340,9 @@ namespace Project.UI
                     inventorySystem.MoveOrMergeSlots(source, ugui.slotIndex);
                 return;
             }
+
+            if (DMUiToolkitMenus.TryDropOnInventoryHotbar(screenPos, source))
+                return;
 
             if (DMUiToolkitMenus.TryDropOnInventorySlot(screenPos, source))
                 return;
@@ -1271,7 +1414,13 @@ namespace Project.UI
 
             if (button == 1)
             {
-                itemActions ??= inventorySystem.GetComponent<InventoryItemActions>();
+                itemActions = inventorySystem.GetComponent<InventoryItemActions>();
+                if (itemActions == null)
+                    itemActions = inventorySystem.gameObject.AddComponent<InventoryItemActions>();
+                if (itemActions == null)
+                    return;
+
+                GameAudioManager.Instance?.PlayInventoryItemClick();
                 DMUiToolkitContext.TryShow(absoluteIndex, CurrentPointerScreenPosition(), itemActions);
                 return;
             }
@@ -1380,6 +1529,8 @@ namespace Project.UI
             public VisualElement Slot;
             public VisualElement Icon;
             public Label Amount;
+            public ItemData CachedItem;
+            public int CachedAmount;
         }
 
         private void HideUguiCounterparts()

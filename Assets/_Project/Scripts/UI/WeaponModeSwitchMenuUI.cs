@@ -457,7 +457,7 @@ namespace Project.UI
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.anchoredPosition = new Vector2(-110f, 40f);
+            panelRect.anchoredPosition = Vector2.zero;
         }
 
         private void PositionBeside(GameObject anchor, GameObject flyout)

@@ -11,8 +11,10 @@
             <ui:VisualElement name="optics-crosshair-v" picking-mode="Ignore" class="dmg-optics-crosshair-v"/>
         </ui:VisualElement>
         <ui:VisualElement name="optics-scanner" picking-mode="Ignore" class="dmg-optics-scanner">
-            <ui:VisualElement name="optics-scanner-frame" picking-mode="Ignore" class="dmg-optics-scanner-frame" style="background-image: none;"/>
-            <ui:VisualElement name="optics-scanner-reticle" picking-mode="Ignore" class="dmg-optics-scanner-reticle" style="background-image: none;"/>
+            <ui:VisualElement name="optics-scanner-border-top" picking-mode="Ignore" class="dmg-optics-scanner-border dmg-optics-scanner-border-top"/>
+            <ui:VisualElement name="optics-scanner-border-bottom" picking-mode="Ignore" class="dmg-optics-scanner-border dmg-optics-scanner-border-bottom"/>
+            <ui:VisualElement name="optics-scanner-border-left" picking-mode="Ignore" class="dmg-optics-scanner-border dmg-optics-scanner-border-left"/>
+            <ui:VisualElement name="optics-scanner-border-right" picking-mode="Ignore" class="dmg-optics-scanner-border dmg-optics-scanner-border-right"/>
             <ui:VisualElement name="optics-markers" picking-mode="Ignore" class="dmg-optics-markers"/>
         </ui:VisualElement>
         <ui:Label name="optics-mode" text="BINOCULARS" picking-mode="Ignore" class="dmg-optics-mode"/>

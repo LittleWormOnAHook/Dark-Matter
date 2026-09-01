@@ -29,7 +29,7 @@ alwaysApply: true
 - **PC first**, then console parity: Input System (KBM + gamepad), scalable UI, solid frame pacing.
 - Prefer pooling, events, ScriptableObject config; minimize polling and heavy Update loops.
 - **DM / DMI naming** — no new Invector-branded identifiers in `_Project` (see `dm-naming-no-invector.mdc`).
-- **UI:** `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`).
+- **UI:** `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`). **New UI:** UI Toolkit only (`dark-matter-genesis-ui-toolkit.mdc`).
 
 ## Non-negotiable agent workflow
 

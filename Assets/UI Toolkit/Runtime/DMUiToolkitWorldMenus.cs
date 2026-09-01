@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Project.Crafting;
 using Project.AI;
 using Project.Companions;
 using Project.Core;
@@ -68,6 +69,12 @@ namespace Project.UI
         private VisualElement itemTooltip;
         private Label itemTipTitle;
         private Label itemTipBody;
+        private VisualElement recipeTooltip;
+        private Label recipeTipTitle;
+        private Label recipeTipBody;
+        private Vector2 itemTipScreenPosition;
+        private Vector2 pioneerHoverScreenPosition;
+        private Vector2 recipeTipScreenPosition;
         private VisualElement pioneerHover;
         private VisualElement pioneerHoverPortrait;
         private Label pioneerHoverTitle;
@@ -88,6 +95,8 @@ namespace Project.UI
         private bool scanOpen;
         private bool tamingOpen;
         private bool itemTipOpen;
+        private bool itemTipCentered;
+        private bool recipeTipOpen;
         private bool pioneerHoverOpen;
         private bool pioneerOpen;
         private bool labOpen;
@@ -223,15 +232,52 @@ namespace Project.UI
             return true;
         }
 
-        public static bool TryShowItemTooltip(ItemData item, int amount, Vector2 screenPosition)
+        public static bool TryShowItemTooltip(ItemData item, int amount, Vector2 screenPosition, bool centerOnScreen = false)
         {
-            if (!DMUiToolkitHud.IsDriving || item == null)
+            if (!CanShowJournalFloatingUi() || item == null)
                 return false;
             DMUiToolkitWorldMenus host = EnsureHost();
             if (host == null)
                 return false;
-            host.ShowItemTipInternal(item, amount, screenPosition);
+            host.ShowItemTipInternal(item, amount, screenPosition, centerOnScreen);
             return true;
+        }
+
+        public static bool TryShowRecipeTooltip(
+            RecipeDefinition recipe,
+            Vector2 screenPosition,
+            bool pendingScroll = false,
+            InventorySystem inventory = null)
+        {
+            if (!CanShowJournalFloatingUi() || recipe == null)
+                return false;
+            DMUiToolkitWorldMenus host = EnsureHost();
+            if (host == null)
+                return false;
+            host.ShowRecipeTipInternal(recipe, screenPosition, pendingScroll, inventory);
+            return true;
+        }
+
+        public static void HideRecipeTooltip() => instance?.HideRecipeTipInternal();
+
+        public static bool TryShowJournalTip(string title, string body, Vector2 screenPosition)
+        {
+            if (!CanShowJournalFloatingUi())
+                return false;
+            DMUiToolkitWorldMenus host = EnsureHost();
+            if (host == null)
+                return false;
+            host.ShowJournalTipInternal(title, body, screenPosition);
+            return true;
+        }
+
+        public static void HideJournalTip() => HideRecipeTooltip();
+
+        private static bool CanShowJournalFloatingUi()
+        {
+            if (MainMenuController.BlocksGameplayHud || DMUiToolkitLoadingOverlay.IsShowing)
+                return false;
+            return DMUiToolkitHud.IsDriving || DMUiToolkitMenus.IsOpen;
         }
 
         public static bool TryShowPioneerRoster(PioneerRosterPanelUI panel, string pioneerId, Vector2 screenPosition)
@@ -277,7 +323,7 @@ namespace Project.UI
 
         public static bool TryShowPioneerHover(SkilledPioneerRecord record, Vector2 screenPosition)
         {
-            if (!DMUiToolkitHud.IsDriving || record == null)
+            if (!CanShowJournalFloatingUi() || record == null)
                 return false;
             DMUiToolkitWorldMenus host = EnsureHost();
             if (host == null)
@@ -376,13 +422,45 @@ namespace Project.UI
                 HideLabInternal();
         }
 
+        private static bool uguiHidden;
+
         private void LateUpdate()
         {
             if (!bound)
                 BindTree();
 
             TickTaming();
+
+            Vector2 pointer = CurrentPointerScreenPosition();
+            if (itemTipOpen && !itemTipCentered)
+            {
+                itemTipScreenPosition = pointer;
+                PositionItemTip(pointer);
+            }
+
+            if (recipeTipOpen)
+            {
+                recipeTipScreenPosition = pointer;
+                PositionRecipeTip(pointer);
+            }
+
+            if (pioneerHoverOpen)
+            {
+                pioneerHoverScreenPosition = pointer;
+                PositionPioneerHover(pointer);
+            }
+
+            if (!DMUiToolkitHud.IsDriving)
+            {
+                uguiHidden = false;
+                return;
+            }
+
+            if (uguiHidden)
+                return;
+
             HideUgui();
+            uguiHidden = true;
         }
 
         internal void BindTree()
@@ -437,6 +515,9 @@ namespace Project.UI
             itemTooltip = tree.Q<VisualElement>("item-tooltip");
             itemTipTitle = tree.Q<Label>("item-tip-title");
             itemTipBody = tree.Q<Label>("item-tip-body");
+            recipeTooltip = tree.Q<VisualElement>("recipe-tooltip");
+            recipeTipTitle = tree.Q<Label>("recipe-tip-title");
+            recipeTipBody = tree.Q<Label>("recipe-tip-body");
             pioneerHover = tree.Q<VisualElement>("pioneer-hover");
             pioneerHoverPortrait = tree.Q<VisualElement>("pioneer-hover-portrait");
             pioneerHoverTitle = tree.Q<Label>("pioneer-hover-title");
@@ -505,11 +586,16 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(scanHost, scanOpen);
             DMUiToolkitOverlayDocument.SetShown(tamingHost, tamingOpen);
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, itemTipOpen);
+            DMUiToolkitOverlayDocument.SetShown(recipeTooltip, recipeTipOpen);
             DMUiToolkitOverlayDocument.SetShown(pioneerHover, pioneerHoverOpen);
             DMUiToolkitOverlayDocument.SetShown(pioneerDismiss, pioneerOpen);
             DMUiToolkitOverlayDocument.SetShown(pioneerMenu, pioneerOpen);
             DMUiToolkitOverlayDocument.SetShown(labDismiss, labOpen);
             DMUiToolkitOverlayDocument.SetShown(labMenu, labOpen);
+
+            if (shelterOpen || drillOpen || weaponOpen || lootOpen || echoOpen || scanOpen || tamingOpen
+                || pioneerOpen || labOpen)
+                DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
         }
 
         private void ShowShelterInternal(QuoraShelterController shelter)
@@ -675,6 +761,8 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(weaponHost, true);
             DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
             DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
+            if (weaponPanel != null)
+                DMUiToolkitOverlayDocument.PositionCenterOnScreen(weaponPanel);
             boundWeaponPlayer?.SetBuildingControlOpen(true);
             GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonWeaponModeSwitch, false);
             GameplayMenuTime.SetPause(GameplayMenuTime.ReasonWeaponModeSwitch, true);
@@ -708,11 +796,7 @@ namespace Project.UI
         {
             DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
             DMUiToolkitOverlayDocument.SetShown(pistolsSub, true);
-            if (weaponPanel != null && pistolsSub != null)
-            {
-                pistolsSub.style.left = weaponPanel.resolvedStyle.left + weaponPanel.resolvedStyle.width;
-                pistolsSub.style.top = weaponPanel.resolvedStyle.top;
-            }
+            PositionWeaponFlyout(weaponPanel, pistolsSub);
             RefreshWeapon();
         }
 
@@ -720,12 +804,24 @@ namespace Project.UI
         {
             DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
             DMUiToolkitOverlayDocument.SetShown(riflesSub, true);
-            if (weaponPanel != null && riflesSub != null)
-            {
-                riflesSub.style.left = weaponPanel.resolvedStyle.left + weaponPanel.resolvedStyle.width;
-                riflesSub.style.top = weaponPanel.resolvedStyle.top;
-            }
+            PositionWeaponFlyout(weaponPanel, riflesSub);
             RefreshWeapon();
+        }
+
+        private static void PositionWeaponFlyout(VisualElement anchor, VisualElement flyout)
+        {
+            if (anchor == null || flyout == null)
+                return;
+
+            anchor.schedule.Execute(() =>
+            {
+                if (anchor == null || flyout == null)
+                    return;
+
+                flyout.style.position = Position.Absolute;
+                flyout.style.top = anchor.resolvedStyle.top;
+                flyout.style.left = anchor.resolvedStyle.left + anchor.resolvedStyle.width + 8f;
+            }).ExecuteLater(0);
         }
 
         private void TogglePistolSight()
@@ -953,24 +1049,126 @@ namespace Project.UI
             }
         }
 
-        private void ShowItemTipInternal(ItemData item, int amount, Vector2 screenPosition)
+        private static Vector2 CurrentPointerScreenPosition()
+        {
+            if (UnityEngine.InputSystem.Mouse.current != null)
+                return UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+            if (UnityEngine.InputSystem.Pointer.current != null)
+                return UnityEngine.InputSystem.Pointer.current.position.ReadValue();
+            return Vector2.zero;
+        }
+
+        private void ShowItemTipInternal(ItemData item, int amount, Vector2 screenPosition, bool centerOnScreen)
         {
             BindTree();
             RecipeHoverTooltip.HideAny();
+            HideRecipeTipInternal();
             HidePioneerHoverInternal();
             itemTipOpen = true;
+            itemTipCentered = centerOnScreen;
+            itemTipScreenPosition = screenPosition;
             if (itemTipTitle != null)
                 itemTipTitle.text = ItemTooltipFormatter.BuildTitle(item);
             if (itemTipBody != null)
                 itemTipBody.text = ItemTooltipFormatter.BuildBody(item, amount);
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, true);
-            DMUiToolkitOverlayDocument.PositionAtScreen(itemTooltip, screenPosition + new Vector2(18f, 18f));
+            PositionItemTip(screenPosition);
         }
 
         private void HideItemTipInternal()
         {
             itemTipOpen = false;
+            itemTipCentered = false;
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, false);
+        }
+
+        private void ShowRecipeTipInternal(
+            RecipeDefinition recipe,
+            Vector2 screenPosition,
+            bool pendingScroll,
+            InventorySystem inventory)
+        {
+            BindTree();
+            HideItemTipInternal();
+            HidePioneerHoverInternal();
+            recipeTipOpen = true;
+            recipeTipScreenPosition = screenPosition;
+            if (recipeTipTitle != null)
+                recipeTipTitle.text = RecipeTooltipFormatter.BuildTitle(recipe);
+            if (recipeTipBody != null)
+            {
+                recipeTipBody.text = pendingScroll
+                    ? RecipeTooltipFormatter.BuildScrollBody(recipe)
+                    : RecipeTooltipFormatter.BuildBody(recipe, inventory);
+            }
+
+            DMUiToolkitOverlayDocument.SetShown(recipeTooltip, true);
+            PositionRecipeTip(screenPosition);
+        }
+
+        private void HideRecipeTipInternal()
+        {
+            recipeTipOpen = false;
+            DMUiToolkitOverlayDocument.SetShown(recipeTooltip, false);
+        }
+
+        private void ShowJournalTipInternal(string title, string body, Vector2 screenPosition)
+        {
+            BindTree();
+            HideItemTipInternal();
+            HidePioneerHoverInternal();
+            recipeTipOpen = true;
+            recipeTipScreenPosition = screenPosition;
+            if (recipeTipTitle != null)
+                recipeTipTitle.text = title ?? string.Empty;
+            if (recipeTipBody != null)
+                recipeTipBody.text = body ?? string.Empty;
+            DMUiToolkitOverlayDocument.SetShown(recipeTooltip, true);
+            PositionRecipeTip(screenPosition);
+        }
+
+        private void PositionItemTip(Vector2 screenPosition)
+        {
+            if (itemTooltip == null || itemTooltip.panel == null)
+                return;
+
+            if (itemTipCentered)
+            {
+                itemTooltip.style.width = 320f;
+                DMUiToolkitOverlayDocument.PositionCenterOnScreen(itemTooltip);
+                return;
+            }
+
+            itemTooltip.style.width = 240f;
+            DMUiToolkitOverlayDocument.PositionNearPointer(
+                itemTooltip,
+                screenPosition,
+                DMUiToolkitOverlayDocument.DefaultHoverOffset,
+                root);
+        }
+
+        private void PositionRecipeTip(Vector2 screenPosition)
+        {
+            if (recipeTooltip == null)
+                return;
+
+            DMUiToolkitOverlayDocument.PositionNearPointer(
+                recipeTooltip,
+                screenPosition,
+                DMUiToolkitOverlayDocument.DefaultHoverOffset,
+                root);
+        }
+
+        private void PositionPioneerHover(Vector2 screenPosition)
+        {
+            if (pioneerHover == null)
+                return;
+
+            DMUiToolkitOverlayDocument.PositionNearPointer(
+                pioneerHover,
+                screenPosition,
+                DMUiToolkitOverlayDocument.DefaultHoverOffset,
+                root);
         }
 
 
@@ -978,7 +1176,9 @@ namespace Project.UI
         {
             BindTree();
             HideItemTipInternal();
+            HideRecipeTipInternal();
             pioneerHoverOpen = true;
+            pioneerHoverScreenPosition = screenPosition;
             if (pioneerHoverTitle != null)
                 pioneerHoverTitle.text = PioneerUiLabels.GetDisplayName(record);
             if (pioneerHoverBody != null)
@@ -986,15 +1186,11 @@ namespace Project.UI
             Sprite sprite = PioneerPortraitResolver.Resolve(record);
             if (pioneerHoverPortrait != null)
             {
-                if (sprite != null)
-                {
-                    pioneerHoverPortrait.style.backgroundImage = new StyleBackground(Background.FromSprite(sprite));
-                    pioneerHoverPortrait.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                if (DMUiToolkitStyle.TrySetSpriteBackground(pioneerHoverPortrait, sprite, ScaleMode.ScaleToFit))
                     pioneerHoverPortrait.style.backgroundColor = Color.clear;
-                }
                 else
                 {
-                    pioneerHoverPortrait.style.backgroundImage = StyleKeyword.None;
+                    DMUiToolkitStyle.ClearBackgroundImage(pioneerHoverPortrait);
                     pioneerHoverPortrait.style.backgroundColor = DarkMatterGenesisUiPalette.SlateGray;
                 }
             }
@@ -1005,7 +1201,7 @@ namespace Project.UI
                     : PioneerPortraitUi.BuildInitials(PioneerUiLabels.GetDisplayName(record));
             }
             DMUiToolkitOverlayDocument.SetShown(pioneerHover, true);
-            DMUiToolkitOverlayDocument.PositionAtScreen(pioneerHover, screenPosition + new Vector2(18f, 18f));
+            PositionPioneerHover(screenPosition);
         }
 
         private void HidePioneerHoverInternal()
@@ -1077,7 +1273,7 @@ namespace Project.UI
             pioneerOpen = true;
             DMUiToolkitOverlayDocument.SetShown(pioneerDismiss, true);
             DMUiToolkitOverlayDocument.SetShown(pioneerMenu, true);
-            DMUiToolkitOverlayDocument.PositionAtScreen(pioneerMenu, screenPosition);
+            DMUiToolkitOverlayDocument.PositionContextMenu(pioneerMenu, screenPosition);
         }
 
         private void HidePioneerInternal()
@@ -1102,7 +1298,7 @@ namespace Project.UI
             labOpen = true;
             DMUiToolkitOverlayDocument.SetShown(labDismiss, true);
             DMUiToolkitOverlayDocument.SetShown(labMenu, true);
-            DMUiToolkitOverlayDocument.PositionAtScreen(labMenu, screenPosition);
+            DMUiToolkitOverlayDocument.PositionContextMenu(labMenu, screenPosition);
         }
 
         private void HideLabInternal()

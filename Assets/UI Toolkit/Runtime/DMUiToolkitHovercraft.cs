@@ -87,6 +87,8 @@ namespace Project.UI
                 instance = null;
         }
 
+        private bool uguiHidden;
+
         private void LateUpdate()
         {
             if (!bound)
@@ -97,6 +99,7 @@ namespace Project.UI
             if (mounted != wasMounted)
             {
                 wasMounted = mounted;
+                uguiHidden = false;
                 HandleMountChanged(mounted);
             }
 
@@ -105,7 +108,15 @@ namespace Project.UI
             if (panel != null)
                 panel.style.opacity = show ? 1f : 0f;
 
-            HideUgui();
+            if (!DMUiToolkitHud.IsDriving || !show)
+            {
+                uguiHidden = false;
+            }
+            else if (!uguiHidden)
+            {
+                HideUgui();
+                uguiHidden = true;
+            }
 
             if (!show)
                 return;

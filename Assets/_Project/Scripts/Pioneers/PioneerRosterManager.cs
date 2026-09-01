@@ -981,9 +981,15 @@ namespace Project.Pioneers
             };
         }
 
+        public void ApplyLegacyAcBalanceMigration(float legacyBalance)
+        {
+            ApplyLegacyCurrencyMigration(legacyBalance);
+        }
+
+        [System.Obsolete("Use ApplyLegacyAcBalanceMigration.")]
         public void ApplyLegacyPiBalanceMigration(float legacyPiBalance)
         {
-            ApplyLegacyCurrencyMigration(legacyPiBalance);
+            ApplyLegacyAcBalanceMigration(legacyPiBalance);
         }
 
         private void ApplyLegacyCurrencyMigration(float legacyAmount)

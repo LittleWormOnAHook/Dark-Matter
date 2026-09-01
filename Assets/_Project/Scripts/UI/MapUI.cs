@@ -363,6 +363,12 @@ namespace Project.UI
 
         public void OpenMapFullscreen()
         {
+            if (DMUiToolkitMenus.HandlesWindow(JournalWindowId.Map))
+                return;
+
+            if (!isActiveAndEnabled)
+                return;
+
             if (!uiBuilt)
                 EnsureUiBuilt();
 

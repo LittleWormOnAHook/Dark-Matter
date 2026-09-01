@@ -72,6 +72,9 @@ namespace Project.UI
 
         private void Update()
         {
+            if (UsesToolkitMenu)
+                return;
+
             if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame)
                 return;
 
@@ -209,6 +212,15 @@ namespace Project.UI
 
         private void BuildMainMenu()
         {
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitMainMenu.EnsureHost();
+                DMUiToolkitMenuPanels.EnsureHosts();
+                RefreshMenuButtonStates();
+                UiScaleApplier.ApplyFromSettings();
+                return;
+            }
+
             Transform canvasRoot = transform;
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
@@ -238,6 +250,12 @@ namespace Project.UI
 
             RefreshMenuButtonStates();
             UiScaleApplier.ApplyFromSettings();
+
+            if (UsesToolkitMenu)
+            {
+                HideLegacyMenuChromeForToolkit();
+                DMUiToolkitMainMenu.EnsureHost();
+            }
         }
 
         private void BuildTitleBlock(Transform parent)
@@ -367,7 +385,7 @@ namespace Project.UI
             if (menuBackground != null)
                 menuBackground.SetActive(true);
             if (menuPanel != null)
-                menuPanel.SetActive(true);
+                menuPanel.SetActive(!UsesToolkitMenu);
 
             DestroyLegacyEnvironmentStatusBar();
 
@@ -390,6 +408,8 @@ namespace Project.UI
             // Loading Genesis overlay finishes fading — it re-runs this path on handoff.
             if (LoadingOverlayController.IsBlockingMenu)
                 HideMenuChrome();
+            else
+                SyncToolkitMainMenu(true);
         }
 
         private void Start()
@@ -415,6 +435,8 @@ namespace Project.UI
                 menuBackground.SetActive(false);
             if (menuPanel != null)
                 menuPanel.SetActive(false);
+
+            SyncToolkitMainMenu(false);
         }
 
         private GameStartPopup ResolveStartPopup()
@@ -431,7 +453,7 @@ namespace Project.UI
             if (menuBackground != null)
                 menuBackground.SetActive(true);
             if (menuPanel != null)
-                menuPanel.SetActive(true);
+                menuPanel.SetActive(!UsesToolkitMenu);
 
             DestroyLegacyEnvironmentStatusBar();
 
@@ -444,6 +466,7 @@ namespace Project.UI
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
             BringMenuToFront();
+            SyncToolkitMainMenu(true);
         }
 
         /// <summary>
@@ -529,6 +552,71 @@ namespace Project.UI
                 saveButton.interactable = GameSession.HasStarted;
             if (loadButton != null)
                 loadButton.interactable = GameSaveSystem.HasAnySaveFile;
+
+            RefreshToolkitMenuStates();
+        }
+
+        private static bool UsesToolkitMenu =>
+            DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive;
+
+        public void RefreshToolkitMenuStates()
+        {
+            if (!UsesToolkitMenu)
+                return;
+
+            DMUiToolkitMainMenu host = DMUiToolkitMainMenu.EnsureHost();
+            host?.RefreshButtonStates(
+                pauseOverlayActive,
+                GameSaveSystem.HasContinueSave,
+                GameSession.HasStarted,
+                GameSaveSystem.HasAnySaveFile);
+        }
+
+        public void HideLegacyMenuChromeForToolkit()
+        {
+            if (menuBackground != null)
+                menuBackground.SetActive(false);
+            if (menuPanel != null)
+                menuPanel.SetActive(false);
+        }
+
+        private void SyncToolkitMainMenu(bool show)
+        {
+            if (!UsesToolkitMenu)
+                return;
+
+            if (show)
+                HideLegacyMenuChromeForToolkit();
+
+            DMUiToolkitMainMenu.SyncFromController(this, show, pauseOverlayActive);
+        }
+
+        public void InvokeNewGame() => StartNewGame();
+        public void InvokeContinueExpedition() => ContinueExpedition();
+        public void InvokeResumeFromPause() => ResumeFromPause();
+        public void InvokeOpenSettings() => OpenSettings();
+        public void InvokeOpenControls() => OpenControls();
+        public void InvokeOpenLoad() => OpenLoad();
+        public void InvokeOpenSave() => OpenSave();
+        public void InvokeExitGame() => ExitGame();
+
+        /// <summary>Restore main/pause menu after Settings, Controls, or Save/Load closes.</summary>
+        public void RestoreMenuAfterSubPanel()
+        {
+            if (UsesToolkitMenu && DMUiToolkitMenuPanels.IsAnySubPanelOpen)
+                return;
+
+            if (settingsPanel != null && settingsPanel.IsOpen)
+                return;
+            if (controlsPanel != null && controlsPanel.IsOpen)
+                return;
+            if (saveSlotsPanel != null && saveSlotsPanel.IsOpen)
+                return;
+
+            if (!UsesToolkitMenu && menuPanel != null)
+                menuPanel.SetActive(true);
+            else
+                SyncToolkitMainMenu(true);
         }
 
         private static void SetMenuButtonLabel(Button button, string label)
@@ -700,6 +788,13 @@ namespace Project.UI
         private void OpenSettings()
         {
             HideHotbars();
+            SyncToolkitMainMenu(false);
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitSettings.Open();
+                return;
+            }
+
             // Hide tilted menu buttons so they cannot ghost through Settings.
             if (menuPanel != null)
                 menuPanel.SetActive(false);
@@ -713,12 +808,24 @@ namespace Project.UI
                 return;
 
             if (!GameSession.HasStarted || pauseOverlayActive)
-                menuPanel.SetActive(true);
+            {
+                if (!UsesToolkitMenu)
+                    menuPanel.SetActive(true);
+                else
+                    SyncToolkitMainMenu(true);
+            }
         }
 
         private void OpenControls()
         {
             HideHotbars();
+            SyncToolkitMainMenu(false);
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitControls.Open();
+                return;
+            }
+
             controlsPanel?.Open();
         }
 
@@ -731,6 +838,13 @@ namespace Project.UI
             }
 
             HideHotbars();
+            SyncToolkitMainMenu(false);
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitSaveSlots.Open(SaveSlotsPanelController.Mode.Load);
+                return;
+            }
+
             saveSlotsPanel?.Open(SaveSlotsPanelController.Mode.Load);
         }
 
@@ -743,12 +857,22 @@ namespace Project.UI
             }
 
             HideHotbars();
+            SyncToolkitMainMenu(false);
             StartCoroutine(OpenSaveSlotsWithScreenshot());
         }
 
         private IEnumerator OpenSaveSlotsWithScreenshot()
         {
             ClearPendingSaveScreenshot();
+
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitMainMenu.EnsureHost()?.Hide();
+                yield return new WaitForEndOfFrame();
+                pendingSaveScreenshot = SaveSlotScreenshotUtility.CaptureGameplayScreenshot();
+                DMUiToolkitSaveSlots.Open(SaveSlotsPanelController.Mode.Save);
+                yield break;
+            }
 
             bool restoreBackground = menuBackground != null && menuBackground.activeSelf;
             bool restorePanel = menuPanel != null && menuPanel.activeSelf;
@@ -781,6 +905,12 @@ namespace Project.UI
 
         private void ShowMenuMessage(string message)
         {
+            if (UsesToolkitMenu)
+            {
+                DMUiToolkitMainMenu host = DMUiToolkitMainMenu.EnsureHost();
+                host?.SetMessage(message);
+            }
+
             if (menuMessageLabel == null)
                 return;
 

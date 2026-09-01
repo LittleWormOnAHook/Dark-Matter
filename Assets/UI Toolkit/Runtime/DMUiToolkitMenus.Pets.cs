@@ -74,8 +74,8 @@ namespace Project.UI
                 VisualElement icon = new VisualElement();
                 icon.AddToClassList("dmg-inv-icon");
                 icon.pickingMode = PickingMode.Ignore;
-                if (pet != null && pet.InventoryIcon != null)
-                    icon.style.backgroundImage = new StyleBackground(Background.FromSprite(pet.InventoryIcon));
+                if (pet != null)
+                    DMUiToolkitStyle.TrySetSpriteBackground(icon, pet.InventoryIcon, ScaleMode.ScaleToFit);
                 slot.Add(icon);
 
                 Label name = new Label(pet != null ? pet.DisplayName : string.Empty);
@@ -91,10 +91,9 @@ namespace Project.UI
                 {
                     if (captured == null)
                         return;
-                    PetHoverTooltip.EnsureExists(transform);
-                    PetHoverTooltip.Instance?.Show(captured, CurrentPointerScreenPosition());
+                    DMUiToolkitPetChrome.TryShowTooltip(captured, CurrentPointerScreenPosition());
                 });
-                slot.RegisterCallback<PointerLeaveEvent>(_ => PetHoverTooltip.HideAny());
+                slot.RegisterCallback<PointerLeaveEvent>(_ => DMUiToolkitPetChrome.HideTooltip());
                 petGrid.Add(slot);
                 petSlotRoots.Add(slot);
                 petSlotIcons.Add(icon);
@@ -105,16 +104,11 @@ namespace Project.UI
                 petToolbarSlot.EnableInClassList("dmg-inv-slot--active", toolbar != null);
                 if (petToolbarIcon != null)
                 {
-                    if (toolbar != null && toolbar.InventoryIcon != null)
-                    {
-                        petToolbarIcon.style.backgroundImage = new StyleBackground(Background.FromSprite(toolbar.InventoryIcon));
-                        DMUiToolkitOverlayDocument.SetShown(petToolbarIcon, true);
-                    }
+                    if (toolbar != null)
+                        DMUiToolkitStyle.TrySetSpriteBackground(petToolbarIcon, toolbar.InventoryIcon, ScaleMode.ScaleToFit);
                     else
-                    {
-                        petToolbarIcon.style.backgroundImage = StyleKeyword.None;
-                        DMUiToolkitOverlayDocument.SetShown(petToolbarIcon, false);
-                    }
+                        DMUiToolkitStyle.ClearBackgroundImage(petToolbarIcon);
+                    DMUiToolkitOverlayDocument.SetShown(petToolbarIcon, toolbar != null && toolbar.InventoryIcon != null);
                 }
 
                 if (petToolbarName != null)
@@ -185,10 +179,7 @@ namespace Project.UI
             petDragGhost.style.height = 48f;
             petDragGhost.style.opacity = 0.75f;
             if (petDragPet.InventoryIcon != null)
-            {
-                petDragGhost.style.backgroundImage = new StyleBackground(Background.FromSprite(petDragPet.InventoryIcon));
-                petDragGhost.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
+                DMUiToolkitStyle.TrySetSpriteBackground(petDragGhost, petDragPet.InventoryIcon, ScaleMode.ScaleToFit);
 
             (root ?? petBody)?.Add(petDragGhost);
             PositionPetGhost(petLastPos);
@@ -214,9 +205,8 @@ namespace Project.UI
 
             if (button == 1)
             {
-                PetHoverTooltip.HideAny();
-                PetContextMenu.EnsureExists(transform);
-                PetContextMenu.Instance?.Show(pet, CurrentPointerScreenPosition());
+                DMUiToolkitPetChrome.HideTooltip();
+                DMUiToolkitPetChrome.TryShowMenuAtPanel(pet, panelPos);
                 return;
             }
 

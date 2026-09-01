@@ -26,6 +26,7 @@ namespace Project.UI
         private bool bound;
         private bool wired;
         private bool menuOpen;
+        private Vector2 tipScreenPosition;
         private bool tipOpen;
         private PetController activePet;
         private int openedOnFrame = -1;
@@ -65,7 +66,7 @@ namespace Project.UI
 
         public static bool TryShowMenu(PetController pet, Vector2 screenPosition)
         {
-            if (!DMUiToolkitHud.IsDriving)
+            if (!DMUiToolkitHud.IsDriving && !DMUiToolkitMenus.IsOpen)
                 return false;
 
             if (pet == null || !pet.IsOwned)
@@ -75,13 +76,29 @@ namespace Project.UI
             if (host == null)
                 return false;
 
-            host.ShowMenuInternal(pet, screenPosition);
+            host.ShowMenuInternal(pet, screenPosition, panelSpace: false);
+            return true;
+        }
+
+        public static bool TryShowMenuAtPanel(PetController pet, Vector2 panelPosition)
+        {
+            if (!DMUiToolkitMenus.IsOpen)
+                return false;
+
+            if (pet == null || !pet.IsOwned)
+                return false;
+
+            DMUiToolkitPetChrome host = EnsureHost();
+            if (host == null)
+                return false;
+
+            host.ShowMenuInternal(pet, panelPosition, panelSpace: true);
             return true;
         }
 
         public static bool TryShowTooltip(PetController pet, Vector2 screenPosition)
         {
-            if (!DMUiToolkitHud.IsDriving)
+            if ((!DMUiToolkitHud.IsDriving && !DMUiToolkitMenus.IsOpen) || pet == null)
                 return false;
 
             DMUiToolkitPetChrome host = EnsureHost();
@@ -153,6 +170,17 @@ namespace Project.UI
 
             if (menuOpen || tipOpen)
                 HideUgui();
+
+            if (tipOpen && tooltip != null)
+            {
+                if (UnityEngine.InputSystem.Mouse.current != null)
+                    tipScreenPosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+                DMUiToolkitOverlayDocument.PositionNearPointer(
+                    tooltip,
+                    tipScreenPosition,
+                    DMUiToolkitOverlayDocument.DefaultHoverOffset,
+                    root);
+            }
         }
 
         internal void BindTree()
@@ -197,7 +225,7 @@ namespace Project.UI
             wired = true;
         }
 
-        private void ShowMenuInternal(PetController pet, Vector2 screenPosition)
+        private void ShowMenuInternal(PetController pet, Vector2 position, bool panelSpace)
         {
             BindTree();
             HideTipInternal();
@@ -211,7 +239,22 @@ namespace Project.UI
             bool assigned = PetManager.Instance != null && PetManager.Instance.ToolbarPet == pet;
             DMUiToolkitOverlayDocument.SetShown(assignButton, !assigned);
             DMUiToolkitOverlayDocument.SetShown(clearButton, assigned);
-            DMUiToolkitOverlayDocument.PositionAtScreen(menu, screenPosition);
+
+            if (panelSpace)
+            {
+                DMUiToolkitOverlayDocument.PositionContextMenuAtPanel(menu, position, root);
+                menu.schedule.Execute(() =>
+                    DMUiToolkitOverlayDocument.PositionContextMenuAtPanel(menu, position, root)).ExecuteLater(1);
+            }
+            else
+            {
+                Vector2 screenPos = UnityEngine.InputSystem.Mouse.current != null
+                    ? UnityEngine.InputSystem.Mouse.current.position.ReadValue()
+                    : position;
+                DMUiToolkitOverlayDocument.PositionContextMenu(menu, screenPos);
+                menu.schedule.Execute(() =>
+                    DMUiToolkitOverlayDocument.PositionContextMenu(menu, screenPos)).ExecuteLater(1);
+            }
         }
 
         private void HideMenuInternal()
@@ -231,6 +274,7 @@ namespace Project.UI
                 return;
 
             tipOpen = true;
+            tipScreenPosition = screenPosition;
             DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.SetShown(tooltip, true);
             tipTitle.text = pet.DisplayName;
@@ -243,8 +287,12 @@ namespace Project.UI
                     : $"{pet.Description}\n\n{status}";
             }
 
-            Vector2 offset = screenPosition + new Vector2(18f, 18f);
-            DMUiToolkitOverlayDocument.PositionAtScreen(tooltip, offset);
+            Vector2 offset = screenPosition;
+            DMUiToolkitOverlayDocument.PositionNearPointer(
+                tooltip,
+                offset,
+                DMUiToolkitOverlayDocument.DefaultHoverOffset,
+                root);
         }
 
         private void HideTipInternal()

@@ -25,7 +25,7 @@ namespace DarkMatterGenesis.Editor
 
         static readonly string[] RequiredNames =
         {
-            "loading-root", "veil", "content", "blackhole", "title", "status", "percent", "progress-fill"
+            "loading-root", "veil", "content", "title", "status", "percent", "progress-fill"
         };
 
         static readonly (string Name, string ParentName)[] RestoreOrder =
@@ -35,7 +35,6 @@ namespace DarkMatterGenesis.Editor
             ("content", "loading-root"),
             ("space", "content"),
             ("stars", "content"),
-            ("blackhole", "content"),
             ("title", "content"),
             ("progress-block", "content"),
             ("status", "progress-block"),
@@ -411,7 +410,6 @@ namespace DarkMatterGenesis.Editor
         <ui:VisualElement name=""content"" class=""dmg-loading-content"" picking-mode=""Ignore"">
             <ui:VisualElement name=""space"" class=""dmg-space"" picking-mode=""Ignore"" />
             <ui:VisualElement name=""stars"" class=""dmg-stars"" picking-mode=""Ignore"" />
-            <ui:VisualElement name=""blackhole"" class=""dmg-blackhole"" picking-mode=""Ignore"" />
             <ui:Label name=""title"" class=""dmg-title"" text=""DARK MATTER : GENESIS"" picking-mode=""Ignore"" />
             <ui:VisualElement name=""progress-block"" class=""dmg-progress-block"" picking-mode=""Ignore"">
                 <ui:Label name=""status"" class=""dmg-status"" text=""Loading Genesis..."" picking-mode=""Ignore"" />

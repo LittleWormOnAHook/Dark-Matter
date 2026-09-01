@@ -737,7 +737,7 @@ namespace Project.Player
             }
             else if (cursorFree)
             {
-                Cursor.lockState = CursorLockMode.None;
+                Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = true;
             }
             else

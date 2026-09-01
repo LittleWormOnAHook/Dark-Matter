@@ -49,9 +49,24 @@ namespace Project.UI
         public float scannerFuzz = 0.035f;
         public Color scannerTint = new Color(0.82f, 1f, 0.9f, 1f);
 
-        [Header("Scanner HUD Viewport (Pixels)")]
-        public float scannerHalfWidthPixels = 420f;
-        public float scannerHalfHeightPixels = 250f;
+        [Header("Scanner HUD")]
+        [Tooltip("Width of the faded green edge border strips (pixels).")]
+        public float scannerBorderWidthPixels = 30f;
+
+        [Tooltip("Marker clamp inset from screen edges. When zero, derived from border width and screen size.")]
+        public float scannerHalfWidthPixels;
+        public float scannerHalfHeightPixels;
+
+        public void GetScannerMarkerHalfExtents(out float halfWidth, out float halfHeight)
+        {
+            float border = Mathf.Max(0f, scannerBorderWidthPixels > 0f ? scannerBorderWidthPixels : 30f);
+            halfWidth = scannerHalfWidthPixels > 0f
+                ? scannerHalfWidthPixels
+                : Screen.width * 0.5f - border;
+            halfHeight = scannerHalfHeightPixels > 0f
+                ? scannerHalfHeightPixels
+                : Screen.height * 0.5f - border;
+        }
     }
 
     [Serializable]
@@ -123,42 +138,22 @@ namespace Project.UI
 
         public static OpticsImageLayerSettings ScannerMaskFrame()
         {
-            return new OpticsImageLayerSettings
-            {
-                stretchToParent = true,
-                color = new Color(0.149f, 0.949f, 0.749f, 0.18f),
-                imageType = Image.Type.Sliced
-            };
+            return new OpticsImageLayerSettings { visible = false };
         }
 
         public static OpticsImageLayerSettings ScannerFrame()
         {
-            return new OpticsImageLayerSettings
-            {
-                stretchToParent = false,
-                sizeDelta = new Vector2(900f, 900f),
-                color = new Color(0.349f, 1f, 0.82f, 0.949f),
-                preserveAspect = true
-            };
+            return new OpticsImageLayerSettings { visible = false };
         }
 
         public static OpticsImageLayerSettings ScannerReticle()
         {
-            return new OpticsImageLayerSettings
-            {
-                stretchToParent = false,
-                sizeDelta = new Vector2(420f, 420f),
-                color = new Color(1f, 0.184f, 0f, 1f)
-            };
+            return new OpticsImageLayerSettings { visible = false };
         }
 
         public static OpticsImageLayerSettings ScannerTintOverlay()
         {
-            return new OpticsImageLayerSettings
-            {
-                stretchToParent = true,
-                color = new Color(0.122f, 0.902f, 0.698f, 0.051f)
-            };
+            return new OpticsImageLayerSettings { visible = false };
         }
     }
 }

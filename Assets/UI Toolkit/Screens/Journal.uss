@@ -15,7 +15,7 @@
     left: 0;
     top: 0;
     right: 0;
-    bottom: 120px;
+    bottom: 0;
     width: 100%;
     height: auto;
     background-color: rgba(0, 0, 0, 0.62);
@@ -26,7 +26,7 @@
     left: 0;
     top: 0;
     right: 0;
-    bottom: 120px;
+    bottom: 0;
     width: 100%;
     height: auto;
     flex-direction: column;
@@ -40,7 +40,7 @@
     padding: 6px 8px;
     background-color: rgba(28, 42, 56, 0.96);
     border-bottom-width: 2px;
-    border-bottom-color: rgb(192, 46, 122);
+    border-bottom-color: rgb(212, 160, 23);
 }
 
 .dmg-tab {
@@ -51,7 +51,7 @@
     padding: 0 6px;
     background-color: rgba(47, 47, 47, 0.92);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     color: rgb(212, 160, 23);
     font-size: 16px;
     letter-spacing: 1px;
@@ -61,14 +61,14 @@
 }
 
 .dmg-tab:hover {
-    background-color: rgba(192, 46, 122, 0.22);
+    background-color: rgba(74, 74, 90, 0.55);
     color: rgb(237, 233, 228);
 }
 
 .dmg-tab--active {
-    background-color: rgba(192, 46, 122, 0.28);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     border-width: 2px;
 }
 
@@ -115,14 +115,14 @@
 }
 
 .dmg-subtab:hover {
-    background-color: rgba(192, 46, 122, 0.22);
+    background-color: rgba(74, 74, 90, 0.55);
     color: rgb(237, 233, 228);
 }
 
 .dmg-subtab--active {
-    background-color: rgba(192, 46, 122, 0.28);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-journal-content {
@@ -192,8 +192,8 @@
 }
 
 .dmg-quest-row--selected {
-    background-color: rgba(192, 46, 122, 0.28);
-    border-color: rgb(192, 46, 122);
+    background-color: rgba(74, 74, 90, 0.75);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-quest-row-title {
@@ -233,7 +233,7 @@
     width: 220px;
     height: 40px;
     margin-top: 12px;
-    background-color: rgba(192, 46, 122, 0.95);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
     font-size: 16px;
     -unity-font-style: bold;
@@ -310,17 +310,21 @@
 }
 
 .dmg-inventory-scroll {
-    flex-grow: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-self: center;
+    width: 884px;
+    max-width: 884px;
     background-color: rgba(28, 42, 56, 0.88);
     border-width: 1px;
-    border-color: rgb(74, 74, 90);
-    padding: 8px;
+    border-color: rgb(212, 160, 23);
+    padding: 12px;
+    overflow: hidden;
 }
 
 #inventory-scroll {
-    width: 720px;
+    width: 884px;
     align-self: center;
-    max-height: 370px;
     flex-grow: 0;
 }
 
@@ -328,31 +332,37 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
+    align-content: flex-start;
+    justify-content: center;
     flex-grow: 0;
-    width: 700px;
+    width: 860px;
+    max-width: 860px;
 }
 
 .dmg-inv-slot {
-    width: 64px;
-    height: 64px;
-    margin: 3px;
-    background-color: rgba(74, 74, 90, 0.82);
+    width: 82px;
+    height: 82px;
+    margin: 2px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: rgba(28, 42, 56, 0.92);
     border-width: 1px;
-    border-color: rgba(237, 233, 228, 0.22);
+    border-color: rgba(237, 233, 228, 0.28);
     overflow: hidden;
 }
 
 .dmg-inv-slot--locked {
-    background-color: rgba(140, 140, 150, 0.9);
-    border-color: rgba(74, 74, 90, 0.8);
+    background-color: rgb(140, 127, 117);
+    border-color: rgb(140, 127, 117);
+    opacity: 1;
 }
 
 .dmg-inv-icon {
     position: absolute;
-    left: 4px;
-    top: 4px;
-    right: 4px;
-    bottom: 4px;
+    left: 1px;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
     width: auto;
     height: auto;
     background-color: rgba(0, 0, 0, 0);
@@ -407,8 +417,7 @@
     width: 100%;
     height: 100%;
     background-color: rgb(3, 3, 5);
-    background-image: resource("UI/FakeMap");
-    -unity-background-scale-mode: scale-to-fit;
+    background-size: contain;
     overflow: hidden;
     transform-origin: center;
 }
@@ -451,9 +460,9 @@
 }
 
 .dmg-inv-slot--active {
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     border-width: 2px;
-    background-color: rgba(192, 46, 122, 0.28);
+    background-color: rgba(74, 74, 90, 0.45);
 }
 
 .dmg-panel-body {
@@ -526,7 +535,7 @@
     padding: 0;
     background-color: rgba(47, 47, 47, 0.92);
     border-width: 3px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     border-top-left-radius: 44px;
     border-top-right-radius: 44px;
     border-bottom-left-radius: 44px;
@@ -540,8 +549,8 @@
 }
 
 .dmg-trio-slot--filled {
-    background-color: rgba(192, 46, 122, 0.28);
-    border-color: rgb(192, 46, 122);
+    background-color: rgba(74, 74, 90, 0.75);
+    border-color: rgb(212, 160, 23);
     color: rgb(237, 233, 228);
 }
 
@@ -609,7 +618,7 @@
 .dmg-vital-fill {
     height: 100%;
     width: 0;
-    background-color: rgb(192, 46, 122);
+    background-color: rgba(74, 74, 90, 0.75);
 }
 
 .dmg-vital-value {
@@ -633,9 +642,9 @@
 }
 
 .dmg-list-row--selected {
-    background-color: rgba(192, 46, 122, 0.35);
+    background-color: rgba(74, 74, 90, 0.75);
     border-width: 2px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-list-row-title {
@@ -653,7 +662,7 @@
     width: 120px;
     height: 28px;
     margin-top: 4px;
-    background-color: rgba(192, 46, 122, 0.95);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
     font-size: 14px;
     -unity-font-style: bold;
@@ -674,7 +683,7 @@
     padding: 12px;
     background-color: rgba(47, 47, 47, 0.95);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
 }
 
 .dmg-ach-slot--unlocked {
@@ -880,7 +889,7 @@
 .dmg-pet-toolbar-slot {
     width: 88px;
     height: 88px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     border-width: 2px;
 }
 
@@ -930,4 +939,94 @@
 
 .dmg-ach-scroll {
     flex-grow: 1;
+}
+
+.dmg-inv-hotbar-block {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    flex-direction: column;
+    align-self: center;
+    width: 884px;
+}
+
+.dmg-inv-hotbar-title {
+    color: rgb(212, 160, 23);
+    font-size: 16px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.dmg-inv-hotbar-row {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+}
+
+.dmg-inv-tools-row {
+    margin-top: 8px;
+}
+
+.dmg-inv-hotbar-slot {
+    width: 82px;
+    height: 82px;
+    margin: 2px;
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 2px;
+    border-color: rgb(74, 74, 90);
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.dmg-inv-hotbar-slot--selected {
+    border-color: rgb(212, 160, 23);
+    background-color: rgba(74, 74, 90, 0.55);
+}
+
+.dmg-inv-hotbar-icon {
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
+    width: auto;
+    height: auto;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.dmg-inv-hotbar-key {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    left: auto;
+    top: auto;
+    font-size: 13px;
+    color: rgba(212, 160, 23, 0.75);
+    -unity-font-style: bold;
+    -unity-text-align: lower-right;
+}
+
+.dmg-inv-hotbar-amount {
+    position: absolute;
+    right: 4px;
+    bottom: 18px;
+    font-size: 12px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+}
+
+.dmg-inv-ctx-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background-color: rgba(0, 0, 0, 0);
 }

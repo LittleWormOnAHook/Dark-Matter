@@ -902,77 +902,10 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
-            if (inventorySystem != null)
-                HandleHotbarHotkeys();
-        }
-
-        private void HandleHotbarHotkeys()
-        {
-            if (equipmentController == null || Keyboard.current == null)
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
                 return;
 
-            int hotbarStartSlot = inventorySystem.inventorySize;
-
-            if (Keyboard.current.digit1Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.PrimaryWeaponHotbarSlot);
-            else if (Keyboard.current.digit2Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.SecondaryWeaponHotbarSlot);
-            else if (Keyboard.current.digit3Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.TertiaryWeaponHotbarSlot);
-            else if (Keyboard.current.digit4Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + equipmentController.QuaternaryWeaponHotbarSlot);
-            else if (Keyboard.current.digit5Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 4);
-            else if (Keyboard.current.digit6Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 5);
-            else if (Keyboard.current.digit7Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 6);
-            else if (Keyboard.current.digit8Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 7);
-            else if (Keyboard.current.digit9Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 8);
-            else if (Keyboard.current.digit0Key.wasPressedThisFrame)
-                SelectOrUseHotbarSlot(hotbarStartSlot + 9);
-        }
-
-        private void SelectOrUseHotbarSlot(int slotIndex)
-        {
-            if (equipmentController == null || inventorySystem == null)
-                return;
-
-            if (UiInputGuard.BlocksGameplayEquipmentInput)
-                return;
-
-            ItemData item = inventorySystem.GetItemAt(slotIndex);
-            if (item == null)
-                return;
-
-            if (inventorySystem.IsToolbarIndex(slotIndex))
-            {
-                equipmentController.SelectToolbarSlot(inventorySystem.ToToolbarSlotIndex(slotIndex));
-                return;
-            }
-
-            int hotbarIndex = slotIndex - inventorySystem.inventorySize;
-
-            if (item.IsConsumable)
-            {
-                if (itemActions != null)
-                    itemActions.TryUse(slotIndex);
-                else
-                    inventorySystem.UseItemAt(slotIndex);
-                return;
-            }
-
-            if (item.IsEquippable && equipmentController.IsWeaponHotbarSlot(hotbarIndex))
-            {
-                int weaponSlot = equipmentController.GetWeaponSlotIndexForHotbar(hotbarIndex);
-                if (weaponSlot >= 0)
-                    equipmentController.SelectWeaponSlot(weaponSlot);
-                return;
-            }
-
-            equipmentController.SelectInventorySlot(slotIndex);
+            GameplayKeyboardShortcuts.TryHandleHotbarHotkeys();
         }
 
         public void OnToggleInventory(InputAction.CallbackContext context)

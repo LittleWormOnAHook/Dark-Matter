@@ -6,6 +6,7 @@
     editor-extension-mode="False">
     <ui:Style src="../Themes/DarkMatterGenesis.uss" />
     <ui:Style src="Journal.uss" />
+    <ui:Style src="FloatingMenu.uss" />
     <ui:VisualElement name="menu-root" class="dmg-menu-root" picking-mode="Ignore">
         <ui:VisualElement name="menu-veil" class="dmg-menu-veil" picking-mode="Position" />
         <ui:VisualElement name="menu-shell" class="dmg-menu-shell" picking-mode="Position">
@@ -13,13 +14,13 @@
                 <ui:Button name="tab-journal" text="Journal (J)" picking-mode="Position" class="dmg-tab dmg-tab--active" />
                 <ui:Button name="tab-inventory" text="Inventory (I)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-map" text="Map (M)" picking-mode="Position" class="dmg-tab" />
-                <ui:Button name="tab-pet" text="Pet (F)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-pet" text="Pet (K)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-companions" text="Companions (P)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-character" text="Character (U)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-blueprints" text="Blueprints (B)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-skills" text="Skills (T)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-echoes" text="Echoes (L)" picking-mode="Position" class="dmg-tab" />
-                <ui:Button name="tab-achievements" text="Achievements (A)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-achievements" text="Achievements (G)" picking-mode="Position" class="dmg-tab" />
             </ui:VisualElement>
             <ui:VisualElement name="menu-body" class="dmg-menu-body" picking-mode="Position">
                 <ui:VisualElement name="journal-body" class="dmg-journal-body" picking-mode="Position">
@@ -46,10 +47,13 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="inventory-body" class="dmg-inventory-body" picking-mode="Position">
                     <ui:Label name="inventory-title" text="INVENTORY" picking-mode="Ignore" class="dmg-section-title" />
-                    <ui:ScrollView name="inventory-scroll" class="dmg-scroll dmg-inventory-scroll" picking-mode="Position">
+                    <ui:VisualElement name="inventory-scroll" class="dmg-inventory-scroll" picking-mode="Position">
                         <ui:VisualElement name="inventory-grid" class="dmg-inv-grid" picking-mode="Position" />
-                    </ui:ScrollView>
-                    <ui:VisualElement name="inventory-storage-row" class="dmg-storage-row" picking-mode="Position"><ui:Label name="inventory-storage-label" text="Storage 20/40 unlocked  ·  Install Increase Storage Module to unlock the next 10-slot row." picking-mode="Ignore" class="dmg-hint" /><ui:Button name="inventory-storage-install" text="Install Storage Module" picking-mode="Position" class="dmg-learn-btn" /></ui:VisualElement><ui:Label name="inventory-hint" text="Drag between inventory slots and the HUD hotbar. Right-click for the item menu. Install storage modules here or from the context menu." picking-mode="Ignore" class="dmg-hint" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="inventory-hotbar-block" class="dmg-inv-hotbar-block" picking-mode="Position">
+                        <ui:Label name="inventory-hotbar-title" text="HOTBAR" picking-mode="Ignore" class="dmg-inv-hotbar-title" />
+                        <ui:VisualElement name="inventory-hotbar-row" class="dmg-inv-hotbar-row" picking-mode="Position" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="map-body" class="dmg-map-body" picking-mode="Position">
                     <ui:VisualElement name="map-viewport" class="dmg-map-viewport" picking-mode="Position">
@@ -154,6 +158,11 @@
                     </ui:ScrollView>
                 </ui:VisualElement>
             </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="inv-ctx-root" picking-mode="Ignore" class="dmg-inv-ctx-overlay">
+            <ui:VisualElement name="inv-ctx-dismiss" picking-mode="Position" class="dmg-fmenu-dismiss" />
+            <ui:VisualElement name="inv-ctx-panel" picking-mode="Position" class="dmg-fmenu-panel" />
+            <ui:VisualElement name="inv-ctx-ammo" picking-mode="Position" class="dmg-fmenu-panel dmg-fmenu-flyout" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

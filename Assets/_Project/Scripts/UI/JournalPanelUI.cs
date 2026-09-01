@@ -150,6 +150,11 @@ namespace Project.UI
 
     public bool IsOpen => navigator != null && navigator.IsAnyOpen;
 
+    public JournalWindowId? ActiveJournalWindow =>
+      navigator != null && navigator.IsAnyOpen ? navigator.CurrentWindow : null;
+
+    public FullscreenUiNavigator Navigator => navigator;
+
     public void TogglePanel()
     {
       TryToggleJournal();
@@ -201,12 +206,51 @@ namespace Project.UI
         return true;
       }
 
+      return SwitchToTab(windowId);
+    }
+
+    /// <summary>
+    /// Opens the journal on <paramref name="windowId"/> or switches tabs without closing when already on that tab.
+    /// </summary>
+    public bool SwitchToTab(JournalWindowId windowId)
+    {
+      if (!GameSession.HasStarted)
+        return false;
+
+      if (!EnsureNavigatorReady())
+        return false;
+
+      if (navigator.IsAnyOpen && navigator.CurrentWindow == windowId)
+      {
+        EnsurePointerForOpenJournal();
+        return true;
+      }
+
       CloseConflictingPanels();
       navigator.SwitchToWindow(windowId);
       ItemHoverTooltip.HideAny();
       RecipeHoverTooltip.HideAny();
       UiFrontLayer.BringLayerToFront(transform);
+      EnsurePointerForOpenJournal();
       return true;
+    }
+
+    public static void EnsurePointerForOpenJournal()
+    {
+      JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+      if (journal == null || !journal.IsOpen)
+        return;
+
+      GameplayInputRecovery.CancelPendingCursorRestore();
+
+      PlayerController player = FindAnyObjectByType<PlayerController>();
+      if (player != null)
+        player.SetJournalOpen(true);
+      else
+      {
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+      }
     }
 
     public bool TryToggleMapTab() => TryToggleTab(JournalWindowId.Map);
@@ -622,7 +666,11 @@ namespace Project.UI
       tabRail?.SetActiveTab(windowId);
       UpdateJournalOverlayInputBlocking(windowId);
       if (navigator != null && navigator.IsAnyOpen)
+      {
         GameplayHudVisibility.SetJournalTabHud(windowId);
+        EnsurePointerForOpenJournal();
+        GameplayMenuTime.SyncJournal(true, windowId);
+      }
     }
 
     private void UpdateJournalOverlayInputBlocking(JournalWindowId? windowId)

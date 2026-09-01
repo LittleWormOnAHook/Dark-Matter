@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="MainMenu.uss" />
+    <ui:VisualElement name="mainmenu-root" class="dmg-mainmenu-root" picking-mode="Position">
+        <ui:VisualElement name="mainmenu-background" class="dmg-mainmenu-background" picking-mode="Ignore" />
+        <ui:VisualElement name="mainmenu-panel" class="dmg-mainmenu-panel" picking-mode="Position">
+            <ui:VisualElement name="title-block" class="dmg-mainmenu-title-block" picking-mode="Ignore">
+                <ui:Label name="mainmenu-title" text="DARK MATTER : GENESIS 2160" picking-mode="Ignore" class="dmg-mainmenu-title" />
+                <ui:Label name="mainmenu-subtitle" text="IO // JUPITER SYSTEM" picking-mode="Ignore" class="dmg-mainmenu-subtitle" />
+            </ui:VisualElement>
+            <ui:VisualElement name="button-column" class="dmg-mainmenu-button-column" picking-mode="Position">
+                <ui:Button name="btn-resume" text="Continue" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-continue" text="Continue Expedition" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-new" text="New Expedition" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-load" text="Load" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-save" text="Save" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-settings" text="Settings" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-controls" text="Controls" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-quit" text="Quit" picking-mode="Position" class="dmg-mainmenu-btn" />
+            </ui:VisualElement>
+            <ui:Label name="menu-message" text="" picking-mode="Ignore" class="dmg-mainmenu-message" />
+            <ui:Label name="version-label" text="v0.1" picking-mode="Ignore" class="dmg-mainmenu-version" />
+        </ui:VisualElement>
+        <ui:VisualElement name="env-status-bar" class="dmg-mainmenu-env-bar" picking-mode="Position">
+            <ui:Label name="env-zone" text="ZONE —" picking-mode="Ignore" class="dmg-mainmenu-env-stat" />
+            <ui:Label name="env-temp" text="TEMP —" picking-mode="Ignore" class="dmg-mainmenu-env-stat" />
+            <ui:Label name="env-condition" text="STATUS —" picking-mode="Ignore" class="dmg-mainmenu-env-stat" />
+            <ui:Label name="env-hazards" text="HAZARDS —" picking-mode="Ignore" class="dmg-mainmenu-env-stat dmg-mainmenu-env-stat--hazards" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

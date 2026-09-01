@@ -68,6 +68,15 @@ namespace Project.UI
 
         public override void OnShow()
         {
+            if (DMUiToolkitMenus.HandlesWindow(JournalWindowId.Inventory))
+            {
+                if (inventoryUi == null)
+                    inventoryUi = FindAnyObjectByType<InventoryUI>();
+                inventoryUi?.RestoreInventoryPanel();
+                GameplayHudVisibility.SetJournalTabHud(JournalWindowId.Inventory);
+                return;
+            }
+
             if (inventoryUi == null)
                 inventoryUi = FindAnyObjectByType<InventoryUI>();
 
@@ -77,6 +86,14 @@ namespace Project.UI
 
         public override void OnHide()
         {
+            if (DMUiToolkitMenus.HandlesWindow(JournalWindowId.Inventory))
+            {
+                if (inventoryUi == null)
+                    inventoryUi = FindAnyObjectByType<InventoryUI>();
+                inventoryUi?.RestoreInventoryPanel();
+                return;
+            }
+
             inventoryUi?.RestoreInventoryPanel();
         }
 

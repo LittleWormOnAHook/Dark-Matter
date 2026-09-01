@@ -450,6 +450,9 @@ namespace Project.UI
 
             DMUiToolkitOverlayDocument.SetShown(root, true);
             open = true;
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
+            if (panel != null)
+                panel.BringToFront();
             GameAudioManager.Instance?.PlayButtonClick();
         }
 

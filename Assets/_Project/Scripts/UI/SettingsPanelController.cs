@@ -47,6 +47,7 @@ namespace Project.UI
         private TextMeshProUGUI bloomIntensityValueLabel;
         private TextMeshProUGUI graphicsAdvisoryLabel;
         private System.Action closedCallback;
+        private readonly List<int> resolutionSourceIndices = new List<int>(32);
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
@@ -436,7 +437,12 @@ namespace Project.UI
                 RefreshGraphicsAdvisory();
             });
             resolutionDropdown.onValueChanged.RemoveAllListeners();
-            resolutionDropdown.onValueChanged.AddListener(GameSettings.SetResolutionIndex);
+            resolutionDropdown.onValueChanged.AddListener(choiceIndex =>
+            {
+                if (choiceIndex < 0 || choiceIndex >= resolutionSourceIndices.Count)
+                    return;
+                GameSettings.SetResolutionIndex(resolutionSourceIndices[choiceIndex]);
+            });
             frameRateDropdown.onValueChanged.RemoveAllListeners();
             frameRateDropdown.onValueChanged.AddListener(index =>
             {
@@ -599,44 +605,50 @@ namespace Project.UI
 
         private void ApplySettings()
         {
-            PushPanelValuesToGameSettings();
-            GameSettings.Save();
-            GameSettings.ApplyAll();
-            PostProcessingController.EnsureExists();
-            PostProcessingController.Instance?.RebuildRuntimeProfile();
-            PostProcessingController.Instance?.ApplyFromSettings();
-            GameAudioManager.Instance?.RefreshVolumes();
+            bool reloading = GameSettingsUiBridge.ApplySnapshot(CapturePanelSnapshot(), reloadSceneAfterApply: true);
             Close();
-            SettingsSceneReloader.ReloadAfterApply();
+            if (!reloading)
+                FindAnyObjectByType<MainMenuController>()?.RestoreMenuAfterSubPanel();
+        }
+
+        private GameSettingsUiBridge.Snapshot CapturePanelSnapshot()
+        {
+            GameSettingsUiBridge.Snapshot snap = GameSettingsUiBridge.CaptureCurrent();
+            snap.MasterVolume = masterSlider.value;
+            snap.MusicVolume = musicSlider.value;
+            snap.SfxVolume = sfxSlider.value;
+            snap.UiScale = uiScaleSlider.value;
+            snap.PostProcessingEnabled = postProcessingToggle.isOn;
+            snap.BloomEnabled = bloomToggle.isOn;
+            snap.BloomIntensity = bloomIntensitySlider.value;
+            snap.FogEnabled = fogToggle.isOn;
+            snap.MotionBlurEnabled = motionBlurToggle.isOn;
+            snap.DepthOfFieldEnabled = depthOfFieldToggle.isOn;
+            snap.AmbientOcclusionEnabled = ambientOcclusionToggle.isOn;
+            snap.ColorGradingEnabled = colorGradingToggle.isOn;
+            snap.VignetteEnabled = vignetteToggle.isOn;
+            snap.MinimapEnabled = minimapToggle.isOn;
+            snap.Fullscreen = fullscreenToggle.isOn;
+            snap.VSync = vsyncToggle.isOn;
+            snap.RayTracingEnabled = rayTracingToggle.isOn;
+            snap.TargetFrameRate = GetFrameRateFromDropdownIndex(frameRateDropdown.value);
+            snap.QualityLevel = qualityDropdown.value;
+            if (resolutionSourceIndices != null
+                && resolutionDropdown.value >= 0
+                && resolutionDropdown.value < resolutionSourceIndices.Count)
+                snap.ResolutionIndex = resolutionSourceIndices[resolutionDropdown.value];
+            else
+                snap.ResolutionIndex = resolutionDropdown.value;
+            if (dlssToggle != null)
+                snap.DlssEnabled = dlssToggle.isOn;
+            if (dlssQualityDropdown != null)
+                snap.DlssQualityDropdownIndex = dlssQualityDropdown.value;
+            return snap;
         }
 
         private void PushPanelValuesToGameSettings()
         {
-            GameSettings.SetMasterVolume(masterSlider.value);
-            GameSettings.SetMusicVolume(musicSlider.value);
-            GameSettings.SetSfxVolume(sfxSlider.value);
-            GameSettings.SetUiScale(uiScaleSlider.value);
-            GameSettings.SetPostProcessingEnabled(postProcessingToggle.isOn);
-            GameSettings.SetBloomEnabled(bloomToggle.isOn);
-            GameSettings.SetBloomIntensity(bloomIntensitySlider.value);
-            GameSettings.SetFogEnabled(fogToggle.isOn);
-            GameSettings.SetMotionBlurEnabled(motionBlurToggle.isOn);
-            GameSettings.SetDepthOfFieldEnabled(depthOfFieldToggle.isOn);
-            GameSettings.SetAmbientOcclusionEnabled(ambientOcclusionToggle.isOn);
-            GameSettings.SetColorGradingEnabled(colorGradingToggle.isOn);
-            GameSettings.SetVignetteEnabled(vignetteToggle.isOn);
-            GameSettings.SetMinimapEnabled(minimapToggle.isOn);
-            MapUI.ApplyMinimapEnabled(minimapToggle.isOn);
-            GameSettings.SetFullscreen(fullscreenToggle.isOn);
-            GameSettings.SetVSync(vsyncToggle.isOn);
-            GameSettings.SetRayTracingEnabled(rayTracingToggle.isOn);
-            GameSettings.SetTargetFrameRate(GetFrameRateFromDropdownIndex(frameRateDropdown.value));
-            GameSettings.SetQualityLevel(qualityDropdown.value, persistPreference: true, applyTierEffectPresets: false);
-            GameSettings.SetResolutionIndex(resolutionDropdown.value);
-            if (dlssToggle != null)
-                GameSettings.SetDlssEnabled(dlssToggle.isOn);
-            if (dlssQualityDropdown != null)
-                GameSettings.SetDlssQualityDropdownIndex(dlssQualityDropdown.value);
+            GameSettingsUiBridge.ApplySnapshot(CapturePanelSnapshot(), reloadSceneAfterApply: false);
         }
 
         private void SyncGraphicsTogglesFromSettings()
@@ -696,7 +708,10 @@ namespace Project.UI
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
             rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);
             qualityDropdown.SetValueWithoutNotify(GameSettings.QualityLevel);
-            resolutionDropdown.SetValueWithoutNotify(GameSettings.GetCurrentResolutionIndex());
+            int resolutionChoice = GameSettings.FindUniqueResolutionChoiceIndex(
+                resolutionSourceIndices,
+                GameSettings.GetCurrentResolutionIndex());
+            resolutionDropdown.SetValueWithoutNotify(resolutionChoice);
             frameRateDropdown.SetValueWithoutNotify(GetFrameRateDropdownIndex(GameSettings.TargetFrameRate));
             if (dlssToggle != null)
                 dlssToggle.SetIsOnWithoutNotify(GameSettings.DlssEnabled);
@@ -720,8 +735,7 @@ namespace Project.UI
 
             resolutionDropdown.ClearOptions();
             List<string> resolutionLabels = new List<string>();
-            foreach (Resolution resolution in Screen.resolutions)
-                resolutionLabels.Add($"{resolution.width} x {resolution.height}");
+            GameSettings.BuildUniqueResolutionChoices(resolutionLabels, resolutionSourceIndices);
             resolutionDropdown.AddOptions(resolutionLabels);
 
             frameRateDropdown.ClearOptions();

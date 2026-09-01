@@ -90,6 +90,7 @@ namespace Project.UI
             CreateMenuButton("Use", () => Execute(itemActions?.TryUse(activeSlotIndex) ?? false));
             CreateMenuButton("Install", () => Execute(itemActions?.TryInstallStorageModule(activeSlotIndex) ?? false));
             CreateMenuButton("Equip", () => Execute(itemActions?.TryEquip(activeSlotIndex) ?? false));
+            CreateMenuButton("Add to Hotbar", () => Execute(itemActions?.TryAddToHotbar(activeSlotIndex) ?? false));
             CreateMenuButton("Unequip", () => Execute(itemActions?.TryUnequip(activeSlotIndex) ?? false));
             CreateAmmoSubmenuButton();
             CreateMenuButton("Refuel", () => Execute(itemActions?.TryRefuelVehicle(activeSlotIndex) ?? false));
@@ -109,7 +110,7 @@ namespace Project.UI
         /// </summary>
         private void CreateAmmoSubmenuButton()
         {
-            Button button = MenuUiBuilder.CreateButton(menuPanel.transform, "Equip Ammo >", new Vector2(164f, 34f), 18f);
+            Button button = MenuUiBuilder.CreateButton(menuPanel.transform, "Load Ammo >", new Vector2(164f, 34f), 18f);
             button.name = "EquipAmmoContextButton";
 
             EventTrigger trigger = button.gameObject.AddComponent<EventTrigger>();
@@ -311,6 +312,7 @@ namespace Project.UI
             SetButtonVisible("Use", itemActions.CanUse(activeSlotIndex) && !itemActions.CanInstallStorageModule(activeSlotIndex) && !itemActions.CanDeployShelter(activeSlotIndex) && !itemActions.CanDeployWalkerDrill(activeSlotIndex));
             SetButtonVisible("Install", itemActions.CanInstallStorageModule(activeSlotIndex));
             SetButtonVisible("Equip", itemActions.CanEquip(activeSlotIndex));
+            SetButtonVisible("Add to Hotbar", itemActions.CanAddToHotbar(activeSlotIndex));
             SetButtonVisible("Unequip", itemActions.CanUnequip(activeSlotIndex));
             SetButtonVisible("EquipAmmo", itemActions.CanEquipAmmo(activeSlotIndex));
             SetButtonVisible("Refuel", itemActions.CanRefuelVehicle(activeSlotIndex));

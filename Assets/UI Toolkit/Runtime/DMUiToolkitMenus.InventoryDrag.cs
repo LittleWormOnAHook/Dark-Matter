@@ -1,3 +1,4 @@
+using Project.Audio;
 using Project.Inventory;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,6 +11,8 @@ namespace Project.UI
         private const float InvDragThresholdPx = 8f;
 
         private InventoryItemActions boundItemActions;
+        private VisualElement inventoryScroll;
+        private VisualElement invDragCaptureSlot;
         private bool invDragActive;
         private int invDragSource = -1;
         private int invPointerSlot = -1;
@@ -55,14 +58,17 @@ namespace Project.UI
                 inventoryStorageInstall.clicked -= OnInstallStorageClicked;
                 inventoryStorageInstall.clicked += OnInstallStorageClicked;
             }
+
+            inventoryScroll = tree.Q<VisualElement>("inventory-scroll");
+            if (inventoryBody == null)
+                inventoryBody = tree.Q<VisualElement>("inventory-body");
         }
 
         private void RefreshInventoryStorage()
         {
             if (boundInventory == null)
                 boundInventory = FindAnyObjectByType<InventorySystem>();
-            boundItemActions ??= boundInventory != null ? boundInventory.GetComponent<InventoryItemActions>() : null;
-            EnsureInventoryContextMenu();
+            boundItemActions ??= EnsureBoundItemActions();
 
             int unlocked = boundInventory != null ? boundInventory.unlockedMainSlots : 0;
             int total = boundInventory != null ? boundInventory.inventorySize : 0;
@@ -108,14 +114,6 @@ namespace Project.UI
             RefreshInventory();
         }
 
-        private void EnsureInventoryContextMenu()
-        {
-            boundItemActions ??= boundInventory != null ? boundInventory.GetComponent<InventoryItemActions>() : null;
-            if (boundItemActions == null)
-                return;
-            InventoryContextMenu.EnsureExists(transform, boundItemActions);
-        }
-
         private void AttachInventorySlotDrag(VisualElement slot, int index)
         {
             if (slot == null)
@@ -123,7 +121,15 @@ namespace Project.UI
 
             slot.userData = index;
             slot.pickingMode = PickingMode.Position;
+            slot.UnregisterCallback<PointerDownEvent>(OnInvPointerDown);
+            slot.UnregisterCallback<ContextClickEvent>(OnInvContextClick);
+            slot.UnregisterCallback<PointerMoveEvent>(OnInvPointerMove);
+            slot.UnregisterCallback<PointerUpEvent>(OnInvPointerUp);
+            slot.UnregisterCallback<PointerCaptureOutEvent>(OnInvPointerCaptureOut);
+            slot.UnregisterCallback<PointerEnterEvent>(OnInvPointerEnter);
+            slot.UnregisterCallback<PointerLeaveEvent>(OnInvPointerLeave);
             slot.RegisterCallback<PointerDownEvent>(OnInvPointerDown);
+            slot.RegisterCallback<ContextClickEvent>(OnInvContextClick);
             slot.RegisterCallback<PointerMoveEvent>(OnInvPointerMove);
             slot.RegisterCallback<PointerUpEvent>(OnInvPointerUp);
             slot.RegisterCallback<PointerCaptureOutEvent>(OnInvPointerCaptureOut);
@@ -140,6 +146,8 @@ namespace Project.UI
 
             Vector2 panelPos = ScreenToMenuPanel(screenPosition);
             int dest = FindInventorySlotAtPanel(panelPos);
+            if (dest < 0)
+                dest = FindInventoryHotbarSlotAtPanel(panelPos);
             if (dest < 0)
                 return false;
             if (dest == sourceAbsoluteIndex)
@@ -158,12 +166,38 @@ namespace Project.UI
             return true;
         }
 
+        private void OnInvContextClick(ContextClickEvent evt)
+        {
+            if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
+                return;
+
+            evt.StopImmediatePropagation();
+            // ContextClickEvent.mousePosition is already panel space (same as PointerEvent.position).
+            HandleInvClick(index, 1, evt.mousePosition);
+        }
+
         private void OnInvPointerDown(PointerDownEvent evt)
         {
             if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
                 return;
 
+            DMUiToolkitWorldMenus.HideItemTooltip();
+
+            if (evt.button == 1)
+            {
+                HandleInvClick(index, 1, evt.position);
+                evt.StopImmediatePropagation();
+                return;
+            }
+
+            HideInventoryContextMenu();
+            DMUiToolkitContext.Hide();
+
+            if (evt.button != 0)
+                return;
+
             invPointerSlot = index;
+            invDragCaptureSlot = slot;
             invPointerDown = (Vector2)evt.position;
             invLastPanelPos = invPointerDown;
             invDragActive = false;
@@ -174,13 +208,14 @@ namespace Project.UI
 
         private void OnInvPointerMove(PointerMoveEvent evt)
         {
-            if (invPointerSlot < 0)
+            if (invPointerSlot < 0 || evt.pointerId != invCapturedPointerId)
                 return;
 
             invLastPanelPos = (Vector2)evt.position;
             if (invDragActive)
             {
                 PositionInvDragGhost(invLastPanelPos);
+                evt.StopPropagation();
                 return;
             }
 
@@ -192,10 +227,14 @@ namespace Project.UI
                 return;
 
             BeginInvDrag(invPointerSlot, invLastPanelPos);
+            evt.StopPropagation();
         }
 
         private void OnInvPointerUp(PointerUpEvent evt)
         {
+            if (evt.pointerId != invCapturedPointerId)
+                return;
+
             int sourceSlot = invPointerSlot;
             Vector2 panelPos = (Vector2)evt.position;
             int button = evt.button;
@@ -205,16 +244,19 @@ namespace Project.UI
             if (dragging)
             {
                 CompleteInvDrag(panelPos);
+                evt.StopPropagation();
                 return;
             }
 
-            if (sourceSlot >= 0)
-                HandleInvClick(sourceSlot, button);
+            if (sourceSlot >= 0 && button == 0)
+                HandleInvClick(sourceSlot, button, panelPos);
+
+            evt.StopPropagation();
         }
 
         private void OnInvPointerCaptureOut(PointerCaptureOutEvent evt)
         {
-            if (invPointerSlot < 0)
+            if (invPointerSlot < 0 || evt.pointerId != invCapturedPointerId)
                 return;
 
             bool dragging = invDragActive;
@@ -226,17 +268,24 @@ namespace Project.UI
 
         private void ReleaseInvPointer()
         {
+            VisualElement slot = invDragCaptureSlot;
             int id = invCapturedPointerId;
-            int slotIndex = invPointerSlot;
+            invDragCaptureSlot = null;
             invCapturedPointerId = -1;
             invPointerSlot = -1;
             invDragActive = false;
-            if (id >= 0 && slotIndex >= 0 && slotIndex < invSlots.Count)
-            {
-                VisualElement slot = invSlots[slotIndex];
-                if (slot != null && slot.HasPointerCapture(id))
-                    slot.ReleasePointer(id);
-            }
+            SetInventoryScrollEnabled(true);
+
+            if (slot != null && id >= 0 && slot.HasPointerCapture(id))
+                slot.ReleasePointer(id);
+        }
+
+        private void SetInventoryScrollEnabled(bool enabled)
+        {
+            if (inventoryScroll == null)
+                return;
+
+            inventoryScroll.pickingMode = enabled ? PickingMode.Position : PickingMode.Ignore;
         }
 
         private void BeginInvDrag(int slotIndex, Vector2 panelPos)
@@ -247,15 +296,17 @@ namespace Project.UI
                 return;
             if (slotIndex < 0 || slotIndex >= boundInventory.slots.Count)
                 return;
-            if (!boundInventory.IsMainSlotUnlocked(slotIndex))
+            if (slotIndex < boundInventory.inventorySize && !boundInventory.IsMainSlotUnlocked(slotIndex))
                 return;
 
             InventorySystem.InventorySlot data = boundInventory.slots[slotIndex];
-            if (data == null || data.IsEmpty || data.item == null || data.item.icon == null)
+            if (data == null || data.IsEmpty || data.item == null)
                 return;
 
             invDragActive = true;
             invDragSource = slotIndex;
+            DMUiToolkitWorldMenus.HideItemTooltip();
+            SetInventoryScrollEnabled(false);
             ClearInvDragGhost();
 
             invDragGhost = new VisualElement();
@@ -264,15 +315,37 @@ namespace Project.UI
             invDragGhost.style.position = Position.Absolute;
             invDragGhost.style.width = 48f;
             invDragGhost.style.height = 48f;
-            invDragGhost.style.backgroundImage = new StyleBackground(Background.FromSprite(data.item.icon));
-            invDragGhost.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            if (data.item.icon != null)
+                DMUiToolkitStyle.TrySetSpriteBackground(invDragGhost, data.item.icon, ScaleMode.ScaleToFit);
             invDragGhost.style.opacity = 0.75f;
-            VisualElement ghostParent = root != null ? root : inventoryBody;
+            VisualElement ghostParent = menuRoot != null ? menuRoot : inventoryBody;
             ghostParent?.Add(invDragGhost);
+            invDragGhost.BringToFront();
             PositionInvDragGhost(panelPos);
 
             if (slotIndex < invIcons.Count && invIcons[slotIndex] != null)
                 invIcons[slotIndex].style.opacity = 0.35f;
+            else
+                DimHotbarDragSource(slotIndex, 0.35f);
+        }
+
+        private void DimHotbarDragSource(int absoluteIndex, float opacity)
+        {
+            for (int i = 0; i < invHotbarSlots.Count; i++)
+            {
+                VisualElement slot = invHotbarSlots[i];
+                if (slot?.userData is int index && index == absoluteIndex && i < invHotbarIcons.Count && invHotbarIcons[i] != null)
+                    invHotbarIcons[i].style.opacity = opacity;
+            }
+        }
+
+        private void RestoreHotbarDragOpacity()
+        {
+            for (int i = 0; i < invHotbarIcons.Count; i++)
+            {
+                if (invHotbarIcons[i] != null)
+                    invHotbarIcons[i].style.opacity = 1f;
+            }
         }
 
         private void PositionInvDragGhost(Vector2 panelPos)
@@ -280,7 +353,7 @@ namespace Project.UI
             if (invDragGhost == null)
                 return;
 
-            VisualElement parent = invDragGhost.parent != null ? invDragGhost.parent : root;
+            VisualElement parent = invDragGhost.parent != null ? invDragGhost.parent : menuRoot;
             Vector2 local = panelPos;
             if (parent != null)
                 local = parent.WorldToLocal(panelPos);
@@ -309,6 +382,8 @@ namespace Project.UI
                 if (invIcons[i] != null)
                     invIcons[i].style.opacity = 1f;
             }
+
+            RestoreHotbarDragOpacity();
         }
 
         private void CompleteInvDrag(Vector2 panelPos)
@@ -316,94 +391,148 @@ namespace Project.UI
             int source = invDragSource;
             ClearInvDragGhost();
             invDragSource = -1;
-            RefreshInventory();
             if (boundInventory == null || source < 0)
                 return;
 
-            Vector2 screenPos = CurrentPointerScreenPosition();
-            int dest = FindInventorySlotAtPanel(panelPos);
-            if (dest >= 0)
+            boundInventory ??= FindAnyObjectByType<InventorySystem>();
+            if (boundInventory == null)
+                return;
+
+            int destMain = FindInventorySlotAtPanel(panelPos);
+            if (destMain >= 0)
             {
-                if (dest != source && boundInventory.IsMainSlotUnlocked(dest))
+                if (destMain != source && boundInventory.IsMainSlotUnlocked(destMain))
                 {
                     InventorySystem.InventorySlot from = boundInventory.slots[source];
                     if (from != null && !from.IsEmpty && from.item != null
-                        && boundInventory.CanAcceptItemAt(dest, from.item, showLevelToast: true))
-                        boundInventory.MoveOrMergeSlots(source, dest);
+                        && boundInventory.CanAcceptItemAt(destMain, from.item, showLevelToast: true))
+                        boundInventory.MoveOrMergeSlots(source, destMain);
                 }
 
+                RefreshInventory();
                 return;
             }
 
+            int destHotbar = FindInventoryHotbarSlotAtPanel(panelPos);
+            if (destHotbar >= 0)
+            {
+                if (destHotbar != source)
+                {
+                    InventorySystem.InventorySlot from = boundInventory.slots[source];
+                    if (from != null && !from.IsEmpty && from.item != null
+                        && boundInventory.CanAcceptItemAt(destHotbar, from.item, showLevelToast: true))
+                        boundInventory.MoveOrMergeSlots(source, destHotbar);
+                }
+
+                RefreshInventory();
+                return;
+            }
+
+            Vector2 screenPos = CurrentPointerScreenPosition();
             if (DMUiToolkitHud.TryDropOnSlot(screenPos, source))
+            {
+                RefreshInventory();
                 return;
-            if (DMUiToolkitHud.IsPointerOverHotbarOrTools(screenPos))
-                return;
+            }
 
-            if (menuRoot != null && menuRoot.worldBound.Contains(panelPos))
-                return;
+            if (!IsPointerOverInventoryBody(panelPos))
+            {
+                boundItemActions ??= boundInventory.GetComponent<InventoryItemActions>();
+                if (boundItemActions != null)
+                    boundItemActions.TryDrop(source);
+                else
+                    boundInventory.DropItemAt(source);
+            }
 
-            boundItemActions ??= boundInventory.GetComponent<InventoryItemActions>();
-            if (boundItemActions != null)
-                boundItemActions.TryDrop(source);
-            else
-                boundInventory.DropItemAt(source);
+            RefreshInventory();
         }
 
-        private void HandleInvClick(int slotIndex, int button)
+        private bool IsPointerOverInventoryBody(Vector2 panelPos)
+        {
+            if (inventoryBody != null && inventoryBody.worldBound.Contains(panelPos))
+                return true;
+            if (menuRoot != null && menuRoot.worldBound.Contains(panelPos))
+                return true;
+            return false;
+        }
+
+        private InventoryItemActions EnsureBoundItemActions()
+        {
+            if (boundInventory == null)
+                boundInventory = FindAnyObjectByType<InventorySystem>();
+            if (boundInventory == null)
+                return null;
+
+            // Legacy InventoryUI AddComponent'd this at runtime — UITK must do the same or
+            // right-click context menus silently no-op (Player often has InventorySystem only).
+            boundItemActions = boundInventory.GetComponent<InventoryItemActions>();
+            if (boundItemActions == null)
+                boundItemActions = boundInventory.gameObject.AddComponent<InventoryItemActions>();
+            return boundItemActions;
+        }
+
+        private void HandleInvClick(int slotIndex, int button, Vector2 pointerPanelPosition)
         {
             if (boundInventory == null)
                 boundInventory = FindAnyObjectByType<InventorySystem>();
             if (boundInventory == null || slotIndex < 0 || slotIndex >= boundInventory.slots.Count)
                 return;
-            if (!boundInventory.IsMainSlotUnlocked(slotIndex))
+            if (slotIndex < boundInventory.inventorySize && !boundInventory.IsMainSlotUnlocked(slotIndex))
                 return;
 
             InventorySystem.InventorySlot data = boundInventory.slots[slotIndex];
             if (data == null || data.IsEmpty || data.item == null)
                 return;
 
-            Vector2 screenPos = CurrentPointerScreenPosition();
             if (button == 1)
             {
-                EnsureInventoryContextMenu();
-                boundItemActions ??= boundInventory.GetComponent<InventoryItemActions>();
-                DMUiToolkitContext.TryShow(slotIndex, screenPos, boundItemActions);
+                // Same-frame ContextClick + PointerDown must not hide/show twice.
+                if (invContextOpen && invContextSlot == slotIndex && invContextOpenedFrame == Time.frameCount)
+                    return;
+
+                if (EnsureBoundItemActions() == null)
+                    return;
+
+                GameAudioManager.Instance?.PlayInventoryItemClick();
+                // Journal inventory shares the HUD panel — use PointerEvent panel coords, not Mouse.screen
+                // (Game view letterboxing breaks ScreenToPanel and parks the menu off-screen).
+                ShowInventoryContextMenu(slotIndex, pointerPanelPosition);
                 return;
             }
 
             if (button != 0)
                 return;
 
-            boundItemActions ??= boundInventory.GetComponent<InventoryItemActions>();
-            if (boundItemActions != null)
+            if (EnsureBoundItemActions() != null)
                 boundItemActions.TryUse(slotIndex);
             else
                 boundInventory.UseItemAt(slotIndex);
         }
 
-
         private void OnInvPointerEnter(PointerEnterEvent evt)
         {
+            if (invDragActive)
+                return;
             if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
                 return;
             if (boundInventory == null)
                 boundInventory = FindAnyObjectByType<InventorySystem>();
             if (boundInventory == null || index < 0 || index >= boundInventory.slots.Count)
                 return;
-            if (!boundInventory.IsMainSlotUnlocked(index))
+            if (index < boundInventory.inventorySize && !boundInventory.IsMainSlotUnlocked(index))
                 return;
 
             InventorySystem.InventorySlot data = boundInventory.slots[index];
             if (data == null || data.IsEmpty || data.item == null)
                 return;
 
-            DMUiToolkitWorldMenus.TryShowItemTooltip(data.item, data.amount, CurrentPointerScreenPosition());
+            DMUiToolkitWorldMenus.TryShowItemTooltip(data.item, data.amount, Vector2.zero, centerOnScreen: true);
         }
 
         private void OnInvPointerLeave(PointerLeaveEvent evt)
         {
-            DMUiToolkitWorldMenus.HideItemTooltip();
+            if (!invDragActive)
+                DMUiToolkitWorldMenus.HideItemTooltip();
         }
 
         private int FindInventorySlotAtPanel(Vector2 panelPos)

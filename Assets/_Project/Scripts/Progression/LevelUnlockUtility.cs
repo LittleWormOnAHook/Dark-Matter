@@ -27,7 +27,7 @@ namespace Project.Progression
 
         /// <summary>Player-facing toast / popup copy for level gates.</summary>
         public static string FormatLevelRequiredMessage(int requiredLevel) =>
-            $"Require Level {requiredLevel}";
+            $"Level {requiredLevel} Required";
 
         public static void ShowLevelRequiredToast(int requiredLevel)
         {

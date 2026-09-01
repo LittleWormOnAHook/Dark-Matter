@@ -20,6 +20,8 @@ namespace Project.Core
         private const string VSyncKey = "settings.vsync";
         private const string QualityKey = "settings.quality";
         private const string ResolutionIndexKey = "settings.resolutionIndex";
+        private const string ResolutionWidthKey = "settings.resolutionWidth";
+        private const string ResolutionHeightKey = "settings.resolutionHeight";
         private const string MinimapEnabledKey = "settings.mapSystemEnabled";
         private const string RayTracingKey = "settings.rayTracing";
         private const string FogKey = "settings.pp.fog";
@@ -357,7 +359,12 @@ namespace Project.Core
 
             index = Mathf.Clamp(index, 0, resolutions.Length - 1);
             Resolution resolution = resolutions[index];
-            Screen.SetResolution(resolution.width, resolution.height, Fullscreen);
+            PlayerPrefs.SetInt(ResolutionIndexKey, index);
+            PlayerPrefs.SetInt(ResolutionWidthKey, resolution.width);
+            PlayerPrefs.SetInt(ResolutionHeightKey, resolution.height);
+            // Borderless fullscreen is safer for UI Toolkit / panel scaling than exclusive mode.
+            FullScreenMode mode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            Screen.SetResolution(resolution.width, resolution.height, mode);
         }
 
         public static int GetCurrentResolutionIndex()
@@ -366,9 +373,27 @@ namespace Project.Core
             if (resolutions == null || resolutions.Length == 0)
                 return 0;
 
+            int savedW = PlayerPrefs.GetInt(ResolutionWidthKey, 0);
+            int savedH = PlayerPrefs.GetInt(ResolutionHeightKey, 0);
+            if (savedW > 0 && savedH > 0)
+            {
+                for (int i = resolutions.Length - 1; i >= 0; i--)
+                {
+                    if (resolutions[i].width == savedW && resolutions[i].height == savedH)
+                        return i;
+                }
+            }
+
             int saved = PlayerPrefs.GetInt(ResolutionIndexKey, -1);
             if (saved >= 0 && saved < resolutions.Length)
                 return saved;
+
+            for (int i = resolutions.Length - 1; i >= 0; i--)
+            {
+                if (resolutions[i].width == Screen.width &&
+                    resolutions[i].height == Screen.height)
+                    return i;
+            }
 
             for (int i = resolutions.Length - 1; i >= 0; i--)
             {
@@ -378,6 +403,79 @@ namespace Project.Core
             }
 
             return resolutions.Length - 1;
+        }
+
+        /// <summary>
+        /// Unique width×height choices for settings UI (highest refresh rate kept per size).
+        /// </summary>
+        public static void BuildUniqueResolutionChoices(
+            System.Collections.Generic.List<string> labels,
+            System.Collections.Generic.List<int> sourceIndices)
+        {
+            labels?.Clear();
+            sourceIndices?.Clear();
+            if (labels == null || sourceIndices == null)
+                return;
+
+            Resolution[] resolutions = Screen.resolutions;
+            if (resolutions == null || resolutions.Length == 0)
+                return;
+
+            var bestBySize = new System.Collections.Generic.Dictionary<long, int>(resolutions.Length);
+            for (int i = 0; i < resolutions.Length; i++)
+            {
+                Resolution r = resolutions[i];
+                long key = ((long)r.width << 32) | (uint)r.height;
+                if (!bestBySize.TryGetValue(key, out int existing)
+                    || r.refreshRateRatio.value >= resolutions[existing].refreshRateRatio.value)
+                    bestBySize[key] = i;
+            }
+
+            var ordered = new System.Collections.Generic.List<int>(bestBySize.Values);
+            ordered.Sort((a, b) =>
+            {
+                int area = (resolutions[a].width * resolutions[a].height)
+                    .CompareTo(resolutions[b].width * resolutions[b].height);
+                return area != 0 ? area : a.CompareTo(b);
+            });
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                int src = ordered[i];
+                Resolution r = resolutions[src];
+                labels.Add($"{r.width} x {r.height}");
+                sourceIndices.Add(src);
+            }
+        }
+
+        public static int FindUniqueResolutionChoiceIndex(
+            System.Collections.Generic.IReadOnlyList<int> sourceIndices,
+            int rawResolutionIndex)
+        {
+            if (sourceIndices == null || sourceIndices.Count == 0)
+                return 0;
+
+            for (int i = 0; i < sourceIndices.Count; i++)
+            {
+                if (sourceIndices[i] == rawResolutionIndex)
+                    return i;
+            }
+
+            Resolution[] resolutions = Screen.resolutions;
+            if (resolutions == null || resolutions.Length == 0)
+                return 0;
+
+            rawResolutionIndex = Mathf.Clamp(rawResolutionIndex, 0, resolutions.Length - 1);
+            int w = resolutions[rawResolutionIndex].width;
+            int h = resolutions[rawResolutionIndex].height;
+            for (int i = 0; i < sourceIndices.Count; i++)
+            {
+                Resolution r = resolutions[sourceIndices[i]];
+                if (r.width == w && r.height == h)
+                    return i;
+            }
+
+            return Mathf.Clamp(sourceIndices.Count - 1, 0, sourceIndices.Count - 1);
         }
 
         public static void MarkSaveExists(bool exists)
@@ -415,10 +513,14 @@ namespace Project.Core
 
         private static void ApplyDisplay()
         {
-            if (Screen.fullScreen == Fullscreen)
+            // Prefer borderless fullscreen — exclusive mode + resolution flips often blank UITK panels.
+            FullScreenMode desired = Fullscreen
+                ? FullScreenMode.FullScreenWindow
+                : FullScreenMode.Windowed;
+            if (Screen.fullScreenMode == desired)
                 return;
 
-            Screen.fullScreen = Fullscreen;
+            Screen.fullScreenMode = desired;
         }
     }
 }

@@ -202,7 +202,7 @@ namespace Project.UI
                 dot.AddToClassList("dmg-hex-dot");
                 dot.pickingMode = PickingMode.Ignore;
                 if (DmHexUiSprites.RankDot != null)
-                    dot.style.backgroundImage = new StyleBackground(Background.FromSprite(DmHexUiSprites.RankDot));
+                    DMUiToolkitStyle.TrySetSpriteBackground(dot, DmHexUiSprites.RankDot);
                 bool usedSlot = d < maxRank;
                 if (!usedSlot)
                     dot.style.unityBackgroundImageTintColor = Color.clear;
@@ -242,10 +242,7 @@ namespace Project.UI
             element.style.right = outset;
             element.style.bottom = outset;
             if (sprite != null)
-            {
-                element.style.backgroundImage = new StyleBackground(Background.FromSprite(sprite));
-                element.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
+                DMUiToolkitStyle.TrySetSpriteBackground(element, sprite, ScaleMode.ScaleToFit);
 
             element.style.unityBackgroundImageTintColor = tint;
             element.style.backgroundColor = Color.clear;
@@ -293,10 +290,12 @@ namespace Project.UI
             {
                 hoveredSkillId = skill.ResolvedId;
                 selectedSkillId = skill.ResolvedId;
+                ShowSkillFloatingTip(skill);
             }
             else if (hoveredSkillId == skill.ResolvedId)
             {
                 hoveredSkillId = null;
+                DMUiToolkitWorldMenus.HideJournalTip();
             }
 
             foreach (KeyValuePair<string, ToolkitHexNode> pair in hexNodes)
@@ -367,6 +366,33 @@ namespace Project.UI
                             : DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SlateGray, 0.9f);
                 }
             }
+        }
+
+        private void ShowSkillFloatingTip(SkillDefinition skill)
+        {
+            if (skill == null)
+                return;
+
+            int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            int maxRank = skill.ClampedMaxRank;
+            int nextCost = rank < maxRank ? skill.GetCostForNextRank(rank) : 0;
+            bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, boundProgression, out string error);
+            bool isMaxed = rank >= maxRank;
+            string prereqLine = FormatHexPrerequisites(skill);
+            string status = isMaxed
+                ? "MAX RANK"
+                : canAllocate
+                    ? "Click to upgrade · Cost " + nextCost + " SP"
+                    : error ?? "Locked";
+
+            string body =
+                (skill.description ?? string.Empty) + "\n\n" +
+                "Rank " + rank + "/" + maxRank + "\n" +
+                "Requires player level " + skill.requiredPlayerLevel + "\n" +
+                (string.IsNullOrEmpty(prereqLine) ? string.Empty : prereqLine + "\n") +
+                "\n" + status;
+
+            DMUiToolkitWorldMenus.TryShowJournalTip(skill.displayName, body, CurrentPointerScreenPosition());
         }
 
         private void ApplyHexPopupOverride()
@@ -467,6 +493,10 @@ namespace Project.UI
         internal static void SetElementRotate(VisualElement element, float degrees)
         {
             if (element == null)
+                return;
+
+            float currentDegrees = element.resolvedStyle.rotate.angle.ToDegrees();
+            if (Mathf.Approximately(currentDegrees, degrees))
                 return;
 
             element.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(degrees)));

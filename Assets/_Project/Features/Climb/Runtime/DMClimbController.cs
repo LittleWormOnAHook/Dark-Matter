@@ -90,7 +90,6 @@ namespace Project.Features.Climb
         private bool _hasLastStick;
         private bool _mantling;
         private float _mantleUntil = -10f;
-        private bool _mantleSawClip;
         private float _mantleBeganAt;
         private Quaternion _mantleStartRot = Quaternion.identity;
         private Quaternion _mantleEndRot = Quaternion.identity;
@@ -1182,7 +1181,6 @@ namespace Project.Features.Climb
             _mantleStartRot = transform.rotation;
             _mantleEndRot = UprightFrom(onto);
             _mantling = true;
-            _mantleSawClip = false;
             _mantleBeganAt = Time.unscaledTime;
             _mantleUntil = Time.unscaledTime + 3.2f;
             if (landing != null)
@@ -1232,8 +1230,6 @@ namespace Project.Features.Climb
                     overNorm = cur.normalizedTime;
                 if (cur.shortNameHash == ClimbStandupState)
                     standNorm = cur.normalizedTime;
-                if (inOver || inStand)
-                    _mantleSawClip = true;
             }
 
             _mantleStand.y = _mantleFloorY + MantlePlantPad;

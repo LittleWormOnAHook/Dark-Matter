@@ -53,7 +53,7 @@
     padding: 16px 18px;
     background-color: rgba(28, 42, 56, 0.96);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     align-items: center;
     flex-direction: column;
 }
@@ -79,7 +79,7 @@
     width: 220px;
     height: 40px;
     margin-top: 8px;
-    background-color: rgba(192, 46, 122, 0.95);
+    background-color: rgba(74, 74, 90, 0.75);
     color: rgb(237, 233, 228);
     font-size: 17px;
     -unity-font-style: bold;
@@ -101,7 +101,7 @@
     padding: 18px 20px;
     background-color: rgba(28, 42, 56, 0.96);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     align-items: center;
     flex-direction: column;
 }
@@ -129,11 +129,12 @@
     -unity-text-align: middle-center;
 }
 
-.dmg-wm-weapon-panel {
+.dmg-fmenu-panel.dmg-wm-weapon-panel {
     left: 50%;
     top: 50%;
-    margin-left: -110px;
-    margin-top: -80px;
+    translate: -50% -50%;
+    margin-left: 0;
+    margin-top: 0;
 }
 
 .dmg-wm-scan {
@@ -177,7 +178,7 @@
 .dmg-wm-tame-fill {
     height: 100%;
     width: 40%;
-    background-color: rgb(192, 46, 122);
+    background-color: rgba(74, 74, 90, 0.75);
 }
 
 .dmg-wm-tame-label {
@@ -197,7 +198,7 @@
     padding: 12px;
     background-color: rgba(61, 52, 69, 0.96);
     border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
     border-bottom-left-radius: 12px;

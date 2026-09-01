@@ -63,7 +63,7 @@ namespace Project.UI
             if (uiManager == null)
                 return;
 
-            ApplyLabelFont(uiManager.piBalanceText, theme);
+            ApplyLabelFont(uiManager.acBalanceText, theme);
             ApplyLabelFont(uiManager.interactionPrompt, theme);
         }
 

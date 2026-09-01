@@ -43,6 +43,9 @@ namespace Project.UI
             if (!IsAnyOpen || Keyboard.current == null)
                 return;
 
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                return;
+
             if (!UiEscapeGate.TryConsumeEscape())
                 return;
 
@@ -211,6 +214,12 @@ namespace Project.UI
 
             GameplayMenuTime.SyncJournal(paused, paused ? CurrentWindow : null);
 
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                DMUiToolkitMenus.SyncFromNavigatorImmediate();
+
+            if (paused)
+                JournalPanelUI.EnsurePointerForOpenJournal();
+
             // Only lock the cursor when no other fullscreen / blocking UI still wants it free.
             bool keepCursorFree = paused
                 || (player != null && (
@@ -221,7 +230,7 @@ namespace Project.UI
                     || player.IsBuildingControlOpen
                     || player.IsGameplayPaused));
 
-            Cursor.lockState = keepCursorFree ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.lockState = keepCursorFree ? CursorLockMode.Confined : CursorLockMode.Locked;
             Cursor.visible = keepCursorFree;
         }
 
@@ -230,7 +239,13 @@ namespace Project.UI
             OnActiveWindowChanged?.Invoke(CurrentWindow);
 
             if (IsAnyOpen)
+            {
                 GameplayMenuTime.SyncJournal(true, CurrentWindow);
+                JournalPanelUI.EnsurePointerForOpenJournal();
+            }
+
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                DMUiToolkitMenus.SyncFromNavigatorImmediate();
         }
     }
 }

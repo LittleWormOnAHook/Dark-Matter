@@ -19,32 +19,32 @@ namespace Project.UI
     {
         public void SetCurrencyHudVisible(bool visible)
         {
-            if (piBalanceText == null)
+            if (acBalanceText == null)
                 return;
 
-            piBalanceText.gameObject.SetActive(visible);
+            acBalanceText.gameObject.SetActive(visible);
             if (visible)
             {
-                ConfigurePiBalancePosition();
+                ConfigureAcBalancePosition();
                 RefreshCurrencyHud();
             }
         }
 
-        private void ConfigurePiBalancePosition()
+        private void ConfigureAcBalancePosition()
         {
-            if (!applyRuntimeHudLayout || piBalanceText == null)
+            if (!applyRuntimeHudLayout || acBalanceText == null)
                 return;
 
-            RectTransform piRect = piBalanceText.rectTransform;
-            piRect.anchorMin = new Vector2(1f, 1f);
-            piRect.anchorMax = new Vector2(1f, 1f);
-            piRect.pivot = new Vector2(1f, 1f);
-            piRect.anchoredPosition = new Vector2(
+            RectTransform acRect = acBalanceText.rectTransform;
+            acRect.anchorMin = new Vector2(1f, 1f);
+            acRect.anchorMax = new Vector2(1f, 1f);
+            acRect.pivot = new Vector2(1f, 1f);
+            acRect.anchoredPosition = new Vector2(
                 -HudLayoutMetrics.RightHudInset,
                 -HudLayoutMetrics.TopHudInset);
 
-            piBalanceText.fontSize = Mathf.Max(12f, piBalanceText.fontSize * 0.5f);
-            piBalanceText.alignment = TextAlignmentOptions.TopRight;
+            acBalanceText.fontSize = Mathf.Max(12f, acBalanceText.fontSize * 0.5f);
+            acBalanceText.alignment = TextAlignmentOptions.TopRight;
         }
 
         public float GetAetherCredits() => aetherCredits;
@@ -77,7 +77,7 @@ namespace Project.UI
             if (amount <= 0)
                 return;
 
-            ShowCurrencyPopup($"+{amount} AC", source);
+            ShowCurrencyPopup($"+{amount} AC Credits", source);
         }
 
         public void ShowLevelUpPopup(int newLevel, int levelsGained = 1)
@@ -85,6 +85,7 @@ namespace Project.UI
             DMILevelUpPopupUI.Show(newLevel, levelsGained);
         }
 
+        [System.Obsolete("Use ShowAcReward.")]
         public void ShowPiReward(int amount, string source = "Gathering")
         {
             ShowAcReward(amount, source);
@@ -92,20 +93,20 @@ namespace Project.UI
 
         private void RefreshCurrencyHud()
         {
-            if (piBalanceText == null || !piBalanceText.gameObject.activeSelf)
+            if (acBalanceText == null || !acBalanceText.gameObject.activeSelf)
                 return;
 
-            piBalanceText.text = $"AC: {Mathf.RoundToInt(aetherCredits)}";
+            acBalanceText.text = $"AC Credits: {Mathf.RoundToInt(aetherCredits)}";
         }
 
         private void ShowCurrencyPopup(string amountLine, string source)
         {
-            if (DMUiToolkitPiReward.TryShow(amountLine, source))
+            if (DMUiToolkitAcReward.TryShow(amountLine, source))
                 return;
 
-            if (piRewardPopupPrefab != null && popupParent != null)
+            if (acRewardPopupPrefab != null && popupParent != null)
             {
-                GameObject popup = Instantiate(piRewardPopupPrefab, popupParent);
+                GameObject popup = Instantiate(acRewardPopupPrefab, popupParent);
                 RectTransform popupRect = popup.transform as RectTransform;
                 if (popupRect != null)
                 {
@@ -119,12 +120,11 @@ namespace Project.UI
                 if (txt != null)
                     txt.text = $"{amountLine}\n{source}";
 
-                if (popup.GetComponent<PiRewardPopup>() == null)
+                if (popup.GetComponent<AcRewardPopup>() == null)
                     StartCoroutine(FadeAndDestroyPopup(popup));
             }
             else
             {
-                // Fallback when reward prefab is not wired — still surface center-screen feedback.
                 PickupToastUI.Show(string.IsNullOrWhiteSpace(source) ? amountLine : $"{amountLine}  ({source})");
             }
         }
@@ -134,6 +134,5 @@ namespace Project.UI
             yield return new WaitForSeconds(2.5f);
             Destroy(popup);
         }
-
     }
 }

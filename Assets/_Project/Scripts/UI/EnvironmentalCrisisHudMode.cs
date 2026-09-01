@@ -167,8 +167,8 @@ namespace Project.UI
             {
                 if (uiManager.interactionPrompt != null)
                     uiManager.interactionPrompt.gameObject.SetActive(!crisis);
-                if (uiManager.piBalanceText != null)
-                    uiManager.piBalanceText.gameObject.SetActive(!crisis);
+                if (uiManager.acBalanceText != null)
+                    uiManager.acBalanceText.gameObject.SetActive(!crisis);
             }
         }
 

@@ -72,6 +72,8 @@ namespace Project.UI
         {
             if (panelRoot != null)
                 panelRoot.SetActive(false);
+
+            UnityEngine.Object.FindAnyObjectByType<MainMenuController>()?.RestoreMenuAfterSubPanel();
         }
 
         public void HandleBack()

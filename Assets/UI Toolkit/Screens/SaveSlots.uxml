@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="MenuModal.uss" />
+    <ui:VisualElement name="saveslots-root" class="dmg-menu-modal-root" picking-mode="Position">
+        <ui:VisualElement name="saveslots-veil" class="dmg-menu-modal-veil" picking-mode="Position" />
+        <ui:VisualElement name="saveslots-panel" class="dmg-menu-modal-panel" picking-mode="Position">
+            <ui:Label name="saveslots-title" text="SELECT SAVE SLOT" class="dmg-menu-modal-title" picking-mode="Ignore" />
+            <ui:ScrollView name="saveslots-body" class="dmg-menu-modal-body" picking-mode="Position" />
+            <ui:VisualElement name="saveslots-footer" class="dmg-menu-modal-footer" picking-mode="Position">
+                <ui:Button name="saveslots-back" text="Back" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted" picking-mode="Position" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

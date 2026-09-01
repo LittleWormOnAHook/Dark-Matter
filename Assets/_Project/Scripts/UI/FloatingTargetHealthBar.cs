@@ -204,5 +204,54 @@ namespace Project.UI
             if (healthText != null)
                 healthText.text = $"{Mathf.CeilToInt(current)}";
         }
+
+        /// <summary>World position and fill for UITK world-chrome bars (uGUI graphics stay hidden).</summary>
+        public bool TryGetWorldPresentation(out Vector3 worldPosition, out float normalized, out string hpText)
+        {
+            worldPosition = default;
+            normalized = 0f;
+            hpText = string.Empty;
+
+            if (!userVisible)
+                return false;
+
+            if (dummyTarget != null)
+            {
+                worldPosition = dummyTarget.HealthBarAnchor.position + worldOffset;
+                normalized = dummyTarget.MaxHealth > 0f
+                    ? Mathf.Clamp01(dummyTarget.CurrentHealth / dummyTarget.MaxHealth)
+                    : 0f;
+                hpText = $"{Mathf.CeilToInt(dummyTarget.CurrentHealth)}";
+                return true;
+            }
+
+            if (enemyTarget != null)
+            {
+                if (enemyTarget.IsDead)
+                    return false;
+
+                worldPosition = enemyTarget.HealthBarAnchor.position + targetBarOffset;
+                normalized = enemyTarget.MaxHealth > 0f
+                    ? Mathf.Clamp01(enemyTarget.CurrentHealth / enemyTarget.MaxHealth)
+                    : 0f;
+                hpText = $"{Mathf.CeilToInt(enemyTarget.CurrentHealth)}";
+                return true;
+            }
+
+            if (companionTarget != null)
+            {
+                if (companionTarget.IsDead)
+                    return false;
+
+                worldPosition = companionTarget.HealthBarAnchor.position + targetBarOffset;
+                normalized = companionTarget.MaxHealth > 0f
+                    ? Mathf.Clamp01(companionTarget.CurrentHealth / companionTarget.MaxHealth)
+                    : 0f;
+                hpText = $"{Mathf.CeilToInt(companionTarget.CurrentHealth)}";
+                return true;
+            }
+
+            return false;
+        }
     }
 }

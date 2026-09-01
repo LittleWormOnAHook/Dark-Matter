@@ -14,7 +14,7 @@
 .dmg-quest-list {
     position: absolute;
     right: 18px;
-    top: 210px;
+    top: 360px;
     width: 320px;
     flex-direction: column;
     align-items: flex-end;

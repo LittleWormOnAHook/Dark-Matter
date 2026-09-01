@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="MenuModal.uss" />
+    <ui:Style src="Settings.uss" />
+    <ui:VisualElement name="settings-root" class="dmg-menu-modal-root" picking-mode="Position">
+        <ui:VisualElement name="settings-veil" class="dmg-menu-modal-veil" picking-mode="Position" />
+        <ui:VisualElement name="settings-panel" class="dmg-menu-modal-panel dmg-settings-panel" picking-mode="Position">
+            <ui:Label name="settings-title" text="SETTINGS" class="dmg-menu-modal-title dmg-settings-title" picking-mode="Ignore" />
+            <ui:Label name="settings-advisory" text="" class="dmg-settings-advisory" picking-mode="Ignore" />
+            <ui:ScrollView name="settings-body" class="dmg-menu-modal-body dmg-settings-body" picking-mode="Position" />
+            <ui:VisualElement name="settings-footer" class="dmg-menu-modal-footer dmg-settings-footer" picking-mode="Position">
+                <ui:Button name="settings-back" text="BACK" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted dmg-settings-btn dmg-settings-btn--muted" picking-mode="Position" />
+                <ui:Button name="settings-apply" text="APPLY" class="dmg-menu-modal-btn dmg-settings-btn" picking-mode="Position" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

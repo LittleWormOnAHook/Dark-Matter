@@ -180,6 +180,7 @@ namespace Project.UI
             source = crafting;
             open = true;
             DMUiToolkitOverlayDocument.SetShown(root, true);
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
             Rebuild();

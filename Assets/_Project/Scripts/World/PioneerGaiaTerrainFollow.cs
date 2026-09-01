@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -143,7 +143,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
 
     void RememberOriginal(Terrain terrain)
     {
-        int id = terrain.GetEntityId();
+        EntityId id = terrain.GetEntityId();
         if (m_originals.ContainsKey(id))
         {
             return;

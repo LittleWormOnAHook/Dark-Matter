@@ -23,4 +23,6 @@
 - No silent git/depot restore without explicit user confirmation in the current message.
 - No forced Unity refresh unless the user asks.
 
+**New UI:** UI Toolkit only (UXML/USS/`DMUiToolkit*` runtime) — see `.cursor/rules/dark-matter-genesis-ui-toolkit.mdc`. Do not add new uGUI menus or HUD panels unless explicitly requested.
+
 Full locks (platforms, AC economy, Echoes, thermal, BCP, DM naming, UI palette) live in `.cursor/rules/dark-matter-genesis-core.mdc` and GDD 5.0.

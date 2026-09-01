@@ -136,6 +136,7 @@ namespace Project.UI
         {
             BindTree();
             DMUiToolkitOverlayDocument.SetShown(root, true);
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             open = true;
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;

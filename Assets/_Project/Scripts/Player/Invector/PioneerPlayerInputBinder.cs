@@ -18,6 +18,8 @@ namespace Project.Player.Invector
     [RequireComponent(typeof(PlayerInput))]
     public class PioneerPlayerInputBinder : MonoBehaviour
     {
+        private static UIManager cachedUiManager;
+
         private PlayerInput _playerInput;
         private PlayerController _playerController;
         private MeleeCombatController _melee;
@@ -168,44 +170,95 @@ namespace Project.Player.Invector
                     break;
                 case "Inventory":
                     if (context.performed)
-                        FindAnyObjectByType<InventoryUI>()?.OnToggleInventory(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory))
+                            ResolveUiManager()?.OnToggleInventory(context);
+                    }
                     break;
                 case "Map":
-                    FindAnyObjectByType<MapUI>()?.OnToggleMap(context);
+                    if (context.performed)
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
+                            ResolveUiManager()?.OnToggleMap(context);
+                    }
+                    else if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                    {
+                        FindAnyObjectByType<MapUI>(FindObjectsInactive.Include)?.OnToggleMap(context);
+                    }
                     break;
                 case "Journal":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleJournal(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true))
+                            ResolveUiManager()?.OnToggleJournal(context);
+                    }
                     break;
                 case "Craft":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleCraft(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                            ResolveUiManager()?.OnToggleCraft(context);
+                    }
                     break;
                 case "Blueprints":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleBlueprints(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                            ResolveUiManager()?.OnToggleBlueprints(context);
+                    }
                     break;
                 case "Pioneers":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnTogglePioneers(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers))
+                            ResolveUiManager()?.OnTogglePioneers(context);
+                    }
                     break;
                 case "Skills":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleSkills(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills))
+                            ResolveUiManager()?.OnToggleSkills(context);
+                    }
                     break;
                 case "Echoes":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleEchoes(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes))
+                            ResolveUiManager()?.OnToggleEchoes(context);
+                    }
+                    break;
+                case "Achievements":
+                    if (context.performed)
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements))
+                            ResolveUiManager()?.OnToggleAchievements(context);
+                    }
                     break;
                 case "Character":
                     if (context.performed)
-                        FindAnyObjectByType<UIManager>()?.OnToggleCharacter(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
+                            ResolveUiManager()?.OnToggleCharacter(context);
+                    }
                     break;
                 case "Pets":
                     if (context.performed)
-                        FindAnyObjectByType<PetUI>()?.OnTogglePets(context);
+                    {
+                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet))
+                            ResolveUiManager()?.OnTogglePets(context);
+                    }
                     break;
             }
+        }
+
+        private static UIManager ResolveUiManager()
+        {
+            if (cachedUiManager != null)
+                return cachedUiManager;
+
+            cachedUiManager = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            return cachedUiManager;
         }
     }
 }

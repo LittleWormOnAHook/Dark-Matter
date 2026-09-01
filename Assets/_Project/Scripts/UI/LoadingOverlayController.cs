@@ -17,7 +17,7 @@ namespace Project.UI
     ///
     /// Camera flash prevention: a solid black veil stays fully opaque until load + destination handoff finish,
     /// gameplay cameras are blacked out while the loader owns the screen, then the veil fades in from black.
-    /// Backdrop: deep-space void with RectTransform flying stars and a distant Blackhole2 sprite.
+    /// Backdrop: deep-space void with RectTransform flying stars.
     /// Dark Matter: Genesis identity only — no Pi, wallet, or legacy branding on this surface.
     /// DMI lettermark is disabled by default on this surface (<see cref="showDmiLogo"/>).
     /// All timing uses unscaled time because both entry points park <c>Time.timeScale</c> at 0.
@@ -27,7 +27,6 @@ namespace Project.UI
     {
         public const string BackgroundResourcePath = "UI/LoadingGenesis_Background";
         public const string LogoResourcePath = "UI/LoadingGenesis_Logo";
-        public const string BlackholeResourcePath = "UI/LoadingGenesis_Blackhole";
         public const string StarfieldShaderName = "Project/DMLoadingStarfield";
         public const string StarfieldMaterialResourcePath = "UI/DMLoadingStarfield";
 
@@ -65,12 +64,7 @@ namespace Project.UI
         private const float LogoFrameSize = 430f;
         private const int FlyingStarCount = 48;
         private const float StarTravelRadius = 1180f;
-        /// <summary>Up + left from screen center (UI: -x left, +y up). Small distant hole keeps prior offset.</summary>
-        private static readonly Vector2 BlackholeAnchoredPosition = new Vector2(-100f, 100f);
 
-        [SerializeField, Range(40f, 200f)] private float blackholeSize = 150f;
-        [SerializeField, Range(0.4f, 1f)] private float blackholeAlpha = 0.8f;
-        [SerializeField, Range(0.0f, 0.08f)] private float blackholeApproachScale = 0.02f;
         [SerializeField] private bool showDmiLogo = false;
         /// <summary>Screen time and progress bar are both driven by this window.</summary>
         [SerializeField] private float simulatedLoadSeconds = 6f;
@@ -94,12 +88,10 @@ namespace Project.UI
         private CanvasGroup blackVeilGroup;
         private Image glowImage;
         private RectTransform logoArtRect;
-        private RectTransform blackholeRect;
         private RectTransform progressFillRect;
         private TextMeshProUGUI percentLabel;
         private Material starfieldMaterial;
         private FlyingStar[] flyingStars;
-        private Vector2 blackholeBaseSize;
         private int satisfiedCheckpoints;
         private int shownPercent = -1;
         private bool cameraGateReleased;
@@ -443,14 +435,6 @@ namespace Project.UI
             }
 
             UpdateFlyingStars(Time.unscaledDeltaTime);
-
-            // Subtle distant approach — scale eases in over the load window.
-            if (blackholeRect != null && blackholeBaseSize.x > 0f)
-            {
-                float approach = 1f + blackholeApproachScale
-                    * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 0.55f));
-                blackholeRect.sizeDelta = blackholeBaseSize * approach;
-            }
         }
 
         private void UpdateFlyingStars(float unscaledDelta)
@@ -596,7 +580,6 @@ namespace Project.UI
         private void BuildBackgroundArt(Transform parent)
         {
             BuildStarfieldLayer(parent);
-            BuildBlackholeLayer(parent);
 
             // Light wash so title + progress stay readable without painting rings or grey panels.
             MenuUiBuilder.CreateFullScreenPanel(
@@ -698,48 +681,6 @@ namespace Project.UI
 
             // Place once before first Update so the field is not empty for a frame.
             UpdateFlyingStars(0f);
-        }
-
-        private void BuildBlackholeLayer(Transform parent)
-        {
-            // Prefer the Sprite sub-asset (Texture Type = Sprite + Alpha Is Transparency).
-            // Fallback builds a sprite from the Texture2D so a Default import never shows as opaque checkerboard.
-            Sprite holeSprite = Resources.Load<Sprite>(BlackholeResourcePath);
-            if (holeSprite == null)
-            {
-                Texture2D holeTexture = Resources.Load<Texture2D>(BlackholeResourcePath);
-                if (holeTexture != null)
-                {
-                    holeSprite = Sprite.Create(
-                        holeTexture,
-                        new Rect(0f, 0f, holeTexture.width, holeTexture.height),
-                        new Vector2(0.5f, 0.5f),
-                        100f,
-                        0,
-                        SpriteMeshType.FullRect);
-                    holeSprite.name = "LoadingGenesis_Blackhole_Runtime";
-                }
-            }
-
-            if (holeSprite == null)
-                return;
-
-            GameObject holeObject = new GameObject("BlackholeArt", typeof(RectTransform), typeof(CanvasRenderer));
-            holeObject.transform.SetParent(parent, false);
-            blackholeRect = holeObject.GetComponent<RectTransform>();
-            blackholeBaseSize = new Vector2(blackholeSize, blackholeSize);
-            // Distant black hole: 100px left and 100px up from screen center.
-            CenterRect(blackholeRect, BlackholeAnchoredPosition, blackholeBaseSize);
-
-            // Transparent Image only — no panel chrome / RawImage behind the sprite.
-            Image hole = holeObject.AddComponent<Image>();
-            hole.sprite = holeSprite;
-            hole.type = Image.Type.Simple;
-            hole.preserveAspect = true;
-            hole.raycastTarget = false;
-            hole.maskable = false;
-            hole.color = new Color(1f, 1f, 1f, blackholeAlpha);
-            hole.material = null;
         }
 
         private void BuildBrandBlock(Transform parent)

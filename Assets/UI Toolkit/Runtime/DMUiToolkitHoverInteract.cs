@@ -161,6 +161,11 @@ namespace Project.UI
                 storeButton.clicked += OnStore;
             if (cancelButton != null)
                 cancelButton.clicked += HideInternal;
+
+            VisualElement veil = root?.Q<VisualElement>("hover-veil");
+            if (veil != null)
+                veil.RegisterCallback<ClickEvent>(_ => HideInternal());
+
             wired = true;
         }
 
@@ -170,6 +175,12 @@ namespace Project.UI
             activeUsable = usable;
             DMUiToolkitOverlayDocument.SetShown(root, true);
             open = true;
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
+            if (root != null)
+            {
+                VisualElement panel = root.Q<VisualElement>("hover-panel");
+                panel?.BringToFront();
+            }
 
             PlayerController player = Object.FindAnyObjectByType<PlayerController>();
             player?.SetBuildingControlOpen(true);

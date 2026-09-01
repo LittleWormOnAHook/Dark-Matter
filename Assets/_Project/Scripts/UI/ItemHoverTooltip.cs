@@ -33,6 +33,7 @@ namespace Project.UI
         public static void HideAny()
         {
             DMUiToolkitWorldMenus.HideItemTooltip();
+            DMUiToolkitWorldMenus.HideJournalTip();
             activeHoverSlot = null;
             if (instance == null)
                 return;
@@ -250,6 +251,7 @@ namespace Project.UI
 
         public static void HideAny()
         {
+            DMUiToolkitWorldMenus.HideJournalTip();
             if (instance == null)
                 return;
 
@@ -333,6 +335,14 @@ namespace Project.UI
             if (recipe == null)
             {
                 Hide();
+                return;
+            }
+
+            if (DMUiToolkitWorldMenus.TryShowRecipeTooltip(recipe, screenPosition, pendingScroll, inventory))
+            {
+                isVisible = false;
+                if (gameObject != null)
+                    gameObject.SetActive(false);
                 return;
             }
 

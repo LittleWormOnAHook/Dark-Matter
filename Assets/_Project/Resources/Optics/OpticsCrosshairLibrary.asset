@@ -124,8 +124,9 @@ MonoBehaviour:
     scannerEdgeSoftness: 0.012
     scannerFuzz: 0.035
     scannerTint: {r: 0.82, g: 1, b: 0.9, a: 1}
-    scannerHalfWidthPixels: 420
-    scannerHalfHeightPixels: 250
+    scannerBorderWidthPixels: 30
+    scannerHalfWidthPixels: 0
+    scannerHalfHeightPixels: 0
   modeLabel:
     anchor: {x: 0.5, y: 0.9}
     sizeDelta: {x: 640, y: 36}

@@ -3,14 +3,14 @@
     <Style src="Hazards.uss"/>
     <ui:VisualElement name="hazards-root" picking-mode="Ignore" class="dmg-hz-root">
         <ui:VisualElement name="hazards-cluster" picking-mode="Ignore" class="dmg-hz-cluster">
-            <ui:VisualElement name="thermal-panel" picking-mode="Ignore" class="dmg-hz-panel">
-                <ui:Label name="thermal-title" text="TEMPERATURE" picking-mode="Ignore" class="dmg-hz-title"/>
-                <ui:Label name="thermal-status" text="EVA NOMINAL" picking-mode="Ignore" class="dmg-hz-status"/>
+            <ui:VisualElement name="thermal-panel" picking-mode="Ignore" class="dmg-hz-panel dmg-hz-thermal">
+                <ui:Label name="thermal-title" text="TEMPERATURE" picking-mode="Ignore" class="dmg-hz-title" style="display: none;"/>
+                <ui:Label name="thermal-status" text="EVA NOMINAL" picking-mode="Ignore" class="dmg-hz-status" style="display: none;"/>
                 <ui:VisualElement name="thermal-track" picking-mode="Ignore" class="dmg-hz-thermal-track">
-                    <ui:VisualElement name="thermal-fill" picking-mode="Ignore" class="dmg-hz-thermal-fill"/>
+                    <ui:VisualElement name="thermal-fill" picking-mode="Ignore" class="dmg-hz-thermal-fill" style="display: none;"/>
                     <ui:VisualElement name="thermal-needle" picking-mode="Ignore" class="dmg-hz-needle"/>
                 </ui:VisualElement>
-                <ui:Label name="thermal-value" text="70 F" picking-mode="Ignore" class="dmg-hz-temp"/>
+                <ui:Label name="thermal-value" text="70°F" picking-mode="Ignore" class="dmg-hz-temp"/>
             </ui:VisualElement>
             <ui:VisualElement name="hazard-panel" picking-mode="Ignore" class="dmg-hz-panel">
                 <ui:Label name="hazard-title" text="HAZARDS" picking-mode="Ignore" class="dmg-hz-title"/>

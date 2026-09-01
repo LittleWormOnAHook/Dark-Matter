@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="AcReward.uss"/>
+    <ui:VisualElement name="acreward-root" picking-mode="Ignore" class="dmg-ac-reward-root">
+        <ui:VisualElement name="acreward-card" picking-mode="Ignore" class="dmg-ac-reward-card">
+            <ui:Label name="acreward-amount" text="+10 AC" picking-mode="Ignore" class="dmg-ac-reward-amount"/>
+            <ui:Label name="acreward-source" text="Gathering" picking-mode="Ignore" class="dmg-ac-reward-source"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

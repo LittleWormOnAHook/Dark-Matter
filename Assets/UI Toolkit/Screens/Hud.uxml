@@ -102,13 +102,19 @@
             <ui:Label name="radio-title" text="RADIO" picking-mode="Ignore" class="dmg-hud-radio-title"/>
             <ui:Label name="radio-body" text="Radio transcript" picking-mode="Ignore" class="dmg-hud-radio-body"/>
         </ui:VisualElement>
-        <ui:VisualElement name="popups" picking-mode="Ignore" class="dmg-hud-popups" style="background-size: 100% 100%; -unity-background-scale-mode: scale-to-fit; background-image: none; -unity-slice-scale: 1px; -unity-text-generator: standard; -unity-background-image-tint-color: rgb(255, 0, 0); -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; background-color: rgba(99, 99, 99, 0); color: rgba(53, 53, 53, 0); font-size: 60px;">
-            <ui:VisualElement name="popup-template" picking-mode="Ignore" class="dmg-hud-popup" style="background-image: url(&quot;project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Textures/Border/Cut/Cut%20Frame%20Filled.png?fileID=21300000&amp;guid=dc2366542d8657842a8bf5378c77bee0&amp;type=3#Cut Frame Filled&quot;); background-size: 100% 100%; -unity-background-scale-mode: stretch-to-fill; background-color: rgba(28, 42, 56, 0.35); -unity-slice-left: 6; -unity-slice-top: 6; -unity-slice-right: 6; -unity-slice-bottom: 6; border-width: 2px; border-color: rgb(212, 160, 23); padding-left: 10px; padding-right: 10px; font-size: 40px;">
-                <ui:Label name="popup-template-text" text="Pickup / XP popup" picking-mode="Ignore" class="dmg-hud-popup-text" style="color: rgb(237, 233, 228); -unity-font-style: bold; opacity: 1; font-size: 40px; flex-grow: 1; -unity-text-align: middle-left;"/>
+        <ui:VisualElement name="popups" picking-mode="Ignore" class="dmg-hud-popups">
+            <ui:VisualElement name="popup-template" picking-mode="Ignore" class="dmg-hud-popup" style="display: none;">
+                <ui:Label name="popup-template-text" text="Pickup / XP popup" picking-mode="Ignore" class="dmg-hud-popup-text"/>
             </ui:VisualElement>
-            <ui:VisualElement name="popup-preview-1" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 2" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 32px; color: rgb(237, 233, 228);"/></ui:VisualElement>
-            <ui:VisualElement name="popup-preview-2" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 3" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 23px; color: rgb(237, 233, 228);"/></ui:VisualElement>
-            <ui:VisualElement name="popup-preview-3" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview"><ui:Label text="Rolodex line 4" picking-mode="Ignore" class="dmg-hud-popup-text" style="font-size: 15px; color: rgb(237, 233, 228);"/></ui:VisualElement>
+            <ui:VisualElement name="popup-preview-1" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview" style="display: none;">
+                <ui:Label text="Rolodex line 2" picking-mode="Ignore" class="dmg-hud-popup-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="popup-preview-2" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview" style="display: none;">
+                <ui:Label text="Rolodex line 3" picking-mode="Ignore" class="dmg-hud-popup-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="popup-preview-3" picking-mode="Ignore" class="dmg-hud-popup dmg-hud-popup-preview" style="display: none;">
+                <ui:Label text="Rolodex line 4" picking-mode="Ignore" class="dmg-hud-popup-text"/>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="xp" picking-mode="Ignore" class="dmg-hud-xp">
             <ui:VisualElement name="xp-track" picking-mode="Ignore" class="dmg-hud-xp-track">
@@ -124,10 +130,16 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="minimap" picking-mode="Ignore" class="dmg-hud-minimap">
-            <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="dmg-hud-minimap-chrome"><ui:Button name="minimap-zoom-out" text="-" picking-mode="Position" class="dmg-hud-minimap-btn"/><ui:VisualElement name="minimap-frame" picking-mode="Ignore" class="dmg-hud-minimap-frame">
-                <ui:VisualElement name="minimap-view" picking-mode="Ignore" class="dmg-hud-minimap-view"/><ui:VisualElement name="minimap-fog" picking-mode="Ignore" class="dmg-hud-minimap-fog"/>
-                <ui:VisualElement name="minimap-player" picking-mode="Ignore" class="dmg-hud-minimap-player"/>
-            </ui:VisualElement><ui:Button name="minimap-zoom-in" text="+" picking-mode="Position" class="dmg-hud-minimap-btn"/></ui:VisualElement><ui:Button name="minimap-scan" text="Scan" picking-mode="Position" class="dmg-hud-minimap-scan"/>
+            <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="dmg-hud-minimap-chrome">
+                <ui:Button name="minimap-zoom-out" text="-" picking-mode="Position" class="dmg-hud-minimap-btn"/>
+                <ui:VisualElement name="minimap-frame" picking-mode="Ignore" class="dmg-hud-minimap-frame">
+                    <ui:VisualElement name="minimap-view" picking-mode="Ignore" class="dmg-hud-minimap-view"/>
+                    <ui:VisualElement name="minimap-fog" picking-mode="Ignore" class="dmg-hud-minimap-fog"/>
+                    <ui:VisualElement name="minimap-player" picking-mode="Ignore" class="dmg-hud-minimap-player"/>
+                </ui:VisualElement>
+                <ui:Button name="minimap-zoom-in" text="+" picking-mode="Position" class="dmg-hud-minimap-btn"/>
+            </ui:VisualElement>
+            <ui:Button name="minimap-scan" text="Scan" picking-mode="Position" class="dmg-hud-minimap-scan"/>
             <ui:VisualElement name="compass" picking-mode="Ignore" class="dmg-hud-compass">
                 <ui:VisualElement name="compass-strip" picking-mode="Ignore" class="dmg-hud-compass-strip">
                     <ui:VisualElement name="compass-ticks" picking-mode="Ignore" class="dmg-hud-compass-ticks"/>

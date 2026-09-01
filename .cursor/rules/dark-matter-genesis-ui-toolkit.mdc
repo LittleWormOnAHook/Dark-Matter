@@ -1,0 +1,46 @@
+---
+description: All new UI must be built with UI Toolkit (UXML/USS/DMUiToolkit runtime), not uGUI
+alwaysApply: true
+---
+
+# UI Toolkit First (New UI)
+
+From here forward, **all new player-facing UI** is built with **UI Toolkit** — not uGUI (`Canvas`, `Image`, `TextMeshProUGUI`, `MenuUiBuilder` runtime panels).
+
+## Required stack
+
+| Layer | Location / pattern |
+|-------|-------------------|
+| Layout | `Assets/UI Toolkit/Screens/<Screen>.uxml` |
+| Styles | Screen `.uss` + `Assets/UI Toolkit/Themes/DarkMatterGenesis.uss` |
+| Runtime | `Assets/UI Toolkit/Runtime/DMUiToolkit*.cs` (`MonoBehaviour` on a named `UIDocument` host) |
+| Colors | `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`) |
+| Naming | `DM` / `DMI` prefixes for new project UI types (`dm-naming-no-invector.mdc`) |
+
+## Host documents (reuse — do not invent a second HUD root)
+
+- **Gameplay HUD / journal chrome:** `UITK_Hud` (`DMUiToolkitHud`, `DMUiToolkitMenus`)
+- **Main menu / pause modals:** `UITK_MainMenu`, `DMUiToolkitMenuPanels` siblings
+- **Fullscreen overlays:** `DMUiToolkitOverlayDocument.Ensure(...)` (optics, loading, etc.)
+- **Panel settings:** share bootstrap `PanelSettings` via `DMUiToolkitBootstrap`
+
+## Do
+
+- Add UXML elements with stable `name=` ids; bind in C# with `root.Q<T>(...)`.
+- Use USS classes (`dmg-*`) for layout and state — avoid inline styles except dynamic values.
+- Wire input through existing bridges (`DMUiToolkitInputHost`, `GameplayKeyboardShortcuts`, Input System).
+- Disable or hide legacy uGUI for the same surface when UITK drives it (`DMUiToolkitUguiRetirement` pattern).
+
+## Do not
+
+- Create new `Canvas` menu/HUD/popup hierarchies with `MenuUiBuilder`, TMP labels, or `GraphicRaycaster` stacks.
+- Add new uGUI “fallback” panels “just in case” when `DMUiToolkitConfig.IsEnabled` — ship UITK only.
+- Expand retired surfaces (wallet, legacy MainCanvas chrome) in uGUI.
+
+## Legacy uGUI
+
+Existing uGUI under `MainCanvas` / Invector may remain until deliberately migrated. When **touching** a UI feature for new work, **extend or replace with UITK** — do not add parallel uGUI.
+
+## Exceptions
+
+Only build uGUI when the user **explicitly** requests legacy uGUI for that task, or the target is third-party package UI that cannot be UITK-wrapped yet (document why in the PR/commit note).

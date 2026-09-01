@@ -122,10 +122,10 @@ namespace Project.Core
                 GameSession.ResetSession();
                 ApplySettingsAfterReload();
 
+                LoadingOverlayController.ReleaseOpaqueCover();
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
                 menu?.ShowMainMenu();
 
-                LoadingOverlayController.ReleaseOpaqueCover();
                 TryShowSettingsAppliedToast();
                 Destroy(gameObject);
             }
@@ -148,10 +148,10 @@ namespace Project.Core
 
                 ApplySettingsAfterReload();
 
+                LoadingOverlayController.ReleaseOpaqueCover();
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
                 menu?.ShowMainMenu();
 
-                LoadingOverlayController.ReleaseOpaqueCover();
                 Destroy(gameObject);
             }
         }
