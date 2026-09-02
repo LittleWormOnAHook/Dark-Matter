@@ -124,14 +124,6 @@ namespace Project.UI
             instance.shelterOpen || instance.drillOpen || instance.weaponOpen
             || instance.lootOpen || instance.echoOpen);
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitWorldMenus EnsureHost()
         {
@@ -357,6 +349,9 @@ namespace Project.UI
 
         private void Update()
         {
+            if (!bound)
+                return;
+
             if (shelterOpen)
             {
                 if (UiEscapeGate.TryConsumeEscape())
@@ -427,7 +422,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             TickTaming();
 

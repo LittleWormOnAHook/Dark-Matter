@@ -120,6 +120,7 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("damage-root") ?? tree;
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             layer = tree.Q<VisualElement>("damage-layer") ?? root;
             bound = root != null;
         }

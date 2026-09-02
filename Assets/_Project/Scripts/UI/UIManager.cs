@@ -78,7 +78,10 @@ namespace Project.UI
 
         private void Awake()
         {
-            GameSession.ResetSession();
+            if (GameSession.Phase != GamePhase.StartPopup
+                && GameSession.Phase != GamePhase.Playing
+                && GameSession.Phase != GamePhase.StarterPioneerSelect)
+                GameSession.ResetSession();
             MainCanvasFlow.SanitizeCanvasHost(GetComponent<Canvas>());
 
             ResolveSurvivalUiReferences();

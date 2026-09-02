@@ -145,7 +145,8 @@ namespace Project.UI
             if (!bound)
                 BindTree();
 
-            bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
+            bool want = DMUiToolkitOverlayDocument.GameplayHudWanted()
+                && !GameplayHudVisibility.CinematicChromeHidden;
             DMUiToolkitOverlayDocument.SetShown(root, want);
 
             if (!DMUiToolkitHud.IsDriving)
@@ -199,6 +200,7 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("hazards-root") ?? tree;
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             cluster = tree.Q<VisualElement>("hazards-cluster");
             hazardPanel = tree.Q<VisualElement>("hazard-panel");
             thermalStatus = tree.Q<Label>("thermal-status");

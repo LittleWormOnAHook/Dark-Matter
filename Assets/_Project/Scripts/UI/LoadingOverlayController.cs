@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
+using Project.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -156,6 +157,9 @@ namespace Project.UI
                 bootPending = false;
                 EnsureEarlyBlackout();
                 GateGameplayCameras(true);
+                // Settings Apply reload skips the branded boot loader. If the reloader
+                // runner is missing, still land on the main menu instead of a gated void.
+                SettingsSceneReloader.EnsureMenuRestoreAfterReload();
                 return;
             }
 
@@ -216,6 +220,7 @@ namespace Project.UI
 
             if (activeInstance != null)
             {
+                activeInstance.mode = LoadingMode.GameStart;
                 activeInstance.onCompleted = onComplete;
                 return;
             }
@@ -898,6 +903,10 @@ namespace Project.UI
         /// </summary>
         private void FinishLoadingVisuals()
         {
+            // A newer GameStart overlay may already own the screen. Do not collapse it.
+            if (activeInstance != null && activeInstance != this)
+                return;
+
             if (useToolkit)
                 DMUiToolkitLoadingOverlay.Hide();
 

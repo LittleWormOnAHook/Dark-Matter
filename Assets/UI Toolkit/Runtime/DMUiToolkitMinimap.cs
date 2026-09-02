@@ -188,10 +188,10 @@ namespace Project.UI
             compassHeading = root.Q<Label>("compass-heading");
             minimapInfo = root.Q<Label>("minimap-info");
 
-            EnsureCompassChrome();
             ApplyAuthoredPlaceholders();
 
-            bound = minimapHost != null && minimapView != null && compassHost != null;
+            EnsureCompassChrome();
+            bound = minimapHost != null && minimapView != null;
             if (bound && !stamped)
             {
                 stamped = true;
@@ -203,6 +203,13 @@ namespace Project.UI
 
         private void EnsureCompassChrome()
         {
+            if (compassHost == null && minimapHost != null)
+            {
+                compassHost = new VisualElement { name = "compass", pickingMode = PickingMode.Ignore };
+                compassHost.AddToClassList("dmg-hud-compass");
+                minimapHost.Add(compassHost);
+            }
+
             if (compassHost == null)
                 return;
 
@@ -227,8 +234,26 @@ namespace Project.UI
                 compassStrip.Add(compassMarkers);
             }
 
+            if (minimapInfo == null)
+            {
+                minimapInfo = new Label("Range 96m  |  Scan: standby")
+                {
+                    name = "minimap-info",
+                    pickingMode = PickingMode.Ignore
+                };
+                minimapInfo.AddToClassList("dmg-hud-minimap-info");
+                compassHost.Add(minimapInfo);
+            }
+
             if (ticks.Count == 0)
                 BuildTicks();
+
+            compassHost.style.display = DisplayStyle.Flex;
+            compassHost.style.visibility = Visibility.Visible;
+            if (compassStrip != null)
+                compassStrip.style.display = DisplayStyle.Flex;
+            if (minimapInfo != null)
+                minimapInfo.style.display = DisplayStyle.Flex;
         }
 
         private void ApplyAuthoredPlaceholders()
@@ -253,32 +278,51 @@ namespace Project.UI
                 && DMUiToolkitBootstrap.IsRootActive
                 && GameSession.HasStarted
                 && !MainMenuController.BlocksGameplayHud
-                && !DMUiToolkitLoadingOverlay.IsShowing;
+                && !DMUiToolkitLoadingOverlay.IsShowing
+                && !GameplayHudVisibility.CinematicChromeHidden;
 
+            bool menuOpen = DMUiToolkitMenus.IsOpen;
+            bool showChrome = bound && hudLive && !menuOpen;
             bool mapOn = hudLive && mapUi != null && mapUi.ShouldPresentMinimap;
-            bool drive = bound && hudLive && mapOn;
+            bool drive = showChrome && mapOn;
 
-            SetHostVisible(drive);
-
-            if (drive)
+            SetHostVisible(showChrome);
+            if (showChrome)
             {
-                if (!uguiHidden)
+                EnsureCompassChrome();
+                if (compassHost != null)
+                    compassHost.style.display = DisplayStyle.Flex;
+                if (compassStrip != null)
+                    compassStrip.style.display = DisplayStyle.Flex;
+                if (minimapInfo != null)
+                    minimapInfo.style.display = DisplayStyle.Flex;
+            }
+
+            if (drive || showChrome)
+            {
+                if (drive && !uguiHidden)
                     HideUguiCounterparts(mapUi);
                 if (Time.unscaledTime >= nextViewRefreshTime)
                 {
                     nextViewRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
-                    BindMinimapView(mapUi);
-                    PullInfo(mapUi);
+                    if (mapUi != null)
+                    {
+                        BindMinimapView(mapUi);
+                        PullInfo(mapUi);
+                    }
                 }
 
-                RefreshCompassHeading(mapUi);
-                if (Time.unscaledTime >= nextMarkerRefreshTime)
+                if (mapUi != null)
                 {
-                    nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
-                    RefreshCompassMarkers(mapUi);
+                    RefreshCompassHeading(mapUi);
+                    if (Time.unscaledTime >= nextMarkerRefreshTime)
+                    {
+                        nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
+                        RefreshCompassMarkers(mapUi);
+                    }
                 }
             }
-            else
+            else if (!GameplayHudVisibility.CinematicChromeHidden)
             {
                 RestoreUguiCounterparts();
             }
@@ -286,14 +330,15 @@ namespace Project.UI
 
         private void SetHostVisible(bool visible)
         {
-            if (hostsVisible == visible)
-                return;
-
             hostsVisible = visible;
             if (minimapHost != null)
                 minimapHost.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             if (compassHost != null && compassHost != minimapHost)
                 compassHost.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (compassStrip != null)
+                compassStrip.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (minimapInfo != null)
+                minimapInfo.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private MapUI ResolveMapUi()
@@ -310,15 +355,26 @@ namespace Project.UI
             if (minimapView == null || mapUi == null)
                 return;
 
-            if (!mapUi.TryGetMinimapViewParams(out Texture source, out Vector2 playerUv, out float uvSpan, out float facingYaw))
+            Texture source;
+            Vector2 playerUv;
+            float uvSpan;
+            float facingYaw;
+            if (!mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
             {
-                if (!warnedMissingTexture)
+                source = mapUi.MinimapSourceTexture;
+                playerUv = new Vector2(0.5f, 0.5f);
+                uvSpan = 0.25f;
+                facingYaw = mapUi.MinimapFacingYaw;
+                if (source == null)
                 {
-                    warnedMissingTexture = true;
-                    Debug.LogWarning(LogStamp + " MapUI map texture not ready ? keeping Builder placeholder");
-                }
+                    if (!warnedMissingTexture)
+                    {
+                        warnedMissingTexture = true;
+                        Debug.LogWarning(LogStamp + " MapUI map texture not ready - keeping Builder placeholder");
+                    }
 
-                return;
+                    return;
+                }
             }
 
             RenderTexture rt = EnsureViewRt();
@@ -502,6 +558,7 @@ namespace Project.UI
             {
                 bool cardinal = Mathf.Approximately(angle % 90f, 0f);
                 var tickRoot = new VisualElement { pickingMode = PickingMode.Ignore };
+                tickRoot.usageHints = UsageHints.DynamicTransform;
                 tickRoot.AddToClassList("dmg-hud-compass-tick");
                 tickRoot.style.position = Position.Absolute;
                 tickRoot.style.width = 32f;
@@ -671,6 +728,7 @@ namespace Project.UI
         private CompassMarker CreateMarker()
         {
             var root = new VisualElement { pickingMode = PickingMode.Ignore };
+            root.usageHints = UsageHints.DynamicTransform;
             root.AddToClassList("dmg-hud-compass-marker");
             root.style.position = Position.Absolute;
             root.style.top = 2f;
@@ -740,8 +798,6 @@ namespace Project.UI
             bool mapOn = cachedMapUi != null && cachedMapUi.ShouldPresentMinimap;
             if (uitkOff && mapOn)
             {
-                if (hiddenCompass != null)
-                    hiddenCompass.SetActive(true);
                 if (hiddenInfoPanel != null)
                     hiddenInfoPanel.SetActive(true);
             }

@@ -370,9 +370,10 @@ namespace Project.UI
         {
             bool reloading = GameSettingsUiBridge.ApplySnapshot(CapturePanel(), reloadSceneAfterApply: true);
             Close();
-            // Always land on the main menu after Apply. RestoreMenuAfterSubPanel no-ops when
-            // GameSession.HasStarted (Play-from-scene / leftover session), which left a world
-            // with gameplay UI already swept and no menu.
+            // Title screen after Apply, even if Play-from-scene left Phase at Playing.
+            // ShowMainMenu now refuses Playing/StartPopup so a New Expedition cannot bounce;
+            // ResetSession first so Apply is allowed through.
+            GameSession.ResetSession();
             if (!reloading)
                 FindAnyObjectByType<MainMenuController>()?.ShowMainMenu();
         }

@@ -37,14 +37,6 @@ namespace Project.UI
         private HovercraftHealth cachedHealth;
         private HovercraftFuelSystem cachedFuel;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitHovercraft EnsureHost()
         {
@@ -92,7 +84,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             bool wantHud = DMUiToolkitOverlayDocument.GameplayHudWanted();
             bool mounted = PlayerVehicleState.IsMounted;
@@ -188,6 +180,7 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("hovercraft-root") ?? tree;
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             panel = tree.Q<VisualElement>("hovercraft-panel");
             nameLabel = tree.Q<Label>("hc-name");
             shieldPct = tree.Q<Label>("hc-shield-pct");

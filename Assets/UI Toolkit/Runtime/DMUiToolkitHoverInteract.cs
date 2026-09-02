@@ -25,20 +25,13 @@ namespace Project.UI
         private Button storeButton;
         private Button cancelButton;
         private bool bound;
+        private bool uguiHidden;
         private bool wired;
         private bool open;
         private HovercraftUsable activeUsable;
 
         public static bool IsOpen => instance != null && instance.open;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitHoverInteract EnsureHost()
         {
@@ -119,10 +112,20 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             if (open)
-                HideUgui();
+            {
+                if (!uguiHidden)
+                {
+                    HideUgui();
+                    uguiHidden = true;
+                }
+            }
+            else
+            {
+                uguiHidden = false;
+            }
         }
 
         internal void BindTree()

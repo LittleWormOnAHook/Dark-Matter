@@ -403,6 +403,8 @@
     margin-top: 10px;
     flex-direction: column;
     align-items: stretch;
+    visibility: visible;
+    overflow: visible;
 }
 
 .dmg-hud-compass-strip {

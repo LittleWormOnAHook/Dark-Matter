@@ -34,8 +34,6 @@ namespace Project.UI
 
             if (bootstrap.GetComponent<DMUiToolkitPlayerInputBridge>() == null)
                 bootstrap.gameObject.AddComponent<DMUiToolkitPlayerInputBridge>();
-
-            DMUiToolkitMenuPanels.EnsureHosts();
         }
 
         private void Update()
@@ -46,6 +44,7 @@ namespace Project.UI
             TryRegisterBootstrapRoots();
 
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
+            GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
 
             if (GameSession.HasStarted
                 && !MainMenuController.BlocksGameplayHud
@@ -122,6 +121,10 @@ namespace Project.UI
                 case KeyCode.N:
                     if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(KeyCode.N))
                         evt.StopImmediatePropagation();
+                    break;
+                case KeyCode.BackQuote:
+                    GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
+                    evt.StopImmediatePropagation();
                     break;
             }
         }

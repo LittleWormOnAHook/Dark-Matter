@@ -21,17 +21,10 @@ namespace Project.UI
         private bool bound;
         private bool wired;
         private bool open;
+        private bool uguiHidden;
 
         public static bool IsOpen => instance != null && instance.open;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitDeath EnsureHost()
         {
@@ -95,9 +88,20 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
-            HideUgui();
+            if (open)
+            {
+                if (!uguiHidden)
+                {
+                    HideUgui();
+                    uguiHidden = true;
+                }
+            }
+            else
+            {
+                uguiHidden = false;
+            }
         }
 
         internal void BindTree()

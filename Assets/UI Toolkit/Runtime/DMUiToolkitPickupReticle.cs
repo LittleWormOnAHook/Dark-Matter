@@ -32,6 +32,7 @@ namespace Project.UI
         private SurvivalStats cachedSurvival;
         private float nextAimSampleTime;
         private bool hasAimedPickup;
+        private bool uguiHidden;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -105,7 +106,17 @@ namespace Project.UI
             }
 
             if (DMUiToolkitHud.IsDriving)
-                HideUgui();
+            {
+                if (!uguiHidden)
+                {
+                    HideUgui();
+                    uguiHidden = true;
+                }
+            }
+            else
+            {
+                uguiHidden = false;
+            }
         }
 
         internal void BindTree()
@@ -121,12 +132,16 @@ namespace Project.UI
 
             root = tree.Q<VisualElement>("reticle-root") ?? tree;
             dot = tree.Q<VisualElement>("reticle-dot");
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(dot);
             bound = root != null;
         }
 
         private bool ShouldShow()
         {
             if (!DMUiToolkitOverlayDocument.GameplayHudWanted())
+                return false;
+            if (GameplayHudVisibility.CinematicChromeHidden)
                 return false;
             if (!GameSession.HasStarted)
                 return false;

@@ -34,6 +34,7 @@ namespace Project.UI
         private bool xpAmmoUguiHidden;
         private PlayerProgressionManager xpProgression;
         private WeaponAmmoState xpAmmoState;
+        private PlayerController cachedEquipmentPlayer;
         private EngagedEnemyHealthHud cachedEnemyHud;
         private string lastXpText;
         private float lastXpFill = -1f;
@@ -53,19 +54,36 @@ namespace Project.UI
                 return;
             }
 
-            PullXpBar();
-            PullAmmoReadout();
-            PullEnemyFocus();
+            if (GameplayHudVisibility.CinematicChromeHidden)
+            {
+                if (xpRoot != null)
+                    xpRoot.style.display = DisplayStyle.None;
+                if (ammoLabel != null)
+                {
+                    lastAmmoShown = false;
+                    lastAmmoText = null;
+                    ammoLabel.style.display = DisplayStyle.None;
+                }
+                if (enemyFocusRoot != null && lastEnemyShown)
+                {
+                    lastEnemyShown = false;
+                    enemyFocusRoot.style.display = DisplayStyle.None;
+                }
+            }
+            else
+            {
+                PullXpBar();
+                PullAmmoReadout();
+                PullEnemyFocus();
+            }
+
             HideXpAmmoEnemyUgui();
         }
 
         private void EnsureXpAmmoEnemyBound()
         {
-            if (xpAmmoHostsReady
-                && (xpRoot != null || ammoLabel != null || enemyFocusRoot != null)
-                && (xpRoot == null || xpRoot.panel != null)
-                && (ammoLabel == null || ammoLabel.panel != null)
-                && (enemyFocusRoot == null || enemyFocusRoot.panel != null))
+            // Once bound, keep cached VisualElement refs. Do not Q() every Update.
+            if (xpAmmoHostsReady && (xpRoot != null || ammoLabel != null || enemyFocusRoot != null))
                 return;
 
             if (document == null)
@@ -98,6 +116,7 @@ namespace Project.UI
                 if (xpLabel == null)
                     xpLabel = xpRoot.Q<Label>("xp-label");
             }
+            HintDynamicFill(xpFill);
 
             ammoLabel = root.Q<Label>("ammo");
             if (ammoLabel == null)
@@ -125,6 +144,7 @@ namespace Project.UI
                 if (enemyFill == null)
                     enemyFill = enemyFocusRoot.Q<VisualElement>("enemy-fill");
             }
+            HintDynamicFill(enemyFill);
 
             if (enemyFocusRoot != null && !lastEnemyShown)
                 enemyFocusRoot.style.display = DisplayStyle.None;
@@ -154,6 +174,7 @@ namespace Project.UI
             fill.AddToClassList("dmg-hud-xp-fill");
             fill.pickingMode = PickingMode.Ignore;
             fill.style.width = Length.Percent(62f);
+            fill.usageHints = UsageHints.DynamicTransform;
             track.Add(fill);
 
             Label label = new Label("Lv 5    120 / 400 XP") { name = "xp-label" };
@@ -197,6 +218,7 @@ namespace Project.UI
             fill.AddToClassList("dmg-hud-enemy-fill");
             fill.pickingMode = PickingMode.Ignore;
             fill.style.width = Length.Percent(70f);
+            fill.usageHints = UsageHints.DynamicTransform;
             track.Add(fill);
 
             focus.Add(name);
@@ -254,11 +276,14 @@ namespace Project.UI
             if (xpAmmoState == null && equipment != null && (Time.frameCount & 31) == 0)
                 xpAmmoState = FindAnyObjectByType<WeaponAmmoState>();
 
+            if (equipment != null && cachedEquipmentPlayer == null)
+                cachedEquipmentPlayer = equipment.GetComponent<PlayerController>();
+
             ItemData weapon = null;
             bool show = false;
             if (equipment != null)
             {
-                PlayerController player = equipment.GetComponent<PlayerController>();
+                PlayerController player = cachedEquipmentPlayer;
                 if (player == null || !player.BlocksCombatInput)
                 {
                     show = equipment.HasActiveRangedWeapon();
@@ -350,7 +375,7 @@ namespace Project.UI
             if (enemyFocusRoot == null)
                 return;
 
-            if (cachedEnemyHud == null)
+            if (cachedEnemyHud == null && (Time.frameCount & 31) == 0)
                 cachedEnemyHud = EngagedEnemyHealthHud.Instance
                     ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
 
@@ -385,10 +410,13 @@ namespace Project.UI
                 return;
             }
 
-            lastEnemyShown = false;
-            lastEnemyName = null;
-            lastEnemyFill = -1f;
-            enemyFocusRoot.style.display = DisplayStyle.None;
+            if (lastEnemyShown)
+            {
+                lastEnemyShown = false;
+                lastEnemyName = null;
+                lastEnemyFill = -1f;
+                enemyFocusRoot.style.display = DisplayStyle.None;
+            }
         }
 
         private void HideXpAmmoEnemyUgui()

@@ -29,14 +29,6 @@ namespace Project.UI
             instance = null;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void AfterSceneLoad()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitHovercraftReticle EnsureHost()
         {
@@ -85,13 +77,22 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            EnsureBuilt();
+            if (!built)
+            {
+                EnsureBuilt();
+                if (!built)
+                    return;
+            }
+
             bool driving = DMUiToolkitOverlayDocument.GameplayHudWanted();
 
             if (!driving)
             {
-                uguiReticleHidden = false;
-                RestoreUguiIfNeeded();
+                if (uguiReticleHidden)
+                {
+                    RestoreUguiIfNeeded();
+                    uguiReticleHidden = false;
+                }
             }
             else if (!uguiReticleHidden)
             {

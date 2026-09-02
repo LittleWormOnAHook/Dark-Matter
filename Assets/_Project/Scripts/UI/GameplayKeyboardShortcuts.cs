@@ -142,9 +142,38 @@ namespace Project.UI
 
         public static void TryHandleAll()
         {
+            TryHandleCinematicHudToggle();
             TryHandleJournalHotkeys();
             TryHandleHotbarHotkeys();
             TryHandleToolbarHotkeys();
+        }
+
+        private static int cinematicHandledFrame = -1;
+
+        /// <summary>Backquote / tilde hides gameplay chrome only. Always available in-session.</summary>
+        public static void TryHandleCinematicHudToggle()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (Time.frameCount == cinematicHandledFrame)
+                return;
+
+            if (DMUiToolkitLoadingOverlay.IsShowing || DMUiToolkitMainMenu.IsVisible)
+                return;
+
+            if (!GameSession.HasStarted)
+                return;
+
+            if (IsTypingInTextField())
+                return;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null || !keyboard.backquoteKey.wasPressedThisFrame)
+                return;
+
+            cinematicHandledFrame = Time.frameCount;
+            GameplayHudVisibility.ToggleCinematicChrome();
         }
 
         private static int escapeHandledFrame = -1;

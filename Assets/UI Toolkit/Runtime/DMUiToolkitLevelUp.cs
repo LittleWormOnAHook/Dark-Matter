@@ -45,14 +45,6 @@ namespace Project.UI
 
         public static DMUiToolkitLevelUp Instance => instance;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitLevelUp EnsureHost()
         {
@@ -142,7 +134,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
             if (root != null && !want)

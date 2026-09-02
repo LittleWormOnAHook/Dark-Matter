@@ -5,7 +5,9 @@ using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Pioneers;
+using Project.Player;
 using Project.Survival;
+using Project.Vehicles;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -27,6 +29,8 @@ namespace Project.UI
 
         private static DMUiToolkitHud instance;
         private static bool stamped;
+
+        internal static DMUiToolkitHud InstanceOrNull => instance;
 
         private UIDocument document;
         private VisualElement hudRoot;
@@ -52,6 +56,7 @@ namespace Project.UI
         private bool lastMenuOpenChrome;
         private bool lastHotbarOverlayChrome;
         private bool lastInventoryOpenChrome;
+        private bool lastCinematicChrome;
         private Coroutine promptRoutine;
         private bool bound;
 
@@ -59,6 +64,7 @@ namespace Project.UI
         private VisualElement hotbarHost;
         private VisualElement toolsHost;
         private VisualElement barsHost;
+        private VisualElement companionsHost;
         private InventorySystem inventorySystem;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
@@ -215,12 +221,29 @@ namespace Project.UI
             if (gameplayVisible)
             {
                 HideUguiCounterparts();
-                TickCompanionHud();
+                if (!GameplayHudVisibility.CinematicChromeHidden)
+                {
+                    TickCompanionHud();
+                    TickLeftoverChrome();
+                }
+                else
+                    HideLeftoverPreviewHosts();
+                TickDeferredVehicleOverlays();
             }
+        }
+
+        private static void TickDeferredVehicleOverlays()
+        {
+            if (!PlayerVehicleState.IsMounted)
+                return;
+
+            DMUiToolkitHovercraft.EnsureHost();
+            DMUiToolkitHovercraftReticle.EnsureHost();
         }
 
         private void OnGameStarted()
         {
+            GameplayHudVisibility.ClearCinematicChrome();
             RefreshVisibility();
             BindSurvival();
             BindInventoryEvents();
@@ -244,6 +267,10 @@ namespace Project.UI
             energyFill = root.Q<VisualElement>("bar-energy-fill");
             staminaFill = root.Q<VisualElement>("bar-stamina-fill");
             oxygenFill = root.Q<VisualElement>("bar-oxygen-fill");
+            HintDynamicFill(healthFill);
+            HintDynamicFill(energyFill);
+            HintDynamicFill(staminaFill);
+            HintDynamicFill(oxygenFill);
             healthLabel = root.Q<Label>("bar-health-label");
             energyLabel = root.Q<Label>("bar-energy-label");
             staminaLabel = root.Q<Label>("bar-stamina-label");
@@ -260,6 +287,7 @@ namespace Project.UI
             BindHudSlots(root);
             minimapHost = root.Q<VisualElement>("minimap");
             BindCompanionHud(root);
+            BindLeftoverChrome(root);
 
             bound = hudRoot != null && healthFill != null;
             if (bound && !stamped)
@@ -353,21 +381,24 @@ namespace Project.UI
         {
             bool menuOpen = gameplayVisible && DMUiToolkitMenus.IsOpen;
             bool inventoryOpen = gameplayVisible && DMUiToolkitMenus.IsInventoryOpen;
-            bool showHotbarOverlay = !menuOpen;
+            bool cinematic = GameplayHudVisibility.CinematicChromeHidden;
+            bool showHotbarOverlay = !menuOpen && !cinematic;
 
             if (menuChromeApplied
                 && menuOpen == lastMenuOpenChrome
                 && showHotbarOverlay == lastHotbarOverlayChrome
-                && inventoryOpen == lastInventoryOpenChrome)
+                && inventoryOpen == lastInventoryOpenChrome
+                && cinematic == lastCinematicChrome)
                 return;
 
             menuChromeApplied = true;
             lastMenuOpenChrome = menuOpen;
             lastHotbarOverlayChrome = showHotbarOverlay;
             lastInventoryOpenChrome = inventoryOpen;
+            lastCinematicChrome = cinematic;
 
             if (minimapHost != null)
-                minimapHost.style.display = menuOpen ? DisplayStyle.None : DisplayStyle.Flex;
+                minimapHost.style.display = (menuOpen || cinematic) ? DisplayStyle.None : DisplayStyle.Flex;
 
             if (hotbarHost != null)
             {
@@ -380,6 +411,15 @@ namespace Project.UI
                 toolsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
                 toolsHost.pickingMode = PickingMode.Ignore;
             }
+
+            if (companionsHost != null)
+                companionsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (xpRoot != null)
+                xpRoot.style.display = (gameplayVisible && !cinematic) ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (barsHost != null)
+                barsHost.style.display = (gameplayVisible && !cinematic) ? DisplayStyle.Flex : DisplayStyle.None;
 
             if (document != null && inventoryOpen)
                 document.sortingOrder = DMUiToolkitBootstrap.HudSortingOrder;
@@ -431,6 +471,12 @@ namespace Project.UI
             int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(oxygen));
             string oxygenText = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
             SetFill(oxygenFill, oxygenLabel, survivalStats.GetOxygenNormalized(), oxygenText);
+        }
+
+        private static void HintDynamicFill(VisualElement fill)
+        {
+            if (fill != null)
+                fill.usageHints = UsageHints.DynamicTransform;
         }
 
         private static void SetFill(VisualElement fill, Label label, float normalized, string text)
@@ -851,6 +897,7 @@ namespace Project.UI
             hotbarHost = root.Q<VisualElement>("hotbar");
             toolsHost = root.Q<VisualElement>("tools");
             barsHost = root.Q<VisualElement>("bars");
+            companionsHost = root.Q<VisualElement>("companions");
 
             int hotbarCount = 10;
             int toolCount = 2;
@@ -959,6 +1006,11 @@ namespace Project.UI
             {
                 equipmentController.OnSelectedHotbarChanged += HandleHudSelectionChanged;
                 equipmentController.OnToolbarSelectionChanged += HandleHudToolbarSelectionChanged;
+                cachedEquipmentPlayer = equipmentController.GetComponent<PlayerController>();
+            }
+            else
+            {
+                cachedEquipmentPlayer = null;
             }
         }
 
@@ -972,6 +1024,8 @@ namespace Project.UI
                 equipmentController.OnSelectedHotbarChanged -= HandleHudSelectionChanged;
                 equipmentController.OnToolbarSelectionChanged -= HandleHudToolbarSelectionChanged;
             }
+
+            cachedEquipmentPlayer = null;
         }
 
         private void HandleHudSelectionChanged(int _)
@@ -1551,6 +1605,10 @@ namespace Project.UI
 
             ExpeditionPioneerHudUI expeditionHud = FindAnyObjectByType<ExpeditionPioneerHudUI>(FindObjectsInactive.Include);
             expeditionHud?.SetGameplayVisible(false);
+
+            RangedCombatHud rangedHud = FindAnyObjectByType<RangedCombatHud>(FindObjectsInactive.Include);
+            if (rangedHud != null)
+                DMUiToolkitOverlayDocument.DisableUguiVisuals(rangedHud.gameObject);
 
             uguiHidden = true;
         }

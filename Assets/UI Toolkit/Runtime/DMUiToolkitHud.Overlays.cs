@@ -23,13 +23,7 @@ namespace Project.UI
         {
             StampOverlaysOnce();
             HideHudAuthoredOverlayHosts();
-            DMUiToolkitLevelUp.EnsureHost();
-            DMUiToolkitDialogue.EnsureHost();
-            DMUiToolkitHovercraft.EnsureHost();
             DMUiToolkitHazards.EnsureHost();
-            DMUiToolkitDeath.EnsureHost();
-            DMUiToolkitOpticsOverlay.EnsureAttached();
-            DMUiToolkitHovercraftReticle.EnsureHost();
         }
 
         internal static void StampOverlaysOnce()

@@ -23,6 +23,7 @@ namespace Project.UI
                 host = new GameObject(objectName);
                 host.transform.SetParent(parent, false);
             }
+            DMUiToolkitOverlayDocument.RegisterNamed(objectName, host);
 
             UIDocument document = host.GetComponent<UIDocument>();
             if (document == null)

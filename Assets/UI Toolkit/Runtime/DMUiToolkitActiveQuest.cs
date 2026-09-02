@@ -124,6 +124,7 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("quest-root") ?? tree;
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             list = tree.Q<VisualElement>("quest-list") ?? root;
             bound = root != null;
             Subscribe();

@@ -77,7 +77,7 @@ namespace Project.UI
             if (!leftoverBound)
                 return;
 
-            if (!gameplayVisible)
+            if (!gameplayVisible || GameplayHudVisibility.CinematicChromeHidden)
             {
                 HideLeftoverPreviewHosts();
                 oxygenWasCritical = false;
@@ -96,7 +96,9 @@ namespace Project.UI
                 return;
 
             bool show = false;
-            if (!DMUiToolkitMenus.IsOpen && !DMUiToolkitOpticsOverlay.IsShowing)
+            if (!GameplayHudVisibility.CinematicChromeHidden
+                && !DMUiToolkitMenus.IsOpen
+                && !DMUiToolkitOpticsOverlay.IsShowing)
             {
                 if (equipmentController == null)
                     BindInventoryEvents();

@@ -1109,8 +1109,6 @@ namespace Project.UI
                     ? invSlotVisualCache[i]
                     : default;
                 bool unchanged = cache.Item == item && cache.Amount == stack && cache.Unlocked == unlocked;
-                if (unchanged && unlocked)
-                    continue;
 
                 if (i >= invSlotVisualCache.Count)
                     invSlotVisualCache.Add(default);
@@ -1120,7 +1118,7 @@ namespace Project.UI
                 if (!unlocked)
                 {
                     // Cover locked expansion rows with palette Soft Beige-Gray until unlocked.
-                    Color locked = DarkMatterGenesisUiPalette.SoftBeigeGray;
+                    Color locked = DarkMatterGenesisUiPalette.LockedSlotBackground;
                     slot.style.backgroundColor = locked;
                     slot.style.borderTopColor = locked;
                     slot.style.borderRightColor = locked;
@@ -1141,6 +1139,9 @@ namespace Project.UI
                     slot.style.borderLeftColor = unlockedBorder;
                     slot.style.opacity = 1f;
                 }
+
+                if (unchanged && unlocked)
+                    continue;
 
                 if (item != null && item.icon != null)
                 {
@@ -1173,6 +1174,16 @@ namespace Project.UI
 
         private void EnsureInventorySlots(int count)
         {
+            if (inventoryGrid != null)
+            {
+                inventoryGrid.style.flexDirection = FlexDirection.Row;
+                inventoryGrid.style.flexWrap = Wrap.Wrap;
+                inventoryGrid.style.justifyContent = Justify.FlexStart;
+                inventoryGrid.style.alignContent = Align.FlexStart;
+                inventoryGrid.style.width = 860f;
+                inventoryGrid.style.maxWidth = 860f;
+            }
+
             while (invSlots.Count < count)
             {
                 int index = invSlots.Count;
@@ -1180,6 +1191,14 @@ namespace Project.UI
                 slot.AddToClassList("dmg-inv-slot");
                 slot.name = "inv-slot-" + index;
                 slot.pickingMode = PickingMode.Position;
+                slot.style.flexGrow = 0f;
+                slot.style.flexShrink = 0f;
+                slot.style.width = 80f;
+                slot.style.height = 80f;
+                slot.style.marginTop = 2f;
+                slot.style.marginRight = 2f;
+                slot.style.marginBottom = 2f;
+                slot.style.marginLeft = 2f;
                 AttachInventorySlotDrag(slot, index);
 
                 VisualElement icon = new VisualElement();
@@ -1198,8 +1217,25 @@ namespace Project.UI
                 invAmounts.Add(amount);
             }
 
+            while (invSlots.Count > count)
+            {
+                int last = invSlots.Count - 1;
+                VisualElement extra = invSlots[last];
+                extra.RemoveFromHierarchy();
+                invSlots.RemoveAt(last);
+                if (last < invIcons.Count)
+                    invIcons.RemoveAt(last);
+                if (last < invAmounts.Count)
+                    invAmounts.RemoveAt(last);
+            }
+
             for (int i = 0; i < invSlots.Count; i++)
-                DMUiToolkitOverlayDocument.SetShown(invSlots[i], i < count);
+            {
+                invSlots[i].style.flexGrow = 0f;
+                invSlots[i].style.flexShrink = 0f;
+                invSlots[i].style.width = 80f;
+                invSlots[i].style.height = 80f;
+            }
         }
 
         private void ApplyMapTexture()

@@ -23,6 +23,15 @@ namespace Project.Core
             pendingMenuSettingsReload = false;
         }
 
+        /// <summary>
+        /// Safety net after a settings scene reload that skipped the branded boot loader.
+        /// Shows the main menu even if the pending-reload flags were cleared.
+        /// </summary>
+        public static void EnsureMenuRestoreAfterReload()
+        {
+            MenuSettingsReloadRunner.EnsureRunner();
+        }
+
         /// <summary>Called from <see cref="SettingsPanelController"/> after settings are saved.</summary>
         public static void ReloadAfterApply()
         {
@@ -30,8 +39,9 @@ namespace Project.Core
                 return;
 
             bool wasGameplay = GameSession.HasStarted;
+            // Always land on the main menu after a graphics Apply reload — never a UI-less world.
             pendingReturnToMainMenu = wasGameplay;
-            pendingMenuSettingsReload = !wasGameplay;
+            pendingMenuSettingsReload = true;
 
             if (wasGameplay)
             {
@@ -63,7 +73,6 @@ namespace Project.Core
             {
                 pendingReturnToMainMenu = false;
                 MainMenuReturnRunner.EnsureRunner();
-                return;
             }
 
             if (pendingMenuSettingsReload)
@@ -118,12 +127,23 @@ namespace Project.Core
                 }
 
                 yield return null;
+                if (DMUiToolkitConfig.IsEnabled)
+                    DMUiToolkitBootstrap.EnsureExists();
+                yield return null;
 
                 GameSession.ResetSession();
                 ApplySettingsAfterReload();
 
                 LoadingOverlayController.ReleaseOpaqueCover();
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
+                if (menu == null)
+                {
+                    MainMenuController.EnsureExists();
+                    menu = FindAnyObjectByType<MainMenuController>();
+                }
+
+                menu?.ShowMainMenu();
+                yield return null;
                 menu?.ShowMainMenu();
 
                 TryShowSettingsAppliedToast();
@@ -145,11 +165,25 @@ namespace Project.Core
             private IEnumerator Start()
             {
                 yield return null;
+                if (DMUiToolkitConfig.IsEnabled)
+                    DMUiToolkitBootstrap.EnsureExists();
+                yield return null;
 
+                // Menu-only Apply reload can still leave HasStarted true if Play-from-scene
+                // left a stale Playing phase — always reset so ShowMainMenu is authoritative.
+                GameSession.ResetSession();
                 ApplySettingsAfterReload();
 
                 LoadingOverlayController.ReleaseOpaqueCover();
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
+                if (menu == null)
+                {
+                    MainMenuController.EnsureExists();
+                    menu = FindAnyObjectByType<MainMenuController>();
+                }
+
+                menu?.ShowMainMenu();
+                yield return null;
                 menu?.ShowMainMenu();
 
                 Destroy(gameObject);

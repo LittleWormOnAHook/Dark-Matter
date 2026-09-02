@@ -30,17 +30,10 @@ namespace Project.UI
         private bool tipOpen;
         private PetController activePet;
         private int openedOnFrame = -1;
+        private bool uguiHidden;
 
         public static bool IsMenuOpen => instance != null && instance.menuOpen;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitPetChrome EnsureHost()
         {
@@ -166,10 +159,20 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             if (menuOpen || tipOpen)
-                HideUgui();
+            {
+                if (!uguiHidden)
+                {
+                    HideUgui();
+                    uguiHidden = true;
+                }
+            }
+            else
+            {
+                uguiHidden = false;
+            }
 
             if (tipOpen && tooltip != null)
             {

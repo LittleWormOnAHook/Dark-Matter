@@ -50,14 +50,6 @@ namespace Project.UI
 
         public static bool IsVisible => instance != null && instance.visible;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitMainMenu EnsureHost()
         {
@@ -106,6 +98,8 @@ namespace Project.UI
                 host.transform.SetParent(parent, false);
             }
 
+            DMUiToolkitOverlayDocument.RegisterNamed(MainMenuName, host);
+
             UIDocument document = host.GetComponent<UIDocument>();
             if (document == null)
                 document = host.AddComponent<UIDocument>();
@@ -127,6 +121,9 @@ namespace Project.UI
         public static void SyncFromController(MainMenuController controller, bool show, bool pauseOverlay)
         {
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            if (!show && instance == null)
                 return;
 
             DMUiToolkitMainMenu host = EnsureHost();
@@ -210,7 +207,7 @@ namespace Project.UI
             }
 
             if (!bound)
-                BindTree();
+                return;
 
             if (visible)
                 HideUguiMenuChromeOnce();
@@ -280,6 +277,7 @@ namespace Project.UI
             if (button == null || action == null)
                 return;
 
+            button.clicked -= action;
             button.clicked += action;
         }
 

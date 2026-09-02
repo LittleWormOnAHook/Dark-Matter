@@ -124,8 +124,9 @@ namespace Project.Features.Jetpack
                     _smoothVertical, move.y, ref _verticalVelocity, smoothTime);
 
                 float leanStrength = profile != null ? profile.animLeanStrength : 0.1f;
-                // Soften IdleFly superhero lock without rewriting the jetpack profile asset.
-                leanStrength = Mathf.Min(0.05f, leanStrength * 0.4f);
+                // DMJetpack 0901-flyup: IdleFly (Mixamo seated/prone hover) was the (0,0)
+                // blend-tree clip and this 0.05 clamp locked the body in that chair pose
+                // for the whole boost. Center clip is now FlyUp; use the profile lean.
 
                 if (_hasJetpackHorizontalParam)
                     animator.SetFloat(JetpackHorizontal, _smoothHorizontal * leanStrength);

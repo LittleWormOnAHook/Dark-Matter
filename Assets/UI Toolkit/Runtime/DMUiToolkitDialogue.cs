@@ -56,14 +56,6 @@ namespace Project.UI
 
         public static bool IsOpen => instance != null && instance.open;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitDialogue EnsureHost()
         {
@@ -152,7 +144,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             if (open && !DMUiToolkitHud.IsDriving)
                 CloseInternal(invokeClosed: true);

@@ -10,6 +10,33 @@ namespace Project.UI
     /// </summary>
     public static class GameplayHudVisibility
     {
+        /// <summary>
+        /// Tilde (~) hides only gameplay chrome. Journal, popups, input, and systems keep running.
+        /// </summary>
+        public static bool CinematicChromeHidden { get; private set; }
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCinematicStatic()
+        {
+            CinematicChromeHidden = false;
+        }
+
+        public static void ToggleCinematicChrome()
+        {
+            CinematicChromeHidden = !CinematicChromeHidden;
+            if (DMUiToolkitHud.InstanceOrNull != null)
+                DMUiToolkitHud.RefreshMenuChrome();
+        }
+
+        public static void ClearCinematicChrome()
+        {
+            if (!CinematicChromeHidden)
+                return;
+            CinematicChromeHidden = false;
+            if (DMUiToolkitHud.InstanceOrNull != null)
+                DMUiToolkitHud.RefreshMenuChrome();
+        }
+
         public static void SetInventoryModeHudVisible(bool visible)
         {
             if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)

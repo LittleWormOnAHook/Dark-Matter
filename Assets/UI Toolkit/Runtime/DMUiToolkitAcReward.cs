@@ -24,14 +24,6 @@ namespace Project.UI
         public static bool IsShowing => instance != null && instance.card != null
             && instance.card.style.display == DisplayStyle.Flex;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitAcReward EnsureHost()
         {
@@ -92,7 +84,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             if (!DMUiToolkitHud.IsDriving)
             {
@@ -119,6 +111,7 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("acreward-root") ?? tree;
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             card = tree.Q<VisualElement>("acreward-card");
             amountLabel = tree.Q<Label>("acreward-amount");
             sourceLabel = tree.Q<Label>("acreward-source");

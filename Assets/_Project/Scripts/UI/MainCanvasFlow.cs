@@ -38,12 +38,19 @@ namespace Project.UI
                     ApplyStartPopupPhase();
                     break;
                 case GamePhase.StarterPioneerSelect:
+                    // Starter select is its own full-screen step. Do not call ShowMainMenu —
+                    // that bounced New Expedition back to the menu under UITK.
+                    ApplyStarterSelectPhase();
+                    break;
                 case GamePhase.MainMenu:
                 default:
                     ApplyMainMenuPhase();
                     break;
             }
         }
+
+        private static bool UitkOwnsGameplayHud =>
+            DMUiToolkitConfig.IsEnabled && DMUiToolkitHud.IsDriving;
 
         public static void SanitizeCanvasHost(Canvas canvas)
         {
@@ -58,9 +65,33 @@ namespace Project.UI
             ExposureZoneEntryBannerUI staleBanner = host.GetComponent<ExposureZoneEntryBannerUI>();
             if (staleBanner != null)
                 Object.Destroy(staleBanner);
+
+            // UITK owns HUD visuals. Keep InventoryUI/ToolBarUI hosts; do not re-enable retired Graphics.
+            if (UitkOwnsGameplayHud)
+                DisableSceneGameplayHudVisuals();
         }
 
         public static void SetSceneGameplayHudRootsActive(bool active)
+        {
+            if (active && UitkOwnsGameplayHud)
+            {
+                DisableSceneGameplayHudVisuals();
+                return;
+            }
+
+            Transform canvasRoot = MainMenuController.ResolveMainCanvas()?.transform;
+            if (canvasRoot == null)
+                return;
+
+            for (int i = 0; i < SceneGameplayHudRoots.Length; i++)
+            {
+                Transform child = FindSceneHudRoot(canvasRoot, SceneGameplayHudRoots[i]);
+                if (child != null)
+                    child.gameObject.SetActive(active);
+            }
+        }
+
+        private static void DisableSceneGameplayHudVisuals()
         {
             Transform canvasRoot = MainMenuController.ResolveMainCanvas()?.transform;
             if (canvasRoot == null)
@@ -68,23 +99,29 @@ namespace Project.UI
 
             for (int i = 0; i < SceneGameplayHudRoots.Length; i++)
             {
-                Transform child = canvasRoot.Find(SceneGameplayHudRoots[i]);
-                if (child == null)
-                {
-                    for (int c = 0; c < canvasRoot.childCount; c++)
-                    {
-                        Transform candidate = canvasRoot.GetChild(c);
-                        if (candidate.name == SceneGameplayHudRoots[i])
-                        {
-                            child = candidate;
-                            break;
-                        }
-                    }
-                }
-
+                Transform child = FindSceneHudRoot(canvasRoot, SceneGameplayHudRoots[i]);
                 if (child != null)
-                    child.gameObject.SetActive(active);
+                    DMUiToolkitOverlayDocument.DisableUguiVisuals(child.gameObject);
             }
+        }
+
+        private static Transform FindSceneHudRoot(Transform canvasRoot, string name)
+        {
+            if (canvasRoot == null)
+                return null;
+
+            Transform child = canvasRoot.Find(name);
+            if (child != null)
+                return child;
+
+            for (int c = 0; c < canvasRoot.childCount; c++)
+            {
+                Transform candidate = canvasRoot.GetChild(c);
+                if (candidate.name == name)
+                    return candidate;
+            }
+
+            return null;
         }
 
         private static void ApplyMainMenuPhase()
@@ -108,47 +145,65 @@ namespace Project.UI
             HideGameplayChrome();
         }
 
+        private static void ApplyStarterSelectPhase()
+        {
+            SetSceneGameplayHudRootsActive(false);
+            HideGameplayChrome();
+            MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
+            menu?.HideMenuChrome();
+        }
+
         private static void ApplyGameplayPhase()
         {
             MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
             menu?.HideMenuChrome();
 
-            SetSceneGameplayHudRootsActive(true);
+            if (UitkOwnsGameplayHud)
+                DisableSceneGameplayHudVisuals();
+            else
+                SetSceneGameplayHudRootsActive(true);
 
             MainMenuController.RestoreGameplayUiFromMenu();
 
-            InventoryUI inventory = Object.FindAnyObjectByType<InventoryUI>();
+            InventoryUI inventory = Object.FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include);
+            if (inventory != null && !inventory.gameObject.activeSelf)
+                inventory.gameObject.SetActive(true);
             inventory?.SetBottomHudVisible(true);
-
             inventory?.EnsureSurvivalStatsHudVisible();
 
-            ToolBarUI toolbar = Object.FindAnyObjectByType<ToolBarUI>();
-            toolbar?.SetGameplayVisible(true);
+            ToolBarUI toolbar = Object.FindAnyObjectByType<ToolBarUI>(FindObjectsInactive.Include);
+            if (toolbar != null && !toolbar.gameObject.activeSelf)
+                toolbar.gameObject.SetActive(true);
+            if (!UitkOwnsGameplayHud)
+                toolbar?.SetGameplayVisible(true);
 
-            CondensedSurvivalStatsHud statsHud = Object.FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
-            statsHud?.RefreshLayout();
+            if (!UitkOwnsGameplayHud)
+            {
+                CondensedSurvivalStatsHud statsHud = Object.FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
+                statsHud?.RefreshLayout();
 
-            HotbarXpHud xpHud = Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
-            if (xpHud == null)
-            {
-                Canvas canvas = MainMenuController.ResolveMainCanvas()
-                    ?? Object.FindAnyObjectByType<Canvas>();
-                if (canvas != null)
-                    xpHud = HotbarXpHud.EnsureExists(canvas.transform);
-            }
-            xpHud?.SetVisible(true);
+                HotbarXpHud xpHud = Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
+                if (xpHud == null)
+                {
+                    Canvas canvas = MainMenuController.ResolveMainCanvas()
+                        ?? Object.FindAnyObjectByType<Canvas>();
+                    if (canvas != null)
+                        xpHud = HotbarXpHud.EnsureExists(canvas.transform);
+                }
+                xpHud?.SetVisible(true);
 
-            ActiveQuestHudUI questHud = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
-            if (questHud == null)
-            {
-                Canvas canvas = MainMenuController.ResolveMainCanvas()
-                    ?? Object.FindAnyObjectByType<Canvas>();
-                if (canvas != null)
-                    questHud = ActiveQuestHudUI.EnsureExists(canvas.transform);
-            }
-            else
-            {
-                questHud.SetGameplayVisible(true);
+                ActiveQuestHudUI questHud = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
+                if (questHud == null)
+                {
+                    Canvas canvas = MainMenuController.ResolveMainCanvas()
+                        ?? Object.FindAnyObjectByType<Canvas>();
+                    if (canvas != null)
+                        questHud = ActiveQuestHudUI.EnsureExists(canvas.transform);
+                }
+                else
+                {
+                    questHud.SetGameplayVisible(true);
+                }
             }
 
             UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
@@ -163,9 +218,12 @@ namespace Project.UI
             // a paused/menu session resumes (Esc to main menu, then back), vitals could get stuck
             // hidden forever. Re-assert once more now that the phase transition is fully settled;
             // this is a no-op if everything was already correct.
-            Object.FindAnyObjectByType<InventoryUI>()?.EnsureSurvivalStatsHudVisible();
-            Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.SetVisible(true);
-            Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.SetGameplayVisible(true);
+            Object.FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include)?.EnsureSurvivalStatsHudVisible();
+            if (!UitkOwnsGameplayHud)
+            {
+                Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.SetVisible(true);
+                Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.SetGameplayVisible(true);
+            }
         }
 
         private static void HideGameplayChrome()

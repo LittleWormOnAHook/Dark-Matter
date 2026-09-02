@@ -26,7 +26,7 @@ namespace Project.UI
     {
         private const float PickupConeFov = PickupProximityDotUI.PickupConeFovDegrees;
         private const float VerticalWorldOffset = 0.45f;
-        private const float InteractionScanInterval = 0.12f;
+        private const float InteractionScanInterval = 1f / 12f;
         private const int MaxDots = 24;
         private const int MaxBars = 16;
 
@@ -48,6 +48,7 @@ namespace Project.UI
         private readonly List<VisualElement> liveDots = new List<VisualElement>();
         private readonly List<VisualElement> barPool = new List<VisualElement>();
         private readonly List<VisualElement> liveBars = new List<VisualElement>();
+        private readonly HashSet<FloatingTargetHealthBar> hiddenBars = new HashSet<FloatingTargetHealthBar>();
         private readonly List<WorldDot> pendingDots = new List<WorldDot>(32);
 
         private struct WorldDot
@@ -108,18 +109,24 @@ namespace Project.UI
                 BindTree();
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
-            if (want != lastGameplayWant)
+            bool show = want && !GameplayHudVisibility.CinematicChromeHidden;
+            if (show != lastGameplayWant)
             {
-                lastGameplayWant = want;
-                DMUiToolkitOverlayDocument.SetShown(root, want);
-                DMUiToolkitOverlayDocument.SetShown(dotsLayer, want);
-                DMUiToolkitOverlayDocument.SetShown(barsLayer, want);
+                lastGameplayWant = show;
+                DMUiToolkitOverlayDocument.SetShown(root, show);
+                DMUiToolkitOverlayDocument.SetShown(dotsLayer, show);
+                DMUiToolkitOverlayDocument.SetShown(barsLayer, show);
             }
 
-            if (!want)
+            if (!show)
             {
+                DMUiToolkitOverlayDocument.SetShown(root, false);
+                DMUiToolkitOverlayDocument.SetShown(dotsLayer, false);
+                DMUiToolkitOverlayDocument.SetShown(barsLayer, false);
                 RecycleDots(0);
                 RecycleBars(0);
+                if (want)
+                    HideUguiCounterparts();
                 return;
             }
 
@@ -162,17 +169,25 @@ namespace Project.UI
 
         private void CollectDots()
         {
-            pendingDots.Clear();
             if (!ResolvePlayer(out Transform player, out Camera camera))
+            {
+                pendingDots.Clear();
                 return;
+            }
 
             PlayerController pc = cachedPlayer;
             if (pc != null && pc.BlocksCombatInput)
+            {
+                pendingDots.Clear();
+                return;
+            }
+
+            if (Time.unscaledTime < nextInteractScan)
                 return;
 
+            nextInteractScan = Time.unscaledTime + InteractionScanInterval;
+            pendingDots.Clear();
             CollectExclusivePickupDot(player, camera);
-            if (Time.unscaledTime >= nextInteractScan)
-                nextInteractScan = Time.unscaledTime + InteractionScanInterval;
             CollectInteractionDots(player);
         }
 
@@ -377,7 +392,9 @@ namespace Project.UI
                 return;
 
             Camera camera = worldCamera;
-            FloatingTargetHealthBar[] bars = Object.FindObjectsByType<FloatingTargetHealthBar>(FindObjectsInactive.Exclude);
+            FloatingTargetHealthBar[] bars = SceneComponentCache.GetAll<FloatingTargetHealthBar>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.12f);
             int shown = 0;
             for (int i = 0; i < bars.Length && shown < MaxBars; i++)
             {
@@ -400,8 +417,16 @@ namespace Project.UI
                     new Vector2(screen.x, screen.y + 28f));
                 host.style.left = panelPos.x - 40f;
                 host.style.top = panelPos.y - 8f;
-                VisualElement fill = host.Q<VisualElement>("fill");
-                Label label = host.Q<Label>("hp");
+                VisualElement fill = null;
+                Label label = null;
+                if (host.childCount > 0)
+                {
+                    VisualElement track = host[0];
+                    if (track.childCount > 0)
+                        fill = track[0];
+                }
+                if (host.childCount > 1)
+                    label = host[1] as Label;
                 if (fill != null)
                     fill.style.width = Length.Percent(Mathf.Clamp01(normalized) * 100f);
                 if (label != null)
@@ -499,24 +524,28 @@ namespace Project.UI
             GameObject layer = DMUiToolkitOverlayDocument.FindNamed(objectName);
             if (layer == null)
                 return;
-            global::UnityEngine.CanvasGroup group = layer.GetComponent<global::UnityEngine.CanvasGroup>();
-            if (group == null)
-                group = layer.AddComponent<global::UnityEngine.CanvasGroup>();
-            group.alpha = 0f;
-            group.blocksRaycasts = false;
-            group.interactable = false;
+
+            DMUiToolkitOverlayDocument.DisableUguiVisuals(layer);
+
+            PickupProximityDotUI pickupDots = layer.GetComponent<PickupProximityDotUI>();
+            if (pickupDots != null)
+                pickupDots.enabled = false;
+
+            WorldInteractionDotUI worldDots = layer.GetComponent<WorldInteractionDotUI>();
+            if (worldDots != null)
+                worldDots.enabled = false;
         }
 
-        private static void HideBarGraphics(FloatingTargetHealthBar bar)
+        private void HideBarGraphics(FloatingTargetHealthBar bar)
         {
             if (bar == null)
                 return;
-            global::UnityEngine.CanvasGroup group = bar.GetComponent<global::UnityEngine.CanvasGroup>();
-            if (group == null)
-                group = bar.gameObject.AddComponent<global::UnityEngine.CanvasGroup>();
-            group.alpha = 0f;
-            group.blocksRaycasts = false;
-            group.interactable = false;
+
+            if (!hiddenBars.Add(bar))
+                return;
+
+            DMUiToolkitOverlayDocument.DisableUguiVisuals(bar.gameObject);
+            bar.enabled = false;
         }
     }
 }

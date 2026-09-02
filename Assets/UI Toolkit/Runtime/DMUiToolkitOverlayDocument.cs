@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -129,6 +130,8 @@ namespace Project.UI
                 host.transform.SetParent(parent, false);
             }
 
+            RegisterNamed(objectName, host);
+
             UIDocument document = host.GetComponent<UIDocument>();
             if (document == null)
                 document = host.AddComponent<UIDocument>();
@@ -150,13 +153,88 @@ namespace Project.UI
             return document;
         }
 
+        private static readonly Dictionary<string, GameObject> namedHosts = new Dictionary<string, GameObject>(32);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetNamedHosts()
+        {
+            namedHosts.Clear();
+        }
+
+        public static void RegisterNamed(string objectName, GameObject host)
+        {
+            if (string.IsNullOrEmpty(objectName) || host == null)
+                return;
+            namedHosts[objectName] = host;
+        }
+
         public static GameObject FindNamed(string objectName)
         {
-            Transform[] transforms = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
-            for (int i = 0; i < transforms.Length; i++)
+            if (string.IsNullOrEmpty(objectName))
+                return null;
+
+            if (namedHosts.TryGetValue(objectName, out GameObject cached)
+                && cached != null
+                && cached.name == objectName)
+                return cached;
+
+            GameObject found = FindNamedInKnownTrees(objectName);
+            if (found != null)
+                namedHosts[objectName] = found;
+            return found;
+        }
+
+        private static GameObject FindNamedInKnownTrees(string objectName)
+        {
+            DMUiToolkitBootstrap bootstrap = DMUiToolkitBootstrap.Instance;
+            if (bootstrap != null)
             {
-                if (transforms[i] != null && transforms[i].name == objectName)
-                    return transforms[i].gameObject;
+                Transform uitkParent = null;
+                if (bootstrap.HudDocument != null)
+                    uitkParent = bootstrap.HudDocument.transform.parent;
+                if (uitkParent == null)
+                    uitkParent = bootstrap.transform.parent;
+
+                GameObject hit = FindNamedUnder(uitkParent, objectName, depth: 2);
+                if (hit != null)
+                    return hit;
+                if (bootstrap.gameObject.name == objectName)
+                    return bootstrap.gameObject;
+            }
+
+            Canvas canvas = MainMenuController.ResolveMainCanvas();
+            if (canvas != null)
+            {
+                GameObject hit = FindNamedUnder(canvas.transform, objectName, depth: 2);
+                if (hit != null)
+                    return hit;
+            }
+
+            return null;
+        }
+
+        private static GameObject FindNamedUnder(Transform root, string objectName, int depth)
+        {
+            if (root == null)
+                return null;
+            if (root.name == objectName)
+                return root.gameObject;
+            if (depth < 0)
+                return null;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                    continue;
+                if (child.name == objectName)
+                    return child.gameObject;
+                if (depth > 0)
+                {
+                    GameObject nested = FindNamedUnder(child, objectName, depth - 1);
+                    if (nested != null)
+                        return nested;
+                }
             }
 
             return null;
@@ -210,6 +288,35 @@ namespace Project.UI
                 group.alpha = 0f;
             group.blocksRaycasts = false;
             group.interactable = false;
+        }
+
+        public static void ApplyIgnorePicking(VisualElement element)
+        {
+            if (element != null && element.pickingMode != PickingMode.Ignore)
+                element.pickingMode = PickingMode.Ignore;
+        }
+
+        /// <summary>
+        /// Stop leftover uGUI mesh/raycast work without destroying host GameObjects.
+        /// InventoryUI / ToolBarUI hosts must stay active; pass visual roots or Canvas only.
+        /// </summary>
+        public static void DisableUguiVisuals(GameObject target)
+        {
+            if (target == null)
+                return;
+
+            if (target.TryGetComponent(out Canvas canvas) && canvas.enabled)
+                canvas.enabled = false;
+
+            if (target.TryGetComponent(out UnityEngine.UI.GraphicRaycaster raycaster) && raycaster.enabled)
+                raycaster.enabled = false;
+
+            UnityEngine.UI.Graphic[] graphics = target.GetComponentsInChildren<UnityEngine.UI.Graphic>(true);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                if (graphics[i] != null && graphics[i].enabled)
+                    graphics[i].enabled = false;
+            }
         }
 
         public static readonly Vector2 DefaultHoverOffset = new Vector2(18f, -18f);

@@ -59,7 +59,32 @@ namespace Project.UI
                 ? boundPets.GetOwnedPets()
                 : Array.Empty<PetController>();
 
-            int slots = PetManager.MaxOwnedPets;
+            const int petColumns = 8;
+            const int petVisibleRows = 2;
+            const float petSlotPitch = 100f;
+            int slots = Mathf.Max(petColumns * petVisibleRows, pets.Count);
+            if (petGrid != null)
+            {
+                petGrid.AddToClassList("dmg-pet-grid");
+                petGrid.style.flexDirection = FlexDirection.Row;
+                petGrid.style.flexWrap = Wrap.Wrap;
+                petGrid.style.justifyContent = Justify.FlexStart;
+                petGrid.style.alignContent = Align.FlexStart;
+                int widthCols = Mathf.Max(petColumns, Mathf.CeilToInt(slots / (float)petVisibleRows));
+                petGrid.style.width = petSlotPitch * widthCols;
+            }
+
+            ScrollView petScroll = petGrid != null ? petGrid.parent as ScrollView : null;
+            if (petScroll == null && petBody != null)
+                petScroll = petBody.Q<ScrollView>("pet-scroll");
+            if (petScroll != null)
+            {
+                petScroll.style.height = 212f;
+                petScroll.mode = slots > petColumns * petVisibleRows
+                    ? ScrollViewMode.Horizontal
+                    : ScrollViewMode.Vertical;
+            }
+
             PetController toolbar = boundPets != null ? boundPets.ToolbarPet : null;
             for (int i = 0; i < slots; i++)
             {

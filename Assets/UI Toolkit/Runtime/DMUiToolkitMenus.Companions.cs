@@ -44,6 +44,7 @@ namespace Project.UI
             loadoutSkill = tree.Q<Button>("loadout-skill");
             loadoutStatus = tree.Q<Label>("loadout-status");
             campList = tree.Q<ScrollView>("camp-list");
+            EnsureCampBesideRoster();
 
             if (loadoutWeapon != null)
             {
@@ -83,9 +84,91 @@ namespace Project.UI
 
         private void RefreshCompanionsExtras()
         {
+            EnsureCampBesideRoster();
             ApplyCompanionPortrait();
             ApplyLoadoutEditors();
             RefreshCampColumn();
+        }
+
+        private void EnsureCampBesideRoster()
+        {
+            if (companionsList == null)
+                return;
+
+            VisualElement left = companionsList.parent;
+            while (left != null && left.name != "companions-left")
+                left = left.parent;
+            if (left == null)
+                left = companionsBody;
+            if (left == null)
+                return;
+
+            VisualElement row = left.Q<VisualElement>("companions-roster-row");
+            if (row == null)
+            {
+                row = new VisualElement { name = "companions-roster-row", pickingMode = PickingMode.Position };
+                row.AddToClassList("dmg-companions-roster-row");
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.flexGrow = 1f;
+                row.style.alignItems = Align.Stretch;
+                int listIndex = left.IndexOf(companionsList);
+                if (listIndex >= 0)
+                    left.Insert(listIndex, row);
+                else
+                    left.Add(row);
+            }
+
+            if (companionsList.parent != row)
+            {
+                companionsList.RemoveFromHierarchy();
+                if (row.childCount > 0)
+                    row.Insert(0, companionsList);
+                else
+                    row.Add(companionsList);
+            }
+
+            companionsList.RemoveFromClassList("dmg-quest-list");
+            companionsList.AddToClassList("dmg-companion-grid");
+            companionsList.style.width = StyleKeyword.Auto;
+            companionsList.style.flexGrow = 1f;
+
+            VisualElement campColumn = row.Q<VisualElement>("camp-column");
+            if (campColumn == null)
+            {
+                campColumn = new VisualElement { name = "camp-column", pickingMode = PickingMode.Position };
+                campColumn.AddToClassList("dmg-camp-column");
+                campColumn.style.flexDirection = FlexDirection.Column;
+                campColumn.style.flexGrow = 1f;
+                campColumn.style.minWidth = 240f;
+                row.Add(campColumn);
+            }
+
+            VisualElement tree = root != null ? root : companionsBody;
+            Label heading = tree != null ? tree.Q<Label>("camp-heading") : null;
+            if (heading == null)
+            {
+                heading = new Label("At Camp") { name = "camp-heading", pickingMode = PickingMode.Ignore };
+                heading.AddToClassList("dmg-gold-heading");
+            }
+            if (heading.parent != campColumn)
+            {
+                heading.RemoveFromHierarchy();
+                campColumn.Insert(0, heading);
+            }
+
+            if (campList == null && tree != null)
+                campList = tree.Q<ScrollView>("camp-list");
+            if (campList == null)
+            {
+                campList = new ScrollView { name = "camp-list" };
+                campList.AddToClassList("dmg-scroll");
+                campList.AddToClassList("dmg-camp-list");
+            }
+            if (campList.parent != campColumn)
+            {
+                campList.RemoveFromHierarchy();
+                campColumn.Add(campList);
+            }
         }
 
         private VisualElement MakeCompanionRowWithPortrait(SkilledPioneerRecord record)

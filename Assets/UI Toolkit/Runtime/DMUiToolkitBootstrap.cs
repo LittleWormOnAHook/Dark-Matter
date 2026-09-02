@@ -104,6 +104,8 @@ namespace Project.UI
                     instance = existing.AddComponent<DMUiToolkitBootstrap>();
 
                 instance.EnsureDocuments();
+                if (!existing.activeSelf)
+                    existing.SetActive(true);
                 bool active = existing.activeInHierarchy;
                 Stamp(active ? "using scene UITK_Root" : "UITK_Root disabled in Hierarchy — uGUI path");
                 return active;

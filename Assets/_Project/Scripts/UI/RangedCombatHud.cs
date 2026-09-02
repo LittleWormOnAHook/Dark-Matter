@@ -207,7 +207,9 @@ namespace Project.UI
 
         private void OnGUI()
         {
-            if (!showCrosshair || !ShouldShowHud(out _))
+            if (!showCrosshair
+                || GameplayHudVisibility.CinematicChromeHidden
+                || !ShouldShowHud(out _))
                 return;
 
             // Skip IMGUI when a live UGUI crosshair already exists (optics / HUD image).

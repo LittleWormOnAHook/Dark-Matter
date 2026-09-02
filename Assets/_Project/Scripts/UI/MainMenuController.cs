@@ -58,7 +58,12 @@ namespace Project.UI
             EnsurePostProcessingController();
             GameAudioManager.EnsureExists();
             GameSettings.Load();
-            GameSession.ResetSession();
+            // Late EnsureExists (e.g. while New Expedition already advanced the phase) must not
+            // yank Phase back to MainMenu — that re-shows the menu and feels like a bounce.
+            if (GameSession.Phase != GamePhase.StartPopup
+                && GameSession.Phase != GamePhase.Playing
+                && GameSession.Phase != GamePhase.StarterPioneerSelect)
+                GameSession.ResetSession();
 
             gameStartPopup = FindStartPopup();
             playerInput = FindAnyObjectByType<PlayerInput>();
@@ -126,7 +131,7 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
-            MainMenuController existing = FindAnyObjectByType<MainMenuController>();
+            MainMenuController existing = FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
             if (existing != null)
                 return;
 
@@ -214,9 +219,7 @@ namespace Project.UI
         {
             if (UsesToolkitMenu)
             {
-                DMUiToolkitMainMenu.EnsureHost();
-                DMUiToolkitMenuPanels.EnsureHosts();
-                RefreshMenuButtonStates();
+                // UITK_MainMenu / Settings / Controls / SaveSlots are created on first Show/Open.
                 UiScaleApplier.ApplyFromSettings();
                 return;
             }
@@ -372,8 +375,17 @@ namespace Project.UI
 
         public void ShowMainMenu()
         {
+            // New Expedition sets StartPopup then Playing. Do not yank those back to the
+            // title screen — that is the first-click bounce. Pause uses ShowPauseMenu.
+            // Settings reload calls ResetSession first, so Phase is MainMenu here.
+            if (GameSession.Phase == GamePhase.StartPopup || GameSession.Phase == GamePhase.Playing)
+                return;
+
             pauseOverlayActive = false;
             GameSession.SetPhase(GamePhase.MainMenu);
+
+            if (DMUiToolkitConfig.IsEnabled)
+                DMUiToolkitBootstrap.EnsureExists();
 
             if (menuPanel == null && buildOnAwake)
                 BuildMainMenu();
@@ -407,9 +419,14 @@ namespace Project.UI
             // World stays paused and gameplay UI swept away, but the menu itself only appears once the
             // Loading Genesis overlay finishes fading — it re-runs this path on handoff.
             if (LoadingOverlayController.IsBlockingMenu)
+            {
                 HideMenuChrome();
-            else
-                SyncToolkitMainMenu(true);
+                return;
+            }
+
+            SyncToolkitMainMenu(true);
+            if (!UsesToolkitMenu && menuPanel != null)
+                menuPanel.SetActive(true);
         }
 
         private void Start()
@@ -707,17 +724,18 @@ namespace Project.UI
             EquipmentController equipment = UnityEngine.Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
             equipment?.HolsterWeapon();
 
-            if (menuBackground != null)
-                menuBackground.SetActive(false);
-            if (menuPanel != null)
-                menuPanel.SetActive(false);
-
             pauseOverlayActive = false;
+            // Hide UITK + uGUI chrome immediately so the first click cannot re-show the menu
+            // under an invisible uGUI starter select (MainCanvasFlow treats that phase as menu).
+            HideMenuChrome();
+            HideGameplayChromeForMenu();
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             roster?.PrepareNewGameSession();
 
-            if (roster != null && roster.StarterPioneerSelected)
+            // UITK path: PrepareNewGameSession auto-selects the starter. The uGUI starter panel
+            // is retired (visuals disabled) and would only bounce back via ApplyMainMenuPhase.
+            if (UsesToolkitMenu || roster == null || roster.StarterPioneerSelected)
             {
                 LoadIntoExpedition();
                 return;

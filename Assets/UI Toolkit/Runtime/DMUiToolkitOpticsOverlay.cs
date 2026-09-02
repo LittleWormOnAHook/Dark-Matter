@@ -57,14 +57,6 @@ namespace Project.UI
             instance = null;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void AfterSceneLoad()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureAttached();
-        }
 
         public static void EnsureAttached()
         {
@@ -114,14 +106,7 @@ namespace Project.UI
 
         private static GameObject FindHost()
         {
-            Transform[] transforms = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
-            for (int i = 0; i < transforms.Length; i++)
-            {
-                if (transforms[i] != null && transforms[i].name == HostName)
-                    return transforms[i].gameObject;
-            }
-
-            return null;
+            return DMUiToolkitOverlayDocument.FindNamed(HostName);
         }
 
         private static GameObject CreateHost()
@@ -130,6 +115,7 @@ namespace Project.UI
             DMUiToolkitBootstrap bootstrap = DMUiToolkitBootstrap.Instance;
             if (bootstrap != null)
                 host.transform.SetParent(bootstrap.transform.parent, false);
+            DMUiToolkitOverlayDocument.RegisterNamed(HostName, host);
             return host;
         }
 
@@ -157,6 +143,9 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            if (document == null)
+                return;
+
             bool driving = DMUiToolkitConfig.IsEnabled && DMUiToolkitHud.IsDriving;
             SetOpticsCanvasEnabled(!driving);
             if (!driving)

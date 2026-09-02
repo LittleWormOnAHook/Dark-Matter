@@ -29,6 +29,7 @@ namespace Project.UI
         private Button confirmButton;
         private Button closeButton;
         private bool bound;
+        private bool uguiHidden;
         private bool wired;
         private bool open;
         private CraftingUI source;
@@ -37,14 +38,6 @@ namespace Project.UI
 
         public static bool IsOpen => instance != null && instance.open;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitCraft EnsureHost()
         {
@@ -120,7 +113,7 @@ namespace Project.UI
         private void LateUpdate()
         {
             if (!bound)
-                BindTree();
+                return;
 
             if (open)
             {
@@ -128,7 +121,15 @@ namespace Project.UI
                 if (wasCrafting && !crafting)
                     Rebuild();
                 wasCrafting = crafting;
-                HideUgui();
+                if (!uguiHidden)
+                {
+                    HideUgui();
+                    uguiHidden = true;
+                }
+            }
+            else
+            {
+                uguiHidden = false;
             }
         }
 

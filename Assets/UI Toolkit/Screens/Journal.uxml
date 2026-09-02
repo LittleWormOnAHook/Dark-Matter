@@ -68,14 +68,20 @@
                     <ui:Label name="pet-title" text="PETS" picking-mode="Ignore" class="dmg-section-title" />
                     <ui:Label name="pet-summary" text="No pets befriended yet. Press E to Adopt near a wild pet." picking-mode="Ignore" class="dmg-hint" /><ui:VisualElement name="pet-toolbar-row" class="dmg-pet-toolbar-row" picking-mode="Position"><ui:VisualElement name="pet-toolbar-slot" class="dmg-pet-slot dmg-pet-toolbar-slot" picking-mode="Position"><ui:VisualElement name="pet-toolbar-icon" class="dmg-inv-icon" picking-mode="Ignore" /><ui:Label name="pet-toolbar-name" text="Empty" picking-mode="Ignore" class="dmg-pet-name" /></ui:VisualElement><ui:Label name="pet-toolbar-hint" text="Active slot — drag a pet here to assign, drag away to clear." picking-mode="Ignore" class="dmg-hint" /></ui:VisualElement>
                     <ui:ScrollView name="pet-scroll" class="dmg-scroll dmg-inventory-scroll" picking-mode="Position">
-                        <ui:VisualElement name="pet-grid" class="dmg-inv-grid" picking-mode="Position" />
+                        <ui:VisualElement name="pet-grid" class="dmg-pet-grid" picking-mode="Position" />
                     </ui:ScrollView>
                 </ui:VisualElement>
                 <ui:VisualElement name="companions-body" class="dmg-split-body" picking-mode="Position">
                     <ui:VisualElement name="companions-left" class="dmg-split-left" picking-mode="Position">
                         <ui:Label name="companions-title" text="COMPANIONS" picking-mode="Ignore" class="dmg-section-title" />
                         <ui:Label name="companions-summary" text="No skilled pioneers recruited yet." picking-mode="Ignore" class="dmg-hint" />
-                        <ui:ScrollView name="companions-list" class="dmg-scroll dmg-quest-list" picking-mode="Position" />
+                        <ui:VisualElement name="companions-roster-row" class="dmg-companions-roster-row" picking-mode="Position">
+                            <ui:ScrollView name="companions-list" class="dmg-scroll dmg-companion-grid" picking-mode="Position" />
+                            <ui:VisualElement name="camp-column" class="dmg-camp-column" picking-mode="Position">
+                                <ui:Label name="camp-heading" text="At Camp" picking-mode="Ignore" class="dmg-gold-heading" />
+                                <ui:ScrollView name="camp-list" class="dmg-scroll dmg-camp-list" picking-mode="Position" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement name="companions-right" class="dmg-split-right" picking-mode="Position">
                         <ui:VisualElement name="companions-portrait" class="dmg-companion-portrait" picking-mode="Ignore"><ui:Label name="companions-portrait-initials" text="" picking-mode="Ignore" class="dmg-companion-initials" /></ui:VisualElement><ui:Label name="companions-detail" text="Select a skilled companion from the roster." picking-mode="Ignore" class="dmg-quest-body" /><ui:Label name="loadout-heading" text="Loadout" picking-mode="Ignore" class="dmg-gold-heading" /><ui:VisualElement name="loadout-row" class="dmg-loadout-row" picking-mode="Position"><ui:Button name="loadout-weapon" text="Weapon" picking-mode="Position" class="dmg-loadout-btn" /><ui:Button name="loadout-tool" text="Tool" picking-mode="Position" class="dmg-loadout-btn" /><ui:Button name="loadout-skill" text="Skill" picking-mode="Position" class="dmg-loadout-btn" /></ui:VisualElement><ui:Label name="loadout-status" text="Select a companion to edit loadout." picking-mode="Ignore" class="dmg-hint" />
@@ -85,7 +91,7 @@
                             <ui:Button name="trio-slot-1" text="Slot 2" picking-mode="Position" class="dmg-trio-slot" />
                             <ui:Button name="trio-slot-2" text="Slot 3" picking-mode="Position" class="dmg-trio-slot" />
                         </ui:VisualElement>
-                        <ui:Label name="trio-hint" text="Drag a companion onto a trio slot, or select then click. Click an occupied slot to clear it." picking-mode="Ignore" class="dmg-hint" /><ui:Label name="camp-heading" text="At Camp" picking-mode="Ignore" class="dmg-gold-heading" /><ui:ScrollView name="camp-list" class="dmg-scroll dmg-camp-list" picking-mode="Position" />
+                        <ui:Label name="trio-hint" text="Drag a companion onto a trio slot, or select then click. Click an occupied slot to clear it." picking-mode="Ignore" class="dmg-hint" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="character-body" class="dmg-split-body" picking-mode="Position">

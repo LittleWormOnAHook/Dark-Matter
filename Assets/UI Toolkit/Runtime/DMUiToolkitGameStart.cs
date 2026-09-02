@@ -18,14 +18,6 @@ namespace Project.UI
 
         public static bool IsOpen => false;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
-        {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
-        }
 
         public static DMUiToolkitGameStart EnsureHost()
         {
@@ -57,7 +49,7 @@ namespace Project.UI
             if (!DMUiToolkitConfig.IsEnabled)
                 return false;
 
-            EnsureHost();
+            // Never spawn START GAME overlay. Auto-advance the begin sequence.
             instance?.HideInternal();
 
             if (popup != null)
