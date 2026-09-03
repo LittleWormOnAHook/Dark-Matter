@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Cold Basin
   zoneKind: 2
   designerNotes: Cold Regions can reach -190 Degrees
-  effectIntensity: 0.927
+  effectIntensity: 0.518
   radiationPerSecond: 0
   thermalColdPerSecond: 8
   thermalHeatPerSecond: 0

@@ -21,6 +21,7 @@
                 <ui:Button name="btn-save" text="Save" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-settings" text="Settings" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-controls" text="Controls" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-main-menu" text="Main Menu" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-quit" text="Quit" picking-mode="Position" class="dmg-mainmenu-btn" />
             </ui:VisualElement>
             <ui:Label name="menu-message" text="" picking-mode="Ignore" class="dmg-mainmenu-message" />

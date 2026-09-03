@@ -1,0 +1,357 @@
+/* Symmetric lower-right cluster. No panel. Map texture only in the circle. */
+.pilot-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.pilot-cluster {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    width: 340px;
+    height: 360px;
+    background-color: rgba(0, 0, 0, 0);
+    overflow: visible;
+}
+
+.pilot-kicker {
+    color: #D4A017;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+    margin-bottom: 0;
+}
+
+.pilot-stat-value {
+    color: #EDE9E4;
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-corner-block {
+    position: absolute;
+    top: 4px;
+    width: 70px;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+}
+
+.pilot-energy-block { left: 4px; }
+.pilot-stamina-block { right: 4px; }
+.pilot-energy-value { color: #D4A017; }
+.pilot-stamina-value { color: rgb(107, 199, 122); }
+
+.pilot-side-block {
+    position: absolute;
+    top: 92px;
+    width: 48px;
+    background-color: rgba(0, 0, 0, 0);
+    align-items: center;
+}
+
+.pilot-o2-block { left: 4px; }
+
+.pilot-o2-icon {
+    color: #EDE9E4;
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-o2-value {
+    color: #EDE9E4;
+    font-size: 13px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-health {
+    position: absolute;
+    right: 6px;
+    top: 56px;
+    width: 32px;
+    height: 150px;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-health-track {
+    width: 8px;
+    flex-grow: 1;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    background-color: rgba(28, 42, 56, 0.35);
+    justify-content: flex-end;
+    overflow: hidden;
+    border-width: 1px;
+    border-color: #D4A017;
+}
+
+.pilot-health-fill {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(235, 97, 81);
+}
+
+.pilot-health-value {
+    color: #EDE9E4;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-map-stage {
+    position: absolute;
+    left: 70px;
+    top: 28px;
+    width: 200px;
+    height: 200px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-arcs {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-map-ring {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 168px;
+    height: 168px;
+    border-width: 2px;
+    border-color: #D4A017;
+    border-radius: 84px;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-map-view {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 84px;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.pilot-map-player {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    margin-top: -7px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-cardinal {
+    position: absolute;
+    color: #EDE9E4;
+    font-size: 11px;
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-cardinal-n { left: 50%; top: 4px; margin-left: -5px; color: #D4A017; }
+.pilot-cardinal-e { right: 6px; top: 50%; margin-top: -7px; }
+.pilot-cardinal-s { left: 50%; bottom: 2px; margin-left: -4px; }
+.pilot-cardinal-w { left: 6px; top: 50%; margin-top: -7px; }
+
+.pilot-pois {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-poi {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    margin-top: -3px;
+    background-color: #C02E7A;
+    border-radius: 3px;
+}
+
+.pilot-meta-col {
+    position: absolute;
+    top: 228px;
+    width: 110px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-left-meta { left: 4px; align-items: flex-start; }
+.pilot-right-meta { right: 4px; align-items: flex-end; }
+
+.pilot-meta-line {
+    color: #EDE9E4;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.4px;
+    background-color: rgba(0, 0, 0, 0);
+    margin-top: 1px;
+}
+
+.pilot-left-meta .pilot-kicker { -unity-text-align: middle-left; }
+.pilot-left-meta .pilot-stat-value { -unity-text-align: middle-left; }
+.pilot-right-meta .pilot-meta-line { -unity-text-align: middle-right; }
+
+.pilot-zone {
+    position: absolute;
+    left: 70px;
+    top: 228px;
+    width: 200px;
+    color: #C02E7A;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 0.6px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-compass {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 4px;
+    height: 72px;
+    background-color: rgba(0, 0, 0, 0);
+    overflow: visible;
+}
+
+.pilot-compass-ticks {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 36px;
+    background-color: rgba(0, 0, 0, 0);
+    overflow: hidden;
+}
+
+.pilot-compass-tick {
+    position: absolute;
+    bottom: 0;
+    width: 36px;
+    height: 36px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-compass-tick-label {
+    font-size: 10px;
+    color: #8C7F75;
+    -unity-text-align: upper-center;
+    background-color: rgba(0, 0, 0, 0);
+    margin-bottom: 1px;
+}
+
+.pilot-compass-tick-cardinal {
+    font-size: 13px;
+    color: #D4A017;
+    -unity-font-style: bold;
+    -unity-text-align: upper-center;
+    background-color: rgba(0, 0, 0, 0);
+    margin-bottom: 1px;
+}
+
+.pilot-compass-tick-line {
+    width: 1px;
+    height: 7px;
+    background-color: rgba(237, 233, 228, 0.55);
+}
+
+.pilot-compass-tick-line-cardinal {
+    width: 2px;
+    height: 10px;
+    background-color: #D4A017;
+}
+
+.pilot-compass-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 36px;
+    height: 2px;
+    background-color: #D4A017;
+}
+
+.pilot-compass-dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 28px;
+    height: 18px;
+    background-color: rgba(0, 0, 0, 0);
+    overflow: visible;
+}
+
+.pilot-compass-dot {
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    margin-left: -4px;
+    background-color: #C02E7A;
+    border-radius: 4px;
+}
+
+.pilot-compass-center {
+    position: absolute;
+    left: 50%;
+    top: 32px;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    background-color: #EDE9E4;
+    border-radius: 1px;
+    rotate: 45deg;
+}
+
+.pilot-compass-poi {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 46px;
+    height: 22px;
+    color: #C02E7A;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 0.4px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}

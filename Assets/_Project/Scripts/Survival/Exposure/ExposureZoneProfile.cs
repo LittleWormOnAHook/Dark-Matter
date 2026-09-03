@@ -69,11 +69,17 @@ namespace Project.Survival.Exposure
 
         public ExposureSample BuildSample(float pulseMultiplier)
         {
-            float pulse = Mathf.Max(0f, pulseMultiplier);
-            float intensity = Mathf.Clamp(effectIntensity, 0.1f, 1f);
+            return BuildSample(pulseMultiplier, 1f);
+        }
 
-            // Rates stay at their authored speed — effectIntensity does NOT slow the ramp,
-            // it caps how high the hazard is allowed to settle (see ceiling fields below).
+        public ExposureSample BuildSample(float pulseMultiplier, float spatial01)
+        {
+            float pulse = Mathf.Max(0f, pulseMultiplier);
+            float spatial = Mathf.Clamp01(spatial01);
+            float intensity = Mathf.Clamp(effectIntensity * spatial, 0f, 1f);
+
+            // Rates stay at their authored speed — effectIntensity / spatial falloff
+            // cap how high the hazard is allowed to settle (see ceiling fields below).
             return new ExposureSample
             {
                 radiationPerSecond = radiationPerSecond * pulse,
@@ -88,10 +94,10 @@ namespace Project.Survival.Exposure
                 thermalRecoveryPerSecond = thermalRecoveryPerSecond,
                 playerDebuffs = playerDebuffs,
                 companionDebuffs = companionDebuffs,
-                radiationCeiling01 = radiationPerSecond > 0f ? intensity : 1f,
-                thermalCeiling01 = (thermalColdPerSecond > 0f || thermalHeatPerSecond > 0f) ? intensity : 1f,
-                sulfurCeiling01 = sulfurPerSecond > 0f ? intensity : 1f,
-                volcanoCeiling01 = volcanoPerSecond > 0f ? intensity : 1f
+                radiationCeiling01 = radiationPerSecond > 0f ? Mathf.Max(0.01f, intensity) : 1f,
+                thermalCeiling01 = (thermalColdPerSecond > 0f || thermalHeatPerSecond > 0f) ? Mathf.Max(0.01f, intensity) : 1f,
+                sulfurCeiling01 = sulfurPerSecond > 0f ? Mathf.Max(0.01f, intensity) : 1f,
+                volcanoCeiling01 = volcanoPerSecond > 0f ? Mathf.Max(0.01f, intensity) : 1f
             };
         }
     }

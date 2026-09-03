@@ -606,9 +606,8 @@ namespace Project.UI
         private void ApplySettings()
         {
             bool reloading = GameSettingsUiBridge.ApplySnapshot(CapturePanelSnapshot(), reloadSceneAfterApply: true);
-            Close();
-            if (!reloading)
-                FindAnyObjectByType<MainMenuController>()?.RestoreMenuAfterSubPanel();
+            if (reloading)
+                Close();
         }
 
         private GameSettingsUiBridge.Snapshot CapturePanelSnapshot()

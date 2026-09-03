@@ -13,3 +13,7 @@ MonoBehaviour:
   m_Name: DMUiToolkitConfig
   m_EditorClassIdentifier: Project.UI.DMUiToolkitConfig
   enabled: 1
+  zoneVignetteAlphaMin: 0.037
+  zoneVignetteAlphaMax: 0.402
+  damageVignetteAlpha: 0.5
+  showPilotCluster: 1

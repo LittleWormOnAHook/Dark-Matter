@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="ZoneVignette.uss"/>
+    <ui:VisualElement name="vignette-root" picking-mode="Ignore" class="zone-vignette-root">
+        <ui:VisualElement name="zone-vignette" picking-mode="Ignore" class="zone-vignette-layer"/>
+        <ui:VisualElement name="damage-vignette" picking-mode="Ignore" class="zone-vignette-layer zone-vignette-damage"/>
+    </ui:VisualElement>
+</ui:UXML>

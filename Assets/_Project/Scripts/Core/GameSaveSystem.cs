@@ -55,6 +55,50 @@ namespace Project.Core
             return TryLoad(ContinueSlotIndex, out message);
         }
 
+        /// <summary>Live-session snapshot for Settings Apply reload. Does not touch Continue / numbered slots.</summary>
+        public static bool TrySaveSettingsReloadSnapshot(out string message)
+        {
+            if (!TryCaptureSaveData(-1, out GameSaveData data, out message))
+                return false;
+
+            File.WriteAllText(SettingsReloadFilePath, JsonUtility.ToJson(data, prettyPrint: true));
+            message = "Saved settings-reload snapshot.";
+            return true;
+        }
+
+        public static bool TryLoadSettingsReloadSnapshot(out string message)
+        {
+            if (!File.Exists(SettingsReloadFilePath))
+            {
+                message = "No settings-reload snapshot.";
+                return false;
+            }
+
+            GameSaveData data;
+            try
+            {
+                data = JsonUtility.FromJson<GameSaveData>(File.ReadAllText(SettingsReloadFilePath));
+            }
+            catch (Exception ex)
+            {
+                message = "Settings-reload snapshot was unreadable. " + ex.Message;
+                return false;
+            }
+
+            if (data == null)
+            {
+                message = "Settings-reload snapshot was empty.";
+                return false;
+            }
+
+            ApplySaveData(data);
+            message = "Restored settings-reload snapshot.";
+            return true;
+        }
+
+        private static string SettingsReloadFilePath =>
+            Path.Combine(Application.persistentDataPath, "savegame_settings_reload.json");
+
         private static string LegacySaveFilePath =>
             Path.Combine(Application.persistentDataPath, LegacySaveFileName);
 
@@ -111,7 +155,23 @@ namespace Project.Core
         public static bool TrySave(int slotIndex, Texture2D screenshot, out string message)
         {
             slotIndex = ClampSlot(slotIndex);
+            if (!TryCaptureSaveData(slotIndex, out GameSaveData data, out message))
+                return false;
 
+            string json = JsonUtility.ToJson(data, prettyPrint: true);
+            File.WriteAllText(GetSlotFilePath(slotIndex), json);
+
+            if (screenshot != null)
+                SaveSlotScreenshotUtility.SaveScreenshot(slotIndex, screenshot);
+
+            GameSettings.MarkSaveExists(true);
+            message = $"Saved to slot {slotIndex + 1}.";
+            return true;
+        }
+
+        private static bool TryCaptureSaveData(int slotIndex, out GameSaveData data, out string message)
+        {
+            data = new GameSaveData();
             GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null)
             {
@@ -138,7 +198,7 @@ namespace Project.Core
                 return false;
             }
 
-            GameSaveData data = new GameSaveData
+            data = new GameSaveData
             {
                 version = CurrentSaveVersion,
                 slotIndex = slotIndex,
@@ -202,14 +262,7 @@ namespace Project.Core
                 data.claimedOneTimeXpKeys = snapshot.claimedOneTimeXpKeys;
             }
 
-            string json = JsonUtility.ToJson(data, prettyPrint: true);
-            File.WriteAllText(GetSlotFilePath(slotIndex), json);
-
-            if (screenshot != null)
-                SaveSlotScreenshotUtility.SaveScreenshot(slotIndex, screenshot);
-
-            GameSettings.MarkSaveExists(true);
-            message = $"Saved to slot {slotIndex + 1}.";
+            message = "Captured.";
             return true;
         }
 

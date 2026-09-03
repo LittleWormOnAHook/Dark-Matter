@@ -1,0 +1,27 @@
+/* Fullscreen zone + hit vignettes. Not gameplay HUD chrome. */
+.zone-vignette-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.zone-vignette-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.zone-vignette-damage {
+    opacity: 0;
+}

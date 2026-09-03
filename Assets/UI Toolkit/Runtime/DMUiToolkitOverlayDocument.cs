@@ -19,6 +19,8 @@ namespace Project.UI
         public const string DeathName = "UITK_Death";
         public const string ActiveQuestName = "UITK_ActiveQuest";
         public const string DamageName = "UITK_Damage";
+        public const string VignetteName = "UITK_ZoneVignette";
+        public const string PilotClusterName = "UITK_PilotCluster";
         public const string PickupReticleName = "UITK_PickupReticle";
         public const string HoverInteractName = "UITK_HoverInteract";
         public const string WorldMenusName = "UITK_WorldMenus";
@@ -34,6 +36,8 @@ namespace Project.UI
         public const int ActiveQuestSort = 11;
         public const int HovercraftSort = 12;
         public const int HazardsSort = 13;
+        public const int VignetteSort = 14;
+        public const int PilotClusterSort = 18;
         public const int DamageSort = 15;
         public const int PickupReticleSort = 16;
         public const int LevelUpSort = ModalInteractiveSort;
@@ -70,6 +74,10 @@ namespace Project.UI
         public const string ActiveQuestUss = "Assets/UI Toolkit/Screens/ActiveQuest.uss";
         public const string DamageUxml = "Assets/UI Toolkit/Screens/DamageOverlay.uxml";
         public const string DamageUss = "Assets/UI Toolkit/Screens/DamageOverlay.uss";
+        public const string VignetteUxml = "Assets/UI Toolkit/Screens/ZoneVignette.uxml";
+        public const string VignetteUss = "Assets/UI Toolkit/Screens/ZoneVignette.uss";
+        public const string PilotClusterUxml = "Assets/UI Toolkit/Screens/PilotCluster.uxml";
+        public const string PilotClusterUss = "Assets/UI Toolkit/Screens/PilotCluster.uss";
         public const string PickupReticleUxml = "Assets/UI Toolkit/Screens/PickupReticle.uxml";
         public const string PickupReticleUss = "Assets/UI Toolkit/Screens/PickupReticle.uss";
         public const string HoverInteractUxml = "Assets/UI Toolkit/Screens/HoverInteract.uxml";

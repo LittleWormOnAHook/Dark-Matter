@@ -36,13 +36,30 @@ namespace Project.EditorTools
         public static GameObject CreateZoneObject(ExposureZoneProfile profile, Vector3 boxSize)
         {
             GameObject zoneObject = new GameObject(profile != null ? profile.displayName : "ExposureZone");
-            BoxCollider collider = zoneObject.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
-            collider.size = boxSize;
+            int triggerLayer = LayerMask.NameToLayer("Triggers");
+            if (triggerLayer >= 0)
+                zoneObject.layer = triggerLayer;
+            BoxCollider box = zoneObject.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.size = boxSize;
+            box.enabled = false;
+
+            float outerRadius = Mathf.Max(boxSize.x, boxSize.y, boxSize.z) * 0.5f * 1.15f;
+            float innerRadius = outerRadius * (16.88f / 37.01f);
+
+            SphereCollider inner = zoneObject.AddComponent<SphereCollider>();
+            inner.isTrigger = true;
+            inner.radius = innerRadius;
+
+            SphereCollider outer = zoneObject.AddComponent<SphereCollider>();
+            outer.isTrigger = true;
+            outer.radius = outerRadius;
 
             ExposureZoneVolume volume = zoneObject.AddComponent<ExposureZoneVolume>();
             SerializedObject serializedVolume = new SerializedObject(volume);
             serializedVolume.FindProperty("profile").objectReferenceValue = profile;
+            serializedVolume.FindProperty("innerCollider").objectReferenceValue = inner;
+            serializedVolume.FindProperty("outerCollider").objectReferenceValue = outer;
             serializedVolume.ApplyModifiedPropertiesWithoutUndo();
             return zoneObject;
         }

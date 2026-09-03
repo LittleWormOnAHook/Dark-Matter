@@ -31,6 +31,7 @@ namespace Project.UI
         private Button saveButton;
         private Button settingsButton;
         private Button controlsButton;
+        private Button mainMenuButton;
         private Button quitButton;
         private Label messageLabel;
         private Label envZoneLabel;
@@ -153,6 +154,7 @@ namespace Project.UI
             SetButtonVisible(resumeButton, pauseOverlay);
             SetButtonVisible(continueButton, !pauseOverlay && hasContinueSave);
             SetButtonVisible(newButton, !pauseOverlay);
+            SetButtonVisible(mainMenuButton, pauseOverlay);
 
             if (saveButton != null)
                 saveButton.SetEnabled(sessionStarted);
@@ -234,6 +236,7 @@ namespace Project.UI
             saveButton = tree.Q<Button>("btn-save");
             settingsButton = tree.Q<Button>("btn-settings");
             controlsButton = tree.Q<Button>("btn-controls");
+            mainMenuButton = tree.Q<Button>("btn-main-menu");
             quitButton = tree.Q<Button>("btn-quit");
             messageLabel = tree.Q<Label>("menu-message");
             envZoneLabel = tree.Q<Label>("env-zone");
@@ -268,6 +271,7 @@ namespace Project.UI
             Wire(saveButton, () => ResolveController()?.InvokeOpenSave());
             Wire(settingsButton, () => ResolveController()?.InvokeOpenSettings());
             Wire(controlsButton, () => ResolveController()?.InvokeOpenControls());
+            Wire(mainMenuButton, () => ResolveController()?.InvokeReturnToMainMenuFromPause());
             Wire(quitButton, () => ResolveController()?.InvokeExitGame());
             wired = true;
         }

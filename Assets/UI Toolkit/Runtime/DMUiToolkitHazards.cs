@@ -163,11 +163,13 @@ namespace Project.UI
             {
                 manualPeekTimer = 0f;
                 hazardAlpha = 0f;
-                hazardAlphaTarget = 0f;
                 ApplyHazardAlpha();
                 DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
                 return;
             }
+
+            if (hasActiveHazard)
+                hazardAlphaTarget = 1f;
 
             if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
             {
@@ -274,13 +276,19 @@ namespace Project.UI
                 snapshot.CombinedExposureLevel,
                 snapshot.DominantHazard.IsClear ? 0f : snapshot.DominantHazard.Severity));
 
-            bool hazardNow = !snapshot.DominantHazard.IsClear;
-            if (hazardNow && !hasActiveHazard)
+            bool hazardNow = !snapshot.DominantHazard.IsClear
+                || snapshot.RadiationHazardLevel > 0.01f
+                || snapshot.ColdHazardLevel > 0.01f
+                || snapshot.HeatHazardLevel > 0.01f
+                || snapshot.SulfurHazardLevel > 0.01f
+                || snapshot.VolcanoHazardLevel > 0.01f
+                || snapshot.IsInShelter;
+            if (hazardNow)
             {
                 hasActiveHazard = true;
                 hazardAlphaTarget = 1f;
             }
-            else if (!hazardNow && hasActiveHazard)
+            else if (hasActiveHazard)
             {
                 hasActiveHazard = false;
                 if (manualPeekTimer <= 0f)
@@ -307,7 +315,7 @@ namespace Project.UI
             ApplyHazardRow(heatSegs, heatPct, snapshot.HeatHazardLevel, HeatColor);
             ApplyHazardRow(sulfurSegs, sulfurPct, snapshot.SulfurHazardLevel, SulfurColor);
             ApplyHazardRow(volcanoSegs, volcanoPct, snapshot.VolcanoHazardLevel, VolcanoColor);
-            ApplyHazardRow(shelterSegs, shelterPct, snapshot.IsInShelter ? 1f : 0.08f, ShelterColor);
+            ApplyHazardRow(shelterSegs, shelterPct, snapshot.IsInShelter ? 1f : 0f, ShelterColor);
 
             PullTicks(snapshot);
             PullCompactExposure();
@@ -319,6 +327,10 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.ApplySegments(segs, n, color);
             if (pct != null)
                 pct.text = $"{Mathf.RoundToInt(n * 100f)}%";
+
+            VisualElement row = segs != null ? segs.parent : null;
+            if (row != null)
+                row.style.display = n > 0.01f ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void ApplyHazardAlpha()

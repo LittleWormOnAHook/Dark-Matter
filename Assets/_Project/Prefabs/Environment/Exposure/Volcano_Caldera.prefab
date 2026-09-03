@@ -9,9 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3213758913477742592}
-  - component: {fileID: 2623995470686297568}
   - component: {fileID: 180633454289398635}
-  m_Layer: 0
+  - component: {fileID: 7100273606986940398}
+  - component: {fileID: 7100313708530165166}
+  m_Layer: 11
   m_Name: Volcano Caldera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -35,27 +36,6 @@ Transform:
   - {fileID: 6070646517298046489}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2623995470686297568
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3695513391431488786}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 28, y: 10, z: 28}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &180633454289398635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -84,6 +64,62 @@ MonoBehaviour:
   shakeClip: {fileID: 8300000, guid: 10139ed7ce1aa7f46ab151439da176e0, type: 3}
   shakeVolume: 0.89
   loopShakeAudio: 1
+  outerCollider: {fileID: 7100313708530165166}
+  innerCollider: {fileID: 7100273606986940398}
+  outerIntensity: 0.12
+  outerGizmoColor: {r: 0.92, g: 0.22, b: 0.12, a: 0.22}
+  innerGizmoColor: {r: 0.506, g: 0.121, b: 0.066, a: 0.5}
+  zoneParticles: {fileID: 0}
+  zoneParticlePrefab: {fileID: 0}
+  fadeParticlesFromCenter: 1
+  particleCenterEmissionMultiplier: 4
+  matchParticleShapeToZone: 1
+  overlayEnabled: 1
+  overlayAlphaMin: 0.1
+  overlayAlphaMax: 0.6
+  overlayTexture: {fileID: 0}
+--- !u!135 &7100273606986940398
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3695513391431488786}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 7.34
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!135 &7100313708530165166
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3695513391431488786}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 16.1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1405666355219620738
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -149,6 +185,10 @@ PrefabInstance:
       value: CameraShake_Continuous_Rumble
       objectReference: {fileID: 0}
     - target: {fileID: 6845866688311663498, guid: 80a4632a14420df48be28eb39b0834d7, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 6845866688311663498, guid: 80a4632a14420df48be28eb39b0834d7, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -190,7 +230,7 @@ SphereCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Radius: 19.11
   m_Center: {x: 0, y: 0, z: 0}

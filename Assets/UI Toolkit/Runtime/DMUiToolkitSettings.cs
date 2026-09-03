@@ -369,13 +369,13 @@ namespace Project.UI
         private void OnApplyClicked()
         {
             bool reloading = GameSettingsUiBridge.ApplySnapshot(CapturePanel(), reloadSceneAfterApply: true);
-            Close();
-            // Title screen after Apply, even if Play-from-scene left Phase at Playing.
-            // ShowMainMenu now refuses Playing/StartPopup so a New Expedition cannot bounce;
-            // ResetSession first so Apply is allowed through.
-            GameSession.ResetSession();
-            if (!reloading)
-                FindAnyObjectByType<MainMenuController>()?.ShowMainMenu();
+            if (reloading)
+            {
+                Close();
+                return;
+            }
+
+            // Stay on Settings. Live session stays paused; title Apply stays on Settings too.
         }
 
         private void OnBackClicked() => HandleBack();

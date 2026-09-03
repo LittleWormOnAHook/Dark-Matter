@@ -9,9 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4328319057740247126}
-  - component: {fileID: 8237497268183736478}
   - component: {fileID: 4200395085383197068}
-  m_Layer: 0
+  - component: {fileID: 8587733052713893764}
+  - component: {fileID: 6926129374467130282}
+  m_Layer: 11
   m_Name: Radiation Flat
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -28,33 +29,12 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 12.119403, y: 6.6742377, z: 8.851633}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4890870278299142940}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &8237497268183736478
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7631219059594335989}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 22, y: 8, z: 22}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &4200395085383197068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73,16 +53,72 @@ MonoBehaviour:
   playAmbientLoop: 1
   ambientVolume: 0.35
   ambientFadeSeconds: 0.75
-  enableCameraShake: 0
+  enableCameraShake: 1
   cameraShakeEmitter: {fileID: 0}
   shakeProximityAnchor: {fileID: 0}
-  shakeTraumaAtCenter: 0.28
-  shakeRadius: 0
+  shakeTraumaAtCenter: 0.447
+  shakeRadius: 35
   shakePattern: 1
   shakePulseIntervalSeconds: 1.4
   shakeClip: {fileID: 0}
   shakeVolume: 0.55
   loopShakeAudio: 1
+  outerCollider: {fileID: 6926129374467130282}
+  innerCollider: {fileID: 8587733052713893764}
+  outerIntensity: 0.12
+  outerGizmoColor: {r: 0.79, g: 0.18, b: 0.48, a: 0.22}
+  innerGizmoColor: {r: 0.435, g: 0.099, b: 0.264, a: 0.5}
+  zoneParticles: {fileID: 0}
+  zoneParticlePrefab: {fileID: 0}
+  fadeParticlesFromCenter: 1
+  particleCenterEmissionMultiplier: 4
+  matchParticleShapeToZone: 1
+  overlayEnabled: 1
+  overlayAlphaMin: 0.1
+  overlayAlphaMax: 0.6
+  overlayTexture: {fileID: 0}
+--- !u!135 &8587733052713893764
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7631219059594335989}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 16.88
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!135 &6926129374467130282
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7631219059594335989}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 37.01
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &4886943700274040144
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -101,7 +137,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4000013917324876, guid: c782363bad942244cb8d81d09a63d588, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.4413974
+      value: -5.14
       objectReference: {fileID: 0}
     - target: {fileID: 4000013917324876, guid: c782363bad942244cb8d81d09a63d588, type: 3}
       propertyPath: m_LocalPosition.z

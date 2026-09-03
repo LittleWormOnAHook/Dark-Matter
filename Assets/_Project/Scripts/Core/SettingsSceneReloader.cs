@@ -9,27 +9,33 @@ namespace Project.Core
 {
     /// <summary>
     /// Reloads the active scene after graphics settings Apply so HDRP pipeline, volumes, and quality tiers
-    /// fully reinitialize. In-game Apply saves continue progress, reloads, and returns to the main menu.
+    /// fully reinitialize. In-game Apply snapshots the live expedition, reloads, then returns to Settings still paused.
+    /// Main Menu from pause goes to the title. Continue Expedition loads that snapshot.
     /// </summary>
     public static class SettingsSceneReloader
     {
-        private static bool pendingReturnToMainMenu;
+        private const string ResumeGameplayPrefsKey = "DMG.ResumeGameplayAfterSettingsApply";
+
+        private static bool pendingResumeGameplay;
         private static bool pendingMenuSettingsReload;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnDomainReload()
         {
-            pendingReturnToMainMenu = false;
+            pendingResumeGameplay = false;
             pendingMenuSettingsReload = false;
         }
 
         /// <summary>
         /// Safety net after a settings scene reload that skipped the branded boot loader.
-        /// Shows the main menu even if the pending-reload flags were cleared.
+        /// Resumes the Apply snapshot when one was saved; otherwise shows the main menu.
         /// </summary>
         public static void EnsureMenuRestoreAfterReload()
         {
-            MenuSettingsReloadRunner.EnsureRunner();
+            if (ShouldResumeGameplay())
+                GameplayResumeRunner.EnsureRunner();
+            else
+                MenuSettingsReloadRunner.EnsureRunner();
         }
 
         /// <summary>Called from <see cref="SettingsPanelController"/> after settings are saved.</summary>
@@ -39,17 +45,21 @@ namespace Project.Core
                 return;
 
             bool wasGameplay = GameSession.HasStarted;
-            // Always land on the main menu after a graphics Apply reload — never a UI-less world.
-            pendingReturnToMainMenu = wasGameplay;
-            pendingMenuSettingsReload = true;
+            pendingResumeGameplay = wasGameplay;
+            pendingMenuSettingsReload = !wasGameplay;
+            PlayerPrefs.SetInt(ResumeGameplayPrefsKey, wasGameplay ? 1 : 0);
+            PlayerPrefs.Save();
 
             if (wasGameplay)
             {
                 float previousTimeScale = Time.timeScale;
                 Time.timeScale = 1f;
 
-                if (!GameSaveSystem.TrySaveContinueExpedition(out string saveMessage))
-                    Debug.LogWarning($"SettingsSceneReloader: Could not save continue slot before reload. {saveMessage}");
+                if (!GameSaveSystem.TrySaveSettingsReloadSnapshot(out string saveMessage))
+                    Debug.LogWarning($"SettingsSceneReloader: Could not save session before reload. {saveMessage}");
+
+                if (!GameSaveSystem.TrySaveContinueExpedition(out string continueMessage))
+                    Debug.LogWarning($"SettingsSceneReloader: Could not update Continue slot before reload. {continueMessage}");
 
                 Time.timeScale = previousTimeScale;
             }
@@ -69,16 +79,31 @@ namespace Project.Core
             if (!Application.isPlaying)
                 return;
 
-            if (pendingReturnToMainMenu)
+            if (ShouldResumeGameplay())
             {
-                pendingReturnToMainMenu = false;
-                MainMenuReturnRunner.EnsureRunner();
+                GameplayResumeRunner.EnsureRunner();
+                return;
             }
 
             if (pendingMenuSettingsReload)
             {
                 pendingMenuSettingsReload = false;
                 MenuSettingsReloadRunner.EnsureRunner();
+            }
+        }
+
+        private static bool ShouldResumeGameplay()
+        {
+            return pendingResumeGameplay || PlayerPrefs.GetInt(ResumeGameplayPrefsKey, 0) == 1;
+        }
+
+        private static void ConsumeResumeFlag()
+        {
+            pendingResumeGameplay = false;
+            if (PlayerPrefs.GetInt(ResumeGameplayPrefsKey, 0) != 0)
+            {
+                PlayerPrefs.SetInt(ResumeGameplayPrefsKey, 0);
+                PlayerPrefs.Save();
             }
         }
 
@@ -101,22 +126,24 @@ namespace Project.Core
             if (PickupToastUI.EnsureExists(canvas.transform) == null)
                 return;
 
-            PickupToastUI.Show("Settings applied. Progress saved.");
+            PickupToastUI.Show("Settings applied.");
         }
 
-        private sealed class MainMenuReturnRunner : MonoBehaviour
+        private sealed class GameplayResumeRunner : MonoBehaviour
         {
             public static void EnsureRunner()
             {
-                if (FindAnyObjectByType<MainMenuReturnRunner>() != null)
+                if (FindAnyObjectByType<GameplayResumeRunner>() != null)
                     return;
 
-                GameObject host = new GameObject(nameof(MainMenuReturnRunner));
-                host.AddComponent<MainMenuReturnRunner>();
+                GameObject host = new GameObject(nameof(GameplayResumeRunner));
+                host.AddComponent<GameplayResumeRunner>();
             }
 
             private IEnumerator Start()
             {
+                ConsumeResumeFlag();
+
                 const int maxFrames = 120;
                 for (int i = 0; i < maxFrames; i++)
                 {
@@ -134,7 +161,6 @@ namespace Project.Core
                 GameSession.ResetSession();
                 ApplySettingsAfterReload();
 
-                LoadingOverlayController.ReleaseOpaqueCover();
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
                 if (menu == null)
                 {
@@ -142,10 +168,27 @@ namespace Project.Core
                     menu = FindAnyObjectByType<MainMenuController>();
                 }
 
-                menu?.ShowMainMenu();
-                yield return null;
-                menu?.ShowMainMenu();
+                const int playerWait = 120;
+                for (int p = 0; p < playerWait; p++)
+                {
+                    if (PlayerLocator.FindPlayerObject() != null)
+                        break;
+                    yield return null;
+                }
 
+                string loadMessage = "Main menu missing.";
+                if (menu == null || !GameSaveSystem.TryLoadSettingsReloadSnapshot(out loadMessage))
+                {
+                    Debug.LogWarning($"SettingsSceneReloader: Could not restore session after settings Apply. {loadMessage}");
+                    LoadingOverlayController.ReleaseOpaqueCover();
+                    menu?.ShowMainMenu();
+                    TryShowSettingsAppliedToast();
+                    Destroy(gameObject);
+                    yield break;
+                }
+
+                menu.ReturnToSettingsAfterApply();
+                yield return null;
                 TryShowSettingsAppliedToast();
                 Destroy(gameObject);
             }
@@ -169,8 +212,6 @@ namespace Project.Core
                     DMUiToolkitBootstrap.EnsureExists();
                 yield return null;
 
-                // Menu-only Apply reload can still leave HasStarted true if Play-from-scene
-                // left a stale Playing phase — always reset so ShowMainMenu is authoritative.
                 GameSession.ResetSession();
                 ApplySettingsAfterReload();
 
@@ -185,6 +226,7 @@ namespace Project.Core
                 menu?.ShowMainMenu();
                 yield return null;
                 menu?.ShowMainMenu();
+                menu?.InvokeOpenSettings();
 
                 Destroy(gameObject);
             }

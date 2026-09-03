@@ -616,6 +616,7 @@ namespace Project.UI
         public void InvokeOpenLoad() => OpenLoad();
         public void InvokeOpenSave() => OpenSave();
         public void InvokeExitGame() => ExitGame();
+        public void InvokeReturnToMainMenuFromPause() => ReturnToMainMenuFromPause();
 
         /// <summary>Restore main/pause menu after Settings, Controls, or Save/Load closes.</summary>
         public void RestoreMenuAfterSubPanel()
@@ -658,6 +659,49 @@ namespace Project.UI
             saveSlotsPanel?.Close();
             ClearMenuMessage();
             LoadIntoExpedition();
+        }
+
+        /// <summary>
+        /// Resume the live session snapshot taken on Settings Apply. Not the Continue Expedition button.
+        /// The continue save is already loaded before this is called.
+        /// </summary>
+        public void EnterLoadedExpedition()
+        {
+            ResumeGameplayAfterSettingsReload();
+        }
+
+        /// <summary>
+        /// Drop back into the live world after a Settings Apply snapshot load.
+        /// Same as LoadFromSlot, not Continue Expedition / the start-game loader.
+        /// </summary>
+        public void ResumeGameplayAfterSettingsReload()
+        {
+            ReturnToSettingsAfterApply();
+        }
+
+        /// <summary>
+        /// After a graphics Apply reload: session snapshot is already loaded.
+        /// Stay paused on the Settings panel. Continue Expedition on the title loads that snapshot.
+        /// </summary>
+        public void ReturnToSettingsAfterApply()
+        {
+            GameSession.MarkStarted();
+            LoadingOverlayController.ReleaseOpaqueCover();
+            ShowPauseMenu();
+            OpenSettings();
+        }
+
+        public void ReturnToMainMenuFromPause()
+        {
+            pauseOverlayActive = false;
+            settingsPanel?.Close();
+            controlsPanel?.Close();
+            saveSlotsPanel?.Close();
+            if (DMUiToolkitConfig.IsEnabled)
+                DMUiToolkitSettings.Close();
+            SetGameWorldPaused(false);
+            GameSession.ResetSession();
+            ShowMainMenu();
         }
 
         public void SaveToSlot(int slotIndex)

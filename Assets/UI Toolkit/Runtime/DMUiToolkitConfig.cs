@@ -19,6 +19,23 @@ namespace Project.UI
         [Tooltip("When false, Loading overlay and future Toolkit screens stay on uGUI.")]
         public bool enabled = true;
 
+        [Header("Zone Vignette")]
+        [Tooltip("Overlay alpha at the outer rim of a hazard zone.")]
+        [Range(0f, 1f)]
+        public float zoneVignetteAlphaMin = 0.1f;
+
+        [Tooltip("Overlay alpha at the inner / center of a hazard zone.")]
+        [Range(0f, 1f)]
+        public float zoneVignetteAlphaMax = 0.6f;
+
+        [Tooltip("Peak alpha of the combat hit edge flash.")]
+        [Range(0f, 1f)]
+        public float damageVignetteAlpha = 0.5f;
+
+        [Header("Pilot Cluster Prototype")]
+        [Tooltip("Show the lower-right combined minimap / stats prototype. Existing HUD stays up.")]
+        public bool showPilotCluster = true;
+
         private static DMUiToolkitConfig cached;
 
         public static DMUiToolkitConfig Instance

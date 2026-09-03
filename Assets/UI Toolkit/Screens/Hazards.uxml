@@ -21,34 +21,34 @@
                 <ui:Label name="hazard-percent" text="0%" picking-mode="Ignore" class="dmg-hz-muted"/>
                 <ui:VisualElement name="hazard-rows" picking-mode="Ignore" class="dmg-hz-rows">
                     <ui:VisualElement name="hz-row-rad" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-rad-name" text="Radiation Flat" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-rad-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-rad-name" text="RAD" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-rad-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-rad-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="hz-row-cold" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-cold-name" text="Cold Basin" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-cold-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-cold-name" text="COLD" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-cold-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-cold-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="hz-row-heat" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-heat-name" text="Heat Vent" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-heat-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-heat-name" text="HEAT" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-heat-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-heat-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="hz-row-sulfur" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-sulfur-name" text="Sulfur Field" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-sulfur-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-sulfur-name" text="SULF" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-sulfur-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-sulfur-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="hz-row-volcano" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-volcano-name" text="Volcano Caldera" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-volcano-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-volcano-name" text="VOLC" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-volcano-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-volcano-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="hz-row-shelter" picking-mode="Ignore" class="dmg-hc-row">
-                        <ui:Label name="hz-shelter-name" text="Shelter Safe Zone" picking-mode="Ignore" class="dmg-hc-stat-name"/>
-                        <ui:Label name="hz-shelter-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                        <ui:Label name="hz-shelter-name" text="SAFE" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-shelter-segs" picking-mode="Ignore" class="dmg-hc-segs"/>
+                        <ui:Label name="hz-shelter-pct" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>

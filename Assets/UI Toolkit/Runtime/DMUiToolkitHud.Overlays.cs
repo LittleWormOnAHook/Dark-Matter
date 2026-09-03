@@ -24,6 +24,7 @@ namespace Project.UI
             StampOverlaysOnce();
             HideHudAuthoredOverlayHosts();
             DMUiToolkitHazards.EnsureHost();
+            DMUiToolkitPilotCluster.EnsureHost();
         }
 
         internal static void StampOverlaysOnce()

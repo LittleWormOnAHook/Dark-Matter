@@ -81,6 +81,7 @@ namespace Project.UI
         }
 
         public static DMUiToolkitMinimap Instance => instance;
+        public Texture ViewTexture => viewRt;
 
         public static bool IsDriving
         {
