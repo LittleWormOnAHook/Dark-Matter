@@ -5,12 +5,19 @@ alwaysApply: true
 
 # Unity Agent Workflow
 
+## Live editor
+
+- Unity **6 HDRP 6000.4.11f1**. Playable scene `Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity`.
+- **Auto Refresh is off** (`kAutoRefreshMode=0`). After script/asset edits, tell the user to **Ctrl+R** / Assets → Refresh. Do **not** call `refresh_unity` with `mode: force` or `compile: request` unless they explicitly ask.
+- Work the **live Unity folder** the editor has open (Play uses that path). Do not clone onto an agent VM.
+- Git is agent source of truth. Plastic check-in is the user in the Plastic window (**no `cm` CLI**).
+
 ## Console check after edits
 
 When editing Unity C# scripts, shaders, ScriptableObjects, or other assets that trigger recompile:
 
 1. Finish the code/asset changes first.
-2. **Do not** call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks. Let Unity pick up file changes on its own.
+2. **Do not** call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks.
 3. **Do not** spam MCP tools while compile / domain reload is in progress.
 4. Wait until Unity has **stopped compiling and finished domain reload**:
    - Poll `mcpforunity://editor/state` until `compilation.is_compiling == false`, `is_domain_reload_pending == false`, and tools are ready.
@@ -43,4 +50,6 @@ When committing Unity work, always stage related changes to:
 
 Do not ship script-only commits that leave behind matching scene wiring, materials, prefabs, terrain, or new assets from the same work.
 
-Still exclude editor noise (`.vscode`), Recovery dumps (`Assets/_Recovery/`), and secrets.
+Still exclude editor noise (`.vscode`), Recovery dumps (`Assets/_Recovery/`), secrets, and **untracked** L.V.E / mocap / `UIElementsSchema` / PlanetPack02 / OlegWER / GDKEditionAutoGen unless the user explicitly asks to add them.
+
+Do **not** `git add -A`.

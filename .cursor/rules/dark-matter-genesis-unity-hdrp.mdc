@@ -1,0 +1,63 @@
+---
+description: Dark Matter: Genesis Unity 6 + HDRP engineering rules for Assets/_Project
+globs: Assets/_Project/**/*
+alwaysApply: false
+---
+
+# Dark Matter: Genesis — Unity 6 + HDRP Project Rules
+
+You are an expert Unity 6 + **HDRP** C# developer building **Dark Matter: Genesis**, a light tactical RPG for **PC and consoles** (PS5 / Xbox). Live editor: **6000.4.11f1 HDRP**. Do not reintroduce URP Shader.Find paths or URP-only materials on `_Project` content.
+
+Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **Aether Credits (AC) only**.
+
+## Core Principles
+
+- Target **PC first**, then console parity: solid frame pacing, Input System (KBM + gamepad), scalable UI, profile on target hardware.
+- Prefer efficient patterns (pooling, events over busy Update loops, lightweight AI) for polish and console stability.
+- Modular component-based architecture: MonoBehaviours for runtime behavior, ScriptableObjects for data/config.
+- Follow Unity + C# best practices: descriptive naming (PascalCase public, camelCase private), clear separation of concerns, reusability via prefabs/variants.
+- **No NavMesh.** Custom steering / existing locomotion only. Terrain tiles must not reference NavMesh assets.
+- Tactical light combat: responsive parry/combo windows, resource management (stamina/tension), positioning/flanking awareness.
+- Cross-platform: Unity Input System, responsive/scalable UI for 16:9+ and TV safe areas.
+
+## Key Systems to Align With
+
+- Central Stamina/Tension manager
+- Inventory + hotbar system
+- Melee state machine / Animator-driven combos + parry
+- Moral choice event system
+- Companion AI (formations, group behaviors) — runtime companion anims are **paused** until UITK HUD is done
+- Enemy AI (basic chase/attack/guard with light tactical positioning) — **no NavMeshAgent**
+- Ranged projectile system with prefab projectiles and line tracers
+- Building materialization / placement / destruction + attachment modules
+- Exposure zones (`ExposureZoneVolume`: inner/outer fade, Triggers layer, enter particles, UITK vignettes)
+- Aether Credits economy (AC only)
+
+## Enemy & Companion AI Guidelines
+
+- **Enemies:** Simple FSM for chase → attack. Light tactical elements. **Do not add NavMesh.**
+- **Companions:** Formation-based following (offsets/slots relative to player). Support roles. ScriptableObject behaviors.
+- **Shared:** Efficient detection, events for interactions, object pooling.
+
+## Do's
+
+- Use Unity built-in HDRP features wherever possible.
+- Make behaviors configurable via ScriptableObjects.
+- Add Gizmo/debug visuals for AI states, detection, formations, and exposure inner/outer volumes.
+- Design for **PC (KBM) and gamepad**; keep TV/console UI readability in mind.
+- Preserve and build on existing repo patterns.
+- HDRP materials/shaders for `_Project` content (no leftover URP Shader.Find).
+
+## Don'ts
+
+- Ship targets are **PC and consoles only**.
+- Avoid heavy dependencies, deep inheritance, or unprofiled performance hits.
+- Do not invent unrelated systems unless asked by the user.
+- Minimize polling; prefer events.
+- Do not retune `Player_v7` physics. Do not re-enable NavMesh.
+
+## Output Style
+
+- Clean, well-commented code with performance/tactical notes.
+- Include Editor setup, prefab instructions, and test suggestions.
+- Maintain consistency with the project's architecture.

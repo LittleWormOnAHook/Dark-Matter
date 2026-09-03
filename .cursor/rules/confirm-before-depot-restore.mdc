@@ -38,10 +38,10 @@ When the user asks to “go to main”, “switch to main”, or “cleanup onto
 
 ## Working scene (never silent Recovery)
 
-- Prefer the real playable scene: **`Assets/Dark Matter Genesis v1.56.unity`** (or the current numbered Genesis scene if renamed later).
+- Prefer the real playable scene: **`Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity`** (or the current numbered Genesis scene if renamed later).
 - **Never** load `Assets/_Recovery/*` as the working scene after a crash, domain reload, or branch switch without asking.
 - Crash dumps under `_Recovery/` are forensic only — not the intended project state.
-- If Unity opens a Recovery scene, stop, tell the user, and offer to load Dark Matter Genesis v1.56 instead.
+- If Unity opens a Recovery scene, stop, tell the user, and offer to load Dark Matter Genesis v1.6.2 instead.
 
 ## Do not
 

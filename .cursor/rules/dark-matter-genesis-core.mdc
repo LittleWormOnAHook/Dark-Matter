@@ -18,14 +18,26 @@ alwaysApply: true
 
 - **Platforms:** PC primary + consoles (PS5 / Xbox) only. No mobile or WebGL ship target.
 - **Economy:** **Aether Credits (AC) only**. No Pi marketplace, wallet, or third-party crypto loops.
-- **Setting:** Io 2160 — survival lite RPG, Lite Building base camp, companion-driven expeditions.
+- **Setting:** Io 2160 — survival lite RPG, Lite Building base camp, companion-driven expeditions. Player is **Kade**.
 - **Roster:** up to 22 base-camp companions; switchable trio of 3 on expeditions.
 - **Echoes / thermal / BCP:** Neural Echoes + Aether-9 Resonance Events; single cold/heat meter; Building Control Panels (Overview | Companions | Production | Craft | Changes). Journal Craft = recipe library only.
-- **Runtime:** The World Engine (WoOS) on Unity 6 + URP.
+- **Runtime:** The World Engine (WoOS) on **Unity 6 HDRP** (`6000.4.11f1`). Not URP. Not a ship target for mobile/WebGL.
+- **Playable scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity`
+
+## Live engineering locks (do not contradict)
+
+- **No NavMesh.** Do not add NavMesh baking, `NavMeshSurface` wiring, `NavMeshAgent` gameplay, or deferred NavMesh loads. Terrain tiles must not reference NavMesh assets.
+- **Do not retune `Player_v7`** (capsule radius/height, layers, physics). Player layer **8**; Climbable layer **23**. See `dark-matter-genesis-player-physics.mdc`.
+- **No NavMesh, motion matching, or a new character controller** for climb. Climb is `DMClimbProfile` + `DMClimbController` on the **Variant**, not a Player_v7 retune.
+- **Source control:** git is agent source of truth. Plastic check-in is the user in the Plastic window (no `cm` CLI). Never silent checkout/reset/revert.
+- **Editor Auto Refresh is off.** After edits, the user Ctrl+R. Do not `refresh_unity` force/compile unless asked.
+- **Do not git-add** untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, GDKEditionAutoGen.
+- **Underground map** is later content. The surface map lower-right `?` / Underground box is the teaser — do not build the second map unless asked.
+- **Companion runtime anims** are paused until UITK HUD work is done.
 
 ## Engineering essentials
 
-- Code under `Assets/_Project/`; reuse existing combat, inventory, quest, save, companion, building systems.
+- Code under `Assets/_Project/`; reuse existing combat, inventory, quest, save, companion, building, exposure systems.
 - **PC first**, then console parity: Input System (KBM + gamepad), scalable UI, solid frame pacing.
 - Prefer pooling, events, ScriptableObject config; minimize polling and heavy Update loops.
 - **DM / DMI naming** — no new Invector-branded identifiers in `_Project` (see `dm-naming-no-invector.mdc`).
@@ -37,9 +49,10 @@ alwaysApply: true
 - **No forced Unity refresh** — do not call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks.
 - **After script/asset edits:** wait for compile + domain reload to finish, then check Unity console for **errors** before claiming done. See `unity-agent-workflow.mdc`.
 - **Before git commit:** Unity console must have no errors; stage scenes, prefabs, materials, terrain, and new assets with script changes. See `unity-agent-workflow.mdc`.
+- Do not clone this repo onto an agent VM. Play uses the live Unity folder the editor has open.
 
 ## When you need more detail
 
 - Full GDD canon → `dark-matter-genesis-gdd.mdc` or GDD 5.0 file
-- Unity engineering patterns → `dark-matter-genesis-unity-urp.mdc`
+- Unity engineering patterns → `dark-matter-genesis-unity-hdrp.mdc`
 - Framework standard → `Assets/_Project/Features/Communications/Documentation/Dark_Matter_Framework_Engineering_Standard.md`

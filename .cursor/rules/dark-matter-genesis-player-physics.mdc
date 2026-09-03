@@ -1,0 +1,22 @@
+---
+description: Do not retune Player_v7; climb restore and collision locks
+alwaysApply: true
+---
+
+# Player physics and climb (do not retune Player_v7)
+
+**Never retune the `Player_v7` prefab** (capsule radius/height, layers, rigidbody, physics matrix). Adding a small script or wiring renderers on **`Player_v7 Variant`** is OK.
+
+## Locks
+
+- Player layer **8**. Capsule **radius 0.26 / height 1.84** (as authored — do not change).
+- Climbable layer **23**.
+- Climb runtime: `DMClimbProfile` + `DMClimbController`. Play-mode slider tweaks write back to **those assets** on Play exit — never onto `Player_v7`.
+- While climbing: capsule is a **trigger**, Player↔Climbable is **ignored**, rigidbody is **kinematic** with velocity zeroed.
+- On release / drop-off / top-out / death retry: always restore a **solid non-trigger** capsule, **re-enable** Player↔Climbable collision, and a **live non-kinematic** rigidbody (gravity on, unlocked). **Do not restore a saved `isKinematic` flag** (Invector can have left it true).
+- Drop from an angled wall restores **world-up** rotation. Death/retry fully resets animator, RB, capsule, and locomotion (no frozen death pose).
+- Do not use NavMesh, motion matching, authored ledge volumes, root-motion+code together, or a new character controller for climb.
+
+## Jetpack (do not regress)
+
+- Jump-into-boost: second Space sets jetpack active and CrossFades into Jetpack Fly — do not pop through the jump clip or reuse the wall-hang fold.

@@ -37,7 +37,7 @@ moves Kade from survivor to explorer, leader, and founder of humanity's first
 permanent home beyond Earth.
 
 Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating
-System (WoOS) stack built for Unity 6:
+System (WoOS) stack built for Unity 6 + HDRP:
 
   World → Simulation → Intelligence → Experience → Presentation → Player
 

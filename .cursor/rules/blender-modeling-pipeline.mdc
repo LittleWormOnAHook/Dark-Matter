@@ -25,7 +25,7 @@ Prefer **Blender 5.2** + **Blender MCP** (`harveyxiacn/blender-mcp`) for new 3D 
 
 ## Game / Unity alignment
 
-- Target Unity 6 + URP import: meters scale, forward −Y or project convention as already used in `_Project` assets.
+- Target Unity 6 + HDRP import: meters scale, forward −Y or project convention as already used in `_Project` assets.
 - Prefer export-ready hierarchy; keep high/low or LOD naming explicit when doing AAA-style blockouts (`_high` / `_low`).
 - Sci-fi / Io survival look: semi-low-poly to mid-poly; favor readable silhouettes over dense subdivision unless asked.
 

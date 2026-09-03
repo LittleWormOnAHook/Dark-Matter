@@ -26,7 +26,7 @@ This file is the primary GDD on git. When asked for "the GDD", use this file
 
 Chapters 1-5 define vision and production philosophy. Appendix A folds locked
 mechanics formerly split across GDD 3.0/4.0. Appendix B records Current
-Implementation / Progress (surveyed July 2026 against the Unity prototype).
+Implementation / Progress (surveyed July 2026; refreshed September 2026).
 Sections B1–B3 gameplay status; B4 near-term roadmap; B5 The World Engine
 (design ratified; Features C# not on disk until Runs 1–2 — see World_Engine_Disk_Status.md).
 
@@ -43,7 +43,7 @@ LOCKED (do not contradict without an explicit design change)
   Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
   Building Control Panels: in-world E terminal → Overview | Companions | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
-  Runtime: Dark Matter: Genesis on The World Engine (WoOS) — Unity 6 + URP.
+  Runtime: Dark Matter: Genesis on The World Engine (WoOS) — Unity 6 + HDRP.
   Player-facing identity: companion-driven survival RPG (primary pitch); story-driven
     sci-fi RPG with a base camp (store / discovery). Prefer "base camp" over "colony"
     or "colony camp" in player-facing copy.
@@ -71,7 +71,7 @@ The emotional arc moves Kade from survivor
 to explorer, leader, and founder of humanity's first permanent home beyond Earth.
 
 Under the hood, Dark Matter: Genesis runs on The World Engine, a World Operating
-System (WoOS) stack built for Unity 6:
+System (WoOS) stack built for Unity 6 + HDRP:
 
   World → Simulation → Intelligence → Experience → Presentation → Player
 
@@ -668,8 +668,12 @@ A1. Platforms, art & tech
   Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
   Not a ship target: mobile
   Art: semi-low-poly modular; 2–3 base meshes + attachments + material swaps
-  Tech: Unity 6 + URP; Addressables/LODs as needed; aggregate base sim (no
-        per-companion pathfinding at 22 scale)
+  Tech: Unity 6 + HDRP; Addressables/LODs as needed; aggregate base sim (no
+        NavMesh — no bake, NavMeshSurface, NavMeshAgent, or terrain NavMesh
+        refs; no per-companion pathfinding at 22 scale)
+  UI:   UI Toolkit for player-facing HUD, menus, and overlays (uGUI leftovers
+        stay on disk until the UITK cutover is finished; do not dual-run forever)
+  Scene: Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity
 
 
 A2. Survival — O2 norm & biome pressures
@@ -977,11 +981,14 @@ OPEN (examples)
 
 
 ================================================================================
-APPENDIX B — Current Implementation / Progress (July 2026)
+APPENDIX B — Current Implementation / Progress (July 2026; refreshed Sept 2026)
 ================================================================================
 
-Survey basis: Assets/_Project on git main (disk audit July 22, 2026).
-Flat terrain prototype — Io biomes not shipped.
+Survey basis: Assets/_Project on git (disk audit July 22, 2026; Sept 2026
+refresh for HDRP, UI Toolkit, exposure, and navigation).
+Playable scene: Dark Matter Genesis v1.6.2 (HDRP).
+Flat terrain prototype — Io biomes not shipped. A later underground-passages
+map is planned; the surface map lower-right "?" / Underground box is the teaser.
 GAME_BREAKDOWN.txt may lag; prefer this appendix over stale breakdown notes.
 
 DISK TRUTH RULE
@@ -1003,8 +1010,10 @@ B1. DONE — playable prototype core
       ragdoll, disintegration/loot, respawn hooks
   [x] SurvivalStats: health, energy, stamina, oxygen
   [x] Exposure: zone kinds (radiation, thermal cold/heat, sulfur, volcano) +
-      HUD gauges including single bipolar thermal meter
-  [x] Inventory 24 + hotbar + toolbar (scanner / binoculars); crafting + stations
+      HUD gauges including single bipolar thermal meter; inner/outer collider
+      fade, world-space enter particles, zone vignettes, enemy-hit flash
+  [x] Inventory 5x10 grid (bottom rows locked until unlocked) + hotbar +
+      toolbar (scanner / binoculars); crafting + stations
   [x] Journal hub + map + quests (QuestManager); save/load
   [x] Economy: Aether Credits on roster/UI/save; starter 5000 AC;
       StarterPioneerSelectUI (1 Skilled Companion choice)
@@ -1017,6 +1026,10 @@ B1. DONE — playable prototype core
       assignment + production queue tick (BuildingOperationRegistry) — not full
       base-22 storm factory sim
   [x] Main menu, Shift UI theme, editor tooling under Assets/_Project/Editor
+  [x] Rendering: Unity 6 HDRP (not URP)
+  [x] Navigation: no NavMesh (no bake, Surface, Agent, or terrain NavMesh refs)
+  [x] Settings Apply snapshots the live run and stays on Settings paused;
+      Continue restores that snapshot (real saves stay on Continue only)
 
 
 B2. PARTIAL — present but incomplete vs lock
@@ -1035,11 +1048,17 @@ B2. PARTIAL — present but incomplete vs lock
   [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
   [~] Quest/loot rewards display as AC; some legacy currency naming in
       enums/assets
+  [~] UI Toolkit HUD / menus / overlays own the player-facing UI; leftover
+      owned uGUI still on disk until the cutover is finished. Do not hide
+      HUD hosts with USS display:none (runtime C# only). Tilde hides gameplay
+      chrome only. Companion runtime animations remain paused until UI work
+      is done.
 
 
 B3. NOT STARTED — vision systems still planned
 ----------------------------------------------
   [ ] Full Io biome world (prototype remains flat terrain)
+  [ ] Second map for underground passages (surface "?" / Underground teaser)
   [ ] Equippable environmental suit gear loop
   [ ] Command Center rooms + aggregate 22 companion shelter/injury sim
   [ ] Live sulfur storm scheduler (WeatherDirector) — crisis HUD exists without scheduler

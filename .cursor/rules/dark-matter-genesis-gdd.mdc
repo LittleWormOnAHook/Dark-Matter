@@ -14,17 +14,22 @@ alwaysApply: false
 
 - **Chapters 1–5** — Dark Matter Studios Production Bible (vision / pillars / solo AAA strategy)
 - **Appendix A** — Interim mechanics lock (roster, Echoes, thermal, Building Control Panels, economy, platforms)
-- **Appendix B** — Current Implementation / Progress (disk-corrected July 22, 2026). Prefer `Documentation/Architecture/World_Engine_Disk_Status.md` over any “[SHIPPED] Features” claims in older drafts.
+- **Appendix B** — Current Implementation / Progress. Prefer `Documentation/Architecture/World_Engine_Disk_Status.md` over any “[SHIPPED] Features” claims in older drafts.
 
-**Engineering rules:** `.cursor/rules/dark-matter-genesis-unity-urp.mdc` (Unity 6 + URP, PC/consoles, combat/AI systems).
+**Engineering rules:** `.cursor/rules/dark-matter-genesis-unity-hdrp.mdc` (Unity 6 + HDRP, PC/consoles, combat/AI systems).
 
 ## Identity
 - Year 2160, Io survival + light base-builder + **Lite Building** colony camp, semi-low-poly, **PC first + consoles**
+- Player is **Kade**
 - 25 companions max: **22 base camp** + **switchable trio of 3** on expeditions with the player
 - Rescue procedural **Neural Echoes**; **Aether-9** memory cores → **Resonance Events**
 - O₂ norm + radiation, thermal, volcanism, sulfur storms, **alien life forms**, **AI androids**
 - Materialize/craft/maintain buildings + **attachment modules** (generators, power grids, auto gather, logistics, communications, defense, mining)
 - **Runtime:** **The World Engine** (WoOS) — World → Simulation → Intelligence → Experience → Presentation → Player
+- **Render:** Unity 6 **HDRP** (not URP)
+- **UI stack:** UI Toolkit for all new player-facing UI
+- **Pathing:** no NavMesh going forward
+- **Second map:** underground passages are later content; surface map lower-right `?` is the teaser
 
 ## Locked decisions (do not contradict)
 - **Platforms:** PC (primary) + consoles (PS5 / Xbox) only. No mobile-as-target.
@@ -41,10 +46,10 @@ If the user asks for features unrelated to the GDD, **ask** whether it is canon,
 
 ## Unity scope
 - Code lives under `Assets/_Project/`
-- Reuse existing systems (combat, inventory, quests, save) where possible
-- Prototype is flat terrain — Io biomes not shipped yet
+- Reuse existing systems (combat, inventory, quests, save, exposure, UITK HUD) where possible
+- Prototype surface is the live Gaia tiles — Io biomes not fully shipped yet
 - Prefer **Aether Credits** for all economy UI/save; strip leftover legacy currency naming when touching those systems
-- Check GDD 5.0 **Appendix B** before assuming a vision system is missing or already shipped
+- Check GDD 5.0 **Appendix B** and `World_Engine_Disk_Status.md` before assuming a vision system is missing or already shipped
 
 ## Economy quick reference
 | Currency | Source | Use |

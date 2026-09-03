@@ -7,6 +7,8 @@ alwaysApply: true
 
 From here forward, **all new player-facing UI** is built with **UI Toolkit** — not uGUI (`Canvas`, `Image`, `TextMeshProUGUI`, `MenuUiBuilder` runtime panels).
 
+The UITK cutover exists to **stop uGUI per-frame ticks**. Once UITK is working for a surface, fully retire that surface's uGUI ticking rather than dual-run forever. Do not destroy leftover uGUI until the new surface is complete and the user asks.
+
 ## Required stack
 
 | Layer | Location / pattern |
@@ -21,8 +23,32 @@ From here forward, **all new player-facing UI** is built with **UI Toolkit** —
 
 - **Gameplay HUD / journal chrome:** `UITK_Hud` (`DMUiToolkitHud`, `DMUiToolkitMenus`)
 - **Main menu / pause modals:** `UITK_MainMenu`, `DMUiToolkitMenuPanels` siblings
-- **Fullscreen overlays:** `DMUiToolkitOverlayDocument.Ensure(...)` (optics, loading, etc.)
+- **Fullscreen overlays:** `DMUiToolkitOverlayDocument.Ensure(...)` (vignette, hazards, loading, optics, **pilot cluster**)
 - **Panel settings:** share bootstrap `PanelSettings` via `DMUiToolkitBootstrap`
+- **Do not** parent a second `UIDocument` under `UITK_Root` or assign it a different Panel Settings.
+
+## UI Builder
+
+- **Every `Hud.uxml` element stays visible in UI Builder.** Never hide HUD pieces with USS `display: none`.
+- Hide unused hosts **only in C# at runtime** so textures/sprites can still be dropped on them in Builder.
+- UI Builder Save must write **runtime UXML** (Editor Extension Authoring **off**) so Play shows the fonts, position, and color just saved.
+
+## Gameplay HUD vs tilde
+
+- Tilde / cinematic chrome hides **gameplay HUD only** (hotbar, minimap, compass, standby, XP, temp/hazards, leftover bars/crosshair/dots).
+- Overlays that are not gameplay chrome (zone vignette, hit flash, menus) stay up unless the feature says otherwise.
+- Defer unused overlay `EnsureHost` until first show (LevelUp, Dialogue, Craft, Death, etc.).
+- Do not per-frame `Q()`, rebuild VisualElements, or `Find` for HUD ticks.
+
+## Prototype combined HUD (`showPilotCluster`)
+
+- Lower-right UITK cluster on `DMUiToolkitConfig.showPilotCluster`.
+- **Existing HUD stays up** until the prototype is complete and the user asks to remove it.
+- No background panel — only the minimap circle gets the map texture. Palette colors, not mockup orange/green.
+
+## Settings Apply
+
+- In-game Apply that reloads graphics: snapshot the live run, stay **paused on Settings**. Settings Back → pause. Pause Main Menu → title. Title Continue loads the real save. Do not dump into a blank no-UI game.
 
 ## Do
 
@@ -36,6 +62,7 @@ From here forward, **all new player-facing UI** is built with **UI Toolkit** —
 - Create new `Canvas` menu/HUD/popup hierarchies with `MenuUiBuilder`, TMP labels, or `GraphicRaycaster` stacks.
 - Add new uGUI “fallback” panels “just in case” when `DMUiToolkitConfig.IsEnabled` — ship UITK only.
 - Expand retired surfaces (wallet, legacy MainCanvas chrome) in uGUI.
+- Let `MainCanvasFlow` re-enable uGUI HUD Canvas/Graphics after UITK owns HUD.
 
 ## Legacy uGUI
 
