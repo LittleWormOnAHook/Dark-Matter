@@ -20,7 +20,7 @@ MonoBehaviour:
   treeRow: 1
   requiredPlayerLevel: 6
   costPerRank: 2
-  maxRank: 20
+  maxRank: 5
   modifierType: 4
   bonusPercentPerRank: 5
   prerequisiteSkillIds:
