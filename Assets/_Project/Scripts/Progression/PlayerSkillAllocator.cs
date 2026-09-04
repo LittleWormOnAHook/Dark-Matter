@@ -14,19 +14,21 @@ namespace Project.Progression
                 return false;
             }
 
-            if (!LevelUnlockUtility.CanAccess(progression, skill.requiredPlayerLevel))
-            {
-                error = LevelUnlockUtility.FormatLevelRequiredMessage(skill.requiredPlayerLevel);
-                return false;
-            }
-
-            if (progression.GetSkillRank(skill.ResolvedId) >= skill.ClampedMaxRank)
+            int currentRank = progression.GetSkillRank(skill.ResolvedId);
+            if (currentRank >= skill.ClampedMaxRank)
             {
                 error = "Max rank reached.";
                 return false;
             }
 
-            int nextCost = skill.GetCostForNextRank(progression.GetSkillRank(skill.ResolvedId));
+            int requiredLevel = skill.GetRequiredPlayerLevelForNextRank(currentRank);
+            if (!LevelUnlockUtility.CanAccess(progression, requiredLevel))
+            {
+                error = LevelUnlockUtility.FormatLevelRequiredMessage(requiredLevel);
+                return false;
+            }
+
+            int nextCost = skill.GetCostForNextRank(currentRank);
             if (progression.UnspentSkillPoints < nextCost)
             {
                 error = "Not enough skill points.";

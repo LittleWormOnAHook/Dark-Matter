@@ -47,7 +47,7 @@ namespace Project.Progression
     {
         public const string MiningSkillId = "skill_mining";
         public const string HarvestingSkillId = "skill_harvesting";
-        public const int DisplayMaxRank = 20;
+        public const int DisplayMaxRank = 5;
 
         [Header("Identity")]
         public string skillId;
@@ -63,13 +63,13 @@ namespace Project.Progression
         public int treeRow;
 
         [Header("Ranks & Cost (editable profile)")]
-        [Tooltip("Player level required before this skill can receive points.")]
+        [Tooltip("Legacy designer hint only. Runtime gates ranks via branch depth (SkillTreeDepthUtility).")]
         public int requiredPlayerLevel = 1;
-        [Tooltip("Default skill-point cost per rank when costPerTargetRank is empty. Post-requisite skills should be base+chainDepth (first=1, next=2, ...).")]
+        [Tooltip("Legacy designer hint only. Runtime cost = branch depth + 1 SP per rank.")]
         public int costPerRank = 1;
         [Tooltip("Max upgrade ranks for this skill (clamped 1-DisplayMaxRank for UI dots). Prior-in-line skills must reach this before dependents can upgrade.")]
-        public int maxRank = 20;
-        [Tooltip("Optional cost to purchase each target rank (index 0 = rank 1). Empty / non-positive entries fall back to costPerRank.")]
+        public int maxRank = 5;
+        [Tooltip("Deprecated — cost is derived from branch depth. Left for asset migration only.")]
         public int[] costPerTargetRank;
 
         [Header("Combat / Survival Spec (editable profile)")]
@@ -85,24 +85,29 @@ namespace Project.Progression
         public string[] prerequisiteSkillIds;
 
         public string ResolvedId => string.IsNullOrEmpty(skillId) ? name : skillId;
-        public int RequiredPlayerLevel => requiredPlayerLevel;
+        public int RequiredPlayerLevel => GetRequiredPlayerLevelForRank(1);
         public int ClampedMaxRank => Mathf.Clamp(maxRank, 1, DisplayMaxRank);
+        public int BranchDepth => SkillTreeDepthUtility.GetBranchDepth(this);
+
+        /// <summary>Clamps stored rank for UI display when saves predate the 5-rank cap.</summary>
+        public int GetDisplayRank(int storedRank) => Mathf.Clamp(storedRank, 0, ClampedMaxRank);
+
+        /// <summary>Player level required to purchase the given target rank (1-based).</summary>
+        public int GetRequiredPlayerLevelForRank(int targetRank) =>
+            SkillTreeDepthUtility.GetRequiredPlayerLevelForRank(this, targetRank);
+
+        /// <summary>Player level required for the next rank purchase from the current owned rank.</summary>
+        public int GetRequiredPlayerLevelForNextRank(int currentRank)
+        {
+            if (currentRank >= ClampedMaxRank)
+                return GetRequiredPlayerLevelForRank(ClampedMaxRank);
+
+            return GetRequiredPlayerLevelForRank(currentRank + 1);
+        }
 
         /// <summary>Skill-point cost to purchase the given target rank (1-based).</summary>
-        public int GetCostForTargetRank(int targetRank)
-        {
-            if (targetRank < 1)
-                return Mathf.Max(1, costPerRank);
-
-            if (costPerTargetRank != null
-                && targetRank - 1 < costPerTargetRank.Length
-                && costPerTargetRank[targetRank - 1] > 0)
-            {
-                return costPerTargetRank[targetRank - 1];
-            }
-
-            return Mathf.Max(1, costPerRank);
-        }
+        public int GetCostForTargetRank(int targetRank) =>
+            SkillTreeDepthUtility.GetSkillPointCostPerRank(this);
 
         public int GetCostForNextRank(int currentRank) =>
             GetCostForTargetRank(currentRank + 1);
