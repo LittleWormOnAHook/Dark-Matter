@@ -33,7 +33,6 @@ namespace Project.UI
         private static DMUiToolkitBootstrap instance;
         private static PanelSettings runtimeShellSettings;
         private static PanelSettings runtimeLoadingSettings;
-        private static bool stamped;
 
         [SerializeField] private UIDocument shellDocument;
         [SerializeField] private UIDocument loadingDocument;
@@ -63,7 +62,6 @@ namespace Project.UI
             instance = null;
             runtimeShellSettings = null;
             runtimeLoadingSettings = null;
-            stamped = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -74,7 +72,6 @@ namespace Project.UI
 
             if (!DMUiToolkitConfig.IsEnabled)
             {
-                Stamp("disabled (config) — uGUI path only");
                 return;
             }
 
@@ -115,7 +112,6 @@ namespace Project.UI
             PlaceAsMainCanvasSibling(root);
             instance = root.AddComponent<DMUiToolkitBootstrap>();
             instance.EnsureDocuments();
-            Stamp("runtime UITK_Root created (dual-run, MainCanvas kept)");
             return true;
         }
 
@@ -212,6 +208,11 @@ namespace Project.UI
 
             ApplyTheme(loadingDocument, ThemeUssPath);
             ApplyTheme(loadingDocument, LoadingUssPath);
+
+            // HandOff -> ShowMainMenu -> EnsureExists can run while IsShowing and AFTER BeginReveal.
+            // Never leave black panel clear armed once reveal has started, or the veil fade is invisible.
+            if (!DMUiToolkitLoadingOverlay.IsShowing || DMUiToolkitLoadingOverlay.HasBegunReveal)
+                ReleaseLoadingClearColor();
 
             if (!DMUiToolkitLoadingOverlay.IsShowing)
                 loadingObject.SetActive(false);
@@ -389,6 +390,17 @@ namespace Project.UI
             runtimeLoadingSettings.colorClearValue = Color.clear;
         }
 
+        internal static void ApplyLoadingOpaqueClearColor()
+        {
+            if (runtimeLoadingSettings == null)
+                return;
+            if (DMUiToolkitLoadingOverlay.HasBegunReveal)
+                return;
+
+            runtimeLoadingSettings.clearColor = true;
+            runtimeLoadingSettings.colorClearValue = Color.black;
+        }
+
         internal static void DeactivateLoadingHosts()
         {
             Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include);
@@ -468,8 +480,18 @@ namespace Project.UI
 
             if (sortingOrder >= LoadingSortingOrder)
             {
-                settings.clearColor = true;
-                settings.colorClearValue = Color.black;
+                // Opaque black clear is owned by DMUiToolkitLoadingOverlay.Show / ForceOpaque.
+                // Re-asserting it on every EnsureDocuments undoes BeginReveal and leaves a permanent black screen.
+                if (DMUiToolkitLoadingOverlay.IsShowing && !DMUiToolkitLoadingOverlay.HasBegunReveal)
+                {
+                    settings.clearColor = true;
+                    settings.colorClearValue = Color.black;
+                }
+                else
+                {
+                    settings.clearColor = false;
+                    settings.colorClearValue = Color.clear;
+                }
             }
             else
             {
@@ -571,17 +593,6 @@ namespace Project.UI
             settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
             settings.match = 0.5f;
         }
-
-        internal static void Stamp(string detail)
-        {
-            if (stamped && string.IsNullOrEmpty(detail))
-                return;
-
-            stamped = true;
-            if (string.IsNullOrEmpty(detail))
-                Debug.Log(DMUiToolkitConfig.LogStamp);
-            else
-                Debug.Log(DMUiToolkitConfig.LogStamp + " " + detail);
-        }
+        internal static void Stamp(string detail) { _ = detail; }
     }
 }

@@ -35,7 +35,7 @@ namespace Project.UI
 
         public const int ActiveQuestSort = 11;
         public const int HovercraftSort = 12;
-        public const int HazardsSort = 13;
+        public const int HazardsSort = 96; // above HudSortingOrder (95) so Z/X cannot cover hazards
         public const int VignetteSort = 14;
         public const int PilotClusterSort = 18;
         public const int DamageSort = 15;

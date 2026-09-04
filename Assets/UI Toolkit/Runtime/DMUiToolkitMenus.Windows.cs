@@ -50,6 +50,9 @@ namespace Project.UI
         private Label skillsDetailTitle;
         private Label skillsDetailBody;
         private Button skillsAllocate;
+        private VisualElement skillsCard;
+        private VisualElement skillsCardArt;
+        private Label skillsCardCaption;
         private ScrollView echoesChronicle;
         private ScrollView echoesBuffs;
         private ScrollView echoesSignals;
@@ -116,6 +119,9 @@ namespace Project.UI
             skillsDetailTitle = tree.Q<Label>("skills-detail-title");
             skillsDetailBody = tree.Q<Label>("skills-detail-body");
             skillsAllocate = tree.Q<Button>("skills-allocate");
+            skillsCard = tree.Q<VisualElement>("skills-card");
+            skillsCardArt = tree.Q<VisualElement>("skills-card-art");
+            skillsCardCaption = tree.Q<Label>("skills-card-caption");
             echoesChronicle = tree.Q<ScrollView>("echoes-chronicle");
             echoesBuffs = tree.Q<ScrollView>("echoes-buffs");
             echoesSignals = tree.Q<ScrollView>("echoes-signals");
@@ -940,6 +946,7 @@ namespace Project.UI
                     skillsDetailBody.text = "Category hex trees from the Player skill allocator.";
                 if (skillsAllocate != null)
                     skillsAllocate.SetEnabled(false);
+                ApplySkillCardArt(null);
                 return;
             }
 
@@ -960,8 +967,62 @@ namespace Project.UI
             if (skillsAllocate != null)
             {
                 skillsAllocate.SetEnabled(can);
-                skillsAllocate.text = can ? "Allocate Point" : (rank >= skill.ClampedMaxRank ? "Max Rank" : "Cannot Allocate");
+                if (can)
+                    skillsAllocate.text = "Allocate Point";
+                else if (rank >= skill.ClampedMaxRank)
+                    skillsAllocate.text = "Max Rank";
+                else if (!string.IsNullOrEmpty(error) && error.StartsWith("Requires ", System.StringComparison.Ordinal))
+                    skillsAllocate.text = "Locked - Prior Skill";
+                else
+                    skillsAllocate.text = "Cannot Allocate";
             }
+
+            ApplySkillCardArt(skill);
+        }
+
+        private static readonly HashSet<string> PrototypeSkillCardIds = new HashSet<string>
+        {
+            "skill_lung_capacity",
+            "skill_breath_efficiency",
+            "skill_o2_scrubber",
+            "skill_marksman_training",
+            "skill_steady_breath",
+            "skill_long_range_cadence",
+            "skill_deadeye",
+        };
+
+        
+
+        private void ApplySkillCardArt(SkillDefinition skill)
+        {
+            if (skillsCard == null)
+                return;
+
+            bool show = skill != null && PrototypeSkillCardIds.Contains(skill.ResolvedId);
+            DMUiToolkitOverlayDocument.SetShown(skillsCard, show);
+            if (!show)
+            {
+                if (skillsCardArt != null)
+                    skillsCardArt.style.backgroundImage = StyleKeyword.None;
+                if (skillsCardCaption != null)
+                    skillsCardCaption.text = string.Empty;
+                return;
+            }
+
+            Texture2D tex = Resources.Load<Texture2D>("UI/Skills/" + skill.ResolvedId);
+            if (skillsCardArt != null)
+            {
+                if (tex != null)
+                {
+                    skillsCardArt.style.backgroundImage = new StyleBackground(Background.FromTexture2D(tex));
+                    skillsCardArt.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
+                }
+                else
+                    skillsCardArt.style.backgroundImage = StyleKeyword.None;
+            }
+
+            if (skillsCardCaption != null)
+                skillsCardCaption.text = skill.displayName;
         }
 
         private void OnAllocateSkillClicked()

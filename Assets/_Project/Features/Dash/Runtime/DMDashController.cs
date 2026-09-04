@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Invector.vCharacterController;
 using Project.Player;
 using Project.Progression;
+using Project.Survival;
 using Project.Vehicles;
 using Project.Features.Climb;
 using UnityEngine;
@@ -39,6 +40,7 @@ namespace Project.Features.Dash
         private bool _heldLockAnimMovement;
 
         private Key _lastTap = Key.None;
+        private SurvivalStats _survival;
         private float _lastTapAt = -10f;
 
         public bool IsDashing => _dashing;
@@ -71,6 +73,8 @@ namespace Project.Features.Dash
             if (cameraPivot == null && Camera.main != null)
                 cameraPivot = Camera.main.transform;
 
+            if (_survival == null)
+                _survival = GetComponent<SurvivalStats>();
             CacheBodyRenderers();
             BuildVfx();
             DMHangLegOverlay.Bind(gameObject);
@@ -162,6 +166,12 @@ namespace Project.Features.Dash
             if (!AllowsAirDash() && motor != null && !motor.isGrounded)
                 return false;
 
+            if (_survival == null)
+                _survival = GetComponent<SurvivalStats>();
+            float cost = profile != null ? profile.staminaCost : 22f;
+            if (_survival != null && cost > 0f && !_survival.HasStamina(cost))
+                return false;
+
             return true;
         }
 
@@ -208,6 +218,12 @@ namespace Project.Features.Dash
 
         private void StartDash(Vector3 dir)
         {
+            if (_survival == null)
+                _survival = GetComponent<SurvivalStats>();
+            float cost = profile != null ? profile.staminaCost : 22f;
+            if (_survival != null && cost > 0f && !_survival.TryConsumeStamina(cost))
+                return;
+
             _dashing = true;
             _dashDir = dir;
             _dashStartedAt = Time.unscaledTime;

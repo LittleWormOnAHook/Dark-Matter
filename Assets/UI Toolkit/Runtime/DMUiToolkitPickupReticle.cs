@@ -139,44 +139,31 @@ namespace Project.UI
 
         private bool ShouldShow()
         {
-            if (!DMUiToolkitOverlayDocument.GameplayHudWanted())
-                return false;
-            if (GameplayHudVisibility.CinematicChromeHidden)
-                return false;
-            if (!GameSession.HasStarted)
-                return false;
-            if (PlayerVehicleState.IsMounted)
-                return false;
-
-            PlayerController player = ResolvePlayer();
-            if (player != null && player.BlocksCombatInput)
-                return false;
-
-            SurvivalStats survivalStats = ResolveSurvival();
-            if (survivalStats != null && survivalStats.IsDead)
-                return false;
-
-            return true;
+            // Pickup aim reticle disabled — AAA world proximity dots live on DMUiToolkitWorldChrome.
+            HideUgui();
+            return false;
         }
 
         private void UpdatePosition()
         {
-            if (dot == null || !ResolveReferences(out Camera camera, out _))
+            if (dot == null || dot.panel == null)
                 return;
 
-            Transform playerTransform = ResolvePlayerTransform();
-            if (playerTransform == null || camera == null)
-                return;
+            // Keep the pickup reticle locked to panel center so FOV / zoom never drifts it.
+            Rect panelRect = dot.panel.visualTree.worldBound;
+            float cx = panelRect.xMin + panelRect.width * 0.5f;
+            float cy = panelRect.yMin + panelRect.height * 0.5f;
+            // worldBound is panel pixels already for the root; convert to local under root.
+            VisualElement rootVe = document != null ? document.rootVisualElement : null;
+            if (rootVe != null)
+            {
+                Rect rootBound = rootVe.worldBound;
+                cx -= rootBound.xMin;
+                cy -= rootBound.yMin;
+            }
 
-            Ray viewRay = WorldUseController.BuildScreenCenterRay(camera, playerTransform);
-            Vector3 world = viewRay.origin + viewRay.direction * 1f;
-            Vector3 screen = camera.WorldToScreenPoint(world);
-            if (screen.z <= 0f || dot.panel == null)
-                return;
-
-            Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(dot.panel, new Vector2(screen.x, screen.y));
-            dot.style.left = panelPos.x - 4f;
-            dot.style.top = panelPos.y - 4f;
+            dot.style.left = cx - 4f;
+            dot.style.top = cy - 4f;
             dot.style.marginLeft = 0;
             dot.style.marginTop = 0;
         }

@@ -121,12 +121,6 @@ namespace Project.UI
 
             pioneerHud.EnsureBuilt(layoutParent, toolbarRoot.anchoredPosition.y);
 
-            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
-            if (gaugeCluster == null)
-                gaugeCluster = gameObject.AddComponent<HotbarExposureGaugeCluster>();
-
-            gaugeCluster.EnsureBuilt(layoutParent, toolbarRoot.anchoredPosition.y);
-
             HovercraftStatusHudUI hovercraftHud = GetComponent<HovercraftStatusHudUI>();
             if (hovercraftHud == null)
                 hovercraftHud = gameObject.AddComponent<HovercraftStatusHudUI>();
@@ -159,11 +153,6 @@ namespace Project.UI
             if (petToolbar == null)
                 petToolbar = FindAnyObjectByType<PetToolbarUI>();
             petToolbar?.SetGameplayVisible(visible);
-
-            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
-            if (gaugeCluster == null)
-                gaugeCluster = FindAnyObjectByType<HotbarExposureGaugeCluster>();
-            gaugeCluster?.SetGameplayVisible(visible);
 
             ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
             if (pioneerHud == null)
@@ -260,7 +249,6 @@ namespace Project.UI
 
             PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
             ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
-            HotbarExposureGaugeCluster gaugeCluster = GetComponent<HotbarExposureGaugeCluster>();
             float pioneerWidth = pioneerHud != null && pioneerHud.IsBuilt ? pioneerHud.GetClusterWidth() : 0f;
             float pioneerGap = pioneerWidth > 0f ? ExpeditionPioneerHudUI.ClusterGap : 0f;
             float petWidth = petToolbar != null && petToolbar.IsBuilt ? petToolbar.GetPetClusterWidth() : 0f;
@@ -289,9 +277,6 @@ namespace Project.UI
             if (petToolbar != null && petToolbar.IsBuilt)
                 petToolbar.AlignLeftOfToolbarCluster(petRight, anchoredY);
 
-            if (gaugeCluster != null && gaugeCluster.IsBuilt)
-                gaugeCluster.AlignToScreenBottomLeft();
-
             if (pioneerHud != null && pioneerHud.IsBuilt)
                 pioneerHud.AlignRightOfHotbar(pioneerLeft, anchoredY);
 
@@ -308,7 +293,6 @@ namespace Project.UI
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             raisedToFrontLayer = true;
             GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
-            GetComponent<HotbarExposureGaugeCluster>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void EnsureRaisedToFrontLayer(Transform canvasRoot)
@@ -324,7 +308,6 @@ namespace Project.UI
 
             UiFrontLayer.ReparentToFront(toolbarRoot, canvasRoot);
             GetComponent<ExpeditionPioneerHudUI>()?.EnsureRaisedToFrontLayer(canvasRoot);
-            GetComponent<HotbarExposureGaugeCluster>()?.EnsureRaisedToFrontLayer(canvasRoot);
         }
 
         public void RestoreFromFrontLayer(Transform hotbarAnchor)
@@ -341,7 +324,6 @@ namespace Project.UI
                 RepositionRelativeToHotbar(hotbarRect);
                 float pioneerLeft = ComputePioneerLeftEdge(hotbarRect);
                 float anchoredY = hotbarRect.anchoredPosition.y;
-                GetComponent<HotbarExposureGaugeCluster>()?.RestoreFromFrontLayer();
                 GetComponent<ExpeditionPioneerHudUI>()?.RestoreFromFrontLayer(pioneerLeft, anchoredY);
             }
         }

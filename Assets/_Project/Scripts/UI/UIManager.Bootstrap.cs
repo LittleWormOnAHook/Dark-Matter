@@ -111,7 +111,6 @@ namespace Project.UI
             AchievementProgressBridge.EnsureExists();
             QuestGiverDialogUI.EnsureExists(transform);
             ActiveQuestHudUI.EnsureExists(transform);
-            HotbarXpHud.EnsureExists(transform);
             EngagedEnemyHealthHud.EnsureExists(transform);
             WeaponModeSwitchMenuUI.EnsureExists(transform);
             UiFrontLayer.Get(transform);
@@ -168,8 +167,6 @@ namespace Project.UI
             if (current.GetComponent<SurvivalStatsPanelBinder>() == null)
                 current.gameObject.AddComponent<SurvivalStatsPanelBinder>();
 
-            if (current.GetComponent<CondensedSurvivalStatsHud>() == null)
-                current.gameObject.AddComponent<CondensedSurvivalStatsHud>();
         }
 
         private void EnsureInteractionPrompt()

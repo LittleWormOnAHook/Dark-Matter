@@ -61,8 +61,6 @@ namespace Project.UI
 
         private Transform hotbarOriginalParent;
         private int hotbarOriginalSiblingIndex;
-        private Transform statsPanelOriginalParent;
-        private int statsPanelOriginalSiblingIndex;
         private bool hudSlotsRaised;
 
         private static float HotbarSlotSize => HudLayoutMetrics.InventorySlotSize(64f);
@@ -284,7 +282,7 @@ namespace Project.UI
                 return;
             }
 
-            if (DMUiToolkitHud.IsDriving)
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
             {
                 if (hotbarParent != null)
                     hotbarParent.gameObject.SetActive(false);
@@ -326,66 +324,11 @@ namespace Project.UI
             EnsureSurvivalStatsHudVisible();
         }
 
-        /// <summary>
-        /// Shows survival vitals during normal gameplay (paired with the hotbar/toolbar/pet bar).
-        /// </summary>
-        public void EnsureSurvivalStatsHudVisible()
-        {
-            if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud)
-            {
-                SetSurvivalStatsHudVisible(false);
-                return;
-            }
+        /// <summary>Retired CondensedSurvivalStatsHud — pilot cluster owns vitals. No-op.</summary>
+        public void EnsureSurvivalStatsHudVisible() { }
 
-            Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>();
-            Transform canvasRoot = canvas != null ? canvas.transform : null;
-            SetSurvivalStatsHudVisible(true, canvasRoot);
-        }
-
-        /// <summary>
-        /// Explicit hide, independent of session/menu-blocked state — used whenever the hotbar
-        /// itself is hidden (Journal tabs other than Inventory, building panel, etc.) so vitals
-        /// only ever show alongside the hotbar/toolbar/pet bar, never on their own.
-        /// </summary>
-        public void HideSurvivalStatsHud()
-        {
-            SetSurvivalStatsHudVisible(false);
-        }
-
-        private void SetSurvivalStatsHudVisible(bool visible, Transform canvasRoot = null)
-        {
-            // Include inactive: HideSurvival deactivates the GO, and default Find skips it —
-            // which permanently stuck vitals hidden after Map tab / modal HUD hide.
-            CondensedSurvivalStatsHud statsHud = FindSurvivalStatsHud();
-            if (statsHud == null)
-                return;
-
-            if (visible && DMUiToolkitHud.IsDriving)
-                visible = false;
-
-            Transform statsTransform = statsHud.transform;
-            statsTransform.gameObject.SetActive(visible);
-            if (!visible)
-                return;
-
-            canvasRoot ??= GetComponent<Canvas>()?.transform ?? GetComponentInParent<Canvas>()?.transform;
-            if (canvasRoot == null)
-                return;
-
-            if (statsPanelOriginalParent == null)
-            {
-                statsPanelOriginalParent = statsTransform.parent;
-                statsPanelOriginalSiblingIndex = statsTransform.GetSiblingIndex();
-            }
-
-            UiFrontLayer.ReparentToFront(statsTransform, canvasRoot);
-            statsHud.RefreshLayout();
-        }
-
-        private static CondensedSurvivalStatsHud FindSurvivalStatsHud()
-        {
-            return FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
-        }
+        /// <summary>Retired CondensedSurvivalStatsHud — pilot cluster owns vitals. No-op.</summary>
+        public void HideSurvivalStatsHud() { }
 
         private void HideLegacyPanelTitleLabels()
         {
@@ -430,16 +373,7 @@ namespace Project.UI
                     LayoutHotbarContainer(inventorySystem.hotbarSize);
             }
 
-            CondensedSurvivalStatsHud statsHud = FindSurvivalStatsHud();
-            if (statsHud != null && statsPanelOriginalParent != null)
-            {
-                Transform statsTransform = statsHud.transform;
-                statsTransform.SetParent(statsPanelOriginalParent, true);
-                statsTransform.SetSiblingIndex(Mathf.Clamp(statsPanelOriginalSiblingIndex, 0, statsPanelOriginalParent.childCount - 1));
-            }
-
             FindAnyObjectByType<ToolBarUI>()?.RestoreFromFrontLayer(hotbarParent);
-            FindSurvivalStatsHud()?.RefreshLayout();
             hudSlotsRaised = false;
         }
 
@@ -729,14 +663,10 @@ namespace Project.UI
             if (preserveHotbarLayout)
             {
                 FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
-                FindSurvivalStatsHud()?.RefreshLayout();
-                FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.AlignUnderHotbar();
                 return;
             }
 
             FindAnyObjectByType<ToolBarUI>()?.AlignCenteredWithHotbar(hotbarRect, preservedY);
-            FindSurvivalStatsHud()?.RefreshLayout();
-            FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.AlignUnderHotbar();
         }
 
         private void ConfigureHotbarLayoutGroup(HorizontalLayoutGroup layout)

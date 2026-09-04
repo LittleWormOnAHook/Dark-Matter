@@ -46,7 +46,7 @@ namespace Project.UI
         private static readonly Color MinimapRingColor =
             DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.RichFuchsia, 0.92f);
 
-        private static readonly Color PlayerMapIconColor = new Color(0.95f, 0.18f, 0.18f, 1f);
+        private static readonly Color PlayerMapIconColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red
 
         [Header("Minimap")]
         [SerializeField] private float minimapWorldSpan = DefaultMinimapWorldSpan;

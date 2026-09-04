@@ -11,21 +11,27 @@
 }
 
 .dmg-hz-cluster {
+    /* Centered on minimap (cluster left 4 + map-stage 4+100 = 108), just above ELEV. */
     position: absolute;
-    left: 18px;
-    bottom: 18px;
-    flex-direction: row;
-    align-items: flex-end;
+    left: 108px;
+    bottom: 300px; /* 4 + 290 + 6 */
+    margin-left: 0;
+    translate: -50% 0;
+    flex-direction: column;
+    align-items: center;
 }
 
 .dmg-hz-panel {
-    width: 210px;
-    margin-right: 8px;
-    padding: 6px 8px 8px 8px;
+    width: auto;
+    min-width: 0;
+    max-width: 148px;
+    margin-right: 0;
+    padding: 4px 5px 5px 5px;
     flex-direction: column;
+    align-items: stretch;
     background-color: rgba(20, 30, 40, 0.82);
     border-width: 1px;
-    border-color: rgba(192, 46, 122, 0.85);
+    border-color: rgba(212, 160, 23, 0.92); /* palette gold #D4A017 */
     border-radius: 2px;
 }
 
@@ -43,11 +49,14 @@
 
 .dmg-hz-title {
     height: 13px;
-    font-size: 10px;
+    font-size: 9px;
     color: rgb(237, 233, 228);
     -unity-font-style: bold;
-    -unity-text-align: middle-left;
+    -unity-text-align: middle-center;
     letter-spacing: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dmg-hz-status {
@@ -99,9 +108,12 @@
 }
 
 .dmg-hz-summary-track {
-    height: 4px;
-    margin-top: 3px;
-    margin-bottom: 2px;
+    position: relative;
+    flex-grow: 0;
+    width: 10px;
+    height: 56px;
+    margin-top: 2px;
+    margin-left: 0;
     background-color: rgba(47, 47, 47, 0.95);
     overflow: hidden;
 }
@@ -109,9 +121,9 @@
 .dmg-hz-summary-fill {
     position: absolute;
     left: 0;
-    top: 0;
-    height: 100%;
-    width: 0;
+    bottom: 0;
+    width: 100%;
+    height: 0;
     background-color: rgb(212, 160, 23);
 }
 
@@ -119,20 +131,25 @@
     height: 11px;
     font-size: 9px;
     color: rgb(140, 127, 117);
-    -unity-text-align: middle-right;
+    -unity-text-align: middle-left;
 }
 
 .dmg-hz-rows {
-    margin-top: 3px;
-    flex-direction: column;
+    margin-top: 2px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
 }
 
 .dmg-hz-ticks {
     position: absolute;
-    left: 18px;
-    bottom: 118px;
-    width: 280px;
+    left: 128px;
+    bottom: 318px; /* just above hazards chip above ELEV */
+    margin-left: 0;
+    translate: -50% 0;
+    width: 148px;
     min-height: 14px;
+    align-items: center;
 }
 
 .dmg-hz-ticks-label {
@@ -181,46 +198,57 @@
 }
 
 .dmg-hc-row {
-    height: 16px;
+    width: 34px;
+    min-width: 34px;
+    height: auto;
+    min-height: 78px;
+    margin-right: 6px;
     margin-bottom: 2px;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .dmg-hc-stat-name {
-    width: 58px;
-    min-width: 58px;
-    height: 14px;
-    font-size: 9px;
+    width: 34px;
+    min-width: 34px;
+    height: 12px;
+    font-size: 8px;
     color: rgb(237, 233, 228);
     -unity-font-style: bold;
-    -unity-text-align: middle-left;
+    -unity-text-align: middle-center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .dmg-hc-stat-pct {
-    width: 28px;
-    min-width: 28px;
-    height: 14px;
-    margin-left: 4px;
-    font-size: 9px;
+    width: 34px;
+    min-width: 34px;
+    height: 12px;
+    margin-left: 0;
+    margin-top: 2px;
+    font-size: 8px;
     color: rgb(237, 233, 228);
-    -unity-text-align: middle-right;
+    -unity-text-align: middle-center;
 }
 
 .dmg-hc-segs {
-    flex-grow: 1;
-    height: 7px;
-    margin-top: 0;
-    margin-left: 4px;
-    flex-direction: row;
+    flex-grow: 0;
+    width: 10px;
+    height: 56px;
+    margin-top: 2px;
+    margin-left: 0;
+    flex-direction: column-reverse;
+    align-items: stretch;
 }
 
 .dmg-seg {
     flex-grow: 1;
-    height: 7px;
-    margin-right: 1px;
+    width: 100%;
+    height: auto;
+    min-height: 2px;
+    margin-right: 0;
+    margin-bottom: 1px;
     background-color: rgba(255, 255, 255, 0.08);
 }

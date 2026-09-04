@@ -70,6 +70,7 @@ namespace Project.Progression
             float healthSkill = 1f + PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.MaxHealthPercent) * 0.01f;
             float energySkill = 1f + PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.MaxEnergyPercent) * 0.01f;
             float staminaSkill = 1f + PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.MaxStaminaPercent) * 0.01f;
+            float oxygenSkill = 1f + PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.MaxOxygenPercent) * 0.01f;
 
             float healthRatio = stats.maxHealth > 0.001f ? stats.CurrentHealth / stats.maxHealth : 1f;
             float energyRatio = stats.maxEnergy > 0.001f ? stats.CurrentEnergy / stats.maxEnergy : 1f;
@@ -79,7 +80,7 @@ namespace Project.Progression
             stats.maxHealth = baseMaxHealth * levelMultiplier * healthSkill;
             stats.maxEnergy = baseMaxEnergy * levelMultiplier * energySkill;
             stats.maxStamina = baseMaxStamina * levelMultiplier * staminaSkill;
-            stats.maxOxygen = baseMaxOxygen * levelMultiplier;
+            stats.maxOxygen = baseMaxOxygen * levelMultiplier * oxygenSkill;
 
             stats.ClampCurrentToMax(
                 stats.maxHealth * healthRatio,

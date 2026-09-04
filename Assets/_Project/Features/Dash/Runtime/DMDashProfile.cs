@@ -20,6 +20,8 @@ namespace Project.Features.Dash
         public float duration = 0.18f;
         [Tooltip("Seconds before another dash can start.")]
         public float cooldown = 0.55f;
+        [Tooltip("Flat SurvivalStats stamina spent when a dash starts.")]
+        public float staminaCost = 22f;
         public bool allowAirDash = false;
         [Tooltip("0 freezes walk/run. 1 is normal speed.")]
         [Range(0f, 1f)]

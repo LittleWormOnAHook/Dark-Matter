@@ -85,7 +85,7 @@ namespace Project.UI
             ApplyLockedLayout();
 
             // Idempotent: reclaim existing children after domain reload / double EnsureExists.
-            // Lv/XP used to live here under the compass — removed (HotbarXpHud owns that readout).
+            // Lv/XP used to live here under the compass — removed; level/XP live in Journal now.
             Transform legacyHeader = transform.Find("ProgressionHeader");
             if (legacyHeader != null)
                 Destroy(legacyHeader.gameObject);

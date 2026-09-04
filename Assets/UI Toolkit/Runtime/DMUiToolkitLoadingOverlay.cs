@@ -26,6 +26,8 @@ namespace Project.UI
         }
 
         private static bool showing;
+        /// <summary>True after BeginReveal — EnsureDocuments must not re-apply black panel clear.</summary>
+        private static bool revealStarted;
         private static UIDocument document;
         private static VisualElement root;
         private static VisualElement veil;
@@ -37,7 +39,41 @@ namespace Project.UI
         private static FlyingStar[] flyingStars;
         private static int shownPercent = -1;
 
+
+        // Domain Reload is often disabled (Enter Play Mode Options). Statics survive Play stop/start;
+        // a stuck showing/revealStarted pair re-arms PanelSettings black clear and leaves a black view.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlayModeSubsystem()
+        {
+            ResetForPlayMode();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ResetForPlayModeBeforeScene()
+        {
+            ResetForPlayMode();
+        }
+
+        internal static void ResetForPlayMode()
+        {
+            showing = false;
+            revealStarted = false;
+            flyingStars = null;
+            shownPercent = -1;
+            root = null;
+            veil = null;
+            content = null;
+            starsRoot = null;
+            progressFill = null;
+            statusLabel = null;
+            percentLabel = null;
+            document = null;
+        }
+
         public static bool IsShowing => showing;
+
+        /// <summary>Veil fade has started; panel clear must stay transparent even while IsShowing.</summary>
+        public static bool HasBegunReveal => revealStarted;
 
         public static bool IsVeilOpaque
         {
@@ -78,7 +114,7 @@ namespace Project.UI
 
             if (root == null)
             {
-                Debug.LogWarning(DMUiToolkitConfig.LogStamp + " loading overlay UXML failed; uGUI path should still run.");
+                // silenced: loading overlay UXML failed stamp
                 showing = false;
                 return;
             }
@@ -104,13 +140,16 @@ namespace Project.UI
             shownPercent = -1;
             SetPercent(0);
             BuildStars();
+            revealStarted = false;
             showing = true;
+            ApplyOpaquePanelClear();
             DMUiToolkitBootstrap.Stamp("loading overlay active (panel-sibling)");
         }
 
         public static void Hide()
         {
             showing = false;
+            revealStarted = false;
             flyingStars = null;
 
             CollapseOverlayTree(document != null ? document.rootVisualElement : root);
@@ -162,6 +201,8 @@ namespace Project.UI
         /// </summary>
         public static void BeginReveal()
         {
+            // Mark before releasing clear so a concurrent EnsureDocuments cannot re-blacken.
+            revealStarted = true;
             ReleasePanelClear(document);
             DMUiToolkitBootstrap.ReleaseLoadingClearColor();
 
@@ -170,6 +211,27 @@ namespace Project.UI
                 panelRoot.style.backgroundColor = Color.clear;
             if (root != null)
                 root.style.backgroundColor = Color.clear;
+        }
+
+        /// <summary>Full-screen black panel clear while branded loader owns the view.</summary>
+        public static void ApplyOpaquePanelClear()
+        {
+            if (revealStarted)
+                return;
+
+            if (document != null && document.panelSettings != null)
+            {
+                document.panelSettings.clearColor = true;
+                document.panelSettings.colorClearValue = Color.black;
+            }
+
+            DMUiToolkitBootstrap.ApplyLoadingOpaqueClearColor();
+
+            VisualElement panelRoot = document != null ? document.rootVisualElement : null;
+            if (panelRoot != null)
+                panelRoot.style.backgroundColor = Color.black;
+            if (root != null)
+                root.style.backgroundColor = Color.black;
         }
 
         private static void CollapseOverlayTree(VisualElement tree)
@@ -256,6 +318,8 @@ namespace Project.UI
         {
             SetContentOpacity(1f);
             SetVeilOpacity(1f);
+            if (showing && !revealStarted)
+                ApplyOpaquePanelClear();
         }
 
         public static void Tick(float unscaledDelta)
@@ -286,19 +350,20 @@ namespace Project.UI
         /// </summary>
         private static void RepairRuntimeLayout()
         {
+            Color cover = revealStarted ? Color.clear : Color.black;
             VisualElement panelRoot = document != null ? document.rootVisualElement : null;
             if (panelRoot != null)
             {
                 panelRoot.style.flexGrow = 1;
                 panelRoot.style.width = Length.Percent(100);
                 panelRoot.style.height = Length.Percent(100);
-                panelRoot.style.backgroundColor = Color.black;
+                panelRoot.style.backgroundColor = cover;
                 panelRoot.style.display = DisplayStyle.Flex;
                 panelRoot.style.opacity = 1f;
             }
 
-            StretchFull(root, Color.black);
-            StretchFull(veil, Color.black);
+            StretchFull(root, cover);
+            StretchFull(veil, revealStarted ? Color.clear : Color.black);
             StretchFull(content, null);
             StretchFull(starsRoot, null);
 

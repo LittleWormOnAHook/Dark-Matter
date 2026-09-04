@@ -32,8 +32,8 @@ namespace Project.UI
             if (overlaysStamped)
                 return;
 
+            // Version marker stamp; stop play-time spam.
             overlaysStamped = true;
-            Debug.Log("DMUiToolkit 0901-overlays");
         }
 
         internal static void HideHudAuthoredOverlayHosts()

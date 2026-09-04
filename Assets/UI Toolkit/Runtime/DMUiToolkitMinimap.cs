@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// Toolkit host for the live circular minimap and the compass strip stacked under it.
-    /// Reuses MapUI camera/texture/marker data. Same UIDocument / Panel Settings as UITK_Hud.
-    /// Dual-run: hides uGUI MinimapPanel / CompassHud / InfoPanel while this drives.
+    /// Crop-blit provider for the pilot cluster map arcs.
+    /// Retired TR minimap / compass / scan / info chrome hosts are gone from Hud.uxml;
+    /// this keeps <see cref="EnsureCroppedView"/> / <see cref="ViewTexture"/> only.
     /// </summary>
     [DefaultExecutionOrder(50)]
     [DisallowMultipleComponent]
@@ -171,33 +171,29 @@ namespace Project.UI
             if (root == null)
                 return;
 
-            minimapHost = root.Q<VisualElement>("minimap");
-            minimapFrame = root.Q<VisualElement>("minimap-frame");
-            minimapView = root.Q<VisualElement>("minimap-view");
-            minimapPlayer = root.Q<VisualElement>("minimap-player");
-            minimapFog = root.Q<VisualElement>("minimap-fog");
-            minimapZoomIn = root.Q<Button>("minimap-zoom-in");
-            minimapZoomOut = root.Q<Button>("minimap-zoom-out");
-            minimapScan = root.Q<Button>("minimap-scan");
-            WireMinimapButtons();
+            // TR chrome hosts removed from Hud.uxml — do not recreate or bind them.
+            minimapHost = null;
+            minimapFrame = null;
+            minimapView = null;
+            minimapPlayer = null;
+            minimapFog = null;
+            minimapZoomIn = null;
+            minimapZoomOut = null;
+            minimapScan = null;
+            compassHost = null;
+            compassStrip = null;
+            compassTicks = null;
+            compassMarkers = null;
+            compassPointer = null;
+            compassHeading = null;
+            minimapInfo = null;
+
             HidePopupAuthoringCopies(root);
-            compassHost = root.Q<VisualElement>("compass");
-            compassStrip = root.Q<VisualElement>("compass-strip");
-            compassTicks = root.Q<VisualElement>("compass-ticks");
-            compassMarkers = root.Q<VisualElement>("compass-markers");
-            compassPointer = root.Q<VisualElement>("compass-pointer");
-            compassHeading = root.Q<Label>("compass-heading");
-            minimapInfo = root.Q<Label>("minimap-info");
 
-            ApplyAuthoredPlaceholders();
-
-            EnsureCompassChrome();
-            bound = minimapHost != null && minimapView != null;
-            if (bound && !stamped)
-            {
+            // Crop blit does not need TR hosts; mark bound once the document tree exists.
+            bound = true;
+            if (!stamped)
                 stamped = true;
-                Debug.Log(LogStamp + " hosts bound on UITK_Hud (RT blit of MapUI texture)");
-            }
 
             RefreshPresentation();
         }
@@ -266,10 +262,12 @@ namespace Project.UI
             {
                 DMUiToolkitStyle.TrySetSpriteBackground(minimapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 minimapPlayer.style.backgroundColor = Color.clear;
+                minimapPlayer.style.unityBackgroundImageTintColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red player arrow
             }
 
             if (compassPointer != null)
                 DMUiToolkitStyle.TrySetSpriteBackground(compassPointer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
+                compassPointer.style.unityBackgroundImageTintColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red (match minimap player arrow)
         }
 
         private void RefreshPresentation()
@@ -282,51 +280,15 @@ namespace Project.UI
                 && !DMUiToolkitLoadingOverlay.IsShowing
                 && !GameplayHudVisibility.CinematicChromeHidden;
 
-            bool menuOpen = DMUiToolkitMenus.IsOpen;
-            bool showChrome = bound && hudLive && !menuOpen;
-            bool mapOn = hudLive && mapUi != null && mapUi.ShouldPresentMinimap;
-            bool drive = showChrome && mapOn;
-
-            SetHostVisible(showChrome);
-            if (showChrome)
+            // Crop-only: feed pilot cluster ViewTexture; no TR chrome bind/show.
+            if (hudLive && mapUi != null && Time.unscaledTime >= nextViewRefreshTime)
             {
-                EnsureCompassChrome();
-                if (compassHost != null)
-                    compassHost.style.display = DisplayStyle.Flex;
-                if (compassStrip != null)
-                    compassStrip.style.display = DisplayStyle.Flex;
-                if (minimapInfo != null)
-                    minimapInfo.style.display = DisplayStyle.Flex;
+                nextViewRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
+                EnsureCroppedView(mapUi);
             }
 
-            if (drive || showChrome)
-            {
-                if (drive && !uguiHidden)
-                    HideUguiCounterparts(mapUi);
-                if (Time.unscaledTime >= nextViewRefreshTime)
-                {
-                    nextViewRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
-                    if (mapUi != null)
-                    {
-                        BindMinimapView(mapUi);
-                        PullInfo(mapUi);
-                    }
-                }
-
-                if (mapUi != null)
-                {
-                    RefreshCompassHeading(mapUi);
-                    if (Time.unscaledTime >= nextMarkerRefreshTime)
-                    {
-                        nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
-                        RefreshCompassMarkers(mapUi);
-                    }
-                }
-            }
-            else if (!GameplayHudVisibility.CinematicChromeHidden)
-            {
-                RestoreUguiCounterparts();
-            }
+            if (hudLive && mapUi != null && !uguiHidden)
+                HideUguiCounterparts(mapUi);
         }
 
         private void SetHostVisible(bool visible)
@@ -351,10 +313,14 @@ namespace Project.UI
             return cachedMapUi;
         }
 
-        private void BindMinimapView(MapUI mapUi)
+        /// <summary>
+        /// Player-centered crop of the world bake into <see cref="viewRt"/>.
+        /// Does not require the retired TR <c>minimap-view</c> element.
+        /// </summary>
+        public RenderTexture EnsureCroppedView(MapUI mapUi)
         {
-            if (minimapView == null || mapUi == null)
-                return;
+            if (mapUi == null)
+                return viewRt;
 
             Texture source;
             Vector2 playerUv;
@@ -365,16 +331,15 @@ namespace Project.UI
                 source = mapUi.MinimapSourceTexture;
                 playerUv = new Vector2(0.5f, 0.5f);
                 uvSpan = 0.25f;
-                facingYaw = mapUi.MinimapFacingYaw;
                 if (source == null)
                 {
                     if (!warnedMissingTexture)
                     {
                         warnedMissingTexture = true;
-                        Debug.LogWarning(LogStamp + " MapUI map texture not ready - keeping Builder placeholder");
+                        // silenced LogStamp map-texture warning
                     }
 
-                    return;
+                    return viewRt;
                 }
             }
 
@@ -391,12 +356,31 @@ namespace Project.UI
                 lastBlitSpan = uvSpan;
             }
 
+            return rt;
+        }
+
+        private void BindMinimapView(MapUI mapUi)
+        {
+            if (mapUi == null)
+                return;
+
+            RenderTexture rt = EnsureCroppedView(mapUi);
+            if (minimapView == null || rt == null)
+                return;
+
             if (!TrySetMinimapViewBackground(rt))
                 return;
 
-            DMUiToolkitMenus.SetElementRotate(minimapView, facingYaw);
-            BindMinimapFog(source, playerUv, uvSpan);
+            DMUiToolkitMenus.SetElementRotate(minimapView, mapUi.MinimapFacingYaw);
+
+            Texture source;
+            Vector2 playerUv;
+            float uvSpan;
+            float facingYaw;
+            if (mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+                BindMinimapFog(source, playerUv, uvSpan);
         }
+
 
         private bool TrySetMinimapViewBackground(RenderTexture rt)
         {

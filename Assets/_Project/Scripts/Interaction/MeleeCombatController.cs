@@ -50,7 +50,9 @@ namespace Project.Interaction
             if (!context.performed || equipment == null || !GameSession.HasStarted)
                 return;
 
-            if (IsCombatInputBlocked())
+            // Keyboard/gamepad Tab must not be blocked by UITK EventSystem.IsPointerOverGameObject
+            // (fullscreen/transparent HUD panels often report "pointer over UI" permanently).
+            if (playerController != null && playerController.BlocksCombatInput)
                 return;
 
             equipment.SwitchActiveWeapon();

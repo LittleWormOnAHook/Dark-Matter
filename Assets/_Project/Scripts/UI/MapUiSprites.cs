@@ -197,6 +197,13 @@ namespace Project.UI
             };
         }
 
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            ResetCache();
+        }
+
         internal static void ResetCache()
         {
             DestroySprite(ref arrowSprite);
@@ -224,7 +231,8 @@ namespace Project.UI
 
         private static Sprite CreateArrowSprite()
         {
-            const int size = 32;
+            // Chevron / arrowhead: sharp tip, inverted-V notch at the bottom (not a flat triangle).
+            const int size = 64;
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
                 name = "MapPlayerArrow",
@@ -234,16 +242,20 @@ namespace Project.UI
 
             Color clear = new Color(0f, 0f, 0f, 0f);
             Color fill = Color.white;
-            Vector2 tip = new Vector2(size * 0.5f, size - 3f);
-            Vector2 left = new Vector2(5f, 4f);
-            Vector2 right = new Vector2(size - 5f, 4f);
+            float cx = size * 0.5f;
+            Vector2 tip = new Vector2(cx, size - 2f);
+            Vector2 leftWing = new Vector2(4f, 6f);
+            Vector2 notch = new Vector2(cx, size * 0.42f);
+            Vector2 rightWing = new Vector2(size - 4f, 6f);
 
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
                     Vector2 point = new Vector2(x + 0.5f, y + 0.5f);
-                    texture.SetPixel(x, y, PointInTriangle(point, tip, left, right) ? fill : clear);
+                    bool inside = PointInTriangle(point, tip, leftWing, notch)
+                        || PointInTriangle(point, tip, notch, rightWing);
+                    texture.SetPixel(x, y, inside ? fill : clear);
                 }
             }
 

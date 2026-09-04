@@ -10,10 +10,21 @@
                 <ui:Label name="pilot-stamina-label" text="STAMINA" picking-mode="Ignore" class="pilot-kicker"/>
                 <ui:Label name="pilot-stamina-value" text="100%" picking-mode="Ignore" class="pilot-stat-value pilot-stamina-value"/>
             </ui:VisualElement>
-
             <ui:VisualElement name="pilot-o2-block" picking-mode="Ignore" class="pilot-side-block pilot-o2-block">
                 <ui:Label name="pilot-o2-icon" text="O2" picking-mode="Ignore" class="pilot-o2-icon"/>
                 <ui:Label name="pilot-o2-value" text="100%" picking-mode="Ignore" class="pilot-o2-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="pilot-left-meta" picking-mode="Ignore" class="pilot-meta-col pilot-left-meta">
+                <ui:Label name="pilot-load-label" text="LOAD" picking-mode="Ignore" class="pilot-kicker"/>
+                <ui:Label name="pilot-load-value" text="0%" picking-mode="Ignore" class="pilot-stat-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="pilot-right-meta" picking-mode="Ignore" class="pilot-meta-col pilot-right-meta">
+                <ui:Label name="pilot-elev-legacy" text="ELEV" picking-mode="Ignore" class="pilot-meta-line"/>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="pilot-top-meta" picking-mode="Ignore" class="pilot-top-meta">
+                <ui:Label name="pilot-elev" text="ELEV +0 M" picking-mode="Ignore" class="pilot-meta-line"/>
+                <ui:Label name="pilot-grid" text="GRID 0.00  0.00" picking-mode="Ignore" class="pilot-meta-line"/>
             </ui:VisualElement>
 
             <ui:VisualElement name="pilot-health" picking-mode="Ignore" class="pilot-health">
@@ -31,30 +42,24 @@
                     <ui:VisualElement name="pilot-pois" picking-mode="Ignore" class="pilot-pois"/>
                     <ui:VisualElement name="pilot-map-player" picking-mode="Ignore" class="pilot-map-player"/>
                     <ui:Label name="pilot-cardinal-n" text="N" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-n"/>
-                    <ui:Label name="pilot-cardinal-e" text="E" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-e"/>
-                    <ui:Label name="pilot-cardinal-s" text="S" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-s"/>
-                    <ui:Label name="pilot-cardinal-w" text="W" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-w"/>
+                <ui:Label name="pilot-cardinal-e" text="E" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-e"/>
+                <ui:Label name="pilot-cardinal-s" text="S" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-s"/>
+                <ui:Label name="pilot-cardinal-w" text="W" picking-mode="Ignore" class="pilot-cardinal pilot-cardinal-w"/>
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <ui:VisualElement name="pilot-left-meta" picking-mode="Ignore" class="pilot-meta-col pilot-left-meta">
-                <ui:Label name="pilot-load-label" text="LOAD" picking-mode="Ignore" class="pilot-kicker"/>
-                <ui:Label name="pilot-load-value" text="0%" picking-mode="Ignore" class="pilot-stat-value"/>
-                <ui:Label name="pilot-temp" text="TEMP 21°C" picking-mode="Ignore" class="pilot-meta-line pilot-temp"/>
-            </ui:VisualElement>
-            <ui:VisualElement name="pilot-right-meta" picking-mode="Ignore" class="pilot-meta-col pilot-right-meta">
-                <ui:Label name="pilot-elev" text="ELEV +0 M" picking-mode="Ignore" class="pilot-meta-line"/>
-                <ui:Label name="pilot-grid" text="GRID 0.00  0.00" picking-mode="Ignore" class="pilot-meta-line"/>
+            <ui:VisualElement name="pilot-temp-gauge" picking-mode="Ignore" class="pilot-temp-gauge">
+                <ui:VisualElement name="pilot-temp-track" picking-mode="Ignore" class="pilot-temp-track"/>
+                <ui:Label name="pilot-temp" text="70°F" picking-mode="Ignore" class="pilot-temp-value"/>
             </ui:VisualElement>
             <ui:Label name="pilot-zone" text="" picking-mode="Ignore" class="pilot-zone"/>
-
-            <ui:VisualElement name="pilot-compass" picking-mode="Ignore" class="pilot-compass">
-                <ui:VisualElement name="pilot-compass-ticks" picking-mode="Ignore" class="pilot-compass-ticks"/>
-                <ui:VisualElement name="pilot-compass-line" picking-mode="Ignore" class="pilot-compass-line"/>
-                <ui:VisualElement name="pilot-compass-dots" picking-mode="Ignore" class="pilot-compass-dots"/>
-                <ui:VisualElement name="pilot-compass-center" picking-mode="Ignore" class="pilot-compass-center"/>
-                <ui:Label name="pilot-compass-poi" text="" picking-mode="Ignore" class="pilot-compass-poi"/>
-            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="pilot-compass" picking-mode="Ignore" class="pilot-compass">
+            <ui:VisualElement name="pilot-compass-ticks" picking-mode="Ignore" class="pilot-compass-ticks"/>
+            <ui:VisualElement name="pilot-compass-line" picking-mode="Ignore" class="pilot-compass-line"/>
+            <ui:VisualElement name="pilot-compass-dots" picking-mode="Ignore" class="pilot-compass-dots"/>
+            <ui:VisualElement name="pilot-compass-center" picking-mode="Ignore" class="pilot-compass-center"/>
+            <ui:Label name="pilot-compass-poi" text="" picking-mode="Ignore" class="pilot-compass-poi"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -460,13 +460,14 @@ namespace Project.Interaction
                 collider.enabled = false;
             }
 
+            // Destroy leftover Rigidbodies — kinematic RBs under animated hand bones still
+            // fight transform parenting and cause held-item jitter. Match Invector strip path.
             foreach (Rigidbody body in instance.GetComponentsInChildren<Rigidbody>(true))
             {
                 if (isHand && body.GetComponentInParent<WeaponHitbox>() != null)
                     continue;
 
-                body.isKinematic = true;
-                body.detectCollisions = false;
+                Object.Destroy(body);
             }
         }
 

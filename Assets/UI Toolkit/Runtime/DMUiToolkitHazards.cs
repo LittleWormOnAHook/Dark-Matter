@@ -10,7 +10,7 @@ namespace Project.UI
 {
     /// <summary>
     /// UITK temperature + hazards cluster, zone-entry banner, and exposure ticks.
-    /// Matches HotbarExposureGaugeCluster / VerticalHazardExposureGauge live layout.
+    /// Matches VerticalHazardExposureGauge live layout (UITK hazards overlay).
     /// </summary>
     [DefaultExecutionOrder(-377)]
     [DisallowMultipleComponent]
@@ -42,6 +42,7 @@ namespace Project.UI
         private VisualElement thermalTrack;
         private VisualElement thermalFill;
         private VisualElement thermalNeedle;
+        private Label hazardTitle;
         private Label hazardSeverity;
         private Label hazardPercent;
         private VisualElement hazardSummaryFill;
@@ -107,12 +108,15 @@ namespace Project.UI
             instance = this;
             if (document == null)
                 document = GetComponent<UIDocument>();
+            // Hide legacy thermal / exposure uGUI before first frame paint.
+            HideUgui();
         }
 
         private void OnEnable()
         {
             instance = this;
             BindTree();
+            HideUgui();
             ExposureStatusService service = ExposureStatusService.Instance;
             if (service != null)
             {
@@ -139,6 +143,11 @@ namespace Project.UI
         }
 
         private bool uguiHidden;
+        private int nextHideUguiFrame;
+        private Label cachedPilotElev;
+        private int nextElevResolveFrame;
+        private float lastHazardPinLeft = float.NaN;
+        private float lastHazardPinBottom = float.NaN;
 
         private void LateUpdate()
         {
@@ -149,14 +158,12 @@ namespace Project.UI
                 && !GameplayHudVisibility.CinematicChromeHidden;
             DMUiToolkitOverlayDocument.SetShown(root, want);
 
-            if (!DMUiToolkitHud.IsDriving)
-            {
-                uguiHidden = false;
-            }
-            else if (!uguiHidden)
+            // Legacy uGUI cleanup uses FindAnyObjectByType - throttle once settled.
+            if (!uguiHidden || Time.frameCount >= nextHideUguiFrame)
             {
                 HideUgui();
-                uguiHidden = true;
+                uguiHidden = DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive;
+                nextHideUguiFrame = Time.frameCount + (uguiHidden ? 60 : 15);
             }
 
             if (!want)
@@ -187,7 +194,9 @@ namespace Project.UI
             hazardAlpha = Mathf.MoveTowards(hazardAlpha, hazardAlphaTarget, Time.unscaledDeltaTime / FadeDuration);
             ApplyHazardAlpha();
             TickBanner();
-            BindZoneReceiver();
+            PinAboveElev();
+            if (boundReceiver == null)
+                BindZoneReceiver();
         }
 
         internal void BindTree()
@@ -205,11 +214,23 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             cluster = tree.Q<VisualElement>("hazards-cluster");
             hazardPanel = tree.Q<VisualElement>("hazard-panel");
+            VisualElement thermalPanel = tree.Q<VisualElement>("thermal-panel");
+            if (thermalPanel != null)
+                thermalPanel.style.display = DisplayStyle.None;
+            HideUgui();
+            ShowBuilderHost(tree.Q("hazard-title"));
+            ShowBuilderHost(tree.Q("hazard-severity"));
+            ShowBuilderHost(tree.Q("hazard-percent"));
+            ShowBuilderHost(tree.Q("hazard-rows"));
+            PinBesidePilot();
+            if (document != null && document.sortingOrder != DMUiToolkitOverlayDocument.HazardsSort)
+                document.sortingOrder = DMUiToolkitOverlayDocument.HazardsSort;
             thermalStatus = tree.Q<Label>("thermal-status");
             thermalValue = tree.Q<Label>("thermal-value");
             thermalTrack = tree.Q<VisualElement>("thermal-track");
             thermalFill = tree.Q<VisualElement>("thermal-fill");
             thermalNeedle = tree.Q<VisualElement>("thermal-needle");
+            hazardTitle = tree.Q<Label>("hazard-title");
             hazardSeverity = tree.Q<Label>("hazard-severity");
             hazardPercent = tree.Q<Label>("hazard-percent");
             hazardSummaryFill = tree.Q<VisualElement>("hazard-summary-fill");
@@ -295,6 +316,15 @@ namespace Project.UI
                     hazardAlphaTarget = 0f;
             }
 
+            if (hazardTitle != null)
+            {
+                // Same source as pilot zone label: DominantHazard.DisplayName (CLEAR when none).
+                string zoneTitle = string.IsNullOrEmpty(snapshot.DominantHazard.DisplayName)
+                    ? "CLEAR"
+                    : snapshot.DominantHazard.DisplayName.ToUpperInvariant();
+                hazardTitle.text = zoneTitle;
+            }
+
             if (hazardSeverity != null)
             {
                 hazardSeverity.text = string.IsNullOrEmpty(snapshot.HazardSeverityLabel) ? "CLEAR" : snapshot.HazardSeverityLabel;
@@ -308,7 +338,22 @@ namespace Project.UI
             if (hazardPercent != null)
                 hazardPercent.text = $"{Mathf.RoundToInt(combined * 100f)}%";
 
-            DMUiToolkitOverlayDocument.SetFillPercent(hazardSummaryFill, combined);
+            if (hazardSummaryFill != null)
+            {
+                // Vertical summary bar: fill grows upward via height %.
+                hazardSummaryFill.style.width = Length.Percent(100f);
+                hazardSummaryFill.style.height = Length.Percent(combined * 100f);
+                Color fill = snapshot.DominantHazard.IsClear
+                    ? ExposureHazardPresentation.ClearColor
+                    : snapshot.DominantHazard.DisplayColor;
+                hazardSummaryFill.style.backgroundColor = fill;
+            }
+
+            VisualElement summaryRow = hazardSummaryFill != null ? hazardSummaryFill.parent : null;
+            if (summaryRow != null)
+                summaryRow = summaryRow.parent; // hazard-summary-track -> hz-row-summary
+            if (summaryRow != null)
+                summaryRow.style.display = DisplayStyle.Flex;
 
             ApplyHazardRow(radSegs, radPct, snapshot.RadiationHazardLevel, RadColor);
             ApplyHazardRow(coldSegs, coldPct, snapshot.ColdHazardLevel, ColdColor);
@@ -498,22 +543,157 @@ namespace Project.UI
             }
         }
 
-        private static void HideUgui()
+
+        private static void ShowBuilderHost(VisualElement element)
         {
-            if (!DMUiToolkitHud.IsDriving)
+            if (element == null)
+                return;
+            element.style.display = DisplayStyle.Flex;
+        }
+
+        // Matches PilotCluster.uss .pilot-cluster (left 4, bottom 4, width 248, height 290).
+        // Pilot cluster + minimap geometry from PilotCluster.uss
+        private const float PilotLeft = 4f;
+        private const float PilotBottom = 4f;
+        private const float PilotWidth = 248f;
+        private const float PilotHeight = 290f;
+        private const float MapStageLeft = 4f;
+        private const float MapStageWidth = 200f;
+        private const float HazardGapAboveElev = 6f;
+        // Minimap center X in panel space: cluster left + stage left + half stage.
+        private const float MinimapCenterX = PilotLeft + MapStageLeft + MapStageWidth * 0.5f; // 108
+
+        private VisualElement cachedPilotMapRing;
+        private VisualElement cachedPilotMapPlayer;
+        private int nextMapRingResolveFrame;
+
+        private void PinBesidePilot()
+        {
+            // Legacy name - pins just above ELEV, horizontally centered on the red player arrow.
+            PinAboveElev();
+        }
+
+        private void PinAboveElev()
+        {
+            if (cluster == null)
                 return;
 
-            HotbarExposureGaugeCluster clusterUi = FindAnyObjectByType<HotbarExposureGaugeCluster>(FindObjectsInactive.Include);
-            clusterUi?.SetGameplayVisible(false);
+            float left = MinimapCenterX;
+            float bottom = PilotBottom + PilotHeight + HazardGapAboveElev;
 
-            ExposureStatusHud compact = FindAnyObjectByType<ExposureStatusHud>(FindObjectsInactive.Include);
-            DMUiToolkitOverlayDocument.HideGameObject(compact != null ? compact.gameObject : null);
+            // Horizontal: center on the red player arrow (fallback: map ring).
+            VisualElement arrow = ResolvePilotMapPlayer();
+            if (arrow != null && arrow.panel != null)
+            {
+                Rect ab = arrow.worldBound;
+                if (ab.width > 0.5f && ab.height > 0.5f)
+                    left = ab.xMin + ab.width * 0.5f;
+            }
+            else
+            {
+                VisualElement ring = ResolvePilotMapRing();
+                if (ring != null && ring.panel != null)
+                {
+                    Rect rb = ring.worldBound;
+                    if (rb.width > 1f && rb.height > 1f)
+                        left = rb.xMin + rb.width * 0.5f;
+                }
+            }
+
+            // Vertical: sit just above ELEV.
+            Label elev = ResolvePilotElevLabel();
+            if (elev != null && elev.panel != null)
+            {
+                Rect wb = elev.worldBound;
+                if (wb.width > 1f && wb.height > 1f)
+                {
+                    float panelH = elev.panel.visualTree.worldBound.height;
+                    if (panelH > 1f)
+                    {
+                        float elevTopFromBottom = panelH - wb.yMin;
+                        bottom = elevTopFromBottom + HazardGapAboveElev;
+                    }
+                }
+            }
+
+            if (!float.IsNaN(lastHazardPinLeft)
+                && Mathf.Abs(left - lastHazardPinLeft) < 0.25f
+                && Mathf.Abs(bottom - lastHazardPinBottom) < 0.25f)
+                return;
+
+            lastHazardPinLeft = left;
+            lastHazardPinBottom = bottom;
+            cluster.style.left = left;
+            cluster.style.right = StyleKeyword.Auto;
+            cluster.style.top = StyleKeyword.Auto;
+            cluster.style.bottom = bottom;
+            cluster.style.marginLeft = 0;
+            cluster.style.translate = new Translate(new Length(-50f, LengthUnit.Percent), 0);
+            cluster.style.alignItems = Align.Center;
+        }
+
+        private Label ResolvePilotElevLabel()
+        {
+            if (cachedPilotElev != null && cachedPilotElev.panel != null)
+                return cachedPilotElev;
+
+            if (Time.frameCount < nextElevResolveFrame)
+                return cachedPilotElev;
+
+            nextElevResolveFrame = Time.frameCount + 30;
+            VisualElement root = ResolvePilotRoot();
+            cachedPilotElev = root != null ? root.Q<Label>("pilot-elev") : null;
+            return cachedPilotElev;
+        }
+
+        private VisualElement ResolvePilotMapRing()
+        {
+            if (cachedPilotMapRing != null && cachedPilotMapRing.panel != null)
+                return cachedPilotMapRing;
+
+            if (Time.frameCount < nextMapRingResolveFrame)
+                return cachedPilotMapRing;
+
+            nextMapRingResolveFrame = Time.frameCount + 30;
+            VisualElement root = ResolvePilotRoot();
+            cachedPilotMapRing = root != null ? root.Q<VisualElement>("pilot-map-ring") : null;
+            return cachedPilotMapRing;
+        }
+
+        private VisualElement ResolvePilotMapPlayer()
+        {
+            if (cachedPilotMapPlayer != null && cachedPilotMapPlayer.panel != null)
+                return cachedPilotMapPlayer;
+
+            if (Time.frameCount < nextMapRingResolveFrame)
+                return cachedPilotMapPlayer;
+
+            VisualElement root = ResolvePilotRoot();
+            cachedPilotMapPlayer = root != null ? root.Q<VisualElement>("pilot-map-player") : null;
+            return cachedPilotMapPlayer;
+        }
+
+        private static VisualElement ResolvePilotRoot()
+        {
+            DMUiToolkitPilotCluster pilot = DMUiToolkitPilotCluster.EnsureHost();
+            if (pilot == null)
+                return null;
+            UIDocument doc = pilot.GetComponent<UIDocument>();
+            return doc != null ? doc.rootVisualElement : null;
+        }
+
+        private static void HideUgui()
+        {
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            // Destroy leftover retired uGUI hosts if still present in a scene/prefab.
+            Transform env = DMUiToolkitOverlayDocument.FindNamed("EnvironmentStatusHud")?.transform;
+            if (env != null)
+                Object.Destroy(env.gameObject);
 
             ExposureZoneEntryBannerUI banner = FindAnyObjectByType<ExposureZoneEntryBannerUI>(FindObjectsInactive.Include);
             banner?.DismissImmediate();
-
-            Transform env = DMUiToolkitOverlayDocument.FindNamed("EnvironmentStatusHud")?.transform;
-            DMUiToolkitOverlayDocument.HideGameObject(env != null ? env.gameObject : null);
         }
     }
 }

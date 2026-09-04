@@ -216,8 +216,10 @@ namespace Project.UI
             if (HasUguiCrosshair())
                 return;
 
-            float centerX = Screen.width * 0.5f;
-            float centerY = Screen.height * 0.5f;
+            // Prefer the gameplay camera pixel rect so Editor Game view / letterboxing stays centered.
+            Rect pixel = ResolveGameplayPixelRect();
+            float centerX = pixel.x + pixel.width * 0.5f;
+            float centerY = pixel.y + pixel.height * 0.5f;
             float spreadScale = IsAimingForHud() ? 0.75f : 1f;
             float size = crosshairSize * spreadScale;
             float gap = crosshairGap * spreadScale;
@@ -271,6 +273,19 @@ namespace Project.UI
                 return invectorInput.IsAiming;
 
             return rangedCombat != null && rangedCombat.IsAiming;
+        }
+
+
+        private Rect ResolveGameplayPixelRect()
+        {
+            Camera cam = null;
+            if (playerController != null)
+                cam = playerController.GameplayCamera;
+            if (cam == null)
+                cam = Camera.main;
+            if (cam != null && cam.pixelWidth > 1 && cam.pixelHeight > 1)
+                return cam.pixelRect;
+            return new Rect(0f, 0f, Screen.width, Screen.height);
         }
 
         private void DrawCrosshairLine(Rect rect)
@@ -346,7 +361,7 @@ namespace Project.UI
             target.SetAsLastSibling();
 
             RectTransform layoutParent = target.parent as RectTransform;
-            RectTransform survivalRect = CondensedSurvivalStatsHud.TryGetPanelRect();
+            RectTransform survivalRect = null;
 
             if (layoutParent != null && survivalRect != null && survivalRect.gameObject.activeInHierarchy)
             {

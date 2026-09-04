@@ -1072,3 +1072,66 @@
     display: none;
     background-color: rgba(0, 0, 0, 0);
 }
+
+
+/* Skills tab only: ~67/33 split, tree centered in left pane */
+#skills-left {
+    width: 67%;
+    flex-grow: 0;
+    flex-shrink: 1;
+    align-items: center;
+}
+
+#skills-right {
+    width: 33%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-width: 240px;
+    align-items: stretch;
+}
+
+#skills-hex-scroll {
+    width: 100%;
+    flex-grow: 1;
+}
+
+#skills-hex-host {
+    align-self: center;
+}
+
+/* Prototype skill illustration card under Allocate Point */
+.dmg-skills-card {
+    width: 220px;
+    height: 308px;
+    max-width: 92%;
+    margin-top: 48px;
+    flex-shrink: 0;
+    align-self: center;
+    position: relative;
+    background-color: rgba(28, 42, 56, 0.94);
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.dmg-skills-card-art {
+    width: 100%;
+    height: 268px;
+    flex-shrink: 0;
+    background-color: rgba(47, 47, 47, 0.85);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.dmg-skills-card-caption {
+    height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    font-size: 12px;
+    color: rgb(237, 233, 228);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}

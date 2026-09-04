@@ -60,7 +60,7 @@ namespace DarkMatterGenesis.Editor
             if (change != PlayModeStateChange.EnteredPlayMode || playStamped)
                 return;
             playStamped = true;
-            Debug.Log(LogStamp + " UXML sanitizer on — Save cannot set Editor Extension, project:// Style src, or drop overlay names");
+            // Startup stamp silenced.
         }
 
         static void SanitizeAllToolkitUxml()
@@ -99,12 +99,12 @@ namespace DarkMatterGenesis.Editor
                     return false;
 
                 File.WriteAllText(fullPath, sanitized, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-                Debug.Log(LogStamp + " sanitized " + assetPath);
+                // Sanitizer success stamp silenced.
                 return true;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Debug.LogWarning(LogStamp + " UXML sanitizer skipped " + assetPath + ": " + exception.Message);
+                /* silenced LogStamp warning */
                 return false;
             }
             finally
@@ -224,7 +224,7 @@ namespace DarkMatterGenesis.Editor
             }
             catch (Exception)
             {
-                Debug.LogWarning(LogStamp + " LoadingOverlay.uxml unreadable — restored last known-good overlay tree");
+                /* silenced LogStamp warning */
                 return known;
             }
 
@@ -259,7 +259,7 @@ namespace DarkMatterGenesis.Editor
             {
                 if (!HasRequiredNames(text))
                 {
-                    Debug.LogWarning(LogStamp + " LoadingOverlay.uxml missing required names — restored last known-good overlay tree");
+                    /* silenced LogStamp warning */
                     return known;
                 }
                 return text;
@@ -271,7 +271,7 @@ namespace DarkMatterGenesis.Editor
                 restored = known;
 
             SaveLastGood(restored);
-            Debug.Log(LogStamp + " restored missing overlay names in " + assetPath);
+            /* silenced LogStamp */
             return restored;
         }
 

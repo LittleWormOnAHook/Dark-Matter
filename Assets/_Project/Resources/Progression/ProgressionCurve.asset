@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c22ce5147f409ce439634c89ac5aa04b, type: 3}
   m_Name: ProgressionCurve
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.ProgressionCurveDefinition
-  expScale: 55
+  expScale: -10
   expPower: 1.42
   linearScale: 25
-  xpRequiredPerLevel: []
+  xpRequiredPerLevel: 

@@ -143,6 +143,10 @@
                         <ui:Label name="skills-detail-title" text="Select a skill" picking-mode="Ignore" class="dmg-quest-title" />
                         <ui:Label name="skills-detail-body" text="Category hex trees from the Player skill allocator." picking-mode="Ignore" class="dmg-quest-body" />
                         <ui:Button name="skills-allocate" text="Allocate Point" picking-mode="Position" class="dmg-abandon-btn" />
+                        <ui:VisualElement name="skills-card" class="dmg-skills-card" picking-mode="Ignore">
+                            <ui:VisualElement name="skills-card-art" class="dmg-skills-card-art" picking-mode="Ignore" />
+                            <ui:Label name="skills-card-caption" text="" picking-mode="Ignore" class="dmg-skills-card-caption" />
+                        </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="echoes-body" class="dmg-panel-body" picking-mode="Position">

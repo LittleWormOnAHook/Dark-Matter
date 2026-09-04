@@ -8,6 +8,8 @@ namespace Project.UI
     // without changing world-map bake, pan math, or marker registry behavior.
     public partial class MapUI
     {
+        private int lastUitkSpanAdjustFrame = -1;
+
         public bool ShouldPresentMinimap =>
             GameSettings.MinimapEnabled && GameSession.HasStarted && !IsJournalOpen();
 
@@ -87,9 +89,25 @@ namespace Project.UI
             return true;
         }
 
+        public void UitkEnsureLegacyStartSpan()
+        {
+            if (minimapWorldSpan > DefaultMinimapWorldSpan)
+            {
+                minimapWorldSpan = DefaultMinimapWorldSpan;
+                UpdateMinimapInfoPanel();
+            }
+        }
+
         public void UitkAdjustMinimapSpan(float multiplier)
         {
-            AdjustMinimapSpan(multiplier);
+            // ] zoom-out is capped at 5% past the default 96m span.
+            if (Time.frameCount == lastUitkSpanAdjustFrame)
+                return;
+            lastUitkSpanAdjustFrame = Time.frameCount;
+
+            float maxOut = DefaultMinimapWorldSpan * 1.05f;
+            minimapWorldSpan = Mathf.Clamp(minimapWorldSpan * multiplier, MinMinimapSpan, maxOut);
+            UpdateMinimapInfoPanel();
         }
 
         public void UitkMinimapScanClicked()

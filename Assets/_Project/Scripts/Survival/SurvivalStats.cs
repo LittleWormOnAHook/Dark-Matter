@@ -5,6 +5,7 @@ using Project.Data;
 using Project.Interaction;
 using Project.Survival.Exposure;
 using Project.UI;
+using Project.Progression;
 
 namespace Project.Survival
 {
@@ -16,12 +17,18 @@ namespace Project.Survival
         public float maxHealth = 100f;
         public float maxEnergy = 100f;
         public float maxStamina = 100f;
+
+        /// <summary>When true, stamina does not regen (climb / other drains own the bar).</summary>
+        [System.NonSerialized] public bool suppressStaminaRegen;
         public float maxOxygen = 2400f;
 
         [Header("Drain Rates")]
         public float energyDrain = 1.3f;
         public float oxygenDrainPerSecond = 4f;
         public float staminaRegenPerSecond = 12f;
+
+        [Tooltip("Stamina drained per second while sprinting.")]
+        public float sprintStaminaDrainPerSecond = 12f;
 
         [Header("Health Drain")]
         [Tooltip("Health drained per second while energy is critical.")]
@@ -287,16 +294,24 @@ namespace Project.Survival
                 return;
 
             CurrentEnergy = Mathf.Clamp(CurrentEnergy - Time.deltaTime * energyDrain, 0f, maxEnergy);
+
+            float oxygenConsumeMul = GetOxygenConsumptionMultiplier();
             CurrentOxygen = Mathf.Clamp(
-                CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond * externalOxygenDrainMultiplier,
+                CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond * externalOxygenDrainMultiplier * oxygenConsumeMul,
                 0f,
                 maxOxygen);
 
-            if (!isSprinting)
+            if (isSprinting)
+            {
+                CurrentStamina = Mathf.Max(0f, CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond);
+            }
+            else if (!suppressStaminaRegen)
+            {
                 CurrentStamina = Mathf.Clamp(
                     CurrentStamina + Time.deltaTime * staminaRegenPerSecond * GetStaminaRegenMultiplier(),
                     0f,
                     maxStamina);
+            }
 
             if (!insideExposureZone)
                 RecoverExposure(Time.deltaTime);
@@ -308,7 +323,7 @@ namespace Project.Survival
                 healthLossRate += healthDrain;
 
             if (CurrentOxygen <= 0f)
-                healthLossRate += healthDrain * oxygenDepletedHealthDrainMultiplier;
+                healthLossRate += healthDrain * oxygenDepletedHealthDrainMultiplier * GetOxygenScrubberMultiplier();
 
             healthLossRate += externalExposureHealthDrain + externalThermalHealthDrain;
 
@@ -347,9 +362,51 @@ namespace Project.Survival
             NotifyStatsChanged(force: true);
         }
 
+
+        public bool HasStamina(float amount) => CurrentStamina >= amount;
+
+        /// <summary>Spend stamina if available. Returns false when the cost cannot be paid.</summary>
+        public bool TryConsumeStamina(float amount)
+        {
+            if (amount <= 0f)
+                return true;
+            if (CurrentStamina < amount)
+                return false;
+
+            CurrentStamina = Mathf.Max(0f, CurrentStamina - amount);
+            NotifyStatsChanged(force: true);
+            return true;
+        }
+
+        /// <summary>1 = full burn. Breath Efficiency skills reduce toward a floor of 0.25.</summary>
+        public float GetOxygenConsumptionMultiplier()
+        {
+            float reduction = PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.OxygenConsumptionReductionPercent);
+            return Mathf.Clamp(1f - reduction * 0.01f, 0.25f, 1f);
+        }
+
+        /// <summary>1 = full asphyxiation drain. O2 Scrubber skills slow health tick when oxygen is empty.</summary>
+        public float GetOxygenScrubberMultiplier()
+        {
+            float scrubber = PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.OxygenScrubberPercent);
+            return Mathf.Clamp01(1f - scrubber * 0.01f);
+        }
+
         public void SetStamina(float newStamina)
         {
             CurrentStamina = Mathf.Clamp(newStamina, 0f, maxStamina);
+            NotifyStatsChanged(force: true);
+        }
+
+        /// <summary>Always subtracts stamina (partial OK). Used by climb continuous drain.</summary>
+        public float SpendStamina(float amount)
+        {
+            if (amount <= 0f)
+                return 0f;
+            float before = CurrentStamina;
+            CurrentStamina = Mathf.Max(0f, CurrentStamina - amount);
+            NotifyStatsChanged(force: true);
+            return before - CurrentStamina;
         }
 
         public float GetOxygenDisplayMinutes()

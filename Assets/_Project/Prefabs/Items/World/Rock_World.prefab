@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 8716590531062477240}
   m_Layer: 7
   m_Name: Rock_World
-  m_TagString: Untagged
+  m_TagString: Collectable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

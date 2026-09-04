@@ -41,8 +41,6 @@ namespace Project.Interaction
 
         private const float PickupAimForwardDistance = 1f;
         private const float DefaultPickupAimHeight = 1f;
-        /// <summary>How much the reticle follows camera pitch (0 = locked, 1 = full).</summary>
-        private const float PickupAimVerticalArc = 0.25f;
         /// <summary>Extra normalized screen push toward the ground / forward of the player.</summary>
         private const float PickupAimForwardScreenBias = 0.04f;
         private const float CraftingStationAimRadius = 1.25f;
@@ -751,19 +749,14 @@ namespace Project.Interaction
 
         public static Vector3 GetPickupAimScreenPoint(Camera camera, Transform playerTransform)
         {
+            // Always use true screen center (plus optional normalized offsets).
+            // Projecting a world point 1m ahead of the player drifted the reticle off-center
+            // in third-person and jumped badly when FOV / optics zoom changed.
+            _ = camera;
+            _ = playerTransform;
             float baseScreenY = GetBaseAimScreenY();
             float baseScreenX = Screen.width * (0.5f + PickupAimScreenOffset.x);
-
-            if (camera == null || playerTransform == null)
-                return new Vector3(baseScreenX, baseScreenY, 0f);
-
-            Vector3 projected = camera.WorldToScreenPoint(GetPickupAimWorldPoint(playerTransform, camera));
-            if (projected.z < 0f)
-                return new Vector3(baseScreenX, baseScreenY, 0f);
-
-            float screenX = projected.x;
-            float screenY = Mathf.Lerp(baseScreenY, projected.y, PickupAimVerticalArc);
-            return new Vector3(screenX, screenY, 0f);
+            return new Vector3(baseScreenX, baseScreenY, 0f);
         }
 
         public static Vector2 GetReticleCanvasOffset(Camera camera, Transform playerTransform, RectTransform canvasRect)
@@ -928,11 +921,7 @@ namespace Project.Interaction
             if (pickup == null)
                 return Vector3.zero;
 
-            Collider col = pickup.GetComponentInChildren<Collider>();
-            if (col != null)
-                return col.bounds.center;
-
-            return pickup.transform.position + Vector3.up * 0.2f;
+            return pickup.GetIndicatorWorldAnchor();
         }
 
         private static Vector3 GetRecipePickupAimPoint(RecipePickup pickup)
@@ -940,7 +929,7 @@ namespace Project.Interaction
             if (pickup == null)
                 return Vector3.zero;
 
-            return pickup.transform.position + Vector3.up * 0.35f;
+            return pickup.GetIndicatorWorldAnchor();
         }
 
         public static Vector2 PickupAimScreenOffsetNormalized => PickupAimScreenOffset;

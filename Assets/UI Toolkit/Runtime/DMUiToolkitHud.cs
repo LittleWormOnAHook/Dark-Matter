@@ -50,6 +50,14 @@ namespace Project.UI
         private VisualElement popupTemplate;
         private VisualElement minimapHost;
         private SurvivalStats survivalStats;
+        private string lastHealthFillText;
+        private string lastEnergyFillText;
+        private string lastStaminaFillText;
+        private string lastOxygenFillText;
+        private float lastHealthFill = float.NaN;
+        private float lastEnergyFill = float.NaN;
+        private float lastStaminaFill = float.NaN;
+        private float lastOxygenFill = float.NaN;
         private bool gameplayVisible;
         private bool uguiHidden;
         private bool menuChromeApplied;
@@ -63,9 +71,9 @@ namespace Project.UI
         private readonly List<BoundHudSlot> boundSlots = new List<BoundHudSlot>();
         private VisualElement hotbarHost;
         private VisualElement toolsHost;
-        private VisualElement barsHost;
         private VisualElement companionsHost;
         private InventorySystem inventorySystem;
+        private int nextInventoryBindFrame;
         private EquipmentController equipmentController;
         private InventoryItemActions itemActions;
         private BoundHudSlot pointerSlot;
@@ -188,6 +196,8 @@ namespace Project.UI
             GameSession.GameStarted -= OnGameStarted;
             GameSession.GameStarted += OnGameStarted;
             BindTree();
+            // Suppress legacy uGUI before first paint (do not wait for LateUpdate).
+            HideUguiCounterparts();
             RefreshVisibility();
         }
 
@@ -263,18 +273,7 @@ namespace Project.UI
                 return;
 
             hudRoot = root.Q<VisualElement>("hud-root") ?? root;
-            healthFill = root.Q<VisualElement>("bar-health-fill");
-            energyFill = root.Q<VisualElement>("bar-energy-fill");
-            staminaFill = root.Q<VisualElement>("bar-stamina-fill");
-            oxygenFill = root.Q<VisualElement>("bar-oxygen-fill");
-            HintDynamicFill(healthFill);
-            HintDynamicFill(energyFill);
-            HintDynamicFill(staminaFill);
-            HintDynamicFill(oxygenFill);
-            healthLabel = root.Q<Label>("bar-health-label");
-            energyLabel = root.Q<Label>("bar-energy-label");
-            staminaLabel = root.Q<Label>("bar-stamina-label");
-            oxygenLabel = root.Q<Label>("bar-oxygen-label");
+            DMUiToolkitOverlayDocument.ApplyIgnorePicking(hudRoot);
             promptLabel = root.Q<Label>("prompt");
             radioRoot = root.Q<VisualElement>("radio");
             radioTitle = root.Q<Label>("radio-title");
@@ -289,11 +288,11 @@ namespace Project.UI
             BindCompanionHud(root);
             BindLeftoverChrome(root);
 
-            bound = hudRoot != null && healthFill != null;
+            bound = hudRoot != null;
             if (bound && !stamped)
             {
+                // LogStamp kept as version marker; stop play-time bind spam.
                 stamped = true;
-                Debug.Log(LogStamp + " hotbar/tools bound, sibling of UITK_Root");
             }
 
             BindSurvival();
@@ -398,7 +397,7 @@ namespace Project.UI
             lastCinematicChrome = cinematic;
 
             if (minimapHost != null)
-                minimapHost.style.display = (menuOpen || cinematic) ? DisplayStyle.None : DisplayStyle.Flex;
+                minimapHost.style.display = DisplayStyle.None;
 
             if (hotbarHost != null)
             {
@@ -414,12 +413,6 @@ namespace Project.UI
 
             if (companionsHost != null)
                 companionsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
-
-            if (xpRoot != null)
-                xpRoot.style.display = (gameplayVisible && !cinematic) ? DisplayStyle.Flex : DisplayStyle.None;
-
-            if (barsHost != null)
-                barsHost.style.display = (gameplayVisible && !cinematic) ? DisplayStyle.Flex : DisplayStyle.None;
 
             if (document != null && inventoryOpen)
                 document.sortingOrder = DMUiToolkitBootstrap.HudSortingOrder;
@@ -463,14 +456,14 @@ namespace Project.UI
             if (survivalStats == null)
                 return;
 
-            SetFill(healthFill, healthLabel, survivalStats.CurrentHealth / Mathf.Max(0.01f, survivalStats.maxHealth), Mathf.CeilToInt(survivalStats.CurrentHealth).ToString());
-            SetFill(energyFill, energyLabel, survivalStats.CurrentEnergy / Mathf.Max(0.01f, survivalStats.maxEnergy), Mathf.CeilToInt(survivalStats.CurrentEnergy).ToString());
-            SetFill(staminaFill, staminaLabel, survivalStats.CurrentStamina / Mathf.Max(0.01f, survivalStats.maxStamina), Mathf.CeilToInt(survivalStats.CurrentStamina).ToString());
+            SetFill(healthFill, healthLabel, survivalStats.CurrentHealth / Mathf.Max(0.01f, survivalStats.maxHealth), Mathf.CeilToInt(survivalStats.CurrentHealth).ToString(), ref lastHealthFill, ref lastHealthFillText);
+            SetFill(energyFill, energyLabel, survivalStats.CurrentEnergy / Mathf.Max(0.01f, survivalStats.maxEnergy), Mathf.CeilToInt(survivalStats.CurrentEnergy).ToString(), ref lastEnergyFill, ref lastEnergyFillText);
+            SetFill(staminaFill, staminaLabel, survivalStats.CurrentStamina / Mathf.Max(0.01f, survivalStats.maxStamina), Mathf.CeilToInt(survivalStats.CurrentStamina).ToString(), ref lastStaminaFill, ref lastStaminaFillText);
 
             float oxygen = survivalStats.CurrentOxygen;
             int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(oxygen));
             string oxygenText = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
-            SetFill(oxygenFill, oxygenLabel, survivalStats.GetOxygenNormalized(), oxygenText);
+            SetFill(oxygenFill, oxygenLabel, survivalStats.GetOxygenNormalized(), oxygenText, ref lastOxygenFill, ref lastOxygenFillText);
         }
 
         private static void HintDynamicFill(VisualElement fill)
@@ -479,13 +472,23 @@ namespace Project.UI
                 fill.usageHints = UsageHints.DynamicTransform;
         }
 
-        private static void SetFill(VisualElement fill, Label label, float normalized, string text)
+        private static void SetFill(VisualElement fill, Label label, float normalized, string text, ref float lastFill, ref string lastText)
         {
             float clamped = Mathf.Clamp01(normalized);
-            if (fill != null)
-                fill.style.width = Length.Percent(clamped * 100f);
-            if (label != null)
-                label.text = text ?? string.Empty;
+            bool fillChanged = float.IsNaN(lastFill) || Mathf.Abs(clamped - lastFill) > 0.001f;
+            if (fillChanged)
+            {
+                lastFill = clamped;
+                if (fill != null)
+                    fill.style.width = Length.Percent(clamped * 100f);
+            }
+
+            string next = text ?? string.Empty;
+            if (label != null && !string.Equals(next, lastText, System.StringComparison.Ordinal))
+            {
+                lastText = next;
+                label.text = next;
+            }
         }
 
         private void SetPrompt(string message)
@@ -896,7 +899,6 @@ namespace Project.UI
 
             hotbarHost = root.Q<VisualElement>("hotbar");
             toolsHost = root.Q<VisualElement>("tools");
-            barsHost = root.Q<VisualElement>("bars");
             companionsHost = root.Q<VisualElement>("companions");
 
             int hotbarCount = 10;
@@ -988,19 +990,36 @@ namespace Project.UI
 
         private void BindInventoryEvents()
         {
+            // Already wired — avoid Find spam and double-subscribe.
+            if (inventorySystem != null && equipmentController != null)
+                return;
+
+            bool hunting = inventorySystem == null && equipmentController == null;
+            if (hunting && Time.frameCount < nextInventoryBindFrame)
+                return;
+
             UnbindInventoryEvents();
             inventorySystem = FindAnyObjectByType<InventorySystem>();
             if (inventorySystem != null)
             {
-                equipmentController = inventorySystem.GetComponent<EquipmentController>();
-                itemActions = inventorySystem.GetComponent<InventoryItemActions>();
+                equipmentController = inventorySystem.GetComponent<EquipmentController>()
+                    ?? inventorySystem.GetComponentInChildren<EquipmentController>(true)
+                    ?? inventorySystem.GetComponentInParent<EquipmentController>();
+                itemActions = inventorySystem.GetComponent<InventoryItemActions>()
+                    ?? inventorySystem.GetComponentInChildren<InventoryItemActions>(true);
                 inventorySystem.OnInventoryChanged += RefreshSlotIcons;
+                nextInventoryBindFrame = 0;
             }
-            else
-            {
+
+            if (equipmentController == null)
                 equipmentController = FindAnyObjectByType<EquipmentController>();
+            if (itemActions == null)
                 itemActions = FindAnyObjectByType<InventoryItemActions>();
-            }
+
+            if (equipmentController == null && inventorySystem == null)
+                nextInventoryBindFrame = Time.frameCount + 30;
+            else
+                nextInventoryBindFrame = 0;
 
             if (equipmentController != null)
             {
@@ -1025,6 +1044,9 @@ namespace Project.UI
                 equipmentController.OnToolbarSelectionChanged -= HandleHudToolbarSelectionChanged;
             }
 
+            inventorySystem = null;
+            equipmentController = null;
+            itemActions = null;
             cachedEquipmentPlayer = null;
         }
 
@@ -1592,10 +1614,6 @@ namespace Project.UI
             if (uguiHidden)
                 return;
 
-            CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
-            if (statsHud != null && statsHud.gameObject.activeSelf)
-                statsHud.gameObject.SetActive(false);
-
             InventoryUI inventoryUi = FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include);
             if (inventoryUi != null && inventoryUi.hotbarParent != null && inventoryUi.hotbarParent.gameObject.activeSelf)
                 inventoryUi.hotbarParent.gameObject.SetActive(false);
@@ -1610,6 +1628,11 @@ namespace Project.UI
             if (rangedHud != null)
                 DMUiToolkitOverlayDocument.DisableUguiVisuals(rangedHud.gameObject);
 
+            // Destroy any leftover retired EnvironmentStatusHud scene GO (old gauge cluster host).
+            Transform env = DMUiToolkitOverlayDocument.FindNamed("EnvironmentStatusHud")?.transform;
+            if (env != null)
+                Object.Destroy(env.gameObject);
+
             uguiHidden = true;
         }
 
@@ -1620,10 +1643,6 @@ namespace Project.UI
 
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
             {
-                CondensedSurvivalStatsHud statsHud = FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
-                if (statsHud != null && GameSession.HasStarted && !MainMenuController.BlocksGameplayHud)
-                    statsHud.gameObject.SetActive(true);
-
                 ExpeditionPioneerHudUI expeditionHud = FindAnyObjectByType<ExpeditionPioneerHudUI>(FindObjectsInactive.Include);
                 expeditionHud?.SetGameplayVisible(true);
             }

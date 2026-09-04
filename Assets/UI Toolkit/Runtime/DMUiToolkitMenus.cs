@@ -333,6 +333,7 @@ namespace Project.UI
             {
                 DMUiToolkitStyle.TrySetSpriteBackground(mapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 mapPlayer.style.backgroundColor = Color.clear;
+                mapPlayer.style.unityBackgroundImageTintColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red player arrow
             }
 
             BindInventoryStorage(tree);
@@ -1615,11 +1616,12 @@ namespace Project.UI
 
         private static void StampOnce(string detail)
         {
+            // No-op: Stamp string kept as version marker; stop play-time spam.
             if (stamped)
                 return;
 
             stamped = true;
-            Debug.Log(Stamp + " " + detail);
+            _ = detail;
         }
     }
 }

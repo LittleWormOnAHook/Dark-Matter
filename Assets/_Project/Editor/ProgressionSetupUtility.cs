@@ -50,6 +50,19 @@ namespace Project.EditorTools.Progression
                 CreateSkill("skill_field_conditioning", "Field Conditioning", "Boost energy reserves for long expeditions.", SkillTreeCategory.Player, 1, 1, 4, SkillModifierType.MaxEnergyPercent, 4f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_endurance" }),
                 CreateSkill("skill_survivor_edge", "Survivor's Edge", "Push stamina capacity after Stamina Core.", SkillTreeCategory.Player, 2, 1, 5, SkillModifierType.MaxStaminaPercent, 4f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_stamina_core" }),
 
+                // Survival — oxygen (Lung Capacity tree)
+                CreateSkill("skill_lung_capacity", "Lung Capacity", "Increase max oxygen. Each rank unlocks a locked O2 arc dash (up to 4).", SkillTreeCategory.Survival, 1, 4, 1, SkillModifierType.MaxOxygenPercent, 8f, maxRank: 4),
+                CreateSkill("skill_breath_efficiency", "Breath Efficiency", "Reduce oxygen consumption rate.", SkillTreeCategory.Survival, 0, 5, 2, SkillModifierType.OxygenConsumptionReductionPercent, 8f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_lung_capacity" }),
+                CreateSkill("skill_o2_scrubber", "O2 Scrubber", "When oxygen is empty, slow asphyxiation health drain.", SkillTreeCategory.Survival, 2, 5, 3, SkillModifierType.OxygenScrubberPercent, 12f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_lung_capacity" }),
+
+                // Player — jet / dash (keep registry complete if menu is re-run)
+                CreateSkill("skill_jet_reservoir", "Jet Reservoir", "Increase suit booster fuel so burns last longer.", SkillTreeCategory.Player, 0, 2, 1, SkillModifierType.JetFuelPercent, 8f, maxRank: 5),
+                CreateSkill("skill_jet_thrust", "Jet Thrust", "Increase suit booster thrust.", SkillTreeCategory.Player, 1, 2, 1, SkillModifierType.JetThrustPercent, 8f, maxRank: 5),
+                CreateSkill("skill_jet_recovery", "Jet Recovery", "Regenerate suit booster fuel faster.", SkillTreeCategory.Player, 2, 2, 1, SkillModifierType.JetRegenPercent, 8f, maxRank: 5),
+                CreateSkill("skill_dash_distance", "Dash Distance", "Increase double-tap dash travel distance.", SkillTreeCategory.Player, 0, 3, 1, SkillModifierType.DashDistancePercent, 8f, maxRank: 5),
+                CreateSkill("skill_dash_speed", "Dash Speed", "Increase double-tap dash move speed.", SkillTreeCategory.Player, 1, 3, 1, SkillModifierType.DashSpeedPercent, 8f, maxRank: 5),
+                CreateSkill("skill_dash_air", "Air Dash", "Unlock dashing while airborne.", SkillTreeCategory.Player, 2, 3, 1, SkillModifierType.DashAirUnlock, 1f, maxRank: 1),
+
                 // Melee
                 CreateSkill("skill_blade_training", "Blade Training", "+2 melee damage per rank for all melee weapons.", SkillTreeCategory.Melee, 0, 0, 2, SkillModifierType.MeleeDamageFlat, 2f, maxRank: 5),
                 CreateSkill("skill_guard_break", "Guard Break", "+2 melee damage per rank; opens heavier follow-ups.", SkillTreeCategory.Melee, 1, 0, 3, SkillModifierType.MeleeDamageFlat, 2f, maxRank: 5),

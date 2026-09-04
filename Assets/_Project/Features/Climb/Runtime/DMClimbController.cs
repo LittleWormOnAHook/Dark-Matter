@@ -2,6 +2,8 @@ using Invector.vCharacterController;
 using Project.Features.Dash;
 using Project.Features.Jetpack;
 using Project.Player;
+using Project.Progression;
+using Project.Survival;
 using Project.Vehicles;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -47,6 +49,7 @@ namespace Project.Features.Climb
         private bool _motorOverridden;
         private CharacterController _character;
         private CapsuleCollider _capsule;
+        private SurvivalStats _survival;
 
         private Transform _anchor;
         private Vector3 _localOffset;
@@ -143,6 +146,8 @@ namespace Project.Features.Climb
 
         private void Awake()
         {
+            if (_survival == null)
+                _survival = ResolveSurvivalStats();
             if (profile == null)
                 profile = Resources.Load<DMClimbProfile>(ResourcesPath);
             if (motor == null)
@@ -168,7 +173,7 @@ namespace Project.Features.Climb
 
         private void Start()
         {
-            Debug.Log(BuildStamp);
+            // Startup stamp silenced.
         }
 
         private void OnDisable()
@@ -235,9 +240,18 @@ namespace Project.Features.Climb
             else if (_hopping)
                 TickHop();
             else if (_climbing)
+            {
+                TickClimbStamina();
+                if (!_climbing)
+                    return;
                 StickAndMove();
+            }
             else
+            {
+                if (_survival != null)
+                    _survival.suppressStaminaRegen = false;
                 SteerAirControl();
+            }
         }
 
         /// <summary>Jump: drop if climbing, else attach if a climbable is in front. Never eats a normal jump.</summary>
@@ -281,6 +295,10 @@ namespace Project.Features.Climb
 
             if (TryJumpToWall(out RaycastHit hit))
             {
+                if (!HasClimbStartStamina())
+                    return false;
+                if (!TryPayClimbStartStamina())
+                    return false;
                 Attach(hit);
                 return true;
             }
@@ -742,8 +760,93 @@ namespace Project.Features.Climb
             return false;
         }
 
+
+        private SurvivalStats Survival
+        {
+            get
+            {
+                if (_survival == null)
+                    _survival = ResolveSurvivalStats();
+                return _survival;
+            }
+        }
+
+        private SurvivalStats ResolveSurvivalStats()
+        {
+            SurvivalStats stats = GetComponent<SurvivalStats>();
+            if (stats == null)
+                stats = GetComponentInParent<SurvivalStats>();
+            if (stats == null)
+                stats = GetComponentInChildren<SurvivalStats>(true);
+            return stats;
+        }
+
+        private bool HasClimbStartStamina()
+        {
+            SurvivalStats stats = Survival;
+            if (stats == null)
+                return true;
+            float cost = profile != null ? profile.climbStartStaminaCost : 5f;
+            return cost <= 0f || stats.HasStamina(cost);
+        }
+
+        private bool TryPayClimbStartStamina()
+        {
+            SurvivalStats stats = Survival;
+            if (stats == null)
+                return true;
+            float cost = profile != null ? profile.climbStartStaminaCost : 5f;
+            return cost <= 0f || stats.TryConsumeStamina(cost);
+        }
+
+        private void TickClimbStamina()
+        {
+            SurvivalStats stats = Survival;
+            if (stats == null)
+                return;
+
+            // Regen otherwise overpowers this drain (~12/s regen vs ~1 dash/s).
+            stats.suppressStaminaRegen = true;
+
+            // 1 stamina dash/sec while climb-moving; half when hanging/idle on wall.
+            // Dash size matches pilot stamina arc (maxStamina / unlockedDashCount).
+            int unlockedDashes = ResolveUnlockedStaminaDashCount();
+            float maxStamina = Mathf.Max(1f, stats.maxStamina);
+            // Guard: never allow a degenerate dash count to zero-out drain.
+            float dashCost = maxStamina / Mathf.Max(1, unlockedDashes);
+            float legacy = profile != null ? Mathf.Max(0f, profile.climbStaminaDrainPerSecond) : 8f;
+            // Prefer dash-sized drain; floor with legacy profile rate so spend is always visible.
+            float moveRate = Mathf.Max(dashCost, legacy * 0.35f);
+            float moveMag = new Vector2(_dampedClimbInput.x, _dampedClimbInput.y).magnitude;
+            bool hangingOrIdle = _lipHang || moveMag < 0.08f;
+            float drainPerSec = hangingOrIdle ? moveRate * 0.5f : moveRate;
+            if (drainPerSec > 0f)
+                stats.SpendStamina(drainPerSec * Time.fixedDeltaTime);
+
+            if (stats.CurrentStamina <= 0.01f)
+                DropFromClimb();
+        }
+
+        /// <summary>Matches DMUiToolkitPilotCluster stamina arc dash count.</summary>
+        private static int ResolveUnlockedStaminaDashCount()
+        {
+            const float StaminaSweepDeg = 136f;
+            const float DashSweep = 3.35f;
+            const float DashGap = 2.05f;
+            const int LockedArcDashCount = 4;
+            float pitch = DashSweep + DashGap;
+            int total = Mathf.Max(LockedArcDashCount + 1, Mathf.FloorToInt((StaminaSweepDeg + 0.01f) / pitch));
+            int baseDashCount = Mathf.Max(1, total - LockedArcDashCount);
+            int bonus = Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxStaminaPercent), 0, LockedArcDashCount);
+            return baseDashCount + bonus;
+        }
+
         private void Attach(RaycastHit hit)
         {
+            SurvivalStats attachStats = Survival;
+            if (attachStats != null)
+                attachStats.suppressStaminaRegen = true;
+
             _climbing = true;
             _hopping = false;
             _lipHang = false;
@@ -1725,6 +1828,9 @@ namespace Project.Features.Climb
 
         private void DropFromClimb()
         {
+            if (Survival != null)
+                Survival.suppressStaminaRegen = false;
+
             float push = profile != null ? profile.dropPush : 2.4f;
             float air = profile != null ? profile.airControlSeconds : 0.95f;
             Vector3 off = Flatten(_lastNormal) * push;
@@ -1747,6 +1853,8 @@ namespace Project.Features.Climb
                 return;
 
             Vector3 platformVel = addPlatformVelocity ? _platformVel : Vector3.zero;
+            if (_survival != null)
+                _survival.suppressStaminaRegen = false;
             _climbing = false;
             _mantling = false;
             _hasLastStick = false;
@@ -1771,6 +1879,8 @@ namespace Project.Features.Climb
 
         private void ForceUnlock()
         {
+            if (_survival != null)
+                _survival.suppressStaminaRegen = false;
             _climbing = false;
             _hopping = false;
             _anchor = null;

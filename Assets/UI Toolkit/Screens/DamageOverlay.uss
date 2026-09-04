@@ -36,3 +36,82 @@
 .dmg-dmg-crit {
     color: rgb(255, 209, 31);
 }
+
+
+/* AAA world proximity dots (pickups / interactables) */
+.dmg-world-dots {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-world-dot {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgba(212, 160, 23, 0.28);
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-world-dot-core {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgba(212, 160, 23, 0.92);
+    border-width: 1px;
+    border-color: rgba(20, 28, 36, 0.55);
+}
+
+.dmg-world-bars {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+.dmg-world-dot-host {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-world-dot-stem {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background-color: rgba(212, 160, 23, 0.85);
+    transform-origin: 50% 50%;
+}
+
+.dmg-world-dot {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgba(212, 160, 23, 0.28);
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-world-dot-core {
+    width: 50%;
+    height: 50%;
+    border-radius: 50%;
+    background-color: rgba(212, 160, 23, 0.92);
+    border-width: 1px;
+    border-color: rgba(20, 28, 36, 0.55);
+}

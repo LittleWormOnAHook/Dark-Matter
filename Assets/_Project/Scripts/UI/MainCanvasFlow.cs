@@ -50,7 +50,7 @@ namespace Project.UI
         }
 
         private static bool UitkOwnsGameplayHud =>
-            DMUiToolkitConfig.IsEnabled && DMUiToolkitHud.IsDriving;
+            DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive;
 
         public static void SanitizeCanvasHost(Canvas canvas)
         {
@@ -169,7 +169,6 @@ namespace Project.UI
             if (inventory != null && !inventory.gameObject.activeSelf)
                 inventory.gameObject.SetActive(true);
             inventory?.SetBottomHudVisible(true);
-            inventory?.EnsureSurvivalStatsHudVisible();
 
             ToolBarUI toolbar = Object.FindAnyObjectByType<ToolBarUI>(FindObjectsInactive.Include);
             if (toolbar != null && !toolbar.gameObject.activeSelf)
@@ -179,19 +178,6 @@ namespace Project.UI
 
             if (!UitkOwnsGameplayHud)
             {
-                CondensedSurvivalStatsHud statsHud = Object.FindAnyObjectByType<CondensedSurvivalStatsHud>(FindObjectsInactive.Include);
-                statsHud?.RefreshLayout();
-
-                HotbarXpHud xpHud = Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
-                if (xpHud == null)
-                {
-                    Canvas canvas = MainMenuController.ResolveMainCanvas()
-                        ?? Object.FindAnyObjectByType<Canvas>();
-                    if (canvas != null)
-                        xpHud = HotbarXpHud.EnsureExists(canvas.transform);
-                }
-                xpHud?.SetVisible(true);
-
                 ActiveQuestHudUI questHud = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
                 if (questHud == null)
                 {
@@ -212,16 +198,8 @@ namespace Project.UI
 
             GameplayHudVisibility.RefreshGameplayHud();
 
-            // RefreshGameplayHud()'s "blocked" branch force-hides CondensedSurvivalStatsHud's own
-            // GameObject whenever it reads MainMenuController.BlocksGameplayHud as true — and nothing
-            // else re-shows it afterward. If that flag was still momentarily stale on the exact frame
-            // a paused/menu session resumes (Esc to main menu, then back), vitals could get stuck
-            // hidden forever. Re-assert once more now that the phase transition is fully settled;
-            // this is a no-op if everything was already correct.
-            Object.FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include)?.EnsureSurvivalStatsHudVisible();
             if (!UitkOwnsGameplayHud)
             {
-                Object.FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include)?.SetVisible(true);
                 Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include)?.SetGameplayVisible(true);
             }
         }

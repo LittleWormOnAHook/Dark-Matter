@@ -13,10 +13,10 @@
 
 .pilot-cluster {
     position: absolute;
-    right: 14px;
-    bottom: 12px;
-    width: 340px;
-    height: 360px;
+    left: 4px;
+    bottom: 4px;
+    width: 248px;
+    height: 290px;
     background-color: rgba(0, 0, 0, 0);
     overflow: visible;
 }
@@ -54,13 +54,15 @@
 
 .pilot-side-block {
     position: absolute;
-    top: 92px;
-    width: 48px;
+    left: 50%;
+    top: 198px;
+    width: 56px;
+    margin-left: -28px;
     background-color: rgba(0, 0, 0, 0);
     align-items: center;
 }
 
-.pilot-o2-block { left: 4px; }
+.pilot-o2-block { left: 50%; }
 
 .pilot-o2-icon {
     color: #EDE9E4;
@@ -79,31 +81,35 @@
 }
 
 .pilot-health {
+    /* +25% again from 40px host / 10px track; bottom-aligned with temperature strip. */
     position: absolute;
-    right: 6px;
-    top: 56px;
-    width: 32px;
-    height: 150px;
+    right: 0px;
+    bottom: 4px;
+    top: auto;
+    width: 50px;
+    height: 186px;
     align-items: center;
+    justify-content: flex-end;
     background-color: rgba(0, 0, 0, 0);
 }
 
 .pilot-health-track {
-    width: 8px;
+    width: 13px;
     flex-grow: 1;
-    margin-top: 4px;
-    margin-bottom: 4px;
+    margin-top: 0;
+    margin-bottom: 2px;
     background-color: rgba(28, 42, 56, 0.35);
     justify-content: flex-end;
     overflow: hidden;
     border-width: 1px;
-    border-color: #D4A017;
+    border-color: #8A6A12;
 }
 
 .pilot-health-fill {
+    /* Solid fill replaced at runtime by dashed HealthDashes painter. Keep host for Builder. */
     width: 100%;
     height: 100%;
-    background-color: rgb(235, 97, 81);
+    background-color: rgb(232, 59, 59);
 }
 
 .pilot-health-value {
@@ -112,12 +118,13 @@
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     background-color: rgba(0, 0, 0, 0);
+    margin-bottom: 2px;
 }
 
 .pilot-map-stage {
     position: absolute;
-    left: 70px;
-    top: 28px;
+    left: 4px;
+    top: 48px;
     width: 200px;
     height: 200px;
     background-color: rgba(0, 0, 0, 0);
@@ -174,16 +181,17 @@
 
 .pilot-cardinal {
     position: absolute;
-    color: #EDE9E4;
-    font-size: 11px;
+    color: #FF1E14;
+    font-size: 13px; /* 11px + 20% */
     -unity-font-style: bold;
     background-color: rgba(0, 0, 0, 0);
+    -unity-text-align: middle-center;
 }
 
-.pilot-cardinal-n { left: 50%; top: 4px; margin-left: -5px; color: #D4A017; }
-.pilot-cardinal-e { right: 6px; top: 50%; margin-top: -7px; }
-.pilot-cardinal-s { left: 50%; bottom: 2px; margin-left: -4px; }
-.pilot-cardinal-w { left: 6px; top: 50%; margin-top: -7px; }
+.pilot-cardinal-n { left: 50%; top: -2px; margin-left: -6px; color: #FF1E14; }
+.pilot-cardinal-e { left: auto; right: -2px; top: 50%; margin-top: -8px; color: #FF1E14; }
+.pilot-cardinal-s { left: 50%; top: auto; bottom: -2px; margin-left: -6px; color: #FF1E14; }
+.pilot-cardinal-w { left: -2px; top: 50%; margin-top: -8px; color: #FF1E14; }
 
 .pilot-pois {
     position: absolute;
@@ -204,9 +212,69 @@
     border-radius: 3px;
 }
 
+.pilot-top-meta {
+    /* Centered on player arrow / map ring: map-stage left 4 + width 200 → center 104 inside cluster. */
+    position: absolute;
+    left: 104px;
+    top: 0px;
+    width: 200px;
+    height: 28px;
+    margin-left: -100px;
+    align-items: stretch;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-top-meta .pilot-meta-line {
+    width: 100%;
+    -unity-text-align: middle-center;
+    font-size: 12px;
+    height: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.pilot-top-meta .pilot-grid {
+    margin-top: -4px;
+}
+
+.pilot-temp-gauge {
+    position: absolute;
+    left: 24px;
+    top: 252px;
+    width: 160px;
+    height: 34px;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-temp-track {
+    width: 148px;
+    height: 8px;
+    margin-top: 2px;
+    background-color: rgba(0, 0, 0, 0);
+    overflow: hidden;
+    border-radius: 1px;
+}
+
+.pilot-temp-value {
+    color: #EDE9E4;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 0.4px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+    margin-top: 2px;
+}
+
 .pilot-meta-col {
     position: absolute;
-    top: 228px;
+    top: 238px;
     width: 110px;
     background-color: rgba(0, 0, 0, 0);
 }
@@ -228,10 +296,12 @@
 .pilot-right-meta .pilot-meta-line { -unity-text-align: middle-right; }
 
 .pilot-zone {
+    /* Centered on player arrow / map ring (stage center 104). */
     position: absolute;
-    left: 70px;
-    top: 228px;
+    left: 104px;
+    top: 28px;
     width: 200px;
+    margin-left: -100px;
     color: #C02E7A;
     font-size: 10px;
     -unity-font-style: bold;
@@ -242,9 +312,10 @@
 
 .pilot-compass {
     position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 4px;
+    left: 50%;
+    top: 10px;
+    width: 486px;
+    margin-left: -243px;
     height: 72px;
     background-color: rgba(0, 0, 0, 0);
     overflow: visible;

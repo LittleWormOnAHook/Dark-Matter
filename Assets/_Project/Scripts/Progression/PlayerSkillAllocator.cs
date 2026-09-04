@@ -33,23 +33,52 @@ namespace Project.Progression
                 return false;
             }
 
-            if (skill.prerequisiteSkillIds != null)
+            if (!ArePrerequisitesFullyMet(skill, progression, out error))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Prior-in-line skills are <see cref="SkillDefinition.prerequisiteSkillIds"/>.
+        /// Each must be at <see cref="SkillDefinition.ClampedMaxRank"/> before this skill can take points.
+        /// Empty prerequisites = first skill in its chain (always eligible for this check).
+        /// </summary>
+        public static bool ArePrerequisitesFullyMet(SkillDefinition skill, PlayerProgressionManager progression, out string error)
+        {
+            error = null;
+            if (skill == null)
             {
-                for (int i = 0; i < skill.prerequisiteSkillIds.Length; i++)
+                error = "Missing skill.";
+                return false;
+            }
+
+            if (skill.prerequisiteSkillIds == null || skill.prerequisiteSkillIds.Length == 0)
+                return true;
+
+            if (progression == null)
+            {
+                error = "Missing progression.";
+                return false;
+            }
+
+            for (int i = 0; i < skill.prerequisiteSkillIds.Length; i++)
+            {
+                string prereqId = skill.prerequisiteSkillIds[i];
+                if (string.IsNullOrEmpty(prereqId))
+                    continue;
+
+                SkillDefinition prereq = SkillRegistry.Resolve(prereqId);
+                if (prereq == null)
+                    continue;
+
+                int required = prereq.ClampedMaxRank;
+                int have = progression.GetSkillRank(prereqId);
+                if (have < required)
                 {
-                    string prereqId = skill.prerequisiteSkillIds[i];
-                    if (string.IsNullOrEmpty(prereqId))
-                        continue;
-
-                    SkillDefinition prereq = SkillRegistry.Resolve(prereqId);
-                    if (prereq == null)
-                        continue;
-
-                    if (progression.GetSkillRank(prereqId) <= 0)
-                    {
-                        error = $"Requires {prereq.displayName}.";
-                        return false;
-                    }
+                    string name = string.IsNullOrEmpty(prereq.displayName) ? prereqId : prereq.displayName;
+                    error = $"Requires {name} at max rank ({have}/{required}).";
+                    return false;
                 }
             }
 
@@ -87,6 +116,28 @@ namespace Project.Progression
             gatherKind == MineHarvestGatherKind.Harvest ? GetHarvestingRank() : GetMiningRank();
 
 
+
+        /// <summary>Sum of allocated ranks across all skills with the given modifier type.</summary>
+        public static int GetTotalRank(SkillModifierType modifierType)
+        {
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            if (progression == null)
+                return 0;
+
+            int total = 0;
+            foreach (SkillDefinition skill in SkillRegistry.GetAllSkills())
+            {
+                if (skill == null || skill.modifierType != modifierType)
+                    continue;
+
+                int rank = progression.GetSkillRank(skill.ResolvedId);
+                if (rank > 0)
+                    total += rank;
+            }
+
+            return total;
+        }
+
         public static float GetTotalBonusPercent(SkillModifierType modifierType)
         {
             PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
@@ -103,7 +154,7 @@ namespace Project.Progression
                 if (rank <= 0)
                     continue;
 
-                total += skill.bonusPercentPerRank * rank;
+                total += skill.GetBonusAtRank(rank);
             }
 
             return total;

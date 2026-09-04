@@ -25,19 +25,8 @@ namespace Project.EditorTools.UiLayout
 
         public static readonly UiPanelDefinition[] Panels =
         {
-            new UiPanelDefinition { Label = "Survival Stats", Category = "HUD", PanelId = UiPanelIds.SurvivalStats, SearchNames = new[] { "SurvivalStatsPanel", "CondensedSurvivalStatsHud" }, ComponentType = typeof(CondensedSurvivalStatsHud) },
             new UiPanelDefinition { Label = "Hotbar", Category = "HUD", PanelId = UiPanelIds.Hotbar, SearchNames = new[] { "Hotbar" } },
             new UiPanelDefinition { Label = "Toolbar", Category = "HUD", SearchNames = new[] { "ToolBar" }, ComponentType = typeof(ToolBarUI), PlayModeOnly = true },
-            new UiPanelDefinition
-            {
-                Label = "Exposure Gauge Cluster",
-                Category = "HUD",
-                PanelId = UiPanelIds.ExposureGaugeCluster,
-                SearchNames = new[] { "ExposureGaugeCluster" },
-                ComponentType = typeof(HotbarExposureGaugeCluster),
-                PlayModeOnly = true,
-                Description = "Bottom-left TEMP + HAZARDS cluster (10px screen inset). Built by ToolBarUI at runtime."
-            },
             new UiPanelDefinition
             {
                 Label = "Thermal Gauge",
@@ -74,7 +63,6 @@ namespace Project.EditorTools.UiLayout
             new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "AcBalanceText", "PiBalanceText", "CurrencyHudText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "Player Level HUD", Category = "HUD", SearchNames = new[] { "HotbarXpHud", "PlayerLevelHud" }, PlayModeOnly = true, Description = "Lv/XP readout under the hotbar. Built by HotbarXpHud." },
             new UiPanelDefinition { Label = "Pickup Proximity Dots", Category = "HUD", SearchNames = new[] { "PickupProximityDots" }, PlayModeOnly = true },
             new UiPanelDefinition { Label = "World Interaction Dots", Category = "HUD", SearchNames = new[] { "WorldInteractionDots" }, ComponentType = typeof(WorldInteractionDotUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Ranged Combat HUD", Category = "HUD", SearchNames = new[] { "RangedAmmoLabel" }, ComponentType = typeof(RangedCombatHud), PlayModeOnly = true, Description = "Crosshair + ammo readout shown while a ranged weapon is drawn." },
@@ -479,8 +467,6 @@ namespace Project.EditorTools.UiLayout
 
             switch (panel.Label)
             {
-                case "Survival Stats":
-                    return PrepareSurvivalStatsLayout();
                 case "Hotbar":
                     return PrepareHotbarLayout();
                 case "Toolbar":
@@ -595,19 +581,6 @@ namespace Project.EditorTools.UiLayout
             serialized.ApplyModifiedProperties();
             UiLayoutEditorInspectorDrawers.CommitChange(target, "Prepare Manual UI Layout");
             return true;
-        }
-
-        private static bool PrepareSurvivalStatsLayout()
-        {
-            CondensedSurvivalStatsHud statsHud = UnityEngine.Object.FindAnyObjectByType<CondensedSurvivalStatsHud>();
-            if (statsHud == null)
-            {
-                RectTransform statsPanel = FindDeepRect(null, "SurvivalStatsPanel");
-                if (statsPanel != null)
-                    statsHud = statsPanel.GetComponent<CondensedSurvivalStatsHud>();
-            }
-
-            return statsHud != null && SetSerializedBoolIfExists(statsHud, "applyRuntimeLayout", false);
         }
 
         private static bool PrepareHotbarLayout()

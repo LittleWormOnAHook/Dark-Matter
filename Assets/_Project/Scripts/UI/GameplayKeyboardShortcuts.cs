@@ -146,6 +146,53 @@ namespace Project.UI
             TryHandleJournalHotkeys();
             TryHandleHotbarHotkeys();
             TryHandleToolbarHotkeys();
+            TryHandleMinimapZoom();
+        }
+
+        public static void TryHandleMinimapZoom()
+        {
+            if (!CanProcess())
+                return;
+
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return;
+
+            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            if (journal != null && journal.IsOpen)
+                return;
+
+            if (DMUiToolkitMenus.IsOpen)
+                return;
+
+            bool zoomIn = false;
+            bool zoomOut = false;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.leftBracketKey.wasPressedThisFrame)
+                    zoomIn = true;
+                if (keyboard.rightBracketKey.wasPressedThisFrame)
+                    zoomOut = true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftBracket))
+                zoomIn = true;
+            if (Input.GetKeyDown(KeyCode.RightBracket))
+                zoomOut = true;
+
+            if (!zoomIn && !zoomOut)
+                return;
+
+            MapUI mapUi = Object.FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            if (mapUi == null)
+                return;
+
+            if (zoomIn)
+                mapUi.UitkAdjustMinimapSpan(0.833f);
+            if (zoomOut)
+                mapUi.UitkAdjustMinimapSpan(1.2f);
         }
 
         private static int cinematicHandledFrame = -1;
@@ -396,12 +443,18 @@ namespace Project.UI
             out InventoryItemActions itemActions)
         {
             inventory = Object.FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
-            equipment = inventory != null
-                ? inventory.GetComponent<EquipmentController>()
-                : Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
-            itemActions = inventory != null
-                ? inventory.GetComponent<InventoryItemActions>()
-                : null;
+            equipment = null;
+            itemActions = null;
+            if (inventory != null)
+            {
+                equipment = inventory.GetComponent<EquipmentController>()
+                    ?? inventory.GetComponentInChildren<EquipmentController>(true)
+                    ?? inventory.GetComponentInParent<EquipmentController>();
+                itemActions = inventory.GetComponent<InventoryItemActions>()
+                    ?? inventory.GetComponentInChildren<InventoryItemActions>(true);
+            }
+            if (equipment == null)
+                equipment = Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
 
             return inventory != null && equipment != null;
         }

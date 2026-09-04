@@ -24,6 +24,7 @@ namespace Project.UI
         private const float TreePadX = 56f;
         private const float TreePadY = 48f;
         private const int TreeColumns = 3;
+        private float lastTreeContentWidth = 420f;
 
         private Transform embeddedParent;
         private GameObject panelRoot;
@@ -146,19 +147,56 @@ namespace Project.UI
             summaryLabel = CreateLabel(panelRoot.transform, "Summary", JournalPanelLayout.SummaryFontSize);
             summaryLabel.color = DarkMatterGenesisUiPalette.BodyText;
 
-            GameObject tabsObject = new GameObject("CategoryTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            tabsObject.transform.SetParent(panelRoot.transform, false);
-            LayoutElement tabsLayout = tabsObject.GetComponent<LayoutElement>();
-            tabsLayout.minHeight = 34f;
-            tabsLayout.preferredHeight = 36f;
-            tabsLayout.flexibleHeight = 0f;
+            // Horizontal overflow scroll for category tabs (5 x 88 + spacing ~464px).
+            // Scroll inactive when content fits viewport (e.g. 1920); enables when journal narrows.
+            GameObject tabsScrollObject = new GameObject("CategoryTabsScroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement));
+            tabsScrollObject.transform.SetParent(panelRoot.transform, false);
+            LayoutElement tabsScrollLayout = tabsScrollObject.GetComponent<LayoutElement>();
+            tabsScrollLayout.minHeight = 34f;
+            tabsScrollLayout.preferredHeight = 36f;
+            tabsScrollLayout.flexibleHeight = 0f;
+            tabsScrollLayout.flexibleWidth = 1f;
+
+            GameObject tabsViewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
+            tabsViewport.transform.SetParent(tabsScrollObject.transform, false);
+            RectTransform tabsViewportRect = tabsViewport.GetComponent<RectTransform>();
+            JournalPanelLayout.StretchFill(tabsViewportRect, 0f);
+            Image tabsViewportImage = tabsViewport.GetComponent<Image>();
+            tabsViewportImage.color = new Color(0f, 0f, 0f, 0f);
+            tabsViewportImage.raycastTarget = true;
+
+            GameObject tabsObject = new GameObject("CategoryTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
+            tabsObject.transform.SetParent(tabsViewport.transform, false);
+            RectTransform tabsContentRect = tabsObject.GetComponent<RectTransform>();
+            tabsContentRect.anchorMin = new Vector2(0f, 0f);
+            tabsContentRect.anchorMax = new Vector2(0f, 1f);
+            tabsContentRect.pivot = new Vector2(0f, 0.5f);
+            tabsContentRect.anchoredPosition = Vector2.zero;
+            tabsContentRect.sizeDelta = new Vector2(0f, 0f);
+
             HorizontalLayoutGroup tabsGroup = tabsObject.GetComponent<HorizontalLayoutGroup>();
             tabsGroup.spacing = 6f;
+            tabsGroup.padding = new RectOffset(0, 0, 0, 0);
             tabsGroup.childAlignment = TextAnchor.MiddleLeft;
             tabsGroup.childControlWidth = true;
             tabsGroup.childControlHeight = true;
             tabsGroup.childForceExpandWidth = false;
             tabsGroup.childForceExpandHeight = true;
+
+            ContentSizeFitter tabsFitter = tabsObject.GetComponent<ContentSizeFitter>();
+            tabsFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            tabsFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            ScrollRect tabsScroll = tabsScrollObject.GetComponent<ScrollRect>();
+            tabsScroll.viewport = tabsViewportRect;
+            tabsScroll.content = tabsContentRect;
+            tabsScroll.horizontal = true;
+            tabsScroll.vertical = false;
+            tabsScroll.movementType = ScrollRect.MovementType.Clamped;
+            tabsScroll.scrollSensitivity = 24f;
+            tabsScroll.horizontalScrollbar = null;
+            tabsScroll.verticalScrollbar = null;
+
             categoryTabsParent = tabsObject.transform;
             BuildCategoryTabs();
 
@@ -207,9 +245,10 @@ namespace Project.UI
             GameObject content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(viewport.transform, false);
             treeContent = content.GetComponent<RectTransform>();
-            treeContent.anchorMin = new Vector2(0f, 1f);
-            treeContent.anchorMax = new Vector2(0f, 1f);
-            treeContent.pivot = new Vector2(0f, 1f);
+            // Top-center so the hex tree sits centered in the left panel (no left-aligned empty right).
+            treeContent.anchorMin = new Vector2(0.5f, 1f);
+            treeContent.anchorMax = new Vector2(0.5f, 1f);
+            treeContent.pivot = new Vector2(0.5f, 1f);
             treeContent.anchoredPosition = Vector2.zero;
 
             GameObject paths = new GameObject("Paths", typeof(RectTransform));
@@ -225,17 +264,20 @@ namespace Project.UI
             ScrollRect scroll = scrollObject.GetComponent<ScrollRect>();
             scroll.viewport = viewportRect;
             scroll.content = treeContent;
-            scroll.horizontal = true;
+            // No horizontal tree scrollbar — center content instead.
+            scroll.horizontal = false;
             scroll.vertical = true;
+            scroll.horizontalScrollbar = null;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 28f;
 
             GameObject detailColumn = new GameObject("DetailColumn", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             detailColumn.transform.SetParent(bodySplit.transform, false);
+            // Match combined Echoes + Achievements tab widths (~88+88+spacing); keep detail narrow.
             LayoutElement detailLayout = detailColumn.GetComponent<LayoutElement>();
-            detailLayout.flexibleWidth = 0.85f;
-            detailLayout.minWidth = 220f;
-            detailLayout.preferredWidth = 260f;
+            detailLayout.flexibleWidth = 0f;
+            detailLayout.minWidth = 280f;
+            detailLayout.preferredWidth = 300f;
             Image detailBg = detailColumn.GetComponent<Image>();
             MenuUiBuilder.ApplyUiSprite(detailBg);
             detailBg.color = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.88f);
@@ -346,7 +388,9 @@ namespace Project.UI
             List<SkillDefinition> skills = SkillRegistry.GetSkillsByCategory(activeCategory);
             if (skills.Count == 0)
             {
+                lastTreeContentWidth = 420f;
                 treeContent.sizeDelta = new Vector2(420f, 280f);
+                treeContent.anchoredPosition = Vector2.zero;
                 GameObject empty = new GameObject("Empty", typeof(RectTransform), typeof(TextMeshProUGUI));
                 empty.transform.SetParent(nodesLayer, false);
                 RectTransform emptyRect = empty.GetComponent<RectTransform>();
@@ -372,7 +416,9 @@ namespace Project.UI
 
             float width = TreePadX * 2f + (maxCol + 1) * ColSpacing;
             float height = TreePadY * 2f + (maxRow + 1) * RowSpacing + HexSize * 0.35f;
-            treeContent.sizeDelta = new Vector2(Mathf.Max(width, 420f), Mathf.Max(height, 280f));
+            lastTreeContentWidth = Mathf.Max(width, 420f);
+            treeContent.sizeDelta = new Vector2(lastTreeContentWidth, Mathf.Max(height, 280f));
+            treeContent.anchoredPosition = Vector2.zero;
 
             Dictionary<string, HexNodeView> byId = new Dictionary<string, HexNodeView>();
             for (int i = 0; i < skills.Count; i++)
@@ -749,9 +795,10 @@ namespace Project.UI
             return true;
         }
 
-        private static Vector2 GridToAnchored(int column, int row)
+        private Vector2 GridToAnchored(int column, int row)
         {
-            float x = TreePadX + column * ColSpacing + HexSize * 0.5f;
+            // Positions are relative to a top-center pivoted content rect so the tree is centered.
+            float x = TreePadX + column * ColSpacing + HexSize * 0.5f - lastTreeContentWidth * 0.5f;
             float y = -(TreePadY + row * RowSpacing + HexSize * 0.5f);
             // Offset odd columns slightly for a hex stagger.
             if ((column & 1) == 1)

@@ -23,6 +23,8 @@ namespace Project.UI
         private static readonly Color HexPathReady = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.SoftBeigeGray, 0.55f);
         private static readonly Color HexPathOwned = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.Gold, 0.72f);
 
+        private float lastHexContentWidth = 420f;
+        private const int HexRankVisualSlots = 5;
         private ScrollView skillsHexScroll;
         private VisualElement skillsHexHost;
         private VisualElement skillsHexPaths;
@@ -48,6 +50,12 @@ namespace Project.UI
                 return;
 
             skillsHexScroll = tree.Q<ScrollView>("skills-hex-scroll");
+            if (skillsHexScroll != null)
+            {
+                skillsHexScroll.mode = ScrollViewMode.Vertical;
+                skillsHexScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                skillsHexScroll.contentContainer.style.alignItems = Align.Center;
+            }
             skillsHexHost = tree.Q<VisualElement>("skills-hex-host");
             if (skillsHexHost == null && skillsHexScroll != null)
                 skillsHexHost = skillsHexScroll.Q<VisualElement>("skills-hex-host");
@@ -95,6 +103,7 @@ namespace Project.UI
             List<SkillDefinition> skills = SkillRegistry.GetSkillsByCategory(skillsCategory);
             if (skills == null || skills.Count == 0)
             {
+                lastHexContentWidth = 420f;
                 skillsHexHost.style.width = 420f;
                 skillsHexHost.style.height = 280f;
                 if (skillsHexNodes != null)
@@ -112,7 +121,8 @@ namespace Project.UI
 
             float width = HexPadX * 2f + (maxCol + 1) * HexColSpacing;
             float height = HexPadY * 2f + (maxRow + 1) * HexRowSpacing + HexSize * 0.35f;
-            skillsHexHost.style.width = Mathf.Max(width, 420f);
+            lastHexContentWidth = Mathf.Max(width, 420f);
+            skillsHexHost.style.width = lastHexContentWidth;
             skillsHexHost.style.height = Mathf.Max(height, 280f);
 
             Dictionary<string, ToolkitHexNode> byId = new Dictionary<string, ToolkitHexNode>();
@@ -195,19 +205,21 @@ namespace Project.UI
             VisualElement dotsRow = new VisualElement();
             dotsRow.AddToClassList("dmg-hex-dots");
             dotsRow.pickingMode = PickingMode.Ignore;
-            VisualElement[] dots = new VisualElement[SkillDefinition.DisplayMaxRank];
-            for (int d = 0; d < SkillDefinition.DisplayMaxRank; d++)
+            // Compact pips: 5 slots map across ClampedMaxRank (supports up to DisplayMaxRank=20).
+            VisualElement[] dots = new VisualElement[HexRankVisualSlots];
+            int filledSlots = maxRank <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt((rank / (float)maxRank) * HexRankVisualSlots), 0, HexRankVisualSlots);
+            if (rank > 0 && filledSlots == 0)
+                filledSlots = 1;
+            if (rank >= maxRank)
+                filledSlots = HexRankVisualSlots;
+            for (int d = 0; d < HexRankVisualSlots; d++)
             {
                 VisualElement dot = new VisualElement();
                 dot.AddToClassList("dmg-hex-dot");
                 dot.pickingMode = PickingMode.Ignore;
                 if (DmHexUiSprites.RankDot != null)
                     DMUiToolkitStyle.TrySetSpriteBackground(dot, DmHexUiSprites.RankDot);
-                bool usedSlot = d < maxRank;
-                if (!usedSlot)
-                    dot.style.unityBackgroundImageTintColor = Color.clear;
-                else
-                    dot.style.unityBackgroundImageTintColor = d < rank ? HexRankFilledBlue : HexRankEmptyGray;
+                dot.style.unityBackgroundImageTintColor = d < filledSlots ? HexRankFilledBlue : HexRankEmptyGray;
                 dotsRow.Add(dot);
                 dots[d] = dot;
             }
@@ -271,9 +283,11 @@ namespace Project.UI
 
             int fromRank = boundProgression != null ? boundProgression.GetSkillRank(from.Skill.ResolvedId) : 0;
             int toRank = boundProgression != null ? boundProgression.GetSkillRank(to.Skill.ResolvedId) : 0;
-            if (toRank > 0 && fromRank > 0)
+            int fromMax = from.Skill != null ? from.Skill.ClampedMaxRank : 1;
+            bool fromMaxed = fromRank >= fromMax;
+            if (toRank > 0 && fromMaxed)
                 line.style.backgroundColor = HexPathOwned;
-            else if (fromRank > 0)
+            else if (fromMaxed)
                 line.style.backgroundColor = HexPathReady;
             else
                 line.style.backgroundColor = HexPathLocked;
@@ -404,6 +418,7 @@ namespace Project.UI
                     skillsDetailTitle.text = "Hover a hex";
                 if (skillsDetailBody != null)
                     skillsDetailBody.text = "Hover a skill for details. Click to spend skill points and raise its rank.";
+                ApplySkillCardArt(null);
                 return;
             }
 
@@ -431,6 +446,8 @@ namespace Project.UI
                     (string.IsNullOrEmpty(prereqLine) ? string.Empty : prereqLine + "\n") +
                     "\n" + status;
             }
+
+            ApplySkillCardArt(skill);
         }
 
         private static string FormatHexPrerequisites(SkillDefinition skill)
@@ -443,29 +460,15 @@ namespace Project.UI
             {
                 SkillDefinition prereq = SkillRegistry.Resolve(skill.prerequisiteSkillIds[i]);
                 if (prereq != null)
-                    names.Add(prereq.displayName);
+                    names.Add(prereq.displayName + " max (" + prereq.ClampedMaxRank + ")");
             }
 
-            return names.Count == 0 ? string.Empty : "Requires: " + string.Join(", ", names);
+            return names.Count == 0 ? string.Empty : "Requires prior fully upgraded: " + string.Join(", ", names);
         }
 
         private bool AreHexPrerequisitesMet(SkillDefinition skill)
         {
-            if (skill.prerequisiteSkillIds == null || skill.prerequisiteSkillIds.Length == 0)
-                return true;
-            if (boundProgression == null)
-                return false;
-
-            for (int i = 0; i < skill.prerequisiteSkillIds.Length; i++)
-            {
-                string id = skill.prerequisiteSkillIds[i];
-                if (string.IsNullOrEmpty(id))
-                    continue;
-                if (boundProgression.GetSkillRank(id) <= 0)
-                    return false;
-            }
-
-            return true;
+            return PlayerSkillAllocator.ArePrerequisitesFullyMet(skill, boundProgression, out _);
         }
 
         private static Vector2 HexGridToPos(int column, int row)

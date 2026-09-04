@@ -161,6 +161,12 @@ namespace Project.Features.Climb
         [Range(0f, 20f)]
         public float jetpackLethalDelay = 6f;
 
+        [Header("Stamina")]
+        [Tooltip("Flat stamina spent when attaching to a wall.")]
+        public float climbStartStaminaCost = 5f;
+        [Tooltip("Legacy fallback only. Live drain is maxStamina/unlockedStaminaDashes per second (half when hanging).")]
+        public float climbStaminaDrainPerSecond = 8f;
+
         [Header("Surface")]
         public string climbableLayerName = "Climbable";
         public string climbableTag = "Climbable";

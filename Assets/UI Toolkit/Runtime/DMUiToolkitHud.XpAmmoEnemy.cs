@@ -4,16 +4,13 @@ using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Player;
-using Project.Progression;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Project.UI
 {
     /// <summary>
-    /// UITK cutover for remaining live uGUI HUD pieces: bottom XP bar, ammo above stats,
-    /// and top focused enemy health. Bind/update lives here so popup/rolodex/hotbar
-    /// work in DMUiToolkitHud.cs is not rewritten.
+    /// UITK ammo label + focused enemy health. XP lives in Journal; old XP bar host removed.
     /// </summary>
     public partial class DMUiToolkitHud
     {
@@ -21,10 +18,6 @@ namespace Project.UI
 
         private static bool xpAmmoStamped;
 
-        private VisualElement xpRoot;
-        private VisualElement xpTrack;
-        private VisualElement xpFill;
-        private Label xpLabel;
         private Label ammoLabel;
         private VisualElement enemyFocusRoot;
         private Label enemyNameLabel;
@@ -32,18 +25,21 @@ namespace Project.UI
         private VisualElement enemyFill;
         private bool xpAmmoHostsReady;
         private bool xpAmmoUguiHidden;
-        private PlayerProgressionManager xpProgression;
         private WeaponAmmoState xpAmmoState;
         private PlayerController cachedEquipmentPlayer;
         private EngagedEnemyHealthHud cachedEnemyHud;
-        private string lastXpText;
-        private float lastXpFill = -1f;
-        private bool lastXpShown;
         private string lastAmmoText;
         private bool lastAmmoShown;
         private string lastEnemyName;
         private float lastEnemyFill = -1f;
         private bool lastEnemyShown;
+        private int lastAmmoLoaded = int.MinValue;
+        private int lastAmmoReserve = int.MinValue;
+        private int lastAmmoMag = int.MinValue;
+        private int lastAmmoSlot = int.MinValue;
+        private int lastMiningPercent = int.MinValue;
+        private bool lastAmmoInfinite;
+        private string lastAmmoName;
 
         private void Update()
         {
@@ -56,8 +52,6 @@ namespace Project.UI
 
             if (GameplayHudVisibility.CinematicChromeHidden)
             {
-                if (xpRoot != null)
-                    xpRoot.style.display = DisplayStyle.None;
                 if (ammoLabel != null)
                 {
                     lastAmmoShown = false;
@@ -72,7 +66,6 @@ namespace Project.UI
             }
             else
             {
-                PullXpBar();
                 PullAmmoReadout();
                 PullEnemyFocus();
             }
@@ -82,8 +75,7 @@ namespace Project.UI
 
         private void EnsureXpAmmoEnemyBound()
         {
-            // Once bound, keep cached VisualElement refs. Do not Q() every Update.
-            if (xpAmmoHostsReady && (xpRoot != null || ammoLabel != null || enemyFocusRoot != null))
+            if (xpAmmoHostsReady && (ammoLabel != null || enemyFocusRoot != null))
                 return;
 
             if (document == null)
@@ -96,27 +88,6 @@ namespace Project.UI
                 return;
 
             VisualElement hostParent = hudRoot != null ? hudRoot : root.Q<VisualElement>("hud-root") ?? root;
-
-            xpRoot = root.Q<VisualElement>("xp");
-            if (xpRoot == null)
-            {
-                CreateXpHost(hostParent);
-                xpRoot = hostParent.Q<VisualElement>("xp") ?? root.Q<VisualElement>("xp");
-            }
-
-            xpTrack = root.Q<VisualElement>("xp-track");
-            xpFill = root.Q<VisualElement>("xp-fill");
-            xpLabel = root.Q<Label>("xp-label");
-            if (xpRoot != null)
-            {
-                if (xpTrack == null)
-                    xpTrack = xpRoot.Q<VisualElement>("xp-track");
-                if (xpFill == null)
-                    xpFill = xpRoot.Q<VisualElement>("xp-fill");
-                if (xpLabel == null)
-                    xpLabel = xpRoot.Q<Label>("xp-label");
-            }
-            HintDynamicFill(xpFill);
 
             ammoLabel = root.Q<Label>("ammo");
             if (ammoLabel == null)
@@ -149,41 +120,9 @@ namespace Project.UI
             if (enemyFocusRoot != null && !lastEnemyShown)
                 enemyFocusRoot.style.display = DisplayStyle.None;
 
-            xpAmmoHostsReady = xpRoot != null || ammoLabel != null || enemyFocusRoot != null;
+            xpAmmoHostsReady = ammoLabel != null || enemyFocusRoot != null;
             if (xpAmmoHostsReady && !xpAmmoStamped)
-            {
                 xpAmmoStamped = true;
-                Debug.Log(XpAmmoLogStamp);
-            }
-        }
-
-        private static void CreateXpHost(VisualElement parent)
-        {
-            if (parent == null)
-                return;
-
-            VisualElement xp = new VisualElement { name = "xp" };
-            xp.AddToClassList("dmg-hud-xp");
-            xp.pickingMode = PickingMode.Ignore;
-
-            VisualElement track = new VisualElement { name = "xp-track" };
-            track.AddToClassList("dmg-hud-xp-track");
-            track.pickingMode = PickingMode.Ignore;
-
-            VisualElement fill = new VisualElement { name = "xp-fill" };
-            fill.AddToClassList("dmg-hud-xp-fill");
-            fill.pickingMode = PickingMode.Ignore;
-            fill.style.width = Length.Percent(62f);
-            fill.usageHints = UsageHints.DynamicTransform;
-            track.Add(fill);
-
-            Label label = new Label("Lv 5    120 / 400 XP") { name = "xp-label" };
-            label.AddToClassList("dmg-hud-xp-label");
-            label.pickingMode = PickingMode.Ignore;
-
-            xp.Add(track);
-            xp.Add(label);
-            parent.Add(xp);
         }
 
         private static void CreateAmmoHost(VisualElement parent)
@@ -224,39 +163,6 @@ namespace Project.UI
             focus.Add(name);
             focus.Add(track);
             parent.Add(focus);
-        }
-
-        private void PullXpBar()
-        {
-            if (xpFill == null && xpLabel == null)
-                return;
-
-            if (xpProgression == null)
-                xpProgression = PlayerProgressionManager.EnsureExists();
-
-            int level = xpProgression != null ? xpProgression.Level : 1;
-            int xpIntoLevel = xpProgression != null ? xpProgression.GetXpProgressInCurrentLevel() : 0;
-            int xpToNext = xpProgression != null ? xpProgression.GetXpRequiredForNextLevel() : 0;
-            float fill = xpProgression != null ? xpProgression.GetXpProgressNormalized() : 0f;
-
-            string text = xpToNext > 0
-                ? $"Lv {level}    {xpIntoLevel} / {xpToNext} XP"
-                : $"Lv {level}    MAX";
-
-            bool fillChanged = !Mathf.Approximately(fill, lastXpFill);
-            bool textChanged = !string.Equals(text, lastXpText, System.StringComparison.Ordinal);
-            if (fillChanged || textChanged)
-            {
-                lastXpFill = fill;
-                lastXpText = text;
-                SetFill(xpFill, xpLabel, fill, text);
-            }
-
-            if (xpRoot != null && !lastXpShown)
-            {
-                lastXpShown = true;
-                xpRoot.style.display = DisplayStyle.Flex;
-            }
         }
 
         private void PullAmmoReadout()
@@ -301,6 +207,8 @@ namespace Project.UI
                 {
                     lastAmmoShown = false;
                     lastAmmoText = null;
+                    lastAmmoLoaded = int.MinValue;
+                    lastMiningPercent = int.MinValue;
                     ammoLabel.style.display = DisplayStyle.None;
                 }
 
@@ -313,15 +221,17 @@ namespace Project.UI
                 ammoLabel.style.display = DisplayStyle.Flex;
             }
 
-            string nextText;
             if (weapon.isMiningTool)
             {
                 int percent = xpAmmoState != null
                     ? xpAmmoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
                     : 0;
-                nextText = $"CHARGE {percent}%";
-                SetAmmoText(nextText);
-
+                if (percent != lastMiningPercent || lastAmmoText == null || !lastAmmoText.StartsWith("CHARGE ", System.StringComparison.Ordinal))
+                {
+                    lastMiningPercent = percent;
+                    lastAmmoLoaded = int.MinValue;
+                    SetAmmoText($"CHARGE {percent}%");
+                }
                 return;
             }
 
@@ -332,14 +242,39 @@ namespace Project.UI
             int reserve = !infiniteReserve && xpAmmoState != null
                 ? xpAmmoState.GetReserveAmmoCount(weaponHotbarSlot)
                 : 0;
+            string ammoName = ResolveToolkitAmmoLabelName(weaponHotbarSlot);
 
             if (!infiniteReserve && loaded <= 0 && reserve <= 0)
             {
-                SetAmmoText("Empty 0/0");
+                if (lastAmmoLoaded != 0 || lastAmmoReserve != 0 || lastAmmoText != "Empty 0/0")
+                {
+                    lastAmmoLoaded = 0;
+                    lastAmmoReserve = 0;
+                    lastAmmoMag = magazineSize;
+                    lastAmmoSlot = weaponHotbarSlot;
+                    lastAmmoInfinite = false;
+                    lastAmmoName = ammoName;
+                    SetAmmoText("Empty 0/0");
+                }
                 return;
             }
 
-            string ammoName = ResolveToolkitAmmoLabelName(weaponHotbarSlot);
+            if (loaded == lastAmmoLoaded
+                && reserve == lastAmmoReserve
+                && magazineSize == lastAmmoMag
+                && weaponHotbarSlot == lastAmmoSlot
+                && infiniteReserve == lastAmmoInfinite
+                && string.Equals(ammoName, lastAmmoName, System.StringComparison.Ordinal))
+                return;
+
+            lastAmmoLoaded = loaded;
+            lastAmmoReserve = reserve;
+            lastAmmoMag = magazineSize;
+            lastAmmoSlot = weaponHotbarSlot;
+            lastAmmoInfinite = infiniteReserve;
+            lastAmmoName = ammoName;
+            lastMiningPercent = int.MinValue;
+
             if (infiniteReserve)
                 SetAmmoText($"{ammoName} {loaded}/{magazineSize}  (\u221e)");
             else
@@ -404,7 +339,8 @@ namespace Project.UI
                 if (!Mathf.Approximately(normalized, lastEnemyFill))
                 {
                     lastEnemyFill = normalized;
-                    SetFill(enemyFill, null, normalized, null);
+                    if (enemyFill != null)
+                        enemyFill.style.width = Length.Percent(Mathf.Clamp01(normalized) * 100f);
                 }
 
                 return;
@@ -424,10 +360,6 @@ namespace Project.UI
             if (xpAmmoUguiHidden)
                 return;
 
-            HotbarXpHud xpHud = FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
-            if (xpHud != null && xpHud.gameObject.activeSelf)
-                xpHud.SetVisible(false);
-
             EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance
                 ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
             enemyHud?.ApplyToolkitVisibility();
@@ -442,10 +374,6 @@ namespace Project.UI
 
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
             {
-                HotbarXpHud xpHud = FindAnyObjectByType<HotbarXpHud>(FindObjectsInactive.Include);
-                if (xpHud != null && GameSession.HasStarted && !MainMenuController.BlocksGameplayHud)
-                    xpHud.SetVisible(true);
-
                 EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance
                     ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
                 enemyHud?.ApplyToolkitVisibility();

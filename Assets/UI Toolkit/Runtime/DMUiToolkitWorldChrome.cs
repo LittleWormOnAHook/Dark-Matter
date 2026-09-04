@@ -8,7 +8,6 @@ using Project.Crafting;
 using Project.Data;
 using Project.Echoes;
 using Project.Interaction;
-using Project.Pet;
 using Project.Player;
 using Project.Quests;
 using UnityEngine;
@@ -25,7 +24,16 @@ namespace Project.UI
     public class DMUiToolkitWorldChrome : MonoBehaviour
     {
         private const float PickupConeFov = PickupProximityDotUI.PickupConeFovDegrees;
-        private const float VerticalWorldOffset = 0.45f;
+        /// <summary>Pickup stem length at lock-on / far planar range (world-up meters).</summary>
+        private const float PickupStemFarMeters = 0.25f;
+        /// <summary>Pickup stem length at near planar reach; tip-locked dot is largest here.</summary>
+        private const float PickupStemNearMeters = 0.5f;
+        /// <summary>Proximity reaches 1 (max stem + largest tip dot) at this planar XZ distance.</summary>
+        private const float StemNearReachMeters = 0.5f;
+        /// <summary>Fallback fixed stem for non-pickup interaction chrome (quest/craft/loot/etc).</summary>
+        private const float InteractStemMeters = 0.75f;
+        private const float DotSizeFarPx = 10f;
+        private const float DotSizeNearPx = 22f;
         private const float InteractionScanInterval = 1f / 12f;
         private const int MaxDots = 24;
         private const int MaxBars = 16;
@@ -50,11 +58,18 @@ namespace Project.UI
         private readonly List<VisualElement> liveBars = new List<VisualElement>();
         private readonly HashSet<FloatingTargetHealthBar> hiddenBars = new HashSet<FloatingTargetHealthBar>();
         private readonly List<WorldDot> pendingDots = new List<WorldDot>(32);
+        private readonly List<WorldDot> cachedInteractDots = new List<WorldDot>(24);
 
         private struct WorldDot
         {
-            public Vector3 World;
+            /// <summary>Prefab-centered world anchor (line base / item bounds center).</summary>
+            public Vector3 Anchor;
             public Color Color;
+            public bool DrawStem;
+            /// <summary>World-up stem length at proximity 0 (far / lock-on).</summary>
+            public float StemMinHeight;
+            /// <summary>World-up stem length at proximity 1 (planar near). Dot always on tip.</summary>
+            public float StemMaxHeight;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -172,6 +187,7 @@ namespace Project.UI
             if (!ResolvePlayer(out Transform player, out Camera camera))
             {
                 pendingDots.Clear();
+                cachedInteractDots.Clear();
                 return;
             }
 
@@ -179,16 +195,23 @@ namespace Project.UI
             if (pc != null && pc.BlocksCombatInput)
             {
                 pendingDots.Clear();
+                cachedInteractDots.Clear();
                 return;
             }
 
-            if (Time.unscaledTime < nextInteractScan)
-                return;
+            // Exclusive pickup stem tracks every frame from each pickup's own anchor.
+            // Other interaction dots stay throttled.
+            if (Time.unscaledTime >= nextInteractScan)
+            {
+                nextInteractScan = Time.unscaledTime + InteractionScanInterval;
+                cachedInteractDots.Clear();
+                CollectInteractionDots(player, cachedInteractDots);
+            }
 
-            nextInteractScan = Time.unscaledTime + InteractionScanInterval;
             pendingDots.Clear();
             CollectExclusivePickupDot(player, camera);
-            CollectInteractionDots(player);
+            for (int i = 0; i < cachedInteractDots.Count; i++)
+                pendingDots.Add(cachedInteractDots[i]);
         }
 
         private void CollectExclusivePickupDot(Transform player, Camera camera)
@@ -202,23 +225,28 @@ namespace Project.UI
             float bestDist = float.MaxValue;
             Vector3 bestWorld = Vector3.zero;
             Color bestColor = Color.white;
+            float bestStemMin = PickupStemFarMeters;
+            float bestStemMax = PickupStemNearMeters;
             bool found = false;
 
             ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
             for (int i = 0; i < pickups.Length; i++)
             {
                 ItemPickup pickup = pickups[i];
-                if (pickup == null || pickup.IsPickedUp || pickup.itemData == null)
+                if (pickup == null || !pickup.IsIndicatorAvailable || pickup.itemData == null)
                     continue;
                 if (!WorldUseController.IsCollectiblePickup(pickup))
                     continue;
-                if (!TryQualify(pickup.transform.position, player.position, origin, forward, nearSqr, halfCone, out float dist))
+                Vector3 anchor = pickup.GetIndicatorWorldAnchor();
+                if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
                     continue;
                 if (dist >= bestDist)
                     continue;
                 bestDist = dist;
-                bestWorld = pickup.transform.position;
+                bestWorld = anchor;
                 bestColor = ProximityDotStyle.PickupColor(pickup.itemData.itemType);
+                bestStemMin = pickup.IndicatorStemMinHeight;
+                bestStemMax = pickup.IndicatorStemMaxHeight;
                 found = true;
             }
 
@@ -226,15 +254,18 @@ namespace Project.UI
             for (int i = 0; i < recipes.Length; i++)
             {
                 RecipePickup recipe = recipes[i];
-                if (recipe == null || recipe.IsLearned)
+                if (recipe == null || !recipe.IsIndicatorAvailable)
                     continue;
-                if (!TryQualify(recipe.transform.position, player.position, origin, forward, nearSqr, halfCone, out float dist))
+                Vector3 anchor = recipe.GetIndicatorWorldAnchor();
+                if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
                     continue;
                 if (dist >= bestDist)
                     continue;
                 bestDist = dist;
-                bestWorld = recipe.transform.position;
+                bestWorld = anchor;
                 bestColor = ProximityDotStyle.RecipeColor;
+                bestStemMin = recipe.IndicatorStemMinHeight;
+                bestStemMax = recipe.IndicatorStemMaxHeight;
                 found = true;
             }
 
@@ -259,7 +290,7 @@ namespace Project.UI
             }
 
             if (found)
-                pendingDots.Add(new WorldDot { World = bestWorld + Vector3.up * VerticalWorldOffset, Color = bestColor });
+                pendingDots.Add(MakeStemDot(bestWorld, bestColor, bestStemMin, bestStemMax));
         }
 
         private static bool TryQualify(
@@ -282,15 +313,18 @@ namespace Project.UI
             return true;
         }
 
-        private void CollectInteractionDots(Transform player)
+        private void CollectInteractionDots(Transform player, List<WorldDot> into)
         {
+            if (into == null)
+                return;
+
             QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>();
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
                 if (giver == null || !giver.IsWithinInteractRange(player.position))
                     continue;
-                pendingDots.Add(new WorldDot { World = giver.transform.position + Vector3.up * 1.15f, Color = ProximityDotStyle.QuestGiverColor });
+                into.Add(MakeStemDot(giver.transform.position, ProximityDotStyle.QuestGiverColor, InteractStemMeters));
             }
 
             CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>();
@@ -299,7 +333,7 @@ namespace Project.UI
                 CraftingStation station = stations[i];
                 if (station == null || !station.IsWithinInteractRange(player.position))
                     continue;
-                pendingDots.Add(new WorldDot { World = station.transform.position + Vector3.up * 0.75f, Color = ProximityDotStyle.CraftingColor });
+                into.Add(MakeStemDot(station.transform.position, ProximityDotStyle.CraftingColor, InteractStemMeters));
             }
 
             BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>();
@@ -308,7 +342,7 @@ namespace Project.UI
                 BuildingControlPanel panel = panels[i];
                 if (panel == null || !panel.IsWithinInteractRange(player.position))
                     continue;
-                pendingDots.Add(new WorldDot { World = panel.transform.position + Vector3.up * 0.9f, Color = ProximityDotStyle.BuildingColor });
+                into.Add(MakeStemDot(panel.transform.position, ProximityDotStyle.BuildingColor, 0.9f));
             }
 
             EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>();
@@ -317,19 +351,9 @@ namespace Project.UI
                 EnemyLootBag bag = bags[i];
                 if (bag == null || !bag.CanPlayerLoot(player.position))
                     continue;
-                pendingDots.Add(new WorldDot { World = bag.transform.position + Vector3.up * VerticalWorldOffset, Color = ProximityDotStyle.LootColor });
+                into.Add(MakeStemDot(bag.transform.position, ProximityDotStyle.LootColor, InteractStemMeters));
             }
 
-            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>();
-            for (int i = 0; i < adoptables.Length; i++)
-            {
-                PetWorldAdoptable adoptable = adoptables[i];
-                if (adoptable == null)
-                    continue;
-                if ((adoptable.transform.position - player.position).sqrMagnitude > adoptable.InteractRange * adoptable.InteractRange)
-                    continue;
-                pendingDots.Add(new WorldDot { World = adoptable.transform.position + Vector3.up * 0.55f, Color = ProximityDotStyle.PetColor });
-            }
 
             InjuredPioneerLabRecoverable[] recoverables = SceneComponentCache.GetAll<InjuredPioneerLabRecoverable>();
             for (int i = 0; i < recoverables.Length; i++)
@@ -339,7 +363,7 @@ namespace Project.UI
                     continue;
                 if ((recoverable.transform.position - player.position).sqrMagnitude > recoverable.InteractRange * recoverable.InteractRange)
                     continue;
-                pendingDots.Add(new WorldDot { World = recoverable.transform.position + Vector3.up * 0.85f, Color = ProximityDotStyle.ScienceLabColor });
+                into.Add(MakeStemDot(recoverable.transform.position, ProximityDotStyle.ScienceLabColor, 0.85f));
             }
 
             EchoWorldEntity[] echoes = SceneComponentCache.GetAll<EchoWorldEntity>();
@@ -350,8 +374,32 @@ namespace Project.UI
                     continue;
                 if ((echo.transform.position - player.position).sqrMagnitude > echo.InteractRange * echo.InteractRange)
                     continue;
-                pendingDots.Add(new WorldDot { World = echo.transform.position + Vector3.up * 1f, Color = ProximityDotStyle.EchoColor });
+                into.Add(MakeStemDot(echo.transform.position, ProximityDotStyle.EchoColor, InteractStemMeters));
             }
+        }
+
+        /// <summary>
+        /// Fixed-height interact stem (min==max). Pickup exclusive path passes growing min/max.
+        /// Tip is computed in PaintDots from proximity — never slide the dot along a fixed stem.
+        /// </summary>
+        private static WorldDot MakeStemDot(Vector3 anchor, Color color, float stemHeight)
+        {
+            float h = Mathf.Max(0.05f, stemHeight);
+            return MakeStemDot(anchor, color, h, h);
+        }
+
+        private static WorldDot MakeStemDot(Vector3 anchor, Color color, float stemMinHeight, float stemMaxHeight)
+        {
+            float minH = Mathf.Max(0.05f, stemMinHeight);
+            float maxH = Mathf.Max(minH, stemMaxHeight);
+            return new WorldDot
+            {
+                Anchor = anchor,
+                Color = color,
+                DrawStem = true,
+                StemMinHeight = minH,
+                StemMaxHeight = maxH
+            };
         }
 
         private void PaintDots()
@@ -360,6 +408,8 @@ namespace Project.UI
                 return;
 
             Camera camera = worldCamera;
+            Transform player = playerTransform;
+            float maxRange = WorldUseController.MaxPickupDistance;
             int shown = 0;
             int limit = Mathf.Min(pendingDots.Count, MaxDots);
             for (int i = 0; i < limit; i++)
@@ -367,19 +417,102 @@ namespace Project.UI
                 WorldDot pending = pendingDots[i];
                 if (camera == null)
                     continue;
-                Vector3 screen = camera.WorldToScreenPoint(pending.World);
-                if (screen.z <= 0f)
+
+                // Proximity 0 at max range, 1 when planar (XZ) dist within StemNearReachMeters.
+                // Full 3D Distance never hits 0.5m: player root vs ground item has a Y delta.
+                float dist = maxRange;
+                if (player != null)
+                {
+                    Vector3 delta = player.position - pending.Anchor;
+                    delta.y = 0f;
+                    dist = delta.magnitude;
+                }
+                float reach = Mathf.Clamp(StemNearReachMeters, 0f, maxRange * 0.85f);
+                float span = Mathf.Max(0.01f, maxRange - reach);
+                float proximity = 1f - Mathf.Clamp01(Mathf.Max(0f, dist - reach) / span);
+
+                // Growing stem: far/lock-on ~0.25m, near (<=0.5m planar) ~0.5m. Dot always on tip.
+                float stemHeight = Mathf.Lerp(pending.StemMinHeight, pending.StemMaxHeight, proximity);
+                Vector3 tipWorld = pending.Anchor + Vector3.up * stemHeight;
+
+                Vector3 tipScreen = camera.WorldToScreenPoint(tipWorld);
+                Vector3 anchorScreen = camera.WorldToScreenPoint(pending.Anchor);
+                // Both endpoints must be in front; otherwise screen-lerp of the tip is bogus.
+                if (tipScreen.z <= 0f || anchorScreen.z <= 0f)
                     continue;
 
-                VisualElement dot = AcquireDot(shown);
-                Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(screen.x, screen.y));
-                dot.style.left = panelPos.x - 8f;
-                dot.style.top = panelPos.y - 8f;
-                dot.style.backgroundColor = pending.Color;
-                VisualElement core = dot.childCount > 0 ? dot[0] : null;
-                if (core != null)
-                    core.style.backgroundColor = pending.Color;
-                DMUiToolkitOverlayDocument.SetShown(dot, true);
+                Vector2 tipPanel = RuntimePanelUtils.ScreenToPanel(
+                    dotsLayer.panel, new Vector2(tipScreen.x, tipScreen.y));
+                Vector2 anchorPanel = RuntimePanelUtils.ScreenToPanel(
+                    dotsLayer.panel, new Vector2(anchorScreen.x, anchorScreen.y));
+
+                float size = Mathf.Lerp(DotSizeFarPx, DotSizeNearPx, proximity);
+                float half = size * 0.5f;
+                float coreSize = size * 0.5f;
+
+                VisualElement host = AcquireDot(shown);
+                VisualElement stem = host.childCount > 0 ? host[0] : null;
+                VisualElement glow = host.childCount > 1 ? host[1] : null;
+
+                // Screen segment from world-projected anchor -> growing tip (world-up).
+                // Both ends track the pickup every frame so orbit stays world-locked.
+                float dx = tipPanel.x - anchorPanel.x;
+                float dy = tipPanel.y - anchorPanel.y;
+                float len = Mathf.Sqrt(dx * dx + dy * dy);
+                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+
+                // Dot is always glued to the tip (no along-stem sliding).
+                Vector2 alongPanel = tipPanel;
+
+                if (pending.DrawStem && stem != null && tipScreen.z > 0f && anchorScreen.z > 0f && len > 0.5f)
+                {
+                    // Pivot at box center: left/top place the unrotated bar so its midpoint
+                    // sits on the screen midpoint of (anchor, tip). Explicit 50%/50% origin --
+                    // left-at-anchor + 0% origin drifts when orbiting if origin fails to apply
+                    // to style.rotate.
+                    float midX = (anchorPanel.x + tipPanel.x) * 0.5f;
+                    float midY = (anchorPanel.y + tipPanel.y) * 0.5f;
+                    stem.style.left = midX - len * 0.5f;
+                    stem.style.top = midY - 1f;
+                    stem.style.width = Mathf.Max(2f, len);
+                    stem.style.height = 2f;
+                    stem.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
+                    stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(angle)));
+                    Color stemColor = pending.Color;
+                    stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
+                    stem.style.backgroundColor = stemColor;
+                    DMUiToolkitOverlayDocument.SetShown(stem, true);
+                }
+                else if (stem != null)
+                {
+                    DMUiToolkitOverlayDocument.SetShown(stem, false);
+                }
+
+                if (glow != null)
+                {
+                    glow.style.width = size;
+                    glow.style.height = size;
+                    glow.style.left = alongPanel.x - half;
+                    glow.style.top = alongPanel.y - half;
+                    glow.style.borderTopLeftRadius = half;
+                    glow.style.borderTopRightRadius = half;
+                    glow.style.borderBottomLeftRadius = half;
+                    glow.style.borderBottomRightRadius = half;
+                    glow.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(pending.Color, 0.28f);
+                    VisualElement core = glow.childCount > 0 ? glow[0] : null;
+                    if (core != null)
+                    {
+                        core.style.width = coreSize;
+                        core.style.height = coreSize;
+                        core.style.borderTopLeftRadius = coreSize * 0.5f;
+                        core.style.borderTopRightRadius = coreSize * 0.5f;
+                        core.style.borderBottomLeftRadius = coreSize * 0.5f;
+                        core.style.borderBottomRightRadius = coreSize * 0.5f;
+                        core.style.backgroundColor = pending.Color;
+                    }
+                }
+
+                DMUiToolkitOverlayDocument.SetShown(host, true);
                 shown++;
             }
 
@@ -442,13 +575,23 @@ namespace Project.UI
         {
             while (dotPool.Count <= index)
             {
+                VisualElement host = new VisualElement { pickingMode = PickingMode.Ignore };
+                host.AddToClassList("dmg-world-dot-host");
+
+                VisualElement stem = new VisualElement { pickingMode = PickingMode.Ignore };
+                stem.AddToClassList("dmg-world-dot-stem");
+                stem.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
+                host.Add(stem);
+
                 VisualElement glow = new VisualElement { pickingMode = PickingMode.Ignore };
                 glow.AddToClassList("dmg-world-dot");
                 VisualElement core = new VisualElement { pickingMode = PickingMode.Ignore };
                 core.AddToClassList("dmg-world-dot-core");
                 glow.Add(core);
-                dotsLayer.Add(glow);
-                dotPool.Add(glow);
+                host.Add(glow);
+
+                dotsLayer.Add(host);
+                dotPool.Add(host);
             }
 
             VisualElement dot = dotPool[index];
@@ -511,19 +654,21 @@ namespace Project.UI
 
         private void HideUguiCounterparts()
         {
-            if (uguiHidden)
-                return;
-
-            HideNamedLayer("PickupProximityDots");
-            HideNamedLayer("WorldInteractionDots");
-            uguiHidden = true;
+            // Keep retrying: PickupProximityDotUI / WorldInteractionDotUI may create their
+            // layers lazily after our first LateUpdate, which previously left uguiHidden=true
+            // with the old floating-dot painter still running (felt like stem patches did nothing).
+            bool pickupGone = HideNamedLayer("PickupProximityDots");
+            bool worldGone = HideNamedLayer("WorldInteractionDots");
+            if (pickupGone && worldGone)
+                uguiHidden = true;
         }
 
-        private static void HideNamedLayer(string objectName)
+        /// <returns>True when the named layer is absent or its painters are disabled.</returns>
+        private static bool HideNamedLayer(string objectName)
         {
             GameObject layer = DMUiToolkitOverlayDocument.FindNamed(objectName);
             if (layer == null)
-                return;
+                return true;
 
             DMUiToolkitOverlayDocument.DisableUguiVisuals(layer);
 
@@ -534,6 +679,9 @@ namespace Project.UI
             WorldInteractionDotUI worldDots = layer.GetComponent<WorldInteractionDotUI>();
             if (worldDots != null)
                 worldDots.enabled = false;
+
+            return (pickupDots == null || !pickupDots.enabled)
+                && (worldDots == null || !worldDots.enabled);
         }
 
         private void HideBarGraphics(FloatingTargetHealthBar bar)

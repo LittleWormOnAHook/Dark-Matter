@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Project.Interaction
 {
     [RequireComponent(typeof(Collider))]
-    public class ItemPickup : MonoBehaviour, IWorldUsable
+    public class ItemPickup : MonoBehaviour, IWorldUsable, IWorldIndicatorAnchor
     {
         private const float AimUseBonus = 500f;
 
@@ -22,6 +22,14 @@ namespace Project.Interaction
 
         [Header("Prompt")]
         public string promptText = "Press E to use";
+
+        [Header("Indicator")]
+        [Tooltip("Optional explicit stem/dot attach point. When empty, uses renderer/collider bounds center.")]
+        [SerializeField] private Transform indicatorAnchor;
+        [Tooltip("World-up stem length (m) when the player first locks onto this pickup.")]
+        [SerializeField] private float indicatorStemMinHeight = 0.25f;
+        [Tooltip("World-up stem length (m) at planar near reach (dot largest, still on tip).")]
+        [SerializeField] private float indicatorStemMaxHeight = 0.5f;
 
         [Header("Respawn Settings")]
         public bool canRespawn = true;
@@ -35,8 +43,27 @@ namespace Project.Interaction
         private bool[] rendererWasEnabled;
         private bool isPickedUp = false;
         private int respawnAmount = 1;
+        private Vector3 indicatorLocalOffset;
+        private bool hasIndicatorLocalOffset;
 
         public bool IsPickedUp => isPickedUp;
+
+        public bool IsIndicatorAvailable => IsCollectibleWorldPickup();
+
+        public float IndicatorStemMinHeight => Mathf.Max(0.05f, indicatorStemMinHeight);
+
+        public float IndicatorStemMaxHeight => Mathf.Max(IndicatorStemMinHeight, indicatorStemMaxHeight);
+
+        public Vector3 GetIndicatorWorldAnchor()
+        {
+            if (indicatorAnchor != null)
+                return indicatorAnchor.position;
+
+            if (hasIndicatorLocalOffset)
+                return transform.TransformPoint(indicatorLocalOffset);
+
+            return ResolveIndicatorWorldAnchor();
+        }
 
         private void OnEnable()
         {
@@ -58,6 +85,7 @@ namespace Project.Interaction
             respawnAmount = Mathf.Max(1, amount);
             StripMisplacedProjectileBehaviour();
             EnsurePickupTriggerCollider();
+            CacheIndicatorLocalOffset();
         }
 
         private void StripMisplacedProjectileBehaviour()
@@ -72,12 +100,12 @@ namespace Project.Interaction
             if (!IsCollectibleWorldPickup())
                 return -1f;
 
-            float distance = Vector3.Distance(context.PlayerPosition, transform.position);
+            Vector3 anchor = GetIndicatorWorldAnchor();
+            float distance = Vector3.Distance(context.PlayerPosition, anchor);
             if (distance > context.UseRange)
                 return -1f;
 
-            Collider col = GetComponentInChildren<Collider>();
-            Vector3 aimPoint = col != null ? col.bounds.center : transform.position + Vector3.up * 0.2f;
+            Vector3 aimPoint = anchor;
             float score = WorldUseController.ScorePickupAim(context.ViewRay, aimPoint, distance, context.UseRange);
             if (score < 0f)
                 return -1f;
@@ -110,6 +138,7 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
 
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            CacheIndicatorLocalOffset();
 
             // Do not force-enable every Renderer/Collider. World pickup prefabs often keep
             // shell meshes disabled on purpose (e.g. Plasma Fuel barrel vs canister child).
@@ -253,6 +282,92 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
             }
 
             return true;
+        }
+
+        private void CacheIndicatorLocalOffset()
+        {
+            if (indicatorAnchor != null)
+            {
+                hasIndicatorLocalOffset = false;
+                return;
+            }
+
+            Vector3 world = ResolveIndicatorWorldAnchor();
+            indicatorLocalOffset = transform.InverseTransformPoint(world);
+            hasIndicatorLocalOffset = true;
+        }
+
+        private Vector3 ResolveIndicatorWorldAnchor()
+        {
+            if (renderers == null || renderers.Length == 0)
+                renderers = GetComponentsInChildren<Renderer>(true);
+
+            if (TryEncapsulateRendererBounds(renderers, out Bounds rendBounds))
+                return rendBounds.center;
+
+            if (colliders == null || colliders.Length == 0)
+                colliders = GetComponentsInChildren<Collider>(true);
+
+            if (TryEncapsulateColliderBounds(colliders, out Bounds colBounds))
+                return colBounds.center;
+
+            return transform.position + Vector3.up * 0.2f;
+        }
+
+        private static bool TryEncapsulateRendererBounds(Renderer[] renderers, out Bounds bounds)
+        {
+            bounds = default;
+            bool any = false;
+            if (renderers == null)
+                return false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer rend = renderers[i];
+                if (rend == null || !rend.enabled || !rend.gameObject.activeInHierarchy)
+                    continue;
+                if (rend is ParticleSystemRenderer)
+                    continue;
+
+                if (!any)
+                {
+                    bounds = rend.bounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(rend.bounds);
+                }
+            }
+
+            return any;
+        }
+
+        private static bool TryEncapsulateColliderBounds(Collider[] colliders, out Bounds bounds)
+        {
+            bounds = default;
+            bool any = false;
+            if (colliders == null)
+                return false;
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider col = colliders[i];
+                if (col == null || !col.enabled || !col.gameObject.activeInHierarchy)
+                    continue;
+
+                if (!any)
+                {
+                    bounds = col.bounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(col.bounds);
+                }
+            }
+
+            return any;
         }
 
         private bool IsAimTarget(Collider collider)

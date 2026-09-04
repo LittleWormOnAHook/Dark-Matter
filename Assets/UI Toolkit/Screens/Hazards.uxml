@@ -13,13 +13,15 @@
                 <ui:Label name="thermal-value" text="70°F" picking-mode="Ignore" class="dmg-hz-temp"/>
             </ui:VisualElement>
             <ui:VisualElement name="hazard-panel" picking-mode="Ignore" class="dmg-hz-panel">
-                <ui:Label name="hazard-title" text="HAZARDS" picking-mode="Ignore" class="dmg-hz-title"/>
-                <ui:Label name="hazard-severity" text="CLEAR" picking-mode="Ignore" class="dmg-hz-status"/>
-                <ui:VisualElement name="hazard-summary-track" picking-mode="Ignore" class="dmg-hz-summary-track">
-                    <ui:VisualElement name="hazard-summary-fill" picking-mode="Ignore" class="dmg-hz-summary-fill"/>
-                </ui:VisualElement>
-                <ui:Label name="hazard-percent" text="0%" picking-mode="Ignore" class="dmg-hz-muted"/>
+                <ui:Label name="hazard-title" text="CLEAR" picking-mode="Ignore" class="dmg-hz-title"/>
                 <ui:VisualElement name="hazard-rows" picking-mode="Ignore" class="dmg-hz-rows">
+                    <ui:VisualElement name="hz-row-summary" picking-mode="Ignore" class="dmg-hc-row">
+                        <ui:Label name="hazard-severity" text="CLEAR" picking-mode="Ignore" class="dmg-hc-stat-name"/>
+                        <ui:VisualElement name="hazard-summary-track" picking-mode="Ignore" class="dmg-hz-summary-track">
+                            <ui:VisualElement name="hazard-summary-fill" picking-mode="Ignore" class="dmg-hz-summary-fill"/>
+                        </ui:VisualElement>
+                        <ui:Label name="hazard-percent" text="0%" picking-mode="Ignore" class="dmg-hc-stat-pct"/>
+                    </ui:VisualElement>
                     <ui:VisualElement name="hz-row-rad" picking-mode="Ignore" class="dmg-hc-row">
                         <ui:Label name="hz-rad-name" text="RAD" picking-mode="Ignore" class="dmg-hc-stat-name"/>
                         <ui:VisualElement name="hz-rad-segs" picking-mode="Ignore" class="dmg-hc-segs"/>

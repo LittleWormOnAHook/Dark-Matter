@@ -118,9 +118,15 @@ namespace Project.UI
             pendingStatusText = null;
             pendingSimulatedLoadSeconds = -1f;
             suppressNextBootOverlay = false;
-            earlyBlackoutHost = null;
-            gatedCameras.Clear();
+            // Restore before clear — Domain Reload off can leave cameras gated if we only Clear().
+            RestoreGatedCameras();
+            if (earlyBlackoutHost != null)
+            {
+                UnityEngine.Object.Destroy(earlyBlackoutHost);
+                earlyBlackoutHost = null;
+            }
             ExpeditionSceneLoadProgress.Reset();
+            DMUiToolkitLoadingOverlay.ResetForPlayMode();
         }
 
         // Claimed before any Awake runs so MainMenuController can never win the race and flash its chrome.
@@ -150,6 +156,13 @@ namespace Project.UI
         {
             if (!Application.isPlaying)
                 return;
+
+            // Enter Play Mode Options often disables Domain Reload — drop any leftover
+            // loading PanelSettings black-clear / UITK_Loading host from the prior Play.
+            DMUiToolkitLoadingOverlay.ResetForPlayMode();
+            DMUiToolkitBootstrap.ReleaseLoadingClearColor();
+            DMUiToolkitBootstrap.DeactivateLoadingHosts();
+            RestoreGatedCameras();
 
             if (suppressNextBootOverlay)
             {
@@ -327,10 +340,16 @@ namespace Project.UI
                 if (IsAlreadyGated(camera))
                     continue;
 
+                // Never snapshot an already-blacked camera as "original" — Domain Reload off can
+                // lose the gate list; a second gate would permanently restore cullingMask 0.
+                int mask = camera.cullingMask;
+                if (mask == 0)
+                    mask = ~0;
+
                 gatedCameras.Add(new GatedCameraState
                 {
                     Camera = camera,
-                    CullingMask = camera.cullingMask,
+                    CullingMask = mask,
                     ClearFlags = camera.clearFlags,
                     BackgroundColor = camera.backgroundColor
                 });
@@ -887,7 +906,8 @@ namespace Project.UI
             yield return null;
             if (useToolkit)
                 DMUiToolkitLoadingOverlay.BeginReveal();
-            yield return FadeCanvasGroup(blackVeilGroup, 1f, 0f, fadeInFromBlackSeconds, fadeAmbience: false);
+            // Re-assert clear each fade frame so a mid-fade EnsureDocuments cannot re-blacken the panel.
+            yield return FadeVeilFromBlackKeepingClear();
             }
             finally
             {
@@ -1083,6 +1103,44 @@ namespace Project.UI
             {
                 group.alpha = to;
             }
+        }
+
+
+        private IEnumerator FadeVeilFromBlackKeepingClear()
+        {
+            float duration = Mathf.Max(0.05f, fadeInFromBlackSeconds);
+            float startedAt = Time.realtimeSinceStartup;
+            if (useToolkit)
+                DMUiToolkitLoadingOverlay.SetVeilOpacity(1f);
+            else if (blackVeilGroup != null)
+                blackVeilGroup.alpha = 1f;
+
+            while (true)
+            {
+                if (useToolkit)
+                {
+                    DMUiToolkitLoadingOverlay.BeginReveal();
+                    DMUiToolkitBootstrap.ReleaseLoadingClearColor();
+                }
+
+                float elapsed = Time.realtimeSinceStartup - startedAt;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float alpha = Mathf.Lerp(1f, 0f, t);
+                if (useToolkit)
+                    DMUiToolkitLoadingOverlay.SetVeilOpacity(alpha);
+                else if (blackVeilGroup != null)
+                    blackVeilGroup.alpha = alpha;
+
+                if (t >= 1f)
+                    break;
+
+                yield return null;
+            }
+
+            if (useToolkit)
+                DMUiToolkitLoadingOverlay.SetVeilOpacity(0f);
+            else if (blackVeilGroup != null)
+                blackVeilGroup.alpha = 0f;
         }
 
         private void HandOffDestination()

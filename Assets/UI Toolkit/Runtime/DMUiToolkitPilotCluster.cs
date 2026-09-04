@@ -3,16 +3,18 @@ using Project.Core;
 using Project.Inventory;
 using Project.Map;
 using Project.Survival;
+using Project.Progression;
 using Project.Survival.Exposure;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Project.UI
 {
     /// <summary>
-    /// Lower-right combined minimap / stats prototype. Existing HUD stays live.
-    /// Toggle from DMUiToolkitConfig.showPilotCluster. No panel background.
-    /// Stays up when tilde hides gameplay HUD.
+    /// Lower-left combined minimap / stats cluster. Toggle from
+    /// DMUiToolkitConfig.showPilotCluster. No panel background.
+    /// Tilde (~) hides this with the rest of the gameplay HUD.
     /// </summary>
     [DefaultExecutionOrder(-360)]
     [DisallowMultipleComponent]
@@ -24,9 +26,21 @@ namespace Project.UI
         private const float CompassFov = 140f;
         private const float CompassTickStep = 15f;
 
-        private static readonly Color EnergyColor = DarkMatterGenesisUiPalette.Gold;
-        private static readonly Color StaminaColor = DarkMatterGenesisUiPalette.PositiveGreen;
+        private static readonly Color EnergyColor = DarkMatterGenesisUiPalette.PositiveGreen;
+        private static readonly Color StaminaColor = DarkMatterGenesisUiPalette.Gold;
         private static readonly Color OxygenColor = new Color(0.86f, 0.90f, 0.94f, 1f);
+        // Vivid crimson health dashes (#E83B3B).
+        private static readonly Color HealthColor = new Color(0.910f, 0.231f, 0.231f, 1f);
+
+        private static Color LockedTint(Color statColor)
+        {
+            Color locked = Color.Lerp(statColor, Color.black, 0.55f);
+            locked.a = 0.92f;
+            return locked;
+        }
+
+        private const int LockedArcDashCount = 4;
+        private const int MaxHealthBonusDashes = 10;
 
         private static DMUiToolkitPilotCluster instance;
 
@@ -35,12 +49,22 @@ namespace Project.UI
         private VisualElement cluster;
         private VisualElement mapView;
         private VisualElement mapPlayer;
+        private VisualElement pilotMapRing;
+        private VisualElement pilotNorthLayer;
+        private Label pilotCardinalN;
+        private Label pilotCardinalE;
+        private Label pilotCardinalS;
+        private Label pilotCardinalW;
         private VisualElement poiHost;
         private VisualElement healthFill;
+        private VisualElement healthTrack;
+        private HealthDashes healthDashes;
         private VisualElement compassTicks;
         private VisualElement compassDots;
         private VisualElement arcsHost;
+        private VisualElement tempTrack;
         private PerimeterArcs arcs;
+        private ThermalStrip thermal;
         private Label energyValue;
         private Label staminaValue;
         private Label oxygenValue;
@@ -54,9 +78,24 @@ namespace Project.UI
         private bool bound;
         private bool playerArrowBound;
         private MapUI cachedMapUi;
+        private bool legacyStartSpanApplied;
         private InventorySystem cachedInventory;
         private SurvivalStats cachedStats;
         private ExposureController cachedExposure;
+        private DMUiToolkitMinimap cachedMinimap;
+        private JournalPanelUI cachedJournal;
+        private int nextJournalResolveFrame;
+        private string lastEnergyText;
+        private string lastStaminaText;
+        private string lastOxygenText;
+        private string lastHealthText;
+        private string lastLoadText;
+        private string lastElevText;
+        private string lastGridText;
+        private string lastTempText;
+        private string lastZoneText;
+        private string lastCompassPoiText;
+        private float lastMapYaw = float.NaN;
         private float nextMapPoiRefresh;
         private float lastCompassHeading = float.NaN;
         private float lastCompassWidth;
@@ -142,7 +181,8 @@ namespace Project.UI
             if (config != null && !config.showPilotCluster)
                 return false;
 
-            return DMUiToolkitOverlayDocument.GameplayHudWanted();
+            return DMUiToolkitOverlayDocument.GameplayHudWanted()
+                && !GameplayHudVisibility.CinematicChromeHidden;
         }
 
         private void BindTree()
@@ -161,10 +201,18 @@ namespace Project.UI
             mapView = tree.Q<VisualElement>("pilot-map-view");
             mapPlayer = tree.Q<VisualElement>("pilot-map-player");
             poiHost = tree.Q<VisualElement>("pilot-pois");
+            pilotMapRing = tree.Q<VisualElement>("pilot-map-ring");
+            pilotCardinalN = tree.Q<Label>("pilot-cardinal-n");
+            pilotCardinalE = tree.Q<Label>("pilot-cardinal-e");
+            pilotCardinalS = tree.Q<Label>("pilot-cardinal-s");
+            pilotCardinalW = tree.Q<Label>("pilot-cardinal-w");
+            EnsureNorthLayer();
             healthFill = tree.Q<VisualElement>("pilot-health-fill");
+            healthTrack = tree.Q<VisualElement>("pilot-health-track");
             compassTicks = tree.Q<VisualElement>("pilot-compass-ticks");
             compassDots = tree.Q<VisualElement>("pilot-compass-dots");
             arcsHost = tree.Q<VisualElement>("pilot-arcs");
+            tempTrack = tree.Q<VisualElement>("pilot-temp-track");
             energyValue = tree.Q<Label>("pilot-energy-value");
             staminaValue = tree.Q<Label>("pilot-stamina-value");
             oxygenValue = tree.Q<Label>("pilot-o2-value");
@@ -177,10 +225,20 @@ namespace Project.UI
             compassPoi = tree.Q<Label>("pilot-compass-poi");
 
             EnsureArcs();
+            EnsureHealthDashes();
+            EnsureThermal();
+            HideBuilderOnly(tree.Q("pilot-energy-block"));
+            HideBuilderOnly(tree.Q("pilot-stamina-block"));
+            HideBuilderOnly(tree.Q("pilot-o2-block"));
+            HideBuilderOnly(tree.Q("pilot-left-meta"));
+            HideBuilderOnly(tree.Q("pilot-right-meta"));
+            HideBuilderOnly(tree.Q("pilot-health-label"));
+            HideBuilderOnly(healthFill);
             if (!playerArrowBound && mapPlayer != null)
             {
                 DMUiToolkitStyle.TrySetSpriteBackground(mapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 mapPlayer.style.backgroundColor = Color.clear;
+                mapPlayer.style.unityBackgroundImageTintColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red player arrow
                 playerArrowBound = true;
             }
 
@@ -188,7 +246,119 @@ namespace Project.UI
             bound = root != null;
         }
 
-        private void EnsureArcs()
+
+        private void EnsureNorthLayer()
+        {
+            if (pilotMapRing == null || pilotCardinalN == null)
+                return;
+
+            bool already =
+                pilotNorthLayer != null
+                && pilotNorthLayer.parent == pilotMapRing
+                && pilotCardinalN.parent == pilotNorthLayer
+                && (pilotCardinalE == null || pilotCardinalE.parent == pilotNorthLayer)
+                && (pilotCardinalS == null || pilotCardinalS.parent == pilotNorthLayer)
+                && (pilotCardinalW == null || pilotCardinalW.parent == pilotNorthLayer);
+            if (already)
+                return;
+
+            pilotNorthLayer = pilotMapRing.Q<VisualElement>("pilot-north-layer");
+            if (pilotNorthLayer == null)
+            {
+                pilotNorthLayer = new VisualElement
+                {
+                    name = "pilot-north-layer",
+                    pickingMode = PickingMode.Ignore
+                };
+                pilotNorthLayer.style.position = Position.Absolute;
+                pilotNorthLayer.style.left = 0;
+                pilotNorthLayer.style.top = 0;
+                pilotNorthLayer.style.right = 0;
+                pilotNorthLayer.style.bottom = 0;
+                pilotNorthLayer.style.width = Length.Percent(100);
+                pilotNorthLayer.style.height = Length.Percent(100);
+                // Under player arrow, above / with map texture rotation.
+                int insertAt = pilotMapRing.childCount;
+                if (mapPlayer != null && mapPlayer.parent == pilotMapRing)
+                    insertAt = pilotMapRing.IndexOf(mapPlayer);
+                pilotMapRing.Insert(insertAt, pilotNorthLayer);
+            }
+
+            PlaceCardinalOnNorthLayer(pilotCardinalN, "N", 50f, -2f, true, false, -6f, 0f);
+            PlaceCardinalOnNorthLayer(pilotCardinalE, "E", -1f, 50f, false, true, 0f, -8f);
+            PlaceCardinalOnNorthLayer(pilotCardinalS, "S", 50f, -1f, true, false, -6f, 0f, bottom: true);
+            PlaceCardinalOnNorthLayer(pilotCardinalW, "W", -2f, 50f, false, true, 0f, -8f);
+
+            lastMapYaw = float.NaN; // force rotate sync next RefreshMap
+        }
+
+        private void PlaceCardinalOnNorthLayer(
+            Label label,
+            string text,
+            float primary,
+            float secondary,
+            bool horizontalCenter,
+            bool verticalCenter,
+            float marginPrimary,
+            float marginSecondary,
+            bool bottom = false)
+        {
+            if (label == null || pilotNorthLayer == null)
+                return;
+
+            if (label.parent != pilotNorthLayer)
+            {
+                label.RemoveFromHierarchy();
+                pilotNorthLayer.Add(label);
+            }
+
+            label.text = text;
+            label.style.position = Position.Absolute;
+            label.style.color = new Color(1f, 0.12f, 0.08f, 1f); // bright red #FF1E14
+            label.style.fontSize = 13f; // 11px + ~20%
+            label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            label.style.display = DisplayStyle.Flex;
+
+            if (horizontalCenter)
+            {
+                label.style.left = new Length(50f, LengthUnit.Percent);
+                label.style.right = StyleKeyword.Auto;
+                label.style.marginLeft = marginPrimary;
+            }
+            else if (text == "E")
+            {
+                label.style.left = StyleKeyword.Auto;
+                label.style.right = -2f;
+                label.style.marginLeft = 0;
+            }
+            else // W
+            {
+                label.style.left = -2f;
+                label.style.right = StyleKeyword.Auto;
+                label.style.marginLeft = 0;
+            }
+
+            if (bottom)
+            {
+                label.style.top = StyleKeyword.Auto;
+                label.style.bottom = -2f;
+                label.style.marginTop = 0;
+            }
+            else if (verticalCenter)
+            {
+                label.style.top = new Length(50f, LengthUnit.Percent);
+                label.style.bottom = StyleKeyword.Auto;
+                label.style.marginTop = marginSecondary;
+            }
+            else
+            {
+                label.style.top = secondary;
+                label.style.bottom = StyleKeyword.Auto;
+                label.style.marginTop = 0;
+            }
+        }
+
+private void EnsureArcs()
         {
             if (arcsHost == null)
                 return;
@@ -199,6 +369,39 @@ namespace Project.UI
             arcsHost.Clear();
             arcs = new PerimeterArcs();
             arcsHost.Add(arcs);
+        }
+
+        private void EnsureHealthDashes()
+        {
+            if (healthTrack == null)
+                return;
+
+            if (healthDashes != null && healthDashes.parent == healthTrack)
+                return;
+
+            healthTrack.Clear();
+            healthDashes = new HealthDashes();
+            healthTrack.Add(healthDashes);
+        }
+
+        private void EnsureThermal()
+        {
+            if (tempTrack == null)
+                return;
+
+            if (thermal != null && thermal.parent == tempTrack)
+                return;
+
+            tempTrack.Clear();
+            thermal = new ThermalStrip();
+            tempTrack.Add(thermal);
+        }
+
+        private static void HideBuilderOnly(VisualElement element)
+        {
+            if (element == null)
+                return;
+            element.style.display = DisplayStyle.None;
         }
 
         private void BuildCompassTicks()
@@ -246,6 +449,7 @@ namespace Project.UI
             RefreshWorld(mapUi, stats);
             RefreshMap(mapUi);
             RefreshCompass(mapUi);
+            TickMinimapZoom(mapUi);
         }
 
         private void RefreshBars(SurvivalStats stats)
@@ -255,17 +459,29 @@ namespace Project.UI
             float oxygen = stats != null ? stats.GetOxygenNormalized() : 0f;
             float health = Ratio(stats != null ? stats.CurrentHealth : 0f, stats != null ? stats.maxHealth : 1f);
 
-            SetPercent(energyValue, energy);
-            SetPercent(staminaValue, stamina);
-            SetPercent(oxygenValue, oxygen);
+            SetPercent(energyValue, energy, ref lastEnergyText);
+            SetPercent(staminaValue, stamina, ref lastStaminaText);
+            SetPercent(oxygenValue, oxygen, ref lastOxygenText);
             if (healthValue != null)
-                healthValue.text = Mathf.RoundToInt(health * 100f).ToString();
+            {
+                string ht = Mathf.RoundToInt(health * 100f).ToString();
+                if (!string.Equals(ht, lastHealthText, System.StringComparison.Ordinal))
+                {
+                    lastHealthText = ht;
+                    healthValue.text = ht;
+                }
+            }
+
+            int energyBonus = GetEnergyUpgradeDashes();
+            int staminaBonus = GetStaminaUpgradeDashes();
+            int oxygenBonus = GetOxygenUpgradeDashes();
+            int healthBonus = GetHealthUpgradeDashes();
 
             if (arcs != null)
-                arcs.SetFills(energy, stamina, oxygen);
+                arcs.SetFills(energy, stamina, oxygen, energyBonus, staminaBonus, oxygenBonus);
 
-            if (healthFill != null)
-                healthFill.style.height = Length.Percent(Mathf.Clamp01(health) * 100f);
+            if (healthDashes != null)
+                healthDashes.SetFill(health, healthBonus);
         }
 
         private void RefreshLoad(InventorySystem inventory)
@@ -275,7 +491,7 @@ namespace Project.UI
 
             if (inventory == null || inventory.slots == null)
             {
-                loadValue.text = "0%";
+                SetLabelText(loadValue, "0%", ref lastLoadText);
                 return;
             }
 
@@ -289,7 +505,7 @@ namespace Project.UI
             }
 
             float ratio = total > 0 ? occupied / (float)total : 0f;
-            loadValue.text = Mathf.RoundToInt(ratio * 100f) + "%";
+            SetLabelText(loadValue, Mathf.RoundToInt(ratio * 100f) + "%", ref lastLoadText);
         }
 
         private void RefreshWorld(MapUI mapUi, SurvivalStats stats)
@@ -303,46 +519,40 @@ namespace Project.UI
             if (elevLabel != null)
             {
                 string sign = elev >= 0 ? "+" : "";
-                elevLabel.text = "ELEV " + sign + elev + " M";
+                SetLabelText(elevLabel, "ELEV " + sign + elev + " M", ref lastElevText);
             }
 
             if (gridLabel != null)
             {
-                WorldMapProvider provider = WorldMapProvider.Instance;
-                if (hasPos && provider != null)
-                {
-                    Vector2 grid = provider.WorldToMap01(pos);
-                    gridLabel.text = "GRID " + grid.x.ToString("0.00") + "  " + grid.y.ToString("0.00");
-                }
+                if (hasPos)
+                    SetLabelText(gridLabel, "GRID " + Mathf.RoundToInt(pos.x) + "  " + Mathf.RoundToInt(pos.z), ref lastGridText);
                 else
-                {
-                    gridLabel.text = "GRID --";
-                }
+                    SetLabelText(gridLabel, "GRID --", ref lastGridText);
             }
 
             float fahrenheit = stats != null ? stats.GetDisplayTemperatureFahrenheit() : 70f;
+            float thermal01 = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
             if (tempLabel != null)
-            {
-                tempLabel.text = "TEMP " + ExposureTemperatureDisplay.FormatCelsius(fahrenheit);
-                float t = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
-                tempLabel.style.color = Color.Lerp(
-                    ExposureHazardPresentation.ColdColor,
-                    ExposureHazardPresentation.HeatColor,
-                    t);
-            }
+                SetLabelText(tempLabel, Mathf.RoundToInt(fahrenheit) + "\u00B0F", ref lastTempText);
+            if (thermal != null)
+                thermal.SetNormalized(thermal01);
 
             if (zoneLabel != null)
             {
-                ExposureController exposure = ResolveExposure(stats);
                 string zone = "";
-                if (exposure != null)
+                Color zoneColor = new Color(0.75f, 0.18f, 0.48f, 1f); // default magenta when clear/empty
+                ExposureStatusSnapshot snap = ExposureStatusService.Current;
+                if (snap != null && !snap.DominantHazard.IsClear)
                 {
-                    string[] names = exposure.GetActiveZoneDisplayNames();
-                    if (names != null && names.Length > 0)
-                        zone = names[0].ToUpperInvariant();
+                    zone = string.IsNullOrEmpty(snap.DominantHazard.DisplayName)
+                        ? ""
+                        : snap.DominantHazard.DisplayName.ToUpperInvariant();
+                    zoneColor = snap.DominantHazard.DisplayColor;
+                    zoneColor.a = 1f;
                 }
-
-                zoneLabel.text = zone;
+                SetLabelText(zoneLabel, zone, ref lastZoneText);
+                if (zoneLabel.style.color.value != zoneColor)
+                    zoneLabel.style.color = zoneColor;
             }
         }
 
@@ -351,22 +561,35 @@ namespace Project.UI
             if (mapView == null)
                 return;
 
-            Texture texture = null;
-            DMUiToolkitMinimap minimap = DMUiToolkitMinimap.Instance;
-            if (minimap != null)
-                texture = minimap.ViewTexture;
-            if (texture == null && mapUi != null)
-                texture = mapUi.MinimapSourceTexture;
+            if (mapUi != null && !legacyStartSpanApplied)
+            {
+                mapUi.UitkEnsureLegacyStartSpan();
+                legacyStartSpanApplied = true;
+            }
 
-            if (texture is RenderTexture rt)
-                DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, rt, ScaleMode.ScaleAndCrop);
-            else
-                DMUiToolkitStyle.TrySetTextureBackground(mapView, texture, ScaleMode.ScaleAndCrop);
+            RenderTexture cropped = null;
+            DMUiToolkitMinimap minimap = cachedMinimap != null ? cachedMinimap : DMUiToolkitMinimap.Instance;
+            if (minimap == null)
+                minimap = FindAnyObjectByType<DMUiToolkitMinimap>(FindObjectsInactive.Include);
+            if (minimap != null)
+                cachedMinimap = minimap;
+            if (minimap != null)
+                cropped = minimap.EnsureCroppedView(mapUi);
+
+            if (cropped != null)
+                DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.StretchToFill);
+            mapView.style.opacity = 0.40f;
 
             float yaw = mapUi != null ? mapUi.MinimapFacingYaw : 0f;
-            DMUiToolkitMenus.SetElementRotate(mapView, yaw);
-            if (poiHost != null)
-                DMUiToolkitMenus.SetElementRotate(poiHost, yaw);
+            if (float.IsNaN(lastMapYaw) || Mathf.Abs(yaw - lastMapYaw) > 0.05f)
+            {
+                lastMapYaw = yaw;
+                DMUiToolkitMenus.SetElementRotate(mapView, yaw);
+                if (poiHost != null)
+                    DMUiToolkitMenus.SetElementRotate(poiHost, yaw);
+                if (pilotNorthLayer != null)
+                    DMUiToolkitMenus.SetElementRotate(pilotNorthLayer, yaw);
+            }
 
             RefreshMapPois(mapUi);
         }
@@ -566,12 +789,66 @@ namespace Project.UI
 
             if (focused == null)
             {
-                compassPoi.text = "";
+                SetLabelText(compassPoi, "", ref lastCompassPoiText);
                 return;
             }
 
             string name = string.IsNullOrEmpty(focused.Label) ? "POI" : focused.Label;
-            compassPoi.text = name + "  " + Mathf.RoundToInt(focusedDist) + "m";
+            SetLabelText(compassPoi, name + "  " + Mathf.RoundToInt(focusedDist) + "m", ref lastCompassPoiText);
+        }
+
+        private void TickMinimapZoom(MapUI mapUi)
+        {
+            if (mapUi == null || MinimapZoomBlocked())
+                return;
+
+            bool zoomIn = false;
+            bool zoomOut = false;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.leftBracketKey.wasPressedThisFrame)
+                    zoomIn = true;
+                if (keyboard.rightBracketKey.wasPressedThisFrame)
+                    zoomOut = true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftBracket))
+                zoomIn = true;
+            if (Input.GetKeyDown(KeyCode.RightBracket))
+                zoomOut = true;
+
+            if (zoomIn)
+                mapUi.UitkAdjustMinimapSpan(0.833f);
+            if (zoomOut)
+                mapUi.UitkAdjustMinimapSpan(1.2f);
+        }
+
+        private bool MinimapZoomBlocked()
+        {
+            if (MainMenuController.BlocksGameplayHud)
+                return true;
+            if (DMUiToolkitLoadingOverlay.IsShowing)
+                return true;
+            if (DMUiToolkitMainMenu.IsVisible)
+                return true;
+            if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
+                return true;
+            if (DMUiToolkitMenus.IsOpen)
+                return true;
+
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return true;
+
+            if (cachedJournal == null && Time.frameCount >= nextJournalResolveFrame)
+            {
+                nextJournalResolveFrame = Time.frameCount + 30;
+                cachedJournal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            }
+
+            return cachedJournal != null && cachedJournal.IsOpen;
         }
 
         private SurvivalStats ResolveStats(GameObject player)
@@ -617,11 +894,53 @@ namespace Project.UI
             return cachedMapUi;
         }
 
-        private static void SetPercent(Label label, float ratio)
+
+        /// <summary>
+        /// Health skill points (Vital Boost / Vital Resilience ranks) → extra vertical dashes, max +10.
+        /// </summary>
+        private static int GetHealthUpgradeDashes()
+        {
+            return Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxHealthPercent), 0, MaxHealthBonusDashes);
+        }
+
+        /// <summary>Energy skill ranks unlock up to 4 locked arc dashes (Endurance / Field Conditioning).</summary>
+        private static int GetEnergyUpgradeDashes()
+        {
+            return Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxEnergyPercent), 0, LockedArcDashCount);
+        }
+
+        /// <summary>Stamina skill ranks unlock up to 4 locked arc dashes (Stamina Core / Survivor's Edge).</summary>
+        private static int GetStaminaUpgradeDashes()
+        {
+            return Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxStaminaPercent), 0, LockedArcDashCount);
+        }
+
+        /// <summary>Oxygen skill ranks unlock up to 4 locked arc dashes (Lung Capacity).</summary>
+        private static int GetOxygenUpgradeDashes()
+        {
+            return Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxOxygenPercent), 0, LockedArcDashCount);
+        }
+
+
+        private static void SetPercent(Label label, float ratio, ref string lastText)
         {
             if (label == null)
                 return;
-            label.text = Mathf.RoundToInt(Mathf.Clamp01(ratio) * 100f) + "%";
+            string text = Mathf.RoundToInt(Mathf.Clamp01(ratio) * 100f) + "%";
+            if (string.Equals(text, lastText, System.StringComparison.Ordinal))
+                return;
+            lastText = text;
+            label.text = text;
+        }
+
+        private static void SetLabelText(Label label, string text, ref string lastText)
+        {
+            if (label == null)
+                return;
+            if (string.Equals(text, lastText, System.StringComparison.Ordinal))
+                return;
+            lastText = text;
+            label.text = text;
         }
 
         private static float Ratio(float current, float max)
@@ -660,6 +979,9 @@ namespace Project.UI
             private float energy = 1f;
             private float stamina = 1f;
             private float oxygen = 1f;
+            private int energyBonus;
+            private int staminaBonus;
+            private int oxygenBonus;
 
             public PerimeterArcs()
             {
@@ -672,19 +994,34 @@ namespace Project.UI
                 generateVisualContent += Paint;
             }
 
-            public void SetFills(float energy01, float stamina01, float oxygen01)
+            public void SetFills(
+                float energy01,
+                float stamina01,
+                float oxygen01,
+                int energyUnlockedBonus,
+                int staminaUnlockedBonus,
+                int oxygenUnlockedBonus)
             {
                 energy01 = Mathf.Clamp01(energy01);
                 stamina01 = Mathf.Clamp01(stamina01);
                 oxygen01 = Mathf.Clamp01(oxygen01);
+                energyUnlockedBonus = Mathf.Clamp(energyUnlockedBonus, 0, LockedArcDashCount);
+                staminaUnlockedBonus = Mathf.Clamp(staminaUnlockedBonus, 0, LockedArcDashCount);
+                oxygenUnlockedBonus = Mathf.Clamp(oxygenUnlockedBonus, 0, LockedArcDashCount);
                 if (Mathf.Approximately(energy, energy01)
                     && Mathf.Approximately(stamina, stamina01)
-                    && Mathf.Approximately(oxygen, oxygen01))
+                    && Mathf.Approximately(oxygen, oxygen01)
+                    && energyBonus == energyUnlockedBonus
+                    && staminaBonus == staminaUnlockedBonus
+                    && oxygenBonus == oxygenUnlockedBonus)
                     return;
 
                 energy = energy01;
                 stamina = stamina01;
                 oxygen = oxygen01;
+                energyBonus = energyUnlockedBonus;
+                staminaBonus = staminaUnlockedBonus;
+                oxygenBonus = oxygenUnlockedBonus;
                 MarkDirtyRepaint();
             }
 
@@ -696,16 +1033,18 @@ namespace Project.UI
                     return;
 
                 Vector2 center = new Vector2(r.width * 0.5f, r.height * 0.5f);
-                float maxR = Mathf.Min(r.width, r.height) * 0.5f;
-                p.lineCap = LineCap.Round;
-                p.lineJoin = LineJoin.Round;
+                // Sit just outside the 168px map ring (inset 16 in a 200px stage).
+                float radius = Mathf.Min(r.width, r.height) * 0.5f - 8f;
+                p.lineJoin = LineJoin.Miter;
 
-                DrawArc(p, center, maxR - 6f, 198f, 78f, energy, EnergyColor, 5.5f);
-                DrawArc(p, center, maxR - 14f, 264f, 78f, stamina, StaminaColor, 5.5f);
-                DrawArc(p, center, maxR - 22f, 32f, 116f, oxygen, OxygenColor, 5f);
+                // 0deg = 3 o'clock, Y-down, clockwise. Energy top-left, oxygen top-right
+                // (same 74deg size), stamina bottom spanning both lower quarters.
+                DrawDashedArc(p, center, radius, 188f, 74f, energy, EnergyColor, 6f, energyBonus);
+                DrawDashedArc(p, center, radius, 278f, 74f, oxygen, OxygenColor, 6f, oxygenBonus);
+                DrawDashedArc(p, center, radius, 22f, 136f, stamina, StaminaColor, 6f, staminaBonus);
             }
 
-            private static void DrawArc(
+            private static void DrawDashedArc(
                 Painter2D p,
                 Vector2 center,
                 float radius,
@@ -713,25 +1052,226 @@ namespace Project.UI
                 float sweepDeg,
                 float fill01,
                 Color color,
-                float width)
+                float width,
+                int unlockedBonus)
             {
-                if (radius < 4f)
+                if (radius < 4f || sweepDeg < 2f)
                     return;
 
-                p.lineWidth = width;
-                Color track = color;
-                track.a = 0.22f;
-                p.strokeColor = track;
+                const float DashSweep = 3.35f;
+                const float DashGap = 2.05f;
+
+                Color rail = color;
+                rail.a = 0.28f;
+                p.lineCap = LineCap.Butt;
+                p.lineWidth = 1.1f;
+                p.strokeColor = rail;
                 p.BeginPath();
-                p.Arc(center, radius, Angle.Degrees(startDeg), Angle.Degrees(startDeg + sweepDeg), ArcDirection.Clockwise);
+                p.Arc(center, radius - width * 0.55f, Angle.Degrees(startDeg), Angle.Degrees(startDeg + sweepDeg), ArcDirection.Clockwise);
+                p.Stroke();
+                p.BeginPath();
+                p.Arc(center, radius + width * 0.55f, Angle.Degrees(startDeg), Angle.Degrees(startDeg + sweepDeg), ArcDirection.Clockwise);
                 p.Stroke();
 
-                float filled = Mathf.Max(1.5f, sweepDeg * Mathf.Clamp01(fill01));
-                p.strokeColor = color;
-                p.BeginPath();
-                p.Arc(center, radius, Angle.Degrees(startDeg), Angle.Degrees(startDeg + filled), ArcDirection.Clockwise);
-                p.Stroke();
+                float pitch = DashSweep + DashGap;
+                int total = Mathf.Max(LockedArcDashCount + 1, Mathf.FloorToInt((sweepDeg + 0.01f) / pitch));
+                int baseDashCount = Mathf.Max(1, total - LockedArcDashCount);
+                int lockedDashCount = LockedArcDashCount;
+                unlockedBonus = Mathf.Clamp(unlockedBonus, 0, lockedDashCount);
+                int unlockedCount = baseDashCount + unlockedBonus;
+                total = baseDashCount + lockedDashCount;
+
+                float used = total * DashSweep + (total - 1) * DashGap;
+                float pad = Mathf.Max(0f, (sweepDeg - used) * 0.5f);
+                // Fill maps across unlocked capacity only (RPG: locked bank is not usable yet).
+                float filledDashes = unlockedCount * Mathf.Clamp01(fill01);
+
+                p.lineWidth = width;
+                for (int i = 0; i < total; i++)
+                {
+                    float a0 = startDeg + pad + i * pitch;
+                    float a1 = a0 + DashSweep;
+                    Color dash;
+                    if (i >= unlockedCount)
+                    {
+                        dash = LockedTint(color);
+                    }
+                    else
+                    {
+                        dash = color;
+                        if (i + 0.5f > filledDashes)
+                            dash.a = 0.22f;
+                    }
+
+                    p.strokeColor = dash;
+                    p.BeginPath();
+                    p.Arc(center, radius, Angle.Degrees(a0), Angle.Degrees(a1), ArcDirection.Clockwise);
+                    p.Stroke();
+                }
             }
         }
+
+        /// <summary>
+        /// Vertical dashed health bar. Same dash language as perimeter arcs; grows upward with health skills.
+        /// </summary>
+        private sealed class HealthDashes : VisualElement
+        {
+            private float fill = 1f;
+            private int bonusDashes;
+
+            public HealthDashes()
+            {
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = 0;
+                style.top = 0;
+                style.right = 0;
+                style.bottom = 0;
+                generateVisualContent += Paint;
+            }
+
+            public void SetFill(float fill01, int healthBonusDashes)
+            {
+                fill01 = Mathf.Clamp01(fill01);
+                healthBonusDashes = Mathf.Clamp(healthBonusDashes, 0, MaxHealthBonusDashes);
+                if (Mathf.Approximately(fill, fill01) && bonusDashes == healthBonusDashes)
+                    return;
+
+                fill = fill01;
+                bonusDashes = healthBonusDashes;
+                MarkDirtyRepaint();
+            }
+
+            private void Paint(MeshGenerationContext ctx)
+            {
+                Painter2D p = ctx.painter2D;
+                Rect r = contentRect;
+                if (r.width < 2f || r.height < 8f)
+                    return;
+
+                // Match arc visual density (~5.5px dash / ~3.2px gap).
+                const float DashH = 5.5f;
+                const float GapH = 3.2f;
+                float pitch = DashH + GapH;
+                int maxTotal = Mathf.Max(1, Mathf.FloorToInt((r.height + 0.01f) / pitch));
+                int baseDashCount = Mathf.Max(1, maxTotal - MaxHealthBonusDashes);
+                int unlocked = baseDashCount + Mathf.Clamp(bonusDashes, 0, MaxHealthBonusDashes);
+                unlocked = Mathf.Min(unlocked, maxTotal);
+                int total = maxTotal;
+
+                float used = total * DashH + (total - 1) * GapH;
+                float padBottom = Mathf.Max(1f, (r.height - used) * 0.5f);
+                float filledDashes = unlocked * Mathf.Clamp01(fill);
+                Color locked = LockedTint(HealthColor);
+
+                float x0 = 1f;
+                float x1 = r.width - 1f;
+                if (x1 <= x0)
+                {
+                    x0 = 0f;
+                    x1 = r.width;
+                }
+
+                for (int i = 0; i < total; i++)
+                {
+                    float y1 = r.height - padBottom - i * pitch;
+                    float y0 = y1 - DashH;
+                    if (y0 < 0f)
+                        break;
+
+                    Color dash;
+                    if (i >= unlocked)
+                    {
+                        dash = locked;
+                    }
+                    else
+                    {
+                        dash = HealthColor;
+                        if (i + 0.5f > filledDashes)
+                            dash.a = 0.22f;
+                    }
+
+                    p.fillColor = dash;
+                    p.BeginPath();
+                    p.MoveTo(new Vector2(x0, y0));
+                    p.LineTo(new Vector2(x1, y0));
+                    p.LineTo(new Vector2(x1, y1));
+                    p.LineTo(new Vector2(x0, y1));
+                    p.ClosePath();
+                    p.Fill();
+                }
+            }
+        }
+
+        private sealed class ThermalStrip : VisualElement
+        {
+            private float normalized = 0.5f;
+
+            public ThermalStrip()
+            {
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = 0;
+                style.top = 0;
+                style.right = 0;
+                style.bottom = 0;
+                generateVisualContent += Paint;
+            }
+
+            public void SetNormalized(float value)
+            {
+                value = Mathf.Clamp01(value);
+                if (Mathf.Approximately(normalized, value))
+                    return;
+                normalized = value;
+                MarkDirtyRepaint();
+            }
+
+            private void Paint(MeshGenerationContext ctx)
+            {
+                Painter2D p = ctx.painter2D;
+                Rect r = contentRect;
+                if (r.width < 8f || r.height < 2f)
+                    return;
+
+                const int slices = 28;
+                float sliceW = r.width / slices;
+                for (int i = 0; i < slices; i++)
+                {
+                    float t = slices == 1 ? 0f : i / (float)(slices - 1);
+                    // Darker blue on the cold (left) end, warming to heat on the right.
+                    Color coldDark = new Color(0.08f, 0.22f, 0.55f, 1f);
+                    Color cold = new Color(0.18f, 0.48f, 0.82f, 1f);
+                    Color mid = new Color(0.42f, 0.78f, 0.48f, 1f);
+                    Color warm = new Color(0.95f, 0.72f, 0.18f, 1f);
+                    Color hot = ExposureHazardPresentation.HeatColor;
+                    Color c;
+                    if (t < 0.25f) c = Color.Lerp(coldDark, cold, t / 0.25f);
+                    else if (t < 0.5f) c = Color.Lerp(cold, mid, (t - 0.25f) / 0.25f);
+                    else if (t < 0.75f) c = Color.Lerp(mid, warm, (t - 0.5f) / 0.25f);
+                    else c = Color.Lerp(warm, hot, (t - 0.75f) / 0.25f);
+                    p.fillColor = c;
+                    float x = i * sliceW;
+                    p.BeginPath();
+                    p.MoveTo(new Vector2(x, 0f));
+                    p.LineTo(new Vector2(x + sliceW + 0.5f, 0f));
+                    p.LineTo(new Vector2(x + sliceW + 0.5f, r.height));
+                    p.LineTo(new Vector2(x, r.height));
+                    p.ClosePath();
+                    p.Fill();
+                }
+
+                float nx = Mathf.Lerp(2f, r.width - 2f, normalized);
+                // Bright red circle handle — slightly thicker than the temp strip.
+                float radius = r.height * 0.5f + 2.5f;
+                p.fillColor = new Color(1f, 0.12f, 0.08f, 1f);
+                p.BeginPath();
+                p.Arc(new Vector2(nx, r.height * 0.5f), radius, Angle.Degrees(0f), Angle.Degrees(360f));
+                p.Fill();
+            }
+        }
+
     }
 }
+
+// fix-stamp 0144

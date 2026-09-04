@@ -527,9 +527,6 @@ namespace Project.UI
 
             if (oxygenText != null)
             {
-                if (CondensedSurvivalStatsHud.IsActive)
-                    oxygenText.gameObject.SetActive(true);
-
                 int oxygenDisplay = Mathf.Max(0, Mathf.CeilToInt(survivalStats.CurrentOxygen));
                 if (oxygenDisplay != lastOxygenDisplay)
                 {
@@ -617,18 +614,28 @@ namespace Project.UI
             int seconds = totalSeconds % 60;
             string formatted = $"{minutes:00}:{seconds:00}";
 
-            if (CondensedSurvivalStatsHud.IsActive)
-                return formatted;
-
             return $"Oxygen: {formatted}";
         }
 
         private static string FormatStatValue(float value, string statName)
         {
-            if (CondensedSurvivalStatsHud.IsActive)
-                return Mathf.CeilToInt(value).ToString();
-
             return $"{statName}: {Mathf.Ceil(value)}";
+        }
+
+
+        private static void ApplyRingFill(RectTransform fillRect, float normalized)
+        {
+            if (fillRect == null)
+                return;
+
+            normalized = Mathf.Clamp01(normalized);
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = new Vector2(normalized, 1f);
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            fillRect.anchoredPosition = Vector2.zero;
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            fillRect.SetAsLastSibling();
         }
 
         private void SetSliderValue(Slider slider, float normalizedValue)
@@ -647,7 +654,7 @@ namespace Project.UI
 
             if (cache.RingFill != null)
             {
-                CondensedSurvivalStatsHud.ApplyBarFill(slider, clamped, cache.RingFill);
+                ApplyRingFill(cache.RingFill, clamped);
                 return;
             }
 
