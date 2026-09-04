@@ -162,6 +162,7 @@ namespace Project.UI
         private ToolkitHexNode CreateToolkitHexNode(SkillDefinition skill)
         {
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             int maxRank = skill.ClampedMaxRank;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, boundProgression, out _);
             bool isMaxed = rank >= maxRank;
@@ -205,13 +206,8 @@ namespace Project.UI
             VisualElement dotsRow = new VisualElement();
             dotsRow.AddToClassList("dmg-hex-dots");
             dotsRow.pickingMode = PickingMode.Ignore;
-            // Compact pips: 5 slots map across ClampedMaxRank (supports up to DisplayMaxRank=20).
+            // One pip per owned rank (5 max per node).
             VisualElement[] dots = new VisualElement[HexRankVisualSlots];
-            int filledSlots = maxRank <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt((rank / (float)maxRank) * HexRankVisualSlots), 0, HexRankVisualSlots);
-            if (rank > 0 && filledSlots == 0)
-                filledSlots = 1;
-            if (rank >= maxRank)
-                filledSlots = HexRankVisualSlots;
             for (int d = 0; d < HexRankVisualSlots; d++)
             {
                 VisualElement dot = new VisualElement();
@@ -219,7 +215,7 @@ namespace Project.UI
                 dot.pickingMode = PickingMode.Ignore;
                 if (DmHexUiSprites.RankDot != null)
                     DMUiToolkitStyle.TrySetSpriteBackground(dot, DmHexUiSprites.RankDot);
-                dot.style.unityBackgroundImageTintColor = d < filledSlots ? HexRankFilledBlue : HexRankEmptyGray;
+                dot.style.unityBackgroundImageTintColor = d < rank ? HexRankFilledBlue : HexRankEmptyGray;
                 dotsRow.Add(dot);
                 dots[d] = dot;
             }
@@ -336,10 +332,11 @@ namespace Project.UI
             ApplySkillDetail();
             ApplyHexPopupOverride();
             if (!string.IsNullOrEmpty(error)
-                && skill.requiredPlayerLevel > 1
-                && !LevelUnlockUtility.CanAccess(boundProgression, skill.requiredPlayerLevel))
+                && !LevelUnlockUtility.CanAccess(boundProgression, skill.GetRequiredPlayerLevelForNextRank(
+                    skill.GetDisplayRank(boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0))))
             {
-                LevelUnlockUtility.ShowRequireLevelPopup(skill.requiredPlayerLevel);
+                LevelUnlockUtility.ShowRequireLevelPopup(skill.GetRequiredPlayerLevelForNextRank(
+                    skill.GetDisplayRank(boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0)));
             }
             else if (!string.IsNullOrEmpty(error) && error != "Max rank reached.")
             {
@@ -356,6 +353,7 @@ namespace Project.UI
                 return;
 
             int rank = boundProgression != null ? boundProgression.GetSkillRank(view.Skill.ResolvedId) : 0;
+            rank = view.Skill.GetDisplayRank(rank);
             int maxRank = view.Skill.ClampedMaxRank;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(view.Skill, boundProgression, out _);
             bool isMaxed = rank >= maxRank;
@@ -388,6 +386,7 @@ namespace Project.UI
                 return;
 
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             int maxRank = skill.ClampedMaxRank;
             int nextCost = rank < maxRank ? skill.GetCostForNextRank(rank) : 0;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, boundProgression, out string error);
@@ -402,7 +401,7 @@ namespace Project.UI
             string body =
                 (skill.description ?? string.Empty) + "\n\n" +
                 "Rank " + rank + "/" + maxRank + "\n" +
-                "Requires player level " + skill.requiredPlayerLevel + "\n" +
+                "Requires player level " + skill.GetRequiredPlayerLevelForNextRank(rank) + "\n" +
                 (string.IsNullOrEmpty(prereqLine) ? string.Empty : prereqLine + "\n") +
                 "\n" + status;
 
@@ -424,6 +423,7 @@ namespace Project.UI
 
             SkillDefinition skill = view.Skill;
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             int maxRank = skill.ClampedMaxRank;
             int nextCost = rank < maxRank ? skill.GetCostForNextRank(rank) : 0;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, boundProgression, out string error);
@@ -442,7 +442,7 @@ namespace Project.UI
                 skillsDetailBody.text =
                     (skill.description ?? string.Empty) + "\n\n" +
                     "Rank " + rank + "/" + maxRank + "\n" +
-                    "Requires player level " + skill.requiredPlayerLevel + "\n" +
+                    "Requires player level " + skill.GetRequiredPlayerLevelForNextRank(rank) + "\n" +
                     (string.IsNullOrEmpty(prereqLine) ? string.Empty : prereqLine + "\n") +
                     "\n" + status;
             }

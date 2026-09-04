@@ -451,6 +451,7 @@ namespace Project.UI
         private HexNodeView CreateHexNode(SkillDefinition skill)
         {
             int rank = progression != null ? progression.GetSkillRank(skill.ResolvedId) : 0;
+            int displayRank = skill.GetDisplayRank(rank);
             int maxRank = skill.ClampedMaxRank;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, progression, out _);
             bool isMaxed = rank >= maxRank;
@@ -563,7 +564,7 @@ namespace Project.UI
                 if (!usedSlot)
                     dot.color = Color.clear;
                 else
-                    dot.color = d < rank ? RankFilledBlue : RankEmptyGray;
+                    dot.color = d < displayRank ? RankFilledBlue : RankEmptyGray;
                 dots[d] = dot;
             }
 
@@ -670,10 +671,11 @@ namespace Project.UI
             RefreshPopupContent();
 
             if (!string.IsNullOrEmpty(error)
-                && skill.requiredPlayerLevel > 1
-                && !LevelUnlockUtility.CanAccess(progression, skill.requiredPlayerLevel))
+                && !LevelUnlockUtility.CanAccess(progression, skill.GetRequiredPlayerLevelForNextRank(
+                    skill.GetDisplayRank(progression != null ? progression.GetSkillRank(skill.ResolvedId) : 0))))
             {
-                LevelUnlockUtility.ShowRequireLevelPopup(skill.requiredPlayerLevel);
+                LevelUnlockUtility.ShowRequireLevelPopup(skill.GetRequiredPlayerLevelForNextRank(
+                    skill.GetDisplayRank(progression != null ? progression.GetSkillRank(skill.ResolvedId) : 0)));
             }
             else if (!string.IsNullOrEmpty(error) && error != "Max rank reached.")
             {
@@ -690,6 +692,7 @@ namespace Project.UI
                 return;
 
             int rank = progression != null ? progression.GetSkillRank(view.Skill.ResolvedId) : 0;
+            rank = view.Skill.GetDisplayRank(rank);
             int maxRank = view.Skill.ClampedMaxRank;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(view.Skill, progression, out _);
             bool isMaxed = rank >= maxRank;
@@ -736,6 +739,7 @@ namespace Project.UI
 
             SkillDefinition skill = view.Skill;
             int rank = progression != null ? progression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             int maxRank = skill.ClampedMaxRank;
             int nextCost = rank < maxRank ? skill.GetCostForNextRank(rank) : 0;
             bool canAllocate = PlayerSkillAllocator.CanAllocate(skill, progression, out string error);
@@ -752,7 +756,7 @@ namespace Project.UI
             popupBody.text =
                 $"{skill.description}\n\n" +
                 $"Rank {rank}/{maxRank}\n" +
-                $"Requires player level {skill.requiredPlayerLevel}\n" +
+                $"Requires player level {skill.GetRequiredPlayerLevelForNextRank(rank)}\n" +
                 (string.IsNullOrEmpty(prereqLine) ? string.Empty : $"{prereqLine}\n") +
                 $"\n{status}";
             popupBody.color = canAllocate || isMaxed
