@@ -380,7 +380,7 @@ namespace Project.UI
 
         /// <summary>
         /// Fixed-height interact stem (min==max). Pickup exclusive path passes growing min/max.
-        /// Tip is computed in PaintDots from proximity — never slide the dot along a fixed stem.
+        /// Tip is computed in PaintDots from proximity - never slide the dot along a fixed stem.
         /// </summary>
         private static WorldDot MakeStemDot(Vector3 anchor, Color color, float stemHeight)
         {
@@ -402,6 +402,43 @@ namespace Project.UI
             };
         }
 
+        /// <summary>
+        /// Panel-local point for a world position. ScreenToPanel is panel-root space; children of
+        /// <paramref name="space"/> need WorldToLocal or left/top drift (stem floats / tip inverts).
+        /// When ScreenToPanel fails to flip Y (panel Y still rises with screen Y), tip and base
+        /// invert so the tip-locked dot sits near the ground — correct by mirroring against panel height.
+        /// </summary>
+        private static bool TryWorldToPanel(Camera camera, VisualElement space, Vector3 world, out Vector2 panelPos)
+        {
+            panelPos = default;
+            if (camera == null || space == null || space.panel == null)
+                return false;
+
+            Vector3 screen = camera.WorldToScreenPoint(world);
+            if (screen.z <= 0f)
+                return false;
+
+            IPanel panel = space.panel;
+            panelPos = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, screen.y));
+
+            // Detect Y orientation once per call pair is fine; cost is two corner samples.
+            Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, 0f));
+            Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height));
+            if (screenTop.y > screenBottom.y + 0.5f)
+            {
+                // Panel Y still increases with screen Y (no flip). style.top needs Y-down.
+                float panelH = space.resolvedStyle.height;
+                if (panelH <= 1f && space.hierarchy.parent != null)
+                    panelH = space.hierarchy.parent.resolvedStyle.height;
+                if (panelH <= 1f)
+                    panelH = Screen.height;
+                panelPos.y = panelH - panelPos.y;
+            }
+
+            panelPos = space.WorldToLocal(panelPos);
+            return true;
+        }
+
         private void PaintDots()
         {
             if (dotsLayer == null || dotsLayer.panel == null)
@@ -410,6 +447,7 @@ namespace Project.UI
             Camera camera = worldCamera;
             Transform player = playerTransform;
             float maxRange = WorldUseController.MaxPickupDistance;
+            const float stemThickness = 2f;
             int shown = 0;
             int limit = Mathf.Min(pendingDots.Count, MaxDots);
             for (int i = 0; i < limit; i++)
@@ -435,48 +473,41 @@ namespace Project.UI
                 float stemHeight = Mathf.Lerp(pending.StemMinHeight, pending.StemMaxHeight, proximity);
                 Vector3 tipWorld = pending.Anchor + Vector3.up * stemHeight;
 
-                Vector3 tipScreen = camera.WorldToScreenPoint(tipWorld);
-                Vector3 anchorScreen = camera.WorldToScreenPoint(pending.Anchor);
-                // Both endpoints must be in front; otherwise screen-lerp of the tip is bogus.
-                if (tipScreen.z <= 0f || anchorScreen.z <= 0f)
+                VisualElement host = AcquireDot(shown);
+                // Position in host-local space (host is a 0x0 overflow:visible marker at panel origin).
+                if (!TryWorldToPanel(camera, host, tipWorld, out Vector2 tipPanel)
+                    || !TryWorldToPanel(camera, host, pending.Anchor, out Vector2 anchorPanel))
+                {
+                    DMUiToolkitOverlayDocument.SetShown(host, false);
                     continue;
-
-                Vector2 tipPanel = RuntimePanelUtils.ScreenToPanel(
-                    dotsLayer.panel, new Vector2(tipScreen.x, tipScreen.y));
-                Vector2 anchorPanel = RuntimePanelUtils.ScreenToPanel(
-                    dotsLayer.panel, new Vector2(anchorScreen.x, anchorScreen.y));
+                }
 
                 float size = Mathf.Lerp(DotSizeFarPx, DotSizeNearPx, proximity);
                 float half = size * 0.5f;
                 float coreSize = size * 0.5f;
 
-                VisualElement host = AcquireDot(shown);
                 VisualElement stem = host.childCount > 0 ? host[0] : null;
                 VisualElement glow = host.childCount > 1 ? host[1] : null;
 
-                // Screen segment from world-projected anchor -> growing tip (world-up).
-                // Both ends track the pickup every frame so orbit stays world-locked.
+                // Panel segment: stem base = pickup anchor, tip = world-up. Dot glued to tip.
                 float dx = tipPanel.x - anchorPanel.x;
                 float dy = tipPanel.y - anchorPanel.y;
                 float len = Mathf.Sqrt(dx * dx + dy * dy);
                 float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
 
-                // Dot is always glued to the tip (no along-stem sliding).
-                Vector2 alongPanel = tipPanel;
-
-                if (pending.DrawStem && stem != null && tipScreen.z > 0f && anchorScreen.z > 0f && len > 0.5f)
+                if (pending.DrawStem && stem != null && len > 0.5f)
                 {
-                    // Pivot at box center: left/top place the unrotated bar so its midpoint
-                    // sits on the screen midpoint of (anchor, tip). Explicit 50%/50% origin --
-                    // left-at-anchor + 0% origin drifts when orbiting if origin fails to apply
-                    // to style.rotate.
-                    float midX = (anchorPanel.x + tipPanel.x) * 0.5f;
-                    float midY = (anchorPanel.y + tipPanel.y) * 0.5f;
-                    stem.style.left = midX - len * 0.5f;
-                    stem.style.top = midY - 1f;
-                    stem.style.width = Mathf.Max(2f, len);
-                    stem.style.height = 2f;
-                    stem.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
+                    // Pin LEFT-CENTER of the unrotated bar on the anchor, then rotate toward tip.
+                    // Origin 0%/50% keeps the base welded to GetIndicatorWorldAnchor() under orbit;
+                    // mid-box 50%/50% placement drifted when transform-origin failed to apply.
+                    stem.style.left = anchorPanel.x;
+                    stem.style.top = anchorPanel.y - stemThickness * 0.5f;
+                    stem.style.right = StyleKeyword.Auto;
+                    stem.style.bottom = StyleKeyword.Auto;
+                    stem.style.width = Mathf.Max(stemThickness, len);
+                    stem.style.height = stemThickness;
+                    stem.style.translate = new Translate(0, 0);
+                    stem.style.transformOrigin = new TransformOrigin(Length.Percent(0f), Length.Percent(50f));
                     stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(angle)));
                     Color stemColor = pending.Color;
                     stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
@@ -490,10 +521,14 @@ namespace Project.UI
 
                 if (glow != null)
                 {
+                    // Tip-locked proximity dot (never on the ground/base end).
                     glow.style.width = size;
                     glow.style.height = size;
-                    glow.style.left = alongPanel.x - half;
-                    glow.style.top = alongPanel.y - half;
+                    glow.style.left = tipPanel.x - half;
+                    glow.style.top = tipPanel.y - half;
+                    glow.style.right = StyleKeyword.Auto;
+                    glow.style.bottom = StyleKeyword.Auto;
+                    glow.style.translate = new Translate(0, 0);
                     glow.style.borderTopLeftRadius = half;
                     glow.style.borderTopRightRadius = half;
                     glow.style.borderBottomLeftRadius = half;
@@ -518,7 +553,6 @@ namespace Project.UI
 
             RecycleDots(shown);
         }
-
         private void PaintBars()
         {
             if (barsLayer == null || barsLayer.panel == null)
@@ -580,7 +614,7 @@ namespace Project.UI
 
                 VisualElement stem = new VisualElement { pickingMode = PickingMode.Ignore };
                 stem.AddToClassList("dmg-world-dot-stem");
-                stem.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
+                stem.style.transformOrigin = new TransformOrigin(Length.Percent(0f), Length.Percent(50f));
                 host.Add(stem);
 
                 VisualElement glow = new VisualElement { pickingMode = PickingMode.Ignore };
