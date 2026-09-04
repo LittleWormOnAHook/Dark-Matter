@@ -569,7 +569,7 @@ namespace Project.UI
 
         private void PinBesidePilot()
         {
-            // Legacy name - pins just above ELEV, horizontally centered on the red player arrow.
+            // Pins just above ELEV, horizontally centered on the ELEV +/- sign.
             PinAboveElev();
         }
 
@@ -581,29 +581,13 @@ namespace Project.UI
             float left = MinimapCenterX;
             float bottom = PilotBottom + PilotHeight + HazardGapAboveElev;
 
-            // Horizontal: center on the red player arrow (fallback: map ring).
-            VisualElement arrow = ResolvePilotMapPlayer();
-            if (arrow != null && arrow.panel != null)
-            {
-                Rect ab = arrow.worldBound;
-                if (ab.width > 0.5f && ab.height > 0.5f)
-                    left = ab.xMin + ab.width * 0.5f;
-            }
-            else
-            {
-                VisualElement ring = ResolvePilotMapRing();
-                if (ring != null && ring.panel != null)
-                {
-                    Rect rb = ring.worldBound;
-                    if (rb.width > 1f && rb.height > 1f)
-                        left = rb.xMin + rb.width * 0.5f;
-                }
-            }
-
-            // Vertical: sit just above ELEV.
             Label elev = ResolvePilotElevLabel();
             if (elev != null && elev.panel != null)
             {
+                float plusX = ResolveElevSignAnchorX(elev);
+                if (!float.IsNaN(plusX))
+                    left = plusX;
+
                 Rect wb = elev.worldBound;
                 if (wb.width > 1f && wb.height > 1f)
                 {
@@ -630,6 +614,58 @@ namespace Project.UI
             cluster.style.marginLeft = 0;
             cluster.style.translate = new Translate(new Length(-50f, LengthUnit.Percent), 0);
             cluster.style.alignItems = Align.Center;
+        }
+
+        /// <summary>
+        /// Horizontal anchor for the hazards cluster: center of the +/- sign in the ELEV readout.
+        /// </summary>
+        private static float ResolveElevSignAnchorX(Label elev)
+        {
+            if (elev == null)
+                return float.NaN;
+
+            Rect wb = elev.worldBound;
+            if (wb.width <= 1f || wb.height <= 1f)
+                return float.NaN;
+
+            string text = elev.text ?? string.Empty;
+            int signIndex = -1;
+            for (int i = 5; i < text.Length; i++)
+            {
+                if (text[i] == '+' || text[i] == '-')
+                {
+                    signIndex = i;
+                    break;
+                }
+            }
+
+            if (signIndex < 0)
+                return wb.xMin + wb.width * 0.5f;
+
+            string prefix = text.Substring(0, signIndex);
+            string sign = text.Substring(signIndex, 1);
+
+            Vector2 total = elev.MeasureTextSize(
+                text,
+                float.PositiveInfinity,
+                MeasureMode.Undefined,
+                float.PositiveInfinity,
+                MeasureMode.Undefined);
+            Vector2 prefixSize = elev.MeasureTextSize(
+                prefix,
+                float.PositiveInfinity,
+                MeasureMode.Undefined,
+                float.PositiveInfinity,
+                MeasureMode.Undefined);
+            Vector2 signSize = elev.MeasureTextSize(
+                sign,
+                float.PositiveInfinity,
+                MeasureMode.Undefined,
+                float.PositiveInfinity,
+                MeasureMode.Undefined);
+
+            float textLeft = wb.xMin + (wb.width - total.x) * 0.5f;
+            return textLeft + prefixSize.x + signSize.x * 0.5f;
         }
 
         private Label ResolvePilotElevLabel()
