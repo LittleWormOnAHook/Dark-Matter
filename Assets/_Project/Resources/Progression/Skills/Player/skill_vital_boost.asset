@@ -20,7 +20,7 @@ MonoBehaviour:
   treeRow: 0
   requiredPlayerLevel: 1
   costPerRank: 1
-  maxRank: 20
+  maxRank: 5
   costPerTargetRank: 
   modifierType: 0
   bonusPercentPerRank: 5

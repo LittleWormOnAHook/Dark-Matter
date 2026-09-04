@@ -35,6 +35,31 @@ namespace Project.EditorTools.Progression
             Selection.activeObject = curve;
         }
 
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Sync Skill Tree Depth Defaults", false, 42)]
+        public static void SyncSkillTreeDepthDefaults()
+        {
+            SkillDefinition[] skills = Resources.LoadAll<SkillDefinition>("Progression/Skills");
+            int updated = 0;
+            for (int i = 0; i < skills.Length; i++)
+            {
+                SkillDefinition skill = skills[i];
+                if (skill == null)
+                    continue;
+
+                int depth = SkillTreeDepthUtility.GetBranchDepth(skill);
+                skill.maxRank = SkillTreeDepthUtility.RanksPerNode;
+                skill.costPerRank = depth + 1;
+                skill.requiredPlayerLevel = SkillTreeDepthUtility.GetRequiredPlayerLevelForRank(skill, 1);
+                skill.costPerTargetRank = null;
+                EditorUtility.SetDirty(skill);
+                updated++;
+            }
+
+            SkillTreeDepthUtility.ClearCache();
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[Progression] Synced depth-based defaults on {updated} skills (5 ranks, level band + SP cost from branch depth).");
+        }
+
         [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Skills + Registry", false, 41)]
         public static void CreateStarterSkills()
         {
@@ -165,13 +190,15 @@ namespace Project.EditorTools.Progression
             skill.treeCategory = category;
             skill.treeColumn = treeColumn;
             skill.treeRow = treeRow;
-            skill.requiredPlayerLevel = requiredLevel;
             skill.modifierType = modifier;
             skill.bonusPercentPerRank = bonusPerRank;
-            skill.costPerRank = 1;
             skill.maxRank = Mathf.Clamp(maxRank, 1, SkillDefinition.DisplayMaxRank);
-            skill.costPerTargetRank = costPerTargetRank;
             skill.prerequisiteSkillIds = prerequisiteSkillIds ?? System.Array.Empty<string>();
+            SkillTreeDepthUtility.ClearCache();
+            int branchDepth = SkillTreeDepthUtility.GetBranchDepth(skill);
+            skill.costPerRank = branchDepth + 1;
+            skill.requiredPlayerLevel = SkillTreeDepthUtility.GetRequiredPlayerLevelForRank(skill, 1);
+            skill.costPerTargetRank = null;
             EditorUtility.SetDirty(skill);
             return skill;
         }

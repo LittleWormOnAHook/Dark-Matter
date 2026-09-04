@@ -18,9 +18,9 @@ MonoBehaviour:
   treeCategory: 2
   treeColumn: 0
   treeRow: 1
-  requiredPlayerLevel: 5
+  requiredPlayerLevel: 6
   costPerRank: 2
-  maxRank: 20
+  maxRank: 5
   modifierType: 7
   bonusPercentPerRank: 2
   prerequisiteSkillIds:

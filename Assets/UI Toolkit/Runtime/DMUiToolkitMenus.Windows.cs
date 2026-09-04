@@ -913,6 +913,7 @@ namespace Project.UI
         private VisualElement MakeSkillRow(SkillDefinition skill)
         {
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             Button row = new Button();
             row.AddToClassList("dmg-list-row");
             row.EnableInClassList("dmg-list-row--selected", skill.ResolvedId == selectedSkillId);
@@ -951,6 +952,7 @@ namespace Project.UI
             }
 
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
+            rank = skill.GetDisplayRank(rank);
             skillsDetailTitle.text = skill.displayName;
             string error;
             bool can = PlayerSkillAllocator.CanAllocate(skill, boundProgression, out error);
@@ -960,7 +962,7 @@ namespace Project.UI
                     (skill.description ?? string.Empty) + "\n\n" +
                     "Category: " + SkillDefinition.GetCategoryDisplayName(skill.treeCategory) + "\n" +
                     "Rank " + rank + "/" + skill.ClampedMaxRank + "  ·  Next cost " + skill.GetCostForNextRank(rank) + "\n" +
-                    "Requires player level " + skill.requiredPlayerLevel +
+                    "Requires player level " + skill.GetRequiredPlayerLevelForNextRank(rank) +
                     (can ? string.Empty : "\n" + error);
             }
 
