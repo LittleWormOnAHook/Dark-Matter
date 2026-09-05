@@ -34,6 +34,13 @@
     padding: 22px 28px;
 }
 
+.dmg-lu-notice {
+    width: 420px;
+    margin-left: -210px;
+    margin-top: -40px;
+    padding: 22px 28px;
+}
+
 .dmg-lu-ach {
     width: 520px;
     margin-left: -260px;

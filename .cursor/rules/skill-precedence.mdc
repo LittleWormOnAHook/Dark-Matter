@@ -19,6 +19,7 @@ When a skill conflicts with any of the following, **project authority wins**:
 - **No forced Unity refresh** — do not call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks (`unity-console-check-after-edit`).
 - **DM / DMI naming** — do not introduce new Invector-branded project identifiers (`dm-naming-no-invector`).
 - **UI palette** — use `DarkMatterGenesisUiPalette` / Shift theme colors (`dark-matter-genesis-ui-palette`).
+- **UITK lock** — all created UI is UI Toolkit only; no new uGUI (`dark-matter-genesis-uitk-lock`). Hot Cross uses `Assets/_Project/Art/UI/HotCrossIcons` only.
 - **GDD lock** — AC-only economy, PC+consoles, thermal/Echo/Building Control Panel canon (`dark-matter-genesis-gdd`).
 - **HDRP / no NavMesh / no Player_v7 retune** — `dark-matter-genesis-core`, `dark-matter-genesis-unity-hdrp`, `dark-matter-genesis-player-physics`.
 - **Console before done/commit** — wait for compile/domain reload; do not commit with Unity Error console entries.

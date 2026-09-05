@@ -890,7 +890,7 @@ namespace Project.UI
                 player = FindAnyObjectByType<PlayerController>();
         }
 
-        private static Color ResolveAmmoColor(AmmoType type)
+        public static Color ResolveAmmoColor(AmmoType type)
         {
             if (AmmoColors.TryGetValue(type, out Color color))
                 return color;

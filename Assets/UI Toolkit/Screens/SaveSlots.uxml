@@ -6,9 +6,25 @@
         <ui:VisualElement name="saveslots-veil" class="dmg-menu-modal-veil" picking-mode="Position" />
         <ui:VisualElement name="saveslots-panel" class="dmg-menu-modal-panel" picking-mode="Position">
             <ui:Label name="saveslots-title" text="SELECT SAVE SLOT" class="dmg-menu-modal-title" picking-mode="Ignore" />
+            <ui:Label name="saveslots-hint" text="Left-click to load or save. Right-click a used slot to delete or overwrite. Slots 1–2 autosave every 5 minutes." class="dmg-menu-slot-hint" picking-mode="Ignore" />
             <ui:ScrollView name="saveslots-body" class="dmg-menu-modal-body" picking-mode="Position" />
             <ui:VisualElement name="saveslots-footer" class="dmg-menu-modal-footer" picking-mode="Position">
                 <ui:Button name="saveslots-back" text="Back" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted" picking-mode="Position" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="saveslots-context" picking-mode="Position" class="dmg-menu-slot-context">
+            <ui:Button name="saveslots-context-overwrite" text="Overwrite" class="dmg-menu-slot-context-btn" picking-mode="Position" />
+            <ui:Button name="saveslots-context-delete" text="Delete" class="dmg-menu-slot-context-btn" picking-mode="Position" />
+        </ui:VisualElement>
+        <ui:VisualElement name="saveslots-confirm" picking-mode="Position" class="dmg-menu-slot-confirm">
+            <ui:VisualElement name="saveslots-confirm-veil" class="dmg-menu-modal-veil" picking-mode="Position" />
+            <ui:VisualElement name="saveslots-confirm-panel" class="dmg-menu-slot-confirm-panel" picking-mode="Position">
+                <ui:Label name="saveslots-confirm-title" text="Overwrite save?" class="dmg-menu-modal-title" picking-mode="Ignore" />
+                <ui:Label name="saveslots-confirm-body" text="This slot will be replaced." class="dmg-menu-slot-confirm-body" picking-mode="Ignore" />
+                <ui:VisualElement class="dmg-menu-modal-footer" picking-mode="Ignore">
+                    <ui:Button name="saveslots-confirm-ok" text="Overwrite" class="dmg-menu-modal-btn" picking-mode="Position" />
+                    <ui:Button name="saveslots-confirm-cancel" text="Cancel" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted" picking-mode="Position" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

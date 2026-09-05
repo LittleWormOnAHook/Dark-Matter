@@ -3,9 +3,9 @@ description: All new UI must be built with UI Toolkit (UXML/USS/DMUiToolkit runt
 alwaysApply: true
 ---
 
-# UI Toolkit First (New UI)
+# UI Toolkit First (All Created UI)
 
-From here forward, **all new player-facing UI** is built with **UI Toolkit** — not uGUI (`Canvas`, `Image`, `TextMeshProUGUI`, `MenuUiBuilder` runtime panels).
+**Any UI you create is UI Toolkit.** Not uGUI (`Canvas`, `Image`, `TextMeshProUGUI`, `MenuUiBuilder` runtime panels). Hard lock: `dark-matter-genesis-uitk-lock.mdc`.
 
 The UITK cutover exists to **stop uGUI per-frame ticks**. Once UITK is working for a surface, fully retire that surface's uGUI ticking rather than dual-run forever. Do not destroy leftover uGUI until the new surface is complete and the user asks.
 

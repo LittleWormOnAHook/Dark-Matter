@@ -140,7 +140,6 @@
     flex-wrap: nowrap;
     align-items: flex-end;
     justify-content: center;
-    column-gap: 6px;
 }
 
 .dmg-hz-ticks {
@@ -204,7 +203,8 @@
     min-width: 34px;
     height: auto;
     min-height: 78px;
-    margin-right: 0;
+    margin-left: 3px;
+    margin-right: 3px;
     margin-bottom: 2px;
     flex-shrink: 0;
     flex-direction: column;

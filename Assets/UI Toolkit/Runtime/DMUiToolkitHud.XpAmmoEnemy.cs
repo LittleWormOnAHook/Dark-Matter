@@ -25,21 +25,11 @@ namespace Project.UI
         private VisualElement enemyFill;
         private bool xpAmmoHostsReady;
         private bool xpAmmoUguiHidden;
-        private WeaponAmmoState xpAmmoState;
-        private PlayerController cachedEquipmentPlayer;
+        private bool hudAmmoHidden;
         private EngagedEnemyHealthHud cachedEnemyHud;
-        private string lastAmmoText;
-        private bool lastAmmoShown;
         private string lastEnemyName;
         private float lastEnemyFill = -1f;
         private bool lastEnemyShown;
-        private int lastAmmoLoaded = int.MinValue;
-        private int lastAmmoReserve = int.MinValue;
-        private int lastAmmoMag = int.MinValue;
-        private int lastAmmoSlot = int.MinValue;
-        private int lastMiningPercent = int.MinValue;
-        private bool lastAmmoInfinite;
-        private string lastAmmoName;
 
         private void Update()
         {
@@ -53,11 +43,7 @@ namespace Project.UI
             if (GameplayHudVisibility.CinematicChromeHidden)
             {
                 if (ammoLabel != null)
-                {
-                    lastAmmoShown = false;
-                    lastAmmoText = null;
                     ammoLabel.style.display = DisplayStyle.None;
-                }
                 if (enemyFocusRoot != null && lastEnemyShown)
                 {
                     lastEnemyShown = false;
@@ -66,7 +52,7 @@ namespace Project.UI
             }
             else
             {
-                PullAmmoReadout();
+                HideHudAmmoLabel();
                 PullEnemyFocus();
             }
 
@@ -120,6 +106,8 @@ namespace Project.UI
             if (enemyFocusRoot != null && !lastEnemyShown)
                 enemyFocusRoot.style.display = DisplayStyle.None;
 
+            HideHudAmmoLabel();
+
             xpAmmoHostsReady = ammoLabel != null || enemyFocusRoot != null;
             if (xpAmmoHostsReady && !xpAmmoStamped)
                 xpAmmoStamped = true;
@@ -165,144 +153,13 @@ namespace Project.UI
             parent.Add(focus);
         }
 
-        private void PullAmmoReadout()
+        private void HideHudAmmoLabel()
         {
-            if (ammoLabel == null)
+            if (hudAmmoHidden || ammoLabel == null)
                 return;
 
-            if (equipmentController == null)
-                BindInventoryEvents();
-
-            EquipmentController equipment = equipmentController;
-            if (equipment == null && (Time.frameCount & 31) == 0)
-                equipment = FindAnyObjectByType<EquipmentController>();
-
-            if (xpAmmoState == null && equipment != null)
-                xpAmmoState = equipment.GetComponent<WeaponAmmoState>();
-            if (xpAmmoState == null && equipment != null && (Time.frameCount & 31) == 0)
-                xpAmmoState = FindAnyObjectByType<WeaponAmmoState>();
-
-            if (equipment != null && cachedEquipmentPlayer == null)
-                cachedEquipmentPlayer = equipment.GetComponent<PlayerController>();
-
-            ItemData weapon = null;
-            bool show = false;
-            if (equipment != null)
-            {
-                PlayerController player = cachedEquipmentPlayer;
-                if (player == null || !player.BlocksCombatInput)
-                {
-                    show = equipment.HasActiveRangedWeapon();
-                    if (show)
-                    {
-                        weapon = equipment.DrawnWeaponItem;
-                        show = weapon != null && weapon.IsRangedWeapon;
-                    }
-                }
-            }
-
-            if (!show)
-            {
-                if (lastAmmoShown)
-                {
-                    lastAmmoShown = false;
-                    lastAmmoText = null;
-                    lastAmmoLoaded = int.MinValue;
-                    lastMiningPercent = int.MinValue;
-                    ammoLabel.style.display = DisplayStyle.None;
-                }
-
-                return;
-            }
-
-            if (!lastAmmoShown)
-            {
-                lastAmmoShown = true;
-                ammoLabel.style.display = DisplayStyle.Flex;
-            }
-
-            if (weapon.isMiningTool)
-            {
-                int percent = xpAmmoState != null
-                    ? xpAmmoState.GetMiningChargePercent(equipment.ActiveWeaponHotbarSlot)
-                    : 0;
-                if (percent != lastMiningPercent || lastAmmoText == null || !lastAmmoText.StartsWith("CHARGE ", System.StringComparison.Ordinal))
-                {
-                    lastMiningPercent = percent;
-                    lastAmmoLoaded = int.MinValue;
-                    SetAmmoText($"CHARGE {percent}%");
-                }
-                return;
-            }
-
-            int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
-            int loaded = xpAmmoState != null ? xpAmmoState.GetActiveLoadedAmmo() : 0;
-            int magazineSize = WeaponAmmoState.GetMagazineCapacity(weapon);
-            bool infiniteReserve = xpAmmoState != null && xpAmmoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
-            int reserve = !infiniteReserve && xpAmmoState != null
-                ? xpAmmoState.GetReserveAmmoCount(weaponHotbarSlot)
-                : 0;
-            string ammoName = ResolveToolkitAmmoLabelName(weaponHotbarSlot);
-
-            if (!infiniteReserve && loaded <= 0 && reserve <= 0)
-            {
-                if (lastAmmoLoaded != 0 || lastAmmoReserve != 0 || lastAmmoText != "Empty 0/0")
-                {
-                    lastAmmoLoaded = 0;
-                    lastAmmoReserve = 0;
-                    lastAmmoMag = magazineSize;
-                    lastAmmoSlot = weaponHotbarSlot;
-                    lastAmmoInfinite = false;
-                    lastAmmoName = ammoName;
-                    SetAmmoText("Empty 0/0");
-                }
-                return;
-            }
-
-            if (loaded == lastAmmoLoaded
-                && reserve == lastAmmoReserve
-                && magazineSize == lastAmmoMag
-                && weaponHotbarSlot == lastAmmoSlot
-                && infiniteReserve == lastAmmoInfinite
-                && string.Equals(ammoName, lastAmmoName, System.StringComparison.Ordinal))
-                return;
-
-            lastAmmoLoaded = loaded;
-            lastAmmoReserve = reserve;
-            lastAmmoMag = magazineSize;
-            lastAmmoSlot = weaponHotbarSlot;
-            lastAmmoInfinite = infiniteReserve;
-            lastAmmoName = ammoName;
-            lastMiningPercent = int.MinValue;
-
-            if (infiniteReserve)
-                SetAmmoText($"{ammoName} {loaded}/{magazineSize}  (\u221e)");
-            else
-                SetAmmoText(reserve > 0
-                    ? $"{ammoName} {loaded}/{magazineSize}  (+{reserve})"
-                    : $"{ammoName} {loaded}/{magazineSize}");
-        }
-
-        private void SetAmmoText(string text)
-        {
-            if (string.Equals(text, lastAmmoText, System.StringComparison.Ordinal))
-                return;
-
-            lastAmmoText = text;
-            ammoLabel.text = text;
-        }
-
-        private string ResolveToolkitAmmoLabelName(int weaponHotbarSlot)
-        {
-            if (xpAmmoState == null)
-                return "STANDARD";
-
-            ItemData loadedAmmoItem = xpAmmoState.GetLoadedAmmoItem(weaponHotbarSlot);
-            if (loadedAmmoItem != null && !string.IsNullOrWhiteSpace(loadedAmmoItem.itemName))
-                return loadedAmmoItem.itemName.ToUpperInvariant();
-
-            AmmoType loadedType = xpAmmoState.GetLoadedAmmoType(weaponHotbarSlot);
-            return loadedType == AmmoType.Gunpowder ? "STANDARD" : loadedType.ToString().ToUpperInvariant();
+            ammoLabel.style.display = DisplayStyle.None;
+            hudAmmoHidden = true;
         }
 
         private void PullEnemyFocus()

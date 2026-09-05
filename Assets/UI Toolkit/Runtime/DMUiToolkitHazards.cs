@@ -600,6 +600,24 @@ namespace Project.UI
                 }
             }
 
+            // Cluster uses translate -50% (centers on style.left). If the title is wider than
+            // the columns (or a trailing gap remains), nudge so the COLUMN midpoint - not the
+            // title/box midpoint - lands on the ELEV +/- sign.
+            VisualElement rows = hazardPanel != null
+                ? hazardPanel.Q<VisualElement>("hazard-rows")
+                : null;
+            if (rows != null)
+            {
+                Rect rb = rows.worldBound;
+                Rect cb = cluster.worldBound;
+                if (rb.width > 1f && cb.width > 1f)
+                {
+                    float rowsMid = rb.xMin + rb.width * 0.5f;
+                    float clusterMid = cb.xMin + cb.width * 0.5f;
+                    left -= (rowsMid - clusterMid);
+                }
+            }
+
             if (!float.IsNaN(lastHazardPinLeft)
                 && Mathf.Abs(left - lastHazardPinLeft) < 0.25f
                 && Mathf.Abs(bottom - lastHazardPinBottom) < 0.25f)
@@ -648,21 +666,21 @@ namespace Project.UI
             Vector2 total = elev.MeasureTextSize(
                 text,
                 float.PositiveInfinity,
-                MeasureMode.Undefined,
+                VisualElement.MeasureMode.Undefined,
                 float.PositiveInfinity,
-                MeasureMode.Undefined);
+                VisualElement.MeasureMode.Undefined);
             Vector2 prefixSize = elev.MeasureTextSize(
                 prefix,
                 float.PositiveInfinity,
-                MeasureMode.Undefined,
+                VisualElement.MeasureMode.Undefined,
                 float.PositiveInfinity,
-                MeasureMode.Undefined);
+                VisualElement.MeasureMode.Undefined);
             Vector2 signSize = elev.MeasureTextSize(
                 sign,
                 float.PositiveInfinity,
-                MeasureMode.Undefined,
+                VisualElement.MeasureMode.Undefined,
                 float.PositiveInfinity,
-                MeasureMode.Undefined);
+                VisualElement.MeasureMode.Undefined);
 
             float textLeft = wb.xMin + (wb.width - total.x) * 0.5f;
             return textLeft + prefixSize.x + signSize.x * 0.5f;

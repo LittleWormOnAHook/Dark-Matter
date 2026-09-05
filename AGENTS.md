@@ -35,6 +35,6 @@
 - **No NavMesh** (baking, NavMeshSurface, NavMeshAgent, terrain NavMesh refs).
 - **Do not retune `Player_v7`** capsule, layers, or physics. See `dark-matter-genesis-player-physics.mdc`.
 
-**New UI:** UI Toolkit only (UXML/USS/`DMUiToolkit*` runtime) — see `.cursor/rules/dark-matter-genesis-ui-toolkit.mdc`. Do not add new uGUI menus or HUD panels unless explicitly requested.
+**All created UI is UITK only** (UXML/USS/`DMUiToolkit*` runtime) — `.cursor/rules/dark-matter-genesis-uitk-lock.mdc` and `dark-matter-genesis-ui-toolkit.mdc`. No new uGUI. Hot Cross uses `Assets/_Project/Art/UI/HotCrossIcons` cutouts only.
 
 Full locks (platforms, AC economy, Echoes, thermal, BCP, DM naming, UI palette) live in `.cursor/rules/dark-matter-genesis-core.mdc` and GDD 5.0.

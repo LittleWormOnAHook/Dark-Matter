@@ -34,6 +34,7 @@ alwaysApply: true
 - **Do not git-add** untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, GDKEditionAutoGen.
 - **Underground map** is later content. The surface map lower-right `?` / Underground box is the teaser — do not build the second map unless asked.
 - **Companion runtime anims** are paused until UITK HUD work is done.
+- **All created UI is UITK only.** No new uGUI. See `dark-matter-genesis-uitk-lock.mdc` and `dark-matter-genesis-ui-toolkit.mdc`. Hot Cross uses `Assets/_Project/Art/UI/HotCrossIcons` cutouts only.
 
 ## Engineering essentials
 
@@ -41,7 +42,7 @@ alwaysApply: true
 - **PC first**, then console parity: Input System (KBM + gamepad), scalable UI, solid frame pacing.
 - Prefer pooling, events, ScriptableObject config; minimize polling and heavy Update loops.
 - **DM / DMI naming** — no new Invector-branded identifiers in `_Project` (see `dm-naming-no-invector.mdc`).
-- **UI:** `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`). **New UI:** UI Toolkit only (`dark-matter-genesis-ui-toolkit.mdc`).
+- **UI:** `DarkMatterGenesisUiPalette` / Shift theme (`dark-matter-genesis-ui-palette.mdc`). **All created UI is UITK only** (`dark-matter-genesis-uitk-lock.mdc`).
 
 ## Non-negotiable agent workflow
 

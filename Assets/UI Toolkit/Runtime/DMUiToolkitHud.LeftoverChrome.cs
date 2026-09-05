@@ -32,6 +32,9 @@ namespace Project.UI
         private Label shelterTimerCaption;
         private Label shelterTimerValue;
         private bool leftoverBound;
+        private bool leftoverPreviewHidden;
+        private bool lastCrosshairShown;
+        private float lastCrosshairScale = -1f;
         private bool oxygenWasCritical;
         private Coroutine oxygenFlashRoutine;
         private static Texture2D oxygenVignetteTexture;
@@ -56,6 +59,9 @@ namespace Project.UI
 
         private void HideLeftoverPreviewHosts()
         {
+            if (leftoverPreviewHidden)
+                return;
+
             if (crosshairRoot != null)
                 crosshairRoot.style.display = DisplayStyle.None;
             if (oxygenFlash != null)
@@ -70,6 +76,10 @@ namespace Project.UI
             }
             if (shelterTimerRoot != null)
                 shelterTimerRoot.style.display = DisplayStyle.None;
+
+            leftoverPreviewHidden = true;
+            lastCrosshairShown = false;
+            lastCrosshairScale = -1f;
         }
 
         private void TickLeftoverChrome()
@@ -85,6 +95,7 @@ namespace Project.UI
                 return;
             }
 
+            leftoverPreviewHidden = false;
             TickCrosshair();
             TickOxygenFx();
             TickShelterTimer();
@@ -104,9 +115,6 @@ namespace Project.UI
                     BindInventoryEvents();
 
                 EquipmentController equipment = equipmentController;
-                if (equipment == null)
-                    equipment = FindAnyObjectByType<EquipmentController>();
-
                 if (equipment != null && equipment.HasActiveRangedWeapon())
                 {
                     ItemData weapon = equipment.DrawnWeaponItem;
@@ -116,12 +124,24 @@ namespace Project.UI
                 }
             }
 
-            crosshairRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (show != lastCrosshairShown)
+            {
+                lastCrosshairShown = show;
+                crosshairRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
             if (!show)
+            {
+                lastCrosshairScale = -1f;
                 return;
+            }
 
             float scale = IsHudAiming() ? 0.75f : 1f;
-            crosshairRoot.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            if (!Mathf.Approximately(scale, lastCrosshairScale))
+            {
+                lastCrosshairScale = scale;
+                crosshairRoot.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            }
         }
 
         private bool IsHudAiming()

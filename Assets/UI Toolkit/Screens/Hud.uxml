@@ -97,5 +97,11 @@
                 <ui:VisualElement name="enemy-fill" picking-mode="Ignore" class="dmg-hud-enemy-fill" style="width: 70%;"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="crosshair" picking-mode="Ignore" class="dmg-hud-crosshair">
+            <ui:VisualElement name="crosshair-left" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-h dmg-hud-crosshair-left"/>
+            <ui:VisualElement name="crosshair-right" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-h dmg-hud-crosshair-right"/>
+            <ui:VisualElement name="crosshair-up" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-v dmg-hud-crosshair-up"/>
+            <ui:VisualElement name="crosshair-down" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-v dmg-hud-crosshair-down"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

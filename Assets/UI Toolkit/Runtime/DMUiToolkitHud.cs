@@ -401,13 +401,14 @@ namespace Project.UI
 
             if (hotbarHost != null)
             {
-                hotbarHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
+                // Replaced by Hot Cross; keep hidden even when overlay chrome is on.
+                hotbarHost.style.display = DisplayStyle.None;
                 hotbarHost.pickingMode = PickingMode.Ignore;
             }
 
             if (toolsHost != null)
             {
-                toolsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
+                toolsHost.style.display = DisplayStyle.None;
                 toolsHost.pickingMode = PickingMode.Ignore;
             }
 
@@ -884,6 +885,23 @@ namespace Project.UI
             return instance.TryGetSlotAbsoluteIndexInternal(screenPosition, out absoluteIndex);
         }
 
+        
+        private void HideLegacyHotbarStrip()
+        {
+            // World HUD face is Hot Cross (right of pilot). Inventory menu still owns 1-10 slots.
+            // Deferred: inventory panel 3-slot specials hotbar (separate from Hot Cross).
+            if (hotbarHost != null)
+            {
+                hotbarHost.style.display = DisplayStyle.None;
+                hotbarHost.pickingMode = PickingMode.Ignore;
+            }
+            if (toolsHost != null)
+            {
+                toolsHost.style.display = DisplayStyle.None;
+                toolsHost.pickingMode = PickingMode.Ignore;
+            }
+        }
+
         public static bool IsPointerOverHotbarOrTools(Vector2 screenPosition)
         {
             if (!IsDriving || instance == null)
@@ -917,6 +935,7 @@ namespace Project.UI
 
             BindInventoryEvents();
             RefreshSlotIcons();
+            HideLegacyHotbarStrip();
         }
 
         private void BindOneSlot(VisualElement root, string slotName, string iconName, string amountName, int localIndex, bool isToolbar)
@@ -990,7 +1009,7 @@ namespace Project.UI
 
         private void BindInventoryEvents()
         {
-            // Already wired — avoid Find spam and double-subscribe.
+            // Already wired ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â avoid Find spam and double-subscribe.
             if (inventorySystem != null && equipmentController != null)
                 return;
 
@@ -1025,11 +1044,6 @@ namespace Project.UI
             {
                 equipmentController.OnSelectedHotbarChanged += HandleHudSelectionChanged;
                 equipmentController.OnToolbarSelectionChanged += HandleHudToolbarSelectionChanged;
-                cachedEquipmentPlayer = equipmentController.GetComponent<PlayerController>();
-            }
-            else
-            {
-                cachedEquipmentPlayer = null;
             }
         }
 
@@ -1047,7 +1061,6 @@ namespace Project.UI
             inventorySystem = null;
             equipmentController = null;
             itemActions = null;
-            cachedEquipmentPlayer = null;
         }
 
         private void HandleHudSelectionChanged(int _)
@@ -1180,6 +1193,8 @@ namespace Project.UI
 
         private bool IsOverHotbarOrTools(Vector2 screenPosition)
         {
+            if (DMUiToolkitHotCross.IsPointerOver(screenPosition))
+                return true;
             Vector2 panelPos = ScreenToPanelPosition(screenPosition);
             if (FindBoundSlotAtPanel(panelPos) != null)
                 return true;
@@ -1436,6 +1451,8 @@ namespace Project.UI
 
         private bool IsOverHotbarOrToolsPanel(Vector2 panelPos)
         {
+            if (DMUiToolkitHotCross.IsPointerOverPanel(panelPos))
+                return true;
             if (hotbarHost != null && hotbarHost.worldBound.Contains(panelPos))
                 return true;
             if (toolsHost != null && toolsHost.worldBound.Contains(panelPos))

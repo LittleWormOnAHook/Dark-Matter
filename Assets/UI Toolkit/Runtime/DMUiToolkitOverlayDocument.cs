@@ -21,6 +21,7 @@ namespace Project.UI
         public const string DamageName = "UITK_Damage";
         public const string VignetteName = "UITK_ZoneVignette";
         public const string PilotClusterName = "UITK_PilotCluster";
+        public const string HotCrossName = "UITK_HotCross";
         public const string PickupReticleName = "UITK_PickupReticle";
         public const string HoverInteractName = "UITK_HoverInteract";
         public const string WorldMenusName = "UITK_WorldMenus";
@@ -29,6 +30,7 @@ namespace Project.UI
         public const string GameStartName = "UITK_GameStart";
         public const string ContextName = "UITK_Context";
         public const string PetChromeName = "UITK_PetChrome";
+        public const string DevPanelName = "UITK_DevPanel";
 
         /// <summary>Interactive modal overlays must sort above <see cref="DMUiToolkitBootstrap.HudSortingOrder"/> (95).</summary>
         public const int ModalInteractiveSort = 130;
@@ -38,6 +40,7 @@ namespace Project.UI
         public const int HazardsSort = 96; // above HudSortingOrder (95) so Z/X cannot cover hazards
         public const int VignetteSort = 14;
         public const int PilotClusterSort = 18;
+        public const int HotCrossSort = 19; // just above pilot; right-of-pilot world HUD
         public const int DamageSort = 15;
         public const int PickupReticleSort = 16;
         public const int LevelUpSort = ModalInteractiveSort;
@@ -50,6 +53,7 @@ namespace Project.UI
         public const int GameStartSort = ModalInteractiveSort + 10;
         public const int ContextSort = 150;
         public const int PetChromeSort = 111;
+        public const int DevPanelSort = ModalInteractiveSort + 25;
 
         public static void PromoteInteractiveOverlay(UIDocument document)
         {
@@ -77,7 +81,9 @@ namespace Project.UI
         public const string VignetteUxml = "Assets/UI Toolkit/Screens/ZoneVignette.uxml";
         public const string VignetteUss = "Assets/UI Toolkit/Screens/ZoneVignette.uss";
         public const string PilotClusterUxml = "Assets/UI Toolkit/Screens/PilotCluster.uxml";
+        public const string HotCrossUxml = "Assets/UI Toolkit/Screens/HotCross.uxml";
         public const string PilotClusterUss = "Assets/UI Toolkit/Screens/PilotCluster.uss";
+        public const string HotCrossUss = "Assets/UI Toolkit/Screens/HotCross.uss";
         public const string PickupReticleUxml = "Assets/UI Toolkit/Screens/PickupReticle.uxml";
         public const string PickupReticleUss = "Assets/UI Toolkit/Screens/PickupReticle.uss";
         public const string HoverInteractUxml = "Assets/UI Toolkit/Screens/HoverInteract.uxml";
@@ -94,6 +100,8 @@ namespace Project.UI
         public const string ContextUss = "Assets/UI Toolkit/Screens/FloatingMenu.uss";
         public const string PetChromeUxml = "Assets/UI Toolkit/Screens/PetChrome.uxml";
         public const string PetChromeUss = "Assets/UI Toolkit/Screens/FloatingMenu.uss";
+        public const string DevPanelUxml = "Assets/UI Toolkit/Screens/DevPanel.uxml";
+        public const string DevPanelUss = "Assets/UI Toolkit/Screens/DevPanel.uss";
 
         public static UIDocument Ensure(string objectName, string uxmlPath, string ussPath, int sortingOrder)
         {
@@ -448,7 +456,7 @@ namespace Project.UI
                 if (flyout.panel == null || anchor.panel == null)
                     return;
 
-                // Flex children often report resolvedStyle.left/top as 0 — use world bounds.
+                // Flex children often report resolvedStyle.left/top as 0 â€” use world bounds.
                 Rect anchorBounds = anchor.worldBound;
                 Rect rowBounds = row != null ? row.worldBound : anchorBounds;
                 if (anchorBounds.width <= 1f || rowBounds.height <= 1f)

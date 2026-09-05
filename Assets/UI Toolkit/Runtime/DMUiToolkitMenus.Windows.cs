@@ -1017,7 +1017,7 @@ namespace Project.UI
                 if (tex != null)
                 {
                     skillsCardArt.style.backgroundImage = new StyleBackground(Background.FromTexture2D(tex));
-                    skillsCardArt.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
+                    DMUiToolkitStyle.ApplyBackgroundScale(skillsCardArt, ScaleMode.ScaleAndCrop);
                 }
                 else
                     skillsCardArt.style.backgroundImage = StyleKeyword.None;

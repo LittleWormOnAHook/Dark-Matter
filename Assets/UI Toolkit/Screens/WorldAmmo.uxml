@@ -1,6 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="WorldAmmo.uss"/>
     <ui:VisualElement name="world-ammo-root" picking-mode="Ignore" class="dmg-world-ammo-root">
-        <ui:Label name="ammo-count" text="0" picking-mode="Ignore" class="dmg-world-ammo-count"/>
+        <ui:Label name="ammo-count" text="0" picking-mode="Ignore" class="dmg-world-ammo-count" style="-unity-font-definition: url(&quot;project://database/Assets/UGUIKit%20Flat/Content/Source/Font/lato/Lato-Hairline.ttf?fileID=12800000&amp;guid=fcd1353af2301764faadf38ba35c562f&amp;type=3#Lato-Hairline&quot;); -unity-text-outline-color: rgba(215, 167, 56, 0.9); -unity-font-style: bold-and-italic;"/>
     </ui:VisualElement>
 </ui:UXML>

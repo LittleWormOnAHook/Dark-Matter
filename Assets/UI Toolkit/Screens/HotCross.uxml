@@ -1,0 +1,37 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="HotCross.uss"/>
+    <ui:VisualElement name="hot-cross-root" picking-mode="Ignore" class="hot-cross-root">
+        <ui:VisualElement name="hot-cross" picking-mode="Ignore" class="hot-cross">
+            <ui:VisualElement name="hot-cross-hbar-l" picking-mode="Ignore" class="hot-cross-bar hot-cross-hbar-l" style="background-color: rgba(212, 160, 23, 0.141);"/>
+            <ui:VisualElement name="hot-cross-hbar-r" picking-mode="Ignore" class="hot-cross-bar hot-cross-hbar-r" style="background-color: rgba(212, 160, 23, 0.141);"/>
+            <ui:VisualElement name="hot-cross-vbar-t" picking-mode="Ignore" class="hot-cross-bar hot-cross-vbar-t" style="background-color: rgba(212, 160, 23, 0.141);"/>
+            <ui:VisualElement name="hot-cross-vbar-b" picking-mode="Ignore" class="hot-cross-bar hot-cross-vbar-b" style="color: rgb(0, 0, 0); background-color: rgba(212, 160, 23, 0.141);"/>
+            <ui:VisualElement name="hot-cross-ring" picking-mode="Ignore" class="hot-cross-ring" style="border-left-color: rgba(255, 185, 0, 0.329); border-right-color: rgba(255, 185, 0, 0.329); border-top-color: rgba(255, 185, 0, 0.329); border-bottom-color: rgba(255, 185, 0, 0.329); background-color: rgb(120, 37, 85);">
+                <ui:Label name="hot-cross-clip" text="5" picking-mode="Ignore" class="hot-cross-clip" style="color: rgb(33, 255, 0); -unity-font-style: bold; -unity-font-definition: url(&quot;project://database/Assets/HONETi/TexturesThemeCommon/Fonts/MontserratExtraLightItalic.ttf?fileID=12800000&amp;guid=10c4c7e699ca9614180b92973fc22c64&amp;type=3#MontserratExtraLightItalic&quot;); -unity-text-outline-width: 0.2px; -unity-text-outline-color: rgb(255, 194, 0); text-shadow: 1px 1px 1px rgb(0, 0, 0); font-size: 18px; margin-left: 3px; margin-top: 5px;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hot-cross-q-tl" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-tl">
+                <ui:VisualElement name="hot-cross-glow-tl" picking-mode="Ignore" class="hot-cross-icon hot-cross-icon-glow"/>
+                <ui:VisualElement name="hot-cross-icon-tl" picking-mode="Ignore" class="hot-cross-icon"/>
+                <ui:Label name="hot-cross-key-tl" text="TAB" picking-mode="Ignore" class="hot-cross-key"/>
+                <ui:Label name="hot-cross-amt-tl" text="" picking-mode="Ignore" class="hot-cross-amt"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hot-cross-q-tr" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-tr">
+                <ui:VisualElement name="hot-cross-glow-tr" picking-mode="Ignore" class="hot-cross-icon hot-cross-icon-glow"/>
+                <ui:VisualElement name="hot-cross-icon-tr" picking-mode="Ignore" class="hot-cross-icon"/>
+                <ui:Label name="hot-cross-key-tr" text="X" picking-mode="Ignore" class="hot-cross-key"/>
+                <ui:Label name="hot-cross-amt-tr" text="" picking-mode="Ignore" class="hot-cross-amt"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hot-cross-q-bl" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-bl">
+                <ui:VisualElement name="hot-cross-glow-bl" picking-mode="Ignore" class="hot-cross-icon hot-cross-icon-glow"/>
+                <ui:VisualElement name="hot-cross-icon-bl" picking-mode="Ignore" class="hot-cross-icon"/>
+                <ui:Label name="hot-cross-key-bl" text="B/N" picking-mode="Ignore" class="hot-cross-key"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="hot-cross-q-br" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-br hot-cross-q-br--reserved"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="hot-cross-ammo-popup" picking-mode="Position" class="hot-cross-ammo-popup">
+            <ui:Label name="hot-cross-ammo-title" text="Load ammo into" picking-mode="Ignore" class="hot-cross-ammo-title"/>
+            <ui:Label name="hot-cross-ammo-hint" text="X cycle  |  Hold X confirm  |  Esc cancel" picking-mode="Ignore" class="hot-cross-ammo-hint"/>
+            <ui:VisualElement name="hot-cross-ammo-list" picking-mode="Position" class="hot-cross-ammo-list"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

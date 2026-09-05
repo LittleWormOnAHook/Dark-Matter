@@ -118,3 +118,82 @@
     border-width: 1px;
     border-color: rgba(20, 28, 36, 0.55);
 }
+
+/* Close-range Hold-E pickup prompt (tip-locked) */
+.dmg-world-close {
+    position: absolute;
+    overflow: visible;
+}
+
+.dmg-world-close-row {
+    flex-direction: row;
+    align-items: center;
+    overflow: visible;
+}
+
+.dmg-world-close-info {
+    background-color: rgba(18, 24, 32, 0.82);
+    border-width: 1px;
+    border-color: rgba(212, 160, 23, 0.65);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.dmg-world-close-icon {
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.dmg-world-close-unknown {
+    font-size: 18px;
+    color: rgb(245, 230, 180);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+}
+
+.dmg-world-close-name {
+    font-size: 16px;
+    color: rgb(245, 230, 180);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);
+    white-space: nowrap;
+}
+
+.dmg-world-close-keyhost {
+    overflow: visible;
+}
+
+.dmg-world-close-ring {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-world-close-key {
+    background-color: rgba(18, 24, 32, 0.88);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.35);
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-world-close-keylabel {
+    font-size: 16px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.dmg-world-close-action {
+    font-size: 16px;
+    color: rgb(245, 230, 180);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);
+    white-space: nowrap;
+}

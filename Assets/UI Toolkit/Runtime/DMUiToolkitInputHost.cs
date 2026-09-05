@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// Global keyboard router on UITK_Root — ESC, pause menu, journal, hotbar, toolbar.
+    /// Global keyboard router on UITK_Root  -  ESC, pause menu, journal, hotbar, toolbar.
     /// Replaces scattered uGUI Update() polling when UITK is enabled.
     /// </summary>
     [DefaultExecutionOrder(300)]
@@ -43,6 +43,7 @@ namespace Project.UI
 
             TryRegisterBootstrapRoots();
 
+            GameplayKeyboardShortcuts.TryHandleDevPanel();
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
             GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
 
@@ -120,6 +121,12 @@ namespace Project.UI
                     break;
                 case KeyCode.N:
                     if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(KeyCode.N))
+                        evt.StopImmediatePropagation();
+                    break;
+                case KeyCode.Tab:
+                case KeyCode.X:
+                    // B/N stay on Update poll (TryHandleToolbarHotkeys) to avoid double-toggle with KeyDown.
+                    if (GameplayKeyboardShortcuts.TryHandleHotCrossKeyCode(evt.keyCode))
                         evt.StopImmediatePropagation();
                     break;
                 case KeyCode.BackQuote:

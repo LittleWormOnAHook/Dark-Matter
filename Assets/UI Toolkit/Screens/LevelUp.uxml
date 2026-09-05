@@ -12,6 +12,9 @@
             <ui:Label name="require-level-headline" text="Require Level" picking-mode="Ignore" class="dmg-lu-header"/>
             <ui:Label name="require-level-value" text="5" picking-mode="Ignore" class="dmg-lu-level"/>
         </ui:VisualElement>
+        <ui:VisualElement name="center-notice" picking-mode="Ignore" class="dmg-lu-card dmg-lu-notice">
+            <ui:Label name="center-notice-text" text="Inventory full" picking-mode="Ignore" class="dmg-lu-headline"/>
+        </ui:VisualElement>
         <ui:VisualElement name="achievement" picking-mode="Ignore" class="dmg-lu-card dmg-lu-ach">
             <ui:Label name="achievement-header" text="ACHIEVEMENT UNLOCKED" picking-mode="Ignore" class="dmg-lu-header"/>
             <ui:Label name="achievement-title" text="Title" picking-mode="Ignore" class="dmg-lu-headline"/>

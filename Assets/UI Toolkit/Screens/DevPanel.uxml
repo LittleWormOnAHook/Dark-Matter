@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../Themes/DarkMatterGenesis.uss" />
+    <ui:Style src="DevPanel.uss" />
+    <ui:VisualElement name="dev-root" class="dmg-dev-root" picking-mode="Position">
+        <ui:VisualElement name="dev-veil" class="dmg-dev-veil" picking-mode="Position" />
+        <ui:VisualElement name="dev-panel" class="dmg-dev-panel" picking-mode="Position">
+            <ui:VisualElement class="dmg-dev-header" picking-mode="Ignore">
+                <ui:Label name="dev-title" text="DEV COMMANDS  ·  Ctrl+D" class="dmg-dev-title" picking-mode="Ignore" />
+                <ui:Label name="dev-live" text="Live: —" class="dmg-dev-live" picking-mode="Ignore" />
+                <ui:Label name="dev-slot0" text="Continue slot: —" class="dmg-dev-live" picking-mode="Ignore" />
+                <ui:Label name="dev-status" text="" class="dmg-dev-status" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:Label text="Cheats" class="dmg-dev-section" picking-mode="Ignore" />
+            <ui:VisualElement class="dmg-dev-row" picking-mode="Ignore">
+                <ui:Button name="dev-god" text="God" class="dmg-dev-btn" picking-mode="Position" />
+                <ui:Button name="dev-stam" text="Inf Stam" class="dmg-dev-btn" picking-mode="Position" />
+                <ui:Button name="dev-energy" text="Inf Energy" class="dmg-dev-btn" picking-mode="Position" />
+                <ui:Button name="dev-oxy" text="Inf O2" class="dmg-dev-btn" picking-mode="Position" />
+                <ui:Button name="dev-refill" text="Refill" class="dmg-dev-btn" picking-mode="Position" />
+            </ui:VisualElement>
+
+            <ui:Label text="Time / Cursor" class="dmg-dev-section" picking-mode="Ignore" />
+            <ui:VisualElement class="dmg-dev-row" picking-mode="Ignore">
+                <ui:Button name="dev-pause" text="Pause Game" class="dmg-dev-btn" picking-mode="Position" />
+                <ui:Button name="dev-cursor" text="Unlock Cursor" class="dmg-dev-btn" picking-mode="Position" />
+            </ui:VisualElement>
+
+            <ui:Label text="Progression" class="dmg-dev-section" picking-mode="Ignore" />
+            <ui:VisualElement class="dmg-dev-row" picking-mode="Ignore">
+                <ui:VisualElement class="dmg-dev-field-group" picking-mode="Ignore">
+                    <ui:Label text="Lv" class="dmg-dev-field-label" picking-mode="Ignore" />
+                    <ui:TextField name="dev-level" value="5" class="dmg-dev-field" picking-mode="Position" />
+                    <ui:Button name="dev-set-level" text="Set" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                </ui:VisualElement>
+                <ui:VisualElement class="dmg-dev-field-group" picking-mode="Ignore">
+                    <ui:Label text="SP" class="dmg-dev-field-label" picking-mode="Ignore" />
+                    <ui:TextField name="dev-sp" value="25" class="dmg-dev-field" picking-mode="Position" />
+                    <ui:Button name="dev-add-sp" text="+SP" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                </ui:VisualElement>
+                <ui:VisualElement class="dmg-dev-field-group" picking-mode="Ignore">
+                    <ui:Label text="AC" class="dmg-dev-field-label" picking-mode="Ignore" />
+                    <ui:TextField name="dev-ac" value="500" class="dmg-dev-field" picking-mode="Position" />
+                    <ui:Button name="dev-add-ac" text="+AC" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label text="Inventory" class="dmg-dev-section" picking-mode="Ignore" />
+            <ui:VisualElement class="dmg-dev-row" picking-mode="Ignore">
+                <ui:Label text="Item" class="dmg-dev-field-label" picking-mode="Ignore" />
+                <ui:TextField name="dev-item" value="" class="dmg-dev-field dmg-dev-field--wide" picking-mode="Position" />
+                <ui:Label text="Qty" class="dmg-dev-field-label" picking-mode="Ignore" />
+                <ui:TextField name="dev-qty" value="1" class="dmg-dev-field dmg-dev-field--qty" picking-mode="Position" />
+                <ui:Button name="dev-add-item" text="Add" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-remove-item" text="Remove" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-clear-inv" text="Clear" class="dmg-dev-btn dmg-dev-btn--danger dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-despawn" text="Despawn" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+            </ui:VisualElement>
+
+            <ui:Label text="Save / Load Registry" class="dmg-dev-section" picking-mode="Ignore" />
+            <ui:VisualElement class="dmg-dev-row" picking-mode="Ignore">
+                <ui:Button name="dev-refresh" text="Refresh" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-save0" text="Save 1" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-load0" text="Load 1" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-reset-new" text="Reset Lv5" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-clear-log" text="Clear Unpinned" class="dmg-dev-btn dmg-dev-btn--muted dmg-dev-btn--tight" picking-mode="Position" />
+            </ui:VisualElement>
+            <ui:ScrollView name="dev-registry" class="dmg-dev-registry" picking-mode="Position" />
+            <ui:VisualElement class="dmg-dev-row dmg-dev-footer" picking-mode="Ignore">
+                <ui:Label text="Note" class="dmg-dev-field-label" picking-mode="Ignore" />
+                <ui:TextField name="dev-note" value="" class="dmg-dev-field dmg-dev-field--wide" picking-mode="Position" />
+                <ui:Button name="dev-note-save" text="Note" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-pin" text="Pin" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-unpin" text="Unpin" class="dmg-dev-btn dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-forget" text="Forget" class="dmg-dev-btn dmg-dev-btn--muted dmg-dev-btn--tight" picking-mode="Position" />
+                <ui:Button name="dev-close" text="Close" class="dmg-dev-btn dmg-dev-btn--muted dmg-dev-btn--tight" picking-mode="Position" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

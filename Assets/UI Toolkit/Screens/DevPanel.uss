@@ -1,0 +1,187 @@
+.dmg-dev-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.dmg-dev-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+.dmg-dev-panel {
+    position: absolute;
+    left: 5%;
+    top: 5%;
+    right: 5%;
+    bottom: 5%;
+    background-color: rgb(28, 42, 56);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    padding: 8px 12px;
+    flex-direction: column;
+}
+
+.dmg-dev-header {
+    margin-bottom: 2px;
+}
+
+.dmg-dev-title {
+    color: rgb(212, 160, 23);
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-bottom: 2px;
+}
+
+.dmg-dev-live {
+    color: rgb(237, 233, 228);
+    font-size: 10px;
+    margin-bottom: 1px;
+    white-space: nowrap;
+}
+
+.dmg-dev-status {
+    color: rgb(140, 127, 117);
+    font-size: 10px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    min-height: 14px;
+}
+
+.dmg-dev-section {
+    color: rgb(192, 46, 122);
+    font-size: 10px;
+    -unity-font-style: bold;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+.dmg-dev-row {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
+}
+
+.dmg-dev-field-group {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.dmg-dev-field-label {
+    color: rgb(140, 127, 117);
+    font-size: 10px;
+    margin-right: 4px;
+    min-width: 18px;
+}
+
+.dmg-dev-field {
+    width: 56px;
+    height: 20px;
+    min-height: 20px;
+    margin-right: 4px;
+    padding: 0 4px;
+    font-size: 11px;
+    background-color: rgb(47, 47, 47);
+    color: rgb(237, 233, 228);
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-dev-field > .unity-base-field__input {
+    height: 20px;
+    min-height: 20px;
+    padding: 0 4px;
+    font-size: 11px;
+}
+
+.dmg-dev-field--wide {
+    width: 180px;
+    flex-grow: 1;
+}
+
+.dmg-dev-field--qty {
+    width: 40px;
+}
+
+.dmg-dev-btn {
+    min-width: 68px;
+    height: 20px;
+    margin-right: 4px;
+    margin-bottom: 2px;
+    padding: 0 8px;
+    font-size: 10px;
+    background-color: rgb(143, 30, 94);
+    border-color: rgb(192, 46, 122);
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-center;
+}
+
+.dmg-dev-btn--tight {
+    min-width: 52px;
+}
+
+.dmg-dev-btn--on {
+    background-color: rgb(192, 46, 122);
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-dev-btn--muted {
+    background-color: rgb(47, 47, 47);
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-dev-btn--danger {
+    background-color: rgb(143, 30, 94);
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-dev-registry {
+    flex-grow: 1;
+    min-height: 120px;
+    margin-bottom: 4px;
+    padding: 1px;
+    background-color: rgba(47, 47, 47, 0.55);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-dev-registry > .unity-scroll-view__content-container {
+    padding: 0;
+}
+
+.dmg-dev-reg-row {
+    flex-direction: row;
+    align-items: center;
+    height: 16px;
+    min-height: 16px;
+    max-height: 16px;
+    padding: 0 6px;
+    margin: 0 0 1px 0;
+    border-width: 0;
+    background-color: rgba(47, 47, 47, 0.75);
+}
+
+.dmg-dev-reg-row--sel {
+    background-color: rgba(192, 46, 122, 0.35);
+}
+
+.dmg-dev-reg-text {
+    color: rgb(237, 233, 228);
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-grow: 1;
+    -unity-text-align: middle-left;
+}
+
+.dmg-dev-footer {
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+}

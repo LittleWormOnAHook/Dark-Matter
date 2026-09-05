@@ -211,7 +211,7 @@ MonoBehaviour:
   m_RenderPipelineSettings:
     supportShadowMask: 1
     supportSSR: 1
-    supportSSRTransparent: 1
+    supportSSRTransparent: 0
     supportSSAO: 1
     supportSSGI: 1
     supportSubsurfaceScattering: 1
@@ -309,14 +309,14 @@ MonoBehaviour:
       maxDirectionalLightsOnScreen: 16
       maxPunctualLightsOnScreen: 512
       maxAreaLightsOnScreen: 64
-      maxCubeReflectionOnScreen: 64
-      maxPlanarReflectionOnScreen: 64
+      maxCubeReflectionOnScreen: 48
+      maxPlanarReflectionOnScreen: 4
       maxDecalsOnScreen: 512
       maxLightsPerClusterCell: 8
       maxLocalVolumetricFogSize: 0
       maxLocalVolumetricFogOnScreen: 256
     hdShadowInitParams:
-      maxShadowRequests: 128
+      maxShadowRequests: 64
       directionalShadowsDepthBits: 32
       punctualShadowFilteringQuality: 2
       directionalShadowFilteringQuality: 2
@@ -364,7 +364,7 @@ MonoBehaviour:
       lutFormat: 48
       bufferFormat: 74
     dynamicResolutionSettings:
-      enabled: 1
+      enabled: 0
       useMipBias: 0
       advancedUpscalersByPriority: 00
       advancedUpscalerNames:
@@ -520,9 +520,9 @@ MonoBehaviour:
       - 0.666
       - 0.5
     gpuResidentDrawerSettings:
-      mode: 0
-      smallMeshScreenPercentage: 0
-      enableOcclusionCullingInCameras: 0
+      mode: 1
+      smallMeshScreenPercentage: 0.5
+      enableOcclusionCullingInCameras: 1
       useDepthPrepassForOccluders: 1
     m_ObsoleteLightLayerName0: 
     m_ObsoleteLightLayerName1: 

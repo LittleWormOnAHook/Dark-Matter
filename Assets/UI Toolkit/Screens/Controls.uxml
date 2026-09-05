@@ -10,7 +10,7 @@
                 <ui:Button name="controls-keyboard" text="Keyboard and Mouse" class="dmg-menu-modal-btn" picking-mode="Position" />
                 <ui:Button name="controls-gamepad" text="Controller" class="dmg-menu-modal-btn" picking-mode="Position" style="margin-top: 12px;" />
             </ui:VisualElement>
-            <ui:ScrollView name="controls-scheme-body" class="dmg-menu-modal-body" picking-mode="Position" style="display: none;" />
+            <ui:VisualElement name="controls-scheme-body" class="dmg-menu-modal-body dmg-menu-scheme-body" picking-mode="Position" style="display: none;" />
             <ui:VisualElement name="controls-footer" class="dmg-menu-modal-footer" picking-mode="Position">
                 <ui:Button name="controls-back" text="Back" class="dmg-menu-modal-btn dmg-menu-modal-btn--muted" picking-mode="Position" />
             </ui:VisualElement>

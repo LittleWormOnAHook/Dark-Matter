@@ -26,12 +26,15 @@ namespace Project.UI
         private Label levelUpSubtitle;
         private VisualElement requireCard;
         private Label requireValue;
+        private VisualElement noticeCard;
+        private Label noticeText;
         private VisualElement achievementCard;
         private Label achievementTitle;
         private Label achievementDesc;
         private Label achievementXp;
         private Coroutine levelRoutine;
         private Coroutine requireRoutine;
+        private Coroutine noticeRoutine;
         private Coroutine achievementRoutine;
         private readonly Queue<AchievementPending> achievementQueue = new Queue<AchievementPending>();
         private bool bound;
@@ -83,7 +86,7 @@ namespace Project.UI
 
         public static bool TryShowRequireLevel(int requiredLevel)
         {
-            if (!DMUiToolkitHud.IsDriving)
+            if (!CanShowCenterToast())
                 return false;
 
             DMUiToolkitLevelUp host = EnsureHost();
@@ -92,6 +95,28 @@ namespace Project.UI
 
             host.PresentRequireLevel(requiredLevel);
             return true;
+        }
+
+        public static bool TryShowCenterNotice(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message) || !CanShowCenterToast())
+                return false;
+
+            DMUiToolkitLevelUp host = EnsureHost();
+            if (host == null)
+                return false;
+
+            host.PresentCenterNotice(message);
+            return true;
+        }
+
+        private static bool CanShowCenterToast()
+        {
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return false;
+            if (MainMenuController.BlocksGameplayHud || DMUiToolkitLoadingOverlay.IsShowing)
+                return false;
+            return GameSession.HasStarted || DMUiToolkitMenus.IsOpen;
         }
 
         public static bool TryShowAchievement(string title, string description, int xpReward)
@@ -137,12 +162,18 @@ namespace Project.UI
                 return;
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
-            if (root != null && !want)
+            if (root != null && !want
+                && levelRoutine == null
+                && requireRoutine == null
+                && noticeRoutine == null
+                && achievementRoutine == null)
             {
                 if (levelUpCard != null)
                     levelUpCard.style.opacity = 0f;
                 if (requireCard != null)
                     requireCard.style.opacity = 0f;
+                if (noticeCard != null)
+                    noticeCard.style.opacity = 0f;
                 if (achievementCard != null)
                     achievementCard.style.opacity = 0f;
             }
@@ -169,6 +200,8 @@ namespace Project.UI
             levelUpSubtitle = tree.Q<Label>("level-up-subtitle");
             requireCard = tree.Q<VisualElement>("require-level");
             requireValue = tree.Q<Label>("require-level-value");
+            noticeCard = tree.Q<VisualElement>("center-notice");
+            noticeText = tree.Q<Label>("center-notice-text");
             achievementCard = tree.Q<VisualElement>("achievement");
             achievementTitle = tree.Q<Label>("achievement-title");
             achievementDesc = tree.Q<Label>("achievement-desc");
@@ -182,11 +215,14 @@ namespace Project.UI
         {
             DMUiToolkitOverlayDocument.SetShown(levelUpCard, false);
             DMUiToolkitOverlayDocument.SetShown(requireCard, false);
+            DMUiToolkitOverlayDocument.SetShown(noticeCard, false);
             DMUiToolkitOverlayDocument.SetShown(achievementCard, false);
             if (levelUpCard != null)
                 levelUpCard.style.opacity = 0f;
             if (requireCard != null)
                 requireCard.style.opacity = 0f;
+            if (noticeCard != null)
+                noticeCard.style.opacity = 0f;
             if (achievementCard != null)
                 achievementCard.style.opacity = 0f;
         }
@@ -232,11 +268,31 @@ namespace Project.UI
             if (requireValue != null)
                 requireValue.text = requiredLevel.ToString();
 
+            DMGameLog.Add(LevelUnlockUtility.FormatLevelRequiredMessage(requiredLevel), DMGameLogKind.Prompt);
             GameAudioManager.Instance?.PlayButtonClick();
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
 
             if (requireRoutine != null)
                 StopCoroutine(requireRoutine);
             requireRoutine = StartCoroutine(AnimateCard(requireCard, 0.28f, 1.8f, 0.3f, 28f, 18f));
+        }
+
+        private void PresentCenterNotice(string message)
+        {
+            BindTree();
+            if (noticeCard == null)
+                return;
+
+            if (noticeText != null)
+                noticeText.text = message;
+
+            DMGameLog.Add(message, DMGameLog.KindFromPopupText(message));
+            GameAudioManager.Instance?.PlayInventoryItemClick();
+            DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
+
+            if (noticeRoutine != null)
+                StopCoroutine(noticeRoutine);
+            noticeRoutine = StartCoroutine(AnimateCard(noticeCard, 0.28f, 2.0f, 0.3f, 28f, 18f));
         }
 
         private void EnqueueAchievement(string title, string description, int xpReward)

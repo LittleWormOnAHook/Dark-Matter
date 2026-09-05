@@ -271,3 +271,46 @@
     -unity-text-align: middle-center;
     overflow: hidden;
 }
+
+.dmg-hud-crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 38px;
+    height: 38px;
+    margin-left: -19px;
+    margin-top: -19px;
+}
+
+.dmg-hud-crosshair-arm {
+    position: absolute;
+    background-color: rgba(237, 233, 228, 0.82);
+}
+
+.dmg-hud-crosshair-h {
+    width: 14px;
+    height: 2px;
+    top: 18px;
+}
+
+.dmg-hud-crosshair-v {
+    width: 2px;
+    height: 14px;
+    left: 18px;
+}
+
+.dmg-hud-crosshair-left {
+    left: 0;
+}
+
+.dmg-hud-crosshair-right {
+    right: 0;
+}
+
+.dmg-hud-crosshair-up {
+    top: 0;
+}
+
+.dmg-hud-crosshair-down {
+    bottom: 0;
+}

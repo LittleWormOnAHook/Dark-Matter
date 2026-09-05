@@ -17,7 +17,7 @@ namespace Project.UI
         private UIDocument document;
         private VisualElement root;
         private VisualElement hub;
-        private ScrollView schemeBody;
+        private VisualElement schemeBody;
         private Label titleLabel;
         private ControlsSchemeDefinition keyboardScheme;
         private ControlsSchemeDefinition gamepadScheme;
@@ -100,7 +100,7 @@ namespace Project.UI
 
             root = tree.Q<VisualElement>("controls-root") ?? tree;
             hub = tree.Q<VisualElement>("controls-hub");
-            schemeBody = tree.Q<ScrollView>("controls-scheme-body");
+            schemeBody = tree.Q<VisualElement>("controls-scheme-body");
             titleLabel = tree.Q<Label>("controls-title");
             Button keyboardButton = tree.Q<Button>("controls-keyboard");
             Button gamepadButton = tree.Q<Button>("controls-gamepad");
@@ -195,13 +195,6 @@ namespace Project.UI
                     image.AddToClassList("dmg-menu-scheme-image");
                     DMUiToolkitStyle.TrySetSpriteBackground(image, page.Image, ScaleMode.ScaleToFit);
                     schemeBody.Add(image);
-                }
-
-                if (!string.IsNullOrWhiteSpace(page.Caption))
-                {
-                    Label caption = new Label(page.Caption) { pickingMode = PickingMode.Ignore };
-                    caption.AddToClassList("dmg-menu-scheme-caption");
-                    schemeBody.Add(caption);
                 }
             }
         }

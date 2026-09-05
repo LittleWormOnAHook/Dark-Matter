@@ -1,0 +1,36 @@
+---
+description: Hard lock — all created UI is UI Toolkit only; Hot Cross uses HotCrossIcons cutouts
+alwaysApply: true
+---
+
+# UITK Lock — All Created UI
+
+**Any UI you create is UI Toolkit only.** No new uGUI (`Canvas`, `Image`, `TextMeshProUGUI`, `MenuUiBuilder`).
+
+How to build it: `dark-matter-genesis-ui-toolkit.mdc`.
+
+## Do
+
+- Layout: `Assets/UI Toolkit/Screens/<Screen>.uxml`
+- Styles: screen `.uss` + `DarkMatterGenesis.uss`
+- Runtime: `Assets/UI Toolkit/Runtime/DMUiToolkit*.cs` on an existing `UIDocument` host
+- Colors: `DarkMatterGenesisUiPalette` / Shift theme
+- Bind with `root.Q<T>("name")`. Hide unused hosts in C# only (never USS `display: none` in Builder files).
+
+## Do not
+
+- Add a second HUD `UIDocument` / Panel Settings
+- Ship a uGUI fallback “just in case”
+- Expand leftover MainCanvas / Invector uGUI when touching a surface — extend UITK instead
+
+## Hot Cross icons
+
+Gameplay crossbar (`HotCross.uxml` / `DMUiToolkitHotCross`) uses **only** the alpha cutouts in:
+
+`Assets/_Project/Art/UI/HotCrossIcons`
+
+Do not put plated `ItemData.icon` / `Art/Icons` tiles on the Hot Cross. Inventory may keep those tiles.
+
+## Exception
+
+uGUI only if the user **explicitly** asks for that surface, or the target is third-party UI that cannot be UITK-wrapped yet.
