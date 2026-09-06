@@ -12,43 +12,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e5da265fbb8694bbb25bae560e1d01, type: 3}
   m_Name: DMJetpackProfile_Starfield
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
-  maxBoostSeconds: 6
-  releaseRegenBonusSeconds: 1
+  maxBoostSeconds: 5.5
+  fullThrustEndSeconds: 5
+  releaseRegenBonusSeconds: 10
   regenSecondsPerSecond: 0.35
-  fullThrustEndSeconds: 4
-  upwardThrustForce: 6
-  descendForce: 1
+  energyDrainPerSecond: 0.1
+  upwardThrustForce: 8
+  descendForce: 25.58
   descendInputThreshold: 0.74
   descendBrakeStrength: 1
   verticalResponse: 8
-  hoverGravityScale: 0.12
-  boostDescendGravityScale: 0.8
+  hoverGravityScale: 0.39
+  boostDescendGravityScale: 0.24
   fadeFallGravityScale: 0.05
   freeFallGravityScale: 0.05
-  coastFallGravityScale: 0.6
+  coastFallGravityScale: 0.22
   releaseUpwardBleed: 4.5
-  jetpackAirSpeed: 6
-  jetpackPlanarResponse: 14
-  jetpackSteerInputSmoothTime: 0.077
-  jetpackAirSmooth: 16
-  defaultAirSpeed: 3
+  jetpackAirSpeed: 3
+  jetpackPlanarResponse: 5
+  directedVerticalScale: 0.575
+  directedRedirect: 10
+  jetpackSteerInputSmoothTime: 0.238
+  jetpackAirSmooth: 23.41
+  defaultAirSpeed: 2
   jetpackMoveSmoothTime: 0.18
   animBlendGain: 1.45
-  animLeanStrength: 0.1
+  animLeanStrength: 0.14
   animInputDeadzone: 0.08
   flyAnimSpeed: 1
   animStrafeThreshold: 0.5
-  landCrossFadeSeconds: 0.12
+  landCrossFadeSeconds: 0.144
   thrusterAlphaMin: 0.1
   thrusterAlphaMax: 1
   thrusterPowerSmoothTime: 0.18
   flareFactorMultiplier: 0.9
-  slowSparksFactorMultiplier: 0.85
-  fastSparksFactorMultiplier: 0.85
+  slowSparksFactorMultiplier: 0.5
+  fastSparksFactorMultiplier: 0.5
   distortionFactorMultiplier: 2.32
   particleSpeedMultiplier: 2.39
   particleLifetimeMultiplier: 1.1
-  thrusterAudioSmooth: 0.12
+  thrusterAudioSmooth: 0.216
   thrusterLayer1: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
   thrusterLayer1Volume: 0.55
   thrusterLayer1Pitch: {x: 0.5, y: 0.65}

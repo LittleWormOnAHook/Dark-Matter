@@ -59,6 +59,12 @@
             <ui:VisualElement name="pilot-compass-line" picking-mode="Ignore" class="pilot-compass-line"/>
             <ui:VisualElement name="pilot-compass-dots" picking-mode="Ignore" class="pilot-compass-dots"/>
             <ui:VisualElement name="pilot-compass-center" picking-mode="Ignore" class="pilot-compass-center"/>
+            <ui:VisualElement name="pilot-jetfuel" picking-mode="Ignore" class="pilot-jetfuel">
+                <ui:Label name="pilot-jetfuel-label" text="FUEL" picking-mode="Ignore" class="pilot-jetfuel-label"/>
+                <ui:VisualElement name="pilot-jetfuel-track" picking-mode="Ignore" class="pilot-jetfuel-track">
+                    <ui:VisualElement name="pilot-jetfuel-fill" picking-mode="Ignore" class="pilot-jetfuel-fill"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
             <ui:Label name="pilot-compass-poi" text="" picking-mode="Ignore" class="pilot-compass-poi"/>
         </ui:VisualElement>
     </ui:VisualElement>

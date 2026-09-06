@@ -1,0 +1,6 @@
+Previous ClimbMantle motion (mantle-simple era):
+m_Motion: {fileID: 7400000, guid: 904a80a41cd986a41b6b15da17acacf0, type: 2}
+New (PROTOFACTOR):
+Humanoid@ClimbUp2MetersObstacleUnarmed.FBX
+m_Motion: {fileID: 7400000, guid: eccc36b57b4d94c469008feb592d68eb, type: 3}
+clip: ClimbUp2MetersObstacleUnarmed

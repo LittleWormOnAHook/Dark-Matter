@@ -15,7 +15,8 @@ MonoBehaviour:
   maxBoostSeconds: 8
   releaseRegenBonusSeconds: 1
   regenSecondsPerSecond: 0.35
-  fullThrustEndSeconds: 6
+  energyDrainPerSecond: 10
+  fullThrustEndSeconds: 8
   upwardThrustForce: 5
   descendForce: 3
   descendInputThreshold: 0.35
@@ -29,6 +30,8 @@ MonoBehaviour:
   releaseUpwardBleed: 6
   jetpackAirSpeed: 4.25
   jetpackPlanarResponse: 26
+  directedVerticalScale: 0.35
+  directedRedirect: 10
   jetpackSteerInputSmoothTime: 0.11
   jetpackAirSmooth: 16
   defaultAirSpeed: 5

@@ -103,12 +103,56 @@ namespace Project.Features.Climb
         [Range(0.2f, 2f)]
         public float airControlSeconds = 0.95f;
 
-        [Tooltip("From a walkable lip, Jump (or S+E) hangs on the face below.")]
+        [Tooltip("From a walkable ledge top: S toward the drop (facing out) or E near the lip reverse-mantles into hang on the outer lip (180 to face the wall), then normal climb. Does not auto-trigger on walk-near-edge.")]
         public bool dropToHang = true;
 
-        [Tooltip("How far below the lip we look for a climbable face.")]
+        [Tooltip("How far below the lip we look for a climbable face when drop-to-hang / reverse mantle starts.")]
         [Range(0.4f, 4f)]
         public float dropToHangRange = 1.8f;
+
+        [Header("Overhang lip")]
+        [Tooltip("When climb-up stops under a soffit or rock shelf, climb onto the nearest lip.")]
+        public bool enableOverhangGrab = true;
+
+        [Tooltip("How far above the hands to look for a soffit or rock shelf.")]
+        [Range(0.4f, 2.2f)]
+        public float overhangReachUp = 1.15f;
+
+        [Tooltip("How far back from the wall the nearest lip may be (slabs and cliff shelves).")]
+        [Range(0.4f, 2.2f)]
+        public float overhangReachBack = 1.4f;
+
+        [Tooltip("Minimum seconds for the climb-up onto the lip. Longer grabs use climb speed.")]
+        [Range(0.2f, 1.4f)]
+        public float overhangGrabSeconds = 0.78f;
+
+        [Tooltip("Outward shelf probe start (meters from climb wall). Lower catches thin/short lips.")]
+        [Range(0.02f, 0.25f)]
+        public float overhangMinProbeOut = 0.05f;
+
+        [Tooltip("Planar lip distance from the climb wall that counts as deep protrusion. Drives short-hop grab — not vertical thickness.")]
+        [Range(0.25f, 1.6f)]
+        public float overhangDeepProtrusion = 0.65f;
+
+        [Tooltip("Deep lips: fraction of planar travel done as a short hop toward the lip. Higher = less arm stretch.")]
+        [Range(0.35f, 0.98f)]
+        public float overhangShortHopPull = 0.94f;
+
+        [Tooltip("Extra hop arc height (meters) on deep short-hop lip grabs.")]
+        [Range(0f, 0.45f)]
+        public float overhangShortHopArc = 0.22f;
+
+        [Tooltip("Deep grab: IK weight ramps in after this fraction of the hop. Higher delays hand IK until the body is closer.")]
+        [Range(0f, 0.9f)]
+        public float overhangIkBlendStart = 0.72f;
+
+        [Tooltip("Body hang inset from the lip along the wall normal.")]
+        [Range(0.05f, 0.4f)]
+        public float overhangHangInset = 0.18f;
+
+        [Tooltip("Seconds for a deep short-hop lip grab. Deep hop uses this only (no speedDur shorten).")]
+        [Range(0.12f, 1.25f)]
+        public float overhangShortHopSeconds = 0.85f;
 
         [Header("Mantle")]
         public bool enableMantle = true;
@@ -154,8 +198,8 @@ namespace Project.Features.Climb
         public float heroDropMeters = 2.6f;
 
         [Tooltip("Fall this far or more (while falling) is death + retry/quit, unless jetpack grace applies.")]
-        [Range(8f, 80f)]
-        public float lethalDropMeters = 20f;
+        [Range(8f, 200f)]
+        public float lethalDropMeters = 100f;
 
         [Tooltip("After jetpack Space/boost is released, wait this many seconds before a lethal-height fall can kill. Still boosting, or land inside this window, is always hero.")]
         [Range(0f, 20f)]
@@ -173,5 +217,24 @@ namespace Project.Features.Climb
 
         [Tooltip("Only these layers. 0 = resolve from climbableLayerName.")]
         public LayerMask climbableLayers;
+
+        [Header("ClingSense bubble")]
+        [Tooltip("Body-centered overlap + ray fan for face/soffit/ground/stub-lip/sides (Dune-style volume feel).")]
+        public bool enableClingSense = true;
+
+        [Tooltip("Draw ClingSense bubble in Scene view while climbing (Gizmos must be enabled). Also draws when the climb controller is selected.")]
+        public bool drawClingSenseGizmos = true;
+
+        [Header("Baked probes")]
+        [Tooltip("When a DMClimbProbeSet is on/near the climbable, prefer nearest baked probe for attach + StickAndMove. Mesh lip fallback remains.")]
+        public bool preferBakedProbes = false;
+
+        [Tooltip("Max distance from body/hands to consider a baked probe for attach and cling.")]
+        [Range(0.4f, 3.5f)]
+        public float probeReach = 1.55f;
+
+        [Tooltip("Max step between neighboring stance pairs while climbing (WASD). Auto-raises to nearest neighbor if bake spacing is wider. Runtime also caps at 0.85m.")]
+        [Range(0.35f, 3.5f)]
+        public float probeStepMax = 1.6f;
     }
 }

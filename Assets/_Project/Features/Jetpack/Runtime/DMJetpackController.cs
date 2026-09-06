@@ -1,5 +1,7 @@
 using Invector.vCharacterController;
 using Project.Progression;
+using Project.Survival;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Features.Jetpack
@@ -39,6 +41,8 @@ namespace Project.Features.Jetpack
         private const float HeroLandHoldSeconds = 4f;
         private bool _wasGrounded = true;
         private float _groundedStable;
+        private bool _emptyUntilRelease;
+        private const float GroundedConfirmSeconds = 0.15f;
         private bool _airSpeedOverridden;
         private bool _airSmoothOverridden;
         private bool _extraGravityOverridden;
@@ -46,6 +50,9 @@ namespace Project.Features.Jetpack
         private float _savedAirSmooth;
         private Vector3 _smoothSteerPlanar;
         private Vector3 _smoothSteerVelocity;
+        private SurvivalStats _survivalStats;
+        private bool _noPowerBoostAttempt;
+        private const float DefaultEnergyDrainPerSecond = 10f;
 
         public DMJetpackProfile Profile => profile;
 
@@ -112,6 +119,7 @@ namespace Project.Features.Jetpack
                 animatorDriver = GetComponent<DMJetpackAnimatorDriver>();
 
             _rigidbody = motor != null ? motor.GetComponent<Rigidbody>() : GetComponent<Rigidbody>();
+            _survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
             RefillFuel();
         }
 
@@ -119,6 +127,11 @@ namespace Project.Features.Jetpack
             profile != null
                 ? profile.upwardThrustForce * (1f + PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.JetThrustPercent) / 100f)
                 : 0f;
+
+        private float EnergyDrainPerSecond =>
+            profile != null
+                ? Mathf.Max(0f, profile.energyDrainPerSecond)
+                : DefaultEnergyDrainPerSecond;
 
         private float ScaledRegenPerSecond =>
             profile != null
@@ -133,6 +146,11 @@ namespace Project.Features.Jetpack
         public void SetBoostHeld(bool held)
         {
             _boostHeld = held;
+            if (!held)
+            {
+                _emptyUntilRelease = false;
+                _noPowerBoostAttempt = false;
+            }
         }
 
         /// <returns>True when this press was consumed for jetpack ignition (skip normal jump).</returns>
@@ -144,11 +162,18 @@ namespace Project.Features.Jetpack
             if (motor.isGrounded)
                 return false;
 
-            if (_fuelRemaining <= 0.01f)
+            if (_emptyUntilRelease || _fuelRemaining <= 0.01f)
                 return false;
 
             if (Phase is DMJetpackPhase.BoostFull or DMJetpackPhase.BoostFade)
                 return false;
+
+            if (!HasJetpackEnergy())
+            {
+                _noPowerBoostAttempt = true;
+                DMUiToolkitHud.ShowNoPower();
+                return true;
+            }
 
             BeginBoost();
             return true;
@@ -192,6 +217,7 @@ namespace Project.Features.Jetpack
             _boostElapsed = 0f;
             _boostHeld = false;
             _boostArmed = false;
+            _emptyUntilRelease = false;
             Phase = DMJetpackPhase.Grounded;
             CurrentThrustVisual = 0f;
             ResetPlanarSteerState();
@@ -209,53 +235,54 @@ namespace Project.Features.Jetpack
             if (motor == null || profile == null || _rigidbody == null)
                 return;
 
+            float dt = Time.fixedDeltaTime;
+            float fuelDt = Time.fixedUnscaledDeltaTime;
             bool grounded = motor.isGrounded;
             if (grounded)
-                _groundedStable += Time.fixedDeltaTime;
+                _groundedStable += dt;
             else
                 _groundedStable = 0f;
 
-            if (grounded && !_wasGrounded)
-            {
-                _boostArmed = false;
+            bool firmlyGrounded = grounded && _groundedStable >= GroundedConfirmSeconds;
 
-                if (Phase != DMJetpackPhase.Grounded)
-                    Phase = DMJetpackPhase.Grounded;
-
-                _boostElapsed = 0f;
-                CurrentThrustVisual = 0f;
-                ResetPlanarSteerState();
-                RestoreMotorTuning();
-            }
-            else if (!grounded && _wasGrounded)
-            {
+            if (!grounded && _wasGrounded)
                 Phase = DMJetpackPhase.Airborne;
-            }
 
             _wasGrounded = grounded;
 
-            if (grounded)
+            // Grazing terrain must not cancel a live burn or refill the tank.
+            if (firmlyGrounded)
             {
-                RegenerateFuel(Time.fixedDeltaTime);
+                _boostArmed = false;
+                _boostElapsed = 0f;
+                if (Phase != DMJetpackPhase.Grounded)
+                    Phase = DMJetpackPhase.Grounded;
                 CurrentThrustVisual = 0f;
+                ResetPlanarSteerState();
+                RestoreMotorTuning();
+                RegenerateFuel(fuelDt);
                 return;
             }
 
             if (IsJetpackAnimActive)
                 SuppressJumpMotorState();
 
-            TickAirborneBoost(Time.fixedDeltaTime);
+            TickAirborneBoost(dt, fuelDt);
         }
 
-        private void TickAirborneBoost(float dt)
+        private void TickAirborneBoost(float dt, float fuelDt)
         {
             // Boost only after an explicit airborne jump press (2nd Space), then hold.
             // Holding Space from the ground jump must not auto-ignite on takeoff.
-            // After a coast this same air, holding Space again re-ignites (boost back down).
-            if (!_boostArmed && _boostHeld && _usedJetpackThisAir && _fuelRemaining > 0.01f)
+            // After a coast this same air, a new Space press re-ignites if fuel remains.
+            bool hasEnergy = HasJetpackEnergy();
+            if (_boostHeld && !hasEnergy && (_usedJetpackThisAir || _boostArmed || _noPowerBoostAttempt))
+                DMUiToolkitHud.ShowNoPower();
+
+            if (!_boostArmed && _boostHeld && !_emptyUntilRelease && _usedJetpackThisAir && _fuelRemaining > 0.01f && hasEnergy)
                 BeginBoost();
 
-            bool wantsBoost = _boostArmed && _boostHeld && _fuelRemaining > 0f;
+            bool wantsBoost = _boostArmed && _boostHeld && !_emptyUntilRelease && _fuelRemaining > 0f && hasEnergy;
 
             if (_wasBoosting && !wantsBoost)
             {
@@ -263,48 +290,49 @@ namespace Project.Features.Jetpack
                 ArmHeroLandHold();
                 _boostArmed = false;
                 ResetPlanarSteerState();
-
-                if (profile.releaseRegenBonusSeconds > 0f)
-                {
-                    _fuelRemaining = Mathf.Min(
-                        MaxBoostSeconds,
-                        _fuelRemaining + profile.releaseRegenBonusSeconds);
-                }
             }
 
             _wasBoosting = wantsBoost;
 
             if (wantsBoost)
             {
-                _fuelRemaining = Mathf.Max(0f, _fuelRemaining - dt);
-                _boostElapsed += dt;
+                _fuelRemaining -= fuelDt;
+                _boostElapsed += fuelDt;
+                SpendJetpackEnergy(fuelDt);
+                if (!HasJetpackEnergy())
+                {
+                    CutBoostNoEnergy();
+                    ApplyCoastFall(dt);
+                    return;
+                }
 
-                float fadeStart = profile.fullThrustEndSeconds * (MaxBoostSeconds / Mathf.Max(0.01f, profile.maxBoostSeconds));
-                float fadeEnd = MaxBoostSeconds;
-                bool inFade = _boostElapsed >= fadeStart && _fuelRemaining > 0f;
+                if (_fuelRemaining <= 0f)
+                {
+                    CutBoostEmpty();
+                    ApplyCoastFall(dt);
+                    return;
+                }
+
+                float tank = MaxBoostSeconds;
+                float fadeStart = Mathf.Clamp(profile.fullThrustEndSeconds, 0f, profile.maxBoostSeconds)
+                    * (tank / Mathf.Max(0.01f, profile.maxBoostSeconds));
+                bool canFade = fadeStart < tank - 0.05f;
+                bool inFade = canFade && _boostElapsed >= fadeStart;
 
                 Phase = inFade ? DMJetpackPhase.BoostFade : DMJetpackPhase.BoostFull;
 
-                float thrustT = Phase == DMJetpackPhase.BoostFull
-                    ? 1f
-                    : Mathf.InverseLerp(fadeEnd, fadeStart, _boostElapsed);
+                float thrustT = inFade
+                    ? Mathf.InverseLerp(tank, fadeStart, _boostElapsed)
+                    : 1f;
 
-                CurrentThrustVisual = Phase == DMJetpackPhase.BoostFade
+                CurrentThrustVisual = inFade
                     ? Mathf.Lerp(profile.thrusterAlphaMin, 1f, thrustT)
                     : 1f;
 
                 ApplyMotorTuningForJetpack();
                 ApplyJetpackAirTuning();
-                ApplyJetpackPlanarSteering(dt);
                 ApplyVerticalThrust(dt, thrustT);
-
-                if (_fuelRemaining <= 0f)
-                {
-                    Phase = DMJetpackPhase.FreeFall;
-                    _boostReleasedAt = Time.unscaledTime;
-                    ArmHeroLandHold();
-                    RestoreAirSpeed();
-                }
+                ApplyJetpackPlanarSteering(dt);
             }
             else
             {
@@ -312,7 +340,7 @@ namespace Project.Features.Jetpack
                     Phase = DMJetpackPhase.FreeFall;
 
                 CurrentThrustVisual = 0f;
-                RegenerateFuel(dt);
+                RegenerateFuel(fuelDt);
                 RestoreAirSpeed();
 
                 if (_hadJetpackFlightThisAirtime)
@@ -325,6 +353,48 @@ namespace Project.Features.Jetpack
                     RestoreMotorPhysicsOverrides();
                 }
             }
+        }
+
+        private void CutBoostEmpty()
+        {
+            _fuelRemaining = 0f;
+            _emptyUntilRelease = true;
+            _boostArmed = false;
+            _wasBoosting = false;
+            _boostReleasedAt = Time.unscaledTime;
+            Phase = DMJetpackPhase.FreeFall;
+            CurrentThrustVisual = 0f;
+            ResetPlanarSteerState();
+            ArmHeroLandHold();
+            RestoreAirSpeed();
+        }
+
+        /// <summary>Stop thrust when energy is empty without dumping the fuel tank.</summary>
+        private void CutBoostNoEnergy()
+        {
+            DMUiToolkitHud.ShowNoPower();
+            _boostArmed = false;
+            _wasBoosting = false;
+            _boostReleasedAt = Time.unscaledTime;
+            Phase = DMJetpackPhase.FreeFall;
+            CurrentThrustVisual = 0f;
+            ResetPlanarSteerState();
+            ArmHeroLandHold();
+            RestoreAirSpeed();
+        }
+
+        private bool HasJetpackEnergy()
+        {
+            if (_survivalStats == null)
+                _survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
+            return _survivalStats == null || _survivalStats.HasEnergy();
+        }
+
+        private void SpendJetpackEnergy(float fuelDt)
+        {
+            if (_survivalStats == null)
+                return;
+            _survivalStats.SpendEnergy(EnergyDrainPerSecond * fuelDt);
         }
 
         private bool CanApplyJetpackPhysics()
@@ -370,6 +440,19 @@ namespace Project.Features.Jetpack
             SyncMotorVerticalVelocity();
         }
 
+        private float GetPlanarIntent()
+        {
+            if (inputBridge == null || profile == null)
+                return 0f;
+
+            Vector2 local = inputBridge.LocalMoveInput;
+            float deadzone = profile.animInputDeadzone;
+            if (local.sqrMagnitude <= deadzone * deadzone)
+                return 0f;
+
+            return Mathf.Clamp01(local.magnitude);
+        }
+
         private void ApplyVerticalThrust(float dt, float thrustStrength)
         {
             if (!CanApplyJetpackPhysics())
@@ -378,22 +461,12 @@ namespace Project.Features.Jetpack
             if (motor.isJumping)
                 SuppressJumpMotorState();
 
-            float localVertical = inputBridge != null ? inputBridge.LocalVerticalInput : 0f;
-            float gravityScale = ResolveBoostGravityScale(localVertical);
+            float planarIntent = GetPlanarIntent();
+            float gravityScale = ResolveBoostGravityScale();
             float response = profile.verticalResponse;
             float currentVy = GetVerticalVelocity();
-            float targetVy;
-
-            if (localVertical < -profile.descendInputThreshold)
-            {
-                targetVy = -profile.descendForce * thrustStrength;
-            }
-            else
-            {
-                float ascendIntent = Mathf.Clamp01(
-                    1f - Mathf.Max(0f, -localVertical) * profile.descendBrakeStrength);
-                targetVy = ScaledUpwardThrust * thrustStrength * ascendIntent;
-            }
+            float verticalScale = Mathf.Lerp(1f, profile.directedVerticalScale, planarIntent);
+            float targetVy = ScaledUpwardThrust * thrustStrength * verticalScale;
 
             float easedVy = Mathf.Lerp(currentVy, targetVy, 1f - Mathf.Exp(-response * dt));
             if (gravityScale > 0f)
@@ -402,11 +475,8 @@ namespace Project.Features.Jetpack
             ApplyVerticalDelta(easedVy - currentVy);
         }
 
-        private float ResolveBoostGravityScale(float localVertical)
+        private float ResolveBoostGravityScale()
         {
-            if (localVertical < -profile.descendInputThreshold)
-                return profile.boostDescendGravityScale;
-
             if (Phase == DMJetpackPhase.BoostFade)
                 return profile.fadeFallGravityScale;
 
@@ -527,6 +597,14 @@ namespace Project.Features.Jetpack
 
             float blend = 1f - Mathf.Exp(-profile.jetpackPlanarResponse * dt);
             Vector3 steeredPlanar = Vector3.Lerp(planar, targetPlanar, blend);
+
+            if (vertical > 0f)
+            {
+                float bleed = Mathf.Min(vertical, profile.directedRedirect * GetPlanarIntent() * dt);
+                vertical -= bleed;
+                steeredPlanar += steerDirection * bleed;
+            }
+
             _rigidbody.linearVelocity = steeredPlanar + vertical * MotorUp;
             SyncMotorVerticalVelocity();
         }
@@ -557,6 +635,9 @@ namespace Project.Features.Jetpack
 
         private void RegenerateFuel(float dt)
         {
+            if (_emptyUntilRelease)
+                return;
+
             if (ScaledRegenPerSecond <= 0f)
                 return;
 

@@ -13,47 +13,65 @@ MonoBehaviour:
   m_Name: DMClimbProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Climb.DMClimbProfile
   walkMaxSlopeDeg: 45
-  climbMinSlopeDeg: 45.8
-  climbMaxSlopeDeg: 115
+  climbMinSlopeDeg: 60
+  climbMaxSlopeDeg: 95
   attachRange: 2
   climbJumpRange: 5
-  probeRadius: 0.18
+  probeRadius: 0.24
   faceDotMin: 0.15
   standOff: 0.35
   startClimbNeedsAirborne: 1
   startClimbNeedsForward: 1
   handPalmOffset: 0.11
-  handSpread: 0.29
+  handSpread: 0.2
   autoGrabInAir: 0
-  moveSpeed: 0.83
-  climbShiftMul: 2.06
-  climbInputDamp: 0.22
+  moveSpeed: 1.17
+  climbShiftMul: 1.85
+  climbInputDamp: 0.1
   jumpReleases: 1
   releasePush: 1.6
-  climbLeapSpeed: 3.02
-  clingHop: 3.1
+  climbLeapSpeed: 5.5
+  clingHop: 6
   climbLeapRegrab: 0.55
   dropPush: 2.4
   detachBuffer: 1.15
-  highFallGrabMeters: 6
+  highFallGrabMeters: 3.5
   airControlSeconds: 0.95
   dropToHang: 1
   dropToHangRange: 1.8
+  enableOverhangGrab: 1
+  overhangReachUp: 1.3
+  overhangReachBack: 1.61
+  overhangGrabSeconds: 0.78
+  overhangMinProbeOut: 0.05
+  overhangDeepProtrusion: 0.65
+  overhangShortHopPull: 0.94
+  overhangShortHopArc: 0.22
+  overhangIkBlendStart: 0.72
+  overhangHangInset: 0.1
+  overhangShortHopSeconds: 0.85
   enableMantle: 1
   mantleRequiresOpenLip: 1
-  handHeight: 1.24
-  mantleForward: 0.036
+  handHeight: 1.125
+  mantleForward: 0.12
   mantleProbeUp: 1.5
   mantleProbeDown: 1.7
-  mantlePlantHeight: -0.09
+  mantlePlantHeight: 0.015
   mantleStandPad: 0.04
   mantleSeconds: 1.4
   mantleIgnoreLands: 2.6
   heroDropMeters: 4.04
-  lethalDropMeters: 20
+  lethalDropMeters: 60
   jetpackLethalDelay: 3
+  climbStartStaminaCost: 5
+  climbStaminaDrainPerSecond: 8
   climbableLayerName: Climbable
   climbableTag: Climbable
   climbableLayers:
     serializedVersion: 2
     m_Bits: 8388608
+  enableClingSense: 1
+  drawClingSenseGizmos: 1
+  preferBakedProbes: 0
+  probeReach: 1.15
+  probeStepMax: 0.91

@@ -8,12 +8,16 @@ namespace Project.Features.Jetpack
     public sealed class DMJetpackProfile : ScriptableObject
     {
         [Header("Fuel")]
+        [Tooltip("How long a full tank lasts (seconds). Player variant uses Starfield.")]
         [Min(1f)] public float maxBoostSeconds = 8f;
+        [Tooltip("Seconds of full thrust before fade. Set equal to Max Boost Seconds for no early cutoff.")]
+        [Min(0f)] public float fullThrustEndSeconds = 8f;
         [Min(0f)] public float releaseRegenBonusSeconds = 1f;
         [Min(0f)] public float regenSecondsPerSecond = 0.35f;
+        [Tooltip("Survival energy (power) spent per second while boosting.")]
+        [Min(0f)] public float energyDrainPerSecond = 10f;
 
         [Header("Vertical Thrust")]
-        [Min(0f)] public float fullThrustEndSeconds = 6f;
         [Tooltip("Target upward speed while holding boost (m/s).")]
         [Min(0f)] public float upwardThrustForce = 6.5f;
         [Tooltip("Target downward speed when holding S during boost (m/s, positive value).")]
@@ -26,7 +30,7 @@ namespace Project.Features.Jetpack
         [Min(0f)] public float hoverGravityScale = 0.12f;
         [Tooltip("Gravity scale while intentionally descending during boost.")]
         [Min(0f)] public float boostDescendGravityScale = 0.85f;
-        [Tooltip("Gravity scale during the 6–8 s thrust fade.")]
+        [Tooltip("Gravity scale during the late-tank thrust fade.")]
         [Min(0f)] public float fadeFallGravityScale = 0.22f;
         [Tooltip("Gravity scale after fuel is empty.")]
         [Min(0f)] public float freeFallGravityScale = 1f;
@@ -35,11 +39,15 @@ namespace Project.Features.Jetpack
         [Tooltip("Bleeds leftover upward velocity after releasing boost.")]
         [Min(0f)] public float releaseUpwardBleed = 5f;
 
-        [Header("Horizontal Movement")]
-        [Tooltip("Target planar speed while jetpack boost is active (m/s).")]
+        [Header("Directed Boost (WASD)")]
+        [Tooltip("Target planar speed while a direction is held during boost (m/s).")]
         [Min(0.5f)] public float jetpackAirSpeed = 3.25f;
-        [Tooltip("How quickly boost steering snaps planar velocity toward WASD input.")]
+        [Tooltip("How quickly planar velocity lerps toward the held WASD heading.")]
         [Min(1f)] public float jetpackPlanarResponse = 22f;
+        [Tooltip("Vertical thrust left at full WASD (0 = flatten, 1 = same climb as hover).")]
+        [Range(0f, 1f)] public float directedVerticalScale = 0.35f;
+        [Tooltip("How quickly leftover upward speed converts into the held WASD heading (m/s per second).")]
+        [Min(0f)] public float directedRedirect = 10f;
         [Tooltip("Brief delay before steer direction catches new WASD input, then planar response takes over.")]
         [Range(0.04f, 0.35f)] public float jetpackSteerInputSmoothTime = 0.11f;
         [Tooltip("Invector airSmooth override during boost (higher = snappier input follow).")]
@@ -101,6 +109,12 @@ namespace Project.Features.Jetpack
         {
             get => thrusterLayer1Pitch;
             set => thrusterLayer1Pitch = value;
+        }
+
+        private void OnValidate()
+        {
+            if (fullThrustEndSeconds > maxBoostSeconds)
+                fullThrustEndSeconds = maxBoostSeconds;
         }
     }
 }

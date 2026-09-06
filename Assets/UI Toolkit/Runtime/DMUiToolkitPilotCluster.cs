@@ -3,6 +3,7 @@ using Project.Core;
 using Project.Inventory;
 using Project.Map;
 using Project.Survival;
+using Project.Features.Jetpack;
 using Project.Progression;
 using Project.Survival.Exposure;
 using UnityEngine;
@@ -31,6 +32,8 @@ namespace Project.UI
         private static readonly Color OxygenColor = new Color(0.86f, 0.90f, 0.94f, 1f);
         // Vivid crimson health dashes (#E83B3B).
         private static readonly Color HealthColor = new Color(0.910f, 0.231f, 0.231f, 1f);
+        // Jetfuel tank dashes (cyan).
+        private static readonly Color JetFuelColor = new Color(0.306f, 0.784f, 0.910f, 1f);
 
         private static Color LockedTint(Color statColor)
         {
@@ -59,6 +62,10 @@ namespace Project.UI
         private VisualElement healthFill;
         private VisualElement healthTrack;
         private HealthDashes healthDashes;
+        private VisualElement jetfuelTrack;
+        private VisualElement jetfuelFill;
+        private FuelDashes fuelDashes;
+        private DMJetpackController cachedJetpack;
         private VisualElement compassTicks;
         private VisualElement compassDots;
         private VisualElement arcsHost;
@@ -101,6 +108,8 @@ namespace Project.UI
         private float lastCompassWidth;
         private readonly List<CompassTick> ticks = new List<CompassTick>(24);
         private readonly Dictionary<MapMarker, VisualElement> compassDotLookup = new Dictionary<MapMarker, VisualElement>(16);
+        private readonly HashSet<MapMarker> compassDotsSeen = new HashSet<MapMarker>();
+        private bool mapOpacityApplied;
 
         private struct CompassTick
         {
@@ -209,6 +218,8 @@ namespace Project.UI
             EnsureNorthLayer();
             healthFill = tree.Q<VisualElement>("pilot-health-fill");
             healthTrack = tree.Q<VisualElement>("pilot-health-track");
+            jetfuelTrack = tree.Q<VisualElement>("pilot-jetfuel-track");
+            jetfuelFill = tree.Q<VisualElement>("pilot-jetfuel-fill");
             compassTicks = tree.Q<VisualElement>("pilot-compass-ticks");
             compassDots = tree.Q<VisualElement>("pilot-compass-dots");
             arcsHost = tree.Q<VisualElement>("pilot-arcs");
@@ -226,6 +237,7 @@ namespace Project.UI
 
             EnsureArcs();
             EnsureHealthDashes();
+            EnsureFuelDashes();
             EnsureThermal();
             HideBuilderOnly(tree.Q("pilot-energy-block"));
             HideBuilderOnly(tree.Q("pilot-stamina-block"));
@@ -234,6 +246,7 @@ namespace Project.UI
             HideBuilderOnly(tree.Q("pilot-right-meta"));
             HideBuilderOnly(tree.Q("pilot-health-label"));
             HideBuilderOnly(healthFill);
+            HideBuilderOnly(jetfuelFill);
             if (!playerArrowBound && mapPlayer != null)
             {
                 DMUiToolkitStyle.TrySetSpriteBackground(mapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
@@ -384,6 +397,19 @@ private void EnsureArcs()
             healthTrack.Add(healthDashes);
         }
 
+        private void EnsureFuelDashes()
+        {
+            if (jetfuelTrack == null)
+                return;
+
+            if (fuelDashes != null && fuelDashes.parent == jetfuelTrack)
+                return;
+
+            fuelDashes = new FuelDashes();
+            jetfuelTrack.Add(fuelDashes);
+        }
+
+
         private void EnsureThermal()
         {
             if (tempTrack == null)
@@ -482,6 +508,10 @@ private void EnsureArcs()
 
             if (healthDashes != null)
                 healthDashes.SetFill(health, healthBonus);
+
+            float jetFuel = ResolveJetpackFuel();
+            if (fuelDashes != null)
+                fuelDashes.SetFill(jetFuel);
         }
 
         private void RefreshLoad(InventorySystem inventory)
@@ -578,7 +608,11 @@ private void EnsureArcs()
 
             if (cropped != null)
                 DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.StretchToFill);
-            mapView.style.opacity = 0.40f;
+            if (!mapOpacityApplied)
+            {
+                mapView.style.opacity = 0.40f;
+                mapOpacityApplied = true;
+            }
 
             float yaw = mapUi != null ? mapUi.MinimapFacingYaw : 0f;
             if (float.IsNaN(lastMapYaw) || Mathf.Abs(yaw - lastMapYaw) > 0.05f)
@@ -695,7 +729,7 @@ private void EnsureArcs()
                 : Vector3.zero;
             bool hasPlayer = mapUi != null && mapUi.HasMinimapPlayerPosition;
 
-            var seen = new HashSet<MapMarker>();
+            compassDotsSeen.Clear();
             MapMarker focused = null;
             float focusedAbs = 999f;
             float focusedDist = 0f;
@@ -719,7 +753,7 @@ private void EnsureArcs()
                     if (Mathf.Abs(delta) > halfFov)
                         continue;
 
-                    seen.Add(marker);
+                    compassDotsSeen.Add(marker);
                     if (!compassDotLookup.TryGetValue(marker, out VisualElement dot) || dot == null)
                     {
                         dot = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -770,7 +804,7 @@ private void EnsureArcs()
             List<MapMarker> stale = null;
             foreach (KeyValuePair<MapMarker, VisualElement> pair in compassDotLookup)
             {
-                if (seen.Contains(pair.Key))
+                if (compassDotsSeen.Contains(pair.Key))
                     continue;
                 stale ??= new List<MapMarker>();
                 stale.Add(pair.Key);
@@ -849,6 +883,15 @@ private void EnsureArcs()
             }
 
             return cachedJournal != null && cachedJournal.IsOpen;
+        }
+
+
+        private float ResolveJetpackFuel()
+        {
+            if (cachedJetpack == null)
+                cachedJetpack = FindAnyObjectByType<DMJetpackController>(FindObjectsInactive.Exclude);
+
+            return cachedJetpack != null ? cachedJetpack.FuelNormalized : 0f;
         }
 
         private SurvivalStats ResolveStats(GameObject player)
@@ -1114,6 +1157,75 @@ private void EnsureArcs()
         /// <summary>
         /// Vertical dashed health bar. Same dash language as perimeter arcs; grows upward with health skills.
         /// </summary>
+
+        private sealed class FuelDashes : VisualElement
+        {
+            private float fill = 1f;
+
+            public FuelDashes()
+            {
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = 0;
+                style.top = 0;
+                style.right = 0;
+                style.bottom = 0;
+                generateVisualContent += Paint;
+            }
+
+            public void SetFill(float fill01)
+            {
+                fill01 = Mathf.Clamp01(fill01);
+                if (Mathf.Approximately(fill, fill01))
+                    return;
+                fill = fill01;
+                MarkDirtyRepaint();
+            }
+
+            private void Paint(MeshGenerationContext ctx)
+            {
+                Painter2D p = ctx.painter2D;
+                Rect r = contentRect;
+                if (r.width < 8f || r.height < 2f)
+                    return;
+
+                // Horizontal dashes matching health dash density.
+                const float DashW = 5.5f;
+                const float GapW = 3.2f;
+                float pitch = DashW + GapW;
+                int total = Mathf.Max(1, Mathf.FloorToInt((r.width + 0.01f) / pitch));
+                float used = total * DashW + (total - 1) * GapW;
+                float padLeft = Mathf.Max(1f, (r.width - used) * 0.5f);
+                float filledDashes = total * Mathf.Clamp01(fill);
+
+                float y0 = 1f;
+                float y1 = r.height - 1f;
+                if (y1 <= y0)
+                {
+                    y0 = 0f;
+                    y1 = r.height;
+                }
+
+                for (int i = 0; i < total; i++)
+                {
+                    float x0 = padLeft + i * pitch;
+                    float x1 = x0 + DashW;
+                    Color dash = JetFuelColor;
+                    if (i + 0.5f > filledDashes)
+                        dash.a = 0.22f;
+
+                    p.fillColor = dash;
+                    p.BeginPath();
+                    p.MoveTo(new Vector2(x0, y0));
+                    p.LineTo(new Vector2(x1, y0));
+                    p.LineTo(new Vector2(x1, y1));
+                    p.LineTo(new Vector2(x0, y1));
+                    p.ClosePath();
+                    p.Fill();
+                }
+            }
+        }
+
         private sealed class HealthDashes : VisualElement
         {
             private float fill = 1f;
