@@ -85,6 +85,32 @@
     -unity-text-align: middle-center;
     background-color: rgba(43, 43, 43, 0);
 }
+.dmg-hud-no-power {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 280px;
+    height: 36px;
+    margin-left: -140px;
+    margin-top: 36px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(28, 42, 56, 0);
+}
+.dmg-hud-no-power-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+    background-image: url("project://database/Assets/_Project/Art/Icons/Ammo/Ammo_Electricity.png");
+}
+.dmg-hud-no-power-label {
+    font-size: 22px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
 .dmg-hud-radio {
     position: absolute;
     left: 24px;

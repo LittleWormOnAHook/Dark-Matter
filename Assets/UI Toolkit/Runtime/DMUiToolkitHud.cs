@@ -43,6 +43,12 @@ namespace Project.UI
         private Label staminaLabel;
         private Label oxygenLabel;
         private Label promptLabel;
+        private VisualElement noPowerRoot;
+        private VisualElement noPowerIcon;
+        private Label noPowerLabel;
+        private bool noPowerWanted;
+        private float noPowerHoldUntil = -1f;
+        private static Sprite noPowerSprite;
         private VisualElement radioRoot;
         private Label radioTitle;
         private Label radioBody;
@@ -162,6 +168,24 @@ namespace Project.UI
             instance.SetPrompt(null);
         }
 
+        public static void ShowNoPower()
+        {
+            if (instance == null)
+                return;
+            instance.noPowerWanted = true;
+            instance.noPowerHoldUntil = Time.unscaledTime + 0.25f;
+            instance.ApplyNoPowerVisible(true);
+        }
+
+        public static void HideNoPower()
+        {
+            if (instance == null)
+                return;
+            instance.noPowerWanted = false;
+            instance.noPowerHoldUntil = -1f;
+            instance.ApplyNoPowerVisible(false);
+        }
+
         public static void ShowPopup(string message)
         {
             if (instance == null || string.IsNullOrEmpty(message))
@@ -235,25 +259,33 @@ namespace Project.UI
                 {
                     TickCompanionHud();
                     TickLeftoverChrome();
+                    TickNoPowerHold();
                 }
                 else
+                {
                     HideLeftoverPreviewHosts();
+                    ApplyNoPowerVisible(false);
+                }
                 TickDeferredVehicleOverlays();
             }
         }
 
+        private static bool vehicleOverlaysEnsured;
+
         private static void TickDeferredVehicleOverlays()
         {
-            if (!PlayerVehicleState.IsMounted)
+            if (vehicleOverlaysEnsured || !PlayerVehicleState.IsMounted)
                 return;
 
             DMUiToolkitHovercraft.EnsureHost();
             DMUiToolkitHovercraftReticle.EnsureHost();
+            vehicleOverlaysEnsured = true;
         }
 
         private void OnGameStarted()
         {
             GameplayHudVisibility.ClearCinematicChrome();
+            DMUiToolkitHotCross.EnsureHost();
             RefreshVisibility();
             BindSurvival();
             BindInventoryEvents();
@@ -275,6 +307,10 @@ namespace Project.UI
             hudRoot = root.Q<VisualElement>("hud-root") ?? root;
             DMUiToolkitOverlayDocument.ApplyIgnorePicking(hudRoot);
             promptLabel = root.Q<Label>("prompt");
+            noPowerRoot = root.Q<VisualElement>("no-power");
+            noPowerIcon = root.Q<VisualElement>("no-power-icon");
+            noPowerLabel = root.Q<Label>("no-power-label");
+            BindNoPowerIcon();
             radioRoot = root.Q<VisualElement>("radio");
             radioTitle = root.Q<Label>("radio-title");
             radioBody = root.Q<Label>("radio-body");
@@ -307,6 +343,9 @@ namespace Project.UI
                 promptLabel.text = string.Empty;
                 promptLabel.style.display = DisplayStyle.None;
             }
+
+            if (noPowerRoot != null)
+                noPowerRoot.style.display = DisplayStyle.None;
 
             if (radioRoot != null)
                 radioRoot.style.display = DisplayStyle.None;
@@ -415,6 +454,9 @@ namespace Project.UI
             if (companionsHost != null)
                 companionsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
 
+            if (cinematic)
+                ApplyNoPowerVisible(false);
+
             if (document != null && inventoryOpen)
                 document.sortingOrder = DMUiToolkitBootstrap.HudSortingOrder;
             else if (document != null && !menuOpen)
@@ -519,6 +561,42 @@ namespace Project.UI
             {
                 lastLoggedPrompt = null;
             }
+        }
+
+        private void BindNoPowerIcon()
+        {
+            if (noPowerIcon == null)
+                return;
+            if (noPowerSprite == null)
+                noPowerSprite = DMUiToolkitBootstrap.LoadAsset<Sprite>(
+                    "Assets/_Project/Art/Icons/Ammo/Ammo_Electricity.png");
+            if (noPowerSprite != null)
+                DMUiToolkitStyle.TrySetSpriteBackground(noPowerIcon, noPowerSprite, ScaleMode.ScaleToFit);
+            if (noPowerLabel != null)
+                noPowerLabel.style.color = DarkMatterGenesisUiPalette.Gold;
+        }
+
+        private void TickNoPowerHold()
+        {
+            if (!noPowerWanted)
+                return;
+            if (Time.unscaledTime <= noPowerHoldUntil)
+            {
+                ApplyNoPowerVisible(true);
+                return;
+            }
+
+            noPowerWanted = false;
+            ApplyNoPowerVisible(false);
+        }
+
+        private void ApplyNoPowerVisible(bool show)
+        {
+            if (noPowerRoot == null)
+                return;
+            if (show && GameplayHudVisibility.CinematicChromeHidden)
+                show = false;
+            noPowerRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void ApplyPopupRolodexLayout()
@@ -1644,6 +1722,10 @@ namespace Project.UI
             RangedCombatHud rangedHud = FindAnyObjectByType<RangedCombatHud>(FindObjectsInactive.Include);
             if (rangedHud != null)
                 DMUiToolkitOverlayDocument.DisableUguiVisuals(rangedHud.gameObject);
+
+            PickupAimReticleUI aimReticle = FindAnyObjectByType<PickupAimReticleUI>(FindObjectsInactive.Include);
+            if (aimReticle != null)
+                DMUiToolkitOverlayDocument.HideGameObject(aimReticle.gameObject);
 
             // Destroy any leftover retired EnvironmentStatusHud scene GO (old gauge cluster host).
             Transform env = DMUiToolkitOverlayDocument.FindNamed("EnvironmentStatusHud")?.transform;

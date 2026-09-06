@@ -27,7 +27,7 @@ namespace Project.Survival
         public float oxygenDrainPerSecond = 4f;
         public float staminaRegenPerSecond = 12f;
 
-        [Tooltip("Stamina drained per second while sprinting.")]
+        [Tooltip("Stamina drained per second of the inspector Max Stamina pool. Scales with level/skill max so a 10 drain on 100 stamina still empties in 10s.")]
         public float sprintStaminaDrainPerSecond = 12f;
 
         [Header("Health Drain")]
@@ -88,6 +88,48 @@ namespace Project.Survival
             enemyCombatImmunityUntil = Time.time + Mathf.Max(0f, durationSeconds);
         }
 
+        private float authoredMaxHealth;
+        private float authoredMaxEnergy;
+        private float authoredMaxStamina;
+        private float authoredMaxOxygen;
+        private bool authoredMaxCaptured;
+
+        public float AuthoredMaxHealth
+        {
+            get
+            {
+                CaptureAuthoredMaximaIfNeeded();
+                return authoredMaxHealth;
+            }
+        }
+
+        public float AuthoredMaxEnergy
+        {
+            get
+            {
+                CaptureAuthoredMaximaIfNeeded();
+                return authoredMaxEnergy;
+            }
+        }
+
+        public float AuthoredMaxStamina
+        {
+            get
+            {
+                CaptureAuthoredMaximaIfNeeded();
+                return authoredMaxStamina;
+            }
+        }
+
+        public float AuthoredMaxOxygen
+        {
+            get
+            {
+                CaptureAuthoredMaximaIfNeeded();
+                return authoredMaxOxygen;
+            }
+        }
+
         private float lastHealthReductionTime = float.NegativeInfinity;
         private float enemyCombatImmunityUntil;
         private bool hasAppliedSaveState;
@@ -117,6 +159,32 @@ namespace Project.Survival
         {
             lowStatThreshold = Mathf.Clamp(lowStatThreshold, 1f, 99f);
         }
+
+        private void Awake()
+        {
+            CaptureAuthoredMaximaIfNeeded();
+        }
+
+        /// <summary>
+        /// Inspector max values before <see cref="ProgressionStatScaler"/> multiplies them.
+        /// Drain/regen use these so Sprint Drain 10 on a 100 bar still empties in 10s after skills.
+        /// </summary>
+        public void CaptureAuthoredMaximaIfNeeded()
+        {
+            if (authoredMaxCaptured)
+                return;
+
+            authoredMaxHealth = Mathf.Max(1f, maxHealth);
+            authoredMaxEnergy = Mathf.Max(1f, maxEnergy);
+            authoredMaxStamina = Mathf.Max(1f, maxStamina);
+            authoredMaxOxygen = Mathf.Max(1f, maxOxygen);
+            authoredMaxCaptured = true;
+        }
+
+        private float HealthRateScale => AuthoredMaxHealth > 0.001f ? maxHealth / AuthoredMaxHealth : 1f;
+        private float EnergyRateScale => AuthoredMaxEnergy > 0.001f ? maxEnergy / AuthoredMaxEnergy : 1f;
+        private float StaminaRateScale => AuthoredMaxStamina > 0.001f ? maxStamina / AuthoredMaxStamina : 1f;
+        private float OxygenRateScale => AuthoredMaxOxygen > 0.001f ? maxOxygen / AuthoredMaxOxygen : 1f;
 
         private void Start()
         {
@@ -290,25 +358,30 @@ namespace Project.Survival
 
         private void Update()
         {
+            DMDevCommandState.Tick(this);
+
             if (IsDead || !CanSimulateStats())
                 return;
 
-            CurrentEnergy = Mathf.Clamp(CurrentEnergy - Time.deltaTime * energyDrain, 0f, maxEnergy);
+            if (DMDevCommandState.GodMode)
+                return;
+
+            CurrentEnergy = Mathf.Clamp(CurrentEnergy - Time.deltaTime * energyDrain * EnergyRateScale, 0f, maxEnergy);
 
             float oxygenConsumeMul = GetOxygenConsumptionMultiplier();
             CurrentOxygen = Mathf.Clamp(
-                CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond * externalOxygenDrainMultiplier * oxygenConsumeMul,
+                CurrentOxygen - Time.deltaTime * oxygenDrainPerSecond * OxygenRateScale * externalOxygenDrainMultiplier * oxygenConsumeMul,
                 0f,
                 maxOxygen);
 
             if (isSprinting)
             {
-                CurrentStamina = Mathf.Max(0f, CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond);
+                CurrentStamina = Mathf.Max(0f, CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond * StaminaRateScale);
             }
             else if (!suppressStaminaRegen)
             {
                 CurrentStamina = Mathf.Clamp(
-                    CurrentStamina + Time.deltaTime * staminaRegenPerSecond * GetStaminaRegenMultiplier(),
+                    CurrentStamina + Time.deltaTime * staminaRegenPerSecond * StaminaRateScale * GetStaminaRegenMultiplier(),
                     0f,
                     maxStamina);
             }
@@ -328,7 +401,7 @@ namespace Project.Survival
             healthLossRate += externalExposureHealthDrain + externalThermalHealthDrain;
 
             if (healthLossRate > 0f)
-                CurrentHealth = Mathf.Max(0f, CurrentHealth - Time.deltaTime * healthLossRate);
+                CurrentHealth = Mathf.Max(0f, CurrentHealth - Time.deltaTime * healthLossRate * HealthRateScale);
 
             if (CurrentHealth < previousHealth)
                 lastHealthReductionTime = Time.time;
@@ -364,6 +437,41 @@ namespace Project.Survival
 
 
         public bool HasStamina(float amount) => CurrentStamina >= amount;
+
+        public bool HasEnergy(float amount = 0.05f)
+        {
+            if (DMDevCommandState.GodMode || DMDevCommandState.InfiniteEnergy)
+                return true;
+            return CurrentEnergy >= amount;
+        }
+
+        /// <summary>Spend energy if available. Returns false when the cost cannot be paid.</summary>
+        public bool TryConsumeEnergy(float amount)
+        {
+            if (amount <= 0f)
+                return true;
+            if (DMDevCommandState.GodMode || DMDevCommandState.InfiniteEnergy)
+                return true;
+            if (CurrentEnergy < amount)
+                return false;
+
+            CurrentEnergy = Mathf.Max(0f, CurrentEnergy - amount);
+            NotifyStatsChanged(force: true);
+            return true;
+        }
+
+        /// <summary>Always subtracts energy (partial OK). Used by mining / jetpack continuous drain.</summary>
+        public float SpendEnergy(float amount)
+        {
+            if (amount <= 0f)
+                return 0f;
+            if (DMDevCommandState.GodMode || DMDevCommandState.InfiniteEnergy)
+                return 0f;
+            float before = CurrentEnergy;
+            CurrentEnergy = Mathf.Max(0f, CurrentEnergy - amount);
+            NotifyStatsChanged(force: true);
+            return before - CurrentEnergy;
+        }
 
         /// <summary>Spend stamina if available. Returns false when the cost cannot be paid.</summary>
         public bool TryConsumeStamina(float amount)
@@ -576,9 +684,44 @@ namespace Project.Survival
             ApplyDamage(damage, source != null ? source.name : null);
         }
 
+        public void DevSetHealth(float value)
+        {
+            CurrentHealth = Mathf.Clamp(value, 0f, maxHealth);
+            if (CurrentHealth > 0f)
+                IsDead = false;
+            NotifyStatsChanged(force: true);
+        }
+
+        public void DevSetEnergy(float value)
+        {
+            CurrentEnergy = Mathf.Clamp(value, 0f, maxEnergy);
+            NotifyStatsChanged();
+        }
+
+        public void DevSetStamina(float value)
+        {
+            CurrentStamina = Mathf.Clamp(value, 0f, maxStamina);
+            NotifyStatsChanged();
+        }
+
+        public void DevSetOxygen(float value)
+        {
+            CurrentOxygen = Mathf.Clamp(value, 0f, maxOxygen);
+            NotifyStatsChanged();
+        }
+
+        public void DevClearExposure()
+        {
+            CurrentThermalStress = 0f;
+            CurrentRadiation = 0f;
+            CurrentSulfur = 0f;
+            CurrentVolcano = 0f;
+            NotifyStatsChanged();
+        }
+
         public void ApplyDamage(float damage, string sourceName = null)
         {
-            if (damage <= 0f || IsDead)
+            if (damage <= 0f || IsDead || DMDevCommandState.BlocksDamage)
                 return;
 
             bool fromFall = string.Equals(sourceName, "fall", System.StringComparison.OrdinalIgnoreCase);
@@ -603,7 +746,7 @@ namespace Project.Survival
         /// </summary>
         public void KillFromFall()
         {
-            if (IsDead)
+            if (IsDead || DMDevCommandState.BlocksDamage)
                 return;
 
             lastDamageSource = "fall";
@@ -622,7 +765,7 @@ namespace Project.Survival
             if (Time.time < lastHealthReductionTime + healthRegenDelayAfterDamage)
                 return;
 
-            CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + healthRegenPerSecond * Time.deltaTime);
+            CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + healthRegenPerSecond * HealthRateScale * Time.deltaTime);
         }
 
         private void Die()

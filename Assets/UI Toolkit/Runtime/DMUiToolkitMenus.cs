@@ -116,7 +116,7 @@ namespace Project.UI
         private bool gameplayFullyBound;
         private bool uguiHidden;
         private bool menusVisible;
-        public static bool IsOpen => instance != null && instance.menusVisible;
+        public static bool IsOpen => instance != null && (instance.menusVisible || instance.pendingShowWindow.HasValue);
         public static bool IsInventoryOpen =>
             instance != null && instance.menusVisible && instance.paintedWindow == JournalWindowId.Inventory;
 
@@ -192,6 +192,29 @@ namespace Project.UI
             EnsureHost()?.SyncFromNavigator();
         }
 
+        /// <summary>
+        /// Ghost-lock helper: if the navigator stack is empty, force-hide Toolkit journal chrome
+        /// even when SyncFromNavigator is waiting on a missing JournalPanelUI bind.
+        /// </summary>
+        public static void ForceHideIfNavigatorClosed()
+        {
+            if (!DMUiToolkitConfig.IsEnabled)
+                return;
+
+            FullscreenUiNavigator nav = FullscreenUiNavigator.Instance;
+            if (nav != null && nav.IsAnyOpen)
+                return;
+
+            DMUiToolkitMenus host = EnsureHost();
+            if (host == null || !host.menusVisible)
+                return;
+
+            host.HideMenus();
+            host.paintedWindow = null;
+            if (host.uguiHidden)
+                host.RestoreUguiWindows();
+        }
+
         private void Awake()
         {
             instance = this;
@@ -238,7 +261,9 @@ namespace Project.UI
             if (!gameplayFullyBound)
                 TryBindGameplay();
             FlushPendingShow();
-            SyncFromNavigator();
+            bool navOpen = boundNav != null && boundNav.IsAnyOpen;
+            if (menusVisible || pendingShowWindow.HasValue || navOpen || (Time.frameCount & 15) == 0)
+                SyncFromNavigator();
             TickInventoryContextDismiss();
         }
 
@@ -575,6 +600,7 @@ namespace Project.UI
             }
 
             menusVisible = true;
+            ReleaseMapPointer();
             menuRoot.pickingMode = PickingMode.Position;
             DMUiToolkitOverlayDocument.SetShown(menuRoot, true);
             if (document != null)
@@ -630,6 +656,8 @@ namespace Project.UI
         {
             menusVisible = false;
             paintedWindow = null;
+            pendingShowWindow = null;
+            ReleaseMapPointer();
             DMUiToolkitWorldMenus.HideItemTooltip();
             DMUiToolkitWorldMenus.HideJournalTip();
             DMUiToolkitPetChrome.HideTooltip();

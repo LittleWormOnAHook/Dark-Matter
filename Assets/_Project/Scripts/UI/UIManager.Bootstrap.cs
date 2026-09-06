@@ -17,11 +17,101 @@ namespace Project.UI
 {
     public partial class UIManager
     {
+        public const string RuntimeHostName = "DM_UiRuntimeHost";
+
+        /// <summary>
+        /// Journal navigator still needs a live UIManager after MainCanvas was removed.
+        /// UITK path: plain host, no Canvas / GraphicRaycaster.
+        /// </summary>
+        public static UIManager EnsureExists()
+        {
+            UIManager existing = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                StripUguiChromeIfToolkit(existing.gameObject);
+                return existing;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            GameObject host = FindRuntimeHost();
+            if (host == null)
+                host = new GameObject(RuntimeHostName);
+
+            host.layer = 5;
+            if (!host.activeSelf)
+                host.SetActive(true);
+
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                StripUguiChromeIfToolkit(host);
+            }
+            else
+            {
+                Canvas canvas = host.GetComponent<Canvas>();
+                if (canvas == null)
+                    canvas = host.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 40;
+
+                if (host.GetComponent<CanvasScaler>() == null)
+                {
+                    CanvasScaler scaler = host.AddComponent<CanvasScaler>();
+                    scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                    scaler.referenceResolution = new Vector2(1920f, 1080f);
+                }
+
+                if (host.GetComponent<GraphicRaycaster>() == null)
+                    host.AddComponent<GraphicRaycaster>();
+            }
+
+            existing = host.GetComponent<UIManager>();
+            if (existing == null)
+                existing = host.AddComponent<UIManager>();
+            return existing;
+        }
+
+        private static GameObject FindRuntimeHost()
+        {
+            GameObject named = GameObject.Find(RuntimeHostName);
+            if (named != null)
+                return named;
+
+            Transform[] transforms = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i] != null && transforms[i].name == RuntimeHostName)
+                    return transforms[i].gameObject;
+            }
+
+            return null;
+        }
+
+        private static void StripUguiChromeIfToolkit(GameObject host)
+        {
+            if (host == null || !DMUiToolkitConfig.IsEnabled)
+                return;
+
+            GraphicRaycaster hostRaycaster = host.GetComponent<GraphicRaycaster>();
+            if (hostRaycaster != null)
+                hostRaycaster.enabled = false;
+
+            CanvasScaler scaler = host.GetComponent<CanvasScaler>();
+            if (scaler != null)
+                scaler.enabled = false;
+
+            Canvas canvas = host.GetComponent<Canvas>();
+            if (canvas != null)
+                canvas.enabled = false;
+        }
+
         private void EnsureJournalPanelUi()
         {
             if (GetComponent<JournalPanelUI>() == null)
                 gameObject.AddComponent<JournalPanelUI>();
-
         }
 
         private void EnsureProgressionHud()
@@ -60,6 +150,9 @@ namespace Project.UI
 
         private void EnsurePeakScreenUi()
         {
+            if (DMUiToolkitConfig.IsEnabled)
+                return;
+
             EnvironmentalCrisisHudMode.EnsureExists(transform);
         }
 
@@ -171,6 +264,9 @@ namespace Project.UI
 
         private void EnsureInteractionPrompt()
         {
+            if (DMUiToolkitConfig.IsEnabled)
+                return;
+
             if (interactionPrompt != null)
                 return;
 

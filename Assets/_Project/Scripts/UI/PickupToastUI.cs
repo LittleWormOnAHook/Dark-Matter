@@ -65,6 +65,9 @@ namespace Project.UI
             if (string.IsNullOrEmpty(message))
                 return;
 
+            if (ShouldCenterWarning(message) && DMUiToolkitLevelUp.TryShowCenterNotice(message))
+                return;
+
             if (DMUiToolkitHud.IsDriving)
             {
                 DMUiToolkitHud.ShowPopup(message);
@@ -102,8 +105,18 @@ namespace Project.UI
         /// <summary>Click + center fade toast used when a world pickup / gather cannot fit in inventory.</summary>
         public static void ShowInventoryFull()
         {
-            GameAudioManager.Instance?.PlayInventoryItemClick();
             Show("Inventory full");
+        }
+
+        private static bool ShouldCenterWarning(string message)
+        {
+            if (message.IndexOf("inventory", System.StringComparison.OrdinalIgnoreCase) >= 0
+                && message.IndexOf("full", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (message.IndexOf("Level ", System.StringComparison.OrdinalIgnoreCase) >= 0
+                && message.IndexOf("Required", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            return false;
         }
 
         private void OnDestroy()

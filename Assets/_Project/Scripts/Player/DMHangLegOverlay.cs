@@ -106,7 +106,7 @@ namespace Project.Player
 
         private void Start()
         {
-            Debug.Log("DMHang 0831-boost");
+            // Startup stamp silenced.
         }
 
         private void CacheRefs()
@@ -176,10 +176,12 @@ namespace Project.Player
                 return;
 
             TickBlend();
-            if (_weight <= 0.001f)
+            bool jetpackAir = jetpack != null && jetpack.IsJetpackAnimActive;
+            if (_weight <= 0.001f && !jetpackAir)
                 return;
 
-            // Never pose with IK. Zero foot-plant so Invector cannot overwrite the overlay.
+            // Never pose with IK. Zero foot-plant so Invector cannot overwrite the overlay
+            // or fold the jump/boost legs toward a ground plant.
             animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 0f);
             animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 0f);
             animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0f);

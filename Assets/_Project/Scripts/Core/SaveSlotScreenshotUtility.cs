@@ -15,12 +15,33 @@ namespace Project.Core
         public static string GetScreenshotPath(int slotIndex)
         {
             slotIndex = Mathf.Clamp(slotIndex, 0, GameSaveSystem.SlotCount - 1);
+            return GetRawScreenshotPath(slotIndex);
+        }
+
+        public static string GetRawScreenshotPath(int slotIndex)
+        {
             return Path.Combine(Application.persistentDataPath, string.Format(ScreenshotFileNameFormat, slotIndex));
         }
 
         public static bool HasScreenshot(int slotIndex)
         {
             return File.Exists(GetScreenshotPath(slotIndex));
+        }
+
+        public static void DeleteScreenshot(int slotIndex)
+        {
+            string path = GetScreenshotPath(slotIndex);
+            if (!File.Exists(path))
+                return;
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"SaveSlotScreenshotUtility: Failed to delete slot {slotIndex} preview. {exception.Message}");
+            }
         }
 
         public static void SaveScreenshot(int slotIndex, Texture2D screenshot)

@@ -10,6 +10,8 @@ namespace Project.UI
     {
         private static int consumedFrame = -1;
 
+        public static bool WasConsumedThisFrame => consumedFrame == Time.frameCount;
+
         public static bool TryConsumeEscape()
         {
             Keyboard keyboard = Keyboard.current;

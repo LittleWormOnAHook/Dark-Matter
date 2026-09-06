@@ -73,6 +73,10 @@ namespace Project.UI
 
         private void Update()
         {
+            // UITK owns the journal/pet surface — skip the per-frame status TMP write behind it.
+            if (DMUiToolkitMenus.IsDriving)
+                return;
+
             if (_pet != null)
                 UpdateStatusText();
         }

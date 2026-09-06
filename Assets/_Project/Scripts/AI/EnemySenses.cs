@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Companions;
+using Project.Core;
 using UnityEngine;
 
 namespace Project.AI
@@ -264,9 +265,7 @@ namespace Project.AI
             if (player != null)
                 return;
 
-            GameObject playerObject = GameObject.FindWithTag("Player");
-            if (playerObject != null)
-                player = playerObject.transform;
+            player = PlayerReference.ResolveTransform();
         }
 
         private bool IsWithinFov(Vector3 targetPosition)

@@ -9,6 +9,7 @@ using Project.Managers;
 using Project.Pioneers;
 using Project.Player;
 using Project.Player.Invector;
+using Project.Progression;
 using Project.Survival;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -135,14 +136,13 @@ namespace Project.UI
             if (existing != null)
                 return;
 
-            Canvas canvas = ResolveMainCanvas();
-            if (canvas == null)
-                return;
+            UIManager ui = UIManager.EnsureExists();
 
-            EnsureEventSystem();
-            EnsureGraphicRaycaster(canvas);
-
-            canvas.gameObject.AddComponent<MainMenuController>();
+            if (ui != null && ui.GetComponent<MainMenuController>() == null)
+            {
+                EnsureEventSystem();
+                ui.gameObject.AddComponent<MainMenuController>();
+            }
         }
 
         private static GameStartPopup FindStartPopup()
@@ -152,27 +152,58 @@ namespace Project.UI
 
         public static Canvas ResolveMainCanvas()
         {
+            UIManager uiManager = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            if (uiManager != null)
+            {
+                Canvas uiCanvas = uiManager.GetComponent<Canvas>() ?? uiManager.GetComponentInParent<Canvas>();
+                if (uiCanvas != null)
+                    return uiCanvas;
+            }
+
+            Canvas named = FindNamedUiCanvas(UIManager.RuntimeHostName)
+                           ?? FindNamedUiCanvas("MainCanvas");
+            if (named != null)
+                return named;
+
             GameStartPopup popup = FindStartPopup();
             if (popup != null && popup.popupPanel != null)
             {
                 Canvas popupCanvas = popup.popupPanel.GetComponentInParent<Canvas>();
-                if (popupCanvas != null && !IsOpticsOverlayCanvas(popupCanvas))
+                if (popupCanvas != null && IsProjectUiCanvas(popupCanvas))
                     return popupCanvas;
             }
 
-            GameObject mainCanvasObject = GameObject.Find("MainCanvas");
-            if (mainCanvasObject != null && mainCanvasObject.TryGetComponent(out Canvas mainCanvas))
-                return mainCanvas;
+            return null;
+        }
 
-            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include);
-            for (int i = 0; i < canvases.Length; i++)
+        private static Canvas FindNamedUiCanvas(string objectName)
+        {
+            Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include);
+            for (int i = 0; i < transforms.Length; i++)
             {
-                Canvas canvas = canvases[i];
-                if (canvas != null && !IsOpticsOverlayCanvas(canvas))
+                Transform t = transforms[i];
+                if (t == null || t.name != objectName)
+                    continue;
+                if (t.TryGetComponent(out Canvas canvas) && IsProjectUiCanvas(canvas))
                     return canvas;
             }
 
             return null;
+        }
+
+        private static bool IsProjectUiCanvas(Canvas canvas)
+        {
+            if (canvas == null || IsOpticsOverlayCanvas(canvas))
+                return false;
+
+            string n = canvas.gameObject.name;
+            if (n == "MainCanvas" || n == UIManager.RuntimeHostName)
+                return true;
+            if (canvas.GetComponent<UIManager>() != null)
+                return true;
+            if (canvas.GetComponent<MainMenuController>() != null)
+                return true;
+            return false;
         }
 
         public static Transform ResolveCombatHudRoot()
@@ -202,7 +233,18 @@ namespace Project.UI
 
         private static void EnsureGraphicRaycaster(Canvas canvas)
         {
-            if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
+            if (canvas == null)
+                return;
+
+            GraphicRaycaster raycaster = canvas.GetComponent<GraphicRaycaster>();
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                if (raycaster != null)
+                    raycaster.enabled = false;
+                return;
+            }
+
+            if (raycaster == null)
                 canvas.gameObject.AddComponent<GraphicRaycaster>();
         }
 
@@ -217,9 +259,10 @@ namespace Project.UI
 
         private void BuildMainMenu()
         {
-            if (UsesToolkitMenu)
+            // Config can be on before UITK_Root exists (runtime host Awake). Do not spawn a
+            // fullscreen uGUI raycast blocker that eats Toolkit title-button clicks.
+            if (DMUiToolkitConfig.IsEnabled)
             {
-                // UITK_MainMenu / Settings / Controls / SaveSlots are created on first Show/Open.
                 UiScaleApplier.ApplyFromSettings();
                 return;
             }
@@ -611,6 +654,29 @@ namespace Project.UI
         public void InvokeNewGame() => StartNewGame();
         public void InvokeContinueExpedition() => ContinueExpedition();
         public void InvokeResumeFromPause() => ResumeFromPause();
+
+        /// <summary>
+        /// Clears stuck pauseOverlayActive when no UITK pause chrome is painted.
+        /// Skips ReleaseAllInputCapture to avoid CloseAnyOpenJournal racing ForceShow.
+        /// stamp: journal-hotkeys-ghost-pause 0905
+        /// </summary>
+        public void ClearGhostPauseOverlay()
+        {
+            DMUiToolkitMainMenu.SyncVisibilityToPainted();
+
+            bool pauseUi = DMUiToolkitMainMenu.IsVisible || DMUiToolkitMenuPanels.IsAnySubPanelOpen;
+            if (!pauseOverlayActive || pauseUi)
+                return;
+
+            pauseOverlayActive = false;
+            ClearMenuMessage();
+            HideMenuChrome();
+            SetGameWorldPaused(false);
+            RefreshMenuButtonStates();
+            MainCanvasFlow.Refresh();
+            GameplayInputRecovery.FinalizeGameplayInput();
+        }
+
         public void InvokeOpenSettings() => OpenSettings();
         public void InvokeOpenControls() => OpenControls();
         public void InvokeOpenLoad() => OpenLoad();
@@ -717,13 +783,28 @@ namespace Project.UI
             {
                 ClearPendingSaveScreenshot();
                 saveSlotsPanel?.Close();
+                DMUiToolkitSaveSlots.Close();
                 ShowMenuMessage(message);
             }
             else
             {
                 saveSlotsPanel?.Close();
+                DMUiToolkitSaveSlots.Close();
                 ShowMenuMessage(message);
             }
+        }
+
+        public bool DeleteSaveSlot(int slotIndex, out string message)
+        {
+            bool deleted = GameSaveSystem.TryDelete(slotIndex, out message);
+            if (deleted)
+            {
+                RefreshMenuButtonStates();
+                DMUiToolkitSaveSlots.RefreshIfOpen();
+            }
+
+            ShowMenuMessage(message);
+            return deleted;
         }
 
         public void ClearPendingSaveScreenshot()
@@ -765,6 +846,14 @@ namespace Project.UI
         {
             // Fresh expedition: clear hold-R mode prefs / lasers and holster any drawn weapon.
             WeaponModeSwitchController.ClearPersistedStatesForNewGame();
+            PlayerProgressionManager.EnsureExists()?.ResetToNewGame();
+            GameObject player = PlayerLocator.FindPlayerObject();
+            ProgressionStatScaler scaler = player != null ? player.GetComponent<ProgressionStatScaler>() : null;
+            if (scaler != null)
+            {
+                scaler.CaptureBaseMaxValues();
+                scaler.ApplyLevelScaling();
+            }
             EquipmentController equipment = UnityEngine.Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
             equipment?.HolsterWeapon();
 

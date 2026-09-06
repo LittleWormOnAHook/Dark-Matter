@@ -26,12 +26,25 @@ namespace Project.UI
         public const string ReasonStandaloneMap = "StandaloneMap";
         public const string ReasonQuoraShelterMenu = "QuoraShelterMenu";
         public const string ReasonWalkerDrillMenu = "WalkerDrillMenu";
+        public const string ReasonDevPanel = "DevPanel";
 
         private static readonly HashSet<string> pauseReasons = new HashSet<string>();
         private static readonly HashSet<string> slowReasons = new HashSet<string>();
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnDomainReload()
+        {
+            pauseReasons.Clear();
+            slowReasons.Clear();
+        }
+
         public static bool IsInventoryPaused => pauseReasons.Count > 0;
         public static bool IsMenuSlowMotion => pauseReasons.Count == 0 && slowReasons.Count > 0;
+
+        public static bool HasPauseReason(string reason)
+        {
+            return !string.IsNullOrEmpty(reason) && pauseReasons.Contains(reason);
+        }
 
         public static void SetPause(string reason, bool active)
         {
@@ -84,6 +97,7 @@ namespace Project.UI
         {
             pauseReasons.Clear();
             slowReasons.Clear();
+            DMDevCommandState.GamePaused = false;
             Apply();
         }
 

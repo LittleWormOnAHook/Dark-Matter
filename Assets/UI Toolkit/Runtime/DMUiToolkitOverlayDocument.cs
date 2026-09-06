@@ -148,6 +148,10 @@ namespace Project.UI
 
             RegisterNamed(objectName, host);
 
+            // Builder rule: overlay hosts stay active; hide via SetShown (C#), never deactivate.
+            if (!host.activeSelf)
+                host.SetActive(true);
+
             UIDocument document = host.GetComponent<UIDocument>();
             if (document == null)
                 document = host.AddComponent<UIDocument>();
@@ -269,7 +273,8 @@ namespace Project.UI
                 return;
 
             DisplayStyle next = shown ? DisplayStyle.Flex : DisplayStyle.None;
-            if (element.resolvedStyle.display == next)
+            StyleEnum<DisplayStyle> current = element.style.display;
+            if (current.keyword != StyleKeyword.Undefined && current.value == next)
                 return;
 
             element.style.display = next;

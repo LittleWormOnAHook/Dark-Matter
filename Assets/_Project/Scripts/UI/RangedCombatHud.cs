@@ -18,20 +18,13 @@ namespace Project.UI
     [DefaultExecutionOrder(120)]
     public class RangedCombatHud : MonoBehaviour
     {
-        [SerializeField] private bool showCrosshair = true;
         [SerializeField] private bool showAmmoCounter = true;
-        [SerializeField] private Color crosshairColor = new Color(1f, 1f, 1f, 0.82f);
-        [SerializeField] private float crosshairSize = 14f;
-        [SerializeField] private float crosshairGap = 5f;
-        [SerializeField] private float crosshairThickness = 2f;
         // Kept in canvas pixels so the visible gap remains the requested seven pixels.
         private const float SurvivalLabelGapPixels = 7f;
 
         private EquipmentController equipment;
         private WeaponAmmoState ammoState;
         private InventorySystem inventory;
-        private RangedCombatController rangedCombat;
-        private PioneerInvectorInputBridge invectorInput;
         private PlayerController playerController;
         private TextMeshProUGUI ammoLabel;
         private RectTransform ammoRect;
@@ -39,17 +32,13 @@ namespace Project.UI
         private RectTransform expeditionPioneerRect;
         private readonly Vector3[] rectCorners = new Vector3[4];
         private int lastMiningChargePercent = -1;
-        private Texture2D cachedCrosshairTex;
-        private bool uguiCrosshairResolved;
-        private bool uguiCrosshairPresent;
+        private bool uitkAmmoHidden;
 
         private void Awake()
         {
             equipment = GetComponent<EquipmentController>();
             ammoState = GetComponent<WeaponAmmoState>();
             inventory = GetComponent<InventorySystem>();
-            rangedCombat = GetComponent<RangedCombatController>();
-            invectorInput = GetComponent<PioneerInvectorInputBridge>();
             playerController = GetComponent<PlayerController>();
         }
 
@@ -172,9 +161,15 @@ namespace Project.UI
 
             if (DMUiToolkitHud.IsDriving)
             {
-                SetAmmoLabelVisible(false);
+                if (!uitkAmmoHidden)
+                {
+                    SetAmmoLabelVisible(false);
+                    uitkAmmoHidden = true;
+                }
                 return;
             }
+
+            uitkAmmoHidden = false;
 
             if (!ShouldShowHud(out ItemData weapon))
             {
@@ -205,53 +200,6 @@ namespace Project.UI
                 LayoutAboveSurvivalStats(ammoRect);
         }
 
-        private void OnGUI()
-        {
-            if (!showCrosshair
-                || GameplayHudVisibility.CinematicChromeHidden
-                || !ShouldShowHud(out _))
-                return;
-
-            // Skip IMGUI when a live UGUI crosshair already exists (optics / HUD image).
-            if (HasUguiCrosshair())
-                return;
-
-            // Prefer the gameplay camera pixel rect so Editor Game view / letterboxing stays centered.
-            Rect pixel = ResolveGameplayPixelRect();
-            float centerX = pixel.x + pixel.width * 0.5f;
-            float centerY = pixel.y + pixel.height * 0.5f;
-            float spreadScale = IsAimingForHud() ? 0.75f : 1f;
-            float size = crosshairSize * spreadScale;
-            float gap = crosshairGap * spreadScale;
-
-            DrawCrosshairLine(new Rect(centerX - gap - size, centerY - crosshairThickness * 0.5f, size, crosshairThickness));
-            DrawCrosshairLine(new Rect(centerX + gap, centerY - crosshairThickness * 0.5f, size, crosshairThickness));
-            DrawCrosshairLine(new Rect(centerX - crosshairThickness * 0.5f, centerY - gap - size, crosshairThickness, size));
-            DrawCrosshairLine(new Rect(centerX - crosshairThickness * 0.5f, centerY + gap, crosshairThickness, size));
-        }
-
-        private bool HasUguiCrosshair()
-        {
-            if (uguiCrosshairResolved)
-                return uguiCrosshairPresent;
-
-            uguiCrosshairResolved = true;
-            Graphic[] graphics = FindObjectsByType<Graphic>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < graphics.Length; i++)
-            {
-                Graphic graphic = graphics[i];
-                if (graphic == null || !graphic.isActiveAndEnabled)
-                    continue;
-                if (graphic.gameObject.name.IndexOf("crosshair", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    uguiCrosshairPresent = true;
-                    break;
-                }
-            }
-
-            return uguiCrosshairPresent;
-        }
-
         private bool ShouldShowHud(out ItemData weapon)
         {
             weapon = null;
@@ -265,37 +213,6 @@ namespace Project.UI
 
             weapon = equipment.DrawnWeaponItem;
             return weapon != null && weapon.IsRangedWeapon;
-        }
-
-        private bool IsAimingForHud()
-        {
-            if (invectorInput != null && PioneerInvectorBootstrap.IsInvectorPlayer(invectorInput))
-                return invectorInput.IsAiming;
-
-            return rangedCombat != null && rangedCombat.IsAiming;
-        }
-
-
-        private Rect ResolveGameplayPixelRect()
-        {
-            Camera cam = null;
-            if (playerController != null)
-                cam = playerController.GameplayCamera;
-            if (cam == null)
-                cam = Camera.main;
-            if (cam != null && cam.pixelWidth > 1 && cam.pixelHeight > 1)
-                return cam.pixelRect;
-            return new Rect(0f, 0f, Screen.width, Screen.height);
-        }
-
-        private void DrawCrosshairLine(Rect rect)
-        {
-            Color previous = GUI.color;
-            GUI.color = crosshairColor;
-            if (cachedCrosshairTex == null)
-                cachedCrosshairTex = Texture2D.whiteTexture;
-            GUI.DrawTexture(rect, cachedCrosshairTex);
-            GUI.color = previous;
         }
 
         private void EnsureAmmoLabel()

@@ -19,6 +19,9 @@ namespace Project.Companions
     // most self-contained cluster in the original file.
     public partial class CompanionFollowController
     {
+        private const int GroundHitBufferSize = 24;
+        private static readonly RaycastHit[] GroundHitBuffer = new RaycastHit[GroundHitBufferSize];
+
         private void MoveTowards(Vector3 target, float speed, bool allowIdleRest, bool faceMovement = true)
         {
             if (useTrailWhenPathBlocked && trailRecoveryUntil <= 0f && Time.time >= stepBackUntil)
@@ -742,13 +745,13 @@ namespace Project.Companions
 
             Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
             float rayLength = (originY - worldPosition.y) + groundProbeDistance;
-            RaycastHit[] hits = Physics.RaycastAll(
+            int hitCount = Physics.RaycastNonAlloc(
                 origin,
                 Vector3.down,
+                GroundHitBuffer,
                 rayLength,
                 obstructionLayers,
                 QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             float maxAllowedY = allowStepUp
                 ? worldPosition.y + stepOffset + collisionSkin
@@ -757,16 +760,16 @@ namespace Project.Companions
             bool found = false;
             float bestScore = float.MaxValue;
 
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                Collider collider = hits[i].collider;
+                Collider collider = GroundHitBuffer[i].collider;
                 if (collider == null || ShouldIgnoreCollider(collider) || !IsWalkableGroundCollider(collider))
                     continue;
 
-                if (!IsWalkableNormal(hits[i].normal))
+                if (!IsWalkableNormal(GroundHitBuffer[i].normal))
                     continue;
 
-                float candidateY = hits[i].point.y + groundOffset;
+                float candidateY = GroundHitBuffer[i].point.y + groundOffset;
                 bool interior = IsInteriorWalkableCollider(collider);
                 float ceilingY = interior
                     ? baselineY + maxInteriorHeightAboveTerrain
@@ -786,7 +789,7 @@ namespace Project.Companions
 
                 bestScore = score;
                 groundY = candidateY;
-                groundNormal = hits[i].normal;
+                groundNormal = GroundHitBuffer[i].normal;
                 found = true;
             }
 

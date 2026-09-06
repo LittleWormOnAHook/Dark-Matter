@@ -72,6 +72,10 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="prompt" text="Interaction prompt" picking-mode="Ignore" class="dmg-hud-prompt" style="font-size: 60px;"/>
+        <ui:VisualElement name="no-power" picking-mode="Ignore" class="dmg-hud-no-power">
+            <ui:VisualElement name="no-power-icon" picking-mode="Ignore" class="dmg-hud-no-power-icon"/>
+            <ui:Label name="no-power-label" text="No Power" picking-mode="Ignore" class="dmg-hud-no-power-label"/>
+        </ui:VisualElement>
         <ui:VisualElement name="radio" picking-mode="Ignore" class="dmg-hud-radio">
             <ui:Label name="radio-title" text="RADIO" picking-mode="Ignore" class="dmg-hud-radio-title"/>
             <ui:Label name="radio-body" text="Radio transcript" picking-mode="Ignore" class="dmg-hud-radio-body"/>

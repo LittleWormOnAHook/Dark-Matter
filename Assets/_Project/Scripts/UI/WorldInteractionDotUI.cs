@@ -41,6 +41,7 @@ namespace Project.UI
         private Camera worldCamera;
         private Transform playerTransform;
         private float nextScanTime;
+        private bool uitkHidden;
 
         private void Awake()
         {
@@ -56,6 +57,19 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            // UITK world chrome owns interaction dots; skip the scan instead of painting behind it.
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (!uitkHidden)
+                {
+                    HideAllDots();
+                    uitkHidden = true;
+                }
+                return;
+            }
+
+            uitkHidden = false;
+
             if (!GameSession.HasStarted)
             {
                 HideAllDots();

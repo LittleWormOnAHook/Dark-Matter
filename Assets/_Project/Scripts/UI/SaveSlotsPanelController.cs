@@ -182,10 +182,11 @@ namespace Project.UI
 
                 if (slotLabels[i] != null)
                 {
+                    string title = GameSaveSystem.GetSlotTitle(i);
                     if (occupied)
-                        slotLabels[i].text = $"Slot {i + 1}\n{info.GetSummaryLine()}";
+                        slotLabels[i].text = $"{title}\n{info.GetSummaryLine()}";
                     else
-                        slotLabels[i].text = $"Slot {i + 1}\nEmpty";
+                        slotLabels[i].text = $"{title}\nEmpty";
                 }
 
                 ApplyPreviewImage(i, info);

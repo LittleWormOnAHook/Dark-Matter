@@ -22,6 +22,11 @@ namespace Project.UI
         private readonly Image[] crossLines = new Image[4];
         private Vector2 reticlePosition;
         private bool reticleInitialized;
+        private Canvas cachedCanvas;
+        private HovercraftController cachedCraft;
+        private HovercraftTurretController cachedTurret;
+        private HovercraftCameraRig cachedCameraRig;
+        private Camera cachedCraftCamera;
 
         private void Awake()
         {
@@ -32,6 +37,13 @@ namespace Project.UI
         {
             if (rootRect == null)
                 return;
+
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (rootRect.gameObject.activeSelf)
+                    rootRect.gameObject.SetActive(false);
+                return;
+            }
 
             if (!ShouldShow(out HovercraftTurretController turret, out Camera camera))
             {
@@ -55,13 +67,14 @@ namespace Project.UI
             if (player == null || player.BlocksCombatInput)
                 return false;
 
-            turret = PlayerVehicleState.ActiveCraft.GetComponent<HovercraftTurretController>();
+            CacheCraftComponents(PlayerVehicleState.ActiveCraft);
+
+            turret = cachedTurret;
             if (turret == null || turret.Muzzle == null)
                 return false;
 
-            HovercraftCameraRig cameraRig = PlayerVehicleState.ActiveCraft.GetComponent<HovercraftCameraRig>();
-            camera = cameraRig != null && cameraRig.IsActive
-                ? PlayerVehicleState.ActiveCraft.GetComponentInChildren<Camera>(false)
+            camera = cachedCameraRig != null && cachedCameraRig.IsActive
+                ? cachedCraftCamera
                 : player.GameplayCamera;
 
             if (camera == null || !camera.enabled)
@@ -70,13 +83,26 @@ namespace Project.UI
             return camera != null;
         }
 
-        private void UpdateReticlePosition(HovercraftTurretController turret, Camera camera)
+        /// <summary>Resolve turret / rig / camera once per mounted craft instead of every frame.</summary>
+        private void CacheCraftComponents(HovercraftController craft)
         {
-            Canvas canvas = rootRect.GetComponentInParent<Canvas>();
-            if (canvas == null)
+            if (cachedCraft == craft)
                 return;
 
-            RectTransform canvasRect = canvas.transform as RectTransform;
+            cachedCraft = craft;
+            cachedTurret = craft.GetComponent<HovercraftTurretController>();
+            cachedCameraRig = craft.GetComponent<HovercraftCameraRig>();
+            cachedCraftCamera = craft.GetComponentInChildren<Camera>(false);
+        }
+
+        private void UpdateReticlePosition(HovercraftTurretController turret, Camera camera)
+        {
+            if (cachedCanvas == null)
+                cachedCanvas = rootRect.GetComponentInParent<Canvas>();
+            if (cachedCanvas == null)
+                return;
+
+            RectTransform canvasRect = cachedCanvas.transform as RectTransform;
             if (canvasRect == null)
                 return;
 
@@ -89,7 +115,7 @@ namespace Project.UI
                 return;
             }
 
-            Camera canvasCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            Camera canvasCamera = cachedCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cachedCanvas.worldCamera;
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     canvasRect,
                     screenPoint,

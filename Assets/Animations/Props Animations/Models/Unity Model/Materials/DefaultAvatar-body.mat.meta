@@ -1,4 +1,15 @@
 fileFormatVersion: 2
 guid: c46b61d8956ccde45ae8a78ee57c2739
 NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 19991
+  packageName: Huge FBX Mocap Library part 1
+  packageVersion: 1.0b
+  assetPath: Assets/Animations/Props Animations/Models/Unity Model/Materials/DefaultAvatar-body.mat
+  uploadId: 9123

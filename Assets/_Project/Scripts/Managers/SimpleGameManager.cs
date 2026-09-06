@@ -37,11 +37,12 @@ namespace Project.Managers
 
             PioneerRosterManager.EnsureExists();
             CompanionSystemsBootstrap.EnsureGameplaySystems(this);
+            DMGameAutosave.EnsureExists();
         }
 
         private void Start()
         {
-            Debug.Log("GameManager Initialized - Pi Pioneer Survival");
+            Debug.Log("GameManager Initialized - Dark Matter Genesis");
         }
 
         public void BeginNewGameSession(bool grantStartingItems = true)

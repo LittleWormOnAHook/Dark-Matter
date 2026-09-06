@@ -48,12 +48,25 @@ namespace Project.Features.Jetpack
             CacheAnimatorParameters();
             if (_hasJetpackActiveParam)
                 animator.SetBool(JetpackActive, true);
+            ClearJumpFlags();
+            DMJetpackLimbDangle dangle = GetComponent<DMJetpackLimbDangle>();
+            if (dangle != null)
+                dangle.ResetInertia();
             if (animator.HasState(0, JetpackFlyState))
-            {
-                AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(0);
-                if (st.shortNameHash != JetpackFlyState)
-                    animator.CrossFadeInFixedTime(JetpackFlyState, 0.24f, 0);
-            }
+                animator.Play(JetpackFlyState, 0, 0f);
+        }
+
+        private void ClearJumpFlags()
+        {
+            if (animator == null)
+                return;
+
+            if (HasParameter(Animator.StringToHash("IsGrounded")))
+                animator.SetBool("IsGrounded", false);
+            if (HasParameter(Animator.StringToHash("IsJumping")))
+                animator.SetBool("IsJumping", false);
+            if (HasParameter(Animator.StringToHash("Jump")))
+                animator.ResetTrigger("Jump");
         }
 
 
@@ -82,6 +95,7 @@ namespace Project.Features.Jetpack
             CacheAnimatorParameters();
             _landing = GetComponent<Project.Player.DMLandingDirector>();
             Project.Player.DMHangLegOverlay.Bind(gameObject);
+            DMJetpackLimbDangle.Bind(gameObject);
         }
 
         private void CacheAnimatorParameters()
@@ -94,6 +108,7 @@ namespace Project.Features.Jetpack
             _hasJetpackVerticalParam = HasParameter(JetpackVertical);
         }
 
+
         private void Update()
         {
             ApplyActiveFlag();
@@ -103,6 +118,7 @@ namespace Project.Features.Jetpack
         {
             if (animator == null || jetpack == null || motor == null)
                 return;
+
 
             if (_landing == null)
                 _landing = GetComponent<Project.Player.DMLandingDirector>();

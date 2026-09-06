@@ -1,4 +1,15 @@
 fileFormatVersion: 2
 guid: e4a12fd3405832f448a43cdddb4a4e87
 NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 19991
+  packageName: Huge FBX Mocap Library part 1
+  packageVersion: 1.0b
+  assetPath: Assets/Animations/Props Animations/Models/Unity Model/Materials/DefaultAvatar-eyes.mat
+  uploadId: 9123

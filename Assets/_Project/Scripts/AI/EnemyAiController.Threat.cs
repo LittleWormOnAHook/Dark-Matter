@@ -4,6 +4,7 @@ using UnityEngine.AI;
 using UnityEngine.Serialization;
 using Project.AI.Invector;
 using Project.Companions;
+using Project.Core;
 using Project.Survival;
 
 namespace Project.AI
@@ -18,11 +19,11 @@ namespace Project.AI
             if (playerSurvivalStats != null)
                 return;
 
-            GameObject playerObject = GameObject.FindWithTag("Player");
-            if (playerObject == null)
+            Transform playerTransform = PlayerReference.ResolveTransform();
+            if (playerTransform == null)
                 return;
 
-            playerSurvivalStats = playerObject.GetComponent<SurvivalStats>();
+            playerSurvivalStats = playerTransform.GetComponent<SurvivalStats>();
             if (playerSurvivalStats == null)
                 return;
 

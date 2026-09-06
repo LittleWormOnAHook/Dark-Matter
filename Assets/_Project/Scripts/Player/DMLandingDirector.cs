@@ -15,7 +15,7 @@ namespace Project.Player
     /// 4) lethal drop — SurvivalStats death + Player_v7 ragdoll
     /// Still thrusting into the ground is hero.
     /// Jetpack: land while boosting, or within jetpackLethalDelay after release, is hero.
-    /// Unboosted 20m+ is lethal. Fall-time backup does not apply during a jetpack air.
+    /// Unboosted 100m+ is lethal. Fall-time backup does not apply during a jetpack air.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
@@ -166,6 +166,19 @@ namespace Project.Player
                 EndLanding(true);
         }
 
+        /// <summary>Terrain rescue snapped us onto the surface — do not count that as a lethal land.</summary>
+        public void NotifyTerrainRescue()
+        {
+            _fallTime = 0f;
+            _playedFallPose = false;
+            _physAir = false;
+            _wasGrounded = true;
+            _groundedFor = GroundCommitSeconds;
+            _airApexY = transform.position.y;
+            _airVerticalVelocity = 0f;
+            IgnoreLandsFor(1.25f);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnPlayer()
         {
@@ -205,7 +218,7 @@ namespace Project.Player
             if (_loggedBuild)
                 return;
             _loggedBuild = true;
-            Debug.Log(BuildStamp);
+            // Startup stamp silenced.
         }
 
         private void OnDisable()
@@ -382,7 +395,7 @@ namespace Project.Player
         }
 
         [SerializeField] private float heroDropMeters = 2.6f;
-        [SerializeField] private float lethalDropMeters = 20f;
+        [SerializeField] private float lethalDropMeters = 100f;
         [SerializeField] private float jetpackLethalDelay = 6f;
 
         private DMClimbProfile LiveClimb
@@ -425,7 +438,7 @@ namespace Project.Player
             float heroMin = HeroMin;
             float lethalMin = LethalMin;
             bool jetGrace = JetpackGraceActive();
-            // Height rule for unboosted falls. Do not treat fall-time as 20m during
+            // Height rule for unboosted falls. Do not treat fall-time as lethal height during
             // a jetpack air — thrusting down still has negative vy and used to
             // arm lethal after 2s even while boosting back to the ground.
             bool lethalByHeight = dropMeters >= lethalMin;
@@ -469,7 +482,7 @@ namespace Project.Player
 
             if (!animator.HasState(0, JetpackLandState) && !_hasJetpackLand)
             {
-                Debug.LogWarning(BuildStamp + " no Jetpack Land state — hero skipped");
+                // silenced 0831 BuildStamp log
                 return;
             }
 
@@ -520,7 +533,7 @@ namespace Project.Player
             if (!_loggedMountedGate)
             {
                 _loggedMountedGate = true;
-                Debug.Log(BuildStamp + " mounted — lethal-fall gated");
+                // silenced 0831 BuildStamp log
             }
             return true;
         }
@@ -568,7 +581,7 @@ namespace Project.Player
             EnsureRagdollKept();
 
             float hipsVy = ReadHipsVelocityY();
-            Debug.Log($"{BuildStamp} lethal drop={drop:F1} fallT={_fallTime:F2} vy={_flopImpact.y:F1} ragdoll={(ragdoll != null && ragdoll.isActive)} bones={_flopBoneCount} hipsVy={hipsVy:F1} anim={(animator != null && animator.enabled)} torsoClamp");
+            // silenced 0831 BuildStamp log
 
             SurvivalStats stats = ResolveSurvivalStats();
             if (stats != null && !stats.IsDead)

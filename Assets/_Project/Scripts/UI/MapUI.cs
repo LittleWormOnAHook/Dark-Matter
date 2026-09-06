@@ -216,6 +216,14 @@ namespace Project.UI
             if (!GameSession.HasStarted)
                 return;
 
+            // UITK owns the minimap and compass; it pulls crop params on demand rather than
+            // reading anything this tick writes. With the full map closed there is nothing left
+            // for the uGUI shell to paint, so skip the whole refresh instead of dirtying
+            // MainCanvas layout behind the UITK layer.
+            bool paintUguiMinimap = !DMUiToolkitMinimap.IsDriving;
+            if (!paintUguiMinimap && !fullMapOpen)
+                return;
+
             if (mapProvider == null)
                 EnsureMapProvider();
 
@@ -225,8 +233,12 @@ namespace Project.UI
             if (Time.unscaledTime >= nextMinimapRefreshTime)
             {
                 nextMinimapRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
-                UpdateMinimap();
-                UpdateCompassHeading();
+
+                if (paintUguiMinimap)
+                {
+                    UpdateMinimap();
+                    UpdateCompassHeading();
+                }
 
                 if (fullMapOpen)
                 {
@@ -235,17 +247,20 @@ namespace Project.UI
                 }
             }
 
-            if (minimapImage != null && minimapImage.texture == null)
+            if (paintUguiMinimap && minimapImage != null && minimapImage.texture == null)
                 ApplyMapTexture();
 
             if (Time.unscaledTime >= nextMarkerRefreshTime)
             {
                 nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshInterval;
                 RefreshMarkerIcons();
-                UpdateCompassMarkers();
+
+                if (paintUguiMinimap)
+                    UpdateCompassMarkers();
             }
 
-            UpdateMinimapInfoPanel();
+            if (paintUguiMinimap)
+                UpdateMinimapInfoPanel();
         }
 
         private void Update()

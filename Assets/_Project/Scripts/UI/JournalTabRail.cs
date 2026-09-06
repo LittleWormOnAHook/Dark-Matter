@@ -153,6 +153,10 @@ namespace Project.UI
 
         private void Update()
         {
+            // UITK owns the journal chrome — no tab scale lerp or layout writes behind it.
+            if (DMUiToolkitMenus.IsDriving)
+                return;
+
             if (tabs.Count == 0)
                 return;
 

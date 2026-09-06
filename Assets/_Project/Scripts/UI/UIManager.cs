@@ -84,20 +84,24 @@ namespace Project.UI
                 GameSession.ResetSession();
             MainCanvasFlow.SanitizeCanvasHost(GetComponent<Canvas>());
 
-            ResolveSurvivalUiReferences();
-            BindSurvivalStats();
-            EnsureSurvivalPanelBinder();
+            if (!DMUiToolkitConfig.IsEnabled)
+            {
+                ResolveSurvivalUiReferences();
+                BindSurvivalStats();
+                EnsureSurvivalPanelBinder();
+                EnsureShiftHudBootstrap();
+                EnsurePickupProximityDotUi();
+                EnsureWorldInteractionDotUi();
+                EnsurePickupAimReticleUi();
+                EnsurePeakScreenUi();
+            }
+
             EnsureMapUi();
             EnsureToolBarUi();
-            EnsureShiftHudBootstrap();
-            EnsurePickupProximityDotUi();
-            EnsureWorldInteractionDotUi();
-            EnsurePickupAimReticleUi();
             EnsureJournalPanelUi();
             EnsureQuestManager();
             EnsureAchievementSystems();
             EnsureCraftingUi();
-            EnsurePeakScreenUi();
             EnsureProgressionHud();
             BindJournalInputActions();
 
@@ -366,14 +370,23 @@ namespace Project.UI
 
         private IEnumerator Start()
         {
-            ResolveSurvivalUiReferences();
-            BindSurvivalStats();
+            bool uitk = DMUiToolkitConfig.IsEnabled;
+            if (!uitk)
+            {
+                ResolveSurvivalUiReferences();
+                BindSurvivalStats();
+            }
+
             EnsureOxygenDeprivationFx();
-            UpdateSurvivalUI();
+            if (!uitk)
+                UpdateSurvivalUI();
             SetCurrencyHudVisible(false);
             if (interactionPrompt != null) interactionPrompt.gameObject.SetActive(false);
-            ConfigureInteractionPromptPosition();
-            EnsureGameplayUiHelpers();
+            if (!uitk)
+            {
+                ConfigureInteractionPromptPosition();
+                EnsureGameplayUiHelpers();
+            }
             EnsureProgressionLevelUpFeedback();
             worldCamera = Camera.main;
             EnsureCombatUiReady();

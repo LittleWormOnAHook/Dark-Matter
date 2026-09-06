@@ -66,8 +66,13 @@ namespace Project.Vehicles
         private readonly RaycastHit[] _raycastHits = new RaycastHit[8];
         private Collider[] _ownColliders;
 
+        // Fallback ray point set when no hoverRayPoints are authored — cached so the per-tick
+        // hover solve does not allocate a single-element array every FixedUpdate.
+        private Transform[] _selfHoverRayPoints;
+
         private void Awake()
         {
+            _selfHoverRayPoints = new[] { transform };
             _rigidbody = GetComponent<Rigidbody>();
             _turbulenceSeed = Random.Range(0f, 100f);
             CacheOwnColliders();
@@ -316,7 +321,7 @@ namespace Project.Vehicles
         {
             Transform[] points = hoverRayPoints;
             if (points == null || points.Length == 0)
-                points = new[] { transform };
+                points = _selfHoverRayPoints ??= new[] { transform };
 
             int activeRays = 0;
             Vector3 totalForce = Vector3.zero;

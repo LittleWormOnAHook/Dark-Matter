@@ -52,6 +52,16 @@ namespace Project.Progression
             return EvaluateHybridXp(targetLevel, expScale, expPower, linearScale);
         }
 
+        private void OnValidate()
+        {
+            if (expScale <= 0f)
+                expScale = DefaultExpScale;
+            if (expPower < 1f)
+                expPower = DefaultExpPower;
+            if (linearScale < 0f)
+                linearScale = DefaultLinearScale;
+        }
+
         /// <summary>Lifetime XP floor for a character at <paramref name="level"/> (sum of XP(2)..XP(level)).</summary>
         public int GetTotalXpForLevel(int level)
         {
@@ -71,7 +81,10 @@ namespace Project.Progression
             float linearScale = DefaultLinearScale)
         {
             float n = Mathf.Max(2, targetLevel);
-            return Mathf.Max(1, Mathf.RoundToInt(expScale * Mathf.Pow(n, expPower) + linearScale * n));
+            float scale = expScale > 0f ? expScale : DefaultExpScale;
+            float power = expPower >= 1f ? expPower : DefaultExpPower;
+            float linear = linearScale >= 0f ? linearScale : DefaultLinearScale;
+            return Mathf.Max(1, Mathf.RoundToInt(scale * Mathf.Pow(n, power) + linear * n));
         }
     }
 }

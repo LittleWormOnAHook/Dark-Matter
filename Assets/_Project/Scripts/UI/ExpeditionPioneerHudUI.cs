@@ -180,6 +180,10 @@ namespace Project.UI
             if (!uiBuilt)
                 return;
 
+            if (DMUiToolkitHud.IsDriving
+                || (clusterRoot != null && !clusterRoot.gameObject.activeSelf))
+                return;
+
             SubscribeToRoster();
             SubscribeToCompanionBridge();
             SubscribeToExposureService();

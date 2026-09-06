@@ -13,6 +13,9 @@ namespace Project.UI
         private static ItemHoverTooltip instance;
         private static InventorySlotUI activeHoverSlot;
 
+        // Shared by ItemHoverTooltip and RecipeHoverTooltip clamping; main-thread only.
+        private static readonly Vector3[] cornerScratch = new Vector3[4];
+
         private RectTransform tooltipRect;
         private TextMeshProUGUI titleText;
         private TextMeshProUGUI bodyText;
@@ -211,11 +214,10 @@ namespace Project.UI
 
         internal static void ClampTooltipToScreen(RectTransform panelRect)
         {
-            Vector3[] corners = new Vector3[4];
-            panelRect.GetWorldCorners(corners);
+            panelRect.GetWorldCorners(cornerScratch);
 
-            Vector2 min = corners[0];
-            Vector2 max = corners[2];
+            Vector2 min = cornerScratch[0];
+            Vector2 max = cornerScratch[2];
             Vector2 shift = Vector2.zero;
 
             if (max.x > Screen.width)

@@ -120,7 +120,7 @@ namespace Project.Player
                   && _invectorBootstrap.ThirdPersonController.input.sqrMagnitude > 0.01f
                 : _sprintInput && _moveInput.sqrMagnitude > 0.01f && _character != null && !_character.IsCrouched();
         public bool BlocksCombatInput =>
-            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _opticsOpen || _teleportPhaseLocked || IsGameplayPaused;
+            _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _opticsOpen || _teleportPhaseLocked || IsGameplayPaused || Project.UI.DMUiToolkitDeath.IsOpen;
         public bool IsGameplayPaused => _gameplayPaused || !GameSession.HasStarted;
         public float CameraYaw => _cameraYaw;
         public float LastLookYawDelta { get; private set; }
@@ -727,13 +727,21 @@ namespace Project.Player
         public void ApplyCursorState()
         {
             // Shelter session keeps cursor locked for orbit look; hold-E menu frees it via building control / menu UI.
-            bool cursorFree = _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
-                              _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f;
+            // Game Over must stay None (not Confined) so UITK buttons receive clicks.
+            bool deathOpen = Project.UI.DMUiToolkitDeath.IsOpen;
+            bool cursorFree = deathOpen || _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
+                              _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f ||
+                              DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen;
 
-            if (_opticsOpen)
+            if (_opticsOpen && !deathOpen)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+            }
+            else if (deathOpen || DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
             else if (cursorFree)
             {
@@ -850,9 +858,12 @@ namespace Project.Player
                 return;
             }
 
+            // Always poll ghost-UI recovery even while flags block movement — otherwise a stuck
+            // _journalOpen / pause never reaches RecoverGhostUiLocks on the classic motor path.
             if (_inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen || _teleportPhaseLocked || IsGameplayPaused)
             {
                 StopPlayerMovement();
+                TryRecoverStaleInputBlockers();
                 return;
             }
 
@@ -865,49 +876,16 @@ namespace Project.Player
 
         private void TryRecoverStaleInputBlockers()
         {
-            if (!GameSession.HasStarted || Time.timeScale <= 0f)
+            if (!GameSession.HasStarted)
                 return;
 
             _inputRecoveryCheckTimer += Time.unscaledDeltaTime;
-            if (_inputRecoveryCheckTimer < 1f)
+            if (_inputRecoveryCheckTimer < 0.25f)
                 return;
 
             _inputRecoveryCheckTimer = 0f;
 
-            if (HasVisibleUiBlockingInput())
-                return;
-
-            if (!_journalOpen && !_mapOpen && !_lootDialogOpen && !_questDialogOpen && !_buildingControlOpen && !_shelterSessionOpen && !_gameplayPaused)
-                return;
-
-            EnsureGameplayInputReady();
-        }
-
-        private static bool HasVisibleUiBlockingInput()
-        {
-            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
-            if (navigator != null && navigator.IsAnyOpen)
-                return true;
-
-            if (EnemyLootDialogUI.IsDialogOpen)
-                return true;
-
-            if (QuestGiverDialogUI.IsDialogOpen)
-                return true;
-
-            if (PptDirectionsMenuUI.IsOpen)
-                return true;
-
-            if (HovercraftInteractMenuUI.IsOpen)
-                return true;
-
-            if (QuoraShelterMenuUI.IsOpen)
-                return true;
-
-            if (CraftingUI.IsAnyStandaloneOpen)
-                return true;
-
-            return BuildingControlPanelUI.IsOpen;
+            GameplayInputRecovery.RecoverGhostUiLocks();
         }
 
         private void UpdateInvectorCompanionSystems()
@@ -977,15 +955,13 @@ namespace Project.Player
         {
             bool isMoving = _moveInput.sqrMagnitude > 0.01f;
             bool isSprinting = _sprintInput && isMoving && !_character.IsCrouched();
+            if (isSprinting && _survivalStats != null && _survivalStats.CurrentStamina <= 0.01f)
+                isSprinting = false;
 
             _character.maxWalkSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
             if (_survivalStats != null)
-            {
                 _survivalStats.SetSprinting(isSprinting);
-                if (isSprinting)
-                    _survivalStats.SetStamina(_survivalStats.CurrentStamina - Time.deltaTime * 12f);
-            }
 
             Vector3 movementDirection = Vector3.right * _moveInput.x + Vector3.forward * _moveInput.y;
 

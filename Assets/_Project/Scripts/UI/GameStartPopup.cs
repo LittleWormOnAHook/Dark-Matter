@@ -5,6 +5,7 @@ using Project.Audio;
 using Project.Interaction;
 using Project.Managers;
 using Project.Player;
+using Project.Progression;
 using Project.Survival;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -179,6 +180,20 @@ namespace Project.UI
             SurvivalStats survivalStats = player != null ? player.GetComponent<SurvivalStats>() : null;
             survivalStats?.ResetForNewGame();
             survivalStats?.SetSimulationPaused(false);
+
+            PlayerProgressionManager progression = player != null
+                ? player.GetComponent<PlayerProgressionManager>()
+                : null;
+            progression ??= PlayerProgressionManager.EnsureExists();
+            progression?.ResetToNewGame();
+            ProgressionStatScaler scaler = player != null
+                ? player.GetComponent<ProgressionStatScaler>()
+                : null;
+            if (scaler != null)
+            {
+                scaler.CaptureBaseMaxValues();
+                scaler.ApplyLevelScaling();
+            }
 
             FindAnyObjectByType<UIManager>()?.SyncSurvivalBars();
 

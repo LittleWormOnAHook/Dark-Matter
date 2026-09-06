@@ -323,6 +323,9 @@ namespace Project.Inventory
             ItemData inSlot = GetToolbarItem(toolbarSlot);
             if (inSlot != null && inSlot.toolType == toolType)
             {
+                if (!LevelUnlockUtility.PassesEquipGate(inSlot, showToast: true))
+                    return false;
+
                 selectedToolbarSlot = toolbarSlot;
                 NotifySelectionChanged();
                 return true;
@@ -517,7 +520,9 @@ namespace Project.Inventory
         private bool HasEquippableInHotbarSlot(int hotbarSlot)
         {
             ItemData item = GetHotbarItem(hotbarSlot);
-            return item != null && item.IsEquippable;
+            return item != null
+                && item.IsEquippable
+                && LevelUnlockUtility.PassesEquipGate(item, showToast: false);
         }
 
         private void SyncWeaponDrawnState()

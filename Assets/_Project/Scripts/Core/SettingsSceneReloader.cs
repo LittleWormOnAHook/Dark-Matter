@@ -143,6 +143,8 @@ namespace Project.Core
             private IEnumerator Start()
             {
                 ConsumeResumeFlag();
+                DMDevCommandState.ClearTransient();
+                GameplayMenuTime.ClearAll();
 
                 const int maxFrames = 120;
                 for (int i = 0; i < maxFrames; i++)
@@ -168,27 +170,12 @@ namespace Project.Core
                     menu = FindAnyObjectByType<MainMenuController>();
                 }
 
-                const int playerWait = 120;
-                for (int p = 0; p < playerWait; p++)
-                {
-                    if (PlayerLocator.FindPlayerObject() != null)
-                        break;
-                    yield return null;
-                }
-
-                string loadMessage = "Main menu missing.";
-                if (menu == null || !GameSaveSystem.TryLoadSettingsReloadSnapshot(out loadMessage))
-                {
-                    Debug.LogWarning($"SettingsSceneReloader: Could not restore session after settings Apply. {loadMessage}");
-                    LoadingOverlayController.ReleaseOpaqueCover();
-                    menu?.ShowMainMenu();
-                    TryShowSettingsAppliedToast();
-                    Destroy(gameObject);
-                    yield break;
-                }
-
-                menu.ReturnToSettingsAfterApply();
+                // Do not ApplySaveData here — that MarkStarted + unpauses the player and dumps
+                // into the live world. Continue Expedition already has the slot written in ReloadAfterApply.
+                LoadingOverlayController.ReleaseOpaqueCover();
+                menu?.ShowMainMenu();
                 yield return null;
+                menu?.ShowMainMenu();
                 TryShowSettingsAppliedToast();
                 Destroy(gameObject);
             }

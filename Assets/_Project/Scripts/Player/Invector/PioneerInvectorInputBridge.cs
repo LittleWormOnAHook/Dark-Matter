@@ -108,6 +108,9 @@ namespace Project.Player.Invector
             if (_playerController.IsGameplayPaused || _playerController.BlocksCombatInput)
                 return true;
 
+            if (DMUiToolkitMenus.IsOpen)
+                return true;
+
             if (_survivalStats != null && _survivalStats.IsDead)
                 return true;
 
@@ -153,6 +156,9 @@ namespace Project.Player.Invector
 
             if (_playerController == null)
                 return false;
+
+            if (DMUiToolkitMenus.IsOpen)
+                return true;
 
             if (_playerController.IsGameplayPaused ||
                 _playerController.IsInventoryOpen ||
@@ -217,17 +223,28 @@ namespace Project.Player.Invector
                 return;
 
             _motor.maxStamina = _survivalStats.maxStamina;
-            _motor.currentStamina = _survivalStats.CurrentStamina;
 
-            if (_motor.isSprinting && _motor.input.sqrMagnitude > 0.01f)
-                _survivalStats.SetSprinting(true);
-            else
-                _survivalStats.SetSprinting(false);
+            bool sprinting = _motor.isSprinting && _motor.input.sqrMagnitude > 0.01f;
+            if (sprinting && _survivalStats.CurrentStamina <= 0.01f)
+            {
+                _motor.isSprinting = false;
+                sprinting = false;
+            }
+
+            _survivalStats.SetSprinting(sprinting);
+            _motor.currentStamina = _survivalStats.CurrentStamina;
         }
 
         private void RefreshCombatUiPointerBlock()
         {
             _combatBlockedByUiPointer = false;
+
+            // UITK HUD/Hot Cross panels often cover the screen and make
+            // EventSystem.IsPointerOverGameObject permanently true (same reason Tab
+            // ignores pointer-over checks). That was locking shooter input and
+            // clearing isAimingByInput every frame - killing RMB ADS.
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                return;
 
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null)

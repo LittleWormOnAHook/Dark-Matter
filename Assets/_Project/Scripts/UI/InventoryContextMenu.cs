@@ -21,7 +21,7 @@ namespace Project.UI
         private int openedOnFrame = -1;
         private readonly List<GameObject> ammoSubmenuButtons = new List<GameObject>();
 
-        public static InventoryContextMenu Instance => instance;
+        public static InventoryContextMenu Instance => instance != null ? instance : null;
 
         public static InventoryContextMenu EnsureExists(Transform canvasRootTransform, InventoryItemActions actions)
         {
@@ -285,8 +285,17 @@ namespace Project.UI
             ClampToScreen(panelRect);
         }
 
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
+        }
+
         public void Hide()
         {
+            if (this == null)
+                return;
+
             DMUiToolkitContext.Hide();
             activeSlotIndex = -1;
             HideAmmoSubmenu();

@@ -50,6 +50,8 @@ namespace Project.UI
 
             RetireCanvas(MainMenuController.ResolveMainCanvas());
             RetireNamedCanvas("OpticsOverlayCanvas");
+            RetireNamedCanvas(UIManager.RuntimeHostName);
+            RetireNamedCanvas("MainCanvas");
 
             GameObject legacyToolkit = GameObject.Find("DMMainCanvas");
             if (legacyToolkit != null)

@@ -99,10 +99,17 @@ namespace Project.UI
         /// </summary>
         public void SwitchToWindow(JournalWindowId id)
         {
-            if (GetOrWarn(id) == null)
+            // UITK paints journal chrome; uGUI FullscreenUiWindow may be absent after a partial build.
+            // Still push the navigator stack so hotkeys / IsAnyOpen / SyncFromNavigator work.
+            bool toolkitOwns = DMUiToolkitConfig.IsEnabled && DMUiToolkitMenus.HandlesWindow(id);
+            if (GetWindow(id) == null && !toolkitOwns)
+            {
+                Debug.LogWarning("[FullscreenUiNavigator] Window not registered: " + id);
                 return;
+            }
 
-            if (windowStack.Count == 1 && windowStack[0] == id && GetWindow(id)?.IsVisible == true)
+            FullscreenUiWindow existing = GetWindow(id);
+            if (windowStack.Count == 1 && windowStack[0] == id && (existing == null || existing.IsVisible))
             {
                 // Re-assert pause / journal flags if they drifted out of sync.
                 NotifyPauseChanged(true);
@@ -168,7 +175,7 @@ namespace Project.UI
 
         private void ShowWindow(JournalWindowId id)
         {
-            FullscreenUiWindow window = GetOrWarn(id);
+            FullscreenUiWindow window = GetWindow(id);
             window?.Show();
             transform.SetAsLastSibling();
         }

@@ -14,18 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Dash.DMDashProfile
   doubleTapWindow: 0.28
   distance: 4.5
-  speed: 17.4
+  speed: 15.4
   duration: 0.18
   cooldown: 0.2
+  staminaCost: 22
   allowAirDash: 1
   animationSpeed: 0
   hologramColor: {r: 0.25, g: 0.85, b: 1, a: 0.42}
   hologramEmission: 4
   hologramMaterial: {fileID: 2100000, guid: 3173674e4cc2d7445a018b8f7d9a72a2, type: 2}
   streakColor: {r: 0.55, g: 0.95, b: 1, a: 0.85}
-  streakCount: 30
+  streakCount: 60
   streakLifetime: 0.22
-  streakSize: 0.08
+  streakSize: 0.12
   streakStretch: 3.5
   streakRadius: 1
   streakMaterial: {fileID: 2100000, guid: 63d8fc1f0ade4d22a822f8cac686a3b9, type: 2}

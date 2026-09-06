@@ -2,6 +2,7 @@ using UnityEngine;
 using MalbersAnimations.PathCreation;
 using Project.AI;
 using Project.Companions;
+using Project.Core;
 using Project.Interaction;
 using Project.Inventory;
 using Project.UI;
@@ -22,6 +23,9 @@ namespace Project.Pet
             Idle,
             PathFollowing
         }
+
+        private const int GroundHitBufferSize = 16;
+        private static readonly RaycastHit[] GroundHitBuffer = new RaycastHit[GroundHitBufferSize];
 
         [Header("Profile")]
         [SerializeField] private PetDefinition definition;
@@ -485,17 +489,15 @@ namespace Project.Pet
 
             if (owner == null)
             {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                {
-                    owner = player.transform;
-                    _ownerInventory = player.GetComponent<InventorySystem>();
-                }
-                else
+                Transform player = PlayerReference.ResolveTransform();
+                if (player == null)
                 {
                     _currentSpeed = 0f;
                     return;
                 }
+
+                owner = player;
+                _ownerInventory = player.GetComponent<InventorySystem>();
             }
 
             switch (_state)
@@ -866,22 +868,37 @@ namespace Project.Pet
 
             Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
             float rayLength = (originY - worldPosition.y) + groundProbeDistance;
-            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            int count = Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                GroundHitBuffer,
+                rayLength,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
 
-            foreach (RaycastHit hit in hits)
+            float bestDistance = float.MaxValue;
+            float bestY = 0f;
+            for (int i = 0; i < count; i++)
             {
+                RaycastHit hit = GroundHitBuffer[i];
                 if (hit.collider == null)
                     continue;
 
                 if (hit.transform == transform || hit.transform.IsChildOf(transform))
                     continue;
 
-                groundY = hit.point.y + groundOffset;
-                return true;
+                if (hit.distance >= bestDistance)
+                    continue;
+
+                bestDistance = hit.distance;
+                bestY = hit.point.y;
             }
 
-            return false;
+            if (bestDistance == float.MaxValue)
+                return false;
+
+            groundY = bestY + groundOffset;
+            return true;
         }
 
         private void SetState(PetState newState)

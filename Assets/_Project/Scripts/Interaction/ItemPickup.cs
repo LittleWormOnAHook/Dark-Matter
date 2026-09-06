@@ -2,6 +2,7 @@ using Project.Audio;
 using Project.Combat;
 using Project.Data;
 using Project.Inventory;
+using Project.Map;
 using Project.Player;
 using Project.Progression;
 using Project.Quests;
@@ -12,7 +13,7 @@ using UnityEngine;
 namespace Project.Interaction
 {
     [RequireComponent(typeof(Collider))]
-    public class ItemPickup : MonoBehaviour, IWorldUsable, IWorldIndicatorAnchor
+    public class ItemPickup : MonoBehaviour, IWorldUsable, IHoldWorldUsable, IWorldIndicatorAnchor
     {
         private const float AimUseBonus = 500f;
 
@@ -21,7 +22,7 @@ namespace Project.Interaction
         public int amount = 1;
 
         [Header("Prompt")]
-        public string promptText = "Press E to use";
+        public string promptText = "Hold E to Take";
 
         [Header("Indicator")]
         [Tooltip("Optional explicit stem/dot attach point. When empty, uses renderer/collider bounds center.")]
@@ -42,17 +43,49 @@ namespace Project.Interaction
         private bool[] colliderWasEnabled;
         private bool[] rendererWasEnabled;
         private bool isPickedUp = false;
+        private bool holdActive;
+        private float holdProgress;
         private int respawnAmount = 1;
         private Vector3 indicatorLocalOffset;
         private bool hasIndicatorLocalOffset;
+        private Transform cachedHierarchyParent;
+        private bool hierarchyStateValid;
+        private bool hierarchyBlocksCollection;
 
         public bool IsPickedUp => isPickedUp;
+        /// <summary>
+        /// True when this pickup's item type has been identified (scanner sweep / mining F-scan).
+        /// Hold-E known-vs-unknown UI wires through this when present on other branches.
+        /// </summary>
+        public bool IsItemIdentified =>
+            itemData != null && ResourceIdentificationRegistry.IsIdentified(itemData);
+
+        /// <summary>
+        /// Label for scanner optics / prompts. Unknown until scanned.
+        /// TODO: Later some items may require Gerald or a designated NPC to identify (not scanner alone).
+        /// </summary>
+        public string GetScanDisplayName()
+        {
+            if (itemData == null)
+                return "Unknown Item";
+            if (ResourceIdentificationRegistry.IsIdentified(itemData))
+                return string.IsNullOrWhiteSpace(itemData.itemName) ? itemData.name : itemData.itemName;
+            return "Unknown Item";
+        }
 
         public bool IsIndicatorAvailable => IsCollectibleWorldPickup();
 
         public float IndicatorStemMinHeight => Mathf.Max(0.05f, indicatorStemMinHeight);
 
         public float IndicatorStemMaxHeight => Mathf.Max(IndicatorStemMinHeight, indicatorStemMaxHeight);
+
+        public float HoldDurationSeconds => WorldPickupFocus.PickupHoldSeconds;
+
+        public string HoldPromptText => string.IsNullOrEmpty(promptText) ? "Hold E to Take" : promptText;
+
+        public bool IsHoldActive => holdActive;
+
+        public float HoldProgress01 => Mathf.Clamp01(holdProgress);
 
         public Vector3 GetIndicatorWorldAnchor()
         {
@@ -67,6 +100,7 @@ namespace Project.Interaction
 
         private void OnEnable()
         {
+            hierarchyStateValid = false;
             WorldUseController.Register(this);
             PickupProximityDotUI.Register(this);
         }
@@ -75,6 +109,47 @@ namespace Project.Interaction
         {
             WorldUseController.Unregister(this);
             PickupProximityDotUI.Unregister(this);
+        }
+
+        /// <summary>
+        /// True when an equipped-visual marker or Player ancestry disqualifies this pickup.
+        /// Cached because the world-dot HUD tests every pickup every frame; reparenting (equip /
+        /// drop) invalidates it.
+        /// </summary>
+        public bool HierarchyBlocksCollection
+        {
+            get
+            {
+                if (hierarchyStateValid && cachedHierarchyParent == transform.parent)
+                    return hierarchyBlocksCollection;
+
+                cachedHierarchyParent = transform.parent;
+                hierarchyStateValid = true;
+                hierarchyBlocksCollection = EvaluateHierarchyBlock();
+                return hierarchyBlocksCollection;
+            }
+        }
+
+        private void OnTransformParentChanged()
+        {
+            hierarchyStateValid = false;
+        }
+
+        private bool EvaluateHierarchyBlock()
+        {
+            if (GetComponent<EquippedVisualMarker>() != null || GetComponentInParent<EquippedVisualMarker>() != null)
+                return true;
+
+            Transform current = transform;
+            while (current != null)
+            {
+                if (current.CompareTag("Player"))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void Start()
@@ -118,7 +193,64 @@ namespace Project.Interaction
 
         public bool TryUse(WorldUseContext context)
         {
-            return TryCollectFor(context.Inventory, showPlayerPrompt: true);
+            // Press path is a no-op. Hold-E via WorldUseController.FindHoldTarget + TickHold owns collect.
+            return false;
+        }
+
+        public bool CanBeginHold(WorldUseContext context)
+        {
+            if (!IsCollectibleWorldPickup() || itemData == null)
+                return false;
+            if (!WorldPickupFocus.IsFocused(this))
+                return false;
+            if (!WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, GetIndicatorWorldAnchor()))
+                return false;
+            if (context.Inventory == null)
+                return false;
+            if (!LevelUnlockUtility.PassesPickupGate(itemData, showToast: false))
+                return false;
+            return true;
+        }
+
+        public void BeginHold(WorldUseContext context)
+        {
+            holdActive = true;
+            holdProgress = 0f;
+        }
+
+        public bool TickHold(WorldUseContext context, float deltaTime, out float progress01)
+        {
+            progress01 = Mathf.Clamp01(holdProgress);
+            if (!holdActive)
+                return false;
+
+            // Focus lost or walked out of close range cancels.
+            if (!WorldPickupFocus.IsFocused(this)
+                || !WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, GetIndicatorWorldAnchor()))
+            {
+                CancelHold(context);
+                progress01 = 0f;
+                return false;
+            }
+
+            float duration = Mathf.Max(0.05f, HoldDurationSeconds);
+            holdProgress += deltaTime / duration;
+            progress01 = Mathf.Clamp01(holdProgress);
+            if (holdProgress < 1f)
+                return false;
+
+            holdActive = false;
+            holdProgress = 0f;
+            bool collected = TryCollectFor(context.Inventory, showPlayerPrompt: true);
+            if (collected && itemData != null)
+                ResourceIdentificationRegistry.Identify(itemData);
+            return true;
+        }
+
+        public void CancelHold(WorldUseContext context)
+        {
+            holdActive = false;
+            holdProgress = 0f;
         }
 
 public void PrepareForWorldDrop(ItemData item, int dropAmount)

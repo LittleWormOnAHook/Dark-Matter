@@ -156,7 +156,14 @@ namespace Project.UI
         public static DMUiToolkitHotCross EnsureHost()
         {
             if (instance != null)
+            {
+                // Builder rule: keep host active in hierarchy; visibility is C# SetShown only.
+                if (!instance.gameObject.activeSelf)
+                    instance.gameObject.SetActive(true);
+                if (instance.document != null && !instance.document.enabled)
+                    instance.document.enabled = true;
                 return instance;
+            }
 
             UIDocument doc = DMUiToolkitOverlayDocument.Ensure(
                 DMUiToolkitOverlayDocument.HotCrossName,
@@ -165,6 +172,11 @@ namespace Project.UI
                 DMUiToolkitOverlayDocument.HotCrossSort);
             if (doc == null)
                 return null;
+
+            if (!doc.gameObject.activeSelf)
+                doc.gameObject.SetActive(true);
+            if (!doc.enabled)
+                doc.enabled = true;
 
             DMUiToolkitHotCross host = doc.GetComponent<DMUiToolkitHotCross>();
             if (host == null)
@@ -254,12 +266,24 @@ namespace Project.UI
                 BindTree();
 
             bool show = ShouldShow();
-            if (show != lastShown)
+            // Only advance lastShown when the visual tree exists — otherwise a null-root
+            // show=true would stick lastShown and never SetShown after BindTree succeeds.
+            if (root != null)
             {
-                lastShown = show;
-                DMUiToolkitOverlayDocument.SetShown(root, show);
-                if (show)
+                if (show != lastShown)
+                {
+                    lastShown = show;
+                    DMUiToolkitOverlayDocument.SetShown(root, show);
+                    if (show)
+                        visualsDirty = true;
+                }
+                else if (show
+                    && root.resolvedStyle.display == DisplayStyle.None)
+                {
+                    // External hide / recovery left display:none without updating lastShown.
+                    DMUiToolkitOverlayDocument.SetShown(root, true);
                     visualsDirty = true;
+                }
             }
 
             if (!show)

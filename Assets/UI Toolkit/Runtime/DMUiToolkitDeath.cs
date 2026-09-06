@@ -7,6 +7,7 @@ namespace Project.UI
 {
     /// <summary>
     /// UITK GAME OVER overlay with Retry / End Game. Forwards from UIManager.ShowDeathPopup.
+    /// stamp: gameover-mouse-uitk 0905
     /// </summary>
     [DefaultExecutionOrder(-376)]
     [DisallowMultipleComponent]
@@ -19,12 +20,10 @@ namespace Project.UI
         private Button retryButton;
         private Button exitButton;
         private bool bound;
-        private bool wired;
         private bool open;
         private bool uguiHidden;
 
         public static bool IsOpen => instance != null && instance.open;
-
 
         public static DMUiToolkitDeath EnsureHost()
         {
@@ -97,6 +96,9 @@ namespace Project.UI
                     HideUgui();
                     uguiHidden = true;
                 }
+
+                // Ghost-pause / cursor-restore can re-lock after Show; keep Game Over clickable.
+                EnsurePointerForOpenDeath();
             }
             else
             {
@@ -116,24 +118,47 @@ namespace Project.UI
                 return;
 
             root = tree.Q<VisualElement>("death-root") ?? tree;
-            retryButton = tree.Q<Button>("death-retry");
-            exitButton = tree.Q<Button>("death-exit");
-            Wire();
+            if (root != null && root.pickingMode != PickingMode.Position)
+                root.pickingMode = PickingMode.Position;
+
+            Button nextRetry = tree.Q<Button>("death-retry");
+            Button nextExit = tree.Q<Button>("death-exit");
+            WireButtons(nextRetry, nextExit);
+
             if (!open)
                 DMUiToolkitOverlayDocument.SetShown(root, false);
             bound = root != null;
         }
 
-        private void Wire()
+        private void WireButtons(Button nextRetry, Button nextExit)
         {
-            if (wired)
-                return;
+            if (retryButton != nextRetry)
+            {
+                if (retryButton != null)
+                    retryButton.clicked -= HandleRetry;
+                retryButton = nextRetry;
+                if (retryButton != null)
+                {
+                    retryButton.clicked -= HandleRetry;
+                    retryButton.clicked += HandleRetry;
+                    if (retryButton.pickingMode != PickingMode.Position)
+                        retryButton.pickingMode = PickingMode.Position;
+                }
+            }
 
-            if (retryButton != null)
-                retryButton.clicked += HandleRetry;
-            if (exitButton != null)
-                exitButton.clicked += HandleExit;
-            wired = true;
+            if (exitButton != nextExit)
+            {
+                if (exitButton != null)
+                    exitButton.clicked -= HandleExit;
+                exitButton = nextExit;
+                if (exitButton != null)
+                {
+                    exitButton.clicked -= HandleExit;
+                    exitButton.clicked += HandleExit;
+                    if (exitButton.pickingMode != PickingMode.Position)
+                        exitButton.pickingMode = PickingMode.Position;
+                }
+            }
         }
 
         private void ShowInternal()
@@ -142,34 +167,87 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             open = true;
-            UnityEngine.Cursor.lockState = CursorLockMode.None;
-            UnityEngine.Cursor.visible = true;
+            EnsurePointerForOpenDeath();
 
-            PlayerController pc = FindAnyObjectByType<PlayerController>();
-            if (pc != null)
-                pc.SetInventoryOpen(true);
+            if (retryButton != null)
+                retryButton.Focus();
         }
 
         private void HideInternal()
         {
+            if (!open && (root == null || root.resolvedStyle.display == DisplayStyle.None))
+            {
+                RestoreGameplayPointerFlags();
+                return;
+            }
+
             open = false;
             DMUiToolkitOverlayDocument.SetShown(root, false);
+            RestoreGameplayPointerFlags();
+        }
 
-            PlayerController pc = FindAnyObjectByType<PlayerController>();
+        /// <summary>
+        /// Unlock mouse, cancel gameplay cursor relock, and mark player UI-captured so
+        /// RecoverGhostUiLocks / ApplyCursorState cannot steal clicks while Game Over is up.
+        /// </summary>
+        public static void EnsurePointerForOpenDeath()
+        {
+            if (!IsOpen)
+                return;
+
+            GameplayInputRecovery.CancelPendingCursorRestore();
+
+            UnityEngine.Cursor.lockState = CursorLockMode.None;
+            UnityEngine.Cursor.visible = true;
+
+            PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
             if (pc != null)
+            {
+                // Reuse inventory-open as the existing "UI has the pointer" flag used by combat/look gates.
+                if (!pc.IsInventoryOpen)
+                    pc.SetInventoryOpen(true);
+                else
+                    pc.ApplyCursorState();
+            }
+
+            CameraController cam = Object.FindAnyObjectByType<CameraController>();
+            if (cam != null)
+                cam.SetInventoryOpen(true);
+        }
+
+        private static void RestoreGameplayPointerFlags()
+        {
+            PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+            if (pc != null && pc.IsInventoryOpen)
                 pc.SetInventoryOpen(false);
+
+            CameraController cam = Object.FindAnyObjectByType<CameraController>();
+            if (cam != null)
+                cam.SetInventoryOpen(false);
         }
 
         private void HandleRetry()
         {
+            if (!open)
+                return;
+
             HideInternal();
-            UIManager ui = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            UIManager ui = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
             if (ui != null)
                 ui.RespawnPlayer();
+            else
+            {
+                // Fallback if UIManager missing: still try player respawn.
+                GameObject player = PlayerLocator.FindPlayerObject();
+                player?.GetComponent<PlayerDeathHandler>()?.Respawn();
+            }
         }
 
         private void HandleExit()
         {
+            if (!open)
+                return;
+
             HideInternal();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
@@ -183,7 +261,7 @@ namespace Project.UI
             if (!DMUiToolkitHud.IsDriving || instance == null || !instance.open)
                 return;
 
-            UIManager ui = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            UIManager ui = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
             if (ui == null)
                 return;
 

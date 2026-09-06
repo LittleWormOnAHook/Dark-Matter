@@ -44,6 +44,9 @@ namespace Project.Inventory
             if (item == null || !item.IsInventoryStorageModule)
                 return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: true))
+                return false;
+
             if (!inventory.CanUnlockNextStorageRow())
             {
                 PickupToastUI.Show("Inventory storage is fully expanded.");
@@ -62,11 +65,18 @@ namespace Project.Inventory
         public bool CanInstallStorageModule(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            return item != null && item.IsInventoryStorageModule && inventory.CanUnlockNextStorageRow();
+            return item != null
+                && item.IsInventoryStorageModule
+                && inventory.CanUnlockNextStorageRow()
+                && LevelUnlockUtility.PassesUseGate(item, showToast: false);
         }
 
         public bool TryUse(int slotIndex)
         {
+            ItemData useItem = inventory?.GetItemAt(slotIndex);
+            if (useItem != null && !LevelUnlockUtility.PassesUseGate(useItem, showToast: true))
+                return false;
+
             if (CanInstallStorageModule(slotIndex))
                 return TryInstallStorageModule(slotIndex);
 
@@ -133,6 +143,9 @@ namespace Project.Inventory
             if (item == null || !item.IsVehicle)
                 return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: true))
+                return false;
+
             ItemData plasmaFuel = ItemRegistry.Resolve("Plasma Fuel");
             if (plasmaFuel == null || inventory.CountItem(plasmaFuel) <= 0)
                 return false;
@@ -153,7 +166,9 @@ namespace Project.Inventory
                 return false;
 
             ItemData plasmaFuel = ItemRegistry.Resolve("Plasma Fuel");
-            return plasmaFuel != null && inventory.CountItem(plasmaFuel) > 0;
+            return plasmaFuel != null
+                && inventory.CountItem(plasmaFuel) > 0
+                && LevelUnlockUtility.PassesUseGate(item, showToast: false);
         }
 
         public bool TryDeploy(int slotIndex)
@@ -180,6 +195,9 @@ namespace Project.Inventory
             if (item == null || !item.IsVehicle)
                 return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: true))
+                return false;
+
             Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
             bool deployed = HovercraftDeploymentUtility.TryDeploy(inventory, item, playerTransform, out string message);
             if (!string.IsNullOrEmpty(message))
@@ -194,7 +212,10 @@ namespace Project.Inventory
         public bool CanDeployVehicle(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            return item != null && item.IsVehicle && item.deployedPrefab != null;
+            return item != null
+                && item.IsVehicle
+                && item.deployedPrefab != null
+                && LevelUnlockUtility.PassesUseGate(item, showToast: false);
         }
 
         /// <summary>Spawns the stored Walker Drill near the player. Not a vehicle — no Refuel.</summary>
@@ -203,6 +224,9 @@ namespace Project.Inventory
             ItemData item = inventory?.GetItemAt(slotIndex);
             ItemData deployItem = ResolveWalkerDrillItem(item);
             if (deployItem == null)
+                return false;
+
+            if (!LevelUnlockUtility.PassesUseGate(deployItem, showToast: true))
                 return false;
 
             Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
@@ -219,8 +243,8 @@ namespace Project.Inventory
         public bool CanDeployWalkerDrill(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            // Show Deploy even if deployedPrefab YAML is a broken fileID; TryDeploy resolves/toasts.
-            return ResolveWalkerDrillItem(item) != null;
+            ItemData deployItem = ResolveWalkerDrillItem(item);
+            return deployItem != null && LevelUnlockUtility.PassesUseGate(deployItem, showToast: false);
         }
 
         private static ItemData ResolveWalkerDrillItem(ItemData item)
@@ -249,6 +273,9 @@ namespace Project.Inventory
             if (deployItem == null)
                 return false;
 
+            if (!LevelUnlockUtility.PassesUseGate(deployItem, showToast: true))
+                return false;
+
             Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
             bool deployed = QuoraShelterDeploymentUtility.TryDeploy(inventory, deployItem, playerTransform, out string message);
             if (!string.IsNullOrEmpty(message))
@@ -263,7 +290,8 @@ namespace Project.Inventory
         public bool CanDeployShelter(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            return ResolveDeployableShelterItem(item) != null;
+            ItemData deployItem = ResolveDeployableShelterItem(item);
+            return deployItem != null && LevelUnlockUtility.PassesUseGate(deployItem, showToast: false);
         }
 
         private static ItemData ResolveDeployableShelterItem(ItemData item)
@@ -527,6 +555,8 @@ namespace Project.Inventory
             {
                 int hotbarSlot = hotbarSlots[i];
                 ItemData weapon = equipment.GetHotbarItem(hotbarSlot);
+                if (weapon != null && !LevelUnlockUtility.PassesEquipGate(weapon, showToast: false))
+                    continue;
                 string label = weapon != null ? weapon.itemName : $"Slot {hotbarSlot + 1}";
                 options.Add(new AmmoEquipOption(hotbarSlot, label));
             }
@@ -536,6 +566,14 @@ namespace Project.Inventory
 
         public bool TryEquipAmmoToWeapon(int ammoSlotIndex, int weaponHotbarSlot)
         {
+            ItemData ammo = inventory?.GetItemAt(ammoSlotIndex);
+            if (ammo != null && !LevelUnlockUtility.PassesUseGate(ammo, showToast: true))
+                return false;
+
+            ItemData weapon = equipment != null ? equipment.GetHotbarItem(weaponHotbarSlot) : null;
+            if (weapon != null && !LevelUnlockUtility.PassesEquipGate(weapon, showToast: true))
+                return false;
+
             if (ammoState == null || !ammoState.TryEquipAmmoToWeaponSlot(weaponHotbarSlot, ammoSlotIndex))
                 return false;
 

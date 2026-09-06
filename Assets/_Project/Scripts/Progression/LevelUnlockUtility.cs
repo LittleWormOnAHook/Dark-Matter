@@ -34,7 +34,7 @@ namespace Project.Progression
             if (!IsGateActive(requiredLevel))
                 return;
 
-            PickupToastUI.Show(FormatLevelRequiredMessage(requiredLevel));
+            ShowRequireLevelPopup(requiredLevel);
         }
 
         /// <summary>Center popup: title "Require Level" + required level number.</summary>
@@ -46,11 +46,40 @@ namespace Project.Progression
             DMIRequireLevelPopupUI.Show(requiredLevel);
         }
 
+        /// <summary>
+        /// Equip/draw/select: authored equip gate, or use gate when equip is inactive
+        /// so a single filled field still blocks both actions.
+        /// </summary>
+        public static int GetEffectiveEquipRequiredLevel(ItemData item)
+        {
+            if (item == null)
+                return 1;
+            if (IsGateActive(item.requiredLevelToEquip))
+                return item.requiredLevelToEquip;
+            if (IsGateActive(item.requiredLevelToUse))
+                return item.requiredLevelToUse;
+            return 1;
+        }
+
+        /// <summary>
+        /// Consume/install/deploy/throw: authored use gate, or equip gate when use is inactive.
+        /// </summary>
+        public static int GetEffectiveUseRequiredLevel(ItemData item)
+        {
+            if (item == null)
+                return 1;
+            if (IsGateActive(item.requiredLevelToUse))
+                return item.requiredLevelToUse;
+            if (IsGateActive(item.requiredLevelToEquip))
+                return item.requiredLevelToEquip;
+            return 1;
+        }
+
         public static bool PassesEquipGate(ItemData item, bool showToast = false) =>
-            PassesGate(item?.requiredLevelToEquip ?? 0, showToast);
+            PassesGate(GetEffectiveEquipRequiredLevel(item), showToast);
 
         public static bool PassesUseGate(ItemData item, bool showToast = false) =>
-            PassesGate(item?.requiredLevelToUse ?? 0, showToast);
+            PassesGate(GetEffectiveUseRequiredLevel(item), showToast);
 
         public static bool PassesCraftGate(ItemData outputItem, bool showToast = false) =>
             PassesGate(outputItem?.requiredLevelToCraft ?? 0, showToast);

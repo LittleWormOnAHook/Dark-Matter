@@ -21,7 +21,7 @@ namespace Project.UI
     /// World-to-screen proximity dots and per-NPC health bars on the Damage overlay.
     /// Dual-run: hides uGUI PickupProximityDotUI / WorldInteractionDotUI / FloatingTargetHealthBar chrome.
     /// </summary>
-    [DefaultExecutionOrder(-366)]
+    [DefaultExecutionOrder(1100)]
     [DisallowMultipleComponent]
     public class DMUiToolkitWorldChrome : MonoBehaviour
     {
@@ -51,7 +51,16 @@ namespace Project.UI
         private VisualElement barsLayer;
         private bool bound;
         private bool lastGameplayWant;
+        private bool uguiHidden;
         private float nextInteractScan;
+        private bool hasExclusiveDot;
+        private WorldDot exclusiveDot;
+        private bool panelMapReady;
+        private bool panelYNeedsFlip;
+        private float panelHeight;
+        private float lastPanelW = -1f;
+        private float lastPanelH = -1f;
+        private int panelStableFrames;
         private Camera worldCamera;
         private Transform playerTransform;
         private PlayerController cachedPlayer;
@@ -148,18 +157,23 @@ namespace Project.UI
 
             if (!show)
             {
-                DMUiToolkitOverlayDocument.SetShown(root, false);
-                DMUiToolkitOverlayDocument.SetShown(dotsLayer, false);
-                DMUiToolkitOverlayDocument.SetShown(barsLayer, false);
                 RecycleDots(0);
                 RecycleBars(0);
+                hasExclusiveDot = false;
+                panelMapReady = false;
+                panelStableFrames = 0;
                 WorldPickupFocus.Clear();
-                if (want)
+                if (want && !uguiHidden)
                     HideUguiCounterparts();
                 return;
             }
 
-            HideUguiCounterparts();
+            if (!uguiHidden)
+                HideUguiCounterparts();
+            if (!TryRefreshPanelMapping())
+                return;
+
+            // Paint after final camera pose (see DefaultExecutionOrder 1100).
             CollectDots();
             PaintDots();
             PaintBars();
@@ -202,6 +216,7 @@ namespace Project.UI
             {
                 pendingDots.Clear();
                 cachedInteractDots.Clear();
+                hasExclusiveDot = false;
                 WorldPickupFocus.Clear();
                 return;
             }
@@ -211,6 +226,7 @@ namespace Project.UI
             {
                 pendingDots.Clear();
                 cachedInteractDots.Clear();
+                hasExclusiveDot = false;
                 WorldPickupFocus.Clear();
                 return;
             }
@@ -226,6 +242,9 @@ namespace Project.UI
 
             pendingDots.Clear();
             CollectExclusivePickupDot(player, camera);
+
+            if (hasExclusiveDot)
+                pendingDots.Add(exclusiveDot);
             for (int i = 0; i < cachedInteractDots.Count; i++)
                 pendingDots.Add(cachedInteractDots[i]);
         }
@@ -322,7 +341,10 @@ namespace Project.UI
             }
 
             if (!found)
+            {
+                hasExclusiveDot = false;
                 return;
+            }
 
             if (bestItem != null)
                 WorldPickupFocus.SetItem(bestItem);
@@ -350,7 +372,8 @@ namespace Project.UI
                     dot.HoldProgress01 = 0f;
             }
 
-            pendingDots.Add(dot);
+            exclusiveDot = dot;
+            hasExclusiveDot = true;
         }
 
         private void FillPickupIdentity(ItemPickup item, RecipePickup recipe, ref WorldDot dot)
@@ -515,45 +538,77 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// Panel-local point for a world position. ScreenToPanel is panel-root space; children of
-        /// <paramref name="space"/> need WorldToLocal or left/top drift (stem floats / tip inverts).
-        /// When ScreenToPanel fails to flip Y (panel Y still rises with screen Y), tip and base
-        /// invert so the tip-locked dot sits near the ground — correct by mirroring against panel height.
+        /// Wait until the overlay panel has a stable size, then cache Y-flip.
+        /// Painting before layout settles is what made stems jiggle at gameplay start.
         /// </summary>
-        private static bool TryWorldToPanel(Camera camera, VisualElement space, Vector3 world, out Vector2 panelPos)
+        private bool TryRefreshPanelMapping()
+        {
+            if (dotsLayer == null || dotsLayer.panel == null)
+                return false;
+
+            float w = dotsLayer.resolvedStyle.width;
+            float h = dotsLayer.resolvedStyle.height;
+            if (w < 16f || h < 16f)
+            {
+                panelStableFrames = 0;
+                panelMapReady = false;
+                return false;
+            }
+
+            bool sizeChanged = Mathf.Abs(w - lastPanelW) >= 1f || Mathf.Abs(h - lastPanelH) >= 1f;
+            if (sizeChanged)
+            {
+                lastPanelW = w;
+                lastPanelH = h;
+                panelHeight = h;
+                panelStableFrames = 0;
+                panelMapReady = false;
+                return false;
+            }
+
+            panelStableFrames++;
+            panelHeight = h;
+            if (panelStableFrames < 2 && !panelMapReady)
+                return false;
+
+            if (!panelMapReady)
+            {
+                Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(0f, 0f));
+                Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(0f, Screen.height));
+                panelYNeedsFlip = screenTop.y > screenBottom.y + 0.5f;
+                panelMapReady = true;
+            }
+
+            return true;
+        }
+
+        private bool TryWorldToPanel(Camera camera, Vector3 world, out Vector2 panelPos)
         {
             panelPos = default;
-            if (camera == null || space == null || space.panel == null)
+            if (camera == null || dotsLayer == null || dotsLayer.panel == null)
                 return false;
 
             Vector3 screen = camera.WorldToScreenPoint(world);
             if (screen.z <= 0f)
                 return false;
 
-            IPanel panel = space.panel;
-            panelPos = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, screen.y));
+            panelPos = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(screen.x, screen.y));
+            if (panelYNeedsFlip)
+                panelPos.y = panelHeight - panelPos.y;
 
-            // Detect Y orientation once per call pair is fine; cost is two corner samples.
-            Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, 0f));
-            Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height));
-            if (screenTop.y > screenBottom.y + 0.5f)
-            {
-                // Panel Y still increases with screen Y (no flip). style.top needs Y-down.
-                float panelH = space.resolvedStyle.height;
-                if (panelH <= 1f && space.hierarchy.parent != null)
-                    panelH = space.hierarchy.parent.resolvedStyle.height;
-                if (panelH <= 1f)
-                    panelH = Screen.height;
-                panelPos.y = panelH - panelPos.y;
-            }
-
-            panelPos = space.WorldToLocal(panelPos);
+            panelPos = dotsLayer.WorldToLocal(panelPos);
             return true;
         }
 
+        /// <summary>
+        /// World-to-panel stem/dot layout. Called from LateUpdate after camera
+        /// (execution order 1100) so WorldToScreen matches the same-frame pose --
+        /// avoids classic 1-frame look/move wiggle. Tip stays locked to item tip;
+        /// stem base stays on world anchor (do not invert).
+        /// </summary>
         private void PaintDots()
         {
-            if (dotsLayer == null || dotsLayer.panel == null)
+            if (dotsLayer == null || dotsLayer.panel == null || !panelMapReady)
                 return;
 
             Camera camera = worldCamera;
@@ -568,7 +623,6 @@ namespace Project.UI
                 if (camera == null)
                     continue;
 
-                // Proximity 0 at max range, 1 when planar (XZ) dist within StemNearReachMeters.
                 float dist = maxRange;
                 if (player != null)
                 {
@@ -583,17 +637,17 @@ namespace Project.UI
                 float stemHeight = Mathf.Lerp(pending.StemMinHeight, pending.StemMaxHeight, proximity);
                 Vector3 tipWorld = pending.Anchor + Vector3.up * stemHeight;
 
-                VisualElement host = AcquireDot(shown);
-                if (!TryWorldToPanel(camera, host, tipWorld, out Vector2 tipPanel)
-                    || !TryWorldToPanel(camera, host, pending.Anchor, out Vector2 anchorPanel))
+                DotVisuals visuals = AcquireDot(shown);
+                if (!TryWorldToPanel(camera, tipWorld, out Vector2 tipPanel)
+                    || !TryWorldToPanel(camera, pending.Anchor, out Vector2 anchorPanel))
                 {
-                    DMUiToolkitOverlayDocument.SetShown(host, false);
+                    DMUiToolkitOverlayDocument.SetShown(visuals.Host, false);
                     continue;
                 }
 
-                VisualElement stem = host.Q<VisualElement>("stem");
-                VisualElement glow = host.Q<VisualElement>("far-glow");
-                VisualElement closeCluster = host.Q<VisualElement>("close-cluster");
+                VisualElement stem = visuals.Stem;
+                VisualElement glow = visuals.Glow;
+                VisualElement closeCluster = visuals.CloseCluster;
 
                 float dx = tipPanel.x - anchorPanel.x;
                 float dy = tipPanel.y - anchorPanel.y;
@@ -650,7 +704,7 @@ namespace Project.UI
                         glow.style.borderBottomLeftRadius = half;
                         glow.style.borderBottomRightRadius = half;
                         glow.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(pending.Color, 0.28f);
-                        VisualElement core = glow.Q<VisualElement>("core");
+                        VisualElement core = visuals.Core;
                         if (core != null)
                         {
                             core.style.width = coreSize;
@@ -665,11 +719,13 @@ namespace Project.UI
                     }
                 }
 
-                DMUiToolkitOverlayDocument.SetShown(host, true);
+                DMUiToolkitOverlayDocument.SetShown(visuals.Host, true);
                 shown++;
             }
 
             RecycleDots(shown);
+            // Force same-frame UITK repaint so style left/top apply before draw.
+            dotsLayer.MarkDirtyRepaint();
         }
 
         private void PaintClosePrompt(VisualElement cluster, Vector2 tipPanel, WorldDot pending)
@@ -856,7 +912,16 @@ namespace Project.UI
             RecycleBars(shown);
         }
 
-        private VisualElement AcquireDot(int index)
+        private sealed class DotVisuals
+        {
+            public VisualElement Host;
+            public VisualElement Stem;
+            public VisualElement Glow;
+            public VisualElement Core;
+            public VisualElement CloseCluster;
+        }
+
+        private DotVisuals AcquireDot(int index)
         {
             while (dotPool.Count <= index)
             {
@@ -878,6 +943,15 @@ namespace Project.UI
                 VisualElement closeCluster = BuildCloseCluster();
                 host.Add(closeCluster);
 
+                host.userData = new DotVisuals
+                {
+                    Host = host,
+                    Stem = stem,
+                    Glow = glow,
+                    Core = core,
+                    CloseCluster = closeCluster
+                };
+
                 dotsLayer.Add(host);
                 dotPool.Add(host);
             }
@@ -885,7 +959,7 @@ namespace Project.UI
             VisualElement dot = dotPool[index];
             if (index >= liveDots.Count)
                 liveDots.Add(dot);
-            return dot;
+            return (DotVisuals)dot.userData;
         }
 
         private static VisualElement BuildCloseCluster()
@@ -1044,11 +1118,12 @@ namespace Project.UI
 
         private void HideUguiCounterparts()
         {
-            // Keep retrying: PickupProximityDotUI / WorldInteractionDotUI may create their
-            // layers lazily after our first LateUpdate, which previously stopped retrying too early
-            // with the old floating-dot painter still running (felt like stem patches did nothing).
+            if (uguiHidden)
+                return;
+
             HideNamedLayer("PickupProximityDots");
             HideNamedLayer("WorldInteractionDots");
+            uguiHidden = true;
         }
 
         /// <returns>True when the named layer is absent or its painters are disabled.</returns>

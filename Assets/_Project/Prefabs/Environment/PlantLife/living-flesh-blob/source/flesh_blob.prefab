@@ -10,43 +10,43 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalScale.x
-      value: 3.2
+      value: 5.2032003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalScale.y
-      value: 3.2
+      value: 5.2032003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalScale.z
-      value: 3.2
+      value: 5.2032003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -24.146425
+      value: 66.70734
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.069
+      value: 1.3899994
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 16.593325
+      value: 22.99247
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.90584487
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.42360955
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -54,7 +54,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 50.125
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -107,14 +107,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Environment.DMIFleshBlobTrigger
   animator: {fileID: 8950528781836385232}
   idleClip: {fileID: 4781951162920444690, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
-  idleAnimSpeed: 0.1
+  idleAnimSpeed: 0.2
   triggeredAnimSpeed: 1
-  triggerRadius: 2
-  fuseDuration: 3
+  triggerRadius: 9.77
+  fuseDuration: 6
   emberSkitterPrefab: {fileID: 993423207139465029, guid: 33756349f81792b419209edea67029ff, type: 3}
   spawnCount: 2
   spawnRadius: 1.25
-  explosionVfxPrefab: {fileID: 0}
+  explosionVfxPrefab: {fileID: 6513053225537362488, guid: 7ee95c046f5579f4896a9e1bd55c233b, type: 3}
   destroyOnExplode: 1
 --- !u!1 &4674361560574099306 stripped
 GameObject:
@@ -138,14 +138,14 @@ MonoBehaviour:
   useMaterialPropertyBlock: 1
   pulseAlpha: 0
   alphaPulseTarget: 0
-  alphaPulseMin: 0.25
+  alphaPulseMin: 0.127
   alphaPulseMax: 1
   alphaPulseSpeed: 1
-  pulseEmission: 0
-  emissionPulseMin: 0.35
-  emissionPulseMax: 1.25
-  emissionPulseSpeed: 1.5
-  fallbackEmissionTint: {r: 1, g: 0.85, b: 0.55, a: 1}
+  pulseEmission: 1
+  emissionPulseMin: 1.82
+  emissionPulseMax: 3
+  emissionPulseSpeed: 0.3
+  fallbackEmissionTint: {r: 3.2490098, g: 2.110686, b: 1.7837701, a: 1}
   ensureEmissionKeyword: 1
   scrollBaseMap: 0
   baseMapScrollSpeed: {x: 0.1, y: 0}
@@ -155,7 +155,7 @@ MonoBehaviour:
   normalMapScrollSpeed: {x: 0, y: 0}
   useUnscaledTime: 0
   phaseOffset: 0
-  previewInEditMode: 1
+  previewInEditMode: 0
 --- !u!95 &8950528781836385232 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}

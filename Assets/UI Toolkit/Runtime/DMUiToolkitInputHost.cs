@@ -15,6 +15,7 @@ namespace Project.UI
     public class DMUiToolkitInputHost : MonoBehaviour
     {
         private static readonly HashSet<VisualElement> RegisteredKeyRoots = new HashSet<VisualElement>();
+        private float nextGhostClear;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -43,12 +44,19 @@ namespace Project.UI
 
             TryRegisterBootstrapRoots();
 
+            // Do NOT RecoverGhostUiLocks every frame here — ForceHide/Close races made journal
+            // hotkeys appear dead. PlayerController polls lightly when input flags are stuck.
             GameplayKeyboardShortcuts.TryHandleDevPanel();
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
             GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
 
+            if (Time.unscaledTime >= nextGhostClear)
+            {
+                nextGhostClear = Time.unscaledTime + 0.25f;
+                GameplayInputRecovery.ClearGhostPauseOverlay();
+            }
+
             if (GameSession.HasStarted
-                && !MainMenuController.BlocksGameplayHud
                 && !DMUiToolkitLoadingOverlay.IsShowing
                 && !DMUiToolkitMainMenu.IsVisible
                 && !DMUiToolkitMenuPanels.IsAnySubPanelOpen)

@@ -26,16 +26,10 @@ namespace Project.EditorTools
             Sprite gamepadSprite = ImportSprite(GamepadImagePath);
 
             ControlsSchemeDefinition keyboardScheme = LoadOrCreateScheme(KeyboardSchemePath, "Keyboard and Mouse");
-            SetSchemePages(
-                keyboardScheme,
-                keyboardSprite,
-                "InputSystem_Actions — WASD move · mouse look · LMB attack · RMB block · E interact · Shift sprint · Space jump · Ctrl crouch · 1/2 hotbar · Tab switch weapon · I inventory · M map · J journal · C craft · B blueprints · P pioneers · K pets · U character · L echoes · Esc menu/pause");
+            SetSchemePages(keyboardScheme, keyboardSprite, string.Empty);
 
             ControlsSchemeDefinition gamepadScheme = LoadOrCreateScheme(GamepadSchemePath, "Controller");
-            SetSchemePages(
-                gamepadScheme,
-                gamepadSprite,
-                "Controller support is in progress. Current bindings: left stick move · right stick look · West (X) attack · North (Y) interact · East (B) crouch · South (A) jump · left stick press sprint · D-pad left/right hotbar. Block, weapon switch, and several UI panels are keyboard-only for now.");
+            SetSchemePages(gamepadScheme, gamepadSprite, string.Empty);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

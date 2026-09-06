@@ -37,14 +37,10 @@ namespace Project.Interaction
 
         public void OnBlock(InputAction.CallbackContext context)
         {
-            if (!Application.isPlaying || !GameSession.HasStarted)
-                return;
-
-            OpticsController optics = GetComponent<OpticsController>();
-            if (optics != null)
-                optics.TryHandleBlockInput(context);
+            // Optics RMB/Block is owned by PioneerInvectorInputBridge.OnBlock.
+            // Do not call TryHandleBlockInput here - a second call on the same
+            // CallbackContext would open then immediately close optics.
         }
-
         public void OnSwitchWeapon(InputAction.CallbackContext context)
         {
             if (!context.performed || equipment == null || !GameSession.HasStarted)

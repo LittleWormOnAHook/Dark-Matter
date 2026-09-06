@@ -151,10 +151,11 @@ namespace Project.Companions
             foreach (Collider collider in instance.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
 
+            // Destroy leftover Rigidbodies so held meshes stay locked to the hand bone.
             foreach (Rigidbody body in instance.GetComponentsInChildren<Rigidbody>(true))
             {
-                body.isKinematic = true;
-                body.detectCollisions = false;
+                if (body != null)
+                    Object.Destroy(body);
             }
         }
     }

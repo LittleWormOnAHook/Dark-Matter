@@ -49,6 +49,8 @@ namespace Project.Player.Invector
         private LineRenderer activeAimLaserLine;
         private SpriteRenderer activeAimLaserSight;
         private Transform activeAimLaserRoot;
+        private Transform cachedPulseRoot;
+        private HitscanBeamMuzzleFollow cachedPulse;
 
         /// <summary>Survival Rifle LaserSight (Rifles submenu).</summary>
         public bool LaserSightEnabled => rifleLaserSightEnabled;
@@ -114,8 +116,13 @@ namespace Project.Player.Invector
                 return;
 
             // Hitscan pulse owns the stack briefly while firing — don't fight it.
-            HitscanBeamMuzzleFollow pulse = activeAimLaserRoot.GetComponent<HitscanBeamMuzzleFollow>();
-            if (pulse != null && pulse.enabled)
+            if (cachedPulseRoot != activeAimLaserRoot)
+            {
+                cachedPulseRoot = activeAimLaserRoot;
+                cachedPulse = activeAimLaserRoot.GetComponent<HitscanBeamMuzzleFollow>();
+            }
+
+            if (cachedPulse != null && cachedPulse.enabled)
                 return;
 
             UpdateActiveAimLaserToReticle();
@@ -381,7 +388,7 @@ namespace Project.Player.Invector
                 out float aimDistance);
             Vector3 endPoint = origin + direction * Mathf.Max(aimDistance, 0.5f);
 
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, AimLaserMaxRange, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, AimLaserMaxRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                 endPoint = hit.point;
 
             if (activeAimLaserLine != null && activeAimLaserLine.enabled)

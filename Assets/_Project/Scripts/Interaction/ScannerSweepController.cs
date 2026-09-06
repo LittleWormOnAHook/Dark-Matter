@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace Project.Interaction
 {
     /// <summary>
-    /// Middle-mouse scanner sweep: gold filled disc (light center → heavy rim) that rides terrain,
+    /// Middle-mouse scanner sweep: gold filled disc (light center â†’ heavy rim) that rides terrain,
     /// outlines scannables, and reveals fog of war.
     /// </summary>
     public class ScannerSweepController : MonoBehaviour
@@ -85,7 +85,7 @@ namespace Project.Interaction
 
             // Marker detect + fog reveal start at 40m, then +skill ranks.
             float range = MapFogOfWar.GetScanRevealRadius();
-            // 50% slower than profile (half speed → 2× duration).
+            // 50% slower than profile (half speed â†’ 2Ã— duration).
             float duration = Mathf.Max(0.2f, activeProfile.sweepDuration) * 2f;
             Vector3 origin = ResolvePlayerSweepOrigin();
 
@@ -203,7 +203,21 @@ namespace Project.Interaction
                 }
             }
 
+            TryIdentifyScannedPickup(root);
             ScannerDiscoveryRegistry.Discover(marker.DiscoveryId);
+        }
+
+        private static void TryIdentifyScannedPickup(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            ItemPickup pickup = root.GetComponentInParent<ItemPickup>();
+            if (pickup == null || pickup.itemData == null || pickup.IsPickedUp)
+                return;
+
+            // TODO: Later some items may require Gerald or a designated NPC to identify (not scanner).
+            ResourceIdentificationRegistry.Identify(pickup.itemData);
         }
 
         private void EnsureSweepDiscVisual()
@@ -298,7 +312,7 @@ namespace Project.Interaction
             Vector3 centerSurface = SampleTopologyPoint(
                 center + Vector3.up * TopologyProbeHeight,
                 center.y);
-            // Mesh is parented to the player — store local verts so the sweep stays centered.
+            // Mesh is parented to the player â€” store local verts so the sweep stays centered.
             sweepVertices[0] = transform.InverseTransformPoint(centerSurface);
             sweepColors[0] = ToColor32(gold, 0.35f * overallAlpha);
 

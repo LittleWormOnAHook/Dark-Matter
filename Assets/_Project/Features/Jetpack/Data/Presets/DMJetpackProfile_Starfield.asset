@@ -17,18 +17,18 @@ MonoBehaviour:
   releaseRegenBonusSeconds: 10
   regenSecondsPerSecond: 0.35
   energyDrainPerSecond: 0.1
-  upwardThrustForce: 8
-  descendForce: 25.58
+  upwardThrustForce: 6.5
+  descendForce: 14.89
   descendInputThreshold: 0.74
   descendBrakeStrength: 1
   verticalResponse: 8
   hoverGravityScale: 0.39
-  boostDescendGravityScale: 0.24
+  boostDescendGravityScale: 0.1
   fadeFallGravityScale: 0.05
   freeFallGravityScale: 0.05
   coastFallGravityScale: 0.22
   releaseUpwardBleed: 4.5
-  jetpackAirSpeed: 3
+  jetpackAirSpeed: 2.5
   jetpackPlanarResponse: 5
   directedVerticalScale: 0.575
   directedRedirect: 10

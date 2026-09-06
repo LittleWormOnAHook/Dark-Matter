@@ -208,11 +208,7 @@ namespace Project.Pet
         {
             Transform owner = _pet != null ? _pet.Owner : null;
             if (owner == null)
-            {
-                GameObject player = GameObject.FindWithTag("Player");
-                if (player != null)
-                    owner = player.transform;
-            }
+                owner = PlayerReference.ResolveTransform();
 
             if (owner != _owner)
             {

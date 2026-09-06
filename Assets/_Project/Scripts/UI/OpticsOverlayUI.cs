@@ -765,6 +765,11 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            // UITK owns optics: DMUiToolkitOpticsOverlay disables OpticsOverlayCanvas and mirrors
+            // this component's state, so skip the layout fit without touching visibility state.
+            if (DMUiToolkitHud.IsDriving)
+                return;
+
             if (sceneAuthoredOverlay || !isVisible || binocularRoot == null || !binocularRoot.activeSelf)
                 return;
 

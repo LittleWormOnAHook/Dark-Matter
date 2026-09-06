@@ -15,4 +15,4 @@ MonoBehaviour:
   schemeTitle: Keyboard and Mouse
   pages:
   - image: {fileID: 21300000, guid: 95258060ac1f2bc4280ce7cc92bd80a1, type: 3}
-    caption: 'InputSystem_Actions — WASD move · mouse look · LMB attack · RMB block · E interact · Shift sprint · Space jump · Ctrl crouch · 1/2 hotbar · Tab switch weapon · I inventory · M map · J journal · C craft · B blueprints · P pioneers · K pets · U character · L echoes · Esc menu/pause'
+    caption:

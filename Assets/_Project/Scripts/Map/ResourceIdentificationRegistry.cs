@@ -6,7 +6,8 @@ using UnityEngine;
 namespace Project.Map
 {
     /// <summary>
-    /// Tracks resource item types identified by the mining multi-tool F-scan.
+    /// Tracks item types identified by mining F-scan and scanner sweep on pickups.
+    /// TODO: Later some items may require Gerald or a designated NPC to identify (not scanner).
     /// Identification is per item type (asset name), not per world node.
     /// </summary>
     public static class ResourceIdentificationRegistry

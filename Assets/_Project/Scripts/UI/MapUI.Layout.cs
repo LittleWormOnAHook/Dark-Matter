@@ -66,6 +66,9 @@ namespace Project.UI
 
         private void EnsureUiBuilt()
         {
+            if (DMUiToolkitConfig.IsEnabled)
+                return;
+
             if (uiBuilt)
                 return;
 

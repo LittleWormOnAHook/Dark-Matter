@@ -23,6 +23,7 @@ namespace Project.UI
 
         private RectTransform dotRect;
         private Image dotImage;
+        private Canvas cachedCanvas;
         private WorldUseController useController;
         private ResourceGatherer gatherer;
         private Camera worldCamera;
@@ -32,6 +33,7 @@ namespace Project.UI
         private bool reticleInitialized;
         private float nextAimSampleTime;
         private bool hasAimedPickup;
+        private bool uitkHidden;
 
         private void Awake()
         {
@@ -42,10 +44,16 @@ namespace Project.UI
         {
             if (DMUiToolkitHud.IsDriving)
             {
-                if (dotRect != null)
-                    dotRect.gameObject.SetActive(false);
+                if (!uitkHidden)
+                {
+                    if (dotRect != null)
+                        dotRect.gameObject.SetActive(false);
+                    uitkHidden = true;
+                }
                 return;
             }
+
+            uitkHidden = false;
 
             if (dotRect == null || dotImage == null)
                 return;
@@ -64,11 +72,12 @@ namespace Project.UI
 
         private void UpdateReticlePosition()
         {
-            Canvas canvas = dotRect.GetComponentInParent<Canvas>();
-            if (canvas == null)
+            if (cachedCanvas == null)
+                cachedCanvas = dotRect.GetComponentInParent<Canvas>();
+            if (cachedCanvas == null)
                 return;
 
-            RectTransform canvasRect = canvas.transform as RectTransform;
+            RectTransform canvasRect = cachedCanvas.transform as RectTransform;
             if (canvasRect == null)
                 return;
 

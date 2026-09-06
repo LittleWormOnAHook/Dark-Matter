@@ -442,7 +442,12 @@ namespace Project.UI
 
         private void Update()
         {
-            if (panelRoot == null)
+            // UITK owns the journal character page; the uGUI panel also has no reason to refresh
+            // while it is closed (panelRoot survives Unembed-less panel hides).
+            if (DMUiToolkitMenus.IsDriving)
+                return;
+
+            if (panelRoot == null || !panelRoot.activeInHierarchy)
                 return;
 
             RefreshJetBar();

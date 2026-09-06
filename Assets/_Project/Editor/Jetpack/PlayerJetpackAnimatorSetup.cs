@@ -58,7 +58,7 @@ namespace Project.EditorTools.Jetpack
 
         public static RuntimeAnimatorController BuildOrUpdateController(out string message)
         {
-            AnimationClip idle = LoadClip(JumpsFlyPath, "IdleFly");
+            AnimationClip idle = LoadClip(JumpsFlyPath, "FlyUp") ?? LoadClip(JumpsFlyPath, "IdleFly");
             AnimationClip forward = LoadClip(JumpsFlyPath, "FlyForwardCoast") ?? LoadClip(JumpsFlyPath, "FlyForward");
             AnimationClip back = LoadClip(JumpsFlyPath, "FlyBackward");
             AnimationClip left = LoadClip(JumpsFlyPath, "FlyLeft");
@@ -126,7 +126,7 @@ namespace Project.EditorTools.Jetpack
             RemoveJetpackTransitions(root, flyState, landState);
             GateAirborneAnyState(root, flyState, landState);
 
-            AddAnyStateTransition(root, flyState, AnimatorConditionMode.If, "JetpackActive", duration: 0.18f);
+            AddAnyStateTransition(root, flyState, AnimatorConditionMode.If, "JetpackActive", duration: 0.08f);
 
             AddTransition(flyState, landState, AnimatorConditionMode.If, "JetpackLand", hasExitTime: false, duration: 0.1f);
 

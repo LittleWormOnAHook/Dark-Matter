@@ -326,6 +326,24 @@ namespace Project.Progression
                 }
             }
 
+            DMSaveLoadRegistry.RecordLive("apply-save", -1, "ApplySaveSnapshot", $"Applied save Lv {level} XP {currentXp} SP {unspentSkillPoints}");
+            OnXpChanged?.Invoke();
+        }
+
+        public void DevSetLevel(int newLevel)
+        {
+            int previous = level;
+            level = Mathf.Clamp(newLevel, 1, MaxLevel);
+            if (level > previous)
+                unspentSkillPoints += GetTotalSkillPointsFromLevels(previous + 1, level);
+            xpBaselineInitialized = false;
+            EnsureXpBaselineForCurrentLevel();
+            OnXpChanged?.Invoke();
+        }
+
+        public void DevAddSkillPoints(int amount)
+        {
+            unspentSkillPoints = Mathf.Max(0, unspentSkillPoints + amount);
             OnXpChanged?.Invoke();
         }
 
@@ -338,6 +356,7 @@ namespace Project.Progression
             claimedOneTimeXp.Clear();
             xpBaselineInitialized = false;
             EnsureXpBaselineForCurrentLevel();
+            DMSaveLoadRegistry.RecordLive("new-game-reset", -1, "ResetToNewGame", $"Reset to level {level} / {unspentSkillPoints} SP");
             OnXpChanged?.Invoke();
         }
 

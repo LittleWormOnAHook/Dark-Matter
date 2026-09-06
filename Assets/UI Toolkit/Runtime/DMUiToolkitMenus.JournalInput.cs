@@ -8,6 +8,39 @@ namespace Project.UI
     {
         private JournalWindowId? pendingShowWindow;
 
+        /// <summary>True while ForceShow is waiting on menuRoot bind (do not treat as ghost-closed).</summary>
+        public static bool HasPendingShow =>
+            instance != null && instance.pendingShowWindow.HasValue;
+
+        /// <summary>
+        /// Navigator reports open but Toolkit menus were force-hidden / never painted (climb Detach recovery).
+        /// Re-paint from the live navigator window — do not CloseAll.
+        /// </summary>
+        public static void RepairOpenNavigatorChrome()
+        {
+            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            FullscreenUiNavigator nav = FullscreenUiNavigator.Instance;
+            if (nav == null || !nav.IsAnyOpen)
+                return;
+
+            JournalWindowId? window = nav.CurrentWindow;
+            if (!window.HasValue || !IsToolkitWindow(window))
+            {
+                // Fall back to journal panel active window if navigator CurrentWindow is unset.
+                JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+                window = journal != null ? journal.ActiveJournalWindow : null;
+            }
+
+            if (!window.HasValue || !IsToolkitWindow(window))
+                window = JournalWindowId.JournalQuest;
+
+            EnsureHost()?.ForceShow(window.Value);
+            GameplayHudVisibility.ClearCinematicChrome();
+        }
+
+
         /// <summary>
         /// Switch journal tabs without closing when already on the requested tab (e.g. Blueprints on B).
         /// </summary>
@@ -63,6 +96,9 @@ namespace Project.UI
             if (journal == null)
                 return false;
 
+            bool wasOpen = journal.IsOpen;
+            JournalWindowId? wasWindow = journal.ActiveJournalWindow;
+
             bool toggled = journalHotkey
                 ? journal.TryToggleJournal()
                 : journal.TryToggleTab(windowId);
@@ -70,15 +106,21 @@ namespace Project.UI
             if (!toggled)
                 return false;
 
+            GameplayHudVisibility.ClearCinematicChrome();
+
             DMUiToolkitMenus host = EnsureHost();
             if (host == null)
                 return true;
 
-            if (journal.IsOpen)
+            // Close only when the press was a real toggle-off of the open journal/tab.
+            bool closedSameTab = wasOpen && (
+                journalHotkey
+                || (wasWindow.HasValue && wasWindow.Value == windowId));
+
+            if (journal.IsOpen || (!closedSameTab && !wasOpen))
             {
-                JournalWindowId? active = journal.ActiveJournalWindow ?? windowId;
-                if (active.HasValue)
-                    host.ForceShow(active.Value);
+                JournalWindowId show = journal.ActiveJournalWindow ?? windowId;
+                host.ForceShow(show);
             }
             else
             {

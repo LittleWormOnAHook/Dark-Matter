@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Project.Companions;
+using Project.Core;
 using Project.Pet;
 using Project.Survival;
 using UnityEngine;
@@ -117,11 +118,12 @@ namespace Project.Creatures
 
             CacheFrame = Time.frameCount;
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            PlayerCache = player != null ? player.transform : null;
+            PlayerCache = PlayerReference.ResolveTransform();
 
             PetsCache.Clear();
-            PetController[] pets = Object.FindObjectsByType<PetController>(FindObjectsInactive.Exclude);
+            PetController[] pets = SceneComponentCache.GetAll<PetController>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.5f);
             for (int i = 0; i < pets.Length; i++)
             {
                 PetController pet = pets[i];
@@ -131,7 +133,9 @@ namespace Project.Creatures
             }
 
             CompanionsCache.Clear();
-            CompanionHealth[] companions = Object.FindObjectsByType<CompanionHealth>(FindObjectsInactive.Exclude);
+            CompanionHealth[] companions = SceneComponentCache.GetAll<CompanionHealth>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.5f);
             for (int i = 0; i < companions.Length; i++)
             {
                 CompanionHealth companion = companions[i];

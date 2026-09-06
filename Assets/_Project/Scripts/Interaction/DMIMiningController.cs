@@ -4,6 +4,7 @@ using Project.Data;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
+using Project.Survival;
 using Project.UI;
 using System;
 using System.Collections.Generic;
@@ -42,10 +43,13 @@ namespace Project.Interaction
             "Assets/Laser Weapons Sound Pack/Free/continuous_beam_1.wav";
         private const string DefaultContinuousLoopResourcesPath = "Audio/continuous_beam_1";
         private const float EmptyChargeSoundCooldown = 0.45f;
+        private const float MiningEnergyDrainPerSecond = 8f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
         private static readonly Color OverheatTint = new Color(1f, 0.22f, 0.08f, 1f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly RaycastHit[] LockHitBuffer = new RaycastHit[24];
+        private static readonly Collider[] NearbyNodeBuffer = new Collider[64];
 
         [Header("Acquire")]
         [Tooltip("Layers used when acquiring / soft-locking ResourceNodes for mining.")]
@@ -75,6 +79,7 @@ namespace Project.Interaction
         private PlayerController player;
         private PioneerInvectorWeaponBridge weaponBridge;
         private PioneerInvectorAmmoBridge ammoBridge;
+        private SurvivalStats survivalStats;
         private Camera gameplayCamera;
 
         private ResourceNode lockedNode;
@@ -124,6 +129,7 @@ namespace Project.Interaction
             weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
             ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
             ammoState = GetComponent<WeaponAmmoState>();
+            survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
             EnsureVisuals();
             EnsureProgressUi();
             EnsureContinuousAudio();
@@ -182,6 +188,21 @@ namespace Project.Interaction
             if (tool == null || !fireHeld)
             {
                 powerDrainAccumulator = 0f;
+                return;
+            }
+
+            if (!HasMiningEnergy())
+            {
+                DMUiToolkitHud.ShowNoPower();
+                InterruptMiningForEmptyPower();
+                return;
+            }
+
+            SpendMiningEnergy(tool);
+            if (!HasMiningEnergy())
+            {
+                DMUiToolkitHud.ShowNoPower();
+                InterruptMiningForEmptyPower();
                 return;
             }
 
@@ -256,7 +277,7 @@ namespace Project.Interaction
                 camAimDir,
                 out RaycastHit camHit,
                 MaxBeamVisualDistance,
-                ~0,
+                Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
             if (camHitSurface)
                 reticlePoint = camHit.point;
@@ -275,7 +296,7 @@ namespace Project.Interaction
                     beamDir,
                     out RaycastHit muzzleHit,
                     dist,
-                    ~0,
+                    Physics.DefaultRaycastLayers,
                     QueryTriggerInteraction.Ignore))
             {
                 hitCollider = true;
@@ -708,6 +729,32 @@ namespace Project.Interaction
             return true;
         }
 
+        private bool HasMiningEnergy()
+        {
+            if (survivalStats == null)
+                survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
+            return survivalStats == null || survivalStats.HasEnergy();
+        }
+
+        private void SpendMiningEnergy(ItemData tool)
+        {
+            if (survivalStats == null)
+                return;
+
+            float drain = MiningEnergyDrainPerSecond;
+            if (tool != null && tool.miningChargeDrainPerSecond > 0.01f)
+                drain = tool.miningChargeDrainPerSecond;
+            survivalStats.SpendEnergy(drain * Time.deltaTime);
+        }
+
+        private void InterruptMiningForEmptyPower()
+        {
+            powerDrainAccumulator = 0f;
+            if (hasLock && lockedNode != null)
+                lockedNode.NotifyMiningInterrupted(ProgressRetainSeconds);
+            StopAllMiningFx(playStopSound: true);
+        }
+
         /// <summary>
         /// Mining only while the mining tool is physically drawn — EquippedItem stays valid when holstered.
         /// </summary>
@@ -941,26 +988,26 @@ namespace Project.Interaction
             if (node == null)
                 return false;
 
-            RaycastHit[] hits = Physics.RaycastAll(
+            int hitCount = Physics.RaycastNonAlloc(
                 aimOrigin,
                 aimDir,
+                LockHitBuffer,
                 maxDistance,
-                ~0,
+                Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Collide);
 
             float bestDist = float.MaxValue;
             bool found = false;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                ResourceNode hitNode = hits[i].collider.GetComponentInParent<ResourceNode>();
-                if (hitNode != node)
+                if (LockHitBuffer[i].distance >= bestDist)
                     continue;
 
-                if (hits[i].distance >= bestDist)
+                if (ResourceNode.FromCollider(LockHitBuffer[i].collider) != node)
                     continue;
 
-                bestDist = hits[i].distance;
-                point = hits[i].point;
+                bestDist = LockHitBuffer[i].distance;
+                point = LockHitBuffer[i].point;
                 found = true;
             }
 
@@ -968,7 +1015,7 @@ namespace Project.Interaction
                 return true;
 
             Vector3 fallbackReference = aimOrigin + aimDir * Mathf.Min(maxDistance, 2f);
-            Collider[] colliders = node.GetComponentsInChildren<Collider>();
+            Collider[] colliders = node.Colliders;
             float closestSqrDistance = float.MaxValue;
             bool hasColliderFallback = false;
 
@@ -1042,12 +1089,13 @@ namespace Project.Interaction
         /// </summary>
         private void TryAcquireFromNearbyNodes(Vector3 aimOrigin, Vector3 aimDir, ItemData tool)
         {
-            Collider[] nearby = Physics.OverlapSphere(
+            int nearbyCount = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 MaxMineDistance,
+                NearbyNodeBuffer,
                 resourceLayer,
                 QueryTriggerInteraction.Collide);
-            if (nearby == null || nearby.Length == 0)
+            if (nearbyCount == 0)
                 return;
 
             ItemData drawnTool = ResolveDrawnMiningTool();
@@ -1056,12 +1104,12 @@ namespace Project.Interaction
             ResourceNode bestNode = null;
             Vector3 bestPoint = default;
 
-            for (int i = 0; i < nearby.Length; i++)
+            for (int i = 0; i < nearbyCount; i++)
             {
-                if (nearby[i] == null)
+                if (NearbyNodeBuffer[i] == null)
                     continue;
 
-                ResourceNode node = nearby[i].GetComponentInParent<ResourceNode>();
+                ResourceNode node = ResourceNode.FromCollider(NearbyNodeBuffer[i]);
                 if (node == null || node.resourceItem == null)
                     continue;
                 if (node.interactionMode != ResourceNodeInteractionMode.LaserMine)

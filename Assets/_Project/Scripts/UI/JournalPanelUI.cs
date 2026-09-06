@@ -64,7 +64,9 @@ namespace Project.UI
 
     private void Awake()
     {
-      MenuUiBuilder.StretchRectToFill(GetComponent<RectTransform>());
+      RectTransform rect = GetComponent<RectTransform>();
+      if (rect != null)
+        MenuUiBuilder.StretchRectToFill(rect);
     }
 
     private void Start()
@@ -306,7 +308,7 @@ namespace Project.UI
 
     public static void CloseAnyOpenJournal()
     {
-      JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+      JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
       journal?.ReleaseInputCapture();
     }
 
@@ -371,6 +373,12 @@ namespace Project.UI
 
     private void EnsureUiBuilt()
     {
+      if (DMUiToolkitConfig.IsEnabled)
+      {
+        EnsureToolkitNavigator();
+        return;
+      }
+
       if (uiBuilt)
         return;
 
@@ -392,6 +400,37 @@ namespace Project.UI
         Debug.LogException(ex);
         CleanupPartialUi();
       }
+    }
+
+    /// <summary>
+    /// Toolkit paints journal chrome. We still need a navigator stack (IsOpen / tab toggle)
+    /// without MenuUiBuilder overlays or Canvas.
+    /// </summary>
+    private void EnsureToolkitNavigator()
+    {
+      if (navigator != null)
+      {
+        uiBuilt = true;
+        return;
+      }
+
+      Transform host = transform.Find("JournalNavigatorHost");
+      if (host == null)
+      {
+        GameObject hostGo = new GameObject("JournalNavigatorHost");
+        hostGo.transform.SetParent(transform, false);
+        host = hostGo.transform;
+      }
+
+      navigator = FullscreenUiNavigator.EnsureExists(host);
+      if (navigator == null)
+        return;
+
+      navigator.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;
+      navigator.OnPauseGameplayChanged += HandleNavigatorPauseChanged;
+      navigator.OnActiveWindowChanged -= HandleActiveWindowChanged;
+      navigator.OnActiveWindowChanged += HandleActiveWindowChanged;
+      uiBuilt = true;
     }
 
     private void ApplySavedLayoutProfiles()

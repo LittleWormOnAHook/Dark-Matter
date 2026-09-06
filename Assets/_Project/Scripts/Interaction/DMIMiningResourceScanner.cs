@@ -24,6 +24,10 @@ namespace Project.Interaction
     [DefaultExecutionOrder(610)]
     public class DMIMiningResourceScanner : MonoBehaviour
     {
+        private const int ScanHitBufferSize = 24;
+        private static readonly RaycastHit[] ScanHitBuffer = new RaycastHit[ScanHitBufferSize];
+        private static readonly Collider[] NearbyNodeBuffer = new Collider[64];
+
         private const float ScanDurationSeconds = 5f;
         private const float ScanHighlightAlpha = 0.32f;
         private const float ToastCooldownSeconds = 1.25f;
@@ -327,24 +331,27 @@ namespace Project.Interaction
 
             Vector3 aimDir = ResolveAimDirection(out Vector3 aimOrigin);
 
-            // Use RaycastAll so we can skip non-ResourceNode hits (e.g. player colliders) instead
-            // of stopping at the first geometry collision.
-            RaycastHit[] hits = Physics.RaycastAll(
-                aimOrigin, aimDir, DMIMiningController.MaxScanDistance,
+            // Gather every hit so we can skip non-ResourceNode geometry (e.g. player colliders)
+            // instead of stopping at the first collision, then keep the nearest real node.
+            int hitCount = Physics.RaycastNonAlloc(
+                aimOrigin, aimDir, ScanHitBuffer, DMIMiningController.MaxScanDistance,
                 effectiveMask, QueryTriggerInteraction.Collide);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             RaycastHit bestHit = default;
             bool found = false;
-            for (int i = 0; i < hits.Length; i++)
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
             {
-                ResourceNode candidate = hits[i].collider.GetComponentInParent<ResourceNode>();
-                if (candidate != null && candidate.resourceItem != null)
-                {
-                    bestHit = hits[i];
-                    found = true;
-                    break;
-                }
+                if (ScanHitBuffer[i].distance >= bestDistance)
+                    continue;
+
+                ResourceNode candidate = ResourceNode.FromCollider(ScanHitBuffer[i].collider);
+                if (candidate == null || candidate.resourceItem == null)
+                    continue;
+
+                bestHit = ScanHitBuffer[i];
+                bestDistance = ScanHitBuffer[i].distance;
+                found = true;
             }
 
             // Sphere-cast fallback for wider acquisition when straight raycast misses.
@@ -365,7 +372,7 @@ namespace Project.Interaction
                 found = true;
             }
 
-            node = bestHit.collider.GetComponentInParent<ResourceNode>();
+            node = ResourceNode.FromCollider(bestHit.collider);
             if (node == null || node.resourceItem == null)
                 return false;
 
@@ -385,24 +392,25 @@ namespace Project.Interaction
             node = null;
             point = default;
 
-            Collider[] nearby = Physics.OverlapSphere(
+            int nearbyCount = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 DMIMiningController.MaxScanDistance,
+                NearbyNodeBuffer,
                 resourceLayer & ~(1 << 2),
                 QueryTriggerInteraction.Collide);
-            if (nearby == null || nearby.Length == 0)
+            if (nearbyCount == 0)
                 return false;
 
             float bestAngle = 25f;
             ResourceNode bestNode = null;
             Vector3 bestPoint = default;
 
-            for (int i = 0; i < nearby.Length; i++)
+            for (int i = 0; i < nearbyCount; i++)
             {
-                if (nearby[i] == null)
+                if (NearbyNodeBuffer[i] == null)
                     continue;
 
-                ResourceNode candidate = nearby[i].GetComponentInParent<ResourceNode>();
+                ResourceNode candidate = ResourceNode.FromCollider(NearbyNodeBuffer[i]);
                 if (candidate == null || candidate.resourceItem == null)
                     continue;
                 if (Vector3.Distance(transform.position, candidate.GetClosestPoint(transform.position))

@@ -74,6 +74,10 @@ namespace Project.UI
 
         private void Update()
         {
+            // UITK owns the gameplay thermal readout — no needle lerp or TMP write behind it.
+            if (DMUiToolkitHud.IsDriving)
+                return;
+
             if (tubeRect == null)
                 return;
 

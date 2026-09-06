@@ -25,6 +25,7 @@ namespace Project.UI
         private Vector3 targetBarOffset;
         private Camera worldCamera;
         private bool userVisible = true;
+        private bool uitkHidden;
 
         public EnemyHealth EnemyTarget => enemyTarget;
 
@@ -122,6 +123,19 @@ namespace Project.UI
         {
             if (rectTransform == null)
                 return;
+
+            // UITK draws the floating health bars; don't run world-to-screen math behind it.
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (!uitkHidden)
+                {
+                    SetBarVisible(0f);
+                    uitkHidden = true;
+                }
+                return;
+            }
+
+            uitkHidden = false;
 
             if (worldCamera == null)
                 worldCamera = Camera.main;

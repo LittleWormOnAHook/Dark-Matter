@@ -51,7 +51,7 @@ namespace Project.Player.Invector
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private bool _miningScanAimHold;
-        /// <summary>Scroll zoom the player chose — preserved across aim/culling so ChangeState cannot wipe it.</summary>
+        /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
         private float _preferredCameraZoom = -1f;
         private bool _wasAimingCameraLastFrame;
         private bool _wasUiBlockingLastFrame;
@@ -114,7 +114,7 @@ namespace Project.Player.Invector
                 yield return null;
 
             ApplyStartZoomIn();
-            // One more frame — loading handoff / ChangeState can rewrite distance after MarkStarted.
+            // One more frame â€” loading handoff / ChangeState can rewrite distance after MarkStarted.
             yield return null;
             ApplyStartZoomIn();
             _startZoomRoutine = null;
@@ -164,12 +164,24 @@ namespace Project.Player.Invector
         {
             base.AimInput();
 
-            if (!_miningScanAimHold || cc == null || cc.ragdolled || CurrentActiveWeapon == null)
+            if (cc == null || cc.ragdolled || CurrentActiveWeapon == null)
+                return;
+
+            bool opticsOpen = _playerController != null && _playerController.IsOpticsOpen;
+
+            // Legacy Input.GetKey(Mouse1) is unreliable with Input System â€” keep ADS while RMB held.
+            // Skip while optics own the view so B/Esc/RMB close paths stay clean.
+            bool rmbAimHeld = !opticsOpen
+                && Mouse.current != null
+                && Mouse.current.rightButton.isPressed
+                && (_equipment == null || _equipment.IsWeaponDrawn);
+
+            if (!_miningScanAimHold && !rmbAimHeld)
                 return;
 
             isAimingByInput = true;
 
-            // base.AimInput may have cleared strafe when RMB was not held — re-enter while scan-aiming.
+            // base.AimInput may have cleared strafe when legacy Mouse1 was not seen â€” re-enter strafe.
             if (cc.locomotionType == vThirdPersonMotor.LocomotionType.FreeWithStrafe &&
                 !cc.lockInStrafe &&
                 !cc.isStrafing)
@@ -200,13 +212,26 @@ namespace Project.Player.Invector
             if (_inputBridge != null && _inputBridge.ShouldLockGameplayInput())
                 return;
 
-            ItemData weapon = _equipment.EquippedItem;
-            if (!EquipmentController.IsWeaponItem(weapon))
+            if (_playerController != null && _playerController.IsOpticsOpen)
                 return;
 
-            if (!_equipment.DrawWeapon())
+            // Hot Cross Tab focuses a TL weapon without drawing â€” arm that slot on RMB ADS.
+            int focusedLocal = DMUiToolkitHotCross.WeaponLocalIndex;
+            if (_equipment.IsWeaponHotbarSlot(focusedLocal)
+                && EquipmentController.IsWeaponItem(_equipment.GetHotbarItem(focusedLocal)))
+            {
+                int weaponSlot = _equipment.GetWeaponSlotIndexForHotbar(focusedLocal);
+                if (weaponSlot >= 0
+                    && (_equipment.ActiveWeaponSlot != weaponSlot || !_equipment.IsWeaponDrawn))
+                {
+                    _equipment.SelectWeaponSlot(weaponSlot);
+                }
+            }
+
+            if (!_equipment.IsWeaponDrawn && !_equipment.DrawWeapon())
                 return;
 
+            ItemData weapon = _equipment.DrawnWeaponItem ?? _equipment.EquippedItem;
             if (EquipmentController.IsRangedWeaponItem(weapon))
                 isAimingByInput = true;
         }
@@ -316,7 +341,7 @@ namespace Project.Player.Invector
 
             PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
 
-            // Invector ReloadWeapon always proceeds while isInfinityAmmo is set — gate on Pioneer
+            // Invector ReloadWeapon always proceeds while isInfinityAmmo is set â€” gate on Pioneer
             // reserve ammo first, and play empty-deny SFX/head-shake instead of reload anim.
             if (ammoBridge != null)
             {
@@ -352,7 +377,7 @@ namespace Project.Player.Invector
         {
             get
             {
-                // Guard before base IsAiming — it reads cc.isRolling and NRE's during early Awake.
+                // Guard before base IsAiming â€” it reads cc.isRolling and NRE's during early Awake.
                 if (cc == null || shooterManager == null)
                     return isAimingByInput;
 
@@ -459,7 +484,7 @@ namespace Project.Player.Invector
             if (!_loggedScrollStamp)
             {
                 _loggedScrollStamp = true;
-                Debug.Log("DMCam 0831-scroll");
+                // Startup stamp silenced.
             }
 
             if (tpCamera == null)
@@ -607,7 +632,7 @@ namespace Project.Player.Invector
             }
 
             // Only repair a permanently broken zoom (e.g. optics left near-zero).
-            // Do NOT ForceSet when distance alone dips from wall culling — that wiped scroll zoom.
+            // Do NOT ForceSet when distance alone dips from wall culling â€” that wiped scroll zoom.
             if (!aiming
                 && tpCamera.CurrentZoom < runtimeMinCameraDistance - 0.01f
                 && tpCamera.distance < runtimeMinCameraDistance - 0.01f)
@@ -634,7 +659,7 @@ namespace Project.Player.Invector
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
                 ApplyFreeLookZoomRange(tpCamera.lerpState);
 
-            // One-shot restore when leaving aim — pull back to the player's scroll preference.
+            // One-shot restore when leaving aim â€” pull back to the player's scroll preference.
             if (_wasAimingCameraLastFrame)
             {
                 _wasAimingCameraLastFrame = false;
@@ -702,7 +727,7 @@ namespace Project.Player.Invector
             if (_lockedAimZoom < aimMinCameraDistance - 0.01f)
                 return;
 
-            // Correct target only — do not snap distance (ForceSet fought wall-cull lerp).
+            // Correct target only â€” do not snap distance (ForceSet fought wall-cull lerp).
             float live = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
             if (live > _lockedAimZoom + 0.12f)
                 tpCamera.SetZoomTarget(_lockedAimZoom);
@@ -769,7 +794,7 @@ namespace Project.Player.Invector
             if (tpCamera == null)
                 return;
 
-            // Always restore the player's scroll preference — never a UI-bloated follow distance.
+            // Always restore the player's scroll preference â€” never a UI-bloated follow distance.
             float preferred = GetPreferredZoom();
             if (_preferredCameraZoom < runtimeMinCameraDistance - 0.05f)
                 preferred = runtimeDefaultCameraDistance;
@@ -1091,6 +1116,7 @@ namespace Project.Player.Invector
 
             return PioneerInvectorMeshyAimSnapUtility.HasMeshyVisualRoot(gameObject);
         }
+
 
         private static Vector2 ReadMoveVector()
         {

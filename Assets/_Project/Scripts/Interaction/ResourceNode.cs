@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.Combat;
 using Project.Data;
 using Project.Inventory;
@@ -163,6 +164,7 @@ namespace Project.Interaction
         {
             ResourceIdentificationRegistry.Changed += OnIdentificationChanged;
             EnsureInteractionVolume();
+            RegisterColliders();
 
             if (interactionMode != ResourceNodeInteractionMode.HoldHarvest)
                 return;
@@ -174,7 +176,76 @@ namespace Project.Interaction
         private void OnDisable()
         {
             ResourceIdentificationRegistry.Changed -= OnIdentificationChanged;
+            UnregisterColliders();
             PickupProximityDotUI.UnregisterHarvestNode(this);
+        }
+
+        /// <summary>
+        /// Collider -> node map so per-frame aim scans resolve a hit without walking the hierarchy.
+        /// </summary>
+        private static readonly Dictionary<Collider, ResourceNode> ColliderLookup = new Dictionary<Collider, ResourceNode>();
+
+        private Collider[] cachedColliders;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetColliderLookup()
+        {
+            ColliderLookup.Clear();
+        }
+
+        /// <summary>
+        /// Resolve the node that owns a collider. Falls back to a hierarchy walk for colliders
+        /// added after the node registered.
+        /// </summary>
+        public static ResourceNode FromCollider(Collider collider)
+        {
+            if (collider == null)
+                return null;
+
+            if (ColliderLookup.TryGetValue(collider, out ResourceNode node))
+                return node != null ? node : null;
+
+            return collider.GetComponentInParent<ResourceNode>();
+        }
+
+        /// <summary>
+        /// Colliders owned by this node, resolved once per enable. Treat as read-only — callers
+        /// share the same array.
+        /// </summary>
+        public Collider[] Colliders
+        {
+            get
+            {
+                if (cachedColliders == null)
+                    cachedColliders = GetComponentsInChildren<Collider>(true);
+                return cachedColliders;
+            }
+        }
+
+        private void RegisterColliders()
+        {
+            cachedColliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < cachedColliders.Length; i++)
+            {
+                Collider col = cachedColliders[i];
+                if (col != null)
+                    ColliderLookup[col] = this;
+            }
+        }
+
+        private void UnregisterColliders()
+        {
+            if (cachedColliders == null)
+                return;
+
+            for (int i = 0; i < cachedColliders.Length; i++)
+            {
+                Collider col = cachedColliders[i];
+                if (col != null)
+                    ColliderLookup.Remove(col);
+            }
+
+            cachedColliders = null;
         }
 
         private void OnIdentificationChanged()
@@ -637,7 +708,7 @@ namespace Project.Interaction
         /// </summary>
         public Vector3 GetClosestPoint(Vector3 worldPoint)
         {
-            Collider[] cols = GetComponentsInChildren<Collider>(true);
+            Collider[] cols = Colliders;
             float bestSqr = float.MaxValue;
             Vector3 best = transform.position;
             bool found = false;

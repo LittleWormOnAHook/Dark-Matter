@@ -18,6 +18,8 @@ namespace Project.UI
     {
         public static PickupProximityDotUI Instance { get; private set; }
 
+        private bool uitkHidden;
+
         /// <summary>Full cone angle (degrees) aligned with camera forward for exclusive pickup dots.</summary>
         public const float PickupConeFovDegrees = 70f;
 
@@ -207,6 +209,20 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            // UITK world chrome paints these dots now. Without this the full pickup/recipe/node
+            // scan below still ran every frame behind the UITK layer.
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (!uitkHidden)
+                {
+                    HideAllDots();
+                    uitkHidden = true;
+                }
+                return;
+            }
+
+            uitkHidden = false;
+
             if (!GameSession.HasStarted)
             {
                 HideAllDots();

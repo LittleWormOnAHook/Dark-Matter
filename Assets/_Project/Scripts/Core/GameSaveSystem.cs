@@ -21,12 +21,83 @@ namespace Project.Core
 {
     public static class GameSaveSystem
     {
-        public const int SlotCount = 5;
+        public const int SlotCount = 10;
         public const int ContinueSlotIndex = 0;
+        public const int AutosaveSlotCount = 2;
+        public const float AutosaveIntervalSeconds = 5f * 60f;
         public const int CurrentSaveVersion = 22;
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
+        private const string WipeOncePrefKey = "DM_WipeAllSaves_20260904";
+        private const int WipeScanSlotCount = 16;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void WipeSavesOnNextStart()
+        {
+            if (PlayerPrefs.GetInt(WipeOncePrefKey, 0) != 0)
+                return;
+
+            DeleteAllSaveFiles();
+            PlayerPrefs.SetInt(WipeOncePrefKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        public static bool IsAutosaveSlot(int slotIndex)
+        {
+            return slotIndex >= 0 && slotIndex < AutosaveSlotCount;
+        }
+
+        public static string GetSlotTitle(int slotIndex)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            return IsAutosaveSlot(slotIndex)
+                ? $"Slot {slotIndex + 1} (Auto)"
+                : $"Slot {slotIndex + 1}";
+        }
+
+        public static int DeleteAllSaveFiles()
+        {
+            int deleted = 0;
+            deleted += TryDeleteFile(LegacySaveFilePath) ? 1 : 0;
+            deleted += TryDeleteFile(SettingsReloadFilePath) ? 1 : 0;
+            deleted += TryDeleteFile(Path.Combine(Application.persistentDataPath, "settings_reload_snapshot.json")) ? 1 : 0;
+
+            int scanCount = Mathf.Max(SlotCount, WipeScanSlotCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (TryDeleteFile(Path.Combine(Application.persistentDataPath, string.Format(SlotFileNameFormat, i))))
+                    deleted++;
+                if (TryDeleteFile(SaveSlotScreenshotUtility.GetRawScreenshotPath(i)))
+                    deleted++;
+            }
+
+            GameSettings.MarkSaveExists(false);
+            DMSaveLoadRegistry.Record("wipe", -1, "DeleteAllSaveFiles", $"Deleted {deleted} save files.");
+            return deleted;
+        }
+
+        public static bool TryAutosave(out string message)
+        {
+            if (!GameSession.HasStarted)
+            {
+                message = "Autosave skipped — expedition has not started.";
+                return false;
+            }
+
+            bool any = false;
+            string last = "Autosave failed.";
+            for (int i = 0; i < AutosaveSlotCount; i++)
+            {
+                if (TrySave(i, null, out last))
+                    any = true;
+            }
+
+            message = any ? "Autosaved slots 1–2." : last;
+            if (any)
+                DMSaveLoadRegistry.RecordLive("autosave", 0, "TryAutosave", message);
+            return any;
+        }
 
         public static bool HasContinueSave => HasSaveInSlot(ContinueSlotIndex);
 
@@ -166,6 +237,45 @@ namespace Project.Core
 
             GameSettings.MarkSaveExists(true);
             message = $"Saved to slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive(
+                "save",
+                slotIndex,
+                "TrySave",
+                message);
+            return true;
+        }
+
+        public static bool TryDelete(int slotIndex, out string message)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            string path = GetSlotFilePath(slotIndex);
+            bool hadFile = File.Exists(path);
+            if (hadFile)
+            {
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                    message = $"Could not delete slot {slotIndex + 1}. {ex.Message}";
+                    return false;
+                }
+            }
+
+            SaveSlotScreenshotUtility.DeleteScreenshot(slotIndex);
+
+            if (!HasAnySaveFile)
+                GameSettings.MarkSaveExists(false);
+
+            if (!hadFile)
+            {
+                message = $"Slot {slotIndex + 1} is empty.";
+                return false;
+            }
+
+            message = $"Deleted slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive("delete", slotIndex, "TryDelete", message);
             return true;
         }
 
@@ -280,6 +390,7 @@ namespace Project.Core
             ApplySaveData(data);
             GameSettings.MarkSaveExists(true);
             message = $"Loaded slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive("load", slotIndex, "TryLoad", message);
             return true;
         }
 
@@ -756,6 +867,23 @@ namespace Project.Core
             catch (Exception exception)
             {
                 Debug.LogWarning($"GameSaveSystem: Failed to migrate legacy save. {exception.Message}");
+            }
+        }
+
+        private static bool TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                File.Delete(path);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"GameSaveSystem: Failed to delete {path}. {exception.Message}");
+                return false;
             }
         }
 

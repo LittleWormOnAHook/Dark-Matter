@@ -24,9 +24,18 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
         public float basemapDistance;
         public ShadowCastingMode shadowCastingMode;
         public bool colliderEnabled;
+        public TerrainCollider collider;
     }
 
     readonly Dictionary<EntityId, OriginalQuality> m_originals = new Dictionary<EntityId, OriginalQuality>();
+
+    // Tile quality only changes as the player crosses the world, so re-evaluating every frame
+    // just burns CPU walking Terrain.activeTerrains.
+    const float ReevaluateInterval = 0.25f;
+    const float ReevaluateMoveDistance = 3f;
+    float m_nextEvaluateTime;
+    Vector3 m_lastEvaluatePosition;
+    bool m_hasEvaluated;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureOnPlayer()
@@ -53,7 +62,28 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
             return;
         }
 
+        if (!ShouldReevaluate())
+        {
+            return;
+        }
+
         ApplyCheapNeighbors();
+    }
+
+    bool ShouldReevaluate()
+    {
+        Vector3 position = transform.position;
+        if (m_hasEvaluated
+            && Time.unscaledTime < m_nextEvaluateTime
+            && (position - m_lastEvaluatePosition).sqrMagnitude < ReevaluateMoveDistance * ReevaluateMoveDistance)
+        {
+            return false;
+        }
+
+        m_hasEvaluated = true;
+        m_nextEvaluateTime = Time.unscaledTime + ReevaluateInterval;
+        m_lastEvaluatePosition = position;
+        return true;
     }
 
     void OnDisable()
@@ -154,7 +184,8 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
         {
             basemapDistance = terrain.basemapDistance,
             shadowCastingMode = terrain.shadowCastingMode,
-            colliderEnabled = collider == null || collider.enabled
+            colliderEnabled = collider == null || collider.enabled,
+            collider = collider
         };
     }
 
@@ -180,7 +211,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
             terrain.basemapDistance = basemap;
         }
 
-        TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
+        TerrainCollider collider = original.collider;
         if (collider != null && collider.enabled != colliderOn)
         {
             collider.enabled = colliderOn;
@@ -212,13 +243,13 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
 
             terrain.shadowCastingMode = original.shadowCastingMode;
             terrain.basemapDistance = original.basemapDistance;
-            TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
-            if (collider != null)
+            if (original.collider != null)
             {
-                collider.enabled = original.colliderEnabled;
+                original.collider.enabled = original.colliderEnabled;
             }
         }
 
         m_originals.Clear();
+        m_hasEvaluated = false;
     }
 }

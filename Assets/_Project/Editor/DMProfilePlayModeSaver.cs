@@ -9,20 +9,26 @@ namespace Project.EditorTools
 {
     /// <summary>
     /// Unity drops ScriptableObject inspector tweaks when you leave Play.
-    /// Snapshot climb/landing profiles on exit and write them back in edit mode.
+    /// Snapshot climb/landing/jetpack profiles on exit and write them back in edit mode.
     /// Always on. Does not save player transforms, scenes, or prefabs.
     /// </summary>
     [InitializeOnLoad]
     public static class DMProfilePlayModeSaver
     {
-        private const string Stamp = "DMProfileSave 0831";
+        private const string Stamp = "DMProfileSave 0904";
         private const string PrefsEnabled = "DM.ProfilePlayModeSaver.Enabled";
-        private const string MenuPath = "Tools/Dark Matter Genesis/Keep Climb Profiles After Play";
+        private const string MenuPath = "Tools/Dark Matter Genesis/Keep Profiles After Play";
 
         private static readonly string[] Roots =
         {
             "Assets/_Project/Resources/Climb",
             "Assets/_Project/Resources/Landing",
+            "Assets/_Project/Features/Jetpack/Data",
+        };
+
+        private static readonly string[] ExtraTypes =
+        {
+            "t:DMJetpackProfile",
         };
 
         public static bool Enabled
@@ -44,7 +50,7 @@ namespace Project.EditorTools
         {
             Enabled = !Enabled;
             Debug.Log(Enabled
-                ? $"[{Stamp}] on. Climb/landing profile tweaks keep when you exit Play."
+                ? $"[{Stamp}] on. Climb/landing/jetpack profile tweaks keep when you exit Play."
                 : $"[{Stamp}] off.");
         }
 
@@ -92,27 +98,35 @@ namespace Project.EditorTools
 
             for (int r = 0; r < Roots.Length; r++)
             {
-                string root = Roots[r];
-                if (!AssetDatabase.IsValidFolder(root))
+                if (!AssetDatabase.IsValidFolder(Roots[r]))
                     continue;
-
-                string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { root });
-                for (int i = 0; i < guids.Length; i++)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                    ScriptableObject so = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
-                    if (so == null || string.IsNullOrEmpty(path) || !seen.Add(path))
-                        continue;
-
-                    items.Add(new Item
-                    {
-                        path = path,
-                        json = EditorJsonUtility.ToJson(so),
-                    });
-                }
+                AddGuids(items, seen, AssetDatabase.FindAssets("t:ScriptableObject", new[] { Roots[r] }));
             }
 
+            for (int t = 0; t < ExtraTypes.Length; t++)
+                AddGuids(items, seen, AssetDatabase.FindAssets(ExtraTypes[t]));
+
             return items;
+        }
+
+        private static void AddGuids(List<Item> items, HashSet<string> seen, string[] guids)
+        {
+            if (guids == null)
+                return;
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                ScriptableObject so = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                if (so == null || string.IsNullOrEmpty(path) || !seen.Add(path))
+                    continue;
+
+                items.Add(new Item
+                {
+                    path = path,
+                    json = EditorJsonUtility.ToJson(so),
+                });
+            }
         }
 
         private static void Restore()

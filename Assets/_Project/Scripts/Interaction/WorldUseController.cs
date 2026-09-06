@@ -157,6 +157,10 @@ namespace Project.Interaction
 
         private IHoldWorldUsable FindHoldTarget(WorldUseContext context)
         {
+            // Exclusive WorldChrome stem/circle focus gates hold-E pickup (proximity alone is not enough).
+            if (WorldPickupFocus.TryGetFocusedHoldPickup(context, out IHoldWorldUsable focusedPickup))
+                return focusedPickup;
+
             if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
             {
                 PptNpcInteractor aimedDirections = context.AimHit.Value.collider.GetComponentInParent<PptNpcInteractor>();
@@ -271,20 +275,11 @@ namespace Project.Interaction
             if (pickup == null || pickup.IsPickedUp || pickup.itemData == null || !pickup.isActiveAndEnabled)
                 return false;
 
-            if (pickup.GetComponent<EquippedVisualMarker>() != null || pickup.GetComponentInParent<EquippedVisualMarker>() != null)
+            if (pickup.HierarchyBlocksCollection)
                 return false;
 
             if (playerRoot != null && (pickup.transform == playerRoot || pickup.transform.IsChildOf(playerRoot)))
                 return false;
-
-            Transform current = pickup.transform;
-            while (current != null)
-            {
-                if (current.CompareTag("Player"))
-                    return false;
-
-                current = current.parent;
-            }
 
             return true;
         }
@@ -592,20 +587,20 @@ namespace Project.Interaction
             if (HasActiveEnemyLootInRange(context))
                 return false;
 
+            // Item / blueprint collect is hold-E only (IHoldWorldUsable). Press still consumes Use
+            // while focused so crafting/NPC prompts cannot steal E from the exclusive stem target.
             if (TryFindFocusedItemPickup(context, range, out ItemPickup itemPickup, out bool itemInRange))
             {
-                if (itemInRange)
-                    itemPickup.TryUse(context);
-
-                return true;
+                if (itemInRange && itemPickup != null && WorldPickupFocus.IsFocused(itemPickup))
+                    return true;
+                return itemInRange;
             }
 
             if (TryFindFocusedRecipePickup(context, out RecipePickup recipePickup, out bool recipeInRange))
             {
-                if (recipeInRange)
-                    recipePickup.TryUse(context);
-
-                return true;
+                if (recipeInRange && recipePickup != null && WorldPickupFocus.IsFocused(recipePickup))
+                    return true;
+                return recipeInRange;
             }
 
             return false;
@@ -620,11 +615,22 @@ namespace Project.Interaction
             pickup = null;
             inPickupRange = false;
 
-            // Near dotted highlight wins: only that item can be collected until it is gone,
-            // then the next-closest gets the dot and becomes the focus.
+            // Exclusive WorldChrome stem focus wins (authoritative). Fall back to legacy uGUI primary.
+            if (WorldPickupFocus.Item != null && IsCollectiblePickup(WorldPickupFocus.Item, context.PlayerTransform))
+            {
+                ItemPickup focused = WorldPickupFocus.Item;
+                float focusedDistance = Vector3.Distance(context.PlayerPosition, focused.GetIndicatorWorldAnchor());
+                if (focusedDistance <= range)
+                {
+                    pickup = focused;
+                    inPickupRange = true;
+                    return true;
+                }
+            }
+
             if (PickupProximityDotUI.TryGetPrimaryNearPickup(out ItemPickup dotted))
             {
-                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.transform.position);
+                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.GetIndicatorWorldAnchor());
                 if (dottedDistance <= range)
                 {
                     pickup = dotted;
@@ -658,9 +664,21 @@ namespace Project.Interaction
             inInteractRange = false;
             float range = MaxPickupDistance;
 
+            if (WorldPickupFocus.Recipe != null && !WorldPickupFocus.Recipe.IsLearned)
+            {
+                RecipePickup focused = WorldPickupFocus.Recipe;
+                float focusedDistance = Vector3.Distance(context.PlayerPosition, focused.GetIndicatorWorldAnchor());
+                if (focusedDistance <= range && focusedDistance <= focused.InteractRange)
+                {
+                    pickup = focused;
+                    inInteractRange = true;
+                    return true;
+                }
+            }
+
             if (PickupProximityDotUI.TryGetPrimaryNearRecipe(out RecipePickup dotted))
             {
-                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.transform.position);
+                float dottedDistance = Vector3.Distance(context.PlayerPosition, dotted.GetIndicatorWorldAnchor());
                 if (dottedDistance <= range && dottedDistance <= dotted.InteractRange)
                 {
                     pickup = dotted;
@@ -1016,7 +1034,7 @@ namespace Project.Interaction
             {
                 // Always consume Use for collectible pickups â€” do not fall through to ResourceNode.Gather
                 // when ItemPickup and ResourceNode share a collider (legacy world-item prefabs).
-                pickup.TryUse(context);
+                // Hold-E owns collect; consume so shared ResourceNode cannot steal Use.
                 return true;
             }
 
@@ -1219,12 +1237,20 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(walkerDrillPrompt))
                 return walkerDrillPrompt;
 
-            if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
+            // Close-range UITK Hold-E chrome owns the prompt; skip duplicate bottom text.
+        if (WorldPickupFocus.Item != null
+            && WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, WorldPickupFocus.Item.GetIndicatorWorldAnchor()))
+            return null;
+        if (WorldPickupFocus.Recipe != null
+            && WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, WorldPickupFocus.Recipe.GetIndicatorWorldAnchor()))
+            return null;
+
+        if (TryFindFocusedItemPickup(context, context.UseRange, out ItemPickup itemPickup, out bool itemInRange)
                 && itemInRange
                 && itemPickup != null
                 && itemPickup.itemData != null)
             {
-                return itemPickup.promptText + " " + itemPickup.itemData.itemName;
+                return "Hold E — Take " + itemPickup.itemData.itemName;
             }
 
             if (TryFindFocusedRecipePickup(context, out RecipePickup recipePickup, out bool recipeInRange)

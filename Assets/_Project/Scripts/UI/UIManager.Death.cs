@@ -138,14 +138,39 @@ namespace Project.UI
 
         private void WireDeathPopupButtons(Transform deathPanel)
         {
-            Button retryBtn = deathPanel.Find("RetryButton")?.GetComponent<Button>();
+            // Runtime-built buttons sit under ContentPanel, not the veil root.
+            Transform content = deathPanel.Find("ContentPanel") ?? deathPanel;
+
+            Button retryBtn = content.Find("RetryButton")?.GetComponent<Button>();
+            if (retryBtn == null)
+            {
+                foreach (Button b in deathPanel.GetComponentsInChildren<Button>(true))
+                {
+                    if (b != null && b.gameObject.name == "RetryButton")
+                    {
+                        retryBtn = b;
+                        break;
+                    }
+                }
+            }
             if (retryBtn != null)
             {
                 retryBtn.onClick.RemoveAllListeners();
                 retryBtn.onClick.AddListener(RespawnPlayer);
             }
 
-            Button exitBtn = deathPanel.Find("ExitButton")?.GetComponent<Button>();
+            Button exitBtn = content.Find("ExitButton")?.GetComponent<Button>();
+            if (exitBtn == null)
+            {
+                foreach (Button b in deathPanel.GetComponentsInChildren<Button>(true))
+                {
+                    if (b != null && b.gameObject.name == "ExitButton")
+                    {
+                        exitBtn = b;
+                        break;
+                    }
+                }
+            }
             if (exitBtn != null)
             {
                 exitBtn.onClick.RemoveAllListeners();
@@ -164,8 +189,10 @@ namespace Project.UI
 
         private void ConfigurePopupCursor()
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            // Match UITK Game Over: cancel relock, free mouse, mark UI capture.
+            GameplayInputRecovery.CancelPendingCursorRestore();
+            UnityEngine.Cursor.lockState = CursorLockMode.None;
+            UnityEngine.Cursor.visible = true;
 
             PlayerController pc = FindAnyObjectByType<PlayerController>();
             if (pc != null) pc.SetInventoryOpen(true);

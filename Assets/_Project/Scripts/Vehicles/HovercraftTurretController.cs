@@ -102,7 +102,7 @@ namespace Project.Vehicles
 
             float arc = profile.turretArcDegrees;
             _localYaw += lookDelta.x * profile.turretSensitivity.x;
-            _localPitch -= lookDelta.y * profile.turretSensitivity.y;
+            _localPitch += lookDelta.y * profile.turretSensitivity.y; // mouse up -> pitch up (was inverted)
             _localYaw = Mathf.Clamp(_localYaw, -arc, arc);
             _localPitch = Mathf.Clamp(_localPitch, -arc, arc);
             ApplyLocalRotation();

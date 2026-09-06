@@ -46,10 +46,11 @@ namespace Project.Progression
             if (stats == null)
                 return;
 
-            baseMaxHealth = stats.maxHealth;
-            baseMaxEnergy = stats.maxEnergy;
-            baseMaxStamina = stats.maxStamina;
-            baseMaxOxygen = stats.maxOxygen;
+            stats.CaptureAuthoredMaximaIfNeeded();
+            baseMaxHealth = stats.AuthoredMaxHealth;
+            baseMaxEnergy = stats.AuthoredMaxEnergy;
+            baseMaxStamina = stats.AuthoredMaxStamina;
+            baseMaxOxygen = stats.AuthoredMaxOxygen;
             basesCaptured = true;
         }
 

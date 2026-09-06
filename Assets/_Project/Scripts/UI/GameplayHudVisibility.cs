@@ -83,6 +83,10 @@ namespace Project.UI
                 return;
             }
 
+            // Hot Cross is a separate overlay host — mount on every HUD refresh / session path
+            // so it does not wait for an inventory pickup to appear.
+            DMUiToolkitHotCross.EnsureHost();
+
             if (BuildingControlPanelUI.IsOpen)
             {
                 SetInventoryModeHudVisible(false);

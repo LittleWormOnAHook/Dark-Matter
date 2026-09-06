@@ -105,14 +105,24 @@ namespace Project.UI
                     existing.SetActive(true);
                 bool active = existing.activeInHierarchy;
                 Stamp(active ? "using scene UITK_Root" : "UITK_Root disabled in Hierarchy — uGUI path");
+                if (active)
+                    EnsureGameplayUiHosts();
                 return active;
             }
 
+            UIManager.EnsureExists();
             GameObject root = new GameObject(RootName);
             PlaceAsMainCanvasSibling(root);
             instance = root.AddComponent<DMUiToolkitBootstrap>();
             instance.EnsureDocuments();
+            EnsureGameplayUiHosts();
             return true;
+        }
+
+        private static void EnsureGameplayUiHosts()
+        {
+            UIManager.EnsureExists();
+            DMUiToolkitHotCross.EnsureHost();
         }
 
         private static GameObject FindRoot(bool includeInactive)

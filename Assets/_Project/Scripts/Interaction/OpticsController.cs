@@ -37,6 +37,8 @@ namespace Project.Interaction
         private ScannerSweepController scannerSweep;
         private Camera worldCamera;
         internal static readonly Collider[] ScanHitBuffer = new Collider[128];
+        private static readonly Collider[] ScanColliderBuffer = new Collider[256];
+
         private readonly List<OpticsScanTarget> scanResults = new List<OpticsScanTarget>(24);
         private readonly HashSet<int> scanResultKeys = new HashSet<int>();
         private readonly HashSet<OutlineController> highlightedOutlines = new HashSet<OutlineController>();
@@ -49,7 +51,10 @@ namespace Project.Interaction
         public bool IsActive => isActive;
 
         public bool ShouldSuppressBlockInput =>
-            isActive || (equipment != null && equipment.HasOpticsToolSelected());
+            isActive
+            || (equipment != null
+                && equipment.HasOpticsToolSelected()
+                && !ShouldDeferBlockToWeaponAim());
 
         private void Awake()
         {
@@ -239,14 +244,44 @@ namespace Project.Interaction
             }
 
             // Opening optics via Block is only for tool-only mode.
-            // If a weapon is drawn, leave mouse buttons to aim/fire — use N/B to open optics.
-            if (equipment.IsWeaponDrawn)
+            // Hot Cross Tab focuses weapons without drawing — RMB must ADS/arm, not open optics.
+            // Use N/B (or Hot Cross tool faces) to open optics while a weapon is focused.
+            if (ShouldDeferBlockToWeaponAim())
                 return false;
 
             if (!equipment.HasOpticsToolSelected())
                 return false;
 
             return TryActivate();
+        }
+
+        /// <summary>
+        /// True when RMB should belong to shooter ADS / weapon arming instead of optics.
+        /// Covers drawn weapons and Hot Cross TL focus (Tab) while still holstered.
+        /// </summary>
+        private bool ShouldDeferBlockToWeaponAim()
+        {
+            if (equipment == null)
+                return false;
+
+            if (equipment.IsWeaponDrawn)
+                return true;
+
+            int focusedLocal = DMUiToolkitHotCross.WeaponLocalIndex;
+            if (equipment.IsWeaponHotbarSlot(focusedLocal))
+            {
+                ItemData focused = equipment.GetHotbarItem(focusedLocal);
+                if (EquipmentController.IsWeaponItem(focused))
+                    return true;
+            }
+
+            if (equipment.IsWeaponHotbarSlot(equipment.SelectedHotbarSlot)
+                && EquipmentController.IsWeaponItem(equipment.SelectedHotbarItem))
+            {
+                return true;
+            }
+
+            return EquipmentController.IsWeaponItem(equipment.EquippedItem);
         }
 
         public void Toggle()
@@ -273,11 +308,15 @@ namespace Project.Interaction
                 ? equipment.ScannerToolbarSlot
                 : equipment.BinocularsToolbarSlot;
 
+            ItemData activeTool = equipment.ActiveToolItem;
             bool wasUsingThisTool = isActive &&
-                                    equipment.ActiveToolItem != null &&
-                                    equipment.ActiveToolItem.toolType == toolType;
+                                    (activeTool == null || activeTool.toolType == toolType);
+            // Hot Cross press-to-open can leave the eye-cam frozen if toolbar selection desyncs.
+            bool binocularCamStuck = toolType == ToolType.Binoculars &&
+                                     playerController != null &&
+                                     playerController.IsBinocularCameraFrozen;
 
-            if (wasUsingThisTool)
+            if (wasUsingThisTool || binocularCamStuck)
             {
                 ForceDeactivate();
                 equipment.SelectToolbarSlot(toolbarSlot, allowToggleOff: true);
@@ -287,7 +326,7 @@ namespace Project.Interaction
             if (!equipment.TryEnsureToolbarTool(toolType, out _))
                 return;
 
-            // Optics take mouse focus — holster any drawn weapon so aim/fire can't fight the optic.
+            // Optics take mouse focus  -  holster any drawn weapon so aim/fire can't fight the optic.
             equipment.HolsterWeapon();
 
             ItemData tool = equipment.ActiveToolItem;
@@ -561,8 +600,10 @@ namespace Project.Interaction
         {
             outlineScratch.Clear();
 
-            // Drive every OutlineDM in range — not limited to the 24 HUD marker slots.
-            OutlineController[] outlines = FindObjectsByType<OutlineController>(FindObjectsInactive.Exclude);
+            // Drive every OutlineDM in range  -  not limited to the 24 HUD marker slots.
+            OutlineController[] outlines = SceneComponentCache.GetAll<OutlineController>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.5f);
             for (int i = 0; i < outlines.Length; i++)
             {
                 OutlineController outline = outlines[i];
@@ -623,11 +664,12 @@ namespace Project.Interaction
 
         private void ScanPhysicsTargets(Vector3 origin, float scanRange)
         {
-            Collider[] hits = Physics.OverlapSphere(origin, scanRange, scanLayers, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                origin, scanRange, ScanColliderBuffer, scanLayers, QueryTriggerInteraction.Ignore);
 
-            for (int i = 0; i < hits.Length && scanResults.Count < 24; i++)
+            for (int i = 0; i < hitCount && scanResults.Count < 24; i++)
             {
-                Collider hit = hits[i];
+                Collider hit = ScanColliderBuffer[i];
                 if (hit == null || hit.transform.IsChildOf(transform))
                     continue;
 
@@ -749,7 +791,7 @@ namespace Project.Interaction
             ItemPickup pickup = collider.GetComponentInParent<ItemPickup>();
             if (pickup != null && !pickup.IsPickedUp)
             {
-                string label = pickup.itemData != null ? pickup.itemData.itemName : "Pickup";
+                string label = pickup.GetScanDisplayName();
                 target = new OpticsScanTarget(
                     pickup.transform.position,
                     label,
@@ -758,7 +800,7 @@ namespace Project.Interaction
                 return true;
             }
 
-            // Prefabs with OutlineDM only — still register as a scan hit so the outline can light up.
+            // Prefabs with OutlineDM only  -  still register as a scan hit so the outline can light up.
             OutlineController outlineOnly = ResolveOutline(collider.transform);
             if (outlineOnly != null)
             {

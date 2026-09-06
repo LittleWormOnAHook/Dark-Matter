@@ -6,13 +6,13 @@ using UnityEngine;
 namespace Project.Crafting
 {
     [RequireComponent(typeof(Collider))]
-    public class RecipePickup : MonoBehaviour, IWorldUsable, IWorldIndicatorAnchor
+    public class RecipePickup : MonoBehaviour, IWorldUsable, IHoldWorldUsable, IWorldIndicatorAnchor
     {
         [Header("Blueprint")]
         [SerializeField] private string recipeId;
 
         [Header("Interaction")]
-        [SerializeField] private string promptText = "Press E to use";
+        [SerializeField] private string promptText = "Hold E to Take";
         [SerializeField] private float interactRange = 3f;
         [SerializeField] private string collectedMessage = "Blueprint collected!";
 
@@ -28,6 +28,8 @@ namespace Project.Crafting
         private CraftingManager craftingManager;
         private bool playerInRange;
         private bool learned;
+        private bool holdActive;
+        private float holdProgress;
         private Vector3 indicatorLocalOffset;
         private bool hasIndicatorLocalOffset;
 
@@ -39,6 +41,16 @@ namespace Project.Crafting
         public float IndicatorStemMinHeight => Mathf.Max(0.05f, indicatorStemMinHeight);
 
         public float IndicatorStemMaxHeight => Mathf.Max(IndicatorStemMinHeight, indicatorStemMaxHeight);
+
+        public float HoldDurationSeconds => WorldPickupFocus.PickupHoldSeconds;
+
+        public string HoldPromptText => string.IsNullOrEmpty(promptText) ? "Hold E to Take" : promptText;
+
+        public bool IsHoldActive => holdActive;
+
+        public float HoldProgress01 => Mathf.Clamp01(holdProgress);
+
+        public string RecipeId => recipeId;
 
         public Vector3 GetIndicatorWorldAnchor()
         {
@@ -254,7 +266,56 @@ namespace Project.Crafting
 
         public bool TryUse(WorldUseContext context)
         {
+            // Press path is a no-op. Hold-E via WorldUseController.FindHoldTarget + TickHold owns learn.
+            return false;
+        }
+
+        public bool CanBeginHold(WorldUseContext context)
+        {
+            if (learned || !GameSession.HasStarted || string.IsNullOrEmpty(recipeId))
+                return false;
+            if (!WorldPickupFocus.IsFocused(this))
+                return false;
+            if (!WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, GetIndicatorWorldAnchor()))
+                return false;
+            return true;
+        }
+
+        public void BeginHold(WorldUseContext context)
+        {
+            holdActive = true;
+            holdProgress = 0f;
+        }
+
+        public bool TickHold(WorldUseContext context, float deltaTime, out float progress01)
+        {
+            progress01 = Mathf.Clamp01(holdProgress);
+            if (!holdActive)
+                return false;
+
+            if (!WorldPickupFocus.IsFocused(this)
+                || !WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, GetIndicatorWorldAnchor()))
+            {
+                CancelHold(context);
+                progress01 = 0f;
+                return false;
+            }
+
+            float duration = Mathf.Max(0.05f, HoldDurationSeconds);
+            holdProgress += deltaTime / duration;
+            progress01 = Mathf.Clamp01(holdProgress);
+            if (holdProgress < 1f)
+                return false;
+
+            holdActive = false;
+            holdProgress = 0f;
             return TryLearn();
+        }
+
+        public void CancelHold(WorldUseContext context)
+        {
+            holdActive = false;
+            holdProgress = 0f;
         }
 
         public bool TryLearn()

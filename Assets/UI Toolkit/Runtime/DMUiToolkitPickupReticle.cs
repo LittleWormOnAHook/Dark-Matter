@@ -37,10 +37,8 @@ namespace Project.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
-
-            EnsureHost();
+            // Disabled: world proximity stems live on DMUiToolkitWorldChrome.
+            // Do not spawn a second overlay UIDocument just to hide itself every frame.
         }
 
         public static DMUiToolkitPickupReticle EnsureHost()
@@ -89,34 +87,15 @@ namespace Project.UI
             if (!bound)
                 BindTree();
 
-            bool show = ShouldShow();
-            DMUiToolkitOverlayDocument.SetShown(root, show);
-            DMUiToolkitOverlayDocument.SetShown(dot, show);
-            if (show)
+            DMUiToolkitOverlayDocument.SetShown(root, false);
+            DMUiToolkitOverlayDocument.SetShown(dot, false);
+            if (!uguiHidden)
             {
-                UpdatePosition();
-                SampleAimedPickupIfDue();
-                if (dot != null)
-                {
-                    if (hasAimedPickup)
-                        dot.AddToClassList("dmg-reticle-hot");
-                    else
-                        dot.RemoveFromClassList("dmg-reticle-hot");
-                }
+                HideUgui();
+                uguiHidden = true;
             }
 
-            if (DMUiToolkitHud.IsDriving)
-            {
-                if (!uguiHidden)
-                {
-                    HideUgui();
-                    uguiHidden = true;
-                }
-            }
-            else
-            {
-                uguiHidden = false;
-            }
+            enabled = false;
         }
 
         internal void BindTree()
@@ -139,7 +118,7 @@ namespace Project.UI
 
         private bool ShouldShow()
         {
-            // Pickup aim reticle disabled ó AAA world proximity dots live on DMUiToolkitWorldChrome.
+            // Pickup aim reticle disabled ù AAA world proximity dots live on DMUiToolkitWorldChrome.
             HideUgui();
             return false;
         }

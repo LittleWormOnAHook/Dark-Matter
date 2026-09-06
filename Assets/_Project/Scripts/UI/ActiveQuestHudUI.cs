@@ -25,6 +25,7 @@ namespace Project.UI
         private CanvasGroup canvasGroup;
         private PlayerController cachedPlayer;
         private bool built;
+        private bool uitkHidden;
         private bool gameplayVisible = true;
         private Vector2 lastCanvasSize;
         private int lastScreenWidth;
@@ -227,6 +228,21 @@ namespace Project.UI
         {
             if (!built)
                 return;
+
+            // UITK owns the quest tracker. Something re-activates this host, so fade the uGUI copy
+            // out once and keep the tick free until UITK stops driving.
+            if (DMUiToolkitHud.IsDriving)
+            {
+                if (!uitkHidden)
+                {
+                    ApplyPresentationVisible();
+                    uitkHidden = true;
+                }
+
+                return;
+            }
+
+            uitkHidden = false;
 
             // Keep the host active so CanvasGroup fade can restore after map / optics / journal.
             // Do not fight MainMenu HideGameplayUi (that SetActive(false) stops LateUpdate until restore).

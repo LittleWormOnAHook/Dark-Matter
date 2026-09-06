@@ -27,6 +27,7 @@ namespace Project.UI
         private VehicleStatSegmentBar healthBar;
         private VehicleStatSegmentBar fuelBar;
         private bool uiBuilt;
+        private bool uitkHidden;
         private bool gameplayVisible = true;
         private bool wasMountedLastFrame;
 
@@ -187,8 +188,15 @@ namespace Project.UI
         {
             if (DMUiToolkitHud.IsDriving)
             {
-                if (panelRoot != null && panelRoot.gameObject.activeSelf)
-                    panelRoot.gameObject.SetActive(false);
+                // UITK owns the vessel readout — drop the uGUI panel once, then keep the tick to
+                // the mount edge only (it still suppresses the legacy toolbar chrome).
+                if (!uitkHidden)
+                {
+                    if (panelRoot != null && panelRoot.gameObject.activeSelf)
+                        panelRoot.gameObject.SetActive(false);
+
+                    uitkHidden = true;
+                }
 
                 bool mountedUitk = PlayerVehicleState.IsMounted;
                 if (mountedUitk != wasMountedLastFrame)
@@ -199,6 +207,8 @@ namespace Project.UI
 
                 return;
             }
+
+            uitkHidden = false;
 
             if (!uiBuilt)
                 return;

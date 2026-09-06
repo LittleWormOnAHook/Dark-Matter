@@ -49,8 +49,37 @@ namespace Project.UI
 
         public static DMUiToolkitMainMenu Instance => instance;
 
-        public static bool IsVisible => instance != null && instance.visible;
 
+
+        /// <summary>
+        /// True only when pause/main-menu chrome is actually painted.
+        /// Ghost <c>visible</c> with display:none must not block journal hotkeys.
+        /// stamp: journal-hotkeys-ghost-pause 0905
+        /// </summary>
+        public static bool IsVisible => instance != null && instance.IsPaintedVisible();
+
+        /// <summary>Clear visible flag when chrome is display:none / unbound.</summary>
+        public static void SyncVisibilityToPainted()
+        {
+            if (instance == null)
+                return;
+
+            if (instance.visible && !instance.IsPaintedVisible())
+                instance.HideInternal();
+        }
+
+        private bool IsPaintedVisible()
+        {
+            if (!visible || root == null)
+                return false;
+
+            // Prefer inline style written by SetShown; fall back to resolved.
+            StyleEnum<DisplayStyle> display = root.style.display;
+            if (display.keyword == StyleKeyword.Null || display.keyword == StyleKeyword.Undefined)
+                return root.resolvedStyle.display != DisplayStyle.None;
+
+            return display.value != DisplayStyle.None;
+        }
 
         public static DMUiToolkitMainMenu EnsureHost()
         {
@@ -211,6 +240,13 @@ namespace Project.UI
             if (!bound)
                 return;
 
+            // stamp: journal-hotkeys-ghost-pause 0905
+            if (visible && !IsPaintedVisible())
+            {
+                HideInternal();
+                return;
+            }
+
             if (visible)
                 HideUguiMenuChromeOnce();
         }
@@ -313,10 +349,15 @@ namespace Project.UI
             HideUguiMenuChromeOnce();
         }
 
+
         private void HideInternal()
         {
             visible = false;
             DMUiToolkitOverlayDocument.SetShown(root, false);
+            if (background != null)
+                background.style.display = DisplayStyle.None;
+            if (panel != null)
+                panel.style.display = DisplayStyle.None;
         }
 
         private void OnEnvBarClicked(ClickEvent evt)
@@ -353,7 +394,7 @@ namespace Project.UI
 
         private static MainMenuController ResolveController()
         {
-            return UnityEngine.Object.FindAnyObjectByType<MainMenuController>();
+            return UnityEngine.Object.FindAnyObjectByType<MainMenuController>(UnityEngine.FindObjectsInactive.Include);
         }
 
         private static void SetButtonVisible(VisualElement button, bool show)
