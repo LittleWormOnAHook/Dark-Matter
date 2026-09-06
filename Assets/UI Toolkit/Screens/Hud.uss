@@ -306,6 +306,7 @@
     height: 38px;
     margin-left: -19px;
     margin-top: -19px;
+    transform-origin: center;
 }
 
 .dmg-hud-crosshair-arm {

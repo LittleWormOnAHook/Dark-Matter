@@ -1,4 +1,5 @@
 using Project.Audio;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
@@ -487,7 +488,8 @@ namespace Project.Interaction
             Camera cam = ResolveCamera();
             if (cam != null)
             {
-                Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                Vector2 viewport = RangedFireSolver.ResolveReticleViewport(cam);
+                Ray ray = cam.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f));
                 origin = ray.origin;
                 return ray.direction.normalized;
             }

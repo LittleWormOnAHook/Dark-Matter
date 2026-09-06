@@ -1,3 +1,4 @@
+using Invector.vCamera;
 using Project.Data;
 using Project.Progression;
 using UnityEngine;
@@ -6,13 +7,15 @@ namespace Project.Combat
 {
     /// <summary>
     /// Resolves the final projectile direction and effective cone spread for a ranged shot.
-    /// ADS: camera reticle aim wins (crosshair-accurate via muzzle → aim point).
-    /// Hip: camera aim clamped to a cone around barrel forward so bullets
-    /// never visibly leave the muzzle at impossible angles.
+    /// The HUD reticle and every muzzle→reticle shot share the same look-at aim point so
+    /// over-shoulder zoom cannot slide the crosshair off the fire line.
+    /// Hip fire adds cone spread only — it does not pull the shot back toward the barrel.
     /// </summary>
     public static class RangedFireSolver
     {
         public const float DefaultHipMaxDeviationDegrees = 15f;
+        public const float DefaultLookAtConvergeDistance = 32f;
+        private const int PlayerLayer = 8;
 
         /// <summary>ADS multiplies effective spread (matches RangedCombatHud crosshair shrink).</summary>
         public const float AdsSpreadScale = 0.75f;
@@ -32,31 +35,34 @@ namespace Project.Combat
             if (cameraAimDirection.sqrMagnitude < 0.0001f)
                 return muzzleForward.sqrMagnitude > 0.0001f ? muzzleForward.normalized : Vector3.forward;
 
-            Vector3 aimDir = cameraAimDirection.normalized;
-            if (isAiming)
-                return aimDir;
-
-            if (muzzleForward.sqrMagnitude < 0.0001f)
-                return aimDir;
-
-            Vector3 barrelDir = muzzleForward.normalized;
-            float maxDeviation = hipMaxDeviationDegrees > 0.01f
-                ? hipMaxDeviationDegrees
-                : DefaultHipMaxDeviationDegrees;
-
-            float angle = Vector3.Angle(barrelDir, aimDir);
-            if (angle <= maxDeviation)
-                return aimDir;
-
-            return Vector3.RotateTowards(
-                barrelDir,
-                aimDir,
-                maxDeviation * Mathf.Deg2Rad,
-                0f).normalized;
+            // Always follow the HUD reticle. Hip fire uses extra spread, not a barrel clamp —
+            // a 15° pull toward the muzzle walks shots off the crosshair when zoomed out.
+            return cameraAimDirection.normalized;
         }
 
         /// <summary>
-        /// Screen-center reticle ray → world aim point (hit or far clip of maxRange).
+        /// Viewport of the shared look-at aim point (Unity bottom-left origin).
+        /// Zoomed-in sits near screen center; zoomed-out stays on the player look line
+        /// instead of drifting right with the over-shoulder camera.
+        /// </summary>
+        public static Vector2 ResolveReticleViewport(Camera cam, float maxRange = DefaultLookAtConvergeDistance)
+        {
+            if (cam == null)
+                return new Vector2(0.5f, 0.5f);
+
+            Vector3 aimPoint = ResolveReticleAimPoint(cam, maxRange);
+            Vector3 vp = cam.WorldToViewportPoint(aimPoint);
+            if (vp.z <= 0.05f)
+                return new Vector2(0.5f, 0.5f);
+
+            return new Vector2(
+                Mathf.Clamp(vp.x, 0.12f, 0.88f),
+                Mathf.Clamp(vp.y, 0.12f, 0.88f));
+        }
+
+        /// <summary>
+        /// World aim point on the player look-at line (hit or far point).
+        /// Used by the HUD crosshair and every muzzle→reticle shot.
         /// </summary>
         public static Vector3 ResolveReticleAimPoint(Camera cam, float maxRange, LayerMask? optionalMask = null)
         {
@@ -64,13 +70,38 @@ namespace Project.Combat
                 return Vector3.zero;
 
             float range = Mathf.Max(1f, maxRange);
-            Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            int mask = optionalMask ?? Physics.DefaultRaycastLayers;
+            Vector3 pivot = ResolveAimPivot(cam);
+            Vector3 dir = cam.transform.forward;
+            if (dir.sqrMagnitude < 0.0001f)
+                dir = Vector3.forward;
+            else
+                dir.Normalize();
 
-            if (Physics.Raycast(ray, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
+            Vector3 origin = pivot + dir * 0.35f;
+            int mask = optionalMask ?? Physics.DefaultRaycastLayers;
+            mask &= ~(1 << PlayerLayer);
+
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
                 return hit.point;
 
-            return ray.GetPoint(range);
+            return origin + dir * range;
+        }
+
+        public static Vector3 ResolveAimPivot(Camera cam)
+        {
+            vThirdPersonCamera tp = vThirdPersonCamera.instance;
+            if (tp != null && tp.currentTarget != null)
+            {
+                Vector3 pivot = tp.currentTarget.position + tp.currentTarget.up * tp.offSetPlayerPivot;
+                if (tp.currentState != null)
+                    pivot += tp.currentTarget.up * tp.currentState.height;
+                return pivot;
+            }
+
+            if (cam != null)
+                return cam.transform.position + cam.transform.forward * 0.75f;
+
+            return Vector3.zero;
         }
 
         /// <summary>

@@ -810,8 +810,9 @@ namespace Project.Interaction
             Camera cam = ResolveCamera();
             if (cam != null)
             {
-                // Always aim at screen-center reticle (same as RangedCombatHud crosshair).
-                Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                // Same look-at reticle the HUD / projectiles use (stays on the crosshair at every zoom).
+                Vector2 viewport = RangedFireSolver.ResolveReticleViewport(cam);
+                Ray ray = cam.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f));
                 origin = ray.origin;
                 return ray.direction.normalized;
             }

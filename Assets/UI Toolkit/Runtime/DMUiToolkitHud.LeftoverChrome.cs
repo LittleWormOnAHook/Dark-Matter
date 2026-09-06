@@ -31,10 +31,13 @@ namespace Project.UI
         private VisualElement shelterTimerRoot;
         private Label shelterTimerCaption;
         private Label shelterTimerValue;
+        private const float CrosshairHalfSize = 19f;
+
         private bool leftoverBound;
         private bool leftoverPreviewHidden;
         private bool lastCrosshairShown;
         private float lastCrosshairScale = -1f;
+        private Vector2 lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
         private bool oxygenWasCritical;
         private Coroutine oxygenFlashRoutine;
         private static Texture2D oxygenVignetteTexture;
@@ -80,6 +83,7 @@ namespace Project.UI
             leftoverPreviewHidden = true;
             lastCrosshairShown = false;
             lastCrosshairScale = -1f;
+            lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
         }
 
         private void TickLeftoverChrome()
@@ -133,15 +137,54 @@ namespace Project.UI
             if (!show)
             {
                 lastCrosshairScale = -1f;
+                lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
                 return;
             }
+
+            ApplyCrosshairReticlePosition();
 
             float scale = IsHudAiming() ? 0.75f : 1f;
             if (!Mathf.Approximately(scale, lastCrosshairScale))
             {
                 lastCrosshairScale = scale;
+                crosshairRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
                 crosshairRoot.style.scale = new Scale(new Vector3(scale, scale, 1f));
             }
+        }
+
+        private void ApplyCrosshairReticlePosition()
+        {
+            Camera cam = null;
+            if (equipmentController != null)
+            {
+                PlayerController player = equipmentController.GetComponent<PlayerController>();
+                if (player != null)
+                    cam = player.GameplayCamera;
+            }
+
+            if (cam == null)
+                cam = Camera.main;
+            if (cam == null || crosshairRoot.panel == null)
+                return;
+
+            Vector3 aimPoint = RangedFireSolver.ResolveReticleAimPoint(
+                cam,
+                RangedFireSolver.DefaultLookAtConvergeDistance);
+            Vector3 screen = cam.WorldToScreenPoint(aimPoint);
+            if (screen.z <= 0.05f)
+                return;
+
+            Vector2 panel = RuntimePanelUtils.ScreenToPanel(crosshairRoot.panel, screen);
+            if ((panel - lastCrosshairPanel).sqrMagnitude < 0.25f)
+                return;
+
+            lastCrosshairPanel = panel;
+            crosshairRoot.style.left = panel.x;
+            crosshairRoot.style.top = panel.y;
+            crosshairRoot.style.right = StyleKeyword.Auto;
+            crosshairRoot.style.bottom = StyleKeyword.Auto;
+            crosshairRoot.style.marginLeft = -CrosshairHalfSize;
+            crosshairRoot.style.marginTop = -CrosshairHalfSize;
         }
 
         private bool IsHudAiming()
