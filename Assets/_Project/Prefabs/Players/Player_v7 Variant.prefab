@@ -3267,7 +3267,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3144481827638918982, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_Name
-      value: L_Upperarm1
+      value: L_UpperarmTwist01
       objectReference: {fileID: 0}
     - target: {fileID: 3211785096386557090, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_IsActive
@@ -3635,7 +3635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6198291352427800366, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_Name
-      value: R_Forearm
+      value: R_ForearmTwist01
       objectReference: {fileID: 0}
     - target: {fileID: 6239281238535849219, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_Enabled
@@ -3999,7 +3999,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7500256032670904062, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_Name
-      value: R_Forearm2
+      value: R_ForearmTwist02
       objectReference: {fileID: 0}
     - target: {fileID: 7684693720678691999, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: far clip plane
@@ -4089,6 +4089,22 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: 0.03
       objectReference: {fileID: 0}
+    - target: {fileID: 7908103568282021093, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -6441369813696030903, guid: 7a00fbf7b0f52eb4aa31dbe72c583dc2, type: 3}
+    - target: {fileID: 7908103568282021093, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: 'm_Bones.Array.data[17]'
+      value: 
+      objectReference: {fileID: 1742307788271611406}
+    - target: {fileID: 7908103568282021093, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: 'm_Bones.Array.data[22]'
+      value: 
+      objectReference: {fileID: 2544058054029125633}
+    - target: {fileID: 7908103568282021093, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: 'm_Bones.Array.data[23]'
+      value: 
+      objectReference: {fileID: 1070948723132477394}
     - target: {fileID: 7908103568282021093, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_SelectedEditorRenderState
       value: 0
@@ -4346,6 +4362,11 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
+--- !u!4 &1070948723132477394 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4084515128192840500, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+  m_PrefabInstance: {fileID: 3923720419485195494}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1115558812064675313 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4109702038986123543, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
@@ -4465,9 +4486,19 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   meleeManager: {fileID: 0}
+--- !u!4 &1742307788271611406 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3341162249058251496, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+  m_PrefabInstance: {fileID: 3923720419485195494}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2317077125450913963 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1608967799142859853, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+  m_PrefabInstance: {fileID: 3923720419485195494}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2544058054029125633 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1530544087344362727, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
   m_PrefabInstance: {fileID: 3923720419485195494}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &2625817537726467709 stripped
@@ -4499,8 +4530,7 @@ MonoBehaviour:
   dash: {fileID: 0}
   landing: {fileID: 0}
   jetpack: {fileID: 0}
-
-
+  tpInput: {fileID: 0}
 --- !u!114 &3705466484633919627
 MonoBehaviour:
   m_ObjectHideFlags: 0
