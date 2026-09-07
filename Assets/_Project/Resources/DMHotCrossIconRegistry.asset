@@ -1,0 +1,241 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b09337745d92ff24c8d299478f0d4bb2, type: 3}
+  m_Name: DMHotCrossIconRegistry
+  m_EditorClassIdentifier: Assembly-CSharp::Project.UI.DMHotCrossIconRegistry
+  defaultTint: {r: 1, g: 1, b: 1, a: 1}
+  defaultAlpha: 1
+  defaultEmissionColor: {r: 1, g: 1, b: 1, a: 1}
+  defaultEmission: 0
+  entries:
+  - item: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 4a8c1d93e7b2456f9c0e2a5d6b8f1c03, type: 2}
+    icon: {fileID: 21300000, guid: cc2c863cb205b964ca8802ad83646ca3, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 2e8f991038197ef498a21d87d427a3b7, type: 2}
+    icon: {fileID: 21300000, guid: 030e5e5da0e8c4745bb8387734473ec5, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: acc8c5e8067ca3644964e55a91642ee8, type: 2}
+    icon: {fileID: 21300000, guid: 360ec0983cf5b8a4e991c2fcc1162dea, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: e09b1bacd07f6184ca23fc5b1bfe4701, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: a9618f10f8cb43842bdd8f8bbf4ba058, type: 2}
+    icon: {fileID: 21300000, guid: 77b1dabed33a6cd4cbd90693216099c1, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 05ca656529d958b4fa6e52e83f5529a0, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
+    icon: {fileID: 21300000, guid: a4441a6489ecfb445a6d9597a77a4d6a, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
+    icon: {fileID: 21300000, guid: 3391c0ab214b1a64995fc5986091c91c, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
+    icon: {fileID: 21300000, guid: 677c3d1d4756fb24dbc379f67fed52cc, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 01c57e6606f0a1343984fa242b3abb54, type: 2}
+    icon: {fileID: 21300000, guid: 2e760c6e177d19445bd102ba04794b42, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: efc7bf626774516478369a90a06f846b, type: 2}
+    icon: {fileID: 21300000, guid: 9d8f123907d550b47965eadbb30f2242, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 11a35b91b9c3267409927ea0992507af, type: 2}
+    icon: {fileID: 21300000, guid: 12cfa887157ba4947b8bf64da4411151, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 7e63fcaed0e4a81439e7ceddf5367f09, type: 2}
+    icon: {fileID: 21300000, guid: c86ba6b5d134dbc4db5c639a282e5b2a, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
+    icon: {fileID: 21300000, guid: c849b861b3f58184799b05329e896990, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 5ae16f172839405b6c7d8e9f01234567, type: 2}
+    icon: {fileID: 21300000, guid: cfa2717624cd6b44d89ce7b626ebd43d, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
+    icon: {fileID: 21300000, guid: 6d67cb20e913c5a4a98401885bba028e, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 17fb7a508038b574f94dfda43a5eedd5, type: 2}
+    icon: {fileID: 21300000, guid: 76b0df452bf1759499df732a92a75987, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: c4d5e6f708192a3b4c5d6e7f8091a2b3, type: 2}
+    icon: {fileID: 21300000, guid: fc8e7eac037405a40ac24fab66e1736b, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: f02b2658b1dcabd4daf8fdb0d9bd91c1, type: 2}
+    icon: {fileID: 21300000, guid: fc8e7eac037405a40ac24fab66e1736b, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+    icon: {fileID: 21300000, guid: 56e84ef5524ea164da23b52301f4b872, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 8e7a10ae2399b0e4a8d0519742119e0d, type: 2}
+    icon: {fileID: 21300000, guid: d87646f8b51e4b24b85336b43be75efd, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: f15772f393794288a2f15ed789a8f1a4, type: 2}
+    icon: {fileID: 21300000, guid: 513bf843c3796594a86e7d8c87a81f1f, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: e99251903192f2d4c95d505b718fde00, type: 2}
+    icon: {fileID: 21300000, guid: ec853c513e5dde943bd4df520070146e, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 3de00f2ad64a18644a0ea967050502b5, type: 2}
+    icon: {fileID: 21300000, guid: db0c1a0107028c1478b855833b93142e, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 2584364ae60f4dbc9a8171f32816d863, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: e80b925d4a2dc3e40b937ca4cb1d2523, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 8f5a89af393b67541aeec3dd39830b47, type: 2}
+    icon: {fileID: 21300000, guid: 3391c0ab214b1a64995fc5986091c91c, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 93fca7746814c434fa0b6af897c4bfaf, type: 2}
+    icon: {fileID: 21300000, guid: 8b97af2d0e6de13438150148c91264b6, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+    icon: {fileID: 21300000, guid: 8a995507497f88d44b877f3839db6ad7, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+    icon: {fileID: 21300000, guid: 2e1b842411aa6204db4495e7b50a018c, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 5c9d4235006e0474c84112fb00bcbbd3, type: 2}
+    icon: {fileID: 21300000, guid: 2e258cf1804dc75468de887ef0930788, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 6d5136e4bf5450144b514355deefa152, type: 2}
+    icon: {fileID: 21300000, guid: 322cc996dc9f4494b90d2a65995bff26, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: bdaeea167dbb9204a95d18c225c6e962, type: 2}
+    icon: {fileID: 21300000, guid: a24dcc8f1d8a45447aa4c6b183fc059b, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 071597d0e1c8ab74f8b945522b0bf576, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 37f79034b2014e7d9dffbf4279f9d074, type: 2}
+    icon: {fileID: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
