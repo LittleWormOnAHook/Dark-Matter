@@ -1272,12 +1272,14 @@ namespace Project.UI
             if (mapImage == null)
                 return;
 
+            WorldMapProvider provider = boundMap != null ? boundMap : WorldMapProvider.Instance;
+            // Use the same authored map as the minimap so UV calibration matches gameplay.
             Texture2D texture = null;
-            if (boundMap != null && boundMap.MapTexture != null)
-                texture = boundMap.MapTexture;
-            else if (WorldMapProvider.Instance != null)
-                texture = WorldMapProvider.Instance.MapTexture;
+            if (provider != null)
+                texture = provider.MinimapTexture != null ? provider.MinimapTexture : provider.MapTexture;
 
+            if (texture == null)
+                texture = WorldMapProvider.LoadMinimapMapTexture();
             if (texture == null)
                 texture = WorldMapProvider.LoadFakeMapTexture();
 
@@ -1358,9 +1360,15 @@ namespace Project.UI
             GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null)
                 return;
-            Vector2 uv = provider.WorldToMap01(player.transform.position);
+            MapUI mapUi = FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            Vector3 worldPos = mapUi != null && mapUi.HasMinimapPlayerPosition
+                ? mapUi.MinimapPlayerWorldPosition
+                : player.transform.position;
+            Vector2 uv = provider.WorldToMap01(worldPos);
             PlaceOnMap(mapPlayer, fitted, uv, 18f);
-            SetElementRotate(mapPlayer, -player.transform.eulerAngles.y);
+            float iconBase = provider.MapPlayerIconBaseDegrees;
+            float facingYaw = mapUi != null ? mapUi.MapDisplayYaw : player.transform.eulerAngles.y;
+            SetElementRotate(mapPlayer, -facingYaw + iconBase);
             DMUiToolkitOverlayDocument.SetShown(mapPlayer, true);
         }
 
@@ -1406,6 +1414,7 @@ namespace Project.UI
 
         private static void PlaceOnMap(VisualElement element, Rect fitted, Vector2 uv, float size)
         {
+            uv = new Vector2(Mathf.Clamp01(uv.x), Mathf.Clamp01(uv.y));
             element.style.left = fitted.x + uv.x * fitted.width - size * 0.5f;
             element.style.top = fitted.y + (1f - uv.y) * fitted.height - size * 0.5f;
         }

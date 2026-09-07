@@ -53,7 +53,6 @@ namespace Project.UI
         private VisualElement mapView;
         private VisualElement mapPlayer;
         private VisualElement pilotMapRing;
-        private VisualElement pilotNorthLayer;
         private Label pilotCardinalN;
         private Label pilotCardinalE;
         private Label pilotCardinalS;
@@ -106,6 +105,9 @@ namespace Project.UI
         private float nextMapPoiRefresh;
         private float lastCompassHeading = float.NaN;
         private float lastCompassWidth;
+        private float nextHeavyRefresh;
+        private float cachedCompassStripWidth = 320f;
+        private int nextCompassWidthFrame;
         private readonly List<CompassTick> ticks = new List<CompassTick>(24);
         private readonly Dictionary<MapMarker, VisualElement> compassDotLookup = new Dictionary<MapMarker, VisualElement>(16);
         private readonly HashSet<MapMarker> compassDotsSeen = new HashSet<MapMarker>();
@@ -115,6 +117,16 @@ namespace Project.UI
         {
             public float Angle;
             public VisualElement Root;
+        }
+
+        private sealed class CompassDotState
+        {
+            public float LastDelta;
+            public float LastSize;
+            public float LastX;
+            public float LastOpacity;
+            public Sprite LastSprite;
+            public Color LastColor;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -215,7 +227,7 @@ namespace Project.UI
             pilotCardinalE = tree.Q<Label>("pilot-cardinal-e");
             pilotCardinalS = tree.Q<Label>("pilot-cardinal-s");
             pilotCardinalW = tree.Q<Label>("pilot-cardinal-w");
-            EnsureNorthLayer();
+            EnsureMapCardinals();
             healthFill = tree.Q<VisualElement>("pilot-health-fill");
             healthTrack = tree.Q<VisualElement>("pilot-health-track");
             jetfuelTrack = tree.Q<VisualElement>("pilot-jetfuel-track");
@@ -260,115 +272,85 @@ namespace Project.UI
         }
 
 
-        private void EnsureNorthLayer()
+        /// <summary>
+        /// Map art displays as authored (north up on texture). Pin N/E/W/S to rotating map edges.
+        /// </summary>
+        private void EnsureMapCardinals()
         {
-            if (pilotMapRing == null || pilotCardinalN == null)
+            if (mapView == null || pilotCardinalN == null)
                 return;
 
-            bool already =
-                pilotNorthLayer != null
-                && pilotNorthLayer.parent == pilotMapRing
-                && pilotCardinalN.parent == pilotNorthLayer
-                && (pilotCardinalE == null || pilotCardinalE.parent == pilotNorthLayer)
-                && (pilotCardinalS == null || pilotCardinalS.parent == pilotNorthLayer)
-                && (pilotCardinalW == null || pilotCardinalW.parent == pilotNorthLayer);
-            if (already)
-                return;
-
-            pilotNorthLayer = pilotMapRing.Q<VisualElement>("pilot-north-layer");
-            if (pilotNorthLayer == null)
-            {
-                pilotNorthLayer = new VisualElement
-                {
-                    name = "pilot-north-layer",
-                    pickingMode = PickingMode.Ignore
-                };
-                pilotNorthLayer.style.position = Position.Absolute;
-                pilotNorthLayer.style.left = 0;
-                pilotNorthLayer.style.top = 0;
-                pilotNorthLayer.style.right = 0;
-                pilotNorthLayer.style.bottom = 0;
-                pilotNorthLayer.style.width = Length.Percent(100);
-                pilotNorthLayer.style.height = Length.Percent(100);
-                // Under player arrow, above / with map texture rotation.
-                int insertAt = pilotMapRing.childCount;
-                if (mapPlayer != null && mapPlayer.parent == pilotMapRing)
-                    insertAt = pilotMapRing.IndexOf(mapPlayer);
-                pilotMapRing.Insert(insertAt, pilotNorthLayer);
-            }
-
-            PlaceCardinalOnNorthLayer(pilotCardinalN, "N", 50f, -2f, true, false, -6f, 0f);
-            PlaceCardinalOnNorthLayer(pilotCardinalE, "E", -1f, 50f, false, true, 0f, -8f);
-            PlaceCardinalOnNorthLayer(pilotCardinalS, "S", 50f, -1f, true, false, -6f, 0f, bottom: true);
-            PlaceCardinalOnNorthLayer(pilotCardinalW, "W", -2f, 50f, false, true, 0f, -8f);
-
-            lastMapYaw = float.NaN; // force rotate sync next RefreshMap
+            PlaceMapCardinal(pilotCardinalN, "N", MapCardinalEdge.Top);
+            PlaceMapCardinal(pilotCardinalS, "S", MapCardinalEdge.Bottom);
+            PlaceMapCardinal(pilotCardinalE, "E", MapCardinalEdge.Right);
+            PlaceMapCardinal(pilotCardinalW, "W", MapCardinalEdge.Left);
         }
 
-        private void PlaceCardinalOnNorthLayer(
-            Label label,
-            string text,
-            float primary,
-            float secondary,
-            bool horizontalCenter,
-            bool verticalCenter,
-            float marginPrimary,
-            float marginSecondary,
-            bool bottom = false)
+        private enum MapCardinalEdge
         {
-            if (label == null || pilotNorthLayer == null)
+            Top,
+            Bottom,
+            Left,
+            Right
+        }
+
+        private void PlaceMapCardinal(Label label, string text, MapCardinalEdge edge)
+        {
+            if (label == null || mapView == null)
                 return;
 
-            if (label.parent != pilotNorthLayer)
+            if (label.parent != mapView)
             {
                 label.RemoveFromHierarchy();
-                pilotNorthLayer.Add(label);
+                mapView.Add(label);
             }
+
+            ApplyMapCardinalStyle(label, text, edge);
+        }
+
+        private static void ApplyMapCardinalStyle(Label label, string text, MapCardinalEdge edge)
+        {
+            if (label == null)
+                return;
 
             label.text = text;
             label.style.position = Position.Absolute;
-            label.style.color = new Color(1f, 0.12f, 0.08f, 1f); // bright red #FF1E14
-            label.style.fontSize = 13f; // 11px + ~20%
+            label.style.color = new Color(1f, 0.12f, 0.08f, 1f);
+            label.style.fontSize = 13f;
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.display = DisplayStyle.Flex;
+            label.style.left = StyleKeyword.Auto;
+            label.style.right = StyleKeyword.Auto;
+            label.style.top = StyleKeyword.Auto;
+            label.style.bottom = StyleKeyword.Auto;
+            label.style.marginLeft = 0;
+            label.style.marginTop = 0;
 
-            if (horizontalCenter)
+            switch (edge)
             {
-                label.style.left = new Length(50f, LengthUnit.Percent);
-                label.style.right = StyleKeyword.Auto;
-                label.style.marginLeft = marginPrimary;
-            }
-            else if (text == "E")
-            {
-                label.style.left = StyleKeyword.Auto;
-                label.style.right = -2f;
-                label.style.marginLeft = 0;
-            }
-            else // W
-            {
-                label.style.left = -2f;
-                label.style.right = StyleKeyword.Auto;
-                label.style.marginLeft = 0;
+                case MapCardinalEdge.Top:
+                    label.style.left = new Length(50f, LengthUnit.Percent);
+                    label.style.marginLeft = -6f;
+                    label.style.top = -2f;
+                    break;
+                case MapCardinalEdge.Bottom:
+                    label.style.left = new Length(50f, LengthUnit.Percent);
+                    label.style.marginLeft = -6f;
+                    label.style.bottom = -2f;
+                    break;
+                case MapCardinalEdge.Right:
+                    label.style.right = -2f;
+                    label.style.top = new Length(50f, LengthUnit.Percent);
+                    label.style.marginTop = -8f;
+                    break;
+                case MapCardinalEdge.Left:
+                    label.style.left = -2f;
+                    label.style.top = new Length(50f, LengthUnit.Percent);
+                    label.style.marginTop = -8f;
+                    break;
             }
 
-            if (bottom)
-            {
-                label.style.top = StyleKeyword.Auto;
-                label.style.bottom = -2f;
-                label.style.marginTop = 0;
-            }
-            else if (verticalCenter)
-            {
-                label.style.top = new Length(50f, LengthUnit.Percent);
-                label.style.bottom = StyleKeyword.Auto;
-                label.style.marginTop = marginSecondary;
-            }
-            else
-            {
-                label.style.top = secondary;
-                label.style.bottom = StyleKeyword.Auto;
-                label.style.marginTop = 0;
-            }
+            label.BringToFront();
         }
 
 private void EnsureArcs()
@@ -470,9 +452,14 @@ private void EnsureArcs()
             InventorySystem inventory = ResolveInventory(player);
             MapUI mapUi = ResolveMapUi();
 
-            RefreshBars(stats);
-            RefreshLoad(inventory);
-            RefreshWorld(mapUi, stats);
+            if (Time.unscaledTime >= nextHeavyRefresh)
+            {
+                nextHeavyRefresh = Time.unscaledTime + 0.066f;
+                RefreshBars(stats);
+                RefreshLoad(inventory);
+                RefreshWorld(mapUi, stats);
+            }
+
             RefreshMap(mapUi);
             RefreshCompass(mapUi);
             TickMinimapZoom(mapUi);
@@ -555,7 +542,14 @@ private void EnsureArcs()
             if (gridLabel != null)
             {
                 if (hasPos)
-                    SetLabelText(gridLabel, "GRID " + Mathf.RoundToInt(pos.x) + "  " + Mathf.RoundToInt(pos.z), ref lastGridText);
+                {
+                    WorldMapProvider map = WorldMapProvider.Instance;
+                    Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
+                    SetLabelText(
+                        gridLabel,
+                        "GRID " + Mathf.RoundToInt(grid.x) + "  " + Mathf.RoundToInt(grid.y),
+                        ref lastGridText);
+                }
                 else
                     SetLabelText(gridLabel, "GRID --", ref lastGridText);
             }
@@ -607,22 +601,20 @@ private void EnsureArcs()
                 cropped = minimap.EnsureCroppedView(mapUi);
 
             if (cropped != null)
-                DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.StretchToFill);
+                DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.ScaleAndCrop);
             if (!mapOpacityApplied)
             {
                 mapView.style.opacity = 0.40f;
                 mapOpacityApplied = true;
             }
 
-            float yaw = mapUi != null ? mapUi.MinimapFacingYaw : 0f;
+            float yaw = mapUi != null ? mapUi.MapDisplayYaw : 0f;
             if (float.IsNaN(lastMapYaw) || Mathf.Abs(yaw - lastMapYaw) > 0.05f)
             {
                 lastMapYaw = yaw;
                 DMUiToolkitMenus.SetElementRotate(mapView, yaw);
                 if (poiHost != null)
                     DMUiToolkitMenus.SetElementRotate(poiHost, yaw);
-                if (pilotNorthLayer != null)
-                    DMUiToolkitMenus.SetElementRotate(pilotNorthLayer, yaw);
             }
 
             RefreshMapPois(mapUi);
@@ -686,21 +678,26 @@ private void EnsureArcs()
 
         private void RefreshCompass(MapUI mapUi)
         {
-            float heading = mapUi != null ? mapUi.MinimapFacingYaw : 0f;
-            float stripWidth = compassTicks != null ? compassTicks.resolvedStyle.width : 320f;
-            if (stripWidth < 8f)
-                stripWidth = 320f;
+            float heading = mapUi != null ? mapUi.MapDisplayYaw : 0f;
+            if (Time.frameCount >= nextCompassWidthFrame)
+            {
+                nextCompassWidthFrame = Time.frameCount + 30;
+                float stripWidth = compassTicks != null ? compassTicks.resolvedStyle.width : 320f;
+                if (stripWidth >= 8f)
+                    cachedCompassStripWidth = stripWidth;
+            }
 
+            float stripWidthStable = cachedCompassStripWidth;
             float halfFov = CompassFov * 0.5f;
-            float halfWidth = stripWidth * 0.5f;
+            float halfWidth = stripWidthStable * 0.5f;
 
             bool headingStable = !float.IsNaN(lastCompassHeading)
                 && Mathf.Abs(Mathf.DeltaAngle(heading, lastCompassHeading)) < 0.15f
-                && Mathf.Approximately(stripWidth, lastCompassWidth);
+                && Mathf.Approximately(stripWidthStable, lastCompassWidth);
             if (!headingStable)
             {
                 lastCompassHeading = heading;
-                lastCompassWidth = stripWidth;
+                lastCompassWidth = stripWidthStable;
                 for (int i = 0; i < ticks.Count; i++)
                 {
                     CompassTick tick = ticks[i];
@@ -715,7 +712,7 @@ private void EnsureArcs()
                 }
             }
 
-            RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidth);
+            RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidthStable);
         }
 
         private void RefreshCompassDots(MapUI mapUi, float heading, float halfFov, float halfWidth, float stripWidth)
@@ -748,7 +745,7 @@ private void EnsureArcs()
                     if (distance > MarkerRange)
                         continue;
 
-                    float bearing = Mathf.Atan2(toMarker.x, toMarker.z) * Mathf.Rad2Deg;
+                    float bearing = WorldMapProvider.WorldDeltaToDisplayBearing(origin, marker.WorldPosition);
                     float delta = Mathf.DeltaAngle(heading, bearing);
                     if (Mathf.Abs(delta) > halfFov)
                         continue;
@@ -759,38 +756,81 @@ private void EnsureArcs()
                         dot = new VisualElement { pickingMode = PickingMode.Ignore };
                         dot.usageHints = UsageHints.DynamicTransform;
                         dot.AddToClassList("pilot-compass-dot");
+                        dot.userData = new CompassDotState();
                         compassDots.Add(dot);
                         compassDotLookup[marker] = dot;
                     }
 
-                    if (marker.IconSprite != null)
+                    if (dot.userData is not CompassDotState dotState)
                     {
-                        DMUiToolkitStyle.TrySetSpriteBackground(dot, marker.IconSprite, ScaleMode.ScaleToFit);
-                        dot.style.backgroundColor = Color.clear;
-                        dot.style.unityBackgroundImageTintColor = marker.Color;
-                    }
-                    else
-                    {
-                        DMUiToolkitStyle.ClearBackgroundImage(dot);
-                        dot.style.backgroundColor = marker.Color;
+                        dotState = new CompassDotState();
+                        dot.userData = dotState;
                     }
 
                     float t = 1f - Mathf.Clamp01(Mathf.Abs(delta) / halfFov);
                     float scale = Mathf.Lerp(0.45f, 1.4f, t * t);
                     float size = 8f * scale;
                     float x = (delta / halfFov) * halfWidth;
+                    float opacity = Mathf.Lerp(0.35f, 1f, t);
+                    float left = halfWidth + x;
+
+                    if (marker.IconSprite != null)
+                    {
+                        if (dotState.LastSprite != marker.IconSprite)
+                        {
+                            dotState.LastSprite = marker.IconSprite;
+                            DMUiToolkitStyle.TrySetSpriteBackground(dot, marker.IconSprite, ScaleMode.ScaleToFit);
+                            dot.style.backgroundColor = Color.clear;
+                        }
+
+                        if (dotState.LastColor != marker.Color)
+                        {
+                            dotState.LastColor = marker.Color;
+                            dot.style.unityBackgroundImageTintColor = marker.Color;
+                        }
+                    }
+                    else
+                    {
+                        if (dotState.LastSprite != null)
+                        {
+                            dotState.LastSprite = null;
+                            DMUiToolkitStyle.ClearBackgroundImage(dot);
+                        }
+
+                        if (dotState.LastColor != marker.Color)
+                        {
+                            dotState.LastColor = marker.Color;
+                            dot.style.backgroundColor = marker.Color;
+                        }
+                    }
+
                     dot.style.display = DisplayStyle.Flex;
-                    dot.style.width = size;
-                    dot.style.height = size;
-                    dot.style.marginLeft = -size * 0.5f;
-                    dot.style.marginTop = -size * 0.5f;
-                    dot.style.left = halfWidth + x;
-                    dot.style.top = Length.Percent(50f);
-                    dot.style.opacity = Mathf.Lerp(0.35f, 1f, t);
-                    dot.style.borderTopLeftRadius = size * 0.5f;
-                    dot.style.borderTopRightRadius = size * 0.5f;
-                    dot.style.borderBottomLeftRadius = size * 0.5f;
-                    dot.style.borderBottomRightRadius = size * 0.5f;
+                    if (!Mathf.Approximately(dotState.LastSize, size))
+                    {
+                        dotState.LastSize = size;
+                        dot.style.width = size;
+                        dot.style.height = size;
+                        dot.style.marginLeft = -size * 0.5f;
+                        dot.style.marginTop = -size * 0.5f;
+                        dot.style.borderTopLeftRadius = size * 0.5f;
+                        dot.style.borderTopRightRadius = size * 0.5f;
+                        dot.style.borderBottomLeftRadius = size * 0.5f;
+                        dot.style.borderBottomRightRadius = size * 0.5f;
+                    }
+
+                    if (!Mathf.Approximately(dotState.LastX, left))
+                    {
+                        dotState.LastX = left;
+                        dot.style.left = left;
+                    }
+
+                    if (!Mathf.Approximately(dotState.LastOpacity, opacity))
+                    {
+                        dotState.LastOpacity = opacity;
+                        dot.style.opacity = opacity;
+                    }
+
+                    dotState.LastDelta = delta;
 
                     if (Mathf.Abs(delta) < focusedAbs)
                     {
@@ -854,9 +894,9 @@ private void EnsureArcs()
                 zoomOut = true;
 
             if (zoomIn)
-                mapUi.UitkAdjustMinimapSpan(0.833f);
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomInMultiplier);
             if (zoomOut)
-                mapUi.UitkAdjustMinimapSpan(1.2f);
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomOutMultiplier);
         }
 
         private bool MinimapZoomBlocked()

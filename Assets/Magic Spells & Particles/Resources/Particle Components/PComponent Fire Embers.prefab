@@ -598,7 +598,7 @@ ParticleSystem:
     boxThickness: {x: 0, y: 0, z: 0}
     radiusThickness: 1
     donutRadius: 0.2
-    m_Position: {x: -1267.1595, y: 55.695244, z: -664.645}
+    m_Position: {x: -872.15955, y: 13.695242, z: -261.745}
     m_Rotation: {x: 0, y: 0, z: 0}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 2
@@ -679,7 +679,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 390.1
+      value: 25
       mode: 0
       spread: 0
       speed:

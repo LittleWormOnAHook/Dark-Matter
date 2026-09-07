@@ -77,11 +77,11 @@ namespace Project.Features.Climb
 
         [Tooltip("Short climb-leap speed (m/s) along the climb direction.")]
         [Range(2f, 12f)]
-        public float climbLeapSpeed = 7.2f;
+        public float climbLeapSpeed = 1.45f;
 
-        [Tooltip("Cling Space-hop height (meters). Hold Space longer to go further, up to this.")]
+        [Tooltip("Space cling hop distance (meters). ~1 body-width; hold Space only slight stretch.")]
         [Range(0.5f, 12f)]
-        public float clingHop = 12f;
+        public float clingHop = 0.72f;
 
         [Tooltip("After one Space leap, WASD toward a Climbable snaps back. Seconds.")]
         [Range(0.12f, 1.2f)]
@@ -103,7 +103,7 @@ namespace Project.Features.Climb
         [Range(0.2f, 2f)]
         public float airControlSeconds = 0.95f;
 
-        [Tooltip("From a walkable ledge top: S toward the drop (facing out) or E near the lip reverse-mantles into hang on the outer lip (180 to face the wall), then normal climb. Does not auto-trigger on walk-near-edge.")]
+        [Tooltip("From a walkable ledge top: walk forward into the void, hold S toward the drop, or press E near the lip — reverse-mantles into hang (180 to face the wall). Standing still at the edge does not trigger.")]
         public bool dropToHang = true;
 
         [Tooltip("How far below the lip we look for a climbable face when drop-to-hang / reverse mantle starts.")]

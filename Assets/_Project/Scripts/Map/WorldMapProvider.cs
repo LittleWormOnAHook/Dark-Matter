@@ -14,7 +14,9 @@ namespace Project.Map
     public class WorldMapProvider : MonoBehaviour
     {
         private const string FakeMapResourcePath = "UI/FakeMap";
-        private const string FakeMapAssetPath = "Assets/_Project/Textures/UI/FakeMap.png";
+        private const string FakeMapAssetPath = "Assets/_Project/World/WorldMap/Io_Plan_BiomeMap_TopDown.png";
+        private const string FakeMapLegacyAssetPath = "Assets/_Project/Textures/UI/FakeMap.png";
+        private const string MinimapMapResourcePath = "UI/FakeMap";
 
         /// <summary>Gaia DM Genesis: 4×4 tiles × 2048 m ≈ 8.19 km playable span.</summary>
         public const float MultiTerrainWorldSizeMeters = 8192f;
@@ -22,12 +24,20 @@ namespace Project.Map
 
         public static WorldMapProvider Instance { get; private set; }
 
+        public const string CalibrationResourcesPath = DMWorldMapCalibrationProfile.ResourcesPath;
+
+        [SerializeField] private DMWorldMapCalibrationProfile calibrationProfile;
         [SerializeField] private Terrain terrain;
         [SerializeField] private bool useTerrainBounds = true;
         [Tooltip("When enabled, map UVs use the full Gaia 4×4 terrain span even if only nearby tiles are loaded.")]
         [SerializeField] private bool useGaiaMultiTerrainBounds = true;
         [SerializeField] private Vector2 manualWorldSize = new Vector2(MultiTerrainWorldSizeMeters, MultiTerrainWorldSizeMeters);
         [SerializeField] private Vector3 manualWorldOrigin = MultiTerrainWorldOrigin;
+        [Tooltip("When set (or a hierarchy object named Map Zero exists), map UVs anchor to this XZ corner.")]
+        [SerializeField] private Transform mapOriginMarker;
+        [SerializeField] private bool preferMapOriginMarker = true;
+        [Tooltip("When enabled, Map Zero position is the map minimum XZ corner. When disabled, it is the map center.")]
+        [SerializeField] private bool mapOriginIsMinCorner = false;
         [SerializeField] private int mapTextureResolution = 512;
         [SerializeField] private Texture2D mapTextureOverride;
         [SerializeField] private bool buildTerrainTextureAtRuntime = true;
@@ -37,8 +47,23 @@ namespace Project.Map
         [SerializeField] private bool useMapArtReference = true;
         [Tooltip("Render a top-down camera snapshot of the terrain (matches in-scene look). Falls back to height/splat bake.")]
         [SerializeField] private bool useCameraTerrainSnapshot = true;
-        [Tooltip("Flip baked map V so terrain +Z (north) aligns with UI up.")]
-        [SerializeField] private bool invertMapVertical;
+        [Tooltip("Flip map V in world→UV math when authored north is texture bottom.")]
+        [SerializeField] private bool invertMapVertical = false;
+        [Tooltip("Extra yaw added to minimap/compass heading ( -90 = world +X reads as North ).")]
+        [SerializeField] private float mapDisplayNorthOffsetDegrees = -90f;
+        [Tooltip("Fine-tune world→UV alignment after affine calibration.")]
+        [SerializeField] private Vector2 mapUvOffset = Vector2.zero;
+        [Tooltip("Static full-map player arrow base rotation (degrees).")]
+        [SerializeField] private float mapPlayerIconBaseDegrees;
+        [Header("Grid 0,0 calibration")]
+        [Tooltip("Texture UV where world grid origin (Map Zero) sits on the authored map.")]
+        [SerializeField] private Vector2 mapZeroUv01 = new Vector2(0.518f, 0.498f);
+        [Tooltip("Known world XZ (grid coords) for the second calibration point.")]
+        [SerializeField] private Vector2 mapCalibrationWorldXz = new Vector2(-767f, -108f);
+        [Tooltip("Texture UV for that second calibration point on the authored map.")]
+        [SerializeField] private Vector2 mapCalibrationUv01 = new Vector2(0.563f, 0.440f);
+        [SerializeField] private bool useAffineMapProjection = true;
+        [SerializeField] private Texture2D minimapTextureOverride;
 
         [Header("Terrain Map Colors")]
         [SerializeField] private Color lowlandColor = new Color(0.12f, 0.24f, 0.14f, 1f);
@@ -46,19 +71,45 @@ namespace Project.Map
 
         public Bounds WorldBounds { get; private set; }
         public Texture2D MapTexture { get; private set; }
+        public Texture2D MinimapTexture { get; private set; }
         public bool IsMapTextureReady { get; private set; }
+        public bool InvertMapVertical => ActiveCalibration.invertMapVertical;
+        public float MapDisplayNorthOffsetDegrees => ActiveCalibration.mapDisplayNorthOffsetDegrees;
+        public Vector2 MapUvOffset => ActiveCalibration.mapUvOffset;
+        public float MapPlayerIconBaseDegrees => ActiveCalibration.mapPlayerIconBaseDegrees;
+        public Vector3 MapGridOriginWorld => ResolveMapGridOriginWorld();
+        public DMWorldMapCalibrationProfile CalibrationProfile => ResolveCalibrationProfile();
 
         public event Action MapTextureReady;
+        public event Action WorldBoundsChanged;
+        public event Action CalibrationChanged;
+
+        private struct CalibrationState
+        {
+            public bool invertMapVertical;
+            public float mapDisplayNorthOffsetDegrees;
+            public Vector2 mapUvOffset;
+            public float mapPlayerIconBaseDegrees;
+            public Vector2 mapZeroUv01;
+            public Vector2 mapCalibrationWorldXz;
+            public Vector2 mapCalibrationUv01;
+            public bool useAffineMapProjection;
+        }
+
+        private CalibrationState ActiveCalibration => BuildCalibrationState();
 
         private Coroutine buildRoutine;
         private Texture2D runtimeGeneratedTexture;
         private Texture2D fallbackTexture;
         private static Texture2D cachedFakeMapTexture;
+        private static Texture2D cachedMinimapTexture;
+        private Transform cachedMapOriginMarker;
 
         internal static void ResetStaticState()
         {
             Instance = null;
             cachedFakeMapTexture = null;
+            cachedMinimapTexture = null;
         }
 
         private void Awake()
@@ -71,11 +122,16 @@ namespace Project.Map
 
             Instance = this;
             EnsureTerrainReference();
+            EnsureCalibrationProfile();
             TryApplyMapArtReference();
+            EnsureCalibrationRuntime();
             RefreshWorldBounds();
 
             if (mapTextureOverride == null && !ShouldPreferTerrainGeneratedMap())
                 mapTextureOverride = LoadFakeMapTexture();
+
+            if (minimapTextureOverride == null && !ShouldPreferTerrainGeneratedMap())
+                minimapTextureOverride = LoadMinimapMapTexture();
 
             InitializeMapTexture();
         }
@@ -92,6 +148,7 @@ namespace Project.Map
         public void RefreshWorldBounds()
         {
             ResolveBounds();
+            WorldBoundsChanged?.Invoke();
         }
 
         public float GetPlayableWorldSpan()
@@ -117,25 +174,234 @@ namespace Project.Map
                 MapTexture = null;
         }
 
-        public Vector2 WorldToMap01(Vector3 worldPosition)
+        public Vector2 WorldToMapRaw01(Vector3 worldPosition)
         {
+            if (ActiveCalibration.useAffineMapProjection)
+                return ProjectWorldToMapAffine(worldPosition, applyFineTuneOffset: false);
+
             Vector3 min = WorldBounds.min;
             Vector3 max = WorldBounds.max;
             float x = Mathf.InverseLerp(min.x, max.x, worldPosition.x);
             float z = Mathf.InverseLerp(min.z, max.z, worldPosition.z);
-            if (invertMapVertical)
+            if (ActiveCalibration.invertMapVertical)
                 z = 1f - z;
             return new Vector2(Mathf.Clamp01(x), Mathf.Clamp01(z));
         }
 
+        public Vector2 WorldToMap01(Vector3 worldPosition)
+        {
+            if (ActiveCalibration.useAffineMapProjection)
+                return ProjectWorldToMapAffine(worldPosition, applyFineTuneOffset: true);
+
+            return ApplyMapUvOffset(WorldToMapRaw01(worldPosition));
+        }
+
         public Vector3 Map01ToWorld(Vector2 map01)
         {
+            Vector2 raw = RemoveMapUvOffset(map01);
+
+            if (ActiveCalibration.useAffineMapProjection)
+            {
+                CalibrationState calibration = ActiveCalibration;
+                Vector2 uvPerMeter = GetMapUvPerWorldMeter();
+                Vector3 origin = ResolveMapGridOriginWorld();
+                float worldX = origin.x;
+                float worldZ = origin.z;
+                if (!Mathf.Approximately(uvPerMeter.x, 0f))
+                    worldX += (raw.x - calibration.mapZeroUv01.x) / uvPerMeter.x;
+                if (!Mathf.Approximately(uvPerMeter.y, 0f))
+                    worldZ += (raw.y - calibration.mapZeroUv01.y) / uvPerMeter.y;
+                return new Vector3(worldX, WorldBounds.center.y, worldZ);
+            }
+
             Vector3 min = WorldBounds.min;
             Vector3 max = WorldBounds.max;
+            float mapZ = raw.y;
+            if (ActiveCalibration.invertMapVertical)
+                mapZ = 1f - mapZ;
             return new Vector3(
-                Mathf.Lerp(min.x, max.x, map01.x),
+                Mathf.Lerp(min.x, max.x, raw.x),
                 WorldBounds.center.y,
-                Mathf.Lerp(min.z, max.z, map01.y));
+                Mathf.Lerp(min.z, max.z, mapZ));
+        }
+
+        public Vector2 WorldToGridXz(Vector3 worldPosition)
+        {
+            Vector3 origin = ResolveMapGridOriginWorld();
+            return new Vector2(
+                worldPosition.x - origin.x,
+                worldPosition.z - origin.z);
+        }
+
+        public float GetMapDisplayYaw(float facingYawDegrees)
+        {
+            CalibrationState calibration = ActiveCalibration;
+            return NormalizeDegrees(facingYawDegrees + calibration.mapDisplayNorthOffsetDegrees);
+        }
+
+        /// <summary>Map-display bearing from a world XZ delta (matches MapDisplayYaw space).</summary>
+        public float WorldDeltaToDisplayBearing(Vector3 worldDelta)
+        {
+            worldDelta.y = 0f;
+            if (worldDelta.sqrMagnitude <= 0.0001f)
+                return 0f;
+
+            float worldBearing = Mathf.Atan2(worldDelta.x, worldDelta.z) * Mathf.Rad2Deg;
+            return GetMapDisplayYaw(worldBearing);
+        }
+
+        public static float WorldDeltaToDisplayBearing(Vector3 fromWorld, Vector3 toWorld)
+        {
+            WorldMapProvider provider = Instance;
+            Vector3 delta = toWorld - fromWorld;
+            return provider != null
+                ? provider.WorldDeltaToDisplayBearing(delta)
+                : NormalizeDegrees(Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg - 90f);
+        }
+
+        public void NotifyCalibrationChanged()
+        {
+            RefreshWorldBounds();
+            CalibrationChanged?.Invoke();
+            WorldBoundsChanged?.Invoke();
+        }
+
+        public void ApplyCalibrationToScene(DMWorldMapCalibrationProfile profile)
+        {
+            if (profile == null)
+                return;
+
+            invertMapVertical = profile.invertMapVertical;
+            mapDisplayNorthOffsetDegrees = profile.mapDisplayNorthOffsetDegrees;
+            mapUvOffset = profile.mapUvOffset;
+            mapPlayerIconBaseDegrees = profile.mapPlayerIconBaseDegrees;
+            mapZeroUv01 = profile.mapZeroUv01;
+            mapCalibrationWorldXz = profile.mapCalibrationWorldXz;
+            mapCalibrationUv01 = profile.mapCalibrationUv01;
+            useAffineMapProjection = profile.useAffineMapProjection;
+            calibrationProfile = profile;
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        }
+
+        private Vector2 ApplyMapUvOffset(Vector2 uv)
+        {
+            CalibrationState calibration = ActiveCalibration;
+            return new Vector2(
+                uv.x + calibration.mapUvOffset.x,
+                uv.y + calibration.mapUvOffset.y);
+        }
+
+        private Vector2 RemoveMapUvOffset(Vector2 uv)
+        {
+            CalibrationState calibration = ActiveCalibration;
+            return new Vector2(
+                uv.x - calibration.mapUvOffset.x,
+                uv.y - calibration.mapUvOffset.y);
+        }
+
+        private Vector3 ResolveMapGridOriginWorld()
+        {
+            WorldMapOriginMarker originMarker = WorldMapOriginMarker.FindInScene();
+            if (originMarker != null)
+                return originMarker.transform.position;
+
+            if (mapOriginMarker != null)
+                return mapOriginMarker.position;
+
+            if (cachedMapOriginMarker != null)
+                return cachedMapOriginMarker.position;
+
+            return Vector3.zero;
+        }
+
+        private Vector2 GetMapUvPerWorldMeter()
+        {
+            CalibrationState calibration = ActiveCalibration;
+            Vector2 deltaWorld = calibration.mapCalibrationWorldXz;
+            Vector2 deltaUv = calibration.mapCalibrationUv01 - calibration.mapZeroUv01;
+            return new Vector2(
+                Mathf.Approximately(deltaWorld.x, 0f) ? 0f : deltaUv.x / deltaWorld.x,
+                Mathf.Approximately(deltaWorld.y, 0f) ? 0f : deltaUv.y / deltaWorld.y);
+        }
+
+        private Vector2 ProjectWorldToMapAffine(Vector3 worldPosition, bool applyFineTuneOffset)
+        {
+            CalibrationState calibration = ActiveCalibration;
+            Vector3 origin = ResolveMapGridOriginWorld();
+            Vector2 uvPerMeter = GetMapUvPerWorldMeter();
+            float relX = worldPosition.x - origin.x;
+            float relZ = worldPosition.z - origin.z;
+            Vector2 uv = new Vector2(
+                calibration.mapZeroUv01.x + relX * uvPerMeter.x,
+                calibration.mapZeroUv01.y + relZ * uvPerMeter.y);
+            return applyFineTuneOffset ? ApplyMapUvOffset(uv) : uv;
+        }
+
+        private CalibrationState BuildCalibrationState()
+        {
+            DMWorldMapCalibrationProfile profile = ResolveCalibrationProfile();
+            if (profile != null)
+            {
+                return new CalibrationState
+                {
+                    invertMapVertical = profile.invertMapVertical,
+                    mapDisplayNorthOffsetDegrees = profile.mapDisplayNorthOffsetDegrees,
+                    mapUvOffset = profile.mapUvOffset,
+                    mapPlayerIconBaseDegrees = profile.mapPlayerIconBaseDegrees,
+                    mapZeroUv01 = profile.mapZeroUv01,
+                    mapCalibrationWorldXz = profile.mapCalibrationWorldXz,
+                    mapCalibrationUv01 = profile.mapCalibrationUv01,
+                    useAffineMapProjection = profile.useAffineMapProjection,
+                };
+            }
+
+            return new CalibrationState
+            {
+                invertMapVertical = invertMapVertical,
+                mapDisplayNorthOffsetDegrees = mapDisplayNorthOffsetDegrees,
+                mapUvOffset = mapUvOffset,
+                mapPlayerIconBaseDegrees = mapPlayerIconBaseDegrees,
+                mapZeroUv01 = mapZeroUv01,
+                mapCalibrationWorldXz = mapCalibrationWorldXz,
+                mapCalibrationUv01 = mapCalibrationUv01,
+                useAffineMapProjection = useAffineMapProjection,
+            };
+        }
+
+        private DMWorldMapCalibrationProfile ResolveCalibrationProfile()
+        {
+            if (calibrationProfile != null)
+                return calibrationProfile;
+
+            calibrationProfile = Resources.Load<DMWorldMapCalibrationProfile>(CalibrationResourcesPath);
+            return calibrationProfile;
+        }
+
+        private void EnsureCalibrationProfile()
+        {
+            if (calibrationProfile != null)
+                return;
+
+            calibrationProfile = Resources.Load<DMWorldMapCalibrationProfile>(CalibrationResourcesPath);
+        }
+
+        private void EnsureCalibrationRuntime()
+        {
+            DMWorldMapCalibrationProfile profile = ResolveCalibrationProfile();
+            if (profile == null || !profile.enableRuntimeTuning)
+                return;
+
+            if (GetComponent<DMWorldMapCalibrationRuntime>() == null)
+                gameObject.AddComponent<DMWorldMapCalibrationRuntime>();
+        }
+
+        private static float NormalizeDegrees(float degrees)
+        {
+            degrees %= 360f;
+            return degrees < 0f ? degrees + 360f : degrees;
         }
 
         public void ApplySystemEnabled(bool enabled)
@@ -181,6 +447,9 @@ namespace Project.Map
             if (interim != null)
             {
                 MapTexture = interim;
+                MinimapTexture = minimapTextureOverride != null ? minimapTextureOverride : LoadMinimapMapTexture();
+                if (MinimapTexture == null)
+                    MinimapTexture = interim;
             }
             else
             {
@@ -212,6 +481,9 @@ namespace Project.Map
 
             mapTextureOverride = texture;
             MapTexture = texture;
+            MinimapTexture = minimapTextureOverride != null ? minimapTextureOverride : LoadMinimapMapTexture();
+            if (MinimapTexture == null)
+                MinimapTexture = texture;
             IsMapTextureReady = true;
             return true;
         }
@@ -511,12 +783,33 @@ namespace Project.Map
             if (cachedFakeMapTexture != null)
                 return cachedFakeMapTexture;
 
-            cachedFakeMapTexture = Resources.Load<Texture2D>(FakeMapResourcePath);
 #if UNITY_EDITOR
+            cachedFakeMapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FakeMapAssetPath);
             if (cachedFakeMapTexture == null)
-                cachedFakeMapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FakeMapAssetPath);
+                cachedFakeMapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FakeMapLegacyAssetPath);
 #endif
+            if (cachedFakeMapTexture == null)
+                cachedFakeMapTexture = Resources.Load<Texture2D>(FakeMapResourcePath);
+
             return cachedFakeMapTexture;
+        }
+
+        public static Texture2D LoadMinimapMapTexture()
+        {
+            if (cachedMinimapTexture != null)
+                return cachedMinimapTexture;
+
+            cachedMinimapTexture = Resources.Load<Texture2D>(MinimapMapResourcePath);
+#if UNITY_EDITOR
+            if (cachedMinimapTexture == null)
+                cachedMinimapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Resources/UI/FakeMap.png");
+            if (cachedMinimapTexture == null)
+                cachedMinimapTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FakeMapLegacyAssetPath);
+#endif
+            if (cachedMinimapTexture == null)
+                cachedMinimapTexture = LoadFakeMapTexture();
+
+            return cachedMinimapTexture;
         }
 
         private bool TryStartTerrainBuild()
@@ -547,6 +840,18 @@ namespace Project.Map
 
         private void ResolveBounds()
         {
+            if (TryResolveOriginMarkerBounds(out Bounds originBounds))
+            {
+                WorldBounds = originBounds;
+                return;
+            }
+
+            if (TryResolveMapArtBounds(out Bounds artBounds))
+            {
+                WorldBounds = artBounds;
+                return;
+            }
+
             if (useGaiaMultiTerrainBounds)
             {
                 Vector3 flatSize = new Vector3(MultiTerrainWorldSizeMeters, 100f, MultiTerrainWorldSizeMeters);
@@ -562,6 +867,70 @@ namespace Project.Map
 
             Vector3 manualSize = new Vector3(manualWorldSize.x, 100f, manualWorldSize.y);
             WorldBounds = new Bounds(manualWorldOrigin + manualSize * 0.5f, manualSize);
+        }
+
+        private bool TryResolveOriginMarkerBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (!preferMapOriginMarker)
+                return false;
+
+            WorldMapOriginMarker originMarker = WorldMapOriginMarker.FindInScene();
+            if (originMarker != null)
+            {
+                bounds = originMarker.BuildWorldBounds();
+                cachedMapOriginMarker = originMarker.transform;
+                mapOriginMarker = originMarker.transform;
+                return true;
+            }
+
+            Transform marker = mapOriginMarker != null ? mapOriginMarker : cachedMapOriginMarker;
+            if (marker == null)
+            {
+                GameObject found = GameObject.Find(WorldMapOriginMarker.DefaultObjectName);
+                if (found != null)
+                    cachedMapOriginMarker = marker = found.transform;
+            }
+
+            if (marker == null)
+                return false;
+
+            WorldMapArtReference art = WorldMapArtReference.FindInScene();
+            if (art != null)
+            {
+                Bounds artBounds = art.GetWorldBounds();
+                if (artBounds.size.x > 0.01f && artBounds.size.z > 0.01f)
+                {
+                    Vector3 flatSize = new Vector3(artBounds.size.x, 100f, artBounds.size.z);
+                    Vector3 minCorner = mapOriginIsMinCorner
+                        ? new Vector3(artBounds.min.x, 0f, artBounds.min.z)
+                        : artBounds.center - new Vector3(flatSize.x * 0.5f, 0f, flatSize.z * 0.5f);
+                    bounds = new Bounds(minCorner + flatSize * 0.5f, flatSize);
+                    return true;
+                }
+            }
+
+            Vector2 worldSize = new Vector2(
+                manualWorldSize.x > 0.01f ? manualWorldSize.x : MultiTerrainWorldSizeMeters,
+                manualWorldSize.y > 0.01f ? manualWorldSize.y : MultiTerrainWorldSizeMeters);
+
+            Vector3 legacyFlatSize = new Vector3(worldSize.x, 100f, worldSize.y);
+            Vector3 legacyMinCorner = mapOriginIsMinCorner
+                ? new Vector3(marker.position.x, 0f, marker.position.z)
+                : marker.position - new Vector3(legacyFlatSize.x * 0.5f, 0f, legacyFlatSize.z * 0.5f);
+            bounds = new Bounds(legacyMinCorner + legacyFlatSize * 0.5f, legacyFlatSize);
+            return true;
+        }
+
+        private static bool TryResolveMapArtBounds(out Bounds bounds)
+        {
+            bounds = default;
+            WorldMapArtReference art = WorldMapArtReference.FindInScene();
+            if (art == null)
+                return false;
+
+            bounds = art.GetWorldBounds();
+            return bounds.size.x > 0.01f && bounds.size.z > 0.01f;
         }
 
         private void TryApplyMapArtReference()
@@ -580,7 +949,23 @@ namespace Project.Map
                 buildTerrainTextureAtRuntime = false;
             }
 
-            invertMapVertical = artReference.InvertMapVertical;
+            if (ResolveCalibrationProfile() == null)
+            {
+                invertMapVertical = artReference.InvertMapVertical;
+                mapDisplayNorthOffsetDegrees = artReference.MapDisplayNorthOffsetDegrees;
+                mapUvOffset = artReference.MapUvOffset;
+                mapPlayerIconBaseDegrees = artReference.MapPlayerIconBaseDegrees;
+                mapZeroUv01 = artReference.MapZeroUv01;
+                mapCalibrationWorldXz = artReference.MapCalibrationWorldXz;
+                mapCalibrationUv01 = artReference.MapCalibrationUv01;
+                useAffineMapProjection = artReference.UseAffineMapProjection;
+            }
+
+            if (IsMapTextureReady && UsesStaticMapTexture())
+            {
+                TryApplyStaticMapTexture();
+                MapTextureReady?.Invoke();
+            }
         }
 
         private bool TryResolveTerrainBounds(out Bounds combinedBounds)

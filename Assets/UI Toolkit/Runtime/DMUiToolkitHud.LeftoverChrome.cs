@@ -1,5 +1,4 @@
 using System.Collections;
-using Project.Combat;
 using Project.Data;
 using Project.Core;
 using Project.Inventory;
@@ -31,17 +30,18 @@ namespace Project.UI
         private VisualElement shelterTimerRoot;
         private Label shelterTimerCaption;
         private Label shelterTimerValue;
-        private const float CrosshairHalfSize = 19f;
-
         private bool leftoverBound;
         private bool leftoverPreviewHidden;
         private bool lastCrosshairShown;
         private float lastCrosshairScale = -1f;
-        private Vector2 lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
         private bool oxygenWasCritical;
         private Coroutine oxygenFlashRoutine;
         private static Texture2D oxygenVignetteTexture;
         private int lastShelterSecond = -1;
+        private EquipmentController leftoverEquipmentCached;
+        private PioneerInvectorInputBridge leftoverInvectorBridge;
+        private RangedCombatController leftoverRangedCombat;
+        private PlayerController leftoverPlayerController;
 
         private void BindLeftoverChrome(VisualElement root)
         {
@@ -83,7 +83,6 @@ namespace Project.UI
             leftoverPreviewHidden = true;
             lastCrosshairShown = false;
             lastCrosshairScale = -1f;
-            lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
         }
 
         private void TickLeftoverChrome()
@@ -121,10 +120,10 @@ namespace Project.UI
                 EquipmentController equipment = equipmentController;
                 if (equipment != null && equipment.HasActiveRangedWeapon())
                 {
+                    EnsureLeftoverEquipmentRefs();
                     ItemData weapon = equipment.DrawnWeaponItem;
-                    PlayerController player = equipment.GetComponent<PlayerController>();
                     show = weapon != null && weapon.IsRangedWeapon
-                        && (player == null || !player.BlocksCombatInput);
+                        && (leftoverPlayerController == null || !leftoverPlayerController.BlocksCombatInput);
                 }
             }
 
@@ -132,16 +131,15 @@ namespace Project.UI
             {
                 lastCrosshairShown = show;
                 crosshairRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                if (show)
+                    LockCrosshairToScreenCenter();
             }
 
             if (!show)
             {
                 lastCrosshairScale = -1f;
-                lastCrosshairPanel = new Vector2(float.NaN, float.NaN);
                 return;
             }
-
-            ApplyCrosshairReticlePosition();
 
             float scale = IsHudAiming() ? 0.75f : 1f;
             if (!Mathf.Approximately(scale, lastCrosshairScale))
@@ -152,39 +150,35 @@ namespace Project.UI
             }
         }
 
-        private void ApplyCrosshairReticlePosition()
+        private void LockCrosshairToScreenCenter()
         {
-            Camera cam = null;
-            if (equipmentController != null)
-            {
-                PlayerController player = equipmentController.GetComponent<PlayerController>();
-                if (player != null)
-                    cam = player.GameplayCamera;
-            }
-
-            if (cam == null)
-                cam = Camera.main;
-            if (cam == null || crosshairRoot.panel == null)
+            if (crosshairRoot == null)
                 return;
 
-            Vector3 aimPoint = RangedFireSolver.ResolveReticleAimPoint(
-                cam,
-                RangedFireSolver.DefaultLookAtConvergeDistance);
-            Vector3 screen = cam.WorldToScreenPoint(aimPoint);
-            if (screen.z <= 0.05f)
-                return;
-
-            Vector2 panel = RuntimePanelUtils.ScreenToPanel(crosshairRoot.panel, screen);
-            if ((panel - lastCrosshairPanel).sqrMagnitude < 0.25f)
-                return;
-
-            lastCrosshairPanel = panel;
-            crosshairRoot.style.left = panel.x;
-            crosshairRoot.style.top = panel.y;
+            crosshairRoot.style.left = Length.Percent(50f);
+            crosshairRoot.style.top = Length.Percent(50f);
             crosshairRoot.style.right = StyleKeyword.Auto;
             crosshairRoot.style.bottom = StyleKeyword.Auto;
-            crosshairRoot.style.marginLeft = -CrosshairHalfSize;
-            crosshairRoot.style.marginTop = -CrosshairHalfSize;
+            crosshairRoot.style.marginLeft = -19f;
+            crosshairRoot.style.marginTop = -19f;
+            crosshairRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
+        }
+
+        private void EnsureLeftoverEquipmentRefs()
+        {
+            if (equipmentController == leftoverEquipmentCached)
+                return;
+
+            leftoverEquipmentCached = equipmentController;
+            leftoverInvectorBridge = equipmentController != null
+                ? equipmentController.GetComponent<PioneerInvectorInputBridge>()
+                : null;
+            leftoverRangedCombat = equipmentController != null
+                ? equipmentController.GetComponent<RangedCombatController>()
+                : null;
+            leftoverPlayerController = equipmentController != null
+                ? equipmentController.GetComponent<PlayerController>()
+                : null;
         }
 
         private bool IsHudAiming()
@@ -192,12 +186,11 @@ namespace Project.UI
             if (equipmentController == null)
                 return false;
 
-            PioneerInvectorInputBridge invector = equipmentController.GetComponent<PioneerInvectorInputBridge>();
-            if (invector != null && PioneerInvectorBootstrap.IsInvectorPlayer(invector))
-                return invector.IsAiming;
+            EnsureLeftoverEquipmentRefs();
+            if (leftoverInvectorBridge != null && PioneerInvectorBootstrap.IsInvectorPlayer(leftoverInvectorBridge))
+                return leftoverInvectorBridge.IsAiming;
 
-            RangedCombatController ranged = equipmentController.GetComponent<RangedCombatController>();
-            return ranged != null && ranged.IsAiming;
+            return leftoverRangedCombat != null && leftoverRangedCombat.IsAiming;
         }
 
         private void TickOxygenFx()

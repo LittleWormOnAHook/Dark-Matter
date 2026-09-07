@@ -11,13 +11,13 @@
         <ui:VisualElement name="menu-veil" class="dmg-menu-veil" picking-mode="Position" />
         <ui:VisualElement name="menu-shell" class="dmg-menu-shell" picking-mode="Position">
             <ui:VisualElement name="tab-rail" class="dmg-tab-rail" picking-mode="Position">
-                <ui:Button name="tab-journal" text="Journal (J)" picking-mode="Position" class="dmg-tab dmg-tab--active" />
+                <ui:Button name="tab-journal" text="Journal" picking-mode="Position" class="dmg-tab dmg-tab--active" />
                 <ui:Button name="tab-inventory" text="Inventory (I)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-map" text="Map (M)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-pet" text="Pet (K)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-companions" text="Companions (P)" picking-mode="Position" class="dmg-tab" />
-                <ui:Button name="tab-character" text="Character (U)" picking-mode="Position" class="dmg-tab" />
-                <ui:Button name="tab-blueprints" text="Blueprints (B)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-character" text="Character (C)" picking-mode="Position" class="dmg-tab" />
+                <ui:Button name="tab-blueprints" text="Blueprints (U)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-skills" text="Skills (T)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-echoes" text="Echoes (L)" picking-mode="Position" class="dmg-tab" />
                 <ui:Button name="tab-achievements" text="Achievements (G)" picking-mode="Position" class="dmg-tab" />

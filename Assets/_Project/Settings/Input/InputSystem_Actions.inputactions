@@ -648,34 +648,12 @@
                 },
                 {
                     "name": "",
-                    "id": "a0b1c2d3-e4f5-4678-a901-23456789abcd",
-                    "path": "<Keyboard>/j",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "Journal",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222001",
                     "path": "<Keyboard>/c",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Craft",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222002",
-                    "path": "<Keyboard>/b",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "Blueprints",
+                    "action": "Character",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -708,7 +686,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Character",
+                    "action": "Craft",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

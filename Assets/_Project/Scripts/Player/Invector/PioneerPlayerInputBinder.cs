@@ -178,7 +178,9 @@ namespace Project.Player.Invector
                 case "Map":
                     if (context.performed)
                     {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
+                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map);
+                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
                             ResolveUiManager()?.OnToggleMap(context);
                     }
                     else if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
@@ -196,14 +198,21 @@ namespace Project.Player.Invector
                 case "Craft":
                     if (context.performed)
                     {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes);
+                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
                             ResolveUiManager()?.OnToggleCraft(context);
                     }
                     break;
                 case "Blueprints":
-                    if (context.performed)
+                    // Keyboard B = binoculars (GameplayKeyboardShortcuts). Gamepad Blueprints only.
+                    if (context.performed
+                        && context.control != null
+                        && context.control.device is not Keyboard)
                     {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                            DMUiToolkitMenus.TrySwitchJournalTab(JournalWindowId.Recipes);
+                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
                             ResolveUiManager()?.OnToggleBlueprints(context);
                     }
                     break;
@@ -238,7 +247,9 @@ namespace Project.Player.Invector
                 case "Character":
                     if (context.performed)
                     {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
+                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character);
+                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
                             ResolveUiManager()?.OnToggleCharacter(context);
                     }
                     break;

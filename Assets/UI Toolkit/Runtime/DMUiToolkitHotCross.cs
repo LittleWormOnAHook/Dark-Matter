@@ -566,7 +566,7 @@ namespace Project.UI
 
             ApplyIcon(iconBl, glowBl, null, item, 0);
             if (keyBl != null)
-                keyBl.text = toolFace == ToolFace.Scanner ? "N" : "B";
+                keyBl.text = toolFace == ToolFace.Scanner ? "J" : "B";
             quadBl?.EnableInClassList("hot-cross-quad--selected", selected);
         }
 

@@ -36,10 +36,13 @@ namespace Project.UI
         private const float InteractStemMeters = 0.75f;
         private const float DotSizeFarPx = 10f;
         private const float DotSizeNearPx = 22f;
-        private const float CloseKeyCirclePx = 36f;
-        private const float CloseInfoCirclePx = 34f;
-        private const float CloseRingThickness = 3.5f;
+        private const float CloseCirclePx = 28f;
+        private const float CloseRowGapPx = 6f;
+        private const float CloseRingThickness = 3f;
+        private const float CloseKeyHostPx = CloseCirclePx + CloseRingThickness * 2f + 2f;
+        private const float CloseKeyInsetPx = (CloseKeyHostPx - CloseCirclePx) * 0.5f;
         private const float InteractionScanInterval = 1f / 12f;
+        private const float ExclusivePickupScanInterval = 0.1f;
         private const int MaxDots = 24;
         private const int MaxBars = 16;
 
@@ -53,17 +56,16 @@ namespace Project.UI
         private bool lastGameplayWant;
         private bool uguiHidden;
         private float nextInteractScan;
+        private float nextExclusivePickupScan;
         private bool hasExclusiveDot;
         private WorldDot exclusiveDot;
-        private bool panelMapReady;
-        private bool panelYNeedsFlip;
-        private float panelHeight;
-        private float lastPanelW = -1f;
-        private float lastPanelH = -1f;
-        private int panelStableFrames;
+        private bool panelYFlipResolved;
+        private bool panelYIncreasesWithScreenY;
+        private float panelFlipHeight;
         private Camera worldCamera;
         private Transform playerTransform;
         private PlayerController cachedPlayer;
+        private InventorySystem cachedInventory;
 
         private readonly List<VisualElement> dotPool = new List<VisualElement>();
         private readonly List<VisualElement> liveDots = new List<VisualElement>();
@@ -160,8 +162,6 @@ namespace Project.UI
                 RecycleDots(0);
                 RecycleBars(0);
                 hasExclusiveDot = false;
-                panelMapReady = false;
-                panelStableFrames = 0;
                 WorldPickupFocus.Clear();
                 if (want && !uguiHidden)
                     HideUguiCounterparts();
@@ -170,10 +170,9 @@ namespace Project.UI
 
             if (!uguiHidden)
                 HideUguiCounterparts();
-            if (!TryRefreshPanelMapping())
-                return;
 
             // Paint after final camera pose (see DefaultExecutionOrder 1100).
+            panelYFlipResolved = false;
             CollectDots();
             PaintDots();
             PaintBars();
@@ -241,7 +240,16 @@ namespace Project.UI
             }
 
             pendingDots.Clear();
-            CollectExclusivePickupDot(player, camera);
+            if (Time.unscaledTime >= nextExclusivePickupScan)
+            {
+                nextExclusivePickupScan = Time.unscaledTime + ExclusivePickupScanInterval;
+                CollectExclusivePickupDot(player, camera);
+            }
+            else if (hasExclusiveDot)
+            {
+                RefreshExclusiveAnchor();
+                RefreshExclusiveHoldProgress();
+            }
 
             if (hasExclusiveDot)
                 pendingDots.Add(exclusiveDot);
@@ -269,7 +277,7 @@ namespace Project.UI
             ResourceNode bestHarvest = null;
             bool found = false;
 
-            ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
+            ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
             for (int i = 0; i < pickups.Length; i++)
             {
                 ItemPickup pickup = pickups[i];
@@ -293,7 +301,7 @@ namespace Project.UI
                 found = true;
             }
 
-            RecipePickup[] recipes = SceneComponentCache.GetAll<RecipePickup>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
+            RecipePickup[] recipes = SceneComponentCache.GetAll<RecipePickup>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
             for (int i = 0; i < recipes.Length; i++)
             {
                 RecipePickup recipe = recipes[i];
@@ -315,7 +323,7 @@ namespace Project.UI
                 found = true;
             }
 
-            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude, refreshInterval: 0.05f);
+            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
             for (int i = 0; i < nodes.Length; i++)
             {
                 ResourceNode node = nodes[i];
@@ -376,11 +384,35 @@ namespace Project.UI
             hasExclusiveDot = true;
         }
 
+        private void RefreshExclusiveAnchor()
+        {
+            if (!hasExclusiveDot)
+                return;
+
+            if (WorldPickupFocus.Item != null)
+                exclusiveDot.Anchor = WorldPickupFocus.Item.GetIndicatorWorldAnchor();
+            else if (WorldPickupFocus.Recipe != null)
+                exclusiveDot.Anchor = WorldPickupFocus.Recipe.GetIndicatorWorldAnchor();
+            else if (WorldPickupFocus.Harvest != null)
+                exclusiveDot.Anchor = WorldPickupFocus.Harvest.GetNodeCenter();
+        }
+
+        private void RefreshExclusiveHoldProgress()
+        {
+            if (!hasExclusiveDot || !exclusiveDot.IsPickupPrompt)
+                return;
+
+            if (WorldPickupFocus.Item != null && WorldPickupFocus.Item.IsHoldActive)
+                exclusiveDot.HoldProgress01 = WorldPickupFocus.Item.HoldProgress01;
+            else if (WorldPickupFocus.Recipe != null && WorldPickupFocus.Recipe.IsHoldActive)
+                exclusiveDot.HoldProgress01 = WorldPickupFocus.Recipe.HoldProgress01;
+            else
+                exclusiveDot.HoldProgress01 = 0f;
+        }
+
         private void FillPickupIdentity(ItemPickup item, RecipePickup recipe, ref WorldDot dot)
         {
-            InventorySystem inventory = null;
-            if (cachedPlayer != null)
-                inventory = cachedPlayer.GetComponent<InventorySystem>();
+            InventorySystem inventory = cachedInventory;
 
             if (item != null && item.itemData != null)
             {
@@ -395,7 +427,7 @@ namespace Project.UI
                 }
                 else
                 {
-                    dot.ItemLabel = "Unknown";
+                    dot.ItemLabel = string.Empty;
                     dot.ItemIcon = null;
                 }
                 return;
@@ -414,7 +446,7 @@ namespace Project.UI
                 else
                 {
                     dot.ItemKnown = false;
-                    dot.ItemLabel = "Unknown";
+                    dot.ItemLabel = string.Empty;
                     dot.ItemIcon = null;
                 }
             }
@@ -538,50 +570,9 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// Wait until the overlay panel has a stable size, then cache Y-flip.
-        /// Painting before layout settles is what made stems jiggle at gameplay start.
+        /// dotsLayer panel position for a world point. Y is flipped when the panel uses Y-up coords.
+        /// Do not round here — callers lock world-vertical stems to one screen X before rounding.
         /// </summary>
-        private bool TryRefreshPanelMapping()
-        {
-            if (dotsLayer == null || dotsLayer.panel == null)
-                return false;
-
-            float w = dotsLayer.resolvedStyle.width;
-            float h = dotsLayer.resolvedStyle.height;
-            if (w < 16f || h < 16f)
-            {
-                panelStableFrames = 0;
-                panelMapReady = false;
-                return false;
-            }
-
-            bool sizeChanged = Mathf.Abs(w - lastPanelW) >= 1f || Mathf.Abs(h - lastPanelH) >= 1f;
-            if (sizeChanged)
-            {
-                lastPanelW = w;
-                lastPanelH = h;
-                panelHeight = h;
-                panelStableFrames = 0;
-                panelMapReady = false;
-                return false;
-            }
-
-            panelStableFrames++;
-            panelHeight = h;
-            if (panelStableFrames < 2 && !panelMapReady)
-                return false;
-
-            if (!panelMapReady)
-            {
-                Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(0f, 0f));
-                Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(0f, Screen.height));
-                panelYNeedsFlip = screenTop.y > screenBottom.y + 0.5f;
-                panelMapReady = true;
-            }
-
-            return true;
-        }
-
         private bool TryWorldToPanel(Camera camera, Vector3 world, out Vector2 panelPos)
         {
             panelPos = default;
@@ -592,12 +583,67 @@ namespace Project.UI
             if (screen.z <= 0f)
                 return false;
 
-            panelPos = RuntimePanelUtils.ScreenToPanel(dotsLayer.panel, new Vector2(screen.x, screen.y));
-            if (panelYNeedsFlip)
-                panelPos.y = panelHeight - panelPos.y;
-
-            panelPos = dotsLayer.WorldToLocal(panelPos);
+            IPanel panel = dotsLayer.panel;
+            panelPos = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, screen.y));
+            ResolvePanelYFlip(panel);
+            if (panelYIncreasesWithScreenY)
+                panelPos.y = panelFlipHeight - panelPos.y;
             return true;
+        }
+
+        private void ResolvePanelYFlip(IPanel panel)
+        {
+            if (panelYFlipResolved)
+                return;
+
+            Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(0f, 0f));
+            Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(0f, Screen.height));
+            panelYIncreasesWithScreenY = screenTop.y > screenBottom.y + 0.5f;
+
+            panelFlipHeight = dotsLayer != null ? dotsLayer.layout.height : 0f;
+            if (panelFlipHeight <= 1f)
+                panelFlipHeight = Screen.height;
+
+            panelYFlipResolved = true;
+        }
+
+        private static Vector3 ResolveLiveAnchor(in WorldDot pending)
+        {
+            if (pending.IsPickupPrompt)
+            {
+                if (WorldPickupFocus.Item != null)
+                    return WorldPickupFocus.Item.GetIndicatorWorldAnchor();
+                if (WorldPickupFocus.Recipe != null)
+                    return WorldPickupFocus.Recipe.GetIndicatorWorldAnchor();
+            }
+
+            return pending.Anchor;
+        }
+
+        private static Vector2 StabilizeAnchorPanel(Vector2 raw, Vector2 lastWritten)
+        {
+            raw.x = Mathf.Round(raw.x);
+            raw.y = Mathf.Round(raw.y);
+            if (float.IsNaN(lastWritten.x))
+                return raw;
+
+            // Low-FPS camera micro-step can wobble screen X; ignore 2px anchor drift.
+            if (Mathf.Abs(raw.x - lastWritten.x) < 2f)
+                raw.x = lastWritten.x;
+            if (Mathf.Abs(raw.y - lastWritten.y) < 2f)
+                raw.y = lastWritten.y;
+            return raw;
+        }
+
+        private static int ResolvePickupAnchorId()
+        {
+            if (WorldPickupFocus.Item != null)
+                return WorldPickupFocus.Item.GetEntityId().GetHashCode();
+            if (WorldPickupFocus.Recipe != null)
+                return WorldPickupFocus.Recipe.GetEntityId().GetHashCode();
+            if (WorldPickupFocus.Harvest != null)
+                return WorldPickupFocus.Harvest.GetEntityId().GetHashCode();
+            return 0;
         }
 
         /// <summary>
@@ -608,7 +654,7 @@ namespace Project.UI
         /// </summary>
         private void PaintDots()
         {
-            if (dotsLayer == null || dotsLayer.panel == null || !panelMapReady)
+            if (dotsLayer == null || dotsLayer.panel == null)
                 return;
 
             Camera camera = worldCamera;
@@ -623,10 +669,30 @@ namespace Project.UI
                 if (camera == null)
                     continue;
 
+                DotVisuals visuals = AcquireDot(shown);
+                Vector3 anchorWorld = ResolveLiveAnchor(pending);
+                if (pending.IsPickupPrompt)
+                {
+                    int anchorId = ResolvePickupAnchorId();
+                    if (!visuals.HasLockedWorldAnchor
+                        || visuals.LockedAnchorId != anchorId
+                        || (anchorWorld - visuals.LockedWorldAnchor).sqrMagnitude > 0.0025f)
+                    {
+                        visuals.LockedWorldAnchor = anchorWorld;
+                        visuals.HasLockedWorldAnchor = true;
+                        visuals.LockedAnchorId = anchorId;
+                        visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
+                    }
+                    else
+                    {
+                        anchorWorld = visuals.LockedWorldAnchor;
+                    }
+                }
+
                 float dist = maxRange;
                 if (player != null)
                 {
-                    Vector3 delta = player.position - pending.Anchor;
+                    Vector3 delta = player.position - anchorWorld;
                     delta.y = 0f;
                     dist = delta.magnitude;
                 }
@@ -635,44 +701,64 @@ namespace Project.UI
                 float proximity = 1f - Mathf.Clamp01(Mathf.Max(0f, dist - reach) / span);
 
                 float stemHeight = Mathf.Lerp(pending.StemMinHeight, pending.StemMaxHeight, proximity);
-                Vector3 tipWorld = pending.Anchor + Vector3.up * stemHeight;
+                Vector3 tipWorld = anchorWorld + Vector3.up * stemHeight;
 
-                DotVisuals visuals = AcquireDot(shown);
-                if (!TryWorldToPanel(camera, tipWorld, out Vector2 tipPanel)
-                    || !TryWorldToPanel(camera, pending.Anchor, out Vector2 anchorPanel))
+                VisualElement host = visuals.Host;
+                if (host == null
+                    || !TryWorldToPanel(camera, anchorWorld, out Vector2 anchorRaw)
+                    || !TryWorldToPanel(camera, tipWorld, out Vector2 tipRaw))
                 {
                     DMUiToolkitOverlayDocument.SetShown(visuals.Host, false);
                     continue;
+                }
+
+                // World-up stems must share one screen column; separate projection + rounding skews X.
+                tipRaw.x = anchorRaw.x;
+                Vector2 anchorPanel = StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
+                Vector2 tipPanel = new Vector2(anchorPanel.x, Mathf.Round(tipRaw.y));
+                float relDy = tipPanel.y - anchorPanel.y;
+
+                bool moved = (anchorPanel - visuals.LastAnchor).sqrMagnitude >= 0.01f
+                    || Mathf.Abs(relDy - (visuals.LastTip.y - visuals.LastAnchor.y)) >= 0.01f;
+                visuals.LastAnchor = anchorPanel;
+                visuals.LastTip = tipPanel;
+
+                if (moved || !visuals.LastStemShown)
+                {
+                    host.style.left = anchorPanel.x;
+                    host.style.top = anchorPanel.y;
                 }
 
                 VisualElement stem = visuals.Stem;
                 VisualElement glow = visuals.Glow;
                 VisualElement closeCluster = visuals.CloseCluster;
 
-                float dx = tipPanel.x - anchorPanel.x;
-                float dy = tipPanel.y - anchorPanel.y;
-                float len = Mathf.Sqrt(dx * dx + dy * dy);
-                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+                float len = Mathf.Abs(relDy);
+                float angle = relDy >= 0f ? 90f : -90f;
 
                 if (pending.DrawStem && stem != null && len > 0.5f)
                 {
-                    stem.style.left = anchorPanel.x;
-                    stem.style.top = anchorPanel.y - stemThickness * 0.5f;
-                    stem.style.right = StyleKeyword.Auto;
-                    stem.style.bottom = StyleKeyword.Auto;
-                    stem.style.width = Mathf.Max(stemThickness, len);
-                    stem.style.height = stemThickness;
-                    stem.style.translate = new Translate(0, 0);
-                    stem.style.transformOrigin = new TransformOrigin(Length.Percent(0f), Length.Percent(50f));
-                    stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(angle)));
-                    Color stemColor = pending.Color;
-                    stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
-                    stem.style.backgroundColor = stemColor;
+                    if (moved || !visuals.LastStemShown)
+                    {
+                        stem.style.left = 0f;
+                        stem.style.top = -stemThickness * 0.5f;
+                        stem.style.right = StyleKeyword.Auto;
+                        stem.style.bottom = StyleKeyword.Auto;
+                        stem.style.width = Mathf.Max(stemThickness, len);
+                        stem.style.height = stemThickness;
+                        stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(angle)));
+                        Color stemColor = pending.Color;
+                        stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
+                        stem.style.backgroundColor = stemColor;
+                    }
+
                     DMUiToolkitOverlayDocument.SetShown(stem, true);
+                    visuals.LastStemShown = true;
                 }
                 else if (stem != null)
                 {
                     DMUiToolkitOverlayDocument.SetShown(stem, false);
+                    visuals.LastStemShown = false;
                 }
 
                 bool showClose = pending.IsPickupPrompt && pending.ClosePrompt;
@@ -680,41 +766,48 @@ namespace Project.UI
                 {
                     if (glow != null)
                         DMUiToolkitOverlayDocument.SetShown(glow, false);
-                    PaintClosePrompt(closeCluster, tipPanel, pending);
+                    PaintClosePrompt(visuals, relDy, pending, moved);
                 }
                 else
                 {
                     if (closeCluster != null)
+                    {
                         DMUiToolkitOverlayDocument.SetShown(closeCluster, false);
+                        visuals.LastCloseShown = false;
+                    }
 
                     float size = Mathf.Lerp(DotSizeFarPx, DotSizeNearPx, proximity);
                     float half = size * 0.5f;
                     float coreSize = size * 0.5f;
                     if (glow != null)
                     {
-                        glow.style.width = size;
-                        glow.style.height = size;
-                        glow.style.left = tipPanel.x - half;
-                        glow.style.top = tipPanel.y - half;
-                        glow.style.right = StyleKeyword.Auto;
-                        glow.style.bottom = StyleKeyword.Auto;
-                        glow.style.translate = new Translate(0, 0);
-                        glow.style.borderTopLeftRadius = half;
-                        glow.style.borderTopRightRadius = half;
-                        glow.style.borderBottomLeftRadius = half;
-                        glow.style.borderBottomRightRadius = half;
-                        glow.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(pending.Color, 0.28f);
-                        VisualElement core = visuals.Core;
-                        if (core != null)
+                        if (moved || Mathf.Abs(size - visuals.LastGlowSize) >= 0.5f)
                         {
-                            core.style.width = coreSize;
-                            core.style.height = coreSize;
-                            core.style.borderTopLeftRadius = coreSize * 0.5f;
-                            core.style.borderTopRightRadius = coreSize * 0.5f;
-                            core.style.borderBottomLeftRadius = coreSize * 0.5f;
-                            core.style.borderBottomRightRadius = coreSize * 0.5f;
-                            core.style.backgroundColor = pending.Color;
+                            visuals.LastGlowSize = size;
+                            glow.style.width = size;
+                            glow.style.height = size;
+                            glow.style.left = -half;
+                            glow.style.top = relDy - half;
+                            glow.style.right = StyleKeyword.Auto;
+                            glow.style.bottom = StyleKeyword.Auto;
+                            glow.style.borderTopLeftRadius = half;
+                            glow.style.borderTopRightRadius = half;
+                            glow.style.borderBottomLeftRadius = half;
+                            glow.style.borderBottomRightRadius = half;
+                            glow.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(pending.Color, 0.28f);
+                            VisualElement core = visuals.Core;
+                            if (core != null)
+                            {
+                                core.style.width = coreSize;
+                                core.style.height = coreSize;
+                                core.style.borderTopLeftRadius = coreSize * 0.5f;
+                                core.style.borderTopRightRadius = coreSize * 0.5f;
+                                core.style.borderBottomLeftRadius = coreSize * 0.5f;
+                                core.style.borderBottomRightRadius = coreSize * 0.5f;
+                                core.style.backgroundColor = pending.Color;
+                            }
                         }
+
                         DMUiToolkitOverlayDocument.SetShown(glow, true);
                     }
                 }
@@ -724,139 +817,99 @@ namespace Project.UI
             }
 
             RecycleDots(shown);
-            // Force same-frame UITK repaint so style left/top apply before draw.
-            dotsLayer.MarkDirtyRepaint();
         }
 
-        private void PaintClosePrompt(VisualElement cluster, Vector2 tipPanel, WorldDot pending)
+        private void PaintClosePrompt(DotVisuals visuals, float relDy, WorldDot pending, bool moved)
         {
+            VisualElement cluster = visuals != null ? visuals.CloseCluster : null;
             if (cluster == null)
                 return;
 
             DMUiToolkitOverlayDocument.SetShown(cluster, true);
 
-            float keySize = CloseKeyCirclePx;
-            float infoSize = CloseInfoCirclePx;
-            float rowGap = 6f;
-            float colGap = 8f;
-
-            // Cluster origin at tip (pick-key center).
-            cluster.style.left = tipPanel.x;
-            cluster.style.top = tipPanel.y;
-            cluster.style.translate = new Translate(0, 0);
-
-            VisualElement infoRow = cluster.Q<VisualElement>("info-row");
-            VisualElement pickRow = cluster.Q<VisualElement>("pick-row");
-            if (infoRow != null)
+            // Host sits on the pickup anchor; cluster is positioned relative to the stem tip.
+            float keyHalf = CloseKeyHostPx * 0.5f;
+            if (moved || !visuals.LastCloseShown)
             {
-                // Place info row above the key circle.
-                infoRow.style.left = -infoSize * 0.5f;
-                infoRow.style.top = -(keySize * 0.5f + rowGap + infoSize);
+                cluster.style.left = -keyHalf;
+                cluster.style.top = relDy - (CloseCirclePx + CloseRowGapPx + keyHalf);
             }
 
-            if (pickRow != null)
-            {
-                pickRow.style.left = -keySize * 0.5f;
-                pickRow.style.top = -keySize * 0.5f;
-            }
+            visuals.LastCloseShown = true;
 
-            VisualElement infoCircle = cluster.Q<VisualElement>("info-circle");
-            Image infoIcon = cluster.Q<Image>("info-icon");
-            Label infoUnknown = cluster.Q<Label>("info-unknown");
-            Label infoName = cluster.Q<Label>("info-name");
-            if (infoCircle != null)
-            {
-                infoCircle.style.width = infoSize;
-                infoCircle.style.height = infoSize;
-                infoCircle.style.borderTopLeftRadius = infoSize * 0.5f;
-                infoCircle.style.borderTopRightRadius = infoSize * 0.5f;
-                infoCircle.style.borderBottomLeftRadius = infoSize * 0.5f;
-                infoCircle.style.borderBottomRightRadius = infoSize * 0.5f;
-            }
+            if (visuals.InfoCircle != null)
+                visuals.InfoCircle.style.backgroundColor = pending.Color;
 
             bool known = pending.ItemKnown;
-            if (infoIcon != null)
+            if (visuals.InfoIcon != null)
             {
                 if (known && pending.ItemIcon != null)
                 {
-                    infoIcon.sprite = pending.ItemIcon;
-                    infoIcon.style.display = DisplayStyle.Flex;
+                    if (visuals.InfoIcon.sprite != pending.ItemIcon)
+                        visuals.InfoIcon.sprite = pending.ItemIcon;
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoIcon, true);
                 }
                 else
                 {
-                    infoIcon.sprite = null;
-                    infoIcon.style.display = DisplayStyle.None;
+                    if (visuals.InfoIcon.sprite != null)
+                        visuals.InfoIcon.sprite = null;
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoIcon, false);
                 }
             }
 
-            if (infoUnknown != null)
+            if (visuals.InfoUnknown != null)
             {
                 if (!known)
                 {
-                    infoUnknown.text = "?";
-                    DMUiToolkitOverlayDocument.SetShown(infoUnknown, true);
-                }
-                else if (pending.ItemIcon == null)
-                {
-                    // Known but no sprite (e.g. blueprint): first letter glyph.
-                    string label = pending.ItemLabel ?? "?";
-                    infoUnknown.text = string.IsNullOrEmpty(label) ? "?" : label.Substring(0, 1).ToUpperInvariant();
-                    DMUiToolkitOverlayDocument.SetShown(infoUnknown, true);
+                    if (visuals.InfoUnknown.text != "?")
+                        visuals.InfoUnknown.text = "?";
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoUnknown, true);
                 }
                 else
                 {
-                    DMUiToolkitOverlayDocument.SetShown(infoUnknown, false);
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoUnknown, false);
                 }
             }
 
-            if (infoName != null)
+            if (visuals.InfoName != null)
             {
-                infoName.text = known
-                    ? (pending.ItemLabel ?? string.Empty)
-                    : "Unknown";
-                infoName.style.marginLeft = colGap;
+                if (known)
+                {
+                    string name = pending.ItemLabel ?? string.Empty;
+                    if (visuals.InfoName.text != name)
+                        visuals.InfoName.text = name;
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoName, true);
+                }
+                else
+                {
+                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoName, false);
+                }
             }
 
-            VisualElement keyHost = cluster.Q<VisualElement>("key-host");
-            VisualElement keyCircle = cluster.Q<VisualElement>("key-circle");
-            Label keyLabel = cluster.Q<Label>("key-label");
-            Label actionLabel = cluster.Q<Label>("action-label");
-            VisualElement ring = cluster.Q<VisualElement>("hold-ring");
-
-            if (keyHost != null)
+            if (visuals.ActionLabel != null)
             {
-                keyHost.style.width = keySize;
-                keyHost.style.height = keySize;
+                string action = string.IsNullOrEmpty(pending.ActionLabel) ? "Take" : pending.ActionLabel;
+                if (visuals.ActionLabel.text != action)
+                    visuals.ActionLabel.text = action;
             }
 
-            if (keyCircle != null)
+            if (visuals.KeyLabel != null)
             {
-                float inner = keySize - CloseRingThickness * 2f - 2f;
-                keyCircle.style.width = inner;
-                keyCircle.style.height = inner;
-                keyCircle.style.borderTopLeftRadius = inner * 0.5f;
-                keyCircle.style.borderTopRightRadius = inner * 0.5f;
-                keyCircle.style.borderBottomLeftRadius = inner * 0.5f;
-                keyCircle.style.borderBottomRightRadius = inner * 0.5f;
-                keyCircle.style.left = (keySize - inner) * 0.5f;
-                keyCircle.style.top = (keySize - inner) * 0.5f;
+                string key = string.IsNullOrEmpty(pending.KeyLabel) ? "E" : pending.KeyLabel;
+                if (visuals.KeyLabel.text != key)
+                    visuals.KeyLabel.text = key;
             }
 
-            if (keyLabel != null)
-                keyLabel.text = string.IsNullOrEmpty(pending.KeyLabel) ? "E" : pending.KeyLabel;
-
-            if (actionLabel != null)
+            if (visuals.HoldRing != null)
             {
-                actionLabel.text = string.IsNullOrEmpty(pending.ActionLabel) ? "Take" : pending.ActionLabel;
-                actionLabel.style.marginLeft = colGap;
-            }
-
-            if (ring != null)
-            {
-                ring.style.width = keySize;
-                ring.style.height = keySize;
-                ring.userData = Mathf.Clamp01(pending.HoldProgress01);
-                ring.MarkDirtyRepaint();
+                float progress = Mathf.Clamp01(pending.HoldProgress01);
+                bool progressChanged = !(visuals.HoldRing.userData is float last)
+                    || Mathf.Abs(last - progress) > 0.001f;
+                if (progressChanged)
+                {
+                    visuals.HoldRing.userData = progress;
+                    visuals.HoldRing.MarkDirtyRepaint();
+                }
             }
         }
 
@@ -889,27 +942,74 @@ namespace Project.UI
                 Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(
                     barsLayer.panel,
                     new Vector2(screen.x, screen.y + 28f));
-                host.style.left = panelPos.x - 40f;
-                host.style.top = panelPos.y - 8f;
-                VisualElement fill = null;
-                Label label = null;
-                if (host.childCount > 0)
+                float left = panelPos.x - 40f;
+                float top = panelPos.y - 8f;
+                float fillPct = Mathf.Clamp01(normalized) * 100f;
+
+                BarVisuals barVisuals = GetBarVisuals(host);
+                bool moved = float.IsNaN(barVisuals.LastLeft)
+                    || Mathf.Abs(left - barVisuals.LastLeft) >= 0.5f
+                    || Mathf.Abs(top - barVisuals.LastTop) >= 0.5f;
+                bool fillChanged = Mathf.Abs(fillPct - barVisuals.LastFillPct) >= 0.5f;
+                bool textChanged = hpText != barVisuals.LastHpText;
+
+                if (moved)
                 {
-                    VisualElement track = host[0];
-                    if (track.childCount > 0)
-                        fill = track[0];
+                    barVisuals.LastLeft = left;
+                    barVisuals.LastTop = top;
+                    host.style.left = left;
+                    host.style.top = top;
                 }
-                if (host.childCount > 1)
-                    label = host[1] as Label;
-                if (fill != null)
-                    fill.style.width = Length.Percent(Mathf.Clamp01(normalized) * 100f);
-                if (label != null)
+
+                VisualElement fill = barVisuals.Fill;
+                Label label = barVisuals.Label;
+                if (fill != null && fillChanged)
+                {
+                    barVisuals.LastFillPct = fillPct;
+                    fill.style.width = Length.Percent(fillPct);
+                }
+
+                if (label != null && textChanged)
+                {
+                    barVisuals.LastHpText = hpText;
                     label.text = hpText;
+                }
+
                 DMUiToolkitOverlayDocument.SetShown(host, true);
                 shown++;
             }
 
             RecycleBars(shown);
+        }
+
+        private static BarVisuals GetBarVisuals(VisualElement host)
+        {
+            if (host.userData is BarVisuals cached)
+                return cached;
+
+            var visuals = new BarVisuals();
+            if (host.childCount > 0)
+            {
+                VisualElement track = host[0];
+                if (track.childCount > 0)
+                    visuals.Fill = track[0];
+            }
+
+            if (host.childCount > 1)
+                visuals.Label = host[1] as Label;
+
+            host.userData = visuals;
+            return visuals;
+        }
+
+        private sealed class BarVisuals
+        {
+            public VisualElement Fill;
+            public Label Label;
+            public float LastLeft = float.NaN;
+            public float LastTop = float.NaN;
+            public float LastFillPct = -1f;
+            public string LastHpText;
         }
 
         private sealed class DotVisuals
@@ -919,6 +1019,23 @@ namespace Project.UI
             public VisualElement Glow;
             public VisualElement Core;
             public VisualElement CloseCluster;
+            public VisualElement InfoRow;
+            public VisualElement InfoCircle;
+            public VisualElement PickRow;
+            public Image InfoIcon;
+            public Label InfoUnknown;
+            public Label InfoName;
+            public Label KeyLabel;
+            public Label ActionLabel;
+            public VisualElement HoldRing;
+            public Vector2 LastTip = new Vector2(float.NaN, float.NaN);
+            public Vector2 LastAnchor = new Vector2(float.NaN, float.NaN);
+            public Vector3 LockedWorldAnchor;
+            public bool HasLockedWorldAnchor;
+            public int LockedAnchorId;
+            public float LastGlowSize = -1f;
+            public bool LastStemShown;
+            public bool LastCloseShown;
         }
 
         private DotVisuals AcquireDot(int index)
@@ -949,7 +1066,16 @@ namespace Project.UI
                     Stem = stem,
                     Glow = glow,
                     Core = core,
-                    CloseCluster = closeCluster
+                    CloseCluster = closeCluster,
+                    InfoRow = closeCluster.Q<VisualElement>("info-row"),
+                    InfoCircle = closeCluster.Q<VisualElement>("info-circle"),
+                    PickRow = closeCluster.Q<VisualElement>("pick-row"),
+                    InfoIcon = closeCluster.Q<Image>("info-icon"),
+                    InfoUnknown = closeCluster.Q<Label>("info-unknown"),
+                    InfoName = closeCluster.Q<Label>("info-name"),
+                    KeyLabel = closeCluster.Q<Label>("key-label"),
+                    ActionLabel = closeCluster.Q<Label>("action-label"),
+                    HoldRing = closeCluster.Q<VisualElement>("hold-ring")
                 };
 
                 dotsLayer.Add(host);
@@ -966,21 +1092,15 @@ namespace Project.UI
         {
             VisualElement cluster = new VisualElement { name = "close-cluster", pickingMode = PickingMode.Ignore };
             cluster.AddToClassList("dmg-world-close");
-            cluster.style.position = Position.Absolute;
             cluster.style.display = DisplayStyle.None;
 
             VisualElement infoRow = new VisualElement { name = "info-row", pickingMode = PickingMode.Ignore };
             infoRow.AddToClassList("dmg-world-close-row");
-            infoRow.style.position = Position.Absolute;
-            infoRow.style.flexDirection = FlexDirection.Row;
-            infoRow.style.alignItems = Align.Center;
 
             VisualElement infoCircle = new VisualElement { name = "info-circle", pickingMode = PickingMode.Ignore };
             infoCircle.AddToClassList("dmg-world-close-info");
             Image infoIcon = new Image { name = "info-icon", pickingMode = PickingMode.Ignore };
             infoIcon.AddToClassList("dmg-world-close-icon");
-            infoIcon.style.width = Length.Percent(70);
-            infoIcon.style.height = Length.Percent(70);
             infoCircle.Add(infoIcon);
             Label infoUnknown = new Label("?") { name = "info-unknown", pickingMode = PickingMode.Ignore };
             infoUnknown.AddToClassList("dmg-world-close-unknown");
@@ -994,29 +1114,28 @@ namespace Project.UI
 
             VisualElement pickRow = new VisualElement { name = "pick-row", pickingMode = PickingMode.Ignore };
             pickRow.AddToClassList("dmg-world-close-row");
-            pickRow.style.position = Position.Absolute;
-            pickRow.style.flexDirection = FlexDirection.Row;
-            pickRow.style.alignItems = Align.Center;
+            pickRow.AddToClassList("dmg-world-close-row-last");
 
             VisualElement keyHost = new VisualElement { name = "key-host", pickingMode = PickingMode.Ignore };
             keyHost.AddToClassList("dmg-world-close-keyhost");
-            keyHost.style.position = Position.Relative;
-
-            VisualElement ring = new VisualElement { name = "hold-ring", pickingMode = PickingMode.Ignore };
-            ring.AddToClassList("dmg-world-close-ring");
-            ring.style.position = Position.Absolute;
-            ring.style.left = 0;
-            ring.style.top = 0;
-            ring.generateVisualContent += PaintHoldRing;
-            keyHost.Add(ring);
+            keyHost.style.width = CloseKeyHostPx;
+            keyHost.style.height = CloseKeyHostPx;
 
             VisualElement keyCircle = new VisualElement { name = "key-circle", pickingMode = PickingMode.Ignore };
             keyCircle.AddToClassList("dmg-world-close-key");
-            keyCircle.style.position = Position.Absolute;
+            keyCircle.style.left = CloseKeyInsetPx;
+            keyCircle.style.top = CloseKeyInsetPx;
             Label keyLabel = new Label("E") { name = "key-label", pickingMode = PickingMode.Ignore };
             keyLabel.AddToClassList("dmg-world-close-keylabel");
             keyCircle.Add(keyLabel);
             keyHost.Add(keyCircle);
+
+            VisualElement ring = new VisualElement { name = "hold-ring", pickingMode = PickingMode.Ignore };
+            ring.AddToClassList("dmg-world-close-ring");
+            ring.style.width = CloseKeyHostPx;
+            ring.style.height = CloseKeyHostPx;
+            ring.generateVisualContent += PaintHoldRing;
+            keyHost.Add(ring);
             pickRow.Add(keyHost);
 
             Label actionLabel = new Label("Take") { name = "action-label", pickingMode = PickingMode.Ignore };
@@ -1041,26 +1160,28 @@ namespace Project.UI
                 return;
 
             Vector2 center = new Vector2(r.width * 0.5f, r.height * 0.5f);
-            float radius = Mathf.Min(r.width, r.height) * 0.5f - 1f;
+            float ringRadius = (CloseCirclePx * 0.5f) + (CloseRingThickness * 0.5f) + 1f;
             Painter2D p = ctx.painter2D;
 
-            // Faded outer track.
-            p.strokeColor = new Color(1f, 1f, 1f, 0.18f);
+            // Faded track around the E circle.
+            p.strokeColor = new Color(1f, 1f, 1f, 0.22f);
             p.lineWidth = CloseRingThickness;
             p.lineCap = LineCap.Round;
             p.BeginPath();
-            p.Arc(center, radius, Angle.Degrees(0f), Angle.Degrees(360f));
+            p.Arc(center, ringRadius, Angle.Degrees(0f), Angle.Degrees(360f));
             p.Stroke();
 
             if (progress <= 0.001f)
                 return;
 
-            // Progress arc 0 → 360°, starting at top (-90°).
-            float sweep = 360f * progress;
-            p.strokeColor = new Color(0.95f, 0.82f, 0.28f, 0.95f);
+            // Gold fill arc, clockwise from top.
+            Color gold = DarkMatterGenesisUiPalette.Gold;
+            gold.a = 0.95f;
+            p.strokeColor = gold;
             p.lineWidth = CloseRingThickness;
             p.BeginPath();
-            p.Arc(center, radius, Angle.Degrees(-90f), Angle.Degrees(-90f + sweep), ArcDirection.Clockwise);
+            float sweep = 360f * progress;
+            p.Arc(center, ringRadius, Angle.Degrees(-90f), Angle.Degrees(-90f + sweep), ArcDirection.Clockwise);
             p.Stroke();
         }
 
@@ -1092,7 +1213,21 @@ namespace Project.UI
         private void RecycleDots(int keep)
         {
             for (int i = keep; i < liveDots.Count; i++)
-                DMUiToolkitOverlayDocument.SetShown(liveDots[i], false);
+            {
+                VisualElement el = liveDots[i];
+                DMUiToolkitOverlayDocument.SetShown(el, false);
+                if (el.userData is DotVisuals visuals)
+                {
+                    visuals.LastTip = new Vector2(float.NaN, float.NaN);
+                    visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
+                    visuals.HasLockedWorldAnchor = false;
+                    visuals.LockedAnchorId = 0;
+                    visuals.LastGlowSize = -1f;
+                    visuals.LastStemShown = false;
+                    visuals.LastCloseShown = false;
+                }
+            }
+
             if (keep < liveDots.Count)
                 liveDots.RemoveRange(keep, liveDots.Count - keep);
         }
@@ -1100,7 +1235,18 @@ namespace Project.UI
         private void RecycleBars(int keep)
         {
             for (int i = keep; i < liveBars.Count; i++)
-                DMUiToolkitOverlayDocument.SetShown(liveBars[i], false);
+            {
+                VisualElement el = liveBars[i];
+                DMUiToolkitOverlayDocument.SetShown(el, false);
+                if (el.userData is BarVisuals visuals)
+                {
+                    visuals.LastLeft = float.NaN;
+                    visuals.LastTop = float.NaN;
+                    visuals.LastFillPct = -1f;
+                    visuals.LastHpText = null;
+                }
+            }
+
             if (keep < liveBars.Count)
                 liveBars.RemoveRange(keep, liveBars.Count - keep);
         }
@@ -1111,6 +1257,8 @@ namespace Project.UI
                 cachedPlayer = PlayerLocator.FindPlayerController();
             playerTransform = PlayerReference.Transform ?? (cachedPlayer != null ? cachedPlayer.transform : null);
             worldCamera = PlayerReference.ResolveCamera();
+            if (cachedInventory == null && cachedPlayer != null)
+                cachedInventory = cachedPlayer.GetComponent<InventorySystem>();
             player = playerTransform;
             camera = worldCamera;
             return player != null && camera != null;

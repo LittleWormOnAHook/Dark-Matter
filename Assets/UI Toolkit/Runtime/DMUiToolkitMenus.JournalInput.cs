@@ -6,6 +6,9 @@ namespace Project.UI
 {
     public partial class DMUiToolkitMenus
     {
+        private static int lastJournalToggleFrame = -1;
+        private static JournalWindowId lastJournalToggleWindow;
+
         private JournalWindowId? pendingShowWindow;
 
         /// <summary>True while ForceShow is waiting on menuRoot bind (do not treat as ghost-closed).</summary>
@@ -89,6 +92,12 @@ namespace Project.UI
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
                 return false;
 
+            // PlayerInput + keyboard shortcuts can fire the same tab twice in one frame (M flicker).
+            if (Time.frameCount == lastJournalToggleFrame
+                && lastJournalToggleWindow == windowId
+                && !journalHotkey)
+                return true;
+
             if (!GameSession.HasStarted || !IsToolkitWindow(windowId))
                 return false;
 
@@ -105,6 +114,9 @@ namespace Project.UI
 
             if (!toggled)
                 return false;
+
+            lastJournalToggleFrame = Time.frameCount;
+            lastJournalToggleWindow = windowId;
 
             GameplayHudVisibility.ClearCinematicChrome();
 

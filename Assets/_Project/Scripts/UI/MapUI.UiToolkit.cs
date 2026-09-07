@@ -1,4 +1,5 @@
 using Project.Core;
+using Project.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,17 +18,25 @@ namespace Project.UI
         {
             get
             {
-                if (minimapImage != null && minimapImage.texture != null)
-                    return minimapImage.texture;
+                if (mapProvider == null)
+                    EnsureMapProvider();
+
+                if (mapProvider != null && mapProvider.MinimapTexture != null)
+                    return mapProvider.MinimapTexture;
 
                 if (mapProvider != null && mapProvider.MapTexture != null)
                     return mapProvider.MapTexture;
 
-                return ResolveMapTexture();
+                if (minimapImage != null && minimapImage.texture != null)
+                    return minimapImage.texture;
+
+                return WorldMapProvider.LoadMinimapMapTexture() ?? ResolveMapTexture();
             }
         }
 
         public float MinimapFacingYaw => GetMapFacingYaw();
+
+        public float MapDisplayYaw => GetMapDisplayYaw();
 
         public string MinimapInfoText =>
             minimapInfoLabel != null ? minimapInfoLabel.text : string.Empty;
@@ -57,7 +66,13 @@ namespace Project.UI
             source = MinimapSourceTexture;
             playerUv = new Vector2(0.5f, 0.5f);
             uvSpan = 0.25f;
-            facingYaw = GetMapFacingYaw();
+            facingYaw = GetMapDisplayYaw();
+
+            if (source == null)
+            {
+                EnsureMapProvider();
+                source = WorldMapProvider.CreateDisplayFallback();
+            }
 
             if (source == null)
                 return false;
@@ -65,27 +80,19 @@ namespace Project.UI
             if (mapProvider == null)
                 EnsureMapProvider();
 
+            float worldSpan = ReferenceTerrainSpan;
             if (mapProvider != null)
             {
                 if (HasMapWorldPosition())
                     playerUv = mapProvider.WorldToMap01(GetMapWorldPosition());
 
-                float world = Mathf.Max(mapProvider.WorldBounds.size.x, mapProvider.WorldBounds.size.z);
-                float spanMeters = Mathf.Max(32f, minimapWorldSpan);
-                uvSpan = spanMeters / Mathf.Max(1f, world);
-
-                int texWidth = source.width;
-                if (texWidth > 0)
-                {
-                    float viewportPx = DefaultMinimapSize;
-                    float maxZoom = texWidth / Mathf.Max(48f, viewportPx * 0.35f);
-                    float zoom = world / spanMeters;
-                    zoom = Mathf.Min(zoom, Mathf.Max(1f, maxZoom));
-                    uvSpan = 1f / Mathf.Max(1f, zoom);
-                }
+                worldSpan = Mathf.Max(mapProvider.WorldBounds.size.x, mapProvider.WorldBounds.size.z);
+                float spanMeters = Mathf.Clamp(minimapWorldSpan, MinMinimapSpan, MaxMinimapSpan);
+                uvSpan = spanMeters / Mathf.Max(1f, worldSpan);
             }
 
-            uvSpan = Mathf.Clamp(uvSpan, 0.02f, 1f);
+            float minUv = worldSpan > 0f ? MinMinimapSpan / worldSpan : 0.005f;
+            uvSpan = Mathf.Clamp(uvSpan, minUv, 1f);
             return true;
         }
 
@@ -100,13 +107,17 @@ namespace Project.UI
 
         public void UitkAdjustMinimapSpan(float multiplier)
         {
-            // ] zoom-out is capped at 5% past the default 96m span.
             if (Time.frameCount == lastUitkSpanAdjustFrame)
                 return;
             lastUitkSpanAdjustFrame = Time.frameCount;
 
-            float maxOut = DefaultMinimapWorldSpan * 1.05f;
-            minimapWorldSpan = Mathf.Clamp(minimapWorldSpan * multiplier, MinMinimapSpan, maxOut);
+            autoScaleMinimapToTerrain = false;
+            float step = (MaxMinimapSpan - MinMinimapSpan) / MinimapScrollNotchesFullRange;
+            if (multiplier < 1f)
+                minimapWorldSpan = Mathf.Clamp(minimapWorldSpan - step, MinMinimapSpan, MaxMinimapSpan);
+            else
+                minimapWorldSpan = Mathf.Clamp(minimapWorldSpan + step, MinMinimapSpan, MaxMinimapSpan);
+
             UpdateMinimapInfoPanel();
         }
 

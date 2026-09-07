@@ -131,10 +131,7 @@ namespace Project.UI
                 if (distance > MaxMarkerRange)
                     continue;
 
-                float bearing = Mathf.Atan2(toMarker.x, toMarker.z) * Mathf.Rad2Deg;
-                if (bearing < 0f)
-                    bearing += 360f;
-
+                float bearing = WorldMapProvider.WorldDeltaToDisplayBearing(playerWorldPosition, marker.WorldPosition);
                 float delta = Mathf.DeltaAngle(headingDegrees, bearing);
                 if (Mathf.Abs(delta) > halfFov)
                     continue;
@@ -419,7 +416,7 @@ namespace Project.UI
             ApplyLabelFont(distanceLabel, semiBold: false);
             distanceLabel.fontSize = MarkerDistanceFontSize;
             distanceLabel.alignment = TextAlignmentOptions.Center;
-            distanceLabel.color = DarkMatterGenesisUiPalette.MutedText;
+            distanceLabel.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             distanceLabel.raycastTarget = false;
 
             return new MarkerEntry

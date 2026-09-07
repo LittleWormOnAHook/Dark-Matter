@@ -114,7 +114,7 @@ namespace Project.UI
             Vector2 mapUv = HasMapWorldPosition()
                 ? mapProvider.WorldToMap01(GetMapWorldPosition())
                 : new Vector2(0.5f, 0.5f);
-            float facingYaw = GetMapFacingYaw();
+            float facingYaw = GetMapDisplayYaw();
             minimapContentRect.anchoredPosition = GetMinimapContentPan(mapUv, contentSize, facingYaw);
             minimapContentRect.localEulerAngles = new Vector3(0f, 0f, facingYaw);
 
@@ -362,7 +362,7 @@ namespace Project.UI
             contentRect.sizeDelta = contentSize;
             contentRect.anchoredPosition = (Vector2.one * 0.5f - mapUv) * contentSize;
             contentRect.localEulerAngles = rotateWithPlayer
-                ? new Vector3(0f, 0f, GetMapFacingYaw())
+                ? new Vector3(0f, 0f, GetMapDisplayYaw())
                 : Vector3.zero;
 
             if (playerIconRect != null)

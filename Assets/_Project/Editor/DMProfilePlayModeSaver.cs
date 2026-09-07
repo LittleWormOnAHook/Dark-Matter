@@ -23,6 +23,7 @@ namespace Project.EditorTools
         {
             "Assets/_Project/Resources/Climb",
             "Assets/_Project/Resources/Landing",
+            "Assets/_Project/Resources/Map",
             "Assets/_Project/Features/Jetpack/Data",
         };
 
@@ -50,7 +51,7 @@ namespace Project.EditorTools
         {
             Enabled = !Enabled;
             Debug.Log(Enabled
-                ? $"[{Stamp}] on. Climb/landing/jetpack profile tweaks keep when you exit Play."
+                ? $"[{Stamp}] on. Climb/landing/jetpack/map profile tweaks keep when you exit Play."
                 : $"[{Stamp}] off.");
         }
 

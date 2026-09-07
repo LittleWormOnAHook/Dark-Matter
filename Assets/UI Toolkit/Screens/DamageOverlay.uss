@@ -119,34 +119,54 @@
     border-color: rgba(20, 28, 36, 0.55);
 }
 
-/* Close-range Hold-E pickup prompt (tip-locked) */
+/* Close-range Hold-E pickup prompt: two stacked rows, circles + labels. */
 .dmg-world-close {
     position: absolute;
+    flex-direction: column;
+    align-items: flex-start;
     overflow: visible;
 }
 
 .dmg-world-close-row {
     flex-direction: row;
     align-items: center;
+    height: 28px;
+    margin-bottom: 6px;
     overflow: visible;
 }
 
+.dmg-world-close-row-last {
+    margin-bottom: 0;
+    min-height: 36px;
+}
+
 .dmg-world-close-info {
-    background-color: rgba(18, 24, 32, 0.82);
-    border-width: 1px;
-    border-color: rgba(212, 160, 23, 0.65);
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    border-width: 2px;
+    border-color: rgb(237, 233, 228);
+    background-color: rgb(212, 160, 23);
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .dmg-world-close-icon {
+    width: 20px;
+    height: 20px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .dmg-world-close-unknown {
-    font-size: 18px;
-    color: rgb(245, 230, 180);
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 14px;
+    color: rgb(237, 233, 228);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     margin: 0;
@@ -154,33 +174,48 @@
 }
 
 .dmg-world-close-name {
+    margin-left: 8px;
     font-size: 16px;
-    color: rgb(245, 230, 180);
+    color: rgb(237, 233, 228);
     -unity-font-style: bold;
     -unity-text-align: middle-left;
-    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
     white-space: nowrap;
 }
 
 .dmg-world-close-keyhost {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
     overflow: visible;
+    position: relative;
 }
 
 .dmg-world-close-ring {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 36px;
+    height: 36px;
     background-color: rgba(0, 0, 0, 0);
 }
 
 .dmg-world-close-key {
-    background-color: rgba(18, 24, 32, 0.88);
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.35);
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    border-width: 2px;
+    border-color: rgb(237, 233, 228);
+    background-color: rgba(28, 42, 56, 0.9);
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .dmg-world-close-keylabel {
-    font-size: 16px;
-    color: rgb(255, 255, 255);
+    font-size: 14px;
+    color: rgb(237, 233, 228);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     margin: 0;
@@ -190,10 +225,11 @@
 }
 
 .dmg-world-close-action {
+    margin-left: 8px;
     font-size: 16px;
-    color: rgb(245, 230, 180);
+    color: rgb(237, 233, 228);
     -unity-font-style: bold;
     -unity-text-align: middle-left;
-    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
     white-space: nowrap;
 }

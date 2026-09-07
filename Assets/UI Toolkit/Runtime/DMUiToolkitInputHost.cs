@@ -103,6 +103,10 @@ namespace Project.UI
                         evt.StopImmediatePropagation();
                     return;
                 case KeyCode.J:
+                case KeyCode.B:
+                    if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(evt.keyCode))
+                        evt.StopImmediatePropagation();
+                    return;
                 case KeyCode.I:
                 case KeyCode.M:
                 case KeyCode.K:

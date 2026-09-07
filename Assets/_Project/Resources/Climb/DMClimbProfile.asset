@@ -25,14 +25,14 @@ MonoBehaviour:
   handPalmOffset: 0.11
   handSpread: 0.2
   autoGrabInAir: 0
-  moveSpeed: 1.17
+  moveSpeed: 0.95
   climbShiftMul: 1.85
   climbInputDamp: 0.1
   jumpReleases: 1
-  releasePush: 1.6
-  climbLeapSpeed: 5.5
-  clingHop: 6
-  climbLeapRegrab: 0.55
+  releasePush: 2.93
+  climbLeapSpeed: 6.6
+  clingHop: 6.7
+  climbLeapRegrab: 0.88
   dropPush: 2.4
   detachBuffer: 1.15
   highFallGrabMeters: 3.5

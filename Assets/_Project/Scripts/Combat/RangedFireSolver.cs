@@ -1,4 +1,3 @@
-using Invector.vCamera;
 using Project.Data;
 using Project.Progression;
 using UnityEngine;
@@ -7,15 +6,12 @@ namespace Project.Combat
 {
     /// <summary>
     /// Resolves the final projectile direction and effective cone spread for a ranged shot.
-    /// The HUD reticle and every muzzle→reticle shot share the same look-at aim point so
-    /// over-shoulder zoom cannot slide the crosshair off the fire line.
+    /// HUD stays at screen center; every muzzle→reticle shot uses that same camera ray.
     /// Hip fire adds cone spread only — it does not pull the shot back toward the barrel.
     /// </summary>
     public static class RangedFireSolver
     {
         public const float DefaultHipMaxDeviationDegrees = 15f;
-        public const float DefaultLookAtConvergeDistance = 32f;
-        private const int PlayerLayer = 8;
 
         /// <summary>ADS multiplies effective spread (matches RangedCombatHud crosshair shrink).</summary>
         public const float AdsSpreadScale = 0.75f;
@@ -40,29 +36,14 @@ namespace Project.Combat
             return cameraAimDirection.normalized;
         }
 
-        /// <summary>
-        /// Viewport of the shared look-at aim point (Unity bottom-left origin).
-        /// Zoomed-in sits near screen center; zoomed-out stays on the player look line
-        /// instead of drifting right with the over-shoulder camera.
-        /// </summary>
-        public static Vector2 ResolveReticleViewport(Camera cam, float maxRange = DefaultLookAtConvergeDistance)
+        /// <summary>Locked HUD / fire viewport (Unity bottom-left origin).</summary>
+        public static Vector2 ResolveReticleViewport(Camera cam, float maxRange = 32f)
         {
-            if (cam == null)
-                return new Vector2(0.5f, 0.5f);
-
-            Vector3 aimPoint = ResolveReticleAimPoint(cam, maxRange);
-            Vector3 vp = cam.WorldToViewportPoint(aimPoint);
-            if (vp.z <= 0.05f)
-                return new Vector2(0.5f, 0.5f);
-
-            return new Vector2(
-                Mathf.Clamp(vp.x, 0.12f, 0.88f),
-                Mathf.Clamp(vp.y, 0.12f, 0.88f));
+            return new Vector2(0.5f, 0.5f);
         }
 
         /// <summary>
-        /// World aim point on the player look-at line (hit or far point).
-        /// Used by the HUD crosshair and every muzzle→reticle shot.
+        /// Screen-center reticle ray → world aim point (hit or far point of maxRange).
         /// </summary>
         public static Vector3 ResolveReticleAimPoint(Camera cam, float maxRange, LayerMask? optionalMask = null)
         {
@@ -70,38 +51,13 @@ namespace Project.Combat
                 return Vector3.zero;
 
             float range = Mathf.Max(1f, maxRange);
-            Vector3 pivot = ResolveAimPivot(cam);
-            Vector3 dir = cam.transform.forward;
-            if (dir.sqrMagnitude < 0.0001f)
-                dir = Vector3.forward;
-            else
-                dir.Normalize();
-
-            Vector3 origin = pivot + dir * 0.35f;
+            Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             int mask = optionalMask ?? Physics.DefaultRaycastLayers;
-            mask &= ~(1 << PlayerLayer);
 
-            if (Physics.Raycast(origin, dir, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(ray, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore))
                 return hit.point;
 
-            return origin + dir * range;
-        }
-
-        public static Vector3 ResolveAimPivot(Camera cam)
-        {
-            vThirdPersonCamera tp = vThirdPersonCamera.instance;
-            if (tp != null && tp.currentTarget != null)
-            {
-                Vector3 pivot = tp.currentTarget.position + tp.currentTarget.up * tp.offSetPlayerPivot;
-                if (tp.currentState != null)
-                    pivot += tp.currentTarget.up * tp.currentState.height;
-                return pivot;
-            }
-
-            if (cam != null)
-                return cam.transform.position + cam.transform.forward * 0.75f;
-
-            return Vector3.zero;
+            return ray.GetPoint(range);
         }
 
         /// <summary>

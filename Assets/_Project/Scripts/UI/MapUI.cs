@@ -34,6 +34,10 @@ namespace Project.UI
         private const float MinimapViewportInset = 4f;
         private const float MinMinimapSpan = 40f;
         private const float MaxMinimapSpan = 420f;
+        /// <summary>Bracket [ zooms in 33% (smaller visible span).</summary>
+        public const float MinimapZoomInMultiplier = 0.67f;
+        /// <summary>Bracket ] zooms out 33% (larger visible span).</summary>
+        public const float MinimapZoomOutMultiplier = 1.333333f;
         private const float DefaultFullMapZoom = 5f;
         private const float MinFullMapZoom = 1f;
         private const float MaxFullMapZoom = 8f;
@@ -455,8 +459,15 @@ namespace Project.UI
 
         public void ToggleFullMap()
         {
-            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
-            if (journal != null && journal.TryToggleMapTab())
+            if (DMUiToolkitMenus.HandlesWindow(JournalWindowId.Map))
+            {
+                JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+                if (journal != null && journal.IsOpen)
+                    return;
+            }
+
+            JournalPanelUI journalPanel = FindAnyObjectByType<JournalPanelUI>();
+            if (journalPanel != null && journalPanel.TryToggleMapTab())
                 return;
 
             if (IsJournalOpen())
@@ -523,6 +534,10 @@ namespace Project.UI
 
         private void SyncMapKeyHold()
         {
+            // UITK journal Map tab owns tap-M; release must not call ToggleFullMap (flicker close).
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                return;
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
                 return;

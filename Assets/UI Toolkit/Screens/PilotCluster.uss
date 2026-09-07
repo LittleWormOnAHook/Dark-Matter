@@ -419,7 +419,7 @@
     right: 0;
     top: 58px;
     height: 22px;
-    color: #C02E7A;
+    color: #EDE9E4;
     font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 0.4px;

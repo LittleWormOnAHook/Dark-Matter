@@ -37,6 +37,7 @@ namespace Project.UI
         private VisualElement root;
         private VisualElement cluster;
         private VisualElement hazardPanel;
+        private VisualElement hazardRows;
         private Label thermalStatus;
         private Label thermalValue;
         private VisualElement thermalTrack;
@@ -148,6 +149,7 @@ namespace Project.UI
         private int nextElevResolveFrame;
         private float lastHazardPinLeft = float.NaN;
         private float lastHazardPinBottom = float.NaN;
+        private int nextPinAboveElevFrame;
 
         private void LateUpdate()
         {
@@ -214,6 +216,7 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             cluster = tree.Q<VisualElement>("hazards-cluster");
             hazardPanel = tree.Q<VisualElement>("hazard-panel");
+            hazardRows = tree.Q<VisualElement>("hazard-rows");
             VisualElement thermalPanel = tree.Q<VisualElement>("thermal-panel");
             if (thermalPanel != null)
                 thermalPanel.style.display = DisplayStyle.None;
@@ -578,6 +581,11 @@ namespace Project.UI
             if (cluster == null)
                 return;
 
+            if (Time.frameCount < nextPinAboveElevFrame)
+                return;
+
+            nextPinAboveElevFrame = Time.frameCount + 4;
+
             float left = MinimapCenterX;
             float bottom = PilotBottom + PilotHeight + HazardGapAboveElev;
 
@@ -603,12 +611,9 @@ namespace Project.UI
             // Cluster uses translate -50% (centers on style.left). If the title is wider than
             // the columns (or a trailing gap remains), nudge so the COLUMN midpoint - not the
             // title/box midpoint - lands on the ELEV +/- sign.
-            VisualElement rows = hazardPanel != null
-                ? hazardPanel.Q<VisualElement>("hazard-rows")
-                : null;
-            if (rows != null)
+            if (hazardRows != null)
             {
-                Rect rb = rows.worldBound;
+                Rect rb = hazardRows.worldBound;
                 Rect cb = cluster.worldBound;
                 if (rb.width > 1f && cb.width > 1f)
                 {

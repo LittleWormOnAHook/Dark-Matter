@@ -529,14 +529,14 @@ namespace Project.UI
                 "+",
                 new Vector2(1f, 0.5f),
                 new Vector2(6f, 0f),
-                () => AdjustMinimapSpan(0.833f));
+                () => AdjustMinimapSpan(MapUI.MinimapZoomInMultiplier));
 
             CreateMinimapEdgeButton(
                 edgeControls.transform,
                 "-",
                 new Vector2(0f, 0.5f),
                 new Vector2(-6f, 0f),
-                () => AdjustMinimapSpan(1.2f));
+                () => AdjustMinimapSpan(MapUI.MinimapZoomOutMultiplier));
 
             minimapScanButton = CreateMinimapEdgeButton(
                 edgeControls.transform,

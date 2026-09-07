@@ -160,12 +160,24 @@ namespace Project.UI
             return playerTransform != null ? playerTransform.position : Vector3.zero;
         }
 
+        private float GetMapDisplayYaw()
+        {
+            float facing = GetMapFacingYaw();
+            if (mapProvider == null)
+                EnsureMapProvider();
+
+            return mapProvider != null
+                ? mapProvider.GetMapDisplayYaw(facing)
+                : facing;
+        }
+
         private void ApplyPlayerArrowRotation(RectTransform playerIconRect)
         {
             if (playerIconRect == null)
                 return;
 
-            playerIconRect.localEulerAngles = new Vector3(0f, 0f, -GetMapFacingYaw());
+            float iconBase = mapProvider != null ? mapProvider.MapPlayerIconBaseDegrees : 0f;
+            playerIconRect.localEulerAngles = new Vector3(0f, 0f, -GetMapDisplayYaw() + iconBase);
         }
 
         private void ApplyMapTexture()

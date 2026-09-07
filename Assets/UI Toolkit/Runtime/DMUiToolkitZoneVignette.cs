@@ -275,7 +275,8 @@ namespace Project.UI
                 ? (1f / ZoneExitFadeSeconds)
                 : ZoneOpacityLerp;
             zoneOpacity = Mathf.MoveTowards(zoneOpacity, zoneOpacityTarget, dt * rate);
-            zoneLayer.style.opacity = zoneOpacity;
+            if (Mathf.Abs(zoneLayer.style.opacity.value - zoneOpacity) > 0.001f)
+                zoneLayer.style.opacity = zoneOpacity;
         }
 
         private void ResolveStrongestZone(

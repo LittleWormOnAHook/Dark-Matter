@@ -20,6 +20,9 @@ namespace Project.UI
     {
         private static int toolHotkeyHandledFrame = -1;
         private static ToolType toolHotkeyHandledType;
+        private static InventorySystem cachedInventory;
+        private static EquipmentController cachedEquipment;
+        private static InventoryItemActions cachedItemActions;
 
 
         public static bool CanProcess()
@@ -66,7 +69,10 @@ namespace Project.UI
                 return;
 
             if (keyboard.jKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.J);
+            {
+                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
+                TryUseTool(ToolType.Scanner);
+            }
             else if (keyboard.iKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.I);
             else if (keyboard.mKey.wasPressedThisFrame)
@@ -164,12 +170,22 @@ namespace Project.UI
 
             if (keyboard.nKey.wasPressedThisFrame)
             {
+                // Legacy scanner binding — J is canonical.
                 DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
                 TryUseTool(ToolType.Scanner);
                 return;
             }
 
-            HandleBinocularsVsBlueprintsKey(keyboard);
+            HandleBinocularsKey(keyboard);
+        }
+
+        private static void HandleBinocularsKey(Keyboard keyboard)
+        {
+            if (!keyboard.bKey.wasPressedThisFrame)
+                return;
+
+            DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
+            TryUseTool(ToolType.Binoculars);
         }
 
         public static void TryHandleDevPanel()
@@ -207,17 +223,6 @@ namespace Project.UI
             if (!CanProcess())
                 return;
 
-            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
-            if (navigator != null && navigator.IsAnyOpen)
-                return;
-
-            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
-            if (journal != null && journal.IsOpen)
-                return;
-
-            if (DMUiToolkitMenus.IsOpen)
-                return;
-
             bool zoomIn = false;
             bool zoomOut = false;
 
@@ -238,14 +243,25 @@ namespace Project.UI
             if (!zoomIn && !zoomOut)
                 return;
 
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return;
+
+            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            if (journal != null && journal.IsOpen)
+                return;
+
+            if (DMUiToolkitMenus.IsOpen)
+                return;
+
             MapUI mapUi = Object.FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
             if (mapUi == null)
                 return;
 
             if (zoomIn)
-                mapUi.UitkAdjustMinimapSpan(0.833f);
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomInMultiplier);
             if (zoomOut)
-                mapUi.UitkAdjustMinimapSpan(1.2f);
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomOutMultiplier);
         }
 
         private static int cinematicHandledFrame = -1;
@@ -426,6 +442,20 @@ namespace Project.UI
             if (!CanProcess())
                 return false;
 
+            if (keyCode == KeyCode.J)
+            {
+                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
+                TryUseTool(ToolType.Scanner);
+                return true;
+            }
+
+            if (keyCode == KeyCode.B)
+            {
+                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
+                TryUseTool(ToolType.Binoculars);
+                return true;
+            }
+
             if (keyCode == KeyCode.N)
             {
                 DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
@@ -444,8 +474,9 @@ namespace Project.UI
             switch (keyCode)
             {
                 case KeyCode.J:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true)
-                        || EnsureJournalPanel()?.TryToggleJournal() == true;
+                    DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
+                    TryUseTool(ToolType.Scanner);
+                    return true;
                 case KeyCode.I:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Inventory) == true;
@@ -459,8 +490,8 @@ namespace Project.UI
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers) == true;
                 case KeyCode.U:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Character) == true;
+                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes)
+                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Recipes) == true;
                 case KeyCode.T:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Skills) == true;
@@ -471,8 +502,8 @@ namespace Project.UI
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Achievements) == true;
                 case KeyCode.C:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Recipes) == true;
+                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character)
+                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Character) == true;
                 default:
                     return false;
             }
@@ -532,20 +563,27 @@ namespace Project.UI
             out EquipmentController equipment,
             out InventoryItemActions itemActions)
         {
-            inventory = Object.FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
-            equipment = null;
-            itemActions = null;
-            if (inventory != null)
+            if (cachedInventory == null || cachedEquipment == null)
             {
-                equipment = inventory.GetComponent<EquipmentController>()
-                    ?? inventory.GetComponentInChildren<EquipmentController>(true)
-                    ?? inventory.GetComponentInParent<EquipmentController>();
-                itemActions = inventory.GetComponent<InventoryItemActions>()
-                    ?? inventory.GetComponentInChildren<InventoryItemActions>(true);
-            }
-            if (equipment == null)
-                equipment = Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+                cachedInventory = Object.FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
+                cachedEquipment = null;
+                cachedItemActions = null;
+                if (cachedInventory != null)
+                {
+                    cachedEquipment = cachedInventory.GetComponent<EquipmentController>()
+                        ?? cachedInventory.GetComponentInChildren<EquipmentController>(true)
+                        ?? cachedInventory.GetComponentInParent<EquipmentController>();
+                    cachedItemActions = cachedInventory.GetComponent<InventoryItemActions>()
+                        ?? cachedInventory.GetComponentInChildren<InventoryItemActions>(true);
+                }
 
+                if (cachedEquipment == null)
+                    cachedEquipment = Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+            }
+
+            inventory = cachedInventory;
+            equipment = cachedEquipment;
+            itemActions = cachedItemActions;
             return inventory != null && equipment != null;
         }
 
@@ -564,16 +602,6 @@ namespace Project.UI
                 journal = ui.gameObject.AddComponent<JournalPanelUI>();
 
             return journal;
-        }
-
-        private static void HandleBinocularsVsBlueprintsKey(Keyboard keyboard)
-        {
-            // Hot Cross: B opens binoculars (and sets BL face). Recipes journal stays on C.
-            if (!keyboard.bKey.wasPressedThisFrame)
-                return;
-
-            DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
-            TryUseTool(ToolType.Binoculars);
         }
 
         
@@ -636,7 +664,7 @@ namespace Project.UI
                 return true;
             }
 
-            // B is handled by HandleBinocularsVsBlueprintsKey (Update poll)  -  do not also handle here.
+            // B/J are handled by TryHandleToolbarHotkeys (Update poll) — do not also handle here.
             return false;
         }
 

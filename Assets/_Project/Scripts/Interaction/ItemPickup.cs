@@ -92,6 +92,9 @@ namespace Project.Interaction
             if (indicatorAnchor != null)
                 return indicatorAnchor.position;
 
+            if (!hasIndicatorLocalOffset)
+                CacheIndicatorLocalOffset();
+
             if (hasIndicatorLocalOffset)
                 return transform.TransformPoint(indicatorLocalOffset);
 
@@ -424,82 +427,19 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
                 return;
             }
 
-            Vector3 world = ResolveIndicatorWorldAnchor();
-            indicatorLocalOffset = transform.InverseTransformPoint(world);
+            if (renderers == null || renderers.Length == 0)
+                renderers = GetComponentsInChildren<Renderer>(true);
+            if (colliders == null || colliders.Length == 0)
+                colliders = GetComponentsInChildren<Collider>(true);
+
+            indicatorLocalOffset = WorldIndicatorAnchorUtil.ResolveStableLocalCenter(transform, renderers, colliders);
             hasIndicatorLocalOffset = true;
         }
 
         private Vector3 ResolveIndicatorWorldAnchor()
         {
-            if (renderers == null || renderers.Length == 0)
-                renderers = GetComponentsInChildren<Renderer>(true);
-
-            if (TryEncapsulateRendererBounds(renderers, out Bounds rendBounds))
-                return rendBounds.center;
-
-            if (colliders == null || colliders.Length == 0)
-                colliders = GetComponentsInChildren<Collider>(true);
-
-            if (TryEncapsulateColliderBounds(colliders, out Bounds colBounds))
-                return colBounds.center;
-
-            return transform.position + Vector3.up * 0.2f;
-        }
-
-        private static bool TryEncapsulateRendererBounds(Renderer[] renderers, out Bounds bounds)
-        {
-            bounds = default;
-            bool any = false;
-            if (renderers == null)
-                return false;
-
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer rend = renderers[i];
-                if (rend == null || !rend.enabled || !rend.gameObject.activeInHierarchy)
-                    continue;
-                if (rend is ParticleSystemRenderer)
-                    continue;
-
-                if (!any)
-                {
-                    bounds = rend.bounds;
-                    any = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(rend.bounds);
-                }
-            }
-
-            return any;
-        }
-
-        private static bool TryEncapsulateColliderBounds(Collider[] colliders, out Bounds bounds)
-        {
-            bounds = default;
-            bool any = false;
-            if (colliders == null)
-                return false;
-
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider col = colliders[i];
-                if (col == null || !col.enabled || !col.gameObject.activeInHierarchy)
-                    continue;
-
-                if (!any)
-                {
-                    bounds = col.bounds;
-                    any = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(col.bounds);
-                }
-            }
-
-            return any;
+            return transform.TransformPoint(
+                WorldIndicatorAnchorUtil.ResolveStableLocalCenter(transform, renderers, colliders));
         }
 
         private bool IsAimTarget(Collider collider)
