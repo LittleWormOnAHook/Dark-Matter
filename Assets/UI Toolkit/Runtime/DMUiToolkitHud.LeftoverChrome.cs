@@ -1,9 +1,5 @@
 using System.Collections;
-using Project.Data;
 using Project.Core;
-using Project.Inventory;
-using Project.Player;
-using Project.Player.Invector;
 using Project.Interaction;
 using Project.Shelter;
 using Project.Survival;
@@ -13,8 +9,8 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// Leftover gameplay HUD chrome: ranged crosshair, oxygen deprivation FX, Quora shelter timer.
-    /// Ammo readout stays in DMUiToolkitHud.XpAmmoEnemy. Hide unused hosts in C#, not USS.
+    /// Leftover gameplay HUD chrome: oxygen deprivation FX, Quora shelter timer.
+    /// Weapon reticle: <see cref="DMUiToolkitHud.WeaponReticle"/> partial.
     /// </summary>
     public partial class DMUiToolkitHud
     {
@@ -24,38 +20,33 @@ namespace Project.UI
         private const int OxygenFlashCount = 3;
         private const float OxygenVignetteAlpha = 0.45f;
 
-        private VisualElement crosshairRoot;
         private VisualElement oxygenFlash;
         private VisualElement oxygenVignette;
         private VisualElement shelterTimerRoot;
         private Label shelterTimerCaption;
         private Label shelterTimerValue;
+
         private bool leftoverBound;
         private bool leftoverPreviewHidden;
-        private bool lastCrosshairShown;
-        private float lastCrosshairScale = -1f;
         private bool oxygenWasCritical;
         private Coroutine oxygenFlashRoutine;
         private static Texture2D oxygenVignetteTexture;
         private int lastShelterSecond = -1;
-        private EquipmentController leftoverEquipmentCached;
-        private PioneerInvectorInputBridge leftoverInvectorBridge;
-        private RangedCombatController leftoverRangedCombat;
-        private PlayerController leftoverPlayerController;
 
         private void BindLeftoverChrome(VisualElement root)
         {
             if (root == null)
                 return;
 
-            crosshairRoot = root.Q<VisualElement>("crosshair");
+            BindWeaponReticle(root);
+
             oxygenFlash = root.Q<VisualElement>("oxygen-flash");
             oxygenVignette = root.Q<VisualElement>("oxygen-vignette");
             shelterTimerRoot = root.Q<VisualElement>("shelter-timer");
             shelterTimerCaption = root.Q<Label>("shelter-timer-caption");
             shelterTimerValue = root.Q<Label>("shelter-timer-value");
 
-            leftoverBound = crosshairRoot != null || oxygenFlash != null || shelterTimerRoot != null;
+            leftoverBound = weaponReticleBound || oxygenFlash != null || shelterTimerRoot != null;
             ApplyOxygenVignetteTexture();
             HideLeftoverPreviewHosts();
         }
@@ -65,8 +56,8 @@ namespace Project.UI
             if (leftoverPreviewHidden)
                 return;
 
-            if (crosshairRoot != null)
-                crosshairRoot.style.display = DisplayStyle.None;
+            HideWeaponReticlePreview();
+
             if (oxygenFlash != null)
             {
                 oxygenFlash.style.opacity = 0f;
@@ -81,8 +72,6 @@ namespace Project.UI
                 shelterTimerRoot.style.display = DisplayStyle.None;
 
             leftoverPreviewHidden = true;
-            lastCrosshairShown = false;
-            lastCrosshairScale = -1f;
         }
 
         private void TickLeftoverChrome()
@@ -99,98 +88,9 @@ namespace Project.UI
             }
 
             leftoverPreviewHidden = false;
-            TickCrosshair();
+            TickWeaponReticle();
             TickOxygenFx();
             TickShelterTimer();
-        }
-
-        private void TickCrosshair()
-        {
-            if (crosshairRoot == null)
-                return;
-
-            bool show = false;
-            if (!GameplayHudVisibility.CinematicChromeHidden
-                && !DMUiToolkitMenus.IsOpen
-                && !DMUiToolkitOpticsOverlay.IsShowing)
-            {
-                if (equipmentController == null)
-                    BindInventoryEvents();
-
-                EquipmentController equipment = equipmentController;
-                if (equipment != null && equipment.HasActiveRangedWeapon())
-                {
-                    EnsureLeftoverEquipmentRefs();
-                    ItemData weapon = equipment.DrawnWeaponItem;
-                    show = weapon != null && weapon.IsRangedWeapon
-                        && (leftoverPlayerController == null || !leftoverPlayerController.BlocksCombatInput);
-                }
-            }
-
-            if (show != lastCrosshairShown)
-            {
-                lastCrosshairShown = show;
-                crosshairRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
-                if (show)
-                    LockCrosshairToScreenCenter();
-            }
-
-            if (!show)
-            {
-                lastCrosshairScale = -1f;
-                return;
-            }
-
-            float scale = IsHudAiming() ? 0.75f : 1f;
-            if (!Mathf.Approximately(scale, lastCrosshairScale))
-            {
-                lastCrosshairScale = scale;
-                crosshairRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
-                crosshairRoot.style.scale = new Scale(new Vector3(scale, scale, 1f));
-            }
-        }
-
-        private void LockCrosshairToScreenCenter()
-        {
-            if (crosshairRoot == null)
-                return;
-
-            crosshairRoot.style.left = Length.Percent(50f);
-            crosshairRoot.style.top = Length.Percent(50f);
-            crosshairRoot.style.right = StyleKeyword.Auto;
-            crosshairRoot.style.bottom = StyleKeyword.Auto;
-            crosshairRoot.style.marginLeft = -19f;
-            crosshairRoot.style.marginTop = -19f;
-            crosshairRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f));
-        }
-
-        private void EnsureLeftoverEquipmentRefs()
-        {
-            if (equipmentController == leftoverEquipmentCached)
-                return;
-
-            leftoverEquipmentCached = equipmentController;
-            leftoverInvectorBridge = equipmentController != null
-                ? equipmentController.GetComponent<PioneerInvectorInputBridge>()
-                : null;
-            leftoverRangedCombat = equipmentController != null
-                ? equipmentController.GetComponent<RangedCombatController>()
-                : null;
-            leftoverPlayerController = equipmentController != null
-                ? equipmentController.GetComponent<PlayerController>()
-                : null;
-        }
-
-        private bool IsHudAiming()
-        {
-            if (equipmentController == null)
-                return false;
-
-            EnsureLeftoverEquipmentRefs();
-            if (leftoverInvectorBridge != null && PioneerInvectorBootstrap.IsInvectorPlayer(leftoverInvectorBridge))
-                return leftoverInvectorBridge.IsAiming;
-
-            return leftoverRangedCombat != null && leftoverRangedCombat.IsAiming;
         }
 
         private void TickOxygenFx()

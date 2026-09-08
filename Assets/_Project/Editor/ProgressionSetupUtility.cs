@@ -84,9 +84,12 @@ namespace Project.EditorTools.Progression
                 CreateSkill("skill_jet_reservoir", "Jet Reservoir", "Increase suit booster fuel so burns last longer.", SkillTreeCategory.Player, 0, 2, 1, SkillModifierType.JetFuelPercent, 8f, maxRank: 5),
                 CreateSkill("skill_jet_thrust", "Jet Thrust", "Increase suit booster thrust.", SkillTreeCategory.Player, 1, 2, 1, SkillModifierType.JetThrustPercent, 8f, maxRank: 5),
                 CreateSkill("skill_jet_recovery", "Jet Recovery", "Regenerate suit booster fuel faster.", SkillTreeCategory.Player, 2, 2, 1, SkillModifierType.JetRegenPercent, 8f, maxRank: 5),
-                CreateSkill("skill_dash_distance", "Dash Distance", "Increase double-tap dash travel distance.", SkillTreeCategory.Player, 0, 3, 1, SkillModifierType.DashDistancePercent, 8f, maxRank: 5),
-                CreateSkill("skill_dash_speed", "Dash Speed", "Increase double-tap dash move speed.", SkillTreeCategory.Player, 1, 3, 1, SkillModifierType.DashSpeedPercent, 8f, maxRank: 5),
-                CreateSkill("skill_dash_air", "Air Dash", "Unlock dashing while airborne.", SkillTreeCategory.Player, 2, 3, 1, SkillModifierType.DashAirUnlock, 1f, maxRank: 1),
+                CreateSkill("skill_dash_distance", "Dash Distance", "Increase hologram slide travel distance (+8% per rank). Stops at walls.", SkillTreeCategory.Player, 0, 3, 1, SkillModifierType.DashDistancePercent, 8f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_jet_reservoir" }),
+                CreateSkill("skill_dash_speed", "Dash Speed", "Increase hologram slide speed (+8% per rank).", SkillTreeCategory.Player, 1, 3, 1, SkillModifierType.DashSpeedPercent, 8f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_jet_thrust" }),
+                CreateSkill("skill_dash_air", "Air Dash", "Unlock double-tap dash while airborne.", SkillTreeCategory.Player, 2, 3, 1, SkillModifierType.DashAirUnlock, 1f, maxRank: 1, prerequisiteSkillIds: new[] { "skill_jet_recovery" }),
+                CreateSkill("skill_dash_climb", "Climb Dash", "Double-tap dash while climbing detaches and slides off the wall.", SkillTreeCategory.Player, 0, 4, 1, SkillModifierType.DashClimbUnlock, 1f, maxRank: 1, prerequisiteSkillIds: new[] { "skill_dash_distance" }),
+                CreateSkill("skill_dash_efficiency", "Dash Efficiency", "Reduce dash stamina drain over the slide (+5% per rank).", SkillTreeCategory.Player, 1, 4, 1, SkillModifierType.DashStaminaTickReductionPercent, 5f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_dash_speed" }),
+                CreateSkill("skill_dash_recovery", "Quick Recovery", "Reduce dash cooldown (+8% per rank).", SkillTreeCategory.Player, 2, 4, 1, SkillModifierType.DashCooldownPercent, 8f, maxRank: 5, prerequisiteSkillIds: new[] { "skill_dash_air" }),
 
                 // Melee
                 CreateSkill("skill_blade_training", "Blade Training", "+2 melee damage per rank for all melee weapons.", SkillTreeCategory.Melee, 0, 0, 2, SkillModifierType.MeleeDamageFlat, 2f, maxRank: 5),

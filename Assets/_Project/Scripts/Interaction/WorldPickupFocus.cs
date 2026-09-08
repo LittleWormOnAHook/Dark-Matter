@@ -1,4 +1,4 @@
-﻿using Project.Crafting;
+using Project.Crafting;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -17,7 +17,7 @@ namespace Project.Interaction
         public const float ClosePromptPlanarMeters = 1.25f;
 
         /// <summary>Hold duration for focused item/blueprint pickup (seconds).</summary>
-        public const float PickupHoldSeconds = 1.5f;
+        public const float PickupHoldSeconds = 0.75f;
 
         public static ItemPickup Item { get; private set; }
         public static RecipePickup Recipe { get; private set; }

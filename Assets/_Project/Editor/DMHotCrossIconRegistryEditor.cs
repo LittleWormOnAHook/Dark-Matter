@@ -19,17 +19,13 @@ namespace Project.EditorTools
     [CustomEditor(typeof(DMHotCrossIconRegistry))]
     public class DMHotCrossIconRegistryEditor : Editor
     {
-        private const string HotCrossIconFolder = "Assets/_Project/Art/UI/HotCrossIcons";
-        private const string RuntimeIconFolder = "Assets/_Project/Resources/UI/HotCrossIcons";
-        private const string SourceIconFolder = "Assets/_Project/Art/UI/Game Icons 1";
-
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
 
             EditorGUILayout.Space(8);
             EditorGUILayout.HelpBox(
-                "Hot Cross only. Assign a cutout sprite per item, then tune tint, alpha, and emission. Inventory icons stay unchanged.",
+                "Hot Cross cutouts only from Resources/UI/HotCrossIcons. Inventory / hotbar tiles use Resources/UI/Game Icons.",
                 MessageType.Info);
 
             if (GUILayout.Button("Import HotCrossIcons as Sprites"))
@@ -42,8 +38,7 @@ namespace Project.EditorTools
         [MenuItem("Dark Matter Genesis/UI/Hot Cross/Import Cutout Icons as Sprites")]
         public static void ImportHotCrossSprites()
         {
-            ImportFolder(HotCrossIconFolder);
-            ImportFolder(RuntimeIconFolder);
+            ImportFolder(DMHotCrossIconRegistry.CutoutAssetFolder);
         }
 
         private static void ImportFolder(string folder)
@@ -103,9 +98,7 @@ namespace Project.EditorTools
                 return;
 
             ItemData[] items = ItemRegistry.GetAllItems();
-            Sprite[] sprites = LoadSprites(HotCrossIconFolder);
-            if (sprites.Length == 0)
-                sprites = LoadSprites(SourceIconFolder);
+            Sprite[] sprites = LoadSprites(DMHotCrossIconRegistry.CutoutAssetFolder);
 
             Dictionary<string, Sprite> byKey = new Dictionary<string, Sprite>();
             for (int i = 0; i < sprites.Length; i++)

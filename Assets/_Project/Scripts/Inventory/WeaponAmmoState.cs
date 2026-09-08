@@ -279,6 +279,29 @@ namespace Project.Inventory
         }
 
         /// <summary>
+        /// Pulls matching reserve ammo from inventory up to magazine capacity (reload finish, etc.).
+        /// Does not run on first weapon assign — mags stay empty until pickup, explicit equip, or reload.
+        /// </summary>
+        public bool RefillMagazineFromInventory(int weaponHotbarSlot, ItemData weapon)
+        {
+            if (weapon == null || !weapon.IsRangedWeapon || weapon.isMiningTool)
+                return false;
+
+            SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
+            int capacity = GetMagazineCapacity(weapon);
+            if (entry.loaded >= capacity)
+                return false;
+
+            int before = entry.loaded;
+            TryRefillFromInventory(weapon, entry);
+            if (entry.loaded <= before)
+                return false;
+
+            NotifyChanged();
+            return true;
+        }
+
+        /// <summary>
         /// Explicit player-driven equip: loads ammo from a specific inventory stack into a specific
         /// weapon's hotbar slot, used by the inventory right-click "Equip Ammo To" menu. Unlike the
         /// passive auto-credit path, this deliberately swaps ammo type if a different one is already
@@ -370,8 +393,6 @@ namespace Project.Inventory
             {
                 slotWeaponIdentity[weaponHotbarSlot] = weapon;
                 ApplyFreshWeaponAmmo(weapon, entry);
-                if (entry.loaded <= 0)
-                    TryRefillFromInventory(weapon, entry);
                 NotifyChanged();
                 return;
             }
@@ -379,8 +400,7 @@ namespace Project.Inventory
             if (entry.loaded > 0)
                 return;
 
-            if (TryRefillFromInventory(weapon, entry))
-                NotifyChanged();
+            RefillMagazineFromInventory(weaponHotbarSlot, weapon);
         }
 
         /// <summary>
@@ -546,6 +566,7 @@ namespace Project.Inventory
             }
 
             int capacity = GetMagazineCapacity(weapon);
+            int before = entry.loaded;
             for (int i = 0; i < inventory.slots.Count; i++)
             {
                 int needed = Mathf.Max(0, capacity - entry.loaded);
@@ -569,7 +590,7 @@ namespace Project.Inventory
                 inventory.RemoveItemAt(i, take);
             }
 
-            return entry.loaded > 0;
+            return entry.loaded > before;
         }
 
         private void HandleInventoryChanged()

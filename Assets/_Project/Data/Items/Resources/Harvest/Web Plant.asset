@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Web Plant
   m_EditorClassIdentifier: Assembly-CSharp::Project.Data.MineHarvestItemData
   itemName: Web Plant
-  icon: {fileID: 21300000, guid: 5aaed78ef0909884097275eacf741a06, type: 3}
+  icon: {fileID: 21300000, guid: a8357be6c2c0a9e43a4f3cda45ef26d7, type: 3}
   worldPrefab: {fileID: 4556512016624447390, guid: 8326826fc8689f542bd08574e3f6d892, type: 3}
   maxStack: 200
   stableItemId: 

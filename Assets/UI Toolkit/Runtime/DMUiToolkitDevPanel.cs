@@ -58,6 +58,8 @@ namespace Project.UI
 
             host.document = doc;
             host.BindTree();
+            if (doc.rootVisualElement != null)
+                DMUiToolkitInputHost.RegisterKeyRoot(doc.rootVisualElement);
             return host;
         }
 

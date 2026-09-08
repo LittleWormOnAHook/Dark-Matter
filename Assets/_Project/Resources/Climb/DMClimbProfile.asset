@@ -30,7 +30,7 @@ MonoBehaviour:
   climbInputDamp: 0.1
   jumpReleases: 1
   releasePush: 2.93
-  climbLeapSpeed: 6.6
+  climbLeapSpeed: 11.44
   clingHop: 6.7
   climbLeapRegrab: 0.88
   dropPush: 2.4
@@ -60,11 +60,26 @@ MonoBehaviour:
   mantleStandPad: 0.04
   mantleSeconds: 1.4
   mantleIgnoreLands: 2.6
-  heroDropMeters: 4.04
-  lethalDropMeters: 60
-  jetpackLethalDelay: 3
+  heroDropMeters: 5.73
+  lethalDropMeters: 9
+  fallDamageStartMeters: 9.5
+  fallDamageLethalPercent: 0.3
+  fallDamageHealthFraction: 0.5
+  jetpackLethalDelay: 6
   climbStartStaminaCost: 5
   climbStaminaDrainPerSecond: 8
+  dashDoubleTapWindow: 0.28
+  dashDistance: 4.5
+  dashSpeed: 15.4
+  dashDuration: 0.18
+  dashCooldown: 0.2
+  dashStaminaCost: 22
+  dashStaminaTickExtraPercent: 0.2
+  dashAllowAirDash: 1
+  dashAnimationSpeed: 0
+  dashCollisionSkin: 0.08
+  dashDetachesFromClimb: 1
+  dashAllowedWhileClimbing: 0
   climbableLayerName: Climbable
   climbableTag: Climbable
   climbableLayers:

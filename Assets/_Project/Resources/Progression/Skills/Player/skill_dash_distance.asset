@@ -14,14 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
   skillId: skill_dash_distance
   displayName: Dash Distance
-  description: Increase how far a double-tap dash slides.
+  description: Increase hologram slide travel distance (+8% per rank). Stops at walls.
   treeCategory: 4
   treeColumn: 0
   treeRow: 3
-  requiredPlayerLevel: 1
-  costPerRank: 1
+  requiredPlayerLevel: 6
+  costPerRank: 2
   maxRank: 5
   modifierType: 15
   bonusPercentPerRank: 8
-  prerequisiteSkillIds: []
+  prerequisiteSkillIds:
+  - skill_jet_reservoir
   costPerTargetRank: 

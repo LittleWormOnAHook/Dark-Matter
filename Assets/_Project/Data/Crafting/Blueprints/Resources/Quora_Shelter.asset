@@ -15,7 +15,7 @@ MonoBehaviour:
   recipeId: Quora Shelter
   displayName: Quora Temporary Shelter
   description: 
-  icon: {fileID: 21300000, guid: d86c4c483dba9294f9abe6f68dbdea58, type: 3}
+  icon: {fileID: 21300000, guid: 115a9a6aa91c5084d937b12d3d00a1db, type: 3}
   stationType: 1
   ingredients:
   - item: {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}

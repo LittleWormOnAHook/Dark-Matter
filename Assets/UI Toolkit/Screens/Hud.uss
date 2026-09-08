@@ -298,46 +298,68 @@
     overflow: hidden;
 }
 
-.dmg-hud-crosshair {
+.dmg-weapon-reticle {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 38px;
-    height: 38px;
-    margin-left: -19px;
-    margin-top: -19px;
+    width: 0;
+    height: 0;
     transform-origin: center;
 }
 
-.dmg-hud-crosshair-arm {
+.dmg-weapon-reticle-spread {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    margin-left: -32px;
+    margin-top: -32px;
+    transform-origin: center;
+}
+
+.dmg-weapon-reticle-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    margin-top: -2px;
+    border-radius: 2px;
+    background-color: rgba(237, 233, 228, 0.92);
+}
+
+.dmg-weapon-reticle-arm {
     position: absolute;
     background-color: rgba(237, 233, 228, 0.82);
+    transform-origin: center;
 }
 
-.dmg-hud-crosshair-h {
-    width: 14px;
+.dmg-weapon-reticle-arm-h {
+    width: 10px;
     height: 2px;
-    top: 18px;
+    top: 50%;
+    left: 50%;
+    margin-left: -5px;
+    margin-top: -1px;
 }
 
-.dmg-hud-crosshair-v {
+.dmg-weapon-reticle-arm-v {
     width: 2px;
-    height: 14px;
-    left: 18px;
+    height: 10px;
+    left: 50%;
+    top: 50%;
+    margin-left: -1px;
+    margin-top: -5px;
 }
 
-.dmg-hud-crosshair-left {
-    left: 0;
+.dmg-weapon-reticle-hit {
+    opacity: 0.45;
 }
 
-.dmg-hud-crosshair-right {
-    right: 0;
+.dmg-weapon-reticle-hit .dmg-weapon-reticle-dot {
+    background-color: rgb(212, 160, 23);
 }
 
-.dmg-hud-crosshair-up {
-    top: 0;
-}
-
-.dmg-hud-crosshair-down {
-    bottom: 0;
+.dmg-weapon-reticle-hit .dmg-weapon-reticle-arm {
+    background-color: rgba(212, 160, 23, 0.88);
 }

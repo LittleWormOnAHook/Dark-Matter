@@ -1,3 +1,4 @@
+using Project.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -55,6 +56,11 @@ namespace Project.UI
 
             element.style.backgroundImage = StyleKeyword.None;
             RememberBackground(element, null);
+        }
+
+        public static bool TrySetItemIcon(VisualElement element, ItemData item, ScaleMode mode = ScaleMode.ScaleToFit)
+        {
+            return TrySetSpriteBackground(element, DMGameIconRegistry.FindIcon(item), mode);
         }
 
         /// <summary>Avoid UITK "Invalid value for image texture" when sprite/texture is missing.</summary>

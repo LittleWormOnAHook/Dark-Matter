@@ -5,6 +5,27 @@ namespace Project.Features.Climb
     [CreateAssetMenu(menuName = "Dark Matter/Player/Climb Profile", fileName = "DMClimbProfile")]
     public sealed class DMClimbProfile : ScriptableObject
     {
+        public const string ResourcesPath = "Climb/DMClimbProfile";
+
+        private static DMClimbProfile live;
+
+        /// <summary>Canonical Resources asset. Play-mode inspector edits apply immediately.</summary>
+        public static DMClimbProfile Live
+        {
+            get
+            {
+                if (live == null)
+                    live = Resources.Load<DMClimbProfile>(ResourcesPath);
+                return live;
+            }
+        }
+
+        public static DMClimbProfile Resolve(DMClimbProfile assigned)
+        {
+            DMClimbProfile canonical = Live;
+            return canonical != null ? canonical : assigned;
+        }
+
         [Header("Slope cutoffs (degrees from up)")]
         [Tooltip("At or under this, the player walks/runs even if the mesh is Climbable. Matches Invector slopeLimit (75).")]
         [Range(20f, 89f)]
@@ -193,13 +214,25 @@ namespace Project.Features.Climb
         public float mantleIgnoreLands = 2.6f;
 
         [Header("Landing")]
-        [Tooltip("Shorter than this is a regular Invector hop. Mid drops and jetpack use hero / Jetpack Land.")]
+        [Tooltip("Shorter than this is a regular Invector hop. Everything else under lethal uses hero / Jetpack Land.")]
         [Range(0.5f, 8f)]
         public float heroDropMeters = 2.6f;
 
-        [Tooltip("Fall this far or more (while falling) is death + retry/quit, unless jetpack grace applies.")]
+        [Tooltip("Fall this far or more (while falling) is death ragdoll + retry, unless jetpack grace applies.")]
         [Range(8f, 200f)]
         public float lethalDropMeters = 100f;
+
+        [Tooltip("No fall damage below this height. Damage starts at the greater of this and (lethal minus fallDamageLethalPercent).")]
+        [Range(8f, 80f)]
+        public float fallDamageStartMeters = 40f;
+
+        [Tooltip("Damage starts this fraction below lethal (0.3 = 30% less than lethal). Combined with fallDamageStartMeters via max().")]
+        [Range(0.1f, 0.6f)]
+        public float fallDamageLethalPercent = 0.3f;
+
+        [Tooltip("Health fraction removed when landing between the no-damage floor and lethal height.")]
+        [Range(0.1f, 1f)]
+        public float fallDamageHealthFraction = 0.5f;
 
         [Tooltip("After jetpack Space/boost is released, wait this many seconds before a lethal-height fall can kill. Still boosting, or land inside this window, is always hero.")]
         [Range(0f, 20f)]
@@ -210,6 +243,47 @@ namespace Project.Features.Climb
         public float climbStartStaminaCost = 5f;
         [Tooltip("Legacy fallback only. Live drain is maxStamina/unlockedStaminaDashes per second (half when hanging).")]
         public float climbStaminaDrainPerSecond = 8f;
+
+        [Header("Dash")]
+        [Tooltip("Max seconds between two taps of the same WASD key.")]
+        public float dashDoubleTapWindow = 0.28f;
+
+        [Tooltip("How far the double-tap slide travels, in meters.")]
+        [Range(1f, 25f)]
+        public float dashDistance = 4.5f;
+
+        [Tooltip("Dash move speed in meters per second.")]
+        [Range(4f, 40f)]
+        public float dashSpeed = 15.4f;
+
+        [Tooltip("Fallback only when distance and speed are unset. Live duration is Distance / Speed.")]
+        public float dashDuration = 0.18f;
+
+        [Tooltip("Seconds before another dash can start.")]
+        public float dashCooldown = 0.55f;
+
+        [Tooltip("Flat stamina spent when a dash starts.")]
+        public float dashStaminaCost = 22f;
+
+        [Tooltip("Extra stamina drained over the dash duration, as a fraction of dashStaminaCost (0.2 = +20%).")]
+        [Range(0f, 1f)]
+        public float dashStaminaTickExtraPercent = 0.20f;
+
+        [Tooltip("Allow double-tap dash while airborne without the Air Dash skill.")]
+        public bool dashAllowAirDash;
+
+        [Tooltip("0 freezes walk/run anim speed during the slide. 1 is normal.")]
+        [Range(0f, 1f)]
+        public float dashAnimationSpeed;
+
+        [Tooltip("Skin applied when capsule-casting so dashes stop before penetrating colliders.")]
+        public float dashCollisionSkin = 0.08f;
+
+        [Tooltip("Double-tap dash while climbing cancels climb and slides off the wall.")]
+        public bool dashDetachesFromClimb = true;
+
+        [Tooltip("Allow double-tap dash input while clinging to a wall.")]
+        public bool dashAllowedWhileClimbing = true;
 
         [Header("Surface")]
         public string climbableLayerName = "Climbable";

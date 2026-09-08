@@ -8,9 +8,8 @@ using UnityEngine;
 namespace Project.Player
 {
     /// <summary>
-    /// Shared runtime pose overlay for dash (one lifted skate foot) and
-    /// jetpack boost (calm hang legs). Visual only — LateUpdate bones, no IK posing.
-    /// Dash snapshots because animator.speed is 0. Boost is small additive on Fly.
+    /// Shared runtime pose overlay for jetpack boost (calm hang legs). Visual only —
+    /// LateUpdate bones, no IK posing. Dash is a kinematic slide with no leg animation.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(3200)]
@@ -226,12 +225,7 @@ namespace Project.Player
 
             if (dash != null && dash.IsDashing)
             {
-                _target = Mode.Dash;
-                _dashDir = dash.DashDirection;
-                if (_dashDir.sqrMagnitude < 0.001f)
-                    _dashDir = transform.forward;
-                float side = Vector3.Dot(_dashDir, transform.right);
-                _rightLead = side >= -0.15f;
+                _target = Mode.Off;
                 return;
             }
 

@@ -69,10 +69,7 @@ namespace Project.UI
                 return;
 
             if (keyboard.jKey.wasPressedThisFrame)
-            {
-                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
-                TryUseTool(ToolType.Scanner);
-            }
+                TryHandleJournalKeyCode(KeyCode.J);
             else if (keyboard.iKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.I);
             else if (keyboard.mKey.wasPressedThisFrame)
@@ -170,7 +167,6 @@ namespace Project.UI
 
             if (keyboard.nKey.wasPressedThisFrame)
             {
-                // Legacy scanner binding — J is canonical.
                 DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
                 TryUseTool(ToolType.Scanner);
                 return;
@@ -188,24 +184,29 @@ namespace Project.UI
             TryUseTool(ToolType.Binoculars);
         }
 
+        private static int destPanelHandledFrame = -1;
+
         public static void TryHandleDevPanel()
         {
             if (!Application.isPlaying)
                 return;
 
-            if (DMUiToolkitLoadingOverlay.IsShowing)
+            if (Time.frameCount == destPanelHandledFrame)
                 return;
 
-            if (IsTypingInTextField())
+            if (DMUiToolkitLoadingOverlay.IsShowing)
                 return;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
                 return;
 
-            bool ctrl = keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
-            if (ctrl && keyboard.dKey.wasPressedThisFrame)
-                DMUiToolkitDevPanel.Toggle();
+            bool alt = keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed;
+            if (!alt || !keyboard.vKey.wasPressedThisFrame)
+                return;
+
+            destPanelHandledFrame = Time.frameCount;
+            DMUiToolkitDevPanel.Toggle();
         }
 
         public static void TryHandleAll()
@@ -442,13 +443,6 @@ namespace Project.UI
             if (!CanProcess())
                 return false;
 
-            if (keyCode == KeyCode.J)
-            {
-                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
-                TryUseTool(ToolType.Scanner);
-                return true;
-            }
-
             if (keyCode == KeyCode.B)
             {
                 DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
@@ -474,9 +468,8 @@ namespace Project.UI
             switch (keyCode)
             {
                 case KeyCode.J:
-                    DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
-                    TryUseTool(ToolType.Scanner);
-                    return true;
+                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true)
+                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.JournalQuest) == true;
                 case KeyCode.I:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Inventory) == true;
@@ -620,7 +613,7 @@ namespace Project.UI
         /// X tap cycles TR utility focus 5-10 (no use), X hold 0.5s uses focused TR
         /// (food/meds consume; ammo opens weapon-target popup).
         /// While ammo popup is open: X tap cycles weapons, X hold 0.5s confirms load, Esc cancels.
-        /// B/N are handled via toolbar hotkeys (binoculars / scanner).
+        /// B/N are handled via toolbar hotkeys (binoculars / scanner). J opens Journal.
         /// </summary>
         public static void TryHandleHotCrossHotkeys()
         {
@@ -664,7 +657,7 @@ namespace Project.UI
                 return true;
             }
 
-            // B/J are handled by TryHandleToolbarHotkeys (Update poll) — do not also handle here.
+            // B/N are handled by TryHandleToolbarHotkeys (Update poll) — do not also handle here.
             return false;
         }
 

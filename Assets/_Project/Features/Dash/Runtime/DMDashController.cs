@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Invector;
 using Invector.vCharacterController;
+using Project.Core;
 using Project.Player;
 using Project.Progression;
 using Project.Survival;
@@ -16,11 +18,16 @@ namespace Project.Features.Dash
     {
         public const string ResourcesPath = "Dash/DMDashProfile";
 
+        private const int PlayerLayer = 8;
+        private const int ClimbableLayer = 23;
+
         [SerializeField] private DMDashProfile profile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private Animator animator;
-        [SerializeField] private CharacterController character;
+        [SerializeField] private Rigidbody body;
+        [SerializeField] private CapsuleCollider capsule;
         [SerializeField] private Transform cameraPivot;
+        [SerializeField] private LayerMask collisionMask = ~0;
 
         private readonly Dictionary<Renderer, Material[]> _originalMats = new Dictionary<Renderer, Material[]>();
         private readonly List<Renderer> _bodyRenderers = new List<Renderer>(8);
@@ -30,18 +37,28 @@ namespace Project.Features.Dash
         private ParticleSystem[] _smokeSystems = System.Array.Empty<ParticleSystem>();
         private Transform _streakRoot;
 
+        private DMClimbController _climb;
+        private SurvivalStats _survival;
+
         private bool _dashing;
         private Vector3 _dashDir;
         private float _dashStartedAt;
         private float _dashEndsAt;
+        private float _dashMaxDistance;
+        private float _dashTraveled;
         private float _readyAt;
         private float _savedAnimSpeed = 1f;
+        private bool _savedAnimatorEnabled = true;
+        private bool _savedBodyKinematic;
         private bool _heldLockMovement;
         private bool _heldLockAnimMovement;
 
         private Key _lastTap = Key.None;
-        private SurvivalStats _survival;
         private float _lastTapAt = -10f;
+
+        private vFootStep[] _footSteps;
+        private vFootStepTrigger[] _footStepTriggers;
+        private bool _footstepsSuppressed;
 
         public bool IsDashing => _dashing;
         public Vector3 DashDirection => _dashDir;
@@ -52,12 +69,25 @@ namespace Project.Features.Dash
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
+            GameObject player = ResolvePlayerObject();
             if (player == null)
                 return;
+
             if (player.GetComponent<DMDashController>() == null)
                 player.AddComponent<DMDashController>();
-            DMHangLegOverlay.Bind(player);
+        }
+
+        private static GameObject ResolvePlayerObject()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player != null)
+                return player;
+
+            player = GameObject.Find("Player_v7");
+            if (player != null)
+                return player;
+
+            return GameObject.Find("Player_v7 Variant");
         }
 
         private void Awake()
@@ -68,16 +98,23 @@ namespace Project.Features.Dash
                 motor = GetComponent<vThirdPersonMotor>();
             if (animator == null)
                 animator = GetComponentInChildren<Animator>();
-            if (character == null)
-                character = GetComponent<CharacterController>();
+            if (body == null)
+                body = GetComponent<Rigidbody>();
+            if (capsule == null)
+                capsule = GetComponent<CapsuleCollider>();
             if (cameraPivot == null && Camera.main != null)
                 cameraPivot = Camera.main.transform;
 
             if (_survival == null)
                 _survival = GetComponent<SurvivalStats>();
+            if (_climb == null)
+                _climb = GetComponent<DMClimbController>();
+
+            if (collisionMask.value == 0)
+                collisionMask = BuildCollisionMask();
+
             CacheBodyRenderers();
             BuildVfx();
-            DMHangLegOverlay.Bind(gameObject);
         }
 
         private void OnDisable()
@@ -91,13 +128,18 @@ namespace Project.Features.Dash
                 Destroy(_runtimeHolo);
         }
 
+        private void FixedUpdate()
+        {
+            if (!_dashing)
+                return;
+
+            TickDash();
+        }
+
         private void Update()
         {
             if (_dashing)
-            {
-                TickDash();
                 return;
-            }
 
             if (!CanDash())
                 return;
@@ -108,25 +150,73 @@ namespace Project.Features.Dash
             TryDoubleTap(Key.D, Vector3.right);
         }
 
-
         private static float SkillMul(SkillModifierType type)
         {
             return 1f + PlayerSkillAllocator.GetTotalBonusPercent(type) / 100f;
         }
 
+        private DMClimbProfile LiveClimb => DMClimbProfile.Live;
+
+        private float DoubleTapWindow =>
+            LiveClimb != null ? LiveClimb.dashDoubleTapWindow : profile != null ? profile.doubleTapWindow : 0.28f;
+
+        private float BaseDashDistance =>
+            LiveClimb != null ? LiveClimb.dashDistance : profile != null ? profile.distance : 4.5f;
+
+        private float BaseDashSpeed =>
+            LiveClimb != null ? LiveClimb.dashSpeed : profile != null ? profile.speed : 14f;
+
+        private float BaseDashDuration =>
+            LiveClimb != null ? LiveClimb.dashDuration : profile != null ? profile.duration : 0.18f;
+
+        private float DashCooldown =>
+            ScaledCooldown(LiveClimb != null ? LiveClimb.dashCooldown : profile != null ? profile.cooldown : 0.55f);
+
+        private float ScaledCooldown(float baseCooldown)
+        {
+            float reduction = PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashCooldownPercent);
+            return baseCooldown * Mathf.Max(0.1f, 1f - reduction / 100f);
+        }
+
+        private float DashStaminaCost =>
+            LiveClimb != null ? LiveClimb.dashStaminaCost : profile != null ? profile.staminaCost : 22f;
+
+        private float DashStaminaTickExtraPercent()
+        {
+            float baseTick = LiveClimb != null
+                ? LiveClimb.dashStaminaTickExtraPercent
+                : profile != null
+                    ? profile.staminaTickExtraPercent
+                    : 0.20f;
+            float reduction = PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashStaminaTickReductionPercent);
+            return baseTick * Mathf.Max(0f, 1f - reduction / 100f);
+        }
+
+        private float DashCollisionSkin =>
+            LiveClimb != null ? LiveClimb.dashCollisionSkin : profile != null ? profile.collisionSkin : 0.08f;
+
+        private bool DashDetachesFromClimb => LiveClimb == null || LiveClimb.dashDetachesFromClimb;
+
+        private bool AllowsClimbDash()
+        {
+            if (LiveClimb != null && LiveClimb.dashAllowedWhileClimbing)
+                return true;
+            return PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashClimbUnlock) > 0f;
+        }
+
         private float ScaledDashDistance()
         {
-            float meters = profile.distance > 0.1f
-                ? profile.distance
-                : profile.speed * Mathf.Max(0.05f, profile.duration);
+            float meters = BaseDashDistance > 0.1f
+                ? BaseDashDistance
+                : BaseDashSpeed * Mathf.Max(0.05f, BaseDashDuration);
             return meters * SkillMul(SkillModifierType.DashDistancePercent);
         }
 
         private float ScaledDashSpeed()
         {
-            float baseSpeed = profile.speed > 0.1f
-                ? profile.speed
-                : profile.distance / Mathf.Max(0.05f, profile.duration);
+            float baseSpeed = BaseDashSpeed > 0.1f
+                ? BaseDashSpeed
+                : BaseDashDistance / Mathf.Max(0.05f, BaseDashDuration);
             return Mathf.Max(0.1f, baseSpeed * SkillMul(SkillModifierType.DashSpeedPercent));
         }
 
@@ -135,20 +225,23 @@ namespace Project.Features.Dash
             float meters = ScaledDashDistance();
             if (speed > 0.1f)
                 return Mathf.Max(0.05f, meters / speed);
-            return Mathf.Max(0.05f, profile.duration);
+            return Mathf.Max(0.05f, BaseDashDuration);
         }
 
         private bool AllowsAirDash()
         {
+            if (LiveClimb != null && LiveClimb.dashAllowAirDash)
+                return true;
             if (profile != null && profile.allowAirDash)
                 return true;
             return PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashAirUnlock) > 0f;
         }
+
         private bool CanDash()
         {
             if (!isActiveAndEnabled)
                 return false;
-            if (profile == null || Time.unscaledTime < _readyAt)
+            if ((LiveClimb == null && profile == null) || Time.unscaledTime < _readyAt)
                 return false;
             if (Time.timeScale <= 0f)
                 return false;
@@ -159,16 +252,21 @@ namespace Project.Features.Dash
             if (landing != null && landing.IsLandingLocked)
                 return false;
 
-            var climb = GetComponent<DMClimbController>();
-            if (climb != null && climb.IsClimbing)
+            if (_climb == null)
+                _climb = GetComponent<DMClimbController>();
+
+            if (_climb != null && _climb.IsClimbing && !AllowsClimbDash())
                 return false;
 
             if (!AllowsAirDash() && motor != null && !motor.isGrounded)
-                return false;
+            {
+                if (_climb == null || !_climb.IsClimbing)
+                    return false;
+            }
 
             if (_survival == null)
                 _survival = GetComponent<SurvivalStats>();
-            float cost = profile != null ? profile.staminaCost : 22f;
+            float cost = DashStaminaCost;
             if (_survival != null && cost > 0f && !_survival.HasStamina(cost))
                 return false;
 
@@ -181,7 +279,7 @@ namespace Project.Features.Dash
             if (keyboard == null || !keyboard[key].wasPressedThisFrame)
                 return;
 
-            if (_lastTap == key && Time.unscaledTime - _lastTapAt <= profile.doubleTapWindow)
+            if (_lastTap == key && Time.unscaledTime - _lastTapAt <= DoubleTapWindow)
             {
                 _lastTap = Key.None;
                 StartDash(WorldDir(localDir));
@@ -218,51 +316,246 @@ namespace Project.Features.Dash
 
         private void StartDash(Vector3 dir)
         {
+            if (_climb == null)
+                _climb = GetComponent<DMClimbController>();
+            if (_climb != null && _climb.IsClimbing && DashDetachesFromClimb)
+                _climb.CancelClimb();
+
             if (_survival == null)
                 _survival = GetComponent<SurvivalStats>();
-            float cost = profile != null ? profile.staminaCost : 22f;
+            float cost = DashStaminaCost;
             if (_survival != null && cost > 0f && !_survival.TryConsumeStamina(cost))
                 return;
 
+            float speed = ScaledDashSpeed();
             _dashing = true;
             _dashDir = dir;
             _dashStartedAt = Time.unscaledTime;
-            _dashEndsAt = _dashStartedAt + ScaledDashDuration(ScaledDashSpeed());
-            _readyAt = _dashEndsAt + Mathf.Max(0f, profile.cooldown);
+            _dashEndsAt = _dashStartedAt + ScaledDashDuration(speed);
+            _dashMaxDistance = ScaledDashDistance();
+            _dashTraveled = 0f;
+            _readyAt = _dashEndsAt + Mathf.Max(0f, DashCooldown);
 
             if (motor != null)
             {
                 _heldLockMovement = motor.lockMovement;
                 _heldLockAnimMovement = motor.lockAnimMovement;
                 motor.lockMovement = true;
-                motor.lockAnimMovement = true;
+                motor.lockAnimMovement = false;
                 motor.input = Vector3.zero;
                 motor.inputMagnitude = 0f;
+            }
+
+            if (body != null)
+            {
+                _savedBodyKinematic = body.isKinematic;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.isKinematic = true;
             }
 
             if (animator != null)
             {
                 _savedAnimSpeed = animator.speed;
-                animator.speed = Mathf.Clamp01(profile.animationSpeed);
+                _savedAnimatorEnabled = animator.enabled;
+                animator.speed = 0f;
+                animator.enabled = false;
             }
 
             ApplyHologram(true);
             PlayVfx();
+            SetFootstepsSuppressed(true);
+
+            if (TryGetGroundedDashPosition(transform.position, out Vector3 startGrounded))
+            {
+                if (body != null && body.isKinematic)
+                    body.MovePosition(startGrounded);
+                else
+                    transform.position = startGrounded;
+            }
         }
 
         private void TickDash()
         {
-            float dt = Time.deltaTime;
+            float dt = Time.fixedDeltaTime;
+            if (dt <= 0f)
+                return;
+
+            if (body != null)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+
+            TickDashStamina(dt);
+
             float speed = ScaledDashSpeed();
-            Vector3 delta = _dashDir * speed * dt;
+            float step = speed * dt;
+            float remaining = _dashMaxDistance - _dashTraveled;
+            step = Mathf.Min(step, remaining);
 
-            if (character != null && character.enabled)
-                character.Move(delta);
-            else
-                transform.position += delta;
-
-            if (Time.unscaledTime >= _dashEndsAt)
+            if (step <= 0.0001f || !TryMoveDash(_dashDir * step, out float moved))
+            {
                 EndDash(restore: true);
+                return;
+            }
+
+            _dashTraveled += moved;
+
+            if (_dashTraveled >= _dashMaxDistance - 0.01f || Time.unscaledTime >= _dashEndsAt)
+                EndDash(restore: true);
+        }
+
+        private void TickDashStamina(float dt)
+        {
+            if (_survival == null || dt <= 0f)
+                return;
+
+            float extraFraction = Mathf.Max(0f, DashStaminaTickExtraPercent());
+            if (extraFraction <= 0f)
+                return;
+
+            float dashDuration = Mathf.Max(0.05f, _dashEndsAt - _dashStartedAt);
+            float totalExtra = DashStaminaCost * extraFraction;
+            _survival.SpendStamina(totalExtra / dashDuration * dt);
+        }
+
+        private bool TryMoveDash(Vector3 delta, out float movedDistance)
+        {
+            movedDistance = 0f;
+            float distance = delta.magnitude;
+            if (distance < 0.0001f)
+                return true;
+
+            Vector3 dir = delta / distance;
+            float skin = DashCollisionSkin;
+
+            if (TryGetCapsule(out Vector3 bottom, out Vector3 top, out float radius))
+            {
+                if (Physics.CapsuleCast(
+                        bottom,
+                        top,
+                        radius,
+                        dir,
+                        out RaycastHit hit,
+                        distance,
+                        collisionMask,
+                        QueryTriggerInteraction.Ignore)
+                    && IsBlockingCollider(hit.collider))
+                {
+                    distance = Mathf.Max(0f, hit.distance - skin);
+                    if (distance < 0.001f)
+                        return false;
+                }
+            }
+
+            Vector3 move = dir * distance;
+            move.y = 0f;
+
+            Vector3 target = transform.position + move;
+            if (TryGetGroundedDashPosition(target, out Vector3 grounded))
+                target = grounded;
+
+            if (body != null && body.isKinematic)
+                body.MovePosition(target);
+            else
+                transform.position = target;
+
+            movedDistance = distance;
+            return true;
+        }
+
+        private bool TryGetGroundedDashPosition(Vector3 planarTarget, out Vector3 grounded)
+        {
+            grounded = planarTarget;
+            const float probeUp = 0.55f;
+            const float probeDown = 3.5f;
+            const float groundSkin = 0.02f;
+            Vector3 origin = planarTarget + Vector3.up * probeUp;
+            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, probeUp + probeDown, collisionMask, QueryTriggerInteraction.Ignore))
+                return false;
+
+            if (hit.collider == null || hit.collider.isTrigger)
+                return false;
+
+            Transform hitTransform = hit.collider.transform;
+            if (hitTransform == transform || hitTransform.IsChildOf(transform))
+                return false;
+
+            float bottomOffset = capsule != null
+                ? capsule.center.y - capsule.height * 0.5f
+                : 0f;
+            grounded.y = hit.point.y - bottomOffset + groundSkin;
+            return true;
+        }
+
+        private void SetFootstepsSuppressed(bool suppress)
+        {
+            if (_footSteps == null || _footSteps.Length == 0)
+                _footSteps = GetComponentsInChildren<vFootStep>(true);
+
+            if (_footStepTriggers == null || _footStepTriggers.Length == 0)
+                _footStepTriggers = GetComponentsInChildren<vFootStepTrigger>(true);
+
+            if (suppress == _footstepsSuppressed
+                && _footSteps.Length > 0
+                && _footStepTriggers.Length > 0)
+                return;
+
+            for (int i = 0; i < _footSteps.Length; i++)
+            {
+                if (_footSteps[i] != null)
+                    _footSteps[i].enabled = !suppress;
+            }
+
+            for (int i = 0; i < _footStepTriggers.Length; i++)
+            {
+                vFootStepTrigger trigger = _footStepTriggers[i];
+                if (trigger != null)
+                    trigger.gameObject.SetActive(!suppress);
+            }
+
+            _footstepsSuppressed = suppress;
+        }
+
+        private bool TryGetCapsule(out Vector3 bottom, out Vector3 top, out float radius)
+        {
+            bottom = top = Vector3.zero;
+            radius = 0.26f;
+
+            CapsuleCollider col = capsule != null ? capsule : GetComponent<CapsuleCollider>();
+            if (col == null)
+                return false;
+
+            radius = Mathf.Max(0.05f, col.radius * 0.95f);
+            Vector3 worldCenter = col.transform.TransformPoint(col.center);
+            float half = Mathf.Max(radius, col.height * 0.5f - radius);
+            bottom = worldCenter - Vector3.up * half;
+            top = worldCenter + Vector3.up * half;
+            return true;
+        }
+
+        private bool IsBlockingCollider(Collider collider)
+        {
+            if (collider == null || collider.isTrigger)
+                return false;
+
+            Transform hit = collider.transform;
+            if (hit == transform || hit.IsChildOf(transform))
+                return false;
+
+            int layer = collider.gameObject.layer;
+            if (layer == PlayerLayer || layer == ClimbableLayer)
+                return false;
+
+            return true;
+        }
+
+        private static LayerMask BuildCollisionMask()
+        {
+            int mask = Physics.DefaultRaycastLayers;
+            mask &= ~(1 << PlayerLayer);
+            return mask;
         }
 
         private void EndDash(bool restore)
@@ -276,9 +569,22 @@ namespace Project.Features.Dash
             _dashing = false;
             StopVfx();
             ApplyHologram(false);
+            SetFootstepsSuppressed(false);
 
             if (animator != null)
+            {
+                animator.enabled = _savedAnimatorEnabled;
                 animator.speed = _savedAnimSpeed;
+            }
+
+            if (body != null)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.isKinematic = false;
+                body.useGravity = true;
+                body.WakeUp();
+            }
 
             if (restore && motor != null)
             {
@@ -397,10 +703,10 @@ namespace Project.Features.Dash
             ParticleSystemRenderer[] rends = root.GetComponentsInChildren<ParticleSystemRenderer>(true);
             for (int i = 0; i < rends.Length; i++)
             {
-                if (rends[i] != null)
-                    rends[i].enableGPUInstancing = false;
-                    if (mat != null)
-                        rends[i].sharedMaterial = mat;
+                if (rends[i] == null)
+                    continue;
+                rends[i].enableGPUInstancing = false;
+                rends[i].sharedMaterial = mat;
             }
         }
 

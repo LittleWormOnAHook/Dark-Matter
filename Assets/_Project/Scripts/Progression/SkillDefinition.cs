@@ -24,7 +24,10 @@ namespace Project.Progression
         DashAirUnlock,
         MaxOxygenPercent,
         OxygenConsumptionReductionPercent,
-        OxygenScrubberPercent
+        OxygenScrubberPercent,
+        DashClimbUnlock,
+        DashStaminaTickReductionPercent,
+        DashCooldownPercent
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>

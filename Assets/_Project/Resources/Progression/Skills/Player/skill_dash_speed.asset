@@ -14,14 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
   skillId: skill_dash_speed
   displayName: Dash Speed
-  description: Increase double-tap dash move speed.
+  description: Increase hologram slide speed (+8% per rank).
   treeCategory: 4
   treeColumn: 1
   treeRow: 3
-  requiredPlayerLevel: 1
-  costPerRank: 1
+  requiredPlayerLevel: 6
+  costPerRank: 2
   maxRank: 5
   modifierType: 14
   bonusPercentPerRank: 8
-  prerequisiteSkillIds: []
+  prerequisiteSkillIds:
+  - skill_jet_thrust
   costPerTargetRank: 

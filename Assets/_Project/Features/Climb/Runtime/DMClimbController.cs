@@ -24,7 +24,7 @@ namespace Project.Features.Climb
     [DefaultExecutionOrder(-20)]
     public sealed class DMClimbController : MonoBehaviour
     {
-        public const string ResourcesPath = "Climb/DMClimbProfile";
+        public const string ResourcesPath = DMClimbProfile.ResourcesPath;
         private const string BuildStamp = "DMClimb hop-hang-v9";
         // DMClimb probe-locomotion-v7
 
@@ -197,7 +197,21 @@ namespace Project.Features.Climb
         public bool IsClimbing => _climbing || _hopping || _mantling || _reverseMantling;
         public bool IsMantling => _mantling;
         private float MantlePlantPad => profile != null ? profile.mantlePlantHeight : 0f;
-        public DMClimbProfile Profile => profile;
+        public DMClimbProfile Profile
+        {
+            get
+            {
+                BindLiveProfile();
+                return profile;
+            }
+        }
+
+        private void BindLiveProfile()
+        {
+            DMClimbProfile canonical = DMClimbProfile.Live;
+            if (canonical != null)
+                profile = canonical;
+        }
 
         public void CancelClimb()
         {
@@ -237,6 +251,7 @@ namespace Project.Features.Climb
         {
             if (_survival == null)
                 _survival = ResolveSurvivalStats();
+            BindLiveProfile();
             if (profile == null)
                 profile = Resources.Load<DMClimbProfile>(ResourcesPath);
             if (motor == null)
@@ -275,6 +290,8 @@ namespace Project.Features.Climb
 
         private void Update()
         {
+            BindLiveProfile();
+
             if (_hopping)
             {
                 if (ReadInteractPressedThisFrame() && !UiBlocksClimbDrop())

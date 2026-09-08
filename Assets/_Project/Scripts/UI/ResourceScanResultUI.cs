@@ -154,9 +154,10 @@ namespace Project.UI
 
             ApplyToastAnchor();
 
-            bool hasIcon = item.icon != null;
+            Sprite sprite = DMGameIconRegistry.FindIcon(item);
+            bool hasIcon = sprite != null;
             iconImage.enabled = hasIcon;
-            iconImage.sprite = item.icon;
+            iconImage.sprite = sprite;
             nameLabel.text = string.IsNullOrEmpty(item.itemName) ? item.name : item.itemName;
 
             RectTransform iconRect = iconImage.rectTransform;

@@ -49,7 +49,10 @@ namespace Project.Combat
             if (prefab == null)
                 return null;
 
-            GameObject instance = PoolManager.Spawn(prefab, muzzle.position, Quaternion.LookRotation(fireDirection, Vector3.up));
+            GameObject instance = PoolManager.Spawn(
+                prefab,
+                muzzle.position + fireDirection * RangedFireSolver.ProjectileSpawnSkin,
+                Quaternion.LookRotation(fireDirection, Vector3.up));
             CombatProjectile projectile = instance.GetComponent<CombatProjectile>();
             if (projectile == null)
                 projectile = instance.AddComponent<CombatProjectile>();
@@ -84,11 +87,19 @@ namespace Project.Combat
             float damage)
         {
             float range = ammoItem.rangedRange > 0f ? ammoItem.rangedRange : weapon.rangedRange;
-            Vector3 origin = muzzle.position;
-            Vector3 endPoint = origin + direction * range;
+            Vector3 origin = muzzle.position + direction * RangedFireSolver.MuzzleRayStartSkin;
+            float castRange = Mathf.Max(0.01f, range - RangedFireSolver.MuzzleRayStartSkin);
+            Vector3 endPoint = origin + direction * castRange;
 
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore) &&
-                !CombatHitResolver.IsOwnerCollider(owner, hit.collider))
+            int mask = Physics.DefaultRaycastLayers & ~(1 << 8);
+            if (RangedFireSolver.TryRaycastAim(
+                    muzzle.position,
+                    direction,
+                    range,
+                    mask,
+                    owner,
+                    out RaycastHit hit,
+                    RangedFireSolver.MuzzleRayStartSkin))
             {
                 endPoint = hit.point;
                 CombatHitResolver.ApplyDirectHit(hit.collider, hit.point, direction, damage, false, owner);

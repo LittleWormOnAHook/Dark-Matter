@@ -16,7 +16,7 @@ MonoBehaviour:
   nodeKind: 1
   designerNotes: Uses WebPlant_1/Materials/Webplant.prefab visual.
   resourceItem: {fileID: 11400000, guid: 8759c1d61f5d64d44b04b86927574895, type: 2}
-  itemIcon: {fileID: 21300000, guid: 1ddfa7fda707b0946b8d98b7456cba88, type: 3}
+  itemIcon: {fileID: 21300000, guid: a8357be6c2c0a9e43a4f3cda45ef26d7, type: 3}
   interactionMode: 1
   requiredTool: {fileID: 0}
   requireMiningLaser: 0

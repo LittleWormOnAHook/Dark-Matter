@@ -1207,7 +1207,7 @@ namespace Project.UI
                     if (empty)
                         DMUiToolkitStyle.ClearBackgroundImage(bound.Icon);
                     else
-                        DMUiToolkitStyle.TrySetSpriteBackground(bound.Icon, slotData.item.icon, ScaleMode.ScaleToFit);
+                        DMUiToolkitStyle.TrySetItemIcon(bound.Icon, slotData.item);
                 }
 
                 if (bound.Amount != null)
@@ -1418,7 +1418,8 @@ namespace Project.UI
                 return;
 
             InventorySystem.InventorySlot slotData = inventorySystem.slots[absoluteIndex];
-            if (slotData == null || slotData.IsEmpty || slotData.item == null || slotData.item.icon == null)
+            if (slotData == null || slotData.IsEmpty || slotData.item == null
+                || DMGameIconRegistry.FindIcon(slotData.item) == null)
                 return;
 
             slotDragActive = true;
@@ -1439,7 +1440,7 @@ namespace Project.UI
 
             slotDragGhost.style.width = size;
             slotDragGhost.style.height = size;
-            DMUiToolkitStyle.TrySetSpriteBackground(slotDragGhost, slotData.item.icon, ScaleMode.ScaleToFit);
+            DMUiToolkitStyle.TrySetItemIcon(slotDragGhost, slotData.item);
             slotDragGhost.style.opacity = 0.75f;
             VisualElement ghostParent = hudRoot != null ? hudRoot : bound.Slot.parent;
             ghostParent?.Add(slotDragGhost);

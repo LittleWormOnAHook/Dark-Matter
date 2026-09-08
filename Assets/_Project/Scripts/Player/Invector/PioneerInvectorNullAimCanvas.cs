@@ -6,7 +6,7 @@ namespace Project.Player.Invector
 {
     /// <summary>
     /// No-op aim canvas so Invector shooter input skips the missing AimCanvas warning.
-    /// Pioneer uses its own combat HUD for aim feedback.
+    /// ADS reticle is UITK (<see cref="Project.UI.DMUiToolkitHud"/> weapon reticle).
     /// </summary>
     [DisallowMultipleComponent]
     public class PioneerInvectorNullAimCanvas : vControlAimCanvas

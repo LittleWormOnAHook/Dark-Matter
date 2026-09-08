@@ -143,12 +143,9 @@ namespace Project.UI
                     : null;
                 ItemData item = data != null && !data.IsEmpty ? data.item : null;
 
-                if (item != null && item.icon != null)
+                if (item != null && DMUiToolkitStyle.TrySetItemIcon(icon, item))
                 {
-                    if (DMUiToolkitStyle.TrySetSpriteBackground(icon, item.icon, ScaleMode.ScaleToFit))
-                        DMUiToolkitOverlayDocument.SetShown(icon, true);
-                    else
-                        DMUiToolkitOverlayDocument.SetShown(icon, false);
+                    DMUiToolkitOverlayDocument.SetShown(icon, true);
                 }
                 else
                 {

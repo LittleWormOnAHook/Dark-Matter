@@ -18,7 +18,8 @@ MonoBehaviour:
   duration: 0.18
   cooldown: 0.2
   staminaCost: 22
-  allowAirDash: 1
+  staminaTickExtraPercent: 0.2
+  allowAirDash: 0
   animationSpeed: 0
   hologramColor: {r: 0.25, g: 0.85, b: 1, a: 0.42}
   hologramEmission: 4
@@ -37,3 +38,4 @@ MonoBehaviour:
   smokeSize: 0.7
   smokeMaterial: {fileID: 2100000, guid: 9abd6c2e7a229c74fa3ba0ece6363f4c, type: 2}
   smokePrefab: {fileID: 7818865290924522459, guid: 69396212cc237c8429a0b85fe1d8b7d1, type: 3}
+  collisionSkin: 0.08

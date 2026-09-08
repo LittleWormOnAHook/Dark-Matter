@@ -69,6 +69,32 @@
     border-color: rgba(20, 28, 36, 0.55);
 }
 
+.dmg-world-dot-unknown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 11px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+}
+
+.dmg-world-dot-name {
+    position: absolute;
+    font-size: 13px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+}
+
 .dmg-world-bars {
     position: absolute;
     left: 0;

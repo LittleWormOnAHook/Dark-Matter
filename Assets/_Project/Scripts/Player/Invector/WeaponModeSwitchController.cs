@@ -385,10 +385,13 @@ namespace Project.Player.Invector
                 cam,
                 origin,
                 AimLaserMaxRange,
-                out float aimDistance);
+                out float aimDistance,
+                weaponMuzzle: activeAimLaserRoot);
             Vector3 endPoint = origin + direction * Mathf.Max(aimDistance, 0.5f);
 
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, AimLaserMaxRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            GameObject owner = gameObject;
+            int mask = Physics.DefaultRaycastLayers & ~(1 << 8);
+            if (RangedFireSolver.TryRaycastAim(origin, direction, AimLaserMaxRange, mask, owner, out RaycastHit hit, RangedFireSolver.MuzzleRayStartSkin))
                 endPoint = hit.point;
 
             if (activeAimLaserLine != null && activeAimLaserLine.enabled)

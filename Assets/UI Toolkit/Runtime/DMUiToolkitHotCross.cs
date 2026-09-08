@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Project.Combat;
-using Project.Core;
 using Project.Data;
+using Project.Core;
 using Project.Inventory;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -293,7 +293,7 @@ namespace Project.UI
                 return;
             }
 
-            if (inventory == null)
+            if (inventory == null || ammoState == null)
             {
                 BindInventoryEvents();
                 visualsDirty = true;
@@ -316,13 +316,9 @@ namespace Project.UI
                 return false;
             if (!GameSession.HasStarted)
                 return false;
-            if (MainMenuController.BlocksGameplayHud)
-                return false;
-            if (DMUiToolkitLoadingOverlay.IsShowing || DMUiToolkitMainMenu.IsVisible)
-                return false;
-            if (GameplayHudVisibility.CinematicChromeHidden)
-                return false;
-            return true;
+            return DMUiToolkitOverlayDocument.GameplayHudWanted()
+                && !DMUiToolkitMainMenu.IsVisible
+                && !GameplayHudVisibility.CinematicChromeHidden;
         }
 
         private void BindTree()
@@ -353,6 +349,11 @@ namespace Project.UI
             amtTr = tree.Q<Label>("hot-cross-amt-tr");
             keyBl = tree.Q<Label>("hot-cross-key-bl");
             clipLabel = tree.Q<Label>("hot-cross-clip");
+            if (clipLabel != null)
+            {
+                clipLabel.text = string.Empty;
+                lastClipShown = int.MinValue;
+            }
             ammoPopup = tree.Q<VisualElement>("hot-cross-ammo-popup");
             ammoTitle = tree.Q<Label>("hot-cross-ammo-title");
             ammoHint = tree.Q<Label>("hot-cross-ammo-hint");
@@ -566,7 +567,7 @@ namespace Project.UI
 
             ApplyIcon(iconBl, glowBl, null, item, 0);
             if (keyBl != null)
-                keyBl.text = toolFace == ToolFace.Scanner ? "J" : "B";
+                keyBl.text = toolFace == ToolFace.Scanner ? "N" : "B";
             quadBl?.EnableInClassList("hot-cross-quad--selected", selected);
         }
 
@@ -673,7 +674,7 @@ namespace Project.UI
             float emission = 0f;
             if (iconRegistry != null)
                 iconRegistry.TryResolve(item, out sprite, out tint, out emissionColor, out emission);
-            else
+            if (sprite == null)
                 sprite = DMHotCrossIconRegistry.FindCutout(item);
 
             if (sprite != null && DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit))

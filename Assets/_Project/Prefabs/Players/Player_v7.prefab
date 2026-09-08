@@ -77,6 +77,22 @@ Transform:
   - {fileID: 8265565121962013363}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -89.999, z: 0}
+--- !u!114 &8811223344556677881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7e4c1a90d2f4a8e9c3d5f7a1b2c3d4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.DMPlayerSystemsProfile
+  climb: 1
+  dash: 1
+  jetpack: 1
+  heroLand: 1
 --- !u!95 &9599192
 Animator:
   serializedVersion: 7
@@ -1342,6 +1358,7 @@ MonoBehaviour:
   energyDrain: 0.2
   oxygenDrainPerSecond: 1
   staminaRegenPerSecond: 12
+  sprintStaminaDrainPerSecond: 12
   healthDrain: 0
   oxygenDepletedHealthDrainMultiplier: 5
   lowStatThreshold: 99
@@ -1920,12 +1937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f822430a4b36bb4b9518caed9413304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.UI.RangedCombatHud
-  showCrosshair: 1
   showAmmoCounter: 1
-  crosshairColor: {r: 1, g: 1, b: 1, a: 0.82}
-  crosshairSize: 14
-  crosshairGap: 5
-  crosshairThickness: 2
 --- !u!114 &3392848996132198380
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2188,6 +2200,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackController
   profile: {fileID: 11400000, guid: f8a3c2e1b4d5678901234567890abcde, type: 2}
   motor: {fileID: 11476208}
+  inputBridge: {fileID: 0}
+  animatorDriver: {fileID: 0}
 --- !u!114 &754828478837318317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2201,6 +2215,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackInputBridge
   jetpack: {fileID: 7793681219969741252}
+  characterTransform: {fileID: 0}
+  referenceCamera: {fileID: 0}
 --- !u!114 &4237150036290553038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2214,6 +2230,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackAnimatorDriver
   jetpack: {fileID: 7793681219969741252}
+  inputBridge: {fileID: 0}
   profile: {fileID: 11400000, guid: f8a3c2e1b4d5678901234567890abcde, type: 2}
   motor: {fileID: 11476208}
   animator: {fileID: 9599192}
@@ -80384,7 +80401,7 @@ SkinnedMeshRenderer:
   m_Quality: 0
   m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
-  m_Mesh: {fileID: -6441369813696030903, guid: 7a00fbf7b0f52eb4aa31dbe72c583dc2, type: 3}
+  m_Mesh: {fileID: -7471084985239382586, guid: 4416f8c5d6f99f24ba9ae6bb23d099f8, type: 3}
   m_Bones:
   - {fileID: 8828429499767262228}
   - {fileID: 7504323978632971882}
@@ -83912,19 +83929,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 418090, guid: 875da639eb8d24e41b892b65cab27b5f, type: 3}
   m_PrefabInstance: {fileID: 7936286899636909484}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8811223344556677881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 114070}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b7e4c1a90d2f4a8e9c3d5f7a1b2c3d4e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.DMPlayerSystemsProfile
-  climb: 1
-  dash: 1
-  jetpack: 1
-  heroLand: 1

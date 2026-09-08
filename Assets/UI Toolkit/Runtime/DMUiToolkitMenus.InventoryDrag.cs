@@ -315,8 +315,8 @@ namespace Project.UI
             invDragGhost.style.position = Position.Absolute;
             invDragGhost.style.width = 48f;
             invDragGhost.style.height = 48f;
-            if (data.item.icon != null)
-                DMUiToolkitStyle.TrySetSpriteBackground(invDragGhost, data.item.icon, ScaleMode.ScaleToFit);
+            if (DMGameIconRegistry.FindIcon(data.item) != null)
+                DMUiToolkitStyle.TrySetItemIcon(invDragGhost, data.item);
             invDragGhost.style.opacity = 0.75f;
             VisualElement ghostParent = menuRoot != null ? menuRoot : inventoryBody;
             ghostParent?.Add(invDragGhost);

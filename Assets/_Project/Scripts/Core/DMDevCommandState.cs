@@ -159,7 +159,7 @@ namespace Project.Core
 
             Project.Interaction.ItemPickup[] pickups =
                 UnityEngine.Object.FindObjectsByType<Project.Interaction.ItemPickup>(
-                    FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                    FindObjectsInactive.Exclude);
             int removed = 0;
             Vector3 origin = player.transform.position;
             float sqr = radius * radius;

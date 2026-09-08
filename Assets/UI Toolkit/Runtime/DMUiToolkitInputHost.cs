@@ -145,6 +145,13 @@ namespace Project.UI
                     GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
                     evt.StopImmediatePropagation();
                     break;
+                case KeyCode.V:
+                    if (evt.altKey)
+                    {
+                        GameplayKeyboardShortcuts.TryHandleDevPanel();
+                        evt.StopImmediatePropagation();
+                    }
+                    break;
             }
         }
     }

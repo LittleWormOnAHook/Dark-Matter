@@ -18,10 +18,11 @@ MonoBehaviour:
   treeCategory: 4
   treeColumn: 2
   treeRow: 3
-  requiredPlayerLevel: 1
-  costPerRank: 1
-  maxRank: 5
+  requiredPlayerLevel: 6
+  costPerRank: 2
+  maxRank: 1
   modifierType: 16
   bonusPercentPerRank: 1
-  prerequisiteSkillIds: []
+  prerequisiteSkillIds:
+  - skill_jet_recovery
   costPerTargetRank: 

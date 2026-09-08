@@ -101,11 +101,14 @@
                 <ui:VisualElement name="enemy-fill" picking-mode="Ignore" class="dmg-hud-enemy-fill" style="width: 70%;"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="crosshair" picking-mode="Ignore" class="dmg-hud-crosshair">
-            <ui:VisualElement name="crosshair-left" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-h dmg-hud-crosshair-left"/>
-            <ui:VisualElement name="crosshair-right" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-h dmg-hud-crosshair-right"/>
-            <ui:VisualElement name="crosshair-up" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-v dmg-hud-crosshair-up"/>
-            <ui:VisualElement name="crosshair-down" picking-mode="Ignore" class="dmg-hud-crosshair-arm dmg-hud-crosshair-v dmg-hud-crosshair-down"/>
+        <ui:VisualElement name="weapon-reticle" picking-mode="Ignore" class="dmg-weapon-reticle">
+            <ui:VisualElement name="reticle-spread" picking-mode="Ignore" class="dmg-weapon-reticle-spread">
+                <ui:VisualElement name="reticle-dot" picking-mode="Ignore" class="dmg-weapon-reticle-dot"/>
+                <ui:VisualElement name="reticle-arm-left" picking-mode="Ignore" class="dmg-weapon-reticle-arm dmg-weapon-reticle-arm-h dmg-weapon-reticle-arm-left"/>
+                <ui:VisualElement name="reticle-arm-right" picking-mode="Ignore" class="dmg-weapon-reticle-arm dmg-weapon-reticle-arm-h dmg-weapon-reticle-arm-right"/>
+                <ui:VisualElement name="reticle-arm-top" picking-mode="Ignore" class="dmg-weapon-reticle-arm dmg-weapon-reticle-arm-v dmg-weapon-reticle-arm-top"/>
+                <ui:VisualElement name="reticle-arm-bottom" picking-mode="Ignore" class="dmg-weapon-reticle-arm dmg-weapon-reticle-arm-v dmg-weapon-reticle-arm-bottom"/>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -27,7 +27,7 @@ How to build it: `dark-matter-genesis-ui-toolkit.mdc`.
 
 Gameplay crossbar (`HotCross.uxml` / `DMUiToolkitHotCross`) uses **only** the alpha cutouts in:
 
-`Assets/_Project/Art/UI/HotCrossIcons`
+`Assets/_Project/Resources/UI/HotCrossIcons`
 
 Do not put plated `ItemData.icon` / `Art/Icons` tiles on the Hot Cross. Inventory may keep those tiles.
 

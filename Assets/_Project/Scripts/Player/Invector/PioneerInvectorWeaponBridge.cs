@@ -6,6 +6,7 @@ using Invector.vCharacterController;
 using Invector.vCharacterController.vActions;
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -878,6 +879,7 @@ namespace Project.Player.Invector
             {
                 slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", item);
                 slot.cachedMuzzle = null;
+                RangedFireSolver.ResetWeaponAimSmoothing();
             }
             if (slot.holsteredInstance == null)
                 slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);

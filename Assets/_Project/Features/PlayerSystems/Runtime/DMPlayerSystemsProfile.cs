@@ -44,6 +44,8 @@ namespace Project.Player
                 return;
 
             GameObject player = GameObject.Find("Player_v7");
+            if (player == null)
+                player = GameObject.Find("Player_v7 Variant");
             if (player == null || player.GetComponent<DMPlayerSystemsProfile>() != null)
                 return;
 
@@ -83,6 +85,8 @@ namespace Project.Player
                     climbCtrl.CancelClimb();
             }
 
+            EnsureComponent<DMDashController>();
+            EnsureComponent<DMHangLegOverlay>();
             SetEnabled<DMDashController>(dash);
             SetEnabled<DMJetpackController>(jetpack);
             SetEnabled<DMJetpackInputBridge>(jetpack);
@@ -99,6 +103,12 @@ namespace Project.Player
             T c = GetComponent<T>();
             if (c != null && c.enabled != on)
                 c.enabled = on;
+        }
+
+        private void EnsureComponent<T>() where T : Component
+        {
+            if (GetComponent<T>() == null)
+                gameObject.AddComponent<T>();
         }
     }
 }

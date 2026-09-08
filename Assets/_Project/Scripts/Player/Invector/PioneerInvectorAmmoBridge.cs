@@ -119,6 +119,9 @@ namespace Project.Player.Invector
         private void HandleAmmoChanged()
         {
             SyncMagazineFromPioneer();
+            // Holstered: force resync when the same slot is drawn next (Invector prefab ammo can lie).
+            if (_shooterManager != null && _shooterManager.CurrentWeapon == null)
+                _lastSyncedSlot = -1;
         }
 
         /// <summary>
@@ -317,7 +320,7 @@ namespace Project.Player.Invector
             if (item.isMiningTool)
                 _ammoState.TryReloadMiningWithPlasmaFuel(slot);
             else
-                _ammoState.EnsureWeaponInitialized(slot, item);
+                _ammoState.RefillMagazineFromInventory(slot, item);
 
             SyncMagazineFromPioneer();
             SuppressRecoilState();

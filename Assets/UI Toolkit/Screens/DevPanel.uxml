@@ -6,7 +6,7 @@
         <ui:VisualElement name="dev-veil" class="dmg-dev-veil" picking-mode="Position" />
         <ui:VisualElement name="dev-panel" class="dmg-dev-panel" picking-mode="Position">
             <ui:VisualElement class="dmg-dev-header" picking-mode="Ignore">
-                <ui:Label name="dev-title" text="DEV COMMANDS  ·  Ctrl+D" class="dmg-dev-title" picking-mode="Ignore" />
+                <ui:Label name="dev-title" text="DEV COMMANDS  ·  Alt+V" class="dmg-dev-title" picking-mode="Ignore" />
                 <ui:Label name="dev-live" text="Live: —" class="dmg-dev-live" picking-mode="Ignore" />
                 <ui:Label name="dev-slot0" text="Continue slot: —" class="dmg-dev-live" picking-mode="Ignore" />
                 <ui:Label name="dev-status" text="" class="dmg-dev-status" picking-mode="Ignore" />

@@ -1,5 +1,6 @@
 using ECM2;
 using Project.Core;
+using Project.Features.Dash;
 using UnityEngine;
 
 namespace Project.Audio
@@ -12,16 +13,27 @@ namespace Project.Audio
 
         private Character character;
         private float distanceSinceLastStep;
+        private DMDashController dash;
 
         private void Awake()
         {
             character = GetComponent<Character>();
+            dash = GetComponent<DMDashController>();
         }
 
         private void Update()
         {
             if (!GameSession.HasStarted || character == null)
                 return;
+
+            if (dash == null)
+                dash = GetComponent<DMDashController>();
+
+            if (dash != null && dash.IsDashing)
+            {
+                distanceSinceLastStep = 0f;
+                return;
+            }
 
             if (!character.IsGrounded())
             {

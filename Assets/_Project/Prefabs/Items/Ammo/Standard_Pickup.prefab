@@ -106,8 +106,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
   itemData: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
-  amount: 50
+  amount: 500
   promptText: Press E to pick up
+  indicatorAnchor: {fileID: 7755462579346218172}
+  indicatorStemMinHeight: 0.25
+  indicatorStemMaxHeight: 0.5
   canRespawn: 1
   minRespawnTime: 20
   maxRespawnTime: 90
+--- !u!4 &7755462579346218172 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+  m_PrefabInstance: {fileID: 7794122770248989527}
+  m_PrefabAsset: {fileID: 0}

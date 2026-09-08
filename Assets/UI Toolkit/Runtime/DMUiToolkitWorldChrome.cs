@@ -21,7 +21,7 @@ namespace Project.UI
     /// World-to-screen proximity dots and per-NPC health bars on the Damage overlay.
     /// Dual-run: hides uGUI PickupProximityDotUI / WorldInteractionDotUI / FloatingTargetHealthBar chrome.
     /// </summary>
-    [DefaultExecutionOrder(1100)]
+    [DefaultExecutionOrder(10100)]
     [DisallowMultipleComponent]
     public class DMUiToolkitWorldChrome : MonoBehaviour
     {
@@ -92,7 +92,7 @@ namespace Project.UI
             public string ActionLabel;
             public string ItemLabel;
             public bool ItemKnown;
-            public Sprite ItemIcon;
+            public bool HasIdentity;
             public float HoldProgress01;
         }
 
@@ -171,7 +171,7 @@ namespace Project.UI
             if (!uguiHidden)
                 HideUguiCounterparts();
 
-            // Paint after final camera pose (see DefaultExecutionOrder 1100).
+            // Paint after DMCameraCollisionOverlay (10000) so stems use the same-frame lens.
             panelYFlipResolved = false;
             CollectDots();
             PaintDots();
@@ -364,6 +364,7 @@ namespace Project.UI
             WorldDot dot = MakeStemDot(bestWorld, bestColor, bestStemMin, bestStemMax);
             bool isPickup = bestItem != null || bestRecipe != null;
             dot.IsPickupPrompt = isPickup;
+            FillPickupIdentity(bestItem, bestRecipe, bestHarvest, ref dot);
 
             if (isPickup)
             {
@@ -371,7 +372,6 @@ namespace Project.UI
                 dot.ClosePrompt = close;
                 dot.KeyLabel = "E";
                 dot.ActionLabel = "Take";
-                FillPickupIdentity(bestItem, bestRecipe, ref dot);
                 if (bestItem != null && bestItem.IsHoldActive)
                     dot.HoldProgress01 = bestItem.HoldProgress01;
                 else if (bestRecipe != null && bestRecipe.IsHoldActive)
@@ -410,45 +410,34 @@ namespace Project.UI
                 exclusiveDot.HoldProgress01 = 0f;
         }
 
-        private void FillPickupIdentity(ItemPickup item, RecipePickup recipe, ref WorldDot dot)
+        private void FillPickupIdentity(ItemPickup item, RecipePickup recipe, ResourceNode harvest, ref WorldDot dot)
         {
             InventorySystem inventory = cachedInventory;
-
-            if (item != null && item.itemData != null)
+            ItemData data = item != null ? item.itemData : harvest != null ? harvest.resourceItem : null;
+            if (data != null)
             {
-                ItemData data = item.itemData;
                 bool known = ResourceIdentificationRegistry.IsIdentified(data)
                     || (inventory != null && inventory.CountItem(data) > 0);
+                dot.HasIdentity = true;
                 dot.ItemKnown = known;
-                if (known)
-                {
-                    dot.ItemLabel = string.IsNullOrEmpty(data.itemName) ? data.name : data.itemName;
-                    dot.ItemIcon = data.icon;
-                }
-                else
-                {
-                    dot.ItemLabel = string.Empty;
-                    dot.ItemIcon = null;
-                }
+                dot.ItemLabel = known
+                    ? (string.IsNullOrEmpty(data.itemName) ? data.name : data.itemName)
+                    : string.Empty;
                 return;
             }
 
             if (recipe != null)
             {
                 RecipeDefinition def = RecipeRegistry.Resolve(recipe.RecipeId);
-                if (def != null)
-                {
-                    dot.ItemKnown = true;
+                bool known = def != null
+                    && CraftingManager.Instance != null
+                    && CraftingManager.Instance.IsDiscovered(def.ResolvedId);
+                dot.HasIdentity = true;
+                dot.ItemKnown = known;
+                if (known)
                     dot.ItemLabel = !string.IsNullOrEmpty(def.displayName) ? def.displayName : "Blueprint";
-                    // RecipeDefinition may not expose an icon; leave null for letter fallback.
-                    dot.ItemIcon = null;
-                }
                 else
-                {
-                    dot.ItemKnown = false;
                     dot.ItemLabel = string.Empty;
-                    dot.ItemIcon = null;
-                }
             }
         }
 
@@ -564,7 +553,7 @@ namespace Project.UI
                 ActionLabel = null,
                 ItemLabel = null,
                 ItemKnown = false,
-                ItemIcon = null,
+                HasIdentity = false,
                 HoldProgress01 = 0f
             };
         }
@@ -635,6 +624,22 @@ namespace Project.UI
             return raw;
         }
 
+        private static Vector2 DampenPickupPanel(Vector2 raw, DotVisuals visuals)
+        {
+            if (!visuals.HasSmoothedPanel)
+            {
+                visuals.SmoothedPanel = raw;
+                visuals.HasSmoothedPanel = true;
+                return raw;
+            }
+
+            float dt = Time.deltaTime;
+            if (dt <= 0f)
+                dt = 0.02f;
+            visuals.SmoothedPanel = Vector2.Lerp(visuals.SmoothedPanel, raw, 1f - Mathf.Exp(-18f * dt));
+            return visuals.SmoothedPanel;
+        }
+
         private static int ResolvePickupAnchorId()
         {
             if (WorldPickupFocus.Item != null)
@@ -647,10 +652,8 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// World-to-panel stem/dot layout. Called from LateUpdate after camera
-        /// (execution order 1100) so WorldToScreen matches the same-frame pose --
-        /// avoids classic 1-frame look/move wiggle. Tip stays locked to item tip;
-        /// stem base stays on world anchor (do not invert).
+        /// World-to-panel stem/dot layout. LateUpdate after camera collision
+        /// (execution order 10100) so WorldToScreen matches the same-frame lens.
         /// </summary>
         private void PaintDots()
         {
@@ -714,6 +717,8 @@ namespace Project.UI
 
                 // World-up stems must share one screen column; separate projection + rounding skews X.
                 tipRaw.x = anchorRaw.x;
+                if (pending.IsPickupPrompt)
+                    anchorRaw = DampenPickupPanel(anchorRaw, visuals);
                 Vector2 anchorPanel = StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
                 Vector2 tipPanel = new Vector2(anchorPanel.x, Mathf.Round(tipRaw.y));
                 float relDy = tipPanel.y - anchorPanel.y;
@@ -766,6 +771,7 @@ namespace Project.UI
                 {
                     if (glow != null)
                         DMUiToolkitOverlayDocument.SetShown(glow, false);
+                    HideFarIdentity(visuals);
                     PaintClosePrompt(visuals, relDy, pending, moved);
                 }
                 else
@@ -810,6 +816,8 @@ namespace Project.UI
 
                         DMUiToolkitOverlayDocument.SetShown(glow, true);
                     }
+
+                    PaintFarIdentity(visuals, size, relDy, pending);
                 }
 
                 DMUiToolkitOverlayDocument.SetShown(visuals.Host, true);
@@ -843,18 +851,9 @@ namespace Project.UI
             bool known = pending.ItemKnown;
             if (visuals.InfoIcon != null)
             {
-                if (known && pending.ItemIcon != null)
-                {
-                    if (visuals.InfoIcon.sprite != pending.ItemIcon)
-                        visuals.InfoIcon.sprite = pending.ItemIcon;
-                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoIcon, true);
-                }
-                else
-                {
-                    if (visuals.InfoIcon.sprite != null)
-                        visuals.InfoIcon.sprite = null;
-                    DMUiToolkitOverlayDocument.SetShown(visuals.InfoIcon, false);
-                }
+                if (visuals.InfoIcon.sprite != null)
+                    visuals.InfoIcon.sprite = null;
+                DMUiToolkitOverlayDocument.SetShown(visuals.InfoIcon, false);
             }
 
             if (visuals.InfoUnknown != null)
@@ -911,6 +910,55 @@ namespace Project.UI
                     visuals.HoldRing.MarkDirtyRepaint();
                 }
             }
+        }
+
+        private static void PaintFarIdentity(DotVisuals visuals, float size, float relDy, WorldDot pending)
+        {
+            if (visuals == null || !pending.HasIdentity)
+            {
+                HideFarIdentity(visuals);
+                return;
+            }
+
+            bool known = pending.ItemKnown;
+            if (visuals.FarUnknown != null)
+            {
+                if (!known)
+                {
+                    if (visuals.FarUnknown.text != "?")
+                        visuals.FarUnknown.text = "?";
+                    DMUiToolkitOverlayDocument.SetShown(visuals.FarUnknown, true);
+                }
+                else
+                {
+                    DMUiToolkitOverlayDocument.SetShown(visuals.FarUnknown, false);
+                }
+            }
+
+            if (visuals.FarName != null)
+            {
+                if (known)
+                {
+                    string name = pending.ItemLabel ?? string.Empty;
+                    if (visuals.FarName.text != name)
+                        visuals.FarName.text = name;
+                    visuals.FarName.style.left = size * 0.5f + 6f;
+                    visuals.FarName.style.top = relDy - 8f;
+                    DMUiToolkitOverlayDocument.SetShown(visuals.FarName, true);
+                }
+                else
+                {
+                    DMUiToolkitOverlayDocument.SetShown(visuals.FarName, false);
+                }
+            }
+        }
+
+        private static void HideFarIdentity(DotVisuals visuals)
+        {
+            if (visuals == null)
+                return;
+            DMUiToolkitOverlayDocument.SetShown(visuals.FarUnknown, false);
+            DMUiToolkitOverlayDocument.SetShown(visuals.FarName, false);
         }
 
         private void PaintBars()
@@ -1025,11 +1073,15 @@ namespace Project.UI
             public Image InfoIcon;
             public Label InfoUnknown;
             public Label InfoName;
+            public Label FarUnknown;
+            public Label FarName;
             public Label KeyLabel;
             public Label ActionLabel;
             public VisualElement HoldRing;
             public Vector2 LastTip = new Vector2(float.NaN, float.NaN);
             public Vector2 LastAnchor = new Vector2(float.NaN, float.NaN);
+            public Vector2 SmoothedPanel = new Vector2(float.NaN, float.NaN);
+            public bool HasSmoothedPanel;
             public Vector3 LockedWorldAnchor;
             public bool HasLockedWorldAnchor;
             public int LockedAnchorId;
@@ -1055,7 +1107,14 @@ namespace Project.UI
                 VisualElement core = new VisualElement { name = "core", pickingMode = PickingMode.Ignore };
                 core.AddToClassList("dmg-world-dot-core");
                 glow.Add(core);
+                Label farUnknown = new Label("?") { name = "far-unknown", pickingMode = PickingMode.Ignore };
+                farUnknown.AddToClassList("dmg-world-dot-unknown");
+                glow.Add(farUnknown);
                 host.Add(glow);
+
+                Label farName = new Label { name = "far-name", pickingMode = PickingMode.Ignore };
+                farName.AddToClassList("dmg-world-dot-name");
+                host.Add(farName);
 
                 VisualElement closeCluster = BuildCloseCluster();
                 host.Add(closeCluster);
@@ -1066,6 +1125,8 @@ namespace Project.UI
                     Stem = stem,
                     Glow = glow,
                     Core = core,
+                    FarUnknown = farUnknown,
+                    FarName = farName,
                     CloseCluster = closeCluster,
                     InfoRow = closeCluster.Q<VisualElement>("info-row"),
                     InfoCircle = closeCluster.Q<VisualElement>("info-circle"),
@@ -1220,11 +1281,14 @@ namespace Project.UI
                 {
                     visuals.LastTip = new Vector2(float.NaN, float.NaN);
                     visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
+                    visuals.SmoothedPanel = new Vector2(float.NaN, float.NaN);
+                    visuals.HasSmoothedPanel = false;
                     visuals.HasLockedWorldAnchor = false;
                     visuals.LockedAnchorId = 0;
                     visuals.LastGlowSize = -1f;
                     visuals.LastStemShown = false;
                     visuals.LastCloseShown = false;
+                    HideFarIdentity(visuals);
                 }
             }
 

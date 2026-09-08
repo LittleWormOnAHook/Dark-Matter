@@ -20,8 +20,9 @@ namespace Project.Player
         private const float MinFollow = 2.15f;
         private const float ClimbMinFollow = 2.55f;
         private const float MantleMinFollow = 2.9f;
-        private const float PullSpeed = 28f;
-        private const float ReleaseSpeed = 7f;
+        private const float PullSpeed = 16f;
+        private const float ReleaseSpeed = 5.5f;
+        private const float CollisionHysteresis = 0.12f;
         private const float ClimbPullSpeed = 5.5f;
         private const float ClimbReleaseSpeed = 2.8f;
         private const float MantlePullSpeed = 3.0f;
@@ -167,12 +168,19 @@ namespace Project.Player
             if (dt <= 0f)
                 dt = 0.02f;
 
-            // Climb/mantle: soft pull only — hard snap was the mantle wall/player slam.
+            // Ignore sphere-cast flicker inside the hysteresis band (AAA camera collision).
+            if (!mantling && !nearClimb
+                && targetDist < _smoothDist - 0.01f
+                && targetDist > _smoothDist - CollisionHysteresis)
+            {
+                targetDist = _smoothDist;
+            }
+
+            // Climb/mantle: soft pull only. Normal: finite pull-in, no per-frame snap
+            // (the old targetDist+0.02 clamp made walls and pickup stems jitter).
             float pull = mantling ? MantlePullSpeed : (nearClimb ? ClimbPullSpeed : PullSpeed);
             float release = mantling ? MantleReleaseSpeed : (nearClimb ? ClimbReleaseSpeed : ReleaseSpeed);
-            float speed = targetDist < _smoothDist - 0.01f ? pull : release;
-            _smoothDist = Mathf.Lerp(_smoothDist, targetDist, 1f - Mathf.Exp(-speed * dt));
-            if (targetDist < _smoothDist)
+            if (targetDist < _smoothDist - 0.01f)
             {
                 if (mantling || nearClimb)
                 {
@@ -182,8 +190,12 @@ namespace Project.Player
                 }
                 else
                 {
-                    _smoothDist = Mathf.Min(_smoothDist, targetDist + 0.02f);
+                    _smoothDist = Mathf.MoveTowards(_smoothDist, targetDist, pull * dt);
                 }
+            }
+            else
+            {
+                _smoothDist = Mathf.Lerp(_smoothDist, targetDist, 1f - Mathf.Exp(-release * dt));
             }
             if (_smoothDist < minFollow)
                 _smoothDist = minFollow;

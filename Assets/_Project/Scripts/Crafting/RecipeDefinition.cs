@@ -33,6 +33,7 @@ namespace Project.Crafting
 
         public string ResolvedId => string.IsNullOrEmpty(recipeId) ? name : recipeId;
 
-        public Sprite DisplayIcon => icon != null ? icon : (outputItem != null ? outputItem.icon : null);
+        public Sprite DisplayIcon =>
+            icon != null ? icon : Project.UI.DMGameIconRegistry.FindIcon(outputItem);
     }
 }

@@ -22,6 +22,9 @@ namespace Project.Features.Dash
         public float cooldown = 0.55f;
         [Tooltip("Flat SurvivalStats stamina spent when a dash starts.")]
         public float staminaCost = 22f;
+        [Tooltip("Extra stamina drained over the dash duration, as a fraction of staminaCost (0.2 = +20%).")]
+        [Range(0f, 1f)]
+        public float staminaTickExtraPercent = 0.20f;
         public bool allowAirDash = false;
         [Tooltip("0 freezes walk/run. 1 is normal speed.")]
         [Range(0f, 1f)]
@@ -50,5 +53,9 @@ namespace Project.Features.Dash
         public float smokeSize = 0.7f;
         public Material smokeMaterial;
         public GameObject smokePrefab;
+
+        [Header("Collision")]
+        [Tooltip("Skin applied when capsule-casting so dashes stop before penetrating colliders.")]
+        public float collisionSkin = 0.08f;
     }
 }

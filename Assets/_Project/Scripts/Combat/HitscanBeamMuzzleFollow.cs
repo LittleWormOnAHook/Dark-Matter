@@ -1,4 +1,5 @@
 using Invector.vShooter;
+using Project.Core;
 using UnityEngine;
 
 namespace Project.Combat
@@ -192,7 +193,15 @@ namespace Project.Combat
             Vector3 direction = ResolveAimDirection(origin);
             Vector3 endPoint = origin + direction * weaponRange;
 
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, weaponRange, hitMask, QueryTriggerInteraction.Ignore))
+            GameObject owner = PlayerLocator.FindPlayerObject();
+            if (RangedFireSolver.TryRaycastAim(
+                    origin,
+                    direction,
+                    weaponRange,
+                    hitMask,
+                    owner,
+                    out RaycastHit hit,
+                    RangedFireSolver.MuzzleRayStartSkin))
                 endPoint = hit.point;
 
             if (lineRenderers != null)
@@ -241,7 +250,8 @@ namespace Project.Combat
                     origin,
                     weaponRange,
                     out _,
-                    hitMask);
+                    hitMask,
+                    weaponMuzzle: muzzle);
             }
 
             if (originTransformForward(out Vector3 fwd))

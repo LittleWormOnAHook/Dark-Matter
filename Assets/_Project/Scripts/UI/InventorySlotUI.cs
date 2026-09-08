@@ -281,7 +281,7 @@ namespace Project.UI
 
             if (iconImage != null)
             {
-                iconImage.sprite = slot.item.icon;
+                iconImage.sprite = DMGameIconRegistry.FindIcon(slot.item);
                 iconImage.enabled = true;
             }
 
@@ -349,15 +349,16 @@ namespace Project.UI
             if (slot.item.isMiningTool)
             {
                 ItemData plasma = WeaponAmmoState.ResolvePlasmaFuelItem();
-                return plasma != null ? plasma.icon : null;
+                return DMGameIconRegistry.FindIcon(plasma);
             }
 
             ItemData loadedAmmo = ammoState.GetLoadedAmmoItem(hotbarIndex);
-            if (loadedAmmo != null && loadedAmmo.icon != null)
-                return loadedAmmo.icon;
+            Sprite loadedIcon = DMGameIconRegistry.FindIcon(loadedAmmo);
+            if (loadedIcon != null)
+                return loadedIcon;
 
             ItemData fallback = WeaponAmmoState.ResolveStandardAmmoItem(slot.item);
-            return fallback != null ? fallback.icon : null;
+            return DMGameIconRegistry.FindIcon(fallback);
         }
 
         private void EnsureAmmoTypeIcon()

@@ -648,6 +648,17 @@
                 },
                 {
                     "name": "",
+                    "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222000",
+                    "path": "<Keyboard>/j",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Journal",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "b1b1b1b1-c1c1-4d1d-8e1e-222222222001",
                     "path": "<Keyboard>/c",
                     "interactions": "",

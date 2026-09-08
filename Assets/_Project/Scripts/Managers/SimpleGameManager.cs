@@ -88,7 +88,8 @@ namespace Project.Managers
                     if (startingItems[i] != null)
                     {
                         int amount = (startingAmounts != null && startingAmounts.Length > i) ? startingAmounts[i] : 5;
-                        inventory.AddItem(startingItems[i], amount);
+                        // Starting kit goes to inventory/reserve only — magazines stay empty until load or pickup.
+                        inventory.AddItem(startingItems[i], amount, autoCreditAmmoToWeapons: false);
                     }
                 }
             }

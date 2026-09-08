@@ -8,23 +8,21 @@ using UnityEngine;
 namespace Project.Player
 {
     /// <summary>
-    /// Four regular-fall heights:
-    /// 1) regular jump — Invector land, no lock
-    /// 2) medium drop — hero / Jetpack Land
-    /// 3) high drop — flop before contact, then get up
-    /// 4) lethal drop — SurvivalStats death + Player_v7 ragdoll
-    /// Still thrusting into the ground is hero.
-    /// Jetpack: land while boosting, or within jetpackLethalDelay after release, is hero.
-    /// Unboosted 100m+ is lethal. Fall-time backup does not apply during a jetpack air.
+    /// Base-layer Player_v7 landing:
+    /// 1) short hop — LandLow
+    /// 2) under lethal — LandHigh (50% health in the damage band)
+    /// 3) lethal — Bounce, then ragdoll, then retry/end
+    /// Jetpack grace still treats a lethal-height land as LandHigh.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-100)]
+    [DefaultExecutionOrder(320)]
     public sealed class DMLandingDirector : MonoBehaviour
     {
-        private const float HeroLandSpeed = 2f;
-        private const float HardFallApproach = 1.35f;
-        private const float SoftImpactApproach = 1.0f;
-        private const float GroundCommitSeconds = 0.16f;
+        private const float GroundCommitSeconds = 0.06f;
+        /// <summary>Start owned land clips when the feet are this close to walkable ground (before touch).</summary>
+        private const float LandAnticipateMaxDist = 0.52f;
+        private const float LandAnticipateMinFallSpeed = 1.35f;
+        private const float LandCrossFadeSeconds = 0.03f;
         private const string BuildStamp = "DMLanding 0831-boost";
         private const float TorsoTwistLimit = 18f;
         private const float TorsoSwing1Limit = 10f;
@@ -34,7 +32,6 @@ namespace Project.Player
         private const float TorsoProjectionAngle = 22f;
         private const float HipAngularDamping = 3.2f;
         private const float SpineAngularDamping = 2.4f;
-        private const float LethalFallTime = 2f;
         private const float WalkableDist = 0.45f;
         private const float WalkableNormalY = 0.55f;
 
@@ -49,10 +46,14 @@ namespace Project.Player
 
         private bool _landing;
         private bool _hardFalling;
-        private bool _enteredHeroState;
+        private bool _enteredLandState;
+        private bool _pendingLethalRagdoll;
+        private bool _lockDuringLand;
+        private int _ownedLandState;
         private bool _heldLockMovement;
         private bool _heldLockAnimMovement;
         private bool _heldBlockFallDamage;
+        private bool _heldDisableAnimations;
         private float _savedAnimatorSpeed = 1f;
         private float _clipEndsAt = -1f;
         private float _airApexY;
@@ -66,30 +67,30 @@ namespace Project.Player
         private bool _mutedInvector;
         private bool _savedBlockFall;
         private float _fallTime;
-        private bool _playedFallPose;
         private Vector3 _flopImpact;
         private float _flopBoostUntil = -1f;
+        private float _unmuteAt = -1f;
         private int _flopBoneCount;
 
         private bool _hasVerticalVelocity;
         private bool _hasJetpackLand;
         private bool _hasLandHigh;
         private bool _hasIsGrounded;
+        private bool _hasGroundDistance;
 
         private static readonly RaycastHit[] ProbeHits = new RaycastHit[16];
         private static readonly int VerticalVelocity = Animator.StringToHash("VerticalVelocity");
         private static readonly int JetpackLand = Animator.StringToHash("JetpackLand");
         private static readonly int LandHighTrigger = Animator.StringToHash("LandHigh");
         private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
-        private static readonly int JetpackLandState = Animator.StringToHash("Jetpack Land");
+        private static readonly int GroundDistance = Animator.StringToHash("GroundDistance");
+        private static readonly int LandLowState = Animator.StringToHash("LandLow");
         private static readonly int LandHighState = Animator.StringToHash("LandHigh");
+        private static readonly int BounceState = Animator.StringToHash("Bounce");
+        private static readonly int JumpState = Animator.StringToHash("Jump");
         private static readonly int Locomotion = Animator.StringToHash("Locomotion");
-        private static readonly int FallingState = Animator.StringToHash("Falling");
-        private static readonly int[] InvectorLandStates =
+        private static readonly int[] StolenGetUpStates =
         {
-            Animator.StringToHash("LandHigh"),
-            Animator.StringToHash("LandLow"),
-            Animator.StringToHash("Landing"),
             Animator.StringToHash("Falling"),
             Animator.StringToHash("StandUpFromBelly"),
             Animator.StringToHash("StandUpFromBack"),
@@ -97,6 +98,7 @@ namespace Project.Player
             Animator.StringToHash("StandUp@FromBack"),
             Animator.StringToHash("GetUpFromBelly"),
             Animator.StringToHash("GetUpFromBack"),
+            Animator.StringToHash("Jetpack Land"),
             Animator.StringToHash("Roll"),
         };
 
@@ -107,14 +109,17 @@ namespace Project.Player
         {
             _hardFalling = false;
             _landing = false;
-            _enteredHeroState = false;
+            _enteredLandState = false;
+            _pendingLethalRagdoll = false;
+            _lockDuringLand = false;
+            _ownedLandState = 0;
             _physAir = false;
             _fallTime = 0f;
-            _playedFallPose = false;
             _flopBoostUntil = -1f;
             _flopBoneCount = 0;
             _clipEndsAt = -1f;
             _ignoreLandsUntil = 0f;
+            _unmuteAt = -1f;
             _groundedFor = 0f;
 
             if (ragdoll != null)
@@ -137,6 +142,8 @@ namespace Project.Player
             {
                 motor.lockMovement = false;
                 motor.lockAnimMovement = false;
+                motor.blockApplyFallDamage = false;
+                motor.disableAnimations = false;
                 if (motor.ragdolled)
                     motor.ResetRagdoll();
                 motor.EnableGravityAndCollision();
@@ -170,7 +177,6 @@ namespace Project.Player
         public void NotifyTerrainRescue()
         {
             _fallTime = 0f;
-            _playedFallPose = false;
             _physAir = false;
             _wasGrounded = true;
             _groundedFor = GroundCommitSeconds;
@@ -186,6 +192,8 @@ namespace Project.Player
                 return;
 
             GameObject player = GameObject.Find("Player_v7");
+            if (player == null)
+                player = GameObject.Find("Player_v7 Variant");
             if (player == null || player.GetComponent<DMLandingDirector>() != null)
                 return;
 
@@ -194,8 +202,7 @@ namespace Project.Player
 
         private void Awake()
         {
-            if (climbProfile == null)
-                climbProfile = Resources.Load<DMClimbProfile>(DMClimbController.ResourcesPath);
+            climbProfile = DMClimbProfile.Resolve(climbProfile);
             if (motor == null)
                 motor = GetComponent<vThirdPersonMotor>();
             if (animator == null)
@@ -232,6 +239,7 @@ namespace Project.Player
             _hasJetpackLand = false;
             _hasLandHigh = false;
             _hasIsGrounded = false;
+            _hasGroundDistance = false;
             if (animator == null)
                 return;
 
@@ -246,6 +254,8 @@ namespace Project.Player
                     _hasLandHigh = true;
                 else if (hash == IsGrounded)
                     _hasIsGrounded = true;
+                else if (hash == GroundDistance)
+                    _hasGroundDistance = true;
             }
         }
 
@@ -285,8 +295,8 @@ namespace Project.Player
             if (ClearMountedAir())
                 return;
 
-            bool walkable = OnWalkableGround(out float floorDist);
-            if (!walkable)
+            bool walkable = OnWalkableGround(out _);
+            if (!walkable || !motor.isGrounded)
                 MuteInvectorFall();
 
             if (Time.unscaledTime < _ignoreLandsUntil)
@@ -310,15 +320,18 @@ namespace Project.Player
                 return;
             }
 
-            bool boosted = JetpackHeroThisAir();
-            float drop = _airApexY - y;
-            FallLand kind = ClassifyFall(drop, boosted, vy);
-            if (kind != FallLand.GetUp && kind != FallLand.Lethal)
-                return;
-
-            // Flop before bone colliders overlap the floor (disableColliders pop-on bounce).
-            if (walkable || floorDist <= HardFallApproach)
-                BeginLethalFall();
+            if (_landing)
+            {
+                SuppressInvectorLand();
+                HoldOwnedLandState();
+                KickStolenGetUpStates();
+            }
+            else if (_physAir)
+            {
+                SuppressAirborneFall();
+                if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
+                    TryAnticipateLanding();
+            }
         }
 
         private void Update()
@@ -329,7 +342,6 @@ namespace Project.Player
             if (climb != null && climb.IsClimbing)
             {
                 _fallTime = 0f;
-                _playedFallPose = false;
                 _wasGrounded = true;
                 return;
             }
@@ -343,7 +355,6 @@ namespace Project.Player
             {
                 _groundedFor += Time.unscaledDeltaTime;
                 _fallTime = 0f;
-                _playedFallPose = false;
             }
             else
             {
@@ -363,16 +374,21 @@ namespace Project.Player
                 else if (y > _airApexY)
                     _airApexY = y;
                 _physAir = true;
-                PlayFallPoseIfNeeded(y, vy);
             }
-            else if (_physAir && _groundedFor >= GroundCommitSeconds)
+            else if (_groundedFor >= GroundCommitSeconds)
             {
-                float drop = _airApexY - transform.position.y;
-                _physAir = false;
-                if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
-                    BeginLanding(drop, _airVerticalVelocity);
-                _airApexY = transform.position.y;
+                if (_physAir)
+                {
+                    float drop = _airApexY - transform.position.y;
+                    if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
+                        BeginLanding(drop, ReadFallVelocity());
+                }
+
+                ResetAirTracking();
             }
+
+            if (_physAir && !_landing && !_hardFalling)
+                TryAnticipateLanding();
 
             _wasGrounded = walkable;
 
@@ -382,41 +398,74 @@ namespace Project.Player
                 return;
             }
 
-            if (_landing)
-                SuppressInvectorLand();
+            if (_unmuteAt > 0f && Time.unscaledTime >= _unmuteAt && !_landing && !_physAir)
+            {
+                UnmuteInvectorFall();
+                _unmuteAt = -1f;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (motor == null || animator == null)
+                return;
+            if (climb != null && climb.IsClimbing)
+                return;
+
+            if (_physAir || _landing || _unmuteAt > Time.unscaledTime)
+            {
+                MuteInvectorFall();
+                if (_hasVerticalVelocity)
+                    animator.SetFloat(VerticalVelocity, 0f);
+            }
+
+            if (_physAir && !_landing)
+            {
+                SuppressAirborneFall();
+                KickFallingWhileAirborne();
+            }
 
             if (!_landing)
                 return;
 
-            ApplyLock();
+            if (_lockDuringLand)
+                ApplyLock();
             SuppressInvectorLand();
-            KickInvectorLandStates();
-            TickHero();
+            HoldOwnedLandState();
+            KickStolenGetUpStates();
+            TickOwnedLand();
         }
 
         [SerializeField] private float heroDropMeters = 2.6f;
         [SerializeField] private float lethalDropMeters = 100f;
+        [SerializeField] private float fallDamageStartMeters = 40f;
+        [SerializeField] private float fallDamageLethalPercent = 0.3f;
+        [SerializeField] private float fallDamageHealthFraction = 0.5f;
         [SerializeField] private float jetpackLethalDelay = 6f;
 
         private DMClimbProfile LiveClimb
         {
             get
             {
-                if (climbProfile == null)
-                    climbProfile = Resources.Load<DMClimbProfile>(DMClimbController.ResourcesPath);
+                climbProfile = DMClimbProfile.Resolve(climbProfile);
                 return climbProfile;
             }
         }
 
         private float HeroMin => LiveClimb != null ? LiveClimb.heroDropMeters : heroDropMeters;
         private float LethalMin => LiveClimb != null ? LiveClimb.lethalDropMeters : lethalDropMeters;
+        private float DamageStartMeters => LiveClimb != null ? LiveClimb.fallDamageStartMeters : fallDamageStartMeters;
+        private float DamageLethalPercent => LiveClimb != null ? LiveClimb.fallDamageLethalPercent : fallDamageLethalPercent;
+        private float DamageHealthFraction => LiveClimb != null ? LiveClimb.fallDamageHealthFraction : fallDamageHealthFraction;
         private float JetDelay => LiveClimb != null ? LiveClimb.jetpackLethalDelay : jetpackLethalDelay;
+
+        /// <summary>No damage below 40m, or below 30% less than lethal if that band is larger.</summary>
+        private float NoDamageMax => Mathf.Max(DamageStartMeters, LethalMin * (1f - DamageLethalPercent));
 
         private enum FallLand
         {
-            RegularJump,
-            Hero,
-            GetUp,
+            LandLow,
+            LandHigh,
             Lethal,
         }
 
@@ -433,81 +482,146 @@ namespace Project.Player
             return jetpack.SecondsSinceBoostReleased <= JetDelay;
         }
 
+        private static float ClampDropToImpact(float dropMeters, float airVelocity)
+        {
+            float speed = Mathf.Abs(airVelocity);
+            if (speed < 0.5f)
+                return Mathf.Min(dropMeters, 1.5f);
+
+            float physicsDrop = (speed * speed) / (2f * 9.81f);
+            if (dropMeters > physicsDrop + 6f)
+                return physicsDrop;
+            return dropMeters;
+        }
+
+        private void TryAnticipateLanding()
+        {
+            if (_landing || _hardFalling || !_physAir)
+                return;
+            if (Time.unscaledTime < _ignoreLandsUntil)
+                return;
+            if (climb != null && climb.IsClimbing)
+                return;
+            if (PlayerVehicleState.IsMounted)
+                return;
+            if (jetpack != null && jetpack.IsBoostingNow)
+                return;
+
+            if (!ProbeGround(out float groundDist))
+                return;
+
+            if (groundDist > LandAnticipateMaxDist)
+                return;
+
+            float vy = ReadFallVelocity();
+            if (vy > -LandAnticipateMinFallSpeed)
+                return;
+
+            float drop = Mathf.Max(_airApexY - transform.position.y, groundDist);
+            BeginLanding(drop, vy);
+        }
+
+        private void ResetAirTracking()
+        {
+            _physAir = false;
+            _airApexY = transform.position.y;
+            _airVerticalVelocity = 0f;
+            _fallTime = 0f;
+        }
+
         private FallLand ClassifyFall(float dropMeters, bool boosted, float verticalVelocity)
         {
             float heroMin = HeroMin;
             float lethalMin = LethalMin;
             bool jetGrace = JetpackGraceActive();
-            // Height rule for unboosted falls. Do not treat fall-time as lethal height during
-            // a jetpack air — thrusting down still has negative vy and used to
-            // arm lethal after 2s even while boosting back to the ground.
-            bool lethalByHeight = dropMeters >= lethalMin;
-            bool lethalByTime = !boosted && _fallTime >= LethalFallTime;
-            bool lethalDrop = lethalByHeight || lethalByTime;
+            bool lethalDrop = dropMeters >= lethalMin;
 
-            if (dropMeters < heroMin && !boosted && !lethalDrop)
-                return FallLand.RegularJump;
             if (lethalDrop && !jetGrace)
                 return FallLand.Lethal;
-            if (boosted || dropMeters >= heroMin || jetGrace)
-                return FallLand.Hero;
-            return FallLand.RegularJump;
+            if (dropMeters < heroMin && !boosted)
+                return FallLand.LandLow;
+            return FallLand.LandHigh;
         }
 
         private void BeginLanding(float dropMeters, float airVelocity)
         {
+            dropMeters = ClampDropToImpact(dropMeters, airVelocity);
             if (dropMeters < 0.2f && airVelocity > -2f)
                 return;
 
             bool boosted = JetpackHeroThisAir();
             FallLand kind = ClassifyFall(dropMeters, boosted, airVelocity);
-            if (kind == FallLand.GetUp || kind == FallLand.Lethal)
+            if (kind == FallLand.Lethal)
             {
-                BeginLethalFall();
+                BeginBounceThenRagdoll();
                 return;
             }
 
-            if (kind != FallLand.Hero)
-            {
-                // Never unmute Invector on a 20m+ drop even if this classified as a hop.
-                if (dropMeters >= LethalMin && !JetpackGraceActive())
-                {
-                    BeginLethalFall();
-                    return;
-                }
+            int state = kind == FallLand.LandHigh ? LandHighState : LandLowState;
+            float duration = kind == FallLand.LandHigh ? 1f : 0.45f;
+            StartOwnedLand(state, duration, lockMove: true);
+            if (kind == FallLand.LandHigh)
+                ApplyFallDamageIfNeeded(dropMeters);
+        }
 
-                UnmuteInvectorFall();
+        private void BeginBounceThenRagdoll()
+        {
+            int state = animator != null && animator.HasState(0, BounceState)
+                ? BounceState
+                : LandHighState;
+            StartOwnedLand(state, 0.65f, lockMove: true);
+            _pendingLethalRagdoll = true;
+        }
+
+        private void StartOwnedLand(int stateHash, float duration, bool lockMove)
+        {
+            if (animator == null)
                 return;
-            }
 
-            if (!animator.HasState(0, JetpackLandState) && !_hasJetpackLand)
-            {
-                // silenced 0831 BuildStamp log
-                return;
-            }
-
+            MuteInvectorFall();
             SoftenImpact();
             _landing = true;
-            _enteredHeroState = false;
+            _enteredLandState = false;
+            _pendingLethalRagdoll = false;
+            _lockDuringLand = lockMove;
+            _ownedLandState = stateHash;
             if (motor != null)
             {
                 _heldLockMovement = motor.lockMovement;
                 _heldLockAnimMovement = motor.lockAnimMovement;
                 _heldBlockFallDamage = motor.blockApplyFallDamage;
+                _heldDisableAnimations = motor.disableAnimations;
                 motor.blockApplyFallDamage = true;
+                motor.disableAnimations = true;
             }
 
             _savedAnimatorSpeed = animator.speed;
-            animator.speed = HeroLandSpeed;
+            animator.speed = 1f;
             ApplyLock();
             SuppressInvectorLand();
             if (_hasLandHigh)
                 animator.ResetTrigger(LandHighTrigger);
             if (_hasJetpackLand)
-                animator.SetTrigger(JetpackLand);
-            if (animator.HasState(0, JetpackLandState))
-                animator.CrossFadeInFixedTime(JetpackLandState, 0.05f, 0);
-            _clipEndsAt = Time.unscaledTime + 1.25f;
+                animator.ResetTrigger(JetpackLand);
+            if (animator.HasState(0, stateHash))
+                animator.CrossFadeInFixedTime(stateHash, LandCrossFadeSeconds, 0, 0f);
+            _clipEndsAt = Time.unscaledTime + Mathf.Max(0.2f, duration);
+        }
+
+        private void ApplyFallDamageIfNeeded(float dropMeters)
+        {
+            if (dropMeters < NoDamageMax)
+                return;
+
+            SurvivalStats stats = ResolveSurvivalStats();
+            if (stats == null || stats.IsDead)
+                return;
+
+            float damage = stats.maxHealth * Mathf.Clamp01(DamageHealthFraction);
+            if (damage <= 0f)
+                return;
+
+            stats.ApplyDamage(damage, "fall");
         }
 
         private void BeginHardFall()
@@ -524,7 +638,6 @@ namespace Project.Player
             }
 
             _fallTime = 0f;
-            _playedFallPose = false;
             _physAir = false;
             _wasGrounded = true;
             _groundedFor = GroundCommitSeconds;
@@ -586,6 +699,8 @@ namespace Project.Player
             SurvivalStats stats = ResolveSurvivalStats();
             if (stats != null && !stats.IsDead)
                 stats.KillFromFall();
+
+            ResetAirTracking();
         }
 
         private Vector3 SnapshotLethalImpact(float drop)
@@ -716,19 +831,16 @@ namespace Project.Player
             return motor == null || motor.isGrounded || distance <= 0.2f;
         }
 
-        private void PlayFallPoseIfNeeded(float y, float vy)
+        private void KickFallingWhileAirborne()
         {
-            if (_playedFallPose || _landing || _hardFalling)
+            if (animator == null)
                 return;
-            if (jetpack != null && (jetpack.IsBoostingNow || jetpack.UsedJetpackThisAir))
+            if (jetpack != null && jetpack.IsBoostingNow)
                 return;
-            float drop = _airApexY - y;
-            if (drop < 6f && vy > -10f)
+            if (!IsStolenGetUpHash(animator.GetCurrentAnimatorStateInfo(0).shortNameHash))
                 return;
-            if (animator == null || !animator.HasState(0, FallingState))
-                return;
-            animator.CrossFadeInFixedTime(FallingState, 0.08f, 0);
-            _playedFallPose = true;
+            if (animator.HasState(0, JumpState))
+                animator.CrossFadeInFixedTime(JumpState, LandCrossFadeSeconds, 0);
         }
 
         private Transform ResolveHips()
@@ -994,12 +1106,23 @@ namespace Project.Player
             joint.projectionDistance = Mathf.Min(joint.projectionDistance, 0.05f);
         }
 
-        private void TickHero()
+        private void TickOwnedLand()
         {
-            bool inState = StateMatches(JetpackLandState);
+            if (_pendingLethalRagdoll)
+            {
+                if (_clipEndsAt > 0f && Time.unscaledTime >= _clipEndsAt)
+                {
+                    _landing = false;
+                    _pendingLethalRagdoll = false;
+                    BeginLethalFall();
+                }
+                return;
+            }
+
+            bool inState = _ownedLandState != 0 && StateMatches(_ownedLandState);
             if (inState)
-                _enteredHeroState = true;
-            else if (_enteredHeroState)
+                _enteredLandState = true;
+            else if (_enteredLandState)
             {
                 EndLanding(restoreLocks: true);
                 return;
@@ -1009,9 +1132,26 @@ namespace Project.Player
                 EndLanding(restoreLocks: true);
         }
 
-        private void KickInvectorLandStates()
+        private void HoldOwnedLandState()
         {
-            if (animator == null)
+            if (animator == null || _ownedLandState == 0)
+                return;
+
+            if (StateMatches(_ownedLandState))
+                return;
+
+            AnimatorStateInfo next = animator.IsInTransition(0)
+                ? animator.GetNextAnimatorStateInfo(0)
+                : default;
+            if (animator.IsInTransition(0) && next.shortNameHash == _ownedLandState)
+                return;
+
+            animator.CrossFadeInFixedTime(_ownedLandState, LandCrossFadeSeconds, 0);
+        }
+
+        private void KickStolenGetUpStates()
+        {
+            if (animator == null || _ownedLandState == 0)
                 return;
 
             AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
@@ -1019,18 +1159,18 @@ namespace Project.Player
                 ? animator.GetNextAnimatorStateInfo(0)
                 : current;
 
-            if (IsInvectorLandHash(current.shortNameHash) || IsInvectorLandHash(next.shortNameHash))
+            if (IsStolenGetUpHash(current.shortNameHash) || IsStolenGetUpHash(next.shortNameHash))
             {
-                if (animator.HasState(0, JetpackLandState))
-                    animator.CrossFadeInFixedTime(JetpackLandState, 0.04f, 0);
+                if (animator.HasState(0, _ownedLandState))
+                    animator.CrossFadeInFixedTime(_ownedLandState, LandCrossFadeSeconds, 0);
             }
         }
 
-        private static bool IsInvectorLandHash(int hash)
+        private static bool IsStolenGetUpHash(int hash)
         {
-            for (int i = 0; i < InvectorLandStates.Length; i++)
+            for (int i = 0; i < StolenGetUpStates.Length; i++)
             {
-                if (InvectorLandStates[i] == hash)
+                if (StolenGetUpStates[i] == hash)
                     return true;
             }
 
@@ -1062,6 +1202,22 @@ namespace Project.Player
             motor.verticalVelocity = 0f;
         }
 
+        private void SuppressAirborneFall()
+        {
+            if (animator == null)
+                return;
+            if (jetpack != null && jetpack.IsBoostingNow)
+                return;
+
+            MuteInvectorFall();
+            if (_hasVerticalVelocity)
+                animator.SetFloat(VerticalVelocity, 0f);
+            if (_hasGroundDistance)
+                animator.SetFloat(GroundDistance, 0.1f);
+            if (_hasIsGrounded)
+                animator.SetBool(IsGrounded, false);
+        }
+
         private void SuppressInvectorLand()
         {
             if (animator == null)
@@ -1072,10 +1228,13 @@ namespace Project.Player
 
             if (_hasVerticalVelocity)
                 animator.SetFloat(VerticalVelocity, 0f);
+            if (_hasGroundDistance)
+                animator.SetFloat(GroundDistance, 0.05f);
             if (_hasLandHigh)
                 animator.ResetTrigger(LandHighTrigger);
-            if (_hasIsGrounded && (_landing || motor != null && motor.isGrounded))
-                animator.SetBool(IsGrounded, true);
+            if (_hasJetpackLand)
+                animator.ResetTrigger(JetpackLand);
+            // Do not push IsGrounded while we own the land clip — that feeds Invector GetUp.
         }
 
         private void EndLanding(bool restoreLocks)
@@ -1084,7 +1243,10 @@ namespace Project.Player
                 return;
 
             _landing = false;
-            _enteredHeroState = false;
+            _enteredLandState = false;
+            _pendingLethalRagdoll = false;
+            _lockDuringLand = false;
+            _ownedLandState = 0;
             _clipEndsAt = -1f;
             SuppressInvectorLand();
 
@@ -1102,8 +1264,14 @@ namespace Project.Player
             {
                 motor.lockMovement = _heldLockMovement;
                 motor.lockAnimMovement = _heldLockAnimMovement;
+                motor.blockApplyFallDamage = _heldBlockFallDamage;
+                motor.disableAnimations = _heldDisableAnimations;
             }
-            UnmuteInvectorFall();
+
+            ResetAirTracking();
+            _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, Time.unscaledTime + 0.25f);
+            _unmuteAt = Time.unscaledTime + 0.4f;
+            SuppressInvectorLand();
         }
     }
 }

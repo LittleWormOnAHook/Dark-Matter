@@ -155,7 +155,8 @@ namespace Project.Player.Invector
                     cam,
                     muzzle.position,
                     maxRange,
-                    out aimDistance);
+                    out aimDistance,
+                    weaponMuzzle: muzzle);
             }
 
             Vector3 direction = RangedFireSolver.ResolveDirection(

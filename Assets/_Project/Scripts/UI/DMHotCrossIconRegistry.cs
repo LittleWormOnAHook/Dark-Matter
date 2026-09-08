@@ -25,6 +25,7 @@ namespace Project.UI
     {
         public const string ResourcesName = "DMHotCrossIconRegistry";
         public const string CutoutResourceFolder = "UI/HotCrossIcons";
+        public const string CutoutAssetFolder = "Assets/_Project/Resources/UI/HotCrossIcons";
 
         [Header("Defaults")]
         public Color defaultTint = Color.white;
@@ -68,7 +69,8 @@ namespace Project.UI
                     if (entry.item != item)
                         continue;
 
-                    if (entry.icon != null)
+                    if (entry.icon != null && entry.icon.texture != null
+                        && entry.icon.texture.width > 0 && entry.icon.rect.width > 0f)
                         sprite = entry.icon;
                     tint = entry.tint;
                     tint.a = entry.alpha;
@@ -87,12 +89,13 @@ namespace Project.UI
                 return null;
 
             EntityId id = item.GetEntityId();
-            if (cutoutByItemId.TryGetValue(id, out Sprite cachedCutout))
+            if (cutoutByItemId.TryGetValue(id, out Sprite cachedCutout) && cachedCutout != null)
                 return cachedCutout;
 
             EnsureCutouts();
             Sprite found = ResolveCutoutUncached(item);
-            cutoutByItemId[id] = found;
+            if (found != null)
+                cutoutByItemId[id] = found;
             return found;
         }
 
@@ -131,7 +134,7 @@ namespace Project.UI
 
         private static void EnsureCutouts()
         {
-            if (cutouts != null)
+            if (cutouts != null && cutouts.Count > 0)
                 return;
 
             cutouts = new Dictionary<string, Sprite>(64);
@@ -156,7 +159,29 @@ namespace Project.UI
                 sprite.name = texture.name;
                 AddCutout(sprite);
             }
+
+#if UNITY_EDITOR
+            if (cutouts.Count > 0)
+                return;
+
+            TryLoadEditorCutouts(CutoutAssetFolder);
+#endif
         }
+
+#if UNITY_EDITOR
+        private static void TryLoadEditorCutouts(string folder)
+        {
+            if (!UnityEditor.AssetDatabase.IsValidFolder(folder))
+                return;
+
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Sprite", new[] { folder });
+            for (int i = 0; i < (guids != null ? guids.Length : 0); i++)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+                AddCutout(UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path));
+            }
+        }
+#endif
 
         private static void AddCutout(Sprite sprite)
         {
@@ -194,9 +219,11 @@ namespace Project.UI
                 return "Storage Module";
             if (n.IndexOf("silicate", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Silicon";
-            if (n.IndexOf("sword", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("2 hander", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("two-handed", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (n.IndexOf("fear", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Sword of Fear";
+            if (n.IndexOf("2 hander", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("two-handed", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("two handed", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Two Handed Sword";
             return n;
         }
