@@ -128,6 +128,9 @@ namespace Project.UI
 
         private void Update()
         {
+            if (DMUiToolkitHud.IsDriving)
+                return;
+
             if (!enableAutoHide || canvasGroup == null)
                 return;
 

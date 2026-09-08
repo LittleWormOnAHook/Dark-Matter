@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Project.Core;
 using UnityEngine;
 
@@ -12,6 +14,24 @@ namespace Project.UI
     public class DMUiToolkitUguiRetirement : MonoBehaviour
     {
         private static bool retired;
+
+        /// <summary>Legacy uGUI HUD ticks replaced by UITK — disable behaviours, not data hosts.</summary>
+        private static readonly HashSet<string> LegacyHudTickTypeNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            nameof(PickupProximityDotUI),
+            nameof(WorldInteractionDotUI),
+            nameof(FloatingTargetHealthBar),
+            nameof(RangedCombatHud),
+            nameof(ActiveQuestHudUI),
+            nameof(CompassHudUI),
+            nameof(VerticalThermalNeedleGauge),
+            nameof(VerticalHazardExposureGauge),
+            nameof(HovercraftStatusHudUI),
+            nameof(ExpeditionPioneerHudUI),
+            nameof(OpticsOverlayUI),
+            nameof(DummyCombatUI),
+            nameof(CharacterPanelUI),
+        };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -71,6 +91,26 @@ namespace Project.UI
                 raycaster.enabled = false;
 
             canvas.enabled = false;
+            DisableLegacyHudBehaviourTicks(canvas.transform);
+        }
+
+        private static void DisableLegacyHudBehaviourTicks(Transform root)
+        {
+            if (root == null)
+                return;
+
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null || !behaviour.enabled)
+                    continue;
+
+                if (!LegacyHudTickTypeNames.Contains(behaviour.GetType().Name))
+                    continue;
+
+                behaviour.enabled = false;
+            }
         }
 
         private static void RetireNamedCanvas(string canvasName)

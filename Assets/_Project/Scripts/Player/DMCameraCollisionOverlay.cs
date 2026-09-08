@@ -47,6 +47,9 @@ namespace Project.Player
         private float _smoothDist = -1f;
         private bool _tuned;
         private bool _logged;
+        private bool _nearClimbCached;
+        private float _nearClimbNextCheck;
+        private Vector3 _nearClimbSamplePivot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnLoad()
@@ -138,7 +141,7 @@ namespace Project.Player
 
             bool mantling = _climb != null && _climb.IsMantling;
             bool climbing = _climb != null && _climb.IsClimbing;
-            bool nearClimb = climbing || NearClimbableGeometry(pivot);
+            bool nearClimb = climbing || IsNearClimbableCached(pivot);
             float minFollow = mantling ? MantleMinFollow : (nearClimb ? ClimbMinFollow : MinFollow);
 
             float wantDist = Mathf.Max(desiredDist, minFollow);
@@ -244,7 +247,7 @@ namespace Project.Player
                 return;
 
             float floor = (_climb != null && _climb.IsMantling) ? MantleMinFollow
-                : ((_climb != null && _climb.IsClimbing) || NearClimbableGeometry(
+                : ((_climb != null && _climb.IsClimbing) || IsNearClimbableCached(
                     tpCamera.mainTarget != null ? tpCamera.mainTarget.position : transform.position)
                     ? ClimbMinFollow : MinFollow);
             if (tpCamera.CurrentZoom < 1f)
@@ -624,6 +627,21 @@ namespace Project.Player
                 return true;
 
             return true;
+        }
+
+        private bool IsNearClimbableCached(Vector3 pivot)
+        {
+            if (_climb != null && _climb.IsClimbing)
+                return true;
+
+            float now = Time.time;
+            if (now < _nearClimbNextCheck && (pivot - _nearClimbSamplePivot).sqrMagnitude < 0.36f)
+                return _nearClimbCached;
+
+            _nearClimbNextCheck = now + 0.15f;
+            _nearClimbSamplePivot = pivot;
+            _nearClimbCached = NearClimbableGeometry(pivot);
+            return _nearClimbCached;
         }
 
         private static bool NearClimbableGeometry(Vector3 pivot)

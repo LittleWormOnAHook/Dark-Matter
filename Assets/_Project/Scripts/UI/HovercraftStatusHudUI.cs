@@ -188,8 +188,6 @@ namespace Project.UI
         {
             if (DMUiToolkitHud.IsDriving)
             {
-                // UITK owns the vessel readout — drop the uGUI panel once, then keep the tick to
-                // the mount edge only (it still suppresses the legacy toolbar chrome).
                 if (!uitkHidden)
                 {
                     if (panelRoot != null && panelRoot.gameObject.activeSelf)
@@ -198,11 +196,21 @@ namespace Project.UI
                     uitkHidden = true;
                 }
 
-                bool mountedUitk = PlayerVehicleState.IsMounted;
-                if (mountedUitk != wasMountedLastFrame)
+                if (!PlayerVehicleState.IsMounted)
                 {
-                    wasMountedLastFrame = mountedUitk;
-                    HandleMountStateChanged(mountedUitk);
+                    if (wasMountedLastFrame)
+                    {
+                        wasMountedLastFrame = false;
+                        HandleMountStateChanged(false);
+                    }
+
+                    return;
+                }
+
+                if (!wasMountedLastFrame)
+                {
+                    wasMountedLastFrame = true;
+                    HandleMountStateChanged(true);
                 }
 
                 return;

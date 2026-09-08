@@ -1139,5 +1139,30 @@ namespace Project.Player.Invector
 
             return move;
         }
+
+        /// <summary>
+        /// Invector calls Physics.SyncTransforms every FixedUpdate; ECM2 + RB already keep transforms
+        /// in sync and the extra sync was costing ~1ms+ per frame on Player_v7.
+        /// </summary>
+        protected override void FixedUpdate()
+        {
+            if (onFixedUpdate != null)
+                onFixedUpdate.Invoke();
+
+            cc.UpdateMotor();
+            cc.ControlLocomotionType();
+            ControlRotation();
+            cc.UpdateAnimator();
+            updateIK = true;
+        }
+
+        /// <summary>UITK HUD owns stamina/health crosshair ticks — skip Invector vHUDController updates.</summary>
+        public override void UpdateHUD()
+        {
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            base.UpdateHUD();
+        }
     }
 }

@@ -174,7 +174,10 @@ namespace Project.UI
             // Paint after DMCameraCollisionOverlay (10000) so stems use the same-frame lens.
             panelYFlipResolved = false;
             CollectDots();
-            PaintDots();
+            if (pendingDots.Count > 0)
+                PaintDots();
+            else
+                RecycleDots(0);
             PaintBars();
         }
 
@@ -970,6 +973,12 @@ namespace Project.UI
             FloatingTargetHealthBar[] bars = SceneComponentCache.GetAll<FloatingTargetHealthBar>(
                 FindObjectsInactive.Exclude,
                 refreshInterval: 0.12f);
+            if (bars.Length == 0)
+            {
+                RecycleBars(0);
+                return;
+            }
+
             int shown = 0;
             for (int i = 0; i < bars.Length && shown < MaxBars; i++)
             {

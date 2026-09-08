@@ -178,7 +178,11 @@ namespace Project.Survival.Exposure
             if (!Application.isPlaying)
                 return;
 
-            if (profile != null && profile.pulse != null && profile.pulse.enabled)
+            bool pulseEnabled = profile != null && profile.pulse != null && profile.pulse.enabled;
+            if (occupants.Count == 0 && !_playerInside && !pulseEnabled)
+                return;
+
+            if (pulseEnabled)
             {
                 pulsePhaseTimer -= Time.deltaTime;
                 if (pulsePhaseTimer <= 0f)

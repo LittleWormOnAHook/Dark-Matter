@@ -10,30 +10,32 @@ namespace Invector.vShooter
         public float aimSpriteOffset;
         public float maxDistance;
 
-        Ray ray;
-        RaycastHit hit;
+        private static readonly RaycastHit[] HitBuffer = new RaycastHit[1];
+
         LineRenderer line;
+
         void Start()
         {
             line = GetComponent<LineRenderer>();
-            ray = new Ray();
         }
 
         void LateUpdate()
         {
-            ray.origin = transform.position;
-            ray.direction = transform.forward.normalized;
+            Vector3 origin = transform.position;
+            Vector3 direction = transform.forward.normalized;
             var laserLenght = Vector3.zero;
 
-            if (Physics.Raycast(ray, out hit, maxDistance, layerMask))
+            int hitCount = Physics.RaycastNonAlloc(origin, direction, HitBuffer, maxDistance, layerMask);
+            if (hitCount > 0)
             {
-                laserLenght.z = transform.InverseTransformPoint(hit.point).z -aimSpriteOffset;
+                RaycastHit hit = HitBuffer[0];
+                laserLenght.z = transform.InverseTransformPoint(hit.point).z - aimSpriteOffset;
                 line.SetPosition(1, laserLenght);
                 aimSprite.transform.rotation = Quaternion.LookRotation(hit.normal);
             }
             else
             {
-                laserLenght.z = Vector3.Distance(transform.position, ray.GetPoint(maxDistance - aimSpriteOffset));
+                laserLenght.z = maxDistance - aimSpriteOffset;
                 line.SetPosition(1, laserLenght);
                 aimSprite.transform.localEulerAngles = Vector3.zero;
             }
