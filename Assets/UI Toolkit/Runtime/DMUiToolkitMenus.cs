@@ -85,6 +85,7 @@ namespace Project.UI
         private ScrollView questObjectives;
         private Button questAbandon;
         private VisualElement inventoryGrid;
+        private VisualElement mapViewport;
         private VisualElement mapImage;
         private VisualElement mapMarkers;
         private VisualElement mapPlayer;
@@ -116,6 +117,7 @@ namespace Project.UI
         private bool gameplayFullyBound;
         private bool uguiHidden;
         private bool menusVisible;
+        private float nextMapMarkerRefresh;
         public static bool IsOpen => instance != null && (instance.menusVisible || instance.pendingShowWindow.HasValue);
         public static bool IsInventoryOpen =>
             instance != null && instance.menusVisible && instance.paintedWindow == JournalWindowId.Inventory;
@@ -315,8 +317,16 @@ namespace Project.UI
             questObjectives = tree.Q<ScrollView>("quest-objectives");
             questAbandon = tree.Q<Button>("quest-abandon");
             inventoryGrid = tree.Q<VisualElement>("inventory-grid");
+            mapViewport = tree.Q<VisualElement>("map-viewport");
             mapImage = tree.Q<VisualElement>("map-image");
             mapMarkers = tree.Q<VisualElement>("map-markers");
+            if (mapViewport != null)
+            {
+                mapViewport.UnregisterCallback<GeometryChangedEvent>(OnMapViewportGeometry);
+                mapViewport.RegisterCallback<GeometryChangedEvent>(OnMapViewportGeometry);
+            }
+
+            ApplySquareMapFrame();
             mapPlayer = tree.Q<VisualElement>("map-player");
             mapFog = tree.Q<VisualElement>("map-fog");
             BindExtraPanels(tree);
@@ -404,12 +414,24 @@ namespace Project.UI
 
             DMGameLog.Changed -= RefreshGameLogs;
             DMGameLog.Changed += RefreshGameLogs;
+            ScannerDiscoveryRegistry.Changed -= HandleMapMarkersChanged;
+            ScannerDiscoveryRegistry.Changed += HandleMapMarkersChanged;
+            MapRegistry.MarkerRegistered -= HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerRegistered += HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUnregistered -= HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUnregistered += HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUpdated -= HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUpdated += HandleMapMarkerRegistryChanged;
             eventsHooked = true;
         }
 
         private void UnhookEvents()
         {
             DMGameLog.Changed -= RefreshGameLogs;
+            ScannerDiscoveryRegistry.Changed -= HandleMapMarkersChanged;
+            MapRegistry.MarkerRegistered -= HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUnregistered -= HandleMapMarkerRegistryChanged;
+            MapRegistry.MarkerUpdated -= HandleMapMarkerRegistryChanged;
             eventsHooked = false;
 
             if (boundNav != null)
@@ -572,7 +594,14 @@ namespace Project.UI
             if (menusVisible && paintedWindow == window.Value)
             {
                 if (window.Value == JournalWindowId.Map)
+                {
                     TickMapPlayer();
+                    if (Time.unscaledTime >= nextMapMarkerRefresh)
+                    {
+                        nextMapMarkerRefresh = Time.unscaledTime + 0.25f;
+                        RefreshMapMarkers();
+                    }
+                }
                 JournalPanelUI.EnsurePointerForOpenJournal();
                 if (!uguiHidden)
                     HideUguiWindows(window.Value);
@@ -1283,9 +1312,21 @@ namespace Project.UI
             if (texture == null || texture == appliedMapTexture)
                 return;
 
-            if (DMUiToolkitStyle.TrySetTextureBackground(mapImage, texture, ScaleMode.ScaleToFit))
+            ApplySquareMapFrame();
+            if (DMUiToolkitStyle.TrySetTextureBackground(mapImage, texture, ScaleMode.StretchToFill))
                 appliedMapTexture = texture;
             ApplyFullMapFog();
+        }
+
+        private void HandleMapMarkersChanged()
+        {
+            if (menusVisible && paintedWindow == JournalWindowId.Map)
+                RefreshMapMarkers();
+        }
+
+        private void HandleMapMarkerRegistryChanged(MapMarker _)
+        {
+            HandleMapMarkersChanged();
         }
 
         private void RefreshMapMarkers()
@@ -1297,12 +1338,10 @@ namespace Project.UI
             ApplyFullMapFog();
 
             WorldMapProvider provider = boundMap != null ? boundMap : WorldMapProvider.Instance;
-            float viewW = mapImage.resolvedStyle.width;
-            float viewH = mapImage.resolvedStyle.height;
-            if (viewW <= 1f || viewH <= 1f)
+            ApplySquareMapFrame();
+            Rect fitted = SquareMapRect();
+            if (fitted.width <= 1f)
                 return;
-
-            Rect fitted = FittedMapRect(viewW, viewH, appliedMapTexture);
 
             IReadOnlyList<MapMarker> markers = MapRegistry.ActiveMarkers;
             int written = 0;
@@ -1315,18 +1354,9 @@ namespace Project.UI
                         continue;
 
                     VisualElement dot = EnsureMarker(written);
-                    Vector2 uv = provider.WorldToMap01(marker.WorldPosition);
+                    Vector2 uv = provider.WorldToPlayerMap01(marker.WorldPosition);
                     PlaceOnMap(dot, fitted, uv, 10f);
-                    if (marker.IconSprite != null)
-                    {
-                        DMUiToolkitStyle.TrySetSpriteBackground(dot, marker.IconSprite, ScaleMode.ScaleToFit);
-                        dot.style.backgroundColor = Color.clear;
-                    }
-                    else
-                    {
-                        DMUiToolkitStyle.ClearBackgroundImage(dot);
-                        dot.style.backgroundColor = marker.Color;
-                    }
+                    ApplyMapPoiDot(dot, marker, 10f, centerWithNegativeMargin: false);
 
                     written++;
                 }
@@ -1343,11 +1373,11 @@ namespace Project.UI
             if (mapImage == null || mapPlayer == null)
                 return;
             WorldMapProvider provider = boundMap != null ? boundMap : WorldMapProvider.Instance;
-            float viewW = mapImage.resolvedStyle.width;
-            float viewH = mapImage.resolvedStyle.height;
-            if (viewW <= 1f || viewH <= 1f)
+            ApplySquareMapFrame();
+            Rect fitted = SquareMapRect();
+            if (fitted.width <= 1f)
                 return;
-            TickMapPlayer(provider, FittedMapRect(viewW, viewH, appliedMapTexture));
+            TickMapPlayer(provider, fitted);
         }
 
         private void TickMapPlayer(WorldMapProvider provider, Rect fitted)
@@ -1361,11 +1391,14 @@ namespace Project.UI
             Vector3 worldPos = mapUi != null && mapUi.HasMinimapPlayerPosition
                 ? mapUi.MinimapPlayerWorldPosition
                 : player.transform.position;
-            Vector2 uv = provider.WorldToMap01(worldPos);
-            PlaceOnMap(mapPlayer, fitted, uv, 18f);
+            Vector2 uv = provider.WorldToMap01(worldPos) + provider.MapPlayerIconUvOffset;
+            float iconSize = provider.MapPlayerIconSizePixels;
+            PlaceOnMap(mapPlayer, fitted, uv, iconSize);
             float iconBase = provider.MapPlayerIconBaseDegrees;
-            float facingYaw = mapUi != null ? mapUi.MapDisplayYaw : player.transform.eulerAngles.y;
-            SetElementRotate(mapPlayer, -facingYaw + iconBase);
+            float facingYaw = mapUi != null
+                ? mapUi.MapPlayerCompassYaw
+                : provider.GetMapCompassYaw(player.transform.eulerAngles.y);
+            ApplyPlayerMapIcon(mapPlayer, iconSize, facingYaw + iconBase, centerWithNegativeMargin: false);
             DMUiToolkitOverlayDocument.SetShown(mapPlayer, true);
         }
 
@@ -1380,17 +1413,15 @@ namespace Project.UI
             if (!show)
                 return;
 
+            ApplySquareMapFrame();
             DMUiToolkitStyle.TrySetTextureBackground(mapFog, fog.FogTexture, ScaleMode.StretchToFill);
-            float viewW = mapImage.resolvedStyle.width;
-            float viewH = mapImage.resolvedStyle.height;
-            if (viewW <= 1f || viewH <= 1f)
-                return;
-            Rect fitted = FittedMapRect(viewW, viewH, appliedMapTexture);
             mapFog.style.position = Position.Absolute;
-            mapFog.style.left = fitted.x;
-            mapFog.style.top = fitted.y;
-            mapFog.style.width = fitted.width;
-            mapFog.style.height = fitted.height;
+            mapFog.style.left = 0f;
+            mapFog.style.top = 0f;
+            mapFog.style.right = 0f;
+            mapFog.style.bottom = 0f;
+            mapFog.style.width = Length.Percent(100f);
+            mapFog.style.height = Length.Percent(100f);
         }
 
         private VisualElement EnsureMarker(int index)
@@ -1412,19 +1443,58 @@ namespace Project.UI
         private static void PlaceOnMap(VisualElement element, Rect fitted, Vector2 uv, float size)
         {
             uv = new Vector2(Mathf.Clamp01(uv.x), Mathf.Clamp01(uv.y));
+            element.style.width = size;
+            element.style.height = size;
             element.style.left = fitted.x + uv.x * fitted.width - size * 0.5f;
             element.style.top = fitted.y + (1f - uv.y) * fitted.height - size * 0.5f;
         }
 
         private static Rect FittedMapRect(float viewW, float viewH, Texture2D texture)
         {
-            if (texture == null || texture.width <= 0 || texture.height <= 0)
+            float side = Mathf.Min(viewW, viewH);
+            if (side <= 1f)
                 return new Rect(0f, 0f, viewW, viewH);
+            return new Rect((viewW - side) * 0.5f, (viewH - side) * 0.5f, side, side);
+        }
 
-            float scale = Mathf.Min(viewW / texture.width, viewH / texture.height);
-            float w = texture.width * scale;
-            float h = texture.height * scale;
-            return new Rect((viewW - w) * 0.5f, (viewH - h) * 0.5f, w, h);
+        private void OnMapViewportGeometry(GeometryChangedEvent evt)
+        {
+            ApplySquareMapFrame();
+        }
+
+        private void ApplySquareMapFrame()
+        {
+            VisualElement host = mapViewport != null ? mapViewport : mapImage?.parent;
+            if (host == null || mapImage == null)
+                return;
+
+            float w = host.resolvedStyle.width;
+            float h = host.resolvedStyle.height;
+            if (w <= 1f || h <= 1f)
+                return;
+
+            float side = Mathf.Min(w, h);
+            mapImage.style.position = Position.Absolute;
+            mapImage.style.left = (w - side) * 0.5f;
+            mapImage.style.top = (h - side) * 0.5f;
+            mapImage.style.right = StyleKeyword.Auto;
+            mapImage.style.bottom = StyleKeyword.Auto;
+            mapImage.style.width = side;
+            mapImage.style.height = side;
+        }
+
+        private Rect SquareMapRect()
+        {
+            if (mapImage == null)
+                return Rect.zero;
+
+            float w = mapImage.resolvedStyle.width;
+            float h = mapImage.resolvedStyle.height;
+            float side = Mathf.Min(w, h);
+            if (side <= 1f)
+                return Rect.zero;
+
+            return new Rect(0f, 0f, side, side);
         }
 
         private static bool IsToolkitWindow(JournalWindowId? window)

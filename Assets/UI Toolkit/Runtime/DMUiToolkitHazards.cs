@@ -1,6 +1,5 @@
 using System.Text;
 using Project.Core;
-using Project.Survival;
 using Project.Survival.Exposure;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -125,6 +124,8 @@ namespace Project.UI
                 service.OnSnapshotChanged += HandleSnapshot;
             }
 
+            ExposureReceiver.AnyZoneEntered -= HandleZoneEntered;
+            ExposureReceiver.AnyZoneEntered += HandleZoneEntered;
             BindZoneReceiver();
         }
 
@@ -134,6 +135,7 @@ namespace Project.UI
             if (service != null)
                 service.OnSnapshotChanged -= HandleSnapshot;
 
+            ExposureReceiver.AnyZoneEntered -= HandleZoneEntered;
             UnbindZoneReceiver();
         }
 
@@ -144,7 +146,6 @@ namespace Project.UI
         }
 
         private bool uguiHidden;
-        private int nextHideUguiFrame;
         private Label cachedPilotElev;
         private int nextElevResolveFrame;
         private float lastHazardPinLeft = float.NaN;
@@ -156,19 +157,18 @@ namespace Project.UI
             if (!bound)
                 BindTree();
 
+            bool toastActive = bannerPhase != 0;
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted()
                 && !GameplayHudVisibility.CinematicChromeHidden;
-            DMUiToolkitOverlayDocument.SetShown(root, want);
+            DMUiToolkitOverlayDocument.SetShown(root, want || toastActive);
 
-            // Legacy uGUI cleanup uses FindAnyObjectByType - throttle once settled.
-            if (!uguiHidden || Time.frameCount >= nextHideUguiFrame)
+            if (!uguiHidden)
             {
                 HideUgui();
-                uguiHidden = DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive;
-                nextHideUguiFrame = Time.frameCount + (uguiHidden ? 60 : 15);
+                uguiHidden = true;
             }
 
-            if (!want)
+            if (!want && !toastActive)
             {
                 manualPeekTimer = 0f;
                 hazardAlpha = 0f;
@@ -250,9 +250,9 @@ namespace Project.UI
             shelterPct = tree.Q<Label>("hz-shelter-pct");
             shelterSegs = tree.Q<VisualElement>("hz-shelter-segs");
             ticksLabel = tree.Q<Label>("hazard-ticks-label");
-            zoneBanner = tree.Q<VisualElement>("zone-banner");
-            zoneAccent = tree.Q<VisualElement>("zone-banner-accent");
-            zoneName = tree.Q<Label>("zone-banner-name");
+            VisualElement authoredBanner = tree.Q<VisualElement>("zone-banner");
+            DMUiToolkitOverlayDocument.SetShown(authoredBanner, false);
+            EnsureToast();
 
             DMUiToolkitOverlayDocument.PopulateSegments(radSegs, SegmentCount);
             DMUiToolkitOverlayDocument.PopulateSegments(coldSegs, SegmentCount);
@@ -366,7 +366,6 @@ namespace Project.UI
             ApplyHazardRow(shelterSegs, shelterPct, snapshot.IsInShelter ? 1f : 0f, ShelterColor);
 
             PullTicks(snapshot);
-            PullCompactExposure();
         }
 
         private static void ApplyHazardRow(VisualElement segs, Label pct, float level, Color color)
@@ -449,15 +448,6 @@ namespace Project.UI
             }
         }
 
-        private static void PullCompactExposure()
-        {
-            SurvivalStats stats = FindAnyObjectByType<SurvivalStats>();
-            if (stats == null)
-                return;
-
-            // Compact RAD/S/V readout is superseded by the hazard rows; keep uGUI hidden only.
-        }
-
         private void BindZoneReceiver()
         {
             if (boundReceiver != null)
@@ -483,6 +473,15 @@ namespace Project.UI
             boundReceiver = null;
         }
 
+        internal static void ShowZoneEntered(string zoneName, Color accent)
+        {
+            DMUiToolkitHazards host = EnsureHost();
+            if (host == null)
+                return;
+
+            host.ShowBanner(zoneName, accent);
+        }
+
         private void HandleZoneEntered(ExposureZoneVolume zone)
         {
             if (!GameSession.HasStarted || zone?.Profile == null)
@@ -495,11 +494,23 @@ namespace Project.UI
             if (string.IsNullOrWhiteSpace(name))
                 name = ExposureHazardPresentation.GetShortLabel(zone.Profile.zoneKind);
 
-            if (zoneName != null)
-                zoneName.text = name.ToUpperInvariant();
-            if (zoneAccent != null)
-                zoneAccent.style.backgroundColor = ExposureHazardPresentation.GetColor(zone.Profile.zoneKind);
+            ShowBanner(name, ExposureHazardPresentation.GetColor(zone.Profile.zoneKind));
+        }
 
+        private void ShowBanner(string zoneName, Color accent)
+        {
+            if (!bound)
+                BindTree();
+
+            EnsureToast();
+            if (this.zoneName != null)
+                this.zoneName.text = string.IsNullOrWhiteSpace(zoneName)
+                    ? "ZONE"
+                    : zoneName.ToUpperInvariant();
+            if (zoneAccent != null)
+                DMUiToolkitOverlayDocument.SetShown(zoneAccent, false);
+
+            ApplyBannerPlacement();
             bannerPhase = 1;
             bannerElapsed = 0f;
             if (zoneBanner != null)
@@ -509,11 +520,96 @@ namespace Project.UI
             }
         }
 
+        private const string ToastName = "zone-entry-toast";
+        private const float ToastWidth = 520f;
+
+        private void EnsureToast()
+        {
+            VisualElement host = ResolveToastHost();
+            if (host == null)
+                return;
+
+            if (zoneBanner != null && zoneBanner.panel != null && zoneBanner.name == ToastName)
+            {
+                ApplyBannerPlacement();
+                return;
+            }
+
+            zoneBanner = host.Q<VisualElement>(ToastName);
+            if (zoneBanner == null)
+            {
+                zoneBanner = new VisualElement { name = ToastName, pickingMode = PickingMode.Ignore };
+                zoneBanner.AddToClassList("dmg-zone-toast");
+                Label heading = new Label("ENTERING ZONE") { name = "zone-banner-heading", pickingMode = PickingMode.Ignore };
+                heading.AddToClassList("dmg-zone-toast-heading");
+                zoneName = new Label("ZONE") { name = "zone-banner-name", pickingMode = PickingMode.Ignore };
+                zoneName.AddToClassList("dmg-zone-toast-name");
+                zoneBanner.Add(heading);
+                zoneBanner.Add(zoneName);
+                host.Add(zoneBanner);
+                zoneAccent = null;
+            }
+            else
+            {
+                zoneAccent = zoneBanner.Q("zone-banner-accent");
+                zoneName = zoneBanner.Q<Label>("zone-banner-name");
+            }
+
+            zoneBanner.pickingMode = PickingMode.Ignore;
+            ApplyBannerPlacement();
+            if (bannerPhase == 0)
+                DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
+        }
+
+        private static VisualElement ResolveToastHost()
+        {
+            DMUiToolkitBootstrap bootstrap = DMUiToolkitBootstrap.Instance;
+            UIDocument hud = bootstrap != null ? bootstrap.HudDocument : null;
+            VisualElement hudRoot = hud != null ? hud.rootVisualElement : null;
+            if (hudRoot != null)
+                return hudRoot.Q<VisualElement>("hud-root") ?? hudRoot;
+            return null;
+        }
+
+        private void ApplyBannerPlacement()
+        {
+            if (zoneBanner == null)
+                return;
+
+            float panelW = 1920f;
+            float panelH = 1080f;
+            IPanel panel = zoneBanner.panel;
+            if (panel != null)
+            {
+                Rect wb = panel.visualTree.worldBound;
+                if (wb.width > 8f)
+                    panelW = wb.width;
+                if (wb.height > 8f)
+                    panelH = wb.height;
+            }
+
+            zoneBanner.style.position = Position.Absolute;
+            zoneBanner.style.left = (panelW - ToastWidth) * 0.5f;
+            zoneBanner.style.top = panelH / 3f;
+            zoneBanner.style.right = StyleKeyword.Auto;
+            zoneBanner.style.bottom = StyleKeyword.Auto;
+            zoneBanner.style.width = ToastWidth;
+            zoneBanner.style.marginLeft = 0f;
+            zoneBanner.style.marginTop = 0f;
+            zoneBanner.style.translate = new Translate(0, 0);
+            zoneBanner.style.backgroundColor = Color.clear;
+            zoneBanner.style.borderTopWidth = 0;
+            zoneBanner.style.borderRightWidth = 0;
+            zoneBanner.style.borderBottomWidth = 0;
+            zoneBanner.style.borderLeftWidth = 0;
+        }
+
         private void TickBanner()
         {
             if (bannerPhase == 0 || zoneBanner == null)
                 return;
 
+            ApplyBannerPlacement();
             bannerElapsed += Time.unscaledDeltaTime;
             if (bannerPhase == 1)
             {
@@ -743,16 +839,21 @@ namespace Project.UI
 
         private static void HideUgui()
         {
-            if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
+            if (!DMUiToolkitConfig.IsEnabled)
                 return;
 
-            // Destroy leftover retired uGUI hosts if still present in a scene/prefab.
-            Transform env = DMUiToolkitOverlayDocument.FindNamed("EnvironmentStatusHud")?.transform;
-            if (env != null)
-                Object.Destroy(env.gameObject);
+            ExposureZoneEntryBannerUI[] banners =
+                FindObjectsByType<ExposureZoneEntryBannerUI>(FindObjectsInactive.Include);
+            for (int i = 0; i < banners.Length; i++)
+            {
+                ExposureZoneEntryBannerUI banner = banners[i];
+                if (banner == null)
+                    continue;
 
-            ExposureZoneEntryBannerUI banner = FindAnyObjectByType<ExposureZoneEntryBannerUI>(FindObjectsInactive.Include);
-            banner?.DismissImmediate();
+                banner.DismissImmediate();
+                banner.enabled = false;
+                Object.Destroy(banner.gameObject);
+            }
         }
     }
 }

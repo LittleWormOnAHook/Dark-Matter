@@ -96,6 +96,13 @@ namespace Project.Creatures
         public CreatureAiState State => state;
         public float CurrentSpeed => currentSpeed;
         public bool IsDead => isDead;
+        public bool IsAggroed =>
+            state == CreatureAiState.Chase
+            || state == CreatureAiState.Melee
+            || state == CreatureAiState.Spit;
+
+        public bool IsAttacking =>
+            state == CreatureAiState.Melee || state == CreatureAiState.Spit;
 
         private void Awake()
         {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Map;
 using Project.Progression;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -495,14 +496,81 @@ namespace Project.UI
 
         internal static void SetElementRotate(VisualElement element, float degrees)
         {
+            SetElementRotateEuler(element, new Vector3(0f, 0f, degrees));
+        }
+
+        internal static void SetElementRotateEuler(VisualElement element, Vector3 euler)
+        {
             if (element == null)
                 return;
 
-            float currentDegrees = element.resolvedStyle.rotate.angle.ToDegrees();
-            if (Mathf.Approximately(currentDegrees, degrees))
+            // UITK style.rotate is 2D (Z) only. Minimap heading-up still needs full XYZ euler.
+#pragma warning disable CS0618
+            Quaternion wanted = Quaternion.Euler(euler);
+            if (element.transform.rotation == wanted)
                 return;
 
-            element.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(degrees)));
+            element.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(0f)));
+            element.transform.rotation = wanted;
+#pragma warning restore CS0618
+        }
+
+        internal static void ApplyMapPoiDot(
+            VisualElement element,
+            MapMarker marker,
+            float sizePixels,
+            bool centerWithNegativeMargin = true)
+        {
+            if (element == null || marker == null)
+                return;
+
+            float size = Mathf.Max(8f, sizePixels);
+            element.style.width = size;
+            element.style.height = size;
+            if (centerWithNegativeMargin)
+            {
+                element.style.marginLeft = -size * 0.5f;
+                element.style.marginTop = -size * 0.5f;
+            }
+            element.style.borderTopLeftRadius = size * 0.5f;
+            element.style.borderTopRightRadius = size * 0.5f;
+            element.style.borderBottomLeftRadius = size * 0.5f;
+            element.style.borderBottomRightRadius = size * 0.5f;
+
+            Color poiColor = DarkMatterGenesisUiPalette.ToMapPoiColor(marker.Color);
+            Sprite sprite = marker.IconSprite != null ? marker.IconSprite : MapUiSprites.Dot;
+            if (DMUiToolkitStyle.TrySetSpriteBackground(element, sprite, ScaleMode.ScaleToFit))
+            {
+                element.style.backgroundColor = Color.clear;
+                element.style.unityBackgroundImageTintColor = poiColor;
+            }
+            else
+            {
+                DMUiToolkitStyle.ClearBackgroundImage(element);
+                element.style.backgroundColor = poiColor;
+                element.style.unityBackgroundImageTintColor = Color.white;
+            }
+        }
+
+        internal static void ApplyPlayerMapIcon(
+            VisualElement element,
+            float sizePixels,
+            float rotateDegrees,
+            bool centerWithNegativeMargin)
+        {
+            if (element == null)
+                return;
+
+            float size = Mathf.Max(8f, sizePixels);
+            element.style.width = size;
+            element.style.height = size;
+            if (centerWithNegativeMargin)
+            {
+                element.style.marginLeft = -size * 0.5f;
+                element.style.marginTop = -size * 0.5f;
+            }
+
+            element.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(rotateDegrees)));
         }
     }
 }

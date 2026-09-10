@@ -1,5 +1,6 @@
 using System;
 using Project.Interaction;
+using Project.Map;
 using Project.Progression;
 using Project.UI;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace Project.AI
             CaptureSpawnPoint();
             if (GetComponent<EnemyProgressionXp>() == null)
                 gameObject.AddComponent<EnemyProgressionXp>();
+            MapMarker.EnsureForEnemy(this);
         }
 
         private void OnEnable()

@@ -11,6 +11,7 @@ namespace Project.Map
 
         public static event Action<MapMarker> MarkerRegistered;
         public static event Action<MapMarker> MarkerUnregistered;
+        public static event Action<MapMarker> MarkerUpdated;
 
         internal static void Register(MapMarker marker)
         {
@@ -30,6 +31,14 @@ namespace Project.Map
                 return;
 
             MarkerUnregistered?.Invoke(marker);
+        }
+
+        internal static void NotifyUpdated(MapMarker marker)
+        {
+            if (marker == null || !Markers.Contains(marker))
+                return;
+
+            MarkerUpdated?.Invoke(marker);
         }
 
         internal static void Clear()

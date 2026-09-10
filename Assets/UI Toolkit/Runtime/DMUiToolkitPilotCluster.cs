@@ -21,7 +21,8 @@ namespace Project.UI
     [DisallowMultipleComponent]
     public class DMUiToolkitPilotCluster : MonoBehaviour
     {
-        private const int MaxPois = 8;
+        private const int MaxPois = 32;
+        private const float MinimapPoiSizePx = 12f;
         private const float MapRadiusPx = 84f;
         private const float MarkerRange = 250f;
         private const float CompassFov = 140f;
@@ -51,6 +52,7 @@ namespace Project.UI
         private VisualElement root;
         private VisualElement cluster;
         private VisualElement mapView;
+        private VisualElement mapFog;
         private VisualElement mapPlayer;
         private VisualElement pilotMapRing;
         private Label pilotCardinalN;
@@ -102,6 +104,7 @@ namespace Project.UI
         private string lastZoneText;
         private string lastCompassPoiText;
         private float lastMapYaw = float.NaN;
+        private Vector3 lastMapEuler;
         private float nextMapPoiRefresh;
         private float lastCompassHeading = float.NaN;
         private float lastCompassWidth;
@@ -220,6 +223,7 @@ namespace Project.UI
             root = tree.Q<VisualElement>("pilot-root");
             cluster = tree.Q<VisualElement>("pilot-cluster");
             mapView = tree.Q<VisualElement>("pilot-map-view");
+            mapFog = tree.Q<VisualElement>("pilot-map-fog");
             mapPlayer = tree.Q<VisualElement>("pilot-map-player");
             poiHost = tree.Q<VisualElement>("pilot-pois");
             pilotMapRing = tree.Q<VisualElement>("pilot-map-ring");
@@ -267,8 +271,20 @@ namespace Project.UI
                 playerArrowBound = true;
             }
 
+            ApplyMinimapPlayerIconRotation();
             BuildCompassTicks();
             bound = root != null;
+        }
+
+        private void ApplyMinimapPlayerIconRotation()
+        {
+            if (mapPlayer == null)
+                return;
+
+            WorldMapProvider provider = WorldMapProvider.Instance;
+            float iconBase = provider != null ? provider.MinimapPlayerIconBaseDegrees : 0f;
+            float size = provider != null ? provider.MinimapPlayerIconSizePixels : 24f;
+            DMUiToolkitMenus.ApplyPlayerMapIcon(mapPlayer, size, iconBase, centerWithNegativeMargin: true);
         }
 
 
@@ -527,6 +543,8 @@ private void EnsureArcs()
 
         private void RefreshWorld(MapUI mapUi, SurvivalStats stats)
         {
+            ApplyMinimapPlayerIconRotation();
+
             Vector3 pos = Vector3.zero;
             bool hasPos = mapUi != null && mapUi.HasMinimapPlayerPosition;
             if (hasPos)
@@ -608,13 +626,29 @@ private void EnsureArcs()
                 mapOpacityApplied = true;
             }
 
-            float yaw = mapUi != null ? mapUi.MapDisplayYaw : 0f;
-            if (float.IsNaN(lastMapYaw) || Mathf.Abs(yaw - lastMapYaw) > 0.05f)
+            RenderTexture fogRt = minimap != null ? minimap.EnsureFogCroppedView(mapUi) : null;
+            bool showFog = fogRt != null;
+            if (mapFog != null)
             {
-                lastMapYaw = yaw;
-                DMUiToolkitMenus.SetElementRotate(mapView, yaw);
+                mapFog.style.display = showFog ? DisplayStyle.Flex : DisplayStyle.None;
+                if (showFog)
+                    DMUiToolkitStyle.TrySetRenderTextureBackground(mapFog, fogRt, ScaleMode.ScaleAndCrop);
+            }
+
+            float mapYaw = mapUi != null ? mapUi.MapCompassYaw : 0f;
+            WorldMapProvider map = WorldMapProvider.Instance;
+            Vector3 mapEuler = map != null ? map.GetMinimapViewEuler(mapYaw) : new Vector3(0f, 0f, -mapYaw);
+            if (float.IsNaN(lastMapYaw)
+                || !Mathf.Approximately(lastMapYaw, mapYaw)
+                || (lastMapEuler - mapEuler).sqrMagnitude > 0.0001f)
+            {
+                lastMapYaw = mapYaw;
+                lastMapEuler = mapEuler;
+                DMUiToolkitMenus.SetElementRotateEuler(mapView, mapEuler);
+                if (mapFog != null)
+                    DMUiToolkitMenus.SetElementRotateEuler(mapFog, mapEuler);
                 if (poiHost != null)
-                    DMUiToolkitMenus.SetElementRotate(poiHost, yaw);
+                    DMUiToolkitMenus.SetElementRotateEuler(poiHost, mapEuler);
             }
 
             RefreshMapPois(mapUi);
@@ -628,12 +662,21 @@ private void EnsureArcs()
             if (Time.unscaledTime < nextMapPoiRefresh)
                 return;
 
-            nextMapPoiRefresh = Time.unscaledTime + 0.25f;
             poiHost.Clear();
 
+            WorldMapProvider provider = WorldMapProvider.Instance;
+            float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
+            Vector3 poiEuler = provider != null
+                ? provider.GetMinimapViewEuler(heading)
+                : new Vector3(0f, 0f, -heading);
+            DMUiToolkitMenus.SetElementRotateEuler(poiHost, poiEuler);
+
             IReadOnlyList<MapMarker> markers = MapRegistry.ActiveMarkers;
-            if (markers == null || markers.Count == 0)
+            if (markers == null || markers.Count == 0 || provider == null)
+            {
+                nextMapPoiRefresh = Time.unscaledTime + 0.25f;
                 return;
+            }
 
             Vector2 playerUv = new Vector2(0.5f, 0.5f);
             float uvSpan = 0.25f;
@@ -644,28 +687,38 @@ private void EnsureArcs()
                 mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw);
             }
 
-            WorldMapProvider provider = WorldMapProvider.Instance;
-            if (provider == null)
-                return;
+            Vector3 playerWorld = mapUi != null && mapUi.HasMinimapPlayerPosition
+                ? mapUi.MinimapPlayerWorldPosition
+                : Vector3.zero;
 
             int drawn = 0;
+            bool combatPulse = false;
             for (int i = 0; i < markers.Count && drawn < MaxPois; i++)
             {
                 MapMarker marker = markers[i];
-                if (marker == null || !marker.ShowOnMinimap || !marker.IsRevealedOnMap)
+                if (marker == null || !marker.ShouldDrawOnMinimap(playerWorld))
                     continue;
 
-                Vector2 markerUv = provider.WorldToMap01(marker.WorldPosition);
+                // Same UV as the cropped map texture (includes player-icon calibration nudge).
+                Vector2 markerUv = provider.WorldToPlayerMap01(marker.WorldPosition);
                 Vector2 delta = (markerUv - playerUv) / Mathf.Max(0.0001f, uvSpan);
+                if (provider.MinimapFlipHorizontal)
+                    delta.x = -delta.x;
+                if (provider.MinimapFlipVertical)
+                    delta.y = -delta.y;
                 if (delta.sqrMagnitude > 1f)
                     continue;
 
                 VisualElement dot = new VisualElement();
                 dot.AddToClassList("pilot-poi");
                 dot.pickingMode = PickingMode.Ignore;
-                Sprite sprite = marker.IconSprite != null ? marker.IconSprite : MapUiSprites.Dot;
-                DMUiToolkitStyle.TrySetSpriteBackground(dot, sprite, ScaleMode.ScaleToFit);
-                dot.style.backgroundColor = marker.Color;
+                DMUiToolkitMenus.ApplyMapPoiDot(dot, marker, MinimapPoiSizePx);
+                if (marker.RequiresCombatAggro)
+                {
+                    dot.style.opacity = marker.GetMinimapDisplayAlpha();
+                    if (marker.IsCombatFlashing)
+                        combatPulse = true;
+                }
 
                 float px = MapRadiusPx + delta.x * MapRadiusPx;
                 float py = MapRadiusPx - delta.y * MapRadiusPx;
@@ -674,11 +727,13 @@ private void EnsureArcs()
                 poiHost.Add(dot);
                 drawn++;
             }
+
+            nextMapPoiRefresh = Time.unscaledTime + (combatPulse ? 1f / 12f : 0.25f);
         }
 
         private void RefreshCompass(MapUI mapUi)
         {
-            float heading = mapUi != null ? mapUi.MapDisplayYaw : 0f;
+            float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
             if (Time.frameCount >= nextCompassWidthFrame)
             {
                 nextCompassWidthFrame = Time.frameCount + 30;

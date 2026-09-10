@@ -202,6 +202,11 @@ namespace Project.AI
         public bool IsEngagedWithTarget =>
             state == AiState.Attack || state == AiState.Chase || state == AiState.Defensive;
 
+        /// <summary>Chasing, attacking, or still inside the damage/heard-hit aggro window.</summary>
+        public bool IsAggroed => IsEngagedWithTarget || HasActiveAggroTarget();
+
+        public bool IsAttacking => state == AiState.Attack;
+
         /// <summary>
         /// True when the enemy is in Attack state with a ranged weapon and the target is within
         /// ranged engage range. Used by the combat bridge to drive the aim stance every frame.
