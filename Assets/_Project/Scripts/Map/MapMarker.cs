@@ -2,14 +2,15 @@ using Project.AI;
 using Project.Creatures;
 using Project.Data;
 using Project.Interaction;
+using Project.Quests;
 using Project.UI;
 using UnityEngine;
 
 namespace Project.Map
 {
     /// <summary>
-    /// Optional world marker shown on the minimap and full map.
-    /// Static POIs snap their host transform once at start. Enemies track live on the minimap while aggroed, then linger solid.
+        /// Optional world marker shown on the minimap and full map.
+        /// Fog-gated, live-position POIs. Enemies also require combat aggro.
     /// </summary>
     [DefaultExecutionOrder(200)]
     public class MapMarker : MonoBehaviour
@@ -26,8 +27,8 @@ namespace Project.Map
         [SerializeField] private string discoveryId;
         [Tooltip("Legacy: fog-gated markers. Ignored when requiresScanDiscovery is true.")]
         [SerializeField] private bool requiresFogReveal = true;
-        [Tooltip("When true, WorldPosition follows the host transform (enemies). Static POIs snap once at start.")]
-        [SerializeField] private bool useLiveWorldPosition;
+        [Tooltip("When true, WorldPosition follows the host transform.")]
+        [SerializeField] private bool useLiveWorldPosition = true;
         [Tooltip("Enemy/creature dots: 3s flash on aggro, solid after, flash while attacking, solid 5s after lose-aggro.")]
         [SerializeField] private bool requiresCombatAggro;
 
@@ -35,8 +36,6 @@ namespace Project.Map
         private const float AggroFlashSeconds = 3f;
         private const float CombatFlashHz = 3f;
 
-        private Vector3 cachedWorldPosition;
-        private bool capturedHostLocation;
         private bool wasCombatActive;
         private float combatLingerUntil;
         private float aggroFlashUntil;
@@ -50,12 +49,7 @@ namespace Project.Map
         public bool RequiresFogReveal => requiresFogReveal;
         public bool UsesLiveWorldPosition => useLiveWorldPosition;
         public bool RequiresCombatAggro => requiresCombatAggro;
-        public Vector3 WorldPosition =>
-            useLiveWorldPosition && isActiveAndEnabled
-                ? transform.position
-                : capturedHostLocation
-                    ? cachedWorldPosition
-                    : transform.position;
+        public Vector3 WorldPosition => transform.position;
 
         public string DiscoveryId
         {
@@ -129,6 +123,7 @@ namespace Project.Map
             showOnFullMap = true;
             requiresScanDiscovery = true;
             discoveryId = string.Empty;
+            ApplyCanonicalFlags();
         }
 
         public void ConfigureScannedPoi(string displayName, Color markerColor)
@@ -139,6 +134,7 @@ namespace Project.Map
             showOnFullMap = true;
             requiresScanDiscovery = true;
             discoveryId = string.Empty;
+            ApplyCanonicalFlags();
         }
 
         public void ConfigureQuestGiver(string npcDisplayName)
@@ -148,7 +144,7 @@ namespace Project.Map
             showOnMinimap = true;
             showOnFullMap = true;
             requiresScanDiscovery = false;
-            requiresFogReveal = false;
+            ApplyCanonicalFlags();
         }
 
         public void SetRequiresScanDiscovery(bool required)
@@ -182,11 +178,46 @@ namespace Project.Map
             showOnMinimap = true;
             showOnFullMap = false;
             requiresScanDiscovery = false;
-            requiresFogReveal = false;
-            useLiveWorldPosition = true;
-            requiresCombatAggro = true;
             discoveryId = string.Empty;
+            ApplyCanonicalFlags();
         }
+
+        /// <summary>
+        /// Fog reveal + live world position on every marker.
+        /// Combat-aggro only on enemy/creature hosts.
+        /// </summary>
+        public void ApplyCanonicalFlags()
+        {
+            requiresFogReveal = true;
+            useLiveWorldPosition = true;
+            requiresCombatAggro = IsEnemyHost();
+        }
+
+        public void RefreshFromHost()
+        {
+            if (TryGetComponent(out QuestGiverNpc questGiver))
+                ConfigureQuestGiver(questGiver.DisplayName);
+            else if (TryGetComponent(out ResourceNode node) && node.resourceItem != null)
+                ConfigureForResource(node.resourceItem);
+            else if (TryGetComponent(out ItemPickup pickup) && pickup.itemData != null)
+                ConfigureForResource(pickup.itemData);
+            else if (TryGetComponent(out EnemyHealth enemy))
+                ConfigureForEnemy(enemy.name);
+            else if (TryGetComponent(out DMICreatureAiController creature))
+                ConfigureForEnemy(creature.name);
+            else
+                ApplyCanonicalFlags();
+        }
+
+        public bool IsEnemyHost()
+        {
+            return TryGetComponent(out EnemyHealth _)
+                || TryGetComponent(out EnemyAiController _)
+                || TryGetComponent(out DMICreatureAiController _)
+                || TryGetComponent(out DMICreatureHealth _);
+        }
+
+        public const float CompassAggroPreviewPadding = 20f;
 
         public bool ShouldDrawOnMinimap(Vector3 playerWorld)
         {
@@ -203,6 +234,47 @@ namespace Project.Map
                 return EvaluateCombatVisibility();
 
             return IsRevealedOnMap;
+        }
+
+        public bool ShouldDrawOnCompass(Vector3 playerWorld)
+        {
+            if (!showOnMinimap || !isActiveAndEnabled)
+                return false;
+
+            if (TryGetComponent(out EnemyHealth health) && health.IsDead)
+            {
+                ClearCombatPulse();
+                return false;
+            }
+
+            if (requiresCombatAggro || IsEnemyHost())
+            {
+                if (EvaluateCombatVisibility())
+                    return true;
+
+                return IsWithinCompassAggroPreview(playerWorld);
+            }
+
+            return IsRevealedOnMap;
+        }
+
+        public bool IsWithinCompassAggroPreview(Vector3 playerWorld)
+        {
+            Vector3 delta = transform.position - playerWorld;
+            delta.y = 0f;
+            float limit = GetOuterAggroRange() + CompassAggroPreviewPadding;
+            return delta.sqrMagnitude <= limit * limit;
+        }
+
+        public float GetOuterAggroRange()
+        {
+            if (TryGetComponent(out EnemySenses senses))
+                return Mathf.Max(1f, senses.OuterSenseRange);
+
+            if (TryGetComponent(out DMICreatureAiController creature))
+                return Mathf.Max(1f, creature.OuterAggroRange);
+
+            return 16f;
         }
 
         public bool IsCombatFlashing => requiresCombatAggro && ShouldFlashCombatDot();
@@ -290,14 +362,17 @@ namespace Project.Map
 
         public void CaptureHostLocation()
         {
-            cachedWorldPosition = transform.position;
-            capturedHostLocation = true;
-            if (!useLiveWorldPosition)
-                MapRegistry.NotifyUpdated(this);
+            MapRegistry.NotifyUpdated(this);
+        }
+
+        private void Awake()
+        {
+            ApplyCanonicalFlags();
         }
 
         private void Start()
         {
+            ApplyCanonicalFlags();
             CaptureHostLocation();
         }
 
@@ -317,7 +392,6 @@ namespace Project.Map
 
         private void OnDisable()
         {
-            cachedWorldPosition = transform.position;
             if (!keepRegisteredWhenDisabled)
                 MapRegistry.Unregister(this);
         }
