@@ -16,7 +16,7 @@
     left: 4px;
     bottom: 4px;
     width: 248px;
-    height: 290px;
+    height: 444px;
     background-color: rgba(0, 0, 0, 0);
     overflow: visible;
 }
@@ -41,7 +41,7 @@
 
 .pilot-corner-block {
     position: absolute;
-    top: 4px;
+    top: 158px;
     width: 70px;
     background-color: rgba(0, 0, 0, 0);
     align-items: center;
@@ -55,7 +55,7 @@
 .pilot-side-block {
     position: absolute;
     left: 50%;
-    top: 198px;
+    top: 352px;
     width: 56px;
     margin-left: -28px;
     background-color: rgba(0, 0, 0, 0);
@@ -124,7 +124,7 @@
 .pilot-map-stage {
     position: absolute;
     left: 4px;
-    top: 48px;
+    top: 202px;
     width: 200px;
     height: 200px;
     background-color: rgba(0, 0, 0, 0);
@@ -155,6 +155,20 @@
 }
 
 .pilot-map-view {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 84px;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.pilot-map-fog {
     position: absolute;
     left: 0;
     top: 0;
@@ -199,26 +213,81 @@
     top: 0;
     right: 0;
     bottom: 0;
+    transform-origin: center;
     background-color: rgba(0, 0, 0, 0);
 }
 
 .pilot-poi {
     position: absolute;
-    width: 6px;
-    height: 6px;
-    margin-left: -3px;
-    margin-top: -3px;
-    background-color: #C02E7A;
-    border-radius: 3px;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    margin-top: -6px;
+    background-color: #FFFFFF;
+    border-radius: 6px;
+}
+
+.pilot-zone-stack {
+    /* Same X center as Elevation (104). Top 44 = 100px above Elevation at 144. */
+    position: absolute;
+    left: 104px;
+    top: 44px;
+    width: 200px;
+    margin-left: -100px;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-zone-icons {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    height: 44px;
+    margin-left: 0;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-zone-entering {
+    width: 100%;
+    margin-top: 2px;
+    color: #D4A017;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.8px;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pilot-zone-icon {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    margin-left: 4px;
+    margin-right: 4px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.pilot-zone-icon-glow {
+    position: absolute;
+    left: -6px;
+    top: -6px;
+    width: 48px;
+    height: 48px;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .pilot-top-meta {
-    /* Centered on player arrow / map ring: map-stage left 4 + width 200 → center 104 inside cluster. */
+    /* Centered on the map ring, above the circle. */
     position: absolute;
     left: 104px;
-    top: 0px;
+    top: 144px;
     width: 200px;
-    height: 28px;
+    height: 42px;
     margin-left: -100px;
     align-items: stretch;
     background-color: rgba(0, 0, 0, 0);
@@ -246,7 +315,7 @@
 .pilot-temp-gauge {
     position: absolute;
     left: 24px;
-    top: 252px;
+    top: 406px;
     width: 160px;
     height: 34px;
     align-items: center;
@@ -274,7 +343,7 @@
 
 .pilot-meta-col {
     position: absolute;
-    top: 238px;
+    top: 392px;
     width: 110px;
     background-color: rgba(0, 0, 0, 0);
 }
@@ -296,14 +365,15 @@
 .pilot-right-meta .pilot-meta-line { -unity-text-align: middle-right; }
 
 .pilot-zone {
-    /* Centered on player arrow / map ring (stage center 104). */
-    position: absolute;
-    left: 104px;
-    top: 28px;
-    width: 200px;
-    margin-left: -100px;
-    color: #C02E7A;
-    font-size: 10px;
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #D4A017;
+    font-size: 13px;
     -unity-font-style: bold;
     letter-spacing: 0.6px;
     -unity-text-align: middle-center;

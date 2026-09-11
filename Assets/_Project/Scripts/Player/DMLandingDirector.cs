@@ -1,5 +1,6 @@
 using Invector.vCharacterController;
 using Project.Features.Climb;
+using Project.Features.Dash;
 using Project.Features.Jetpack;
 using Project.Survival;
 using Project.Vehicles;
@@ -35,7 +36,7 @@ namespace Project.Player
         private const float WalkableDist = 0.45f;
         private const float WalkableNormalY = 0.55f;
 
-        [SerializeField] private DMClimbProfile climbProfile;
+        [SerializeField] private DM_ClimbDashProfile climbProfile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private Animator animator;
         [SerializeField] private DMJetpackController jetpack;
@@ -43,6 +44,7 @@ namespace Project.Player
         [SerializeField] private Rigidbody body;
         [SerializeField] private CapsuleCollider capsule;
         [SerializeField] private DMClimbController climb;
+        [SerializeField] private DMDashController dash;
 
         private bool _landing;
         private bool _hardFalling;
@@ -202,7 +204,7 @@ namespace Project.Player
 
         private void Awake()
         {
-            climbProfile = DMClimbProfile.Resolve(climbProfile);
+            climbProfile = DM_ClimbDashProfile.Resolve(climbProfile);
             if (motor == null)
                 motor = GetComponent<vThirdPersonMotor>();
             if (animator == null)
@@ -217,7 +219,53 @@ namespace Project.Player
                 capsule = GetComponent<CapsuleCollider>();
             if (climb == null)
                 climb = GetComponent<DMClimbController>();
+            if (dash == null)
+                dash = GetComponent<DMDashController>();
             CacheAnimatorParameters();
+        }
+
+        private bool IsDashing => dash != null && dash.IsDashing;
+
+        /// <summary>Dash restores locomotion — cancel half-started lands and unstick motor/animator.</summary>
+        public void OnDashEnded()
+        {
+            if (_landing && !_enteredLandState)
+                EndLanding(restoreLocks: false);
+            else if (_landing)
+            {
+                _heldLockMovement = false;
+                _heldLockAnimMovement = false;
+            }
+
+            if (_landing)
+                return;
+
+            ReleaseMotorForLocomotion();
+            RestoreAnimatorLocomotion();
+        }
+
+        private void ReleaseMotorForLocomotion()
+        {
+            if (motor == null)
+                return;
+
+            motor.lockMovement = false;
+            motor.lockAnimMovement = false;
+            motor.disableAnimations = false;
+            motor.disableCheckGround = false;
+        }
+
+        private void RestoreAnimatorLocomotion()
+        {
+            if (animator == null)
+                return;
+
+            animator.enabled = true;
+            if (animator.speed <= 0.01f)
+                animator.speed = 1f;
+
+            if (animator.HasState(0, Locomotion))
+                animator.CrossFadeInFixedTime(Locomotion, 0.1f, 0, 0f);
         }
 
         private void Start()
@@ -290,6 +338,9 @@ namespace Project.Player
                 return;
 
             if (climb != null && climb.IsClimbing)
+                return;
+
+            if (IsDashing)
                 return;
 
             if (ClearMountedAir())
@@ -377,7 +428,7 @@ namespace Project.Player
             }
             else if (_groundedFor >= GroundCommitSeconds)
             {
-                if (_physAir)
+                if (_physAir && !IsDashing)
                 {
                     float drop = _airApexY - transform.position.y;
                     if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
@@ -387,7 +438,7 @@ namespace Project.Player
                 ResetAirTracking();
             }
 
-            if (_physAir && !_landing && !_hardFalling)
+            if (_physAir && !_landing && !_hardFalling && !IsDashing)
                 TryAnticipateLanding();
 
             _wasGrounded = walkable;
@@ -443,11 +494,11 @@ namespace Project.Player
         [SerializeField] private float fallDamageHealthFraction = 0.5f;
         [SerializeField] private float jetpackLethalDelay = 6f;
 
-        private DMClimbProfile LiveClimb
+        private DM_ClimbDashProfile LiveClimb
         {
             get
             {
-                climbProfile = DMClimbProfile.Resolve(climbProfile);
+                climbProfile = DM_ClimbDashProfile.Resolve(climbProfile);
                 return climbProfile;
             }
         }
@@ -498,6 +549,8 @@ namespace Project.Player
         {
             if (_landing || _hardFalling || !_physAir)
                 return;
+            if (IsDashing)
+                return;
             if (Time.unscaledTime < _ignoreLandsUntil)
                 return;
             if (climb != null && climb.IsClimbing)
@@ -545,6 +598,9 @@ namespace Project.Player
 
         private void BeginLanding(float dropMeters, float airVelocity)
         {
+            if (IsDashing)
+                return;
+
             dropMeters = ClampDropToImpact(dropMeters, airVelocity);
             if (dropMeters < 0.2f && airVelocity > -2f)
                 return;
@@ -575,7 +631,7 @@ namespace Project.Player
 
         private void StartOwnedLand(int stateHash, float duration, bool lockMove)
         {
-            if (animator == null)
+            if (animator == null || IsDashing)
                 return;
 
             MuteInvectorFall();
@@ -587,8 +643,8 @@ namespace Project.Player
             _ownedLandState = stateHash;
             if (motor != null)
             {
-                _heldLockMovement = motor.lockMovement;
-                _heldLockAnimMovement = motor.lockAnimMovement;
+                _heldLockMovement = motor.lockMovement && !IsDashing;
+                _heldLockAnimMovement = motor.lockAnimMovement && !IsDashing;
                 _heldBlockFallDamage = motor.blockApplyFallDamage;
                 _heldDisableAnimations = motor.disableAnimations;
                 motor.blockApplyFallDamage = true;
@@ -1266,6 +1322,13 @@ namespace Project.Player
                 motor.lockAnimMovement = _heldLockAnimMovement;
                 motor.blockApplyFallDamage = _heldBlockFallDamage;
                 motor.disableAnimations = _heldDisableAnimations;
+            }
+            else if (motor != null)
+            {
+                motor.lockMovement = false;
+                motor.lockAnimMovement = false;
+                motor.disableAnimations = false;
+                motor.blockApplyFallDamage = _heldBlockFallDamage;
             }
 
             ResetAirTracking();

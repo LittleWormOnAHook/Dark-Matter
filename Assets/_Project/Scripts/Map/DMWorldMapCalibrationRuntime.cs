@@ -5,7 +5,7 @@ namespace Project.Map
 {
     /// <summary>
     /// Play-mode keyboard nudge for map calibration profile (saved on Play exit).
-    /// Arrow keys = UV offset, Alt+arrows = map-zero anchor, Q/E = north offset.
+    /// Arrow keys = UV offset, Alt+arrows = map-zero anchor, Q/E = north offset, Page Up/Down = UV scale.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(200)]
@@ -54,7 +54,9 @@ namespace Project.Map
             bool changed = false;
             if (uvDelta.sqrMagnitude > 0f)
             {
-                if (alt)
+                if (alt && shift)
+                    profile.NudgePlayerIconUv(uvDelta);
+                else if (alt)
                     profile.NudgeMapZeroUv(uvDelta);
                 else
                     profile.NudgeUvOffset(uvDelta);
@@ -70,6 +72,30 @@ namespace Project.Map
             if (keyboard.eKey.wasPressedThisFrame)
             {
                 profile.NudgeNorthOffset(northStepDegrees);
+                changed = true;
+            }
+
+            if (keyboard.pageUpKey.wasPressedThisFrame)
+            {
+                float scaleStep = shift ? 0.005f : 0.02f;
+                if (ctrl)
+                    profile.NudgeUvScale(scaleStep, 0f);
+                else if (alt)
+                    profile.NudgeUvScale(0f, scaleStep);
+                else
+                    profile.NudgeUvScale(scaleStep, scaleStep);
+                changed = true;
+            }
+
+            if (keyboard.pageDownKey.wasPressedThisFrame)
+            {
+                float scaleStep = shift ? 0.005f : 0.02f;
+                if (ctrl)
+                    profile.NudgeUvScale(-scaleStep, 0f);
+                else if (alt)
+                    profile.NudgeUvScale(0f, -scaleStep);
+                else
+                    profile.NudgeUvScale(-scaleStep, -scaleStep);
                 changed = true;
             }
 
@@ -90,13 +116,15 @@ namespace Project.Map
             if (!showOnScreenHelp || profile == null || !profile.enableRuntimeTuning || !Application.isPlaying)
                 return;
 
-            const int width = 420;
-            GUI.Box(new Rect(8f, 8f, width, 118f), "Map calibration (Play tweaks save on exit)");
-            GUILayout.BeginArea(new Rect(16f, 28f, width - 16f, 92f));
+            const int width = 440;
+            GUI.Box(new Rect(8f, 8f, width, 168f), "Map calibration (Play tweaks save on exit)");
+            GUILayout.BeginArea(new Rect(16f, 28f, width - 16f, 142f));
             GUILayout.Label($"UV offset: {profile.mapUvOffset.x:F4}, {profile.mapUvOffset.y:F4}");
             GUILayout.Label($"Map zero UV: {profile.mapZeroUv01.x:F4}, {profile.mapZeroUv01.y:F4}");
+            GUILayout.Label($"Player icon UV: {profile.mapPlayerIconUvOffset.x:F4}, {profile.mapPlayerIconUvOffset.y:F4}");
             GUILayout.Label($"North offset: {profile.mapDisplayNorthOffsetDegrees:F1}°");
-            GUILayout.Label("Arrows=UV | Alt+Arrows=zero | Q/E=north | Shift/Ctrl=step");
+            GUILayout.Label($"UV scale X/Y: {profile.mapUvScaleX:F3} / {profile.mapUvScaleY:F3}");
+            GUILayout.Label("Arrows=UV | Alt+Arrows=zero | Shift+Alt+Arrows=icon | Q/E=north | PgUp/Dn=scale (Ctrl=X Alt=Y)");
             GUILayout.EndArea();
         }
     }

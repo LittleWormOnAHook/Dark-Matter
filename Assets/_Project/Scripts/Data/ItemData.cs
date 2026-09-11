@@ -225,6 +225,10 @@ namespace Project.Data
         [Range(0f, 1f)]
         public float splashDamageFalloff = 0.25f;
 
+        [Header("Combat FX")]
+        [Tooltip("Full DM ammo profile: stats, muzzle/tracer/beam, hit VFX, and per-ammo hit marks. When set, FX slots on the profile win over the loose fields below.")]
+        public DMAmmoFxProfile fxProfile;
+
         [Header("Projectile VFX")]
         [Tooltip("Spawned at the firing socket every shot (muzzle flash particle/light burst). Auto-destroyed shortly after.")]
         public GameObject muzzleFlashPrefab;

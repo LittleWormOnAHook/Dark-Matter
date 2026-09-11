@@ -1,16 +1,28 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Project.Core;
 using Project.Data;
+using Project.Features.Climb;
 using Project.Interaction;
+using Project.Progression;
 using Project.Survival.Exposure;
 using Project.UI;
-using Project.Progression;
+using UnityEngine;
 
 namespace Project.Survival
 {
     public class SurvivalStats : MonoBehaviour, IDamageable
     {
+        [Flags]
+        public enum StaminaActivity
+        {
+            None = 0,
+            Sprint = 1 << 0,
+            Climb = 1 << 1,
+            Dash = 1 << 2,
+            DashRecovery = 1 << 3
+        }
+
         public const float OxygenCriticalPercent = 15f;
 
         [Header("Survival Stats")]
@@ -18,12 +30,22 @@ namespace Project.Survival
         public float maxEnergy = 100f;
         public float maxStamina = 100f;
 
-        /// <summary>When true, stamina does not regen (climb / other drains own the bar).</summary>
-        [System.NonSerialized] public bool suppressStaminaRegen;
+        /// <summary>Legacy climb gate — maps to <see cref="StaminaActivity.Climb"/>.</summary>
+        public bool suppressStaminaRegen
+        {
+            get => (activeStaminaActivities & StaminaActivity.Climb) != 0;
+            set => SetStaminaActivity(StaminaActivity.Climb, value);
+        }
+
         public float maxOxygen = 2400f;
 
         [Header("Drain Rates")]
-        public float energyDrain = 1.3f;
+        [Tooltip("Passive idle/walk drain. Tool activities use toolEnergyDrainPerSecond.")]
+        public float energyDrain;
+        [Tooltip("Jetpack, mining tool, and scanner drain while active.")]
+        public float toolEnergyDrainPerSecond = 0.5f;
+        [Tooltip("Energy per crafted output item when not at a workbench.")]
+        public float handCraftEnergyPerItem = 0.5f;
         public float oxygenDrainPerSecond = 4f;
         public float staminaRegenPerSecond = 12f;
 
@@ -135,6 +157,8 @@ namespace Project.Survival
         private bool hasAppliedSaveState;
         private bool simulationPaused;
         private bool isSprinting;
+        [NonSerialized] private StaminaActivity activeStaminaActivities;
+        private float dashRecoveryEndsAt;
         private string lastDamageSource = "unknown";
         private float externalOxygenDrainMultiplier = 1f;
         private float externalExposureHealthDrain;
@@ -174,11 +198,67 @@ namespace Project.Survival
             if (authoredMaxCaptured)
                 return;
 
+            RecaptureAuthoredMaxima();
+        }
+
+        public void RecaptureAuthoredMaxima()
+        {
             authoredMaxHealth = Mathf.Max(1f, maxHealth);
             authoredMaxEnergy = Mathf.Max(1f, maxEnergy);
             authoredMaxStamina = Mathf.Max(1f, maxStamina);
             authoredMaxOxygen = Mathf.Max(1f, maxOxygen);
             authoredMaxCaptured = true;
+        }
+
+        public void SetStaminaActivity(StaminaActivity activity, bool active)
+        {
+            if (activity == StaminaActivity.None)
+                return;
+
+            if (active)
+                activeStaminaActivities |= activity;
+            else
+                activeStaminaActivities &= ~activity;
+        }
+
+        public void BeginDashStaminaRecovery(float durationSeconds)
+        {
+            SetStaminaActivity(StaminaActivity.Dash, false);
+            if (durationSeconds <= 0f)
+            {
+                SetStaminaActivity(StaminaActivity.DashRecovery, false);
+                return;
+            }
+
+            SetStaminaActivity(StaminaActivity.DashRecovery, true);
+            dashRecoveryEndsAt = Time.time + durationSeconds;
+        }
+
+        private void TickDashRecoveryTimeout()
+        {
+            if ((activeStaminaActivities & StaminaActivity.DashRecovery) == 0)
+                return;
+
+            if (Time.time >= dashRecoveryEndsAt)
+                SetStaminaActivity(StaminaActivity.DashRecovery, false);
+        }
+
+        private float ResolveEffectiveStaminaRegenPerSecond()
+        {
+            DM_ClimbDashProfile profile = DM_ClimbDashProfile.Live;
+            if (profile == null)
+                return staminaRegenPerSecond;
+
+            if ((activeStaminaActivities & StaminaActivity.Dash) != 0)
+                return profile.dashStaminaRegenPerSecond;
+            if ((activeStaminaActivities & StaminaActivity.DashRecovery) != 0)
+                return profile.dashRecoveryStaminaRegenPerSecond;
+            if ((activeStaminaActivities & StaminaActivity.Climb) != 0)
+                return profile.climbStaminaRegenPerSecond;
+            if (isSprinting)
+                return profile.sprintStaminaRegenPerSecond;
+
+            return profile.idleStaminaRegenPerSecond;
         }
 
         private float HealthRateScale => AuthoredMaxHealth > 0.001f ? maxHealth / AuthoredMaxHealth : 1f;
@@ -374,14 +454,18 @@ namespace Project.Survival
                 0f,
                 maxOxygen);
 
+            TickDashRecoveryTimeout();
+
             if (isSprinting)
             {
                 CurrentStamina = Mathf.Max(0f, CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond * StaminaRateScale);
             }
-            else if (!suppressStaminaRegen)
+
+            float regenPerSecond = ResolveEffectiveStaminaRegenPerSecond();
+            if (regenPerSecond > 0f)
             {
                 CurrentStamina = Mathf.Clamp(
-                    CurrentStamina + Time.deltaTime * staminaRegenPerSecond * StaminaRateScale * GetStaminaRegenMultiplier(),
+                    CurrentStamina + Time.deltaTime * regenPerSecond * StaminaRateScale * GetStaminaRegenMultiplier(),
                     0f,
                     maxStamina);
             }

@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Progression;
 using Project.Quests;
+using Project.Survival;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Crafting
@@ -58,6 +61,16 @@ namespace Project.Crafting
 
         /// <summary>Obsolete alias for <see cref="AddPendingBlueprintScroll"/>.</summary>
         public bool AddPendingRecipeScroll(string id) => AddPendingBlueprintScroll(id);
+
+        public bool TryLearnPendingScroll(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return false;
+
+            RecipeDefinition recipe = RecipeRegistry.Resolve(id);
+            string resolved = recipe != null ? recipe.ResolvedId : id;
+            return TryLearnPendingScrollAt(pendingRecipeScrollIds.IndexOf(resolved));
+        }
 
         public bool TryLearnPendingScrollAt(int index)
         {
@@ -183,7 +196,7 @@ namespace Project.Crafting
             return CanCraft(recipe, inventory, 1);
         }
 
-        public bool CanCraft(RecipeDefinition recipe, InventorySystem inventory, int amount)
+        public bool CanCraft(RecipeDefinition recipe, InventorySystem inventory, int amount, bool requireStation = true)
         {
             if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
                 return false;
@@ -193,7 +206,7 @@ namespace Project.Crafting
             if (!IsDiscovered(recipe.ResolvedId))
                 return false;
 
-            if (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value)
+            if (requireStation && (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value))
                 return false;
 
             PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
@@ -204,6 +217,9 @@ namespace Project.Crafting
                 return false;
 
             if (!HasIngredients(recipe, inventory, amount))
+                return false;
+
+            if (!HasCraftEnergy(recipe, amount, requireStation))
                 return false;
 
             // Storage modules install on craft and do not need an empty bag slot.
@@ -235,7 +251,7 @@ namespace Project.Crafting
         }
 
         /// <summary>Max times this recipe can be crafted with current ingredients and bag space.</summary>
-        public int GetMaxCraftCount(RecipeDefinition recipe, InventorySystem inventory)
+        public int GetMaxCraftCount(RecipeDefinition recipe, InventorySystem inventory, bool requireStation = true)
         {
             if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
                 return 0;
@@ -243,7 +259,7 @@ namespace Project.Crafting
             if (!IsDiscovered(recipe.ResolvedId))
                 return 0;
 
-            if (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value)
+            if (requireStation && (!CurrentStation.HasValue || recipe.stationType != CurrentStation.Value))
                 return 0;
 
             int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
@@ -296,7 +312,7 @@ namespace Project.Crafting
             return TryCraft(recipe, inventory, 1);
         }
 
-        public bool TryCraft(RecipeDefinition recipe, InventorySystem inventory, int amount)
+        public bool TryCraft(RecipeDefinition recipe, InventorySystem inventory, int amount, bool requireStation = true)
         {
             if (recipe == null || inventory == null || recipe.outputItem == null || recipe.outputAmount <= 0)
                 return false;
@@ -312,8 +328,16 @@ namespace Project.Crafting
                 return false;
             }
 
-            if (!CanCraft(recipe, inventory, amount))
+            if (!CanCraft(recipe, inventory, amount, requireStation))
                 return false;
+
+            float craftEnergyCost = GetCraftEnergyCost(recipe, amount, requireStation);
+            SurvivalStats stats = ResolvePlayerSurvivalStats();
+            if (craftEnergyCost > 0f && (stats == null || !stats.TryConsumeEnergy(craftEnergyCost)))
+            {
+                PickupToastUI.Show("Not enough energy to craft.");
+                return false;
+            }
 
             List<(ItemData item, int amount)> removedIngredients = new List<(ItemData, int)>();
 
@@ -370,6 +394,50 @@ namespace Project.Crafting
         {
             for (int i = 0; i < removedIngredients.Count; i++)
                 inventory.AddItem(removedIngredients[i].item, removedIngredients[i].amount);
+        }
+
+        private static SurvivalStats ResolvePlayerSurvivalStats()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                return null;
+
+            return player.GetComponent<SurvivalStats>() ?? player.GetComponentInChildren<SurvivalStats>();
+        }
+
+        private static bool IsWorkbenchCraft(bool requireStation, CraftingStationType? station)
+        {
+            return requireStation
+                && station.HasValue
+                && station.Value == CraftingStationType.Workbench;
+        }
+
+        private static float GetCraftEnergyCost(RecipeDefinition recipe, int amount, bool requireStation, CraftingStationType? station)
+        {
+            if (recipe == null || IsWorkbenchCraft(requireStation, station))
+                return 0f;
+
+            SurvivalStats stats = ResolvePlayerSurvivalStats();
+            float perItem = stats != null && stats.handCraftEnergyPerItem > 0f
+                ? stats.handCraftEnergyPerItem
+                : 0.5f;
+            int outputItems = Mathf.Max(1, recipe.outputAmount) * Mathf.Max(1, amount);
+            return perItem * outputItems;
+        }
+
+        private float GetCraftEnergyCost(RecipeDefinition recipe, int amount, bool requireStation)
+        {
+            return GetCraftEnergyCost(recipe, amount, requireStation, CurrentStation);
+        }
+
+        private bool HasCraftEnergy(RecipeDefinition recipe, int amount, bool requireStation)
+        {
+            float cost = GetCraftEnergyCost(recipe, amount, requireStation);
+            if (cost <= 0f)
+                return true;
+
+            SurvivalStats stats = ResolvePlayerSurvivalStats();
+            return stats != null && stats.HasEnergy(cost);
         }
 
         public string[] BuildSave()

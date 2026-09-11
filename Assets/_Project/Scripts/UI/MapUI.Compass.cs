@@ -65,7 +65,7 @@ namespace Project.UI
             if (compassHud == null)
                 return;
 
-            compassHud.RefreshHeading(GetMapDisplayYaw());
+            compassHud.RefreshHeading(GetMapCompassYaw());
         }
 
         private void UpdateCompassMarkers()
@@ -73,7 +73,7 @@ namespace Project.UI
             if (compassHud == null || !HasMapWorldPosition())
                 return;
 
-            compassHud.RefreshMarkers(GetMapDisplayYaw(), GetMapWorldPosition(), MapRegistry.ActiveMarkers);
+            compassHud.RefreshMarkers(GetMapCompassYaw(), GetMapWorldPosition(), MapRegistry.ActiveMarkers);
         }
     }
 }

@@ -69,6 +69,7 @@ namespace Project.Data
             invectorWeaponId = string.Empty;
             projectilePrefab = null;
             defaultAmmoItem = null;
+            fxProfile = null;
             muzzleFlashPrefab = null;
             tracerPrefab = null;
             impactVfxPrefab = null;

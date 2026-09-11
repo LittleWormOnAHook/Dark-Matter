@@ -49,7 +49,7 @@ namespace Project.EditorTools
                 (DarkMatterGenesisEditorMenus.EquipmentItemCreatorFromSelection, "Equipment creator pre-filled from selection"),
                 (DarkMatterGenesisEditorMenus.WeaponPrefabCreator, "Weapon held/world prefabs with optional melee hitbox"),
                 (DarkMatterGenesisEditorMenus.WeaponPrefabCreatorFromSelection, "Weapon creator pre-filled from selection"),
-                (DarkMatterGenesisEditorMenus.ProjectileAmmoCreator, "Projectile + ammo ItemData and prefabs"),
+                (DarkMatterGenesisEditorMenus.ProjectileAmmoCreator, "Opens Blueprint Manager → Ammo tab (DMAmmoFxProfile + combat prefabs)"),
                 (DarkMatterGenesisEditorMenus.EnemyPrefabCreator, "Enemy prefabs with AI, animation, and loot"),
                 (DarkMatterGenesisEditorMenus.TwoHandedWeaponFromScene, "Bake a two-handed weapon prefab from scene selection"),
                 (DarkMatterGenesisEditorMenus.PetManager, "Pet Manager — prefabs, definitions, melee/ranged combat"),
@@ -98,9 +98,14 @@ namespace Project.EditorTools
                 (DarkMatterGenesisEditorMenus.Content + "Create Enemy Registry", "Seed enemy definitions into EnemyRegistry"),
             });
 
+            DrawSection("Profiles", new[]
+            {
+                (DarkMatterGenesisEditorMenus.GenesisStudio, "Unified studio: survival, map, ammo FX, companions, crafting embeds, UI, audio"),
+            });
+
             DrawSection("Crafting", new[]
             {
-                (DarkMatterGenesisEditorMenus.BlueprintCraftingManager, "Primary: blueprints, equipment craft, pickups, registry, Item Data, Crafting Item"),
+                (DarkMatterGenesisEditorMenus.BlueprintCraftingManager, "Primary: blueprints, equipment craft, pickups, registry, Item Data, Ammo, Crafting Item"),
                 (DarkMatterGenesisEditorMenus.Crafting + "Wire Scene Stations", "Wire Cooking, Workbench, and blueprint pickups"),
                 (DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Blueprints", "Create starter blueprint assets and registry entries"),
             });
@@ -188,6 +193,17 @@ namespace Project.EditorTools
                 (DarkMatterGenesisEditorMenus.PlayModeSaverWindow, "One-click save for Play Mode edits"),
                 (DarkMatterGenesisEditorMenus.PlayModeSaverSaveNow, "Capture live edits (Play Mode only)"),
                 (DarkMatterGenesisEditorMenus.PlayModeSaverSaveAndExit, "Capture edits and exit Play Mode"),
+            });
+
+            DrawSection("Scene", new[]
+            {
+                (DarkMatterGenesisEditorMenus.RefreshAllMapMarkers, "Fog reveal + live position on every MapMarker; combat aggro on enemies"),
+            });
+
+            DrawSection("Texture Streaming", new[]
+            {
+                (DarkMatterGenesisEditorMenus.TextureStreamingPreview, "Log how many world textures would opt into mip streaming"),
+                (DarkMatterGenesisEditorMenus.TextureStreamingApply, "Enable mip streaming on world/environment textures"),
             });
 
             DrawSection("Maintenance", new[]

@@ -24,7 +24,7 @@ namespace Project.Features.Climb
     [DefaultExecutionOrder(-20)]
     public sealed class DMClimbController : MonoBehaviour
     {
-        public const string ResourcesPath = DMClimbProfile.ResourcesPath;
+        public const string ResourcesPath = DM_ClimbDashProfile.ResourcesPath;
         private const string BuildStamp = "DMClimb hop-hang-v9";
         // DMClimb probe-locomotion-v7
 
@@ -35,7 +35,7 @@ namespace Project.Features.Climb
         private static readonly int MantleHash = Animator.StringToHash("Mantle");
 
         [Header("Climb Manager")]
-        [SerializeField] private DMClimbProfile profile;
+        [SerializeField] private DM_ClimbDashProfile profile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private Animator animator;
         [SerializeField] private Rigidbody body;
@@ -197,7 +197,7 @@ namespace Project.Features.Climb
         public bool IsClimbing => _climbing || _hopping || _mantling || _reverseMantling;
         public bool IsMantling => _mantling;
         private float MantlePlantPad => profile != null ? profile.mantlePlantHeight : 0f;
-        public DMClimbProfile Profile
+        public DM_ClimbDashProfile Profile
         {
             get
             {
@@ -208,7 +208,7 @@ namespace Project.Features.Climb
 
         private void BindLiveProfile()
         {
-            DMClimbProfile canonical = DMClimbProfile.Live;
+            DM_ClimbDashProfile canonical = DM_ClimbDashProfile.Live;
             if (canonical != null)
                 profile = canonical;
         }
@@ -253,7 +253,7 @@ namespace Project.Features.Climb
                 _survival = ResolveSurvivalStats();
             BindLiveProfile();
             if (profile == null)
-                profile = Resources.Load<DMClimbProfile>(ResourcesPath);
+                profile = Resources.Load<DM_ClimbDashProfile>(ResourcesPath);
             if (motor == null)
                 motor = GetComponent<vThirdPersonMotor>();
             if (tpInput == null)
@@ -423,7 +423,7 @@ namespace Project.Features.Climb
             else
             {
                 if (_survival != null)
-                    _survival.suppressStaminaRegen = false;
+                    _survival.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, false);
                 if (TryAirJumpWallGrab())
                     return;
                 if (TryJetpackWallGrab())
@@ -1868,7 +1868,11 @@ namespace Project.Features.Climb
             if (collider == null)
                 return false;
 
-            if (collider is MeshCollider mesh && !mesh.convex)
+            // Physics.ClosestPoint only supports box/sphere/capsule and convex mesh.
+            if (!(collider is BoxCollider
+                  || collider is SphereCollider
+                  || collider is CapsuleCollider
+                  || (collider is MeshCollider mesh && mesh.convex)))
                 return false;
 
             closest = collider.ClosestPoint(point);
@@ -1982,40 +1986,18 @@ namespace Project.Features.Climb
             if (stats == null)
                 return;
 
-            // Regen otherwise overpowers this drain (~12/s regen vs ~1 dash/s).
-            stats.suppressStaminaRegen = true;
+            stats.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, true);
 
-            // 1 stamina dash/sec while climb-moving; half when hanging/idle on wall.
-            // Dash size matches pilot stamina arc (maxStamina / unlockedDashCount).
-            int unlockedDashes = ResolveUnlockedStaminaDashCount();
-            float maxStamina = Mathf.Max(1f, stats.maxStamina);
-            // Guard: never allow a degenerate dash count to zero-out drain.
-            float dashCost = maxStamina / Mathf.Max(1, unlockedDashes);
-            float legacy = profile != null ? Mathf.Max(0f, profile.climbStaminaDrainPerSecond) : 8f;
-            // Prefer dash-sized drain; floor with legacy profile rate so spend is always visible.
-            float moveRate = Mathf.Max(dashCost, legacy * 0.35f);
+            float moveRate = profile != null ? profile.climbMoveStaminaDrainPerSecond : 8f;
+            float hangRate = profile != null ? profile.climbHangStaminaDrainPerSecond : moveRate * 0.5f;
             float moveMag = new Vector2(_dampedClimbInput.x, _dampedClimbInput.y).magnitude;
             bool hangingOrIdle = _lipHang || moveMag < 0.08f;
-            float drainPerSec = hangingOrIdle ? moveRate * 0.5f : moveRate;
+            float drainPerSec = hangingOrIdle ? hangRate : moveRate;
             if (drainPerSec > 0f)
                 stats.SpendStamina(drainPerSec * Time.fixedDeltaTime);
 
             if (stats.CurrentStamina <= 0.01f)
                 DropFromClimb();
-        }
-
-        /// <summary>Matches DMUiToolkitPilotCluster stamina arc dash count.</summary>
-        private static int ResolveUnlockedStaminaDashCount()
-        {
-            const float StaminaSweepDeg = 136f;
-            const float DashSweep = 3.35f;
-            const float DashGap = 2.05f;
-            const int LockedArcDashCount = 4;
-            float pitch = DashSweep + DashGap;
-            int total = Mathf.Max(LockedArcDashCount + 1, Mathf.FloorToInt((StaminaSweepDeg + 0.01f) / pitch));
-            int baseDashCount = Mathf.Max(1, total - LockedArcDashCount);
-            int bonus = Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxStaminaPercent), 0, LockedArcDashCount);
-            return baseDashCount + bonus;
         }
 
         private enum ClimbAttachHang
@@ -2034,7 +2016,7 @@ namespace Project.Features.Climb
         {
             SurvivalStats attachStats = Survival;
             if (attachStats != null)
-                attachStats.suppressStaminaRegen = true;
+                attachStats.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, true);
 
             _climbing = true;
             StowWeaponForClimb();
@@ -5515,7 +5497,7 @@ namespace Project.Features.Climb
         private void DropFromClimb()
         {
             if (Survival != null)
-                Survival.suppressStaminaRegen = false;
+                Survival.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, false);
 
             float push = profile != null ? profile.dropPush : 2.4f;
             float air = profile != null ? profile.airControlSeconds : 0.95f;
@@ -5550,7 +5532,7 @@ namespace Project.Features.Climb
 
             Vector3 platformVel = addPlatformVelocity ? _platformVel : Vector3.zero;
             if (_survival != null)
-                _survival.suppressStaminaRegen = false;
+                _survival.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, false);
             _climbing = false;
             _mantling = false;
             _mantleSettling = false;
@@ -5587,7 +5569,7 @@ namespace Project.Features.Climb
         private void ForceUnlock()
         {
             if (_survival != null)
-                _survival.suppressStaminaRegen = false;
+                _survival.SetStaminaActivity(SurvivalStats.StaminaActivity.Climb, false);
             _climbing = false;
             _hopping = false;
             _mantling = false;

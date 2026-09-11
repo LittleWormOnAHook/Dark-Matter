@@ -40,6 +40,12 @@ namespace Project.UI
 
         public void EnsureBuilt(Transform canvasRoot)
         {
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             if (built || canvasRoot == null)
                 return;
 
@@ -156,8 +162,24 @@ namespace Project.UI
             }
         }
 
+        private void Awake()
+        {
+            if (!DMUiToolkitConfig.IsEnabled)
+                return;
+
+            enabled = false;
+            gameObject.SetActive(false);
+        }
+
         private void OnEnable()
         {
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                DismissImmediate();
+                enabled = false;
+                return;
+            }
+
             // Parent canvas/HUD re-enabled us after a menu/loading toggle. If we are not mid-show,
             // hide again so a killed fade cannot leave a stuck full-alpha toast.
             if (!suppressEnableHide && built && phase == Phase.Idle)
@@ -180,6 +202,13 @@ namespace Project.UI
 
         private void Update()
         {
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                DismissImmediate();
+                enabled = false;
+                return;
+            }
+
             if (!built || phase == Phase.Idle || canvasGroup == null)
                 return;
 
@@ -241,11 +270,19 @@ namespace Project.UI
                 zoneName = ExposureHazardPresentation.GetShortLabel(zone.Profile.zoneKind);
 
             Color accent = ExposureHazardPresentation.GetColor(zone.Profile.zoneKind);
+            if (DMUiToolkitConfig.IsEnabled)
+            {
+                DMUiToolkitHazards.ShowZoneEntered(zoneName, accent);
+                DismissImmediate();
+                return;
+            }
+
             Show(zoneName, accent);
         }
 
         private void Show(string zoneName, Color accentColor)
         {
+
             if (!built || zoneLabel == null || accentBar == null || canvasGroup == null)
                 return;
 

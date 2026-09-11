@@ -11,8 +11,9 @@ using UnityEngine.UI;
 
 namespace Project.UI
 {
-    // WorldMapProvider binding, minimap auto-scale, player/vehicle world-position and camera-facing
-    // resolution, and applying the resolved map texture to both display surfaces.
+        // WorldMapProvider binding, minimap auto-scale, player/vehicle world-position,
+        // camera heading (minimap/compass) vs player-body facing (full map arrow),
+        // and applying the resolved map texture to both display surfaces.
     // Split out of MapUI.cs.
     public partial class MapUI
     {
@@ -113,6 +114,25 @@ namespace Project.UI
             return playerTransform != null ? playerTransform.eulerAngles.y : 0f;
         }
 
+        private float GetPlayerBodyYaw()
+        {
+            if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
+                return PlayerVehicleState.ActiveCraft.transform.eulerAngles.y;
+
+            return playerTransform != null ? playerTransform.eulerAngles.y : GetMapFacingYaw();
+        }
+
+        private float GetMapPlayerCompassYaw()
+        {
+            float facing = GetPlayerBodyYaw();
+            if (mapProvider == null)
+                EnsureMapProvider();
+
+            return mapProvider != null
+                ? mapProvider.GetMapCompassYaw(facing)
+                : NormalizeMapYaw(facing + 180f);
+        }
+
         private Camera ResolveMapFacingCamera()
         {
             Camera mainCamera = Camera.main;
@@ -171,13 +191,31 @@ namespace Project.UI
                 : facing;
         }
 
-        private void ApplyPlayerArrowRotation(RectTransform playerIconRect)
+        private float GetMapCompassYaw()
+        {
+            float facing = GetMapFacingYaw();
+            if (mapProvider == null)
+                EnsureMapProvider();
+
+            return mapProvider != null
+                ? mapProvider.GetMapCompassYaw(facing)
+                : NormalizeMapYaw(facing + 180f);
+        }
+
+        private static float NormalizeMapYaw(float degrees)
+        {
+            degrees %= 360f;
+            return degrees < 0f ? degrees + 360f : degrees;
+        }
+
+        private void ApplyPlayerArrowRotation(RectTransform playerIconRect, bool playerBodyFacing = false)
         {
             if (playerIconRect == null)
                 return;
 
+            float yaw = playerBodyFacing ? GetMapPlayerCompassYaw() : GetMapCompassYaw();
             float iconBase = mapProvider != null ? mapProvider.MapPlayerIconBaseDegrees : 0f;
-            playerIconRect.localEulerAngles = new Vector3(0f, 0f, -GetMapDisplayYaw() + iconBase);
+            playerIconRect.localEulerAngles = new Vector3(0f, 0f, playerBodyFacing ? yaw + iconBase : -yaw + iconBase);
         }
 
         private void ApplyMapTexture()

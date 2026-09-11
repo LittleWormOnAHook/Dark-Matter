@@ -44,13 +44,11 @@ namespace Project.Combat
             Vector3 hitPoint,
             Vector3 hitNormal,
             GameObject owner,
+            GameObject receiver = null,
             bool playHitAudio = true,
             GameObject impactVfxOverride = null)
         {
-            SpawnImpactVfx(ammoItem, weapon, hitPoint, hitNormal, impactVfxOverride);
-
-            if (DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon))
-                DMILaserBurnMarkSpawner.Spawn(hitPoint, hitNormal);
+            DMCombatFx.PlayWorldImpact(ammoItem, weapon, hitPoint, hitNormal, receiver, impactVfxOverride);
 
             if (playHitAudio)
                 PlayImpactHitAudio(hitPoint);
@@ -256,11 +254,7 @@ namespace Project.Combat
         {
             GameObject prefab = impactVfxOverride;
             if (prefab == null)
-            {
-                prefab = ammoItem != null && ammoItem.impactVfxPrefab != null
-                    ? ammoItem.impactVfxPrefab
-                    : weapon != null ? weapon.impactVfxPrefab : null;
-            }
+                prefab = DMCombatFx.ResolveDefaultImpact(ammoItem, weapon);
 
             if (prefab == null)
                 return;
@@ -278,16 +272,7 @@ namespace Project.Combat
 
         public static void SpawnMuzzleFlash(ItemData ammoItem, ItemData weapon, Transform muzzle)
         {
-            GameObject prefab = ammoItem != null && ammoItem.muzzleFlashPrefab != null
-                ? ammoItem.muzzleFlashPrefab
-                : weapon != null ? weapon.muzzleFlashPrefab : null;
-
-            if (prefab == null || muzzle == null)
-                return;
-
-            GameObject instance = PoolManager.Spawn(prefab, muzzle.position, muzzle.rotation, muzzle);
-            CombatVfxUtility.PlayParticleSystemsRecursive(instance);
-            PoolManager.ReleaseDelayed(instance, 2f);
+            DMCombatFx.PlayMuzzle(ammoItem, weapon, muzzle);
         }
 
         /// <summary>
@@ -316,9 +301,7 @@ namespace Project.Combat
             if (TryPulseWeaponLaserStack(muzzle, followRange, 0.35f))
                 return;
 
-            GameObject beamPrefab = ammoItem != null && ammoItem.beamVfxPrefab != null
-                ? ammoItem.beamVfxPrefab
-                : weapon != null ? weapon.beamVfxPrefab : null;
+            GameObject beamPrefab = DMCombatFx.ResolveBeam(ammoItem, weapon);
 
             GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
 

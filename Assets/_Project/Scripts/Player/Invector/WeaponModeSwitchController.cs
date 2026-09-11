@@ -10,8 +10,8 @@ using UnityEngine.InputSystem;
 namespace Project.Player.Invector
 {
     /// <summary>
-    /// Owns the R key (Input System): tap &lt;0.2s reloads, hold ≥0.2s never reloads,
-    /// hold ≥1.2s opens Mode Switch (tap R again to close). Pref Laser / LaserSight only show while aiming.
+    /// Owns the R key (Input System): release reloads unless hold ≥1.2s opened Mode Switch
+    /// (tap R again to close). Pref Laser / LaserSight only show while aiming.
     /// Aim lasers are driven muzzle→reticle (world space) so they match the crosshair — never barrel-only vLaserSight.
     /// </summary>
     [DisallowMultipleComponent]
@@ -19,7 +19,6 @@ namespace Project.Player.Invector
     [DefaultExecutionOrder(620)]
     public class WeaponModeSwitchController : MonoBehaviour
     {
-        private const float MaxReloadTapSeconds = 0.2f;
         private const float HoldSecondsToOpen = 1.2f;
         private const float AimLaserMaxRange = 80f;
 
@@ -189,7 +188,7 @@ namespace Project.Player.Invector
             }
 
             holdingReload = false;
-            if (!openedMenuThisHold && heldFor < MaxReloadTapSeconds)
+            if (!openedMenuThisHold)
                 TryRequestManualReload();
         }
 

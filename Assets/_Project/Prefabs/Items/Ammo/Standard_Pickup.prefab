@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -27.970955
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.18859261
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 13.288182
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.w
@@ -26,7 +26,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00000003774895
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.y
@@ -34,7 +34,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -55,6 +55,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
       propertyPath: m_Name
       value: Standard_Pickup
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -105,17 +109,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb5b4c34c4484e44e8868138d7bb7531, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interaction.ItemPickup
-  itemData: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
+  itemData: {fileID: 11400000, guid: c7d8e9f0a1b23c4d5e6f708192a3b467, type: 2}
   amount: 500
   promptText: Press E to pick up
-  indicatorAnchor: {fileID: 7755462579346218172}
+  indicatorAnchor: {fileID: 0}
   indicatorStemMinHeight: 0.25
   indicatorStemMaxHeight: 0.5
   canRespawn: 1
   minRespawnTime: 20
   maxRespawnTime: 90
---- !u!4 &7755462579346218172 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cc990a5dbc2cbcc459f47c85ec122fdc, type: 3}
-  m_PrefabInstance: {fileID: 7794122770248989527}
-  m_PrefabAsset: {fileID: 0}

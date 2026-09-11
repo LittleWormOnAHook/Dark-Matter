@@ -13,15 +13,12 @@ using UnityEngine.InputSystem;
 namespace Project.Features.Dash
 {
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-30)]
+    [DefaultExecutionOrder(600)]
     public sealed class DMDashController : MonoBehaviour
     {
-        public const string ResourcesPath = "Dash/DMDashProfile";
-
         private const int PlayerLayer = 8;
         private const int ClimbableLayer = 23;
 
-        [SerializeField] private DMDashProfile profile;
         [SerializeField] private vThirdPersonMotor motor;
         [SerializeField] private Animator animator;
         [SerializeField] private Rigidbody body;
@@ -52,6 +49,7 @@ namespace Project.Features.Dash
         private bool _savedBodyKinematic;
         private bool _heldLockMovement;
         private bool _heldLockAnimMovement;
+        private bool _heldDisableCheckGround;
 
         private Key _lastTap = Key.None;
         private float _lastTapAt = -10f;
@@ -92,8 +90,6 @@ namespace Project.Features.Dash
 
         private void Awake()
         {
-            if (profile == null)
-                profile = Resources.Load<DMDashProfile>(ResourcesPath);
             if (motor == null)
                 motor = GetComponent<vThirdPersonMotor>();
             if (animator == null)
@@ -155,22 +151,22 @@ namespace Project.Features.Dash
             return 1f + PlayerSkillAllocator.GetTotalBonusPercent(type) / 100f;
         }
 
-        private DMClimbProfile LiveClimb => DMClimbProfile.Live;
+        private DM_ClimbDashProfile LiveProfile => DM_ClimbDashProfile.Live;
 
         private float DoubleTapWindow =>
-            LiveClimb != null ? LiveClimb.dashDoubleTapWindow : profile != null ? profile.doubleTapWindow : 0.28f;
+            LiveProfile != null ? LiveProfile.dashDoubleTapWindow : 0.28f;
 
         private float BaseDashDistance =>
-            LiveClimb != null ? LiveClimb.dashDistance : profile != null ? profile.distance : 4.5f;
+            LiveProfile != null ? LiveProfile.dashDistance : 4.5f;
 
         private float BaseDashSpeed =>
-            LiveClimb != null ? LiveClimb.dashSpeed : profile != null ? profile.speed : 14f;
+            LiveProfile != null ? LiveProfile.dashSpeed : 14f;
 
         private float BaseDashDuration =>
-            LiveClimb != null ? LiveClimb.dashDuration : profile != null ? profile.duration : 0.18f;
+            LiveProfile != null ? LiveProfile.dashDuration : 0.18f;
 
         private float DashCooldown =>
-            ScaledCooldown(LiveClimb != null ? LiveClimb.dashCooldown : profile != null ? profile.cooldown : 0.55f);
+            ScaledCooldown(LiveProfile != null ? LiveProfile.dashCooldown : 0.55f);
 
         private float ScaledCooldown(float baseCooldown)
         {
@@ -179,27 +175,25 @@ namespace Project.Features.Dash
         }
 
         private float DashStaminaCost =>
-            LiveClimb != null ? LiveClimb.dashStaminaCost : profile != null ? profile.staminaCost : 22f;
+            LiveProfile != null ? LiveProfile.dashStaminaCost : 22f;
 
         private float DashStaminaTickExtraPercent()
         {
-            float baseTick = LiveClimb != null
-                ? LiveClimb.dashStaminaTickExtraPercent
-                : profile != null
-                    ? profile.staminaTickExtraPercent
-                    : 0.20f;
+            float baseTick = LiveProfile != null
+                ? LiveProfile.dashStaminaTickExtraPercent
+                : 0.20f;
             float reduction = PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashStaminaTickReductionPercent);
             return baseTick * Mathf.Max(0f, 1f - reduction / 100f);
         }
 
         private float DashCollisionSkin =>
-            LiveClimb != null ? LiveClimb.dashCollisionSkin : profile != null ? profile.collisionSkin : 0.08f;
+            LiveProfile != null ? LiveProfile.dashCollisionSkin : 0.08f;
 
-        private bool DashDetachesFromClimb => LiveClimb == null || LiveClimb.dashDetachesFromClimb;
+        private bool DashDetachesFromClimb => LiveProfile == null || LiveProfile.dashDetachesFromClimb;
 
         private bool AllowsClimbDash()
         {
-            if (LiveClimb != null && LiveClimb.dashAllowedWhileClimbing)
+            if (LiveProfile != null && LiveProfile.dashAllowedWhileClimbing)
                 return true;
             return PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashClimbUnlock) > 0f;
         }
@@ -230,9 +224,7 @@ namespace Project.Features.Dash
 
         private bool AllowsAirDash()
         {
-            if (LiveClimb != null && LiveClimb.dashAllowAirDash)
-                return true;
-            if (profile != null && profile.allowAirDash)
+            if (LiveProfile != null && LiveProfile.dashAllowAirDash)
                 return true;
             return PlayerSkillAllocator.GetTotalBonusPercent(SkillModifierType.DashAirUnlock) > 0f;
         }
@@ -241,7 +233,7 @@ namespace Project.Features.Dash
         {
             if (!isActiveAndEnabled)
                 return false;
-            if ((LiveClimb == null && profile == null) || Time.unscaledTime < _readyAt)
+            if (LiveProfile == null || Time.unscaledTime < _readyAt)
                 return false;
             if (Time.timeScale <= 0f)
                 return false;
@@ -292,9 +284,11 @@ namespace Project.Features.Dash
 
         private Vector3 WorldDir(Vector3 local)
         {
-            Transform pivot = cameraPivot != null
-                ? cameraPivot
-                : (Camera.main != null ? Camera.main.transform : transform);
+            Transform pivot = motor != null && motor.rotateTarget != null
+                ? motor.rotateTarget
+                : cameraPivot != null
+                    ? cameraPivot
+                    : (Camera.main != null ? Camera.main.transform : transform);
 
             Vector3 forward = pivot.forward;
             Vector3 right = pivot.right;
@@ -327,6 +321,9 @@ namespace Project.Features.Dash
             if (_survival != null && cost > 0f && !_survival.TryConsumeStamina(cost))
                 return;
 
+            _survival?.SetStaminaActivity(SurvivalStats.StaminaActivity.DashRecovery, false);
+            _survival?.SetStaminaActivity(SurvivalStats.StaminaActivity.Dash, true);
+
             float speed = ScaledDashSpeed();
             _dashing = true;
             _dashDir = dir;
@@ -340,8 +337,10 @@ namespace Project.Features.Dash
             {
                 _heldLockMovement = motor.lockMovement;
                 _heldLockAnimMovement = motor.lockAnimMovement;
+                _heldDisableCheckGround = motor.disableCheckGround;
                 motor.lockMovement = true;
                 motor.lockAnimMovement = false;
+                motor.disableCheckGround = true;
                 motor.input = Vector3.zero;
                 motor.inputMagnitude = 0f;
             }
@@ -349,8 +348,12 @@ namespace Project.Features.Dash
             if (body != null)
             {
                 _savedBodyKinematic = body.isKinematic;
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                if (!body.isKinematic)
+                {
+                    body.linearVelocity = Vector3.zero;
+                    body.angularVelocity = Vector3.zero;
+                }
+
                 body.isKinematic = true;
             }
 
@@ -367,12 +370,7 @@ namespace Project.Features.Dash
             SetFootstepsSuppressed(true);
 
             if (TryGetGroundedDashPosition(transform.position, out Vector3 startGrounded))
-            {
-                if (body != null && body.isKinematic)
-                    body.MovePosition(startGrounded);
-                else
-                    transform.position = startGrounded;
-            }
+                ApplyDashPosition(startGrounded);
         }
 
         private void TickDash()
@@ -380,12 +378,6 @@ namespace Project.Features.Dash
             float dt = Time.fixedDeltaTime;
             if (dt <= 0f)
                 return;
-
-            if (body != null)
-            {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
-            }
 
             TickDashStamina(dt);
 
@@ -428,20 +420,26 @@ namespace Project.Features.Dash
                 return true;
 
             Vector3 dir = delta / distance;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.0001f)
+                return false;
+            dir.Normalize();
+
             float skin = DashCollisionSkin;
 
-            if (TryGetCapsule(out Vector3 bottom, out Vector3 top, out float radius))
+            if (TryGetCapsule(out _, out _, out float radius))
             {
-                if (Physics.CapsuleCast(
-                        bottom,
-                        top,
-                        radius,
+                float probeHeight = Mathf.Max(0.65f, radius * 2.1f);
+                Vector3 probeOrigin = transform.position + Vector3.up * probeHeight;
+                if (Physics.SphereCast(
+                        probeOrigin,
+                        radius * 0.82f,
                         dir,
                         out RaycastHit hit,
-                        distance,
+                        distance + skin,
                         collisionMask,
                         QueryTriggerInteraction.Ignore)
-                    && IsBlockingCollider(hit.collider))
+                    && IsBlockingWallHit(hit))
                 {
                     distance = Mathf.Max(0f, hit.distance - skin);
                     if (distance < 0.001f)
@@ -449,19 +447,52 @@ namespace Project.Features.Dash
                 }
             }
 
-            Vector3 move = dir * distance;
-            move.y = 0f;
-
-            Vector3 target = transform.position + move;
+            Vector3 target = transform.position + dir * distance;
             if (TryGetGroundedDashPosition(target, out Vector3 grounded))
                 target = grounded;
 
-            if (body != null && body.isKinematic)
-                body.MovePosition(target);
-            else
-                transform.position = target;
+            ApplyDashPosition(target);
 
             movedDistance = distance;
+            return true;
+        }
+
+        private void ApplyDashPosition(Vector3 target)
+        {
+            if (body != null && body.isKinematic)
+            {
+                body.MovePosition(target);
+                transform.position = target;
+                return;
+            }
+
+            transform.position = target;
+            if (body != null)
+                body.position = target;
+        }
+
+        private bool IsBlockingWallHit(RaycastHit hit)
+        {
+            if (!IsBlockingCollider(hit.collider))
+                return false;
+
+            // Foot-level casts treat the floor ahead as a wall; only block steep surfaces.
+            return hit.normal.y < 0.55f;
+        }
+
+        private bool IsBlockingCollider(Collider collider)
+        {
+            if (collider == null || collider.isTrigger)
+                return false;
+
+            Transform hit = collider.transform;
+            if (hit == transform || hit.IsChildOf(transform))
+                return false;
+
+            int layer = collider.gameObject.layer;
+            if (layer == PlayerLayer || layer == ClimbableLayer)
+                return false;
+
             return true;
         }
 
@@ -535,22 +566,6 @@ namespace Project.Features.Dash
             return true;
         }
 
-        private bool IsBlockingCollider(Collider collider)
-        {
-            if (collider == null || collider.isTrigger)
-                return false;
-
-            Transform hit = collider.transform;
-            if (hit == transform || hit.IsChildOf(transform))
-                return false;
-
-            int layer = collider.gameObject.layer;
-            if (layer == PlayerLayer || layer == ClimbableLayer)
-                return false;
-
-            return true;
-        }
-
         private static LayerMask BuildCollisionMask()
         {
             int mask = Physics.DefaultRaycastLayers;
@@ -567,30 +582,40 @@ namespace Project.Features.Dash
             }
 
             _dashing = false;
+            if (_survival != null)
+            {
+                _survival.SetStaminaActivity(SurvivalStats.StaminaActivity.Dash, false);
+                float recoverySeconds = LiveProfile != null ? LiveProfile.dashStaminaRecoverySeconds : 2.5f;
+                _survival.BeginDashStaminaRecovery(recoverySeconds);
+            }
+
             StopVfx();
             ApplyHologram(false);
             SetFootstepsSuppressed(false);
 
             if (animator != null)
             {
-                animator.enabled = _savedAnimatorEnabled;
-                animator.speed = _savedAnimSpeed;
+                animator.enabled = true;
+                float speed = _savedAnimSpeed > 0.01f ? _savedAnimSpeed : 1f;
+                animator.speed = speed;
             }
 
             if (body != null)
             {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
                 body.isKinematic = false;
                 body.useGravity = true;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
                 body.WakeUp();
             }
 
-            if (restore && motor != null)
-            {
-                motor.lockMovement = _heldLockMovement;
-                motor.lockAnimMovement = _heldLockAnimMovement;
-            }
+            DMLandingDirector landing = GetComponent<DMLandingDirector>();
+            landing?.OnDashEnded();
+
+            if (restore && motor != null && (landing == null || !landing.IsLandingLocked))
+                motor.disableCheckGround = _heldDisableCheckGround;
+            else if (motor != null)
+                motor.disableCheckGround = false;
         }
 
         private void CacheBodyRenderers()
@@ -638,8 +663,8 @@ namespace Project.Features.Dash
 
         private Material GetHologramMaterial()
         {
-            if (profile != null && profile.hologramMaterial != null)
-                return profile.hologramMaterial;
+            if (LiveProfile != null && LiveProfile.dashHologramMaterial != null)
+                return LiveProfile.dashHologramMaterial;
 
             if (_runtimeHolo == null)
             {
@@ -650,8 +675,8 @@ namespace Project.Features.Dash
                 _runtimeHolo.name = "DMDashHologram";
             }
 
-            Color c = profile != null ? profile.hologramColor : new Color(0.25f, 0.85f, 1f, 0.42f);
-            float emit = profile != null ? profile.hologramEmission : 4f;
+            Color c = LiveProfile != null ? LiveProfile.dashHologramColor : new Color(0.25f, 0.85f, 1f, 0.42f);
+            float emit = LiveProfile != null ? LiveProfile.dashHologramEmission : 4f;
             if (_runtimeHolo.HasProperty("_UnlitColor"))
                 _runtimeHolo.SetColor("_UnlitColor", c);
             if (_runtimeHolo.HasProperty("_Color"))
@@ -669,8 +694,16 @@ namespace Project.Features.Dash
 
         private void BuildVfx()
         {
-            _streakSystems = SpawnVfx(profile != null ? profile.streakPrefab : null, profile != null ? profile.streakMaterial : null, "DashStreaks", true);
-            _smokeSystems = SpawnVfx(profile != null ? profile.smokePrefab : null, profile != null ? profile.smokeMaterial : null, "DashSmoke", false);
+            _streakSystems = SpawnVfx(
+                LiveProfile != null ? LiveProfile.dashStreakPrefab : null,
+                LiveProfile != null ? LiveProfile.dashStreakMaterial : null,
+                "DashStreaks",
+                true);
+            _smokeSystems = SpawnVfx(
+                LiveProfile != null ? LiveProfile.dashSmokePrefab : null,
+                LiveProfile != null ? LiveProfile.dashSmokeMaterial : null,
+                "DashSmoke",
+                false);
         }
 
         private ParticleSystem[] SpawnVfx(GameObject prefab, Material mat, string fallbackName, bool streaks)
@@ -733,14 +766,14 @@ namespace Project.Features.Dash
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = profile != null ? profile.streakRadius : 0.55f;
+            shape.radius = LiveProfile != null ? LiveProfile.dashStreakRadius : 0.55f;
 
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = streaks
                 ? ParticleSystemRenderMode.Stretch
                 : ParticleSystemRenderMode.Billboard;
             if (streaks)
-                renderer.lengthScale = profile != null ? profile.streakStretch : 3.5f;
+                renderer.lengthScale = LiveProfile != null ? LiveProfile.dashStreakStretch : 3.5f;
 
             return ps;
         }
@@ -766,7 +799,7 @@ namespace Project.Features.Dash
 
         private void PlaySystems(ParticleSystem[] systems, bool streaks)
         {
-            if (systems == null || profile == null)
+            if (systems == null || LiveProfile == null)
                 return;
 
             for (int i = 0; i < systems.Length; i++)
@@ -779,15 +812,15 @@ namespace Project.Features.Dash
                 main.playOnAwake = false;
                 if (streaks)
                 {
-                    main.startColor = profile.streakColor;
-                    main.startLifetime = profile.streakLifetime;
-                    main.startSize = profile.streakSize;
+                    main.startColor = LiveProfile.dashStreakColor;
+                    main.startLifetime = LiveProfile.dashStreakLifetime;
+                    main.startSize = LiveProfile.dashStreakSize;
                 }
                 else
                 {
-                    main.startColor = profile.smokeColor;
-                    main.startLifetime = profile.smokeLifetime;
-                    main.startSize = profile.smokeSize;
+                    main.startColor = LiveProfile.dashSmokeColor;
+                    main.startLifetime = LiveProfile.dashSmokeLifetime;
+                    main.startSize = LiveProfile.dashSmokeSize;
                 }
 
                 ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);

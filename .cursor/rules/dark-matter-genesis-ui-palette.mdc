@@ -18,6 +18,16 @@ Use `DarkMatterGenesisUiPalette` and `ShiftUiTheme` for all UI color decisions.
 | Soft Beige-Gray | `#8C7F75` | Muted/secondary text, captions |
 | Gold | `#D4A017` | XP, skill points, rewards, key highlights |
 
+**Map / minimap POI icons only** (never gold, magenta, beige, or other Io-terrain blends):
+
+| Name | Hex | Usage on maps |
+|------|-----|----------------|
+| Map POI Red | `#FF0000` | Threat, consumable, combat |
+| Map POI Blue | `#0000FF` | NPC, quest, companion |
+| Map POI Green | `#00FF00` | Resource / harvest node |
+| Map POI Black | `#000000` | Tool, interactable, undiscovered |
+| Map POI White | `#FFFFFF` | Cache, loot, generic scanned POI |
+
 ## Rules
 
 - Prefer `DarkMatterGenesisUiPalette` constants over hardcoded RGB values in UI code.
@@ -29,3 +39,4 @@ Use `DarkMatterGenesisUiPalette` and `ShiftUiTheme` for all UI color decisions.
 - Keep positive/success greens unchanged (`PositiveGreen`, `ConnectedGreen`, craft-ready slot tints).
 - Do not reintroduce the old cyan/blue sci-fi accent (`#63C6FF`) unless explicitly requested.
 - Main menu connected status uses the `119 Eye` sprite tinted green when connected.
+- Map and minimap POI icons use only `MapPoiRed` / `MapPoiBlue` / `MapPoiGreen` / `MapPoiBlack` / `MapPoiWhite` (`ToMapPoiColor`). Do not put Gold, Deep Magenta, Rich Fuchsia, Soft Beige-Gray, or other warm Io-blend tints on terrain-layered markers.

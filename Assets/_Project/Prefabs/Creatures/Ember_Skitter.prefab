@@ -458,7 +458,7 @@ MonoBehaviour:
   randomLootCountMin: 0
   randomLootCountMax: 2
   lootItemPool:
-  - {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
+  - {fileID: 11400000, guid: c7d8e9f0a1b23c4d5e6f708192a3b467, type: 2}
   - {fileID: 11400000, guid: 6bf27028394a516c7d8e9f0123456789, type: 2}
   lootUnlootedLifetime: 20
   lootedBagDissolveDelay: 2

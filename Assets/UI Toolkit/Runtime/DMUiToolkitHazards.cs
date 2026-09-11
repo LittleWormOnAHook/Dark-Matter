@@ -2,7 +2,6 @@ using System.Text;
 using Project.Core;
 using Project.Survival.Exposure;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Project.UI
@@ -16,8 +15,6 @@ namespace Project.UI
     public class DMUiToolkitHazards : MonoBehaviour
     {
         private const int SegmentCount = 12;
-        private const float FadeDuration = 0.35f;
-        private const float ManualPeekDuration = 5f;
         private const float BannerHold = 3f;
         private const float BannerFadeIn = 0.25f;
         private const float BannerFadeOut = 0.45f;
@@ -62,11 +59,9 @@ namespace Project.UI
         private VisualElement zoneBanner;
         private VisualElement zoneAccent;
         private Label zoneName;
+        private bool usesClusterToast;
         private bool bound;
-        private bool hasActiveHazard;
         private float hazardAlpha;
-        private float hazardAlphaTarget;
-        private float manualPeekTimer;
         private ExposureReceiver boundReceiver;
         private float bannerElapsed;
         private int bannerPhase;
@@ -170,33 +165,15 @@ namespace Project.UI
 
             if (!want && !toastActive)
             {
-                manualPeekTimer = 0f;
                 hazardAlpha = 0f;
                 ApplyHazardAlpha();
                 DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
                 return;
             }
 
-            if (hasActiveHazard)
-                hazardAlphaTarget = 1f;
-
-            if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
-            {
-                manualPeekTimer = ManualPeekDuration;
-                hazardAlphaTarget = 1f;
-            }
-
-            if (manualPeekTimer > 0f)
-            {
-                manualPeekTimer -= Time.unscaledDeltaTime;
-                if (manualPeekTimer <= 0f && !hasActiveHazard)
-                    hazardAlphaTarget = 0f;
-            }
-
-            hazardAlpha = Mathf.MoveTowards(hazardAlpha, hazardAlphaTarget, Time.unscaledDeltaTime / FadeDuration);
+            hazardAlpha = 0f;
             ApplyHazardAlpha();
             TickBanner();
-            PinAboveElev();
             if (boundReceiver == null)
                 BindZoneReceiver();
         }
@@ -217,6 +194,10 @@ namespace Project.UI
             cluster = tree.Q<VisualElement>("hazards-cluster");
             hazardPanel = tree.Q<VisualElement>("hazard-panel");
             hazardRows = tree.Q<VisualElement>("hazard-rows");
+            if (hazardPanel != null)
+                hazardPanel.style.visibility = Visibility.Hidden;
+            if (cluster != null)
+                cluster.style.visibility = Visibility.Hidden;
             VisualElement thermalPanel = tree.Q<VisualElement>("thermal-panel");
             if (thermalPanel != null)
                 thermalPanel.style.display = DisplayStyle.None;
@@ -225,7 +206,6 @@ namespace Project.UI
             ShowBuilderHost(tree.Q("hazard-severity"));
             ShowBuilderHost(tree.Q("hazard-percent"));
             ShowBuilderHost(tree.Q("hazard-rows"));
-            PinBesidePilot();
             if (document != null && document.sortingOrder != DMUiToolkitOverlayDocument.HazardsSort)
                 document.sortingOrder = DMUiToolkitOverlayDocument.HazardsSort;
             thermalStatus = tree.Q<Label>("thermal-status");
@@ -264,7 +244,6 @@ namespace Project.UI
             ApplyThermalGradientTrack();
 
             hazardAlpha = 0f;
-            hazardAlphaTarget = 0f;
             ApplyHazardAlpha();
             DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
             DMUiToolkitOverlayDocument.SetShown(root, false);
@@ -299,25 +278,6 @@ namespace Project.UI
             float combined = Mathf.Clamp01(Mathf.Max(
                 snapshot.CombinedExposureLevel,
                 snapshot.DominantHazard.IsClear ? 0f : snapshot.DominantHazard.Severity));
-
-            bool hazardNow = !snapshot.DominantHazard.IsClear
-                || snapshot.RadiationHazardLevel > 0.01f
-                || snapshot.ColdHazardLevel > 0.01f
-                || snapshot.HeatHazardLevel > 0.01f
-                || snapshot.SulfurHazardLevel > 0.01f
-                || snapshot.VolcanoHazardLevel > 0.01f
-                || snapshot.IsInShelter;
-            if (hazardNow)
-            {
-                hasActiveHazard = true;
-                hazardAlphaTarget = 1f;
-            }
-            else if (hasActiveHazard)
-            {
-                hasActiveHazard = false;
-                if (manualPeekTimer <= 0f)
-                    hazardAlphaTarget = 0f;
-            }
 
             if (hazardTitle != null)
             {
@@ -504,11 +464,19 @@ namespace Project.UI
 
             EnsureToast();
             if (this.zoneName != null)
+            {
                 this.zoneName.text = string.IsNullOrWhiteSpace(zoneName)
                     ? "ZONE"
                     : zoneName.ToUpperInvariant();
+                this.zoneName.style.color = DarkMatterGenesisUiPalette.Gold;
+            }
             if (zoneAccent != null)
                 DMUiToolkitOverlayDocument.SetShown(zoneAccent, false);
+            if (usesClusterToast && zoneBanner is Label entering)
+            {
+                entering.text = "ENTERING ZONE";
+                entering.style.color = DarkMatterGenesisUiPalette.Gold;
+            }
 
             ApplyBannerPlacement();
             bannerPhase = 1;
@@ -521,10 +489,31 @@ namespace Project.UI
         }
 
         private const string ToastName = "zone-entry-toast";
-        private const float ToastWidth = 520f;
+        private const float ToastWidth = 220f;
+        private const float ToastGapBelowIcons = 6f;
 
         private void EnsureToast()
         {
+            DMUiToolkitPilotCluster cluster = DMUiToolkitPilotCluster.Instance
+                ?? DMUiToolkitPilotCluster.EnsureHost();
+            Label entering = cluster != null ? cluster.ZoneEnteringLabel : null;
+            Label name = cluster != null ? cluster.ZoneNameLabel : null;
+            if (entering != null)
+            {
+                HideHudToast();
+                usesClusterToast = true;
+                zoneBanner = entering;
+                zoneName = name;
+                zoneAccent = null;
+                entering.style.color = DarkMatterGenesisUiPalette.Gold;
+                if (name != null)
+                    name.style.color = DarkMatterGenesisUiPalette.Gold;
+                if (bannerPhase == 0)
+                    DMUiToolkitOverlayDocument.SetShown(entering, false);
+                return;
+            }
+
+            usesClusterToast = false;
             VisualElement host = ResolveToastHost();
             if (host == null)
                 return;
@@ -542,8 +531,10 @@ namespace Project.UI
                 zoneBanner.AddToClassList("dmg-zone-toast");
                 Label heading = new Label("ENTERING ZONE") { name = "zone-banner-heading", pickingMode = PickingMode.Ignore };
                 heading.AddToClassList("dmg-zone-toast-heading");
+                heading.style.color = DarkMatterGenesisUiPalette.Gold;
                 zoneName = new Label("ZONE") { name = "zone-banner-name", pickingMode = PickingMode.Ignore };
                 zoneName.AddToClassList("dmg-zone-toast-name");
+                zoneName.style.color = DarkMatterGenesisUiPalette.Gold;
                 zoneBanner.Add(heading);
                 zoneBanner.Add(zoneName);
                 host.Add(zoneBanner);
@@ -553,12 +544,22 @@ namespace Project.UI
             {
                 zoneAccent = zoneBanner.Q("zone-banner-accent");
                 zoneName = zoneBanner.Q<Label>("zone-banner-name");
+                if (zoneName != null)
+                    zoneName.style.color = DarkMatterGenesisUiPalette.Gold;
             }
 
             zoneBanner.pickingMode = PickingMode.Ignore;
             ApplyBannerPlacement();
             if (bannerPhase == 0)
                 DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
+        }
+
+        private void HideHudToast()
+        {
+            VisualElement host = ResolveToastHost();
+            VisualElement leftover = host != null ? host.Q<VisualElement>(ToastName) : null;
+            if (leftover != null)
+                DMUiToolkitOverlayDocument.SetShown(leftover, false);
         }
 
         private static VisualElement ResolveToastHost()
@@ -573,24 +574,10 @@ namespace Project.UI
 
         private void ApplyBannerPlacement()
         {
-            if (zoneBanner == null)
+            if (zoneBanner == null || usesClusterToast)
                 return;
 
-            float panelW = 1920f;
-            float panelH = 1080f;
-            IPanel panel = zoneBanner.panel;
-            if (panel != null)
-            {
-                Rect wb = panel.visualTree.worldBound;
-                if (wb.width > 8f)
-                    panelW = wb.width;
-                if (wb.height > 8f)
-                    panelH = wb.height;
-            }
-
             zoneBanner.style.position = Position.Absolute;
-            zoneBanner.style.left = (panelW - ToastWidth) * 0.5f;
-            zoneBanner.style.top = panelH / 3f;
             zoneBanner.style.right = StyleKeyword.Auto;
             zoneBanner.style.bottom = StyleKeyword.Auto;
             zoneBanner.style.width = ToastWidth;
@@ -602,6 +589,62 @@ namespace Project.UI
             zoneBanner.style.borderRightWidth = 0;
             zoneBanner.style.borderBottomWidth = 0;
             zoneBanner.style.borderLeftWidth = 0;
+
+            Vector2 local = ResolveToastLocalBelowZoneIcons();
+            zoneBanner.style.left = local.x;
+            zoneBanner.style.top = local.y;
+        }
+
+        private Vector2 ResolveToastLocalBelowZoneIcons()
+        {
+            VisualElement icons = DMUiToolkitPilotCluster.Instance != null
+                ? DMUiToolkitPilotCluster.Instance.ZoneIconsHost
+                : null;
+            VisualElement parent = zoneBanner.hierarchy.parent;
+
+            float panelW = 1920f;
+            float panelH = 1080f;
+            IPanel panel = zoneBanner.panel;
+            if (panel != null)
+            {
+                Rect tree = panel.visualTree.worldBound;
+                if (tree.width > 8f)
+                    panelW = tree.width;
+                if (tree.height > 8f)
+                    panelH = tree.height;
+            }
+
+            Vector2 panelPoint;
+            if (icons != null && icons.panel != null && icons.worldBound.height > 1f)
+            {
+                Rect ib = icons.worldBound;
+                Vector2 world = new Vector2(ib.center.x, ib.yMax + ToastGapBelowIcons);
+                if (panel != null && icons.panel != panel)
+                {
+                    Vector2 screen = DMUiToolkitOverlayDocument.PanelPositionToScreen(icons.panel, world);
+                    panelPoint = RuntimePanelUtils.ScreenToPanel(panel, screen);
+                }
+                else
+                {
+                    panelPoint = world;
+                }
+            }
+            else
+            {
+                // Fallback: PilotCluster.uss icons sit at cluster (4, bottom 4, h 444) top 280 h 44.
+                const float iconCenterX = 104f;
+                const float iconBottomFromScreenBottom = 124f;
+                panelPoint = new Vector2(iconCenterX, panelH - iconBottomFromScreenBottom + ToastGapBelowIcons);
+            }
+
+            if (parent != null)
+                panelPoint = parent.WorldToLocal(panelPoint);
+
+            float left = panelPoint.x - ToastWidth * 0.5f;
+            float top = panelPoint.y;
+            left = Mathf.Clamp(left, 8f, Mathf.Max(8f, panelW - ToastWidth - 8f));
+            top = Mathf.Clamp(top, 8f, Mathf.Max(8f, panelH - 8f));
+            return new Vector2(left, top);
         }
 
         private void TickBanner()

@@ -86,6 +86,7 @@ namespace Project.EditorTools
         private SerializedProperty splashDamageFalloff;
         private SerializedProperty muzzleFlashPrefab;
         private SerializedProperty tracerPrefab;
+        private SerializedProperty fxProfile;
         private SerializedProperty impactVfxPrefab;
         private SerializedProperty beamVfxPrefab;
         private SerializedProperty isMiningTool;
@@ -210,6 +211,7 @@ namespace Project.EditorTools
             projectileGravityScale = serializedObject.FindProperty("projectileGravityScale");
             splashRadius = serializedObject.FindProperty("splashRadius");
             splashDamageFalloff = serializedObject.FindProperty("splashDamageFalloff");
+            fxProfile = serializedObject.FindProperty("fxProfile");
             muzzleFlashPrefab = serializedObject.FindProperty("muzzleFlashPrefab");
             tracerPrefab = serializedObject.FindProperty("tracerPrefab");
             impactVfxPrefab = serializedObject.FindProperty("impactVfxPrefab");
@@ -691,6 +693,9 @@ namespace Project.EditorTools
         private void DrawProjectileVfx()
         {
             EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("Combat FX", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(fxProfile);
+            EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Projectile VFX", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(muzzleFlashPrefab);
             EditorGUILayout.PropertyField(tracerPrefab);

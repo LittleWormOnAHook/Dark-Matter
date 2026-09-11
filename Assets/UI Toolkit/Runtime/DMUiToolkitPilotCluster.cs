@@ -27,6 +27,9 @@ namespace Project.UI
         private const float MarkerRange = 250f;
         private const float CompassFov = 140f;
         private const float CompassTickStep = 15f;
+        private const float MapPoiRefreshInterval = 0.25f;
+        private const float CompassDotsRefreshInterval = 1f / 15f;
+        private const float CompassDotsCombatRefreshInterval = 1f / 12f;
 
         private static readonly Color EnergyColor = DarkMatterGenesisUiPalette.PositiveGreen;
         private static readonly Color StaminaColor = DarkMatterGenesisUiPalette.Gold;
@@ -47,6 +50,11 @@ namespace Project.UI
         private const int MaxHealthBonusDashes = 10;
 
         private static DMUiToolkitPilotCluster instance;
+
+        public static DMUiToolkitPilotCluster Instance => instance;
+        public VisualElement ZoneIconsHost => zoneIconsHost;
+        public Label ZoneEnteringLabel => zoneEnteringLabel;
+        public Label ZoneNameLabel => zoneLabel;
 
         private UIDocument document;
         private VisualElement root;
@@ -80,7 +88,10 @@ namespace Project.UI
         private Label healthValue;
         private Label elevLabel;
         private Label tempLabel;
-        private Label gridLabel;
+        private Label latLabel;
+        private Label longLabel;
+        private VisualElement zoneIconsHost;
+        private Label zoneEnteringLabel;
         private Label zoneLabel;
         private Label compassPoi;
         private bool bound;
@@ -99,13 +110,32 @@ namespace Project.UI
         private string lastHealthText;
         private string lastLoadText;
         private string lastElevText;
-        private string lastGridText;
+        private string lastLatText;
+        private string lastLongText;
+        private readonly Dictionary<ExposureZoneKind, ZoneIconVisual> zoneIconVisuals =
+            new Dictionary<ExposureZoneKind, ZoneIconVisual>(8);
+        private readonly Dictionary<ExposureZoneKind, float> zoneIconWanted =
+            new Dictionary<ExposureZoneKind, float>(8);
+        private readonly List<ExposureZoneKind> zoneIconRemove = new List<ExposureZoneKind>(4);
+
+        private sealed class ZoneIconVisual
+        {
+            public VisualElement Host;
+            public VisualElement Glow;
+            public VisualElement Glyph;
+            public float Fade;
+            public float Center01;
+            public bool Active;
+        }
         private string lastTempText;
         private string lastZoneText;
         private string lastCompassPoiText;
         private float lastMapYaw = float.NaN;
         private Vector3 lastMapEuler;
         private float nextMapPoiRefresh;
+        private float nextCompassDotsRefresh;
+        private int livePoiCount;
+        private readonly List<VisualElement> poiPool = new List<VisualElement>(MaxPois);
         private float lastCompassHeading = float.NaN;
         private float lastCompassWidth;
         private float nextHeavyRefresh;
@@ -130,6 +160,14 @@ namespace Project.UI
             public float LastOpacity;
             public Sprite LastSprite;
             public Color LastColor;
+        }
+
+        private sealed class PoiDotState
+        {
+            public MapMarker Marker;
+            public float LastLeft;
+            public float LastTop;
+            public float LastOpacity = -1f;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -247,9 +285,19 @@ namespace Project.UI
             healthValue = tree.Q<Label>("pilot-health-value");
             elevLabel = tree.Q<Label>("pilot-elev");
             tempLabel = tree.Q<Label>("pilot-temp");
-            gridLabel = tree.Q<Label>("pilot-grid");
+            latLabel = tree.Q<Label>("pilot-lat");
+            longLabel = tree.Q<Label>("pilot-long");
+            zoneIconsHost = tree.Q<VisualElement>("pilot-zone-icons");
+            zoneEnteringLabel = tree.Q<Label>("pilot-zone-entering");
             zoneLabel = tree.Q<Label>("pilot-zone");
             compassPoi = tree.Q<Label>("pilot-compass-poi");
+            if (zoneEnteringLabel != null)
+            {
+                zoneEnteringLabel.style.color = DarkMatterGenesisUiPalette.Gold;
+                DMUiToolkitOverlayDocument.SetShown(zoneEnteringLabel, false);
+            }
+            if (zoneLabel != null)
+                zoneLabel.style.color = DarkMatterGenesisUiPalette.Gold;
 
             EnsureArcs();
             EnsureHealthDashes();
@@ -550,27 +598,27 @@ private void EnsureArcs()
             if (hasPos)
                 pos = mapUi.MinimapPlayerWorldPosition;
 
+            ResolveExposure(stats);
+
             int elev = Mathf.RoundToInt(pos.y);
             if (elevLabel != null)
+                SetLabelText(elevLabel, "Elevation " + FormatSignedCoord(elev) + " M", ref lastElevText);
+
+            if (hasPos)
             {
-                string sign = elev >= 0 ? "+" : "";
-                SetLabelText(elevLabel, "ELEV " + sign + elev + " M", ref lastElevText);
+                WorldMapProvider map = WorldMapProvider.Instance;
+                Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
+                // North is world +X, so grid.x is latitude and grid.y (world Z) is longitude.
+                SetLabelText(latLabel, "Lat " + FormatSignedCoord(Mathf.RoundToInt(grid.x)), ref lastLatText);
+                SetLabelText(longLabel, "Long " + FormatSignedCoord(Mathf.RoundToInt(grid.y)), ref lastLongText);
+            }
+            else
+            {
+                SetLabelText(latLabel, "Lat ----", ref lastLatText);
+                SetLabelText(longLabel, "Long ----", ref lastLongText);
             }
 
-            if (gridLabel != null)
-            {
-                if (hasPos)
-                {
-                    WorldMapProvider map = WorldMapProvider.Instance;
-                    Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
-                    SetLabelText(
-                        gridLabel,
-                        "GRID " + Mathf.RoundToInt(grid.x) + "  " + Mathf.RoundToInt(grid.y),
-                        ref lastGridText);
-                }
-                else
-                    SetLabelText(gridLabel, "GRID --", ref lastGridText);
-            }
+            RefreshZoneIcons(hasPos ? pos : Vector3.zero);
 
             float fahrenheit = stats != null ? stats.GetDisplayTemperatureFahrenheit() : 70f;
             float thermal01 = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
@@ -582,19 +630,15 @@ private void EnsureArcs()
             if (zoneLabel != null)
             {
                 string zone = "";
-                Color zoneColor = new Color(0.75f, 0.18f, 0.48f, 1f); // default magenta when clear/empty
                 ExposureStatusSnapshot snap = ExposureStatusService.Current;
                 if (snap != null && !snap.DominantHazard.IsClear)
                 {
                     zone = string.IsNullOrEmpty(snap.DominantHazard.DisplayName)
                         ? ""
                         : snap.DominantHazard.DisplayName.ToUpperInvariant();
-                    zoneColor = snap.DominantHazard.DisplayColor;
-                    zoneColor.a = 1f;
                 }
                 SetLabelText(zoneLabel, zone, ref lastZoneText);
-                if (zoneLabel.style.color.value != zoneColor)
-                    zoneLabel.style.color = zoneColor;
+                zoneLabel.style.color = DarkMatterGenesisUiPalette.Gold;
             }
         }
 
@@ -662,8 +706,6 @@ private void EnsureArcs()
             if (Time.unscaledTime < nextMapPoiRefresh)
                 return;
 
-            poiHost.Clear();
-
             WorldMapProvider provider = WorldMapProvider.Instance;
             float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
             Vector3 poiEuler = provider != null
@@ -674,7 +716,8 @@ private void EnsureArcs()
             IReadOnlyList<MapMarker> markers = MapRegistry.ActiveMarkers;
             if (markers == null || markers.Count == 0 || provider == null)
             {
-                nextMapPoiRefresh = Time.unscaledTime + 0.25f;
+                RecyclePois(0);
+                nextMapPoiRefresh = Time.unscaledTime + MapPoiRefreshInterval;
                 return;
             }
 
@@ -699,7 +742,6 @@ private void EnsureArcs()
                 if (marker == null || !marker.ShouldDrawOnMinimap(playerWorld))
                     continue;
 
-                // Same UV as the cropped map texture (includes player-icon calibration nudge).
                 Vector2 markerUv = provider.WorldToPlayerMap01(marker.WorldPosition);
                 Vector2 delta = (markerUv - playerUv) / Mathf.Max(0.0001f, uvSpan);
                 if (provider.MinimapFlipHorizontal)
@@ -709,26 +751,81 @@ private void EnsureArcs()
                 if (delta.sqrMagnitude > 1f)
                     continue;
 
-                VisualElement dot = new VisualElement();
-                dot.AddToClassList("pilot-poi");
-                dot.pickingMode = PickingMode.Ignore;
-                DMUiToolkitMenus.ApplyMapPoiDot(dot, marker, MinimapPoiSizePx);
+                VisualElement dot = AcquirePoi(drawn);
+                PoiDotState state = dot.userData as PoiDotState;
+                if (state == null)
+                {
+                    state = new PoiDotState();
+                    dot.userData = state;
+                }
+
+                if (state.Marker != marker)
+                {
+                    state.Marker = marker;
+                    DMUiToolkitMenus.ApplyMapPoiDot(dot, marker, MinimapPoiSizePx);
+                    state.LastOpacity = -1f;
+                }
+
+                float opacity = 1f;
                 if (marker.RequiresCombatAggro)
                 {
-                    dot.style.opacity = marker.GetMinimapDisplayAlpha();
+                    opacity = marker.GetMinimapDisplayAlpha();
                     if (marker.IsCombatFlashing)
                         combatPulse = true;
                 }
 
+                if (!Mathf.Approximately(state.LastOpacity, opacity))
+                {
+                    state.LastOpacity = opacity;
+                    dot.style.opacity = opacity;
+                }
+
                 float px = MapRadiusPx + delta.x * MapRadiusPx;
                 float py = MapRadiusPx - delta.y * MapRadiusPx;
-                dot.style.left = px;
-                dot.style.top = py;
-                poiHost.Add(dot);
+                if (!Mathf.Approximately(state.LastLeft, px))
+                {
+                    state.LastLeft = px;
+                    dot.style.left = px;
+                }
+
+                if (!Mathf.Approximately(state.LastTop, py))
+                {
+                    state.LastTop = py;
+                    dot.style.top = py;
+                }
+
                 drawn++;
             }
 
-            nextMapPoiRefresh = Time.unscaledTime + (combatPulse ? 1f / 12f : 0.25f);
+            RecyclePois(drawn);
+            nextMapPoiRefresh = Time.unscaledTime + (combatPulse ? CompassDotsCombatRefreshInterval : MapPoiRefreshInterval);
+        }
+
+        private VisualElement AcquirePoi(int index)
+        {
+            while (poiPool.Count <= index)
+            {
+                VisualElement dot = new VisualElement();
+                dot.AddToClassList("pilot-poi");
+                dot.pickingMode = PickingMode.Ignore;
+                poiHost.Add(dot);
+                poiPool.Add(dot);
+            }
+
+            VisualElement pooled = poiPool[index];
+            pooled.style.display = DisplayStyle.Flex;
+            return pooled;
+        }
+
+        private void RecyclePois(int shown)
+        {
+            for (int i = shown; i < livePoiCount; i++)
+            {
+                if (i < poiPool.Count)
+                    poiPool[i].style.display = DisplayStyle.None;
+            }
+
+            livePoiCount = shown;
         }
 
         private void RefreshCompass(MapUI mapUi)
@@ -767,7 +864,8 @@ private void EnsureArcs()
                 }
             }
 
-            RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidthStable);
+            if (Time.unscaledTime >= nextCompassDotsRefresh || !headingStable)
+                RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidthStable);
         }
 
         private void RefreshCompassDots(MapUI mapUi, float heading, float halfFov, float halfWidth, float stripWidth)
@@ -775,6 +873,7 @@ private void EnsureArcs()
             if (compassDots == null)
                 return;
 
+            bool combatPulse = false;
             IReadOnlyList<MapMarker> markers = MapRegistry.ActiveMarkers;
             Vector3 origin = mapUi != null && mapUi.HasMinimapPlayerPosition
                 ? mapUi.MinimapPlayerWorldPosition
@@ -791,7 +890,7 @@ private void EnsureArcs()
                 for (int i = 0; i < markers.Count; i++)
                 {
                     MapMarker marker = markers[i];
-                    if (marker == null || !marker.ShowOnMinimap || !marker.IsRevealedOnMap)
+                    if (marker == null || !marker.ShouldDrawOnCompass(origin))
                         continue;
 
                     Vector3 toMarker = marker.WorldPosition - origin;
@@ -804,6 +903,9 @@ private void EnsureArcs()
                     float delta = Mathf.DeltaAngle(heading, bearing);
                     if (Mathf.Abs(delta) > halfFov)
                         continue;
+
+                    if (marker.RequiresCombatAggro && marker.IsCombatFlashing)
+                        combatPulse = true;
 
                     compassDotsSeen.Add(marker);
                     if (!compassDotLookup.TryGetValue(marker, out VisualElement dot) || dot == null)
@@ -913,6 +1015,9 @@ private void EnsureArcs()
                     compassDotLookup.Remove(stale[i]);
             }
 
+            nextCompassDotsRefresh = Time.unscaledTime
+                + (combatPulse ? CompassDotsCombatRefreshInterval : CompassDotsRefreshInterval);
+
             if (compassPoi == null)
                 return;
 
@@ -1017,9 +1122,18 @@ private void EnsureArcs()
         {
             if (cachedExposure != null)
                 return cachedExposure;
-            if (stats == null)
-                return null;
-            cachedExposure = stats.GetComponent<ExposureController>();
+            if (stats != null)
+                cachedExposure = stats.GetComponent<ExposureController>()
+                    ?? stats.GetComponentInParent<ExposureController>()
+                    ?? stats.GetComponentInChildren<ExposureController>();
+            if (cachedExposure == null)
+            {
+                GameObject player = PlayerLocator.FindPlayerObject();
+                if (player != null)
+                    cachedExposure = player.GetComponent<ExposureController>()
+                        ?? player.GetComponentInChildren<ExposureController>();
+            }
+
             return cachedExposure;
         }
 
@@ -1059,6 +1173,171 @@ private void EnsureArcs()
             return Mathf.Clamp(PlayerSkillAllocator.GetTotalRank(SkillModifierType.MaxOxygenPercent), 0, LockedArcDashCount);
         }
 
+
+        private static string FormatSignedCoord(int value)
+        {
+            return value.ToString("+0;-0;+0");
+        }
+
+        private void RefreshZoneIcons(Vector3 playerWorld)
+        {
+            if (zoneIconsHost == null)
+                return;
+
+            if (zoneIconsHost.childCount > zoneIconVisuals.Count)
+            {
+                for (int i = zoneIconsHost.childCount - 1; i >= 0; i--)
+                {
+                    VisualElement child = zoneIconsHost[i];
+                    bool known = false;
+                    foreach (KeyValuePair<ExposureZoneKind, ZoneIconVisual> pair in zoneIconVisuals)
+                    {
+                        if (pair.Value != null && pair.Value.Host == child)
+                        {
+                            known = true;
+                            break;
+                        }
+                    }
+                    if (!known)
+                        child.RemoveFromHierarchy();
+                }
+            }
+
+            Dictionary<ExposureZoneKind, float> wanted = null;
+            ExposureReceiver receiver = cachedExposure != null
+                ? cachedExposure
+                : ResolveExposure(null);
+            if (receiver == null)
+            {
+                GameObject player = PlayerLocator.FindPlayerObject();
+                if (player != null)
+                    receiver = player.GetComponent<ExposureReceiver>()
+                        ?? player.GetComponentInChildren<ExposureReceiver>();
+            }
+
+            if (receiver != null)
+            {
+                IReadOnlyList<ExposureZoneVolume> zones = receiver.ActiveZones;
+                if (zones != null)
+                {
+                    for (int i = 0; i < zones.Count; i++)
+                    {
+                        ExposureZoneVolume zone = zones[i];
+                        ExposureZoneKind kind = DMZoneHudIcons.ResolveKind(zone);
+                        if (kind == ExposureZoneKind.Custom)
+                            continue;
+
+                        float center01 = zone != null ? zone.EvaluateCenter01(playerWorld) : 0f;
+                        if (wanted == null)
+                            wanted = new Dictionary<ExposureZoneKind, float>(8);
+                        if (!wanted.TryGetValue(kind, out float existing) || center01 > existing)
+                            wanted[kind] = center01;
+                    }
+                }
+            }
+
+            ExposureStatusSnapshot snap = ExposureStatusService.Current;
+            if (snap != null && !snap.DominantHazard.IsClear && snap.DominantHazard.Kind != ExposureZoneKind.Custom)
+            {
+                if (wanted == null)
+                    wanted = new Dictionary<ExposureZoneKind, float>(8);
+                ExposureZoneKind snapKind = snap.DominantHazard.Kind;
+                if (!wanted.ContainsKey(snapKind))
+                    wanted[snapKind] = Mathf.Clamp01(snap.DominantHazard.Severity);
+            }
+
+            foreach (KeyValuePair<ExposureZoneKind, ZoneIconVisual> pair in zoneIconVisuals)
+                pair.Value.Active = false;
+
+            if (wanted != null)
+            {
+                foreach (KeyValuePair<ExposureZoneKind, float> pair in wanted)
+                {
+                    ZoneIconVisual visual = EnsureZoneIcon(pair.Key);
+                    if (visual == null)
+                        continue;
+                    visual.Active = true;
+                    visual.Center01 = pair.Value;
+                }
+            }
+
+            float fadeStep = Time.unscaledDeltaTime / 0.35f;
+            zoneIconRemove.Clear();
+            foreach (KeyValuePair<ExposureZoneKind, ZoneIconVisual> pair in zoneIconVisuals)
+            {
+                ZoneIconVisual visual = pair.Value;
+                float target = visual.Active ? 1f : 0f;
+                visual.Fade = Mathf.MoveTowards(visual.Fade, target, fadeStep);
+                if (!visual.Active && visual.Fade <= 0.001f)
+                {
+                    if (visual.Host != null)
+                        visual.Host.RemoveFromHierarchy();
+                    zoneIconRemove.Add(pair.Key);
+                    continue;
+                }
+
+                if (visual.Host != null)
+                    visual.Host.style.visibility = Visibility.Visible;
+
+                float hz = Mathf.Lerp(0.5f, 2f, visual.Center01);
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * hz * Mathf.PI * 2f);
+                float alpha = visual.Fade * (0.42f + 0.58f * pulse);
+                if (visual.Glyph != null)
+                    visual.Glyph.style.opacity = alpha;
+                if (visual.Glow != null)
+                    visual.Glow.style.opacity = alpha * 0.45f;
+            }
+
+            for (int i = 0; i < zoneIconRemove.Count; i++)
+                zoneIconVisuals.Remove(zoneIconRemove[i]);
+        }
+
+        private ZoneIconVisual EnsureZoneIcon(ExposureZoneKind kind)
+        {
+            if (zoneIconVisuals.TryGetValue(kind, out ZoneIconVisual existing) && existing.Host != null)
+            {
+                if (existing.Host.parent != zoneIconsHost && zoneIconsHost != null)
+                    zoneIconsHost.Add(existing.Host);
+                return existing;
+            }
+
+            Texture2D texture = DMZoneHudIcons.ForKind(kind);
+            if (texture == null || zoneIconsHost == null)
+                return null;
+
+            VisualElement host = new VisualElement();
+            host.AddToClassList("pilot-zone-icon");
+            host.pickingMode = PickingMode.Ignore;
+
+            VisualElement glow = new VisualElement();
+            glow.AddToClassList("pilot-zone-icon-glow");
+            glow.pickingMode = PickingMode.Ignore;
+            DMUiToolkitStyle.TrySetTextureBackground(glow, texture, ScaleMode.ScaleToFit);
+            glow.style.unityBackgroundImageTintColor = DMZoneHudIcons.EmissionTint(kind);
+
+            VisualElement glyph = new VisualElement();
+            glyph.AddToClassList("pilot-zone-icon");
+            glyph.pickingMode = PickingMode.Ignore;
+            glyph.style.position = Position.Absolute;
+            glyph.style.left = 0;
+            glyph.style.top = 0;
+            glyph.style.marginLeft = 0;
+            glyph.style.marginRight = 0;
+            DMUiToolkitStyle.TrySetTextureBackground(glyph, texture, ScaleMode.ScaleToFit);
+
+            host.Add(glow);
+            host.Add(glyph);
+            zoneIconsHost.Add(host);
+
+            ZoneIconVisual visual = new ZoneIconVisual
+            {
+                Host = host,
+                Glow = glow,
+                Glyph = glyph
+            };
+            zoneIconVisuals[kind] = visual;
+            return visual;
+        }
 
         private static void SetPercent(Label label, float ratio, ref string lastText)
         {

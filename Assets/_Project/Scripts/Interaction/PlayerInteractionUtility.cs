@@ -41,11 +41,27 @@ namespace Project.Interaction
         {
             if (interactCollider != null)
             {
-                Vector3 closest = interactCollider.ClosestPoint(playerPosition);
+                Vector3 closest = GetClosestPointSafe(interactCollider, playerPosition);
                 return Vector3.Distance(playerPosition, closest);
             }
 
             return Vector3.Distance(playerPosition, fallbackPosition);
+        }
+
+        private static Vector3 GetClosestPointSafe(Collider collider, Vector3 point)
+        {
+            if (collider == null)
+                return point;
+
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider
+                || (collider is MeshCollider meshCollider && meshCollider.convex))
+            {
+                return collider.ClosestPoint(point);
+            }
+
+            return collider.bounds.ClosestPoint(point);
         }
     }
 }

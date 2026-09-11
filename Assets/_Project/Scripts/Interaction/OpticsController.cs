@@ -28,8 +28,11 @@ namespace Project.Interaction
         [SerializeField] private float scrollMomentumDecay = 10f;
         [SerializeField] private float minScrollNotchStep = 0.18f;
 
+        private const float DefaultToolEnergyDrainPerSecond = 0.5f;
+
         private EquipmentController equipment;
         private PlayerController playerController;
+        private SurvivalStats survivalStats;
         private EquippedItemVisual equippedVisual;
         private OpticsOverlayUI overlayUi;
         private OpticsCameraRig cameraRig;
@@ -150,14 +153,25 @@ namespace Project.Interaction
                 return;
             }
 
-            if (tool.toolType == ToolType.Scanner && Time.unscaledTime >= nextScanTime)
-            {
-                nextScanTime = Time.unscaledTime + scanRefreshInterval;
-                RefreshScannerTargets(tool);
-            }
-
             if (tool.toolType == ToolType.Scanner)
+            {
+                if (!HasScannerEnergy())
+                {
+                    ForceDeactivate();
+                    equipment?.ClearToolbarSelectionPublic();
+                    return;
+                }
+
+                SpendScannerEnergy();
+
+                if (Time.unscaledTime >= nextScanTime)
+                {
+                    nextScanTime = Time.unscaledTime + scanRefreshInterval;
+                    RefreshScannerTargets(tool);
+                }
+
                 scannerSweep?.TickScannerInput(true, worldCamera);
+            }
 
             // Mouse-wheel FOV zoom is binoculars-only.
             if (tool.toolType == ToolType.Binoculars && Mouse.current != null)
@@ -857,12 +871,33 @@ namespace Project.Interaction
             return Vector3.Distance(hit.point, targetPosition) <= 0.5f;
         }
 
+        private bool HasScannerEnergy()
+        {
+            if (survivalStats == null)
+                survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
+            return survivalStats == null || survivalStats.HasEnergy();
+        }
+
+        private void SpendScannerEnergy()
+        {
+            if (survivalStats == null)
+                survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
+            if (survivalStats == null)
+                return;
+
+            float drain = survivalStats.toolEnergyDrainPerSecond > 0f
+                ? survivalStats.toolEnergyDrainPerSecond
+                : DefaultToolEnergyDrainPerSecond;
+            survivalStats.SpendEnergy(drain * Time.deltaTime);
+        }
+
         private bool CanOperate()
         {
             if (!GameSession.HasStarted || playerController == null || playerController.IsGameplayPaused)
                 return false;
 
-            SurvivalStats survivalStats = GetComponent<SurvivalStats>();
+            if (survivalStats == null)
+                survivalStats = GetComponent<SurvivalStats>() ?? GetComponentInParent<SurvivalStats>();
             return survivalStats == null || !survivalStats.IsDead;
         }
 

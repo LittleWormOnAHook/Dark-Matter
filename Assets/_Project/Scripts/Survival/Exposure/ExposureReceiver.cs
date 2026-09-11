@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,8 +13,11 @@ namespace Project.Survival.Exposure
 
         public IReadOnlyList<ExposureZoneVolume> ActiveZones => activeZones;
 
-        public event System.Action<ExposureZoneVolume> ZoneEntered;
-        public event System.Action<ExposureZoneVolume> ZoneExited;
+        /// <summary>Any receiver entered a zone. UITK toast binds this so it cannot miss the event.</summary>
+        public static event Action<ExposureZoneVolume> AnyZoneEntered;
+
+        public event Action<ExposureZoneVolume> ZoneEntered;
+        public event Action<ExposureZoneVolume> ZoneExited;
 
         public void RegisterZone(ExposureZoneVolume zone)
         {
@@ -21,6 +25,7 @@ namespace Project.Survival.Exposure
                 return;
 
             activeZones.Add(zone);
+            AnyZoneEntered?.Invoke(zone);
             ZoneEntered?.Invoke(zone);
         }
 

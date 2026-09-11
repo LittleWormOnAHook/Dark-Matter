@@ -38,9 +38,9 @@ namespace Project.UI
         public const float MinimapZoomInMultiplier = 0.67f;
         /// <summary>Bracket ] zooms out 33% (larger visible span).</summary>
         public const float MinimapZoomOutMultiplier = 1.333333f;
-        private const float DefaultFullMapZoom = 5f;
+        private const float FallbackFullMapOpenZoom = 5f;
+        private const float FallbackFullMapMaxZoom = 8f;
         private const float MinFullMapZoom = 1f;
-        private const float MaxFullMapZoom = 8f;
         private const float FullMapScrollNotchesFullRange = 3f;
         private const float MinimapScrollNotchesFullRange = 4f;
         private const float MapKeyHoldTapSeconds = 0.18f;
@@ -99,7 +99,7 @@ namespace Project.UI
         private bool uiBuilt;
         private bool fullMapOpen;
         private bool openedViaNavigator;
-        private float fullMapZoom = DefaultFullMapZoom;
+        private float fullMapZoom = FallbackFullMapOpenZoom;
         private int lastMapToggleFrame = -1;
         private Vector2 lastFullMapViewportSize;
         private Vector2 lastFullMapPanelSize;
@@ -111,7 +111,7 @@ namespace Project.UI
         private static JournalPanelUI cachedJournalPanel;
         private static ScannerSweepController cachedScannerSweep;
         private const float MarkerRefreshInterval = 0.25f;
-        private const float MinimapRefreshInterval = 0.05f;
+        private const float MinimapRefreshInterval = 0.066f;
         private const int MaxMinimapMarkers = 128;
         private const float VehicleMapPositionFreezeSpeed = 0.25f;
         private readonly Dictionary<MapMarker, RectTransform> minimapMarkerIcons = new Dictionary<MapMarker, RectTransform>();
@@ -402,7 +402,7 @@ namespace Project.UI
                 fullMapOverlay.transform.SetAsLastSibling();
 
             RefreshFullMapFrameLayout();
-            fullMapZoom = DefaultFullMapZoom;
+            fullMapZoom = ResolveDefaultFullMapZoom();
             UpdateFullMapZoomLabel();
             CenterFullMapOnPlayer();
             ApplyPlayerArrowSizes();
@@ -439,11 +439,14 @@ namespace Project.UI
 
         private void ApplyPlayerArrowSizes()
         {
+            float minimapSize = mapProvider != null ? mapProvider.MinimapPlayerIconSizePixels : MinimapPlayerIconSize;
+            float fullMapSize = mapProvider != null ? mapProvider.MapPlayerIconSizePixels : FullMapPlayerIconSize;
+
             if (minimapPlayerIconRect != null)
-                minimapPlayerIconRect.sizeDelta = new Vector2(MinimapPlayerIconSize, MinimapPlayerIconSize);
+                minimapPlayerIconRect.sizeDelta = new Vector2(minimapSize, minimapSize);
 
             if (fullMapPlayerIconRect != null)
-                fullMapPlayerIconRect.sizeDelta = new Vector2(FullMapPlayerIconSize, FullMapPlayerIconSize);
+                fullMapPlayerIconRect.sizeDelta = new Vector2(fullMapSize, fullMapSize);
         }
 
         public void CloseFullMapFromNavigator()
@@ -498,7 +501,7 @@ namespace Project.UI
             if (fullMapOpen)
             {
                 RefreshFullMapFrameLayout();
-                fullMapZoom = DefaultFullMapZoom;
+                fullMapZoom = ResolveDefaultFullMapZoom();
                 UpdateFullMapZoomLabel();
                 CenterFullMapOnPlayer();
                 RequestImmediateMarkerRefresh();
@@ -647,6 +650,36 @@ namespace Project.UI
 
             Canvas.ForceUpdateCanvases();
             EnsureFullMapChromeLayout();
+        }
+
+        private float ResolvePlayableWorldSpan()
+        {
+            if (mapProvider == null)
+                EnsureMapProvider();
+            if (mapProvider != null)
+            {
+                float span = mapProvider.GetPlayableWorldSpan();
+                if (span > 1f)
+                    return span;
+            }
+
+            return ReferenceTerrainSpan;
+        }
+
+        private float ResolveDefaultFullMapZoom()
+        {
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            return profile != null
+                ? profile.GetFullMapOpenZoomMultiplier(ResolvePlayableWorldSpan())
+                : FallbackFullMapOpenZoom;
+        }
+
+        private float ResolveMaxFullMapZoom()
+        {
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            return profile != null
+                ? profile.GetFullMapMaxZoomMultiplier(ResolvePlayableWorldSpan())
+                : FallbackFullMapMaxZoom;
         }
 
         private static void PauseForFullMap(bool pause)

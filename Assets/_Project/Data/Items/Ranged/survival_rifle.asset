@@ -63,11 +63,11 @@ MonoBehaviour:
   reloadTimeSeconds: 2.2
   defaultAmmoType: 0
   compatibleAmmoTypes: 000000000100000002000000030000000400000005000000060000000700000008000000
-  defaultAmmoItem: {fileID: 11400000, guid: 33a3d134127358d448f7c7807d0ec2c8, type: 2}
+  defaultAmmoItem: {fileID: 11400000, guid: c7d8e9f0a1b23c4d5e6f708192a3b467, type: 2}
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
-  projectilePrefab: {fileID: 43210292418809407, guid: 677c96554679d064ab9d4df997baff2c, type: 3}
+  projectilePrefab: {fileID: 0}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.76
   hipFireMaxDeviationDegrees: 14
@@ -78,16 +78,24 @@ MonoBehaviour:
   useAimHeldLocalRotation: 1
   aimHeldLocalRotation: {x: -0.6346855, y: 0.14677942, z: -0.08939872, w: 0.75341755}
   aimHeldLocalScale: {x: 0.85, y: 0.85, z: 0.85}
-  ammoType: 1
+  ammoType: 0
   ammoPerPickup: 0
   ammoPickupGrant: 0
+  ammoRecoilProfile:
+    pistolCameraVertical: 0
+    pistolCameraHorizontal: 0
+    pistolAnimationWeight: 0
+    rifleCameraVertical: 0
+    rifleCameraHorizontal: 0
+    rifleAnimationWeight: 0
   isHitscanBeam: 0
   projectileGravityScale: 0.35
   splashRadius: 0
   splashDamageFalloff: 0.25
-  muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
-  tracerPrefab: {fileID: 1878987882032996, guid: 2f30ce685381cf141a1c05b1ee359db2, type: 3}
-  impactVfxPrefab: {fileID: 1065618375357958, guid: 6f8068e2c99ffb04b932ec74e5773db5, type: 3}
+  fxProfile: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0
   miningPassesRequired: 0

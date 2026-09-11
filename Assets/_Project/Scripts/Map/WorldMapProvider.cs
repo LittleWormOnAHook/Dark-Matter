@@ -49,12 +49,14 @@ namespace Project.Map
         [SerializeField] private bool useCameraTerrainSnapshot = true;
         [Tooltip("Flip map V in world→UV math when authored north is texture bottom.")]
         [SerializeField] private bool invertMapVertical = false;
+        [SerializeField] private bool invertMapHorizontal = false;
         [Tooltip("Extra yaw added to minimap/compass heading ( -90 = world +X reads as North ).")]
         [SerializeField] private float mapDisplayNorthOffsetDegrees = -90f;
         [Tooltip("Fine-tune world→UV alignment after affine calibration.")]
         [SerializeField] private Vector2 mapUvOffset = Vector2.zero;
-        [Tooltip("Static full-map player arrow base rotation (degrees).")]
+        [Tooltip("Static full-map player arrow base rotation (degrees). Driven by the calibration profile.")]
         [SerializeField] private float mapPlayerIconBaseDegrees;
+        [SerializeField] private Vector2 mapPlayerIconUvOffset;
         [Header("Grid 0,0 calibration")]
         [Tooltip("Texture UV where world grid origin (Map Zero) sits on the authored map.")]
         [SerializeField] private Vector2 mapZeroUv01 = new Vector2(0.518f, 0.498f);
@@ -74,9 +76,20 @@ namespace Project.Map
         public Texture2D MinimapTexture { get; private set; }
         public bool IsMapTextureReady { get; private set; }
         public bool InvertMapVertical => ActiveCalibration.invertMapVertical;
+        public bool InvertMapHorizontal => ActiveCalibration.invertMapHorizontal;
+        public bool MinimapFlipHorizontal => ActiveCalibration.minimapFlipHorizontal;
+        public bool MinimapFlipVertical => ActiveCalibration.minimapFlipVertical;
+        public Vector3 MinimapRotateEuler => new Vector3(
+            ActiveCalibration.minimapRotateX,
+            ActiveCalibration.minimapRotateY,
+            ActiveCalibration.minimapRotateZ);
         public float MapDisplayNorthOffsetDegrees => ActiveCalibration.mapDisplayNorthOffsetDegrees;
         public Vector2 MapUvOffset => ActiveCalibration.mapUvOffset;
         public float MapPlayerIconBaseDegrees => ActiveCalibration.mapPlayerIconBaseDegrees;
+        public float MinimapPlayerIconBaseDegrees => ActiveCalibration.minimapPlayerIconBaseDegrees;
+        public Vector2 MapPlayerIconUvOffset => ActiveCalibration.mapPlayerIconUvOffset;
+        public float MapPlayerIconSizePixels => ActiveCalibration.mapPlayerIconSizePixels;
+        public float MinimapPlayerIconSizePixels => ActiveCalibration.minimapPlayerIconSizePixels;
         public Vector3 MapGridOriginWorld => ResolveMapGridOriginWorld();
         public DMWorldMapCalibrationProfile CalibrationProfile => ResolveCalibrationProfile();
 
@@ -87,9 +100,21 @@ namespace Project.Map
         private struct CalibrationState
         {
             public bool invertMapVertical;
+            public bool invertMapHorizontal;
             public float mapDisplayNorthOffsetDegrees;
             public Vector2 mapUvOffset;
+            public float mapUvScaleX;
+            public float mapUvScaleY;
+            public bool minimapFlipHorizontal;
+            public bool minimapFlipVertical;
+            public float minimapRotateX;
+            public float minimapRotateY;
+            public float minimapRotateZ;
             public float mapPlayerIconBaseDegrees;
+            public float minimapPlayerIconBaseDegrees;
+            public Vector2 mapPlayerIconUvOffset;
+            public float mapPlayerIconSizePixels;
+            public float minimapPlayerIconSizePixels;
             public Vector2 mapZeroUv01;
             public Vector2 mapCalibrationWorldXz;
             public Vector2 mapCalibrationUv01;
@@ -196,6 +221,33 @@ namespace Project.Map
             return ApplyMapUvOffset(WorldToMapRaw01(worldPosition));
         }
 
+        /// <summary>
+        /// UV on the painted map after the player-icon calibration nudge.
+        /// Use for the player token and POI dots so they sit on the same texture.
+        /// </summary>
+        public Vector2 WorldToPlayerMap01(Vector3 worldPosition)
+        {
+            return WorldToMap01(worldPosition) + MapPlayerIconUvOffset;
+        }
+
+        public Vector2 GetCircularRevealUvRadius(float radiusMeters)
+        {
+            Vector2 uvPerMeter = GetMapUvPerWorldMeter();
+            float iso = 0.5f * (Mathf.Abs(uvPerMeter.x) + Mathf.Abs(uvPerMeter.y));
+            if (iso < 0.0000001f)
+            {
+                float span = Mathf.Max(WorldBounds.size.x, WorldBounds.size.z);
+                iso = span > 1f ? 1f / span : 0.0001f;
+            }
+
+            float radiusUv = Mathf.Max(0.00001f, radiusMeters * iso);
+            float aspect = 1f;
+            if (MapTexture != null && MapTexture.height > 0)
+                aspect = MapTexture.width / (float)MapTexture.height;
+
+            return new Vector2(radiusUv, radiusUv * aspect);
+        }
+
         public Vector3 Map01ToWorld(Vector2 map01)
         {
             Vector2 raw = RemoveMapUvOffset(map01);
@@ -207,10 +259,15 @@ namespace Project.Map
                 Vector3 origin = ResolveMapGridOriginWorld();
                 float worldX = origin.x;
                 float worldZ = origin.z;
+                float axisX = 0f;
+                float axisZ = 0f;
                 if (!Mathf.Approximately(uvPerMeter.x, 0f))
-                    worldX += (raw.x - calibration.mapZeroUv01.x) / uvPerMeter.x;
+                    axisX = (raw.x - calibration.mapZeroUv01.x) / uvPerMeter.x;
                 if (!Mathf.Approximately(uvPerMeter.y, 0f))
-                    worldZ += (raw.y - calibration.mapZeroUv01.y) / uvPerMeter.y;
+                    axisZ = (raw.y - calibration.mapZeroUv01.y) / uvPerMeter.y;
+                MapAxesToWorldDelta(axisX, axisZ, out float relX, out float relZ);
+                worldX += relX;
+                worldZ += relZ;
                 return new Vector3(worldX, WorldBounds.center.y, worldZ);
             }
 
@@ -239,7 +296,22 @@ namespace Project.Map
             return NormalizeDegrees(facingYawDegrees + calibration.mapDisplayNorthOffsetDegrees);
         }
 
-        /// <summary>Map-display bearing from a world XZ delta (matches MapDisplayYaw space).</summary>
+        /// <summary>
+        /// Compass / minimap / player-arrow yaw. Heading is 180° from
+        /// <see cref="GetMapDisplayYaw"/> so NEWS matches player facing.
+        /// </summary>
+        public float GetMapCompassYaw(float facingYawDegrees)
+        {
+            return NormalizeDegrees(GetMapDisplayYaw(facingYawDegrees) + 180f);
+        }
+
+        public Vector3 GetMinimapViewEuler(float headingYawDegrees)
+        {
+            Vector3 extra = MinimapRotateEuler;
+            return new Vector3(extra.x, extra.y, extra.z - headingYawDegrees);
+        }
+
+        /// <summary>Map-display bearing from a world XZ delta (matches MapCompassYaw space).</summary>
         public float WorldDeltaToDisplayBearing(Vector3 worldDelta)
         {
             worldDelta.y = 0f;
@@ -247,7 +319,7 @@ namespace Project.Map
                 return 0f;
 
             float worldBearing = Mathf.Atan2(worldDelta.x, worldDelta.z) * Mathf.Rad2Deg;
-            return GetMapDisplayYaw(worldBearing);
+            return GetMapCompassYaw(worldBearing);
         }
 
         public static float WorldDeltaToDisplayBearing(Vector3 fromWorld, Vector3 toWorld)
@@ -256,7 +328,7 @@ namespace Project.Map
             Vector3 delta = toWorld - fromWorld;
             return provider != null
                 ? provider.WorldDeltaToDisplayBearing(delta)
-                : NormalizeDegrees(Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg - 90f);
+                : NormalizeDegrees(Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg + 90f);
         }
 
         public void NotifyCalibrationChanged()
@@ -272,9 +344,11 @@ namespace Project.Map
                 return;
 
             invertMapVertical = profile.invertMapVertical;
+            invertMapHorizontal = profile.invertMapHorizontal;
             mapDisplayNorthOffsetDegrees = profile.mapDisplayNorthOffsetDegrees;
             mapUvOffset = profile.mapUvOffset;
             mapPlayerIconBaseDegrees = profile.mapPlayerIconBaseDegrees;
+            mapPlayerIconUvOffset = profile.mapPlayerIconUvOffset;
             mapZeroUv01 = profile.mapZeroUv01;
             mapCalibrationWorldXz = profile.mapCalibrationWorldXz;
             mapCalibrationUv01 = profile.mapCalibrationUv01;
@@ -322,9 +396,12 @@ namespace Project.Map
             CalibrationState calibration = ActiveCalibration;
             Vector2 deltaWorld = calibration.mapCalibrationWorldXz;
             Vector2 deltaUv = calibration.mapCalibrationUv01 - calibration.mapZeroUv01;
+            float worldLen = deltaWorld.magnitude;
+            float uvLen = deltaUv.magnitude;
+            float iso = worldLen > 0.01f ? uvLen / worldLen : 0f;
             return new Vector2(
-                Mathf.Approximately(deltaWorld.x, 0f) ? 0f : deltaUv.x / deltaWorld.x,
-                Mathf.Approximately(deltaWorld.y, 0f) ? 0f : deltaUv.y / deltaWorld.y);
+                iso * Mathf.Max(0.01f, calibration.mapUvScaleX),
+                iso * Mathf.Max(0.01f, calibration.mapUvScaleY));
         }
 
         private Vector2 ProjectWorldToMapAffine(Vector3 worldPosition, bool applyFineTuneOffset)
@@ -334,10 +411,27 @@ namespace Project.Map
             Vector2 uvPerMeter = GetMapUvPerWorldMeter();
             float relX = worldPosition.x - origin.x;
             float relZ = worldPosition.z - origin.z;
+            WorldDeltaToMapAxes(relX, relZ, out float mapX, out float mapZ);
             Vector2 uv = new Vector2(
-                calibration.mapZeroUv01.x + relX * uvPerMeter.x,
-                calibration.mapZeroUv01.y + relZ * uvPerMeter.y);
+                calibration.mapZeroUv01.x + mapX * uvPerMeter.x,
+                calibration.mapZeroUv01.y + mapZ * uvPerMeter.y);
             return applyFineTuneOffset ? ApplyMapUvOffset(uv) : uv;
+        }
+
+        /// <summary>
+        /// Compass north is world +X. Map north is +UV.y. Fixed 90° basis so
+        /// walking north moves the token up, not east. Do not use heading offset.
+        /// </summary>
+        private static void WorldDeltaToMapAxes(float relX, float relZ, out float mapX, out float mapZ)
+        {
+            mapX = -relZ;
+            mapZ = relX;
+        }
+
+        private static void MapAxesToWorldDelta(float mapX, float mapZ, out float relX, out float relZ)
+        {
+            relX = mapZ;
+            relZ = -mapX;
         }
 
         private CalibrationState BuildCalibrationState()
@@ -348,9 +442,21 @@ namespace Project.Map
                 return new CalibrationState
                 {
                     invertMapVertical = profile.invertMapVertical,
+                    invertMapHorizontal = profile.invertMapHorizontal,
                     mapDisplayNorthOffsetDegrees = profile.mapDisplayNorthOffsetDegrees,
                     mapUvOffset = profile.mapUvOffset,
+                    mapUvScaleX = profile.mapUvScaleX,
+                    mapUvScaleY = profile.mapUvScaleY,
+                    minimapFlipHorizontal = profile.minimapFlipHorizontal,
+                    minimapFlipVertical = profile.minimapFlipVertical,
+                    minimapRotateX = profile.minimapRotateX,
+                    minimapRotateY = profile.minimapRotateY,
+                    minimapRotateZ = profile.minimapRotateZ,
                     mapPlayerIconBaseDegrees = profile.mapPlayerIconBaseDegrees,
+                    minimapPlayerIconBaseDegrees = profile.minimapPlayerIconBaseDegrees,
+                    mapPlayerIconUvOffset = profile.mapPlayerIconUvOffset,
+                    mapPlayerIconSizePixels = profile.mapPlayerIconSizePixels,
+                    minimapPlayerIconSizePixels = profile.minimapPlayerIconSizePixels,
                     mapZeroUv01 = profile.mapZeroUv01,
                     mapCalibrationWorldXz = profile.mapCalibrationWorldXz,
                     mapCalibrationUv01 = profile.mapCalibrationUv01,
@@ -361,9 +467,16 @@ namespace Project.Map
             return new CalibrationState
             {
                 invertMapVertical = invertMapVertical,
+                invertMapHorizontal = invertMapHorizontal,
                 mapDisplayNorthOffsetDegrees = mapDisplayNorthOffsetDegrees,
                 mapUvOffset = mapUvOffset,
+                mapUvScaleX = 1f,
+                mapUvScaleY = 1f,
                 mapPlayerIconBaseDegrees = mapPlayerIconBaseDegrees,
+                minimapPlayerIconBaseDegrees = 180f,
+                mapPlayerIconUvOffset = mapPlayerIconUvOffset,
+                mapPlayerIconSizePixels = 18f,
+                minimapPlayerIconSizePixels = 24f,
                 mapZeroUv01 = mapZeroUv01,
                 mapCalibrationWorldXz = mapCalibrationWorldXz,
                 mapCalibrationUv01 = mapCalibrationUv01,

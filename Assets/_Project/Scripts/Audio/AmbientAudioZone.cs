@@ -67,8 +67,18 @@ namespace Project.Audio
                     Random.Range(bounds.min.y, bounds.max.y),
                     Random.Range(bounds.min.z, bounds.max.z));
 
-                if (zoneCollider.ClosestPoint(candidate) == candidate)
+                if (zoneCollider is BoxCollider
+                    || zoneCollider is SphereCollider
+                    || zoneCollider is CapsuleCollider
+                    || (zoneCollider is MeshCollider mesh && mesh.convex))
+                {
+                    if (zoneCollider.ClosestPoint(candidate) == candidate)
+                        return candidate;
+                }
+                else if (bounds.Contains(candidate))
+                {
                     return candidate;
+                }
             }
 
             return bounds.center;

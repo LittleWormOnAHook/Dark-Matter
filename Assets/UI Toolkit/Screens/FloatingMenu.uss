@@ -83,3 +83,23 @@
     color: rgb(140, 127, 117);
     white-space: normal;
 }
+
+.dmg-bp-tip {
+    width: 320px;
+    min-width: 280px;
+    padding: 12px 14px;
+}
+
+.dmg-bp-tip-head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.dmg-bp-tip-icon {
+    width: 56px;
+    height: 56px;
+    margin-right: 10px;
+    background-color: rgba(74, 74, 90, 0.82);
+    -unity-background-scale-mode: scale-to-fit;
+}

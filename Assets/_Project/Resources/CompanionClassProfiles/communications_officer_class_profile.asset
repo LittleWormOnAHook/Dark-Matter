@@ -17,11 +17,7 @@ MonoBehaviour:
   deployableSlots: 1
   buffSlots: 1
   toolSlots: 1
-  allowedKinds:
-  - 0
-  - 1
-  - 2
-  - 3
+  allowedKinds: 00000000010000000200000003000000
   defaultWeaponAbilityId: 
   defaultDeployableAbilityId: 
   defaultBuffAbilityId: uplink_matrix

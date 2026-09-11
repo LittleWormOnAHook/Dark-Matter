@@ -18,6 +18,8 @@ namespace Project.Player.Invector
         private EquipmentController _equipment;
         private WeaponAmmoState _ammoState;
         private bool _nativeRecoilSuppressed;
+        private vShooterWeapon _pausedAmmoWeapon;
+        private vShooterWeapon.CheckAmmoHandle _pausedCheckAmmoHandle;
 
         public override void Start()
         {
@@ -59,6 +61,7 @@ namespace Project.Player.Invector
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, this);
             SuppressNativeRecoil();
             UpdateTotalAmmo();
+            onFinishReloadWeapon.AddListener(OnPioneerReloadFinished);
         }
 
         private void LateUpdate()
@@ -155,6 +158,71 @@ namespace Project.Player.Invector
         public override int GetShotID()
         {
             return PioneerInvectorRecoilUtility.MildShotAnimationId;
+        }
+
+        public override void ReloadWeapon()
+        {
+            vShooterWeapon weapon = rWeapon ? rWeapon : lWeapon;
+            if (weapon == null)
+            {
+                GetComponent<PioneerInvectorWeaponBridge>()?.EnsureDrawnShooterBound();
+                weapon = rWeapon ? rWeapon : lWeapon;
+            }
+
+            if (!weapon || !weapon.gameObject.activeInHierarchy || isReloading)
+                return;
+
+            // Rifle Invector clips (vShooterEquipment checkAmmoHandle / isInfinityAmmo /
+            // dontUseReload on vAssaultRifle) can report full or skip while Pioneer mag
+            // is empty. Pause the handle, force reload on, and empty the clip so the
+            // reload anim + Pioneer refill can run.
+            PioneerInvectorAmmoBridge bridge = GetComponent<PioneerInvectorAmmoBridge>();
+            if (bridge != null && !bridge.TryRequestReload(playEmptyDenyFeedback: false))
+                return;
+
+            weapon.dontUseReload = false;
+            PauseInvectorAmmoHandle(weapon);
+            if (weapon.ammoCount >= weapon.clipSize)
+                weapon.ammo = 0;
+
+            base.ReloadWeapon();
+
+            if (!isReloading)
+                RestoreInvectorAmmoHandle();
+        }
+
+        public override void CancelReload()
+        {
+            base.CancelReload();
+            RestoreInvectorAmmoHandle();
+        }
+
+        private void PauseInvectorAmmoHandle(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            RestoreInvectorAmmoHandle();
+            if (weapon.checkAmmoHandle == null)
+                return;
+
+            _pausedAmmoWeapon = weapon;
+            _pausedCheckAmmoHandle = weapon.checkAmmoHandle;
+            weapon.checkAmmoHandle = null;
+        }
+
+        private void RestoreInvectorAmmoHandle()
+        {
+            if (_pausedAmmoWeapon != null && _pausedCheckAmmoHandle != null)
+                _pausedAmmoWeapon.checkAmmoHandle = _pausedCheckAmmoHandle;
+
+            _pausedAmmoWeapon = null;
+            _pausedCheckAmmoHandle = null;
+        }
+
+        private void OnPioneerReloadFinished(vShooterWeapon _)
+        {
+            RestoreInvectorAmmoHandle();
         }
     }
 }

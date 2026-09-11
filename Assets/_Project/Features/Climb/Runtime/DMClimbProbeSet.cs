@@ -55,7 +55,7 @@ namespace Project.Features.Climb
         public IReadOnlyList<Probe> Probes => probes;
         public int Count => probes != null ? probes.Count : 0;
 
-        /// <summary>True when surface is steep enough to climb (not a walkable top). Default 75deg matches DMClimbProfile.walkMaxSlopeDeg.</summary>
+        /// <summary>True when surface is steep enough to climb (not a walkable top). Default 75deg matches DM_ClimbDashProfile.walkMaxSlopeDeg.</summary>
         public static bool IsClimbableProbeNormal(Vector3 worldNormal, float walkableMaxSlopeDeg = 50f)
         {
             if (worldNormal.sqrMagnitude < 0.0001f)

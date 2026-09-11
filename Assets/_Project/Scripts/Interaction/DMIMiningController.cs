@@ -43,7 +43,7 @@ namespace Project.Interaction
             "Assets/Laser Weapons Sound Pack/Free/continuous_beam_1.wav";
         private const string DefaultContinuousLoopResourcesPath = "Audio/continuous_beam_1";
         private const float EmptyChargeSoundCooldown = 0.45f;
-        private const float MiningEnergyDrainPerSecond = 8f;
+        private const float DefaultToolEnergyDrainPerSecond = 0.5f;
         private static readonly Color LaserRed = new Color(1f, 0.18f, 0.12f, 0.95f);
         private static readonly Color OverheatTint = new Color(1f, 0.22f, 0.08f, 1f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -741,9 +741,9 @@ namespace Project.Interaction
             if (survivalStats == null)
                 return;
 
-            float drain = MiningEnergyDrainPerSecond;
-            if (tool != null && tool.miningChargeDrainPerSecond > 0.01f)
-                drain = tool.miningChargeDrainPerSecond;
+            float drain = survivalStats.toolEnergyDrainPerSecond > 0f
+                ? survivalStats.toolEnergyDrainPerSecond
+                : DefaultToolEnergyDrainPerSecond;
             survivalStats.SpendEnergy(drain * Time.deltaTime);
         }
 

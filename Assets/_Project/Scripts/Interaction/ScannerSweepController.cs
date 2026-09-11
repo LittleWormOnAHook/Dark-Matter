@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Project.Companions;
+using Project.Events;
 using Project.Map;
+using Project.Quests;
 using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -148,28 +151,37 @@ namespace Project.Interaction
 
             GameObject rootObject = hit.gameObject;
             OutlineController outline = OpticsController.ResolveOutlinePublic(hit.transform);
-            if (outline == null)
+            bool important = IsImportantDiscoverable(rootObject);
+            if (outline == null && !important)
                 return;
 
             if (!ScannerHighlightResolver.TryResolve(rootObject, activeProfile, out ScannerHighlightRule rule, out string label))
                 return;
 
-            Vector3 point = outline.transform.position;
-            Renderer renderer = outline.GetComponentInChildren<Renderer>();
+            Vector3 point = outline != null ? outline.transform.position : hit.transform.position;
+            Renderer renderer = outline != null
+                ? outline.GetComponentInChildren<Renderer>()
+                : rootObject.GetComponentInChildren<Renderer>();
             if (renderer != null)
                 point = renderer.bounds.center;
 
-            if (!opticsController.HasLineOfSightPublic(origin, point, outline.transform))
+            if (outline != null
+                && opticsController != null
+                && !opticsController.HasLineOfSightPublic(origin, point, outline.transform))
                 return;
 
             int key = OpticsController.BuildScanKeyPublic(point, label);
             if (!postScanKeys.Add(key))
                 return;
 
+            DiscoverHitOnMap(rootObject, label, rule.outlineColor);
+
+            if (outline == null)
+                return;
+
             // World items: outline only via scan flash; unlock map marker on first discovery.
             outline.scannerOnlyOutline = true;
             outline.PlayScanDiscoveryFlash(rule.outlineColor, rule.alpha, pulses: 5, durationSeconds: 2.5f);
-            DiscoverHitOnMap(outline.gameObject, label, rule.outlineColor);
 
             postScanOutlines.Add(outline);
             postScanResults.Add(new OpticsScanTarget(
@@ -188,23 +200,58 @@ namespace Project.Interaction
             MapMarker marker = root.GetComponentInParent<MapMarker>();
             if (marker == null)
             {
-                marker = root.AddComponent<MapMarker>();
-
+                Transform host = root.transform;
+                QuestGiverNpc npc = root.GetComponentInParent<QuestGiverNpc>();
+                DmEvents cache = root.GetComponentInParent<DmEvents>();
+                DMItemCollection collection = root.GetComponentInParent<DMItemCollection>();
+                PioneerCompanionAgent companion = root.GetComponentInParent<PioneerCompanionAgent>();
                 ResourceNode node = root.GetComponentInParent<ResourceNode>();
-                if (node != null && node.resourceItem != null)
+                ItemPickup pickup = root.GetComponentInParent<ItemPickup>();
+
+                if (npc != null)
+                    host = npc.transform;
+                else if (cache != null)
+                    host = cache.transform;
+                else if (collection != null)
+                    host = collection.transform;
+                else if (companion != null)
+                    host = companion.transform;
+                else if (node != null)
+                    host = node.transform;
+                else if (pickup != null)
+                    host = pickup.transform;
+
+                marker = host.GetComponent<MapMarker>();
+                if (marker == null)
+                    marker = host.gameObject.AddComponent<MapMarker>();
+
+                if (npc != null)
+                    marker.ConfigureQuestGiver(npc.DisplayName);
+                else if (node != null && node.resourceItem != null)
                     marker.ConfigureForResource(node.resourceItem);
+                else if (pickup != null && pickup.itemData != null)
+                    marker.ConfigureForResource(pickup.itemData);
                 else
-                {
-                    ItemPickup pickup = root.GetComponentInParent<ItemPickup>();
-                    if (pickup != null && pickup.itemData != null)
-                        marker.ConfigureForResource(pickup.itemData);
-                    else
-                        marker.ConfigureScannedPoi(label, color);
-                }
+                    marker.ConfigureScannedPoi(label, color);
             }
 
             TryIdentifyScannedPickup(root);
             ScannerDiscoveryRegistry.Discover(marker.DiscoveryId);
+        }
+
+        private static bool IsImportantDiscoverable(GameObject root)
+        {
+            if (root == null)
+                return false;
+
+            return root.GetComponentInParent<MapMarker>() != null
+                || root.GetComponentInParent<QuestGiverNpc>() != null
+                || root.GetComponentInParent<DmEvents>() != null
+                || root.GetComponentInParent<DMItemCollection>() != null
+                || root.GetComponentInParent<PioneerCompanionAgent>() != null
+                || root.GetComponentInParent<ItemPickup>() != null
+                || root.GetComponentInParent<ResourceNode>() != null
+                || root.GetComponentInParent<ScannableTarget>() != null;
         }
 
         private static void TryIdentifyScannedPickup(GameObject root)

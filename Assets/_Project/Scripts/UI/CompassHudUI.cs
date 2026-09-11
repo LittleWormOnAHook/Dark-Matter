@@ -122,7 +122,7 @@ namespace Project.UI
             for (int i = 0; i < markers.Count && shown < MaxVisibleMarkers; i++)
             {
                 MapMarker marker = markers[i];
-                if (marker == null || !marker.ShowOnMinimap || !marker.IsRevealedOnMap)
+                if (marker == null || !marker.ShouldDrawOnCompass(playerWorldPosition))
                     continue;
 
                 Vector3 toMarker = marker.WorldPosition - playerWorldPosition;

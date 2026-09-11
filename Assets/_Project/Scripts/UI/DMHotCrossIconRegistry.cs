@@ -207,6 +207,18 @@ namespace Project.UI
                 return "Standard Ammo";
             if (n.IndexOf("laser", StringComparison.OrdinalIgnoreCase) >= 0 && n.IndexOf("ammo", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Laser Ammo";
+            if (n.Equals("Ice", StringComparison.OrdinalIgnoreCase))
+                return "Ice";
+            if (n.Equals("Fire", StringComparison.OrdinalIgnoreCase))
+                return "Fire";
+            if (n.Equals("Electricity", StringComparison.OrdinalIgnoreCase))
+                return "Electricity";
+            if (n.Equals("Explosive", StringComparison.OrdinalIgnoreCase))
+                return "Explosive";
+            if (n.Equals("Ion", StringComparison.OrdinalIgnoreCase))
+                return "Ion";
+            if (n.IndexOf("resonance", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Resonance Stabilizer";
             if (n.IndexOf("pistol", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Pistol";
             if (n.IndexOf("grenade", StringComparison.OrdinalIgnoreCase) >= 0)

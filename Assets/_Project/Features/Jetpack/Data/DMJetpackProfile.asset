@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: DMJetpackProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
   maxBoostSeconds: 8
+  fullThrustEndSeconds: 8
   releaseRegenBonusSeconds: 1
   regenSecondsPerSecond: 0.35
-  energyDrainPerSecond: 10
-  fullThrustEndSeconds: 8
+  energyDrainPerSecond: 0.5
   upwardThrustForce: 5
   descendForce: 3
   descendInputThreshold: 0.35
@@ -40,6 +40,7 @@ MonoBehaviour:
   animLeanStrength: 0.1
   animInputDeadzone: 0.12
   flyAnimSpeed: 0.95
+  animStrafeThreshold: 0.5
   landCrossFadeSeconds: 0.15
   thrusterAlphaMin: 0.1
   thrusterAlphaMax: 1

@@ -35,11 +35,14 @@ namespace Project.World
         [SerializeField] private UnloadMode unloadMode = UnloadMode.HideDrawAndCollider;
         [SerializeField] private bool setNeighborsOnActive = true;
         [SerializeField] private bool streamInEditor = false;
+        [Tooltip("Off by default — gameplay does not use NavMesh; streaming AddData/RemoveData causes chunk-border hitches.")]
+        [SerializeField] private bool streamNavMeshData = false;
 
         private readonly List<Chunk> _chunks = new List<Chunk>(16);
         private readonly List<int> _order = new List<int>(16);
         private readonly HashSet<int> _active = new HashSet<int>();
         private readonly HashSet<EntityId> _navMeshAdded = new HashSet<EntityId>();
+        private int[] _cachedActiveIndices = System.Array.Empty<int>();
         private float _nextUpdate;
         private static readonly Regex GridName = new Regex(@"(\d+)[_\-](\d+)", RegexOptions.Compiled);
 
@@ -103,6 +106,7 @@ namespace Project.World
         {
             _chunks.Clear();
             _active.Clear();
+            _cachedActiveIndices = System.Array.Empty<int>();
             if (chunkRoot == null)
                 chunkRoot = transform;
 
@@ -169,14 +173,36 @@ namespace Project.World
             _order.Sort((a, b) => DistanceSq(sample, _chunks[a]).CompareTo(DistanceSq(sample, _chunks[b])));
 
             int keep = Mathf.Min(maxActiveChunks, _order.Count);
+            if (ActiveChunkSetUnchanged(keep))
+                return;
+
             _active.Clear();
             for (int i = 0; i < keep; i++)
                 _active.Add(_order[i]);
+
+            if (_cachedActiveIndices.Length != keep)
+                _cachedActiveIndices = new int[keep];
+            for (int i = 0; i < keep; i++)
+                _cachedActiveIndices[i] = _order[i];
 
             for (int i = 0; i < _chunks.Count; i++)
                 ApplyChunk(_chunks[i], _active.Contains(i));
 
             RefreshNeighborsIfNeeded();
+        }
+
+        private bool ActiveChunkSetUnchanged(int keep)
+        {
+            if (_cachedActiveIndices.Length != keep)
+                return false;
+
+            for (int i = 0; i < keep; i++)
+            {
+                if (_cachedActiveIndices[i] != _order[i])
+                    return false;
+            }
+
+            return keep > 0;
         }
 
         private static float DistanceSq(Vector3 player, Chunk chunk)
@@ -209,7 +235,8 @@ namespace Project.World
             if (chunk.Collider != null && chunk.Collider.enabled != on)
                 chunk.Collider.enabled = on;
 
-            SetChunkNavMesh(chunk, on);
+            if (streamNavMeshData)
+                SetChunkNavMesh(chunk, on);
 
             if (chunk.Terrain != null)
             {

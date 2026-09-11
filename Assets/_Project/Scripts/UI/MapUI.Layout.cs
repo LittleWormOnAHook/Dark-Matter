@@ -969,7 +969,7 @@ namespace Project.UI
                 () => SetFullMapZoom(fullMapZoom - GetFullMapZoomStep()),
                 () =>
                 {
-                    SetFullMapZoom(DefaultFullMapZoom);
+                    SetFullMapZoom(ResolveDefaultFullMapZoom());
                     CenterFullMapOnPlayer();
                 },
                 () => SetFullMapZoom(fullMapZoom + GetFullMapZoomStep()));
@@ -987,7 +987,7 @@ namespace Project.UI
             CreateFullMapMarkerTooltip(mapFrame.transform);
             EnsureFullMapLegend();
 
-            SetFullMapZoom(DefaultFullMapZoom);
+            SetFullMapZoom(ResolveDefaultFullMapZoom());
             RefreshMapShellVisibility();
         }
 
@@ -1041,13 +1041,12 @@ namespace Project.UI
             subtitle.color = DarkMatterGenesisUiPalette.MutedText;
 
             CreateLegendEntry(legend.transform, PlayerMapIconColor, "You (facing)");
-            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.Gold, "Quest giver");
-            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Resource), "Resource / node");
-            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Consumable), "Consumable");
-            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.Tool), "Tool / gear");
-            CreateLegendEntry(legend.transform, MapUiSprites.GetResourceColor(ItemType.MeleeWeapon), "Weapon cache");
-            CreateLegendEntry(legend.transform, new Color(1f, 0.85f, 0.2f, 1f), "Point of interest");
-            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.SoftBeigeGray, "Undiscovered (scan)");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiBlue, "Quest / NPC");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiGreen, "Resource / node");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiRed, "Consumable / threat");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiBlack, "Tool / interactable");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiWhite, "Cache / loot / POI");
+            CreateLegendEntry(legend.transform, DarkMatterGenesisUiPalette.MapPoiBlack, "Undiscovered (scan)");
 
             TextMeshProUGUI tip = CreateLegendLabel(
                 legend.transform,

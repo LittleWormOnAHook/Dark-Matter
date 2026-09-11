@@ -60,10 +60,7 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.HelpBox("MapMarker present — this NPC appears on the map/minimap.", MessageType.None);
                 if (GUILayout.Button("Refresh Map Marker Label", GUILayout.Height(24f)))
-                {
-                    marker.ConfigureQuestGiver(serializedObject.FindProperty("displayName").stringValue);
-                    EditorUtility.SetDirty(marker);
-                }
+                    MapMarkerEditorUtility.RefreshAllMapMarkers();
             }
         }
         private void DrawQuestOffers()

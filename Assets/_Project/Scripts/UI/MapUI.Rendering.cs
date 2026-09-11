@@ -114,7 +114,7 @@ namespace Project.UI
             Vector2 mapUv = HasMapWorldPosition()
                 ? mapProvider.WorldToMap01(GetMapWorldPosition())
                 : new Vector2(0.5f, 0.5f);
-            float facingYaw = GetMapDisplayYaw();
+            float facingYaw = GetMapCompassYaw();
             minimapContentRect.anchoredPosition = GetMinimapContentPan(mapUv, contentSize, facingYaw);
             minimapContentRect.localEulerAngles = new Vector3(0f, 0f, facingYaw);
 
@@ -128,7 +128,8 @@ namespace Project.UI
             if (minimapPlayerIconRect != null)
             {
                 minimapPlayerIconRect.anchoredPosition = Vector2.zero;
-                minimapPlayerIconRect.localEulerAngles = Vector3.zero;
+                float iconYaw = mapProvider != null ? mapProvider.MinimapPlayerIconBaseDegrees : 0f;
+                minimapPlayerIconRect.localEulerAngles = new Vector3(0f, 0f, iconYaw);
                 ApplyPlayerMapIconColor(minimapPlayerIconRect);
                 minimapPlayerIconRect.SetAsLastSibling();
             }
@@ -179,9 +180,9 @@ namespace Project.UI
                 pan.x * sin + pan.y * cos);
         }
 
-        private static float GetFullMapZoomStep()
+        private float GetFullMapZoomStep()
         {
-            return (MaxFullMapZoom - MinFullMapZoom) / FullMapScrollNotchesFullRange;
+            return (ResolveMaxFullMapZoom() - MinFullMapZoom) / FullMapScrollNotchesFullRange;
         }
 
         private Vector2 GetFullMapContentSize()
@@ -192,21 +193,8 @@ namespace Project.UI
             if (viewportSize.sqrMagnitude < 1f)
                 viewportSize = new Vector2(640f, 640f);
 
-            float aspect = GetFullMapTextureAspect();
-            float fittedWidth;
-            float fittedHeight;
-            if (viewportSize.x / Mathf.Max(1f, viewportSize.y) > aspect)
-            {
-                fittedHeight = viewportSize.y;
-                fittedWidth = fittedHeight * aspect;
-            }
-            else
-            {
-                fittedWidth = viewportSize.x;
-                fittedHeight = fittedWidth / Mathf.Max(0.0001f, aspect);
-            }
-
-            return new Vector2(fittedWidth, fittedHeight) * fullMapZoom;
+            float side = Mathf.Min(viewportSize.x, viewportSize.y);
+            return new Vector2(side, side) * fullMapZoom;
         }
 
         private float GetFullMapTextureAspect()
@@ -284,7 +272,7 @@ namespace Project.UI
 
             if (HasMapWorldPosition() && fullMapPlayerIconRect.parent == fullMapMarkerLayer)
             {
-                Vector2 mapUv = mapProvider.WorldToMap01(GetMapWorldPosition());
+                Vector2 mapUv = mapProvider.WorldToMap01(GetMapWorldPosition()) + mapProvider.MapPlayerIconUvOffset;
                 fullMapPlayerIconRect.anchoredPosition = MapUvToContentLocal(mapUv, contentSize);
             }
             else
@@ -292,7 +280,8 @@ namespace Project.UI
                 fullMapPlayerIconRect.anchoredPosition = Vector2.zero;
             }
 
-            ApplyPlayerArrowRotation(fullMapPlayerIconRect);
+            ApplyPlayerArrowSizes();
+            ApplyPlayerArrowRotation(fullMapPlayerIconRect, playerBodyFacing: true);
             ApplyPlayerMapIconColor(fullMapPlayerIconRect);
             fullMapPlayerIconRect.SetAsLastSibling();
         }
@@ -362,7 +351,7 @@ namespace Project.UI
             contentRect.sizeDelta = contentSize;
             contentRect.anchoredPosition = (Vector2.one * 0.5f - mapUv) * contentSize;
             contentRect.localEulerAngles = rotateWithPlayer
-                ? new Vector3(0f, 0f, GetMapDisplayYaw())
+                ? new Vector3(0f, 0f, GetMapCompassYaw())
                 : Vector3.zero;
 
             if (playerIconRect != null)
@@ -477,16 +466,17 @@ namespace Project.UI
 
             iconRect.sizeDelta = marker.IconSprite != null ? new Vector2(16f, 16f) : new Vector2(10f, 10f);
 
+            Color poiColor = DarkMatterGenesisUiPalette.ToMapPoiColor(marker.Color);
             if (marker.IconSprite != null)
             {
                 image.sprite = marker.IconSprite;
-                image.color = marker.Color;
+                image.color = poiColor;
             }
             else
             {
                 MenuUiBuilder.ApplyUiSprite(image);
                 image.sprite = MapUiSprites.Dot;
-                image.color = marker.Color;
+                image.color = poiColor;
             }
         }
 
@@ -551,7 +541,7 @@ namespace Project.UI
 
         private void SetFullMapZoom(float zoom)
         {
-            fullMapZoom = Mathf.Clamp(zoom, MinFullMapZoom, MaxFullMapZoom);
+            fullMapZoom = Mathf.Clamp(zoom, MinFullMapZoom, ResolveMaxFullMapZoom());
             UpdateFullMapZoomLabel();
             if (fullMapOpen)
                 CenterFullMapOnPlayer();
@@ -733,6 +723,14 @@ namespace Project.UI
         {
             if (fullMapZoomLabel == null)
                 return;
+
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            if (profile != null)
+            {
+                float meters = profile.GetFullMapVisibleMeters(ResolvePlayableWorldSpan(), fullMapZoom);
+                fullMapZoomLabel.text = $"{Mathf.RoundToInt(meters)}m";
+                return;
+            }
 
             fullMapZoomLabel.text = $"{Mathf.RoundToInt(fullMapZoom * 100f)}%";
         }

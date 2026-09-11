@@ -315,7 +315,7 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Called by WeaponModeSwitchController on a quick R tap (&lt;0.2s).
+        /// Called by WeaponModeSwitchController when R is released without opening Mode Switch.
         /// Works even when lockShooterInput skipped Invector ReloadInput this frame.
         /// Does not use UI-pointer soft-lock (hotbar hover must not eat R).
         /// </summary>
@@ -328,8 +328,20 @@ namespace Project.Player.Invector
             if (pc != null && (pc.BlocksCombatInput || pc.IsGameplayPaused))
                 return;
 
-            if (!shooterManager || CurrentActiveWeapon == null || isReloading || shooterManager.isShooting)
+            if (!shooterManager || isReloading || shooterManager.isShooting)
                 return;
+
+            if (CurrentActiveWeapon == null)
+            {
+                GetComponent<PioneerInvectorWeaponBridge>()?.EnsureDrawnShooterBound();
+                if (CurrentActiveWeapon == null)
+                {
+                    EquipmentController eq = GetComponent<EquipmentController>();
+                    ItemData drawn = eq != null ? eq.DrawnWeaponItem : null;
+                    if (drawn == null || !drawn.IsRangedWeapon)
+                        return;
+                }
+            }
 
             PerformManualReload();
         }
@@ -1141,19 +1153,10 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Invector calls Physics.SyncTransforms every FixedUpdate; ECM2 + RB already keep transforms
-        /// in sync and the extra sync was costing ~1ms+ per frame on Player_v7.
+        /// ECM2 + Invector RB already keep transforms in sync; global SyncTransforms was ~1ms+/frame.
         /// </summary>
-        protected override void FixedUpdate()
+        protected override void SyncPhysicsTransformsBeforeMotor()
         {
-            if (onFixedUpdate != null)
-                onFixedUpdate.Invoke();
-
-            cc.UpdateMotor();
-            cc.ControlLocomotionType();
-            ControlRotation();
-            cc.UpdateAnimator();
-            updateIK = true;
         }
 
         /// <summary>UITK HUD owns stamina/health crosshair ticks — skip Invector vHUDController updates.</summary>

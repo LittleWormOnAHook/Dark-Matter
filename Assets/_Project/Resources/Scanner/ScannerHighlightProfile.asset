@@ -69,7 +69,7 @@ MonoBehaviour:
   - tag: Building
     category: 6
     outlineColor: {r: 0.2901961, g: 0.2901961, b: 0.3529412, a: 1}
-    alpha: 0.55
+    alpha: 0.563
     durationSeconds: 8
     priority: 15
   fallbackRule:

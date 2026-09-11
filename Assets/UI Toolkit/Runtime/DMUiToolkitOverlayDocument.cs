@@ -360,6 +360,52 @@ namespace Project.UI
             element.style.translate = new Translate(Length.Percent(-50), Length.Percent(-50));
         }
 
+        /// <summary>Center a floating panel over another element, even across UIDocuments.</summary>
+        public static void PositionCenterOver(VisualElement element, VisualElement target)
+        {
+            if (element == null)
+                return;
+            if (target == null || target.panel == null || element.panel == null)
+            {
+                PositionCenterOnScreen(element);
+                return;
+            }
+
+            element.style.position = Position.Absolute;
+            element.style.right = StyleKeyword.Auto;
+            element.style.bottom = StyleKeyword.Auto;
+            element.style.marginLeft = 0;
+            element.style.marginTop = 0;
+            element.style.translate = new Translate(0, 0);
+
+            void Place()
+            {
+                if (element.panel == null || target.panel == null)
+                    return;
+
+                Rect bound = target.worldBound;
+                Vector2 screen = PanelPositionToScreen(target.panel, bound.center);
+                Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(element.panel, screen);
+                VisualElement parent = element.hierarchy.parent;
+                if (parent != null)
+                    panelPos = parent.WorldToLocal(panelPos);
+
+                float width = element.resolvedStyle.width;
+                float height = element.resolvedStyle.height;
+                if (width <= 0f)
+                    width = 320f;
+                if (height <= 0f)
+                    height = 220f;
+
+                element.style.left = panelPos.x - width * 0.5f;
+                element.style.top = panelPos.y - height * 0.5f;
+            }
+
+            Place();
+            element.schedule.Execute(Place).ExecuteLater(0);
+            element.schedule.Execute(Place).ExecuteLater(1);
+        }
+
         public static void PositionAtScreen(VisualElement element, Vector2 screenPosition)
         {
             PositionNearPointer(element, screenPosition, Vector2.zero);

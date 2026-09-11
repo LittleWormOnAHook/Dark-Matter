@@ -91,6 +91,7 @@ namespace Project.EditorTools
         public const string PrefabsCreatures = Prefabs + "/Creatures";
         public const string PrefabsParticles = Prefabs + "/Particles";
         public const string PrefabsCombatProjectiles = PrefabsCombat + "/Projectiles";
+        public const string PrefabsCombatAmmo = PrefabsCombat + "/Ammo";
         public const string PrefabsCombatVfx = PrefabsCombat + "/VFX";
         public const string PrefabsCrafting = Prefabs + "/Crafting";
         public const string PrefabsCraftingStations = PrefabsCrafting + "/Stations";

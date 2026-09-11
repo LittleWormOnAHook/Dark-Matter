@@ -197,6 +197,19 @@ namespace Project.UI
             };
         }
 
+        public static Color GetMapPoiColor(ItemType itemType)
+        {
+            return itemType switch
+            {
+                ItemType.Resource => DarkMatterGenesisUiPalette.MapPoiGreen,
+                ItemType.Consumable => DarkMatterGenesisUiPalette.MapPoiRed,
+                ItemType.Tool => DarkMatterGenesisUiPalette.MapPoiBlack,
+                ItemType.MeleeWeapon => DarkMatterGenesisUiPalette.MapPoiWhite,
+                ItemType.Quest => DarkMatterGenesisUiPalette.MapPoiBlue,
+                _ => DarkMatterGenesisUiPalette.MapPoiWhite
+            };
+        }
+
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()

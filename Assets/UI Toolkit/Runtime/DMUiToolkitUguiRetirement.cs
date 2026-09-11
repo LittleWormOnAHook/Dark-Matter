@@ -31,6 +31,7 @@ namespace Project.UI
             nameof(OpticsOverlayUI),
             nameof(DummyCombatUI),
             nameof(CharacterPanelUI),
+            nameof(ExposureZoneEntryBannerUI),
         };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

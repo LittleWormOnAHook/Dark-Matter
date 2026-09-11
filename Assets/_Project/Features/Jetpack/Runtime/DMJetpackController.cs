@@ -52,7 +52,7 @@ namespace Project.Features.Jetpack
         private Vector3 _smoothSteerVelocity;
         private SurvivalStats _survivalStats;
         private bool _noPowerBoostAttempt;
-        private const float DefaultEnergyDrainPerSecond = 10f;
+        private const float DefaultEnergyDrainPerSecond = 0.5f;
 
         public DMJetpackProfile Profile => profile;
 

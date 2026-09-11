@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a8c2e1b9d0437fa6e5d834c12b5678, type: 3}
+  m_Name: Ice_Ammo
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Crafting.RecipeDefinition
+  recipeId: Ice_Ammo
+  displayName: Ice Ammo
+  description: Cryo-stable rounds for Io night work.
+  icon: {fileID: 21300000, guid: 603c7da1e744e3b43902579e5e8bf89e, type: 3}
+  stationType: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+    amount: 4
+  - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+    amount: 8
+  - item: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
+    amount: 2
+  outputItem: {fileID: 11400000, guid: 1b4cdc0df3151d34db2842ba363126f8, type: 2}
+  outputAmount: 2
+  requiredPlayerLevel: 1
+  recipeTier: 1

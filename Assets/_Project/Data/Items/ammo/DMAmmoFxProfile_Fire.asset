@@ -1,0 +1,182 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b2d9e4c1a5f6083b4c7d8e9f0a1b2c3, type: 3}
+  m_Name: DMAmmoFxProfile_Fire
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMAmmoFxProfile
+  itemName: Fire
+  icon: {fileID: 21300000, guid: 3bf0025b06ffc3e4d89d84dbb621225b, type: 3}
+  worldPrefab: {fileID: 8445470272609254547, guid: 1137b15fec1116e458390fe99107c57a, type: 3}
+  maxStack: 999
+  stableItemId: 82ab035f5a8bd314a91333efd8f70b21
+  itemType: 4
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 0
+  heldPrefab: {fileID: 0}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  useHeldLocalRotation: 0
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalChance: 0.1
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 8
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 300
+  projectileSpreadDegrees: 1.4
+  weaponAccuracy: 75
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.2
+  recoilVertical: 0
+  recoilHorizontal: 0
+  recoilFireRateScale: 0
+  fireRate: 4
+  magazineSize: 30
+  reloadTimeSeconds: 1.8
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
+  projectilePrefab: {fileID: 2577137788397890626, guid: 27ab7cf443f555f4bb1e8c4c53868733, type: 3}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 7
+  ammoPerPickup: 500
+  ammoPickupGrant: 50
+  ammoRecoilProfile:
+    pistolCameraVertical: 2.8
+    pistolCameraHorizontal: 0.75
+    pistolAnimationWeight: 0.38
+    rifleCameraVertical: 4.2
+    rifleCameraHorizontal: 1.1
+    rifleAnimationWeight: 0.18
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  fxProfile: {fileID: 11400000}
+  muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
+  tracerPrefab: {fileID: 4699155335917859912, guid: 93ff3fd87a8823644983e1fd3d9102b2, type: 3}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
+  fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
+  statusEffectOverride: 1
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 3
+  statusEffectVfxPrefab: {fileID: 0}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isAcInfused: 0
+  acValue: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  grantXpEveryPickupOrUse: 0
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: "Standard gunpowder cartridges \u2014 the colony default. 50
+    rounds per pickup; fast ballistic travel (~300 m/s). Reliable for pistols and
+    rifles that accept Gunpowder ammo."
+  unlocksInventoryStorageRow: 0
+  spawnLaserBurn: 0
+  useHitMarks: 1
+  defaultDecals: []
+  defaultHitEffects: []
+  surfaces:
+  - tag: Untagged
+    hitMark: {fileID: 11400000, guid: b0c1d2e3f4a5061728394a5b6c7d8e9f, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Dirt
+    hitMark: {fileID: 11400000, guid: b0c1d2e3f4a5061728394a5b6c7d8e9f, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Metal
+    hitMark: {fileID: 11400000, guid: c1d2e3f4a5b60718293a4b5c6d7e8f01, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Concrete
+    hitMark: {fileID: 11400000, guid: d2e3f4a5b6c708192a3b4c5d6e7f8012, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Wood
+    hitMark: {fileID: 11400000, guid: e3f4a5b6c7d8091a2b3c4d5e6f708123, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Glass
+    hitMark: {fileID: 11400000, guid: f4a5b6c7d8e90a1b2c3d4e5f60718234, type: 2}
+    decals: []
+    hitEffects: []
+  - tag: Barrel
+    hitMark: {fileID: 11400000, guid: a5b6c7d8e9f01a2b3c4d5e6f70819245, type: 2}
+    decals: []
+    hitEffects: []
+  fallBackToCatalog: 1
+  catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}

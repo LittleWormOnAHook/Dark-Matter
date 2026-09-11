@@ -231,7 +231,7 @@ BlendTree:
   - serializedVersion: 2
     m_Motion: {fileID: 3094330708855449807, guid: f1f1135ca9cfa8c47bf81718bb0d6873, type: 3}
     m_Threshold: 0
-    m_Position: {x: 0, y: -0.5}
+    m_Position: {x: 0, y: 0.61}
     m_TimeScale: 1
     m_CycleOffset: 0
     m_DirectBlendParameter: LocomotionAnimSpeed

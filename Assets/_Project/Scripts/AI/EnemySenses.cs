@@ -42,6 +42,10 @@ namespace Project.AI
         private Transform cachedVisiblePioneer;
         private Transform cachedVisibleThreat;
 
+        public float VisionRange => visionRange;
+        public float HearingRange => hearingRange;
+        public float OuterSenseRange => Mathf.Max(visionRange, hearingRange);
+
         public Vector3 LastNoisePosition => lastNoisePosition;
         public bool HasRecentNoise => hasRecentNoise && Time.time - lastNoiseTime <= noiseMemoryDuration;
         public float NoiseAge => HasRecentNoise ? Time.time - lastNoiseTime : float.MaxValue;

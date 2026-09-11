@@ -38,6 +38,11 @@ namespace Project.UI
 
         public float MapDisplayYaw => GetMapDisplayYaw();
 
+        public float MapCompassYaw => GetMapCompassYaw();
+
+        /// <summary>Full / journal map arrow: character (or craft) facing, not look camera.</summary>
+        public float MapPlayerCompassYaw => GetMapPlayerCompassYaw();
+
         public string MinimapInfoText =>
             minimapInfoLabel != null ? minimapInfoLabel.text : string.Empty;
 
@@ -84,7 +89,7 @@ namespace Project.UI
             if (mapProvider != null)
             {
                 if (HasMapWorldPosition())
-                    playerUv = mapProvider.WorldToMap01(GetMapWorldPosition());
+                    playerUv = mapProvider.WorldToPlayerMap01(GetMapWorldPosition());
 
                 worldSpan = Mathf.Max(mapProvider.WorldBounds.size.x, mapProvider.WorldBounds.size.z);
                 float spanMeters = Mathf.Clamp(minimapWorldSpan, MinMinimapSpan, MaxMinimapSpan);

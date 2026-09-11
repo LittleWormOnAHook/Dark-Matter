@@ -524,7 +524,8 @@ namespace Project.UI
             if (element == null || marker == null)
                 return;
 
-            float size = Mathf.Max(8f, sizePixels);
+            float minPixels = centerWithNegativeMargin ? 8f : 3f;
+            float size = Mathf.Max(minPixels, sizePixels);
             element.style.width = size;
             element.style.height = size;
             if (centerWithNegativeMargin)
@@ -561,7 +562,8 @@ namespace Project.UI
             if (element == null)
                 return;
 
-            float size = Mathf.Max(8f, sizePixels);
+            float minPixels = centerWithNegativeMargin ? 8f : 3f;
+            float size = Mathf.Max(minPixels, sizePixels);
             element.style.width = size;
             element.style.height = size;
             if (centerWithNegativeMargin)

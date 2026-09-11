@@ -59,7 +59,8 @@ namespace Project.EditorTools
                     || importer.spriteImportMode != SpriteImportMode.Single
                     || importer.mipmapEnabled
                     || !importer.alphaIsTransparency
-                    || importer.npotScale != TextureImporterNPOTScale.None;
+                    || importer.npotScale != TextureImporterNPOTScale.None
+                    || DMTextureImporterEditorUtility.GetSpriteGenerateFallbackPhysicsShape(importer);
 
                 if (!dirty)
                     continue;
@@ -70,6 +71,7 @@ namespace Project.EditorTools
                 importer.alphaIsTransparency = true;
                 importer.npotScale = TextureImporterNPOTScale.None;
                 importer.wrapMode = TextureWrapMode.Clamp;
+                DMTextureImporterEditorUtility.SetSpriteGenerateFallbackPhysicsShape(importer, false);
                 importer.SaveAndReimport();
                 changed++;
             }

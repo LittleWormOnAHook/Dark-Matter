@@ -19,7 +19,8 @@ namespace Project.EditorTools
             Pickups = 2,
             Registry = 3,
             ItemData = 4,
-            CraftingItem = 5
+            Ammo = 5,
+            CraftingItem = 6
         }
 
         private static readonly string[] TabLabels =
@@ -29,11 +30,13 @@ namespace Project.EditorTools
             "Pickup Prefabs",
             "Registry",
             "Item Data",
+            "Ammo",
             "Crafting Item"
         };
 
         private ManagerTab tab = ManagerTab.Blueprints;
         private readonly ItemDataCreatorPanel itemDataPanel = new ItemDataCreatorPanel();
+        private readonly DMAmmoCreatorPanel ammoPanel = new DMAmmoCreatorPanel();
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
 
         private RecipeDefinition[] blueprintAssets = System.Array.Empty<RecipeDefinition>();
@@ -76,6 +79,7 @@ namespace Project.EditorTools
         public static void OpenPickupsTab() => OpenTab(ManagerTab.Pickups);
         public static void OpenRegistryTab() => OpenTab(ManagerTab.Registry);
         public static void OpenItemDataTab() => OpenTab(ManagerTab.ItemData);
+        public static void OpenAmmoTab() => OpenTab(ManagerTab.Ammo);
         public static void OpenCraftingItemTab() => OpenTab(ManagerTab.CraftingItem);
 
         private static void OpenTab(ManagerTab targetTab)
@@ -106,7 +110,7 @@ namespace Project.EditorTools
             EditorGUILayout.LabelField("Blueprint and Crafting Manager", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Create and edit DM blueprints, link craftable equipment, build world pickup prefabs, " +
-                "sync the blueprint registry, and author ItemData / crafting ingredients.",
+                "sync the blueprint registry, and author ItemData, ammo types / DMAmmoFxProfiles, and crafting ingredients.",
                 MessageType.Info);
 
             tab = (ManagerTab)GUILayout.Toolbar((int)tab, TabLabels);
@@ -129,12 +133,15 @@ namespace Project.EditorTools
                 case ManagerTab.ItemData:
                     itemDataPanel.Draw();
                     break;
+                case ManagerTab.Ammo:
+                    ammoPanel.Draw();
+                    break;
                 case ManagerTab.CraftingItem:
                     craftingItemPanel.Draw();
                     break;
             }
 
-            if (tab != ManagerTab.ItemData && tab != ManagerTab.CraftingItem && !string.IsNullOrEmpty(statusMessage))
+            if (tab != ManagerTab.ItemData && tab != ManagerTab.Ammo && tab != ManagerTab.CraftingItem && !string.IsNullOrEmpty(statusMessage))
             {
                 EditorGUILayout.Space(8f);
                 EditorGUILayout.HelpBox(statusMessage, statusType);

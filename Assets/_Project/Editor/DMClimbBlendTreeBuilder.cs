@@ -58,7 +58,7 @@ namespace Project.EditorTools
             var profileProp = so.FindProperty("profile");
             if (profileProp != null && profileProp.objectReferenceValue == null)
             {
-                var profile = UnityEngine.Resources.Load<Project.Features.Climb.DMClimbProfile>("Climb/DMClimbProfile");
+                var profile = UnityEngine.Resources.Load<Project.Features.Climb.DM_ClimbDashProfile>("Climb/DM_ClimbDashProfile");
                 if (profile != null)
                     profileProp.objectReferenceValue = profile;
             }
@@ -68,7 +68,7 @@ namespace Project.EditorTools
             EditorGUIUtility.PingObject(player);
             EditorUtility.DisplayDialog(
                 "Climb Manager",
-                "Climb manager is on Player_v7. Edit the Climb Profile on that component (or Assets/_Project/Resources/Climb/DMClimbProfile). Space or E only grabs a Climbable wall.",
+                "Climb manager is on Player_v7. Edit the Climb Profile on that component (or Assets/_Project/Resources/Climb/DM_ClimbDashProfile). Space or E only grabs a Climbable wall.",
                 "OK");
         }
         [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Spawn Climb Test Wall", false, 2)]

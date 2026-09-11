@@ -13,15 +13,18 @@ namespace Project.Combat
             if (ammoItem != null)
                 return ammoItem;
 
-            return weapon != null ? weapon.defaultAmmoItem : null;
+            if (weapon == null)
+                return null;
+
+            if (weapon.defaultAmmoItem != null && weapon.defaultAmmoItem.CountsAsAmmo)
+                return weapon.defaultAmmoItem;
+
+            return null;
         }
 
         public static GameObject ResolveTracerPrefab(ItemData ammoItem, ItemData weapon)
         {
-            if (ammoItem != null && ammoItem.tracerPrefab != null)
-                return ammoItem.tracerPrefab;
-
-            return weapon != null ? weapon.tracerPrefab : null;
+            return DMCombatFx.ResolveTracer(ammoItem, weapon);
         }
 
         public static void PlayParticleSystemsRecursive(GameObject root)

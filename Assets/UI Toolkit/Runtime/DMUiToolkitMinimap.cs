@@ -22,7 +22,7 @@ namespace Project.UI
         private const float MaxMarkerRange = 250f;
         private const int MaxVisibleMarkers = 10;
         private const int ViewRtSize = 256;
-        private const float MinimapRefreshInterval = 0.05f;
+        private const float MinimapRefreshInterval = 0.066f;
         private const float MarkerRefreshInterval = 0.25f;
 
         private static DMUiToolkitMinimap instance;
@@ -58,6 +58,8 @@ namespace Project.UI
         private Texture lastBlitSource;
         private Vector2 lastBlitUv;
         private float lastBlitSpan;
+        private bool lastBlitInvertH;
+        private bool lastBlitInvertV;
         private MapUI cachedMapUi;
         private global::UnityEngine.CanvasGroup hiddenMinimapGroup;
         private GameObject hiddenMinimapRoot;
@@ -296,6 +298,7 @@ namespace Project.UI
                 DMUiToolkitStyle.TrySetSpriteBackground(minimapPlayer, MapUiSprites.PlayerArrow, ScaleMode.ScaleToFit);
                 minimapPlayer.style.backgroundColor = Color.clear;
                 minimapPlayer.style.unityBackgroundImageTintColor = new Color(1f, 0.12f, 0.08f, 1f); // bright red player arrow
+                ApplyMinimapPlayerIconRotation();
             }
 
             if (compassPointer != null)
@@ -380,19 +383,50 @@ namespace Project.UI
             }
 
             RenderTexture rt = EnsureViewRt();
+            WorldMapProvider provider = WorldMapProvider.Instance;
+            bool invertH = provider != null && provider.MinimapFlipHorizontal;
+            bool invertV = provider != null && provider.MinimapFlipVertical;
             bool dirty = source != lastBlitSource
                 || (playerUv - lastBlitUv).sqrMagnitude > 0.00000025f
-                || !Mathf.Approximately(uvSpan, lastBlitSpan);
+                || !Mathf.Approximately(uvSpan, lastBlitSpan)
+                || invertH != lastBlitInvertH
+                || invertV != lastBlitInvertV;
 
             if (dirty)
             {
-                bool invertVertical = WorldMapProvider.Instance != null && WorldMapProvider.Instance.InvertMapVertical;
-                BlitCrop(source, rt, playerUv, uvSpan, invertVertical);
+                BlitCrop(source, rt, playerUv, uvSpan, invertH, invertV);
                 lastBlitSource = source;
                 lastBlitUv = playerUv;
                 lastBlitSpan = uvSpan;
+                lastBlitInvertH = invertH;
+                lastBlitInvertV = invertV;
             }
 
+            return rt;
+        }
+
+        /// <summary>Same crop as the minimap terrain, using the live FOW mask.</summary>
+        public RenderTexture EnsureFogCroppedView(MapUI mapUi)
+        {
+            MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
+            if (fog == null || !MapFogOfWar.SystemEnabled || fog.FogTexture == null)
+                return null;
+
+            Texture source;
+            Vector2 playerUv;
+            float uvSpan;
+            float facingYaw;
+            if (mapUi == null || !mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+            {
+                playerUv = new Vector2(0.5f, 0.5f);
+                uvSpan = 0.25f;
+            }
+
+            RenderTexture rt = EnsureFogViewRt();
+            WorldMapProvider map = WorldMapProvider.Instance;
+            bool invertH = map != null && map.MinimapFlipHorizontal;
+            bool invertV = map != null && map.MinimapFlipVertical;
+            BlitCrop(fog.FogTexture, rt, playerUv, uvSpan, invertH, invertV);
             return rt;
         }
 
@@ -408,7 +442,12 @@ namespace Project.UI
             if (!TrySetMinimapViewBackground(rt))
                 return;
 
-            DMUiToolkitMenus.SetElementRotate(minimapView, mapUi.MapDisplayYaw);
+            WorldMapProvider map = WorldMapProvider.Instance;
+            Vector3 viewEuler = map != null
+                ? map.GetMinimapViewEuler(mapUi.MapCompassYaw)
+                : new Vector3(0f, 0f, -mapUi.MapCompassYaw);
+            DMUiToolkitMenus.SetElementRotateEuler(minimapView, viewEuler);
+            ApplyMinimapPlayerIconRotation();
 
             Texture source;
             Vector2 playerUv;
@@ -418,6 +457,16 @@ namespace Project.UI
                 BindMinimapFog(source, playerUv, uvSpan);
         }
 
+        private void ApplyMinimapPlayerIconRotation()
+        {
+            if (minimapPlayer == null)
+                return;
+
+            WorldMapProvider provider = WorldMapProvider.Instance;
+            float degrees = provider != null ? provider.MinimapPlayerIconBaseDegrees : 180f;
+            float size = provider != null ? provider.MinimapPlayerIconSizePixels : 24f;
+            DMUiToolkitMenus.ApplyPlayerMapIcon(minimapPlayer, size, degrees, centerWithNegativeMargin: true);
+        }
 
         private bool TrySetMinimapViewBackground(RenderTexture rt)
         {
@@ -493,11 +542,15 @@ namespace Project.UI
                 return;
 
             RenderTexture rt = EnsureFogViewRt();
-            bool invertVertical = WorldMapProvider.Instance != null && WorldMapProvider.Instance.InvertMapVertical;
-            BlitCrop(fog.FogTexture, rt, playerUv, uvSpan, invertVertical);
+            WorldMapProvider map = WorldMapProvider.Instance;
+            bool invertH = map != null && map.MinimapFlipHorizontal;
+            bool invertV = map != null && map.MinimapFlipVertical;
+            BlitCrop(fog.FogTexture, rt, playerUv, uvSpan, invertH, invertV);
             DMUiToolkitStyle.TrySetRenderTextureBackground(minimapFog, rt, ScaleMode.ScaleAndCrop);
             MapUI mapUi = ResolveMapUi();
-            DMUiToolkitMenus.SetElementRotate(minimapFog, mapUi != null ? mapUi.MapDisplayYaw : 0f);
+            float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
+            Vector3 fogEuler = map != null ? map.GetMinimapViewEuler(heading) : new Vector3(0f, 0f, -heading);
+            DMUiToolkitMenus.SetElementRotateEuler(minimapFog, fogEuler);
         }
 
         private RenderTexture EnsureFogViewRt()
@@ -531,20 +584,25 @@ namespace Project.UI
             return viewRt;
         }
 
-        private static void BlitCrop(Texture source, RenderTexture dest, Vector2 playerUv, float uvSpan, bool invertMapVertical)
+        private static void BlitCrop(
+            Texture source,
+            RenderTexture dest,
+            Vector2 playerUv,
+            float uvSpan,
+            bool invertHorizontal,
+            bool invertVertical)
         {
             if (source == null || dest == null)
                 return;
 
             float span = Mathf.Clamp(uvSpan, 0.02f, 1f);
-            // POI dots use (markerUv - playerUv) with py = center - delta.y * radius
-            // (higher calibration uv.y = north on screen). Blit samples bottom-left UV;
-            // UITK RenderTexture backgrounds display top row first — use raw uv.y for crop
-            // center so terrain scroll matches POI overlay. invertMapVertical flips when set.
-            float sampleY = invertMapVertical ? (1f - playerUv.y) : playerUv.y;
-            Vector2 scale = new Vector2(span, span);
-            Vector2 offset = new Vector2(playerUv.x - span * 0.5f, sampleY - span * 0.5f);
-            Graphics.Blit(source, dest, scale, offset);
+            float sampleX = invertHorizontal ? 1f - playerUv.x : playerUv.x;
+            float sampleY = invertVertical ? 1f - playerUv.y : playerUv.y;
+            float scaleX = invertHorizontal ? -span : span;
+            float scaleY = invertVertical ? -span : span;
+            float offsetX = invertHorizontal ? sampleX + span * 0.5f : sampleX - span * 0.5f;
+            float offsetY = invertVertical ? sampleY + span * 0.5f : sampleY - span * 0.5f;
+            Graphics.Blit(source, dest, new Vector2(scaleX, scaleY), new Vector2(offsetX, offsetY));
         }
 
         private void ReleaseViewRt()
@@ -628,7 +686,7 @@ namespace Project.UI
             if (mapUi == null || ticks.Count == 0)
                 return;
 
-            float heading = mapUi.MapDisplayYaw;
+            float heading = mapUi.MapCompassYaw;
             float halfFov = FieldOfViewDegrees * 0.5f;
             float stripWidth = compassStrip != null ? compassStrip.resolvedStyle.width : GameplayHudLayout.CompassWidth;
             if (stripWidth < 8f)
@@ -673,7 +731,7 @@ namespace Project.UI
             if (mapUi == null || compassMarkers == null)
                 return;
 
-            float heading = mapUi.MapDisplayYaw;
+            float heading = mapUi.MapCompassYaw;
             float halfFov = FieldOfViewDegrees * 0.5f;
             float stripWidth = compassStrip != null ? compassStrip.resolvedStyle.width : GameplayHudLayout.CompassWidth;
             if (stripWidth < 8f)
@@ -691,7 +749,7 @@ namespace Project.UI
                 for (int i = 0; i < markers.Count && shown < MaxVisibleMarkers; i++)
                 {
                     MapMarker marker = markers[i];
-                    if (marker == null || !marker.ShowOnMinimap || !marker.IsRevealedOnMap)
+                    if (marker == null || !marker.ShouldDrawOnCompass(playerPos))
                         continue;
 
                     Vector3 toMarker = marker.WorldPosition - playerPos;

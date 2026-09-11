@@ -21,6 +21,13 @@ namespace Project.UI
         public static readonly Color PositiveGreen = new Color(0.42f, 0.78f, 0.48f, 1f);
         public static readonly Color DangerRed = new Color(0.92f, 0.38f, 0.32f, 1f);
 
+        /// <summary>Map / minimap POI icons only. Never gold or magenta on terrain.</summary>
+        public static readonly Color MapPoiRed = Color.red;
+        public static readonly Color MapPoiBlue = Color.blue;
+        public static readonly Color MapPoiGreen = Color.green;
+        public static readonly Color MapPoiBlack = Color.black;
+        public static readonly Color MapPoiWhite = Color.white;
+
         public static Color PanelBackground => WithAlpha(DarkNavy, 0.94f);
         public static Color PanelHeader => WithAlpha(CharcoalGray, 0.98f);
         public static Color PanelBorder => WithAlpha(SlateGray, 0.95f);
@@ -122,6 +129,50 @@ namespace Project.UI
                 return color;
 
             return Color.white;
+        }
+
+        /// <summary>
+        /// Snap a marker tint onto the map POI set so gold / magenta / beige never sit on the terrain.
+        /// </summary>
+        public static Color ToMapPoiColor(Color source)
+        {
+            source.a = 1f;
+            if (IsWarmMapBlend(source) || IsNear(source, Gold) || IsNear(source, SoftBeigeGray))
+                return MapPoiWhite;
+            if (IsNear(source, DeepMagenta) || IsNear(source, RichFuchsia) || IsNear(source, DangerRed))
+                return MapPoiRed;
+
+            Color nearest = MapPoiWhite;
+            float best = float.MaxValue;
+            Color[] set = { MapPoiRed, MapPoiBlue, MapPoiGreen, MapPoiBlack, MapPoiWhite };
+            for (int i = 0; i < set.Length; i++)
+            {
+                float d = SqrDelta(source, set[i]);
+                if (d >= best)
+                    continue;
+                best = d;
+                nearest = set[i];
+            }
+
+            return nearest;
+        }
+
+        private static bool IsWarmMapBlend(Color color)
+        {
+            return color.r > 0.55f && color.g > 0.35f && color.b < 0.45f && color.r >= color.g;
+        }
+
+        private static bool IsNear(Color a, Color b)
+        {
+            return SqrDelta(a, b) < 0.12f;
+        }
+
+        private static float SqrDelta(Color a, Color b)
+        {
+            float dr = a.r - b.r;
+            float dg = a.g - b.g;
+            float db = a.b - b.b;
+            return dr * dr + dg * dg + db * db;
         }
     }
 }

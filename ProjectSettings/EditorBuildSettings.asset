@@ -168,6 +168,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Terrain_3_3_Content.unity
     guid: f87175cf85f142c7a220b035a1938247
+  - enabled: 1
+    path: Assets/_Project/Scenes/Dark Matter Genesis v1.6.3.1.unity
+    guid: 872bb85aa72723d4e9e5183bbdeead86
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 6e057c20afe52a74a94e01fae3a1c27a, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}

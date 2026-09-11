@@ -729,7 +729,7 @@ namespace Project.Core
                 // Fresh / pre-fog saves: stamp an initial walk circle at the player so they aren't fully blind.
                 GameObject player = PlayerLocator.FindPlayerObject();
                 if (player != null)
-                    fog.RevealCircle(player.transform.position, MapFogOfWar.WalkRevealRadiusMeters, 1.5f);
+                    fog.RevealCircle(player.transform.position, MapFogOfWar.WalkRevealRadiusMeters, MapFogOfWar.WalkRevealEdgeSoftnessMeters);
                 return;
             }
 

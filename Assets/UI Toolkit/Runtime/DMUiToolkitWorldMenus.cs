@@ -7,6 +7,7 @@ using Project.Core;
 using Project.Data;
 using Project.Interaction;
 using Project.Inventory;
+using Project.Pet;
 using Project.Pioneers;
 using Project.Player;
 using Project.Player.Invector;
@@ -70,6 +71,7 @@ namespace Project.UI
         private Label itemTipTitle;
         private Label itemTipBody;
         private VisualElement recipeTooltip;
+        private VisualElement recipeTipIcon;
         private Label recipeTipTitle;
         private Label recipeTipBody;
         private Vector2 itemTipScreenPosition;
@@ -110,8 +112,6 @@ namespace Project.UI
         private IEnemyLootProvider activeLoot;
         private Action echoClosed;
         private Coroutine scanRoutine;
-        private Transform tamingTarget;
-        private Vector3 tamingOffset = new Vector3(0f, 2.2f, 0f);
         private PioneerRosterPanelUI rosterPanel;
         private BuildingControlPanelUI labPanel;
 
@@ -213,14 +213,14 @@ namespace Project.UI
             return true;
         }
 
-        public static bool TryShowTaming(Transform target, float progress01, string message)
+        public static bool TryShowTaming(float progress01, string message)
         {
             if (!DMUiToolkitHud.IsDriving)
                 return false;
             DMUiToolkitWorldMenus host = EnsureHost();
             if (host == null)
                 return false;
-            host.ShowTamingInternal(target, progress01, message);
+            host.ShowTamingInternal(progress01, message);
             return true;
         }
 
@@ -239,14 +239,15 @@ namespace Project.UI
             RecipeDefinition recipe,
             Vector2 screenPosition,
             bool pendingScroll = false,
-            InventorySystem inventory = null)
+            InventorySystem inventory = null,
+            VisualElement centerOver = null)
         {
             if (!CanShowJournalFloatingUi() || recipe == null)
                 return false;
             DMUiToolkitWorldMenus host = EnsureHost();
             if (host == null)
                 return false;
-            host.ShowRecipeTipInternal(recipe, screenPosition, pendingScroll, inventory);
+            host.ShowRecipeTipInternal(recipe, screenPosition, pendingScroll, inventory, centerOver);
             return true;
         }
 
@@ -424,7 +425,7 @@ namespace Project.UI
             if (!bound)
                 return;
 
-            TickTaming();
+            TickTamingProximity();
 
             Vector2 pointer = CurrentPointerScreenPosition();
             if (itemTipOpen && !itemTipCentered)
@@ -511,6 +512,7 @@ namespace Project.UI
             itemTipTitle = tree.Q<Label>("item-tip-title");
             itemTipBody = tree.Q<Label>("item-tip-body");
             recipeTooltip = tree.Q<VisualElement>("recipe-tooltip");
+            recipeTipIcon = tree.Q<VisualElement>("recipe-tip-icon");
             recipeTipTitle = tree.Q<Label>("recipe-tip-title");
             recipeTipBody = tree.Q<Label>("recipe-tip-body");
             pioneerHover = tree.Q<VisualElement>("pioneer-hover");
@@ -999,12 +1001,15 @@ namespace Project.UI
             scanRoutine = null;
         }
 
-        private void ShowTamingInternal(Transform target, float progress01, string message)
+        private void ShowTamingInternal(float progress01, string message)
         {
             BindTree();
-            tamingTarget = target;
-            tamingOpen = target != null;
-            DMUiToolkitOverlayDocument.SetShown(tamingHost, tamingOpen);
+            if (tamingHost == null)
+                return;
+
+            tamingOpen = true;
+            DMUiToolkitOverlayDocument.SetShown(tamingHost, true);
+            PositionTamingCenter();
             if (tamingFill != null)
                 tamingFill.style.width = Length.Percent(Mathf.Clamp01(progress01) * 100f);
             if (tamingLabel != null)
@@ -1014,34 +1019,76 @@ namespace Project.UI
         private void HideTamingInternal()
         {
             tamingOpen = false;
-            tamingTarget = null;
             DMUiToolkitOverlayDocument.SetShown(tamingHost, false);
         }
 
-        private void TickTaming()
+        private static void PositionTamingCenter()
         {
-            if (!tamingOpen || tamingHost == null || tamingTarget == null)
+            if (instance == null || instance.tamingHost == null)
                 return;
 
-            Camera camera = Camera.main;
-            if (camera == null)
+            VisualElement host = instance.tamingHost;
+            host.style.position = Position.Absolute;
+            host.style.left = Length.Percent(50);
+            host.style.top = Length.Percent(54);
+            host.style.right = StyleKeyword.Auto;
+            host.style.bottom = StyleKeyword.Auto;
+            host.style.marginLeft = 0;
+            host.style.marginTop = 0;
+            host.style.translate = new Translate(Length.Percent(-50), Length.Percent(-50));
+        }
+
+        private void TickTamingProximity()
+        {
+            if (!bound || !DMUiToolkitHud.IsDriving)
                 return;
 
-            Vector3 world = tamingTarget.position + tamingOffset;
-            Vector3 screen = camera.WorldToScreenPoint(world);
-            if (screen.z < 0f)
+            if (!ShouldShowTamingProximity())
             {
-                DMUiToolkitOverlayDocument.SetShown(tamingHost, false);
+                if (tamingOpen)
+                    HideTamingInternal();
                 return;
             }
 
-            DMUiToolkitOverlayDocument.SetShown(tamingHost, true);
-            if (tamingHost.panel != null)
+            Transform player = PlayerLocator.FindPlayerObject()?.transform;
+            if (player == null)
             {
-                Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(tamingHost.panel, new Vector2(screen.x, screen.y));
-                tamingHost.style.left = panelPos.x - 90f;
-                tamingHost.style.top = panelPos.y - 14f;
+                if (tamingOpen)
+                    HideTamingInternal();
+                return;
             }
+
+            PetWorldAdoptable adoptable = PetWorldAdoptable.FindClosestAdoptable(player.position, 100f);
+            if (adoptable == null || !PetWorldAdoptable.IsWithinImmediateAdoptRange(player.position, adoptable))
+            {
+                if (tamingOpen)
+                    HideTamingInternal();
+                return;
+            }
+
+            PetManager manager = PetManager.EnsureExists();
+            float progress = manager != null ? manager.GetTamingProgress(adoptable.InstanceId) : 0f;
+            ShowTamingInternal(progress, adoptable.PromptText);
+        }
+
+        private static bool ShouldShowTamingProximity()
+        {
+            if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud || DMUiToolkitLoadingOverlay.IsShowing)
+                return false;
+            if (IsAnyModalOpen)
+                return false;
+
+            PlayerController player = PlayerLocator.FindPlayerController();
+            if (player == null)
+                return true;
+
+            return !player.IsInventoryOpen
+                && !player.IsJournalOpen
+                && !player.IsMapOpen
+                && !player.IsQuestDialogOpen
+                && !player.IsLootDialogOpen
+                && !player.IsBuildingControlOpen
+                && !player.IsOpticsOpen;
         }
 
         private static Vector2 CurrentPointerScreenPosition()
@@ -1077,25 +1124,26 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, false);
         }
 
+        private VisualElement recipeTipCenterOver;
+
         private void ShowRecipeTipInternal(
             RecipeDefinition recipe,
             Vector2 screenPosition,
             bool pendingScroll,
-            InventorySystem inventory)
+            InventorySystem inventory,
+            VisualElement centerOver)
         {
             BindTree();
             HideItemTipInternal();
             HidePioneerHoverInternal();
             recipeTipOpen = true;
             recipeTipScreenPosition = screenPosition;
+            recipeTipCenterOver = centerOver;
+            ApplyRecipeTipIcon(recipe);
             if (recipeTipTitle != null)
                 recipeTipTitle.text = RecipeTooltipFormatter.BuildTitle(recipe);
             if (recipeTipBody != null)
-            {
-                recipeTipBody.text = pendingScroll
-                    ? RecipeTooltipFormatter.BuildScrollBody(recipe)
-                    : RecipeTooltipFormatter.BuildBody(recipe, inventory);
-            }
+                recipeTipBody.text = RecipeTooltipFormatter.BuildBody(recipe, inventory, pendingScroll);
 
             DMUiToolkitOverlayDocument.SetShown(recipeTooltip, true);
             PositionRecipeTip(screenPosition);
@@ -1104,6 +1152,7 @@ namespace Project.UI
         private void HideRecipeTipInternal()
         {
             recipeTipOpen = false;
+            recipeTipCenterOver = null;
             DMUiToolkitOverlayDocument.SetShown(recipeTooltip, false);
         }
 
@@ -1114,6 +1163,8 @@ namespace Project.UI
             HidePioneerHoverInternal();
             recipeTipOpen = true;
             recipeTipScreenPosition = screenPosition;
+            recipeTipCenterOver = null;
+            ApplyRecipeTipIcon(null);
             if (recipeTipTitle != null)
                 recipeTipTitle.text = title ?? string.Empty;
             if (recipeTipBody != null)
@@ -1142,10 +1193,33 @@ namespace Project.UI
                 root);
         }
 
+        private void ApplyRecipeTipIcon(RecipeDefinition recipe)
+        {
+            if (recipeTipIcon == null)
+                return;
+
+            Sprite sprite = recipe != null ? recipe.DisplayIcon : null;
+            if (sprite != null && DMUiToolkitStyle.TrySetSpriteBackground(recipeTipIcon, sprite, ScaleMode.ScaleToFit))
+            {
+                recipeTipIcon.style.visibility = Visibility.Visible;
+                return;
+            }
+
+            DMUiToolkitStyle.ClearBackgroundImage(recipeTipIcon);
+            recipeTipIcon.style.visibility = Visibility.Hidden;
+        }
+
         private void PositionRecipeTip(Vector2 screenPosition)
         {
             if (recipeTooltip == null)
                 return;
+
+            recipeTooltip.style.width = 320f;
+            if (recipeTipCenterOver != null)
+            {
+                DMUiToolkitOverlayDocument.PositionCenterOver(recipeTooltip, recipeTipCenterOver);
+                return;
+            }
 
             DMUiToolkitOverlayDocument.PositionNearPointer(
                 recipeTooltip,

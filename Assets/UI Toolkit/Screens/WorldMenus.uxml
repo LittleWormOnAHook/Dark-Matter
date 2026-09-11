@@ -73,8 +73,11 @@
             <ui:Label name="item-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
             <ui:Label name="item-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
         </ui:VisualElement>
-        <ui:VisualElement name="recipe-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
-            <ui:Label name="recipe-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
+        <ui:VisualElement name="recipe-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip dmg-bp-tip">
+            <ui:VisualElement name="recipe-tip-head" picking-mode="Ignore" class="dmg-bp-tip-head">
+                <ui:VisualElement name="recipe-tip-icon" picking-mode="Ignore" class="dmg-bp-tip-icon"/>
+                <ui:Label name="recipe-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
+            </ui:VisualElement>
             <ui:Label name="recipe-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
         </ui:VisualElement>
         <ui:VisualElement name="pioneer-hover" picking-mode="Ignore" class="dmg-pioneer-hover">

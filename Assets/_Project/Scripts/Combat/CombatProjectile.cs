@@ -340,6 +340,7 @@ namespace Project.Combat
                 hitPoint,
                 impactNormal,
                 owner,
+                collider != null ? collider.gameObject : null,
                 playHitAudio: true,
                 impactVfxOverride: impactVfxOverride);
 

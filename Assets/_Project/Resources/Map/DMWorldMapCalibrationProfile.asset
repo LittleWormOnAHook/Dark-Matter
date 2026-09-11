@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4c8a2e19b7d4f6a8e3c1d0b5a9f2e7c, type: 3}
+  m_Name: DMWorldMapCalibrationProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Map.DMWorldMapCalibrationProfile
+  enableRuntimeTuning: 0
+  enableMapFogOfWar: 0
+  walkRevealRadiusMeters: 5
+  walkRevealEdgeSoftnessMeters: 2
+  walkStampIntervalMeters: 5
+  textureUploadInterval: 0.18
+  fogResolution: 1024
+  scanRevealRadiusMeters: 20
+  scanSkillBonusPerRankMeters: 10
+  maxScanSkillRanks: 5
+  scanRevealEdgeSoftnessMeters: 50
+  fogOverlayAlpha: 0.97
+  revealThreshold: 0.835
+  landMaskGreenThreshold: 0.609
+  fogColor: {r: 0.90188676, g: 0.6975656, b: 0.46115336, a: 1}
+  terrainMask: {fileID: 0}
+  mapPlayerIconBaseDegrees: 0
+  minimapPlayerIconBaseDegrees: 0
+  mapPlayerIconUvOffset: {x: 0.008, y: -0.01}
+  mapPlayerIconSizePixels: 8
+  minimapPlayerIconSizePixels: 25
+  invertMapVertical: 1
+  invertMapHorizontal: 0
+  mapDisplayNorthOffsetDegrees: 102
+  mapUvOffset: {x: 0, y: 0}
+  mapUvScaleX: 1.12
+  mapUvScaleY: 1.14
+  fullMapMaxZoomVisibleMeters: 200
+  fullMapOpenVisibleMeters: 1200
+  fullMapMarkerScreenPixels: 7
+  fullMapPlayerScreenPixels: 10
+  minimapFlipHorizontal: 0
+  minimapFlipVertical: 0
+  minimapRotateX: 0
+  minimapRotateY: 0
+  minimapRotateZ: 0
+  mapZeroUv01: {x: 0.518, y: 0.498}
+  mapCalibrationWorldXz: {x: -767, y: -108}
+  mapCalibrationUv01: {x: 0.563, y: 0.44}
+  useAffineMapProjection: 1

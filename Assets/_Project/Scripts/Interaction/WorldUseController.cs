@@ -1261,9 +1261,21 @@ namespace Project.Interaction
                 return recipePickup.GetInteractionPromptMessage();
             }
 
-            PetWorldAdoptable adoptable = PetWorldAdoptable.FindAdoptableForPrompt(context);
-            if (adoptable != null)
-                return adoptable.PromptText + " " + (adoptable.GetComponent<PetController>()?.DisplayName ?? "pet");
+            if (DMUiToolkitHud.IsDriving)
+            {
+                PetWorldAdoptable adoptable = PetWorldAdoptable.FindClosestAdoptable(
+                    context.PlayerPosition,
+                    100f);
+                if (adoptable != null
+                    && PetWorldAdoptable.IsWithinImmediateAdoptRange(context.PlayerPosition, adoptable))
+                    return null;
+            }
+            else
+            {
+                PetWorldAdoptable adoptable = PetWorldAdoptable.FindAdoptableForPrompt(context);
+                if (adoptable != null)
+                    return adoptable.PromptText;
+            }
 
             InjuredPioneerLabRecoverable injuredRecoverable = InjuredPioneerLabRecoverable.FindForPrompt(context);
             if (injuredRecoverable != null)

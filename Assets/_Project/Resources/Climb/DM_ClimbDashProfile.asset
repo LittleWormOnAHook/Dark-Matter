@@ -1,0 +1,137 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7c4e2b19f8d4e6a8c3b5d7e1f0a2c4b, type: 3}
+  m_Name: DM_ClimbDashProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Climb.DM_ClimbDashProfile
+  walkMaxSlopeDeg: 45
+  climbMinSlopeDeg: 60
+  climbMaxSlopeDeg: 95
+  attachRange: 2
+  climbJumpRange: 5
+  probeRadius: 0.24
+  faceDotMin: 0.15
+  standOff: 0.35
+  startClimbNeedsAirborne: 1
+  startClimbNeedsForward: 1
+  handPalmOffset: 0.11
+  handSpread: 0.2
+  autoGrabInAir: 0
+  moveSpeed: 0.95
+  climbShiftMul: 1.85
+  climbInputDamp: 0.1
+  jumpReleases: 1
+  releasePush: 2.93
+  climbLeapSpeed: 11.44
+  clingHop: 6.7
+  climbLeapRegrab: 0.88
+  dropPush: 2.4
+  detachBuffer: 1.15
+  highFallGrabMeters: 3.5
+  airControlSeconds: 0.95
+  dropToHang: 1
+  dropToHangRange: 1.8
+  enableOverhangGrab: 1
+  overhangReachUp: 1.3
+  overhangReachBack: 1.61
+  overhangGrabSeconds: 0.78
+  overhangMinProbeOut: 0.05
+  overhangDeepProtrusion: 0.65
+  overhangShortHopPull: 0.94
+  overhangShortHopArc: 0.22
+  overhangIkBlendStart: 0.72
+  overhangHangInset: 0.1
+  overhangShortHopSeconds: 0.85
+  enableMantle: 1
+  mantleRequiresOpenLip: 1
+  handHeight: 1.125
+  mantleForward: 0.12
+  mantleProbeUp: 1.5
+  mantleProbeDown: 1.7
+  mantlePlantHeight: 0.015
+  mantleStandPad: 0.04
+  mantleSeconds: 1.4
+  mantleIgnoreLands: 2.6
+  heroDropMeters: 5.73
+  lethalDropMeters: 9
+  fallDamageStartMeters: 9.5
+  fallDamageLethalPercent: 0.3
+  fallDamageHealthFraction: 0.5
+  jetpackLethalDelay: 6
+  maxHealth: 100
+  maxEnergy: 100
+  maxStamina: 100
+  maxOxygen: 2400
+  energyDrainPerSecond: 0
+  toolEnergyDrainPerSecond: 0.5
+  handCraftEnergyPerItem: 0.5
+  oxygenDrainPerSecond: 10
+  healthDrainPerSecond: 0
+  lowStatThresholdPercent: 25
+  oxygenDepletedHealthDrainMultiplier: 5
+  enableHealthRegen: 1
+  healthRegenPerSecond: 5
+  healthRegenDelayAfterDamage: 5
+  maxThermalStress: 100
+  maxRadiation: 100
+  maxSulfur: 100
+  maxVolcano: 100
+  exposureRecoveryPerSecond: 8
+  thermalRecoveryPerSecond: 12
+  idleStaminaRegenPerSecond: 3
+  sprintStaminaDrainPerSecond: 12
+  sprintStaminaRegenPerSecond: 0
+  climbStartStaminaCost: 1
+  climbMoveStaminaDrainPerSecond: 2
+  climbHangStaminaDrainPerSecond: 2
+  climbStaminaRegenPerSecond: 10
+  dashStaminaCost: 30
+  dashStaminaTickExtraPercent: 0.2
+  dashStaminaRegenPerSecond: 0
+  dashRecoveryStaminaRegenPerSecond: 5
+  dashStaminaRecoverySeconds: 3
+  dashDoubleTapWindow: 0.28
+  dashDistance: 4.5
+  dashSpeed: 25.9
+  dashDuration: 0.18
+  dashCooldown: 0.2
+  dashAllowAirDash: 1
+  dashAnimationSpeed: 0
+  dashCollisionSkin: 0.08
+  dashDetachesFromClimb: 1
+  dashAllowedWhileClimbing: 0
+  dashHologramColor: {r: 0.25, g: 0.85, b: 1, a: 0.42}
+  dashHologramEmission: 4
+  dashHologramMaterial: {fileID: 2100000, guid: 3173674e4cc2d7445a018b8f7d9a72a2, type: 2}
+  dashStreakColor: {r: 0.55, g: 0.95, b: 1, a: 0.85}
+  dashStreakCount: 60
+  dashStreakLifetime: 0.22
+  dashStreakSize: 0.12
+  dashStreakStretch: 3.5
+  dashStreakRadius: 1
+  dashStreakMaterial: {fileID: 2100000, guid: 63d8fc1f0ade4d22a822f8cac686a3b9, type: 2}
+  dashStreakPrefab: {fileID: 4794414913881438078, guid: cb77bc11d7d3be340b520d5c4f2a19a7, type: 3}
+  dashSmokeColor: {r: 1, g: 1, b: 1, a: 0.45}
+  dashSmokeCount: 43
+  dashSmokeLifetime: 0.55
+  dashSmokeSize: 0.7
+  dashSmokeMaterial: {fileID: 2100000, guid: 9abd6c2e7a229c74fa3ba0ece6363f4c, type: 2}
+  dashSmokePrefab: {fileID: 7818865290924522459, guid: 69396212cc237c8429a0b85fe1d8b7d1, type: 3}
+  climbableLayerName: Climbable
+  climbableTag: Climbable
+  climbableLayers:
+    serializedVersion: 2
+    m_Bits: 8388608
+  enableClingSense: 1
+  drawClingSenseGizmos: 1
+  preferBakedProbes: 0
+  probeReach: 1.15
+  probeStepMax: 0.91

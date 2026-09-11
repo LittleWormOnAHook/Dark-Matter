@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,13 +20,7 @@ namespace Project.EditorTools
         private const string PrefsEnabled = "DM.ProfilePlayModeSaver.Enabled";
         private const string MenuPath = "Tools/Dark Matter Genesis/Keep Profiles After Play";
 
-        private static readonly string[] Roots =
-        {
-            "Assets/_Project/Resources/Climb",
-            "Assets/_Project/Resources/Landing",
-            "Assets/_Project/Resources/Map",
-            "Assets/_Project/Features/Jetpack/Data",
-        };
+        private static string[] Roots => DMStudioRegistry.GetPlayModeSaveRoots();
 
         private static readonly string[] ExtraTypes =
         {
@@ -118,6 +113,12 @@ namespace Project.EditorTools
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                // World map calibration is persisted by DMWorldMapCalibrationSceneSync
+                // (live Play snapshot). Skip so a reverted SO capture cannot overwrite it.
+                if (!string.IsNullOrEmpty(path) &&
+                    path.IndexOf("DMWorldMapCalibrationProfile", StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+
                 ScriptableObject so = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
                 if (so == null || string.IsNullOrEmpty(path) || !seen.Add(path))
                     continue;

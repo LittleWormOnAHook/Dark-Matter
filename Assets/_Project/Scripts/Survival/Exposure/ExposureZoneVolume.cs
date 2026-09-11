@@ -1029,6 +1029,13 @@ namespace Project.Survival.Exposure
             return ContainsPoint(outer, other.bounds.center) || ContainsPoint(outer, other.transform.position);
         }
 
+        /// <summary>0 at the outer rim, 1 at / inside the inner collider.</summary>
+        public float EvaluateCenter01(Vector3 worldPoint)
+        {
+            float intensity = EvaluateSpatialIntensity(worldPoint);
+            return Mathf.Clamp01(Mathf.InverseLerp(outerIntensity, 1f, intensity));
+        }
+
         public float EvaluateSpatialIntensity(Vector3 worldPoint)
         {
             Collider outer = ResolveOuter();

@@ -9,16 +9,28 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.20355
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.72213
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.20355
+      objectReference: {fileID: 0}
+    - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -24.676186
+      value: -3.5278645
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.3997676
+      value: -0.13
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.510971
+      value: 17.158749
       objectReference: {fileID: 0}
     - target: {fileID: 1306476746690666818, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       propertyPath: m_LocalRotation.w
@@ -56,6 +68,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1354411061141904384, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      propertyPath: m_Convex
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -63,6 +79,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4486791629508987517}
+    - targetCorrespondingSourceObject: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8507046972706574451}
+    - targetCorrespondingSourceObject: {fileID: 1308416867274770426, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6993951324317885324}
   m_SourcePrefab: {fileID: 100100000, guid: 6176af45cdfee7a4fac7c2e2bbec9e22, type: 3}
 --- !u!1 &6008611658010270204 stripped
 GameObject:
@@ -87,8 +109,8 @@ MonoBehaviour:
   interactionMode: 0
   passDuration: 5
   waves: 3
-  dropMin: 1
-  dropMax: 3
+  dropMin: 4
+  dropMax: 10
   lastWaveDropScale: 0.6
   holdDurationSeconds: 4
   holdPromptText: 
@@ -99,3 +121,47 @@ MonoBehaviour:
   lootTint: {r: 0.82, g: 0.72, b: 0.35, a: 1}
   lootYieldClipOverride: {fileID: 0}
   lootGrantClipOverride: {fileID: 0}
+--- !u!114 &8507046972706574451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6008611658010270204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6f7b2a3a0c3c2248b6e34f3890da87e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
+  label: Iron Ore
+  color: {r: 1, g: 0.5264092, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  showOnMinimap: 1
+  showOnFullMap: 1
+  keepRegisteredWhenDisabled: 0
+  requiresScanDiscovery: 1
+  discoveryId: 
+  requiresFogReveal: 1
+  useLiveWorldPosition: 0
+  requiresCombatAggro: 0
+--- !u!114 &6993951324317885324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6008611658010270204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b8110982f2d6104eb841a769f6d249e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OutlineController
+  outlineColor: {r: 1, g: 0.07087423, b: 0.020754695, a: 1}
+  alpha: 1
+  thickness: 0.01
+  lookRange: 2
+  lookDotThreshold: 0.72
+  player: {fileID: 0}
+  scannerFalloffDistance: 50
+  scannerOnlyOutline: 1
+  outlineMaterial: {fileID: 0}

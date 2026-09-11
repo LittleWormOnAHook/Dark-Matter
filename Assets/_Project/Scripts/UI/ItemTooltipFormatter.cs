@@ -304,21 +304,22 @@ namespace Project.UI
 
             StringBuilder text = new StringBuilder();
             string stationLabel = recipe.stationType == CraftingStationType.Cooking ? "Cooking" : "Workbench";
-            text.AppendLine($"<color=#C8A2FF><b>{stationLabel} Blueprint</b></color>");
+            text.AppendLine($"<color=#D4A017><b>{stationLabel} Blueprint</b></color>");
+            text.AppendLine($"<color=#8C7F75>Tier {recipe.recipeTier}  ·  Level {Mathf.Max(1, recipe.requiredPlayerLevel)}</color>");
 
             if (pendingScroll)
-                text.AppendLine("<color=#FF9F6E>Right-click to learn</color>");
+                text.AppendLine("<color=#C02E7A>Click Learn to add this blueprint.</color>");
 
             if (!string.IsNullOrWhiteSpace(recipe.description))
             {
                 text.AppendLine();
-                text.AppendLine(recipe.description.Trim());
+                text.AppendLine($"<color=#EDE9E4>{recipe.description.Trim()}</color>");
             }
 
             if (recipe.ingredients != null && recipe.ingredients.Count > 0)
             {
                 text.AppendLine();
-                text.AppendLine("<color=#A0A8B8>Ingredients:</color>");
+                text.AppendLine("<color=#8C7F75>Ingredients:</color>");
                 for (int i = 0; i < recipe.ingredients.Count; i++)
                 {
                     RecipeIngredient ingredient = recipe.ingredients[i];
@@ -326,7 +327,7 @@ namespace Project.UI
                         continue;
 
                     int have = inventory != null ? inventory.CountItem(ingredient.item) : 0;
-                    string color = have >= ingredient.amount ? "#7DDA7D" : "#FF9F6E";
+                    string color = have >= ingredient.amount ? "#6BC77A" : "#C02E7A";
                     text.AppendLine($"  <color={color}>{ingredient.item.itemName} {have}/{ingredient.amount}</color>");
                 }
             }
@@ -334,15 +335,16 @@ namespace Project.UI
             if (recipe.outputItem != null)
             {
                 text.AppendLine();
-                text.AppendLine("<color=#A0A8B8>Creates:</color>");
-                text.AppendLine($"  {recipe.outputAmount}x {recipe.outputItem.itemName}");
+                text.AppendLine("<color=#8C7F75>Creates:</color>");
+                text.AppendLine($"  <color=#EDE9E4>{recipe.outputAmount}x {recipe.outputItem.itemName}</color>");
                 int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
                     recipe.requiredPlayerLevel,
                     recipe.outputItem);
                 if (craftLevel > 1)
                     text.AppendLine($"  <color=#D4A017>Requires level {craftLevel}</color>");
                 AppendItemEffectSummary(text, recipe.outputItem);
-                text.AppendLine("<color=#8890A0><i>Left-click to craft when ingredients are ready.</i></color>");
+                if (!pendingScroll)
+                    text.AppendLine("<color=#8C7F75><i>Craft at a cooking pot or workbench.</i></color>");
             }
 
             return text.ToString().TrimEnd();

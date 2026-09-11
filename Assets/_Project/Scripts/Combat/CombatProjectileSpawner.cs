@@ -107,7 +107,13 @@ namespace Project.Combat
                 if (ammoItem.HasSplashDamage)
                     CombatHitResolver.ApplySplash(ammoItem, hit.point, damage, owner, hit.collider);
 
-                CombatHitResolver.HandleRangedWorldImpact(ammoItem, weapon, hit.point, hit.normal, owner);
+                CombatHitResolver.HandleRangedWorldImpact(
+                    ammoItem,
+                    weapon,
+                    hit.point,
+                    hit.normal,
+                    owner,
+                    hit.collider != null ? hit.collider.gameObject : null);
                 CombatStatusEffect.Apply(ammoItem, hit.collider.gameObject, owner);
             }
 
@@ -128,11 +134,9 @@ namespace Project.Combat
 
         private static GameObject ResolveProjectilePrefab(ItemData weapon, ItemData ammoItem)
         {
-            if (ammoItem != null && ammoItem.projectilePrefab != null)
-                return ammoItem.projectilePrefab;
-
-            if (weapon.projectilePrefab != null)
-                return weapon.projectilePrefab;
+            GameObject fromProfile = DMCombatFx.ResolveProjectile(ammoItem, weapon);
+            if (fromProfile != null)
+                return fromProfile;
 
 #if UNITY_EDITOR
             return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(DefaultProjectilePath);

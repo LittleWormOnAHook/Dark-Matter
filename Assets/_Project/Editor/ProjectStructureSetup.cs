@@ -51,6 +51,7 @@ namespace Project.EditorTools
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombat);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombatEnemies);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombatProjectiles);
+            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombatAmmo);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombatVfx);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCrafting);
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCraftingStations);

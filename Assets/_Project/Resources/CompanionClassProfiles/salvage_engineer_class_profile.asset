@@ -17,10 +17,7 @@ MonoBehaviour:
   deployableSlots: 0
   buffSlots: 1
   toolSlots: 1
-  allowedKinds:
-  - 0
-  - 2
-  - 3
+  allowedKinds: 000000000200000003000000
   defaultWeaponAbilityId: 
   defaultDeployableAbilityId: 
   defaultBuffAbilityId: upkeep_patch

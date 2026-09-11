@@ -26,6 +26,7 @@ namespace Project.EditorTools
         // Combat prefabs
         public const string WeaponPrefabCreator = PrefabCreator + "Weapon Prefab Creator";
         public const string WeaponPrefabCreatorFromSelection = PrefabCreator + "Weapon Prefab Creator From Selection";
+        /// <summary>Legacy redirect — opens Blueprint and Crafting Manager (Ammo tab).</summary>
         public const string ProjectileAmmoCreator = PrefabCreator + "Projectile + Ammo Creator";
         public const string EnemyPrefabCreator = PrefabCreator + "Enemy Prefab Creator";
         public const string PlayerPrefabCreator = PrefabCreator + "Player Prefab Creator";
@@ -61,6 +62,9 @@ namespace Project.EditorTools
 
         public const string Project = Root + "Project/";
         public const string Content = Root + "Content/";
+        public const string Profiles = Root + "Profiles/";
+        /// <summary>Unified profile studio (player, world, combat, crafting, UI, audio).</summary>
+        public const string GenesisStudio = Profiles + "Genesis Studio";
         public const string Crafting = Root + "Crafting/";
         /// <summary>Primary crafting/blueprint editor entry point.</summary>
         public const string BlueprintCraftingManager = Crafting + "Blueprint and Crafting Manager";
@@ -82,11 +86,15 @@ namespace Project.EditorTools
         public const string Ui = Root + "UI/";
         public const string Scene = Root + "Scene/";
         public const string Ppt = Root + "PPT/";
+        public const string RefreshAllMapMarkers = Scene + "Refresh All Map Markers";
         public const string PlaceExposureStarterKit = Scene + "Place Exposure Starter Kit (Open Scene)";
         public const string PlaceExposureStarterKitInPioneer = Scene + "Place Exposure Starter Kit In Pioneer.unity";
         public const string Audio = Root + "Audio/";
         public const string Optics = Root + "Optics/";
         public const string Maintenance = Root + "Maintenance/";
+        public const string TextureStreaming = Root + "Texture Streaming/";
+        public const string TextureStreamingPreview = TextureStreaming + "Preview Gameplay Streaming";
+        public const string TextureStreamingApply = TextureStreaming + "Apply Gameplay Streaming";
         public const string Hdrp = Root + "HDRP/";
         public const string Hierarchy = Root + "Hierarchy/";
         public const string HierarchySortChildren = Hierarchy + "Sort Children/";

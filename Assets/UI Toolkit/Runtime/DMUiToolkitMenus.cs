@@ -1225,6 +1225,8 @@ namespace Project.UI
 
             RefreshInventoryStorage();
             RefreshInventoryHotbar();
+            if (paintedWindow == JournalWindowId.Recipes)
+                ApplyBlueprintCraft();
         }
 
         private void EnsureInventorySlots(int count)
@@ -1355,8 +1357,9 @@ namespace Project.UI
 
                     VisualElement dot = EnsureMarker(written);
                     Vector2 uv = provider.WorldToPlayerMap01(marker.WorldPosition);
-                    PlaceOnMap(dot, fitted, uv, 10f);
-                    ApplyMapPoiDot(dot, marker, 10f, centerWithNegativeMargin: false);
+                    float markerSize = ResolveFullMapMarkerLocalSize();
+                    PlaceOnMap(dot, fitted, uv, markerSize);
+                    ApplyMapPoiDot(dot, marker, markerSize, centerWithNegativeMargin: false);
 
                     written++;
                 }
@@ -1392,7 +1395,7 @@ namespace Project.UI
                 ? mapUi.MinimapPlayerWorldPosition
                 : player.transform.position;
             Vector2 uv = provider.WorldToMap01(worldPos) + provider.MapPlayerIconUvOffset;
-            float iconSize = provider.MapPlayerIconSizePixels;
+            float iconSize = ResolveFullMapPlayerLocalSize();
             PlaceOnMap(mapPlayer, fitted, uv, iconSize);
             float iconBase = provider.MapPlayerIconBaseDegrees;
             float facingYaw = mapUi != null
@@ -1642,6 +1645,7 @@ namespace Project.UI
             mapPan = Vector2.zero;
             mapPanning = false;
             ApplyMapTransform();
+            RefreshMapMarkers();
         }
 
         private void ApplyMapTransform()
@@ -1653,24 +1657,79 @@ namespace Project.UI
             mapImage.style.translate = new Translate(mapPan.x, mapPan.y, 0f);
         }
 
+        private float ResolvePlayableWorldSpan()
+        {
+            WorldMapProvider provider = boundMap != null ? boundMap : WorldMapProvider.Instance;
+            if (provider != null)
+            {
+                float span = provider.GetPlayableWorldSpan();
+                if (span > 1f)
+                    return span;
+            }
+
+            return WorldMapProvider.MultiTerrainWorldSizeMeters;
+        }
+
+        private float ResolveJournalMapMaxZoom()
+        {
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            return profile != null
+                ? profile.GetFullMapMaxZoomMultiplier(ResolvePlayableWorldSpan())
+                : 4f;
+        }
+
+        private float ResolveFullMapMarkerScreenPixels()
+        {
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            return profile != null ? profile.fullMapMarkerScreenPixels : 7f;
+        }
+
+        private float ResolveFullMapPlayerScreenPixels()
+        {
+            DMWorldMapCalibrationProfile profile = DMWorldMapCalibrationProfile.LoadDefault();
+            return profile != null ? profile.fullMapPlayerScreenPixels : 10f;
+        }
+
+        private float ResolveFullMapMarkerLocalSize()
+        {
+            return ResolveFullMapMarkerScreenPixels() / Mathf.Max(1f, mapZoom);
+        }
+
+        private float ResolveFullMapPlayerLocalSize()
+        {
+            return ResolveFullMapPlayerScreenPixels() / Mathf.Max(1f, mapZoom);
+        }
+
         private void OnMapWheel(WheelEvent evt)
         {
             if (mapImage == null)
                 return;
 
+            float oldZoom = mapZoom;
             float factor = evt.delta.y < 0f ? 1.12f : 0.89f;
-            float next = Mathf.Clamp(mapZoom * factor, 1f, 4f);
-            if (Mathf.Approximately(next, mapZoom))
+            float next = Mathf.Clamp(mapZoom * factor, 1f, ResolveJournalMapMaxZoom());
+            if (Mathf.Approximately(next, oldZoom))
                 return;
 
+            float mapWidth = mapImage.resolvedStyle.width;
+            float mapHeight = mapImage.resolvedStyle.height;
             mapZoom = next;
             if (mapZoom <= 1.01f)
             {
                 mapZoom = 1f;
                 mapPan = Vector2.zero;
             }
+            else if (mapWidth > 1f && mapHeight > 1f)
+            {
+                Vector2 localMouse = mapImage.WorldToLocal(evt.mousePosition);
+                Vector2 center = new Vector2(mapWidth * 0.5f, mapHeight * 0.5f);
+                Vector2 fromCenter = localMouse - center;
+                Vector2 contentPoint = (fromCenter - mapPan) / Mathf.Max(1f, oldZoom);
+                mapPan = fromCenter - contentPoint * mapZoom;
+            }
 
             ApplyMapTransform();
+            RefreshMapMarkers();
             evt.StopPropagation();
         }
 

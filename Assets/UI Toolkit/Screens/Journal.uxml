@@ -62,7 +62,7 @@
                             <ui:VisualElement name="map-player" class="dmg-map-player" picking-mode="Ignore" />
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:Label name="map-title" text="MAP  ·  drag to pan  ·  wheel to zoom" picking-mode="Ignore" class="dmg-map-title" />
+                    <ui:Label name="map-title" text="MAP  ·  drag to pan  ·  wheel zooms at cursor" picking-mode="Ignore" class="dmg-map-title" />
                 </ui:VisualElement>
                 <ui:VisualElement name="pet-body" class="dmg-panel-body" picking-mode="Position">
                     <ui:Label name="pet-title" text="PETS" picking-mode="Ignore" class="dmg-section-title" />
@@ -118,12 +118,35 @@
                         <ui:Label name="blueprints-title" text="BLUEPRINTS" picking-mode="Ignore" class="dmg-section-title" />
                         <ui:Label name="blueprints-summary" text="No learned blueprints yet." picking-mode="Ignore" class="dmg-hint" />
                         <ui:Label name="pending-heading" text="Pending Blueprints" picking-mode="Ignore" class="dmg-gold-heading" />
-                        <ui:ScrollView name="blueprints-pending" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                        <ui:ScrollView name="blueprints-pending" class="dmg-scroll dmg-bp-list" picking-mode="Position" />
                         <ui:Label name="learned-heading" text="Learned Blueprints" picking-mode="Ignore" class="dmg-gold-heading" />
-                        <ui:ScrollView name="blueprints-learned" class="dmg-scroll dmg-log-panel" picking-mode="Position" />
+                        <ui:ScrollView name="blueprints-learned" class="dmg-scroll dmg-bp-list" picking-mode="Position" />
                     </ui:VisualElement>
                     <ui:VisualElement name="blueprints-right" class="dmg-split-right" picking-mode="Position">
-                        <ui:Label name="blueprints-detail" text="Select a pending scroll to learn, or a learned blueprint to inspect. Craft at a cooking pot or workbench." picking-mode="Ignore" class="dmg-quest-body" />
+                        <ui:Label name="blueprints-lib-heading" text="Blueprint Library" picking-mode="Ignore" class="dmg-gold-heading" />
+                        <ui:VisualElement name="blueprints-lib-tabs" class="dmg-bp-tab-rail" picking-mode="Position">
+                            <ui:Button name="bp-tab-all" text="All" picking-mode="Position" class="dmg-subtab dmg-bp-tab dmg-subtab--active" />
+                            <ui:Button name="bp-tab-cooking" text="Cooking" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-workbench" text="Workbench" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-consumables" text="Consumables" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-weapons" text="Weapons" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-ammo" text="Ammo" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-resources" text="Resources" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                            <ui:Button name="bp-tab-other" text="Other" picking-mode="Position" class="dmg-subtab dmg-bp-tab" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="blueprints-library" class="dmg-scroll dmg-bp-list" picking-mode="Position" />
+                        <ui:VisualElement name="blueprints-craft" class="dmg-bp-craft" picking-mode="Position">
+                            <ui:Label name="blueprints-detail" text="Select a learned blueprint to inspect and craft." picking-mode="Ignore" class="dmg-bp-craft-title" />
+                            <ui:Label name="bp-craft-meta" text="" picking-mode="Ignore" class="dmg-bp-craft-meta" />
+                            <ui:VisualElement name="bp-craft-ings" picking-mode="Ignore" class="dmg-bp-craft-ings" />
+                            <ui:Label name="bp-craft-output" text="" picking-mode="Ignore" class="dmg-bp-craft-output" />
+                            <ui:VisualElement name="bp-craft-amount-row" picking-mode="Position" class="dmg-bp-craft-amount-row">
+                                <ui:Label name="bp-craft-amount-label" text="Amount" picking-mode="Ignore" class="dmg-bp-craft-amount-label" />
+                                <ui:SliderInt name="bp-craft-amount" low-value="1" high-value="1" picking-mode="Position" class="dmg-bp-craft-slider" />
+                                <ui:Label name="bp-craft-amount-value" text="1" picking-mode="Ignore" class="dmg-bp-craft-amount-value" />
+                            </ui:VisualElement>
+                            <ui:Button name="bp-craft-confirm" text="Craft" picking-mode="Position" class="dmg-bp-craft-btn" />
+                        </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="skills-body" class="dmg-split-body" picking-mode="Position">

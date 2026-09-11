@@ -1,5 +1,8 @@
 using Project.AI;
+using Project.Companions;
+using Project.Events;
 using Project.Map;
+using Project.Quests;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -31,6 +34,30 @@ namespace Project.Interaction
                     rule.outlineColor = scannable.ScanColor;
                     return true;
                 }
+            }
+
+            QuestGiverNpc questNpc = targetObject.GetComponentInParent<QuestGiverNpc>();
+            if (questNpc != null)
+            {
+                label = questNpc.DisplayName;
+                if (profile.TryGetRuleForCategory(ScannerTargetCategory.Quest, out rule))
+                    return true;
+            }
+
+            DmEvents cache = targetObject.GetComponentInParent<DmEvents>();
+            if (cache != null || targetObject.GetComponentInParent<DMItemCollection>() != null)
+            {
+                label = scannable != null ? scannable.ScanLabel : "Cache";
+                if (profile.TryGetRuleForCategory(ScannerTargetCategory.Loot, out rule))
+                    return true;
+            }
+
+            PioneerCompanionAgent companion = targetObject.GetComponentInParent<PioneerCompanionAgent>();
+            if (companion != null)
+            {
+                label = companion.name;
+                if (profile.TryGetRuleForCategory(ScannerTargetCategory.Quest, out rule))
+                    return true;
             }
 
             ResourceNode resourceNode = targetObject.GetComponentInParent<ResourceNode>();

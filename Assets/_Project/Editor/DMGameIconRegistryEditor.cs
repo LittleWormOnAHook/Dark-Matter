@@ -104,7 +104,8 @@ namespace Project.EditorTools
                     || importer.mipmapEnabled
                     || !importer.alphaIsTransparency
                     || importer.npotScale != TextureImporterNPOTScale.None
-                    || importer.wrapMode != TextureWrapMode.Clamp;
+                    || importer.wrapMode != TextureWrapMode.Clamp
+                    || DMTextureImporterEditorUtility.GetSpriteGenerateFallbackPhysicsShape(importer);
 
                 if (!dirty)
                     continue;
@@ -115,6 +116,7 @@ namespace Project.EditorTools
                 importer.alphaIsTransparency = true;
                 importer.npotScale = TextureImporterNPOTScale.None;
                 importer.wrapMode = TextureWrapMode.Clamp;
+                DMTextureImporterEditorUtility.SetSpriteGenerateFallbackPhysicsShape(importer, false);
                 importer.SaveAndReimport();
                 changed++;
             }
@@ -186,6 +188,18 @@ namespace Project.EditorTools
                 if (n.IndexOf("plasma", System.StringComparison.OrdinalIgnoreCase) >= 0
                     && n.IndexOf("ammo", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     return "DM_Blueprint_Plasma_Ammo";
+                if (n.IndexOf("ice", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Ice_Ammo";
+                if (n.IndexOf("fire", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Fire_Ammo";
+                if (n.IndexOf("electric", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Electricity_Ammo";
+                if (n.IndexOf("explosive", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Explosive_Ammo";
+                if (n.IndexOf("ion", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Ion_Ammo";
+                if (n.IndexOf("resonance", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "DM_Blueprint_Resonance_Stabilizer";
                 if (n.IndexOf("rifle", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     return "DM_Blueprint_Survival_Rifle";
                 if (n.IndexOf("quora", System.StringComparison.OrdinalIgnoreCase) >= 0)
@@ -210,6 +224,18 @@ namespace Project.EditorTools
             if (n.IndexOf("laser", System.StringComparison.OrdinalIgnoreCase) >= 0
                 && n.IndexOf("ammo", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Laser Ammo";
+            if (n.Equals("Ice", System.StringComparison.OrdinalIgnoreCase))
+                return "Ice";
+            if (n.Equals("Fire", System.StringComparison.OrdinalIgnoreCase))
+                return "Fire";
+            if (n.Equals("Electricity", System.StringComparison.OrdinalIgnoreCase))
+                return "Electricity";
+            if (n.Equals("Explosive", System.StringComparison.OrdinalIgnoreCase))
+                return "Explosive";
+            if (n.Equals("Ion", System.StringComparison.OrdinalIgnoreCase))
+                return "Ion";
+            if (n.IndexOf("resonance", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Resonance Stabilizer";
             if (n.IndexOf("pistol", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Pistol";
             if (n.IndexOf("grenade", System.StringComparison.OrdinalIgnoreCase) >= 0)

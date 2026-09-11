@@ -162,37 +162,38 @@
 .dmg-hz-banner {
     position: absolute;
     left: 50%;
-    top: 42%;
-    width: 280px;
-    height: 64px;
-    margin-left: -140px;
-    margin-top: -32px;
-    background-color: rgba(20, 30, 40, 0.9);
-    border-width: 1px;
-    border-color: rgb(192, 46, 122);
+    top: 33.333%;
+    width: 520px;
+    height: auto;
+    margin-left: -260px;
+    margin-top: 0;
+    flex-direction: column;
     align-items: center;
-    padding: 8px 12px;
+    justify-content: flex-start;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
 }
 
 .dmg-hz-banner-accent {
-    position: absolute;
-    left: 10%;
-    right: 10%;
-    top: 0;
-    height: 2px;
-    background-color: rgb(192, 46, 122);
+    display: none;
+    width: 0;
+    height: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .dmg-hz-banner-heading {
     margin-top: 6px;
-    font-size: 10px;
+    font-size: 13px;
     color: rgb(140, 127, 117);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
+    letter-spacing: 1px;
 }
 
 .dmg-hz-banner-name {
-    font-size: 16px;
+    margin-top: 2px;
+    font-size: 24px;
     color: rgb(237, 233, 228);
     -unity-font-style: bold;
     -unity-text-align: middle-center;

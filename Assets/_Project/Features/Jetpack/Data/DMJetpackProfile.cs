@@ -15,7 +15,7 @@ namespace Project.Features.Jetpack
         [Min(0f)] public float releaseRegenBonusSeconds = 1f;
         [Min(0f)] public float regenSecondsPerSecond = 0.35f;
         [Tooltip("Survival energy (power) spent per second while boosting.")]
-        [Min(0f)] public float energyDrainPerSecond = 10f;
+        [Min(0f)] public float energyDrainPerSecond = 0.5f;
 
         [Header("Vertical Thrust")]
         [Tooltip("Target upward speed while holding boost (m/s).")]

@@ -10,6 +10,7 @@ using Project.Echoes;
 using Project.Interaction;
 using Project.Inventory;
 using Project.Map;
+using Project.Pet;
 using Project.Player;
 using Project.Quests;
 using UnityEngine;
@@ -57,6 +58,12 @@ namespace Project.UI
         private bool uguiHidden;
         private float nextInteractScan;
         private float nextExclusivePickupScan;
+        private int interactScanRevision;
+        private int lastPaintInteractRevision = -1;
+        private int lastPaintDotCount = -1;
+        private Vector3 lastPaintCamPos = new Vector3(float.MaxValue, 0f, 0f);
+        private Quaternion lastPaintCamRot = Quaternion.identity;
+        private Vector3 lastPaintPlayerPos = new Vector3(float.MaxValue, 0f, 0f);
         private bool hasExclusiveDot;
         private WorldDot exclusiveDot;
         private bool panelYFlipResolved;
@@ -175,7 +182,13 @@ namespace Project.UI
             panelYFlipResolved = false;
             CollectDots();
             if (pendingDots.Count > 0)
-                PaintDots();
+            {
+                if (ShouldRepaintDots())
+                {
+                    PaintDots();
+                    NotePaintSnapshot();
+                }
+            }
             else
                 RecycleDots(0);
             PaintBars();
@@ -240,6 +253,7 @@ namespace Project.UI
                 nextInteractScan = Time.unscaledTime + InteractionScanInterval;
                 cachedInteractDots.Clear();
                 CollectInteractionDots(player, cachedInteractDots);
+                interactScanRevision++;
             }
 
             pendingDots.Clear();
@@ -527,6 +541,17 @@ namespace Project.UI
                     continue;
                 into.Add(MakeStemDot(echo.transform.position, ProximityDotStyle.EchoColor, InteractStemMeters));
             }
+
+            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>();
+            for (int i = 0; i < adoptables.Length; i++)
+            {
+                PetWorldAdoptable adoptable = adoptables[i];
+                if (adoptable == null)
+                    continue;
+                if ((adoptable.transform.position - player.position).sqrMagnitude > adoptable.InteractRange * adoptable.InteractRange)
+                    continue;
+                into.Add(MakeStemDot(adoptable.transform.position, ProximityDotStyle.PetColor, 0.55f));
+            }
         }
 
         /// <summary>
@@ -652,6 +677,53 @@ namespace Project.UI
             if (WorldPickupFocus.Harvest != null)
                 return WorldPickupFocus.Harvest.GetEntityId().GetHashCode();
             return 0;
+        }
+
+        private bool ShouldRepaintDots()
+        {
+            if (hasExclusiveDot)
+                return true;
+
+            if (pendingDots.Count != lastPaintDotCount)
+                return true;
+
+            if (interactScanRevision != lastPaintInteractRevision)
+                return true;
+
+            Transform player = playerTransform;
+            if (player != null && (player.position - lastPaintPlayerPos).sqrMagnitude > 0.0004f)
+                return true;
+
+            Camera camera = worldCamera;
+            if (camera == null)
+                return true;
+
+            Transform cam = camera.transform;
+            if ((cam.position - lastPaintCamPos).sqrMagnitude > 0.0004f)
+                return true;
+
+            if (Quaternion.Angle(cam.rotation, lastPaintCamRot) > 0.08f)
+                return true;
+
+            return false;
+        }
+
+        private void NotePaintSnapshot()
+        {
+            lastPaintDotCount = pendingDots.Count;
+            lastPaintInteractRevision = interactScanRevision;
+
+            Transform player = playerTransform;
+            if (player != null)
+                lastPaintPlayerPos = player.position;
+
+            Camera camera = worldCamera;
+            if (camera != null)
+            {
+                Transform cam = camera.transform;
+                lastPaintCamPos = cam.position;
+                lastPaintCamRot = cam.rotation;
+            }
         }
 
         /// <summary>

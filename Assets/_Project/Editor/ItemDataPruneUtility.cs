@@ -14,7 +14,7 @@ namespace Project.EditorTools
     {
         public static void Prune(ItemData item)
         {
-            if (item == null || item is MineHarvestItemData)
+            if (item == null || item is MineHarvestItemData || item is DMAmmoFxProfile)
                 return;
 
             ItemDataInspectorCategory category = ItemDataInspectorCategoryResolver.Resolve(item);
@@ -23,7 +23,7 @@ namespace Project.EditorTools
 
         public static void Prune(ItemData item, ItemDataInspectorCategory category)
         {
-            if (item == null || item is MineHarvestItemData)
+            if (item == null || item is MineHarvestItemData || item is DMAmmoFxProfile)
                 return;
 
             switch (category)
@@ -342,6 +342,7 @@ namespace Project.EditorTools
             item.projectileGravityScale = 0f;
             item.splashRadius = 0f;
             item.splashDamageFalloff = 0f;
+            item.fxProfile = null;
             item.muzzleFlashPrefab = null;
             item.tracerPrefab = null;
             item.impactVfxPrefab = null;

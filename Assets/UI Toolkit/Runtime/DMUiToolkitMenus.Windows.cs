@@ -43,7 +43,32 @@ namespace Project.UI
         private Label blueprintsSummary;
         private ScrollView blueprintsPending;
         private ScrollView blueprintsLearned;
+        private Label learnedHeading;
+        private VisualElement blueprintsLibTabs;
+        private ScrollView blueprintsLibrary;
         private Label blueprintsDetail;
+        private Label blueprintCraftMeta;
+        private VisualElement blueprintCraftIngs;
+        private Label blueprintCraftOutput;
+        private SliderInt blueprintCraftAmount;
+        private Label blueprintCraftAmountValue;
+        private Button blueprintCraftConfirm;
+        private readonly Dictionary<BlueprintLibraryGroup, Button> blueprintTabs =
+            new Dictionary<BlueprintLibraryGroup, Button>();
+        private BlueprintLibraryGroup blueprintLibraryGroup = BlueprintLibraryGroup.All;
+        private bool blueprintCraftWired;
+
+        private enum BlueprintLibraryGroup
+        {
+            All,
+            Cooking,
+            Workbench,
+            Consumables,
+            Weapons,
+            Ammo,
+            Resources,
+            Other
+        }
         private Label skillsSummary;
         private readonly Dictionary<SkillTreeCategory, Button> skillCats = new Dictionary<SkillTreeCategory, Button>();
         private ScrollView skillsList;
@@ -113,7 +138,20 @@ namespace Project.UI
             blueprintsSummary = tree.Q<Label>("blueprints-summary");
             blueprintsPending = tree.Q<ScrollView>("blueprints-pending");
             blueprintsLearned = tree.Q<ScrollView>("blueprints-learned");
+            learnedHeading = tree.Q<Label>("learned-heading");
+            blueprintsLibTabs = tree.Q<VisualElement>("blueprints-lib-tabs");
+            blueprintsLibrary = tree.Q<ScrollView>("blueprints-library");
             blueprintsDetail = tree.Q<Label>("blueprints-detail");
+            blueprintCraftMeta = tree.Q<Label>("bp-craft-meta");
+            blueprintCraftIngs = tree.Q<VisualElement>("bp-craft-ings");
+            blueprintCraftOutput = tree.Q<Label>("bp-craft-output");
+            blueprintCraftAmount = tree.Q<SliderInt>("bp-craft-amount");
+            blueprintCraftAmountValue = tree.Q<Label>("bp-craft-amount-value");
+            blueprintCraftConfirm = tree.Q<Button>("bp-craft-confirm");
+            BindBlueprintLibraryTabs(tree);
+            WireBlueprintCraft();
+            DMUiToolkitOverlayDocument.SetShown(learnedHeading, false);
+            DMUiToolkitOverlayDocument.SetShown(blueprintsLearned, false);
             skillsSummary = tree.Q<Label>("skills-summary");
             skillsList = tree.Q<ScrollView>("skills-list");
             skillsDetailTitle = tree.Q<Label>("skills-detail-title");
@@ -704,12 +742,13 @@ namespace Project.UI
 
         private void RefreshBlueprints()
         {
-            if (blueprintsPending == null || blueprintsLearned == null)
+            if (blueprintsPending == null)
                 return;
 
             boundCrafting ??= CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
             blueprintsPending.Clear();
-            blueprintsLearned.Clear();
+            if (blueprintsLibrary != null)
+                blueprintsLibrary.Clear();
             if (boundCrafting == null)
             {
                 blueprintsPending.Add(MakeEmpty("No crafting manager."));
@@ -721,87 +760,116 @@ namespace Project.UI
             if (blueprintsSummary != null)
             {
                 blueprintsSummary.text = pending.Count + " pending  ·  " + learned.Count +
-                    " learned  ·  Craft at a cooking pot or workbench.";
+                    " learned  ·  Craft from the library on the right.";
             }
 
             if (pending.Count == 0)
-            {
                 blueprintsPending.Add(MakeEmpty("No pending blueprint scrolls."));
-            }
             else
             {
                 for (int i = 0; i < pending.Count; i++)
-                    blueprintsPending.Add(MakePendingRow(pending[i], i));
+                    blueprintsPending.Add(MakePendingRow(pending[i]));
             }
 
-            if (learned.Count == 0)
-            {
-                blueprintsLearned.Add(MakeEmpty("No learned blueprints yet."));
-            }
-            else
+            int shown = 0;
+            if (blueprintsLibrary != null)
             {
                 for (int i = 0; i < learned.Count; i++)
-                    blueprintsLearned.Add(MakeLearnedRow(learned[i]));
+                {
+                    RecipeDefinition recipe = learned[i];
+                    if (!MatchesLibraryGroup(recipe, blueprintLibraryGroup))
+                        continue;
+                    blueprintsLibrary.Add(MakeLearnedRow(recipe));
+                    shown++;
+                }
+
+                if (shown == 0)
+                    blueprintsLibrary.Add(MakeEmpty("No learned blueprints in this group yet."));
             }
 
-            ApplyBlueprintDetail();
+            foreach (KeyValuePair<BlueprintLibraryGroup, Button> pair in blueprintTabs)
+                pair.Value.EnableInClassList("dmg-subtab--active", pair.Key == blueprintLibraryGroup);
+
+            ApplyBlueprintCraft();
         }
 
-        private VisualElement MakePendingRow(string recipeId, int index)
+        private VisualElement MakePendingRow(string recipeId)
         {
             RecipeDefinition recipe = RecipeRegistry.Resolve(recipeId);
             string title = recipe != null && !string.IsNullOrEmpty(recipe.displayName) ? recipe.displayName : recipeId;
-            VisualElement row = new VisualElement();
-            row.AddToClassList("dmg-log-card");
-            Label heading = new Label("Pending Scroll");
-            heading.AddToClassList("dmg-log-heading");
-            heading.style.color = DarkMatterGenesisUiPalette.Gold;
-            row.Add(heading);
-            Label name = new Label(title);
-            name.AddToClassList("dmg-log-title");
-            row.Add(name);
-            Button learn = new Button();
-            learn.text = "Learn";
-            learn.AddToClassList("dmg-learn-btn");
-            int captured = index;
-            string capturedId = recipeId;
-            learn.clicked += () => LearnPendingScroll(captured, capturedId);
-            row.Add(learn);
+            VisualElement card = MakeBlueprintCard(recipe, title, "Pending scroll");
+            Button learn = new Button { text = "Learn" };
+            learn.AddToClassList("dmg-bp-learn");
+            string capturedId = recipe != null ? recipe.ResolvedId : recipeId;
+            learn.clicked += () => LearnPendingScroll(capturedId);
+            learn.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            card.Add(learn);
 
-            string selectId = recipeId;
-            row.RegisterCallback<ClickEvent>(_ =>
+            card.RegisterCallback<ClickEvent>(_ =>
             {
-                selectedRecipeId = selectId;
+                selectedRecipeId = capturedId;
                 selectedRecipePending = true;
                 ApplyBlueprintDetail();
             });
-            AttachBlueprintHover(row, recipe ?? RecipeRegistry.Resolve(recipeId), pendingScroll: true);
-            return row;
+            AttachBlueprintHover(card, recipe, pendingScroll: true);
+            return card;
         }
 
         private VisualElement MakeLearnedRow(RecipeDefinition recipe)
         {
-            Button row = new Button();
-            row.AddToClassList("dmg-list-row");
-            bool selected = recipe.ResolvedId == selectedRecipeId && !selectedRecipePending;
-            row.EnableInClassList("dmg-list-row--selected", selected);
-            Label title = new Label(recipe.displayName);
-            title.AddToClassList("dmg-list-row-title");
-            title.pickingMode = PickingMode.Ignore;
-            row.Add(title);
-            Label sub = new Label(recipe.stationType + "  ·  Tier " + recipe.recipeTier);
-            sub.AddToClassList("dmg-list-row-sub");
-            sub.pickingMode = PickingMode.Ignore;
-            row.Add(sub);
-            string captured = recipe.ResolvedId;
-            row.clicked += () =>
+            string title = recipe != null && !string.IsNullOrEmpty(recipe.displayName)
+                ? recipe.displayName
+                : "Blueprint";
+            string sub = recipe != null
+                ? recipe.stationType + "  ·  Tier " + recipe.recipeTier
+                : string.Empty;
+            VisualElement card = MakeBlueprintCard(recipe, title, sub);
+            bool selected = recipe != null && recipe.ResolvedId == selectedRecipeId && !selectedRecipePending;
+            card.EnableInClassList("dmg-bp-card--selected", selected);
+            string captured = recipe != null ? recipe.ResolvedId : string.Empty;
+            card.RegisterCallback<ClickEvent>(_ =>
             {
                 selectedRecipeId = captured;
                 selectedRecipePending = false;
                 RefreshBlueprints();
-            };
-            AttachBlueprintHover(row, recipe, pendingScroll: false);
-            return row;
+            });
+            AttachBlueprintHover(card, recipe, pendingScroll: false);
+            return card;
+        }
+
+        private static VisualElement MakeBlueprintCard(
+            RecipeDefinition recipe,
+            string title,
+            string subtitle)
+        {
+            VisualElement card = new VisualElement();
+            card.AddToClassList("dmg-bp-card");
+
+            VisualElement icon = new VisualElement();
+            icon.AddToClassList("dmg-bp-card-icon");
+            icon.pickingMode = PickingMode.Ignore;
+            Sprite sprite = recipe != null ? recipe.DisplayIcon : null;
+            if (sprite != null)
+                DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit);
+            card.Add(icon);
+
+            VisualElement text = new VisualElement();
+            text.AddToClassList("dmg-bp-card-text");
+            text.pickingMode = PickingMode.Ignore;
+            Label name = new Label(title);
+            name.AddToClassList("dmg-bp-card-name");
+            name.pickingMode = PickingMode.Ignore;
+            text.Add(name);
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                Label sub = new Label(subtitle);
+                sub.AddToClassList("dmg-bp-card-sub");
+                sub.pickingMode = PickingMode.Ignore;
+                text.Add(sub);
+            }
+
+            card.Add(text);
+            return card;
         }
 
         private void AttachBlueprintHover(VisualElement target, RecipeDefinition recipe, bool pendingScroll)
@@ -810,18 +878,23 @@ namespace Project.UI
                 return;
 
             target.RegisterCallback<PointerEnterEvent>(_ =>
-                DMUiToolkitWorldMenus.TryShowRecipeTooltip(recipe, CurrentPointerScreenPosition(), pendingScroll, boundInventory));
+                DMUiToolkitWorldMenus.TryShowRecipeTooltip(
+                    recipe,
+                    CurrentPointerScreenPosition(),
+                    pendingScroll,
+                    boundInventory,
+                    blueprintsBody));
             target.RegisterCallback<PointerLeaveEvent>(_ => DMUiToolkitWorldMenus.HideRecipeTooltip());
         }
 
-        private void LearnPendingScroll(int index, string recipeId)
+        private void LearnPendingScroll(string recipeId)
         {
             boundCrafting ??= CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
             if (boundCrafting == null)
                 return;
 
             RecipeDefinition recipe = RecipeRegistry.Resolve(recipeId);
-            if (!boundCrafting.TryLearnPendingScrollAt(index))
+            if (!boundCrafting.TryLearnPendingScroll(recipeId))
                 return;
 
             string recipeName = recipe != null && !string.IsNullOrEmpty(recipe.displayName)
@@ -833,45 +906,246 @@ namespace Project.UI
             RefreshBlueprints();
         }
 
-        private void ApplyBlueprintDetail()
+        private void BindBlueprintLibraryTabs(VisualElement tree)
         {
-            if (blueprintsDetail == null)
+            BindBlueprintTab("bp-tab-all", BlueprintLibraryGroup.All, tree);
+            BindBlueprintTab("bp-tab-cooking", BlueprintLibraryGroup.Cooking, tree);
+            BindBlueprintTab("bp-tab-workbench", BlueprintLibraryGroup.Workbench, tree);
+            BindBlueprintTab("bp-tab-consumables", BlueprintLibraryGroup.Consumables, tree);
+            BindBlueprintTab("bp-tab-weapons", BlueprintLibraryGroup.Weapons, tree);
+            BindBlueprintTab("bp-tab-ammo", BlueprintLibraryGroup.Ammo, tree);
+            BindBlueprintTab("bp-tab-resources", BlueprintLibraryGroup.Resources, tree);
+            BindBlueprintTab("bp-tab-other", BlueprintLibraryGroup.Other, tree);
+        }
+
+        private void BindBlueprintTab(string name, BlueprintLibraryGroup group, VisualElement tree)
+        {
+            Button button = tree.Q<Button>(name);
+            if (button == null)
                 return;
 
+            blueprintTabs[group] = button;
+            button.userData = group;
+            button.UnregisterCallback<ClickEvent>(OnBlueprintTabClicked);
+            button.RegisterCallback<ClickEvent>(OnBlueprintTabClicked);
+        }
+
+        private void OnBlueprintTabClicked(ClickEvent evt)
+        {
+            if (evt.currentTarget is not Button button || button.userData is not BlueprintLibraryGroup group)
+                return;
+
+            evt.StopPropagation();
+            GameAudioManager.Instance?.PlayUiHoverTick();
+            blueprintLibraryGroup = group;
+            RefreshBlueprints();
+        }
+
+        private void WireBlueprintCraft()
+        {
+            if (blueprintCraftWired)
+                return;
+
+            if (blueprintCraftConfirm != null)
+                blueprintCraftConfirm.clicked += OnBlueprintCraftClicked;
+            if (blueprintCraftAmount != null)
+                blueprintCraftAmount.RegisterValueChangedCallback(OnBlueprintCraftAmountChanged);
+            blueprintCraftWired = true;
+        }
+
+        private void OnBlueprintCraftAmountChanged(ChangeEvent<int> evt)
+        {
+            if (blueprintCraftAmountValue != null)
+                blueprintCraftAmountValue.text = evt.newValue.ToString();
+            ApplyBlueprintCraft();
+        }
+
+        private void OnBlueprintCraftClicked()
+        {
+            if (selectedRecipePending)
+                return;
+
+            boundCrafting ??= CraftingManager.Instance ?? FindAnyObjectByType<CraftingManager>();
+            RecipeDefinition recipe = RecipeRegistry.Resolve(selectedRecipeId);
+            if (boundCrafting == null || recipe == null || boundInventory == null)
+                return;
+
+            int amount = blueprintCraftAmount != null ? Mathf.Max(1, blueprintCraftAmount.value) : 1;
+            if (!boundCrafting.TryCraft(recipe, boundInventory, amount, requireStation: false))
+                return;
+
+            PickupToastUI.Show("Crafted: " + ResolveBlueprintName(recipe));
+            RefreshBlueprints();
+        }
+
+        private static bool MatchesLibraryGroup(RecipeDefinition recipe, BlueprintLibraryGroup group)
+        {
+            if (recipe == null)
+                return false;
+
+            ItemType type = recipe.outputItem != null ? recipe.outputItem.itemType : ItemType.Quest;
+            return group switch
+            {
+                BlueprintLibraryGroup.All => true,
+                BlueprintLibraryGroup.Cooking => recipe.stationType == CraftingStationType.Cooking,
+                BlueprintLibraryGroup.Workbench => recipe.stationType == CraftingStationType.Workbench,
+                BlueprintLibraryGroup.Consumables => type == ItemType.Consumable,
+                BlueprintLibraryGroup.Weapons => type == ItemType.MeleeWeapon || type == ItemType.RangedWeapon,
+                BlueprintLibraryGroup.Ammo => type == ItemType.Ammo,
+                BlueprintLibraryGroup.Resources => type == ItemType.Resource,
+                BlueprintLibraryGroup.Other => type != ItemType.Consumable
+                    && type != ItemType.MeleeWeapon
+                    && type != ItemType.RangedWeapon
+                    && type != ItemType.Ammo
+                    && type != ItemType.Resource,
+                _ => true
+            };
+        }
+
+        private static string ResolveBlueprintName(RecipeDefinition recipe)
+        {
+            if (recipe == null)
+                return "Blueprint";
+            if (!string.IsNullOrWhiteSpace(recipe.displayName))
+                return recipe.displayName;
+            if (recipe.outputItem != null && !string.IsNullOrEmpty(recipe.outputItem.itemName))
+                return recipe.outputItem.itemName;
+            return recipe.ResolvedId;
+        }
+
+        private void ApplyBlueprintDetail()
+        {
+            ApplyBlueprintCraft();
+        }
+
+        private void ApplyBlueprintCraft()
+        {
             RecipeDefinition recipe = RecipeRegistry.Resolve(selectedRecipeId);
             if (recipe == null)
             {
-                blueprintsDetail.text = "Select a pending scroll to learn, or a learned blueprint to inspect. Craft at a cooking pot or workbench.";
+                if (blueprintsDetail != null)
+                    blueprintsDetail.text = "Select a learned blueprint to inspect and craft.";
+                if (blueprintCraftMeta != null)
+                    blueprintCraftMeta.text = string.Empty;
+                if (blueprintCraftIngs != null)
+                    blueprintCraftIngs.Clear();
+                if (blueprintCraftOutput != null)
+                    blueprintCraftOutput.text = string.Empty;
+                if (blueprintCraftAmount != null)
+                    blueprintCraftAmount.SetEnabled(false);
+                if (blueprintCraftConfirm != null)
+                    blueprintCraftConfirm.SetEnabled(false);
                 return;
             }
 
-            string ingredients = "None";
-            if (recipe.ingredients != null && recipe.ingredients.Count > 0)
-            {
-                List<string> parts = new List<string>();
-                for (int i = 0; i < recipe.ingredients.Count; i++)
-                {
-                    RecipeIngredient ing = recipe.ingredients[i];
-                    if (ing == null || ing.item == null)
-                        continue;
-                    parts.Add(ing.amount + "x " + ing.item.itemName);
-                }
+            if (blueprintsDetail != null)
+                blueprintsDetail.text = ResolveBlueprintName(recipe);
 
-                if (parts.Count > 0)
-                    ingredients = string.Join(", ", parts);
+            int craftLevel = LevelUnlockUtility.GetEffectiveCraftRequiredLevel(
+                recipe.requiredPlayerLevel,
+                recipe.outputItem);
+            float duration = CraftingManager.GetCraftDurationSeconds(recipe);
+            string station = recipe.stationType == CraftingStationType.Cooking ? "Cooking" : "Workbench";
+            if (blueprintCraftMeta != null)
+            {
+                blueprintCraftMeta.text = selectedRecipePending
+                    ? "Pending scroll  ·  Learn it on the left, then craft here."
+                    : station + "  ·  Tier " + Mathf.Max(1, recipe.recipeTier) +
+                      "  ·  Level " + craftLevel +
+                      "  ·  " + duration.ToString("0.#") + "s each";
             }
 
-            string output = recipe.outputItem != null
-                ? recipe.outputAmount + "x " + recipe.outputItem.itemName
-                : "Unknown";
-            blueprintsDetail.text =
-                recipe.displayName + "\n" +
-                (recipe.description ?? string.Empty) + "\n\n" +
-                "Station: " + recipe.stationType + "  ·  Tier " + recipe.recipeTier +
-                "  ·  Level " + recipe.requiredPlayerLevel + "\n" +
-                "Ingredients: " + ingredients + "\n" +
-                "Output: " + output +
-                (selectedRecipePending ? "\n\nLearn this scroll, then craft at a station." : "\n\nProduction crafting is station/campfire only.");
+            int amount = blueprintCraftAmount != null ? Mathf.Max(1, blueprintCraftAmount.value) : 1;
+            RebuildBlueprintIngredients(recipe, amount);
+
+            if (blueprintCraftOutput != null)
+            {
+                if (recipe.outputItem != null)
+                    blueprintCraftOutput.text = "Output  " + (recipe.outputAmount * amount) + "x " + recipe.outputItem.itemName;
+                else
+                    blueprintCraftOutput.text = "Output  Unknown";
+            }
+
+            int max = 1;
+            if (!selectedRecipePending && boundCrafting != null && boundInventory != null)
+                max = Mathf.Max(1, boundCrafting.GetMaxCraftCount(recipe, boundInventory, requireStation: false));
+
+            if (blueprintCraftAmount != null)
+            {
+                blueprintCraftAmount.lowValue = 1;
+                blueprintCraftAmount.highValue = max;
+                if (blueprintCraftAmount.value < 1 || blueprintCraftAmount.value > max)
+                    blueprintCraftAmount.SetValueWithoutNotify(1);
+                blueprintCraftAmount.SetEnabled(!selectedRecipePending && max > 1);
+            }
+
+            if (blueprintCraftAmountValue != null)
+                blueprintCraftAmountValue.text = (blueprintCraftAmount != null ? blueprintCraftAmount.value : 1).ToString();
+
+            bool can = !selectedRecipePending
+                && boundCrafting != null
+                && boundInventory != null
+                && boundCrafting.CanCraft(recipe, boundInventory, amount, requireStation: false);
+            if (blueprintCraftConfirm != null)
+            {
+                blueprintCraftConfirm.SetEnabled(can);
+                blueprintCraftConfirm.text = selectedRecipePending ? "Learn first" : "Craft";
+            }
+        }
+
+        private void RebuildBlueprintIngredients(RecipeDefinition recipe, int amount)
+        {
+            if (blueprintCraftIngs == null)
+                return;
+
+            blueprintCraftIngs.Clear();
+            if (recipe?.ingredients == null || recipe.ingredients.Count == 0)
+            {
+                Label empty = new Label("No ingredients");
+                empty.AddToClassList("dmg-bp-ing-name");
+                empty.pickingMode = PickingMode.Ignore;
+                blueprintCraftIngs.Add(empty);
+                return;
+            }
+
+            amount = Mathf.Max(1, amount);
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                RecipeIngredient ingredient = recipe.ingredients[i];
+                if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
+                    continue;
+
+                int need = ingredient.amount * amount;
+                int have = boundCrafting != null
+                    ? boundCrafting.CountItem(ingredient.item, boundInventory)
+                    : 0;
+
+                VisualElement row = new VisualElement();
+                row.AddToClassList("dmg-bp-ing-row");
+                row.pickingMode = PickingMode.Ignore;
+
+                VisualElement icon = new VisualElement();
+                icon.AddToClassList("dmg-bp-ing-icon");
+                icon.pickingMode = PickingMode.Ignore;
+                Sprite sprite = DMGameIconRegistry.FindIcon(ingredient.item);
+                if (sprite != null)
+                    DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit);
+                row.Add(icon);
+
+                Label name = new Label(ingredient.item.itemName);
+                name.AddToClassList("dmg-bp-ing-name");
+                name.pickingMode = PickingMode.Ignore;
+                row.Add(name);
+
+                Label count = new Label(have + " / " + need);
+                count.AddToClassList("dmg-bp-ing-count");
+                if (have >= need)
+                    count.AddToClassList("dmg-bp-ing-count--ready");
+                count.pickingMode = PickingMode.Ignore;
+                row.Add(count);
+
+                blueprintCraftIngs.Add(row);
+            }
         }
 
         private void OnSkillCatClicked(ClickEvent evt)

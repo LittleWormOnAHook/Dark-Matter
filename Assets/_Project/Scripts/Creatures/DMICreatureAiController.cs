@@ -104,6 +104,8 @@ namespace Project.Creatures
         public bool IsAttacking =>
             state == CreatureAiState.Melee || state == CreatureAiState.Spit;
 
+        public float OuterAggroRange => Mathf.Max(engageRange, leashRange);
+
         private void Awake()
         {
             CacheReferences();

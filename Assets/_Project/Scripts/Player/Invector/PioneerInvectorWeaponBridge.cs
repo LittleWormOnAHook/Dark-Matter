@@ -2293,7 +2293,46 @@ namespace Project.Player.Invector
             PrepareUnifiedProjectileWeapon(instance, _activeItem);
 
             if (_shooterManager != null)
-                _shooterManager.SetRightWeapon(instance);
+            {
+                // vAssaultRifle / Survival Rifle keep vShooterWeapon on a child.
+                // Invector SetRightWeapon(GameObject) only GetComponent on the root, so
+                // passing the slot root leaves CurrentActiveWeapon null and R is ignored.
+                GameObject shooterObject = ResolveShooterWeaponObject(instance);
+                _shooterManager.SetRightWeapon(shooterObject != null ? shooterObject : instance);
+            }
+        }
+
+        /// <summary>Rebinds Invector rWeapon from the drawn slot when the rifle child was missed.</summary>
+        public void EnsureDrawnShooterBound()
+        {
+            if (_shooterManager != null && _shooterManager.CurrentWeapon != null)
+                return;
+
+            ItemData item = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            if (item == null || !item.IsRangedWeapon)
+                return;
+
+            GameObject drawn = FindPreloadedDrawnSlot(transform, item);
+            if (drawn == null)
+                drawn = TryGetWeaponInstance(item);
+            if (drawn == null)
+                return;
+
+            PrepareUnifiedProjectileWeapon(drawn, item);
+            GameObject shooterObject = ResolveShooterWeaponObject(drawn);
+            if (shooterObject != null && _shooterManager != null)
+                _shooterManager.SetRightWeapon(shooterObject);
+        }
+
+        private static GameObject ResolveShooterWeaponObject(GameObject instance)
+        {
+            if (instance == null)
+                return null;
+
+            vShooterWeapon shooter = instance.GetComponent<vShooterWeapon>();
+            if (shooter == null)
+                shooter = instance.GetComponentInChildren<vShooterWeapon>(true);
+            return shooter != null ? shooter.gameObject : null;
         }
 
         /// <summary>
