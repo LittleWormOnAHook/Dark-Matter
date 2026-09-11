@@ -211,23 +211,87 @@ namespace Project.Inventory
         public void SwitchActiveWeapon()
         {
             ClearToolbarSelection();
-            for (int offset = 1; offset <= WeaponSlotCount; offset++)
+            if (!TryGetNextOccupiedWeaponSlot(activeWeaponSlot, out int candidate))
             {
-                int candidate = (activeWeaponSlot + offset) % WeaponSlotCount;
-                int hotbarIndex = GetWeaponHotbarSlot(candidate);
-                ItemData item = GetHotbarItem(hotbarIndex);
-                if (item != null && !LevelUnlockUtility.PassesEquipGate(item, showToast: false))
-                    continue;
-
-                activeWeaponSlot = candidate;
-                selectedHotbarSlot = hotbarIndex;
                 SyncWeaponDrawnState();
                 NotifySelectionChanged();
                 return;
             }
 
+            activeWeaponSlot = candidate;
+            selectedHotbarSlot = GetWeaponHotbarSlot(candidate);
             SyncWeaponDrawnState();
             NotifySelectionChanged();
+        }
+
+        /// <summary>Next weapon slot (0-3) with an item, skipping empty and level-locked slots.</summary>
+        public bool TryGetNextOccupiedWeaponSlot(int fromWeaponSlot, out int nextWeaponSlot)
+        {
+            nextWeaponSlot = fromWeaponSlot;
+            fromWeaponSlot = Mathf.Clamp(fromWeaponSlot, 0, WeaponSlotCount - 1);
+
+            for (int offset = 1; offset <= WeaponSlotCount; offset++)
+            {
+                int candidate = (fromWeaponSlot + offset) % WeaponSlotCount;
+                int hotbarIndex = GetWeaponHotbarSlot(candidate);
+                ItemData item = GetHotbarItem(hotbarIndex);
+                if (item == null)
+                    continue;
+                if (!LevelUnlockUtility.PassesEquipGate(item, showToast: false))
+                    continue;
+
+                nextWeaponSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index (typically 4-9) that has an item.</summary>
+        public bool TryGetNextOccupiedUtilityHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate))
+                    continue;
+                if (GetHotbarItem(candidate) == null)
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next weapon hotbar local index (typically 0-3) that has an equippable item.</summary>
+        public bool TryGetNextOccupiedWeaponHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            int fromWeaponSlot = GetWeaponSlotIndexForHotbar(fromLocalHotbarSlot);
+            if (fromWeaponSlot < 0)
+                fromWeaponSlot = activeWeaponSlot;
+
+            if (!TryGetNextOccupiedWeaponSlot(fromWeaponSlot, out int nextWeaponSlot))
+                return false;
+
+            nextLocalHotbarSlot = GetWeaponHotbarSlot(nextWeaponSlot);
+            return true;
         }
 
         public void SelectWeaponSlot(int weaponSlotIndex)

@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using Invector;
 using Project.AI;
+using Project.Core;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -17,10 +17,8 @@ namespace Project.Combat
         private const string BloodSplatterResourcePath = "Combat/FX_Blood_Splatter";
         private const string BloodSplatterAssetPath =
             "Assets/Synty/PolygonGeneric/Prefabs/FX/FX_Blood_Splatter_01.prefab";
-        private const int MaxPoolSize = 12;
 
         private static GameObject bloodSplatterPrefab;
-        private static readonly Queue<GameObject> Pool = new Queue<GameObject>(MaxPoolSize);
 
         /// <summary>
         /// Spawns hit VFX when an enemy damages the player or a companion via Invector.
@@ -69,7 +67,7 @@ namespace Project.Combat
                 sprayDirection = Vector3.forward;
 
             Quaternion rotation = Quaternion.LookRotation(sprayDirection, Vector3.up);
-            GameObject instance = Rent(prefab, spawnPosition, rotation);
+            GameObject instance = PoolManager.Spawn(prefab, spawnPosition, rotation);
             if (instance == null)
                 return;
 
@@ -83,33 +81,7 @@ namespace Project.Combat
 
         internal static void ReleaseToPool(GameObject instance)
         {
-            if (instance == null)
-                return;
-
-            instance.SetActive(false);
-            if (Pool.Count >= MaxPoolSize)
-            {
-                Object.Destroy(instance);
-                return;
-            }
-
-            Pool.Enqueue(instance);
-        }
-
-        private static GameObject Rent(GameObject prefab, Vector3 position, Quaternion rotation)
-        {
-            while (Pool.Count > 0)
-            {
-                GameObject candidate = Pool.Dequeue();
-                if (candidate == null)
-                    continue;
-
-                candidate.transform.SetPositionAndRotation(position, rotation);
-                candidate.SetActive(true);
-                return candidate;
-            }
-
-            return Object.Instantiate(prefab, position, rotation);
+            PoolManager.Release(instance);
         }
 
         private static bool IsEnemyDamageSource(Transform source)

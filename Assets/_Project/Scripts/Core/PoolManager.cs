@@ -106,10 +106,7 @@ namespace Project.Core
             if (instance.TryGetComponent(out PooledInstanceTag tag) && tag.LeaseId != leaseAtSchedule)
                 yield break;
 
-            // Already inactive / returned.
-            if (!instance.activeInHierarchy)
-                yield break;
-
+            // Still return inactive VFX — particle prefabs often disable themselves before the timer fires.
             Release(instance);
         }
 

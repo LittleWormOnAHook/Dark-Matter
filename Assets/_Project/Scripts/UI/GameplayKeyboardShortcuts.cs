@@ -667,9 +667,14 @@ namespace Project.UI
                 return;
             if (Time.frameCount == hotCrossTabHandledFrame)
                 return;
+            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+                return;
 
             hotCrossTabHandledFrame = Time.frameCount;
-            int next = (DMUiToolkitHotCross.WeaponLocalIndex + 1) % 4;
+            int current = DMUiToolkitHotCross.WeaponLocalIndex;
+            if (!equipment.TryGetNextOccupiedWeaponHotbarLocal(current, out int next))
+                return;
+
             DMUiToolkitHotCross.NotifyWeaponLocalIndex(next);
         }
 
@@ -741,10 +746,13 @@ namespace Project.UI
 
         private static void TryCycleHotCrossConsumableFocus()
         {
-            const int first = 4;
-            const int last = 9;
-            int start = DMUiToolkitHotCross.ConsumableLocalIndex;
-            int next = first + ((start - first + 1) % (last - first + 1));
+            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+                return;
+
+            int current = DMUiToolkitHotCross.ConsumableLocalIndex;
+            if (!equipment.TryGetNextOccupiedUtilityHotbarLocal(current, out int next))
+                return;
+
             DMUiToolkitHotCross.NotifyConsumableLocalIndex(next);
         }
 
@@ -820,7 +828,7 @@ namespace Project.UI
                     if (!TryResolveInventory(out _, out _, out InventoryItemActions actions) || actions == null)
                         return;
                     if (!actions.TryEquipAmmoToWeapon(ammoAbsoluteSlot, weaponHotbar))
-                        PickupToastUI.Show("Failed to load ammo");
+                        PickupToastUI.Show("Cannot load — magazine full or incompatible");
                 });
 
             if (!opened)
@@ -833,7 +841,7 @@ namespace Project.UI
                 return;
 
             if (!DMUiToolkitHotCross.TryConfirmAmmoLoad())
-                PickupToastUI.Show("Failed to load ammo");
+                PickupToastUI.Show("Cannot load — magazine full or incompatible");
         }
 
         private static void TryArmFocusedHotCrossWeapon()

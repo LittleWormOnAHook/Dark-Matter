@@ -17,6 +17,49 @@ namespace Project.Inventory
         private const string StandardAmmoItemName = "Standard";
 
         [Serializable]
+        private class ParkedMag
+        {
+            public int loaded;
+            public ItemData loadedItem;
+        }
+
+        /// <summary>Per-weapon-slot memory of magazine counts per ammo profile (swap restores parked rounds).</summary>
+        private readonly struct MagProfileKey : IEquatable<MagProfileKey>
+        {
+            public readonly AmmoType Type;
+            public readonly bool ContinuousLaser;
+
+            public MagProfileKey(AmmoType type, bool continuousLaser)
+            {
+                Type = type;
+                ContinuousLaser = continuousLaser;
+            }
+
+            public static MagProfileKey From(ItemData ammo)
+            {
+                if (ammo == null)
+                    return new MagProfileKey(AmmoType.Gunpowder, false);
+
+                return new MagProfileKey(ammo.ammoType, ammo.isContinuousLaser);
+            }
+
+            public static MagProfileKey FromEntry(SlotAmmo entry)
+            {
+                if (entry?.loadedItem != null)
+                    return From(entry.loadedItem);
+
+                return new MagProfileKey(entry?.loadedType ?? AmmoType.Gunpowder, false);
+            }
+
+            public bool Equals(MagProfileKey other) =>
+                Type == other.Type && ContinuousLaser == other.ContinuousLaser;
+
+            public override bool Equals(object obj) => obj is MagProfileKey other && Equals(other);
+
+            public override int GetHashCode() => ((int)Type * 397) ^ ContinuousLaser.GetHashCode();
+        }
+
+        [Serializable]
         private class SlotAmmo
         {
             public int loaded;
@@ -24,6 +67,7 @@ namespace Project.Inventory
             /// <summary>Actual ammo ItemData asset currently loaded, so VFX/status-effect data can be
             /// resolved per specific ammo variant rather than just the shared enum type.</summary>
             public ItemData loadedItem;
+            public readonly Dictionary<MagProfileKey, ParkedMag> parkedByProfile = new Dictionary<MagProfileKey, ParkedMag>(8);
         }
 
         private readonly Dictionary<int, SlotAmmo> slotAmmo = new Dictionary<int, SlotAmmo>(4);
@@ -121,8 +165,33 @@ namespace Project.Inventory
             if (weapon != null && weapon.isMiningTool)
                 return CountPlasmaFuelInInventory();
 
+            // Empty mag / unset loadedItem must use defaultAmmoItem / defaultAmmoType.
+            // Never use ItemData.ammoType on a weapon — Survival Rifle leftover is Plasma (1).
             AmmoType loadedType = GetLoadedAmmoType(weaponHotbarSlot);
             ItemData loadedItem = GetLoadedAmmoItem(weaponHotbarSlot);
+            int loaded = GetLoadedAmmo(weaponHotbarSlot);
+            if (loaded <= 0 || loadedItem == null)
+            {
+                if (TryResolveEmptyMagRefillProfile(weapon, out ItemData adoptItem, out AmmoType adoptType))
+                {
+                    loadedItem = adoptItem;
+                    loadedType = adoptType;
+                }
+                else
+                {
+                    ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
+                    if (defaultAmmo != null)
+                    {
+                        loadedItem = defaultAmmo;
+                        loadedType = defaultAmmo.ammoType;
+                    }
+                    else if (weapon != null)
+                    {
+                        loadedType = weapon.defaultAmmoType;
+                    }
+                }
+            }
+
             int reserve = 0;
             for (int i = 0; i < inventory.slots.Count; i++)
             {
@@ -258,11 +327,18 @@ namespace Project.Inventory
                     return;
 
                 SlotAmmo entry = GetOrCreateSlot(hotbarSlot, weapon);
-                // Only auto-credit a pickup into the weapon if it matches the ammo type already
-                // loaded (or defaulted) for this slot. A different type never silently swaps in —
-                // the player must explicitly "Equip Ammo To" it via the inventory right-click menu.
-                if (entry.loadedType != ammoItem.ammoType)
+                // Partial mag keeps its type — swap only via explicit equip / empty-mag pickup.
+                if (entry.loaded > 0 && entry.loadedType != ammoItem.ammoType)
                     return;
+
+                if (entry.loaded <= 0 && entry.loadedType != ammoItem.ammoType)
+                {
+                    if (!weapon.AcceptsAmmoType(ammoItem.ammoType))
+                        return;
+
+                    entry.loadedType = ammoItem.ammoType;
+                    entry.loadedItem = ammoItem;
+                }
 
                 entry.loadedType = ammoItem.ammoType;
                 entry.loadedItem = ammoItem;
@@ -303,9 +379,8 @@ namespace Project.Inventory
 
         /// <summary>
         /// Explicit player-driven equip: loads ammo from a specific inventory stack into a specific
-        /// weapon's hotbar slot, used by the inventory right-click "Equip Ammo To" menu. Unlike the
-        /// passive auto-credit path, this deliberately swaps ammo type if a different one is already
-        /// loaded — any remaining old rounds are returned to the inventory first.
+        /// weapon's hotbar slot (Hot Cross hold / inventory "Equip Ammo To"). Swapping types parks the
+        /// current magazine in memory — switching back restores the round count that type had before.
         /// </summary>
         public bool TryEquipAmmoToWeaponSlot(int weaponHotbarSlot, int inventorySlotIndex)
         {
@@ -328,18 +403,41 @@ namespace Project.Inventory
                 return false;
 
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
-            if (entry.loaded > 0 && entry.loadedType != invSlot.item.ammoType)
-                ReturnLoadedAmmoToInventory(entry);
+            int capacity = GetMagazineCapacity(weapon);
+            bool sameProfile = entry.loadedType == invSlot.item.ammoType
+                && AmmoItemsCompatibleForReserve(entry.loadedItem, invSlot.item);
 
-            entry.loadedType = invSlot.item.ammoType;
-            entry.loadedItem = invSlot.item;
+            bool restoredParked = false;
+            if (!sameProfile)
+            {
+                ParkActiveMag(entry, capacity);
+                restoredParked = TryRestoreParkedMag(entry, invSlot.item, capacity);
+                if (!restoredParked)
+                {
+                    entry.loadedType = invSlot.item.ammoType;
+                    entry.loadedItem = invSlot.item;
+                    entry.loaded = 0;
+                }
+            }
 
-            int space = Mathf.Max(0, GetMagazineCapacity(weapon) - entry.loaded);
+            int space = Mathf.Max(0, capacity - entry.loaded);
             int take = Mathf.Min(space, invSlot.amount);
             if (take > 0)
             {
+                entry.loadedType = invSlot.item.ammoType;
+                entry.loadedItem = invSlot.item;
                 entry.loaded += take;
                 inventory.RemoveItemAt(inventorySlotIndex, take);
+            }
+
+            if (sameProfile)
+            {
+                if (take <= 0)
+                    return false;
+            }
+            else if (!restoredParked && take <= 0)
+            {
+                return false;
             }
 
             NotifyChanged();
@@ -368,16 +466,32 @@ namespace Project.Inventory
             return eligible;
         }
 
-        private void ReturnLoadedAmmoToInventory(SlotAmmo entry)
+        private static void ParkActiveMag(SlotAmmo entry, int capacity)
         {
-            if (entry.loaded <= 0)
+            if (entry == null)
                 return;
 
-            if (entry.loadedItem != null && inventory != null)
-                inventory.AddItem(entry.loadedItem, entry.loaded, autoCreditAmmoToWeapons: false);
+            MagProfileKey key = MagProfileKey.FromEntry(entry);
+            entry.parkedByProfile[key] = new ParkedMag
+            {
+                loaded = Mathf.Clamp(entry.loaded, 0, capacity),
+                loadedItem = entry.loadedItem
+            };
+        }
 
-            entry.loaded = 0;
-            entry.loadedItem = null;
+        private static bool TryRestoreParkedMag(SlotAmmo entry, ItemData targetAmmo, int capacity)
+        {
+            if (entry == null || targetAmmo == null)
+                return false;
+
+            MagProfileKey key = MagProfileKey.From(targetAmmo);
+            if (!entry.parkedByProfile.TryGetValue(key, out ParkedMag parked))
+                return false;
+
+            entry.loadedType = targetAmmo.ammoType;
+            entry.loadedItem = parked.loadedItem != null ? parked.loadedItem : targetAmmo;
+            entry.loaded = Mathf.Clamp(parked.loaded, 0, capacity);
+            return true;
         }
 
         public void EnsureWeaponInitialized(int weaponHotbarSlot, ItemData weapon)
@@ -410,6 +524,8 @@ namespace Project.Inventory
         /// </summary>
         private void ApplyFreshWeaponAmmo(ItemData weapon, SlotAmmo entry)
         {
+            entry.parkedByProfile.Clear();
+
             if (weapon != null && weapon.isMiningTool)
             {
                 entry.loadedItem = null;
@@ -567,6 +683,11 @@ namespace Project.Inventory
 
             int capacity = GetMagazineCapacity(weapon);
             int before = entry.loaded;
+
+            // Empty mag: adopt a compatible inventory stack so R / reload finish can pull non-default types.
+            if (entry.loaded <= 0)
+                TryAdoptRefillAmmoFromInventory(weapon, entry);
+
             for (int i = 0; i < inventory.slots.Count; i++)
             {
                 int needed = Mathf.Max(0, capacity - entry.loaded);
@@ -591,6 +712,73 @@ namespace Project.Inventory
             }
 
             return entry.loaded > before;
+        }
+
+        /// <summary>
+        /// When the magazine is empty, pick the ammo profile reload / reserve HUD should target:
+        /// weapon default if stocked, otherwise the first compatible inventory stack.
+        /// </summary>
+        private bool TryResolveEmptyMagRefillProfile(ItemData weapon, out ItemData ammoItem, out AmmoType ammoType)
+        {
+            ammoItem = null;
+            ammoType = AmmoType.Gunpowder;
+            if (inventory == null || weapon == null || weapon.isMiningTool)
+                return false;
+
+            ItemData preferred = weapon.defaultAmmoItem;
+            if (preferred != null && preferred.CountsAsAmmo && weapon.AcceptsAmmoType(preferred.ammoType)
+                && CountInventoryAmmoMatching(preferred.ammoType, preferred) > 0)
+            {
+                ammoItem = preferred;
+                ammoType = preferred.ammoType;
+                return true;
+            }
+
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null || !slot.item.CountsAsAmmo)
+                    continue;
+                if (slot.item.isContinuousLaser || !weapon.AcceptsAmmoType(slot.item.ammoType))
+                    continue;
+
+                ammoItem = slot.item;
+                ammoType = slot.item.ammoType;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void TryAdoptRefillAmmoFromInventory(ItemData weapon, SlotAmmo entry)
+        {
+            if (TryResolveEmptyMagRefillProfile(weapon, out ItemData ammoItem, out AmmoType ammoType))
+            {
+                entry.loadedType = ammoType;
+                entry.loadedItem = ammoItem;
+            }
+        }
+
+        private int CountInventoryAmmoMatching(AmmoType type, ItemData loadedItem)
+        {
+            if (inventory == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null || !slot.item.CountsAsAmmo)
+                    continue;
+                if (slot.item.ammoType != type)
+                    continue;
+                if (!AmmoItemsCompatibleForReserve(loadedItem, slot.item))
+                    continue;
+
+                count += slot.amount;
+            }
+
+            return count;
         }
 
         private void HandleInventoryChanged()
