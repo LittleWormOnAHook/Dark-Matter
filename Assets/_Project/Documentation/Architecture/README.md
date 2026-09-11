@@ -14,3 +14,5 @@ Authoritative order (highest first):
 8. **[Dark_Matter_Framework_Engineering_Standard.md](../../Features/Communications/Documentation/Dark_Matter_Framework_Engineering_Standard.md)** — coding rules
 
 HLA v1.0 ratified July 2026 (design). **Run 1** landed Features GameState / WorldState / Directors / Validation. Communications Runtime is Run 2. Safe Mode help: [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md). Do not edit HLA casually — use versioned revisions (1.1, 2.0).
+
+World streaming (planned, not shipped): [Terrain_Subtile_Split_64_Plan.md](Terrain_Subtile_Split_64_Plan.md) — 16 × 2048 m Gaia tiles → 64 × 1024 m scenes. Gaia TLM remains the only expedition streamer until that cutover.

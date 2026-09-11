@@ -48,6 +48,12 @@ namespace Project.UI
         /// <summary>Updated whenever pause overlay toggles — avoids scene searches from hot paths.</summary>
         public static bool IsPauseOverlayActive { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPauseOverlayStatic()
+        {
+            IsPauseOverlayActive = false;
+        }
+
         private bool _pauseOverlayActive;
         private bool pauseOverlayActive
         {
@@ -66,6 +72,9 @@ namespace Project.UI
         {
             if (!Application.isPlaying)
                 return;
+
+            // Keep static pause flag aligned with this instance (Enter Play Mode without domain reload).
+            IsPauseOverlayActive = _pauseOverlayActive;
 
             if (!buildOnAwake)
                 return;
@@ -570,7 +579,31 @@ namespace Project.UI
         /// True while the main menu or in-game pause overlay should suppress bottom gameplay HUD.
         /// </summary>
         public static bool BlocksGameplayHud =>
-            !GameSession.HasStarted || IsPauseOverlayActive;
+            !GameSession.HasStarted || PauseOverlayBlocksGameplay();
+
+        /// <summary>
+        /// In-game pause only — ignores stale <see cref="IsPauseOverlayActive"/> when time is running and UITK pause is not painted.
+        /// </summary>
+        public static bool PauseOverlayBlocksGameplay()
+        {
+            if (!IsPauseOverlayActive)
+                return false;
+
+            if (Time.timeScale <= 0.01f)
+                return true;
+
+            if (!Application.isPlaying)
+                return true;
+
+            DMUiToolkitMainMenu.SyncVisibilityToPainted();
+            return DMUiToolkitMainMenu.IsVisible || DMUiToolkitMenuPanels.IsAnySubPanelOpen;
+        }
+
+        /// <summary>Recovery when pause flag desyncs from painted UITK chrome.</summary>
+        internal static void ClearStuckPauseOverlayFlag()
+        {
+            IsPauseOverlayActive = false;
+        }
 
         /// <summary>
         /// Hides the item/tool hotbars. Called whenever the main menu, pause menu, or any of their
@@ -693,10 +726,14 @@ namespace Project.UI
             DMUiToolkitMainMenu.SyncVisibilityToPainted();
 
             bool pauseUi = DMUiToolkitMainMenu.IsVisible || DMUiToolkitMenuPanels.IsAnySubPanelOpen;
-            if (!pauseOverlayActive || pauseUi)
+            if (pauseUi)
+                return;
+
+            if (!pauseOverlayActive && !IsPauseOverlayActive)
                 return;
 
             pauseOverlayActive = false;
+            ClearStuckPauseOverlayFlag();
             ClearMenuMessage();
             HideMenuChrome();
             SetGameWorldPaused(false);

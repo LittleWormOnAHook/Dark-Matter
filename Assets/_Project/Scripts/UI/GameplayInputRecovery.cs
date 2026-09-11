@@ -40,10 +40,18 @@ namespace Project.UI
             DMUiToolkitMainMenu.SyncVisibilityToPainted();
 
             bool pauseUi = DMUiToolkitMainMenu.IsVisible || DMUiToolkitMenuPanels.IsAnySubPanelOpen;
-            if (MainMenuController.BlocksGameplayHud && !pauseUi)
+            bool ghostPause = GameSession.HasStarted
+                && Time.timeScale > 0.01f
+                && MainMenuController.IsPauseOverlayActive
+                && !pauseUi;
+            if (ghostPause)
             {
-                MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
-                menu?.ClearGhostPauseOverlay();
+                MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
+                if (menu != null)
+                    menu.ClearGhostPauseOverlay();
+                else
+                    MainMenuController.ClearStuckPauseOverlayFlag();
+
                 pauseUi = DMUiToolkitMainMenu.IsVisible || DMUiToolkitMenuPanels.IsAnySubPanelOpen;
             }
 
