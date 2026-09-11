@@ -32,8 +32,8 @@ namespace Project.UI
         [Range(0f, 1f)]
         public float damageVignetteAlpha = 0.5f;
 
-        [Header("Pilot Cluster Prototype")]
-        [Tooltip("Show the lower-left combined minimap / stats cluster. Old top-right minimap/compass/scan stay hidden.")]
+        [Header("Pilot Cluster (shipping HUD)")]
+        [Tooltip("Lower-right combined minimap, compass, and survival readouts. Legacy uGUI minimap/compass stay retired when UITK is enabled.")]
         public bool showPilotCluster = true;
 
         private static DMUiToolkitConfig cached;

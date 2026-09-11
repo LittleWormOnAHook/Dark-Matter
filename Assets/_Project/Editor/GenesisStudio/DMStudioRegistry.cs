@@ -126,7 +126,7 @@ namespace Project.EditorTools.GenesisStudio
                     "survival",
                     "Survival",
                     "♡",
-                    "Health, energy, oxygen, exposure caps, fall damage, and hazard zone profiles.",
+                    "Health, energy, oxygen, walk/run/sprint gaits, exposure caps, fall damage, and hazard zone profiles.",
                     FromHex("#D4A017"),
                     new[]
                     {
@@ -138,6 +138,14 @@ namespace Project.EditorTools.GenesisStudio
                             "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.SurvivalOnly),
+                        new DMStudioSubtab(
+                            "locomotion-gaits",
+                            "Walk / Run / Sprint",
+                            "Slow walk default, Shift jog, and double-tap Shift sprint burst multipliers.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LocomotionOnly),
                         new DMStudioSubtab(
                             "exposure",
                             "Exposure Zones",

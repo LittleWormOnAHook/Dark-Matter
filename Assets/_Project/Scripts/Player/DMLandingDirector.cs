@@ -334,6 +334,9 @@ namespace Project.Player
 
         private void FixedUpdate()
         {
+            if (Project.Core.GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (motor == null)
                 return;
 
@@ -387,6 +390,9 @@ namespace Project.Player
 
         private void Update()
         {
+            if (Project.Core.GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (motor == null || animator == null)
                 return;
 

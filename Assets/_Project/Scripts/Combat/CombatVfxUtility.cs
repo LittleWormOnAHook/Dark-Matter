@@ -54,6 +54,72 @@ namespace Project.Combat
         }
 
         /// <summary>
+        /// Disables vendor auto-destroy drivers and schedules a pooled return after particles finish
+        /// or <paramref name="maxLifeSeconds"/> (realtime), whichever comes first.
+        /// </summary>
+        public static void PreparePooledOneShotVfx(GameObject instance, float maxLifeSeconds)
+        {
+            if (instance == null)
+                return;
+
+            TracerVfxCache cache = instance.GetComponent<TracerVfxCache>();
+            if (cache == null)
+                cache = instance.AddComponent<TracerVfxCache>();
+            cache.EnsureCached();
+            DisableVendorAutoReleaseBehaviours(cache);
+            PlayParticleSystemsRecursive(instance);
+
+            PooledOneShotVfx lifetime = instance.GetComponent<PooledOneShotVfx>();
+            if (lifetime == null)
+                lifetime = instance.AddComponent<PooledOneShotVfx>();
+
+            lifetime.Begin(maxLifeSeconds, cache.Particles);
+        }
+
+        /// <summary>
+        /// Vendor VFX packs often ship Destroy-on-finish scripts that break pooling and leave orphans.
+        /// Scans once per pooled instance via <see cref="TracerVfxCache"/>.
+        /// </summary>
+        public static void DisableVendorAutoReleaseBehaviours(TracerVfxCache cache)
+        {
+            if (cache == null || cache.VendorAutoReleaseDisabled)
+                return;
+
+            cache.EnsureCached();
+            MonoBehaviour[] behaviours = cache.Behaviours;
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                    continue;
+
+                string typeName = behaviour.GetType().Name;
+                if (typeName == "CFX_AutoDestructShuriken"
+                    || typeName == "CFX_AutoStopLoopedEffect"
+                    || typeName == "CFX_Lifetime"
+                    || typeName == "AutoDestroy"
+                    || typeName == "DestroyAfterTime"
+                    || typeName == "DestroyAfterSeconds")
+                {
+                    behaviour.enabled = false;
+                }
+            }
+
+            cache.MarkVendorAutoReleaseDisabled();
+        }
+
+        public static void DisableVendorAutoReleaseBehaviours(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            TracerVfxCache cache = root.GetComponent<TracerVfxCache>();
+            if (cache == null)
+                cache = root.AddComponent<TracerVfxCache>();
+            DisableVendorAutoReleaseBehaviours(cache);
+        }
+
+        /// <summary>
         /// Prepares an ammo tracer that rides a <see cref="CombatProjectile"/> so the visual
         /// begins at the barrel instead of mid-flight.
         /// </summary>

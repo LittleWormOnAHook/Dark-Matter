@@ -290,6 +290,9 @@ namespace Project.Features.Climb
 
         private void Update()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             BindLiveProfile();
 
             if (_hopping)

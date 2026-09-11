@@ -103,12 +103,22 @@ namespace Project.UI
                 instance = null;
         }
 
+        private bool lastShown;
+        private bool hasAppliedShown;
+
         private void LateUpdate()
         {
             if (!bound)
                 BindTree();
 
-            ApplyShown(ShouldShow());
+            bool show = ShouldShow();
+            if (!hasAppliedShown || show != lastShown)
+            {
+                hasAppliedShown = true;
+                lastShown = show;
+                ApplyShown(show);
+            }
+
             HideUgui();
         }
 

@@ -4,6 +4,7 @@ using Project.Core;
 using Project.Features.Jetpack;
 using Project.Features.Dash;
 using Project.Features.Climb;
+using Project.Features.Locomotion;
 using Project.Interaction;
 using Project.Survival;
 using Project.UI;
@@ -34,6 +35,7 @@ namespace Project.Player.Invector
         private DMLandingDirector _landing;
         private DMDashController _dash;
         private DMClimbController _climb;
+        private DMLocomotionGaitController _locomotionGait;
         private bool _combatBlockedByUiPointer;
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
@@ -67,15 +69,35 @@ namespace Project.Player.Invector
             _landing = GetComponent<DMLandingDirector>();
             _dash = GetComponent<DMDashController>();
             _climb = GetComponent<DMClimbController>();
+            _locomotionGait = GetComponent<DMLocomotionGaitController>();
         }
+
+        private float _nextStaminaSyncUnscaled;
 
         private void Update()
         {
             if (!_bootstrap.IsActive || _shooterInput == null)
                 return;
 
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             RefreshCombatUiPointerBlock();
             ApplyInputLocks(_shooterInput);
+        }
+
+        private void LateUpdate()
+        {
+            if (!_bootstrap.IsActive || GameplayWorldSimulation.IsFrozen)
+                return;
+
+            float interval = _locomotionGait != null && _locomotionGait.IsBurstSprinting
+                ? 0f
+                : 0.05f;
+            if (interval > 0f && Time.unscaledTime < _nextStaminaSyncUnscaled)
+                return;
+
+            _nextStaminaSyncUnscaled = Time.unscaledTime + interval;
             SyncStamina();
         }
 
@@ -222,16 +244,31 @@ namespace Project.Player.Invector
             if (_motor == null || _survivalStats == null)
                 return;
 
+            if (_locomotionGait == null)
+                _locomotionGait = GetComponent<DMLocomotionGaitController>();
+
             _motor.maxStamina = _survivalStats.maxStamina;
 
-            bool sprinting = _motor.isSprinting && _motor.input.sqrMagnitude > 0.01f;
+            bool moving = _motor.input.sqrMagnitude > 0.01f;
+            bool sprinting = _locomotionGait != null
+                ? _locomotionGait.IsBurstSprinting && moving
+                : _motor.isSprinting && moving;
+
             if (sprinting && _survivalStats.CurrentStamina <= 0.01f)
             {
-                _motor.isSprinting = false;
+                if (_locomotionGait != null)
+                    _locomotionGait.ApplyGaitFromInput(
+                        DMLocomotionGaitController.ReadShiftHeld(),
+                        false);
+                else
+                    _motor.isSprinting = false;
                 sprinting = false;
             }
 
-            _survivalStats.SetSprinting(sprinting);
+            float sprintDrainScale = sprinting && _locomotionGait != null
+                ? _locomotionGait.SprintStaminaDrainMultiplier
+                : 1f;
+            _survivalStats.SetSprinting(sprinting, sprintDrainScale);
             _motor.currentStamina = _survivalStats.CurrentStamina;
         }
 

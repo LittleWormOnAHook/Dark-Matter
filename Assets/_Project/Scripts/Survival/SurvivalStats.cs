@@ -360,9 +360,12 @@ namespace Project.Survival
                 NotifyStatsChanged();
         }
 
-        public void SetSprinting(bool sprinting)
+        private float sprintStaminaDrainScale = 1f;
+
+        public void SetSprinting(bool sprinting, float drainScale = 1f)
         {
             isSprinting = sprinting;
+            sprintStaminaDrainScale = sprinting ? Mathf.Max(0f, drainScale) : 1f;
         }
 
         public void ResetForNewGame()
@@ -458,7 +461,9 @@ namespace Project.Survival
 
             if (isSprinting)
             {
-                CurrentStamina = Mathf.Max(0f, CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond * StaminaRateScale);
+                CurrentStamina = Mathf.Max(
+                    0f,
+                    CurrentStamina - Time.deltaTime * sprintStaminaDrainPerSecond * StaminaRateScale * sprintStaminaDrainScale);
             }
 
             float regenPerSecond = ResolveEffectiveStaminaRegenPerSecond();

@@ -6,6 +6,7 @@ using Project.Core;
 using Project.Data;
 using Project.Features.Jetpack;
 using Project.Features.Climb;
+using Project.Features.Locomotion;
 using Project.Inventory;
 using Project.Player;
 using Project.UI;
@@ -48,6 +49,7 @@ namespace Project.Player.Invector
         private PioneerInvectorInputBridge _inputBridge;
         private DMJetpackInputBridge _jetpackInputBridge;
         private DMClimbController _climb;
+        private DMLocomotionGaitController _locomotionGait;
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private bool _miningScanAimHold;
@@ -68,6 +70,7 @@ namespace Project.Player.Invector
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
             _jetpackInputBridge = GetComponent<DMJetpackInputBridge>();
             _climb = GetComponent<DMClimbController>();
+            _locomotionGait = GetComponent<DMLocomotionGaitController>();
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, shooterManager);
@@ -137,14 +140,18 @@ namespace Project.Player.Invector
 
         protected override void Update()
         {
-            if (_inputBridge != null)
-                _inputBridge.ApplyInputLocks(this);
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
 
             TryDrawWeaponOnAimPress();
 
             base.Update();
             SyncPioneerCursorState();
             PollFollowCameraZoom();
+
+            if (_locomotionGait == null)
+                _locomotionGait = GetComponent<DMLocomotionGaitController>();
+            _locomotionGait?.TickLocomotion();
         }
 
         /// <summary>
@@ -238,6 +245,9 @@ namespace Project.Player.Invector
 
         protected override void LateUpdate()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (tpCamera == null)
             {
                 PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
@@ -413,6 +423,13 @@ namespace Project.Player.Invector
         public override void SprintInput()
         {
             if (!sprintInput.useInput || cc == null || !CanReadGameplayInput())
+                return;
+
+            if (_locomotionGait == null)
+                _locomotionGait = GetComponent<DMLocomotionGaitController>();
+
+            // DMLocomotionGaitController ticks gaits in Update; skip Invector Sprint() when it owns input.
+            if (_locomotionGait != null)
                 return;
 
             if (Keyboard.current == null)
@@ -599,7 +616,10 @@ namespace Project.Player.Invector
         private float GetGameplayFollowZoom()
         {
             float preferred = GetPreferredZoom();
-            bool sprinting = cc != null && cc.isSprinting && cc.input.sqrMagnitude > 0.01f && !IsAimingActive;
+            bool sprinting = cc != null && cc.input.sqrMagnitude > 0.01f && !IsAimingActive &&
+                (_locomotionGait != null
+                    ? _locomotionGait.IsBurstSprinting
+                    : cc.isSprinting);
             if (sprinting)
             {
                 return Mathf.Clamp(
@@ -679,7 +699,10 @@ namespace Project.Player.Invector
             }
 
             // Slight sprint pull-out only (never jump to max distance).
-            bool sprinting = cc != null && cc.isSprinting && cc.input.sqrMagnitude > 0.01f;
+            bool sprinting = cc != null && cc.input.sqrMagnitude > 0.01f &&
+                (_locomotionGait != null
+                    ? _locomotionGait.IsBurstSprinting
+                    : cc.isSprinting);
             if (sprinting || _wasSprintingLastFrame)
             {
                 float target = GetGameplayFollowZoom();

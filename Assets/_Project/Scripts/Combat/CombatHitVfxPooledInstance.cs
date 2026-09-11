@@ -15,6 +15,7 @@ namespace Project.Combat
         public void Play(float scale)
         {
             transform.localScale = Vector3.one * scale;
+            CombatVfxUtility.DisableVendorAutoReleaseBehaviours(gameObject);
 
             if (_particleSystems == null)
                 _particleSystems = GetComponentsInChildren<ParticleSystem>(true);
@@ -41,7 +42,13 @@ namespace Project.Combat
 
         private IEnumerator ReleaseAfterDelay(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            float elapsed = 0f;
+            while (elapsed < delay)
+            {
+                yield return null;
+                elapsed += Time.unscaledDeltaTime;
+            }
+
             _releaseRoutine = null;
             CombatHitVfx.ReleaseToPool(gameObject);
         }

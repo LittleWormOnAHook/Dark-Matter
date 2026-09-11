@@ -5,6 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.Serialization;
 using Project.AI.Invector;
 using Project.Companions;
+using Project.Core;
 using Project.Survival;
 using Project.World;
 
@@ -415,6 +416,9 @@ namespace Project.AI
 
         private void LateUpdate()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (IsStationary)
                 return;
 
@@ -432,6 +436,9 @@ namespace Project.AI
         {
             currentLocomotionSpeed = 0f;
             currentLocalMoveDirection = Vector3.zero;
+
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
 
             if (health != null && health.IsDead)
                 return;

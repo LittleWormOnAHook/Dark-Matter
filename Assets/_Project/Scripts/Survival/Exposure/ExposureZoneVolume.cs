@@ -175,7 +175,7 @@ namespace Project.Survival.Exposure
 
         private void Update()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || Project.Core.GameplayWorldSimulation.IsFrozen)
                 return;
 
             bool pulseEnabled = profile != null && profile.pulse != null && profile.pulse.enabled;

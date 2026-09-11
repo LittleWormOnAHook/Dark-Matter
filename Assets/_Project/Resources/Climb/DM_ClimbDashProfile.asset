@@ -66,6 +66,10 @@ MonoBehaviour:
   fallDamageLethalPercent: 0.3
   fallDamageHealthFraction: 0.5
   jetpackLethalDelay: 6
+  slowWalkSpeedMultiplier: 0.5
+  jogSpeedMultiplier: 1
+  sprintBurstSpeedMultiplier: 1.2
+  shiftDoubleTapWindow: 0.28
   maxHealth: 100
   maxEnergy: 100
   maxStamina: 100

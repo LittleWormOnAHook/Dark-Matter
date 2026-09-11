@@ -78,6 +78,9 @@ namespace Project.World
 
         private void LateUpdate()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (!ResolvePlayer())
                 return;
 

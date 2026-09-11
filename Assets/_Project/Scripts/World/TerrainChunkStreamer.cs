@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Project.Core;
 using Unity.AI.Navigation;
 using UnityEngine;
 
@@ -31,7 +32,7 @@ namespace Project.World
 
         [Header("Streaming")]
         [SerializeField, Min(1)] private int maxActiveChunks = 3;
-        [SerializeField, Min(0.05f)] private float updateInterval = 0.2f;
+        [SerializeField, Min(0.05f)] private float updateInterval = 0.25f;
         [SerializeField] private UnloadMode unloadMode = UnloadMode.HideDrawAndCollider;
         [SerializeField] private bool setNeighborsOnActive = true;
         [SerializeField] private bool streamInEditor = false;
@@ -89,6 +90,9 @@ namespace Project.World
 
         private void LateUpdate()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (!Application.isPlaying && !streamInEditor)
                 return;
 

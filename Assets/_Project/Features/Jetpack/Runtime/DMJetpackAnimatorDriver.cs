@@ -111,11 +111,17 @@ namespace Project.Features.Jetpack
 
         private void Update()
         {
+            if (Project.Core.GameplayWorldSimulation.IsFrozen)
+                return;
+
             ApplyActiveFlag();
         }
 
         private void FixedUpdate()
         {
+            if (Project.Core.GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (animator == null || jetpack == null || motor == null)
                 return;
 

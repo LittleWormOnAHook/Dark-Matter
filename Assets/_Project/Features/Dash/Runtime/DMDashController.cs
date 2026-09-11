@@ -134,6 +134,9 @@ namespace Project.Features.Dash
 
         private void Update()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             if (_dashing)
                 return;
 

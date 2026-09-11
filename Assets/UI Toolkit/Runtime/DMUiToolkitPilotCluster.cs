@@ -14,7 +14,7 @@ namespace Project.UI
 {
     /// <summary>
     /// Lower-left combined minimap / stats cluster. Toggle from
-    /// DMUiToolkitConfig.showPilotCluster. No panel background.
+    /// DMUiToolkitConfig.showPilotCluster (shipping pilot HUD). No panel background.
     /// Tilde (~) hides this with the rest of the gameplay HUD.
     /// </summary>
     [DefaultExecutionOrder(-360)]
@@ -139,6 +139,10 @@ namespace Project.UI
         private float lastCompassHeading = float.NaN;
         private float lastCompassWidth;
         private float nextHeavyRefresh;
+        private float nextMapCompassRefresh;
+        private const float MapCompassRefreshInterval = 0.066f;
+        private float lastMapCompassHeading = float.NaN;
+        private GameObject cachedPlayerGo;
         private float cachedCompassStripWidth = 320f;
         private int nextCompassWidthFrame;
         private readonly List<CompassTick> ticks = new List<CompassTick>(24);
@@ -511,22 +515,38 @@ private void EnsureArcs()
 
         private void RefreshPresentation()
         {
-            GameObject player = PlayerLocator.FindPlayerObject();
+            if (cachedPlayerGo == null)
+                cachedPlayerGo = PlayerLocator.FindPlayerObject();
+
+            GameObject player = cachedPlayerGo;
             SurvivalStats stats = ResolveStats(player);
             InventorySystem inventory = ResolveInventory(player);
             MapUI mapUi = ResolveMapUi();
 
             if (Time.unscaledTime >= nextHeavyRefresh)
             {
-                nextHeavyRefresh = Time.unscaledTime + 0.066f;
+                nextHeavyRefresh = Time.unscaledTime + MapCompassRefreshInterval;
                 RefreshBars(stats);
                 RefreshLoad(inventory);
                 RefreshWorld(mapUi, stats);
             }
 
-            RefreshMap(mapUi);
-            RefreshCompass(mapUi);
-            TickMinimapZoom(mapUi);
+            float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
+            bool mapCompassDue = Time.unscaledTime >= nextMapCompassRefresh;
+            if (!float.IsNaN(lastMapCompassHeading)
+                && Mathf.Abs(Mathf.DeltaAngle(heading, lastMapCompassHeading)) > 0.35f)
+            {
+                mapCompassDue = true;
+            }
+
+            if (mapCompassDue)
+            {
+                nextMapCompassRefresh = Time.unscaledTime + MapCompassRefreshInterval;
+                lastMapCompassHeading = heading;
+                RefreshMap(mapUi);
+                RefreshCompass(mapUi);
+                TickMinimapZoom(mapUi);
+            }
         }
 
         private void RefreshBars(SurvivalStats stats)

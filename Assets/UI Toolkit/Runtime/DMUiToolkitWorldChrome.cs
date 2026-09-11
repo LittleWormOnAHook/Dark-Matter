@@ -691,7 +691,7 @@ namespace Project.UI
                 return true;
 
             Transform player = playerTransform;
-            if (player != null && (player.position - lastPaintPlayerPos).sqrMagnitude > 0.0004f)
+            if (player != null && (player.position - lastPaintPlayerPos).sqrMagnitude > 0.04f)
                 return true;
 
             Camera camera = worldCamera;
@@ -699,10 +699,10 @@ namespace Project.UI
                 return true;
 
             Transform cam = camera.transform;
-            if ((cam.position - lastPaintCamPos).sqrMagnitude > 0.0004f)
+            if ((cam.position - lastPaintCamPos).sqrMagnitude > 0.04f)
                 return true;
 
-            if (Quaternion.Angle(cam.rotation, lastPaintCamRot) > 0.08f)
+            if (Quaternion.Angle(cam.rotation, lastPaintCamRot) > 0.35f)
                 return true;
 
             return false;

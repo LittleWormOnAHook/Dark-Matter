@@ -245,6 +245,23 @@ namespace Project.Features.Climb
         [Range(0f, 20f)]
         public float jetpackLethalDelay = 6f;
 
+        [Header("Locomotion — walk / run / sprint")]
+        [Tooltip("Default slow walk = Invector runningSpeed × this (0.5 = half prior jog speed).")]
+        [Range(0.25f, 1f)]
+        public float slowWalkSpeedMultiplier = 0.5f;
+
+        [Tooltip("Shift hold jog = Invector runningSpeed × this.")]
+        [Range(0.5f, 1.5f)]
+        public float jogSpeedMultiplier = 1f;
+
+        [Tooltip("Double-tap Shift burst = Invector sprintSpeed × this (+20% = 1.2). Stamina drain scales by the same factor.")]
+        [Min(1f)]
+        public float sprintBurstSpeedMultiplier = 1.2f;
+
+        [Tooltip("Max seconds between Shift taps to arm the sprint burst.")]
+        [Min(0.05f)]
+        public float shiftDoubleTapWindow = 0.28f;
+
         [Header("Survival — pools (authority)")]
         public float maxHealth = 100f;
         public float maxEnergy = 100f;

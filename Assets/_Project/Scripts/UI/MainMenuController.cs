@@ -45,7 +45,21 @@ namespace Project.UI
         private Button controlsButton;
         private Button exitButton;
         private TextMeshProUGUI menuMessageLabel;
-        private bool pauseOverlayActive;
+        /// <summary>Updated whenever pause overlay toggles — avoids scene searches from hot paths.</summary>
+        public static bool IsPauseOverlayActive { get; private set; }
+
+        private bool _pauseOverlayActive;
+        private bool pauseOverlayActive
+        {
+            get => _pauseOverlayActive;
+            set
+            {
+                if (_pauseOverlayActive == value)
+                    return;
+                _pauseOverlayActive = value;
+                IsPauseOverlayActive = value;
+            }
+        }
         private Texture2D pendingSaveScreenshot;
 
         private void Awake()
@@ -530,19 +544,33 @@ namespace Project.UI
         }
 
         /// <summary>
+        /// Re-assert title-menu pause if editor tooling or recovery code raised timeScale during boot.
+        /// </summary>
+        public static void EnforceTitleWorldPause()
+        {
+            if (!Application.isPlaying || GameSession.HasStarted)
+                return;
+
+            if (Time.timeScale <= 0.01f)
+                return;
+
+            MainMenuController menu = FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
+            if (menu != null)
+            {
+                menu.SetGameWorldPaused(true);
+                return;
+            }
+
+            Time.timeScale = 0f;
+            PlayerController player = PlayerLocator.FindPlayerController();
+            player?.SetGameplayPaused(true);
+        }
+
+        /// <summary>
         /// True while the main menu or in-game pause overlay should suppress bottom gameplay HUD.
         /// </summary>
-        public static bool BlocksGameplayHud
-        {
-            get
-            {
-                if (!GameSession.HasStarted)
-                    return true;
-
-                MainMenuController menu = FindAnyObjectByType<MainMenuController>();
-                return menu != null && menu.pauseOverlayActive;
-            }
-        }
+        public static bool BlocksGameplayHud =>
+            !GameSession.HasStarted || IsPauseOverlayActive;
 
         /// <summary>
         /// Hides the item/tool hotbars. Called whenever the main menu, pause menu, or any of their
@@ -1147,7 +1175,7 @@ namespace Project.UI
                    candidate.name == "XpToastUI";
         }
 
-        private void SetGameWorldPaused(bool paused)
+        internal void SetGameWorldPaused(bool paused)
         {
             Time.timeScale = paused ? 0f : 1f;
             SetGameplayPaused(paused);

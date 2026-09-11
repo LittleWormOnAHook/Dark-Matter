@@ -1,0 +1,38 @@
+---
+description: Register new profile-tunable systems in Genesis Studio when adding or upgrading them.
+alwaysApply: true
+---
+
+# Genesis Studio — Profile Adjuster Registration
+
+When you **add or upgrade** a gameplay system that exposes tunable values via a **ScriptableObject profile**, **MonoBehaviour profile adjuster**, or **Resources-backed live profile** (same pattern as climb, dash, jetpack, map, survival pools):
+
+## Required
+
+1. **Expose tunables on a durable profile asset** under `Assets/_Project/Resources/` (or an existing canonical profile such as `DM_ClimbDashProfile`) — not only on ephemeral scene/prefab fields.
+2. **Register the surface in Genesis Studio** (`Assets/_Project/Editor/GenesisStudio/`):
+   - Add or extend a **category subtab** in `DMStudioRegistry.cs`.
+   - If the profile is shared with other tabs, add a **`DMStudioProfileSectionFilter`** + field list in `DMStudioProfileSectionFilter.cs` so the studio shows only the relevant slice.
+   - Set **`playModeSave: true`** when Play-mode slider edits should persist (match `DMProfilePlayModeSaver` roots).
+3. **Runtime reads the live profile** (`Profile.Live` / `Resolve(...)`) so Genesis Studio Play tweaks apply immediately — same as climb, dash, and survival pools.
+
+## Placement guide
+
+| System type | Genesis Studio home |
+|-------------|---------------------|
+| Survival / pools / exposure / on-foot gaits | **Survival** category |
+| Climb / dash / jetpack / landing / player modules | **Player** category |
+| Map / fog-of-war | **World** |
+| Ammo FX / hit catalog | **Combat** |
+| Companion loadouts | **Companions** |
+| Scanner / UI layout | **UI** |
+| Music / SFX | **Audio** |
+
+## Do not
+
+- Ship a new profile-only tuning workflow that lives **only** in a raw Inspector on a prefab when Genesis Studio is the project’s tuning hub.
+- Forget to update **`GetPlayModeSaveRoots()`** indirectly — new subtabs with `playModeSave: true` must point at the correct asset folder.
+
+## Example (locomotion gaits)
+
+Walk / run / sprint multipliers live on `DM_ClimbDashProfile` and appear under **Survival → Walk / Run / Sprint** via `DMStudioProfileSectionFilter.LocomotionOnly`.

@@ -42,6 +42,8 @@ namespace Project.UI
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
                 return;
 
+            GameplayWorldSimulation.EnforcePreGameplayPause();
+
             TryRegisterBootstrapRoots();
 
             // Do NOT RecoverGhostUiLocks every frame here — ForceHide/Close races made journal

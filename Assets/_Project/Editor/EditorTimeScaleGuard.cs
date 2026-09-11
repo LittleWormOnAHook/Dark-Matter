@@ -26,7 +26,7 @@ namespace Project.EditorTools
             if (state == PlayModeStateChange.ExitingPlayMode ||
                 state == PlayModeStateChange.EnteredEditMode)
             {
-                EnsureProjectTimeScale();
+                EnsureProjectTimeScaleAfterPlayMode();
             }
         }
 
@@ -43,14 +43,28 @@ namespace Project.EditorTools
 
         private static void EnsureProjectTimeScale(bool forceLog)
         {
+            // delayCall runs during Play too — never stomp runtime pause (main menu / pause / journal).
+            EnsureProjectTimeScaleInternal(
+                resetRuntimeScale: !Application.isPlaying || forceLog,
+                resetAsset: !Application.isPlaying,
+                forceLog: forceLog);
+        }
+
+        private static void EnsureProjectTimeScaleAfterPlayMode()
+        {
+            EnsureProjectTimeScaleInternal(resetRuntimeScale: true, resetAsset: true, forceLog: false);
+        }
+
+        private static void EnsureProjectTimeScaleInternal(bool resetRuntimeScale, bool resetAsset, bool forceLog)
+        {
             bool runtimeFixed = false;
-            if (!Mathf.Approximately(Time.timeScale, DesiredTimeScale))
+            if (resetRuntimeScale && !Mathf.Approximately(Time.timeScale, DesiredTimeScale))
             {
                 Time.timeScale = DesiredTimeScale;
                 runtimeFixed = true;
             }
 
-            bool assetFixed = EnsureTimeManagerAsset();
+            bool assetFixed = resetAsset && EnsureTimeManagerAsset();
 
             if (forceLog || runtimeFixed || assetFixed)
             {

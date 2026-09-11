@@ -9,11 +9,20 @@ namespace Project.EditorTools.GenesisStudio
         None = 0,
         ClimbOnly = 1,
         DashOnly = 2,
-        SurvivalOnly = 3
+        SurvivalOnly = 3,
+        LocomotionOnly = 4
     }
 
     internal static class DMStudioProfileSections
     {
+        private static readonly string[] LocomotionFields =
+        {
+            "slowWalkSpeedMultiplier",
+            "jogSpeedMultiplier",
+            "sprintBurstSpeedMultiplier",
+            "shiftDoubleTapWindow"
+        };
+
         private static readonly string[] SurvivalFields =
         {
             "maxHealth",
@@ -92,7 +101,9 @@ namespace Project.EditorTools.GenesisStudio
             {
                 DMStudioProfileSectionFilter.SurvivalOnly => IsSurvivalField(propertyPath),
                 DMStudioProfileSectionFilter.DashOnly => IsDashField(propertyPath),
-                DMStudioProfileSectionFilter.ClimbOnly => !IsSurvivalField(propertyPath) && !IsDashField(propertyPath),
+                DMStudioProfileSectionFilter.LocomotionOnly => IsLocomotionField(propertyPath),
+                DMStudioProfileSectionFilter.ClimbOnly =>
+                    !IsSurvivalField(propertyPath) && !IsDashField(propertyPath) && !IsLocomotionField(propertyPath),
                 _ => true
             };
         }
@@ -106,9 +117,22 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.DashOnly =>
                     "Dash motion, stamina cost, hologram, streaks, and smoke on DM_ClimbDashProfile — climb tuning lives under Climb.",
                 DMStudioProfileSectionFilter.ClimbOnly =>
-                    "Wall attach, mantle, climb stamina, sprint stamina, and surface probes on DM_ClimbDashProfile — dash and survival have their own tabs.",
+                    "Wall attach, mantle, climb stamina, sprint stamina, and surface probes on DM_ClimbDashProfile — dash, survival, and locomotion have their own tabs.",
+                DMStudioProfileSectionFilter.LocomotionOnly =>
+                    "On-foot gaits on DM_ClimbDashProfile — slow walk, Shift jog, and double-tap Shift sprint burst. Play-mode edits persist via Profile Save.",
                 _ => string.Empty
             };
+        }
+
+        private static bool IsLocomotionField(string propertyPath)
+        {
+            for (int i = 0; i < LocomotionFields.Length; i++)
+            {
+                if (propertyPath == LocomotionFields[i])
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsSurvivalField(string propertyPath)

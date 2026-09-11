@@ -10,7 +10,8 @@ namespace Project.Core
     public static class PoolManager
     {
         private static readonly Dictionary<GameObject, GameObjectPool> PoolsByPrefab = new Dictionary<GameObject, GameObjectPool>();
-        private static readonly Dictionary<float, WaitForSeconds> WaitCache = new Dictionary<float, WaitForSeconds>(8);
+        private static readonly Dictionary<float, WaitForSecondsRealtime> WaitCache =
+            new Dictionary<float, WaitForSecondsRealtime>(8);
         private static Transform poolRoot;
         private static CoroutineRunner runner;
 
@@ -110,12 +111,12 @@ namespace Project.Core
             Release(instance);
         }
 
-        private static WaitForSeconds GetWait(float delay)
+        private static WaitForSecondsRealtime GetWait(float delay)
         {
             float key = Mathf.Round(delay * 100f) * 0.01f;
-            if (!WaitCache.TryGetValue(key, out WaitForSeconds wait))
+            if (!WaitCache.TryGetValue(key, out WaitForSecondsRealtime wait))
             {
-                wait = new WaitForSeconds(key);
+                wait = new WaitForSecondsRealtime(key);
                 WaitCache[key] = wait;
             }
 

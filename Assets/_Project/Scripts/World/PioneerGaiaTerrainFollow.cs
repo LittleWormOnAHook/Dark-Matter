@@ -57,7 +57,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
     void LateUpdate()
     {
         // TLM owns play-mode streaming. Do not call UpdateTerrainLoadState here.
-        if (!Application.isPlaying)
+        if (!Application.isPlaying || Project.Core.GameplayWorldSimulation.IsFrozen)
         {
             return;
         }

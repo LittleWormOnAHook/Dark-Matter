@@ -129,6 +129,9 @@ namespace Project.Features.Jetpack
 
         private void LateUpdate()
         {
+            if (Project.Core.GameplayWorldSimulation.IsFrozen)
+                return;
+
             float goal = ResolveWeight();
             float dt = Time.unscaledDeltaTime;
             float blend = goal > _weight ? BlendIn : BlendOut;
