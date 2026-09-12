@@ -10,11 +10,19 @@ namespace Project.EditorTools.GenesisStudio
         ClimbOnly = 1,
         DashOnly = 2,
         SurvivalOnly = 3,
-        LocomotionOnly = 4
+        LocomotionOnly = 4,
+        FootstepsAudioOnly = 5
     }
 
     internal static class DMStudioProfileSections
     {
+        private static readonly string[] FootstepsAudioFields =
+        {
+            "defaultFootsteps",
+            "surfaceFootsteps",
+            "terrainLayerFootsteps"
+        };
+
         private static readonly string[] LocomotionFields =
         {
             "slowWalkSpeedMultiplier",
@@ -104,6 +112,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.LocomotionOnly => IsLocomotionField(propertyPath),
                 DMStudioProfileSectionFilter.ClimbOnly =>
                     !IsSurvivalField(propertyPath) && !IsDashField(propertyPath) && !IsLocomotionField(propertyPath),
+                DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
                 _ => true
             };
         }
@@ -120,8 +129,21 @@ namespace Project.EditorTools.GenesisStudio
                     "Wall attach, mantle, climb stamina, sprint stamina, and surface probes on DM_ClimbDashProfile — dash, survival, and locomotion have their own tabs.",
                 DMStudioProfileSectionFilter.LocomotionOnly =>
                     "On-foot gaits on DM_ClimbDashProfile — slow walk, Shift jog, and double-tap Shift sprint burst. Play-mode edits persist via Profile Save.",
+                DMStudioProfileSectionFilter.FootstepsAudioOnly =>
+                    "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 _ => string.Empty
             };
+        }
+
+        private static bool IsFootstepsAudioField(string propertyPath)
+        {
+            for (int i = 0; i < FootstepsAudioFields.Length; i++)
+            {
+                if (propertyPath == FootstepsAudioFields[i])
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsLocomotionField(string propertyPath)

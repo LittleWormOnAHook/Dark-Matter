@@ -28,5 +28,5 @@ MonoBehaviour:
   stepMark: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
   stepLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 8388609
   timeToDestroy: 3

@@ -19,6 +19,7 @@ namespace Invector
         public float Volume { get { return _volume; } set { _volume = value; } }
         public bool SpawnParticle { get { return _spawnParticle; } set { _spawnParticle = value; } }
         public bool SpawnStepMark { get { return _spawnStepMark; } set { _spawnStepMark = value; } }
+        public bool UseTriggerEnter { get { return _useTriggerEnter; } set { _useTriggerEnter = value; } }
 
         protected int surfaceIndex = 0;
         protected Terrain terrain;
@@ -32,6 +33,8 @@ namespace Invector
         public List<vFootStepTrigger> footStepTriggers;
 
         protected FootStepObject currentFootStep;
+        private float lastLeftStepUnscaled = -10f;
+        private float lastRightStepUnscaled = -10f;
 
         protected virtual void Start()
         {
@@ -100,63 +103,13 @@ namespace Invector
             }
         }
 
-        protected virtual float[] GetTextureMix(FootStepObject footStepObj)
-        {
-            // returns an array containing the relative mix of textures
-            // on the main terrain at this world position.
-
-            // The number of values in the array will equal the number
-            // of textures added to the terrain.
-
-            UpdateTerrainInfo(footStepObj.terrain);
-
-            // calculate which splat map cell the worldPos falls within (ignoring y)
-            var worldPos = footStepObj.sender.position;
-            int mapX = (int)(((worldPos.x - terrainPos.x) / terrainData.size.x) * terrainData.alphamapWidth);
-            int mapZ = (int)(((worldPos.z - terrainPos.z) / terrainData.size.z) * terrainData.alphamapHeight);
-
-            // get the splat data for this cell as a 1x1xN 3d array (where N = number of textures)
-            if (!terrainCollider.bounds.Contains(worldPos))
-            {
-                return new float[0];
-            }
-
-            float[,,] splatmapData = terrainData.GetAlphamaps(mapX, mapZ, 1, 1);
-
-            // extract the 3D array data to a 1D array:
-            float[] cellMix = new float[splatmapData.GetUpperBound(2) + 1];
-
-            for (int n = 0; n < cellMix.Length; n++)
-            {
-                cellMix[n] = splatmapData[0, 0, n];
-            }
-            return cellMix;
-        }
-
         protected virtual int GetMainTexture(FootStepObject footStepObj)
         {
-            // returns the zero-based index of the most dominant texture
-            // on the main terrain at this world position.
-            float[] mix = GetTextureMix(footStepObj);
-
-            if (mix == null)
-            {
+            UpdateTerrainInfo(footStepObj.terrain);
+            if (terrain == null)
                 return -1;
-            }
 
-            float maxMix = 0;
-            int maxIndex = 0;
-
-            // loop through each mix value and find the maximum
-            for (int n = 0; n < mix.Length; n++)
-            {
-                if (mix[n] > maxMix)
-                {
-                    maxIndex = n;
-                    maxMix = mix[n];
-                }
-            }
-            return maxIndex;
+            return Project.Player.DMFootstepManager.SampleTerrainLayerIndex(terrain, footStepObj.sender.position);
         }
 
         protected virtual void OnDestroy()
@@ -214,6 +167,7 @@ namespace Invector
                 var name = (terrainData != null && terrainData.splatPrototypes.Length > 0) ? (terrainData.splatPrototypes[surfaceIndex]).texture.name : "";
 #endif
                 footStepObject.name = name;
+                footStepObject.terrainLayerIndex = surfaceIndex;
                 currentFootStep = footStepObject;
                 if (_useTriggerEnter)
                 {
@@ -238,6 +192,7 @@ namespace Invector
             }
 
             currentStep = footStepObject.sender;
+            footStepObject.terrainLayerIndex = -1;
             currentFootStep = footStepObject;
             if (_useTriggerEnter)
             {
@@ -254,13 +209,25 @@ namespace Invector
         /// </summary>
         public override void PlayFootStepEffect()
         {
-            if (currentFootStep != null)
+            if (currentFootStep == null || currentFootStep.sender == null)
+                return;
+
+            if (!TryAcceptFootPlant(currentFootStep.sender))
+                return;
+
+            var resolved = Project.Player.DMFootstepManager.Resolve(currentFootStep);
+            currentFootStep.volume = resolved.volume;
+            currentFootStep.spawnParticleEffect = resolved.spawnParticle;
+            currentFootStep.spawnStepMarkEffect = resolved.spawnStepMark;
+            if (debugTextureName)
             {
-                currentFootStep.volume = Volume;
-                currentFootStep.spawnParticleEffect = SpawnParticle;
-                currentFootStep.spawnStepMarkEffect = SpawnStepMark;
-                SpawnSurfaceEffect(currentFootStep);
+                Debug.Log(
+                    "Footstep tag=" + Project.Player.DMFootstepManager.ResolveTag(currentFootStep) +
+                    " terrainLayer=" + currentFootStep.terrainLayerIndex +
+                    " name=" + currentFootStep.name);
             }
+
+            SpawnSurfaceEffect(currentFootStep);
         }
 
         /// <summary>
@@ -269,10 +236,10 @@ namespace Invector
         /// <param name="evt"></param>
         public override void PlayFootStep(AnimationEvent evt)
         {
-            if (evt.animatorClipInfo.weight > 0.5)
-            {
-                PlayFootStepEffect();
-            }
+            if (_useTriggerEnter || evt.animatorClipInfo.weight <= 0.5f)
+                return;
+
+            PlayFootStepEffect();
         }
 
         /// <summary>
@@ -281,11 +248,11 @@ namespace Invector
         /// <param name="evt"></param>
         public override void PlayFootStepLeft(AnimationEvent evt)
         {
-            if (evt.animatorClipInfo.weight > 0.5)
-            {
-                currentFootStep.sender = leftFootTrigger.transform;
-                PlayFootStepEffect();
-            }
+            if (_useTriggerEnter || evt.animatorClipInfo.weight <= 0.5f || leftFootTrigger == null || currentFootStep == null)
+                return;
+
+            currentFootStep.sender = leftFootTrigger.transform;
+            PlayFootStepEffect();
         }
 
         /// <summary>
@@ -294,11 +261,32 @@ namespace Invector
         /// <param name="evt"></param>
         public override void PlayFootStepRight(AnimationEvent evt)
         {
-            if (evt.animatorClipInfo.weight > 0.15)
-            {
-                currentFootStep.sender = rightFootTrigger.transform;
-                PlayFootStepEffect();
-            }
+            if (_useTriggerEnter || evt.animatorClipInfo.weight <= 0.5f || rightFootTrigger == null || currentFootStep == null)
+                return;
+
+            currentFootStep.sender = rightFootTrigger.transform;
+            PlayFootStepEffect();
+        }
+
+        private bool TryAcceptFootPlant(Transform sender)
+        {
+            float minInterval = 0.18f;
+            var profile = Project.Player.DMFootstepProfile.Live;
+            if (profile != null)
+                minInterval = profile.minSecondsBetweenFootVfx;
+
+            bool isLeft = leftFootTrigger != null && sender == leftFootTrigger.transform;
+            float last = isLeft ? lastLeftStepUnscaled : lastRightStepUnscaled;
+            float now = Time.unscaledTime;
+            if (now - last < minInterval)
+                return false;
+
+            if (isLeft)
+                lastLeftStepUnscaled = now;
+            else
+                lastRightStepUnscaled = now;
+
+            return true;
         }
 
     }

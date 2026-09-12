@@ -148,12 +148,12 @@ namespace Project.Audio
             AudioListener.pause = !GameSession.HasStarted;
         }
 
-        public void PlayFootstep(Vector3 position, string surfaceTag, bool isRunning)
+        public void PlayFootstep(Vector3 position, string surfaceTag, bool isRunning, int terrainLayerIndex = -1)
         {
             if (profile == null)
                 return;
 
-            FootstepSurfaceSet set = profile.GetFootstepsForSurface(surfaceTag);
+            FootstepSurfaceSet set = profile.GetFootsteps(surfaceTag, terrainLayerIndex);
             AudioClip[] clips = isRunning ? set.runClips : set.walkClips;
             if (clips == null || clips.Length == 0)
                 clips = isRunning ? profile.defaultFootsteps.runClips : profile.defaultFootsteps.walkClips;
@@ -161,12 +161,12 @@ namespace Project.Audio
             PlayClip3D(PickClip(clips), position, set.volume * profile.combatVolume, Random.Range(0.92f, 1.08f));
         }
 
-        public void PlayLanding(Vector3 position, string surfaceTag, float impactSpeed)
+        public void PlayLanding(Vector3 position, string surfaceTag, float impactSpeed, int terrainLayerIndex = -1)
         {
             if (profile == null || impactSpeed < profile.minLandingSpeed)
                 return;
 
-            AudioClip[] clips = profile.GetLandingClipsForSurface(surfaceTag);
+            AudioClip[] clips = profile.GetLandingClips(surfaceTag, terrainLayerIndex);
             AudioClip clip = PickClip(clips);
             if (clip == null)
                 return;

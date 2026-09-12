@@ -41,7 +41,8 @@ namespace Project.Audio
             }
             else if (!wasGrounded)
             {
-                GameAudioManager.Instance?.PlayLanding(transform.position, GetSurfaceTag(), peakFallSpeed);
+                SampleGround(out string surfaceTag, out int terrainLayerIndex);
+                GameAudioManager.Instance?.PlayLanding(transform.position, surfaceTag, peakFallSpeed, terrainLayerIndex);
                 peakFallSpeed = 0f;
             }
             else
@@ -52,17 +53,23 @@ namespace Project.Audio
             wasGrounded = grounded;
         }
 
-        private string GetSurfaceTag()
+        private void SampleGround(out string surfaceTag, out int terrainLayerIndex)
         {
+            surfaceTag = "Default";
+            terrainLayerIndex = -1;
+
             Vector3 origin = transform.position + Vector3.up * 0.15f;
             if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore))
-                return "Default";
+                return;
 
             FootstepSurface surface = hit.collider.GetComponentInParent<FootstepSurface>();
-            if (surface != null && !string.IsNullOrEmpty(surface.SurfaceTag))
-                return surface.SurfaceTag;
+            surfaceTag = surface != null && !string.IsNullOrEmpty(surface.SurfaceTag)
+                ? surface.SurfaceTag
+                : hit.collider.tag;
 
-            return hit.collider.tag;
+            Terrain terrain = hit.collider.GetComponent<Terrain>();
+            if (terrain != null)
+                terrainLayerIndex = Project.Player.DMFootstepManager.SampleTerrainLayerIndex(terrain, hit.point);
         }
     }
 }

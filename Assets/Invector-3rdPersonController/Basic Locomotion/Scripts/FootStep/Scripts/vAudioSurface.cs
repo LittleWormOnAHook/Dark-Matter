@@ -43,20 +43,24 @@ namespace Invector
             {
                 randomSource = new vFisherYatesRandom();
             }
+            var resolved = Project.Player.DMFootstepManager.Resolve(footStepObject);
+
             ///Create audio Effect
             if (footStepObject.spawnSoundEffect)
             {
                 PlaySound(footStepObject);
             }
+            LayerMask walkableMask = ResolveWalkableStepMask();
             ///Create particle Effect
-            if (footStepObject.spawnParticleEffect && particleObject && footStepObject.ground && stepLayer.ContainsLayer(footStepObject.ground.gameObject.layer))
+            if (footStepObject.spawnParticleEffect && footStepObject.ground && walkableMask.ContainsLayer(footStepObject.ground.gameObject.layer)
+                && (resolved.dustPrefab != null || particleObject != null))
             {
-                SpawnParticle(footStepObject);
+                SpawnParticle(footStepObject, resolved);
             }
             ///Create Step Mark Effect
             if (footStepObject.spawnStepMarkEffect && useStepMark)
             {
-                StepMark(footStepObject);
+                StepMark(footStepObject, walkableMask, resolved);
             }
         }
 
@@ -67,6 +71,17 @@ namespace Invector
         /// <param name="footStepObject">Step object surface info</param>      
         protected virtual void PlaySound(FootStepObject footStepObject)
         {
+            if (footStepObject != null && Project.Audio.GameAudioManager.Instance != null)
+            {
+                string tag = Project.Player.DMFootstepManager.ResolveTag(footStepObject);
+                Project.Audio.GameAudioManager.Instance.PlayFootstep(
+                    footStepObject.sender.position,
+                    tag,
+                    false,
+                    footStepObject.terrainLayerIndex);
+                return;
+            }
+
             // if there are no clips to play return.
             if (audioClips == null || audioClips.Count == 0)
             {
@@ -93,29 +108,61 @@ namespace Invector
         /// Spawn Particle effect
         /// </summary>
         /// <param name="footStepObject">Step object surface info</param>
-        protected virtual void SpawnParticle(FootStepObject footStepObject)
+        protected virtual void SpawnParticle(FootStepObject footStepObject, Project.Player.DMFootstepResolved resolved)
         {
-            var obj = Instantiate(particleObject, footStepObject.sender.position, footStepObject.sender.rotation);
-            obj.transform.SetParent(vObjectContainer.root, true);
-            Project.Effects.DustTrackLifetime.RegisterSpawned(obj);
+            GameObject prefab = resolved.dustPrefab != null ? resolved.dustPrefab : particleObject;
+            if (prefab == null)
+                return;
+
+            Project.Effects.DustTrackLifetime.Spawn(
+                prefab,
+                footStepObject.sender.position,
+                footStepObject.sender.rotation,
+                resolved.dustMaterial,
+                vObjectContainer.root);
         }
         /// <summary>
         /// Spawn Step Mark effect
         /// </summary>
         /// <param name="footStepObject">Step object surface info</param>
-        protected virtual void StepMark(FootStepObject footStep)
+        protected virtual void StepMark(FootStepObject footStep, LayerMask walkableMask, Project.Player.DMFootstepResolved resolved)
         {
+            var profile = Project.Player.DMFootstepProfile.Live;
+            GameObject markPrefab = resolved.stepMarkPrefab != null ? resolved.stepMarkPrefab : stepMark;
+            float life = profile != null ? profile.stepMarkLifetime : timeToDestroy;
+
             RaycastHit hit;
-            if (Physics.Raycast(footStep.sender.transform.position + new Vector3(0, 0.25f, 0), Vector3.down, out hit, 1f, stepLayer))
+            if (Physics.Raycast(footStep.sender.transform.position + new Vector3(0, 0.25f, 0), Vector3.down, out hit, 1f, walkableMask))
             {
-                if (stepMark)
+                if (markPrefab)
                 {
                     var angle = Quaternion.FromToRotation(footStep.sender.up, hit.normal);
-                    var step = Instantiate(stepMark, hit.point, angle * footStep.sender.rotation);
+                    var step = Instantiate(markPrefab, hit.point, angle * footStep.sender.rotation);
                     step.transform.SetParent(vObjectContainer.root, true);
-                    Destroy(step, timeToDestroy);
+                    Destroy(step, life);
                 }
             }
+        }
+
+        /// <summary>
+        /// Playable Gaia tile is Climbable (23). Surface assets often only list Default,
+        /// which drops both dust and step marks on the live terrain.
+        /// </summary>
+        protected virtual int ResolveWalkableStepMask()
+        {
+            var profile = Project.Player.DMFootstepProfile.Live;
+            if (profile != null)
+                return profile.ResolveWalkableMask(stepLayer);
+
+            int mask = stepLayer.value;
+            if (mask == 0)
+                mask = 1;
+
+            int climbable = LayerMask.NameToLayer("Climbable");
+            if (climbable >= 0)
+                mask |= 1 << climbable;
+
+            return mask;
         }
     }
 }

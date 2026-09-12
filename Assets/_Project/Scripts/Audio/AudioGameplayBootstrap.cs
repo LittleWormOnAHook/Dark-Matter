@@ -18,8 +18,18 @@ namespace Project.Audio
             if (player == null)
                 return;
 
-            if (player.GetComponent<FootstepController>() == null)
+            // Invector vFootStep already plants audio + VFX. Adding FootstepController
+            // after Pioneer disables it double-fires clips and GetAlphamaps every frame.
+            if (player.GetComponent<Invector.vFootStep>() != null)
+            {
+                FootstepController extra = player.GetComponent<FootstepController>();
+                if (extra != null)
+                    extra.enabled = false;
+            }
+            else if (player.GetComponent<FootstepController>() == null)
+            {
                 player.AddComponent<FootstepController>();
+            }
 
             if (player.GetComponent<LandingAudioController>() == null)
                 player.AddComponent<LandingAudioController>();

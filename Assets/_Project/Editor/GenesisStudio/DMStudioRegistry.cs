@@ -13,7 +13,8 @@ namespace Project.EditorTools.GenesisStudio
         EmbeddedCraftingItem = 4,
         ExternalBlueprintTab = 5,
         ExternalTool = 6,
-        PlayerSystemsLink = 7
+        PlayerSystemsLink = 7,
+        FootstepsCombined = 8
     }
 
     public readonly struct DMStudioSubtab
@@ -158,7 +159,7 @@ namespace Project.EditorTools.GenesisStudio
                     "player",
                     "Player",
                     "◆",
-                    "Climb, dash, jetpack, landing, and live player wiring.",
+                    "Climb, dash, jetpack, landing, footsteps, and live player wiring.",
                     FromHex("#C02E7A"),
                     new[]
                     {
@@ -191,6 +192,13 @@ namespace Project.EditorTools.GenesisStudio
                             "Hero land / roll animation clip sets.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Landing/DMLandingClips.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "footsteps",
+                            "Footsteps",
+                            "Look (marks, dust, tags, terrain 0-10) and audio clip libraries in one place.",
+                            DMStudioPanelMode.FootstepsCombined,
+                            "Assets/_Project/Resources/Player/DM_FootstepProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
                             "player-systems",

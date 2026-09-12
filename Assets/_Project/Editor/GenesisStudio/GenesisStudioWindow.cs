@@ -18,6 +18,7 @@ namespace Project.EditorTools.GenesisStudio
         private Vector2 contentScroll;
         private readonly DMStudioAssetPanel assetPanel = new DMStudioAssetPanel();
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
+        private readonly DMStudioFootstepsPanel footstepsPanel = new DMStudioFootstepsPanel();
         private readonly ItemDataCreatorPanel itemDataPanel = new ItemDataCreatorPanel();
         private readonly DMAmmoCreatorPanel ammoPanel = new DMAmmoCreatorPanel();
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
@@ -183,6 +184,9 @@ namespace Project.EditorTools.GenesisStudio
                     case DMStudioPanelMode.PlayerSystemsLink:
                         DrawPlayerSystemsLink();
                         break;
+                    case DMStudioPanelMode.FootstepsCombined:
+                        footstepsPanel.Draw();
+                        break;
                 }
 
                 EditorGUILayout.EndScrollView();
@@ -287,7 +291,7 @@ namespace Project.EditorTools.GenesisStudio
                     "Tip: tune profiles in Play — Profile Save keeps climb, jetpack, map, and landing edits when you stop.",
                     DMStudioStyles.HeroSubtitle);
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Tools Window", GUILayout.Width(100f)))
+                if (GUILayout.Button("Genesis Tools", GUILayout.Width(100f)))
                     DarkMatterGenesisToolsWindow.Open();
                 if (GUILayout.Button("UI Studio", GUILayout.Width(80f)))
                     UiStudioWindow.ShowWindow();

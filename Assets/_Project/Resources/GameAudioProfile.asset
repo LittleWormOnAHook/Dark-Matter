@@ -32,7 +32,8 @@ MonoBehaviour:
     - {fileID: 8300000, guid: c621e1c37e59364438ac7b81e8cd1db3, type: 3}
     - {fileID: 8300000, guid: 83155f864d3d9f044a1a7625c29374f5, type: 3}
     - {fileID: 8300000, guid: c1c96c7059e287a439d1f995d02dd4cb, type: 3}
-    landingClips: []
+    landingClips:
+    - {fileID: 8300000, guid: 5a4ca305a97471b458fecb85f1482197, type: 3}
     walkStepDistance: 2.1
     runStepDistance: 2.8
     volume: 0.93
@@ -47,6 +48,164 @@ MonoBehaviour:
     walkStepDistance: 0
     runStepDistance: 0
     volume: 0.9
+  - surfaceTag: Climbable
+    walkClips:
+    - {fileID: 8300000, guid: 8588fbd0adac5a64e88cc29de98fe433, type: 3}
+    - {fileID: 8300000, guid: 6fc2d82e5702afb4c8b22c92c8e656de, type: 3}
+    - {fileID: 8300000, guid: 2e497fe8ace730e4da80ff2c9ebba6f6, type: 3}
+    - {fileID: 8300000, guid: 4e182ea589069584e9a520b54b13dcd8, type: 3}
+    - {fileID: 8300000, guid: 7e32c3b0f770c1c4aa7a3ef4fab02558, type: 3}
+    runClips: []
+    landingClips:
+    - {fileID: 8300000, guid: 4e182ea589069584e9a520b54b13dcd8, type: 3}
+    - {fileID: 8300000, guid: 6fc2d82e5702afb4c8b22c92c8e656de, type: 3}
+    walkStepDistance: 0
+    runStepDistance: 0
+    volume: 0.9
+  terrainLayerFootsteps:
+  - layerIndex: 0
+    label: 0 Sand Fine
+    enabled: 1
+    walkClips:
+    - {fileID: 8300000, guid: e261f23e28fa820419592cb7907f385f, type: 3}
+    - {fileID: 8300000, guid: 5b5d23b41843469409c1646424fc5059, type: 3}
+    - {fileID: 8300000, guid: ef15b7ad151db9d438cb1aa79f5402f4, type: 3}
+    - {fileID: 8300000, guid: e394162adc925fc4c85cf4dae972ff61, type: 3}
+    runClips:
+    - {fileID: 8300000, guid: e261f23e28fa820419592cb7907f385f, type: 3}
+    - {fileID: 8300000, guid: 5b5d23b41843469409c1646424fc5059, type: 3}
+    - {fileID: 8300000, guid: ef15b7ad151db9d438cb1aa79f5402f4, type: 3}
+    - {fileID: 8300000, guid: e394162adc925fc4c85cf4dae972ff61, type: 3}
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 1
+    label: 1 Sand Coarse
+    enabled: 1
+    walkClips:
+    - {fileID: 8300000, guid: 5cbf4dba6e3b40040938560663d850cc, type: 3}
+    - {fileID: 8300000, guid: 36b2a5a7f988c3a49a8dcb97c82f3055, type: 3}
+    - {fileID: 8300000, guid: 061f92917f3344e46a181210cd2be5f8, type: 3}
+    - {fileID: 8300000, guid: e6b69fa3aa7d71543b631e73a8d4edaa, type: 3}
+    - {fileID: 8300000, guid: 325a507d48fda384fa119f766f5c51a7, type: 3}
+    - {fileID: 8300000, guid: 763ef6481f64ff044b076930e3e76ba2, type: 3}
+    runClips:
+    - {fileID: 8300000, guid: 5cbf4dba6e3b40040938560663d850cc, type: 3}
+    - {fileID: 8300000, guid: 36b2a5a7f988c3a49a8dcb97c82f3055, type: 3}
+    - {fileID: 8300000, guid: 061f92917f3344e46a181210cd2be5f8, type: 3}
+    - {fileID: 8300000, guid: e6b69fa3aa7d71543b631e73a8d4edaa, type: 3}
+    - {fileID: 8300000, guid: 325a507d48fda384fa119f766f5c51a7, type: 3}
+    - {fileID: 8300000, guid: 763ef6481f64ff044b076930e3e76ba2, type: 3}
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 2
+    label: 2 Rock Ground
+    enabled: 1
+    walkClips:
+    - {fileID: 8300000, guid: 8a03f352c2559e94dbc4ef50b41bd5d2, type: 3}
+    - {fileID: 8300000, guid: 6d9eab75b322d1c449088e38a4f5e1e6, type: 3}
+    - {fileID: 8300000, guid: 6d6d9854951d666499c1917ccead38f9, type: 3}
+    - {fileID: 8300000, guid: 53a951344a063cb48b0c0b981c120b9e, type: 3}
+    - {fileID: 8300000, guid: 6db065b750e7e114cb33b3441bf0f56f, type: 3}
+    runClips:
+    - {fileID: 8300000, guid: 8a03f352c2559e94dbc4ef50b41bd5d2, type: 3}
+    - {fileID: 8300000, guid: 6d9eab75b322d1c449088e38a4f5e1e6, type: 3}
+    - {fileID: 8300000, guid: 6d6d9854951d666499c1917ccead38f9, type: 3}
+    - {fileID: 8300000, guid: 53a951344a063cb48b0c0b981c120b9e, type: 3}
+    - {fileID: 8300000, guid: 6db065b750e7e114cb33b3441bf0f56f, type: 3}
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 3
+    label: 3 Scattered Stones
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 4
+    label: 4 Rock Path
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 5
+    label: 5 Cliffs
+    enabled: 1
+    walkClips:
+    - {fileID: 8300000, guid: 65b499ffb7e5b3f48b65692d8755ebf8, type: 3}
+    - {fileID: 8300000, guid: 6110c76fa6964d446b1db30509dfd28b, type: 3}
+    - {fileID: 8300000, guid: 344781d66eee0664fab2bd534f7d2591, type: 3}
+    - {fileID: 8300000, guid: 344781d66eee0664fab2bd534f7d2591, type: 3}
+    - {fileID: 8300000, guid: 89162354899ca10499fead189dfe210d, type: 3}
+    runClips:
+    - {fileID: 8300000, guid: 833710f121507a340bc538a5366f6227, type: 3}
+    - {fileID: 8300000, guid: 4bc5be32f5547d446b427dc84de2e4e6, type: 3}
+    - {fileID: 8300000, guid: 7501b2f15a2702d40a3037a6b1a54937, type: 3}
+    - {fileID: 8300000, guid: a5826dbff675cd44c82228913d69fe7d, type: 3}
+    - {fileID: 8300000, guid: 6a9cf497015e03d48a5ddb8ebabc2994, type: 3}
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 6
+    label: 6 Mud
+    enabled: 1
+    walkClips:
+    - {fileID: 8300000, guid: d176d898723ad0d4e83f9dbc8cf07614, type: 3}
+    - {fileID: 8300000, guid: fd9c43acc85891c479ae09f6b7c338ad, type: 3}
+    runClips:
+    - {fileID: 8300000, guid: d176d898723ad0d4e83f9dbc8cf07614, type: 3}
+    - {fileID: 8300000, guid: fd9c43acc85891c479ae09f6b7c338ad, type: 3}
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 7
+    label: 7 Snow
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 8
+    label: 8 Terrain Layer
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 9
+    label: 9 Terrain Layer
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
+  - layerIndex: 10
+    label: 10 Terrain Layer
+    enabled: 1
+    walkClips: []
+    runClips: []
+    landingClips: []
+    walkStepDistance: 2.1
+    runStepDistance: 2.8
+    volume: 0.85
   defaultLandingClips:
   - {fileID: 8300000, guid: d6615f4bb3916ff4cbeb364b5c57063a, type: 3}
   - {fileID: 8300000, guid: d6615f4bb3916ff4cbeb364b5c57063a, type: 3}

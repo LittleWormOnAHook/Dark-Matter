@@ -50,10 +50,7 @@ namespace Project.Audio
 
             bool isRunning = speed >= runSpeedThreshold;
             GameAudioProfile profile = GameAudioManager.Instance != null ? GameAudioManager.Instance.Profile : null;
-            FootstepSurfaceSet set = profile != null
-                ? profile.GetFootstepsForSurface(GetSurfaceTag())
-                : null;
-
+            FootstepSurfaceSet set = profile != null ? profile.defaultFootsteps : null;
             float stepDistance = isRunning
                 ? (set != null ? set.runStepDistance : 2.8f)
                 : (set != null ? set.walkStepDistance : 2.1f);
@@ -63,20 +60,27 @@ namespace Project.Audio
                 return;
 
             distanceSinceLastStep = 0f;
-            GameAudioManager.Instance?.PlayFootstep(transform.position, GetSurfaceTag(), isRunning);
+            SampleGround(out string surfaceTag, out int terrainLayerIndex);
+            GameAudioManager.Instance?.PlayFootstep(transform.position, surfaceTag, isRunning, terrainLayerIndex);
         }
 
-        private string GetSurfaceTag()
+        private void SampleGround(out string surfaceTag, out int terrainLayerIndex)
         {
+            surfaceTag = "Default";
+            terrainLayerIndex = -1;
+
             Vector3 origin = transform.position + Vector3.up * 0.15f;
             if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore))
-                return "Default";
+                return;
 
             FootstepSurface surface = hit.collider.GetComponentInParent<FootstepSurface>();
-            if (surface != null && !string.IsNullOrEmpty(surface.SurfaceTag))
-                return surface.SurfaceTag;
+            surfaceTag = surface != null && !string.IsNullOrEmpty(surface.SurfaceTag)
+                ? surface.SurfaceTag
+                : hit.collider.tag;
 
-            return hit.collider.tag;
+            Terrain terrain = hit.collider.GetComponent<Terrain>();
+            if (terrain != null)
+                terrainLayerIndex = Project.Player.DMFootstepManager.SampleTerrainLayerIndex(terrain, hit.point);
         }
     }
 }

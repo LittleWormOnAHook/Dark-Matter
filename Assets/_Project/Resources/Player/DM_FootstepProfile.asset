@@ -1,0 +1,164 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e1c4a7b2d9f4e6a91b3c5d7e0f2a4b6, type: 3}
+  m_Name: DM_FootstepProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.DMFootstepProfile
+  volume: 1
+  spawnParticle: 1
+  spawnStepMark: 1
+  useTriggerEnter: 1
+  minSecondsBetweenFootVfx: 0.18
+  debugTextureName: 0
+  includeDefaultLayer: 1
+  includeClimbableLayer: 1
+  extraWalkableLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+  stepMarkLifetime: 3
+  dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+  dustMaterial: {fileID: 2100000, guid: 46a43ce8397caab4a8db6c3908fd1f35, type: 2}
+  dustLifetimeSeconds: 1
+  maxLiveDust: 8
+  tagEntries:
+  - tag: Terrain
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - tag: Untagged
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - tag: Climbable
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - tag: Default
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  terrainTextureLayers:
+  - layerIndex: 0
+    label: 0 Sand Fine
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 1
+    label: 1 Sand Coarse
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 2
+    label: 2 Rock Ground
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 3
+    label: 3 Scattered Stones
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 4
+    label: 4 Rock Path
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 5
+    label: 5 Cliffs
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 135586, guid: 50016857087368141803f41af4837830, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 6
+    label: 6 Mud
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 7
+    label: 7 Snow
+    enabled: 1
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 8
+    label: 8 Terrain Layer
+    enabled: 0
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 9
+    label: 9 Terrain Layer
+    enabled: 0
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}
+  - layerIndex: 10
+    label: 10 Terrain Layer
+    enabled: 0
+    volume: 1
+    spawnParticle: 1
+    spawnStepMark: 1
+    stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
+    dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
+    dustMaterial: {fileID: 0}

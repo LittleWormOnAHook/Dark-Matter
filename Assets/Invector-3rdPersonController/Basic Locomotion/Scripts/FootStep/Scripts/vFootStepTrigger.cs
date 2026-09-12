@@ -102,6 +102,7 @@ namespace Invector
         public bool spawnStepMarkEffect;
         public bool spawnParticleEffect;
         public float volume;
+        public int terrainLayerIndex = -1;
         public FootStepObject(Transform sender, Collider ground)
         {            
             this.name = "";
