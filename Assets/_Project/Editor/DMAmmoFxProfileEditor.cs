@@ -19,7 +19,11 @@ namespace Project.EditorTools
             EditorGUILayout.LabelField("Ammo Profile Sync", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "This asset is the full ammo authoring profile (stats + FX + per-ammo hit marks). " +
-                "Inline decals/hit effects on a surface row override the shared set for this ammo only.",
+                "Recoil Vertical/Horizontal are the live camera kick. " +
+                "Rifle Camera fields on Ammo Recoil Profile still override two-hand weapons. " +
+                "Invector weapon recoilUp / recoilLeft / recoilRight do nothing. " +
+                "Fire Rate is shots or burst groups per second and overrides the weapon when > 0. " +
+                "Shots Per Burst 1 = single; 2-5 fires that many rounds at Burst Fire Rate.",
                 MessageType.Info);
 
             EditorGUILayout.BeginHorizontal();

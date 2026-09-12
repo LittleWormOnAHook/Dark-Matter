@@ -55,8 +55,8 @@ MonoBehaviour:
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
-  recoilVertical: 0.22
-  recoilHorizontal: 0.14
+  recoilVertical: 0.65
+  recoilHorizontal: 0.22
   recoilFireRateScale: 0
   fireRate: 4
   magazineSize: 30

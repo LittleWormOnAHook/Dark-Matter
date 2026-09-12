@@ -55,6 +55,8 @@ namespace Project.EditorTools
             RefreshExistingAmmo();
 
             scroll = EditorGUILayout.BeginScrollView(scroll);
+            try
+            {
             EditorGUILayout.LabelField("Create Ammo Type", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Register a new AmmoType (Acid, CryoCells, …) or reuse an existing one. " +
@@ -167,8 +169,11 @@ namespace Project.EditorTools
                 EditorGUILayout.Space(8f);
                 EditorGUILayout.HelpBox(status, MessageType.Info);
             }
-
-            EditorGUILayout.EndScrollView();
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
         }
 
         private void DrawExistingAmmo()
@@ -193,79 +198,93 @@ namespace Project.EditorTools
 
         private void DrawProfileFields(SerializedObject so)
         {
-            EditorGUILayout.PropertyField(so.FindProperty("itemName"));
-            EditorGUILayout.PropertyField(so.FindProperty("ammoType"));
-            EditorGUILayout.PropertyField(so.FindProperty("icon"));
-            EditorGUILayout.PropertyField(so.FindProperty("worldPrefab"));
-            EditorGUILayout.PropertyField(so.FindProperty("maxStack"));
-            EditorGUILayout.PropertyField(so.FindProperty("ammoPerPickup"));
-            EditorGUILayout.PropertyField(so.FindProperty("ammoPickupGrant"));
-            EditorGUILayout.PropertyField(so.FindProperty("tooltipDescription"));
-            EditorGUILayout.PropertyField(so.FindProperty("grantsXp"));
-            EditorGUILayout.PropertyField(so.FindProperty("xpAmount"));
-            EditorGUILayout.PropertyField(so.FindProperty("xpSource"));
-            EditorGUILayout.PropertyField(so.FindProperty("grantXpEveryPickupOrUse"));
-            EditorGUILayout.PropertyField(so.FindProperty("requiredLevelToPickup"));
-            EditorGUILayout.PropertyField(so.FindProperty("requiredLevelToUse"));
-            EditorGUILayout.PropertyField(so.FindProperty("requiredLevelToEquip"));
-            EditorGUILayout.PropertyField(so.FindProperty("requiredLevelToCraft"));
-            EditorGUILayout.PropertyField(so.FindProperty("isAcInfused"));
-            EditorGUILayout.PropertyField(so.FindProperty("acValue"));
+            DrawProperty(so, "itemName");
+            DrawProperty(so, "ammoType");
+            DrawProperty(so, "icon");
+            DrawProperty(so, "worldPrefab");
+            DrawProperty(so, "maxStack");
+            DrawProperty(so, "ammoPerPickup");
+            DrawProperty(so, "ammoPickupGrant");
+            DrawProperty(so, "tooltipDescription");
+            DrawProperty(so, "grantsXp");
+            DrawProperty(so, "xpAmount");
+            DrawProperty(so, "xpSource");
+            DrawProperty(so, "grantXpEveryPickupOrUse");
+            DrawProperty(so, "requiredLevelToPickup");
+            DrawProperty(so, "requiredLevelToUse");
+            DrawProperty(so, "requiredLevelToEquip");
+            DrawProperty(so, "requiredLevelToCraft");
+            DrawProperty(so, "isAcInfused");
+            DrawProperty(so, "acValue");
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Ranged Behavior", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(so.FindProperty("isHitscanBeam"));
-            if (so.FindProperty("isHitscanBeam").boolValue)
-                EditorGUILayout.PropertyField(so.FindProperty("isContinuousLaser"));
-            EditorGUILayout.PropertyField(so.FindProperty("rangedDamage"));
-            EditorGUILayout.PropertyField(so.FindProperty("rangedDamageRandomRange"));
-            EditorGUILayout.PropertyField(so.FindProperty("rangedRange"));
-            EditorGUILayout.PropertyField(so.FindProperty("projectileSpeed"));
-            EditorGUILayout.PropertyField(so.FindProperty("projectileSpreadDegrees"));
-            EditorGUILayout.PropertyField(so.FindProperty("weaponAccuracy"));
-            EditorGUILayout.PropertyField(so.FindProperty("closeRangeFullAccuracyDistance"));
-            EditorGUILayout.PropertyField(so.FindProperty("closeRangeSpreadScale"));
-            EditorGUILayout.PropertyField(so.FindProperty("projectileGravityScale"));
-            EditorGUILayout.PropertyField(so.FindProperty("splashRadius"));
-            EditorGUILayout.PropertyField(so.FindProperty("splashDamageFalloff"));
-            EditorGUILayout.PropertyField(so.FindProperty("recoilVertical"));
-            EditorGUILayout.PropertyField(so.FindProperty("recoilHorizontal"));
-            EditorGUILayout.PropertyField(so.FindProperty("recoilFireRateScale"));
-            EditorGUILayout.PropertyField(so.FindProperty("ammoRecoilProfile"), true);
+            DrawProperty(so, "isHitscanBeam");
+            SerializedProperty hitscan = so.FindProperty("isHitscanBeam");
+            if (hitscan != null && hitscan.boolValue)
+                DrawProperty(so, "isContinuousLaser");
+            DrawProperty(so, "rangedDamage");
+            DrawProperty(so, "rangedDamageRandomRange");
+            DrawProperty(so, "rangedRange");
+            DrawProperty(so, "projectileSpeed");
+            DrawProperty(so, "projectileSpreadDegrees");
+            DrawProperty(so, "weaponAccuracy");
+            DrawProperty(so, "closeRangeFullAccuracyDistance");
+            DrawProperty(so, "closeRangeSpreadScale");
+            DrawProperty(so, "projectileGravityScale");
+            DrawProperty(so, "splashRadius");
+            DrawProperty(so, "splashDamageFalloff");
+            DrawProperty(so, "recoilVertical");
+            DrawProperty(so, "recoilHorizontal");
+            DrawProperty(so, "recoilFireRateScale");
+            DrawProperty(so, "ammoRecoilProfile", true);
+            DrawProperty(so, "fireRate");
+            DrawProperty(so, "shotsPerBurst");
+            DrawProperty(so, "burstFireRate");
+            DrawProperty(so, "magazineSize");
+            DrawProperty(so, "reloadTimeSeconds");
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Muzzle / Tracer / Projectile", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(so.FindProperty("projectilePrefab"));
-            EditorGUILayout.PropertyField(so.FindProperty("muzzleFlashPrefab"));
-            EditorGUILayout.PropertyField(so.FindProperty("tracerPrefab"));
-            EditorGUILayout.PropertyField(so.FindProperty("beamVfxPrefab"));
+            DrawProperty(so, "projectilePrefab");
+            DrawProperty(so, "muzzleFlashPrefab");
+            DrawProperty(so, "tracerPrefab");
+            DrawProperty(so, "beamVfxPrefab");
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Audio", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(so.FindProperty("fireSound"));
-            EditorGUILayout.PropertyField(so.FindProperty("projectileTravelSound"));
-            EditorGUILayout.PropertyField(so.FindProperty("continuousLoopSound"));
-            EditorGUILayout.PropertyField(so.FindProperty("continuousStartSound"));
-            EditorGUILayout.PropertyField(so.FindProperty("continuousStopSound"));
+            DrawProperty(so, "fireSound");
+            DrawProperty(so, "projectileTravelSound");
+            DrawProperty(so, "continuousLoopSound");
+            DrawProperty(so, "continuousStartSound");
+            DrawProperty(so, "continuousStopSound");
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Elemental", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(so.FindProperty("statusEffectOverride"));
-            EditorGUILayout.PropertyField(so.FindProperty("statusEffectDamagePerTick"));
-            EditorGUILayout.PropertyField(so.FindProperty("statusEffectTickInterval"));
-            EditorGUILayout.PropertyField(so.FindProperty("statusEffectDuration"));
-            EditorGUILayout.PropertyField(so.FindProperty("statusEffectVfxPrefab"));
+            DrawProperty(so, "statusEffectOverride");
+            DrawProperty(so, "statusEffectDamagePerTick");
+            DrawProperty(so, "statusEffectTickInterval");
+            DrawProperty(so, "statusEffectDuration");
+            DrawProperty(so, "statusEffectVfxPrefab");
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Hit VFX + Hit Marks (this ammo)", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(so.FindProperty("defaultImpactVfxPrefab"));
-            EditorGUILayout.PropertyField(so.FindProperty("spawnLaserBurn"));
-            EditorGUILayout.PropertyField(so.FindProperty("useHitMarks"));
-            EditorGUILayout.PropertyField(so.FindProperty("defaultDecals"), true);
-            EditorGUILayout.PropertyField(so.FindProperty("defaultHitEffects"), true);
-            EditorGUILayout.PropertyField(so.FindProperty("surfaces"), true);
-            EditorGUILayout.PropertyField(so.FindProperty("fallBackToCatalog"));
-            EditorGUILayout.PropertyField(so.FindProperty("catalog"));
+            DrawProperty(so, "impactVfxPrefab");
+            DrawProperty(so, "spawnLaserBurn");
+            DrawProperty(so, "useHitMarks");
+            DrawProperty(so, "defaultDecals", true);
+            DrawProperty(so, "defaultHitEffects", true);
+            DrawProperty(so, "surfaces", true);
+            DrawProperty(so, "fallBackToCatalog");
+            DrawProperty(so, "catalog");
+        }
+
+        private static void DrawProperty(SerializedObject so, string propertyName, bool includeChildren = false)
+        {
+            SerializedProperty property = so.FindProperty(propertyName);
+            if (property == null)
+                return;
+            EditorGUILayout.PropertyField(property, includeChildren);
         }
 
         private void EnsureWorking()

@@ -109,6 +109,7 @@ namespace Project.Player.Invector
         private void HandleHotbarChanged(int _)
         {
             SyncMagazineFromPioneer();
+            ApplyLiveRangedTiming();
         }
 
         /// <summary>
@@ -119,9 +120,26 @@ namespace Project.Player.Invector
         private void HandleAmmoChanged()
         {
             SyncMagazineFromPioneer();
+            ApplyLiveRangedTiming();
             // Holstered: force resync when the same slot is drawn next (Invector prefab ammo can lie).
             if (_shooterManager != null && _shooterManager.CurrentWeapon == null)
                 _lastSyncedSlot = -1;
+        }
+
+        private void ApplyLiveRangedTiming()
+        {
+            if (_shooterManager == null || _equipment == null)
+                return;
+
+            vShooterWeapon weapon = _shooterManager.CurrentWeapon;
+            if (weapon == null)
+                return;
+
+            ItemData item = _equipment.DrawnWeaponItem;
+            ItemData ammo = _ammoState != null
+                ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
+                : null;
+            PioneerInvectorRecoilUtility.ApplyRangedTiming(weapon, item, ammo);
         }
 
         /// <summary>
@@ -183,7 +201,7 @@ namespace Project.Player.Invector
 
             int slot = _equipment.ActiveWeaponHotbarSlot;
             int loaded = _ammoState.GetLoadedAmmo(slot);
-            int magSize = WeaponAmmoState.GetMagazineCapacity(weapon);
+            int magSize = WeaponAmmoState.GetMagazineCapacity(weapon, _ammoState.GetLoadedAmmoItem(slot));
             if (loaded >= magSize)
                 return false;
 
@@ -337,7 +355,10 @@ namespace Project.Player.Invector
             GameObject weaponRoot = _shooterManager != null && _shooterManager.CurrentWeapon != null
                 ? _shooterManager.CurrentWeapon.gameObject
                 : null;
-            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, item);
+            ItemData ammo = _ammoState != null && _equipment != null
+                ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
+                : null;
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, item, ammo);
         }
 
         private void SyncMagazineFromPioneer()

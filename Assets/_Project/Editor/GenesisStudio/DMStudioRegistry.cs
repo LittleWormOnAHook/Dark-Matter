@@ -236,7 +236,9 @@ namespace Project.EditorTools.GenesisStudio
                             "Per-type projectile / impact profiles (ItemData + combat FX).",
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Data/Items/Ammo",
-                            typeFilter: "t:DMAmmoFxProfile"),
+                            typeFilter: "t:DMAmmoFxProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatAmmoOnly),
                         new DMStudioSubtab(
                             "hit-catalog",
                             "Hit Catalog",

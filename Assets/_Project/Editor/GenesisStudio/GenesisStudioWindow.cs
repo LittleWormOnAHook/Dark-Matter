@@ -162,7 +162,11 @@ namespace Project.EditorTools.GenesisStudio
                     case DMStudioPanelMode.AssetFolder:
                         contentScroll = Vector2.zero;
                         EditorGUILayout.EndScrollView();
-                        assetPanel.DrawFolder(sub.SearchFolder, sub.TypeFilter, null);
+                        assetPanel.DrawFolder(
+                            sub.SearchFolder,
+                            sub.TypeFilter,
+                            null,
+                            sub.SectionFilter);
                         contentScroll = Vector2.zero;
                         EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
                         break;

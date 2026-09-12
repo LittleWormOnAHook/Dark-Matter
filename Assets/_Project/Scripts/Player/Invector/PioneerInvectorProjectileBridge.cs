@@ -1,3 +1,4 @@
+using System.Collections;
 using Invector.vShooter;
 using Project.Combat;
 using Project.Data;
@@ -9,13 +10,8 @@ namespace Project.Player.Invector
 {
     /// <summary>
     /// Unifies player ranged fire onto the same CombatProjectile pipeline companions and enemies
-    /// use, so tracers/particles/muzzle flashes/hit-fx/elemental status effects and ammo types all
-    /// behave identically no matter who pulled the trigger. Invector's vShooterManager keeps
-    /// owning aim, animation, recoil, and fire-rate gating (onShot fires after a successful shot);
-    /// this bridge just spawns our own projectile from the same muzzle. Invector's own hit
-    /// detection is prevented from double-dealing damage separately in
-    /// PioneerInvectorDamageBridge.ResolveOutgoingDamage (returns 0 for ranged weapons — the
-    /// spawned CombatProjectile is now the sole damage source for ranged shots).
+    /// use. Invector still owns aim, animation, and the trigger cycle; this bridge applies ammo
+    /// profile fire-rate / burst / damage stats and spawns our projectile.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PioneerInvectorBootstrap))]
@@ -31,6 +27,8 @@ namespace Project.Player.Invector
         private PioneerInvectorInputBridge _inputBridge;
         private PioneerInvectorWeaponBridge _weaponBridge;
         private PlayerController _player;
+        private Coroutine _burstRoutine;
+        private bool _burstActive;
 
         private void Awake()
         {
@@ -54,30 +52,95 @@ namespace Project.Player.Invector
         {
             if (_shooterManager != null)
                 _shooterManager.onShot.RemoveListener(HandleShot);
+            StopBurst();
         }
 
         private void HandleShot(vShooterWeapon invectorWeapon)
         {
+            if (_burstActive)
+                return;
+
+            if (!TryPrepareShot(invectorWeapon, out ItemData weaponItem, out ItemData ammoItem, out Transform muzzle))
+                return;
+
+            PioneerInvectorRecoilUtility.ApplyRangedTiming(invectorWeapon, weaponItem, ammoItem);
+
+            if (_ammoBridge != null && !_ammoBridge.TryProcessShotAmmo())
+                return;
+
+            FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle);
+
+            int burst = DMRangedAmmoStats.ResolveBurstCount(weaponItem, ammoItem);
+            if (burst <= 1)
+                return;
+
+            StopBurst();
+            _burstRoutine = StartCoroutine(ContinueBurst(invectorWeapon, weaponItem, ammoItem, muzzle, burst - 1));
+        }
+
+        private IEnumerator ContinueBurst(
+            vShooterWeapon invectorWeapon,
+            ItemData weaponItem,
+            ItemData ammoItem,
+            Transform muzzle,
+            int remaining)
+        {
+            _burstActive = true;
+            try
+            {
+                float interval = 1f / DMRangedAmmoStats.ResolveBurstFireRate(weaponItem, ammoItem);
+                for (int i = 0; i < remaining; i++)
+                {
+                    yield return new WaitForSeconds(interval);
+                    if (invectorWeapon == null || weaponItem == null)
+                        yield break;
+                    if (_ammoBridge != null && !_ammoBridge.TryProcessShotAmmo())
+                        yield break;
+
+                    FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle);
+                    if (_shooterManager != null)
+                        PioneerInvectorRecoilUtility.ApplyPlayerShotRecoil(_shooterManager, weaponItem, ammoItem);
+                }
+            }
+            finally
+            {
+                _burstActive = false;
+                _burstRoutine = null;
+            }
+        }
+
+        private void StopBurst()
+        {
+            if (_burstRoutine != null)
+            {
+                StopCoroutine(_burstRoutine);
+                _burstRoutine = null;
+            }
+
+            _burstActive = false;
+        }
+
+        private bool TryPrepareShot(
+            vShooterWeapon invectorWeapon,
+            out ItemData weaponItem,
+            out ItemData ammoItem,
+            out Transform muzzle)
+        {
+            weaponItem = null;
+            ammoItem = null;
+            muzzle = null;
+
             if (_bootstrap != null && !_bootstrap.IsActive)
-                return;
-
+                return false;
             if (invectorWeapon == null || _equipment == null)
-                return;
+                return false;
 
-            // Invector's own vShooterWeapon.ShootBullet spawns its own physical bullet (with a
-            // TrailRenderer + its own hit-damage) whenever its "projectile" field is assigned —
-            // independent of and in addition to the CombatProjectile we spawn below. Since we've
-            // fully unified ranged fire onto our own ammo-driven pipeline, keep it cleared so only
-            // our ammo-specific tracer/visual shows and Invector's generic bullet never fires or
-            // double-deals damage.
             invectorWeapon.projectile = null;
 
-            ItemData weaponItem = _equipment.DrawnWeaponItem != null
+            weaponItem = _equipment.DrawnWeaponItem != null
                 ? _equipment.DrawnWeaponItem
                 : _equipment.EquippedItem;
 
-            // Mining tools own continuous Fire-hold beam audio/VFX via DMIMiningController.
-            // Strip Invector pulse shot FX immediately and never spawn combat projectiles/sounds.
             if (weaponItem != null && weaponItem.isMiningTool)
             {
                 invectorWeapon.fireClip = null;
@@ -85,15 +148,9 @@ namespace Project.Player.Invector
                 invectorWeapon.lightOnShot = null;
                 invectorWeapon.isInfinityAmmo = true;
                 PioneerInvectorRecoilUtility.ZeroWeaponRecoil(invectorWeapon);
-                return;
+                return false;
             }
 
-            // Invector plays its own bundled fireClip on every shot (source.PlayOneShot) on top of
-            // whatever ammoItem/weapon fire sound we resolve below — clear it so only one gunshot
-            // isInfinityAmmo stays true so Invector's unfed native reserve (vAmmoManager) never
-            // gates shots — WeaponAmmoState is the sole authority for finite player magazines.
-            // Companions/enemies also set isInfinityAmmo, but they intentionally never consume
-            // Pioneer inventory ammo. dontUseReload stays false so reload animation still runs.
             invectorWeapon.fireClip = null;
             invectorWeapon.emittShurykenParticle = null;
             invectorWeapon.lightOnShot = null;
@@ -111,24 +168,16 @@ namespace Project.Player.Invector
             {
                 invectorWeapon.source.enabled = true;
             }
+
             PioneerInvectorRecoilUtility.ZeroWeaponRecoil(invectorWeapon);
 
             if (weaponItem == null || !weaponItem.IsRangedWeapon)
-                return;
+                return false;
 
-            // Single authoritative ammo decision for this trigger pull: blocks fire while a reload
-            // is already in progress (pauses shooting), consumes a round (or starts a reload and
-            // reports failure if the magazine just ran dry), and keeps Invector's native counter
-            // synced. No projectile spawns unless this actually consumed a real round.
-            if (_ammoBridge != null && !_ammoBridge.TryProcessShotAmmo())
-                return;
-
-            ItemData ammoItem = _ammoState != null
+            ammoItem = _ammoState != null
                 ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
                 : null;
 
-            // Prefer the authored Muzzle on the Pioneer drawn visual — never the hidden vendor muzzle.
-            Transform muzzle = null;
             if (_weaponBridge != null &&
                 _weaponBridge.TryGetActiveDrawnMuzzle(weaponItem, out Transform drawnMuzzle) &&
                 drawnMuzzle != null)
@@ -140,11 +189,20 @@ namespace Project.Player.Invector
                 muzzle = invectorWeapon.muzzle;
             }
 
-            if (muzzle == null)
+            return muzzle != null;
+        }
+
+        private void FireResolvedRound(
+            vShooterWeapon invectorWeapon,
+            ItemData weaponItem,
+            ItemData ammoItem,
+            Transform muzzle)
+        {
+            if (muzzle == null || weaponItem == null)
                 return;
 
             bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
-            float maxRange = ResolveMaxRange(weaponItem, ammoItem);
+            float maxRange = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
 
             Camera cam = ResolveGameplayCamera();
             float aimDistance = maxRange;
@@ -180,14 +238,6 @@ namespace Project.Player.Invector
             if (_player != null && _player.GameplayCamera != null)
                 return _player.GameplayCamera;
             return Camera.main;
-        }
-
-        private static float ResolveMaxRange(ItemData weapon, ItemData ammo)
-        {
-            float range = weapon != null ? weapon.rangedRange : 45f;
-            if (ammo != null && ammo.rangedRange > 0.01f)
-                range = ammo.rangedRange;
-            return Mathf.Max(1f, range);
         }
     }
 }

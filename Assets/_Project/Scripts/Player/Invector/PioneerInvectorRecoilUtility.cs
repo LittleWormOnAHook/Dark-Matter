@@ -1,6 +1,7 @@
 using Invector;
 using Invector.vCamera;
 using Invector.vShooter;
+using Project.Combat;
 using Project.Data;
 using UnityEngine;
 
@@ -218,7 +219,7 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Resolves vertical/horizontal kick from ammo recoil profile, then weapon ItemData, then grip defaults.
+        /// Resolves camera kick from live ammo sliders (or rifle profile column), then weapon, then grip defaults.
         /// </summary>
         public static void ResolveRecoilKick(ItemData weaponItem, out float verticalKick, out float horizontalKick)
         {
@@ -236,91 +237,79 @@ namespace Project.Player.Invector
             }
 
             bool isRifle = weaponItem != null && weaponItem.weaponGrip == WeaponGrip.TwoHanded;
+            DMRangedAmmoStats.ResolveRecoilKick(weaponItem, ammoItem, isRifle, out float vertBase, out float horizBase);
 
-            if (ammoItem != null && ammoItem.ammoRecoilProfile.HasAuthoredValues)
-            {
-                ammoItem.ammoRecoilProfile.GetCameraKick(isRifle, out float vertBase, out float horizBase);
-                verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
-                horizontalKick = Random.Range(-horizBase, horizBase);
-                ApplyFireRateScale(weaponItem, ref verticalKick, ref horizontalKick);
-                return;
-            }
-
-            if (IsLowRecoilLaserAmmo(ammoItem))
+            if (vertBase <= 0.001f && horizBase <= 0.001f && IsLowRecoilLaserAmmo(ammoItem))
             {
                 verticalKick = Random.Range(0.02f, 0.05f);
                 horizontalKick = Random.Range(-0.02f, 0.02f);
                 return;
             }
 
-            bool useAuthored = weaponItem != null
-                && (weaponItem.recoilVertical > 0.01f || weaponItem.recoilHorizontal > 0.01f);
-
-            if (useAuthored)
-            {
-                float vertBase = weaponItem.recoilVertical > 0.01f
-                    ? weaponItem.recoilVertical
-                    : (isRifle ? 0.65f : 2.75f);
-                float horizBase = weaponItem.recoilHorizontal > 0.01f
-                    ? weaponItem.recoilHorizontal
-                    : (isRifle ? 0.2f : 0.8f);
-
-                verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
-                horizontalKick = Random.Range(-horizBase, horizBase);
-            }
-            else
-            {
-                verticalKick = isRifle
-                    ? Random.Range(0.45f, 0.85f)
-                    : Random.Range(2f, 3.5f);
-                horizontalKick = isRifle
-                    ? Random.Range(-0.2f, 0.2f)
-                    : Random.Range(-0.8f, 0.8f);
-            }
-
-            ApplyFireRateScale(weaponItem, ref verticalKick, ref horizontalKick);
+            verticalKick = Random.Range(vertBase * 0.85f, vertBase * 1.15f);
+            horizontalKick = Random.Range(-horizBase, horizBase);
+            ApplyFireRateScale(weaponItem, ammoItem, ref verticalKick, ref horizontalKick);
         }
 
-        private static void ApplyFireRateScale(ItemData weaponItem, ref float verticalKick, ref float horizontalKick)
+        private static void ApplyFireRateScale(ItemData weaponItem, ItemData ammoItem, ref float verticalKick, ref float horizontalKick)
         {
-            float fireRateThreshold = weaponItem != null && weaponItem.recoilFireRateScale > 0.01f
-                ? weaponItem.recoilFireRateScale
-                : 4.5f;
-            if (weaponItem == null || weaponItem.fireRate <= fireRateThreshold)
+            float fireRateThreshold = DMRangedAmmoStats.ResolveRecoilFireRateScale(weaponItem, ammoItem);
+            float fireRate = DMRangedAmmoStats.ResolveFireRate(weaponItem, ammoItem);
+            if (fireRate <= fireRateThreshold)
                 return;
 
-            float fireRateScale = Mathf.Clamp(fireRateThreshold / weaponItem.fireRate, 0.65f, 1f);
+            float fireRateScale = Mathf.Clamp(fireRateThreshold / fireRate, 0.65f, 1f);
             verticalKick *= fireRateScale;
             horizontalKick *= fireRateScale;
         }
 
         public static void ApplyWeaponRecoilTuning(vShooterWeapon weapon, ItemData weaponItem)
         {
+            ApplyWeaponRecoilTuning(weapon, weaponItem, null);
+        }
+
+        public static void ApplyWeaponRecoilTuning(vShooterWeapon weapon, ItemData weaponItem, ItemData ammoItem)
+        {
             if (weapon == null)
                 return;
 
             ZeroWeaponRecoil(weapon);
             ApplyWeaponAnimationRecoilTuning(weapon, weaponItem);
-            ApplyReloadTiming(weapon, weaponItem);
+            ApplyRangedTiming(weapon, weaponItem, ammoItem);
         }
 
         public static void ApplyReloadTiming(vShooterWeapon weapon, ItemData weaponItem)
         {
-            if (weapon == null || weaponItem == null)
+            ApplyRangedTiming(weapon, weaponItem, null);
+        }
+
+        public static void ApplyRangedTiming(vShooterWeapon weapon, ItemData weaponItem, ItemData ammoItem)
+        {
+            if (weapon == null || (weaponItem == null && ammoItem == null))
                 return;
 
-            if (weaponItem.reloadTimeSeconds > 0.01f)
-                weapon.reloadTime = weaponItem.reloadTimeSeconds;
+            weapon.shootFrequency = DMRangedAmmoStats.ResolveShootInterval(weaponItem, ammoItem);
+            weapon.reloadTime = DMRangedAmmoStats.ResolveReloadSeconds(weaponItem, ammoItem);
+            weapon.clipSize = DMRangedAmmoStats.ResolveMagazineSize(weaponItem, ammoItem);
+            weapon.velocity = DMRangedAmmoStats.ResolveProjectileSpeed(weaponItem, ammoItem);
+            weapon.maxDamageDistance = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
+            weapon.minDamage = Mathf.RoundToInt(DMRangedAmmoStats.ResolveMinDamage(weaponItem, ammoItem));
+            weapon.maxDamage = Mathf.RoundToInt(Mathf.Max(1f, DMRangedAmmoStats.ResolveAverageDamage(weaponItem, ammoItem)));
         }
 
         public static void ApplyWeaponRecoilTuning(GameObject weaponRoot, ItemData weaponItem)
+        {
+            ApplyWeaponRecoilTuning(weaponRoot, weaponItem, null);
+        }
+
+        public static void ApplyWeaponRecoilTuning(GameObject weaponRoot, ItemData weaponItem, ItemData ammoItem)
         {
             if (weaponRoot == null)
                 return;
 
             vShooterWeapon[] weapons = weaponRoot.GetComponentsInChildren<vShooterWeapon>(true);
             for (int i = 0; i < weapons.Length; i++)
-                ApplyWeaponRecoilTuning(weapons[i], weaponItem);
+                ApplyWeaponRecoilTuning(weapons[i], weaponItem, ammoItem);
         }
 
         public static void ApplyWeaponAnimationRecoilTuning(vShooterWeapon weapon)

@@ -896,7 +896,8 @@ namespace Project.Player.Invector
 
         /// <summary>
         /// Resolves the muzzle transform on the active drawn ranged slot for the given item.
-        /// Prefers the authored barrel <c>muzzle</c> / <c>Muzzle</c> on the drawn visual.
+        /// Prefers the authored Pioneer <c>Muzzle</c> on the visible mesh — never the hidden
+        /// Invector <c>muzzle</c> that sits slightly below the barrel.
         /// </summary>
         public bool TryGetActiveDrawnMuzzle(ItemData item, out Transform muzzle)
         {
@@ -907,107 +908,8 @@ namespace Project.Player.Invector
             if (!slot.drawnInstance.activeInHierarchy)
                 return false;
 
-            if (slot.cachedMuzzle != null &&
-                slot.cachedMuzzle &&
-                slot.cachedMuzzle.IsChildOf(slot.drawnInstance.transform))
+            if (TryPickPreferredDrawnMuzzle(slot.drawnInstance.transform, out muzzle))
             {
-                muzzle = slot.cachedMuzzle;
-                return true;
-            }
-
-            Transform[] children = slot.drawnInstance.GetComponentsInChildren<Transform>(true);
-
-            // Prefer authored muzzle that owns a Laser LineRenderer stack (Sci-Fi Pistol / Survival Rifle / Mining Tool).
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform t = children[i];
-                if (t == null)
-                    continue;
-
-                if (!t.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) &&
-                    !t.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                Transform laser = t.Find("Laser");
-                if (laser == null)
-                {
-                    for (int c = 0; c < t.childCount; c++)
-                    {
-                        Transform child = t.GetChild(c);
-                        if (child != null && child.name.Equals("Laser", StringComparison.OrdinalIgnoreCase))
-                        {
-                            laser = child;
-                            break;
-                        }
-                    }
-                }
-
-                if (laser != null && laser.GetComponent<LineRenderer>() != null)
-                {
-                    muzzle = t;
-                    slot.cachedMuzzle = muzzle;
-                    return true;
-                }
-            }
-
-            // Prefer the authored barrel muzzle the artist placed (exact name match).
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform t = children[i];
-                if (t == null)
-                    continue;
-
-                if (t.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
-                    t.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
-                {
-                    muzzle = t;
-                    slot.cachedMuzzle = muzzle;
-                    return true;
-                }
-            }
-
-            // Legacy runtime tip created for mining when no authored muzzle exists.
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform t = children[i];
-                if (t == null)
-                    continue;
-
-                if (t.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase))
-                {
-                    muzzle = t;
-                    slot.cachedMuzzle = muzzle;
-                    return true;
-                }
-            }
-
-            // Next: any transform with "uzzle" under PioneerVisual_* (authored mesh).
-            for (int i = 0; i < children.Length; i++)
-            {
-                Transform t = children[i];
-                if (t == null)
-                    continue;
-
-                if (t.name.IndexOf("uzzle", StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
-
-                bool underVisual = false;
-                Transform p = t;
-                while (p != null && p != slot.drawnInstance.transform)
-                {
-                    if (p.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
-                    {
-                        underVisual = true;
-                        break;
-                    }
-
-                    p = p.parent;
-                }
-
-                if (!underVisual)
-                    continue;
-
-                muzzle = t;
                 slot.cachedMuzzle = muzzle;
                 return true;
             }
@@ -1015,6 +917,91 @@ namespace Project.Player.Invector
             muzzle = slot.drawnInstance.transform;
             slot.cachedMuzzle = muzzle;
             return true;
+        }
+
+        private static bool TryPickPreferredDrawnMuzzle(Transform root, out Transform muzzle)
+        {
+            muzzle = null;
+            if (root == null)
+                return false;
+
+            Transform authoredOnVisual = null;
+            Transform laserStack = null;
+            Transform authoredNamed = null;
+            Transform miningTip = null;
+            Transform fuzzyOnVisual = null;
+            Transform vendorMuzzle = null;
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                bool underVisual = IsUnderPioneerVisual(t, root);
+                bool exactMuzzle = t.name.Equals("Muzzle", StringComparison.Ordinal);
+                bool vendorNamed = t.name.Equals("muzzle", StringComparison.Ordinal);
+
+                if ((exactMuzzle || vendorNamed) && HasLaserStack(t) && laserStack == null)
+                    laserStack = t;
+
+                if (exactMuzzle && underVisual && authoredOnVisual == null)
+                    authoredOnVisual = t;
+                else if (exactMuzzle && authoredNamed == null)
+                    authoredNamed = t;
+                else if (vendorNamed && vendorMuzzle == null)
+                    vendorMuzzle = t;
+                else if (t.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase) && miningTip == null)
+                    miningTip = t;
+                else if (fuzzyOnVisual == null
+                    && t.name.IndexOf("uzzle", StringComparison.OrdinalIgnoreCase) >= 0
+                    && underVisual)
+                    fuzzyOnVisual = t;
+            }
+
+            muzzle = authoredOnVisual
+                ?? laserStack
+                ?? authoredNamed
+                ?? miningTip
+                ?? fuzzyOnVisual
+                ?? vendorMuzzle;
+            return muzzle != null;
+        }
+
+        private static bool IsUnderPioneerVisual(Transform t, Transform root)
+        {
+            Transform p = t;
+            while (p != null && p != root)
+            {
+                if (p.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    return true;
+                p = p.parent;
+            }
+
+            return false;
+        }
+
+        private static bool HasLaserStack(Transform muzzle)
+        {
+            if (muzzle == null)
+                return false;
+
+            Transform laser = muzzle.Find("Laser");
+            if (laser == null)
+            {
+                for (int c = 0; c < muzzle.childCount; c++)
+                {
+                    Transform child = muzzle.GetChild(c);
+                    if (child != null && child.name.Equals("Laser", StringComparison.OrdinalIgnoreCase))
+                    {
+                        laser = child;
+                        break;
+                    }
+                }
+            }
+
+            return laser != null && laser.GetComponent<LineRenderer>() != null;
         }
 
         /// <summary>
@@ -2352,11 +2339,12 @@ namespace Project.Player.Invector
         /// PioneerInvectorAmmoBridge.SyncMagazineFromPioneer to set correctly on the next sync tick,
         /// rather than being force-filled here.
         /// </summary>
-        private static void PrepareUnifiedProjectileWeapon(GameObject instance, ItemData weaponItem)
+        private void PrepareUnifiedProjectileWeapon(GameObject instance, ItemData weaponItem)
         {
             if (instance == null)
                 return;
 
+            ItemData ammoItem = ResolveLoadedAmmo();
             foreach (vShooterWeapon weapon in instance.GetComponentsInChildren<vShooterWeapon>(true))
             {
                 if (weapon == null)
@@ -2373,8 +2361,17 @@ namespace Project.Player.Invector
                 // shared dry-fire click as other guns (never the handgun fireClip).
                 ApplySharedEmptyClickClip(weapon);
                 EnsureReloadAudioSource(weapon);
-                PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem);
+                PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem, ammoItem);
             }
+        }
+
+        private ItemData ResolveLoadedAmmo()
+        {
+            WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+            if (ammoState == null || _equipment == null)
+                return null;
+
+            return ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
         }
 
         private static AudioClip _sharedEmptyClickClip;
@@ -2615,8 +2612,13 @@ namespace Project.Player.Invector
             vShooterWeapon shooterWeapon = instance.GetComponent<vShooterWeapon>();
             if (shooterWeapon != null)
             {
-                shooterWeapon.maxDamage = Mathf.RoundToInt(item.GetAverageRangedDamage());
-                shooterWeapon.minDamage = Mathf.RoundToInt(Mathf.Max(1f, item.rangedDamage));
+                ItemData ammoItem = null;
+                WeaponAmmoState ammoState = instance.GetComponentInParent<WeaponAmmoState>();
+                EquipmentController equipment = instance.GetComponentInParent<EquipmentController>();
+                if (ammoState != null && equipment != null)
+                    ammoItem = ammoState.GetLoadedAmmoItem(equipment.ActiveWeaponHotbarSlot);
+
+                PioneerInvectorRecoilUtility.ApplyRangedTiming(shooterWeapon, item, ammoItem);
             }
 
             vMeleeWeapon meleeWeapon = instance.GetComponent<vMeleeWeapon>();

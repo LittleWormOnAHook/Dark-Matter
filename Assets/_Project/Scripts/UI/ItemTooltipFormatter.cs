@@ -31,6 +31,7 @@ namespace Project.UI
 
             AppendConsumableLines(text, item);
             AppendWeaponLines(text, item);
+            AppendAmmoLines(text, item);
             AppendToolLines(text, item);
             AppendVehicleLines(text, item);
             AppendDeployableShelterLines(text, item);
@@ -173,6 +174,10 @@ namespace Project.UI
                 text.AppendLine($"  <color=#8C7F75>Effective Acc: {effectiveAcc:0.#}</color>");
             text.AppendLine($"  Spread: {item.projectileSpreadDegrees:0.##}°");
             text.AppendLine($"  Fire Rate: {item.fireRate:0.#}/s");
+            if (item.shotsPerBurst > 1)
+            {
+                text.AppendLine($"  Burst: {item.shotsPerBurst} shots @ {item.burstFireRate:0.#}/s");
+            }
             text.AppendLine($"  Range: {item.rangedRange:0.#}m");
             text.AppendLine($"  Magazine: {item.magazineSize}");
             if (item.reloadTimeSeconds > 0f)
@@ -180,7 +185,38 @@ namespace Project.UI
             if (item.recoilVertical > 0.01f || item.recoilHorizontal > 0.01f)
                 text.AppendLine($"  Recoil: {item.recoilVertical:0.##}↑ / ±{item.recoilHorizontal:0.##}");
             text.AppendLine($"  Projectile Speed: {item.projectileSpeed:0.#}");
-            text.AppendLine($"  <color=#8C7F75>Ammo modifies speed/spread/VFX/status — not base damage.</color>");
+            text.AppendLine($"  <color=#8C7F75>Loaded ammo can override damage, fire rate, burst, magazine, and reload.</color>");
+        }
+
+        private static void AppendAmmoLines(StringBuilder text, ItemData item)
+        {
+            if (item == null || !item.CountsAsAmmo)
+                return;
+
+            text.AppendLine("<color=#A0A8B8>Ammo Stats:</color>");
+            if (item.rangedDamage > 0.01f)
+                text.AppendLine($"  Damage: {Mathf.RoundToInt(item.rangedDamage)}-{Mathf.RoundToInt(item.rangedDamage + item.rangedDamageRandomRange)}");
+            if (item.weaponAccuracy > 0.01f)
+                text.AppendLine($"  Accuracy: {item.weaponAccuracy:0.#}");
+            if (item.projectileSpreadDegrees > 0.01f)
+                text.AppendLine($"  Spread: {item.projectileSpreadDegrees:0.##}°");
+            if (item.fireRate > 0.01f)
+                text.AppendLine($"  Fire Rate: {item.fireRate:0.#}/s");
+            if (item.shotsPerBurst > 1)
+                text.AppendLine($"  Burst: {item.shotsPerBurst} shots @ {item.burstFireRate:0.#}/s");
+            if (item.rangedRange > 0.01f)
+                text.AppendLine($"  Range: {item.rangedRange:0.#}m");
+            if (item.magazineSize > 0)
+                text.AppendLine($"  Magazine: {item.magazineSize}");
+            if (item.reloadTimeSeconds > 0.01f)
+                text.AppendLine($"  Reload: {item.reloadTimeSeconds:0.##}s");
+            if (item.projectileSpeed > 0.01f)
+                text.AppendLine($"  Projectile Speed: {item.projectileSpeed:0.#}");
+            if (item.recoilVertical > 0.01f || item.recoilHorizontal > 0.01f)
+                text.AppendLine($"  Recoil: {item.recoilVertical:0.##}↑ / ±{item.recoilHorizontal:0.##}");
+            if (item.ammoRecoilProfile.rifleCameraVertical > 0.001f || item.ammoRecoilProfile.rifleCameraHorizontal > 0.001f)
+                text.AppendLine($"  Rifle Recoil: {item.ammoRecoilProfile.rifleCameraVertical:0.##}↑ / ±{item.ammoRecoilProfile.rifleCameraHorizontal:0.##}");
+            text.AppendLine("  <color=#8C7F75>Overrides the drawn weapon when a field is set above 0.</color>");
         }
 
         private static void AppendToolLines(StringBuilder text, ItemData item)

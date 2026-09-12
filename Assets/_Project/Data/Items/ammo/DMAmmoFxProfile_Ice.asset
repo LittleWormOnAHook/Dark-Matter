@@ -47,18 +47,20 @@ MonoBehaviour:
   meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
-  rangedDamage: 8
-  rangedDamageRandomRange: 4
+  rangedDamage: 15
+  rangedDamageRandomRange: 19
   rangedRange: 45
   projectileSpeed: 300
   projectileSpreadDegrees: 1.4
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
-  recoilVertical: 0
-  recoilHorizontal: 0
+  recoilVertical: 1.2
+  recoilHorizontal: 0.75
   recoilFireRateScale: 0
   fireRate: 4
+  shotsPerBurst: 1
+  burstFireRate: 10
   magazineSize: 30
   reloadTimeSeconds: 1.8
   defaultAmmoType: 0
@@ -84,7 +86,7 @@ MonoBehaviour:
   ammoRecoilProfile:
     pistolCameraVertical: 2.8
     pistolCameraHorizontal: 0.75
-    pistolAnimationWeight: 0.38
+    pistolAnimationWeight: 0.5
     rifleCameraVertical: 4.2
     rifleCameraHorizontal: 1.1
     rifleAnimationWeight: 0.18
@@ -94,8 +96,8 @@ MonoBehaviour:
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
   muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
-  tracerPrefab: {fileID: 4699155335917859912, guid: 93ff3fd87a8823644983e1fd3d9102b2, type: 3}
-  impactVfxPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 4699155335917859912, guid: 55eb5d3ee0f992a42a23d20cad39ad81, type: 3}
+  impactVfxPrefab: {fileID: 3658251721659802214, guid: e41c6b20c2e60a5478f8a3fef948ad61, type: 3}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0
   miningPassesRequired: 2
@@ -106,7 +108,7 @@ MonoBehaviour:
   miningChunkVfxPrefab: {fileID: 0}
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
-  fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
+  fireSound: {fileID: 8300000, guid: e3298e35eed19c942b6f4d2d41cd21ba, type: 3}
   projectileTravelSound: {fileID: 0}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
@@ -116,10 +118,10 @@ MonoBehaviour:
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 2
-  statusEffectDamagePerTick: 0
+  statusEffectDamagePerTick: 5
   statusEffectTickInterval: 1
-  statusEffectDuration: 3
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 6379905319634205711, guid: dc30bfbc83ace204ba54c786e718a60d, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -141,9 +143,9 @@ MonoBehaviour:
   requiredLevelToCraft: 1
   requiredLevelToUse: 1
   requiredLevelToPickup: 1
-  tooltipDescription: "Standard gunpowder cartridges \u2014 the colony default. 50
-    rounds per pickup; fast ballistic travel (~300 m/s). Reliable for pistols and
-    rifles that accept Gunpowder ammo."
+  tooltipDescription: Not your average balistics ammo, this one packs a punch with
+    frozen ionized gas particales, that leave a lasting mark. Quick ballistic travel
+    (~300 m/s). Reliable for pistols and rifles that accept elemental Ammo.
   unlocksInventoryStorageRow: 0
   spawnLaserBurn: 0
   useHitMarks: 1

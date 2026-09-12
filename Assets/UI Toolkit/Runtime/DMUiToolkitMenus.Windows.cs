@@ -103,12 +103,134 @@ namespace Project.UI
         private string selectedSkillId;
         private AchievementCategory? selectedAchievementCategory;
 
+        /// <summary>Starting dash count before level / skill upgrades. Strip caps at 70% of the cell.</summary>
+        private const int VitalDashBaseCount = 12;
+        private const int VitalDashMaxLevelExtras = 8;
+        private const float VitalDashMaxWidthPercent = 70f;
+        private const float VitalDashWidth = 5.5f;
+        private const float VitalDashGap = 3.2f;
+
         private sealed class VitalRow
         {
             public string Id;
             public Label Label;
-            public VisualElement Fill;
+            public VisualElement DashCell;
+            public VitalDashes Dashes;
             public Label Value;
+        }
+
+        /// <summary>
+        /// Horizontal dashes with no track. Base count is the start max; each level and skill rank
+        /// appends dashes and lengthens the strip.
+        /// </summary>
+        private sealed class VitalDashes : VisualElement
+        {
+            private float fill01 = 1f;
+            private int extraDashes;
+            private int paintedCount;
+            private bool showStrip;
+            private Color color = DarkMatterGenesisUiPalette.Gold;
+
+            public VitalDashes()
+            {
+                pickingMode = PickingMode.Ignore;
+                AddToClassList("dmg-vital-dashes");
+                generateVisualContent += Paint;
+            }
+
+            public void Set(float currentFill01, int upgradeDashes, Color dashColor)
+            {
+                showStrip = true;
+                fill01 = Mathf.Clamp01(currentFill01);
+                extraDashes = Mathf.Max(0, upgradeDashes);
+                color = dashColor;
+                ApplyWidth();
+                MarkDirtyRepaint();
+            }
+
+            public void HideStrip()
+            {
+                showStrip = false;
+                fill01 = 0f;
+                extraDashes = 0;
+                paintedCount = 0;
+                style.width = 0f;
+                MarkDirtyRepaint();
+            }
+
+            public void Refit()
+            {
+                ApplyWidth();
+                MarkDirtyRepaint();
+            }
+
+            private void ApplyWidth()
+            {
+                if (!showStrip)
+                {
+                    paintedCount = 0;
+                    style.width = 0f;
+                    return;
+                }
+
+                int wanted = VitalDashBaseCount + extraDashes;
+                float pitch = VitalDashWidth + VitalDashGap;
+                float cap = ResolveWidthCap();
+                int maxFit = cap > 4f
+                    ? Mathf.Max(VitalDashBaseCount, Mathf.FloorToInt((cap + VitalDashGap) / pitch))
+                    : wanted;
+                paintedCount = Mathf.Clamp(wanted, 0, maxFit);
+                if (paintedCount <= 0)
+                {
+                    style.width = 0f;
+                    return;
+                }
+
+                style.width = paintedCount * VitalDashWidth + (paintedCount - 1) * VitalDashGap;
+            }
+
+            private float ResolveWidthCap()
+            {
+                VisualElement cell = parent;
+                if (cell == null || float.IsNaN(cell.layout.width) || cell.layout.width < 8f)
+                    return 0f;
+                return cell.layout.width * (VitalDashMaxWidthPercent * 0.01f);
+            }
+
+            private void Paint(MeshGenerationContext ctx)
+            {
+                Painter2D p = ctx.painter2D;
+                Rect r = contentRect;
+                if (paintedCount <= 0 || r.width < 4f || r.height < 2f)
+                    return;
+
+                float filledDashes = paintedCount * fill01;
+                float y0 = 1f;
+                float y1 = r.height - 1f;
+                if (y1 <= y0)
+                {
+                    y0 = 0f;
+                    y1 = r.height;
+                }
+
+                for (int i = 0; i < paintedCount; i++)
+                {
+                    float x0 = i * (VitalDashWidth + VitalDashGap);
+                    float x1 = x0 + VitalDashWidth;
+                    Color dash = color;
+                    if (i + 0.5f > filledDashes)
+                        dash.a = 0.22f;
+
+                    p.fillColor = dash;
+                    p.BeginPath();
+                    p.MoveTo(new Vector2(x0, y0));
+                    p.LineTo(new Vector2(x1, y0));
+                    p.LineTo(new Vector2(x1, y1));
+                    p.LineTo(new Vector2(x0, y1));
+                    p.ClosePath();
+                    p.Fill();
+                }
+            }
         }
 
         private void BindExtraPanels(VisualElement tree)
@@ -582,27 +704,62 @@ namespace Project.UI
             row.AddToClassList("dmg-vital-row");
             Label name = new Label(label);
             name.AddToClassList("dmg-vital-label");
-            VisualElement track = new VisualElement();
-            track.AddToClassList("dmg-vital-track");
-            VisualElement fill = new VisualElement();
-            fill.AddToClassList("dmg-vital-fill");
-            track.Add(fill);
+            VisualElement dashCell = new VisualElement();
+            dashCell.AddToClassList("dmg-vital-dash-cell");
+            VitalDashes dashes = new VitalDashes();
+            dashCell.Add(dashes);
+            dashCell.RegisterCallback<GeometryChangedEvent>(_ => dashes.Refit());
             Label value = new Label("--");
             value.AddToClassList("dmg-vital-value");
             row.Add(name);
-            row.Add(track);
+            row.Add(dashCell);
             row.Add(value);
             characterVitals.Add(row);
-            vitalRows.Add(new VitalRow { Id = id, Label = name, Fill = fill, Value = value });
+            vitalRows.Add(new VitalRow
+            {
+                Id = id,
+                Label = name,
+                DashCell = dashCell,
+                Dashes = dashes,
+                Value = value
+            });
         }
 
-        private static void SetVital(VitalRow row, float current, float max, string text)
+        private static void SetVitalPool(
+            VitalRow row,
+            float current,
+            float currentMax,
+            float startMax,
+            SkillModifierType unlockModifier,
+            bool usesLevelStatBonus = true)
         {
             if (row == null)
                 return;
-            float n = max > 0.001f ? Mathf.Clamp01(current / max) : 0f;
-            row.Fill.style.width = Length.Percent(n * 100f);
-            row.Value.text = text;
+
+            bool revealed = PlayerSkillAllocator.GetTotalRank(unlockModifier) > 0;
+            float fill01 = currentMax > 0.001f ? Mathf.Clamp01(current / currentMax) : 0f;
+            int extras = CountVitalUpgradeDashes(unlockModifier, usesLevelStatBonus, usesLevelWeaponBonus: false);
+            row.Dashes?.Set(fill01, extras, DarkMatterGenesisUiPalette.Gold);
+            string currentText = FormatStat(current);
+            row.Value.text = revealed
+                ? currentText + "/" + FormatStat(currentMax)
+                : currentText + "/???";
+        }
+
+        private static void SetVitalStat(
+            VitalRow row,
+            float current,
+            float startMax,
+            SkillModifierType unlockModifier,
+            bool usesLevelWeaponBonus)
+        {
+            if (row == null)
+                return;
+
+            bool revealed = PlayerSkillAllocator.GetTotalRank(unlockModifier) > 0;
+            int extras = CountVitalUpgradeDashes(unlockModifier, usesLevelStatBonus: false, usesLevelWeaponBonus: usesLevelWeaponBonus);
+            row.Dashes?.Set(1f, extras, DarkMatterGenesisUiPalette.Gold);
+            row.Value.text = revealed ? FormatStat(current) : FormatStat(current) + "/???";
         }
 
         private static void SetVitalUnavailable(VitalRow row, string label)
@@ -610,8 +767,23 @@ namespace Project.UI
             if (row == null)
                 return;
             row.Label.text = label;
-            row.Fill.style.width = Length.Percent(0f);
-            row.Value.text = "--";
+            row.Dashes?.HideStrip();
+            row.Value.text = "—";
+        }
+
+        private static int CountVitalUpgradeDashes(
+            SkillModifierType modifier,
+            bool usesLevelStatBonus,
+            bool usesLevelWeaponBonus)
+        {
+            int extras = Mathf.Max(0, PlayerSkillAllocator.GetTotalRank(modifier));
+            if (!usesLevelStatBonus && !usesLevelWeaponBonus)
+                return extras;
+
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            int level = progression != null ? progression.Level : 1;
+            extras += Mathf.Clamp(level - 1, 0, VitalDashMaxLevelExtras);
+            return extras;
         }
 
         private VitalRow FindVital(string id)
@@ -656,10 +828,10 @@ namespace Project.UI
             SurvivalStats stats = boundSurvival;
             if (stats != null)
             {
-                SetVital(FindVital("health"), stats.CurrentHealth, stats.maxHealth, FormatStat(stats.CurrentHealth) + "/" + FormatStat(stats.maxHealth));
-                SetVital(FindVital("energy"), stats.CurrentEnergy, stats.maxEnergy, FormatStat(stats.CurrentEnergy) + "/" + FormatStat(stats.maxEnergy));
-                SetVital(FindVital("stamina"), stats.CurrentStamina, stats.maxStamina, FormatStat(stats.CurrentStamina) + "/" + FormatStat(stats.maxStamina));
-                SetVital(FindVital("oxygen"), stats.CurrentOxygen, stats.maxOxygen, FormatStat(stats.CurrentOxygen) + "/" + FormatStat(stats.maxOxygen));
+                SetVitalPool(FindVital("health"), stats.CurrentHealth, stats.maxHealth, stats.AuthoredMaxHealth, SkillModifierType.MaxHealthPercent);
+                SetVitalPool(FindVital("energy"), stats.CurrentEnergy, stats.maxEnergy, stats.AuthoredMaxEnergy, SkillModifierType.MaxEnergyPercent);
+                SetVitalPool(FindVital("stamina"), stats.CurrentStamina, stats.maxStamina, stats.AuthoredMaxStamina, SkillModifierType.MaxStaminaPercent);
+                SetVitalPool(FindVital("oxygen"), stats.CurrentOxygen, stats.maxOxygen, stats.AuthoredMaxOxygen, SkillModifierType.MaxOxygenPercent);
             }
             else
             {
@@ -670,16 +842,26 @@ namespace Project.UI
             }
 
             if (boundJetpack != null && boundJetpack.MaxBoostSeconds > 0f)
-                SetVital(FindVital("jet"), boundJetpack.FuelRemaining, boundJetpack.MaxBoostSeconds,
-                    FormatStat(boundJetpack.FuelRemaining) + "/" + FormatStat(boundJetpack.MaxBoostSeconds));
+            {
+                float jetStart = boundJetpack.Profile != null ? boundJetpack.Profile.maxBoostSeconds : boundJetpack.MaxBoostSeconds;
+                SetVitalPool(
+                    FindVital("jet"),
+                    boundJetpack.FuelRemaining,
+                    boundJetpack.MaxBoostSeconds,
+                    jetStart,
+                    SkillModifierType.JetFuelPercent,
+                    usesLevelStatBonus: false);
+            }
             else
+            {
                 SetVitalUnavailable(FindVital("jet"), "Jet Fuel");
+            }
 
             ItemData weapon = boundEquipment != null ? boundEquipment.EquippedItem : null;
             if (weapon != null && weapon.itemType == ItemType.MeleeWeapon)
             {
-                float damage = weapon.GetAverageMeleeDamage();
-                SetVital(FindVital("melee"), damage, 100f, FormatStat(damage));
+                float start = ResolveWeaponBaseAverage(weapon.meleeDamage, weapon.meleeDamageRandomRange);
+                SetVitalStat(FindVital("melee"), weapon.GetAverageMeleeDamage(), start, SkillModifierType.MeleeDamageFlat, usesLevelWeaponBonus: true);
             }
             else
             {
@@ -688,10 +870,11 @@ namespace Project.UI
 
             if (weapon != null && weapon.IsRangedWeapon)
             {
-                float damage = weapon.GetAverageRangedDamage();
+                float start = ResolveWeaponBaseAverage(weapon.rangedDamage, weapon.rangedDamageRandomRange);
+                SetVitalStat(FindVital("ranged"), weapon.GetAverageRangedDamage(), start, SkillModifierType.RangedDamageFlat, usesLevelWeaponBonus: true);
                 float accuracy = weapon.GetEffectiveAccuracy();
-                SetVital(FindVital("ranged"), damage, 100f, FormatStat(damage));
-                SetVital(FindVital("accuracy"), accuracy, 100f, FormatStat(accuracy));
+                float accuracyStart = weapon.ResolveBaseAccuracy(null);
+                SetVitalAccuracy(FindVital("accuracy"), accuracy, accuracyStart);
             }
             else
             {
@@ -707,6 +890,25 @@ namespace Project.UI
                 characterCredits.text = "Aether Credits: " + Mathf.RoundToInt(ac);
             if (characterUnlocks != null)
                 characterUnlocks.text = LevelUnlockRegistry.BuildUnlockSummary(level);
+        }
+
+        private static void SetVitalAccuracy(VitalRow row, float current, float start)
+        {
+            if (row == null)
+                return;
+
+            bool revealed = PlayerSkillAllocator.GetTotalRank(SkillModifierType.WeaponAccuracyPercent) > 0;
+            int extras = CountVitalUpgradeDashes(SkillModifierType.WeaponAccuracyPercent, false, false);
+            row.Dashes?.Set(1f, extras, DarkMatterGenesisUiPalette.Gold);
+            row.Value.text = revealed ? FormatStat(current) : FormatStat(current) + "/???";
+        }
+
+        private static float ResolveWeaponBaseAverage(float baseDamage, float randomRange)
+        {
+            float minDamage = Mathf.Max(1f, baseDamage);
+            if (randomRange <= 0f)
+                return minDamage;
+            return (minDamage + Mathf.Max(minDamage, baseDamage + randomRange)) * 0.5f;
         }
 
         private static string FormatStat(float value)
@@ -728,7 +930,7 @@ namespace Project.UI
                 if (activeItem.isMiningTool)
                     ammoLine = "\nMining charge: " + ammo.GetMiningChargePercent(equip.ActiveWeaponHotbarSlot) + "%";
                 else
-                    ammoLine = "\nLoaded ammo: " + ammo.GetActiveLoadedAmmo() + "/" + WeaponAmmoState.GetMagazineCapacity(activeItem);
+                    ammoLine = "\nLoaded ammo: " + ammo.GetActiveLoadedAmmo() + "/" + WeaponAmmoState.GetMagazineCapacity(activeItem, ammo.GetLoadedAmmoItem(equip.ActiveWeaponHotbarSlot));
             }
 
             return

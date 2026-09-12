@@ -55,10 +55,12 @@ MonoBehaviour:
   weaponAccuracy: 75
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
-  recoilVertical: 0
-  recoilHorizontal: 0
+  recoilVertical: 4
+  recoilHorizontal: 0.75
   recoilFireRateScale: 0
-  fireRate: 4
+  fireRate: 1
+  shotsPerBurst: 1
+  burstFireRate: 1
   magazineSize: 30
   reloadTimeSeconds: 1.8
   defaultAmmoType: 8
@@ -119,7 +121,7 @@ MonoBehaviour:
   statusEffectDamagePerTick: 3
   statusEffectTickInterval: 2
   statusEffectDuration: 10
-  statusEffectVfxPrefab: {fileID: 1284412465784686, guid: b99ce17d2a62f164698110549e49b762, type: 3}
+  statusEffectVfxPrefab: {fileID: 991146027762279692, guid: d59ef6889e1116e47bac1164ffb3a9e2, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8

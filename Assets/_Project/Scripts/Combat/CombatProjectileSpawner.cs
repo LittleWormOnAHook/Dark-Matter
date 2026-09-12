@@ -49,17 +49,20 @@ namespace Project.Combat
             if (prefab == null)
                 return null;
 
+            Vector3 barrelForward = RangedFireSolver.ResolveWeaponAimForward(muzzle);
+            Vector3 spawnPosition = muzzle.position;
+            if (barrelForward.sqrMagnitude > 0.0001f)
+                spawnPosition += barrelForward * RangedFireSolver.ProjectileSpawnSkin;
+
             GameObject instance = PoolManager.Spawn(
                 prefab,
-                muzzle.position + fireDirection * RangedFireSolver.ProjectileSpawnSkin,
+                spawnPosition,
                 Quaternion.LookRotation(fireDirection, Vector3.up));
             CombatProjectile projectile = instance.GetComponent<CombatProjectile>();
             if (projectile == null)
                 projectile = instance.AddComponent<CombatProjectile>();
             AmmoType ammoType = ammoItem != null ? ammoItem.ammoType : weapon.defaultAmmoType;
-            float speed = ammoItem != null && ammoItem.projectileSpeed > 0f
-                ? ammoItem.projectileSpeed
-                : weapon.projectileSpeed;
+            float speed = DMRangedAmmoStats.ResolveProjectileSpeed(weapon, ammoItem);
 
             projectile.Launch(owner, fireDirection, damage, ammoType, ammoItem, speed, weaponItemData: weapon);
             return projectile;
@@ -74,8 +77,7 @@ namespace Project.Combat
             if (damageOverride > 0f)
                 return damageOverride;
 
-            // Weapon owns the damage roll. Ammo contributes speed/spread/VFX/status only.
-            return weapon.RollRangedDamage();
+            return DMRangedAmmoStats.ResolveShotDamage(weapon, ammoItem);
         }
 
         private static void ResolveHitscanBeam(
@@ -86,7 +88,7 @@ namespace Project.Combat
             Vector3 direction,
             float damage)
         {
-            float range = ammoItem.rangedRange > 0f ? ammoItem.rangedRange : weapon.rangedRange;
+            float range = DMRangedAmmoStats.ResolveRange(weapon, ammoItem);
             Vector3 origin = muzzle.position + direction * RangedFireSolver.MuzzleRayStartSkin;
             float castRange = Mathf.Max(0.01f, range - RangedFireSolver.MuzzleRayStartSkin);
             Vector3 endPoint = origin + direction * castRange;

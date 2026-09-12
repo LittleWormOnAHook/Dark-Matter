@@ -113,7 +113,8 @@ namespace Project.UI
 
             int weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
             int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
-            int magazineSize = WeaponAmmoState.GetMagazineCapacity(weapon);
+            ItemData loadedAmmo = ammoState != null ? ammoState.GetLoadedAmmoItem(weaponHotbarSlot) : null;
+            int magazineSize = WeaponAmmoState.GetMagazineCapacity(weapon, loadedAmmo);
             bool infiniteReserve = ammoState != null && ammoState.IsInfiniteAmmoForSlot(weaponHotbarSlot);
             int reserve = !infiniteReserve && ammoState != null
                 ? ammoState.GetReserveAmmoCount(weaponHotbarSlot)

@@ -11,7 +11,8 @@ namespace Project.EditorTools.GenesisStudio
         DashOnly = 2,
         SurvivalOnly = 3,
         LocomotionOnly = 4,
-        FootstepsAudioOnly = 5
+        FootstepsAudioOnly = 5,
+        CombatAmmoOnly = 6
     }
 
     internal static class DMStudioProfileSections
@@ -59,6 +60,57 @@ namespace Project.EditorTools.GenesisStudio
             "fallDamageLethalPercent",
             "fallDamageHealthFraction",
             "jetpackLethalDelay"
+        };
+
+        private static readonly string[] CombatAmmoFields =
+        {
+            "itemName",
+            "ammoType",
+            "tooltipDescription",
+            "rangedDamage",
+            "rangedDamageRandomRange",
+            "rangedRange",
+            "projectileSpeed",
+            "projectileSpreadDegrees",
+            "weaponAccuracy",
+            "closeRangeFullAccuracyDistance",
+            "closeRangeSpreadScale",
+            "fireRate",
+            "shotsPerBurst",
+            "burstFireRate",
+            "magazineSize",
+            "reloadTimeSeconds",
+            "recoilVertical",
+            "recoilHorizontal",
+            "recoilFireRateScale",
+            "ammoRecoilProfile",
+            "isHitscanBeam",
+            "isContinuousLaser",
+            "projectileGravityScale",
+            "splashRadius",
+            "splashDamageFalloff",
+            "statusEffectOverride",
+            "statusEffectDamagePerTick",
+            "statusEffectTickInterval",
+            "statusEffectDuration",
+            "statusEffectVfxPrefab",
+            "projectilePrefab",
+            "muzzleFlashPrefab",
+            "tracerPrefab",
+            "impactVfxPrefab",
+            "beamVfxPrefab",
+            "fireSound",
+            "projectileTravelSound",
+            "continuousLoopSound",
+            "continuousStartSound",
+            "continuousStopSound",
+            "spawnLaserBurn",
+            "useHitMarks",
+            "defaultDecals",
+            "defaultHitEffects",
+            "surfaces",
+            "fallBackToCatalog",
+            "catalog"
         };
 
         private static readonly string[] DashFields =
@@ -113,6 +165,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.ClimbOnly =>
                     !IsSurvivalField(propertyPath) && !IsDashField(propertyPath) && !IsLocomotionField(propertyPath),
                 DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
+                DMStudioProfileSectionFilter.CombatAmmoOnly => IsCombatAmmoField(propertyPath),
                 _ => true
             };
         }
@@ -131,6 +184,8 @@ namespace Project.EditorTools.GenesisStudio
                     "On-foot gaits on DM_ClimbDashProfile — slow walk, Shift jog, and double-tap Shift sprint burst. Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.FootstepsAudioOnly =>
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
+                DMStudioProfileSectionFilter.CombatAmmoOnly =>
+                    "Live ammo combat fields. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 _ => string.Empty
             };
         }
@@ -162,6 +217,23 @@ namespace Project.EditorTools.GenesisStudio
             for (int i = 0; i < SurvivalFields.Length; i++)
             {
                 if (propertyPath == SurvivalFields[i])
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsCombatAmmoField(string propertyPath)
+        {
+            return MatchesField(propertyPath, CombatAmmoFields);
+        }
+
+        private static bool MatchesField(string propertyPath, string[] fields)
+        {
+            for (int i = 0; i < fields.Length; i++)
+            {
+                string field = fields[i];
+                if (propertyPath == field || propertyPath.StartsWith(field + ".", System.StringComparison.Ordinal))
                     return true;
             }
 

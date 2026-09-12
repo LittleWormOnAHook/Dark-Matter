@@ -294,7 +294,7 @@ namespace Project.UI
                 else
                 {
                     int loaded = ammo.GetActiveLoadedAmmo();
-                    ammoLine = $"\nLoaded ammo: {loaded}/{WeaponAmmoState.GetMagazineCapacity(activeItem)}";
+                    ammoLine = $"\nLoaded ammo: {loaded}/{WeaponAmmoState.GetMagazineCapacity(activeItem, ammo.GetLoadedAmmoItem(equip.ActiveWeaponHotbarSlot))}";
                 }
             }
 

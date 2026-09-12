@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using Project.Combat;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace Project.EditorTools.GenesisStudio
         private Vector2 inspectorScroll;
         private UnityEngine.Object cachedTarget;
         private string lastFolderKey;
+        private DMStudioProfileSectionFilter folderSectionFilter;
 
         public void Dispose()
         {
@@ -43,9 +45,14 @@ namespace Project.EditorTools.GenesisStudio
             DrawInspector(asset);
         }
 
-        public void DrawFolder(string folder, string typeFilter, string description)
+        public void DrawFolder(
+            string folder,
+            string typeFilter,
+            string description,
+            DMStudioProfileSectionFilter sectionFilter = DMStudioProfileSectionFilter.None)
         {
-            string key = folder + "|" + typeFilter;
+            string key = folder + "|" + typeFilter + "|" + (int)sectionFilter;
+            folderSectionFilter = sectionFilter;
             if (lastFolderKey != key)
             {
                 lastFolderKey = key;
@@ -131,7 +138,74 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             DrawAssetHeader(asset, null);
-            DrawInspector(asset);
+            if (folderSectionFilter != DMStudioProfileSectionFilter.None)
+                DrawFilteredInspector(asset, folderSectionFilter);
+            else
+                DrawInspector(asset);
+        }
+
+        private void DrawFilteredInspector(UnityEngine.Object asset, DMStudioProfileSectionFilter section)
+        {
+            string note = DMStudioProfileSections.GetSectionNote(section);
+            if (!string.IsNullOrEmpty(note))
+            {
+                EditorGUILayout.HelpBox(note, MessageType.Info);
+                EditorGUILayout.Space(4f);
+            }
+
+            SerializedObject serialized = new SerializedObject(asset);
+            serialized.Update();
+            inspectorScroll = EditorGUILayout.BeginScrollView(inspectorScroll);
+            using (DMStudioStyles.PushLabelWidth(280f))
+            {
+                SerializedProperty iterator = serialized.GetIterator();
+                bool enterChildren = true;
+                while (iterator.NextVisible(enterChildren))
+                {
+                    enterChildren = false;
+                    if (!DMStudioProfileSections.IncludesField(iterator.propertyPath, section))
+                        continue;
+
+                    if (iterator.propertyPath == "m_Script")
+                    {
+                        using (new EditorGUI.DisabledScope(true))
+                            EditorGUILayout.PropertyField(iterator, true);
+                        continue;
+                    }
+
+                    EditorGUILayout.PropertyField(iterator, true);
+                }
+            }
+
+            EditorGUILayout.EndScrollView();
+            if (serialized.ApplyModifiedProperties())
+                EditorUtility.SetDirty(asset);
+
+            DMAmmoFxProfile profile = asset as DMAmmoFxProfile;
+            if (profile == null)
+                return;
+
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Seed Hit-Mark Rows From Catalog"))
+            {
+                Undo.RecordObject(profile, "Seed ammo hit marks");
+                profile.SeedSurfacesFromCatalog();
+                EditorUtility.SetDirty(profile);
+            }
+
+            DMAmmoFxProfile selectedProfile = Selection.activeObject as DMAmmoFxProfile;
+            using (new EditorGUI.DisabledScope(selectedProfile == null || selectedProfile == profile))
+            {
+                if (GUILayout.Button("Copy From Selected Profile"))
+                {
+                    Undo.RecordObject(profile, "Copy ammo profile");
+                    profile.CopyFrom(selectedProfile);
+                    EditorUtility.SetDirty(profile);
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawAssetHeader(UnityEngine.Object asset, string description)
@@ -158,7 +232,8 @@ namespace Project.EditorTools.GenesisStudio
                 return;
 
             inspectorScroll = EditorGUILayout.BeginScrollView(inspectorScroll);
-            GetOrCreateEditor(target)?.OnInspectorGUI();
+            using (DMStudioStyles.PushLabelWidth(280f))
+                GetOrCreateEditor(target)?.OnInspectorGUI();
             EditorGUILayout.EndScrollView();
 
             if (GUI.changed && target != null)
@@ -220,16 +295,19 @@ namespace Project.EditorTools.GenesisStudio
             if (string.IsNullOrEmpty(lastFolderKey))
                 return;
 
-            int pipe = lastFolderKey.IndexOf('|');
-            if (pipe <= 0)
+            string[] parts = lastFolderKey.Split('|');
+            if (parts.Length < 2)
                 return;
 
-            RefreshFolder(lastFolderKey.Substring(0, pipe), lastFolderKey.Substring(pipe + 1));
+            RefreshFolder(parts[0], parts[1]);
         }
 
         private string GetFolderFromKey()
         {
-            int pipe = lastFolderKey?.IndexOf('|') ?? -1;
+            if (string.IsNullOrEmpty(lastFolderKey))
+                return string.Empty;
+
+            int pipe = lastFolderKey.IndexOf('|');
             return pipe > 0 ? lastFolderKey.Substring(0, pipe) : string.Empty;
         }
 

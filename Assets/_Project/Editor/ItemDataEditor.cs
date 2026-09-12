@@ -58,6 +58,8 @@ namespace Project.EditorTools
         private SerializedProperty recoilHorizontal;
         private SerializedProperty recoilFireRateScale;
         private SerializedProperty fireRate;
+        private SerializedProperty shotsPerBurst;
+        private SerializedProperty burstFireRate;
         private SerializedProperty magazineSize;
         private SerializedProperty reloadTimeSeconds;
         private SerializedProperty defaultAmmoType;
@@ -185,6 +187,8 @@ namespace Project.EditorTools
             recoilHorizontal = serializedObject.FindProperty("recoilHorizontal");
             recoilFireRateScale = serializedObject.FindProperty("recoilFireRateScale");
             fireRate = serializedObject.FindProperty("fireRate");
+            shotsPerBurst = serializedObject.FindProperty("shotsPerBurst");
+            burstFireRate = serializedObject.FindProperty("burstFireRate");
             magazineSize = serializedObject.FindProperty("magazineSize");
             reloadTimeSeconds = serializedObject.FindProperty("reloadTimeSeconds");
             defaultAmmoType = serializedObject.FindProperty("defaultAmmoType");
@@ -617,6 +621,9 @@ namespace Project.EditorTools
             EditorGUILayout.PropertyField(recoilHorizontal);
             EditorGUILayout.PropertyField(recoilFireRateScale);
             EditorGUILayout.PropertyField(fireRate);
+            EditorGUILayout.PropertyField(shotsPerBurst);
+            if (shotsPerBurst != null && shotsPerBurst.intValue > 1)
+                EditorGUILayout.PropertyField(burstFireRate);
             EditorGUILayout.PropertyField(magazineSize);
             EditorGUILayout.PropertyField(reloadTimeSeconds);
             EditorGUILayout.PropertyField(defaultAmmoType);
@@ -665,6 +672,12 @@ namespace Project.EditorTools
             EditorGUILayout.PropertyField(weaponAccuracy);
             EditorGUILayout.PropertyField(closeRangeFullAccuracyDistance);
             EditorGUILayout.PropertyField(closeRangeSpreadScale);
+            EditorGUILayout.PropertyField(fireRate);
+            EditorGUILayout.PropertyField(shotsPerBurst);
+            if (shotsPerBurst != null && shotsPerBurst.intValue > 1)
+                EditorGUILayout.PropertyField(burstFireRate);
+            EditorGUILayout.PropertyField(magazineSize);
+            EditorGUILayout.PropertyField(reloadTimeSeconds);
             EditorGUILayout.LabelField("Shot Recoil (per weapon grip)", EditorStyles.miniBoldLabel);
             SerializedProperty ammoRecoilProfile = serializedObject.FindProperty("ammoRecoilProfile");
             if (ammoRecoilProfile != null)

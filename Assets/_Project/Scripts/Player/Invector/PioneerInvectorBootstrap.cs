@@ -153,7 +153,12 @@ namespace Project.Player.Invector
 
             PioneerInvectorWeaponBridge weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
             ItemData equippedItem = weaponBridge != null ? weaponBridge.ActiveEquippedItem : null;
-            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, equippedItem);
+            WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+            EquipmentController equipment = GetComponent<EquipmentController>();
+            ItemData ammoItem = ammoState != null && equipment != null
+                ? ammoState.GetLoadedAmmoItem(equipment.ActiveWeaponHotbarSlot)
+                : null;
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, equippedItem, ammoItem);
 
             weapon.onFinishReload.RemoveListener(HandleWeaponReloadFinished);
             weapon.onFinishReload.AddListener(HandleWeaponReloadFinished);
@@ -168,10 +173,15 @@ namespace Project.Player.Invector
 
             PioneerInvectorWeaponBridge weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
             ItemData equippedItem = weaponBridge != null ? weaponBridge.ActiveEquippedItem : null;
+            WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+            EquipmentController equipment = GetComponent<EquipmentController>();
+            ItemData ammoItem = ammoState != null && equipment != null
+                ? ammoState.GetLoadedAmmoItem(equipment.ActiveWeaponHotbarSlot)
+                : null;
             GameObject weaponRoot = ShooterManager != null && ShooterManager.CurrentWeapon != null
                 ? ShooterManager.CurrentWeapon.gameObject
                 : null;
-            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, equippedItem);
+            PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weaponRoot, equippedItem, ammoItem);
         }
 
         private void HandleGameStarted()

@@ -171,13 +171,20 @@ namespace Project.Data
         [Tooltip("Spread multiplier at point-blank (0 = perfect, 1 = full spread). Lerps to 1 beyond closeRangeFullAccuracyDistance.")]
         [Range(0f, 1f)]
         public float closeRangeSpreadScale = 0.2f;
-        [Tooltip("Vertical camera recoil kick magnitude (authoring units matching PioneerInvectorRecoilUtility). 0 falls back to grip defaults.")]
+        [Tooltip("Live camera pitch kick. Loaded ammo overrides the weapon when > 0. Rifles can still use ammoRecoilProfile.rifleCameraVertical.")]
         public float recoilVertical;
-        [Tooltip("Horizontal camera recoil kick magnitude (half-range of ±drift). 0 falls back to grip defaults.")]
+        [Tooltip("Live camera yaw kick (half-range of ±drift). Loaded ammo overrides the weapon when > 0.")]
         public float recoilHorizontal;
         [Tooltip("When fireRate exceeds this value, recoil scales down. 0 uses default 4.5. Ammo: pistol-base recoil; rifles scale automatically.")]
         public float recoilFireRateScale = 4.5f;
+        [Tooltip("Single shots or burst groups per second. Loaded ammo overrides the weapon when ammo fireRate > 0.")]
         public float fireRate = 4f;
+        [Header("Burst")]
+        [Tooltip("1 = semi / auto single. 2-5 fires that many rounds per trigger cycle.")]
+        [Range(1, 5)]
+        public int shotsPerBurst = 1;
+        [Tooltip("Shots per second inside a burst. Ignored when shotsPerBurst is 1.")]
+        public float burstFireRate = 10f;
         public int magazineSize = 30;
         [Tooltip("Authoritative reload duration in seconds. Pushed onto Invector weapons when > 0.")]
         public float reloadTimeSeconds = 1.8f;

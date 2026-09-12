@@ -298,9 +298,8 @@ namespace Project.EditorTools
 
         private static void ClearWeaponMagazineAuthoring(ItemData item)
         {
-            // Ammo items may override damage/accuracy/speed; clear magazine/reload/ADS authoring.
-            item.magazineSize = 0;
-            item.reloadTimeSeconds = 0f;
+            // Keep ammo combat overrides (damage, fire rate, burst, magazine, reload, recoil).
+            // Clear only weapon-only ADS / starting-mag / socket authoring.
             item.defaultAmmoItem = null;
             item.compatibleAmmoTypes = System.Array.Empty<AmmoType>();
             item.grantRandomStartingAmmo = false;
@@ -312,10 +311,6 @@ namespace Project.EditorTools
             item.useAimHeldLocalRotation = false;
             item.aimHeldLocalRotation = Quaternion.identity;
             item.aimHeldLocalScale = Vector3.one;
-            item.recoilVertical = 0f;
-            item.recoilHorizontal = 0f;
-            item.recoilFireRateScale = 0f;
-            item.fireRate = 0f;
             item.hipFireMaxDeviationDegrees = 0f;
             item.hipFireSpreadMultiplier = 0f;
             item.aimFovMultiplier = 0f;

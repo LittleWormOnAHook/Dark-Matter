@@ -144,10 +144,15 @@ namespace Project.Inventory
         /// </summary>
         public static int GetMagazineCapacity(ItemData weapon)
         {
+            return GetMagazineCapacity(weapon, null);
+        }
+
+        public static int GetMagazineCapacity(ItemData weapon, ItemData ammo)
+        {
             if (weapon != null && weapon.isMiningTool)
                 return MiningChargeCapacity;
 
-            return weapon != null ? Mathf.Max(1, weapon.magazineSize) : 1;
+            return Mathf.Max(1, DMRangedAmmoStats.ResolveMagazineSize(weapon, ammo));
         }
 
         /// <summary>
@@ -165,32 +170,12 @@ namespace Project.Inventory
             if (weapon != null && weapon.isMiningTool)
                 return CountPlasmaFuelInInventory();
 
-            // Empty mag / unset loadedItem must use defaultAmmoItem / defaultAmmoType.
             // Never use ItemData.ammoType on a weapon — Survival Rifle leftover is Plasma (1).
+            // Empty mag still counts the type that was just loaded. Switching types is Equip Ammo To.
             AmmoType loadedType = GetLoadedAmmoType(weaponHotbarSlot);
             ItemData loadedItem = GetLoadedAmmoItem(weaponHotbarSlot);
-            int loaded = GetLoadedAmmo(weaponHotbarSlot);
-            if (loaded <= 0 || loadedItem == null)
-            {
-                if (TryResolveEmptyMagRefillProfile(weapon, out ItemData adoptItem, out AmmoType adoptType))
-                {
-                    loadedItem = adoptItem;
-                    loadedType = adoptType;
-                }
-                else
-                {
-                    ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
-                    if (defaultAmmo != null)
-                    {
-                        loadedItem = defaultAmmo;
-                        loadedType = defaultAmmo.ammoType;
-                    }
-                    else if (weapon != null)
-                    {
-                        loadedType = weapon.defaultAmmoType;
-                    }
-                }
-            }
+            if (loadedItem == null)
+                loadedItem = FindFirstInventoryAmmo(loadedType);
 
             int reserve = 0;
             for (int i = 0; i < inventory.slots.Count; i++)
@@ -342,7 +327,7 @@ namespace Project.Inventory
 
                 entry.loadedType = ammoItem.ammoType;
                 entry.loadedItem = ammoItem;
-                int space = Mathf.Max(0, GetMagazineCapacity(weapon) - entry.loaded);
+                int space = Mathf.Max(0, GetMagazineCapacity(weapon, ammoItem) - entry.loaded);
                 int add = Mathf.Min(space, remaining);
                 entry.loaded += add;
                 remaining -= add;
@@ -364,7 +349,7 @@ namespace Project.Inventory
                 return false;
 
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
-            int capacity = GetMagazineCapacity(weapon);
+            int capacity = GetMagazineCapacity(weapon, entry.loadedItem);
             if (entry.loaded >= capacity)
                 return false;
 
@@ -403,7 +388,7 @@ namespace Project.Inventory
                 return false;
 
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
-            int capacity = GetMagazineCapacity(weapon);
+            int capacity = GetMagazineCapacity(weapon, invSlot.item);
             bool sameProfile = entry.loadedType == invSlot.item.ammoType
                 && AmmoItemsCompatibleForReserve(entry.loadedItem, invSlot.item);
 
@@ -542,7 +527,7 @@ namespace Project.Inventory
             if (!weapon.grantRandomStartingAmmo)
                 return;
 
-            int capacity = GetMagazineCapacity(weapon);
+            int capacity = GetMagazineCapacity(weapon, defaultAmmo);
             int min = Mathf.Max(0, Mathf.Min(weapon.startingAmmoMin, weapon.startingAmmoMax));
             int max = Mathf.Max(0, Mathf.Max(weapon.startingAmmoMin, weapon.startingAmmoMax));
             if (max <= 0)
@@ -580,9 +565,10 @@ namespace Project.Inventory
             }
             else if (entry.loadedItem == null && (weapon == null || !weapon.isMiningTool))
             {
-                ItemData defaultAmmo = ResolveDefaultAmmoItemForWeapon(weapon);
-                entry.loadedItem = defaultAmmo;
-                entry.loadedType = defaultAmmo != null ? defaultAmmo.ammoType : AmmoType.Gunpowder;
+                // Keep the type already on this slot. Do not snap back to Standard on empty mag.
+                ItemData sameType = FindFirstInventoryAmmo(entry.loadedType);
+                if (sameType != null)
+                    entry.loadedItem = sameType;
             }
 
             return entry;
@@ -681,12 +667,15 @@ namespace Project.Inventory
                 return false;
             }
 
-            int capacity = GetMagazineCapacity(weapon);
+            int capacity = GetMagazineCapacity(weapon, entry.loadedItem);
             int before = entry.loaded;
 
-            // Empty mag: adopt a compatible inventory stack so R / reload finish can pull non-default types.
-            if (entry.loaded <= 0)
-                TryAdoptRefillAmmoFromInventory(weapon, entry);
+            if (entry.loadedItem == null)
+            {
+                ItemData sameType = FindFirstInventoryAmmo(entry.loadedType);
+                if (sameType != null)
+                    entry.loadedItem = sameType;
+            }
 
             for (int i = 0; i < inventory.slots.Count; i++)
             {
@@ -714,57 +703,11 @@ namespace Project.Inventory
             return entry.loaded > before;
         }
 
-        /// <summary>
-        /// When the magazine is empty, pick the ammo profile reload / reserve HUD should target:
-        /// weapon default if stocked, otherwise the first compatible inventory stack.
-        /// </summary>
-        private bool TryResolveEmptyMagRefillProfile(ItemData weapon, out ItemData ammoItem, out AmmoType ammoType)
-        {
-            ammoItem = null;
-            ammoType = AmmoType.Gunpowder;
-            if (inventory == null || weapon == null || weapon.isMiningTool)
-                return false;
-
-            ItemData preferred = weapon.defaultAmmoItem;
-            if (preferred != null && preferred.CountsAsAmmo && weapon.AcceptsAmmoType(preferred.ammoType)
-                && CountInventoryAmmoMatching(preferred.ammoType, preferred) > 0)
-            {
-                ammoItem = preferred;
-                ammoType = preferred.ammoType;
-                return true;
-            }
-
-            for (int i = 0; i < inventory.slots.Count; i++)
-            {
-                InventorySystem.InventorySlot slot = inventory.slots[i];
-                if (slot == null || slot.IsEmpty || slot.item == null || !slot.item.CountsAsAmmo)
-                    continue;
-                if (slot.item.isContinuousLaser || !weapon.AcceptsAmmoType(slot.item.ammoType))
-                    continue;
-
-                ammoItem = slot.item;
-                ammoType = slot.item.ammoType;
-                return true;
-            }
-
-            return false;
-        }
-
-        private void TryAdoptRefillAmmoFromInventory(ItemData weapon, SlotAmmo entry)
-        {
-            if (TryResolveEmptyMagRefillProfile(weapon, out ItemData ammoItem, out AmmoType ammoType))
-            {
-                entry.loadedType = ammoType;
-                entry.loadedItem = ammoItem;
-            }
-        }
-
-        private int CountInventoryAmmoMatching(AmmoType type, ItemData loadedItem)
+        private ItemData FindFirstInventoryAmmo(AmmoType type)
         {
             if (inventory == null)
-                return 0;
+                return null;
 
-            int count = 0;
             for (int i = 0; i < inventory.slots.Count; i++)
             {
                 InventorySystem.InventorySlot slot = inventory.slots[i];
@@ -772,13 +715,10 @@ namespace Project.Inventory
                     continue;
                 if (slot.item.ammoType != type)
                     continue;
-                if (!AmmoItemsCompatibleForReserve(loadedItem, slot.item))
-                    continue;
-
-                count += slot.amount;
+                return slot.item;
             }
 
-            return count;
+            return null;
         }
 
         private void HandleInventoryChanged()

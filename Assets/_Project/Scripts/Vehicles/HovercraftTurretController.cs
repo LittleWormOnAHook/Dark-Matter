@@ -125,8 +125,9 @@ namespace Project.Vehicles
                 return;
 
             float cooldown = profile.turretFireCooldown;
-            if (weapon.fireRate > 0.01f)
-                cooldown = 1f / weapon.fireRate;
+            float fireRate = DMRangedAmmoStats.ResolveFireRate(weapon, ammo);
+            if (fireRate > 0.01f)
+                cooldown = 1f / fireRate;
 
             _nextFireTime = Time.time + cooldown;
 
