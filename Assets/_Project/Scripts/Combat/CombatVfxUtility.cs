@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Data;
 using UnityEngine;
 
@@ -57,7 +58,7 @@ namespace Project.Combat
         /// Disables vendor auto-destroy drivers and schedules a pooled return after particles finish
         /// or <paramref name="maxLifeSeconds"/> (realtime), whichever comes first.
         /// </summary>
-        public static void PreparePooledOneShotVfx(GameObject instance, float maxLifeSeconds)
+        public static void PreparePooledOneShotVfx(GameObject instance, float maxLifeSeconds, bool playParticles = true)
         {
             if (instance == null)
                 return;
@@ -67,13 +68,25 @@ namespace Project.Combat
                 cache = instance.AddComponent<TracerVfxCache>();
             cache.EnsureCached();
             DisableVendorAutoReleaseBehaviours(cache);
-            PlayParticleSystemsRecursive(instance);
+            if (playParticles)
+                PlayParticleSystemsRecursive(instance);
+
+            SchedulePooledVfxRelease(instance, maxLifeSeconds, cache.Particles);
+        }
+
+        public static void SchedulePooledVfxRelease(
+            GameObject instance,
+            float maxLifeSeconds,
+            ParticleSystem[] cachedParticles = null)
+        {
+            if (instance == null)
+                return;
 
             PooledOneShotVfx lifetime = instance.GetComponent<PooledOneShotVfx>();
             if (lifetime == null)
                 lifetime = instance.AddComponent<PooledOneShotVfx>();
 
-            lifetime.Begin(maxLifeSeconds, cache.Particles);
+            lifetime.Begin(maxLifeSeconds, cachedParticles);
         }
 
         /// <summary>
@@ -82,7 +95,7 @@ namespace Project.Combat
         /// </summary>
         public static void DisableVendorAutoReleaseBehaviours(TracerVfxCache cache)
         {
-            if (cache == null || cache.VendorAutoReleaseDisabled)
+            if (cache == null)
                 return;
 
             cache.EnsureCached();
@@ -93,19 +106,36 @@ namespace Project.Combat
                 if (behaviour == null)
                     continue;
 
-                string typeName = behaviour.GetType().Name;
-                if (typeName == "CFX_AutoDestructShuriken"
-                    || typeName == "CFX_AutoStopLoopedEffect"
-                    || typeName == "CFX_Lifetime"
-                    || typeName == "AutoDestroy"
-                    || typeName == "DestroyAfterTime"
-                    || typeName == "DestroyAfterSeconds")
+                if (!IsVendorAutoReleaseBehaviour(behaviour))
+                    continue;
+
+                // OnEnable starts CheckIfAlive even when the component is disabled.
+                // Leaving that coroutine running Destroy()s pooled WarFX after the first burst.
+                behaviour.StopAllCoroutines();
+                if (behaviour is CFX_AutoDestructShuriken cfx)
                 {
-                    behaviour.enabled = false;
+                    cfx.OnlyDeactivate = true;
+                    Object.Destroy(cfx);
+                    continue;
                 }
+
+                behaviour.enabled = false;
             }
 
             cache.MarkVendorAutoReleaseDisabled();
+        }
+
+        private static bool IsVendorAutoReleaseBehaviour(MonoBehaviour behaviour)
+        {
+            if (behaviour is CFX_AutoDestructShuriken)
+                return true;
+
+            string typeName = behaviour.GetType().Name;
+            return typeName == "CFX_AutoStopLoopedEffect"
+                || typeName == "CFX_Lifetime"
+                || typeName == "AutoDestroy"
+                || typeName == "DestroyAfterTime"
+                || typeName == "DestroyAfterSeconds";
         }
 
         public static void DisableVendorAutoReleaseBehaviours(GameObject root)
@@ -120,9 +150,167 @@ namespace Project.Combat
         }
 
         /// <summary>
-        /// Prepares an ammo tracer that rides a <see cref="CombatProjectile"/> so the visual
-        /// begins at the barrel instead of mid-flight.
+        /// Parents a pooled VFX instance to the struck collider (world pose preserved) and schedules pool return.
         /// </summary>
+        public static void StickPooledVfxAtImpact(
+            GameObject instance,
+            Vector3 worldPoint,
+            Quaternion worldRotation,
+            Transform attach,
+            float lifeSeconds,
+            bool freezeProjectileVisual = false)
+        {
+            if (instance == null)
+                return;
+
+            Transform root = instance.transform;
+            root.SetParent(null, true);
+            if (attach != null)
+            {
+                root.SetParent(attach, true);
+                root.SetPositionAndRotation(worldPoint, worldRotation);
+            }
+            else
+            {
+                root.SetPositionAndRotation(worldPoint, worldRotation);
+            }
+
+            if (freezeProjectileVisual)
+            {
+                HaltProjectileVfxAtImpact(instance);
+                TracerVfxCache cache = instance.GetComponent<TracerVfxCache>();
+                cache?.EnsureCached();
+                DisableVendorAutoReleaseBehaviours(cache);
+                SchedulePooledVfxRelease(instance, lifeSeconds, cache != null ? cache.Particles : null);
+                return;
+            }
+
+            TracerVfxCache trailCache = instance.GetComponent<TracerVfxCache>();
+            if (trailCache != null)
+            {
+                trailCache.EnsureCached();
+                TrailRenderer[] trails = trailCache.Trails;
+                for (int i = 0; i < trails.Length; i++)
+                {
+                    TrailRenderer trail = trails[i];
+                    if (trail == null)
+                        continue;
+
+                    trail.emitting = false;
+                }
+            }
+
+            PreparePooledOneShotVfx(instance, lifeSeconds);
+        }
+
+        /// <summary>
+        /// Spawns Hovl <see cref="ParticleCollisionInstance"/> hit bursts when gameplay
+        /// (<see cref="CombatProjectile"/>) resolves the impact — not when particles bounce.
+        /// </summary>
+        public static void SpawnVendorParticleCollisionEffects(
+            GameObject vfxRoot,
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            Transform attach)
+        {
+            if (vfxRoot == null)
+                return;
+
+            ParticleCollisionInstance[] handlers = vfxRoot.GetComponentsInChildren<ParticleCollisionInstance>(true);
+            if (handlers == null || handlers.Length == 0)
+                return;
+
+            Vector3 normal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : Vector3.up;
+
+            for (int h = 0; h < handlers.Length; h++)
+            {
+                ParticleCollisionInstance handler = handlers[h];
+                if (handler == null || handler.EffectsOnCollision == null)
+                    continue;
+
+                GameObject[] effects = handler.EffectsOnCollision;
+                float offset = handler.Offset;
+                float life = Mathf.Max(0.05f, handler.DestroyTimeDelay);
+                Vector3 spawnPoint = hitPoint + normal * offset;
+                Transform parent = handler.UseWorldSpacePosition ? attach : handler.transform;
+
+                for (int e = 0; e < effects.Length; e++)
+                {
+                    GameObject prefab = effects[e];
+                    if (prefab == null)
+                        continue;
+
+                    Quaternion rotation = ResolveVendorCollisionEffectRotation(handler, normal, spawnPoint);
+                    GameObject instance = PoolManager.Spawn(prefab, spawnPoint, rotation, parent);
+                    if (instance == null)
+                        continue;
+
+                    if (parent != null && handler.UseWorldSpacePosition)
+                        instance.transform.SetPositionAndRotation(spawnPoint, rotation);
+
+                    PreparePooledOneShotVfx(instance, life);
+                }
+            }
+        }
+
+        private static Quaternion ResolveVendorCollisionEffectRotation(
+            ParticleCollisionInstance handler,
+            Vector3 normal,
+            Vector3 spawnPoint)
+        {
+            if (handler.UseFirePointRotation && handler.transform != null)
+                return Quaternion.LookRotation(handler.transform.position - spawnPoint, Vector3.up);
+
+            if (handler.useOnlyRotationOffset && handler.rotationOffset != Vector3.zero)
+                return Quaternion.Euler(handler.rotationOffset);
+
+            Quaternion look = Quaternion.LookRotation(normal, Vector3.up);
+            if (handler.rotationOffset != Vector3.zero)
+                look *= Quaternion.Euler(handler.rotationOffset);
+
+            return look;
+        }
+
+        /// <summary>Freeze rider/tracer visuals on the surface after gameplay hit.</summary>
+        public static void HaltProjectileVfxAtImpact(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            TracerVfxCache cache = root.GetComponent<TracerVfxCache>();
+            if (cache == null)
+                cache = root.AddComponent<TracerVfxCache>();
+            cache.EnsureCached();
+
+            DisableVendorProjectileDrivers(cache);
+
+            ParticleSystem[] systems = cache.Particles;
+            for (int i = 0; i < systems.Length; i++)
+            {
+                ParticleSystem ps = systems[i];
+                if (ps == null)
+                    continue;
+
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
+            TrailRenderer[] trails = cache.Trails;
+            for (int i = 0; i < trails.Length; i++)
+            {
+                TrailRenderer trail = trails[i];
+                if (trail == null)
+                    continue;
+
+                trail.emitting = false;
+                trail.Clear();
+            }
+        }
+
+        public static Transform ResolveImpactAttachTransform(GameObject receiver)
+        {
+            return receiver != null ? receiver.transform : null;
+        }
+
         public static void PrepareAttachedTracer(GameObject tracer, Vector3 muzzleWorldPosition, Vector3 fireDirection)
         {
             if (tracer == null)
@@ -134,6 +322,7 @@ namespace Project.Combat
             cache.EnsureCached();
 
             DisableVendorProjectileDrivers(cache);
+            DisableVendorParticleCollisionHandlers(cache);
 
             Transform root = tracer.transform;
             Vector3 forward = fireDirection.sqrMagnitude > 0.0001f
@@ -206,7 +395,27 @@ namespace Project.Combat
                     colliders[i].enabled = false;
             }
 
+            DisableVendorParticleCollisionHandlers(cache);
+
             cache.MarkDriversDisabled();
+        }
+
+        /// <summary>
+        /// Gameplay owns impact spawns — keep vendor particle bounce, but block duplicate Instantiate paths.
+        /// </summary>
+        private static void DisableVendorParticleCollisionHandlers(TracerVfxCache cache)
+        {
+            if (cache == null)
+                return;
+
+            cache.EnsureCached();
+            MonoBehaviour[] behaviours = cache.Behaviours;
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour is ParticleCollisionInstance pci)
+                    Object.Destroy(pci);
+            }
         }
 
         private static void FlattenAuthoredDemoOffsets(TracerVfxCache cache, Transform root)

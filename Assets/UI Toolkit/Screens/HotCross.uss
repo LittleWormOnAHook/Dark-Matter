@@ -18,6 +18,23 @@
     width: 132px;
     height: 132px;
     background-color: rgba(0, 0, 0, 0);
+    overflow: visible;
+}
+
+.hot-cross-loaded-ammo {
+    position: absolute;
+    left: 50%;
+    top: -22px;
+    width: 120px;
+    height: 24px;
+    margin-left: -60px;
+    font-size: 11px;
+    color: rgb(237, 233, 228);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.75);
 }
 
 .hot-cross-bar {

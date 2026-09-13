@@ -2,6 +2,7 @@
     <Style src="HotCross.uss"/>
     <ui:VisualElement name="hot-cross-root" picking-mode="Ignore" class="hot-cross-root">
         <ui:VisualElement name="hot-cross" picking-mode="Ignore" class="hot-cross">
+            <ui:Label name="hot-cross-loaded-ammo" text="" picking-mode="Ignore" class="hot-cross-loaded-ammo"/>
             <ui:VisualElement name="hot-cross-hbar-l" picking-mode="Ignore" class="hot-cross-bar hot-cross-hbar-l" style="background-color: rgba(212, 160, 23, 0.141);"/>
             <ui:VisualElement name="hot-cross-hbar-r" picking-mode="Ignore" class="hot-cross-bar hot-cross-hbar-r" style="background-color: rgba(212, 160, 23, 0.141);"/>
             <ui:VisualElement name="hot-cross-vbar-t" picking-mode="Ignore" class="hot-cross-bar hot-cross-vbar-t" style="background-color: rgba(212, 160, 23, 0.141);"/>

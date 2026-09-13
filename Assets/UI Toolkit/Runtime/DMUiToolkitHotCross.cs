@@ -55,9 +55,13 @@ namespace Project.UI
         private Label amtTr;
         private Label keyBl;
         private Label clipLabel;
+        private Label loadedAmmoLabel;
         private WeaponAmmoState ammoState;
         private int lastClipShown = int.MinValue;
+        private string lastAmmoNameShown;
         private Color lastClipColor;
+        private bool lastAmmoNameGlowValid;
+        private Color lastAmmoNameGlowColor;
         private VisualElement ammoPopup;
         private Label ammoTitle;
         private Label ammoHint;
@@ -349,10 +353,16 @@ namespace Project.UI
             amtTr = tree.Q<Label>("hot-cross-amt-tr");
             keyBl = tree.Q<Label>("hot-cross-key-bl");
             clipLabel = tree.Q<Label>("hot-cross-clip");
+            loadedAmmoLabel = tree.Q<Label>("hot-cross-loaded-ammo");
             if (clipLabel != null)
-            {
                 clipLabel.text = string.Empty;
+
+            if (loadedAmmoLabel != null)
+            {
+                loadedAmmoLabel.text = string.Empty;
                 lastClipShown = int.MinValue;
+                lastAmmoNameShown = null;
+                lastAmmoNameGlowValid = false;
             }
             ammoPopup = tree.Q<VisualElement>("hot-cross-ammo-popup");
             ammoTitle = tree.Q<Label>("hot-cross-ammo-title");
@@ -454,52 +464,108 @@ namespace Project.UI
 
         private void RefreshClipCount()
         {
-            if (clipLabel == null)
+            if (clipLabel == null && loadedAmmoLabel == null)
                 return;
 
             ResolveAmmoState();
 
-            ItemData weapon = null;
-            int slot = -1;
-            if (equipment != null && equipment.HasActiveRangedWeapon())
-            {
-                weapon = equipment.DrawnWeaponItem;
-                slot = equipment.ActiveWeaponHotbarSlot;
-            }
-            else if (inventory != null)
-            {
-                int absolute = inventory.HotbarStartIndex + Mathf.Clamp(weaponLocalIndex, 0, WeaponSlotCount - 1);
-                weapon = inventory.GetItemAt(absolute);
-                slot = weaponLocalIndex;
-            }
+            bool show = equipment != null && equipment.HasActiveRangedWeapon();
+            ItemData weapon = show ? equipment.DrawnWeaponItem : null;
+            if (show)
+                show = weapon != null && weapon.IsRangedWeapon && !weapon.isMiningTool;
 
-            bool show = weapon != null && weapon.IsRangedWeapon && !weapon.isMiningTool;
             if (!show)
             {
                 lastClipShown = int.MinValue;
-                clipLabel.text = string.Empty;
-                DMUiToolkitOverlayDocument.SetShown(clipLabel, false);
+                lastAmmoNameShown = null;
+                lastAmmoNameGlowValid = false;
+                if (clipLabel != null)
+                {
+                    clipLabel.text = string.Empty;
+                    DMUiToolkitOverlayDocument.SetShown(clipLabel, false);
+                }
+
+                if (loadedAmmoLabel != null)
+                {
+                    loadedAmmoLabel.text = string.Empty;
+                    DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, false);
+                }
+
                 return;
             }
 
-            int loaded = ammoState != null ? ammoState.GetLoadedAmmo(slot) : 0;
-            if (loaded != lastClipShown)
-            {
-                lastClipShown = loaded;
-                clipLabel.text = loaded.ToString();
-            }
-
+            int slot = equipment.ActiveWeaponHotbarSlot;
+            int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
             AmmoType ammoType = ammoState != null
                 ? ammoState.GetLoadedAmmoType(slot)
                 : weapon.defaultAmmoType;
             Color color = DMWorldAmmoHud.ResolveAmmoColor(ammoType);
-            if (lastClipColor != color)
-            {
+            string ammoName = ResolveLoadedAmmoDisplayName(slot, weapon, ammoState);
+            bool colorChanged = lastClipColor != color;
+            if (colorChanged)
                 lastClipColor = color;
-                clipLabel.style.color = color;
+
+            if (clipLabel != null)
+            {
+                if (loaded != lastClipShown)
+                {
+                    lastClipShown = loaded;
+                    clipLabel.text = loaded.ToString();
+                }
+
+                if (colorChanged)
+                    clipLabel.style.color = color;
+
+                DMUiToolkitOverlayDocument.SetShown(clipLabel, true);
             }
 
-            DMUiToolkitOverlayDocument.SetShown(clipLabel, true);
+            if (loadedAmmoLabel != null)
+            {
+                if (!string.Equals(ammoName, lastAmmoNameShown, System.StringComparison.Ordinal))
+                {
+                    lastAmmoNameShown = ammoName;
+                    loadedAmmoLabel.text = ammoName;
+                }
+
+                if (colorChanged)
+                    loadedAmmoLabel.style.color = color;
+
+                if (!lastAmmoNameGlowValid || lastAmmoNameGlowColor != color)
+                {
+                    lastAmmoNameGlowColor = color;
+                    lastAmmoNameGlowValid = true;
+                    loadedAmmoLabel.style.textShadow = new TextShadow
+                    {
+                        offset = Vector2.zero,
+                        blurRadius = 14f,
+                        color = new Color(color.r, color.g, color.b, 0.9f)
+                    };
+                }
+
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, true);
+            }
+        }
+
+        private static string ResolveLoadedAmmoDisplayName(int weaponHotbarSlot, ItemData weapon, WeaponAmmoState state)
+        {
+            if (state != null)
+            {
+                ItemData loadedAmmoItem = state.GetLoadedAmmoItem(weaponHotbarSlot);
+                if (loadedAmmoItem != null && !string.IsNullOrWhiteSpace(loadedAmmoItem.itemName))
+                    return loadedAmmoItem.itemName;
+
+                return FormatAmmoTypeName(state.GetLoadedAmmoType(weaponHotbarSlot));
+            }
+
+            return weapon != null ? FormatAmmoTypeName(weapon.defaultAmmoType) : "Standard";
+        }
+
+        private static string FormatAmmoTypeName(AmmoType type)
+        {
+            if (type == AmmoType.Gunpowder)
+                return "Standard";
+
+            return type.ToString();
         }
 
         private void RefreshWeaponQuadrant()

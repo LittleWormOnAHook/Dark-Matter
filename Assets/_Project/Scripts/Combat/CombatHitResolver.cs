@@ -5,6 +5,7 @@ using Project.Companions;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
+using Project.Progression;
 using Project.Survival;
 using Project.UI;
 using UnityEngine;
@@ -167,12 +168,79 @@ namespace Project.Combat
             GameObject owner,
             Collider excludeCollider)
         {
+            ApplySplash(ammoItem, center, centerDamage, owner, excludeCollider, allowFollowUp: true);
+        }
+
+        /// <param name="allowFollowUp">False for Cluster Munitions second pulse so it cannot recurse.</param>
+        public static void ApplySplash(
+            ItemData ammoItem,
+            Vector3 center,
+            float centerDamage,
+            GameObject owner,
+            Collider excludeCollider,
+            bool allowFollowUp)
+        {
             if (ammoItem == null || !ammoItem.HasSplashDamage)
+                return;
+
+            float radius = ammoItem.splashRadius > 0.05f ? ammoItem.splashRadius : 2.5f;
+            float damage = centerDamage;
+            float dotDurationScale = 1f;
+            bool forceResidue = false;
+            bool cluster = false;
+            bool cloud = false;
+            float clusterDamageScale = 0.48f;
+            float cloudDuration = 2f;
+
+            if (IsPlayerCombatOwner(owner))
+            {
+                radius *= PlayerSkillAllocator.GetSplashRadiusMultiplier();
+                damage *= PlayerSkillAllocator.GetSplashDamageMultiplier();
+                dotDurationScale = PlayerSkillAllocator.GetSplashDotDurationMultiplier();
+                forceResidue = PlayerSkillAllocator.HasHotResidue();
+                cluster = PlayerSkillAllocator.HasClusterMunitions();
+                cloud = PlayerSkillAllocator.HasPersistentHazard();
+                clusterDamageScale = PlayerSkillAllocator.GetClusterPulseDamageScale();
+                cloudDuration = PlayerSkillAllocator.GetPersistentHazardDuration();
+            }
+
+            ApplySplashPulse(ammoItem, center, damage, radius, owner, excludeCollider, dotDurationScale, forceResidue);
+
+            if (!allowFollowUp)
+                return;
+
+            DMAoeTriggerBubble.Spawn(
+                center,
+                radius,
+                ammoItem,
+                owner,
+                excludeCollider,
+                damage,
+                dotDurationScale,
+                forceResidue,
+                cluster,
+                cloud,
+                clusterDamageScale,
+                cloudDuration);
+        }
+
+        /// <summary>One overlap pulse at an explicit radius / payload. Used by the first blast and Cluster follow-up.</summary>
+        public static void ApplySplashPulse(
+            ItemData ammoItem,
+            Vector3 center,
+            float centerDamage,
+            float radius,
+            GameObject owner,
+            Collider excludeCollider,
+            float dotDurationScale = 1f,
+            bool forceResidue = false)
+        {
+            if (ammoItem == null || radius <= 0.05f || centerDamage <= 0.01f)
                 return;
 
             int hitCount = Physics.OverlapSphereNonAlloc(
                 center,
-                ammoItem.splashRadius,
+                radius,
                 SplashOverlapBuffer,
                 ~0,
                 QueryTriggerInteraction.Ignore);
@@ -189,7 +257,7 @@ namespace Project.Combat
 
                 Vector3 closest = GetClosestPointSafe(hitCollider, center);
                 float distance = Vector3.Distance(center, closest);
-                float t = Mathf.Clamp01(distance / Mathf.Max(0.01f, ammoItem.splashRadius));
+                float t = Mathf.Clamp01(distance / Mathf.Max(0.01f, radius));
                 float falloffDamage = Mathf.Lerp(centerDamage, centerDamage * ammoItem.splashDamageFalloff, t);
                 if (falloffDamage <= 0.01f)
                     continue;
@@ -203,7 +271,6 @@ namespace Project.Combat
                     if (outward.sqrMagnitude < 0.0001f)
                         outward = Vector3.up;
                     splashEnemy.GetComponent<EnemyInvectorRagdollBridge>()?.RememberHitForDeath(
-
                         closest,
                         outward,
                         falloffDamage,
@@ -213,8 +280,26 @@ namespace Project.Combat
                 damageable.TakeDamage(falloffDamage, owner, false);
                 if (!SelfReportsDamageUi(damageable))
                     CombatUiSpawner.ShowDamage(falloffDamage, closest, false);
-                ApplyStatusEffect(ammoItem, hitCollider, owner);
+                ApplyStatusEffect(ammoItem, hitCollider, owner, dotDurationScale, forceResidue, falloffDamage * 0.08f);
             }
+        }
+
+        private static bool IsPlayerCombatOwner(GameObject owner)
+        {
+            if (owner == null)
+                return false;
+
+            Transform current = owner.transform;
+            while (current != null)
+            {
+                if (current.CompareTag("Player"))
+                    return true;
+                current = current.parent;
+            }
+
+            return owner.GetComponentInParent<SurvivalStats>() != null
+                && owner.GetComponentInParent<EnemyHealth>() == null
+                && owner.GetComponentInParent<CompanionHealth>() == null;
         }
 
         /// <summary>
@@ -239,10 +324,30 @@ namespace Project.Combat
         /// <summary>Applies the ammo's elemental status effect (Burning/Frozen/Shocked/etc.) to whatever the collider resolves to.</summary>
         public static void ApplyStatusEffect(ItemData ammoItem, Collider collider, GameObject owner)
         {
-            if (ammoItem == null || collider == null || !ammoItem.HasStatusEffect)
+            ApplyStatusEffect(ammoItem, collider, owner, 1f, false, 0f);
+        }
+
+        public static void ApplyStatusEffect(
+            ItemData ammoItem,
+            Collider collider,
+            GameObject owner,
+            float durationScale,
+            bool forceResidue,
+            float residueTickFallback)
+        {
+            if (ammoItem == null || collider == null)
                 return;
 
-            CombatStatusEffect.Apply(ammoItem, collider.gameObject, owner);
+            if (!ammoItem.HasStatusEffect && !forceResidue)
+                return;
+
+            CombatStatusEffect.Apply(
+                ammoItem,
+                collider.gameObject,
+                owner,
+                durationScale,
+                forceResidue,
+                residueTickFallback);
         }
 
         public static void SpawnImpactVfx(
@@ -250,7 +355,8 @@ namespace Project.Combat
             ItemData weapon,
             Vector3 point,
             Vector3 normal,
-            GameObject impactVfxOverride = null)
+            GameObject impactVfxOverride = null,
+            GameObject receiver = null)
         {
             GameObject prefab = impactVfxOverride;
             if (prefab == null)
@@ -263,11 +369,12 @@ namespace Project.Combat
                 ? Quaternion.LookRotation(normal, Vector3.up)
                 : Quaternion.identity;
 
-            GameObject instance = PoolManager.Spawn(prefab, point, rotation);
-            // Reactivating a pooled instance doesn't reliably re-trigger playOnAwake particle
-            // systems on every Unity version, so explicitly clear+replay them on every reuse.
-            CombatVfxUtility.PlayParticleSystemsRecursive(instance);
-            PoolManager.ReleaseDelayed(instance, 4f);
+            Transform attach = CombatVfxUtility.ResolveImpactAttachTransform(receiver);
+            GameObject instance = PoolManager.Spawn(prefab, point, rotation, attach);
+            if (instance != null && attach != null)
+                instance.transform.SetPositionAndRotation(point, rotation);
+
+            CombatVfxUtility.PreparePooledOneShotVfx(instance, 4f);
         }
 
         public static void SpawnMuzzleFlash(ItemData ammoItem, ItemData weapon, Transform muzzle)
@@ -313,8 +420,7 @@ namespace Project.Combat
                 GameObject beam = PoolManager.Spawn(beamPrefab, origin, rotation);
                 ApplyBeamLine(beam, origin, endPoint);
                 AttachMuzzleFollow(beam, muzzle, followRange);
-                CombatVfxUtility.PlayParticleSystemsRecursive(beam);
-                PoolManager.ReleaseDelayed(beam, 0.35f);
+                CombatVfxUtility.PreparePooledOneShotVfx(beam, 0.35f);
             }
             else if (tracerPrefab != null)
             {
@@ -324,7 +430,7 @@ namespace Project.Combat
                 ApplyBeamLine(tracer, origin, endPoint);
                 StretchTracerAlongBeam(tracer, length);
                 AttachMuzzleFollow(tracer, muzzle, followRange);
-                PoolManager.ReleaseDelayed(tracer, 0.45f);
+                CombatVfxUtility.PreparePooledOneShotVfx(tracer, 0.45f);
             }
         }
 

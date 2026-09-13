@@ -1,6 +1,14 @@
 using System.Collections.Generic;
+using Project.AI;
+using Project.Companions;
 using Project.Core;
+using Project.Crafting;
+using Project.Creatures;
 using Project.Data;
+using Project.Echoes;
+using Project.Interaction;
+using Project.PPT;
+using Project.Quests;
 using UnityEngine;
 
 namespace Project.Combat
@@ -119,9 +127,9 @@ namespace Project.Combat
             if (prefab == null || muzzle == null)
                 return;
 
-            GameObject instance = PoolManager.Spawn(prefab, muzzle.position, muzzle.rotation, muzzle);
-            CombatVfxUtility.PlayParticleSystemsRecursive(instance);
-            PoolManager.ReleaseDelayed(instance, MuzzleLifeSeconds);
+            // World-space spawn — parenting to the muzzle socket leaves (Clone) clutter on the weapon.
+            GameObject instance = PoolManager.Spawn(prefab, muzzle.position, muzzle.rotation);
+            CombatVfxUtility.PreparePooledOneShotVfx(instance, MuzzleLifeSeconds);
         }
 
         public static void PlayWorldImpact(
@@ -134,53 +142,99 @@ namespace Project.Combat
         {
             DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
             bool spawnedMark = false;
+            bool splash = HasSplashImpact(ammoItem, profile);
+
+            Transform attach = CombatVfxUtility.ResolveImpactAttachTransform(receiver);
 
             if (impactVfxOverride != null)
             {
-                SpawnPooled(impactVfxOverride, point, LookAlongNormal(normal), null, HitEffectLifeSeconds);
+                SpawnPooled(impactVfxOverride, point, LookAlongNormal(normal), attach, HitEffectLifeSeconds);
                 spawnedMark = true;
             }
             else if (profile != null && profile.useHitMarks)
             {
-                spawnedMark = TrySpawnSurfaceMark(profile, point, normal, receiver);
+                spawnedMark = TrySpawnSurfaceMark(profile, point, normal, receiver, spawnHitEffects: !splash);
             }
 
-            if (!spawnedMark)
+            if (!spawnedMark || splash)
             {
-                GameObject impact = ResolveDefaultImpact(ammoItem, weapon);
+                GameObject impact = impactVfxOverride != null
+                    ? null
+                    : ResolveDefaultImpact(ammoItem, weapon);
                 if (impact != null)
-                    SpawnPooled(impact, point, LookAlongNormal(normal), null, HitEffectLifeSeconds);
+                    SpawnPooled(impact, point, LookAlongNormal(normal), attach, HitEffectLifeSeconds);
             }
 
-            bool burn = profile != null
+            bool skipDecal = ShouldSkipImpactDecal(receiver);
+            bool burn = !skipDecal && (profile != null
                 ? profile.spawnLaserBurn
-                : DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon);
+                : DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon));
             if (burn)
-                DMILaserBurnMarkSpawner.Spawn(point, normal);
+                DMILaserBurnMarkSpawner.Spawn(point, normal, attach);
+        }
+
+        /// <summary>
+        /// Bullet holes / laser burns stay on world surfaces only — not characters or pickups.
+        /// </summary>
+        private static bool ShouldSkipImpactDecal(GameObject receiver)
+        {
+            if (receiver == null)
+                return false;
+
+            if (receiver.GetComponentInParent<EnemyHealth>() != null
+                || receiver.GetComponentInParent<DMICreatureHealth>() != null
+                || receiver.GetComponentInParent<CompanionHealth>() != null
+                || receiver.GetComponentInParent<PioneerCompanionAgent>() != null
+                || receiver.GetComponentInParent<ItemPickup>() != null
+                || receiver.GetComponentInParent<RecipePickup>() != null
+                || receiver.GetComponentInParent<QuestGiverNpc>() != null
+                || receiver.GetComponentInParent<PptNpcInteractor>() != null
+                || receiver.GetComponentInParent<EchoWorldEntity>() != null)
+                return true;
+
+            Transform t = receiver.transform;
+            while (t != null)
+            {
+                if (t.CompareTag("Enemy") || t.CompareTag("CompanionAI"))
+                    return true;
+                t = t.parent;
+            }
+
+            return false;
+        }
+
+        private static bool HasSplashImpact(ItemData ammoItem, DMAmmoFxProfile profile)
+        {
+            if (ammoItem != null && ammoItem.HasSplashDamage)
+                return true;
+            return profile != null && profile.HasSplashDamage;
         }
 
         private static bool TrySpawnSurfaceMark(
             DMAmmoFxProfile profile,
             Vector3 point,
             Vector3 normal,
-            GameObject receiver)
+            GameObject receiver,
+            bool spawnHitEffects = true)
         {
             string tag = receiver != null ? receiver.tag : "Untagged";
             if (!profile.TryResolveHitMark(tag, out GameObject decal, out GameObject hitEffect))
                 return false;
 
             Quaternion rotation = LookAlongNormal(normal);
-            if (decal != null)
+            if (decal != null && !ShouldSkipImpactDecal(receiver))
             {
                 GameObject instance = SpawnPooled(decal, point, rotation, receiver != null ? receiver.transform : null, DecalLifeSeconds);
                 if (instance != null)
                     instance.transform.Rotate(Vector3.forward, Random.Range(0f, 360f), Space.Self);
             }
 
-            if (hitEffect != null)
-                SpawnPooled(hitEffect, point, rotation, null, HitEffectLifeSeconds);
+            Transform attach = CombatVfxUtility.ResolveImpactAttachTransform(receiver);
+            if (spawnHitEffects && hitEffect != null)
+                SpawnPooled(hitEffect, point, rotation, attach, HitEffectLifeSeconds);
 
-            return decal != null || hitEffect != null;
+            bool spawnedDecal = decal != null && !ShouldSkipImpactDecal(receiver);
+            return spawnedDecal || (spawnHitEffects && hitEffect != null);
         }
 
         private static GameObject SpawnPooled(
@@ -197,9 +251,23 @@ namespace Project.Combat
             if (parent != null)
                 instance.transform.SetPositionAndRotation(point, rotation);
 
-            CombatVfxUtility.PlayParticleSystemsRecursive(instance);
-            PoolManager.ReleaseDelayed(instance, life);
+            CombatVfxUtility.PreparePooledOneShotVfx(instance, life);
             return instance;
+        }
+
+        /// <summary>Stick a flying tracer / projectile visual at the impact point (used by <see cref="CombatProjectile"/>).</summary>
+        public static void StickTracerAtImpact(
+            GameObject tracer,
+            Vector3 point,
+            Vector3 normal,
+            Transform attach,
+            float lifeSeconds = HitEffectLifeSeconds)
+        {
+            if (tracer == null)
+                return;
+
+            Quaternion rotation = LookAlongNormal(normal);
+            CombatVfxUtility.StickPooledVfxAtImpact(tracer, point, rotation, attach, lifeSeconds, freezeProjectileVisual: true);
         }
 
         private static Quaternion LookAlongNormal(Vector3 normal)

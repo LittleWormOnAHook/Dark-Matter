@@ -110,7 +110,37 @@ namespace Project.Combat
 
             // Detach so pool reparent does not fight an active projectile hierarchy.
             tracer.transform.SetParent(null, true);
-            PoolManager.ReleaseDelayed(tracer, 2f);
+            CombatVfxUtility.PreparePooledOneShotVfx(tracer, 2f);
+        }
+
+        private void StickProjectileVisualsAtImpact(Vector3 hitPoint, Vector3 impactNormal, Transform attach)
+        {
+            Quaternion rotation = impactNormal.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(impactNormal, Vector3.up)
+                : transform.rotation;
+
+            if (tracerInstance != null)
+            {
+                GameObject tracer = tracerInstance;
+                tracerInstance = null;
+                tracerPrefabUsed = null;
+                DMCombatFx.StickTracerAtImpact(tracer, hitPoint, impactNormal, attach);
+                return;
+            }
+
+            GameObject stuckPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
+            if (stuckPrefab == null)
+                stuckPrefab = DMCombatFx.ResolveProjectile(ammoItem, weapon);
+
+            if (stuckPrefab == null)
+                return;
+
+            GameObject stuck = PoolManager.Spawn(stuckPrefab, hitPoint, rotation, attach);
+            if (stuck == null)
+                return;
+
+            CombatVfxUtility.DisableVendorAutoReleaseBehaviours(stuck);
+            CombatVfxUtility.StickPooledVfxAtImpact(stuck, hitPoint, rotation, attach, 4f, freezeProjectileVisual: true);
         }
 
         private void EnsureProjectileVisible()
@@ -318,6 +348,9 @@ namespace Project.Combat
         private void ResolveHit(Collider collider, Vector3 hitPoint, Vector3 surfaceNormal)
         {
             hasHit = true;
+            launched = false;
+            velocity = Vector3.zero;
+            transform.position = hitPoint;
             StopTravelAudio();
 
             float appliedDamage = damage;
@@ -349,7 +382,10 @@ namespace Project.Combat
             else
                 CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
 
-            ReleaseTracerToPool();
+            Transform attach = collider != null ? collider.transform : null;
+            GameObject vfxSource = tracerInstance != null ? tracerInstance : gameObject;
+            CombatVfxUtility.SpawnVendorParticleCollisionEffects(vfxSource, hitPoint, impactNormal, attach);
+            StickProjectileVisualsAtImpact(hitPoint, impactNormal, attach);
             PoolManager.Release(gameObject);
         }
 

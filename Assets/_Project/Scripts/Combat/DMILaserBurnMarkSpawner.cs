@@ -1,4 +1,3 @@
-using System.Collections;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -18,8 +17,6 @@ namespace Project.Combat
         // Dense overlap vs scorch diameter ~0.95–1.05 (root scale 1). Slight gaps only.
         private const float MiningStampMinDistance = 0.018f;
         private const float MiningStampCooldown = 0.012f;
-        private const float PoolReleaseDelay = 5.5f;
-
         // Ping-pong twist around surface normal (degrees). Consecutive stamps alternate orientation.
         private const float PingPongAngleDegrees = 32f;
         private const float TwistJitterDegrees = 6f;
@@ -30,11 +27,6 @@ namespace Project.Combat
         private static Vector3 _lastMiningStamp;
         private static float _nextMiningStampTime;
         private static int _miningStampIndex;
-        private static CoroutineRunner _runner;
-
-        private sealed class CoroutineRunner : MonoBehaviour
-        {
-        }
 
         public static bool ShouldSpawnForLaserAmmo(ItemData ammoItem, ItemData weapon)
         {
@@ -54,9 +46,9 @@ namespace Project.Combat
             return ammo.ammoType == AmmoType.Laser;
         }
 
-        public static void Spawn(Vector3 point, Vector3 normal)
+        public static void Spawn(Vector3 point, Vector3 normal, Transform attachTo = null)
         {
-            SpawnInternal(point, normal, NextPingPongTwist(), NextScaleMul(), NextIntensityMul(), attachTo: null);
+            SpawnInternal(point, normal, NextPingPongTwist(), NextScaleMul(), NextIntensityMul(), attachTo);
         }
 
         /// <summary>
@@ -132,14 +124,10 @@ namespace Project.Combat
             Quaternion rotation = Quaternion.AngleAxis(twistDegrees, n) * Quaternion.LookRotation(-n, tangent);
             Vector3 spawnPos = point + n * 0.014f;
 
-            // Parent to harvestable resources only — terrain/world burns stay under the pool root.
-            Transform parent = null;
+            Transform parent = attachTo;
             DMILaserBurnMarkHost host = null;
             if (attachTo != null && attachTo.GetComponentInParent<ResourceNode>() != null)
-            {
-                parent = attachTo;
                 host = DMILaserBurnMarkHost.GetOrCreate(attachTo);
-            }
 
             GameObject instance = PoolManager.Spawn(prefab, spawnPos, rotation, parent);
             if (instance == null)
@@ -155,51 +143,11 @@ namespace Project.Combat
                 mark.Play(point, n, twistDegrees, scaleMul, intensityMul);
                 if (host != null)
                     host.Register(mark);
-
-                ScheduleLeaseRelease(mark, PoolReleaseDelay);
             }
             else
             {
-                PoolManager.ReleaseDelayed(instance, PoolReleaseDelay);
+                PoolManager.ReleaseDelayed(instance, 5.5f);
             }
-        }
-
-        private static void ScheduleLeaseRelease(DMILaserBurnMark mark, float delay)
-        {
-            if (mark == null)
-                return;
-
-            EnsureRunner();
-            int lease = mark.LeaseId;
-            _runner.StartCoroutine(ReleaseAfterDelayIfLease(mark, lease, delay));
-        }
-
-        private static IEnumerator ReleaseAfterDelayIfLease(DMILaserBurnMark mark, int lease, float delay)
-        {
-            if (delay > 0f)
-                yield return new WaitForSeconds(delay);
-
-            if (mark == null)
-                yield break;
-
-            if (mark.LeaseId != lease)
-                yield break;
-
-            DMILaserBurnMarkHost host = mark.GetComponentInParent<DMILaserBurnMarkHost>();
-            if (host != null)
-                host.Unregister(mark);
-
-            PoolManager.Release(mark.gameObject);
-        }
-
-        private static void EnsureRunner()
-        {
-            if (_runner != null)
-                return;
-
-            GameObject runnerObject = new GameObject("DMILaserBurnMarkSpawnerRunner");
-            Object.DontDestroyOnLoad(runnerObject);
-            _runner = runnerObject.AddComponent<CoroutineRunner>();
         }
 
         /// <summary>
