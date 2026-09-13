@@ -38,6 +38,10 @@ namespace Project.Companions
             ? followController.FollowMode
             : PioneerFollowMode.FollowPlayer;
 
+        private CompanionHealth companionHealth;
+
+        public CompanionHealth Health => companionHealth;
+
         private void Reset()
         {
             WireSerializedRefs();
@@ -64,6 +68,7 @@ namespace Project.Companions
 
         private void Awake()
         {
+            companionHealth = GetComponent<CompanionHealth>();
             taskQueue = new CompanionTaskQueue();
 
             if (equipmentVisual == null && GetComponent<CompanionInvectorBootstrap>() == null)

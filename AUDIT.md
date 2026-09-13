@@ -5,12 +5,27 @@
 **Render pipeline:** HDRP-oriented project code (`ScannerHdrpOverlayGate`, HDRP material property IDs in `DMIMaterialPulseScroll`)  
 **Unity:** 6000.x line (per team context)  
 **Audit date:** 2026-09-13  
+**Remediation pass:** 2026-09-13 — High findings H1–H6 addressed in code (see [Remediation](#remediation-2026-09-13) below).
 
-This report is **read-only**: findings are grounded in source on this branch. Items marked *uncertain* need Profiler confirmation on target hardware (PC first, then consoles).
+This report was originally read-only; the remediation section tracks what landed on branch `cursor/unity-perf-architecture-audit-0b61`.
 
 ---
 
-## Executive summary
+## Remediation (2026-09-13)
+
+| ID | Status | Change |
+|----|--------|--------|
+| **H1** | **Fixed** | Added `Core/GameplayActorRegistry.cs` with OnEnable registration for pets, companions, creatures, scannables, pickups. `DMICreatureTargetResolver` reads registry + `PlayerReference` (no `FindObjectsByType`). `DMICreatureBridge` registers creatures (replaces internal `Live` list). |
+| **H2** | **Fixed** | `ScannableTarget` registers with registry; `OpticsController.ScanScannableComponents` iterates `GameplayActorRegistry.ActiveScannables`. |
+| **H3** | **Fixed** | `CompanionRosterBridge.Instance` + per-enemy cached bridge via `ResolveCompanionRosterBridge()`; `PioneerCompanionAgent.Health` avoids retarget `GetComponent`. |
+| **H4** | **Fixed** | `Core/DmGroundProbe.cs` uses `RaycastNonAlloc`; `PlayerPathTrail` calls it (removed local `RaycastAll` + sort). |
+| **H5** | **Fixed** | `ItemPickup` + `PetController` registry; `FindNearestPickup` scans `ActiveItemPickups`. |
+| **H6** | **Fixed** | `ExposureStatusService` reuses per-slot buff/debuff buffers via `CopyTickScratch` (same pattern as player ticks). |
+| **Extra** | **Fixed** | `DMIGrenadeExplosive` → `OverlapSphereNonAlloc`; `InventorySystem` drop grounding → `RaycastNonAlloc`; `HumanoidPerformanceController` prefers `PlayerReference` before `Camera.main`. |
+
+Remaining Medium items (M3–M5, hold-harvest prompts, fog upload budget) still warrant Profiler passes on target hardware.
+
+---
 
 The codebase mixes a **mature gameplay layer** (`Assets/_Project/Scripts/`) with an early **World Engine spine** (`Assets/_Project/Features/`). Several systems already show deliberate perf hygiene (`SceneComponentCache`, phased enemy vision, humanoid distance culling, fog-of-war dirty uploads, `OverlapSphereNonAlloc` in combat). The largest **scalability risks** cluster around **scene-wide queries** (`FindObjectsByType`, `FindWithTag`, `FindAnyObjectByType`) still used in **AI, creatures, optics, and pet fetch**, and around **per-frame work on companions + player trail grounding** that allocates via `Physics.RaycastAll`. **Architecture debt** is dominated by **Invector bridge proliferation**, **parallel Pet vs Pioneer companion models**, and **central hubs** (`WorldUseController`, `UIManager` partials) that couple many domains.
 

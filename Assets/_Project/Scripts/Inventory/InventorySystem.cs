@@ -11,6 +11,9 @@ namespace Project.Inventory
 {
     public class InventorySystem : MonoBehaviour
     {
+        private const int DropGroundHitBufferSize = 24;
+        private static readonly RaycastHit[] DropGroundHitBuffer = new RaycastHit[DropGroundHitBufferSize];
+
         public const int MainInventoryColumns = 10;
         public const int StorageRowSlotCount = 10;
         public const int DefaultUnlockedMainSlots = 20;
@@ -817,9 +820,10 @@ private static void DestroyDroppedComponent(Object component)
 
             Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
             float rayLength = originY - (worldPosition.y - 8f);
-            RaycastHit[] hits = Physics.RaycastAll(
+            int hitCount = Physics.RaycastNonAlloc(
                 origin,
                 Vector3.down,
+                DropGroundHitBuffer,
                 Mathf.Max(4f, rayLength),
                 Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
@@ -827,17 +831,17 @@ private static void DestroyDroppedComponent(Object component)
             float closestDistance = float.MaxValue;
             bool foundGround = false;
 
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = hits[i].collider;
+                Collider hitCollider = DropGroundHitBuffer[i].collider;
                 if (IsIgnorableDropSurface(hitCollider))
                     continue;
 
-                if (hits[i].distance >= closestDistance)
+                if (DropGroundHitBuffer[i].distance >= closestDistance)
                     continue;
 
-                closestDistance = hits[i].distance;
-                groundY = hits[i].point.y;
+                closestDistance = DropGroundHitBuffer[i].distance;
+                groundY = DropGroundHitBuffer[i].point.y;
                 foundGround = true;
             }
 

@@ -9,16 +9,12 @@ namespace Project.Creatures
 {
     /// <summary>
     /// Resolves combat targets for Malbers brains: player, owned pets, expedition companions,
-    /// and other DMI creatures, excluding allies that share this creature id.
-    /// Player/pets/companions are gathered once per frame. Other creatures use the live registry.
+    /// and other DMI creatures — excluding allies that share this creature id.
+    /// Uses <see cref="GameplayActorRegistry"/> (no FindObjectsByType).
     /// </summary>
     public static class DMICreatureTargetResolver
     {
         private static readonly List<Transform> CandidateBuffer = new List<Transform>(32);
-        private static readonly List<Transform> PetsCache = new List<Transform>(8);
-        private static readonly List<Transform> CompanionsCache = new List<Transform>(8);
-        private static Transform PlayerCache;
-        private static int CacheFrame = -1;
 
         public static bool TryResolveThreat(
             DMICreatureBridge self,
@@ -32,17 +28,34 @@ namespace Project.Creatures
             if (self == null)
                 return false;
 
-            EnsureFrameCache();
-
             Vector3 origin = self.transform.position;
             float rangeSqr = senseRange > 0f ? senseRange * senseRange : float.MaxValue;
             string allyId = self.Definition != null ? self.Definition.creatureId : null;
 
             CandidateBuffer.Clear();
-            if (PlayerCache != null)
-                CandidateBuffer.Add(PlayerCache);
-            CandidateBuffer.AddRange(PetsCache);
-            CandidateBuffer.AddRange(CompanionsCache);
+
+            Transform player = PlayerReference.ResolveTransform();
+            if (player != null)
+                CandidateBuffer.Add(player);
+
+            IReadOnlyList<PetController> pets = GameplayActorRegistry.ActivePets;
+            for (int i = 0; i < pets.Count; i++)
+            {
+                PetController pet = pets[i];
+                if (pet == null || !pet.IsOwned || !pet.CompanionActive)
+                    continue;
+                CandidateBuffer.Add(pet.transform);
+            }
+
+            IReadOnlyList<CompanionHealth> companions = GameplayActorRegistry.ActiveCompanions;
+            for (int i = 0; i < companions.Count; i++)
+            {
+                CompanionHealth companion = companions[i];
+                if (companion == null || companion.IsDead)
+                    continue;
+                CandidateBuffer.Add(companion.transform);
+            }
+
             CollectOtherCreatures(CandidateBuffer, self, allyId);
 
             Transform best = null;
@@ -111,43 +124,9 @@ namespace Project.Creatures
             return otherCreature != null && otherCreature != self;
         }
 
-        private static void EnsureFrameCache()
-        {
-            if (CacheFrame == Time.frameCount)
-                return;
-
-            CacheFrame = Time.frameCount;
-
-            PlayerCache = PlayerReference.ResolveTransform();
-
-            PetsCache.Clear();
-            PetController[] pets = SceneComponentCache.GetAll<PetController>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.5f);
-            for (int i = 0; i < pets.Length; i++)
-            {
-                PetController pet = pets[i];
-                if (pet == null || !pet.IsOwned || !pet.CompanionActive)
-                    continue;
-                PetsCache.Add(pet.transform);
-            }
-
-            CompanionsCache.Clear();
-            CompanionHealth[] companions = SceneComponentCache.GetAll<CompanionHealth>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.5f);
-            for (int i = 0; i < companions.Length; i++)
-            {
-                CompanionHealth companion = companions[i];
-                if (companion == null || companion.IsDead)
-                    continue;
-                CompanionsCache.Add(companion.transform);
-            }
-        }
-
         private static void CollectOtherCreatures(List<Transform> buffer, DMICreatureBridge self, string allyId)
         {
-            List<DMICreatureBridge> live = DMICreatureBridge.Live;
+            IReadOnlyList<DMICreatureBridge> live = GameplayActorRegistry.ActiveCreatures;
             for (int i = 0; i < live.Count; i++)
             {
                 DMICreatureBridge creature = live[i];

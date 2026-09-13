@@ -1,6 +1,7 @@
 using Project.Audio;
 using Project.Combat;
 using Project.Data;
+using Project.Core;
 using Project.Inventory;
 using Project.Map;
 using Project.Player;
@@ -106,12 +107,14 @@ namespace Project.Interaction
             hierarchyStateValid = false;
             WorldUseController.Register(this);
             PickupProximityDotUI.Register(this);
+            GameplayActorRegistry.Register(this);
         }
 
         private void OnDisable()
         {
             WorldUseController.Unregister(this);
             PickupProximityDotUI.Unregister(this);
+            GameplayActorRegistry.Unregister(this);
         }
 
         /// <summary>

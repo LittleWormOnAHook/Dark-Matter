@@ -12,6 +12,8 @@ namespace Project.Companions
     /// </summary>
     public class CompanionRosterBridge : MonoBehaviour
     {
+        public static CompanionRosterBridge Instance { get; private set; }
+
         [SerializeField] private PioneerCompanionAgent companionPrefab;
         [SerializeField] private Transform companionRoot;
 
@@ -76,6 +78,7 @@ namespace Project.Companions
 
         private void OnEnable()
         {
+            Instance = this;
             roster = PioneerRosterManager.EnsureExists();
             roster.OnTrioChanged += HandleTrioChanged;
             roster.OnRosterChanged += HandleRosterChanged;
@@ -83,6 +86,9 @@ namespace Project.Companions
 
         private void OnDisable()
         {
+            if (Instance == this)
+                Instance = null;
+
             if (roster != null)
             {
                 roster.OnTrioChanged -= HandleTrioChanged;

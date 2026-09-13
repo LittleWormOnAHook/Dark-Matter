@@ -262,7 +262,7 @@ namespace Project.AI
 
         private Transform PickClosestNearbyPioneerWithin(float maxRange)
         {
-            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            CompanionRosterBridge bridge = ResolveCompanionRosterBridge();
             if (bridge == null)
                 return null;
 
@@ -279,7 +279,7 @@ namespace Project.AI
                 if (agent == null)
                     continue;
 
-                CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                CompanionHealth health = agent.Health;
                 if (health != null && health.IsDead)
                     continue;
 
@@ -318,7 +318,7 @@ namespace Project.AI
                 }
             }
 
-            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            CompanionRosterBridge bridge = ResolveCompanionRosterBridge();
             IReadOnlyList<PioneerCompanionAgent> companions = bridge != null ? bridge.ActiveCompanions : null;
             if (companions != null)
             {
@@ -328,7 +328,7 @@ namespace Project.AI
                     if (agent == null)
                         continue;
 
-                    CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                    CompanionHealth health = agent.Health;
                     if (health != null && health.IsDead)
                         continue;
 
@@ -346,7 +346,7 @@ namespace Project.AI
 
         private Transform PickRandomNearbyPioneer()
         {
-            CompanionRosterBridge bridge = FindAnyObjectByType<CompanionRosterBridge>();
+            CompanionRosterBridge bridge = ResolveCompanionRosterBridge();
             if (bridge == null)
                 return null;
 
@@ -361,7 +361,7 @@ namespace Project.AI
                 if (agent == null)
                     continue;
 
-                CompanionHealth health = agent.GetComponent<CompanionHealth>();
+                CompanionHealth health = agent.Health;
                 if (health != null && health.IsDead)
                     continue;
 
@@ -373,6 +373,18 @@ namespace Project.AI
             }
 
             return null;
+        }
+
+        private CompanionRosterBridge ResolveCompanionRosterBridge()
+        {
+            if (companionRosterBridge != null)
+                return companionRosterBridge;
+
+            companionRosterBridge = CompanionRosterBridge.Instance;
+            if (companionRosterBridge == null)
+                companionRosterBridge = FindAnyObjectByType<CompanionRosterBridge>();
+
+            return companionRosterBridge;
         }
     }
 }

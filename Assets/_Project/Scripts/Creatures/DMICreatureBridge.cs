@@ -5,6 +5,7 @@ using MalbersAnimations.Controller.AI;
 using Project.AI;
 using Project.Combat;
 using Project.Companions;
+using Project.Core;
 using Project.Interaction;
 using Project.Survival;
 using UnityEngine;
@@ -48,8 +49,6 @@ namespace Project.Creatures
         private bool syncingFromMalbersDamage;
         private Transform currentThreat;
 
-        internal static readonly List<DMICreatureBridge> Live = new List<DMICreatureBridge>(64);
-
         public DMICreatureDefinition Definition => definition;
         public MAnimal Animal => animal;
         public MAnimalBrain Brain => brain;
@@ -72,9 +71,7 @@ namespace Project.Creatures
 
         private void OnEnable()
         {
-            if (!Live.Contains(this))
-                Live.Add(this);
-
+            GameplayActorRegistry.Register(this);
             CacheReferences();
             BindHealthEvents(true);
             BindMalbersDamageEvents(true);
@@ -84,7 +81,7 @@ namespace Project.Creatures
 
         private void OnDisable()
         {
-            Live.Remove(this);
+            GameplayActorRegistry.Unregister(this);
 
             BindHealthEvents(false);
             BindMalbersDamageEvents(false);

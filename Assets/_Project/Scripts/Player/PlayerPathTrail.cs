@@ -232,7 +232,7 @@ namespace Project.Player
         private void RecordCurrentPosition()
         {
             Vector3 position = transform.position;
-            position.y = SampleGroundHeight(position);
+            position.y = DmGroundProbe.SampleWalkableGroundY(position);
 
             if (!hasRecordedPosition)
             {
@@ -364,87 +364,6 @@ namespace Project.Player
             float horizontal = HorizontalDistance(a, b);
             float vertical = Mathf.Abs(a.y - b.y);
             return horizontal + vertical * 0.65f;
-        }
-
-        private static float SampleGroundHeight(Vector3 position)
-        {
-            const float probeHeight = 2.5f;
-            const float probeDistance = 10f;
-            const float groundOffset = 0.05f;
-            const float maxHeightAboveTerrain = 0.35f;
-
-            float baselineY = GetTerrainBaselineY(position, groundOffset);
-            float originY = Mathf.Max(position.y + probeHeight, baselineY + probeHeight);
-            Vector3 origin = new Vector3(position.x, originY, position.z);
-            float rayLength = (originY - position.y) + probeDistance;
-
-            RaycastHit[] hits = Physics.RaycastAll(
-                origin,
-                Vector3.down,
-                rayLength,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            float maxAllowedY = Mathf.Min(position.y + 0.5f, baselineY + maxHeightAboveTerrain);
-            float bestScore = float.MaxValue;
-            float bestY = baselineY;
-            bool found = false;
-
-            for (int i = 0; i < hits.Length; i++)
-            {
-                Collider collider = hits[i].collider;
-                if (collider == null || collider.isTrigger || !IsWalkableGroundCollider(collider))
-                    continue;
-
-                float candidateY = hits[i].point.y + groundOffset;
-                if (candidateY > maxAllowedY + 0.01f)
-                    continue;
-
-                float score = Mathf.Abs(candidateY - baselineY);
-                if (score >= bestScore)
-                    continue;
-
-                bestScore = score;
-                bestY = candidateY;
-                found = true;
-            }
-
-            return found ? bestY : baselineY;
-        }
-
-        private static float GetTerrainBaselineY(Vector3 worldPosition, float groundOffset)
-        {
-            Terrain terrain = Terrain.activeTerrain;
-            if (terrain == null)
-                return worldPosition.y;
-
-            return terrain.SampleHeight(worldPosition) + terrain.transform.position.y + groundOffset;
-        }
-
-        private static bool IsWalkableGroundCollider(Collider collider)
-        {
-            if (collider is TerrainCollider)
-                return true;
-
-            if (collider.CompareTag("Dirt") || collider.CompareTag("Walkable"))
-                return true;
-
-            return IsWalkableGeometryName(collider.name);
-        }
-
-        private static bool IsWalkableGeometryName(string objectName)
-        {
-            if (string.IsNullOrEmpty(objectName))
-                return false;
-
-            string lower = objectName.ToLowerInvariant();
-            return lower.Contains("ramp")
-                || lower.Contains("stair")
-                || lower.Contains("step")
-                || lower.Contains("floor")
-                || lower.Contains("walkway")
-                || lower.Contains("platform");
         }
 
 #if UNITY_EDITOR

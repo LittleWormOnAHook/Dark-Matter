@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using MalbersAnimations.PathCreation;
 using Project.AI;
@@ -425,13 +426,20 @@ namespace Project.Pet
         private void OnEnable()
         {
             PetManager.Instance?.Register(this);
+            GameplayActorRegistry.Register(this);
             ApplyCompanionVisibility();
+        }
+
+        private void OnDisable()
+        {
+            GameplayActorRegistry.Unregister(this);
         }
 
         private void OnDestroy()
         {
             FollowerCollisionUtility.UnregisterHierarchyColliders(gameObject);
             PetManager.Instance?.Unregister(this);
+            GameplayActorRegistry.Unregister(this);
         }
 
         private void Start()
@@ -749,12 +757,13 @@ namespace Project.Pet
 
         private ItemPickup FindNearestPickup()
         {
-            ItemPickup[] pickups = FindObjectsByType<ItemPickup>();
+            IReadOnlyList<ItemPickup> pickups = GameplayActorRegistry.ActiveItemPickups;
             ItemPickup nearest = null;
             float nearestDistance = fetchSearchRadius;
 
-            foreach (ItemPickup pickup in pickups)
+            for (int i = 0; i < pickups.Count; i++)
             {
+                ItemPickup pickup = pickups[i];
                 if (pickup == null || pickup.IsPickedUp || pickup.itemData == null)
                     continue;
 

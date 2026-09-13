@@ -1,4 +1,5 @@
 using Project.AI.Invector;
+using Project.Core;
 using UnityEngine;
 
 namespace Project.AI
@@ -315,6 +316,21 @@ namespace Project.AI
         {
             if (_cameraTransform != null)
             {
+                cameraTransform = _cameraTransform;
+                return true;
+            }
+
+            Camera gameplayCamera = PlayerReference.Camera;
+            if (gameplayCamera == null)
+            {
+                Transform player = PlayerReference.ResolveTransform();
+                if (player != null)
+                    gameplayCamera = player.GetComponentInChildren<Camera>();
+            }
+
+            if (gameplayCamera != null)
+            {
+                _cameraTransform = gameplayCamera.transform;
                 cameraTransform = _cameraTransform;
                 return true;
             }

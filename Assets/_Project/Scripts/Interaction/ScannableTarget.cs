@@ -1,3 +1,4 @@
+using Project.Core;
 using UnityEngine;
 
 namespace Project.Interaction
@@ -43,6 +44,16 @@ namespace Project.Interaction
         public void SetHiddenFromScanner(bool hidden)
         {
             hiddenFromScanner = hidden;
+        }
+
+        private void OnEnable()
+        {
+            GameplayActorRegistry.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            GameplayActorRegistry.Unregister(this);
         }
     }
 }

@@ -19,6 +19,9 @@ namespace Project.Combat
     {
         public const float DefaultCookFuseSeconds = 10f;
 
+        private const int ExplosionHitBufferSize = 64;
+        private static readonly Collider[] ExplosionHitBuffer = new Collider[ExplosionHitBufferSize];
+
         [Header("AOE Damage")]
         [SerializeField] private float minDamage = 15f;
         [SerializeField] private float maxDamage = 25f;
@@ -318,13 +321,18 @@ namespace Project.Combat
             Vector3 origin = transform.position;
             float radius = Mathf.Max(0.1f, explosionRadius);
 
-            Collider[] hits = Physics.OverlapSphere(origin, radius, hitLayers, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                origin,
+                radius,
+                ExplosionHitBuffer,
+                hitLayers,
+                QueryTriggerInteraction.Ignore);
             var damagedEnemies = new HashSet<EnemyHealth>();
             var damagedCompanions = new HashSet<CompanionHealth>();
 
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                Collider col = hits[i];
+                Collider col = ExplosionHitBuffer[i];
                 if (col == null)
                     continue;
 

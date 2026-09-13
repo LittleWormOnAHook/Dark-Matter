@@ -42,6 +42,10 @@ namespace Project.Survival.Exposure
         private const float LateRefreshInterval = 0.1f;
         private readonly CompanionExposureModifierSlot[] companionSlotScratch =
             new CompanionExposureModifierSlot[PioneerRosterManager.ExpeditionTrioSize];
+        private readonly ExposureModifierTick[][] companionSlotBuffBuffers =
+            new ExposureModifierTick[PioneerRosterManager.ExpeditionTrioSize][];
+        private readonly ExposureModifierTick[][] companionSlotDebuffBuffers =
+            new ExposureModifierTick[PioneerRosterManager.ExpeditionTrioSize][];
 
         private int lastSnapshotHash;
 
@@ -66,6 +70,11 @@ namespace Project.Survival.Exposure
             {
                 if (companionSlotScratch[i] == null)
                     companionSlotScratch[i] = new CompanionExposureModifierSlot();
+
+                if (companionSlotBuffBuffers[i] == null)
+                    companionSlotBuffBuffers[i] = Array.Empty<ExposureModifierTick>();
+                if (companionSlotDebuffBuffers[i] == null)
+                    companionSlotDebuffBuffers[i] = Array.Empty<ExposureModifierTick>();
             }
         }
 
@@ -394,7 +403,8 @@ namespace Project.Survival.Exposure
 
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             if (cachedCompanionBridge == null)
-                cachedCompanionBridge = UnityEngine.Object.FindAnyObjectByType<CompanionRosterBridge>();
+                cachedCompanionBridge = CompanionRosterBridge.Instance
+                    ?? UnityEngine.Object.FindAnyObjectByType<CompanionRosterBridge>();
             IReadOnlyList<PioneerCompanionAgent> companions =
                 cachedCompanionBridge != null ? cachedCompanionBridge.ActiveCompanions : null;
 
@@ -435,12 +445,8 @@ namespace Project.Survival.Exposure
                     slot.ExposureLevel = 0f;
                 }
 
-                slot.BuffTicks = companionBuffScratch.Count == 0
-                    ? Array.Empty<ExposureModifierTick>()
-                    : companionBuffScratch.ToArray();
-                slot.DebuffTicks = companionDebuffScratch.Count == 0
-                    ? Array.Empty<ExposureModifierTick>()
-                    : companionDebuffScratch.ToArray();
+                slot.BuffTicks = CopyTickScratch(companionBuffScratch, ref companionSlotBuffBuffers[i]);
+                slot.DebuffTicks = CopyTickScratch(companionDebuffScratch, ref companionSlotDebuffBuffers[i]);
             }
 
             target.ExpeditionCompanionSlots = companionSlotScratch;

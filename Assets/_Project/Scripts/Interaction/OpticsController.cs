@@ -720,8 +720,8 @@ namespace Project.Interaction
 
         private void ScanScannableComponents(Vector3 origin, float scanRange)
         {
-            ScannableTarget[] scannables = FindObjectsByType<ScannableTarget>();
-            for (int i = 0; i < scannables.Length && scanResults.Count < 24; i++)
+            IReadOnlyList<ScannableTarget> scannables = GameplayActorRegistry.ActiveScannables;
+            for (int i = 0; i < scannables.Count && scanResults.Count < 24; i++)
             {
                 ScannableTarget scannable = scannables[i];
                 if (scannable == null || !scannable.IsVisibleToScanner || scannable.transform.IsChildOf(transform))

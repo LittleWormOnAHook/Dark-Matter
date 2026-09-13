@@ -146,6 +146,7 @@ namespace Project.AI
         private EnemyHealth health;
         private EnemyCombat combat;
         private EnemyInvectorCombatBridge combatBridge;
+        private CompanionRosterBridge companionRosterBridge;
 
         private AiState state = AiState.Idle;
         private Vector3 homePosition;

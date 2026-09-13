@@ -1,5 +1,6 @@
 using System;
 using Project.AI;
+using Project.Core;
 using Project.Interaction;
 using Project.Survival.Exposure;
 using Project.UI;
@@ -36,6 +37,16 @@ namespace Project.Companions
         private void Awake()
         {
             ResetHealth();
+        }
+
+        private void OnEnable()
+        {
+            GameplayActorRegistry.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            GameplayActorRegistry.Unregister(this);
         }
 
         public void Initialize(string recordId)
