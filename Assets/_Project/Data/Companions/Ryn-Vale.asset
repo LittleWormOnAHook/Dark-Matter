@@ -49,20 +49,20 @@ MonoBehaviour:
     followBehaviorMode: 0
     worldAmbientMode: 1
     worldIdleJob: 0
-    wanderPaceScale: 0
-    walkSpeed: 0
-    runSpeed: 0
-    catchUpSpeed: 0
-    catchUpDistance: 0
-    maxFollowDistance: 0
-    stopDistance: 0
-    formationHeadingSmoothTime: 0
-    walkAnimationSpeed: 0
-    runAnimationSpeed: 0
-    walkSpeedReference: 0
-    runSpeedReference: 0
-    combatTetherRadius: 0
-    preferredCombatDistance: 0
-    rangedPreferredDistance: 0
-    losSearchRadius: 0
-    formationDriftDegreesPerSecond: 0
+    wanderPaceScale: 0.3
+    walkSpeed: 4.4
+    runSpeed: 8.5
+    catchUpSpeed: 8.5
+    catchUpDistance: 5.5
+    maxFollowDistance: 14
+    stopDistance: 0.45
+    formationHeadingSmoothTime: 0.45
+    walkAnimationSpeed: 0.7
+    runAnimationSpeed: 0.9
+    walkSpeedReference: 4.4
+    runSpeedReference: 8.5
+    combatTetherRadius: 6
+    preferredCombatDistance: 3
+    rangedPreferredDistance: 7
+    losSearchRadius: 1.5
+    formationDriftDegreesPerSecond: 2.8

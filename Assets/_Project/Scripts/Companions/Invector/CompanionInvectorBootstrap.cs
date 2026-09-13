@@ -9,6 +9,7 @@ using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
 using Project.Player.Invector;
+using Project.Rendering;
 using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -63,6 +64,7 @@ namespace Project.Companions.Invector
             StripPlayerOnlyComponents();
             DestroyFootstepTriggers();
             SnapBodyContainersToLocalBones();
+            DMRuntimeHierarchyMaterialInstancer.EnsureOn(gameObject);
             DisableInvectorStandaloneUi();
             DisableInvectorHealthDeath();
             _kinematicGuardFrames = 8;
@@ -113,6 +115,7 @@ namespace Project.Companions.Invector
             {
                 body.isKinematic = true;
                 body.useGravity = false;
+                body.interpolation = RigidbodyInterpolation.None;
                 body.constraints = RigidbodyConstraints.FreezeRotation;
             }
 
@@ -143,7 +146,7 @@ namespace Project.Companions.Invector
             }
         }
 
-        private void EnsureInvectorInitialized()
+        public void EnsureInvectorInitialized()
         {
             if (_invectorInitialized || ThirdPersonController == null)
                 return;
@@ -152,6 +155,10 @@ namespace Project.Companions.Invector
             ThirdPersonController.lockMovement = true;
             ThirdPersonController.useRootMotion = false;
             ThirdPersonController.isGrounded = true;
+            ThirdPersonController.locomotionType = vThirdPersonMotor.LocomotionType.FreeWithStrafe;
+            ThirdPersonController.useLeanMovementAnim = false;
+            ThirdPersonController.useTurnOnSpotAnim = false;
+            ThirdPersonController.lockInStrafe = false;
             _invectorInitialized = true;
         }
 
@@ -192,6 +199,8 @@ namespace Project.Companions.Invector
             DestroyIfPresent<PioneerPlayerInputBinder>();
             DestroyIfPresent<PioneerShooterMeleeInput>();
             DestroyIfPresent<vShooterMeleeInput>();
+            DestroyIfPresent<vThirdPersonInput>();
+            DestroyIfPresent<vAnimatorMoveSender>();
             DestroyIfPresent<PlayerInput>();
             DestroyIfPresent<PlayerController>();
             DestroyIfPresent<InventorySystem>();

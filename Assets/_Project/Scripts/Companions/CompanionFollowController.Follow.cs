@@ -112,6 +112,7 @@ namespace Project.Companions
             }
 
             catchUpActive = distanceToOwner > catchUpDistance;
+            Vector3 previousSlot = looseFollowSmoothedTarget;
             Vector3 desired = ComputeLooseFollowPoint();
             looseFollowSmoothedTarget = Vector3.SmoothDamp(
                 looseFollowSmoothedTarget,
@@ -120,8 +121,41 @@ namespace Project.Companions
                 looseTargetSmoothTime);
             looseFollowSmoothedTarget.y = SampleTerrainHeight(looseFollowSmoothedTarget);
 
+            Vector3 slotDelta = looseFollowSmoothedTarget - previousSlot;
+            slotDelta.y = 0f;
+            float distanceToSlot = HorizontalDistance(transform.position, looseFollowSmoothedTarget);
+            if (distanceToSlot <= stopDistance + 0.85f)
+            {
+                RideFollowSlot(slotDelta);
+                return;
+            }
+
             float speed = distanceToOwner > catchUpDistance ? runSpeed : walkSpeed * 0.8f;
             MoveTowards(looseFollowSmoothedTarget, speed, allowIdleRest: false, faceMovement: true);
+        }
+
+        private void RideFollowSlot(Vector3 slotDelta)
+        {
+            if (slotDelta.sqrMagnitude > 0.0000001f)
+            {
+                Vector3 step = ResolveMovement(slotDelta);
+                transform.position += step;
+                Depenetrate();
+                SyncInvectorRigidbody();
+                currentMoveDirection = slotDelta.normalized;
+                currentSpeed = Time.deltaTime > 0.0001f
+                    ? step.magnitude / Time.deltaTime
+                    : 0f;
+                if (ownerMotionSpeed > 0.4f)
+                    currentSpeed = Mathf.Max(currentSpeed, walkSpeed * 0.55f);
+                if (currentSpeed > runSpeed)
+                    currentSpeed = catchUpActive ? runSpeed : walkSpeed * 0.8f;
+                DMILocomotionFacing.FaceTowardDirection(transform, currentMoveDirection, turnSpeed * 0.65f);
+                return;
+            }
+
+            currentSpeed = 0f;
+            currentMoveDirection = Vector3.zero;
         }
 
         private Vector3 ComputeLooseFollowPoint()

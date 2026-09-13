@@ -8,7 +8,7 @@ namespace Project.EditorTools.GenesisStudio
     /// <summary>
     /// Shift-theme editor chrome for Genesis Studio (Dark Matter palette).
     /// </summary>
-    internal static class DMStudioStyles
+    public static class DMStudioStyles
     {
         private static GUIStyle headerPanel;
         private static GUIStyle sidebarPanel;
@@ -222,6 +222,52 @@ namespace Project.EditorTools.GenesisStudio
             style.onActive = style.active;
             style.fontStyle = selected ? FontStyle.Bold : FontStyle.Normal;
             return style;
+        }
+
+        public static float MeasureInspectorLabelWidth(SerializedObject serialized, System.Func<string, bool> include)
+        {
+            float widest = 180f;
+            if (serialized == null || serialized.targetObject == null)
+                return widest;
+
+            SerializedProperty iterator = serialized.GetIterator();
+            bool enterChildren = true;
+            while (iterator.NextVisible(enterChildren))
+            {
+                enterChildren = false;
+                if (iterator.propertyPath == "m_Script")
+                    continue;
+                if (include != null && !include(iterator.propertyPath))
+                    continue;
+
+                string label = ObjectNames.NicifyVariableName(iterator.displayName);
+                float width = EditorStyles.label.CalcSize(new GUIContent(label)).x;
+                if (width > widest)
+                    widest = width;
+            }
+
+            return Mathf.Clamp(widest + 24f, 200f, 420f);
+        }
+
+        public static System.IDisposable PushLabelWidth(float width)
+        {
+            return new LabelWidthScope(width);
+        }
+
+        private sealed class LabelWidthScope : System.IDisposable
+        {
+            private readonly float previous;
+
+            public LabelWidthScope(float width)
+            {
+                previous = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = width;
+            }
+
+            public void Dispose()
+            {
+                EditorGUIUtility.labelWidth = previous;
+            }
         }
 
         private static Texture2D GetSolid(ref Texture2D tex, Color color)

@@ -4,25 +4,31 @@ using UnityEngine;
 namespace Project.Companions.Invector
 {
     /// <summary>
-    /// Hybrid locomotion: CompanionFollowController owns translation; this bridge drives Invector animator params.
+    /// Hybrid locomotion: CompanionFollowController owns translation; this bridge drives Invector
+    /// Free Locomotion animator params (same tree as Player_v7 Variant).
     /// </summary>
-    [DefaultExecutionOrder(100)]
+    [DefaultExecutionOrder(120)]
     [DisallowMultipleComponent]
     public class CompanionInvectorMotorBridge : MonoBehaviour
     {
-        private const float MoveSpeedThreshold = 0.08f;
+        private const float MoveEnterThreshold = 0.18f;
+        private const float MoveExitThreshold = 0.08f;
+        private const float IdleHoldSeconds = 0.2f;
+        private const float AnimDamp = 0.1f;
 
         private CompanionFollowController _followController;
         private CompanionCombatController _combatController;
+        private CompanionInvectorBootstrap _bootstrap;
         private vThirdPersonController _controller;
-        private Rigidbody _body;
         private bool _initialized;
+        private bool _animMoving;
+        private float _stoppedSeconds;
 
         private void Awake()
         {
             _followController = GetComponent<CompanionFollowController>();
+            _bootstrap = GetComponent<CompanionInvectorBootstrap>();
             _controller = GetComponent<vThirdPersonController>();
-            _body = GetComponent<Rigidbody>();
         }
 
         private void FixedUpdate()
@@ -30,13 +36,32 @@ namespace Project.Companions.Invector
             if (_controller == null || _followController == null)
                 return;
 
+            _bootstrap?.EnsureInvectorInitialized();
             EnsureControllerReady();
-            SyncRigidbodyToTransform();
-            ApplyFollowLocomotion();
+        }
+
+        private void Update()
+        {
+            if (_controller == null || _followController == null)
+                return;
+
+            EnsureAnimatorReady();
+            if (_controller.animator == null)
+                return;
+
+            if (_controller.animator.updateMode != AnimatorUpdateMode.Normal)
+                _controller.animator.updateMode = AnimatorUpdateMode.Normal;
+
+            EnsureLocomotionAnimatorWrites();
+            // Order 120: after FollowController.Update, before Animator.Normal evaluates.
+            ApplyFollowLocomotionMotor();
+            WriteLocomotionAnimatorParams();
         }
 
         private void EnsureControllerReady()
         {
+            LockFreeLocomotion();
+
             if (_initialized)
                 return;
 
@@ -47,44 +72,83 @@ namespace Project.Companions.Invector
             _initialized = true;
         }
 
-        private void SyncRigidbodyToTransform()
+        private void LockFreeLocomotion()
         {
-            if (_body == null || !_body.isKinematic)
-                return;
-
-            _body.MovePosition(transform.position);
-            _body.MoveRotation(transform.rotation);
+            if (_controller.locomotionType != vThirdPersonMotor.LocomotionType.FreeWithStrafe)
+                _controller.locomotionType = vThirdPersonMotor.LocomotionType.FreeWithStrafe;
+            if (_controller.useLeanMovementAnim)
+                _controller.useLeanMovementAnim = false;
+            if (_controller.useTurnOnSpotAnim)
+                _controller.useTurnOnSpotAnim = false;
+            if (_controller.lockInStrafe)
+                _controller.lockInStrafe = false;
         }
 
-        private void ApplyFollowLocomotion()
+        private void EnsureAnimatorReady()
         {
-            if (ShouldSuppressLocomotionAnimator())
+            if (_controller.animator == null)
             {
-                if (_controller != null)
-                {
-                    _controller.moveDirection = Vector3.zero;
-                    _controller.input = Vector3.zero;
-                    _controller.isSprinting = false;
-                    _controller.isGrounded = true;
-                    if (_controller.animator != null &&
-                        _controller.animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
-                        _controller.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                }
-
-                return;
+                _controller.Init();
+                if (_controller.animator == null)
+                    return;
             }
 
-            float speed = _followController.CurrentSpeed;
-            Vector3 worldDirection = _followController.CurrentMoveDirection;
+            Animator animator = _controller.animator;
+            if (!animator.enabled)
+                animator.enabled = true;
+
+            animator.applyRootMotion = false;
+        }
+
+        private void EnsureLocomotionAnimatorWrites()
+        {
+            Animator animator = _controller.animator;
+            if (animator == null)
+                return;
+
+            if (animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        private void ApplyFollowLocomotionMotor()
+        {
+            LockFreeLocomotion();
+
+            bool meleeLocked = ShouldSuppressLocomotionAnimator();
+            float speed = meleeLocked ? 0f : _followController.CurrentSpeed;
+            Vector3 worldDirection = meleeLocked ? Vector3.zero : _followController.CurrentMoveDirection;
             worldDirection.y = 0f;
 
-            bool isMoving = speed > MoveSpeedThreshold && worldDirection.sqrMagnitude > 0.0001f;
-
-            if (isMoving)
+            if (speed > MoveEnterThreshold)
             {
-                worldDirection.Normalize();
+                _animMoving = true;
+                _stoppedSeconds = 0f;
+            }
+            else if (speed <= MoveExitThreshold)
+            {
+                _stoppedSeconds += Time.deltaTime;
+                if (_stoppedSeconds >= IdleHoldSeconds)
+                    _animMoving = false;
+            }
+            else
+            {
+                _stoppedSeconds = 0f;
+            }
+
+            _controller.isStrafing = false;
+            _controller.isGrounded = true;
+            _controller.useRootMotion = false;
+            _controller.lockMovement = true;
+
+            if (_animMoving)
+            {
+                if (worldDirection.sqrMagnitude > 0.0001f)
+                    worldDirection.Normalize();
+                else
+                    worldDirection = transform.forward;
+
                 _controller.moveDirection = worldDirection;
-                _controller.input = transform.InverseTransformDirection(worldDirection);
+                _controller.input = Vector3.forward;
                 _controller.isSprinting = speed >= _followController.RunSpeed * 0.85f;
             }
             else
@@ -93,15 +157,32 @@ namespace Project.Companions.Invector
                 _controller.input = Vector3.zero;
                 _controller.isSprinting = false;
             }
+        }
 
-            _controller.isGrounded = true;
-            _controller.UpdateMotor();
+        private void WriteLocomotionAnimatorParams()
+        {
+            Animator animator = _controller.animator;
+            if (animator == null || !animator.isInitialized)
+                return;
 
-            var moveSpeed = _controller.isStrafing
-                ? _controller.strafeSpeed
-                : _controller.freeSpeed;
-            _controller.SetAnimatorMoveSpeed(moveSpeed);
-            _controller.UpdateAnimator();
+            float magnitude = 0f;
+            float vertical = 0f;
+            if (_animMoving)
+            {
+                magnitude = _controller.isSprinting ? 1f : 0.5f;
+                vertical = 1f;
+            }
+
+            _controller.inputMagnitude = magnitude;
+            _controller.verticalSpeed = vertical;
+            _controller.horizontalSpeed = 0f;
+            animator.SetFloat(vAnimatorParameters.InputHorizontal, 0f, AnimDamp, Time.deltaTime);
+            animator.SetFloat(vAnimatorParameters.InputVertical, vertical, AnimDamp, Time.deltaTime);
+            animator.SetFloat(vAnimatorParameters.InputMagnitude, magnitude, AnimDamp, Time.deltaTime);
+            animator.SetFloat(vAnimatorParameters.RotationMagnitude, 0f);
+            animator.SetBool(vAnimatorParameters.IsStrafing, false);
+            animator.SetBool(vAnimatorParameters.IsGrounded, true);
+            animator.SetBool(vAnimatorParameters.IsSprinting, _controller.isSprinting);
         }
 
         private bool ShouldSuppressLocomotionAnimator()
@@ -109,11 +190,10 @@ namespace Project.Companions.Invector
             if (_combatController == null)
                 _combatController = GetComponent<CompanionCombatController>();
 
-            if (_combatController != null && _combatController.IsAttackPending)
-                return true;
-
-            CompanionCombatCoordinator coordinator = CompanionCombatCoordinator.Instance;
-            return coordinator != null && coordinator.IsAttacking(_combatController);
+            // Only freeze legs for a pending melee beat. Ranged fire still kites/walks.
+            return _combatController != null
+                && _combatController.IsAttackPending
+                && !_followController.IsRangedCombatEngaged;
         }
     }
 }

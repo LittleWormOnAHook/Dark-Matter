@@ -43,7 +43,17 @@ namespace Project.EditorTools.Companions
             GetWindow<CompanionPrefabToolWindow>("Companion Prefab Tool");
         }
 
+        public void DrawEmbedded()
+        {
+            DrawToolBody();
+        }
+
         private void OnGUI()
+        {
+            DrawToolBody();
+        }
+
+        private void DrawToolBody()
         {
             scroll = EditorGUILayout.BeginScrollView(scroll);
 

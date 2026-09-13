@@ -209,6 +209,19 @@ namespace Project.Companions
         private float combatEngageMaxStrikeRange = 2.4f;
         private bool combatEngageIsRanged;
         private float combatOrbitSign;
+        private enum RangedKiteManeuver
+        {
+            Hold,
+            Approach,
+            Backstep,
+            Orbit
+        }
+
+        private RangedKiteManeuver rangedKiteManeuver = RangedKiteManeuver.Hold;
+        private Vector3 rangedKiteTarget;
+        private float rangedKiteUntil;
+        private float rangedOrbitPauseUntil;
+        private bool rangedOrbitTowardB;
         private int consecutiveStuckCount;
         private int trailAttemptsThisEpisode;
         private bool looseFollowActive;
@@ -226,6 +239,7 @@ namespace Project.Companions
         public float RunSpeed => runSpeed;
         public int FormationSlot => formationSlot;
         public Vector3 CurrentMoveDirection => currentMoveDirection;
+        public bool IsRangedCombatEngaged => combatEngageTarget != null && combatEngageIsRanged;
         public bool IsNearFormation => isNearFormation;
         public bool IsWandering => isWandering;
         public PioneerFollowMode FollowMode => followMode;
@@ -315,6 +329,7 @@ namespace Project.Companions
         public void ApplyBehaviorProfile(PioneerBehaviorProfile profile)
         {
             activeProfile = profile != null ? profile.Clone() : new PioneerBehaviorProfile();
+            PioneerBehaviorDefaults.FillMissingNumericFields(activeProfile, pioneerClass);
             followMode = activeProfile.followMode;
             if (owner != null)
                 behaviorMode = activeProfile.followBehaviorMode;
@@ -366,16 +381,20 @@ namespace Project.Companions
         /// </summary>
         public void SetCombatEngagement(Transform target, float preferredDistance, float maxStrikeRange, bool isRangedEngagement)
         {
+            bool targetChanged = combatEngageTarget != target;
             combatEngageTarget = target;
             combatEngagePreferredDistance = Mathf.Max(1f, preferredDistance);
             combatEngageMaxStrikeRange = Mathf.Max(combatEngagePreferredDistance, maxStrikeRange);
             combatEngageIsRanged = isRangedEngagement;
+            if (targetChanged)
+                ResetRangedKiteState();
         }
 
         public void ClearCombatEngagement()
         {
             combatEngageTarget = null;
             combatEngageIsRanged = false;
+            ResetRangedKiteState();
         }
 
         public void RequestCombatChase(Vector3 targetWorld, float preferredDistance, float duration)

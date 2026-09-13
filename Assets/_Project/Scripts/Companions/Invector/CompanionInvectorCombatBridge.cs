@@ -108,9 +108,6 @@ namespace Project.Companions.Invector
             SnapBodyToward(target);
             _loadoutBridge?.PulseRangedFirePose();
 
-            if (_controller != null)
-                _controller.isStrafing = true;
-
             Vector3 aimPoint = ResolveAimPoint(target);
             _shooterManager.Shoot(aimPoint, applyHipfirePrecision: false);
             EnemyNoiseEvents.RaiseNoise(transform.position, 12f, gameObject);
@@ -147,10 +144,6 @@ namespace Project.Companions.Invector
             if (_loadoutBridge != null)
                 _loadoutBridge.SyncRangedAimPose(shouldAim);
 
-            if (_controller == null)
-                return;
-
-            _controller.isStrafing = shouldAim;
         }
 
         private bool ShouldMaintainRangedAim()

@@ -265,10 +265,14 @@ namespace Project.Companions
             if (profile == null)
                 return;
 
-            walkSpeedReference = profile.walkSpeedReference;
-            runSpeedReference = profile.runSpeedReference;
-            walkAnimationSpeed = profile.walkAnimationSpeed;
-            runAnimationSpeed = profile.runAnimationSpeed;
+            if (profile.walkSpeedReference > 0.1f)
+                walkSpeedReference = profile.walkSpeedReference;
+            if (profile.runSpeedReference > 0.1f)
+                runSpeedReference = profile.runSpeedReference;
+            if (profile.walkAnimationSpeed > 0.01f)
+                walkAnimationSpeed = profile.walkAnimationSpeed;
+            if (profile.runAnimationSpeed > 0.01f)
+                runAnimationSpeed = profile.runAnimationSpeed;
         }
 
         private void CacheAnimatorCapabilities()

@@ -14,7 +14,9 @@ namespace Project.EditorTools.GenesisStudio
         ExternalBlueprintTab = 5,
         ExternalTool = 6,
         PlayerSystemsLink = 7,
-        FootstepsCombined = 8
+        FootstepsCombined = 8,
+        EmbeddedCompanionEditor = 9,
+        EmbeddedCompanionSystems = 10
     }
 
     public readonly struct DMStudioSubtab
@@ -116,6 +118,9 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             roots.Add("Assets/_Project/Resources/Landing");
+            roots.Add("Assets/_Project/Data/Companions");
+            roots.Add("Assets/_Project/Resources/CompanionAbilities");
+            roots.Add("Assets/_Project/Resources/CompanionClassProfiles");
             return new List<string>(roots).ToArray();
         }
 
@@ -220,6 +225,13 @@ namespace Project.EditorTools.GenesisStudio
                             "Journal / minimap UV, zoom meters, fog-of-war.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Map/DMWorldMapCalibrationProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "terrain-splats",
+                            "Terrain Layer Render",
+                            "Per splat: height blend on/off, parallax on select Io layers, normal/tile overrides.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_TerrainSplatRenderProfile.asset",
                             playModeSave: true)
                     }),
                 new DMStudioCategory(
@@ -250,17 +262,29 @@ namespace Project.EditorTools.GenesisStudio
                     "companions",
                     "Companions",
                     "◇",
-                    "Per-class ability loadouts for expedition pioneers.",
+                    "Companion chassis, roster data, class loadouts, abilities, and AI behavior.",
                     FromHex("#4A4A5A"),
                     new[]
                     {
                         new DMStudioSubtab(
+                            "companion-editor",
+                            "Companion Editor",
+                            "Build the Invector chassis, author roster data, generate Companion / Echo / Recruit prefabs, and sync the catalog.",
+                            DMStudioPanelMode.EmbeddedCompanionEditor),
+                        new DMStudioSubtab(
                             "class-profiles",
                             "Class Profiles",
-                            "Med-tech, salvage, logistics, comms loadouts.",
+                            "Med-tech, salvage, logistics, comms slot limits and default abilities.",
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Resources/CompanionClassProfiles",
-                            typeFilter: "t:CompanionClassProfile")
+                            typeFilter: "t:CompanionClassProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "companion-systems",
+                            "Loadouts & AI",
+                            "Weapon / tool loadouts, abilities, follow behavior, and live scene companion AI.",
+                            DMStudioPanelMode.EmbeddedCompanionSystems,
+                            playModeSave: true)
                     }),
                 new DMStudioCategory(
                     "crafting",

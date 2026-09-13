@@ -68,7 +68,7 @@ namespace Project.Companions
             }
 
             isWandering = true;
-            MoveTowards(target, walkSpeed * wanderPaceScale, allowIdleRest: false);
+            MoveTowards(target, walkSpeed * wanderPaceScale, allowIdleRest: false, easeThroughTurn: true);
         }
 
         private void SetupPingPongPoints()
@@ -108,7 +108,7 @@ namespace Project.Companions
 
                 if (distanceToAnchor > stopDistance + 0.25f)
                 {
-                    MoveTowards(anchorWorld, walkSpeed * 0.75f, allowIdleRest: true);
+                    MoveTowards(anchorWorld, walkSpeed * 0.75f, allowIdleRest: true, easeThroughTurn: true);
                     return;
                 }
 
@@ -130,7 +130,7 @@ namespace Project.Companions
                 return;
             }
 
-            MoveTowards(idleWanderWorldTarget, walkSpeed * idleWanderPaceScale, allowIdleRest: false);
+            MoveTowards(idleWanderWorldTarget, walkSpeed * idleWanderPaceScale, allowIdleRest: false, easeThroughTurn: true);
         }
 
         private Vector3 GetIdleAnchorWorld()

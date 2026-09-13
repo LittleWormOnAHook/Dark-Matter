@@ -22,7 +22,12 @@ namespace Project.Companions
         private const int GroundHitBufferSize = 24;
         private static readonly RaycastHit[] GroundHitBuffer = new RaycastHit[GroundHitBufferSize];
 
-        private void MoveTowards(Vector3 target, float speed, bool allowIdleRest, bool faceMovement = true)
+        private void MoveTowards(
+            Vector3 target,
+            float speed,
+            bool allowIdleRest,
+            bool faceMovement = true,
+            bool easeThroughTurn = false)
         {
             if (useTrailWhenPathBlocked && trailRecoveryUntil <= 0f && Time.time >= stepBackUntil)
                 target = ResolveTrailAwareTarget(target);
@@ -41,7 +46,9 @@ namespace Project.Companions
 
             if (distance > stopDistance)
             {
-                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget);
+                float moveScale = easeThroughTurn
+                    ? DMILocomotionFacing.FacingMoveScale(transform, toTarget)
+                    : DMILocomotionFacing.FacingMoveScale(transform, toTarget, minScale: 0.72f);
                 float scaledSpeed = speed * moveScale;
                 Vector3 direction = toTarget.normalized;
                 Vector3 step = direction * (scaledSpeed * Time.deltaTime);
@@ -75,8 +82,11 @@ namespace Project.Companions
             if (!faceMovement)
                 return;
 
-            if (toTarget.sqrMagnitude > 0.01f && currentSpeed > 0.05f)
-                DMILocomotionFacing.FaceToward(transform, flatTarget, turnSpeed);
+            if (currentSpeed > 0.05f && currentMoveDirection.sqrMagnitude > 0.0001f)
+                DMILocomotionFacing.FaceTowardDirection(
+                    transform,
+                    currentMoveDirection,
+                    easeThroughTurn ? turnSpeed : turnSpeed * 0.65f);
             else if (allowIdleRest)
                 ApplyIdleRestFacing();
         }
@@ -190,8 +200,10 @@ namespace Project.Companions
             if (body == null || !body.isKinematic)
                 return;
 
-            body.MovePosition(transform.position);
-            body.MoveRotation(transform.rotation);
+            // Assign, don't MovePosition — interpolation would fight transform-driven steps.
+            body.interpolation = RigidbodyInterpolation.None;
+            body.position = transform.position;
+            body.rotation = transform.rotation;
         }
 
         private void GetCapsulePoints(Vector3 worldPosition, out Vector3 bottom, out Vector3 top)
@@ -669,13 +681,18 @@ namespace Project.Companions
             if (!IsOnInteriorWalkableSurface(pos, walkableY))
                 walkableY = Mathf.Min(walkableY, baselineY + maxHeightAboveTerrain);
 
-            if (pos.y > walkableY + 0.02f)
+            float deltaY = walkableY - pos.y;
+            if (Mathf.Abs(deltaY) <= 0.02f)
+                return;
+
+            if (deltaY < -0.02f)
                 pos.y = walkableY;
-            else if (walkableY - pos.y > 0.02f && walkableY - pos.y <= stepOffset + collisionSkin)
+            else if (deltaY <= stepOffset + collisionSkin)
                 pos.y = walkableY;
+            else
+                return;
 
             transform.position = pos;
-            Depenetrate();
             SyncInvectorRigidbody();
         }
 

@@ -31,10 +31,20 @@ namespace Project.AI
 
             Vector3 toTarget = worldTarget - transform.position;
             toTarget.y = 0f;
-            if (toTarget.sqrMagnitude <= 0.0001f)
+            FaceTowardDirection(transform, toTarget, turnSpeed);
+        }
+
+        /// <summary>Yaw toward a flat world direction at a capped deg/sec rate.</summary>
+        public static void FaceTowardDirection(Transform transform, Vector3 flatDirection, float turnSpeed)
+        {
+            if (transform == null)
                 return;
 
-            Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+            flatDirection.y = 0f;
+            if (flatDirection.sqrMagnitude <= 0.0001f)
+                return;
+
+            Quaternion look = Quaternion.LookRotation(flatDirection.normalized, Vector3.up);
             float maxDegrees = ToDegreesPerSecond(turnSpeed) * Time.deltaTime;
             transform.rotation = Quaternion.RotateTowards(transform.rotation, look, maxDegrees);
         }

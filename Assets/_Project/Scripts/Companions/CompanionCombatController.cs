@@ -224,6 +224,7 @@ namespace Project.Companions
         {
             pioneerClass = skilledClass;
             behaviorProfile = profile != null ? profile.Clone() : new PioneerBehaviorProfile();
+            PioneerBehaviorDefaults.FillMissingNumericFields(behaviorProfile, pioneerClass);
             preferredCombatDistance = behaviorProfile.ResolvePreferredCombatDistance(pioneerClass);
             selfTargetPriority = behaviorProfile.followMode == PioneerFollowMode.FollowSelf ? 0.68f : 0.35f;
             // Ranged standoff may widen detect/fire range. Melee contact is owned by

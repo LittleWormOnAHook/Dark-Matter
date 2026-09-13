@@ -41,24 +41,30 @@ namespace Project.EditorTools.GenesisStudio
                 serialized = new SerializedObject(asset);
 
             serialized.Update();
+            float labelWidth = DMStudioStyles.MeasureInspectorLabelWidth(
+                serialized,
+                path => DMStudioProfileSections.IncludesField(path, section));
+
             scroll = EditorGUILayout.BeginScrollView(scroll);
-
-            SerializedProperty iterator = serialized.GetIterator();
-            bool enterChildren = true;
-            while (iterator.NextVisible(enterChildren))
+            using (DMStudioStyles.PushLabelWidth(labelWidth))
             {
-                enterChildren = false;
-                if (!DMStudioProfileSections.IncludesField(iterator.propertyPath, section))
-                    continue;
-
-                if (iterator.propertyPath == "m_Script")
+                SerializedProperty iterator = serialized.GetIterator();
+                bool enterChildren = true;
+                while (iterator.NextVisible(enterChildren))
                 {
-                    using (new EditorGUI.DisabledScope(true))
-                        EditorGUILayout.PropertyField(iterator, true);
-                    continue;
-                }
+                    enterChildren = false;
+                    if (!DMStudioProfileSections.IncludesField(iterator.propertyPath, section))
+                        continue;
 
-                EditorGUILayout.PropertyField(iterator, true);
+                    if (iterator.propertyPath == "m_Script")
+                    {
+                        using (new EditorGUI.DisabledScope(true))
+                            EditorGUILayout.PropertyField(iterator, true);
+                        continue;
+                    }
+
+                    EditorGUILayout.PropertyField(iterator, true);
+                }
             }
 
             EditorGUILayout.EndScrollView();

@@ -12,10 +12,9 @@ using UnityEngine;
 
 namespace Project.Companions
 {
-    // Break-away combat engagement: while fighting, the companion anchors to the enemy instead of
-    // the player's formation slot, holding a comfort ring (ranged standoff band or melee strike
-    // range) around it with facing always locked onto the enemy. Split out of
-    // CompanionFollowController.cs.
+    // Break-away combat engagement: companions leave the player's formation slot and work a
+    // comfort ring around the enemy. Ranged kits close in, take short backsteps, then ping-pong
+    // along the buffer. Relocates face the walk; only holds face the enemy (no moonwalk).
     public partial class CompanionFollowController
     {
         private void FaceCombatTarget(Vector3 enemyPos)
@@ -29,10 +28,8 @@ namespace Project.Companions
         }
 
         /// <summary>
-        /// Break-away combat movement: hold a comfort ring around the enemy with a wide
-        /// deadband so the companion stands its ground instead of oscillating between the
-        /// enemy and the moving formation slot (the source of the side-to-side jitter).
-        /// Facing is always toward the enemy — never toward movement or the player.
+        /// Combat ring: melee closes to strike range; ranged kits, backsteps, and orbits
+        /// the buffer. Walks face the step so Invector does not moonwalk.
         /// </summary>
         private bool TryUpdateCombatEngagement()
         {
@@ -51,47 +48,137 @@ namespace Project.Companions
             return TryUpdateMeleeCombatEngagement(enemyPos, distance, preferred, strikeRange);
         }
 
+        private void ResetRangedKiteState()
+        {
+            rangedKiteManeuver = RangedKiteManeuver.Hold;
+            rangedKiteUntil = 0f;
+            rangedOrbitPauseUntil = 0f;
+            rangedOrbitTowardB = combatOrbitSign >= 0f;
+        }
+
         private bool TryUpdateRangedCombatEngagement(Vector3 enemyPos, float distance, float preferred, float strikeRange)
         {
             float loseFireRange = strikeRange * 0.88f;
-            float comfortOuter = preferred * 1.18f;
-            float comfortInner = preferred * 0.82f;
+            float comfortOuter = preferred * 1.22f;
+            float comfortInner = preferred * 0.72f;
 
-            // Enemy fled beyond effective fire range — run the standoff ring back into band.
-            if (distance > loseFireRange)
+            if (distance > loseFireRange || distance > comfortOuter)
             {
-                Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
-                float speed = distance > preferred * 1.75f ? runSpeed * 1.08f : runSpeed;
-                MoveTowards(ringPoint, speed, allowIdleRest: false, faceMovement: false);
-                FaceCombatTarget(enemyPos);
-                return true;
-            }
-
-            // Still in range but drifting too far for reliable shots — walk back to preferred standoff.
-            if (distance > comfortOuter)
-            {
-                Vector3 ringPoint = ComputeCombatRingPoint(enemyPos, preferred);
-                MoveTowards(ringPoint, walkSpeed * 1.12f, allowIdleRest: false, faceMovement: false);
-                FaceCombatTarget(enemyPos);
+                BeginRangedApproach(enemyPos, preferred);
+                TickRangedRelocate(enemyPos, walkOrRun: distance > preferred * 1.6f);
                 return true;
             }
 
             if (distance < comfortInner)
             {
-                Vector3 away = transform.position - enemyPos;
-                away.y = 0f;
-                if (away.sqrMagnitude < 0.01f)
-                    away = -transform.forward;
-
-                Vector3 backPoint = enemyPos + away.normalized * preferred;
-                backPoint.y = SampleTerrainHeight(backPoint);
-                MoveTowards(backPoint, walkSpeed * 0.95f, allowIdleRest: false, faceMovement: false);
-                FaceCombatTarget(enemyPos);
+                if (rangedKiteManeuver != RangedKiteManeuver.Backstep || Time.time >= rangedKiteUntil)
+                    BeginRangedBackstep(enemyPos, preferred);
+                TickRangedRelocate(enemyPos, walkOrRun: false);
                 return true;
             }
 
-            HoldCombatFacing(enemyPos);
+            if (rangedKiteManeuver == RangedKiteManeuver.Backstep && Time.time < rangedKiteUntil)
+            {
+                TickRangedRelocate(enemyPos, walkOrRun: false);
+                return true;
+            }
+
+            if (rangedKiteManeuver == RangedKiteManeuver.Approach)
+            {
+                if (HorizontalDistance(transform.position, rangedKiteTarget) > stopDistance + 0.25f)
+                {
+                    TickRangedRelocate(enemyPos, walkOrRun: false);
+                    return true;
+                }
+
+                BeginRangedOrbitHold(enemyPos);
+            }
+
+            TickRangedOrbit(enemyPos, preferred);
             return true;
+        }
+
+        private void BeginRangedApproach(Vector3 enemyPos, float preferred)
+        {
+            rangedKiteManeuver = RangedKiteManeuver.Approach;
+            rangedKiteTarget = ComputeCombatRingPoint(enemyPos, preferred);
+            rangedKiteUntil = Time.time + 1.4f;
+        }
+
+        private void BeginRangedBackstep(Vector3 enemyPos, float preferred)
+        {
+            Vector3 away = transform.position - enemyPos;
+            away.y = 0f;
+            if (away.sqrMagnitude < 0.01f)
+                away = -transform.forward;
+
+            rangedKiteManeuver = RangedKiteManeuver.Backstep;
+            rangedKiteTarget = enemyPos + away.normalized * preferred;
+            rangedKiteTarget.y = SampleTerrainHeight(rangedKiteTarget);
+            rangedKiteUntil = Time.time + 0.7f;
+        }
+
+        private void BeginRangedOrbitHold(Vector3 enemyPos)
+        {
+            rangedKiteManeuver = RangedKiteManeuver.Hold;
+            rangedOrbitPauseUntil = Time.time + Random.Range(0.4f, 0.85f);
+            HoldCombatFacing(enemyPos);
+        }
+
+        private void TickRangedRelocate(Vector3 enemyPos, bool walkOrRun)
+        {
+            isWandering = true;
+            float speed = walkOrRun ? runSpeed : walkSpeed * 0.95f;
+            MoveTowards(rangedKiteTarget, speed, allowIdleRest: false, faceMovement: true);
+            if (currentSpeed <= 0.05f)
+                FaceCombatTarget(enemyPos);
+        }
+
+        private void TickRangedOrbit(Vector3 enemyPos, float preferred)
+        {
+            if (rangedKiteManeuver == RangedKiteManeuver.Hold || Time.time < rangedOrbitPauseUntil)
+            {
+                if (Time.time >= rangedOrbitPauseUntil)
+                    BeginRangedOrbitStep(enemyPos, preferred);
+                else
+                    HoldCombatFacing(enemyPos);
+                return;
+            }
+
+            if (rangedKiteManeuver != RangedKiteManeuver.Orbit)
+                BeginRangedOrbitStep(enemyPos, preferred);
+
+            if (HorizontalDistance(transform.position, rangedKiteTarget) <= stopDistance + 0.3f
+                || Time.time >= rangedKiteUntil)
+            {
+                rangedOrbitTowardB = !rangedOrbitTowardB;
+                BeginRangedOrbitHold(enemyPos);
+                return;
+            }
+
+            isWandering = true;
+            MoveTowards(rangedKiteTarget, walkSpeed * 0.88f, allowIdleRest: false, faceMovement: true);
+            if (currentSpeed <= 0.05f)
+                FaceCombatTarget(enemyPos);
+        }
+
+        private void BeginRangedOrbitStep(Vector3 enemyPos, float preferred)
+        {
+            Vector3 radial = transform.position - enemyPos;
+            radial.y = 0f;
+            if (radial.sqrMagnitude < 0.01f)
+                radial = -transform.forward;
+            radial.Normalize();
+
+            if (combatOrbitSign == 0f)
+                combatOrbitSign = (pioneerSeed.GetHashCode() & 1) == 0 ? 1f : -1f;
+
+            Vector3 lateral = Vector3.Cross(Vector3.up, radial) * combatOrbitSign;
+            float side = rangedOrbitTowardB ? 1f : -1f;
+            rangedKiteTarget = enemyPos + radial * preferred + lateral * (preferred * 0.42f * side);
+            rangedKiteTarget.y = SampleTerrainHeight(rangedKiteTarget);
+            rangedKiteManeuver = RangedKiteManeuver.Orbit;
+            rangedKiteUntil = Time.time + 1.15f;
         }
 
         private bool TryUpdateMeleeCombatEngagement(Vector3 enemyPos, float distance, float preferred, float strikeRange)

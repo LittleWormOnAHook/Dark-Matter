@@ -81,20 +81,7 @@ namespace Project.Pioneers
             if (definition.overrideDefaultFollowMode)
                 target.followMode = source.followMode;
 
-            if (source.wanderPaceScale > 0.09f)
-                target.wanderPaceScale = source.wanderPaceScale;
-            if (source.walkSpeed > 0.1f)
-                target.walkSpeed = source.walkSpeed;
-            if (source.runSpeed > 0.1f)
-                target.runSpeed = source.runSpeed;
-            if (source.catchUpSpeed > 0.1f)
-                target.catchUpSpeed = source.catchUpSpeed;
-            if (source.combatTetherRadius > 0.1f)
-                target.combatTetherRadius = source.combatTetherRadius;
-            if (source.preferredCombatDistance > 0.1f)
-                target.preferredCombatDistance = source.preferredCombatDistance;
-            if (source.rangedPreferredDistance > 0.1f)
-                target.rangedPreferredDistance = source.rangedPreferredDistance;
+            OverlayPositiveFields(target, source);
 
             if (definition.overrideDefaultWorldAmbientMode)
                 target.worldAmbientMode = source.worldAmbientMode;
@@ -103,14 +90,89 @@ namespace Project.Pioneers
                 target.worldIdleJob = source.worldIdleJob;
         }
 
+        public static void OverlayPositiveFields(PioneerBehaviorProfile target, PioneerBehaviorProfile source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (source.wanderPaceScale > 0.09f)
+                target.wanderPaceScale = source.wanderPaceScale;
+            if (source.walkSpeed > 0.1f)
+                target.walkSpeed = source.walkSpeed;
+            if (source.runSpeed > 0.1f)
+                target.runSpeed = source.runSpeed;
+            if (source.catchUpSpeed > 0.1f)
+                target.catchUpSpeed = source.catchUpSpeed;
+            if (source.catchUpDistance > 0.1f)
+                target.catchUpDistance = source.catchUpDistance;
+            if (source.maxFollowDistance > 0.1f)
+                target.maxFollowDistance = source.maxFollowDistance;
+            if (source.stopDistance > 0.01f)
+                target.stopDistance = source.stopDistance;
+            if (source.formationHeadingSmoothTime > 0.01f)
+                target.formationHeadingSmoothTime = source.formationHeadingSmoothTime;
+            if (source.walkAnimationSpeed > 0.01f)
+                target.walkAnimationSpeed = source.walkAnimationSpeed;
+            if (source.runAnimationSpeed > 0.01f)
+                target.runAnimationSpeed = source.runAnimationSpeed;
+            if (source.walkSpeedReference > 0.1f)
+                target.walkSpeedReference = source.walkSpeedReference;
+            if (source.runSpeedReference > 0.1f)
+                target.runSpeedReference = source.runSpeedReference;
+            if (source.combatTetherRadius > 0.1f)
+                target.combatTetherRadius = source.combatTetherRadius;
+            if (source.preferredCombatDistance > 0.1f)
+                target.preferredCombatDistance = source.preferredCombatDistance;
+            if (source.rangedPreferredDistance > 0.1f)
+                target.rangedPreferredDistance = source.rangedPreferredDistance;
+            if (source.losSearchRadius > 0.01f)
+                target.losSearchRadius = source.losSearchRadius;
+            if (source.formationDriftDegreesPerSecond > 0.01f)
+                target.formationDriftDegreesPerSecond = source.formationDriftDegreesPerSecond;
+        }
+
+        public static bool HasMissingNumericFields(PioneerBehaviorProfile profile)
+        {
+            if (profile == null)
+                return true;
+
+            return profile.wanderPaceScale <= 0.09f
+                || profile.walkSpeed <= 0.1f
+                || profile.runSpeed <= 0.1f
+                || profile.catchUpSpeed <= 0.1f
+                || profile.catchUpDistance <= 0.1f
+                || profile.maxFollowDistance <= 0.1f
+                || profile.stopDistance <= 0.01f
+                || profile.formationHeadingSmoothTime <= 0.01f
+                || profile.walkAnimationSpeed <= 0.01f
+                || profile.runAnimationSpeed <= 0.01f
+                || profile.walkSpeedReference <= 0.1f
+                || profile.runSpeedReference <= 0.1f
+                || profile.combatTetherRadius <= 0.1f
+                || profile.preferredCombatDistance <= 0.1f
+                || profile.rangedPreferredDistance <= 0.1f
+                || profile.losSearchRadius <= 0.01f
+                || profile.formationDriftDegreesPerSecond <= 0.01f;
+        }
+
+        public static void FillMissingNumericFields(PioneerBehaviorProfile target, SkilledPioneerClass pioneerClass)
+        {
+            if (target == null)
+                return;
+
+            PioneerBehaviorProfile defaults = CreateForClass(pioneerClass);
+            PioneerBehaviorProfile filled = defaults.Clone();
+            OverlayPositiveFields(filled, target);
+            OverlayPositiveFields(target, filled);
+        }
+
         public static PioneerBehaviorProfile ResolveForRecord(SkilledPioneerRecord record)
         {
             if (record == null)
                 return new PioneerBehaviorProfile();
 
-            PioneerBehaviorProfile profile = record.behavior != null
-                ? record.behavior.Clone()
-                : CreateForClass(record.pioneerClass);
+            PioneerBehaviorProfile profile = CreateForClass(record.pioneerClass);
+            OverlayPositiveFields(profile, record.behavior);
 
             if (record.followMode >= 0)
                 profile.followMode = (PioneerFollowMode)Mathf.Clamp(record.followMode, 0, 2);
@@ -120,6 +182,7 @@ namespace Project.Pioneers
                 definition = NamedPioneerCatalog.FindById(record.id);
 
             MergeDefinitionOverrides(profile, definition);
+            FillMissingNumericFields(profile, record.pioneerClass);
             return profile;
         }
     }

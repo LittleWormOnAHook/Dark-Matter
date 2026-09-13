@@ -19,6 +19,8 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMStudioAssetPanel assetPanel = new DMStudioAssetPanel();
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
         private readonly DMStudioFootstepsPanel footstepsPanel = new DMStudioFootstepsPanel();
+        private readonly DMStudioCompanionEditorPanel companionEditorPanel = new DMStudioCompanionEditorPanel();
+        private readonly DMStudioCompanionSystemsPanel companionSystemsPanel = new DMStudioCompanionSystemsPanel();
         private readonly ItemDataCreatorPanel itemDataPanel = new ItemDataCreatorPanel();
         private readonly DMAmmoCreatorPanel ammoPanel = new DMAmmoCreatorPanel();
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
@@ -36,6 +38,8 @@ namespace Project.EditorTools.GenesisStudio
         private void OnDisable()
         {
             assetPanel.Dispose();
+            companionEditorPanel.Dispose();
+            companionSystemsPanel.Dispose();
             DestroyPlayerSystemsEditor();
         }
 
@@ -190,6 +194,18 @@ namespace Project.EditorTools.GenesisStudio
                         break;
                     case DMStudioPanelMode.FootstepsCombined:
                         footstepsPanel.Draw();
+                        break;
+                    case DMStudioPanelMode.EmbeddedCompanionEditor:
+                        contentScroll = Vector2.zero;
+                        EditorGUILayout.EndScrollView();
+                        companionEditorPanel.Draw();
+                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                        break;
+                    case DMStudioPanelMode.EmbeddedCompanionSystems:
+                        contentScroll = Vector2.zero;
+                        EditorGUILayout.EndScrollView();
+                        companionSystemsPanel.Draw();
+                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
                         break;
                 }
 
