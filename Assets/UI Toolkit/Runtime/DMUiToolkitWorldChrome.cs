@@ -602,9 +602,7 @@ namespace Project.UI
             Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(0f, Screen.height));
             panelYIncreasesWithScreenY = screenTop.y > screenBottom.y + 0.5f;
 
-            panelFlipHeight = dotsLayer != null ? dotsLayer.layout.height : 0f;
-            if (panelFlipHeight <= 1f)
-                panelFlipHeight = Screen.height;
+            panelFlipHeight = Screen.height;
 
             panelYFlipResolved = true;
         }
@@ -650,12 +648,10 @@ namespace Project.UI
 
         private bool ShouldRepaintDots()
         {
+            // Exclusive pickup must repaint every frame while the camera moves so world-locked stems
+            // stay glued to the item (throttling caused screen-space detach/jitter on pan/tilt).
             if (hasExclusiveDot)
-            {
-                float hold = exclusiveDot.HoldProgress01;
-                if (Mathf.Abs(hold - lastPaintExclusiveHoldProgress) > 0.002f)
-                    return true;
-            }
+                return true;
 
             if (pendingDots.Count != lastPaintDotCount)
                 return true;
@@ -760,14 +756,16 @@ namespace Project.UI
                     continue;
                 }
 
-                // World-up stems must share one screen column; separate projection + rounding skews X.
-                tipRaw.x = anchorRaw.x;
-                Vector2 anchorPanel = StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
-                Vector2 tipPanel = new Vector2(anchorPanel.x, Mathf.Round(tipRaw.y));
-                float relDy = tipPanel.y - anchorPanel.y;
+                Vector2 anchorPanel = pending.IsPickupPrompt
+                    ? new Vector2(Mathf.Round(anchorRaw.x), Mathf.Round(anchorRaw.y))
+                    : StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
+                Vector2 tipPanel = new Vector2(Mathf.Round(tipRaw.x), Mathf.Round(tipRaw.y));
+                float dx = tipPanel.x - anchorPanel.x;
+                float dy = tipPanel.y - anchorPanel.y;
+                float relDy = dy;
 
                 bool moved = (anchorPanel - visuals.LastAnchor).sqrMagnitude >= 0.01f
-                    || Mathf.Abs(relDy - (visuals.LastTip.y - visuals.LastAnchor.y)) >= 0.01f;
+                    || (tipPanel - visuals.LastTip).sqrMagnitude >= 0.01f;
                 visuals.LastAnchor = anchorPanel;
                 visuals.LastTip = tipPanel;
 
@@ -781,8 +779,8 @@ namespace Project.UI
                 VisualElement glow = visuals.Glow;
                 VisualElement closeCluster = visuals.CloseCluster;
 
-                float len = Mathf.Abs(relDy);
-                float angle = relDy >= 0f ? 90f : -90f;
+                float len = Mathf.Sqrt(dx * dx + dy * dy);
+                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
 
                 if (pending.DrawStem && stem != null && len > 0.5f)
                 {
@@ -835,8 +833,8 @@ namespace Project.UI
                             visuals.LastGlowSize = size;
                             glow.style.width = size;
                             glow.style.height = size;
-                            glow.style.left = -half;
-                            glow.style.top = relDy - half;
+                            glow.style.left = dx - half;
+                            glow.style.top = dy - half;
                             glow.style.right = StyleKeyword.Auto;
                             glow.style.bottom = StyleKeyword.Auto;
                             glow.style.borderTopLeftRadius = half;

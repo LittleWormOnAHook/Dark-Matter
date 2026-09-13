@@ -22,6 +22,7 @@ namespace Project.Companions
     /// the public Initialize/behavior-profile API, and the main Update() dispatch. Purely a
     /// mechanical reorganization (partial class split) — no behavior changed by the split.
     /// </summary>
+    [DefaultExecutionOrder(90)]
     public partial class CompanionFollowController : MonoBehaviour
     {
         private static readonly Vector3[] FormationOffsets =
