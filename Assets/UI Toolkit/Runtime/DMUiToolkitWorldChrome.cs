@@ -64,6 +64,7 @@ namespace Project.UI
         private Vector3 lastPaintCamPos = new Vector3(float.MaxValue, 0f, 0f);
         private Quaternion lastPaintCamRot = Quaternion.identity;
         private Vector3 lastPaintPlayerPos = new Vector3(float.MaxValue, 0f, 0f);
+        private float lastPaintExclusiveHoldProgress = -1f;
         private bool hasExclusiveDot;
         private WorldDot exclusiveDot;
         private bool panelYFlipResolved;
@@ -263,10 +264,7 @@ namespace Project.UI
                 CollectExclusivePickupDot(player, camera);
             }
             else if (hasExclusiveDot)
-            {
-                RefreshExclusiveAnchor();
                 RefreshExclusiveHoldProgress();
-            }
 
             if (hasExclusiveDot)
                 pendingDots.Add(exclusiveDot);
@@ -399,19 +397,6 @@ namespace Project.UI
 
             exclusiveDot = dot;
             hasExclusiveDot = true;
-        }
-
-        private void RefreshExclusiveAnchor()
-        {
-            if (!hasExclusiveDot)
-                return;
-
-            if (WorldPickupFocus.Item != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Item.GetIndicatorWorldAnchor();
-            else if (WorldPickupFocus.Recipe != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Recipe.GetIndicatorWorldAnchor();
-            else if (WorldPickupFocus.Harvest != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Harvest.GetNodeCenter();
         }
 
         private void RefreshExclusiveHoldProgress()
@@ -652,22 +637,6 @@ namespace Project.UI
             return raw;
         }
 
-        private static Vector2 DampenPickupPanel(Vector2 raw, DotVisuals visuals)
-        {
-            if (!visuals.HasSmoothedPanel)
-            {
-                visuals.SmoothedPanel = raw;
-                visuals.HasSmoothedPanel = true;
-                return raw;
-            }
-
-            float dt = Time.deltaTime;
-            if (dt <= 0f)
-                dt = 0.02f;
-            visuals.SmoothedPanel = Vector2.Lerp(visuals.SmoothedPanel, raw, 1f - Mathf.Exp(-18f * dt));
-            return visuals.SmoothedPanel;
-        }
-
         private static int ResolvePickupAnchorId()
         {
             if (WorldPickupFocus.Item != null)
@@ -682,7 +651,11 @@ namespace Project.UI
         private bool ShouldRepaintDots()
         {
             if (hasExclusiveDot)
-                return true;
+            {
+                float hold = exclusiveDot.HoldProgress01;
+                if (Mathf.Abs(hold - lastPaintExclusiveHoldProgress) > 0.002f)
+                    return true;
+            }
 
             if (pendingDots.Count != lastPaintDotCount)
                 return true;
@@ -712,6 +685,7 @@ namespace Project.UI
         {
             lastPaintDotCount = pendingDots.Count;
             lastPaintInteractRevision = interactScanRevision;
+            lastPaintExclusiveHoldProgress = hasExclusiveDot ? exclusiveDot.HoldProgress01 : -1f;
 
             Transform player = playerTransform;
             if (player != null)
@@ -752,9 +726,7 @@ namespace Project.UI
                 if (pending.IsPickupPrompt)
                 {
                     int anchorId = ResolvePickupAnchorId();
-                    if (!visuals.HasLockedWorldAnchor
-                        || visuals.LockedAnchorId != anchorId
-                        || (anchorWorld - visuals.LockedWorldAnchor).sqrMagnitude > 0.0025f)
+                    if (!visuals.HasLockedWorldAnchor || visuals.LockedAnchorId != anchorId)
                     {
                         visuals.LockedWorldAnchor = anchorWorld;
                         visuals.HasLockedWorldAnchor = true;
@@ -762,9 +734,7 @@ namespace Project.UI
                         visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
                     }
                     else
-                    {
                         anchorWorld = visuals.LockedWorldAnchor;
-                    }
                 }
 
                 float dist = maxRange;
@@ -792,8 +762,6 @@ namespace Project.UI
 
                 // World-up stems must share one screen column; separate projection + rounding skews X.
                 tipRaw.x = anchorRaw.x;
-                if (pending.IsPickupPrompt)
-                    anchorRaw = DampenPickupPanel(anchorRaw, visuals);
                 Vector2 anchorPanel = StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
                 Vector2 tipPanel = new Vector2(anchorPanel.x, Mathf.Round(tipRaw.y));
                 float relDy = tipPanel.y - anchorPanel.y;
@@ -1161,8 +1129,6 @@ namespace Project.UI
             public VisualElement HoldRing;
             public Vector2 LastTip = new Vector2(float.NaN, float.NaN);
             public Vector2 LastAnchor = new Vector2(float.NaN, float.NaN);
-            public Vector2 SmoothedPanel = new Vector2(float.NaN, float.NaN);
-            public bool HasSmoothedPanel;
             public Vector3 LockedWorldAnchor;
             public bool HasLockedWorldAnchor;
             public int LockedAnchorId;
@@ -1362,8 +1328,6 @@ namespace Project.UI
                 {
                     visuals.LastTip = new Vector2(float.NaN, float.NaN);
                     visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
-                    visuals.SmoothedPanel = new Vector2(float.NaN, float.NaN);
-                    visuals.HasSmoothedPanel = false;
                     visuals.HasLockedWorldAnchor = false;
                     visuals.LockedAnchorId = 0;
                     visuals.LastGlowSize = -1f;
