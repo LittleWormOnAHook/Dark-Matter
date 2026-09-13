@@ -11,7 +11,7 @@ namespace Project.Companions
     /// <summary>
     /// Lightweight health for expedition pioneers so enemies can damage them without full survival simulation.
     /// </summary>
-    public class CompanionHealth : MonoBehaviour, IDamageable
+    public class CompanionHealth : MonoBehaviour, IDamageable, IExpeditionCompanionActor
     {
         [SerializeField] private float maxHealth = 80f;
         [SerializeField] private Transform healthBarAnchor;
@@ -26,6 +26,8 @@ namespace Project.Companions
 
         /// <summary>Global fan-out so expedition slot arcs bind even if they miss the first HealthChanged.</summary>
         public static event Action<CompanionHealth, float, float> AnyHealthChanged;
+
+        Transform IExpeditionCompanionActor.Transform => transform;
 
         public float MaxHealth => maxHealth;
         public float CurrentHealth { get; private set; }
