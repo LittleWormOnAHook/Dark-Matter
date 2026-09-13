@@ -1,6 +1,7 @@
 using ECM2;
 using Invector.vCharacterController;
 using Project.AI;
+using Project.Core;
 using Project.Companions.Invector;
 using Project.Crafting;
 using Project.Data;
@@ -59,11 +60,6 @@ namespace Project.Companions
                 transform.position += step;
                 Depenetrate();
                 SyncInvectorRigidbody();
-                currentSpeed = scaledSpeed;
-            }
-            else
-            {
-                currentSpeed = 0f;
             }
 
             TryRecoverFromStuck(previousPosition, distance);
@@ -73,11 +69,18 @@ namespace Project.Companions
             if (frameDelta.sqrMagnitude > 0.0001f)
             {
                 currentMoveDirection = frameDelta.normalized;
+                currentSpeed = Time.deltaTime > 0.0001f
+                    ? frameDelta.magnitude / Time.deltaTime
+                    : 0f;
                 if (trailRecoveryUntil > 0f && Time.time < trailRecoveryUntil)
                     consecutiveStuckCount = 0;
             }
-            else if (toTarget.sqrMagnitude > 0.01f)
-                currentMoveDirection = toTarget.normalized;
+            else
+            {
+                currentSpeed = 0f;
+                if (toTarget.sqrMagnitude > 0.01f)
+                    currentMoveDirection = toTarget.normalized;
+            }
 
             if (!faceMovement)
                 return;
@@ -722,7 +725,16 @@ namespace Project.Companions
 
         private float SampleTerrainHeight(Vector3 worldPosition)
         {
-            return ResolveWalkableGroundY(worldPosition, allowStepUp: true);
+            float probeY = DmGroundProbe.SampleWalkableGroundY(
+                worldPosition,
+                groundProbeHeight,
+                groundProbeDistance,
+                groundOffset,
+                maxHeightAboveTerrain);
+            float resolvedY = ResolveWalkableGroundY(worldPosition, allowStepUp: true);
+            return Mathf.Abs(probeY - worldPosition.y) <= Mathf.Abs(resolvedY - worldPosition.y) + 0.02f
+                ? probeY
+                : resolvedY;
         }
 
         private float ResolveWalkableGroundY(Vector3 worldPosition, bool allowStepUp)
@@ -854,10 +866,14 @@ namespace Project.Companions
                 || lower.Contains("stair")
                 || lower.Contains("step")
                 || lower.Contains("floor")
+                || lower.Contains("ground")
+                || lower.Contains("terrain")
                 || lower.Contains("walkway")
                 || lower.Contains("platform")
                 || lower.Contains("porch")
-                || lower.Contains("deck");
+                || lower.Contains("deck")
+                || lower.Contains("road")
+                || lower.Contains("path");
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)

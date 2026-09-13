@@ -30,7 +30,8 @@ namespace Project.Core
                 Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
 
-            float maxAllowedY = Mathf.Min(position.y + 0.5f, baselineY + maxHeightAboveTerrain);
+            // Allow walkable meshes at the player's altitude (walkways/platforms); terrain-only cap caused trail Y drift.
+            float maxAllowedY = Mathf.Max(position.y + 0.5f, baselineY + maxHeightAboveTerrain);
             float bestScore = float.MaxValue;
             float bestY = baselineY;
             bool found = false;
@@ -146,7 +147,10 @@ namespace Project.Core
                 || lower.Contains("floor")
                 || lower.Contains("ground")
                 || lower.Contains("terrain")
+                || lower.Contains("walkway")
                 || lower.Contains("platform")
+                || lower.Contains("porch")
+                || lower.Contains("deck")
                 || lower.Contains("road")
                 || lower.Contains("path");
         }
