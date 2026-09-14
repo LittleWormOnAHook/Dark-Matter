@@ -16,7 +16,8 @@ namespace Project.EditorTools.GenesisStudio
         PlayerSystemsLink = 7,
         FootstepsCombined = 8,
         EmbeddedCompanionEditor = 9,
-        EmbeddedCompanionSystems = 10
+        EmbeddedCompanionSystems = 10,
+        CameraCombined = 11
     }
 
     public readonly struct DMStudioSubtab
@@ -164,7 +165,7 @@ namespace Project.EditorTools.GenesisStudio
                     "player",
                     "Player",
                     "◆",
-                    "Climb, dash, jetpack, landing, footsteps, and live player wiring.",
+                    "Climb, dash, jetpack, landing, footsteps, camera, and live player wiring.",
                     FromHex("#C02E7A"),
                     new[]
                     {
@@ -205,7 +206,14 @@ namespace Project.EditorTools.GenesisStudio
                             DMStudioPanelMode.FootstepsCombined,
                             "Assets/_Project/Resources/Player/DM_FootstepProfile.asset",
                             playModeSave: true),
-                        new DMStudioSubtab(
+                                                new DMStudioSubtab(
+                            "camera",
+                            "Camera",
+                            "Mouse zoom, aim/sprint pull, wall collision push, near clip, optics, and prefab camera wiring.",
+                            DMStudioPanelMode.CameraCombined,
+                            "Assets/_Project/Resources/Player/DM_CameraProfile.asset",
+                            playModeSave: true),
+new DMStudioSubtab(
                             "player-systems",
                             "Player Systems",
                             "Toggle DM modules on Player_v7 Variant (MonoBehaviour — not a profile asset).",

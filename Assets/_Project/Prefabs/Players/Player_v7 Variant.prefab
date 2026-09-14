@@ -2741,6 +2741,10 @@ PrefabInstance:
       propertyPath: rightFootTrigger
       value: 
       objectReference: {fileID: 6980914467938004668}
+    - target: {fileID: 11476208, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: _locomotionType
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 13627252, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_Center.x
       value: -2.83
@@ -2964,6 +2968,26 @@ PrefabInstance:
     - target: {fileID: 1224298583672759292, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_LocalPosition.z
       value: -0.0336
+      objectReference: {fileID: 0}
+    - target: {fileID: 1291581839440830285, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: cameraProfile
+      value: 
+      objectReference: {fileID: 11400000, guid: 036091f8a5f167446bba9442ac451786, type: 2}
+    - target: {fileID: 1291581839440830285, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: sprintZoomOutMeters
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1291581839440830285, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: runtimeMaxCameraDistance
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1291581839440830285, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: runtimeMinCameraDistance
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1291581839440830285, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: runtimeDefaultCameraDistance
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 1383270616227676437, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_IsActive
@@ -4282,6 +4306,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 114070, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5314259648231336822}
+    - targetCorrespondingSourceObject: {fileID: 114070, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2267508422002194787}
     - targetCorrespondingSourceObject: {fileID: 4873610712850481247, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6921872329947340462}
@@ -4618,6 +4645,20 @@ MonoBehaviour:
   landing: {fileID: 0}
   survival: {fileID: 0}
   ragdoll: {fileID: 0}
+--- !u!114 &2267508422002194787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923720419485229424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa0ae87384b5a0c4599fe7db7dee8b33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMRuntimeHierarchyMaterialInstancer
+  includeInactive: 1
+  skipParticleRenderers: 1
 --- !u!4 &4500269503029005637 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 578696797251031459, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}

@@ -14,21 +14,48 @@ namespace Project.Player
     [DefaultExecutionOrder(10000)]
     public sealed class DMCameraCollisionOverlay : MonoBehaviour
     {
-        private const string BuildStamp = "DMCamera 0905-climbfix3";
-        private const float SphereRadius = 0.2f;
-        private const float ExtraSkin = 0.08f;
-        private const float MinFollow = 2.15f;
-        private const float ClimbMinFollow = 2.55f;
-        private const float MantleMinFollow = 2.9f;
-        private const float PullSpeed = 16f;
-        private const float ReleaseSpeed = 5.5f;
-        private const float CollisionHysteresis = 0.12f;
-        private const float ClimbPullSpeed = 5.5f;
-        private const float ClimbReleaseSpeed = 2.8f;
-        private const float MantlePullSpeed = 3.0f;
-        private const float MantleReleaseSpeed = 2.2f;
-        private const float ClimbNearRadius = 4.25f;
-        private const float FloorProbe = 3.0f;
+        private const string BuildStamp = "DMCamera 0913-profile";
+        private const float DefaultSphereRadius = 0.2f;
+        private const float DefaultExtraSkin = 0.08f;
+        private const float DefaultMinFollow = 2.15f;
+        private const float DefaultClimbMinFollow = 2.55f;
+        private const float DefaultMantleMinFollow = 2.9f;
+        private const float DefaultPullSpeed = 16f;
+        private const float DefaultReleaseSpeed = 5.5f;
+        private const float DefaultCollisionHysteresis = 0.12f;
+        private const float DefaultClimbPullSpeed = 5.5f;
+        private const float DefaultClimbReleaseSpeed = 2.8f;
+        private const float DefaultMantlePullSpeed = 3.0f;
+        private const float DefaultMantleReleaseSpeed = 2.2f;
+        private const float DefaultClimbNearRadius = 4.25f;
+        private const float DefaultFloorProbe = 3.0f;
+
+        private DMCameraProfile _profile;
+
+        private DMCameraProfile Profile
+        {
+            get
+            {
+                if (_profile == null)
+                    _profile = DMCameraProfile.LoadOrNull();
+                return _profile;
+            }
+        }
+
+        private float SphereRadius => Profile != null ? Profile.sphereRadius : DefaultSphereRadius;
+        private float ExtraSkin => Profile != null ? Profile.extraSkin : DefaultExtraSkin;
+        private float MinFollow => Profile != null ? Profile.minFollow : DefaultMinFollow;
+        private float ClimbMinFollow => Profile != null ? Profile.climbMinFollow : DefaultClimbMinFollow;
+        private float MantleMinFollow => Profile != null ? Profile.mantleMinFollow : DefaultMantleMinFollow;
+        private float PullSpeed => Profile != null ? Profile.pullSpeed : DefaultPullSpeed;
+        private float ReleaseSpeed => Profile != null ? Profile.releaseSpeed : DefaultReleaseSpeed;
+        private float CollisionHysteresis => Profile != null ? Profile.collisionHysteresis : DefaultCollisionHysteresis;
+        private float ClimbPullSpeed => Profile != null ? Profile.climbPullSpeed : DefaultClimbPullSpeed;
+        private float ClimbReleaseSpeed => Profile != null ? Profile.climbReleaseSpeed : DefaultClimbReleaseSpeed;
+        private float MantlePullSpeed => Profile != null ? Profile.mantlePullSpeed : DefaultMantlePullSpeed;
+        private float MantleReleaseSpeed => Profile != null ? Profile.mantleReleaseSpeed : DefaultMantleReleaseSpeed;
+        private float ClimbNearRadius => Profile != null ? Profile.climbNearRadius : DefaultClimbNearRadius;
+        private float FloorProbe => Profile != null ? Profile.floorProbe : DefaultFloorProbe;
         private const int PlayerLayer = 8;
         private const int ClimbableLayer = 23;
 
@@ -104,6 +131,7 @@ namespace Project.Player
                 return;
 
             CacheRefs();
+            ApplyLensTuning();
             // Binoculars disable vThirdPersonCamera (eye pose). Skip third-person push while frozen/disabled
             // or the lens gets yanked from the eye out to CurrentZoom (often high above terrain).
             if (tpCamera == null || tpCamera.isFreezed || !tpCamera.enabled)
@@ -268,7 +296,7 @@ namespace Project.Player
             Vector3 fallbackDir,
             float radius,
             Transform pivotTf,
-            float minFollow = MinFollow)
+            float minFollow = DefaultMinFollow)
         {
             pos = DepenetrateFromEnvironment(pos, radius, pivotTf);
             pos = EnforceMinFollow(pivot, pos, fallbackDir, minFollow);
@@ -276,7 +304,7 @@ namespace Project.Player
             return EnforceMinFollow(pivot, pos, fallbackDir, minFollow);
         }
 
-        private Vector3 EnforceMinFollow(Vector3 pivot, Vector3 pos, Vector3 fallbackDir, float minFollow = MinFollow)
+        private Vector3 EnforceMinFollow(Vector3 pivot, Vector3 pos, Vector3 fallbackDir, float minFollow = DefaultMinFollow)
         {
             Vector3 offset = pos - pivot;
             float dist = offset.magnitude;
@@ -376,6 +404,17 @@ namespace Project.Player
                 return true;
             MeshCollider mesh = c as MeshCollider;
             return mesh != null && mesh.convex;
+        }
+
+        private void ApplyLensTuning()
+        {
+            DMCameraProfile profile = Profile;
+            if (profile == null || eye == null)
+                return;
+
+            float near = Mathf.Clamp(profile.nearClipPlane, 0.01f, 1f);
+            if (!Mathf.Approximately(eye.nearClipPlane, near))
+                eye.nearClipPlane = near;
         }
 
         private void CacheRefs()
@@ -509,7 +548,7 @@ namespace Project.Player
             return pos;
         }
 
-        private Vector3 PullOutOfEnvironment(Vector3 pivot, Vector3 pos, float radius, Transform pivotTf, float minFollow = MinFollow)
+        private Vector3 PullOutOfEnvironment(Vector3 pivot, Vector3 pos, float radius, Transform pivotTf, float minFollow = DefaultMinFollow)
         {
             if (!OverlapsEnvironment(pos, radius, pivotTf))
                 return pos;
@@ -640,14 +679,14 @@ namespace Project.Player
 
             _nearClimbNextCheck = now + 0.15f;
             _nearClimbSamplePivot = pivot;
-            _nearClimbCached = NearClimbableGeometry(pivot);
+            _nearClimbCached = NearClimbableGeometry(pivot, ClimbNearRadius);
             return _nearClimbCached;
         }
 
-        private static bool NearClimbableGeometry(Vector3 pivot)
+        private static bool NearClimbableGeometry(Vector3 pivot, float nearRadius)
         {
             int mask = 1 << ClimbableLayer;
-            if (Physics.CheckSphere(pivot, ClimbNearRadius, mask, QueryTriggerInteraction.Ignore))
+            if (Physics.CheckSphere(pivot, nearRadius, mask, QueryTriggerInteraction.Ignore))
                 return true;
             // Also soft-damp when the lens itself is skimming a climbable lip/ledge.
             return Physics.CheckSphere(pivot, 1.25f, mask, QueryTriggerInteraction.Collide);

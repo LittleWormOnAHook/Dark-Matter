@@ -122,8 +122,8 @@
     width: 2px;
     height: 2px;
     background-color: rgba(212, 160, 23, 0.85);
-    /* Left-center: stem base stays welded to world anchor under rotate. */
-    transform-origin: 0% 50%;
+    /* Bottom-center: anchor-locked vertical stem; C# places top at tip offset. */
+    transform-origin: 50% 100%;
 }
 
 .dmg-world-dot {

@@ -102,6 +102,67 @@ namespace Project.Interaction
             return ResolveIndicatorWorldAnchor();
         }
 
+        /// <summary>
+        /// Stem base for UITK chrome: primary mesh/collider center (not a high marker, not FX averages).
+        /// </summary>
+        public Vector3 GetVisualCenterWorldAnchor()
+        {
+            return transform.TransformPoint(ResolveVisualCenterLocal());
+        }
+
+        private Vector3 ResolveVisualCenterLocal()
+        {
+            if (renderers == null || renderers.Length == 0)
+                renderers = GetComponentsInChildren<Renderer>(true);
+            if (colliders == null || colliders.Length == 0)
+                colliders = GetComponentsInChildren<Collider>(true);
+
+            // Prefer the largest non-particle mesh so child glow/FX cannot pull the stem off-center.
+            float bestVol = -1f;
+            Vector3 bestLocal = Vector3.zero;
+            bool foundMesh = false;
+            if (renderers != null)
+            {
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Renderer rend = renderers[i];
+                    if (rend == null || !rend.enabled || !rend.gameObject.activeInHierarchy)
+                        continue;
+                    if (rend is ParticleSystemRenderer)
+                        continue;
+                    if (!(rend is MeshRenderer) && !(rend is SkinnedMeshRenderer))
+                        continue;
+
+                    Bounds lb = rend.localBounds;
+                    Vector3 size = lb.size;
+                    float vol = Mathf.Abs(size.x * size.y * size.z);
+                    if (vol <= bestVol)
+                        continue;
+                    bestVol = vol;
+                    Vector3 world = rend.transform.TransformPoint(lb.center);
+                    bestLocal = transform.InverseTransformPoint(world);
+                    foundMesh = true;
+                }
+            }
+
+            if (foundMesh)
+                return bestLocal;
+
+            // Fallback: root pickup collider center (trigger sphere on the item).
+            Collider rootCol = GetComponent<Collider>();
+            if (rootCol != null)
+            {
+                if (rootCol is SphereCollider sphere)
+                    return sphere.center;
+                if (rootCol is BoxCollider box)
+                    return box.center;
+                if (rootCol is CapsuleCollider capsule)
+                    return capsule.center;
+            }
+
+            return WorldIndicatorAnchorUtil.ResolveStableLocalCenter(transform, renderers, colliders);
+        }
+
         private void OnEnable()
         {
             hierarchyStateValid = false;

@@ -146,10 +146,6 @@ namespace Project.Companions
                 currentSpeed = Time.deltaTime > 0.0001f
                     ? step.magnitude / Time.deltaTime
                     : 0f;
-                if (ownerMotionSpeed > 0.4f)
-                    currentSpeed = Mathf.Max(currentSpeed, walkSpeed * 0.55f);
-                if (currentSpeed > runSpeed)
-                    currentSpeed = catchUpActive ? runSpeed : walkSpeed * 0.8f;
                 DMILocomotionFacing.FaceTowardDirection(transform, currentMoveDirection, turnSpeed * 0.65f);
                 return;
             }

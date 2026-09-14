@@ -47,13 +47,13 @@ namespace Project.Creatures
                 CandidateBuffer.Add(pet.transform);
             }
 
-            IReadOnlyList<CompanionHealth> companions = GameplayActorRegistry.ActiveCompanions;
+            IReadOnlyList<IExpeditionCompanionActor> companions = GameplayActorRegistry.ActiveCompanions;
             for (int i = 0; i < companions.Count; i++)
             {
-                CompanionHealth companion = companions[i];
+                IExpeditionCompanionActor companion = companions[i];
                 if (companion == null || companion.IsDead)
                     continue;
-                CandidateBuffer.Add(companion.transform);
+                CandidateBuffer.Add(companion.Transform);
             }
 
             CollectOtherCreatures(CandidateBuffer, self, allyId);
