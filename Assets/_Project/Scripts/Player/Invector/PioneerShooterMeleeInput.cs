@@ -25,14 +25,16 @@ namespace Project.Player.Invector
     public class PioneerShooterMeleeInput : vShooterMeleeInput
     {
         private const float MouseLookScale = 0.1f;
-        /// <summary>Discrete mouse-wheel zoom stops from min to max follow distance.</summary>
-        private const int ZoomClickLevels = 10;
+        /// <summary>Fallback discrete mouse-wheel zoom stops when no profile is assigned.</summary>
+        private const int DefaultZoomClickLevels = 10;
         private const int UiZoomRestoreFrames = 12;
 
         [Header("Pioneer Camera Zoom")]
-        [SerializeField] private float runtimeMinCameraDistance = 1.6f;
+        [SerializeField, Tooltip("Optional shared profile (Genesis Studio → Player → Camera). Overrides the fields below when set.")]
+        private DMCameraProfile cameraProfile;
+        [SerializeField] private float runtimeMinCameraDistance = 2.25f;
         [SerializeField] private float runtimeMaxCameraDistance = 12f;
-        [SerializeField] private float runtimeDefaultCameraDistance = 1.6f;
+        [SerializeField] private float runtimeDefaultCameraDistance = 2.25f;
         [SerializeField, Tooltip("How much closer Aiming pulls vs free-look preferred zoom.")]
         private float aimZoomPullInMeters = 0.55f;
         [SerializeField, Tooltip("Extra follow distance while sprinting (slight pull-out only).")]
@@ -125,17 +127,17 @@ namespace Project.Player.Invector
 
         private void ApplyStartZoomIn()
         {
-            _preferredCameraZoom = runtimeMinCameraDistance;
+            _preferredCameraZoom = MinCamDistance;
             if (tpCamera == null)
                 return;
 
             EnsureRuntimeZoomState();
             if (tpCamera.currentState != null)
-                tpCamera.currentState.defaultDistance = runtimeMinCameraDistance;
+                tpCamera.currentState.defaultDistance = MinCamDistance;
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
-                tpCamera.lerpState.defaultDistance = runtimeMinCameraDistance;
+                tpCamera.lerpState.defaultDistance = MinCamDistance;
 
-            tpCamera.ForceSetZoomDistance(runtimeMinCameraDistance);
+            tpCamera.ForceSetZoomDistance(MinCamDistance);
         }
 
         protected override void Update()
@@ -158,6 +160,77 @@ namespace Project.Player.Invector
         /// While held, keep aim active so mining resource scan (F / LB) can force aim without RMB/LT.
         /// Cleared when the scan key is released.
         /// </summary>
+
+        private DMCameraProfile ResolveCameraProfile()
+        {
+            if (cameraProfile != null)
+                return cameraProfile;
+            return DMCameraProfile.LoadOrNull();
+        }
+
+        private float MinCamDistance
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.minDistance : runtimeMinCameraDistance;
+            }
+        }
+
+        private float MaxCamDistance
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.maxDistance : runtimeMaxCameraDistance;
+            }
+        }
+
+        private float DefaultCamDistance
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.defaultDistance : runtimeDefaultCameraDistance;
+            }
+        }
+
+        private int ZoomLevels
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? Mathf.Max(2, p.zoomClickLevels) : DefaultZoomClickLevels;
+            }
+        }
+
+        private float AimZoomPullIn
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.aimZoomPullInMeters : aimZoomPullInMeters;
+            }
+        }
+
+        private float SprintZoomOut
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.sprintZoomOutMeters : sprintZoomOutMeters;
+            }
+        }
+
+        private float AimMinCamDistance
+        {
+            get
+            {
+                DMCameraProfile p = ResolveCameraProfile();
+                return p != null ? p.aimMinCameraDistance : aimMinCameraDistance;
+            }
+        }
+
         public void SetMiningScanAimHold(bool held)
         {
             _miningScanAimHold = held;
@@ -297,6 +370,10 @@ namespace Project.Player.Invector
             }
 
             PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
+
+            // Pioneer ammo bridge: manual R reload only (dry-fire shows RELOAD toast).
+            if (ammoBridge != null)
+                return;
 
             if (CurrentActiveWeapon.autoReload && !shooterManager.WeaponHasLoadedAmmo())
             {
@@ -553,12 +630,12 @@ namespace Project.Player.Invector
 
             // One physical wheel tick = one of 10 discrete follow-distance levels.
             int direction = raw > 0f ? 1 : -1;
-            float range = runtimeMaxCameraDistance - runtimeMinCameraDistance;
-            float step = range / (ZoomClickLevels - 1);
+            float range = MaxCamDistance - MinCamDistance;
+            float step = range / (ZoomLevels - 1);
             float current = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : GetPreferredZoom();
-            int currentLevel = Mathf.RoundToInt((current - runtimeMinCameraDistance) / step);
-            int nextLevel = Mathf.Clamp(currentLevel - direction, 0, ZoomClickLevels - 1);
-            float next = runtimeMinCameraDistance + nextLevel * step;
+            int currentLevel = Mathf.RoundToInt((current - MinCamDistance) / step);
+            int nextLevel = Mathf.Clamp(currentLevel - direction, 0, ZoomLevels - 1);
+            float next = MinCamDistance + nextLevel * step;
 
             ApplyFreeLookZoomRange(tpCamera.currentState);
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
@@ -602,15 +679,15 @@ namespace Project.Player.Invector
                 return;
 
             float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
-            if (zoom >= runtimeMinCameraDistance - 0.05f)
-                _preferredCameraZoom = Mathf.Clamp(zoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
+            if (zoom >= MinCamDistance - 0.05f)
+                _preferredCameraZoom = Mathf.Clamp(zoom, MinCamDistance, MaxCamDistance);
         }
 
         private float GetPreferredZoom()
         {
-            if (_preferredCameraZoom >= runtimeMinCameraDistance - 0.05f)
-                return Mathf.Clamp(_preferredCameraZoom, runtimeMinCameraDistance, runtimeMaxCameraDistance);
-            return runtimeDefaultCameraDistance;
+            if (_preferredCameraZoom >= MinCamDistance - 0.05f)
+                return Mathf.Clamp(_preferredCameraZoom, MinCamDistance, MaxCamDistance);
+            return DefaultCamDistance;
         }
 
         private float GetGameplayFollowZoom()
@@ -623,9 +700,9 @@ namespace Project.Player.Invector
             if (sprinting)
             {
                 return Mathf.Clamp(
-                    preferred + Mathf.Max(0f, sprintZoomOutMeters),
-                    runtimeMinCameraDistance,
-                    runtimeMaxCameraDistance);
+                    preferred + Mathf.Max(0f, SprintZoomOut),
+                    MinCamDistance,
+                    MaxCamDistance);
             }
 
             return preferred;
@@ -666,8 +743,8 @@ namespace Project.Player.Invector
             // Only repair a permanently broken zoom (e.g. optics left near-zero).
             // Do NOT ForceSet when distance alone dips from wall culling â€” that wiped scroll zoom.
             if (!aiming
-                && tpCamera.CurrentZoom < runtimeMinCameraDistance - 0.01f
-                && tpCamera.distance < runtimeMinCameraDistance - 0.01f)
+                && tpCamera.CurrentZoom < MinCamDistance - 0.01f
+                && tpCamera.distance < MinCamDistance - 0.01f)
             {
                 tpCamera.ForceSetZoomDistance(GetGameplayFollowZoom());
                 return;
@@ -675,7 +752,7 @@ namespace Project.Player.Invector
 
             if (aiming)
             {
-                if (!_wasAimingCameraLastFrame || _lockedAimZoom < aimMinCameraDistance - 0.05f)
+                if (!_wasAimingCameraLastFrame || _lockedAimZoom < AimMinCamDistance - 0.05f)
                     LockAimZoomOnce();
 
                 _wasAimingCameraLastFrame = true;
@@ -721,12 +798,12 @@ namespace Project.Player.Invector
             ItemData weapon = ResolveAimZoomWeaponItem();
 
             float currentDistance = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
-            float armedBaseline = _lastArmedCameraZoom > aimMinCameraDistance
+            float armedBaseline = _lastArmedCameraZoom > AimMinCamDistance
                 ? _lastArmedCameraZoom
                 : currentDistance;
 
-            if (armedBaseline < aimMinCameraDistance)
-                armedBaseline = Mathf.Max(aimMinCameraDistance, GetPreferredZoom());
+            if (armedBaseline < AimMinCamDistance)
+                armedBaseline = Mathf.Max(AimMinCamDistance, GetPreferredZoom());
 
             _lockedAimZoom = GetWeaponAimTargetDistance(weapon, armedBaseline);
 
@@ -734,8 +811,8 @@ namespace Project.Player.Invector
             // Keep useZoom so CameraMovement lerps toward currentZoom instead of
             // Slerping defaultDistance from the Aim list asset (that fight jittered ADS).
             state.useZoom = true;
-            state.minDistance = aimMinCameraDistance;
-            state.maxDistance = Mathf.Max(_lockedAimZoom + 0.25f, aimMinCameraDistance);
+            state.minDistance = AimMinCamDistance;
+            state.maxDistance = Mathf.Max(_lockedAimZoom + 0.25f, AimMinCamDistance);
 
             float baselineFov = GetArmedBaselineFov();
             float aimFovMultiplier = GetWeaponAimFovMultiplier(weapon);
@@ -750,7 +827,7 @@ namespace Project.Player.Invector
                 return;
 
             float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
-            if (zoom >= aimMinCameraDistance - 0.05f)
+            if (zoom >= AimMinCamDistance - 0.05f)
                 _lastArmedCameraZoom = zoom;
         }
 
@@ -759,7 +836,7 @@ namespace Project.Player.Invector
             if (tpCamera?.currentState == null || !IsAimCameraStateName(tpCamera.currentStateName))
                 return;
 
-            if (_lockedAimZoom < aimMinCameraDistance - 0.01f)
+            if (_lockedAimZoom < AimMinCamDistance - 0.01f)
                 return;
 
             // Correct target only â€” do not snap distance (ForceSet fought wall-cull lerp).
@@ -782,13 +859,13 @@ namespace Project.Player.Invector
 
         private float GetWeaponAimTargetDistance(ItemData weapon, float armedDistance)
         {
-            armedDistance = Mathf.Max(armedDistance, aimMinCameraDistance);
+            armedDistance = Mathf.Max(armedDistance, AimMinCamDistance);
 
             if (weapon != null && weapon.weaponGrip == WeaponGrip.TwoHanded)
             {
                 return Mathf.Clamp(
                     armedDistance * 0.68f,
-                    aimMinCameraDistance,
+                    AimMinCamDistance,
                     armedDistance - 0.1f);
             }
 
@@ -796,13 +873,13 @@ namespace Project.Player.Invector
             {
                 return Mathf.Clamp(
                     armedDistance * 0.82f,
-                    aimMinCameraDistance,
+                    AimMinCamDistance,
                     armedDistance - 0.08f);
             }
 
             return Mathf.Clamp(
-                armedDistance - Mathf.Max(0.12f, aimZoomPullInMeters * 0.35f),
-                aimMinCameraDistance,
+                armedDistance - Mathf.Max(0.12f, AimZoomPullIn * 0.35f),
+                AimMinCamDistance,
                 armedDistance - 0.05f);
         }
 
@@ -831,8 +908,8 @@ namespace Project.Player.Invector
 
             // Always restore the player's scroll preference â€” never a UI-bloated follow distance.
             float preferred = GetPreferredZoom();
-            if (_preferredCameraZoom < runtimeMinCameraDistance - 0.05f)
-                preferred = runtimeDefaultCameraDistance;
+            if (_preferredCameraZoom < MinCamDistance - 0.05f)
+                preferred = DefaultCamDistance;
 
             if (force || Mathf.Abs(tpCamera.CurrentZoom - preferred) > 0.05f)
                 tpCamera.ForceSetZoomDistance(preferred);
@@ -844,14 +921,14 @@ namespace Project.Player.Invector
                 return;
 
             state.useZoom = true;
-            state.minDistance = runtimeMinCameraDistance;
-            state.maxDistance = Mathf.Max(runtimeMaxCameraDistance, state.maxDistance, GetPreferredZoom());
-            if (state.defaultDistance < runtimeMinCameraDistance
-                || state.defaultDistance > runtimeMaxCameraDistance * 1.5f)
+            state.minDistance = MinCamDistance;
+            state.maxDistance = Mathf.Max(MaxCamDistance, state.maxDistance, GetPreferredZoom());
+            if (state.defaultDistance < MinCamDistance
+                || state.defaultDistance > MaxCamDistance * 1.5f)
             {
                 state.defaultDistance = Mathf.Clamp(
-                    state.defaultDistance > 0.01f ? state.defaultDistance : runtimeDefaultCameraDistance,
-                    runtimeMinCameraDistance,
+                    state.defaultDistance > 0.01f ? state.defaultDistance : DefaultCamDistance,
+                    MinCamDistance,
                     state.maxDistance);
             }
         }

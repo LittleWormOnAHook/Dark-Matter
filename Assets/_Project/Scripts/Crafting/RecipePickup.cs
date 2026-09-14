@@ -66,6 +66,51 @@ namespace Project.Crafting
             return ResolveIndicatorWorldAnchor();
         }
 
+        /// <summary>
+        /// Stem base for UITK chrome: largest mesh center, else collider center.
+        /// </summary>
+        public Vector3 GetVisualCenterWorldAnchor()
+        {
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            float bestVol = -1f;
+            Vector3 bestLocal = Vector3.zero;
+            bool foundMesh = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer rend = renderers[i];
+                if (rend == null || !rend.enabled || !rend.gameObject.activeInHierarchy)
+                    continue;
+                if (rend is ParticleSystemRenderer)
+                    continue;
+                if (!(rend is MeshRenderer) && !(rend is SkinnedMeshRenderer))
+                    continue;
+
+                Bounds lb = rend.localBounds;
+                Vector3 size = lb.size;
+                float vol = Mathf.Abs(size.x * size.y * size.z);
+                if (vol <= bestVol)
+                    continue;
+                bestVol = vol;
+                bestLocal = transform.InverseTransformPoint(rend.transform.TransformPoint(lb.center));
+                foundMesh = true;
+            }
+
+            if (foundMesh)
+                return transform.TransformPoint(bestLocal);
+
+            Collider rootCol = GetComponent<Collider>();
+            if (rootCol is SphereCollider sphere)
+                return transform.TransformPoint(sphere.center);
+            if (rootCol is BoxCollider box)
+                return transform.TransformPoint(box.center);
+            if (rootCol is CapsuleCollider capsule)
+                return transform.TransformPoint(capsule.center);
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            return transform.TransformPoint(
+                WorldIndicatorAnchorUtil.ResolveStableLocalCenter(transform, renderers, colliders));
+        }
+
         public void Configure(string id, string prompt = "Press E to use", float range = 2.5f)
         {
             recipeId = id;

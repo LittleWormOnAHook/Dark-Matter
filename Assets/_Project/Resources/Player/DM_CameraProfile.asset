@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1ceafe53c31af4aa314c6d00f6fa4a, type: 3}
+  m_Name: DM_CameraProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.DMCameraProfile
+  minDistance: 2.5
+  maxDistance: 4
+  defaultDistance: 2.5
+  zoomClickLevels: 6
+  aimZoomPullInMeters: 0.55
+  sprintZoomOutMeters: 0.85
+  aimMinCameraDistance: 0.78
+  minFollow: 2.5
+  climbMinFollow: 2.8
+  mantleMinFollow: 2.8
+  pullSpeed: 16
+  releaseSpeed: 5.5
+  collisionHysteresis: 0.12
+  climbPullSpeed: 5.5
+  climbReleaseSpeed: 2.8
+  mantlePullSpeed: 3
+  mantleReleaseSpeed: 2.2
+  climbNearRadius: 4.25
+  sphereRadius: 0.2
+  extraSkin: 0.08
+  floorProbe: 3
+  nearClipPlane: 0.05

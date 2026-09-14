@@ -19,6 +19,7 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMStudioAssetPanel assetPanel = new DMStudioAssetPanel();
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
         private readonly DMStudioFootstepsPanel footstepsPanel = new DMStudioFootstepsPanel();
+        private readonly DMStudioCameraPanel cameraPanel = new DMStudioCameraPanel();
         private readonly DMStudioCompanionEditorPanel companionEditorPanel = new DMStudioCompanionEditorPanel();
         private readonly DMStudioCompanionSystemsPanel companionSystemsPanel = new DMStudioCompanionSystemsPanel();
         private readonly ItemDataCreatorPanel itemDataPanel = new ItemDataCreatorPanel();
@@ -194,6 +195,9 @@ namespace Project.EditorTools.GenesisStudio
                         break;
                     case DMStudioPanelMode.FootstepsCombined:
                         footstepsPanel.Draw();
+                        break;
+                    case DMStudioPanelMode.CameraCombined:
+                        cameraPanel.Draw();
                         break;
                     case DMStudioPanelMode.EmbeddedCompanionEditor:
                         contentScroll = Vector2.zero;

@@ -13,13 +13,13 @@ namespace Project.Core
     public static class GameplayActorRegistry
     {
         private static readonly List<PetController> Pets = new List<PetController>(16);
-        private static readonly List<CompanionHealth> Companions = new List<CompanionHealth>(8);
+        private static readonly List<IExpeditionCompanionActor> Companions = new List<IExpeditionCompanionActor>(8);
         private static readonly List<DMICreatureBridge> Creatures = new List<DMICreatureBridge>(64);
         private static readonly List<ScannableTarget> Scannables = new List<ScannableTarget>(32);
         private static readonly List<ItemPickup> ItemPickups = new List<ItemPickup>(128);
 
         public static IReadOnlyList<PetController> ActivePets => Pets;
-        public static IReadOnlyList<CompanionHealth> ActiveCompanions => Companions;
+        public static IReadOnlyList<IExpeditionCompanionActor> ActiveCompanions => Companions;
         public static IReadOnlyList<DMICreatureBridge> ActiveCreatures => Creatures;
         public static IReadOnlyList<ScannableTarget> ActiveScannables => Scannables;
         public static IReadOnlyList<ItemPickup> ActiveItemPickups => ItemPickups;
@@ -48,14 +48,14 @@ namespace Project.Core
             Pets.Remove(pet);
         }
 
-        public static void Register(CompanionHealth companion)
+        public static void Register(IExpeditionCompanionActor companion)
         {
             if (companion == null || Companions.Contains(companion))
                 return;
             Companions.Add(companion);
         }
 
-        public static void Unregister(CompanionHealth companion)
+        public static void Unregister(IExpeditionCompanionActor companion)
         {
             if (companion == null)
                 return;

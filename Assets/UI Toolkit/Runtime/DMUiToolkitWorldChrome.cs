@@ -22,7 +22,7 @@ namespace Project.UI
     /// World-to-screen proximity dots and per-NPC health bars on the Damage overlay.
     /// Dual-run: hides uGUI PickupProximityDotUI / WorldInteractionDotUI / FloatingTargetHealthBar chrome.
     /// </summary>
-    [DefaultExecutionOrder(10100)]
+    [DefaultExecutionOrder(20000)]
     [DisallowMultipleComponent]
     public class DMUiToolkitWorldChrome : MonoBehaviour
     {
@@ -64,6 +64,7 @@ namespace Project.UI
         private Vector3 lastPaintCamPos = new Vector3(float.MaxValue, 0f, 0f);
         private Quaternion lastPaintCamRot = Quaternion.identity;
         private Vector3 lastPaintPlayerPos = new Vector3(float.MaxValue, 0f, 0f);
+        private float lastPaintExclusiveHoldProgress = -1f;
         private bool hasExclusiveDot;
         private WorldDot exclusiveDot;
         private bool panelYFlipResolved;
@@ -143,12 +144,6 @@ namespace Project.UI
             BindTree();
         }
 
-        private void OnDestroy()
-        {
-            if (instance == this)
-                instance = null;
-        }
-
         private void LateUpdate()
         {
             if (!bound)
@@ -166,6 +161,7 @@ namespace Project.UI
 
             if (!show)
             {
+                pendingDots.Clear();
                 RecycleDots(0);
                 RecycleBars(0);
                 hasExclusiveDot = false;
@@ -175,23 +171,27 @@ namespace Project.UI
                 return;
             }
 
-            if (!uguiHidden)
-                HideUguiCounterparts();
+            // Keep uGUI pickup/interact painters suppressed every frame while UITK drives chrome.
+            HideUguiCounterparts();
+            ForceSuppressLegacyDotPainters();
 
-            // Paint after DMCameraCollisionOverlay (10000) so stems use the same-frame lens.
-            panelYFlipResolved = false;
+            // Refresh lens each frame after collision overlay (order 10000 < 10100).
+            worldCamera = PlayerReference.ResolveCamera();
             CollectDots();
             if (pendingDots.Count > 0)
             {
-                if (ShouldRepaintDots())
-                {
-                    PaintDots();
-                    NotePaintSnapshot();
-                }
+                PaintDots();
+                NotePaintSnapshot();
             }
             else
                 RecycleDots(0);
             PaintBars();
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
         }
 
         internal void BindTree()
@@ -257,16 +257,10 @@ namespace Project.UI
             }
 
             pendingDots.Clear();
-            if (Time.unscaledTime >= nextExclusivePickupScan)
-            {
-                nextExclusivePickupScan = Time.unscaledTime + ExclusivePickupScanInterval;
-                CollectExclusivePickupDot(player, camera);
-            }
-            else if (hasExclusiveDot)
-            {
-                RefreshExclusiveAnchor();
+            // Exclusive pickup must refresh every frame so the stem stays on the live item center.
+            CollectExclusivePickupDot(player, camera);
+            if (hasExclusiveDot)
                 RefreshExclusiveHoldProgress();
-            }
 
             if (hasExclusiveDot)
                 pendingDots.Add(exclusiveDot);
@@ -302,7 +296,7 @@ namespace Project.UI
                     continue;
                 if (!WorldUseController.IsCollectiblePickup(pickup))
                     continue;
-                Vector3 anchor = pickup.GetIndicatorWorldAnchor();
+                Vector3 anchor = pickup.GetVisualCenterWorldAnchor();
                 if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
                     continue;
                 if (dist >= bestDist)
@@ -324,7 +318,7 @@ namespace Project.UI
                 RecipePickup recipe = recipes[i];
                 if (recipe == null || !recipe.IsIndicatorAvailable)
                     continue;
-                Vector3 anchor = recipe.GetIndicatorWorldAnchor();
+                Vector3 anchor = recipe.GetVisualCenterWorldAnchor();
                 if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
                     continue;
                 if (dist >= bestDist)
@@ -399,19 +393,6 @@ namespace Project.UI
 
             exclusiveDot = dot;
             hasExclusiveDot = true;
-        }
-
-        private void RefreshExclusiveAnchor()
-        {
-            if (!hasExclusiveDot)
-                return;
-
-            if (WorldPickupFocus.Item != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Item.GetIndicatorWorldAnchor();
-            else if (WorldPickupFocus.Recipe != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Recipe.GetIndicatorWorldAnchor();
-            else if (WorldPickupFocus.Harvest != null)
-                exclusiveDot.Anchor = WorldPickupFocus.Harvest.GetNodeCenter();
         }
 
         private void RefreshExclusiveHoldProgress()
@@ -587,51 +568,45 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// dotsLayer panel position for a world point. Y is flipped when the panel uses Y-up coords.
-        /// Do not round here — callers lock world-vertical stems to one screen X before rounding.
+        /// Map a world point into dotsLayer local pixels using the gameplay camera viewport.
+        /// Matches Unity's runtime world-marker pattern (viewport * container layout) so stems
+        /// track the same pixels the 3D view uses — avoids panel ScreenToPanel / WorldToLocal drift.
         /// </summary>
-        private bool TryWorldToPanel(Camera camera, Vector3 world, out Vector2 panelPos)
+        private bool TryWorldToPanel(Camera camera, Vector3 world, out Vector2 localPos)
         {
-            panelPos = default;
-            if (camera == null || dotsLayer == null || dotsLayer.panel == null)
+            localPos = default;
+            if (camera == null || dotsLayer == null)
                 return false;
 
-            Vector3 screen = camera.WorldToScreenPoint(world);
-            if (screen.z <= 0f)
+            Vector3 viewport = camera.WorldToViewportPoint(world);
+            if (viewport.z <= 0.05f)
                 return false;
 
-            IPanel panel = dotsLayer.panel;
-            panelPos = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, screen.y));
-            ResolvePanelYFlip(panel);
-            if (panelYIncreasesWithScreenY)
-                panelPos.y = panelFlipHeight - panelPos.y;
-            return true;
-        }
+            Rect layout = dotsLayer.contentRect;
+            float w = layout.width;
+            float h = layout.height;
+            if (w < 1f || h < 1f)
+            {
+                w = dotsLayer.resolvedStyle.width;
+                h = dotsLayer.resolvedStyle.height;
+            }
+            if (w < 1f || h < 1f)
+                return false;
 
-        private void ResolvePanelYFlip(IPanel panel)
-        {
-            if (panelYFlipResolved)
-                return;
-
-            Vector2 screenBottom = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(0f, 0f));
-            Vector2 screenTop = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(0f, Screen.height));
-            panelYIncreasesWithScreenY = screenTop.y > screenBottom.y + 0.5f;
-
-            panelFlipHeight = dotsLayer != null ? dotsLayer.layout.height : 0f;
-            if (panelFlipHeight <= 1f)
-                panelFlipHeight = Screen.height;
-
-            panelYFlipResolved = true;
+            // Viewport Y is bottom-up; UITK Y is top-down.
+            localPos = new Vector2(viewport.x * w, (1f - viewport.y) * h);
+            return !float.IsNaN(localPos.x) && !float.IsNaN(localPos.y);
         }
 
         private static Vector3 ResolveLiveAnchor(in WorldDot pending)
         {
             if (pending.IsPickupPrompt)
             {
+                // Prefer live mesh/collider center so a high prefab marker cannot float the stem.
                 if (WorldPickupFocus.Item != null)
-                    return WorldPickupFocus.Item.GetIndicatorWorldAnchor();
+                    return WorldPickupFocus.Item.GetVisualCenterWorldAnchor();
                 if (WorldPickupFocus.Recipe != null)
-                    return WorldPickupFocus.Recipe.GetIndicatorWorldAnchor();
+                    return WorldPickupFocus.Recipe.GetVisualCenterWorldAnchor();
             }
 
             return pending.Anchor;
@@ -652,22 +627,6 @@ namespace Project.UI
             return raw;
         }
 
-        private static Vector2 DampenPickupPanel(Vector2 raw, DotVisuals visuals)
-        {
-            if (!visuals.HasSmoothedPanel)
-            {
-                visuals.SmoothedPanel = raw;
-                visuals.HasSmoothedPanel = true;
-                return raw;
-            }
-
-            float dt = Time.deltaTime;
-            if (dt <= 0f)
-                dt = 0.02f;
-            visuals.SmoothedPanel = Vector2.Lerp(visuals.SmoothedPanel, raw, 1f - Mathf.Exp(-18f * dt));
-            return visuals.SmoothedPanel;
-        }
-
         private static int ResolvePickupAnchorId()
         {
             if (WorldPickupFocus.Item != null)
@@ -681,6 +640,8 @@ namespace Project.UI
 
         private bool ShouldRepaintDots()
         {
+            // Exclusive pickup must repaint every frame while the camera moves so world-locked stems
+            // stay glued to the item (throttling caused screen-space detach/jitter on pan/tilt).
             if (hasExclusiveDot)
                 return true;
 
@@ -712,6 +673,7 @@ namespace Project.UI
         {
             lastPaintDotCount = pendingDots.Count;
             lastPaintInteractRevision = interactScanRevision;
+            lastPaintExclusiveHoldProgress = hasExclusiveDot ? exclusiveDot.HoldProgress01 : -1f;
 
             Transform player = playerTransform;
             if (player != null)
@@ -727,8 +689,7 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// World-to-panel stem/dot layout. LateUpdate after camera collision
-        /// (execution order 10100) so WorldToScreen matches the same-frame lens.
+        /// Anchor-locked screen-vertical stem from item center. LateUpdate after camera collision.
         /// </summary>
         private void PaintDots()
         {
@@ -748,24 +709,8 @@ namespace Project.UI
                     continue;
 
                 DotVisuals visuals = AcquireDot(shown);
+                // Live item/bounds center every frame — host sits on the object, not the tip.
                 Vector3 anchorWorld = ResolveLiveAnchor(pending);
-                if (pending.IsPickupPrompt)
-                {
-                    int anchorId = ResolvePickupAnchorId();
-                    if (!visuals.HasLockedWorldAnchor
-                        || visuals.LockedAnchorId != anchorId
-                        || (anchorWorld - visuals.LockedWorldAnchor).sqrMagnitude > 0.0025f)
-                    {
-                        visuals.LockedWorldAnchor = anchorWorld;
-                        visuals.HasLockedWorldAnchor = true;
-                        visuals.LockedAnchorId = anchorId;
-                        visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
-                    }
-                    else
-                    {
-                        anchorWorld = visuals.LockedWorldAnchor;
-                    }
-                }
 
                 float dist = maxRange;
                 if (player != null)
@@ -782,55 +727,51 @@ namespace Project.UI
                 Vector3 tipWorld = anchorWorld + Vector3.up * stemHeight;
 
                 VisualElement host = visuals.Host;
-                if (host == null
-                    || !TryWorldToPanel(camera, anchorWorld, out Vector2 anchorRaw)
-                    || !TryWorldToPanel(camera, tipWorld, out Vector2 tipRaw))
+                // Anchor-locked: project the object center. Stem is screen-vertical UP from that point.
+                if (host == null || !TryWorldToPanel(camera, anchorWorld, out Vector2 anchorRaw))
                 {
                     DMUiToolkitOverlayDocument.SetShown(visuals.Host, false);
                     continue;
                 }
 
-                // World-up stems must share one screen column; separate projection + rounding skews X.
-                tipRaw.x = anchorRaw.x;
-                if (pending.IsPickupPrompt)
-                    anchorRaw = DampenPickupPanel(anchorRaw, visuals);
-                Vector2 anchorPanel = StabilizeAnchorPanel(anchorRaw, visuals.LastAnchor);
-                Vector2 tipPanel = new Vector2(anchorPanel.x, Mathf.Round(tipRaw.y));
-                float relDy = tipPanel.y - anchorPanel.y;
-
-                bool moved = (anchorPanel - visuals.LastAnchor).sqrMagnitude >= 0.01f
-                    || Mathf.Abs(relDy - (visuals.LastTip.y - visuals.LastAnchor.y)) >= 0.01f;
-                visuals.LastAnchor = anchorPanel;
-                visuals.LastTip = tipPanel;
-
-                if (moved || !visuals.LastStemShown)
+                // One length path only (switching lerp vs projected looked like two stems).
+                float stemPx = Mathf.Lerp(36f, 72f, proximity);
+                if (TryWorldToPanel(camera, tipWorld, out Vector2 tipRaw))
                 {
-                    host.style.left = anchorPanel.x;
-                    host.style.top = anchorPanel.y;
+                    float projected = anchorRaw.y - tipRaw.y; // tip is screen-up => smaller Y
+                    if (projected > 4f)
+                        stemPx = projected;
+                    else if (projected < -4f)
+                        stemPx = -projected; // if panel Y is flipped relative to expectation
                 }
+
+                // UITK Y grows downward: negative top moves toward screen-up (world tip).
+                float tipOffsetY = -stemPx;
+                Vector2 anchorPanel = anchorRaw;
+                visuals.LastAnchor = anchorPanel;
+                visuals.LastTip = new Vector2(anchorPanel.x, anchorPanel.y + tipOffsetY);
+
+                // left/top stay 0; translate carries the world lock (no layout reflow swim).
+                host.style.left = 0;
+                host.style.top = 0;
+                host.style.translate = new Translate(anchorPanel.x, anchorPanel.y);
 
                 VisualElement stem = visuals.Stem;
                 VisualElement glow = visuals.Glow;
                 VisualElement closeCluster = visuals.CloseCluster;
 
-                float len = Mathf.Abs(relDy);
-                float angle = relDy >= 0f ? 90f : -90f;
-
-                if (pending.DrawStem && stem != null && len > 0.5f)
+                if (pending.DrawStem && stem != null && stemPx > 0.5f)
                 {
-                    if (moved || !visuals.LastStemShown)
-                    {
-                        stem.style.left = 0f;
-                        stem.style.top = -stemThickness * 0.5f;
-                        stem.style.right = StyleKeyword.Auto;
-                        stem.style.bottom = StyleKeyword.Auto;
-                        stem.style.width = Mathf.Max(stemThickness, len);
-                        stem.style.height = stemThickness;
-                        stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(angle)));
-                        Color stemColor = pending.Color;
-                        stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
-                        stem.style.backgroundColor = stemColor;
-                    }
+                    stem.style.left = -stemThickness * 0.5f;
+                    stem.style.top = tipOffsetY;
+                    stem.style.right = StyleKeyword.Auto;
+                    stem.style.bottom = StyleKeyword.Auto;
+                    stem.style.width = stemThickness;
+                    stem.style.height = stemPx;
+                    stem.style.rotate = new StyleRotate(new UnityEngine.UIElements.Rotate(Angle.Degrees(0f)));
+                    Color stemColor = pending.Color;
+                    stemColor.a = Mathf.Clamp01(pending.Color.a * 0.85f);
+                    stem.style.backgroundColor = stemColor;
 
                     DMUiToolkitOverlayDocument.SetShown(stem, true);
                     visuals.LastStemShown = true;
@@ -840,6 +781,9 @@ namespace Project.UI
                     DMUiToolkitOverlayDocument.SetShown(stem, false);
                     visuals.LastStemShown = false;
                 }
+
+                bool moved = true;
+                float relDy = tipOffsetY; // tip Y relative to host/anchor for close/far chrome
 
                 bool showClose = pending.IsPickupPrompt && pending.ClosePrompt;
                 if (showClose)
@@ -910,7 +854,7 @@ namespace Project.UI
 
             DMUiToolkitOverlayDocument.SetShown(cluster, true);
 
-            // Host sits on the pickup anchor; cluster is positioned relative to the stem tip.
+            // Host sits on the item center; cluster stacks above the stem tip (relDy is tip offset, usually negative).
             float keyHalf = CloseKeyHostPx * 0.5f;
             if (moved || !visuals.LastCloseShown)
             {
@@ -1161,8 +1105,6 @@ namespace Project.UI
             public VisualElement HoldRing;
             public Vector2 LastTip = new Vector2(float.NaN, float.NaN);
             public Vector2 LastAnchor = new Vector2(float.NaN, float.NaN);
-            public Vector2 SmoothedPanel = new Vector2(float.NaN, float.NaN);
-            public bool HasSmoothedPanel;
             public Vector3 LockedWorldAnchor;
             public bool HasLockedWorldAnchor;
             public int LockedAnchorId;
@@ -1177,10 +1119,12 @@ namespace Project.UI
             {
                 VisualElement host = new VisualElement { pickingMode = PickingMode.Ignore };
                 host.AddToClassList("dmg-world-dot-host");
+                host.style.position = Position.Absolute;
 
                 VisualElement stem = new VisualElement { name = "stem", pickingMode = PickingMode.Ignore };
                 stem.AddToClassList("dmg-world-dot-stem");
-                stem.style.transformOrigin = new TransformOrigin(Length.Percent(0f), Length.Percent(50f));
+                stem.style.position = Position.Absolute;
+                stem.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(100f));
                 host.Add(stem);
 
                 VisualElement glow = new VisualElement { name = "far-glow", pickingMode = PickingMode.Ignore };
@@ -1362,8 +1306,6 @@ namespace Project.UI
                 {
                     visuals.LastTip = new Vector2(float.NaN, float.NaN);
                     visuals.LastAnchor = new Vector2(float.NaN, float.NaN);
-                    visuals.SmoothedPanel = new Vector2(float.NaN, float.NaN);
-                    visuals.HasSmoothedPanel = false;
                     visuals.HasLockedWorldAnchor = false;
                     visuals.LockedAnchorId = 0;
                     visuals.LastGlowSize = -1f;
@@ -1417,6 +1359,31 @@ namespace Project.UI
             HideNamedLayer("PickupProximityDots");
             HideNamedLayer("WorldInteractionDots");
             uguiHidden = true;
+        }
+
+        private static bool legacyDotPaintersSuppressed;
+
+        private static void ForceSuppressLegacyDotPainters()
+        {
+            if (legacyDotPaintersSuppressed)
+                return;
+
+            // One-shot: disable any live uGUI painters so UITK is the only stem on screen.
+            PickupProximityDotUI[] pickups = Object.FindObjectsByType<PickupProximityDotUI>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < pickups.Length; i++)
+            {
+                if (pickups[i] != null && pickups[i].enabled)
+                    pickups[i].enabled = false;
+            }
+
+            WorldInteractionDotUI[] worldDots = Object.FindObjectsByType<WorldInteractionDotUI>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < worldDots.Length; i++)
+            {
+                if (worldDots[i] != null && worldDots[i].enabled)
+                    worldDots[i].enabled = false;
+            }
+
+            legacyDotPaintersSuppressed = true;
         }
 
         /// <returns>True when the named layer is absent or its painters are disabled.</returns>
