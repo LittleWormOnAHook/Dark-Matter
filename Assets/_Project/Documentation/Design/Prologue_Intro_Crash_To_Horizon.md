@@ -12,7 +12,7 @@
 
 Kade’s insert shuttle is scheduled to land on a **surveyed horizon site** in **B6 Basalt Highlands** — the future **base camp** ring. Navigation dies in a **geomagnetic shear** (Jupiter–Io flux / precursor field interference). The shuttle **crashes** kilometers off-target.
 
-Kade survives with **no working uplink**, **no ground crew**, and **one hard asset**: a **coordinate set** (and maybe a cracked charter slate) for the intended landing zone. The intro is a **solo walk** from wreck to horizon: navigate by bearing, survive exposure, and pass through **three encounter corrals** that teach core verbs without quest-board hand-holding.
+Kade survives with **no working uplink**, **no ground crew**, and **one hard asset**: a **coordinate set** on a charter slate for the intended landing zone — plotted as a **map search zone** (thin alpha circle), **not** a precise POI. The intro is a **solo walk** from wreck to horizon: explore the ring, **scanner-ping** for short bearing flashes, survive exposure, and pass through **three encounter corrals** that teach core verbs without quest-board hand-holding.
 
 **Prologue proper** begins when Kade reaches the **empty camp pad** (hab scars, dead auto-land beacons) and later finds the **liaison shell** — not during the crash march.
 
@@ -34,19 +34,37 @@ GDD already ties **ion lightning** and **radiation pulse** to Jupiter shadow / m
 
 | Has | Does not have |
 |-----|----------------|
-| Survival suit, starter sidearm / utility knife (package gear) | Working shuttle radio (sparks static or ledger ghost lines only) |
-| **Waypoint A:** crash site (implicit) | Map reveal of full Io |
-| **Waypoint B:** charter coordinates for **Horizon Pad** (base camp site) | Companions on the ground (orbit / dead insert / solo charter — pick one; **solo on foot** fits tutorial) |
-| Emergency O₂ / thermal baseline | Building Control Panel, Kairos, 5000 AC spend until camp beat |
+| Survival suit, emergency O₂ / thermal baseline | Working shuttle radio (sparks static or ledger ghost lines only) |
+| **Crash salvage** (see §3.1) after searching crates | Map reveal of full Io |
+| Charter slate → **search zone** for **Horizon Pad** (base camp site) | Precise horizon POI on map/compass until ping + close approach |
+| Crash site (implicit anchor) | Companions on the ground (orbit / dead insert / solo charter — pick one; **solo on foot** fits tutorial) |
+| | Building Control Panel, Kairos, 5000 AC spend until camp beat |
 
-**Coordinate presentation (low hand-holding):**
+### 3.1 Crash shuttle salvage (before leaving wreck)
 
-- Diegetic: wrist slate or hull plate with **two lat/long or survey grid pairs** — “**HORIZON PAD — PRIMARY LANDING**.”
-- UI: single **gold map marker** at Horizon Pad; **no path polyline**.
-- **Compass strip** (`CompassHudUI`) + full map (M key / slate) = primary navigation.
-- Optional: when bearing to pad is within ~15°, one **ledger tick** (“bearing holds”) — not continuous VO.
+Kade **must search supply crates** in the wreck (interact prompts on labeled cases). **Cannot** exit playable wreck zone until at least **primary crate** looted (tutorial gate — optional soft block with “seal suit first” bark).
 
-Scanner (F) is introduced in **Corral 1** or on the open walk between 0→1, not in the crash cinematic.
+| Item | Qty | Notes |
+|------|-----|-------|
+| **UEA Standard Pistol** | 1 | Lore name; maps to existing ranged pistol pipeline (`sci_fi_pistol` class) until dedicated UEA asset |
+| **Pistol ammunition** | **20** | Standard rounds / cell count per ammo bridge |
+| **Service Axe** | 1 | Melee tool + corral 2 teach; new `Service Axe` ItemData or reskin of utility axe |
+| **Med Pack** | 1 | Maps to `Medpack` consumable |
+| **Bio Gel** | 1 | New consumable — exposure/suit patch or heal-over-time (author effect in ItemData) |
+
+Corral 2–3 assume **ranged + melee** in inventory. Hotbar assignment teach in crash bowl after loot.
+
+**Field Log:** first **electronic field device** (EEB puck in cockpit or crate) — UEA insert briefing fragment; unlocks Journal **Field Logs** replay (see `Field_Log_Devices.md`).
+
+### 3.2 Coordinate + search zone (low hand-holding)
+
+- Diegetic: charter slate — “**HORIZON PAD — PRIMARY LANDING**” + grid reference.
+- UI: **`MapSearchZone`** — hard thin **alpha circle** on minimap/full map (`Map_Search_Zone_System.md`). **No center POI.**
+- Inside circle: **scanner sweep** → audio ping + **3 s direction flash** toward true pad coords; repeatable until within `captureRadius`.
+- **Compass:** no quest icon at pad; optional edge bearing after first ping.
+- Optional ledger tick when **in zone** + first ping only — not continuous VO.
+
+Scanner sweep is **taught at crash** (optional “try scan inside plotted ring” after slate) and reinforced in **Corral 1**.
 
 ---
 
@@ -71,11 +89,11 @@ Approximate **play time 25–40 min** first run; **1.5–3 km** authored path on
 ### 4.1 Crash bowl (5–8 min)
 
 - **Cinematic:** descent → flux alarms → hard landing (skippable).
-- **Gameplay:** exit wreck, **move / camera / interact**, open slate → **confirm coordinates**, see **Horizon marker** on map.
+- **Gameplay:** search **crates** (§3.1) → equip pistol/axe → collect **Field Log** EEB → read slate → **plot search zone** (ring on map).
 - **Tone:** no NPC; distant ruined hab **visible on horizon** optional; emphasize silence.
-- **Teach:** interact, journal/map open, read coordinates (optional UI: “Plot horizon grid” once).
+- **Teach:** interact, loot, journal/map, field log replay, search ring + scanner ping.
 
-**WorldState:** `intro_crashed`, `intro_horizon_marker_unlocked`
+**WorldState:** `intro_crashed`, `intro_crash_loot_complete`, `intro_search_zone_plotted`, `intro_field_log_eeb_collected`
 
 ### 4.2 Open walk 0 → Corral 1 (3–5 min)
 
@@ -96,7 +114,7 @@ An **encounter corral** is a **authored choke** with:
 
 | Corral | Location flavor | Systems taught | Encounter content |
 |--------|-----------------|----------------|-------------------|
-| **1 — Survey lane** | Basalt cut, broken fence | **Move, jump, scan**, hotbar slot, pick up salvage | 0 combat or 1 **Beacon Hopper** flee (V1 seed) |
+| **1 — Survey lane** | Basalt cut, broken fence | **Move, jump, scan**, search-zone ping refresh, hotbar | 0 combat or 1 **Beacon Hopper** flee (V1 seed); optional Field Log puck |
 | **2 — Contact ring** | Old expedition corral / animal pen mesh | **Lock-on / melee**, damage, **enemy telegraph** | 1–2 **Tube Jackal** or **Cinder Skitter** (B6 ecology); `[SHIPPED]` melee where possible |
 | **3 — Hold the gap** | Narrow bridge or tube mouth | **Stamina**, block/parry *or* ranged + **reload**, dodge | 1 **Sulfur Hound** if reachable from B6 skirt *or* jackal pack; use `SurfaceEncounterTable` intro row |
 
@@ -122,7 +140,7 @@ An **encounter corral** is a **authored choke** with:
 
 When Kade hits the pad:
 
-1. **Coordinates vindicated** — slate chimes “grid match.”
+1. **Search zone resolved** — slate chimes “grid match”; ring fades to optional camp marker.
 2. Player finds **not** a ready camp — **abandoned prep**: foundations, tether points, dead auto-beacon (scheduled colony that never arrived *on this insert*).
 3. **Interact:** deploy **emergency stake** / flag survey claim (fiction) → unlock **camp build footprint** or transition to existing B6 hub greybox.
 4. **Do not** spawn Kairos here if ML beats place shell under ash bowl nearby — separate discoverable POI.
@@ -136,7 +154,7 @@ When Kade hits the pad:
 | Do | Don’t |
 |----|-------|
 | Teach through **corral geometry** and one slate line per corral | Floating modal chains or 12-step coach marks |
-| Let **coordinates + compass** be the main quest | NPC arrow over Kade’s head |
+| Let **search ring + scanner ping** be the main quest | NPC arrow or precise POI before resolve |
 | One **optional** “open map” nudge at crash | Per-meter distance callouts |
 | Respect **PC + gamepad** parity for map/compass | Mobile-style forced taps |
 
@@ -148,7 +166,9 @@ When Kade hits the pad:
 |-------|------------|
 | Scene | `Prologue_Intro_B6_CrashToHorizon` (subscene or sector of Genesis scene) |
 | Encounters | Reuse `SurfaceEncounterZone` + `CombatZoneController`; intro table `SurfaceEncounterTable_IntroB6` |
-| Map | `MapMarker` on pad — `requiresScanDiscovery = false` |
+| Map | `MapSearchZone` for horizon; `MapMarker` only after `intro_search_zone_resolved` |
+| Field Logs | `FieldLogDefinition` + Journal tab; intro EEB + 2–3 optional along route |
+| Items | UEA pistol + 20 ammo, Service Axe, Medpack, Bio Gel — crash crate loot table |
 | Directors | `GameState` / `WorldState` flags above; `intro_complete` gates main hub systems |
 | Comms | Ledger strings only until Communications runtime; label **liaison / probe**, not Kairos |
 | Save | New game starts `intro_crashed=false`; mid-intro flags restore at last corral checkpoint |
@@ -176,7 +196,9 @@ When Kade hits the pad:
 
 ## 10. Related files
 
+- `Map_Search_Zone_System.md` — alpha circle + scanner ping rules  
+- `Field_Log_Devices.md` — Io recording collectibles + Journal  
 - `Narrative_Package_V2_Colony_Horizon.md` — ML-01+ hub beats  
 - `Narrative_Package_V1_Ash_And_Signal.md` — ML-V1-01 prologue beats  
 - `Io_Genesis_World_Map_Geography.md` — B6 placement  
-- `Assets/_Project/Scripts/Map/MapMarker.cs`, `CompassHudUI.cs`, `SurfaceEncounterZone.cs`, `CombatZoneController.cs`
+- `Assets/_Project/Scripts/Map/MapMarker.cs`, `CompassHudUI.cs`, `ScannerSweepController.cs`, `SurfaceEncounterZone.cs`, `CombatZoneController.cs`
