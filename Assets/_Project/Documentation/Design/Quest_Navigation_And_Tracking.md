@@ -4,7 +4,8 @@
 **Status:** Design lock (Sep 2026)  
 **Applies to:** Mainline (progress-triggered), **side quests**, **lore** beats, **PPT** (point-person / direction NPC moments), Field Logs, companions, co-protagonist dialogue  
 **Related:** `Map_Search_Zone_System.md`, `Field_Log_Devices.md`, `Prologue_Intro_Crash_To_Horizon.md`  
-**Shipped baseline:** `QuestManager`, `QuestDefinition`, `JournalQuestFullscreenWindow`, `ActiveQuestHudUI` (right-middle HUD — extend per this doc)
+**Shipped baseline:** `QuestManager`, `QuestDefinition`, `JournalQuestFullscreenWindow` (migrate UI to **Quests** tab), `ActiveQuestHudUI` (right-middle HUD — extend per this doc)  
+**Journal shell:** `JournalTabRail`, `JournalWindowId` — add dedicated **Quests** top tab; general **Journal** tab reserved for Field Logs / chronicle (`Field_Log_Devices.md`)
 
 ---
 
@@ -69,14 +70,61 @@ Approximate dialog copy examples: “**Somewhere east of the broken relay**,” 
 
 ---
 
-## 4. Quest log (Journal → Quest / JournalQuest)
+## 4. Quests — dedicated Journal tab (category shelves)
 
-### 4.1 List behavior
+Quest browsing lives in a **new top-level Journal tab: Quests** (`JournalWindowId.Quests`). It is **not** mixed with Field Logs or personal chronicle (those stay on the **Journal** tab).
 
-- Shows **Available** (at giver), **Active**, **Completed** (turn-in), **Failed/Abandoned** per existing `QuestStatus`.
-- Selecting a quest shows title, description, objectives, rewards, **linked Journal coordinates**, navigation mode summary (“Search area,” “Marked on map,” “Coordinates only”).
+| Tab label | `JournalWindowId` | Contents |
+|-----------|-------------------|----------|
+| **Quests** | `Quests` *(new)* | All quest definitions / progress, filtered by **category shelf** below |
+| **Journal** | `JournalQuest` → rename window to **Chronicle** or repurpose id to `FieldLogs` when implemented | Field Logs, coordinates panel, optional personal notes |
+| *(existing)* | Map, Inventory, … | Unchanged |
 
-### 4.2 Right-click context menu (PC); long-press (gamepad)
+Shortcut: **Q** for Quests tab (reserve **J** for Journal / chronicle).
+
+### 4.1 Category shelves (primary organization)
+
+Every `QuestDefinition` has exactly one **`journalCategory`** (shelf). The Quests UI uses a **left rail or top chip row** — player picks a shelf; the list shows only quests in that category (plus status filters).
+
+| Shelf | `QuestJournalCategory` | What goes here |
+|-------|------------------------|----------------|
+| **Main Quests** | `Main` | Mainline, prologue, act beats, progress-triggered chains, Kairos repair arc steps authored as quests |
+| **Side Quests** | `Side` | Board jobs, NPC one-offs, faction errands, rewards-focused content |
+| **Biome Areas** | `Biome` | Regional arcs keyed to **surface/UG biomes** — discovery, biome gates, ecology setpieces |
+| **Specific Areas** | `Area` | Named **sub-regions** that are not a full biome shelf — hub bowl, caldera rim, polar lens, command ring, underground instance names, intro crash march, etc. |
+
+**Biome shelf sub-filters** (second row when `Biome` selected):
+
+| Code | Biome name (canon order note) |
+|------|-------------------------------|
+| B6 | Basalt Highlands (hub) |
+| B1 | Sulfur Plains |
+| B2 | Geyser Fields |
+| B3 | Ash Flats & Ridges |
+| B5 | Polar Radiation Flats |
+| B4 | Lava Calderas |
+| B7 | Precursor Ruin Belt |
+| UG1–UG5 | Underground strata 1–5 |
+
+**Specific Areas shelf** uses authored **`areaTag`** strings (e.g. `horizon_pad`, `expedition_graveyard`, `command_center_ring`, `prologue_crash_corridor`). Multiple quests may share one tag; UI groups by tag optionally.
+
+| Field on `QuestDefinition` | Type | Required |
+|----------------------------|------|----------|
+| `journalCategory` | `QuestJournalCategory` | Yes |
+| `biomeCode` | `B1`…`B7`, `UG1`…`UG5` | When category = `Biome` |
+| `areaTag` | string | When category = `Area` (display name + id) |
+| `sortOrder` | int | Within shelf |
+
+**Cross-listing:** A quest appears in **one** shelf only. HUD tracker and map nav do not depend on shelf — category is for **finding** content in a large campaign.
+
+### 4.2 List + detail behavior (Quests tab)
+
+- Per shelf: list **Active**, **Completed** (turn-in), **Available** (discovered at giver/board), **Failed/Abandoned** — status chips or sub-filters.
+- **Badge counts** on shelf rail: e.g. `Side (2 active)` in Gold.
+- Detail pane: title, description, objectives, rewards, **linked coordinates**, navigation mode summary (“Search area,” “Marked on map,” “Coordinates only”).
+- **Main** shelf: sort by `chainIndex` / act; collapsed chain headers optional.
+
+### 4.3 Right-click context menu (PC); long-press (gamepad)
 
 | Action | Effect |
 |--------|--------|
@@ -104,7 +152,7 @@ Implementation: extend `QuestProgress` save data — `isHudTracked`, `trackOrder
 | **Chain display** | Parent title — **bold**, normal tracker size (~24 px reference) |
 | **Chain substeps** | **One** active sub-objective line beneath parent — **~80–85% font size**, Warm Off-White, indented / linked visually (smaller text “linked” under main) |
 | **Additional chain steps** | Not stacked as separate HUD rows; advance sub-line when objective index changes |
-| **Over cap** | Track attempt → toast: “Tracker full (3). Stop tracking a quest in the Journal.” |
+| **Over cap** | Track attempt → toast: “Tracker full (3). Stop tracking a quest in **Quests**.” |
 
 **Completed** quests on tracker: keep until turn-in (existing); still count toward cap.
 
@@ -142,10 +190,10 @@ When parent is tracked, **child activations** update the **sub-line** only — d
 
 ## 7. Lore & PPT (non-board quests)
 
-| Kind | Quest log? | Tracker? |
-|------|------------|----------|
-| **Lore step** | Optional “Lore” filter in Journal; may use lightweight `QuestDefinition` with no rewards | Usually **not** tracked unless player opts in |
-| **PPT moment** | Dialog log / chronicle entry | **PptBearing** only — no permanent track unless tied to side quest |
+| Kind | Quests tab? | Tracker? |
+|------|-------------|----------|
+| **Lore step** | Optional — shelf `Area` or `Side`; or **Journal** tab only via Field Log | Usually **not** tracked unless player opts in |
+| **PPT moment** | **Journal** dialog chronicle; quest entry only if tied to `Side` / `Area` | **PptBearing** only — no permanent track unless tied to a quest |
 
 PPT integration: on direction resolve, call same **3 s bearing flash** as scanner ping (`PptNpcGestureController` + compass pulse).
 
@@ -184,8 +232,10 @@ Persist: `trackedQuestIds` (max 3), `pinnedQuestId`, `chainHudCollapse` states, 
 
 ## 11. Related implementation files
 
+- `Assets/_Project/Scripts/UI/JournalTabRail.cs` — add **Quests** tab; clarify **Journal** vs **Quests** labels  
+- `Assets/_Project/Scripts/UI/JournalWindowId.cs` — add `Quests`; migrate quest UI from `JournalQuest` host  
 - `Assets/_Project/Scripts/UI/ActiveQuestHudUI.cs` — tracker cap + chain layout  
-- `Assets/_Project/Scripts/UI/JournalPanelUI.cs` — quest list + context menu  
+- `Assets/_Project/Scripts/UI/JournalPanelUI.cs` — Quests window: category shelves + context menu  
 - `Assets/_Project/Scripts/Quests/QuestManager.cs`, `QuestDefinition.cs`, `QuestProgress.cs`  
 - `Assets/_Project/Scripts/PPT/Runtime/PptDirectionResolver.cs`  
 - `Assets/_Project/Documentation/Design/Map_Search_Zone_System.md`  

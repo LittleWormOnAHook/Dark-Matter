@@ -110,7 +110,7 @@ Avoid single-tone “everyone hates Io.” Mix **gallows hope** (V2) with **horr
 
 ## 6. Journal integration
 
-Add **`JournalWindowId.FieldLogs`** (implementation backlog) or nest under **JournalQuest** as “Recordings” until tab exists.
+**Journal** top tab (chronicle) hosts **Field Logs** + **Coordinates** panel — separate from the **Quests** tab (`Quest_Navigation_And_Tracking.md` §4). Add `JournalWindowId.FieldLogs` or repurpose legacy `JournalQuest` id when splitting UI.
 
 List sort: **newest first**, filter by biome/category.
 
