@@ -585,7 +585,7 @@ private fun MonthCalendarPage(
 ) {
     val today = LocalDate.now()
     val days = remember(yearMonth) { daysInMonthGrid(yearMonth) }
-    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+    val dayLabels = listOf("S", "M", "T", "W", "T", "F", "S")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
