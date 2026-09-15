@@ -55,11 +55,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,9 +111,10 @@ fun AppointmentEditorScreen(
     defaultDate: LocalDate,
     prefilledJobNotes: String? = null,
     onDismiss: () -> Unit,
-    onSave: (Appointment) -> Unit
+    onAutoSave: (Appointment) -> Unit
 ) {
     val isEditing = initial != null
+    val appointmentId = remember(initial?.id) { initial?.id ?: java.util.UUID.randomUUID().toString() }
     val defaultStart = initial?.startEpochMillis ?: defaultAppointmentStart(defaultDate)
     val defaultEnd = initial?.endEpochMillis ?: defaultAppointmentEnd(defaultStart)
 
@@ -139,8 +145,11 @@ fun AppointmentEditorScreen(
     var allDay by remember { mutableStateOf(initial?.allDay ?: false) }
     var startMillis by remember { mutableStateOf(defaultStart) }
     var endMillis by remember { mutableStateOf(defaultEnd) }
+    var inspectionId by remember { mutableStateOf(initial?.inspectionId.orEmpty()) }
     var showPicker by remember { mutableStateOf<PickerTarget?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    var autoSaveHint by remember { mutableStateOf<String?>(null) }
+    var showPhoneRequiredDialog by remember { mutableStateOf(false) }
     val copyToClipboard = rememberCopyHandler()
 
     val autofillQuery = remember(title, jobNotes, customerName) {
@@ -187,7 +196,19 @@ fun AppointmentEditorScreen(
         endMillis = syncEndAfterStartChange(newStart)
     }
 
-    fun save() {
+    fun hasMeaningfulContent(): Boolean =
+        isEditing ||
+            title.isNotBlank() ||
+            jobNotes.isNotBlank() ||
+            customerName.isNotBlank() ||
+            customerPhone.isNotBlank() ||
+            address.isNotBlank() ||
+            vehicleMake.isNotBlank() ||
+            vehicleModel.isNotBlank() ||
+            mileage.isNotBlank() ||
+            engineSize.isNotBlank()
+
+    fun buildCurrentAppointment(): Appointment? {
         val resolvedJob = when {
             jobNotes.isNotBlank() -> jobNotes.trim()
             title.isNotBlank() -> title.trim()
@@ -196,39 +217,81 @@ fun AppointmentEditorScreen(
         val resolvedName = customerName.trim().ifBlank {
             title.trim().takeIf { resolvedJob.isBlank() }.orEmpty()
         }
-        if (resolvedName.isBlank() && resolvedJob.isBlank()) {
-            validationError = "Enter a job title or customer name."
+        if (resolvedName.isBlank() && resolvedJob.isBlank()) return null
+        if (!allDay && endMillis <= startMillis) return null
+        if (inspectionId.isBlank()) {
+            inspectionId = java.util.UUID.randomUUID().toString()
+        }
+        return Appointment(
+            id = appointmentId,
+            customerName = resolvedName,
+            customerPhone = customerPhone.trim(),
+            jobNotes = resolvedJob,
+            address = address.trim(),
+            vehicleCategory = vehicleCategory.name,
+            vehicleYear = vehicleYear,
+            vehicleMake = vehicleMake.trim(),
+            vehicleModel = vehicleModel.trim(),
+            engineSize = engineSize.trim(),
+            mileage = mileage.trim(),
+            inspectionId = inspectionId,
+            startEpochMillis = if (allDay) {
+                startMillis.toLocalDate().toEpochMillisAtStartOfDay()
+            } else startMillis,
+            endEpochMillis = if (allDay) {
+                endMillis.toLocalDate().plusDays(1).toEpochMillisAtStartOfDay() - 1
+            } else endMillis,
+            allDay = allDay
+        )
+    }
+
+    fun attemptDismiss() {
+        if (hasMeaningfulContent() && customerPhone.isBlank()) {
+            showPhoneRequiredDialog = true
             return
         }
-        if (!allDay && endMillis <= startMillis) {
-            validationError = "End time must be after start time."
-            return
-        }
+        onDismiss()
+    }
+
+    val appointmentProvider = rememberUpdatedState { buildCurrentAppointment() }
+
+    LaunchedEffect(
+        title,
+        customerName,
+        customerPhone,
+        jobNotes,
+        address,
+        vehicleCategory,
+        vehicleYear,
+        vehicleMake,
+        vehicleModel,
+        engineSize,
+        mileage,
+        allDay,
+        startMillis,
+        endMillis
+    ) {
+        delay(400)
+        val appointment = appointmentProvider.value() ?: return@LaunchedEffect
+        onAutoSave(appointment)
+        autoSaveHint = "Saved automatically"
         validationError = null
-        val inspectionId = initial?.inspectionId?.takeIf { it.isNotBlank() }
-            ?: java.util.UUID.randomUUID().toString()
-        onSave(
-            Appointment(
-                id = initial?.id ?: java.util.UUID.randomUUID().toString(),
-                customerName = resolvedName,
-                customerPhone = customerPhone.trim(),
-                jobNotes = resolvedJob,
-                address = address.trim(),
-                vehicleCategory = vehicleCategory.name,
-                vehicleYear = vehicleYear,
-                vehicleMake = vehicleMake.trim(),
-                vehicleModel = vehicleModel.trim(),
-                engineSize = engineSize.trim(),
-                mileage = mileage.trim(),
-                inspectionId = inspectionId,
-                startEpochMillis = if (allDay) {
-                    startMillis.toLocalDate().toEpochMillisAtStartOfDay()
-                } else startMillis,
-                endEpochMillis = if (allDay) {
-                    endMillis.toLocalDate().plusDays(1).toEpochMillisAtStartOfDay() - 1
-                } else endMillis,
-                allDay = allDay
-            )
+    }
+
+    BackHandler { attemptDismiss() }
+
+    if (showPhoneRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhoneRequiredDialog = false },
+            title = { Text("Phone number needed") },
+            text = {
+                Text("Add a customer phone number before leaving. Your job is already saved — enter a phone number so you can call from the calendar.")
+            },
+            confirmButton = {
+                TextButton(onClick = { showPhoneRequiredDialog = false }) {
+                    Text("OK", color = SamsungCalendarColors.green)
+                }
+            }
         )
     }
 
@@ -328,7 +391,7 @@ fun AppointmentEditorScreen(
             TopAppBar(
                 title = { Text(if (isEditing) "Edit job" else "Add job") },
                 navigationIcon = {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = { attemptDismiss() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back to calendar",
@@ -353,7 +416,7 @@ fun AppointmentEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss) {
+                TextButton(onClick = { attemptDismiss() }) {
                     Text(
                         "Cancel",
                         color = SamsungCalendarColors.green,
@@ -362,13 +425,13 @@ fun AppointmentEditorScreen(
                     )
                 }
                 Button(
-                    onClick = { save() },
+                    onClick = { attemptDismiss() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SamsungCalendarColors.green,
                         contentColor = Color.Black
                     )
                 ) {
-                    Text("Save", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text("Done", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
             }
         }
@@ -385,6 +448,14 @@ fun AppointmentEditorScreen(
                     text = error,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+            autoSaveHint?.let { hint ->
+                Text(
+                    text = hint,
+                    color = SamsungCalendarColors.green,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
                 )
             }
 
@@ -607,7 +678,7 @@ fun AppointmentEditorScreen(
             }
 
             Text(
-                text = "Save creates the calendar job and an inspection file with this customer info.",
+                text = "Changes save automatically and create a linked inspection file with this customer info.",
                 color = SamsungCalendarColors.green,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
