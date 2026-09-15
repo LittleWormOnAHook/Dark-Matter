@@ -199,6 +199,7 @@ When Kade hits the pad:
 ## 10. Related files
 
 - `Map_Search_Zone_System.md` — alpha circle + scanner ping rules  
+- `Quest_Navigation_And_Tracking.md` — quest/lore/PPT nav modes + 3-slot HUD tracker  
 - `Field_Log_Devices.md` — Io recording collectibles + Journal  
 - `Narrative_Package_V2_Colony_Horizon.md` — ML-01+ hub beats  
 - `Narrative_Package_V1_Ash_And_Signal.md` — ML-V1-01 prologue beats  

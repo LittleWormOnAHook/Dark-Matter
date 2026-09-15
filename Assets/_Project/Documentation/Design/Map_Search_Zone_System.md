@@ -12,7 +12,7 @@
 Replace **precise map POIs** for unknown or imprecise objectives with a **search zone**: a **hard thin circle** on minimap and full map. The player must **enter the zone** and optionally **use the scanner** to refine position. This applies to:
 
 - Intro **Horizon Pad** coordinates (post-crash)
-- Future **undisclosed** POIs and quest areas (exact target hidden until search completes)
+- Future **undisclosed** POIs and **quest / lore / PPT / side** areas (exact target hidden until search completes) — see `Quest_Navigation_And_Tracking.md` for dot/symbol/coords-only variants
 - Optional: Echo signals, cache hunts, liaison shell first pass (designer toggle per zone)
 
 **Not** used for: known vendors, active BCP, companions on map, discovered scan markers.

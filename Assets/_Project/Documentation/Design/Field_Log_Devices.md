@@ -114,7 +114,7 @@ Add **`JournalWindowId.FieldLogs`** (implementation backlog) or nest under **Jou
 
 List sort: **newest first**, filter by biome/category.
 
-Cross-link: Echo chronicle entries may **cite** log IDs (“matches Field Log 12-B”).
+Cross-link: Echo chronicle entries may **cite** log IDs (“matches Field Log 12-B”). Quest givers, companions, and co-protagonist dialog may grant the same coordinate rows without a new EEB (`Quest_Navigation_And_Tracking.md`).
 
 ---
 
