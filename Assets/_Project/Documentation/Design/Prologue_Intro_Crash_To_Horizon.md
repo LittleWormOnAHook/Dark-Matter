@@ -36,7 +36,7 @@ GDD already ties **ion lightning** and **radiation pulse** to Jupiter shadow / m
 |-----|----------------|
 | Survival suit, emergency O₂ / thermal baseline | Working shuttle radio (sparks static or ledger ghost lines only) |
 | **Crash salvage** (see §3.1) after searching crates | Map reveal of full Io |
-| Charter slate → **search zone** for **Horizon Pad** (base camp site) | Precise horizon POI on map/compass until ping + close approach |
+| **Journal Coordinates** (from first EEB) → **search zone** on map for **Horizon Pad** | Map center POI for pad until ping/resolve; **no compass ring** (gold bearing dot only) |
 | Crash site (implicit anchor) | Companions on the ground (orbit / dead insert / solo charter — pick one; **solo on foot** fits tutorial) |
 | | Building Control Panel, Kairos, 5000 AC spend until camp beat |
 
@@ -51,20 +51,22 @@ Kade **must search supply crates** in the wreck (interact prompts on labeled cas
 | **Service Axe** | 1 | Melee tool + corral 2 teach; new `Service Axe` ItemData or reskin of utility axe |
 | **Med Pack** | 1 | Maps to `Medpack` consumable |
 | **Bio Gel** | 1 | New consumable — exposure/suit patch or heal-over-time (author effect in ItemData) |
+| **EEB field log puck** | 1 | Same **primary crate** as pistol; read to collect log + **Horizon Pad coordinates** |
 
 Corral 2–3 assume **ranged + melee** in inventory. Hotbar assignment teach in crash bowl after loot.
 
-**Field Log:** first **electronic field device** (EEB puck in cockpit or crate) — UEA insert briefing fragment; unlocks Journal **Field Logs** replay (see `Field_Log_Devices.md`).
+**EEB read:** posts **bold gold** coordinate lines to Journal **Coordinates**; plots map search zone (see `Field_Log_Devices.md` §2.1).
 
 ### 3.2 Coordinate + search zone (low hand-holding)
 
-- Diegetic: charter slate — “**HORIZON PAD — PRIMARY LANDING**” + grid reference.
-- UI: **`MapSearchZone`** — hard thin **alpha circle** on minimap/full map (`Map_Search_Zone_System.md`). **No center POI.**
-- Inside circle: **scanner sweep** → audio ping + **3 s direction flash** toward true pad coords; repeatable until within `captureRadius`.
-- **Compass:** no quest icon at pad; optional edge bearing after first ping.
+- **Source of truth:** first **EEB** transcript (UEA insert / horizon grid) — not a separate slate item.
+- **Journal:** Coordinates panel — highlighted **bold**, **~115% size**, **Gold** text.
+- **Map / minimap:** **`MapSearchZone`** alpha ring (`Map_Search_Zone_System.md`); **no center POI** until ping/resolve.
+- **Compass:** **no ring** — **large gold dot** on bearing with radial alpha falloff (opaque to ~⅔ radius, fade to edge); optional emission glow child.
+- Inside map ring: **scanner sweep** → ping + **3 s direction flash** toward true pad; compass dot may pulse once.
 - Optional ledger tick when **in zone** + first ping only — not continuous VO.
 
-Scanner sweep is **taught at crash** (optional “try scan inside plotted ring” after slate) and reinforced in **Corral 1**.
+Scanner sweep taught after first EEB read (open map, see ring) and reinforced in **Corral 1**.
 
 ---
 
@@ -89,11 +91,11 @@ Approximate **play time 25–40 min** first run; **1.5–3 km** authored path on
 ### 4.1 Crash bowl (5–8 min)
 
 - **Cinematic:** descent → flux alarms → hard landing (skippable).
-- **Gameplay:** search **crates** (§3.1) → equip pistol/axe → collect **Field Log** EEB → read slate → **plot search zone** (ring on map).
+- **Gameplay:** search **primary crate** (§3.1) → pistol + **EEB** → **read EEB** → Journal coordinates + map ring → equip / hotbar.
 - **Tone:** no NPC; distant ruined hab **visible on horizon** optional; emphasize silence.
-- **Teach:** interact, loot, journal/map, field log replay, search ring + scanner ping.
+- **Teach:** interact, loot, EEB read, Journal coordinates styling, map ring + compass gold dot + scanner ping.
 
-**WorldState:** `intro_crashed`, `intro_crash_loot_complete`, `intro_search_zone_plotted`, `intro_field_log_eeb_collected`
+**WorldState:** `intro_crashed`, `intro_crash_loot_complete`, `intro_eeb_horizon_read`, `intro_search_zone_plotted`, `intro_journal_coords_horizon_posted`
 
 ### 4.2 Open walk 0 → Corral 1 (3–5 min)
 

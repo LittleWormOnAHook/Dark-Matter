@@ -26,10 +26,29 @@ Replace **precise map POIs** for unknown or imprecise objectives with a **search
 | **Outline** | 1–2 px equivalent **hard** ring (use `MapUiSprites.CircleRing` or dedicated `SearchZoneRing` sprite — no soft glow-only ring) |
 | **Fill** | **Alpha only** — ~8–15% Dark Navy or Slate tint inside ring; must not obscure terrain |
 | **Label** | Optional short tag on full map only: e.g. `SEARCH — HORIZON GRID` (Gold when active objective) |
-| **Compass** | **No** icon at zone center by default; compass shows zone edge bearing only after slate “plots search area” |
-| **Precision POI** | Hidden until zone state ≥ `Pinged`; never show exact dot at game start for intro horizon |
+| **Precision POI** | Hidden on **map** until zone state ≥ `Pinged` or `Resolved`; never show exact map chevron at zone center for undisclosed targets |
+| **Journal** | Coordinates from EEB reads — bold gold lines in **Coordinates** panel (`Field_Log_Devices.md` §2.1) |
 
 Undisclosed future quests use the same component with `revealLabel = false` until narrative flag unlocks a name.
+
+### 2.1 Compass (search zone bearing — no ring)
+
+The **compass strip never draws the search ring**. Rings are **map + minimap only**.
+
+For each **active, unresolved** `MapSearchZone` linked from Journal coordinates:
+
+| Element | Spec |
+|---------|------|
+| **Icon** | **Larger gold dot** — `DarkMatterGenesisUiPalette.Gold` (`#D4A017`); ~**1.6–2.0×** normal compass POI icon (`CompassHudUI` default ~14 px → **22–28 px** visual) |
+| **Position** | Bearing toward zone **center** (or `trueTarget` after first ping — designer toggle; default **center** until `Pinged`, then **trueTarget**) |
+| **Falloff** | **No ring.** Dot uses **radial alpha falloff**: opaque core through **~66%** of icon radius, alpha → **0** at outer edge (soft halo read at a glance). |
+| **Implementation** | Prefer **stacked UI Images**: inner `CircleFilled` (solid gold) + outer `CircleGlow` mask with gradient alpha; **or** single sprite + **UI/Default** material with radial alpha; **or** optional **UI Image + additive/emission** material on glow child if URP canvas supports it without bloom blowout |
+| **Distance label** | Optional muted meters to zone edge (not to hidden true POI) until `Pinged` |
+| **Resolved** | Dot removed; standard `MapMarker` compass icon if camp POI unlocked |
+
+**Do not** duplicate the map alpha circle on the compass. Player reads **ring on map**, **gold dot on compass**, **coords in Journal**.
+
+`MapUI` compass refresh should accept `IReadOnlyList<SearchZoneCompassTarget>` alongside `MapMarker` (implementation backlog).
 
 ---
 
@@ -42,7 +61,7 @@ Locked → Plotted → InZone → Pinged → Resolved
 | State | How entered | Map / compass behavior |
 |-------|-------------|-------------------------|
 | **Locked** | Default for secret quests | No ring (or greyed dossier only in Journal) |
-| **Plotted** | Kade reads coordinates / accepts quest | Ring appears; **no center POI** |
+| **Plotted** | EEB read posts coords to Journal **or** quest flag | Map ring appears; compass **gold dot** at bearing; **no map center POI** |
 | **InZone** | Player position inside circle collider | Ring highlight (Rich Fuchsia edge pulse optional) |
 | **Pinged** | InZone + **scanner sweep** (middle mouse / bound scan) | **3 s directional flash** toward true target; optional audio ping |
 | **Resolved** | Reach `captureRadius` around true coords | Ring fades; optional permanent `MapMarker` for camp/POI |
@@ -67,7 +86,7 @@ Direction flash:
 - Bearing from player → `trueTarget` (horizontal)
 - Duration: **3 seconds** (configurable per zone)
 - Cooldown: **5–8 s** between ping flashes to prevent spam
-- Optional: brief gold rim on compass strip in bearing direction
+- Scanner ping: optional **pulse** on compass gold dot (scale 1.0 → 1.15 → 1.0 over 0.4 s) in addition to 3 s world bearing flash
 
 ---
 
@@ -83,7 +102,7 @@ ScriptableObject or scene component **`MapSearchZoneDefinition`**:
 | `trueTarget` | Vector3 | Actual pad / POI |
 | `captureRadius` | float | Resolve distance |
 | `initialState` | enum | Intro: `Plotted` after slate read |
-| `showOnCompass` | bool | Edge bearing vs none until pinged |
+| `showOnCompass` | bool | Gold bearing dot (default true when plotted) |
 | `label` | string | Optional |
 | `linkedQuestFlag` | string | WorldState gate for Locked → Plotted |
 
@@ -98,7 +117,7 @@ Runtime: **`MapSearchZoneRegistry`** syncs with `MapUI` overlay layer and `World
 | `zoneId` | `intro_horizon_pad` |
 | Ring radius | 600 m (tune to corral path length) |
 | True target | Empty horizon pad origin |
-| Plotted trigger | Kade reads charter slate **after** crate salvage |
+| Plotted trigger | **First EEB read** (pistol crate) posts Journal coordinates |
 | First ping teach | Optional forced hint if player leaves crash bowl without opening map once |
 
 **WorldState flags:** `intro_search_zone_plotted`, `intro_search_zone_pinged`, `intro_search_zone_resolved`
@@ -110,7 +129,7 @@ Runtime: **`MapSearchZoneRegistry`** syncs with `MapUI` overlay layer and `World
 - Stack **multiple rings** (only one “active” gold; others muted)
 - **Nested zones:** outer ring → inner ring after first ping (B3 beacon choir)
 - **False rings:** V1 package — hopper mimic ring decoy (one per act, rare)
-- Journal **Quest** tab lists zone label + state text, not coordinates string
+- Journal **Coordinates** panel holds grid strings; Quest tab lists zone label + state only
 
 ---
 

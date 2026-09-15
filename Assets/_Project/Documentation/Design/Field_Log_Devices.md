@@ -24,14 +24,31 @@ Small **electronic field devices** (slates, pucks, helmet chips, survey spikes w
 
 | Action | Behavior |
 |--------|----------|
-| **Find device** | World interact on prop (`DMFieldLogDevice`) |
-| **Collect** | Adds entry to Journal → new tab **`Field Logs`** (or sub-tab under Journal Quest) |
-| **Replay** | List UI: title, speaker tag, biome, optional transcript; play audio + scroll text |
+| **Find device** | World interact on prop (`DMFieldLogDevice`) — intro: **same crate as UEA pistol** |
+| **Collect / read** | Adds entry to Journal → **`Field Logs`**; first read plays transcript/audio |
+| **Replay** | List UI: title, speaker tag, biome, transcript; play audio + scroll text |
 | **Duplicate** | First pickup only; replays from Journal |
 
-Devices can be **required** (intro tutorial log in shuttle) or **optional** (90% of catalog).
+Devices can be **required** (intro EEB) or **optional** (90% of catalog).
 
-**UI palette:** Dark Navy panels, Warm Off-White transcript, Gold for “new log” dot, Soft Beige-Gray metadata.
+**UI palette:** Dark Navy panels, Warm Off-White body transcript, Gold for “new log” dot, Soft Beige-Gray metadata.
+
+### 2.1 Journal — Coordinates panel (canon)
+
+Navigation coordinates live in the **Journal**, not as floating quest text.
+
+| Rule | Detail |
+|------|--------|
+| **Source** | Any **EEB** whose `FieldLogDefinition` includes one or more **`coordinateEntries`** (grid string + optional label + linked `MapSearchZone` id) |
+| **On first read** | Each new coordinate is **posted** to Journal → **Coordinates** section (Field Logs tab header block, or dedicated sub-panel) |
+| **Typography** | Coordinate lines use **Gold** (`DarkMatterGenesisUiPalette.Gold`), **bold**, **~115% body size** vs normal transcript text |
+| **Highlight** | New coordinate rows get a **“NEW”** chip until Journal opened once; optional one-frame Rich Text `<mark>` on post |
+| **Map hook** | Posting runs `MapSearchZoneRegistry.PlotZone(zoneId)` — **map/minimap alpha ring** appears; compass uses **gold bearing dot** (see `Map_Search_Zone_System.md` §2.1) |
+| **Transcript** | In-log replay still shows coords inline with same bold/gold styling inside the recording |
+
+**Intro:** First EEB (pistol crate) contains **Horizon Pad** coordinates. Reading it is the **only** trigger needed to populate Journal Coordinates and plot the intro search zone (no separate charter slate required).
+
+**Flavor coords** in logs without a `zoneId` post to Journal for lore only — **no** map ring (e.g. “home dome on Mars”).
 
 ---
 
@@ -74,7 +91,8 @@ Avoid single-tone “everyone hates Io.” Mix **gallows hope** (V2) with **horr
 | `logId` | Save / achievement key |
 | `displayTitle` | Journal list |
 | `speakerLabel` | “UEA Survey — Reyes” |
-| `transcript` | Localized string |
+| `transcript` | Localized string (TMP rich text allowed) |
+| `coordinateEntries` | Array: `label`, `displayGrid`, `searchZoneId` (optional), `plotOnRead` bool |
 | `audioClip` | Optional VO |
 | `duration` | UI |
 | `categories` | Flags for filter |
@@ -104,8 +122,8 @@ Cross-link: Echo chronicle entries may **cite** log IDs (“matches Field Log 12
 
 | Device | Location | Content sketch |
 |--------|----------|----------------|
-| **Shuttle EEB** | Crash crate / cockpit | UEA safety + “horizon pad is live” — teaches Field Log UI |
-| **Wreck lane** | Optional outside | Prior survey team: “geomagnetic drops aren’t myth” |
+| **Shuttle EEB** | **Primary supply crate with pistol** | UEA insert briefing + **Horizon Pad grid** → Journal Coordinates + map search zone on read |
+| **Wreck lane** | Optional outside | Prior survey team: “geomagnetic drops aren’t myth” (no coords) |
 | **Corral 2** | Broken pen | Rancher joke turns dark — fauna not livestock |
 | **Horizon pad** | Dead beacon housing | Empty camp schedule; **nobody boarded** |
 
