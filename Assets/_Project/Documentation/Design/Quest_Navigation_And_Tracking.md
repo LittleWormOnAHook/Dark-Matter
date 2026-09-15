@@ -80,7 +80,28 @@ Quest browsing lives in a **new top-level Journal tab: Quests** (`JournalWindowI
 | **Journal** | `JournalQuest` → rename window to **Chronicle** or repurpose id to `FieldLogs` when implemented | Field Logs, coordinates panel, optional personal notes |
 | *(existing)* | Map, Inventory, … | Unchanged |
 
-Shortcut: **Q** for Quests tab (reserve **J** for Journal / chronicle).
+### 4.0 Keyboard shortcuts (journal tabs)
+
+**Do not use Q** — reserved / conflicts with gameplay (Invector or future bind); not available for Quests.
+
+| Tab | Key | `JournalWindowId` | Notes |
+|-----|-----|-------------------|--------|
+| **Quests** | **G** | `Quests` *(new)* | **G** unused in `InputSystem_Actions` + `JournalWindowShortcuts`; label **Quests (G)** |
+| **Journal** (chronicle / Field Logs) | **J** | `JournalQuest` → chronicle id | Opens journal shell; default tab = chronicle |
+| Inventory | I | `Inventory` | Shipped |
+| Map | M | `Map` | Shipped |
+| Pet | F *(UI label)* / **K** *(input action)* | `Pet` | Align pet key in a future pass |
+| Companions | P | `Pioneers` | Shipped |
+| Character | U | `Character` | Shipped |
+| Craft | C | `Craft` | Shipped |
+| Blueprints | R | `Recipes` | Shipped |
+| Skills | T | `Skills` | Shipped |
+| Echoes | L | `Echoes` | Shipped |
+| Achievements | A | `Achievements` | Shipped |
+
+**Implementation:** add `ToggleQuests` → `<Keyboard>/g` in `InputSystem_Actions.inputactions`; `UIManager.OnToggleQuests` → `TryToggleTab(JournalWindowId.Quests)`; `JournalWindowShortcuts.GetShortcutKey(Quests) => 'G'`.
+
+Other unused letters if **G** is ever taken: **O** (objectives), **H**, **N**, **V**, **B** — none bound in project input today.
 
 ### 4.1 Category shelves (primary organization)
 
