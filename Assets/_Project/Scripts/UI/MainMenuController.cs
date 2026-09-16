@@ -902,7 +902,7 @@ namespace Project.UI
             ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
-            UnityEngine.Object.DmUiRuntimeRefs.ResolveUiManager()?.RefreshSurvivalDisplay();
+            DmUiRuntimeRefs.ResolveUiManager()?.RefreshSurvivalDisplay();
             RefreshMenuButtonStates();
             MainCanvasFlow.Refresh();
         }

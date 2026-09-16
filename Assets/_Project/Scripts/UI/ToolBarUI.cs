@@ -149,11 +149,6 @@ namespace Project.UI
             RefreshUI();
         }
 
-        private void OnDestroy()
-        {
-            DmUiRuntimeRefs.Unregister(this);
-        }
-
         public void SetGameplayVisible(bool visible)
         {
             if (MainMenuController.BlocksGameplayHud)
@@ -371,6 +366,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            DmUiRuntimeRefs.Unregister(this);
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged -= RefreshUI;
 

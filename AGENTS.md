@@ -17,7 +17,7 @@
 - Editor **Auto Refresh is off**. After script/asset edits, Anthony Ctrl+R / Assets → Refresh. Do not force-refresh unless asked.
 - Git is agent source of truth. Plastic check-in is Anthony in the Plastic window (no `cm` CLI).
 - Do not clone this repo onto the agent box. Work the live project folder Unity has open (Play uses that path).
-- Do not add untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, or GDKEditionAutoGen.
+- Do not add untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, or GDKEditionAutoGen. Policy: `Assets/_Project/Documentation/Engineering/Vendor_Assets_And_Git_Policy.md`.
 
 ## Framework & disk truth
 

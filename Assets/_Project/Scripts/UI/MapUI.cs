@@ -139,11 +139,6 @@ namespace Project.UI
             DmUiRuntimeRefs.Register(this);
         }
 
-        private void OnDestroy()
-        {
-            DmUiRuntimeRefs.Unregister(this);
-        }
-
         private void DetectSceneLayoutShells()
         {
             if (!preserveManualLayout)
@@ -207,6 +202,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            DmUiRuntimeRefs.Unregister(this);
             if (mapProvider != null)
                 mapProvider.MapTextureReady -= HandleMapTextureReady;
 

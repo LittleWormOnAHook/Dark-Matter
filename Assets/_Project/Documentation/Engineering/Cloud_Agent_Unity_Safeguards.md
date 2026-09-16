@@ -29,3 +29,7 @@ If `git log HEAD..backup/wip-pre-restore-20260907` shows commits, **do not check
 ## Agent rules
 
 See `.cursor/rules/cloud-agent-unity-safeguards.mdc` and `confirm-before-depot-restore.mdc`.
+
+## Vendor assets (large packs)
+
+Do not commit full Asset Store trees. See **`Vendor_Assets_And_Git_Policy.md`** and **`Vendor_Install_Manifest.md`** in this folder.

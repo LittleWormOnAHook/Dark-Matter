@@ -84,8 +84,7 @@ namespace Project.EditorTools.GenesisStudio
         private void DrawLiveAi()
         {
             PioneerCompanionAgent[] agents = UnityEngine.Object.FindObjectsByType<PioneerCompanionAgent>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Exclude);
 
             if (agents == null || agents.Length == 0)
             {

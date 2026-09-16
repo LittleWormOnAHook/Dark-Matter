@@ -35,11 +35,22 @@ Assets/LocalAgent_*.txt
 Assets/LocalAgent_*.txt.meta
 
 # Vendor packages and oversized assets (GitHub 100MB limit)
+# Policy: Assets/_Project/Documentation/Engineering/Vendor_Assets_And_Git_Policy.md
 *.unitypackage
 "Assets/Audio/QP01 0016 Thunderstorm.wav"
 "Assets/Audio/QP01 0016 Thunderstorm.wav.meta"
 "Assets/NatureManufacture Assets/L.V.E- Lava and Volcano Environment/"
 "Assets/NatureManufacture Assets/L.V.E- Lava and Volcano Environment.meta"
+
+# Vendor Asset Store packs — local install only (see Vendor_Install_Manifest.md)
+/Assets/PlanetPack02/
+/Assets/PlanetPack02.meta
+/Assets/OlegWER/
+/Assets/OlegWER.meta
+/Assets/Resources/GDKEditionAutoGen/
+/Assets/Resources/GDKEditionAutoGen.meta
+/UIElementsSchema/
+/UIElementsSchema.meta
 
 # Local dumps and generated (stay on disk, out of git)
 /Assets/_Recovery/

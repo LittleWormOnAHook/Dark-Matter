@@ -1369,14 +1369,14 @@ namespace Project.UI
                 return;
 
             // One-shot: disable any live uGUI painters so UITK is the only stem on screen.
-            PickupProximityDotUI[] pickups = Object.FindObjectsByType<PickupProximityDotUI>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            PickupProximityDotUI[] pickups = Object.FindObjectsByType<PickupProximityDotUI>(FindObjectsInactive.Exclude);
             for (int i = 0; i < pickups.Length; i++)
             {
                 if (pickups[i] != null && pickups[i].enabled)
                     pickups[i].enabled = false;
             }
 
-            WorldInteractionDotUI[] worldDots = Object.FindObjectsByType<WorldInteractionDotUI>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            WorldInteractionDotUI[] worldDots = Object.FindObjectsByType<WorldInteractionDotUI>(FindObjectsInactive.Exclude);
             for (int i = 0; i < worldDots.Length; i++)
             {
                 if (worldDots[i] != null && worldDots[i].enabled)

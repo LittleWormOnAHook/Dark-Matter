@@ -127,11 +127,6 @@ namespace Project.UI
             GameSession.GameStarted -= HandleGameStarted;
         }
 
-        private void OnDestroy()
-        {
-            DmUiRuntimeRefs.Unregister(this);
-        }
-
         private void HandleGameStarted()
         {
             BindJournalInputActions();
@@ -786,6 +781,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            DmUiRuntimeRefs.Unregister(this);
             if (trackedProgression != null)
                 trackedProgression.OnLevelUp -= HandleProgressionLevelUp;
 
