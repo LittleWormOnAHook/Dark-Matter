@@ -92,6 +92,7 @@ namespace Project.UI
       petUi = FindAnyObjectByType<PetUI>();
       questManager = FindAnyObjectByType<QuestManager>();
       craftingManager = FindAnyObjectByType<CraftingManager>();
+      DmUiRuntimeRefs.Register(this);
 
       if (craftingManager == null)
       {
@@ -127,6 +128,7 @@ namespace Project.UI
 
     private void OnDestroy()
     {
+      DmUiRuntimeRefs.Unregister(this);
       if (navigator != null)
       {
         navigator.OnPauseGameplayChanged -= HandleNavigatorPauseChanged;

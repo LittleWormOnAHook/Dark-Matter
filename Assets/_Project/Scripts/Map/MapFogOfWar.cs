@@ -89,6 +89,8 @@ namespace Project.Map
         private Vector3 lastWalkStampPosition = new Vector3(float.MaxValue, 0f, float.MaxValue);
         private Transform playerTransform;
         private bool fullyInitialized;
+        private float nextProfileLiveSyncTime;
+        private const float ProfileLiveSyncIntervalSeconds = 1.5f;
 
         public Texture2D FogTexture => fogTexture;
         public bool IsReady => fullyInitialized && fogTexture != null;
@@ -183,7 +185,11 @@ namespace Project.Map
             if (!SystemEnabled || !GameSession.HasStarted || !fullyInitialized)
                 return;
 
-            SyncLiveFromProfile();
+            if (Time.unscaledTime >= nextProfileLiveSyncTime)
+            {
+                SyncLiveFromProfile();
+                nextProfileLiveSyncTime = Time.unscaledTime + ProfileLiveSyncIntervalSeconds;
+            }
 
             if (mapProvider == null)
                 mapProvider = WorldMapProvider.Instance ?? FindAnyObjectByType<WorldMapProvider>();
@@ -219,9 +225,9 @@ namespace Project.Map
             if (playerTransform != null)
                 return;
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            Transform player = PlayerReference.ResolveTransform();
             if (player != null)
-                playerTransform = player.transform;
+                playerTransform = player;
         }
 
         private void SyncLiveFromProfile()

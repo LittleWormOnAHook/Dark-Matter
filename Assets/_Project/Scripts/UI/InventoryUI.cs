@@ -76,6 +76,7 @@ namespace Project.UI
             if (UiPreviewContext.IsActive)
                 return;
 
+            DmUiRuntimeRefs.Register(this);
             inventorySystem = FindAnyObjectByType<InventorySystem>();
             equipmentController = inventorySystem != null
                 ? inventorySystem.GetComponent<EquipmentController>()
@@ -411,6 +412,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            DmUiRuntimeRefs.Unregister(this);
             if (inventorySystem != null)
                 inventorySystem.OnInventoryChanged -= RefreshUI;
 

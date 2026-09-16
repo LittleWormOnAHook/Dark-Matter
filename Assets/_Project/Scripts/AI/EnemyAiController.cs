@@ -393,6 +393,7 @@ namespace Project.AI
             }
 
             ClearThreatLedger();
+            companionRosterBridge = CompanionRosterBridge.Instance;
 
             ConfigureNavMeshAgent();
             TryBindAssignedPatrolPath();

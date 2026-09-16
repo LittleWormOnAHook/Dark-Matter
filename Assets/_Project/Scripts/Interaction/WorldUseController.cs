@@ -60,6 +60,10 @@ namespace Project.Interaction
         private float lastUseTime = -999f;
         private UIManager promptUiManager;
         private IHoldWorldUsable activeHoldUsable;
+        private const float HoldContextRefreshInterval = 0.12f;
+        private WorldUseContext cachedHoldContext;
+        private bool holdContextValid;
+        private float nextHoldContextRefreshTime;
 
         public static void Register(IWorldUsable usable)
         {
@@ -83,6 +87,7 @@ namespace Project.Interaction
             inventory = GetComponent<InventorySystem>();
             playerController = GetComponent<PlayerController>();
             survivalStats = GetComponent<SurvivalStats>();
+            promptUiManager = DmUiRuntimeRefs.ResolveUiManager();
         }
 
         private void Start()
@@ -104,32 +109,43 @@ namespace Project.Interaction
             }
 
             bool useHeld = IsUseHeld();
-            WorldUseContext context = BuildPromptContext();
 
             if (activeHoldUsable != null && activeHoldUsable.IsHoldActive)
             {
+                WorldUseContext holdContext = GetHoldHarvestContext(throttleRaycast: true);
                 if (!useHeld)
                 {
-                    activeHoldUsable.CancelHold(context);
+                    activeHoldUsable.CancelHold(holdContext);
                     activeHoldUsable = null;
+                    InvalidateHoldContext();
                     return;
                 }
 
-                if (activeHoldUsable.TickHold(context, Time.deltaTime, out _))
+                if (activeHoldUsable.TickHold(holdContext, Time.deltaTime, out _))
+                {
                     activeHoldUsable = null;
+                    InvalidateHoldContext();
+                }
 
                 return;
             }
 
             if (!useHeld)
+            {
+                InvalidateHoldContext();
                 return;
+            }
 
+            WorldUseContext context = BuildPromptContext();
             IHoldWorldUsable holdTarget = FindHoldTarget(context);
             if (holdTarget == null || !holdTarget.CanBeginHold(context))
                 return;
 
             holdTarget.BeginHold(context);
             activeHoldUsable = holdTarget;
+            cachedHoldContext = context;
+            holdContextValid = true;
+            nextHoldContextRefreshTime = Time.unscaledTime + HoldContextRefreshInterval;
         }
 
         private void CancelActiveHold()
@@ -137,9 +153,26 @@ namespace Project.Interaction
             if (activeHoldUsable == null)
                 return;
 
-            WorldUseContext context = BuildPromptContext();
+            WorldUseContext context = GetHoldHarvestContext(throttleRaycast: true);
             activeHoldUsable.CancelHold(context);
             activeHoldUsable = null;
+            InvalidateHoldContext();
+        }
+
+        private void InvalidateHoldContext()
+        {
+            holdContextValid = false;
+        }
+
+        private WorldUseContext GetHoldHarvestContext(bool throttleRaycast)
+        {
+            if (throttleRaycast && holdContextValid && Time.unscaledTime < nextHoldContextRefreshTime)
+                return cachedHoldContext;
+
+            cachedHoldContext = BuildPromptContext(includeAimRaycast: !throttleRaycast || !holdContextValid);
+            holdContextValid = true;
+            nextHoldContextRefreshTime = Time.unscaledTime + HoldContextRefreshInterval;
+            return cachedHoldContext;
         }
 
         private static bool IsUseHeld()
@@ -1154,7 +1187,7 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(message))
             {
                 if (promptUiManager == null)
-                    promptUiManager = FindAnyObjectByType<UIManager>();
+                    promptUiManager = DmUiRuntimeRefs.ResolveUiManager();
 
                 promptUiManager?.ShowInteractionPrompt(message);
                 return;
@@ -1186,12 +1219,12 @@ namespace Project.Interaction
         private void ClearOwnedWorldPrompt()
         {
             if (promptUiManager == null)
-                promptUiManager = FindAnyObjectByType<UIManager>();
+                promptUiManager = DmUiRuntimeRefs.ResolveUiManager();
 
             promptUiManager?.HideInteractionPrompt();
         }
 
-        private WorldUseContext BuildPromptContext()
+        private WorldUseContext BuildPromptContext(bool includeAimRaycast = true)
         {
             if (gatherer == null)
                 gatherer = GetComponent<ResourceGatherer>();
@@ -1205,7 +1238,7 @@ namespace Project.Interaction
                 : default;
 
             RaycastHit? aimHit = null;
-            if (camera != null && gatherer != null
+            if (includeAimRaycast && camera != null && gatherer != null
                 && Physics.Raycast(viewRay, out RaycastHit hit, gatherer.gatherRange, gatherer.resourceLayer, QueryTriggerInteraction.Collide))
             {
                 aimHit = hit;

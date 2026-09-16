@@ -179,27 +179,39 @@ namespace Project.Survival.Exposure
                 return;
 
             bool pulseEnabled = profile != null && profile.pulse != null && profile.pulse.enabled;
-            if (occupants.Count == 0 && !_playerInside && !pulseEnabled)
+            if (occupants.Count == 0 && !_playerInside)
+            {
+                if (!pulseEnabled)
+                    return;
+
+                AdvancePulsePhase();
                 return;
+            }
 
             if (pulseEnabled)
-            {
-                pulsePhaseTimer -= Time.deltaTime;
-                if (pulsePhaseTimer <= 0f)
-                {
-                    pulseActive = !pulseActive;
-                    float baseDuration = pulseActive
-                        ? profile.pulse.activeDurationSeconds
-                        : profile.pulse.inactiveDurationSeconds;
-                    float jitter = profile.pulse.timingJitter;
-                    float variance = baseDuration * Random.Range(-jitter, jitter);
-                    pulsePhaseTimer = Mathf.Max(0.25f, baseDuration + variance);
-                }
-            }
+                AdvancePulsePhase();
 
             UpdateCameraShake();
             UpdateAmbientProximityVolume();
             UpdateZoneParticles();
+        }
+
+        private void AdvancePulsePhase()
+        {
+            if (profile == null || profile.pulse == null || !profile.pulse.enabled)
+                return;
+
+            pulsePhaseTimer -= Time.deltaTime;
+            if (pulsePhaseTimer > 0f)
+                return;
+
+            pulseActive = !pulseActive;
+            float baseDuration = pulseActive
+                ? profile.pulse.activeDurationSeconds
+                : profile.pulse.inactiveDurationSeconds;
+            float jitter = profile.pulse.timingJitter;
+            float variance = baseDuration * Random.Range(-jitter, jitter);
+            pulsePhaseTimer = Mathf.Max(0.25f, baseDuration + variance);
         }
 
         private void OnTriggerEnter(Collider other)

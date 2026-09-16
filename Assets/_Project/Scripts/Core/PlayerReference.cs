@@ -11,6 +11,7 @@ namespace Project.Core
         public static Transform Transform { get; private set; }
         public static Camera Camera { get; private set; }
 
+        private static PlayerController cachedController;
         private static float nextResolveTime;
 
         public static void Register(Transform playerTransform, Camera gameplayCamera = null)
@@ -19,6 +20,7 @@ namespace Project.Core
                 return;
 
             Transform = playerTransform;
+            cachedController = playerTransform.GetComponent<PlayerController>();
             if (gameplayCamera != null)
                 Camera = gameplayCamera;
             else if (Camera == null)
@@ -32,6 +34,20 @@ namespace Project.Core
 
             Transform = null;
             Camera = null;
+            cachedController = null;
+        }
+
+        public static PlayerController ResolvePlayerController()
+        {
+            if (cachedController != null)
+                return cachedController;
+
+            Transform player = ResolveTransform();
+            if (player == null)
+                return null;
+
+            cachedController = player.GetComponent<PlayerController>();
+            return cachedController;
         }
 
         public static Transform ResolveTransform()
@@ -48,6 +64,7 @@ namespace Project.Core
             if (tagged != null)
             {
                 Register(tagged.transform);
+                cachedController = tagged.GetComponent<PlayerController>();
                 return Transform;
             }
 
@@ -55,6 +72,7 @@ namespace Project.Core
             if (controller != null)
             {
                 Register(controller.transform, controller.GameplayCamera);
+                cachedController = controller;
                 return Transform;
             }
 

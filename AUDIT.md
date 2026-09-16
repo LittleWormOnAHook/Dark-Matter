@@ -25,6 +25,18 @@ This report was originally read-only; the remediation section tracks what landed
 
 Remaining Medium items (M3–M5, hold-harvest prompts, fog upload budget) still warrant Profiler passes on target hardware.
 
+### Follow-up (2026-09-15) — suggested fixes 1–7
+
+| # | Target | Status |
+|---|--------|--------|
+| 1 | `WorldUseController` hold-harvest | **Fixed** — throttled `GetHoldHarvestContext` skips per-frame aim raycasts while E is held. |
+| 2 | `MapFogOfWar` | **Fixed** — `SyncLiveFromProfile` at 1.5s interval in `LateUpdate`; `EnsurePlayer` uses `PlayerReference`. |
+| 3 | `CompanionFollowController.Movement` | **Verified** — already `RaycastNonAlloc` + static buffer; no change. |
+| 4 | Mining scanner/controller | **Verified** — main paths already `RaycastNonAlloc`; no change. |
+| 5 | `ExposureZoneVolume` | **Fixed** — empty zones with pulse-only skip shake/ambient/particle updates. |
+| 6 | Legacy uGUI menu lookups | **Fixed** — `DmUiRuntimeRefs` + registration on `UIManager` / inventory / map / journal / toolbar; `MainMenuController` and prompt paths use cache. |
+| 7 | `EnemyAiController` pioneer bridge | **Fixed** — bridge cached in `OnEnable`; removed `FindAnyObjectByType` fallback. |
+
 ---
 
 The codebase mixes a **mature gameplay layer** (`Assets/_Project/Scripts/`) with an early **World Engine spine** (`Assets/_Project/Features/`). Several systems already show deliberate perf hygiene (`SceneComponentCache`, phased enemy vision, humanoid distance culling, fog-of-war dirty uploads, `OverlapSphereNonAlloc` in combat). The largest **scalability risks** cluster around **scene-wide queries** (`FindObjectsByType`, `FindWithTag`, `FindAnyObjectByType`) still used in **AI, creatures, optics, and pet fetch**, and around **per-frame work on companions + player trail grounding** that allocates via `Physics.RaycastAll`. **Architecture debt** is dominated by **Invector bridge proliferation**, **parallel Pet vs Pioneer companion models**, and **central hubs** (`WorldUseController`, `UIManager` partials) that couple many domains.

@@ -113,6 +113,8 @@ namespace Project.UI
 
             if (!GameSession.HasStarted)
                 MainMenuController.EnsureExists();
+
+            DmUiRuntimeRefs.Register(this);
         }
 
         private void OnEnable()
@@ -123,6 +125,11 @@ namespace Project.UI
         private void OnDisable()
         {
             GameSession.GameStarted -= HandleGameStarted;
+        }
+
+        private void OnDestroy()
+        {
+            DmUiRuntimeRefs.Unregister(this);
         }
 
         private void HandleGameStarted()

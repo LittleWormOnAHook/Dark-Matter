@@ -38,6 +38,10 @@ namespace Project.UI
         private Transform toolbarOriginalParent;
         private int toolbarOriginalSiblingIndex;
         private bool raisedToFrontLayer;
+        private PetToolbarUI cachedPetToolbar;
+        private ExpeditionPioneerHudUI cachedPioneerHud;
+        private HovercraftStatusHudUI cachedHovercraftHud;
+        private InventoryUI cachedInventoryUi;
 
         public void EnsureBuilt(Transform canvasRoot, GameObject slotPrefabOverride = null, Transform hotbarAnchor = null)
         {
@@ -137,8 +141,17 @@ namespace Project.UI
             }
 
             uiBuilt = true;
+            cachedPetToolbar = petToolbar;
+            cachedPioneerHud = pioneerHud;
+            cachedHovercraftHud = hovercraftHud;
+            DmUiRuntimeRefs.Register(this);
             SetGameplayVisible(false);
             RefreshUI();
+        }
+
+        private void OnDestroy()
+        {
+            DmUiRuntimeRefs.Unregister(this);
         }
 
         public void SetGameplayVisible(bool visible)
@@ -149,25 +162,20 @@ namespace Project.UI
             if (toolbarRoot != null)
                 toolbarRoot.gameObject.SetActive(visible);
 
-            PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
-            if (petToolbar == null)
-                petToolbar = FindAnyObjectByType<PetToolbarUI>();
+            PetToolbarUI petToolbar = cachedPetToolbar ?? GetComponent<PetToolbarUI>();
             petToolbar?.SetGameplayVisible(visible);
 
-            ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
-            if (pioneerHud == null)
-                pioneerHud = FindAnyObjectByType<ExpeditionPioneerHudUI>();
+            ExpeditionPioneerHudUI pioneerHud = cachedPioneerHud ?? GetComponent<ExpeditionPioneerHudUI>();
             pioneerHud?.SetGameplayVisible(visible);
 
-            HovercraftStatusHudUI hovercraftHud = GetComponent<HovercraftStatusHudUI>();
-            if (hovercraftHud == null)
-                hovercraftHud = FindAnyObjectByType<HovercraftStatusHudUI>();
+            HovercraftStatusHudUI hovercraftHud = cachedHovercraftHud ?? GetComponent<HovercraftStatusHudUI>();
             hovercraftHud?.SetGameplayVisible(visible);
 
             if (!visible)
                 return;
 
-            InventoryUI inventory = FindAnyObjectByType<InventoryUI>();
+            InventoryUI inventory = cachedInventoryUi ?? DmUiRuntimeRefs.ResolveInventoryUi();
+            cachedInventoryUi = inventory;
             if (inventory != null && inventory.hotbarParent is RectTransform hotbarRect)
             {
                 Canvas canvas = inventory.GetComponent<Canvas>() ?? inventory.GetComponentInParent<Canvas>();
@@ -198,17 +206,14 @@ namespace Project.UI
                 if (toolbarRoot != null)
                     toolbarRoot.gameObject.SetActive(false);
 
-                PetToolbarUI petToolbar = GetComponent<PetToolbarUI>();
-                if (petToolbar == null)
-                    petToolbar = FindAnyObjectByType<PetToolbarUI>();
+                PetToolbarUI petToolbar = cachedPetToolbar ?? GetComponent<PetToolbarUI>();
                 petToolbar?.SetGameplayVisible(false);
 
-                ExpeditionPioneerHudUI pioneerHud = GetComponent<ExpeditionPioneerHudUI>();
-                if (pioneerHud == null)
-                    pioneerHud = FindAnyObjectByType<ExpeditionPioneerHudUI>();
+                ExpeditionPioneerHudUI pioneerHud = cachedPioneerHud ?? GetComponent<ExpeditionPioneerHudUI>();
                 pioneerHud?.SetGameplayVisible(false);
 
-                InventoryUI inventory = FindAnyObjectByType<InventoryUI>();
+                InventoryUI inventory = cachedInventoryUi ?? DmUiRuntimeRefs.ResolveInventoryUi();
+                cachedInventoryUi = inventory;
                 if (inventory != null && inventory.hotbarParent != null)
                     inventory.hotbarParent.gameObject.SetActive(false);
             }
@@ -220,7 +225,7 @@ namespace Project.UI
 
         public static void ApplyGameplayVisibility()
         {
-            ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
+            ToolBarUI toolbar = DmUiRuntimeRefs.ResolveToolBar();
             if (toolbar == null)
                 return;
 
@@ -280,7 +285,7 @@ namespace Project.UI
             if (pioneerHud != null && pioneerHud.IsBuilt)
                 pioneerHud.AlignRightOfHotbar(pioneerLeft, anchoredY);
 
-            FindAnyObjectByType<InventoryUI>()?.EnsureSurvivalStatsHudVisible();
+            DmUiRuntimeRefs.ResolveInventoryUi()?.EnsureSurvivalStatsHudVisible();
         }
 
         public void RaiseToFrontLayer(Transform canvasRoot)

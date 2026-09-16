@@ -136,6 +136,12 @@ namespace Project.UI
             DetectSceneLayoutShells();
             EnsureMapProvider();
             minimapRingSprite = MapUiSprites.HudCircleRing;
+            DmUiRuntimeRefs.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            DmUiRuntimeRefs.Unregister(this);
         }
 
         private void DetectSceneLayoutShells()
@@ -375,7 +381,7 @@ namespace Project.UI
                 return true;
 
             if (cachedJournalPanel == null)
-                cachedJournalPanel = FindAnyObjectByType<JournalPanelUI>();
+                cachedJournalPanel = DmUiRuntimeRefs.ResolveJournalPanel();
 
             return cachedJournalPanel != null && cachedJournalPanel.IsOpen;
         }
@@ -423,7 +429,7 @@ namespace Project.UI
             if (!fullMapOpen)
                 yield break;
 
-            JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+            JournalPanelUI journal = DmUiRuntimeRefs.ResolveJournalPanel();
             journal?.BringJournalChromeToFront();
         }
 
@@ -464,12 +470,12 @@ namespace Project.UI
         {
             if (DMUiToolkitMenus.HandlesWindow(JournalWindowId.Map))
             {
-                JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>();
+                JournalPanelUI journal = DmUiRuntimeRefs.ResolveJournalPanel();
                 if (journal != null && journal.IsOpen)
                     return;
             }
 
-            JournalPanelUI journalPanel = FindAnyObjectByType<JournalPanelUI>();
+            JournalPanelUI journalPanel = DmUiRuntimeRefs.ResolveJournalPanel();
             if (journalPanel != null && journalPanel.TryToggleMapTab())
                 return;
 
@@ -687,7 +693,7 @@ namespace Project.UI
             Cursor.lockState = pause ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = pause;
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            PlayerController player = PlayerReference.ResolvePlayerController();
             if (player != null)
                 player.SetMapOpen(pause);
 

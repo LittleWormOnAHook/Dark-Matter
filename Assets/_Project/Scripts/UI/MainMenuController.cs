@@ -175,7 +175,7 @@ namespace Project.UI
 
         public static Canvas ResolveMainCanvas()
         {
-            UIManager uiManager = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            UIManager uiManager = DmUiRuntimeRefs.ResolveUiManager(includeInactive: true);
             if (uiManager != null)
             {
                 Canvas uiCanvas = uiManager.GetComponent<Canvas>() ?? uiManager.GetComponentInParent<Canvas>();
@@ -474,7 +474,7 @@ namespace Project.UI
 
             ResolveStartPopup()?.HidePopup();
 
-            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
+            DmUiRuntimeRefs.ResolveUiManager()?.SetCurrencyHudVisible(false);
             HideHotbars();
 
             RefreshMenuButtonStates();
@@ -544,7 +544,7 @@ namespace Project.UI
             controlsPanel?.Close();
             saveSlotsPanel?.Close();
             ClearMenuMessage();
-            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
+            DmUiRuntimeRefs.ResolveUiManager()?.SetCurrencyHudVisible(false);
             HideGameplayChromeForMenu();
             RefreshMenuButtonStates();
             SetGameWorldPaused(true);
@@ -620,7 +620,7 @@ namespace Project.UI
         {
             GameplayHudVisibility.SetGameplayHudVisible(false);
 
-            ToolBarUI toolbar = FindAnyObjectByType<ToolBarUI>();
+            ToolBarUI toolbar = DmUiRuntimeRefs.ResolveToolBar();
             toolbar?.SetGameplayVisible(false);
 
             // Builds often pause/toggle canvas mid-banner; never leave ENTERING ZONE over the menu.
@@ -902,7 +902,7 @@ namespace Project.UI
             ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
-            UnityEngine.Object.FindAnyObjectByType<UIManager>()?.RefreshSurvivalDisplay();
+            UnityEngine.Object.DmUiRuntimeRefs.ResolveUiManager()?.RefreshSurvivalDisplay();
             RefreshMenuButtonStates();
             MainCanvasFlow.Refresh();
         }
@@ -1186,7 +1186,7 @@ namespace Project.UI
             InventoryUI.CloseAnyOpenInventory();
             JournalPanelUI.CloseAnyOpenJournal();
             GameplayHudVisibility.SetGameplayHudVisible(true);
-            FindAnyObjectByType<UIManager>()?.SetCurrencyHudVisible(false);
+            DmUiRuntimeRefs.ResolveUiManager()?.SetCurrencyHudVisible(false);
         }
 
         public static void RestoreGameplayUiFromMenu()
@@ -1227,14 +1227,14 @@ namespace Project.UI
             if (playerInput != null)
                 playerInput.enabled = !paused;
 
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
+            PlayerController playerController = PlayerReference.ResolvePlayerController();
             if (playerController != null)
                 playerController.SetGameplayPaused(paused);
         }
 
         private static void RefreshGameplayCamera()
         {
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
+            PlayerController playerController = PlayerReference.ResolvePlayerController();
             if (playerController != null)
                 playerController.RefreshCameraFollow();
         }

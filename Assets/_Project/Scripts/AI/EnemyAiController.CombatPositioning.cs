@@ -381,9 +381,6 @@ namespace Project.AI
                 return companionRosterBridge;
 
             companionRosterBridge = CompanionRosterBridge.Instance;
-            if (companionRosterBridge == null)
-                companionRosterBridge = FindAnyObjectByType<CompanionRosterBridge>();
-
             return companionRosterBridge;
         }
     }
