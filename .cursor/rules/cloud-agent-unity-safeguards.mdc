@@ -1,0 +1,34 @@
+---
+description: Cloud Agent + local Unity folder — prevent silent git reversions
+alwaysApply: true
+---
+
+# Cloud Agent / Unity Safeguards
+
+The **live Unity project folder on Anthony's machine** is the play target. Cloud Agents must not treat a remote VM checkout as a substitute, and must not move git HEAD on the live folder in ways that drop unmerged local commits.
+
+## Before any `git checkout`, `git switch`, or `git merge` on the live repo
+
+1. Run **`Tools/DmUnityGitSafeguard.ps1`** (report). If `-Strict` would fail, **stop and explain** what commits or scenes would disappear from disk.
+2. If the user has a local anchor branch (default **`backup/wip-pre-restore-20260907`**), compare `git log HEAD..anchor` — any lines mean **Unity would lose work** unless those commits are merged or the user confirms.
+3. Never checkout an older branch/commit as "cleanup" without naming the save point and getting explicit approval (`confirm-before-depot-restore.mdc`).
+
+## Before `git commit` or `git push` (agent or human)
+
+1. Unity must not be compiling (poll MCP editor state when available).
+2. **`read_console`** with types `error` — **zero errors** before commit/push.
+3. Stage scenes/prefabs/materials/terrain with script changes (`unity-agent-workflow.mdc`).
+4. Run **`Tools/DmUnityGitSafeguard.ps1 -BeforePush`** before push when the branch tracks remote.
+
+## After git changes on the live folder
+
+Tell the user to **Ctrl+R** (Auto Refresh off). Remind which **Genesis scene** file is canonical (current numbered scene under `Assets/_Project/Scenes/`).
+
+## Optional local hooks
+
+Anthony can run **`Tools/install-unity-git-hooks.ps1`** once to block commit/push when the safeguard script warns (override: `SKIP_UNITY_GUARD=1` for one shot).
+
+## Cloud vs local
+
+- Cloud sessions may push branches Anthony does not have checked out — **pull/merge on the machine where Unity is open**, do not assume the Editor updated.
+- Prefer **merge anchor → feature branch** over **checkout older tip** when recovering work.
