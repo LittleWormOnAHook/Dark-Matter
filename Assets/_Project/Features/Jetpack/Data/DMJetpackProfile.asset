@@ -52,10 +52,11 @@ MonoBehaviour:
   particleSpeedMultiplier: 0.65
   particleLifetimeMultiplier: 1.2
   thrusterAudioSmooth: 0.12
+  thrusterAudioReleaseSeconds: 1
   thrusterLayer1: {fileID: 8300000, guid: 37946e82a3e82214a818fcec01f8fcb7, type: 3}
   thrusterLayer1Volume: 0.55
   thrusterLayer1Pitch: {x: 0.92, y: 1.04}
   thrusterLayer2: {fileID: 8300000, guid: 1b3a23db3360e4940885eb9ef794391b, type: 3}
-  thrusterLayer2Volume: 0.4
+  thrusterLayer2Volume: 0.544
   thrusterLayer2Pitch: {x: 0.98, y: 1.12}
   thrusterLayer2Start: 0.25

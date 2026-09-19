@@ -1,0 +1,111 @@
+fileFormatVersion: 2
+guid: fa15295de1403684b87eeac1f7b572e2
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: FLO_Stairs_ToLeft_Banister003
+    100002: Object561
+    100004: STEP050
+    100006: STEP054
+    100008: STEP055
+    100010: STEP056
+    100012: STEP057
+    100014: //RootNode
+    100016: FLO_Walkway_Straight_5m_Banister
+    100018: FLO_Walkway_Straight_5m_Plates
+    400000: FLO_Stairs_ToLeft_Banister003
+    400002: Object561
+    400004: STEP050
+    400006: STEP054
+    400008: STEP055
+    400010: STEP056
+    400012: STEP057
+    400014: //RootNode
+    400016: FLO_Walkway_Straight_5m_Banister
+    400018: FLO_Walkway_Straight_5m_Plates
+    2300000: FLO_Stairs_ToLeft_Banister003
+    2300002: Object561
+    2300004: STEP050
+    2300006: STEP054
+    2300008: STEP055
+    2300010: STEP056
+    2300012: STEP057
+    2300014: FLO_Walkway_Straight_5m_Banister
+    2300016: FLO_Walkway_Straight_5m_Plates
+    3300000: FLO_Stairs_ToLeft_Banister003
+    3300002: Object561
+    3300004: STEP050
+    3300006: STEP054
+    3300008: STEP055
+    3300010: STEP056
+    3300012: STEP057
+    3300014: FLO_Walkway_Straight_5m_Banister
+    3300016: FLO_Walkway_Straight_5m_Plates
+    4300000: STEP050
+    4300002: STEP054
+    4300004: STEP055
+    4300006: STEP056
+    4300008: STEP057
+    4300010: Object561
+    4300012: FLO_Stairs_ToLeft_Banister003
+    4300014: FLO_Walkway_Straight_5m_Plates
+    4300016: FLO_Walkway_Straight_5m_Banister
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

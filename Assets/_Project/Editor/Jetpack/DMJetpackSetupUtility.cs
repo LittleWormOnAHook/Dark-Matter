@@ -1,4 +1,5 @@
 using System.Text;
+using Project.EditorTools;
 using Project.Features.Jetpack;
 using QFX.SFX;
 using UnityEditor;
@@ -17,7 +18,7 @@ namespace Project.EditorTools.Jetpack
         private const string JetpackEngineInnerPath =
             "Assets/_Project/Models/DM_Jetpack/Materials/DM_Jetpack_EngineInner.mat";
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Setup Selected Player For Jetpack")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Setup Selected Player For Jetpack")]
         public static void SetupSelectedPlayer()
         {
             GameObject selected = Selection.activeGameObject;
@@ -33,7 +34,7 @@ namespace Project.EditorTools.Jetpack
             EditorUtility.DisplayDialog("Jetpack Setup", WirePlayerRoot(selected), "OK");
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Wire Player_v7 Prefab")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Wire Player_v7 Prefab")]
         public static void WirePlayerV7PrefabMenu()
         {
             EditorUtility.DisplayDialog("Jetpack Prefab Wire", WirePlayerPrefabAtPath(PlayerV7PrefabPath), "OK");
@@ -75,6 +76,7 @@ namespace Project.EditorTools.Jetpack
             AddIfMissing<DMJetpackController>(root);
             AddIfMissing<DMJetpackInputBridge>(root);
             AddIfMissing<DMJetpackAnimatorDriver>(root);
+            AddIfMissing<DMJetpackThrusterAudio>(root);
 
             DMJetpackController jetpackController = root.GetComponent<DMJetpackController>();
             SerializedObject jetpackSo = new SerializedObject(jetpackController);
@@ -127,6 +129,13 @@ namespace Project.EditorTools.Jetpack
             driverSo.FindProperty("profile").objectReferenceValue = profile;
             driverSo.FindProperty("animator").objectReferenceValue = animator;
             driverSo.ApplyModifiedPropertiesWithoutUndo();
+
+            DMJetpackThrusterAudio thrusterAudio = root.GetComponent<DMJetpackThrusterAudio>();
+            SerializedObject audioSo = new SerializedObject(thrusterAudio);
+            audioSo.FindProperty("jetpack").objectReferenceValue = jetpackController;
+            audioSo.FindProperty("profile").objectReferenceValue = profile;
+            audioSo.FindProperty("thrusterAnchor").objectReferenceValue = jetpackRoot;
+            audioSo.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(root);
             log.AppendLine("Jetpack hierarchy + components wired on '" + root.name + "'.");

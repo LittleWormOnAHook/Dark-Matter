@@ -1,8 +1,14 @@
+using Project.Core;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Project.Features.Jetpack
 {
+    /// <summary>
+    /// Layered loop audio on the jetpack engine mounts, driven by <see cref="DMJetpackController.CurrentThrustVisual"/>.
+    /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(455)]
     public sealed class DMJetpackThrusterAudio : MonoBehaviour
     {
         public const string Layer1Resource = "Audio/Thruster";
@@ -10,11 +16,20 @@ namespace Project.Features.Jetpack
 
         [SerializeField] private DMJetpackController jetpack;
         [SerializeField] private DMJetpackProfile profile;
+        [SerializeField] private Transform thrusterAnchor;
         [SerializeField] private AudioSource layer1Source;
         [SerializeField] private AudioSource layer2Source;
+        [SerializeField] private AudioSource igniteSource;
 
         private float _smoothed;
         private float _velocity;
+        private bool _wasThrusting;
+        private bool _releaseFading;
+        private float _releaseFrom;
+        private float _releaseElapsed;
+        private const float IgniteSeconds = 0.14f;
+        private const float DefaultReleaseSeconds = 1f;
+        private const float ReleaseStopThreshold = 0.001f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnPlayer()
@@ -22,7 +37,11 @@ namespace Project.Features.Jetpack
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                player = GameObject.Find("Player_v7 Variant");
+            if (player == null)
+                player = GameObject.Find("Player_v7");
             if (player == null || player.GetComponent<DMJetpackThrusterAudio>() != null)
                 return;
 
@@ -36,50 +55,164 @@ namespace Project.Features.Jetpack
             if (profile == null && jetpack != null)
                 profile = jetpack.Profile;
 
-            layer1Source = EnsureSource(layer1Source, "ThrusterLayer1");
-            layer2Source = EnsureSource(layer2Source, "ThrusterLayer2");
+            ResolveThrusterAnchor();
+            layer1Source = EnsureSource(layer1Source, "ThrusterLayer1", ResolveEngineMount(0), loop: true);
+            layer2Source = EnsureSource(layer2Source, "ThrusterLayer2", ResolveEngineMount(1), loop: true);
+            igniteSource = EnsureSource(igniteSource, "ThrusterIgnite", ResolveEngineMount(0), loop: false);
         }
 
         private void OnDisable()
         {
-            Stop(layer1Source);
-            Stop(layer2Source);
+            HardStop();
         }
 
         private void Update()
         {
-            float target = 0f;
-            if (jetpack != null && Time.timeScale > 0f)
-                target = Mathf.Clamp01(jetpack.CurrentThrustVisual);
+            if (jetpack == null || !GameSession.HasStarted || Time.timeScale <= 0f)
+            {
+                HardStop();
+                return;
+            }
 
-            float smooth = profile != null ? profile.thrusterAudioSmooth : 0.12f;
-            _smoothed = Mathf.SmoothDamp(_smoothed, target, ref _velocity, smooth);
+            bool thrusting = IsThrusterEngaged();
+            if (thrusting && !_wasThrusting)
+            {
+                _releaseFading = false;
+                PlayIgnitePop();
+            }
 
+            if (!thrusting && _wasThrusting)
+            {
+                Stop(igniteSource);
+                BeginReleaseFade();
+            }
+
+            _wasThrusting = thrusting;
+
+            if (thrusting)
+            {
+                _releaseFading = false;
+                float target = Mathf.Clamp01(jetpack.CurrentThrustVisual);
+                float smooth = profile != null ? profile.thrusterAudioSmooth : 0.12f;
+                _smoothed = Mathf.SmoothDamp(_smoothed, target, ref _velocity, smooth);
+            }
+            else if (_releaseFading)
+            {
+                float duration = Mathf.Max(0.05f, profile != null
+                    ? profile.thrusterAudioReleaseSeconds
+                    : DefaultReleaseSeconds);
+                _releaseElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(_releaseElapsed / duration);
+                _smoothed = _releaseFrom * (1f - t);
+                _velocity = 0f;
+                if (t >= 1f || _smoothed <= ReleaseStopThreshold)
+                {
+                    HardStop();
+                    return;
+                }
+            }
+            else
+            {
+                HardStop();
+                return;
+            }
+
+            float master = GameSettings.MasterVolume * GameSettings.SfxVolume;
             AudioClip clip1 = ResolveLayer1();
             AudioClip clip2 = ResolveLayer2();
-            TickLayer(layer1Source, clip1, Layer1Volume(), Layer1Pitch(), _smoothed);
-            TickLayer(layer2Source, clip2, Layer2Volume(), Layer2Pitch(), Layer2Mix());
+            TickLayer(layer1Source, clip1, Layer1Volume() * master, Layer1Pitch(), _smoothed, _releaseFading);
+            TickLayer(layer2Source, clip2, Layer2Volume() * master, Layer2Pitch(), Layer2Mix(), _releaseFading);
         }
 
-        private float Layer1Volume()
+        private void PlayIgnitePop()
         {
-            return profile != null ? profile.thrusterLayer1Volume : 0.55f;
+            AudioClip clip = ResolveLayer2() ?? ResolveLayer1();
+            if (clip == null || igniteSource == null)
+                return;
+
+            float master = GameSettings.MasterVolume * GameSettings.SfxVolume;
+            igniteSource.clip = clip;
+            igniteSource.loop = false;
+            igniteSource.volume = (profile != null ? profile.thrusterLayer2Volume : 0.4f) * master * 0.65f;
+            igniteSource.pitch = 1f;
+            igniteSource.Play();
+            igniteSource.SetScheduledEndTime(AudioSettings.dspTime + IgniteSeconds);
         }
 
-        private Vector2 Layer1Pitch()
+        private void HardStop()
         {
-            return profile != null ? profile.thrusterLayer1Pitch : new Vector2(0.92f, 1.04f);
+            Stop(layer1Source);
+            Stop(layer2Source);
+            Stop(igniteSource);
+            _smoothed = 0f;
+            _velocity = 0f;
+            _wasThrusting = false;
+            _releaseFading = false;
+            _releaseFrom = 0f;
+            _releaseElapsed = 0f;
         }
 
-        private float Layer2Volume()
+        private bool IsThrusterEngaged()
         {
-            return profile != null ? profile.thrusterLayer2Volume : 0.4f;
+            if (!jetpack.IsBoostingNow)
+                return false;
+
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.isPressed)
+                return true;
+
+            Gamepad pad = Gamepad.current;
+            return pad != null && pad.buttonSouth.isPressed;
         }
 
-        private Vector2 Layer2Pitch()
+        private void BeginReleaseFade()
         {
-            return profile != null ? profile.thrusterLayer2Pitch : new Vector2(0.98f, 1.12f);
+            _releaseFading = true;
+            _releaseElapsed = 0f;
+            _releaseFrom = Mathf.Max(_smoothed, 0.18f);
+            _smoothed = _releaseFrom;
+            _velocity = 0f;
         }
+
+        private void ResolveThrusterAnchor()
+        {
+            if (thrusterAnchor != null)
+                return;
+
+            Transform spine = transform.Find("Spine2") ?? transform.Find("Spine02");
+            if (spine != null)
+                thrusterAnchor = spine.Find("DM_Jetpack");
+
+            if (thrusterAnchor == null)
+            {
+                DMJetpackThrusterVfx vfx = GetComponentInChildren<DMJetpackThrusterVfx>(true);
+                if (vfx != null)
+                    thrusterAnchor = vfx.transform;
+            }
+        }
+
+        private Transform ResolveEngineMount(int index)
+        {
+            if (thrusterAnchor == null)
+                ResolveThrusterAnchor();
+
+            if (thrusterAnchor == null)
+                return null;
+
+            Transform left = thrusterAnchor.Find("Engine_L");
+            Transform right = thrusterAnchor.Find("Engine_R");
+            if (index == 0)
+                return left != null ? left : thrusterAnchor;
+            return right != null ? right : thrusterAnchor;
+        }
+
+        private float Layer1Volume() => profile != null ? profile.thrusterLayer1Volume : 0.55f;
+
+        private Vector2 Layer1Pitch() => profile != null ? profile.thrusterLayer1Pitch : new Vector2(0.92f, 1.04f);
+
+        private float Layer2Volume() => profile != null ? profile.thrusterLayer2Volume : 0.4f;
+
+        private Vector2 Layer2Pitch() => profile != null ? profile.thrusterLayer2Pitch : new Vector2(0.98f, 1.12f);
 
         private float Layer2Mix()
         {
@@ -103,9 +236,15 @@ namespace Project.Features.Jetpack
             return Resources.Load<AudioClip>(Layer2Resource);
         }
 
-        private void TickLayer(AudioSource source, AudioClip clip, float volume, Vector2 pitch, float mix)
+        private void TickLayer(
+            AudioSource source,
+            AudioClip clip,
+            float volume,
+            Vector2 pitch,
+            float mix,
+            bool releasing)
         {
-            if (source == null || clip == null || mix <= 0.01f)
+            if (!GameplayAudioUtility.CanPlaySpatialSource(source) || clip == null || mix <= ReleaseStopThreshold)
             {
                 Stop(source);
                 return;
@@ -115,7 +254,9 @@ namespace Project.Features.Jetpack
                 source.clip = clip;
 
             float flutter = Mathf.Sin(Time.unscaledTime * 9.3f) * 0.018f * mix;
-            source.volume = volume * Mathf.Lerp(0.18f, 1f, mix);
+            source.volume = releasing
+                ? volume * mix
+                : volume * Mathf.Lerp(0.18f, 1f, mix);
             source.pitch = Mathf.Lerp(pitch.x, pitch.y, mix) + flutter;
 
             if (!source.isPlaying)
@@ -128,28 +269,34 @@ namespace Project.Features.Jetpack
                 source.Stop();
         }
 
-        private AudioSource EnsureSource(AudioSource existing, string childName)
+        private AudioSource EnsureSource(AudioSource existing, string childName, Transform anchor, bool loop)
         {
             if (existing != null)
+            {
+                ConfigureSource(existing, loop);
                 return existing;
+            }
 
-            Transform child = transform.Find(childName);
+            Transform parent = anchor != null ? anchor : transform;
+            Transform child = parent.Find(childName);
             AudioSource source = child != null ? child.GetComponent<AudioSource>() : null;
             if (source == null)
             {
                 GameObject go = new GameObject(childName);
-                go.transform.SetParent(transform, false);
+                go.transform.SetParent(parent, false);
                 source = go.AddComponent<AudioSource>();
             }
 
-            source.playOnAwake = false;
-            source.loop = true;
-            source.spatialBlend = 1f;
-            source.minDistance = 2f;
-            source.maxDistance = 28f;
-            source.rolloffMode = AudioRolloffMode.Logarithmic;
-            source.dopplerLevel = 0.15f;
+            ConfigureSource(source, loop);
             return source;
+        }
+
+        private static void ConfigureSource(AudioSource source, bool loop)
+        {
+            source.playOnAwake = false;
+            source.loop = loop;
+            source.dopplerLevel = 0.15f;
+            GameplayAudioUtility.ConfigureWorldSpatialSource(source, 2f, 28f);
         }
     }
 }

@@ -1,0 +1,89 @@
+fileFormatVersion: 2
+guid: 7ddfb879318dfe541a6d35a6dfbe32ff
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: EQP_Crane_Cables
+    100002: EQP_Crane_GirderLatr
+    100004: EQP_Crane_HookBox
+    100006: EQP_Crane_MetalStructure
+    100008: //RootNode
+    400000: EQP_Crane_Cables
+    400002: EQP_Crane_GirderLatr
+    400004: EQP_Crane_HookBox
+    400006: EQP_Crane_MetalStructure
+    400008: //RootNode
+    2300000: EQP_Crane_Cables
+    2300002: EQP_Crane_GirderLatr
+    2300004: EQP_Crane_HookBox
+    2300006: EQP_Crane_MetalStructure
+    2300008: //RootNode
+    3300000: EQP_Crane_Cables
+    3300002: EQP_Crane_GirderLatr
+    3300004: EQP_Crane_HookBox
+    3300006: EQP_Crane_MetalStructure
+    3300008: //RootNode
+    4300000: EQP_Crane_GirderLongt
+    4300002: EQP_Crane_GirderLatr
+    4300004: EQP_Crane_MetalStructure
+    4300006: EQP_Crane_HookBox
+    4300008: EQP_Crane_Cables
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 1
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

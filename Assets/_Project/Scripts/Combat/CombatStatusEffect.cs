@@ -25,29 +25,62 @@ namespace Project.Combat
         /// </summary>
         public static void Apply(ItemData ammoItem, GameObject target, GameObject source)
         {
+            Apply(ammoItem, target, source, 1f, false, 0f);
+        }
+
+        /// <param name="durationScale">Ordinance Hot Residue / Persistent Hazard duration multiplier.</param>
+        /// <param name="forceBurningIfNone">Hot Residue: apply a short Burning residue when the ammo has no DOT.</param>
+        /// <param name="residueTickFallback">Tick damage used when forcing Burning and the ammo has no tick value.</param>
+        public static void Apply(
+            ItemData ammoItem,
+            GameObject target,
+            GameObject source,
+            float durationScale,
+            bool forceBurningIfNone,
+            float residueTickFallback)
+        {
             if (target == null || ammoItem == null)
                 return;
 
             ApplyResonanceStabilizer(ammoItem.ammoType, target, source);
 
-            if (!ammoItem.HasStatusEffect)
-                return;
+            StatusEffectType type = ammoItem.ResolveStatusEffect();
+            float duration = ammoItem.statusEffectDuration;
+            float tick = ammoItem.statusEffectDamagePerTick;
+            float interval = ammoItem.statusEffectTickInterval;
+            GameObject vfx = ammoItem.statusEffectVfxPrefab;
 
-            IDamageable damageable = DamageableUtility.GetDamageable(target.GetComponent<Collider>());
+            if (type == StatusEffectType.None || duration <= 0f)
+            {
+                if (!forceBurningIfNone)
+                    return;
+
+                type = StatusEffectType.Burning;
+                duration = duration > 0f ? duration : 3f;
+                tick = tick > 0f ? tick : Mathf.Max(3f, residueTickFallback);
+                interval = interval > 0.05f ? interval : 0.75f;
+                vfx = null;
+            }
+
+            Collider targetCollider = target.GetComponent<Collider>();
+            if (targetCollider == null)
+                targetCollider = target.GetComponentInParent<Collider>();
+            if (targetCollider == null)
+                targetCollider = target.GetComponentInChildren<Collider>();
+
+            IDamageable damageable = DamageableUtility.GetDamageable(targetCollider);
             MonoBehaviour damageableBehaviour = damageable as MonoBehaviour;
             if (damageableBehaviour == null)
                 return;
 
-            GameObject targetRoot = damageableBehaviour.gameObject;
-
             CombatStatusEffectController.Apply(
-                targetRoot,
-                ammoItem.ResolveStatusEffect(),
-                ammoItem.statusEffectDamagePerTick,
-                ammoItem.statusEffectTickInterval,
-                ammoItem.statusEffectDuration,
+                damageableBehaviour.gameObject,
+                type,
+                tick,
+                interval,
+                duration * Mathf.Max(0.05f, durationScale),
                 source,
-                ammoItem.statusEffectVfxPrefab);
+                vfx);
         }
 
         private static void ApplyResonanceStabilizer(AmmoType ammoType, GameObject target, GameObject source)

@@ -1,0 +1,100 @@
+fileFormatVersion: 2
+guid: bb44c4c59f80f144895eb8ca7975efe1
+timeCreated: 1427789406
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Object672
+    100004: OCCLUSION BLOCKER NarrowRoom 1
+    100006: OCCLUSION BLOCKER NarrowRoom2
+    100008: OCCLUSION BLOCKER NarrowRoom4
+    100010: OCCLUSION BLOCKER NarrowRoom5
+    100012: OCCLUSION BLOCKER NarrowRoom6
+    400000: //RootNode
+    400002: Object672
+    400004: OCCLUSION BLOCKER NarrowRoom 1
+    400006: OCCLUSION BLOCKER NarrowRoom2
+    400008: OCCLUSION BLOCKER NarrowRoom4
+    400010: OCCLUSION BLOCKER NarrowRoom5
+    400012: OCCLUSION BLOCKER NarrowRoom6
+    2300000: //RootNode
+    2300002: Object672
+    2300004: OCCLUSION BLOCKER NarrowRoom 1
+    2300006: OCCLUSION BLOCKER NarrowRoom2
+    2300008: OCCLUSION BLOCKER NarrowRoom4
+    2300010: OCCLUSION BLOCKER NarrowRoom5
+    2300012: OCCLUSION BLOCKER NarrowRoom6
+    3300000: //RootNode
+    3300002: Object672
+    3300004: OCCLUSION BLOCKER NarrowRoom 1
+    3300006: OCCLUSION BLOCKER NarrowRoom2
+    3300008: OCCLUSION BLOCKER NarrowRoom4
+    3300010: OCCLUSION BLOCKER NarrowRoom5
+    3300012: OCCLUSION BLOCKER NarrowRoom6
+    4300000: OCCLUSION BLOCKER NarrowRoom
+    4300002: OCCLUSION BLOCKER NarrowRoom6
+    4300004: OCCLUSION BLOCKER NarrowRoom2
+    4300006: Object672
+    4300008: OCCLUSION BLOCKER NarrowRoom4
+    4300010: OCCLUSION BLOCKER NarrowRoom5
+    4300012: OCCLUSION BLOCKER NarrowRoom
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

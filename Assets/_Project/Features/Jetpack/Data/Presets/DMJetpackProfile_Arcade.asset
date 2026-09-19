@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: DMJetpackProfile_Arcade
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
   maxBoostSeconds: 6
+  fullThrustEndSeconds: 4.5
   releaseRegenBonusSeconds: 0.75
   regenSecondsPerSecond: 0.5
   energyDrainPerSecond: 10
-  fullThrustEndSeconds: 4.5
   upwardThrustForce: 11
   descendForce: 5
   descendInputThreshold: 0.25
@@ -40,6 +40,7 @@ MonoBehaviour:
   animLeanStrength: 0.1
   animInputDeadzone: 0.06
   flyAnimSpeed: 1.15
+  animStrafeThreshold: 0.5
   landCrossFadeSeconds: 0.08
   thrusterAlphaMin: 0.15
   thrusterAlphaMax: 1
@@ -51,6 +52,7 @@ MonoBehaviour:
   particleSpeedMultiplier: 1
   particleLifetimeMultiplier: 0.9
   thrusterAudioSmooth: 0.12
+  thrusterAudioReleaseSeconds: 2
   thrusterLayer1: {fileID: 8300000, guid: 37946e82a3e82214a818fcec01f8fcb7, type: 3}
   thrusterLayer1Volume: 0.55
   thrusterLayer1Pitch: {x: 0.92, y: 1.04}

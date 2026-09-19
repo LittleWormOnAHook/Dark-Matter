@@ -1,0 +1,101 @@
+fileFormatVersion: 2
+guid: 77874b24c1d99b64aba9161af7537f5b
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: FLO_Stairs_ToLeft_Banister010
+    100002: Object566
+    100004: STEP077
+    100006: STEP078
+    100008: STEP081
+    100010: //RootNode
+    100012: FLO_Walkway_Open_5m_Banister
+    100014: FLO_Walkway_Open_5m_Plates
+    400000: FLO_Stairs_ToLeft_Banister010
+    400002: Object566
+    400004: STEP077
+    400006: STEP078
+    400008: STEP081
+    400010: //RootNode
+    400012: FLO_Walkway_Open_5m_Banister
+    400014: FLO_Walkway_Open_5m_Plates
+    2300000: FLO_Stairs_ToLeft_Banister010
+    2300002: Object566
+    2300004: STEP077
+    2300006: STEP078
+    2300008: STEP081
+    2300010: FLO_Walkway_Open_5m_Banister
+    2300012: FLO_Walkway_Open_5m_Plates
+    3300000: FLO_Stairs_ToLeft_Banister010
+    3300002: Object566
+    3300004: STEP077
+    3300006: STEP078
+    3300008: STEP081
+    3300010: FLO_Walkway_Open_5m_Banister
+    3300012: FLO_Walkway_Open_5m_Plates
+    4300000: STEP077
+    4300002: Object566
+    4300004: STEP078
+    4300006: STEP081
+    4300008: FLO_Stairs_ToLeft_Banister010
+    4300010: FLO_Walkway_Open_5m_Plates
+    4300012: FLO_Walkway_Open_5m_Banister
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -37,13 +37,17 @@ namespace Project.Features.Jetpack
                 referenceCamera = Camera.main;
         }
 
+        private void Update()
+        {
+            PollBoostHeld();
+        }
+
         private void FixedUpdate()
         {
             if (jetpack == null)
                 return;
 
-            _spaceHeld = ReadBoostHeld();
-            jetpack.SetBoostHeld(_spaceHeld);
+            PollBoostHeld();
 
             if (referenceCamera == null)
                 referenceCamera = Camera.main;
@@ -61,6 +65,15 @@ namespace Project.Features.Jetpack
                 return false;
 
             return jetpack.TryIgniteBoostOnJumpPress();
+        }
+
+        private void PollBoostHeld()
+        {
+            if (jetpack == null)
+                return;
+
+            _spaceHeld = ReadBoostHeld();
+            jetpack.SetBoostHeld(_spaceHeld);
         }
 
         private static bool ReadJumpPressedThisFrame()

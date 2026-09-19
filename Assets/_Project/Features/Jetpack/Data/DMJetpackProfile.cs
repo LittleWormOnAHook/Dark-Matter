@@ -80,6 +80,10 @@ namespace Project.Features.Jetpack
         [Tooltip("How quickly volume/pitch catch thrust.")]
         [Range(0.02f, 0.4f)] public float thrusterAudioSmooth = 0.12f;
 
+        [Tooltip("SmoothDamp time when thrust ends — loop layers fade out over roughly this many seconds.")]
+        [Min(0.1f)]
+        public float thrusterAudioReleaseSeconds = 1f;
+
         [Header("Thruster Audio / Layer 1 (Rumble)")]
         public AudioClip thrusterLayer1;
         [Range(0f, 1f)] public float thrusterLayer1Volume = 0.55f;

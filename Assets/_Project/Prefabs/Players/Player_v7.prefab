@@ -50,6 +50,7 @@ GameObject:
   - component: {fileID: 7793681219969741252}
   - component: {fileID: 754828478837318317}
   - component: {fileID: 4237150036290553038}
+  - component: {fileID: 6076415076473324485}
   m_Layer: 8
   m_Name: Player_v7
   m_TagString: Player
@@ -216,7 +217,7 @@ MonoBehaviour:
   _speedMultiplier: 1
   rotateByWorld: 0
   moveForwardInFree: 0
-  _locomotionType: 1
+  _locomotionType: 0
   freeSpeed:
     movementSmooth: 6
     animationSmooth: 0.2
@@ -1356,6 +1357,8 @@ MonoBehaviour:
   maxStamina: 100
   maxOxygen: 4000
   energyDrain: 0.2
+  toolEnergyDrainPerSecond: 0.5
+  handCraftEnergyPerItem: 0.5
   oxygenDrainPerSecond: 1
   staminaRegenPerSecond: 12
   sprintStaminaDrainPerSecond: 12
@@ -2045,10 +2048,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae55537ebf25e76418e2705fe8747c4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.Invector.PioneerInvectorAmmoBridge
-  emptyReloadDenyClip: {fileID: 0}
-  emptyReloadDenyVolume: 0.85
-  emptyReloadHeadShakeTrauma: 0.28
-  emptyReloadDenyCooldown: 0.55
+  emptyMagCameraShakeTrauma: 0.07
+  reloadPromptCooldown: 0.55
   sharedEmptyClickClip: {fileID: 0}
   emptyClickVolume: 0.9
   emptyClickCooldown: 0.18
@@ -2234,6 +2235,20 @@ MonoBehaviour:
   profile: {fileID: 11400000, guid: f8a3c2e1b4d5678901234567890abcde, type: 2}
   motor: {fileID: 11476208}
   animator: {fileID: 9599192}
+--- !u!114 &6076415076473324485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa0ae87384b5a0c4599fe7db7dee8b33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Rendering.DMRuntimeHierarchyMaterialInstancer
+  includeInactive: 1
+  skipParticleRenderers: 1
 --- !u!1 &116780
 GameObject:
   m_ObjectHideFlags: 0

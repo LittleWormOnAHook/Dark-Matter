@@ -27,7 +27,13 @@ namespace Project.Progression
         OxygenScrubberPercent,
         DashClimbUnlock,
         DashStaminaTickReductionPercent,
-        DashCooldownPercent
+        DashCooldownPercent,
+        SplashRadiusPercent,
+        SplashDamagePercent,
+        SplashDotDurationPercent,
+        SplashOverpressurePercent,
+        SplashClusterPulsePercent,
+        SplashCloudDurationPercent
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>
@@ -50,6 +56,12 @@ namespace Project.Progression
     {
         public const string MiningSkillId = "skill_mining";
         public const string HarvestingSkillId = "skill_harvesting";
+        public const string BlastRadiusSkillId = "skill_blast_radius";
+        public const string HeavyPayloadSkillId = "skill_heavy_payload";
+        public const string HotResidueSkillId = "skill_hot_residue";
+        public const string OverpressureSkillId = "skill_overpressure";
+        public const string ClusterMunitionsSkillId = "skill_cluster_munitions";
+        public const string PersistentHazardSkillId = "skill_persistent_hazard";
         public const int DisplayMaxRank = 5;
 
         [Header("Identity")]

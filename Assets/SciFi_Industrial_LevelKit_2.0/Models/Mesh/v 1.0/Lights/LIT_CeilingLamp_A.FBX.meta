@@ -1,0 +1,99 @@
+fileFormatVersion: 2
+guid: 71d0d6880e6d8034fb9fcea9d101f168
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Cylinder086
+    100002: Cylinder087
+    100004: Cylinder088
+    100006: Cylinder089
+    100008: //RootNode
+    100010: Object578
+    100012: Object584
+    400000: Cylinder086
+    400002: Cylinder087
+    400004: Cylinder088
+    400006: Cylinder089
+    400008: //RootNode
+    400010: Object578
+    400012: Object584
+    2300000: Cylinder086
+    2300002: Cylinder087
+    2300004: Cylinder088
+    2300006: Cylinder089
+    2300008: Object578
+    2300010: Object584
+    2300012: //RootNode
+    3300000: Cylinder086
+    3300002: Cylinder087
+    3300004: Cylinder088
+    3300006: Cylinder089
+    3300008: Object578
+    3300010: Object584
+    3300012: //RootNode
+    4300000: Object578
+    4300002: Object584
+    4300004: Cylinder089
+    4300006: Cylinder087
+    4300008: Cylinder086
+    4300010: Cylinder088
+    4300012: LIT_CeilingLamp_A
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

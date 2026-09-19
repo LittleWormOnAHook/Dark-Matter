@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Data;
+using UnityEngine;
 
 namespace Project.Progression
 {
@@ -176,6 +177,52 @@ namespace Project.Progression
         /// <summary>+% weapon accuracy from skill ranks (WeaponAccuracyPercent).</summary>
         public static float GetWeaponAccuracyBonusPercent() =>
             GetTotalBonusPercent(SkillModifierType.WeaponAccuracyPercent);
+
+        public static int GetSkillRank(string skillId)
+        {
+            if (string.IsNullOrEmpty(skillId))
+                return 0;
+
+            PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
+            return progression != null ? progression.GetSkillRank(skillId) : 0;
+        }
+
+        /// <summary>Splash / explosive trigger-bubble radius multiplier from ordinance skills.</summary>
+        public static float GetSplashRadiusMultiplier()
+        {
+            float radius = 1f + GetTotalBonusPercent(SkillModifierType.SplashRadiusPercent) * 0.01f;
+            radius *= 1f + GetTotalBonusPercent(SkillModifierType.SplashOverpressurePercent) * 0.01f;
+            return Mathf.Max(0.05f, radius);
+        }
+
+        /// <summary>Splash / explosive payload multiplier from ordinance skills.</summary>
+        public static float GetSplashDamageMultiplier()
+        {
+            float damage = 1f + GetTotalBonusPercent(SkillModifierType.SplashDamagePercent) * 0.01f;
+            damage *= 1f + GetTotalBonusPercent(SkillModifierType.SplashOverpressurePercent) * 0.01f;
+            return Mathf.Max(0.05f, damage);
+        }
+
+        /// <summary>Splash DOT duration multiplier from Hot Residue / Persistent Hazard.</summary>
+        public static float GetSplashDotDurationMultiplier() =>
+            Mathf.Max(0.05f, 1f + GetTotalBonusPercent(SkillModifierType.SplashDotDurationPercent) * 0.01f);
+
+        public static bool HasHotResidue() =>
+            GetSkillRank(SkillDefinition.HotResidueSkillId) > 0;
+
+        public static bool HasClusterMunitions() =>
+            GetSkillRank(SkillDefinition.ClusterMunitionsSkillId) > 0;
+
+        public static bool HasPersistentHazard() =>
+            GetSkillRank(SkillDefinition.PersistentHazardSkillId) > 0;
+
+        /// <summary>Second-pulse damage scale. Base 48% of the first blast, plus Cluster ranks.</summary>
+        public static float GetClusterPulseDamageScale() =>
+            0.48f * (1f + GetTotalBonusPercent(SkillModifierType.SplashClusterPulsePercent) * 0.01f);
+
+        /// <summary>Lingering hazard seconds. Base 2s, scaled by Persistent Hazard ranks.</summary>
+        public static float GetPersistentHazardDuration() =>
+            2f * (1f + GetTotalBonusPercent(SkillModifierType.SplashCloudDurationPercent) * 0.01f);
 
         /// <summary>Level-based weapon damage multiplier (+3%/level), applied on top of the flat skill bonus.</summary>
         public static float GetLevelWeaponDamageMultiplier()

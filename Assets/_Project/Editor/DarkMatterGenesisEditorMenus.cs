@@ -7,7 +7,17 @@ namespace Project.EditorTools
     {
         public const string Root = "Tools/Dark Matter Genesis/";
         public const string ToolsWindow = Root + "Tools Window";
+        public const string KeepProfilesAfterPlay = Root + "Keep Profiles After Play";
         public const string Climb = Root + "Climb/";
+        public const string Jetpack = Root + "Jetpack/";
+        public const string JetpackPresets = Jetpack + "Presets/";
+        public const string Player = Root + "Player/";
+        public const string Companions = Root + "Companions/";
+        public const string World = Root + "World/";
+        public const string WorldGaia = World + "Gaia/";
+        public const string Scanner = Root + "Scanner/";
+        public const string Debug = Root + "Debug/";
+        public const string Diagnostics = Root + "Diagnostics/";
 
         public const string PrefabCreator = Root + "Prefab Creator/";
 
@@ -73,6 +83,8 @@ namespace Project.EditorTools
         public const string CombatAnimations = Combat + "Animations/";
         public const string RebuildEnemyControllerFromShooterMelee = CombatAnimations + "Rebuild Selected Controller from ShooterMelee Base";
         public const string RepairAllHumanoidCombatPrefabs = Combat + "Repair All Humanoid Combat Prefabs";
+        public const string RepairCompanionEchoHumanoidAnims =
+            Combat + "Repair Companion And Echo Humanoid Anims (Player_v7)";
         public const string AddWeaponHitboxToSelectedPrefab = Combat + "Add Weapon Hitbox To Selected Prefab";
         public const string RefreshAllWeaponHitboxes = Combat + "Refresh All Weapon Hitboxes";
         public const string Equipment = Root + "Equipment/";
@@ -84,11 +96,14 @@ namespace Project.EditorTools
         public const string ResetInvectorWeaponGrips = InvectorWeaponGrip + "Reset Grips On Selected Item";
         public const string OpenInvectorWeaponGripWindow = InvectorWeaponGrip + "Grip Bake Window";
         public const string Ui = Root + "UI/";
+        public const string UiGameIcons = Ui + "Game Icons/";
+        public const string UiHotCross = Ui + "Hot Cross/";
         public const string Scene = Root + "Scene/";
         public const string Ppt = Root + "PPT/";
+        public const string PlayableScene = "Assets/_Project/Scenes/Dark Matter Genesis v1.6.3.1.unity";
         public const string RefreshAllMapMarkers = Scene + "Refresh All Map Markers";
         public const string PlaceExposureStarterKit = Scene + "Place Exposure Starter Kit (Open Scene)";
-        public const string PlaceExposureStarterKitInPioneer = Scene + "Place Exposure Starter Kit In Pioneer.unity";
+        public const string PlaceExposureStarterKitInPioneer = Scene + "Place Exposure Starter Kit In Playable Scene";
         public const string Audio = Root + "Audio/";
         public const string Optics = Root + "Optics/";
         public const string Maintenance = Root + "Maintenance/";
@@ -102,5 +117,37 @@ namespace Project.EditorTools
         public const string PlayModeSaverWindow = PlayModeSaver + "Open Window";
         public const string PlayModeSaverSaveNow = PlayModeSaver + "Save Now %#s";
         public const string PlayModeSaverSaveAndExit = PlayModeSaver + "Save And Exit Play Mode %#&s";
+
+        public const string ClimbProbeBaker = Climb + "Probe Baker";
+        public const string SyncGaiaTerrainNavMesh = WorldGaia + "Sync NavMesh Surfaces To Gaia Terrains";
+        public const string BindGaiaTerrainScenes = WorldGaia + "Bind DM Genesis Terrain Scenes";
+        public const string BindPlayerTerrainLoader = WorldGaia + "Bind Player_v7 Terrain Loader";
+        public const string RemoveStamperTerrainLayers = WorldGaia + "Remove Stamper Terrain Layers";
+        public const string RebuildSplatmapsFromHeight = WorldGaia + "Rebuild Splatmaps From Height (Like Gaia)";
+        public const string StripTreesFromAllTerrains = WorldGaia + "Strip Trees From All Terrains";
+        public const string SetPixelError25OnAllTerrains = WorldGaia + "Set Pixel Error 25 On All Terrains";
+        public const string StitchCenterTileSplatEdges = WorldGaia + "Stitch Center Tile Splat Edges";
+        public const string CreateTerrainContentScenes = WorldGaia + "Create Terrain Content Scenes";
+        public const string EditorFourTerrainsAndImpostors = WorldGaia + "Editor: 4 Terrains + Impostors";
+        public const string BakeTlmImpostors = WorldGaia + "Bake TLM Impostors";
+        public const string BakeBorderFence = World + "Bake Border Fence";
+        public const string SetupWalkerDrillInScene = World + "Setup Walker Drill In Scene";
+        public const string BuildWalkerDrillAnimatorController = World + "Build Walker Drill Animator Controller";
+        public const string SaveWalkerDrillPrefab = World + "Save Walker Drill Prefab";
+        public const string BuildLaserBurnMarkPrefab = Combat + "Build Laser Burn Mark Prefab";
+        public const string AuditConsole = Diagnostics + "Audit Console";
+        public const string AuditResourcesPaths = Diagnostics + "Audit Resources Paths";
+        public const string DebugToggleSulfurCrisisHud = Debug + "Toggle Sulfur Crisis HUD";
+        public const string DebugShowEchoRescueReveal = Debug + "Show Echo Rescue Reveal (Test)";
+        public const string DebugSpawnTestEchoSignal = Debug + "Spawn Test Echo Signal";
+        public const string DebugRefreshExpeditionTrio = Debug + "Refresh Expedition Trio Companions";
+        public const string ImportGameIconsAsSprites = UiGameIcons + "Import as Sprites";
+        public const string RewireItemAndRecipeIcons = UiGameIcons + "Rewire Item + Recipe Icons";
+        public const string ImportHotCrossIconsAsSprites = UiHotCross + "Import Cutout Icons as Sprites";
+        public const string RebuildHotCrossIconRegistry = UiHotCross + "Rebuild Icon Registry";
+        public const string ReimportCompanionPortraitTextures = Companions + "Reimport Portrait Textures";
+        public const string AssignPioneerPortraits = Companions + "Assign Pioneer Portraits";
+        public const string CreateDefaultScannerHighlightProfile = Scanner + "Create Default Highlight Profile";
+        public const string RemoveInvectorHiveInstances = Scene + "Remove Invector Hive Instances";
     }
 }

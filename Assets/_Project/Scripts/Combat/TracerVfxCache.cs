@@ -16,6 +16,7 @@ namespace Project.Combat
         public MonoBehaviour[] Behaviours { get; private set; }
         public Transform[] Transforms { get; private set; }
         public bool DriversDisabled { get; private set; }
+        public bool VendorAutoReleaseDisabled { get; private set; }
         public bool OffsetsFlattened { get; private set; }
 
         public void EnsureCached()
@@ -32,6 +33,7 @@ namespace Project.Combat
         }
 
         public void MarkDriversDisabled() => DriversDisabled = true;
+        public void MarkVendorAutoReleaseDisabled() => VendorAutoReleaseDisabled = true;
         public void MarkOffsetsFlattened() => OffsetsFlattened = true;
     }
 }

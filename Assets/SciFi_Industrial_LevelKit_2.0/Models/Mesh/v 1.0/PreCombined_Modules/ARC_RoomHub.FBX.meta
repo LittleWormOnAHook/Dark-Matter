@@ -1,0 +1,122 @@
+fileFormatVersion: 2
+guid: f1097cb7b137ac844be9d8e24988dcce
+timeCreated: 1427730106
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: ARC_RoomHub_Ceiling
+    100004: ARC_RoomHub_Floor
+    100006: ARC_RoomHub_Walls
+    100008: ARC_RoomHub_Ceiling1
+    100010: ARC_RoomHub_Ceiling2
+    100012: ARC_RoomHub_Walls1
+    100014: ARC_RoomHub_Walls2
+    100016: ARC_RoomHub_Walls3
+    100018: ARC_RoomHub_Walls4
+    100020: ARC_RoomHub_Walls5
+    100022: ARC_RoomHub_Walls6
+    400000: //RootNode
+    400002: ARC_RoomHub_Ceiling
+    400004: ARC_RoomHub_Floor
+    400006: ARC_RoomHub_Walls
+    400008: ARC_RoomHub_Ceiling1
+    400010: ARC_RoomHub_Ceiling2
+    400012: ARC_RoomHub_Walls1
+    400014: ARC_RoomHub_Walls2
+    400016: ARC_RoomHub_Walls3
+    400018: ARC_RoomHub_Walls4
+    400020: ARC_RoomHub_Walls5
+    400022: ARC_RoomHub_Walls6
+    2300000: ARC_RoomHub_Ceiling
+    2300002: ARC_RoomHub_Floor
+    2300004: ARC_RoomHub_Walls
+    2300006: ARC_RoomHub_Ceiling1
+    2300008: ARC_RoomHub_Ceiling2
+    2300010: ARC_RoomHub_Walls1
+    2300012: ARC_RoomHub_Walls2
+    2300014: ARC_RoomHub_Walls3
+    2300016: ARC_RoomHub_Walls4
+    2300018: ARC_RoomHub_Walls5
+    2300020: ARC_RoomHub_Walls6
+    3300000: ARC_RoomHub_Ceiling
+    3300002: ARC_RoomHub_Floor
+    3300004: ARC_RoomHub_Walls
+    3300006: ARC_RoomHub_Ceiling1
+    3300008: ARC_RoomHub_Ceiling2
+    3300010: ARC_RoomHub_Walls1
+    3300012: ARC_RoomHub_Walls2
+    3300014: ARC_RoomHub_Walls3
+    3300016: ARC_RoomHub_Walls4
+    3300018: ARC_RoomHub_Walls5
+    3300020: ARC_RoomHub_Walls6
+    4300000: ARC_RoomHub_Ceiling
+    4300002: ARC_RoomHub_Floor
+    4300004: ARC_RoomHub_Walls
+    4300006: ARC_RoomHub_Ceiling1
+    4300008: ARC_RoomHub_Walls1
+    4300010: ARC_RoomHub_Ceiling2
+    4300012: ARC_RoomHub_Walls6
+    4300014: ARC_RoomHub_Walls5
+    4300016: ARC_RoomHub_Walls4
+    4300018: ARC_RoomHub_Walls3
+    4300020: ARC_RoomHub_Walls2
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 1
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

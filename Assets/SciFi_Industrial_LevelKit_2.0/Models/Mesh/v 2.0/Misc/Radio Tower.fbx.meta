@@ -1,0 +1,154 @@
+fileFormatVersion: 2
+guid: 4d13f8f0c7c1b3b42b3594e4fc130226
+timeCreated: 1518007451
+licenseType: Store
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: Antenna Frame
+    100002: Antennae Box
+    100004: Base
+    100006: Box Holder
+    100008: Disc A
+    100010: Disc Arm
+    100012: Disc B
+    100014: Girders_00
+    100016: Girders_01
+    100018: Girders_02
+    100020: Girders_03
+    100022: //RootNode
+    100024: Red lights
+    400000: Antenna Frame
+    400002: Antennae Box
+    400004: Base
+    400006: Box Holder
+    400008: Disc A
+    400010: Disc Arm
+    400012: Disc B
+    400014: Girders_00
+    400016: Girders_01
+    400018: Girders_02
+    400020: Girders_03
+    400022: //RootNode
+    400024: Red lights
+    2100000: SCF_Cutouts
+    2100002: SCF_CraneSystem
+    2100004: SCF_Floors
+    2100006: No Name
+    2100008: SCF_Panels
+    2300000: Antenna Frame
+    2300002: Antennae Box
+    2300004: Base
+    2300006: Box Holder
+    2300008: Disc A
+    2300010: Disc Arm
+    2300012: Disc B
+    2300014: Girders_00
+    2300016: Girders_01
+    2300018: Girders_02
+    2300020: Girders_03
+    2300022: Red lights
+    3300000: Antenna Frame
+    3300002: Antennae Box
+    3300004: Base
+    3300006: Box Holder
+    3300008: Disc A
+    3300010: Disc Arm
+    3300012: Disc B
+    3300014: Girders_00
+    3300016: Girders_01
+    3300018: Girders_02
+    3300020: Girders_03
+    3300022: Red lights
+    4300000: Girders_00
+    4300002: Girders_01
+    4300004: Antenna Frame
+    4300006: Girders_02
+    4300008: Girders_03
+    4300010: Base
+    4300012: Red lights
+    4300014: Box Holder
+    4300016: Antennae Box
+    4300018: Disc A
+    4300020: Disc Arm
+    4300022: Disc B
+  externalObjects: {}
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 0
+    importBlendShapes: 0
+    importCameras: 0
+    importLights: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 0
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

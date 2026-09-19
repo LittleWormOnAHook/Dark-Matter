@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33f4772fb7e54c649aee61c03b8d9f75, type: 3}
+  m_Name: skill_overpressure
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Progression.SkillDefinition
+  skillId: skill_overpressure
+  displayName: Overpressure
+  description: After maxing Blast Radius (player level 6+), overpressure the bubble
+    for extra radius and payload (+8% each per rank).
+  treeCategory: 2
+  treeColumn: 0
+  treeRow: 3
+  requiredPlayerLevel: 6
+  costPerRank: 2
+  maxRank: 5
+  modifierType: 26
+  bonusPercentPerRank: 8
+  prerequisiteSkillIds:
+  - skill_blast_radius
+  costPerTargetRank: 
