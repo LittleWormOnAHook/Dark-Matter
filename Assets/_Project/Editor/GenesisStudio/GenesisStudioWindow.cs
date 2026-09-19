@@ -19,6 +19,7 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMStudioAssetPanel assetPanel = new DMStudioAssetPanel();
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
         private readonly DMStudioFootstepsPanel footstepsPanel = new DMStudioFootstepsPanel();
+        private readonly DMStudioLandingPanel landingPanel = new DMStudioLandingPanel();
         private readonly DMStudioCameraPanel cameraPanel = new DMStudioCameraPanel();
         private readonly DMStudioCompanionEditorPanel companionEditorPanel = new DMStudioCompanionEditorPanel();
         private readonly DMStudioCompanionSystemsPanel companionSystemsPanel = new DMStudioCompanionSystemsPanel();
@@ -193,6 +194,9 @@ namespace Project.EditorTools.GenesisStudio
                     case DMStudioPanelMode.PlayerSystemsLink:
                         DrawPlayerSystemsLink();
                         break;
+                    case DMStudioPanelMode.LandingCombined:
+                        landingPanel.Draw();
+                        break;
                     case DMStudioPanelMode.FootstepsCombined:
                         footstepsPanel.Draw();
                         break;
@@ -249,7 +253,7 @@ namespace Project.EditorTools.GenesisStudio
         private void DrawPlayerSystemsLink()
         {
             EditorGUILayout.HelpBox(
-                "DMPlayerSystemsProfile is a MonoBehaviour on the player prefab — enable/disable climb, jetpack, landing, and related modules.",
+                "DMPlayerSystemsProfile is a MonoBehaviour on the player prefab — enable/disable climb, jetpack, jump/landing, and related modules.",
                 MessageType.Info);
 
             const string variantPath = "Assets/_Project/Prefabs/Players/Player_v7 Variant.prefab";
@@ -312,7 +316,7 @@ namespace Project.EditorTools.GenesisStudio
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(
-                    "Tip: tune profiles in Play — Profile Save keeps climb, jetpack, map, and landing edits when you stop.",
+                    "Tip: tune profiles in Play — Profile Save keeps climb, jetpack, map, and jump/landing edits when you stop.",
                     DMStudioStyles.HeroSubtitle);
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Genesis Tools", GUILayout.Width(100f)))

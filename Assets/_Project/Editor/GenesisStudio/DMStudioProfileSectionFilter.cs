@@ -12,7 +12,8 @@ namespace Project.EditorTools.GenesisStudio
         SurvivalOnly = 3,
         LocomotionOnly = 4,
         FootstepsAudioOnly = 5,
-        CombatAmmoOnly = 6
+        CombatAmmoOnly = 6,
+        LandingHeightsOnly = 7
     }
 
     internal static class DMStudioProfileSections
@@ -30,6 +31,16 @@ namespace Project.EditorTools.GenesisStudio
             "jogSpeedMultiplier",
             "sprintBurstSpeedMultiplier",
             "shiftDoubleTapWindow"
+        };
+
+        private static readonly string[] LandingHeightFields =
+        {
+            "heroDropMeters",
+            "lethalDropMeters",
+            "fallDamageStartMeters",
+            "fallDamageLethalPercent",
+            "fallDamageHealthFraction",
+            "jetpackLethalDelay"
         };
 
         private static readonly string[] SurvivalFields =
@@ -53,13 +64,7 @@ namespace Project.EditorTools.GenesisStudio
             "maxSulfur",
             "maxVolcano",
             "exposureRecoveryPerSecond",
-            "thermalRecoveryPerSecond",
-            "heroDropMeters",
-            "lethalDropMeters",
-            "fallDamageStartMeters",
-            "fallDamageLethalPercent",
-            "fallDamageHealthFraction",
-            "jetpackLethalDelay"
+            "thermalRecoveryPerSecond"
         };
 
         private static readonly string[] CombatAmmoFields =
@@ -163,9 +168,13 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.DashOnly => IsDashField(propertyPath),
                 DMStudioProfileSectionFilter.LocomotionOnly => IsLocomotionField(propertyPath),
                 DMStudioProfileSectionFilter.ClimbOnly =>
-                    !IsSurvivalField(propertyPath) && !IsDashField(propertyPath) && !IsLocomotionField(propertyPath),
+                    !IsSurvivalField(propertyPath)
+                    && !IsDashField(propertyPath)
+                    && !IsLocomotionField(propertyPath)
+                    && !IsLandingHeightField(propertyPath),
                 DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
                 DMStudioProfileSectionFilter.CombatAmmoOnly => IsCombatAmmoField(propertyPath),
+                DMStudioProfileSectionFilter.LandingHeightsOnly => IsLandingHeightField(propertyPath),
                 _ => true
             };
         }
@@ -186,6 +195,8 @@ namespace Project.EditorTools.GenesisStudio
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
                     "Live ammo combat fields. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
+                DMStudioProfileSectionFilter.LandingHeightsOnly =>
+                    "Jump/Landing 3-tier height band on DM_ClimbDashProfile (bounce / hero / hero+damage + jetpack grace) - same asset as Climb/Dash; Play-mode edits persist via Profile Save.",
                 _ => string.Empty
             };
         }
@@ -195,6 +206,17 @@ namespace Project.EditorTools.GenesisStudio
             for (int i = 0; i < FootstepsAudioFields.Length; i++)
             {
                 if (propertyPath == FootstepsAudioFields[i])
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsLandingHeightField(string propertyPath)
+        {
+            for (int i = 0; i < LandingHeightFields.Length; i++)
+            {
+                if (propertyPath == LandingHeightFields[i])
                     return true;
             }
 

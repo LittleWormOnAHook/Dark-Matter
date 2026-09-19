@@ -19,12 +19,7 @@ namespace Project.Player
     [DefaultExecutionOrder(320)]
     public sealed class DMLandingDirector : MonoBehaviour
     {
-        private const float GroundCommitSeconds = 0.06f;
-        /// <summary>Start owned land clips when the feet are this close to walkable ground (before touch).</summary>
-        private const float LandAnticipateMaxDist = 0.52f;
-        private const float LandAnticipateMinFallSpeed = 1.35f;
-        private const float LandCrossFadeSeconds = 0.03f;
-        private const string BuildStamp = "DMLanding 0831-boost";
+        private const string BuildStamp = "DMLanding 0919-anyfall-gate";
         private const float TorsoTwistLimit = 18f;
         private const float TorsoSwing1Limit = 10f;
         private const float TorsoSwing2Limit = 8f;
@@ -33,8 +28,16 @@ namespace Project.Player
         private const float TorsoProjectionAngle = 22f;
         private const float HipAngularDamping = 3.2f;
         private const float SpineAngularDamping = 2.4f;
-        private const float WalkableDist = 0.45f;
-        private const float WalkableNormalY = 0.55f;
+
+        // Fallbacks if Resources Landing/DMLandingProfile is missing � Genesis Studio edits Live.
+        private const float FallbackGroundCommitSeconds = 0.06f;
+        private const float FallbackLandAnticipateMaxDist = 0.52f;
+        private const float FallbackLandAnticipateMinFallSpeed = 1.35f;
+        private const float FallbackLandCrossFadeSeconds = 0.08f;
+        private const float FallbackWalkableDist = 0.45f;
+        private const float FallbackWalkableNormalY = 0.55f;
+        /// <summary>Allow Jump->Falling only this close to dirt (meters).</summary>
+        private const float ShortHopNearGroundDist = 0.7f;
 
         [SerializeField] private DM_ClimbDashProfile climbProfile;
         [SerializeField] private vThirdPersonMotor motor;
@@ -48,6 +51,7 @@ namespace Project.Player
 
         private bool _landing;
         private bool _hardFalling;
+        private bool _shortHopArmed;
         private bool _enteredLandState;
         private bool _pendingLethalRagdoll;
         private bool _lockDuringLand;
@@ -58,6 +62,8 @@ namespace Project.Player
         private bool _heldDisableAnimations;
         private float _savedAnimatorSpeed = 1f;
         private float _clipEndsAt = -1f;
+        /// <summary>Hero LandHigh: cut soft clip tail + snap out of crouch (no exit cushion).</summary>
+        private bool _ownedLandSharpExit;
         private float _airApexY;
         private float _airVerticalVelocity;
         private bool _wasGrounded = true;
@@ -83,14 +89,17 @@ namespace Project.Player
         private static readonly RaycastHit[] ProbeHits = new RaycastHit[16];
         private static readonly int VerticalVelocity = Animator.StringToHash("VerticalVelocity");
         private static readonly int JetpackLand = Animator.StringToHash("JetpackLand");
+        private static readonly int JetpackLandState = Animator.StringToHash("Jetpack Land");
         private static readonly int LandHighTrigger = Animator.StringToHash("LandHigh");
         private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
         private static readonly int GroundDistance = Animator.StringToHash("GroundDistance");
         private static readonly int LandLowState = Animator.StringToHash("LandLow");
         private static readonly int LandHighState = Animator.StringToHash("LandHigh");
         private static readonly int BounceState = Animator.StringToHash("Bounce");
-        private static readonly int JumpState = Animator.StringToHash("Jump");
         private static readonly int Locomotion = Animator.StringToHash("Locomotion");
+        private static readonly int JumpState = Animator.StringToHash("Jump");
+        private static readonly int JumpMoveState = Animator.StringToHash("JumpMove");
+        private static readonly int FallingState = Animator.StringToHash("Falling");
         private static readonly int[] StolenGetUpStates =
         {
             Animator.StringToHash("Falling"),
@@ -115,6 +124,7 @@ namespace Project.Player
             _pendingLethalRagdoll = false;
             _lockDuringLand = false;
             _ownedLandState = 0;
+            _ownedLandSharpExit = false;
             _physAir = false;
             _fallTime = 0f;
             _flopBoostUntil = -1f;
@@ -349,8 +359,12 @@ namespace Project.Player
             if (ClearMountedAir())
                 return;
 
+            TrackShortHopSession();
+            ProtectShortHopApex();
+
             bool walkable = OnWalkableGround(out _);
-            if (!walkable || !motor.isGrounded)
+            // Regular jumps must stay on Invector � muting here was fighting the hop.
+            if ((!walkable || !motor.isGrounded) && !IsShortHopAir())
                 MuteInvectorFall();
 
             if (Time.unscaledTime < _ignoreLandsUntil)
@@ -374,13 +388,13 @@ namespace Project.Player
                 return;
             }
 
-            if (_landing)
+            if (_landing && _lockDuringLand)
             {
                 SuppressInvectorLand();
                 HoldOwnedLandState();
                 KickStolenGetUpStates();
             }
-            else if (_physAir)
+            else if (_physAir && !IsShortHopAir())
             {
                 SuppressAirborneFall();
                 if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
@@ -420,7 +434,8 @@ namespace Project.Player
                     _fallTime = 0f;
                 else if (vy < -2f)
                     _fallTime += Time.unscaledDeltaTime;
-                MuteInvectorFall();
+                if (!IsShortHopAir())
+                    MuteInvectorFall();
             }
 
             if (!walkable)
@@ -437,11 +452,23 @@ namespace Project.Player
                 if (_physAir && !IsDashing)
                 {
                     float drop = _airApexY - transform.position.y;
-                    if (!_landing && !_hardFalling && Time.unscaledTime >= _ignoreLandsUntil)
+                    // Regular jump: OnWalkableGround probe goes true early and was CrossFading LandLow
+                    // while Jump was still playing (mid-air pop / fast shift). Wait for real grounded.
+                    bool shortHop = !JetpackHeroThisAir()
+                        && (_shortHopArmed || IsInvectorRegularJump());
+                    bool commitOk = !shortHop || (motor.isGrounded && vy <= 0.05f);
+                    if (commitOk
+                        && !_landing
+                        && !_hardFalling
+                        && Time.unscaledTime >= _ignoreLandsUntil)
                         BeginLanding(drop, ReadFallVelocity());
-                }
 
-                ResetAirTracking();
+                    // Keep apex while short-hop is still airborne over a false walkable probe.
+                    if (!shortHop || motor.isGrounded || _landing)
+                        ResetAirTracking();
+                }
+                else
+                    ResetAirTracking();
             }
 
             if (_physAir && !_landing && !_hardFalling && !IsDashing)
@@ -469,27 +496,37 @@ namespace Project.Player
             if (climb != null && climb.IsClimbing)
                 return;
 
-            if (_physAir || _landing || _unmuteAt > Time.unscaledTime)
+            TrackShortHopSession();
+            ProtectShortHopApex();
+            // Soft bounce sets _landing but must not mute/zero VerticalVelocity — that fought LandLow on regular jumps.
+            bool hardLandOrAir = _physAir || (_landing && _lockDuringLand) || _unmuteAt > Time.unscaledTime;
+            if (!IsShortHopAir() && hardLandOrAir)
             {
                 MuteInvectorFall();
                 if (_hasVerticalVelocity)
                     animator.SetFloat(VerticalVelocity, 0f);
             }
 
-            if (_physAir && !_landing)
-            {
+            if (_physAir && !_landing && !IsShortHopAir())
                 SuppressAirborneFall();
-                KickFallingWhileAirborne();
-            }
 
             if (!_landing)
                 return;
 
             if (_lockDuringLand)
+            {
                 ApplyLock();
-            SuppressInvectorLand();
-            HoldOwnedLandState();
-            KickStolenGetUpStates();
+                // Settle velocity only after feet are close � keeps hero crouch from floating then dropping.
+                if (_ownedLandSharpExit && ProbeGround(out float lockDist) && lockDist <= SoftenNearGroundDist)
+                {
+                    SoftenImpact();
+                    SnapFeetToGround();
+                }
+                SuppressInvectorLand();
+                HoldOwnedLandState();
+                KickStolenGetUpStates();
+            }
+            // Soft bounce: one CrossFade only � no per-frame Hold/Suppress fight with Invector.
             TickOwnedLand();
         }
 
@@ -508,6 +545,64 @@ namespace Project.Player
                 return climbProfile;
             }
         }
+
+        private DMLandingProfile LiveLanding => DMLandingProfile.Live;
+
+        private float GroundCommitSeconds =>
+            LiveLanding != null ? LiveLanding.groundCommitSeconds : FallbackGroundCommitSeconds;
+
+        private float LandAnticipateMaxDist =>
+            LiveLanding != null ? LiveLanding.landAnticipateMaxDist : FallbackLandAnticipateMaxDist;
+
+        private float LandAnticipateMinFallSpeed =>
+            LiveLanding != null ? LiveLanding.landAnticipateMinFallSpeed : FallbackLandAnticipateMinFallSpeed;
+
+        private float LandCrossFadeSeconds =>
+            LiveLanding != null ? LiveLanding.landCrossFadeSeconds : FallbackLandCrossFadeSeconds;
+
+        private float WalkableDist =>
+            LiveLanding != null ? LiveLanding.walkableDist : FallbackWalkableDist;
+
+        private float WalkableNormalY =>
+            LiveLanding != null ? LiveLanding.walkableNormalY : FallbackWalkableNormalY;
+
+        private float LandLowDuration =>
+            LiveLanding != null ? LiveLanding.landLowDuration : 0.45f;
+
+        private float LandHighDuration =>
+            LiveLanding != null ? LiveLanding.landHighDuration : 1f;
+
+        private float JetpackLandDuration =>
+            LiveLanding != null ? LiveLanding.jetpackLandDuration : 1.25f;
+
+        private bool PreferJetpackLandState =>
+            LiveLanding == null || LiveLanding.preferJetpackLandState;
+
+        private bool OwnedBounceOnRegularJump =>
+            LiveLanding == null || LiveLanding.ownedBounceOnRegularJump;
+
+        private bool PreferBounceStateForShortLand =>
+            LiveLanding == null || LiveLanding.preferBounceStateForShortLand;
+
+        /// <summary>Short bounce ceiling: Studio shortBounceMaxDropMeters, else ClimbDash heroDropMeters.</summary>
+        private float BounceCeilingMeters =>
+            LiveLanding != null && LiveLanding.shortBounceMaxDropMeters > 0.01f
+                ? LiveLanding.shortBounceMaxDropMeters
+                : HeroMin;
+
+        private float BounceLandDuration =>
+            LiveLanding != null ? LiveLanding.bounceLandDuration : 0.65f;
+
+        private float MinDropMetersToLand =>
+            LiveLanding != null ? LiveLanding.minDropMetersToLand : 0.2f;
+
+        private float MinFallSpeedYToLand =>
+            LiveLanding != null ? LiveLanding.minFallSpeedYToLand : -2f;
+
+        private float SoftenNearGroundDist =>
+            LiveLanding != null
+                ? Mathf.Max(0.12f, LiveLanding.landAnticipateMaxDist + 0.08f)
+                : 0.22f;
 
         private float HeroMin => LiveClimb != null ? LiveClimb.heroDropMeters : heroDropMeters;
         private float LethalMin => LiveClimb != null ? LiveClimb.lethalDropMeters : lethalDropMeters;
@@ -539,14 +634,21 @@ namespace Project.Player
             return jetpack.SecondsSinceBoostReleased <= JetDelay;
         }
 
-        private static float ClampDropToImpact(float dropMeters, float airVelocity)
+        private float ClampDropToImpact(float dropMeters, float airVelocity)
         {
+            DMLandingProfile profile = LiveLanding;
+            float epsilon = profile != null ? profile.clampDropSpeedEpsilon : 0.5f;
+            float shortCap = profile != null ? profile.clampDropShortCap : 1.5f;
+            float slack = profile != null ? profile.clampDropPhysicsSlack : 6f;
+
             float speed = Mathf.Abs(airVelocity);
-            if (speed < 0.5f)
-                return Mathf.Min(dropMeters, 1.5f);
+            // Soft touch: keep measured apex drop so Studio hero/lethal bands still tier correctly.
+            // Only clamp tiny / noisy apex values.
+            if (speed < epsilon)
+                return dropMeters;
 
             float physicsDrop = (speed * speed) / (2f * 9.81f);
-            if (dropMeters > physicsDrop + 6f)
+            if (dropMeters > physicsDrop + slack)
                 return physicsDrop;
             return dropMeters;
         }
@@ -557,6 +659,7 @@ namespace Project.Player
                 return;
             if (IsDashing)
                 return;
+
             if (Time.unscaledTime < _ignoreLandsUntil)
                 return;
             if (climb != null && climb.IsClimbing)
@@ -564,6 +667,11 @@ namespace Project.Player
             if (PlayerVehicleState.IsMounted)
                 return;
             if (jetpack != null && jetpack.IsBoostingNow)
+                return;
+            if (IsShortHopAir())
+                return;
+            // Jetpack / hero-armed air: wait for real ground commit. Anticipating played the crouch in empty air.
+            if (JetpackHeroThisAir())
                 return;
 
             if (!ProbeGround(out float groundDist))
@@ -590,14 +698,14 @@ namespace Project.Player
 
         private FallLand ClassifyFall(float dropMeters, bool boosted, float verticalVelocity)
         {
-            float heroMin = HeroMin;
             float lethalMin = LethalMin;
             bool jetGrace = JetpackGraceActive();
             bool lethalDrop = dropMeters >= lethalMin;
 
+            // Studio Jump/Landing: BounceCeiling (heroDropMeters or override) = bounce -> hero.
             if (lethalDrop && !jetGrace)
                 return FallLand.Lethal;
-            if (dropMeters < heroMin && !boosted)
+            if (dropMeters < BounceCeilingMeters)
                 return FallLand.LandLow;
             return FallLand.LandHigh;
         }
@@ -608,10 +716,22 @@ namespace Project.Player
                 return;
 
             dropMeters = ClampDropToImpact(dropMeters, airVelocity);
-            if (dropMeters < 0.2f && airVelocity > -2f)
+            bool boosted = JetpackHeroThisAir();
+
+            // Regular-jump soft bounce must not start in empty air (probe can see ground early).
+            if (!boosted
+                && OwnedBounceOnRegularJump
+                && (motor == null || !motor.isGrounded))
                 return;
 
-            bool boosted = JetpackHeroThisAir();
+            // Micro-contact skip is for tiny foot taps only. When Studio wants owned regular-jump bounce, keep going.
+            // Jetpack touchdowns always get an owned absorb.
+            if (!boosted
+                && !OwnedBounceOnRegularJump
+                && dropMeters < MinDropMetersToLand
+                && airVelocity > MinFallSpeedYToLand)
+                return;
+
             FallLand kind = ClassifyFall(dropMeters, boosted, airVelocity);
             if (kind == FallLand.Lethal)
             {
@@ -619,11 +739,57 @@ namespace Project.Player
                 return;
             }
 
-            int state = kind == FallLand.LandHigh ? LandHighState : LandLowState;
-            float duration = kind == FallLand.LandHigh ? 1f : 0.45f;
-            StartOwnedLand(state, duration, lockMove: true);
+            int state;
+            float duration;
+            bool lockMove;
+            bool sharpExit;
+
+            if (kind == FallLand.LandLow)
+            {
+                // Regular jump can opt out in Studio (ownedBounceOnRegularJump).
+                if (!boosted && !OwnedBounceOnRegularJump)
+                {
+                    UnmuteInvectorFall();
+                    return;
+                }
+
+                // Regular jump + short jetpack: nice bounce (Studio landLowDuration / Bounce / Jetpack Land).
+                state = ResolveShortBounceState(boosted);
+                duration = LandLowDuration;
+                lockMove = false;
+                sharpExit = false;
+            }
+            else
+            {
+                // Mid / high: LandHigh hero crouch. Damage when drop is in Studio damage band.
+                state = LandHighState;
+                duration = LandHighDuration;
+                lockMove = true;
+                sharpExit = true;
+            }
+
+            StartOwnedLand(state, duration, lockMove, sharpExit);
             if (kind == FallLand.LandHigh)
                 ApplyFallDamageIfNeeded(dropMeters);
+        }
+
+        private int ResolveShortBounceState(bool boosted)
+        {
+            // Studio: LandLow first; Bounce if preferred/missing LandLow; Jetpack Land fallback.
+            if (animator != null && animator.HasState(0, LandLowState))
+                return LandLowState;
+            if (PreferBounceStateForShortLand && animator != null && animator.HasState(0, BounceState))
+                return BounceState;
+            if (boosted && PreferJetpackLandState && animator != null)
+            {
+                if (animator.HasState(0, JetpackLandState))
+                    return JetpackLandState;
+                if (animator.HasState(0, JetpackLand))
+                    return JetpackLand;
+            }
+            if (animator != null && animator.HasState(0, BounceState))
+                return BounceState;
+            return LandHighState;
         }
 
         private void BeginBounceThenRagdoll()
@@ -631,22 +797,29 @@ namespace Project.Player
             int state = animator != null && animator.HasState(0, BounceState)
                 ? BounceState
                 : LandHighState;
-            StartOwnedLand(state, 0.65f, lockMove: true);
+            StartOwnedLand(state, BounceLandDuration, lockMove: true);
             _pendingLethalRagdoll = true;
         }
 
-        private void StartOwnedLand(int stateHash, float duration, bool lockMove)
+        private void StartOwnedLand(int stateHash, float duration, bool lockMove, bool sharpExit = false)
         {
             if (animator == null || IsDashing)
                 return;
 
             MuteInvectorFall();
-            SoftenImpact();
+            // Hero lands: settle feet. Soft bounce (regular jump): skip snap/soften � that popped the hop.
+            if (lockMove && ProbeGround(out float softDist) && softDist <= SoftenNearGroundDist)
+            {
+                SoftenImpact();
+                SnapFeetToGround();
+            }
             _landing = true;
             _enteredLandState = false;
             _pendingLethalRagdoll = false;
             _lockDuringLand = lockMove;
+            _ownedLandSharpExit = sharpExit;
             _ownedLandState = stateHash;
+            _shortHopArmed = false;
             if (motor != null)
             {
                 _heldLockMovement = motor.lockMovement && !IsDashing;
@@ -654,20 +827,32 @@ namespace Project.Player
                 _heldBlockFallDamage = motor.blockApplyFallDamage;
                 _heldDisableAnimations = motor.disableAnimations;
                 motor.blockApplyFallDamage = true;
-                motor.disableAnimations = true;
+                // Soft bounce must leave Invector anim ownership alone � disableAnimations made regular jumps look broken.
+                if (lockMove)
+                    motor.disableAnimations = true;
             }
 
             _savedAnimatorSpeed = animator.speed;
             animator.speed = 1f;
-            ApplyLock();
-            SuppressInvectorLand();
+            if (lockMove)
+                ApplyLock();
+            else if (motor != null)
+            {
+                motor.isJumping = false;
+                if (motor.verticalVelocity < 0f)
+                    motor.verticalVelocity = 0f;
+            }
+
+            if (lockMove)
+                SuppressInvectorLand();
             if (_hasLandHigh)
                 animator.ResetTrigger(LandHighTrigger);
             if (_hasJetpackLand)
                 animator.ResetTrigger(JetpackLand);
             if (animator.HasState(0, stateHash))
                 animator.CrossFadeInFixedTime(stateHash, LandCrossFadeSeconds, 0, 0f);
-            _clipEndsAt = Time.unscaledTime + Mathf.Max(0.2f, duration);
+            float minHold = lockMove ? 0.2f : 0.28f;
+            _clipEndsAt = Time.unscaledTime + Mathf.Max(minHold, duration);
         }
 
         private void ApplyFallDamageIfNeeded(float dropMeters)
@@ -819,6 +1004,33 @@ namespace Project.Player
             return stats;
         }
 
+
+        private void SnapFeetToGround()
+        {
+            DMLandingProfile profile = LiveLanding;
+            float skin = profile != null ? profile.landFeetGroundSkin : 0.03f;
+            float maxSnap = profile != null ? profile.landMaxFeetSnap : 0.85f;
+            if (!ProbeGround(out float dist))
+                return;
+            if (dist <= skin || dist > maxSnap)
+                return;
+
+            float delta = dist - skin;
+            if (delta <= 0.001f)
+                return;
+
+            Vector3 p = transform.position;
+            p.y -= Mathf.Min(delta, maxSnap);
+            transform.position = p;
+            if (body != null && !body.isKinematic)
+            {
+                Vector3 v = body.linearVelocity;
+                if (v.y < 0f)
+                    v.y = 0f;
+                body.linearVelocity = v;
+            }
+        }
+
         private void SoftenImpact()
         {
             if (body == null)
@@ -853,8 +1065,13 @@ namespace Project.Player
         private bool ProbeGround(out float distance)
         {
             distance = 99f;
-            Vector3 origin = transform.position + Vector3.up * 0.2f;
-            int n = Physics.RaycastNonAlloc(origin, Vector3.down, ProbeHits, 5f, ~0, QueryTriggerInteraction.Ignore);
+            DMLandingProfile probeProfile = LiveLanding;
+            float originUp = probeProfile != null ? probeProfile.probeRayOriginUp : 0.2f;
+            float rayMax = probeProfile != null ? probeProfile.probeRayMaxDown : 5f;
+            float belowReject = probeProfile != null ? probeProfile.probePivotBelowReject : -0.25f;
+            float validMax = probeProfile != null ? probeProfile.probeValidMaxDist : 3.5f;
+            Vector3 origin = transform.position + Vector3.up * originUp;
+            int n = Physics.RaycastNonAlloc(origin, Vector3.down, ProbeHits, rayMax, ~0, QueryTriggerInteraction.Ignore);
             float best = 99f;
             bool any = false;
             for (int i = 0; i < n; i++)
@@ -868,7 +1085,7 @@ namespace Project.Player
                     continue;
 
                 float d = transform.position.y - hit.point.y;
-                if (d < -0.25f)
+                if (d < belowReject)
                     continue;
                 if (!any || d < best)
                 {
@@ -881,7 +1098,7 @@ namespace Project.Player
                 return false;
 
             distance = best;
-            return distance < 3.5f;
+            return distance < validMax;
         }
 
         private bool OnWalkableGround(out float distance)
@@ -893,16 +1110,61 @@ namespace Project.Player
             return motor == null || motor.isGrounded || distance <= 0.2f;
         }
 
-        private void KickFallingWhileAirborne()
+        /// <summary>Invector standing / move jump — do not steal the animator or land clip.</summary>
+        
+        private void TrackShortHopSession()
         {
-            if (animator == null)
+            if (motor == null)
                 return;
-            if (jetpack != null && jetpack.IsBoostingNow)
-                return;
-            if (!IsStolenGetUpHash(animator.GetCurrentAnimatorStateInfo(0).shortNameHash))
-                return;
-            if (animator.HasState(0, JumpState))
-                animator.CrossFadeInFixedTime(JumpState, LandCrossFadeSeconds, 0);
+
+            if (motor.isJumping && !JetpackHeroThisAir())
+            {
+                if (!_shortHopArmed)
+                    _shortHopArmed = true;
+            }
+            else if (_shortHopArmed && motor.isGrounded && !_physAir)
+            {
+                _shortHopArmed = false;
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// Falling used to Any-State interrupt Jump at GroundDistance > 0.25.
+        /// Controller now gates Any-State Falling at 1.5m; Jump exits muted.
+        /// </summary>
+        private void ProtectShortHopApex()
+        {
+            // Intentionally empty � Falling gate is on Base Layer Any State.
+        }
+
+
+
+        private bool IsShortHopSessionActive()
+        {
+            if (_shortHopArmed && (_physAir || (motor != null && motor.isJumping)))
+                return true;
+            return IsShortHopAir();
+        }
+
+        private bool IsInvectorRegularJump()
+        {
+            return motor != null && motor.isJumping && !JetpackHeroThisAir();
+        }
+
+        private bool IsShortHopAir()
+        {
+            if (_landing || _hardFalling || JetpackHeroThisAir())
+                return false;
+            if (IsInvectorRegularJump())
+                return true;
+            // Keep protecting after Invector clears isJumping (~0.3s) until we leave short-hop height.
+            // Do not treat random short falls as short hops - that fought Invector and glitched regular jumps.
+            if (_shortHopArmed && _physAir)
+                return (_airApexY - transform.position.y) < HeroMin;
+            return false;
         }
 
         private Transform ResolveHips()
@@ -1190,6 +1452,17 @@ namespace Project.Player
                 return;
             }
 
+            // Hero LandHigh clip has a soft rise at the end - cut before that cushion plays.
+            if (_ownedLandSharpExit && inState && animator != null && !animator.IsInTransition(0))
+            {
+                AnimatorStateInfo landInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (landInfo.normalizedTime >= 0.62f)
+                {
+                    EndLanding(restoreLocks: true);
+                    return;
+                }
+            }
+
             if (_clipEndsAt > 0f && Time.unscaledTime >= _clipEndsAt)
                 EndLanding(restoreLocks: true);
         }
@@ -1310,6 +1583,8 @@ namespace Project.Player
             _lockDuringLand = false;
             _ownedLandState = 0;
             _clipEndsAt = -1f;
+            bool sharpExit = _ownedLandSharpExit;
+            _ownedLandSharpExit = false;
             SuppressInvectorLand();
 
             if (jetpack != null && motor != null && motor.isGrounded && _groundedFor >= GroundCommitSeconds)
@@ -1319,7 +1594,11 @@ namespace Project.Player
             {
                 animator.speed = _savedAnimatorSpeed;
                 if (animator.HasState(0, Locomotion))
-                    animator.CrossFadeInFixedTime(Locomotion, 0.12f, 0);
+                {
+                    // Hero: snap out - the 0.35 blend was the tail cushion. Soft jetpack absorb keeps a light blend.
+                    float exitBlend = sharpExit ? LandCrossFadeSeconds : 0.18f;
+                    animator.CrossFadeInFixedTime(Locomotion, exitBlend, 0);
+                }
             }
 
             if (restoreLocks && motor != null)
@@ -1338,9 +1617,19 @@ namespace Project.Player
             }
 
             ResetAirTracking();
-            _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, Time.unscaledTime + 0.25f);
-            _unmuteAt = Time.unscaledTime + 0.4f;
-            SuppressInvectorLand();
+            float endGrace = LiveLanding != null ? LiveLanding.landGroundedEndGraceSeconds : 0.25f;
+            _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, Time.unscaledTime + endGrace);
+            // Soft bounce: do not keep muting Invector after � that made regular-jump recovery look wrong.
+            if (sharpExit)
+            {
+                _unmuteAt = Time.unscaledTime + 0.4f;
+                SuppressInvectorLand();
+            }
+            else
+            {
+                _unmuteAt = -1f;
+                UnmuteInvectorFall();
+            }
         }
     }
 }

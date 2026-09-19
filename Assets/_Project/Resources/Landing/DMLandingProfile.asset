@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a91c7b2d8f4e1a9c6b3d5f0e8a2c7b, type: 3}
+  m_Name: DMLandingProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.DMLandingProfile
+  landAnticipateMaxDist: 0.07
+  landAnticipateMinFallSpeed: 1.35
+  landFeetGroundSkin: 0.03
+  landMaxFeetSnap: 0.439
+  walkableDist: 0.45
+  walkableNormalY: 0.55
+  groundCommitSeconds: 0.06
+  probeRayOriginUp: 0.2
+  probeRayMaxDown: 5
+  probeValidMaxDist: 3.5
+  probePivotBelowReject: -0.25
+  landLowDuration: 0.194
+  landHighDuration: 1
+  jetpackLandDuration: 1.25
+  bounceLandDuration: 0.65
+  landCrossFadeSeconds: 0.03
+  landGroundedEndGraceSeconds: 0.35
+  landMaxExtraWaitSeconds: 0.55
+  minDropMetersToLand: 0.2
+  minFallSpeedYToLand: -2
+  clampDropSpeedEpsilon: 0.5
+  clampDropShortCap: 1.5
+  clampDropPhysicsSlack: 6
+  preferJetpackLandState: 1
+  zeroPlanarVelocityOnLand: 0
+  holdPlanarPositionDuringLand: 0
+  slidingLandingHoldSeconds: 0.154

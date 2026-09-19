@@ -17,7 +17,8 @@ namespace Project.EditorTools.GenesisStudio
         FootstepsCombined = 8,
         EmbeddedCompanionEditor = 9,
         EmbeddedCompanionSystems = 10,
-        CameraCombined = 11
+        CameraCombined = 11,
+        LandingCombined = 12
     }
 
     public readonly struct DMStudioSubtab
@@ -165,7 +166,7 @@ namespace Project.EditorTools.GenesisStudio
                     "player",
                     "Player",
                     "◆",
-                    "Climb, dash, jetpack, landing, footsteps, camera, and live player wiring.",
+                    "Climb, dash, jetpack, jump/landing, footsteps, camera, and live player wiring.",
                     FromHex("#C02E7A"),
                     new[]
                     {
@@ -194,10 +195,10 @@ namespace Project.EditorTools.GenesisStudio
                             playModeSave: true),
                         new DMStudioSubtab(
                             "landing",
-                            "Landing Clips",
-                            "Hero land / roll animation clip sets.",
-                            DMStudioPanelMode.SingletonAsset,
-                            "Assets/_Project/Resources/Landing/DMLandingClips.asset",
+                            "Jump/Landing",
+                            "Regular jump bounce, early land timing, foot snap, probes, clip lengths, 3-tier height bands, and clip library.",
+                            DMStudioPanelMode.LandingCombined,
+                            "Assets/_Project/Resources/Landing/DMLandingProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
                             "footsteps",
@@ -240,6 +241,14 @@ new DMStudioSubtab(
                             "Per splat: height blend on/off, parallax on select Io layers, normal/tile overrides.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/World/DM_TerrainSplatRenderProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "sliding-doors",
+                            "Sliding Doors",
+                            "Slide/rotate motion, open direction, timing, pooled VFX, and door SFX profiles.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Environment/SlidingDoors",
+                            typeFilter: "t:DMSlidingDoorProfile",
                             playModeSave: true)
                     }),
                 new DMStudioCategory(
@@ -334,10 +343,17 @@ new DMStudioSubtab(
                     "ui",
                     "UI",
                     "▣",
-                    "Scanner optics and layout tooling.",
+                    "Scanner optics, journal skill-tree lines, and layout tooling.",
                     FromHex("#EDE9E4"),
                     new[]
                     {
+                        new DMStudioSubtab(
+                            "skill-tree-lines",
+                            "Skill Tree Lines",
+                            "Journal prerequisite link sprites, gold glow strength, and line thickness.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/UI/Skills/Tree/DMSkillTreeLineProfile.asset",
+                            playModeSave: true),
                         new DMStudioSubtab(
                             "scanner",
                             "Scanner Highlight",
