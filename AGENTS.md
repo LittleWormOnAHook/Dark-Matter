@@ -18,6 +18,7 @@
 - Git is agent source of truth. Plastic check-in is Anthony in the Plastic window (no `cm` CLI).
 - Do not clone this repo onto the agent box. Work the live project folder Unity has open (Play uses that path).
 - Do not add untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, or GDKEditionAutoGen. Policy: `Assets/_Project/Documentation/Engineering/Vendor_Assets_And_Git_Policy.md`.
+- **Disk = truth / commit+Unity sync:** `Assets/_Project/Documentation/Engineering/Unity_Git_Disk_Truth.md` (pre-commit checklist + agent paste block).
 
 ## Framework & disk truth
 

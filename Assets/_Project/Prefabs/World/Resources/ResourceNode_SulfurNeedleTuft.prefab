@@ -108,6 +108,8 @@ MonoBehaviour:
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0
 --- !u!114 &2403013115995546325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,7 +231,7 @@ MonoBehaviour:
   normalMapScrollSpeed: {x: 0, y: 0}
   useUnscaledTime: 0
   phaseOffset: 0
-  previewInEditMode: 1
+  previewInEditMode: 0
 --- !u!137 &6038827963679018047 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: -3012597505919958286, guid: b33bd2f1179168943bd9c3085b931fdb, type: 3}

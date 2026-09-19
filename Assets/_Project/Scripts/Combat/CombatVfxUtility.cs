@@ -112,10 +112,19 @@ namespace Project.Combat
                 // OnEnable starts CheckIfAlive even when the component is disabled.
                 // Leaving that coroutine running Destroy()s pooled WarFX after the first burst.
                 behaviour.StopAllCoroutines();
+                string typeName = behaviour.GetType().Name;
                 if (behaviour is CFX_AutoDestructShuriken cfx)
                 {
                     cfx.OnlyDeactivate = true;
                     Object.Destroy(cfx);
+                    continue;
+                }
+
+                if (typeName == "AutoDestroyPS"
+                    || typeName == "SFX_SimpleProjectile"
+                    || typeName == "SFX_PhysicsMotion")
+                {
+                    Object.Destroy(behaviour);
                     continue;
                 }
 
@@ -134,8 +143,11 @@ namespace Project.Combat
             return typeName == "CFX_AutoStopLoopedEffect"
                 || typeName == "CFX_Lifetime"
                 || typeName == "AutoDestroy"
+                || typeName == "AutoDestroyPS"
                 || typeName == "DestroyAfterTime"
-                || typeName == "DestroyAfterSeconds";
+                || typeName == "DestroyAfterSeconds"
+                || typeName == "SFX_SimpleProjectile"
+                || typeName == "SFX_PhysicsMotion";
         }
 
         public static void DisableVendorAutoReleaseBehaviours(GameObject root)

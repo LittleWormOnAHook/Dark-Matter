@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f2a6b3c4d5e4037b8c1e0f2a3b4c5d6, type: 3}
+  m_Name: DMSkillTreeLineProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.UI.DMSkillTreeLineProfile
+  pathCore: {fileID: 0}
+  pathGlow: {fileID: 0}
+  pathLocked: {fileID: 0}
+  pathReady: {fileID: 0}
+  pathOwned: {fileID: 0}
+  coreHeight: 5
+  glowHeight: 13
+  glowAlphaLocked: 0.1
+  glowAlphaReady: 0.42
+  glowAlphaOwned: 0.78
+  usePaletteTints: 1

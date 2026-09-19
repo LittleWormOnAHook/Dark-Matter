@@ -23,5 +23,6 @@ MonoBehaviour:
   maxRank: 5
   modifierType: 12
   bonusPercentPerRank: 6
-  prerequisiteSkillIds: []
+  prerequisiteSkillIds:
+  - skill_system_jetpack
   costPerTargetRank: 

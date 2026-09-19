@@ -7,7 +7,8 @@ namespace Project.Player
 {
     /// <summary>
         /// Keeps the live Invector third-person camera out of buildings, walls, and terrain.
-        /// Close collision holds ~2m and slides along the wall — never into the player, never hides the mesh.
+        /// Wall/tent collision pulls the lens in; tight spaces can go closer than normal min follow.
+        /// Player mesh hides briefly when the lens must sit inside the body shell, then restores.
         /// Runtime-added (not on Player_v7). Does not retune zoom assets, climb, dash, or jetpack.
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,6 +30,26 @@ namespace Project.Player
         private const float DefaultMantleReleaseSpeed = 2.2f;
         private const float DefaultClimbNearRadius = 4.25f;
         private const float DefaultFloorProbe = 3.0f;
+        private const float DefaultTightSpaceMinFollow = 0.4f;
+        private const float DefaultPlayerMeshHideDistance = 0.85f;
+        private const float DefaultPlayerMeshShowHysteresis = 0.18f;
+        private const float DefaultTightSpaceReleaseSpeed = 7.5f;
+        private const float DefaultInteriorMaxFollow = 1.35f;
+        private const float DefaultInteriorFirstPersonDistance = 0.35f;
+        private const float DefaultInteriorEnclosureProbeDistance = 2.75f;
+        private const int InteriorEnclosureMinHits = 4;
+
+        private static readonly Vector3[] EnclosureProbeOffsets =
+        {
+            Vector3.forward,
+            Vector3.back,
+            Vector3.left,
+            Vector3.right,
+            new Vector3(0.707f, 0f, 0.707f),
+            new Vector3(-0.707f, 0f, 0.707f),
+            new Vector3(0.707f, 0f, -0.707f),
+            new Vector3(-0.707f, 0f, -0.707f)
+        };
 
         private DMCameraProfile _profile;
 
@@ -56,6 +77,18 @@ namespace Project.Player
         private float MantleReleaseSpeed => Profile != null ? Profile.mantleReleaseSpeed : DefaultMantleReleaseSpeed;
         private float ClimbNearRadius => Profile != null ? Profile.climbNearRadius : DefaultClimbNearRadius;
         private float FloorProbe => Profile != null ? Profile.floorProbe : DefaultFloorProbe;
+        private float TightSpaceMinFollow => Profile != null ? Profile.tightSpaceMinFollow : DefaultTightSpaceMinFollow;
+        private float PlayerMeshHideDistance =>
+            Profile != null ? Profile.playerMeshHideDistance : DefaultPlayerMeshHideDistance;
+        private float PlayerMeshShowHysteresis =>
+            Profile != null ? Profile.playerMeshShowHysteresis : DefaultPlayerMeshShowHysteresis;
+        private float TightSpaceReleaseSpeed =>
+            Profile != null ? Profile.tightSpaceReleaseSpeed : DefaultTightSpaceReleaseSpeed;
+        private float InteriorMaxFollow => Profile != null ? Profile.interiorMaxFollow : DefaultInteriorMaxFollow;
+        private float InteriorFirstPersonDistance =>
+            Profile != null ? Profile.interiorFirstPersonDistance : DefaultInteriorFirstPersonDistance;
+        private float InteriorEnclosureProbeDistance =>
+            Profile != null ? Profile.interiorEnclosureProbeDistance : DefaultInteriorEnclosureProbeDistance;
         private const int PlayerLayer = 8;
         private const int ClimbableLayer = 23;
 
@@ -77,6 +110,16 @@ namespace Project.Player
         private bool _nearClimbCached;
         private float _nearClimbNextCheck;
         private Vector3 _nearClimbSamplePivot;
+        private bool _inTightSpace;
+        private bool _pivotEnclosed;
+        private bool _playerMeshHidden;
+        private Renderer[] _playerRenderers;
+        private float _lastComfortDist = -1f;
+        private float _restoreComfortDist = -1f;
+        private float _savedExteriorZoom = -1f;
+        private bool _wasPivotEnclosedLastFrame;
+        private bool _pivotInsideShell;
+        private bool _treatClimbableAsWall;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnLoad()
@@ -125,6 +168,11 @@ namespace Project.Player
             }
         }
 
+        private void OnDisable()
+        {
+            SetPlayerMeshVisible(true);
+        }
+
         private void LateUpdate()
         {
             if (!isActiveAndEnabled)
@@ -149,9 +197,20 @@ namespace Project.Player
             if (collisionMask.value == 0)
                 collisionMask = BuildMask();
 
-            ClampScrollZoom();
-
             Vector3 pivot = ResolvePivot(pivotTf);
+            bool mantling = _climb != null && _climb.IsMantling;
+            bool climbing = _climb != null && _climb.IsClimbing;
+            bool nearClimb = climbing || IsNearClimbableCached(pivot);
+            _pivotInsideShell = !mantling && !nearClimb && IsPivotInsideEnvironmentShell(pivot, pivotTf);
+            _pivotEnclosed = !mantling && !nearClimb
+                && (_pivotInsideShell || IsPivotRayEnclosed(pivot, pivotTf));
+            _treatClimbableAsWall = _pivotInsideShell || _pivotEnclosed;
+            if (_pivotEnclosed && !_wasPivotEnclosedLastFrame)
+                SaveExteriorZoomBeforeEnclosure();
+            if (!_pivotEnclosed && _wasPivotEnclosedLastFrame)
+                BeginExteriorZoomRestore();
+            ClampScrollZoom(mantling, nearClimb, _pivotEnclosed);
+
             Vector3 desired = transform.position;
             Vector3 toCam = desired - pivot;
             float desiredDist = toCam.magnitude;
@@ -167,24 +226,38 @@ namespace Project.Player
             if (eye != null)
                 skin += eye.nearClipPlane;
 
-            bool mantling = _climb != null && _climb.IsMantling;
-            bool climbing = _climb != null && _climb.IsClimbing;
-            bool nearClimb = climbing || IsNearClimbableCached(pivot);
             float minFollow = mantling ? MantleMinFollow : (nearClimb ? ClimbMinFollow : MinFollow);
 
-            float wantDist = Mathf.Max(desiredDist, minFollow);
-            float zoom = tpCamera.CurrentZoom;
-            if (zoom > minFollow)
+            float wantDist;
+            if (_pivotEnclosed)
+                wantDist = Mathf.Min(desiredDist, InteriorMaxFollow);
+            else
+                wantDist = Mathf.Max(desiredDist, minFollow);
+
+            float zoom = ResolveExteriorFollowZoom(minFollow);
+            if (!_pivotEnclosed && zoom > minFollow)
                 wantDist = Mathf.Max(wantDist, zoom);
+            else if (_pivotEnclosed)
+                wantDist = Mathf.Min(wantDist, InteriorMaxFollow);
 
             float closest = ClosestEnvHit(pivot, dir, wantDist, radius, pivotTf);
             float targetDist = wantDist;
             bool tightWall = false;
+            _inTightSpace = false;
             if (closest < float.PositiveInfinity)
             {
                 float allowed = closest - skin;
-                if (allowed >= minFollow)
+                bool bypassNormalMinCap = !mantling && !nearClimb && (_pivotEnclosed || allowed < minFollow);
+                if (!bypassNormalMinCap && allowed >= minFollow)
+                {
                     targetDist = allowed;
+                }
+                else if (!mantling && !nearClimb)
+                {
+                    _inTightSpace = true;
+                    tightWall = true;
+                    targetDist = Mathf.Max(TightSpaceMinFollow, allowed);
+                }
                 else
                 {
                     targetDist = minFollow;
@@ -192,15 +265,43 @@ namespace Project.Player
                 }
             }
 
+            if (_pivotEnclosed)
+            {
+                _inTightSpace = true;
+                tightWall = true;
+                float interiorMax = FindMaxInteriorCameraDistance(pivot, dir, wantDist, radius, pivotTf);
+                targetDist = Mathf.Min(targetDist, interiorMax);
+                if (targetDist <= InteriorFirstPersonDistance + 0.08f)
+                {
+                    targetDist = InteriorFirstPersonDistance;
+                    SetPlayerMeshVisible(false);
+                }
+            }
+
+            float activeMinFollow = ResolveActiveMinFollow(mantling, nearClimb, _inTightSpace, _pivotEnclosed);
+
             if (_smoothDist < 0f)
-                _smoothDist = Mathf.Max(desiredDist, minFollow);
+            {
+                if (_pivotEnclosed || _inTightSpace)
+                {
+                    _smoothDist = Mathf.Clamp(
+                        desiredDist,
+                        TightSpaceMinFollow,
+                        InteriorMaxFollow);
+                }
+                else
+                {
+                    _smoothDist = Mathf.Max(desiredDist, minFollow);
+                }
+            }
 
             float dt = Time.deltaTime;
             if (dt <= 0f)
                 dt = 0.02f;
 
             // Ignore sphere-cast flicker inside the hysteresis band (AAA camera collision).
-            if (!mantling && !nearClimb
+            if (!_pivotEnclosed
+                && !mantling && !nearClimb
                 && targetDist < _smoothDist - 0.01f
                 && targetDist > _smoothDist - CollisionHysteresis)
             {
@@ -228,8 +329,28 @@ namespace Project.Player
             {
                 _smoothDist = Mathf.Lerp(_smoothDist, targetDist, 1f - Mathf.Exp(-release * dt));
             }
-            if (_smoothDist < minFollow)
-                _smoothDist = minFollow;
+            if (_smoothDist < activeMinFollow)
+                _smoothDist = activeMinFollow;
+
+            if (!_inTightSpace && !_playerMeshHidden && _smoothDist >= minFollow - 0.05f)
+                _lastComfortDist = _smoothDist;
+            else if (_inTightSpace && _restoreComfortDist < 0f && _lastComfortDist >= minFollow)
+                _restoreComfortDist = _lastComfortDist;
+
+            if (!_pivotEnclosed
+                && !_inTightSpace
+                && _restoreComfortDist > 0f
+                && _smoothDist < _restoreComfortDist - 0.05f)
+            {
+                _smoothDist = Mathf.MoveTowards(_smoothDist, _restoreComfortDist, TightSpaceReleaseSpeed * dt);
+            }
+
+            if (!_inTightSpace && !_pivotEnclosed)
+                TryFinishExteriorZoomRestore();
+
+            _wasPivotEnclosedLastFrame = _pivotEnclosed;
+
+            UpdatePlayerMeshVisibility(activeMinFollow, _pivotEnclosed);
 
             Vector3 pos = pivot + dir * _smoothDist;
             pos = KeepAboveFloor(pos, radius, pivotTf);
@@ -237,36 +358,149 @@ namespace Project.Player
             if (mantling)
             {
                 // During mantle ignore aggressive depenetrate that yanks into wall/player.
-                pos = EnforceMinFollow(pivot, pos, dir, minFollow);
+                pos = EnforceMinFollow(pivot, pos, dir, activeMinFollow);
             }
             else if (tightWall)
-                pos = SlideClearOfEnvironment(pivot, pos, dir, radius, pivotTf, minFollow);
+                pos = SlideClearOfEnvironment(pivot, pos, dir, radius, pivotTf, activeMinFollow);
             else
             {
-                pos = PullOutOfEnvironment(pivot, pos, radius, pivotTf, minFollow);
+                pos = PullOutOfEnvironment(pivot, pos, radius, pivotTf, activeMinFollow);
                 if (!nearClimb)
                     pos = DepenetrateFromEnvironment(pos, radius, pivotTf);
                 else
-                    pos = EnforceMinFollow(pivot, pos, dir, minFollow);
+                    pos = EnforceMinFollow(pivot, pos, dir, activeMinFollow);
             }
 
-            pos = EnforceMinFollow(pivot, pos, dir, minFollow);
+            if (_pivotInsideShell || _pivotEnclosed || _inTightSpace)
+                pos = ClampCameraAlongPivotRay(pivot, pos, radius, pivotTf, activeMinFollow);
+            pos = EnforceMinFollow(pivot, pos, dir, activeMinFollow);
             pos = KeepAboveTerrainSurface(pos, radius);
+
+            Vector3 placed = pos - pivot;
+            float placedDist = placed.magnitude;
+            float zoomNow = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            bool pulledBelowZoom = placedDist < zoomNow - 0.08f;
+            bool needsInvectorSync = _pivotEnclosed
+                || _inTightSpace
+                || pulledBelowZoom
+                || _restoreComfortDist > 0f;
+
+            if (!needsInvectorSync)
+            {
+                _smoothDist = zoomNow;
+                _wasPivotEnclosedLastFrame = _pivotEnclosed;
+                if (!_pivotEnclosed && !_inTightSpace)
+                    TryFinishExteriorZoomRestore();
+                return;
+            }
 
             transform.position = pos;
             if (_body != null)
                 _body.position = pos;
 
-            Vector3 placed = pos - pivot;
-            float placedDist = placed.magnitude;
             if (placedDist > 0.001f)
-                _smoothDist = Mathf.Max(placedDist, minFollow);
+                _smoothDist = Mathf.Max(placedDist, activeMinFollow);
 
             tpCamera.distance = _smoothDist;
-            SetCullingDistance(Mathf.Max(_smoothDist, minFollow));
+            if (pulledBelowZoom)
+                SetCullingDistance(_smoothDist);
         }
 
-        private void ClampScrollZoom()
+        private float ResolveActiveMinFollow(bool mantling, bool nearClimb, bool tightSpace, bool pivotEnclosed)
+        {
+            if (mantling)
+                return MantleMinFollow;
+            if (nearClimb)
+                return ClimbMinFollow;
+            if (pivotEnclosed || tightSpace)
+                return TightSpaceMinFollow;
+            return MinFollow;
+        }
+
+        private void UpdatePlayerMeshVisibility(float activeMinFollow, bool pivotEnclosed)
+        {
+            if (_playerRenderers == null || _playerRenderers.Length == 0)
+                return;
+
+            float hideDist = pivotEnclosed
+                ? Mathf.Max(PlayerMeshHideDistance, InteriorFirstPersonDistance + 0.05f)
+                : PlayerMeshHideDistance;
+            if (!_playerMeshHidden && (_smoothDist < hideDist || pivotEnclosed && _smoothDist <= InteriorFirstPersonDistance + 0.1f))
+            {
+                if (_restoreComfortDist < 0f)
+                {
+                    _restoreComfortDist = _lastComfortDist >= MinFollow
+                        ? _lastComfortDist
+                        : MinFollow;
+                }
+
+                SetPlayerMeshVisible(false);
+                return;
+            }
+
+            if (_playerMeshHidden
+                && _smoothDist > hideDist + PlayerMeshShowHysteresis
+                && _smoothDist >= activeMinFollow + 0.02f)
+            {
+                SetPlayerMeshVisible(true);
+            }
+        }
+
+        private void SetPlayerMeshVisible(bool visible)
+        {
+            if (_playerRenderers == null)
+                return;
+
+            if (_playerMeshHidden == !visible)
+                return;
+
+            _playerMeshHidden = !visible;
+            for (int i = 0; i < _playerRenderers.Length; i++)
+            {
+                Renderer renderer = _playerRenderers[i];
+                if (renderer != null)
+                    renderer.enabled = visible;
+            }
+        }
+
+        private void CachePlayerRenderers()
+        {
+            if (playerRoot == null)
+                return;
+
+            if (_playerRenderers != null && _playerRenderers.Length > 0)
+                return;
+
+            Renderer[] all = playerRoot.GetComponentsInChildren<Renderer>(true);
+            if (all == null || all.Length == 0)
+                return;
+
+            int count = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Renderer r = all[i];
+                if (r == null)
+                    continue;
+                if (r.transform.IsChildOf(transform))
+                    continue;
+                count++;
+            }
+
+            if (count == 0)
+                return;
+
+            _playerRenderers = new Renderer[count];
+            int write = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Renderer r = all[i];
+                if (r == null || r.transform.IsChildOf(transform))
+                    continue;
+                _playerRenderers[write++] = r;
+            }
+        }
+
+        private void ClampScrollZoom(bool mantling, bool nearClimb, bool pivotEnclosed)
         {
             if (tpCamera == null || tpCamera.currentState == null)
                 return;
@@ -274,12 +508,84 @@ namespace Project.Player
                 IsAimOrScopeState(tpCamera.currentState.Name))
                 return;
 
-            float floor = (_climb != null && _climb.IsMantling) ? MantleMinFollow
-                : ((_climb != null && _climb.IsClimbing) || IsNearClimbableCached(
-                    tpCamera.mainTarget != null ? tpCamera.mainTarget.position : transform.position)
-                    ? ClimbMinFollow : MinFollow);
+            if (pivotEnclosed)
+            {
+                if (tpCamera.CurrentZoom > InteriorMaxFollow + 0.02f)
+                    tpCamera.SetZoomTarget(InteriorMaxFollow);
+                if (tpCamera.CurrentZoom < TightSpaceMinFollow)
+                    tpCamera.SetZoomTarget(TightSpaceMinFollow);
+                return;
+            }
+
+            if (_restoreComfortDist >= MinFollow - 0.05f)
+            {
+                float live = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+                if (live < _restoreComfortDist - 0.08f)
+                    tpCamera.SetZoomTarget(_restoreComfortDist);
+                return;
+            }
+
+            float floor = mantling ? MantleMinFollow : (nearClimb ? ClimbMinFollow : MinFollow);
             if (tpCamera.CurrentZoom < 1f)
                 tpCamera.SetZoomTarget(floor);
+        }
+
+        private void SaveExteriorZoomBeforeEnclosure()
+        {
+            if (tpCamera == null)
+                return;
+
+            float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            if (zoom >= MinFollow - 0.05f)
+                _savedExteriorZoom = zoom;
+            else if (_lastComfortDist >= MinFollow - 0.05f)
+                _savedExteriorZoom = _lastComfortDist;
+        }
+
+        private void BeginExteriorZoomRestore()
+        {
+            if (tpCamera == null)
+                return;
+
+            float restore = _savedExteriorZoom;
+            if (restore < MinFollow - 0.05f)
+            {
+                if (_lastComfortDist >= MinFollow - 0.05f)
+                    restore = _lastComfortDist;
+                else
+                    restore = MinFollow;
+            }
+
+            _restoreComfortDist = restore;
+            tpCamera.SetZoomTarget(restore);
+        }
+
+        private float ResolveExteriorFollowZoom(float minFollow)
+        {
+            if (tpCamera == null)
+                return minFollow;
+
+            float zoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
+            if (!_pivotEnclosed && _restoreComfortDist >= minFollow - 0.05f)
+                return Mathf.Max(zoom, _restoreComfortDist);
+            return zoom;
+        }
+
+        private void TryFinishExteriorZoomRestore()
+        {
+            if (_restoreComfortDist < MinFollow - 0.05f)
+                return;
+
+            bool distOk = _smoothDist >= _restoreComfortDist - 0.1f;
+            float live = tpCamera != null
+                ? (tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance)
+                : 0f;
+            bool zoomOk = live >= _restoreComfortDist - 0.12f;
+            if (!distOk || !zoomOk)
+                return;
+
+            _restoreComfortDist = -1f;
+            _savedExteriorZoom = -1f;
         }
 
         private static bool IsAimOrScopeState(string stateName)
@@ -384,7 +690,9 @@ namespace Project.Player
                 return false;
 
             int layer = c.gameObject.layer;
-            if (layer == PlayerLayer || layer == ClimbableLayer)
+            if (layer == PlayerLayer)
+                return false;
+            if (layer == ClimbableLayer && !_treatClimbableAsWall)
                 return false;
             if (c is TerrainCollider)
                 return false;
@@ -461,6 +769,8 @@ namespace Project.Player
             tpCamera.cullingLayer = collisionMask;
             if (tpCamera.clipPlaneMargin < 0.2f)
                 tpCamera.clipPlaneMargin = 0.25f;
+
+            CachePlayerRenderers();
             if (tpCamera.checkHeightRadius < 0.15f)
                 tpCamera.checkHeightRadius = 0.2f;
             _tuned = true;
@@ -476,9 +786,175 @@ namespace Project.Player
             return pivotTf.position + pivotTf.up * height;
         }
 
+        private bool IsPivotRayEnclosed(Vector3 pivot, Transform pivotTf)
+        {
+            int hits = 0;
+            float probe = InteriorEnclosureProbeDistance;
+            for (int i = 0; i < EnclosureProbeOffsets.Length; i++)
+            {
+                Vector3 dir = EnclosureProbeOffsets[i];
+                if (Physics.Raycast(
+                        pivot,
+                        dir,
+                        out RaycastHit hit,
+                        probe,
+                        collisionMask,
+                        QueryTriggerInteraction.Ignore)
+                    && IsEnvironmentHit(hit, pivotTf))
+                {
+                    hits++;
+                }
+            }
+
+            return hits >= InteriorEnclosureMinHits;
+        }
+
+        /// <summary>
+        /// Forward rays from a pivot already inside geometry miss that shell (Unity raycast rule).
+        /// Overlap + ClosestPoint detects box/convex rooms without requiring static colliders.
+        /// </summary>
+        private bool IsPivotInsideEnvironmentShell(Vector3 pivot, Transform pivotTf)
+        {
+            int n = Physics.OverlapSphereNonAlloc(
+                pivot,
+                0.3f,
+                Overlaps,
+                collisionMask,
+                QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                Collider c = Overlaps[i];
+                if (!IsShellVolumeCollider(c, pivotTf))
+                    continue;
+                if (ColliderContainsPoint(c, pivot))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Detect tent / room volumes; climbable layer counts here only.</summary>
+        private bool IsShellVolumeCollider(Collider c, Transform pivotTf)
+        {
+            if (c == null || c.isTrigger)
+                return false;
+
+            Transform tr = c.transform;
+            if (tr == transform || tr.IsChildOf(transform))
+                return false;
+
+            Transform root = pivotTf != null ? pivotTf.root : null;
+            if (root != null && (tr == root || tr.IsChildOf(root)))
+                return false;
+
+            if (c.gameObject.layer == PlayerLayer)
+                return false;
+
+            return c is BoxCollider || c is SphereCollider || c is CapsuleCollider;
+        }
+
+        private static bool ColliderContainsPoint(Collider c, Vector3 point)
+        {
+            if (c == null)
+                return false;
+
+            Vector3 closest = c.ClosestPoint(point);
+            return (closest - point).sqrMagnitude < 1e-4f;
+        }
+
+        private Vector3 ClampCameraAlongPivotRay(
+            Vector3 pivot,
+            Vector3 pos,
+            float radius,
+            Transform pivotTf,
+            float minFollow)
+        {
+            Vector3 offset = pos - pivot;
+            float dist = offset.magnitude;
+            if (dist < 0.001f)
+                return pos;
+
+            Vector3 dir = offset / dist;
+            float skin = ExtraSkin + (eye != null ? eye.nearClipPlane : 0f);
+            float wallDist = ClosestEnvHit(pivot, dir, dist + radius + skin, radius, pivotTf);
+            if (wallDist >= float.PositiveInfinity)
+                return pos;
+
+            float allowed = wallDist - skin;
+            allowed = Mathf.Max(minFollow, allowed);
+            if (dist <= allowed + 0.02f)
+                return pos;
+
+            return pivot + dir * allowed;
+        }
+
+        private float FindMaxInteriorCameraDistance(
+            Vector3 pivot,
+            Vector3 dir,
+            float maxSearch,
+            float radius,
+            Transform pivotTf)
+        {
+            float lo = TightSpaceMinFollow;
+            float hi = Mathf.Max(lo + 0.05f, maxSearch);
+            for (int i = 0; i < 12; i++)
+            {
+                float mid = (lo + hi) * 0.5f;
+                if (IsValidInteriorCameraDistance(pivot, dir, mid, radius, pivotTf))
+                    lo = mid;
+                else
+                    hi = mid;
+            }
+
+            return lo;
+        }
+
+        private bool IsValidInteriorCameraDistance(
+            Vector3 pivot,
+            Vector3 dir,
+            float dist,
+            float radius,
+            Transform pivotTf)
+        {
+            if (dist < TightSpaceMinFollow - 0.001f)
+                return false;
+
+            Vector3 cam = pivot + dir * dist;
+            if (OverlapsEnvironment(cam, radius, pivotTf))
+                return false;
+
+            if (Physics.Linecast(
+                    pivot,
+                    cam,
+                    out RaycastHit lineHit,
+                    collisionMask,
+                    QueryTriggerInteraction.Ignore)
+                && IsEnvironmentHit(lineHit, pivotTf)
+                && lineHit.distance < dist - 0.06f)
+            {
+                return false;
+            }
+
+            float wall = ClosestEnvHit(pivot, dir, dist + 0.05f, radius, pivotTf);
+            return wall >= dist - 0.08f;
+        }
+
         private float ClosestEnvHit(Vector3 pivot, Vector3 dir, float desiredDist, float radius, Transform pivotTf)
         {
             float closest = float.PositiveInfinity;
+
+            if (Physics.Linecast(
+                    pivot,
+                    pivot + dir * desiredDist,
+                    out RaycastHit line,
+                    collisionMask,
+                    QueryTriggerInteraction.Ignore)
+                && IsEnvironmentHit(line, pivotTf)
+                && line.distance < closest)
+            {
+                closest = line.distance;
+            }
+
             int count = Physics.SphereCastNonAlloc(
                 pivot,
                 radius,
@@ -511,6 +987,13 @@ namespace Project.Player
                     continue;
                 if (hit.distance < closest)
                     closest = hit.distance;
+            }
+
+            if (_pivotInsideShell || _pivotEnclosed)
+            {
+                float reverse = ClosestShellHitFromExterior(pivot, dir, desiredDist, radius, pivotTf);
+                if (reverse < closest)
+                    closest = reverse;
             }
 
             return closest;
@@ -546,6 +1029,53 @@ namespace Project.Player
             }
 
             return pos;
+        }
+
+        /// <summary>
+        /// When the pivot sits inside a shell, cast from the far end back toward the pivot to find the inner wall.
+        /// </summary>
+        private float ClosestShellHitFromExterior(
+            Vector3 pivot,
+            Vector3 dir,
+            float searchDist,
+            float radius,
+            Transform pivotTf)
+        {
+            if (searchDist < 0.05f)
+                return float.PositiveInfinity;
+
+            float closest = float.PositiveInfinity;
+            float skin = ExtraSkin + (eye != null ? eye.nearClipPlane : 0f);
+            float[] probeDepths =
+            {
+                searchDist,
+                searchDist + radius,
+                searchDist + skin + radius
+            };
+
+            for (int p = 0; p < probeDepths.Length; p++)
+            {
+                float depth = probeDepths[p];
+                Vector3 probeOrigin = pivot + dir * depth;
+                float castLen = depth + skin + radius;
+                if (!Physics.Raycast(
+                        probeOrigin,
+                        -dir,
+                        out RaycastHit back,
+                        castLen,
+                        collisionMask,
+                        QueryTriggerInteraction.Ignore)
+                    || !IsEnvironmentHit(back, pivotTf))
+                {
+                    continue;
+                }
+
+                float fromPivot = depth - back.distance;
+                if (fromPivot > 0.02f && fromPivot < closest)
+                    closest = fromPivot;
+            }
+
+            return closest;
         }
 
         private Vector3 PullOutOfEnvironment(Vector3 pivot, Vector3 pos, float radius, Transform pivotTf, float minFollow = DefaultMinFollow)
@@ -599,7 +1129,9 @@ namespace Project.Player
                     continue;
 
                 int layer = c.gameObject.layer;
-                if (layer == PlayerLayer || layer == ClimbableLayer)
+                if (layer == PlayerLayer)
+                    continue;
+                if (layer == ClimbableLayer && !_treatClimbableAsWall)
                     continue;
                 if (c is TerrainCollider)
                     continue;
@@ -660,7 +1192,9 @@ namespace Project.Player
                 return false;
 
             int layer = hit.collider.gameObject.layer;
-            if (layer == PlayerLayer || layer == ClimbableLayer)
+            if (layer == PlayerLayer)
+                return false;
+            if (layer == ClimbableLayer && !_treatClimbableAsWall)
                 return false;
             if (hit.collider is TerrainCollider)
                 return true;

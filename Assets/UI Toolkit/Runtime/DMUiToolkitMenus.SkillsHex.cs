@@ -13,6 +13,7 @@ namespace Project.UI
     public partial class DMUiToolkitMenus
     {
         private const float HexSize = 92f;
+        private const float HexAnchorSize = 59f;
         private const float HexColSpacing = 118f;
         private const float HexRowSpacing = 104f;
         private const float HexPadX = 56f;
@@ -112,16 +113,18 @@ namespace Project.UI
                 return;
             }
 
+            int minRow = 0;
             int maxRow = 0;
             int maxCol = 2;
             for (int i = 0; i < skills.Count; i++)
             {
+                minRow = Mathf.Min(minRow, skills[i].treeRow);
                 maxRow = Mathf.Max(maxRow, skills[i].treeRow);
                 maxCol = Mathf.Max(maxCol, skills[i].treeColumn);
             }
 
             float width = HexPadX * 2f + (maxCol + 1) * HexColSpacing;
-            float height = HexPadY * 2f + (maxRow + 1) * HexRowSpacing + HexSize * 0.35f;
+            float height = HexPadY * 2f + (maxRow - minRow + 1) * HexRowSpacing + HexSize * 0.35f;
             lastHexContentWidth = Mathf.Max(width, 420f);
             skillsHexHost.style.width = lastHexContentWidth;
             skillsHexHost.style.height = Mathf.Max(height, 280f);
@@ -132,7 +135,7 @@ namespace Project.UI
                 SkillDefinition skill = skills[i];
                 if (skill == null)
                     continue;
-                ToolkitHexNode view = CreateToolkitHexNode(skill);
+                ToolkitHexNode view = CreateToolkitHexNode(skill, minRow);
                 byId[skill.ResolvedId] = view;
                 hexNodes[skill.ResolvedId] = view;
             }
@@ -160,7 +163,7 @@ namespace Project.UI
                 ApplyHexHoverVisual(pair.Value, pair.Key == hoveredSkillId || pair.Key == selectedSkillId);
         }
 
-        private ToolkitHexNode CreateToolkitHexNode(SkillDefinition skill)
+        private ToolkitHexNode CreateToolkitHexNode(SkillDefinition skill, int minRow)
         {
             int rank = boundProgression != null ? boundProgression.GetSkillRank(skill.ResolvedId) : 0;
             rank = skill.GetDisplayRank(rank);
@@ -169,14 +172,18 @@ namespace Project.UI
             bool isMaxed = rank >= maxRank;
             bool unlocked = rank > 0 || canAllocate || AreHexPrerequisitesMet(skill);
             Color accent = GetHexCategoryAccent(skillsCategory);
-            Vector2 pos = HexGridToPos(skill.treeColumn, skill.treeRow);
+            bool anchor = skill.IsMovementSystemUnlock;
+            float nodeSize = anchor ? HexAnchorSize : HexSize;
+            Vector2 pos = HexGridToPos(skill.treeColumn, skill.treeRow, minRow);
 
             VisualElement node = new VisualElement { name = "hex-" + skill.ResolvedId, pickingMode = PickingMode.Position };
             node.AddToClassList("dmg-hex-node");
-            node.style.left = pos.x - HexSize * 0.5f;
-            node.style.top = pos.y - HexSize * 0.5f;
-            node.style.width = HexSize;
-            node.style.height = HexSize;
+            if (anchor)
+                node.AddToClassList("dmg-hex-node--system-anchor");
+            node.style.left = pos.x - nodeSize * 0.5f;
+            node.style.top = pos.y - nodeSize * 0.5f;
+            node.style.width = nodeSize;
+            node.style.height = nodeSize;
             node.userData = skill.ResolvedId;
 
             VisualElement glow = MakeHexSprite("hex-glow", DmHexUiSprites.SoftGlow, Color.clear, -10f);
@@ -199,7 +206,8 @@ namespace Project.UI
             outline.pickingMode = PickingMode.Ignore;
             node.Add(outline);
 
-            Label label = new Label(skill.displayName);
+            string nodeLabel = anchor ? TrimAnchorLabel(skill.displayName) : skill.displayName;
+            Label label = new Label(nodeLabel);
             label.AddToClassList("dmg-hex-label");
             label.pickingMode = PickingMode.Ignore;
             node.Add(label);
@@ -207,18 +215,24 @@ namespace Project.UI
             VisualElement dotsRow = new VisualElement();
             dotsRow.AddToClassList("dmg-hex-dots");
             dotsRow.pickingMode = PickingMode.Ignore;
-            // One pip per owned rank (5 max per node).
             VisualElement[] dots = new VisualElement[HexRankVisualSlots];
-            for (int d = 0; d < HexRankVisualSlots; d++)
+            if (!anchor)
             {
-                VisualElement dot = new VisualElement();
-                dot.AddToClassList("dmg-hex-dot");
-                dot.pickingMode = PickingMode.Ignore;
-                if (DmHexUiSprites.RankDot != null)
-                    DMUiToolkitStyle.TrySetSpriteBackground(dot, DmHexUiSprites.RankDot);
-                dot.style.unityBackgroundImageTintColor = d < rank ? HexRankFilledBlue : HexRankEmptyGray;
-                dotsRow.Add(dot);
-                dots[d] = dot;
+                for (int d = 0; d < HexRankVisualSlots; d++)
+                {
+                    VisualElement dot = new VisualElement();
+                    dot.AddToClassList("dmg-hex-dot");
+                    dot.pickingMode = PickingMode.Ignore;
+                    if (DmHexUiSprites.RankDot != null)
+                        DMUiToolkitStyle.TrySetSpriteBackground(dot, DmHexUiSprites.RankDot);
+                    dot.style.unityBackgroundImageTintColor = d < rank ? HexRankFilledBlue : HexRankEmptyGray;
+                    dotsRow.Add(dot);
+                    dots[d] = dot;
+                }
+            }
+            else
+            {
+                dotsRow.style.display = DisplayStyle.None;
             }
 
             node.Add(dotsRow);
@@ -266,7 +280,10 @@ namespace Project.UI
             Vector2 a = from.Pos;
             Vector2 b = to.Pos;
             Vector2 delta = b - a;
-            float length = Mathf.Max(8f, delta.magnitude - HexSize * 0.55f);
+            float fromSize = from.Skill != null && from.Skill.IsMovementSystemUnlock ? HexAnchorSize : HexSize;
+            float toSize = to.Skill != null && to.Skill.IsMovementSystemUnlock ? HexAnchorSize : HexSize;
+            float inset = (fromSize + toSize) * 0.28f;
+            float length = Mathf.Max(8f, delta.magnitude - inset);
             float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
             Vector2 mid = (a + b) * 0.5f;
 
@@ -396,7 +413,7 @@ namespace Project.UI
             string status = isMaxed
                 ? "MAX RANK"
                 : canAllocate
-                    ? "Click to upgrade · Cost " + nextCost + " SP"
+                    ? "Click to upgrade ┬╖ Cost " + nextCost + " SP"
                     : error ?? "Locked";
 
             string body =
@@ -433,7 +450,7 @@ namespace Project.UI
             string status = isMaxed
                 ? "MAX RANK"
                 : canAllocate
-                    ? "Click to upgrade · Cost " + nextCost + " SP"
+                    ? "Click to upgrade ┬╖ Cost " + nextCost + " SP"
                     : error ?? "Locked";
 
             if (skillsDetailTitle != null)
@@ -472,10 +489,17 @@ namespace Project.UI
             return PlayerSkillAllocator.ArePrerequisitesFullyMet(skill, boundProgression, out _);
         }
 
-        private static Vector2 HexGridToPos(int column, int row)
+        private static string TrimAnchorLabel(string displayName)
+        {
+            if (string.IsNullOrEmpty(displayName))
+                return string.Empty;
+            return displayName.Trim().Trim('(', ')');
+        }
+
+        private static Vector2 HexGridToPos(int column, int row, int minRow)
         {
             float x = HexPadX + column * HexColSpacing + HexSize * 0.5f;
-            float y = HexPadY + row * HexRowSpacing + HexSize * 0.5f;
+            float y = HexPadY + (row - minRow) * HexRowSpacing + HexSize * 0.5f;
             if ((column & 1) == 1)
                 y += HexRowSpacing * 0.18f;
             return new Vector2(x, y);

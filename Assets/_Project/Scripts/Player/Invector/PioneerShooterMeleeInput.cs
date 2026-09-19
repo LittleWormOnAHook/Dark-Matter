@@ -1252,13 +1252,6 @@ namespace Project.Player.Invector
             return move;
         }
 
-        /// <summary>
-        /// ECM2 + Invector RB already keep transforms in sync; global SyncTransforms was ~1ms+/frame.
-        /// </summary>
-        protected override void SyncPhysicsTransformsBeforeMotor()
-        {
-        }
-
         /// <summary>UITK HUD owns stamina/health crosshair ticks — skip Invector vHUDController updates.</summary>
         public override void UpdateHUD()
         {

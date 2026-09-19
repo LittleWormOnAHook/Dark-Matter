@@ -49,7 +49,7 @@ namespace Project.Features.Jetpack
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
+            GameObject player = Project.Player.DMPlayerRuntimeRoot.Find();
             if (player == null)
                 return;
 
@@ -125,6 +125,14 @@ namespace Project.Features.Jetpack
             _smoothAccel = Vector3.zero;
             _accelVelocity = Vector3.zero;
             _weight = 0f;
+        }
+
+        /// <summary>Clear fall/jetpack limb offsets before owned land clips drive the skeleton.</summary>
+        internal void ResetForLanding()
+        {
+            ResetInertia();
+            for (int i = 0; i < _limbs.Length; i++)
+                _limbs[i].ClearOffset();
         }
 
         private void LateUpdate()
@@ -228,6 +236,12 @@ namespace Project.Features.Jetpack
                     MaxDegrees = maxDegrees,
                     Whip = whip
                 };
+            }
+
+            public void ClearOffset()
+            {
+                _offset = Vector3.zero;
+                _offsetVelocity = Vector3.zero;
             }
 
             public void Apply(Vector3 worldInertia, float weight, float dt)

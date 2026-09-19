@@ -15,6 +15,11 @@ namespace Project.EditorTools
         public const string Companions = Root + "Companions/";
         public const string World = Root + "World/";
         public const string WorldGaia = World + "Gaia/";
+        public const string SplineCreatorWindowPrimary = Root + "Spline Creator Window";
+        public const string SplineCreatorWindow = World + "Spline Creator Window";
+        public const string CreateElectricalLineSpline = World + "Create Electrical Line Spline";
+        public const string CreateObjectPlacerSpline = World + "Create Object Placer Spline";
+        public const string CreateScatterPlacer = World + "Create Scatter Placer";
         public const string Scanner = Root + "Scanner/";
         public const string Debug = Root + "Debug/";
         public const string Diagnostics = Root + "Diagnostics/";
@@ -131,6 +136,7 @@ namespace Project.EditorTools
         public const string EditorFourTerrainsAndImpostors = WorldGaia + "Editor: 4 Terrains + Impostors";
         public const string BakeTlmImpostors = WorldGaia + "Bake TLM Impostors";
         public const string BakeBorderFence = World + "Bake Border Fence";
+        public const string WireSelectedSlidingDoor = World + "Wire Selected Sliding Door";
         public const string SetupWalkerDrillInScene = World + "Setup Walker Drill In Scene";
         public const string BuildWalkerDrillAnimatorController = World + "Build Walker Drill Animator Controller";
         public const string SaveWalkerDrillPrefab = World + "Save Walker Drill Prefab";

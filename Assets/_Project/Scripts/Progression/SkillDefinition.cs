@@ -33,7 +33,11 @@ namespace Project.Progression
         SplashDotDurationPercent,
         SplashOverpressurePercent,
         SplashClusterPulsePercent,
-        SplashCloudDurationPercent
+        SplashCloudDurationPercent,
+        /// <summary>Tier-0 journal anchor — unlocks climb when rank is above zero.</summary>
+        ClimbSystemUnlock,
+        JetpackSystemUnlock,
+        DashSystemUnlock
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>
@@ -62,6 +66,9 @@ namespace Project.Progression
         public const string OverpressureSkillId = "skill_overpressure";
         public const string ClusterMunitionsSkillId = "skill_cluster_munitions";
         public const string PersistentHazardSkillId = "skill_persistent_hazard";
+        public const string ClimbSystemSkillId = "skill_system_climb";
+        public const string JetpackSystemSkillId = "skill_system_jetpack";
+        public const string DashSystemSkillId = "skill_system_dash";
         public const int DisplayMaxRank = 5;
 
         [Header("Identity")]
@@ -100,6 +107,11 @@ namespace Project.Progression
         public string[] prerequisiteSkillIds;
 
         public string ResolvedId => string.IsNullOrEmpty(skillId) ? name : skillId;
+
+        public bool IsMovementSystemUnlock =>
+            modifierType == SkillModifierType.ClimbSystemUnlock
+            || modifierType == SkillModifierType.JetpackSystemUnlock
+            || modifierType == SkillModifierType.DashSystemUnlock;
         public int RequiredPlayerLevel => GetRequiredPlayerLevelForRank(1);
         public int ClampedMaxRank => Mathf.Clamp(maxRank, 1, DisplayMaxRank);
         public int BranchDepth => SkillTreeDepthUtility.GetBranchDepth(this);

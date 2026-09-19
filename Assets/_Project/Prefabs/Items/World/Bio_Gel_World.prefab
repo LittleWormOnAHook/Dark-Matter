@@ -210,4 +210,4 @@ MonoBehaviour:
   normalMapScrollSpeed: {x: 0, y: 0}
   useUnscaledTime: 0
   phaseOffset: 0
-  previewInEditMode: 1
+  previewInEditMode: 0

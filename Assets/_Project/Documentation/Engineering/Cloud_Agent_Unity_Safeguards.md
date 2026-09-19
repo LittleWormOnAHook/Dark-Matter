@@ -2,6 +2,8 @@
 
 Cloud Agents and branch switches can change **files on disk** while Unity still holds an older in-memory view—or reload scenes from an **older commit**. That feels like "reversed progress" even when git history is consistent.
 
+**Full policy (disk truth, partial commits, backups, agent paste block):** [Unity_Git_Disk_Truth.md](Unity_Git_Disk_Truth.md)
+
 ## Quick checklist (Anthony)
 
 | When | Do |

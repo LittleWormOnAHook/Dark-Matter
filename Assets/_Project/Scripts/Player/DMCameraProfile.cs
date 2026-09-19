@@ -49,6 +49,22 @@ namespace Project.Player
         public float extraSkin = 0.08f;
         public float floorProbe = 3.0f;
 
+        [Header("Tight spaces (tents, corners, single walls)")]
+        [Tooltip("When geometry blocks the lens closer than Min Follow, allow pulling in to this distance (meters from pivot).")]
+        public float tightSpaceMinFollow = 0.4f;
+        [Tooltip("Hide the player mesh when the lens is closer than this to the pivot (prevents clipping through the body).")]
+        public float playerMeshHideDistance = 0.85f;
+        [Tooltip("Hysteresis before re-showing the player mesh after a hide.")]
+        public float playerMeshShowHysteresis = 0.18f;
+        [Tooltip("When leaving a tight push, blend back toward the last comfortable follow distance.")]
+        public float tightSpaceReleaseSpeed = 7.5f;
+        [Tooltip("Max follow distance while the pivot is inside an enclosed shell (tent, room).")]
+        public float interiorMaxFollow = 1.35f;
+        [Tooltip("First-person-style follow when interior push cannot keep the lens inside the shell.")]
+        public float interiorFirstPersonDistance = 0.35f;
+        [Tooltip("Horizontal ray length used to detect enclosed spaces around the pivot.")]
+        public float interiorEnclosureProbeDistance = 2.75f;
+
         [Header("Lens")]
         [Tooltip("Gameplay camera near clip plane. Too small + max zoom-in can make world UI swim.")]
         public float nearClipPlane = 0.05f;
@@ -71,6 +87,13 @@ namespace Project.Player
             if (defaultDistance + 0.01f < minFollow)
                 defaultDistance = minFollow;
             nearClipPlane = Mathf.Clamp(nearClipPlane, 0.01f, 1f);
+            tightSpaceMinFollow = Mathf.Clamp(tightSpaceMinFollow, 0.15f, minFollow - 0.05f);
+            playerMeshHideDistance = Mathf.Clamp(playerMeshHideDistance, tightSpaceMinFollow + 0.05f, minFollow);
+            playerMeshShowHysteresis = Mathf.Max(0.05f, playerMeshShowHysteresis);
+            tightSpaceReleaseSpeed = Mathf.Max(1f, tightSpaceReleaseSpeed);
+            interiorMaxFollow = Mathf.Clamp(interiorMaxFollow, tightSpaceMinFollow + 0.05f, minFollow);
+            interiorFirstPersonDistance = Mathf.Clamp(interiorFirstPersonDistance, 0.15f, tightSpaceMinFollow);
+            interiorEnclosureProbeDistance = Mathf.Max(1f, interiorEnclosureProbeDistance);
         }
     }
 }

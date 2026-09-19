@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 66.70734
+      value: 66.393
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.3899994
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 22.99247
+      value: 23.451
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
       propertyPath: m_LocalRotation.w
@@ -107,7 +107,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Environment.DMIFleshBlobTrigger
   animator: {fileID: 8950528781836385232}
   idleClip: {fileID: 4781951162920444690, guid: 67c0da234c21d1f44bb4e25661efc0d7, type: 3}
-  idleAnimSpeed: 0.2
+  idleAnimSpeed: 1
   triggeredAnimSpeed: 1
   triggerRadius: 9.77
   fuseDuration: 6

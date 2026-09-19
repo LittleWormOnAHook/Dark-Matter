@@ -221,7 +221,7 @@ namespace Project.Features.Climb
         public float mantleIgnoreLands = 2.6f;
 
         [Header("Landing")]
-        [Tooltip("Shorter than this is a regular Invector hop. Everything else under lethal uses hero / Jetpack Land.")]
+        [Tooltip("Jump/Landing: drops shorter than this use short bounce (LandLow). From this height up to the damage band uses hero LandHigh; higher still hero + damage (jetpack grace on lethal).")]
         [Range(0.5f, 8f)]
         public float heroDropMeters = 2.6f;
 

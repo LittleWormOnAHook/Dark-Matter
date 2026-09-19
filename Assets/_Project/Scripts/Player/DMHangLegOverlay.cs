@@ -78,11 +78,20 @@ namespace Project.Player
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
+            GameObject player = DMPlayerRuntimeRoot.Find();
             if (player == null)
                 return;
 
             Bind(player);
+        }
+
+        internal void ResetForOwnedLand()
+        {
+            RestoreDashSnapshot();
+            ClearDashSnapshot();
+            _weight = 0f;
+            _mode = Mode.Off;
+            _target = Mode.Off;
         }
 
         internal static DMHangLegOverlay Bind(GameObject player)
@@ -175,8 +184,9 @@ namespace Project.Player
                 return;
 
             TickBlend();
+            bool ownedLand = landing != null && landing.IsLandingLocked;
             bool jetpackAir = jetpack != null && jetpack.IsJetpackAnimActive;
-            if (_weight <= 0.001f && !jetpackAir)
+            if (_weight <= 0.001f && !jetpackAir && !ownedLand)
                 return;
 
             // Never pose with IK. Zero foot-plant so Invector cannot overwrite the overlay

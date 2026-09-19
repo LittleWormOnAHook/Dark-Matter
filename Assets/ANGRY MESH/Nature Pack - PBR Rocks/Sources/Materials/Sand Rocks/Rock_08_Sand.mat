@@ -266,8 +266,8 @@ Material:
     - _AlphaCutoffEnable: 0
     - _AlphaDstBlend: 0
     - _AlphaSrcBlend: 1
-    - _BaseAOIntensity: 0.873
-    - _BaseSmoothness: 0.472
+    - _BaseAOIntensity: 1
+    - _BaseSmoothness: 0.092
     - _BlendMode: 0
     - _BumpScale: 1
     - _Contrast: 0.5
@@ -276,13 +276,13 @@ Material:
     - _CullModeForward: 2
     - _Cutoff: 0.5
     - _Detail: 2
-    - _DetailAlbedoIntensity: 1
+    - _DetailAlbedoIntensity: 0.072
     - _DetailAlbedoOpacity: 0.609
     - _DetailIntensity: 0
     - _DetailNormalIntensity: 0
-    - _DetailNormalMapIntensity: 0.19
+    - _DetailNormalMapIntensity: 0.82
     - _DetailNormalMapScale: 0
-    - _DetailUVScale: 3
+    - _DetailUVScale: 5.3
     - _DetailWorldMapping: 1
     - _Detail_Contrast: 1
     - _DoubleSidedEnable: 0
@@ -374,7 +374,7 @@ Material:
     - _node_7069: 0.51
     - _node_9200: 0
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.9924528, g: 0.9101496, b: 0.67224634, a: 1}
     - _COLORRR: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color0: {r: 1, g: 1, b: 1, a: 0}
@@ -385,7 +385,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _MaskColor: {r: 1, g: 1, b: 1, a: 0}
     - _MultiplyColor: {r: 1, g: 1, b: 1, a: 1}
-    - _TopColor: {r: 1, g: 1, b: 1, a: 0}
+    - _TopColor: {r: 1, g: 0.6543112, b: 0.020754695, a: 0}
     - _Top_Color: {r: 0.49803913, g: 0.49803913, b: 1, a: 0}
     - _node_4205: {r: 1, g: 1, b: 1, a: 1}
     - _node_7672: {r: 1, g: 1, b: 1, a: 1}

@@ -78,6 +78,48 @@ namespace Project.Core
             runner.StartCoroutine(ReleaseAfterDelay(instance, delay, lease));
         }
 
+        /// <summary>
+        /// Runs on the pool runner so one-shot VFX still return after vendor scripts disable the instance.
+        /// </summary>
+        public static void ScheduleOneShotVfxRelease(
+            GameObject instance,
+            float maxLifeSeconds,
+            ParticleSystem[] cachedParticles = null)
+        {
+            if (instance == null)
+                return;
+
+            EnsureRoot();
+            int lease = 0;
+            if (instance.TryGetComponent(out PooledInstanceTag tag))
+                lease = tag.LeaseId;
+
+            runner.StartCoroutine(OneShotVfxReleaseRoutine(instance, maxLifeSeconds, cachedParticles, lease));
+        }
+
+        /// <summary>
+        /// Vendor VFX often disables the root without returning to the pool; finish the return off the disabled instance.
+        /// </summary>
+        public static void TryReturnOrphanedPooledInstance(GameObject instance)
+        {
+            if (instance == null || !instance.TryGetComponent(out PooledInstanceTag tag) || tag.SourcePool == null)
+                return;
+
+            if (IsInactiveUnderPoolRoot(instance))
+                return;
+
+            if (!instance.activeSelf)
+                ReleaseDelayed(instance, 0f);
+        }
+
+        internal static bool IsInactiveUnderPoolRoot(GameObject instance)
+        {
+            return instance != null
+                && poolRoot != null
+                && !instance.activeSelf
+                && instance.transform.parent == poolRoot;
+        }
+
         public static void ReleaseDelayed(MonoBehaviour host, GameObject instance, float delay)
         {
             if (instance == null)
@@ -121,6 +163,60 @@ namespace Project.Core
             }
 
             return wait;
+        }
+
+        private static IEnumerator OneShotVfxReleaseRoutine(
+            GameObject instance,
+            float maxLifeSeconds,
+            ParticleSystem[] cachedParticles,
+            int leaseAtSchedule)
+        {
+            const float pollInterval = 0.25f;
+            var pollWait = new WaitForSecondsRealtime(pollInterval);
+            float maxLife = Mathf.Max(0.05f, maxLifeSeconds);
+            float elapsed = 0f;
+            const float minVisibleSeconds = 0.2f;
+
+            ParticleSystem[] systems = cachedParticles;
+            if (systems == null || systems.Length == 0)
+            {
+                if (instance != null)
+                    systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            }
+
+            while (instance != null && elapsed < maxLife)
+            {
+                if (instance.TryGetComponent(out PooledInstanceTag tag) && tag.LeaseId != leaseAtSchedule)
+                    yield break;
+
+                yield return pollWait;
+                elapsed += pollInterval;
+
+                if (elapsed < minVisibleSeconds || systems == null || systems.Length == 0)
+                    continue;
+
+                bool anyAlive = false;
+                for (int i = 0; i < systems.Length; i++)
+                {
+                    ParticleSystem ps = systems[i];
+                    if (ps != null && ps.IsAlive(true))
+                    {
+                        anyAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyAlive)
+                    break;
+            }
+
+            if (instance == null)
+                yield break;
+
+            if (instance.TryGetComponent(out PooledInstanceTag leaseTag) && leaseTag.LeaseId != leaseAtSchedule)
+                yield break;
+
+            Release(instance);
         }
 
         public static void Prewarm(GameObject prefab, int count)

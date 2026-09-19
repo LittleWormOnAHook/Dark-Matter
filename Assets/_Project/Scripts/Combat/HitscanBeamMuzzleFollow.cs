@@ -138,7 +138,7 @@ namespace Project.Combat
         private void OnDestroy()
         {
             if (hitSparksInstance != null && !hitSparksAuthored)
-                Destroy(hitSparksInstance);
+                PoolManager.Release(hitSparksInstance);
         }
 
         private void ShutdownWeaponPulse()
@@ -289,9 +289,11 @@ namespace Project.Combat
             if (hitSparksInstance == null && hitSparksPrefab != null)
             {
                 hitSparksAuthored = false;
-                hitSparksInstance = Instantiate(hitSparksPrefab);
+                hitSparksInstance = PoolManager.Spawn(hitSparksPrefab, endPoint, Quaternion.identity);
+                if (hitSparksInstance == null)
+                    return;
+
                 hitSparksInstance.name = "HitscanHitSparks_SparksLong";
-                hitSparksInstance.transform.SetParent(null, true);
                 hitSparksInstance.transform.localScale = Vector3.one;
 
                 hitSparksParticles = hitSparksInstance.GetComponent<ParticleSystem>();
@@ -315,11 +317,17 @@ namespace Project.Combat
 
         private void StopHitSparks()
         {
+            if (hitSparksInstance == null)
+                return;
+
+            GameObject sparks = hitSparksInstance;
+            hitSparksInstance = null;
+
             if (hitSparksParticles != null)
                 hitSparksParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            hitSparksParticles = null;
 
-            if (hitSparksInstance != null)
-                hitSparksInstance.SetActive(false);
+            CombatVfxUtility.PreparePooledOneShotVfx(sparks, 0.35f, playParticles: false);
         }
 
         /// <summary>

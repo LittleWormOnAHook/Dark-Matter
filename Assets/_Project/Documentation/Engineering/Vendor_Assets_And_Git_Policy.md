@@ -75,7 +75,7 @@ That does **not** shrink old commits; it only stops future diffs. History rewrit
 
 ## Agents and hooks
 
-- Cloud agents: see `Cloud_Agent_Unity_Safeguards.md` — no silent checkout; no `git add -A`.
+- Cloud agents: see `Cloud_Agent_Unity_Safeguards.md` and **`Unity_Git_Disk_Truth.md`** — disk truth, scene/prefab staging, no silent checkout; no `git add -A`.
 - Optional: `Tools/install-unity-git-hooks.ps1` runs `DmUnityGitSafeguard.ps1` before commit/push.
 
 ---

@@ -1,4 +1,4 @@
-using System.Collections;
+using Project.Core;
 using UnityEngine;
 
 namespace Project.Combat
@@ -10,7 +10,6 @@ namespace Project.Combat
     internal sealed class CombatHitVfxPooledInstance : MonoBehaviour
     {
         private ParticleSystem[] _particleSystems;
-        private Coroutine _releaseRoutine;
 
         public void Play(float scale)
         {
@@ -34,32 +33,12 @@ namespace Project.Combat
                 releaseDelay = Mathf.Max(releaseDelay, main.duration + 1f);
             }
 
-            if (_releaseRoutine != null)
-                StopCoroutine(_releaseRoutine);
-
-            _releaseRoutine = StartCoroutine(ReleaseAfterDelay(releaseDelay));
-        }
-
-        private IEnumerator ReleaseAfterDelay(float delay)
-        {
-            float elapsed = 0f;
-            while (elapsed < delay)
-            {
-                yield return null;
-                elapsed += Time.unscaledDeltaTime;
-            }
-
-            _releaseRoutine = null;
-            CombatHitVfx.ReleaseToPool(gameObject);
+            PoolManager.ScheduleOneShotVfxRelease(gameObject, releaseDelay, _particleSystems);
         }
 
         private void OnDisable()
         {
-            if (_releaseRoutine != null)
-            {
-                StopCoroutine(_releaseRoutine);
-                _releaseRoutine = null;
-            }
+            PoolManager.TryReturnOrphanedPooledInstance(gameObject);
         }
     }
 }

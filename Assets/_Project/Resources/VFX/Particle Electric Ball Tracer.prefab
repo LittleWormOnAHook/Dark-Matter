@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
       propertyPath: m_Name
-      value: Particle Electric Ball Variant
+      value: Particle Electric Ball Tracer
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
       propertyPath: m_LocalPosition.x
@@ -51,6 +51,14 @@ PrefabInstance:
     - target: {fileID: 400000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 19800000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
+      propertyPath: InitialModule.startRotationX.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 19800000, guid: e517b3f9449d945ac97bf9897d01e434, type: 3}
+      propertyPath: InitialModule.startRotationY.minMaxState
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

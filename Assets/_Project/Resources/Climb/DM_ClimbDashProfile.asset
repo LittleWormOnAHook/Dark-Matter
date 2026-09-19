@@ -60,7 +60,7 @@ MonoBehaviour:
   mantleStandPad: 0.04
   mantleSeconds: 1.4
   mantleIgnoreLands: 2.6
-  heroDropMeters: 5.73
+  heroDropMeters: 4.447
   lethalDropMeters: 9
   fallDamageStartMeters: 9.5
   fallDamageLethalPercent: 0.3

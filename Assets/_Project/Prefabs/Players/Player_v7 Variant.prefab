@@ -4233,6 +4233,18 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -0.024927
       objectReference: {fileID: 0}
+    - target: {fileID: 8811223344556677881, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: dash
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8811223344556677881, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: jetpack
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8811223344556677881, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: requireSkillTreeUnlocks
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8942925215708721318, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.0083

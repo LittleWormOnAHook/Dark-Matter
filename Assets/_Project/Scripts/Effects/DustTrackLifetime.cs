@@ -16,8 +16,6 @@ namespace Project.Effects
         private static readonly Dictionary<int, Stack<DustTrackLifetime>> Pools = new Dictionary<int, Stack<DustTrackLifetime>>(4);
         private static readonly List<DustTrackLifetime> Live = new List<DustTrackLifetime>(20);
 
-        [SerializeField] private float lifetimeSeconds = DefaultLifetimeSeconds;
-
         private int prefabId;
         private float expireUnscaled;
         private bool armed;
@@ -67,7 +65,7 @@ namespace Project.Effects
 
         private static DustTrackLifetime Rent(GameObject prefab, Vector3 position, Quaternion rotation, Transform parent)
         {
-            int id = prefab.GetInstanceID();
+            int id = prefab.GetEntityId().GetHashCode();
             if (!Pools.TryGetValue(id, out Stack<DustTrackLifetime> stack))
             {
                 stack = new Stack<DustTrackLifetime>(8);

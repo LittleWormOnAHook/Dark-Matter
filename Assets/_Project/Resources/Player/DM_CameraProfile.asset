@@ -33,4 +33,11 @@ MonoBehaviour:
   sphereRadius: 0.2
   extraSkin: 0.08
   floorProbe: 3
+  tightSpaceMinFollow: 0.4
+  playerMeshHideDistance: 0.85
+  playerMeshShowHysteresis: 0.18
+  tightSpaceReleaseSpeed: 7.5
+  interiorMaxFollow: 1.35
+  interiorFirstPersonDistance: 0.35
+  interiorEnclosureProbeDistance: 2.75
   nearClipPlane: 0.05

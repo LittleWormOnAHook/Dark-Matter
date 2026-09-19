@@ -1420,7 +1420,7 @@ namespace Project.UI
             {
                 skillsDetailTitle.text = "Select a skill";
                 if (skillsDetailBody != null)
-                    skillsDetailBody.text = "Category hex trees from the Player skill allocator.";
+                    skillsDetailBody.text = "Hover or click a skill node to inspect ranks, requirements, and cost.";
                 if (skillsAllocate != null)
                     skillsAllocate.SetEnabled(false);
                 ApplySkillCardArt(null);
@@ -1476,7 +1476,7 @@ namespace Project.UI
             if (skillsCard == null)
                 return;
 
-            bool show = skill != null && PrototypeSkillCardIds.Contains(skill.ResolvedId);
+            bool show = skill != null;
             DMUiToolkitOverlayDocument.SetShown(skillsCard, show);
             if (!show)
             {
@@ -1496,7 +1496,11 @@ namespace Project.UI
                     DMUiToolkitStyle.ApplyBackgroundScale(skillsCardArt, ScaleMode.ScaleAndCrop);
                 }
                 else
+                {
                     skillsCardArt.style.backgroundImage = StyleKeyword.None;
+                    skillsCardArt.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(
+                        DarkMatterGenesisUiPalette.CharcoalGray, 0.92f);
+                }
             }
 
             if (skillsCardCaption != null)
