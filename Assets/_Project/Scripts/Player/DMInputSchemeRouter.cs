@@ -131,7 +131,7 @@ namespace Project.Player.Invector
             if (!gamepad)
             {
                 DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
-                gait?.ClearGamepadAutoRunLatch();
+                gait?.ClearGamepadLocomotionLatches();
             }
 
             if (!stampedLog && Application.isPlaying)

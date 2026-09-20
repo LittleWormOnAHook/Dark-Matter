@@ -818,8 +818,8 @@ namespace Project.Player
             {
                 if (context.performed)
                 {
-                    vThirdPersonController motor = GetComponent<vThirdPersonController>();
-                    motor?.Crouch();
+                    DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
+                    gait?.ToggleGamepadAutoCrouchLatch();
                 }
 
                 return;

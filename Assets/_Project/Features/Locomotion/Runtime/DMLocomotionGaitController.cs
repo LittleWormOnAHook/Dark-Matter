@@ -82,7 +82,11 @@ namespace Project.Features.Locomotion
 
         private bool _gamepadAutoRunLatched;
 
+        private bool _gamepadAutoCrouchLatched;
+
         public const string AutoRunLatchStamp = "controller-autorun-l3 0920";
+
+        public const string AutoCrouchLatchStamp = "controller-autocrouch-r3 0920";
 
         public Gait CurrentGait { get; private set; } = Gait.SlowWalk;
 
@@ -91,6 +95,8 @@ namespace Project.Features.Locomotion
         public bool IsBurstSprinting => CurrentGait == Gait.SprintBurst;
 
         public bool IsGamepadAutoRunLatched => _gamepadAutoRunLatched;
+
+        public bool IsGamepadAutoCrouchLatched => _gamepadAutoCrouchLatched;
 
         /// <summary>L3 / Sprint action toggle while on Gamepad scheme (jog latch, not hold).</summary>
         public void ToggleGamepadAutoRunLatch()
@@ -117,6 +123,31 @@ namespace Project.Features.Locomotion
 
             bool speedsChanged = RefreshSpeedsFromProfile();
             ApplyGaitFromInput(ReadKeyboardShiftHeld(), false, speedsChanged);
+        }
+
+        /// <summary>R3 / Crouch action toggle while on Gamepad scheme (crouch latch, not hold).</summary>
+        public void ToggleGamepadAutoCrouchLatch()
+        {
+            _gamepadAutoCrouchLatched = !_gamepadAutoCrouchLatched;
+            Debug.Log(
+                $"[DMLocomotionGaitController] {AutoCrouchLatchStamp} auto-crouch {(_gamepadAutoCrouchLatched ? "ON" : "OFF")}");
+
+            ApplyGamepadAutoCrouchLatchState();
+        }
+
+        public void ClearGamepadAutoCrouchLatch()
+        {
+            if (!_gamepadAutoCrouchLatched)
+                return;
+
+            _gamepadAutoCrouchLatched = false;
+            ApplyGamepadAutoCrouchLatchState();
+        }
+
+        public void ClearGamepadLocomotionLatches()
+        {
+            ClearGamepadAutoRunLatch();
+            ClearGamepadAutoCrouchLatch();
         }
 
         /// <summary>
@@ -225,7 +256,7 @@ namespace Project.Features.Locomotion
 
                 return;
 
-
+            EnforceGamepadAutoCrouchLatch();
 
             bool shiftHeld = EffectiveShiftHeld();
 
@@ -452,6 +483,31 @@ namespace Project.Features.Locomotion
 
         private bool EffectiveShiftHeld() => ComputeShiftHeldForLocomotion();
 
+        private void EnforceGamepadAutoCrouchLatch()
+        {
+            if (!_gamepadAutoCrouchLatched || !DMInputSchemeRouter.IsGamepadScheme || motor == null)
+                return;
+
+            if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
+                motor.Crouch();
+        }
+
+        private void ApplyGamepadAutoCrouchLatchState()
+        {
+            if (motor == null)
+                return;
+
+            if (_gamepadAutoCrouchLatched)
+            {
+                if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
+                    motor.Crouch();
+                return;
+            }
+
+            if (motor.isCrouching)
+                motor.Crouch();
+        }
+
         public static bool ReadKeyboardShiftHeld()
         {
             Keyboard keyboard = Keyboard.current;
@@ -465,14 +521,6 @@ namespace Project.Features.Locomotion
             return keyboard != null
                    && (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.rightShiftKey.wasPressedThisFrame);
         }
-
-        [System.Obsolete("Use ReadKeyboardShiftHeld; L3 auto-run is a toggle via Input System Sprint.")]
-        public static bool ReadShiftHeld() => ReadKeyboardShiftHeld();
-
-        [System.Obsolete("Use ReadKeyboardShiftPressedThisFrame; L3 uses Sprint toggle.")]
-        public static bool ReadShiftPressedThisFrame() => ReadKeyboardShiftPressedThisFrame();
-
-
 
         private float CurrentSlowMultiplier() =>
 
