@@ -294,6 +294,75 @@ namespace Project.UI
         }
 
         private static int escapeHandledFrame = -1;
+        private static int uiCancelHandledFrame = -1;
+
+        /// <summary>
+        /// Gamepad B / UI Cancel — back one layer only; never opens pause (Start / Esc own pause).
+        /// stamp: controller-fix-0920
+        /// </summary>
+        public static void HandleUiCancelBack()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (Time.frameCount == uiCancelHandledFrame)
+                return;
+
+            uiCancelHandledFrame = Time.frameCount;
+
+            if (DMUiToolkitLoadingOverlay.IsShowing)
+                return;
+
+            if (DMUiToolkitDevPanel.HandleBack())
+                return;
+
+            if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
+            {
+                DMUiToolkitHotCross.HideAmmoLoadPopup();
+                ResetHotCrossConsumableHold();
+                return;
+            }
+
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitMenuPanels.TryHandleEscapeBack())
+                return;
+
+            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            if (settings != null && settings.IsOpen)
+            {
+                settings.Close();
+                return;
+            }
+
+            ControlsPanelController controls = Object.FindAnyObjectByType<ControlsPanelController>();
+            if (controls != null && controls.IsOpen)
+            {
+                controls.HandleBack();
+                return;
+            }
+
+            SaveSlotsPanelController saves = Object.FindAnyObjectByType<SaveSlotsPanelController>();
+            if (saves != null && saves.IsOpen)
+            {
+                saves.Close();
+                return;
+            }
+
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+            {
+                if (!UiEscapeGate.TryConsumeEscape())
+                    return;
+                navigator.HandleEscape();
+                return;
+            }
+
+            if (DMUiToolkitMainMenu.IsVisible)
+            {
+                MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
+                if (menu != null && MainMenuController.BlocksGameplayHud)
+                    menu.InvokeResumeFromPause();
+            }
+        }
 
         /// <summary>Escape: close sub-panels, journal layers, then pause menu toggle.</summary>
         public static void TryHandleEscapeAndPause()
