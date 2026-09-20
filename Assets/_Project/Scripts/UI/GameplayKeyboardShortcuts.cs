@@ -1,8 +1,9 @@
-using Project.Core;
+﻿using Project.Core;
 using Project.Data;
 using Project.Interaction;
 using Project.Inventory;
 using Project.Player;
+using Project.Player.Invector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -14,6 +15,7 @@ namespace Project.UI
     /// <summary>
     /// Shared keyboard shortcuts for hotbar, journal tabs, toolbar tools, and pause menu.
     /// When UITK is enabled, <see cref="DMUiToolkitInputHost"/> is the sole caller.
+    /// stamp: hotcross-tab-arm-x-ammo 0920f
     /// </summary>
     public static class GameplayKeyboardShortcuts
     {
@@ -63,30 +65,32 @@ namespace Project.UI
             if (!CanProcess())
                 return;
 
+            // KBM tab letters (match Journal.uxml). Gamepad uses Journal + D-Pad/stick only.
+            // KeyCode poll is required while journal is open: DMUiModalInputGate disables the Player map.
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
                 return;
 
             if (keyboard.jKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.J);
-            else if (keyboard.iKey.wasPressedThisFrame)
+            if (keyboard.iKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.I);
-            else if (keyboard.mKey.wasPressedThisFrame)
+            if (keyboard.mKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.M);
-            else if (keyboard.kKey.wasPressedThisFrame)
+            if (keyboard.kKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.K);
-            else if (keyboard.pKey.wasPressedThisFrame)
+            if (keyboard.pKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.P);
-            else if (keyboard.uKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.U);
-            else if (keyboard.tKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.T);
-            else if (keyboard.lKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.L);
-            else if (keyboard.gKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.G);
-            else if (keyboard.cKey.wasPressedThisFrame)
+            if (keyboard.cKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.C);
+            if (keyboard.uKey.wasPressedThisFrame)
+                TryHandleJournalKeyCode(KeyCode.U);
+            if (keyboard.tKey.wasPressedThisFrame)
+                TryHandleJournalKeyCode(KeyCode.T);
+            if (keyboard.lKey.wasPressedThisFrame)
+                TryHandleJournalKeyCode(KeyCode.L);
+            if (keyboard.gKey.wasPressedThisFrame)
+                TryHandleJournalKeyCode(KeyCode.G);
         }
 
         public static void TryHandleHotbarHotkeys()
@@ -210,6 +214,13 @@ namespace Project.UI
 
         public static void TryHandleAll()
         {
+            // Journal tab letters must work while the journal locks the Player map / gameplay input.
+            if (IsGameplayInputLockedByUi())
+            {
+                TryHandleJournalHotkeys();
+                return;
+            }
+
             TryHandleCinematicHudToggle();
             TryHandleJournalHotkeys();
             TryHandleHotbarHotkeys();
@@ -264,10 +275,37 @@ namespace Project.UI
                 mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomOutMultiplier);
         }
 
+
+        public static void TryMinimapZoom(bool zoomIn)
+        {
+            if (!CanProcess())
+                return;
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return;
+            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            if (journal != null && journal.IsOpen)
+                return;
+            if (DMUiToolkitMenus.IsOpen)
+                return;
+            MapUI mapUi = Object.FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            if (mapUi == null)
+                return;
+            if (zoomIn)
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomInMultiplier);
+            else
+                mapUi.UitkAdjustMinimapSpan(MapUI.MinimapZoomOutMultiplier);
+        }
+
+        public static void TryToggleCinematicHudFromAction()
+        {
+            TryHandleCinematicHudToggle(forceFromAction: true);
+        }
+
         private static int cinematicHandledFrame = -1;
 
         /// <summary>Backquote / tilde hides gameplay chrome only. Always available in-session.</summary>
-        public static void TryHandleCinematicHudToggle()
+        public static void TryHandleCinematicHudToggle(bool forceFromAction = false)
         {
             if (!Application.isPlaying)
                 return;
@@ -284,9 +322,12 @@ namespace Project.UI
             if (IsTypingInTextField())
                 return;
 
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || !keyboard.backquoteKey.wasPressedThisFrame)
-                return;
+            if (!forceFromAction)
+            {
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard == null || !keyboard.backquoteKey.wasPressedThisFrame)
+                    return;
+            }
 
             cinematicHandledFrame = Time.frameCount;
             GameplayHudVisibility.ToggleCinematicChrome();
@@ -296,8 +337,8 @@ namespace Project.UI
         private static int uiCancelHandledFrame = -1;
 
         /// <summary>
-        /// Gamepad B / UI Cancel — back one layer only; never opens pause (Start / Esc own pause).
-        /// stamp: controller-fix-0920
+        /// Gamepad B / UI Cancel â€” back one layer only; never opens pause (Start / Esc own pause).
+        /// stamp: controller-b-dodge-dash 0920b
         /// </summary>
         public static void HandleUiCancelBack()
         {
@@ -314,6 +355,15 @@ namespace Project.UI
 
             if (DMUiToolkitDevPanel.HandleBack())
                 return;
+
+            if (DMUiToolkitMenus.TryHideInventoryContextMenu())
+                return;
+
+            if (DMUiToolkitContext.IsOpen)
+            {
+                DMUiToolkitContext.Hide();
+                return;
+            }
 
             if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
             {
@@ -346,12 +396,18 @@ namespace Project.UI
                 return;
             }
 
+            // Journal / fullscreen windows: B pops one layer (same as Esc back), no keyboard Escape required.
             FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
             if (navigator != null && navigator.IsAnyOpen)
             {
-                if (!UiEscapeGate.TryConsumeEscape())
-                    return;
                 navigator.HandleEscape();
+                return;
+            }
+
+            if (DMUiToolkitMenus.IsOpen)
+            {
+                navigator?.CloseAll();
+                DMUiToolkitMenus.ForceHideIfNavigatorClosed();
                 return;
             }
 
@@ -361,6 +417,40 @@ namespace Project.UI
                 if (menu != null && MainMenuController.BlocksGameplayHud)
                     menu.InvokeResumeFromPause();
             }
+        }
+
+        /// <summary>True when Cancel/B should act as Back (journal, pause overlay, popups, settings).</summary>
+        public static bool IsModalUiOpenForCancel()
+        {
+            if (DMUiToolkitLoadingOverlay.IsShowing || DMUiToolkitMainMenu.IsVisible)
+                return true;
+            if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
+                return true;
+            if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
+                return true;
+            if (DMUiToolkitMenus.IsInventoryContextOpen || DMUiToolkitContext.IsOpen)
+                return true;
+            if (DMUiToolkitMenus.IsOpen)
+                return true;
+            if (MainMenuController.BlocksGameplayHud || MainMenuController.IsPauseOverlayActive)
+                return true;
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+                return true;
+            if (GameplayMenuTime.IsInventoryPaused)
+                return true;
+            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            if (settings != null && settings.IsOpen)
+                return true;
+            if (DMUiToolkitControls.IsOpen)
+                return true;
+            return false;
+        }
+
+        /// <summary>Menus own input: only UI Navigate / Submit / Cancel should fire. Modal UI locks gameplay.</summary>
+        public static bool IsGameplayInputLockedByUi()
+        {
+            return IsModalUiOpenForCancel();
         }
 
         /// <summary>Escape: close sub-panels, journal layers, then pause menu toggle.</summary>
@@ -528,6 +618,7 @@ namespace Project.UI
             return false;
         }
 
+
         public static bool TryHandleJournalKeyCode(KeyCode keyCode)
         {
             if (!CanProcess())
@@ -539,8 +630,10 @@ namespace Project.UI
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.JournalQuest) == true;
                 case KeyCode.I:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Inventory) == true;
+                    if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory))
+                        return true;
+                    EnsureJournalPanel()?.OpenToInventoryTab();
+                    return true;
                 case KeyCode.M:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map)
                         || EnsureJournalPanel()?.TryToggleMapTab() == true;
@@ -550,9 +643,16 @@ namespace Project.UI
                 case KeyCode.P:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers) == true;
+                case KeyCode.C:
+                    if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
+                        return true;
+                    EnsureJournalPanel()?.OpenToCharacterTab();
+                    return true;
                 case KeyCode.U:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Recipes) == true;
+                    if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
+                        return true;
+                    EnsureJournalPanel()?.OpenToBlueprintsTab();
+                    return true;
                 case KeyCode.T:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Skills) == true;
@@ -562,9 +662,6 @@ namespace Project.UI
                 case KeyCode.G:
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements)
                         || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Achievements) == true;
-                case KeyCode.C:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Character) == true;
                 default:
                     return false;
             }
@@ -681,6 +778,12 @@ namespace Project.UI
         private static bool hotCrossGamepadAmmoHoldUsed;
         private static int hotCrossGamepadAmmoLostFrames;
 
+        // Tab / Y (North): tap = cycle weapon focus; hold ~0.5s = arm focused weapon.
+        private static bool hotCrossWeaponKeyHeld;
+        private static float hotCrossWeaponKeyDownTime;
+        private static bool hotCrossWeaponHoldUsed;
+        private static int hotCrossWeaponLostFrames;
+
         /// <summary>
         /// Hot Cross face keys: Tab cycles TL weapon focus 1-4 (no equip), LMB arms focused TL,
         /// X / D-Pad Right tap cycles TR utility focus 5-10 (no use), hold 0.5s uses focused TR
@@ -700,14 +803,21 @@ namespace Project.UI
             }
 
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
-                TryCycleHotCrossWeaponFocus();
+            Gamepad pad = Gamepad.current;
+            bool wpnPressed = (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
+                || (pad != null && pad.buttonNorth.wasPressedThisFrame);
+            bool wpnReleased = (keyboard != null && keyboard.tabKey.wasReleasedThisFrame)
+                || (pad != null && pad.buttonNorth.wasReleasedThisFrame);
+            bool wpnDown = (keyboard != null && keyboard.tabKey.isPressed)
+                || (pad != null && pad.buttonNorth.isPressed);
+            UpdateHotCrossWeaponCycleArm(wpnPressed, wpnReleased, wpnDown);
 
             if (keyboard != null)
                 UpdateHotCrossConsumableKey(keyboard);
 
             UpdateHotCrossGamepadAmmoSelect();
-            TryArmFocusedHotCrossWeapon();
+            // LMB still arms focused TL weapon (combat click when already drawn leaves fire alone).
+            TryArmFocusedHotCrossWeaponFromMouse();
         }
 
         public static bool TryHandleHotCrossKeyCode(KeyCode keyCode)
@@ -717,7 +827,7 @@ namespace Project.UI
 
             if (keyCode == KeyCode.Tab)
             {
-                TryCycleHotCrossWeaponFocus();
+                // Update poll owns tap (cycle+arm) / hold (arm). Swallow so UITK does not steal Tab.
                 return true;
             }
 
@@ -728,8 +838,110 @@ namespace Project.UI
                 return true;
             }
 
-            // B/N are handled by TryHandleToolbarHotkeys (Update poll) — do not also handle here.
+            // B/N are handled by TryHandleToolbarHotkeys (Update poll) â€” do not also handle here.
             return false;
+        }
+
+        
+        /// <summary>Tab / Y North: tap cycles to next weapon and arms/draws it; hold ~0.5s arms focused weapon without cycling.</summary>
+        private static void UpdateHotCrossWeaponCycleArm(bool pressed, bool released, bool down)
+        {
+            const float holdSeconds = 0.5f;
+
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+            {
+                hotCrossWeaponKeyHeld = false;
+                hotCrossWeaponHoldUsed = false;
+                hotCrossWeaponLostFrames = 0;
+                return;
+            }
+
+            if (pressed)
+            {
+                hotCrossWeaponKeyHeld = true;
+                hotCrossWeaponHoldUsed = false;
+                hotCrossWeaponKeyDownTime = Time.unscaledTime;
+                hotCrossWeaponLostFrames = 0;
+            }
+
+            if (hotCrossWeaponKeyHeld && down && !hotCrossWeaponHoldUsed
+                && (Time.unscaledTime - hotCrossWeaponKeyDownTime) >= holdSeconds)
+            {
+                hotCrossWeaponHoldUsed = true;
+                TryArmFocusedHotCrossWeaponNow();
+            }
+
+            if (released || (hotCrossWeaponKeyHeld && !down))
+            {
+                if (hotCrossWeaponKeyHeld && !hotCrossWeaponHoldUsed)
+                    TryCycleHotCrossWeaponFocus();
+                hotCrossWeaponKeyHeld = false;
+                hotCrossWeaponHoldUsed = false;
+                hotCrossWeaponLostFrames = 0;
+            }
+            else if (hotCrossWeaponKeyHeld && !down)
+            {
+                hotCrossWeaponLostFrames++;
+                if (hotCrossWeaponLostFrames > 3)
+                {
+                    if (!hotCrossWeaponHoldUsed)
+                        TryCycleHotCrossWeaponFocus();
+                    hotCrossWeaponKeyHeld = false;
+                    hotCrossWeaponHoldUsed = false;
+                    hotCrossWeaponLostFrames = 0;
+                }
+            }
+            else
+                hotCrossWeaponLostFrames = 0;
+        }
+
+        private static void TryArmFocusedHotCrossWeaponNow()
+        {
+            if (Time.frameCount == hotCrossArmHandledFrame)
+                return;
+            if (!TryResolveInventory(out InventorySystem inventory, out EquipmentController equipment, out _))
+                return;
+
+            int local = DMUiToolkitHotCross.WeaponLocalIndex;
+            int absolute = inventory.HotbarStartIndex + local;
+            ItemData item = inventory.GetItemAt(absolute);
+            if (item == null || !item.IsEquippable || !equipment.IsWeaponHotbarSlot(local))
+                return;
+
+            int weaponSlot = equipment.GetWeaponSlotIndexForHotbar(local);
+            if (weaponSlot < 0)
+                return;
+
+            // Already drawn active â€” still force Invector shooter rebind (Tab switch can leave old gun bound).
+            if (equipment.IsWeaponDrawn
+                && equipment.ActiveWeaponSlot == weaponSlot
+                && equipment.ActiveWeaponHotbarSlot == local)
+            {
+                hotCrossArmHandledFrame = Time.frameCount;
+                EnsureDrawnShooterBound(equipment);
+                return;
+            }
+
+            hotCrossArmHandledFrame = Time.frameCount;
+            // SelectWeaponSlot toggles holster when re-selecting the same slot; only call it when switching
+            // or when the slot is holstered (toggle then draws).
+            bool sameSlot = equipment.ActiveWeaponSlot == weaponSlot
+                && equipment.ActiveWeaponHotbarSlot == local;
+            if (!sameSlot || !equipment.IsWeaponDrawn)
+                equipment.SelectWeaponSlot(weaponSlot);
+            if (!equipment.IsWeaponDrawn)
+                equipment.DrawWeapon();
+            EnsureDrawnShooterBound(equipment);
+        }
+
+        private static void EnsureDrawnShooterBound(EquipmentController equipment)
+        {
+            if (equipment == null)
+                return;
+            PioneerInvectorWeaponBridge bridge = equipment.GetComponent<PioneerInvectorWeaponBridge>();
+            if (bridge == null)
+                bridge = Object.FindAnyObjectByType<PioneerInvectorWeaponBridge>();
+            bridge?.EnsureDrawnShooterBound();
         }
 
         private static void TryCycleHotCrossWeaponFocus()
@@ -747,6 +959,8 @@ namespace Project.UI
                 return;
 
             DMUiToolkitHotCross.NotifyWeaponLocalIndex(next);
+            // Tap Tab/Y fully switches: focus + arm/draw so fire is not required to finish the swap.
+            TryArmFocusedHotCrossWeaponNow();
         }
 
         private static void UpdateHotCrossConsumableKey(Keyboard keyboard)
@@ -864,7 +1078,7 @@ namespace Project.UI
 
         private static void TryCycleHotCrossConsumableFocus()
         {
-            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+            if (!TryResolveInventory(out InventorySystem inventory, out EquipmentController equipment, out InventoryItemActions itemActions))
                 return;
 
             int current = DMUiToolkitHotCross.ConsumableLocalIndex;
@@ -872,6 +1086,12 @@ namespace Project.UI
                 return;
 
             DMUiToolkitHotCross.NotifyConsumableLocalIndex(next);
+
+            // KBM X / pad D-Pad Right tap: cycle Hot Cross ammo focus and auto-load into the armed ranged weapon.
+            int absolute = inventory.HotbarStartIndex + next;
+            ItemData item = inventory.GetItemAt(absolute);
+            if (item != null && item.CountsAsAmmo && itemActions != null)
+                itemActions.TryEquipAmmoToActiveRangedWeapon(absolute);
         }
 
         private static void TryUseFocusedHotCrossConsumable()
@@ -893,7 +1113,7 @@ namespace Project.UI
                 {
                     if (itemActions != null && !itemActions.TryResolveActiveRangedWeaponHotbarSlot(out _))
                         return;
-                    PickupToastUI.Show("Cannot load — magazine full or incompatible");
+                    PickupToastUI.Show("Cannot load â€” magazine full or incompatible");
                 }
 
                 return;
@@ -922,7 +1142,7 @@ namespace Project.UI
             PickupToastUI.Show($"{item.itemName} cannot be used from Hot Cross");
         }
 
-        private static void TryArmFocusedHotCrossWeapon()
+        private static void TryArmFocusedHotCrossWeaponFromMouse()
         {
             Mouse mouse = Mouse.current;
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
@@ -952,8 +1172,24 @@ namespace Project.UI
 
             hotCrossArmHandledFrame = Time.frameCount;
             equipment.SelectWeaponSlot(weaponSlot);
+            if (!equipment.IsWeaponDrawn)
+                equipment.DrawWeapon();
+            EnsureDrawnShooterBound(equipment);
         }
 
+
+
+        /// <summary>Shared entry for toolbar tools from Input Actions or keyboard.</summary>
+        public static void TryUseToolFromAction(ToolType toolType)
+        {
+            if (!CanProcess())
+                return;
+            if (toolType == ToolType.Scanner)
+                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Scanner);
+            else if (toolType == ToolType.Binoculars)
+                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
+            TryUseTool(toolType);
+        }
 
         private static void TryUseTool(ToolType toolType)
         {
@@ -999,3 +1235,4 @@ namespace Project.UI
         }
     }
 }
+

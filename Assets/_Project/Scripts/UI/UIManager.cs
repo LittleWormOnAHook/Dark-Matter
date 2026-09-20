@@ -157,6 +157,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
                 return;
 
@@ -167,6 +168,7 @@ namespace Project.UI
         {
             if (!GameSession.HasStarted || !context.performed)
                 return;
+
 
             // Keyboard B is shared: tap = Blueprints (ToolBarUI), hold = binoculars.
             // Ignore the Input System performed pulse on keyboard B so hold can resolve first.
@@ -200,6 +202,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers))
                 return;
 
@@ -210,6 +213,7 @@ namespace Project.UI
         {
             if (!GameSession.HasStarted || !context.performed)
                 return;
+
 
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
                 return;
@@ -222,6 +226,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills))
                 return;
 
@@ -232,6 +237,7 @@ namespace Project.UI
         {
             if (!GameSession.HasStarted || !context.performed)
                 return;
+
 
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes))
                 return;
@@ -244,6 +250,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements))
                 return;
 
@@ -255,6 +262,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory))
                 return;
 
@@ -265,6 +273,7 @@ namespace Project.UI
         {
             if (!GameSession.HasStarted || !context.performed)
                 return;
+
 
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
                 return;
@@ -283,6 +292,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet))
                 return;
 
@@ -294,7 +304,8 @@ namespace Project.UI
             if (!context.performed)
                 return;
 
-            GameplayKeyboardShortcuts.HandleUiCancelBack();
+            if (GameplayKeyboardShortcuts.IsModalUiOpenForCancel())
+                GameplayKeyboardShortcuts.HandleUiCancelBack();
         }
 
         private JournalPanelUI GetJournalPanel()
@@ -314,16 +325,21 @@ namespace Project.UI
                 return;
 
             BindJournalAction(playerInput, "Journal", OnToggleJournal);
-            BindJournalAction(playerInput, "Inventory", OnToggleInventory);
-            BindJournalAction(playerInput, "Map", OnToggleMap);
-            BindJournalAction(playerInput, "Craft", OnToggleCraft);
-            BindJournalAction(playerInput, "Blueprints", OnToggleBlueprints);
-            BindJournalAction(playerInput, "Pioneers", OnTogglePioneers);
-            BindJournalAction(playerInput, "Skills", OnToggleSkills);
-            BindJournalAction(playerInput, "Echoes", OnToggleEchoes);
-            BindJournalAction(playerInput, "Achievements", OnToggleAchievements);
-            BindJournalAction(playerInput, "Character", OnToggleCharacter);
-            BindJournalAction(playerInput, "Pets", OnTogglePets);
+            // UITK: Journal open only — tabs are D-Pad/stick (DMUiJournalGamepadNav). Do not bind I/M/C/...
+            bool uitkMenus = DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive;
+            if (!uitkMenus)
+            {
+                BindJournalAction(playerInput, "Inventory", OnToggleInventory);
+                BindJournalAction(playerInput, "Map", OnToggleMap);
+                BindJournalAction(playerInput, "Craft", OnToggleCraft);
+                BindJournalAction(playerInput, "Blueprints", OnToggleBlueprints);
+                BindJournalAction(playerInput, "Pioneers", OnTogglePioneers);
+                BindJournalAction(playerInput, "Skills", OnToggleSkills);
+                BindJournalAction(playerInput, "Echoes", OnToggleEchoes);
+                BindJournalAction(playerInput, "Achievements", OnToggleAchievements);
+                BindJournalAction(playerInput, "Character", OnToggleCharacter);
+                BindJournalAction(playerInput, "Pets", OnTogglePets);
+            }
 
             InputAction cancel = playerInput.actions.FindAction("Cancel", false);
             if (cancel != null)

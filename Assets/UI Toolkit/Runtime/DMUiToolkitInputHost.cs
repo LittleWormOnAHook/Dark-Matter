@@ -51,6 +51,7 @@ namespace Project.UI
             GameplayKeyboardShortcuts.TryHandleDevPanel();
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
             GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
+            DMUiModalInputGate.Tick();
             DMUiJournalGamepadNav.Tick();
 
             if (Time.unscaledTime >= nextGhostClear)
@@ -65,6 +66,14 @@ namespace Project.UI
                 && !DMUiToolkitMenuPanels.IsAnySubPanelOpen)
             {
                 GameplayKeyboardShortcuts.TryHandleAll();
+            }
+            else if (GameSession.HasStarted
+                && !DMUiToolkitLoadingOverlay.IsShowing
+                && !DMUiToolkitMainMenu.IsVisible
+                && DMUiToolkitMenus.IsOpen)
+            {
+                // Journal open: Player map is disabled — still poll tab letters.
+                GameplayKeyboardShortcuts.TryHandleJournalHotkeys();
             }
         }
 
@@ -101,24 +110,21 @@ namespace Project.UI
                     GameplayKeyboardShortcuts.HandleEscapePressed();
                     evt.StopImmediatePropagation();
                     return;
-                case KeyCode.C:
-                    if (GameplayKeyboardShortcuts.TryHandleJournalKeyCode(KeyCode.C))
-                        evt.StopImmediatePropagation();
-                    return;
                 case KeyCode.J:
-                case KeyCode.B:
-                    if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(evt.keyCode))
-                        evt.StopImmediatePropagation();
-                    return;
                 case KeyCode.I:
                 case KeyCode.M:
                 case KeyCode.K:
                 case KeyCode.P:
+                case KeyCode.C:
                 case KeyCode.U:
                 case KeyCode.T:
                 case KeyCode.L:
                 case KeyCode.G:
                     if (GameplayKeyboardShortcuts.TryHandleJournalKeyCode(evt.keyCode))
+                        evt.StopImmediatePropagation();
+                    return;
+                case KeyCode.B:
+                    if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(KeyCode.B))
                         evt.StopImmediatePropagation();
                     return;
                 case KeyCode.Alpha1:
