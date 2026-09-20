@@ -36,7 +36,6 @@ namespace Project.Player.Invector
         private DMDashController _dash;
         private DMClimbController _climb;
         private DMLocomotionGaitController _locomotionGait;
-        private PlayerInput _playerInput;
         private bool _combatBlockedByUiPointer;
 
         public bool IsAiming => _shooterInput != null && (_shooterInput.isAimingByInput || _shooterInput.IsAiming);
@@ -71,7 +70,6 @@ namespace Project.Player.Invector
             _dash = GetComponent<DMDashController>();
             _climb = GetComponent<DMClimbController>();
             _locomotionGait = GetComponent<DMLocomotionGaitController>();
-            _playerInput = GetComponent<PlayerInput>();
         }
 
         private float _nextStaminaSyncUnscaled;
@@ -85,20 +83,7 @@ namespace Project.Player.Invector
                 return;
 
             RefreshCombatUiPointerBlock();
-            SyncInvectorInputDeviceFromPlayerInput();
             ApplyInputLocks(_shooterInput);
-        }
-
-        private void SyncInvectorInputDeviceFromPlayerInput()
-        {
-            if (vInput.instance == null)
-                return;
-
-            if (_playerInput == null)
-                _playerInput = GetComponent<PlayerInput>();
-
-            bool gamepad = _playerInput != null && _playerInput.currentControlScheme == "Gamepad";
-            vInput.instance.inputDevice = gamepad ? InputDevice.Joystick : InputDevice.MouseKeyboard;
         }
 
         private void LateUpdate()

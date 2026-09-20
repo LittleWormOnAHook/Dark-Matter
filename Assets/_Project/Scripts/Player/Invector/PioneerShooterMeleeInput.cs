@@ -28,7 +28,6 @@ namespace Project.Player.Invector
         private const float GamepadStickDeadZone = 0.18f;
         /// <summary>Maps right-stick -1..1 into RotateCamera before Invector sensitivity.</summary>
         private const float GamepadStickLookScale = 6f;
-        private const string GamepadControlScheme = "Gamepad";
         private const string KbmLookStamp = "controller-kbm-look 0920";
         /// <summary>Fallback discrete mouse-wheel zoom stops when no profile is assigned.</summary>
         private const int DefaultZoomClickLevels = 10;
@@ -59,7 +58,6 @@ namespace Project.Player.Invector
         private DMLocomotionGaitController _locomotionGait;
         private EquipmentController _equipment;
         private PlayerController _playerController;
-        private PlayerInput _playerInput;
         private static bool _loggedKbmLookStamp;
         private bool _miningScanAimHold;
         /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
@@ -492,6 +490,14 @@ namespace Project.Player.Invector
             }
         }
 
+        public override void CrouchInput()
+        {
+            if (DMInputSchemeRouter.IsGamepadScheme)
+                return;
+
+            base.CrouchInput();
+        }
+
         public override void MoveInput()
         {
             if (lockMoveInput || cc == null || !CanReadGameplayInput())
@@ -597,10 +603,7 @@ namespace Project.Player.Invector
             if (_playerInput == null)
                 _playerInput = GetComponent<PlayerInput>();
 
-            bool useGamepadScheme = _playerInput != null &&
-                                    _playerInput.currentControlScheme == GamepadControlScheme;
-
-            SyncInvectorInputDevice(useGamepadScheme);
+            bool useGamepadScheme = DMInputSchemeRouter.IsGamepadScheme;
 
             if (!_loggedKbmLookStamp && Application.isPlaying)
             {
@@ -632,16 +635,6 @@ namespace Project.Player.Invector
 
             x = delta.x * MouseLookScale;
             y = delta.y * MouseLookScale;
-        }
-
-        private static void SyncInvectorInputDevice(bool gamepadScheme)
-        {
-            if (vInput.instance == null)
-                return;
-
-            vInput.instance.inputDevice = gamepadScheme
-                ? InputDevice.Joystick
-                : InputDevice.MouseKeyboard;
         }
 
         /// <summary>
@@ -1294,8 +1287,18 @@ namespace Project.Player.Invector
         }
 
 
-        private static Vector2 ReadMoveVector()
+        private Vector2 ReadMoveVector()
         {
+            if (_playerController == null)
+                _playerController = GetComponent<PlayerController>();
+
+            Vector2 fromInputSystem = _playerController != null ? _playerController.MoveInput : Vector2.zero;
+            if (fromInputSystem.sqrMagnitude > 0.0001f)
+                return fromInputSystem;
+
+            if (DMInputSchemeRouter.IsGamepadScheme)
+                return Vector2.zero;
+
             Vector2 move = Vector2.zero;
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)

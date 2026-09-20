@@ -14,6 +14,7 @@ using Project.UI;
 using Project.Vehicles;
 using Invector.vCamera;
 using Invector;
+using Invector.vCharacterController;
 
 namespace Project.Player
 {
@@ -800,6 +801,17 @@ namespace Project.Player
         {
             if (IsGameplayPaused)
                 return;
+
+            if (UsesInvectorMotor() && DMInputSchemeRouter.IsGamepadScheme)
+            {
+                if (context.performed)
+                {
+                    vThirdPersonController motor = GetComponent<vThirdPersonController>();
+                    motor?.Crouch();
+                }
+
+                return;
+            }
 
             if (context.started || context.performed)
                 _crouchInput = true;

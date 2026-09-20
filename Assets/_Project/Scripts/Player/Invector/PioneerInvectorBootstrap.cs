@@ -81,6 +81,9 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerPlayerInputBinder>() == null)
                 gameObject.AddComponent<PioneerPlayerInputBinder>();
 
+            if (GetComponent<DMInputSchemeRouter>() == null)
+                gameObject.AddComponent<DMInputSchemeRouter>();
+
             if (GetComponent<PioneerInvectorSurvivalBridge>() == null)
                 gameObject.AddComponent<PioneerInvectorSurvivalBridge>();
 
