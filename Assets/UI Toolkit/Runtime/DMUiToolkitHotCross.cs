@@ -107,7 +107,7 @@ namespace Project.UI
         }
 
         /// <summary>
-        /// Opens the Hot Cross ammo load popup. Highlight prefers the currently drawn weapon when eligible.
+        /// Optional confirm UI for ammo load. Weapon list is skipped — only the preferred/active ranged slot is used.
         /// </summary>
         public static bool ShowAmmoLoadPopup(
             int ammoAbsoluteSlot,
@@ -648,26 +648,35 @@ namespace Project.UI
             if (ammoPopup == null || ammoList == null || options == null || options.Count == 0)
                 return false;
 
+            ResolveInventory();
             ammoPopupAbsoluteSlot = ammoAbsoluteSlot;
             ammoConfirmHandler = onConfirmWeaponHotbar;
             ammoOptions.Clear();
-            ammoOptions.AddRange(options);
+
+            int targetWeapon = preferredWeaponHotbarSlot;
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (targetWeapon < 0 || options[i].WeaponHotbarSlot == targetWeapon)
+                    ammoOptions.Add(options[i]);
+            }
+
+            if (ammoOptions.Count == 0)
+                return false;
 
             ammoHighlightIndex = 0;
-            for (int i = 0; i < ammoOptions.Count; i++)
-            {
-                if (ammoOptions[i].WeaponHotbarSlot == preferredWeaponHotbarSlot)
-                {
-                    ammoHighlightIndex = i;
-                    break;
-                }
-            }
 
             ItemData ammo = null;
             if (inventory != null)
                 ammo = inventory.GetItemAt(ammoAbsoluteSlot);
+            ItemData weapon = equipment != null && targetWeapon >= 0
+                ? equipment.GetHotbarItem(targetWeapon)
+                : null;
+            string weaponName = weapon != null ? weapon.itemName : "drawn weapon";
             if (ammoTitle != null)
-                ammoTitle.text = ammo != null ? $"Load {ammo.itemName} into" : "Load ammo into";
+                ammoTitle.text = ammo != null ? $"Load {ammo.itemName} into {weaponName}" : $"Load ammo into {weaponName}";
+
+            if (ammoHint != null)
+                ammoHint.text = "Hold confirm  |  Esc cancel";
 
             ammoPopupOpen = true;
             RebuildAmmoList();

@@ -581,6 +581,57 @@ namespace Project.Inventory
             return true;
         }
 
+        /// <summary>Drawn ranged weapon hotbar slot, or -1 when holstered / melee / mining.</summary>
+        public bool TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot)
+        {
+            weaponHotbarSlot = -1;
+            if (equipment == null || !equipment.HasActiveRangedWeapon())
+                return false;
+
+            weaponHotbarSlot = equipment.ActiveWeaponHotbarSlot;
+            ItemData weapon = equipment.GetHotbarItem(weaponHotbarSlot);
+            if (weapon == null || !weapon.IsRangedWeapon || weapon.isMiningTool)
+            {
+                weaponHotbarSlot = -1;
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool CanEquipAmmoToActiveRangedWeapon(int ammoSlotIndex)
+        {
+            if (!TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot))
+                return false;
+
+            ItemData ammo = inventory?.GetItemAt(ammoSlotIndex);
+            if (ammo == null || !ammo.CountsAsAmmo || ammo.isContinuousLaser)
+                return false;
+
+            ItemData weapon = equipment.GetHotbarItem(weaponHotbarSlot);
+            return weapon != null && weapon.AcceptsAmmoType(ammo.ammoType);
+        }
+
+        /// <summary>Hot Cross / D-Pad ammo cycle — loads into the drawn ranged weapon only.</summary>
+        public bool TryEquipAmmoToActiveRangedWeapon(int ammoSlotIndex, bool showToast = true)
+        {
+            if (!TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot))
+            {
+                if (showToast)
+                    PickupToastUI.Show("Draw a ranged weapon to load ammo");
+                return false;
+            }
+
+            if (!CanEquipAmmoToActiveRangedWeapon(ammoSlotIndex))
+            {
+                if (showToast)
+                    PickupToastUI.Show("Ammo incompatible with drawn weapon");
+                return false;
+            }
+
+            return TryEquipAmmoToWeapon(ammoSlotIndex, weaponHotbarSlot);
+        }
+
         private bool HasEmptyMainInventorySlot()
         {
             if (inventory == null)

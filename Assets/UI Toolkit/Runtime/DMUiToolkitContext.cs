@@ -341,6 +341,13 @@ namespace Project.UI
             if (actions == null || ammoPanel == null)
                 return;
 
+            if (actions.CanEquipAmmoToActiveRangedWeapon(activeSlot))
+            {
+                Execute(actions.TryEquipAmmoToActiveRangedWeapon(activeSlot));
+                HideInternal();
+                return;
+            }
+
             List<InventoryItemActions.AmmoEquipOption> options = actions.GetAmmoEquipOptions(activeSlot);
             if (options == null || options.Count == 0)
             {

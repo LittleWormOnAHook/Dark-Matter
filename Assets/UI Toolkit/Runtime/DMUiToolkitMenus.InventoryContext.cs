@@ -162,7 +162,10 @@ namespace Project.UI
             TryAddContextBtn("Unequip", boundItemActions.CanUnequip(slot),
                 () => ExecuteContextAction(boundItemActions.TryUnequip(slot)));
 
-            if (boundItemActions.CanEquipAmmo(slot))
+            if (boundItemActions.CanEquipAmmoToActiveRangedWeapon(slot))
+                TryAddContextBtn("Load into drawn weapon", true,
+                    () => ExecuteContextAction(boundItemActions.TryEquipAmmoToActiveRangedWeapon(slot)));
+            else if (boundItemActions.CanEquipAmmo(slot))
                 AddInventoryAmmoContextButton();
 
             TryAddContextBtn("Refuel", boundItemActions.CanRefuelVehicle(slot),
