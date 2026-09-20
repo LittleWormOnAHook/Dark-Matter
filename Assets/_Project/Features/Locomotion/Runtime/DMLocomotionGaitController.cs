@@ -80,7 +80,13 @@ namespace Project.Features.Locomotion
 
         private float _nextProfilePollUnscaled;
 
+        private bool _gamepadAutoRunLatched;
 
+        private bool _gamepadAutoCrouchLatched;
+
+        public const string AutoRunLatchStamp = "controller-autorun-l3 0920";
+
+        public const string AutoCrouchLatchStamp = "controller-autocrouch-r3 0920";
 
         public Gait CurrentGait { get; private set; } = Gait.SlowWalk;
 
@@ -88,7 +94,61 @@ namespace Project.Features.Locomotion
 
         public bool IsBurstSprinting => CurrentGait == Gait.SprintBurst;
 
+        public bool IsGamepadAutoRunLatched => _gamepadAutoRunLatched;
 
+        public bool IsGamepadAutoCrouchLatched => _gamepadAutoCrouchLatched;
+
+        /// <summary>L3 / Sprint action toggle while on Gamepad scheme (jog latch, not hold).</summary>
+        public void ToggleGamepadAutoRunLatch()
+        {
+            _gamepadAutoRunLatched = !_gamepadAutoRunLatched;
+            Debug.Log(
+                $"[DMLocomotionGaitController] {AutoRunLatchStamp} auto-run {(_gamepadAutoRunLatched ? "ON" : "OFF")}");
+
+            if (motor == null)
+                return;
+
+            bool speedsChanged = RefreshSpeedsFromProfile();
+            ApplyGaitFromInput(EffectiveShiftHeld(), false, speedsChanged);
+        }
+
+        public void ClearGamepadAutoRunLatch()
+        {
+            if (!_gamepadAutoRunLatched)
+                return;
+
+            _gamepadAutoRunLatched = false;
+            if (motor == null)
+                return;
+
+            bool speedsChanged = RefreshSpeedsFromProfile();
+            ApplyGaitFromInput(ReadKeyboardShiftHeld(), false, speedsChanged);
+        }
+
+        /// <summary>R3 / Crouch action toggle while on Gamepad scheme (crouch latch, not hold).</summary>
+        public void ToggleGamepadAutoCrouchLatch()
+        {
+            _gamepadAutoCrouchLatched = !_gamepadAutoCrouchLatched;
+            Debug.Log(
+                $"[DMLocomotionGaitController] {AutoCrouchLatchStamp} auto-crouch {(_gamepadAutoCrouchLatched ? "ON" : "OFF")}");
+
+            ApplyGamepadAutoCrouchLatchState();
+        }
+
+        public void ClearGamepadAutoCrouchLatch()
+        {
+            if (!_gamepadAutoCrouchLatched)
+                return;
+
+            _gamepadAutoCrouchLatched = false;
+            ApplyGamepadAutoCrouchLatchState();
+        }
+
+        public void ClearGamepadLocomotionLatches()
+        {
+            ClearGamepadAutoRunLatch();
+            ClearGamepadAutoCrouchLatch();
+        }
 
         /// <summary>
 
@@ -196,11 +256,11 @@ namespace Project.Features.Locomotion
 
                 return;
 
+            EnforceGamepadAutoCrouchLatch();
 
+            bool shiftHeld = EffectiveShiftHeld();
 
-            bool shiftHeld = ReadShiftHeld();
-
-            bool shiftPressed = ReadShiftPressedThisFrame();
+            bool shiftPressed = ReadKeyboardShiftPressedThisFrame();
 
 
 
@@ -412,49 +472,55 @@ namespace Project.Features.Locomotion
 
 
 
-        public static bool ReadShiftHeld()
-
+        /// <summary>Keyboard Shift hold or latched gamepad auto-run (jog).</summary>
+        public bool ComputeShiftHeldForLocomotion()
         {
-
-            Keyboard keyboard = Keyboard.current;
-
-            if (keyboard != null &&
-
-                (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
-
+            if (ReadKeyboardShiftHeld())
                 return true;
 
-
-
-            Gamepad pad = Gamepad.current;
-
-            return pad != null && pad.leftStickButton.isPressed;
-
+            return _gamepadAutoRunLatched && DMInputSchemeRouter.IsGamepadScheme;
         }
 
+        private bool EffectiveShiftHeld() => ComputeShiftHeldForLocomotion();
 
-
-        public static bool ReadShiftPressedThisFrame()
-
+        private void EnforceGamepadAutoCrouchLatch()
         {
+            if (!_gamepadAutoCrouchLatched || !DMInputSchemeRouter.IsGamepadScheme || motor == null)
+                return;
 
-            Keyboard keyboard = Keyboard.current;
-
-            if (keyboard != null &&
-
-                (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.rightShiftKey.wasPressedThisFrame))
-
-                return true;
-
-
-
-            Gamepad pad = Gamepad.current;
-
-            return pad != null && pad.leftStickButton.wasPressedThisFrame;
-
+            if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
+                motor.Crouch();
         }
 
+        private void ApplyGamepadAutoCrouchLatchState()
+        {
+            if (motor == null)
+                return;
 
+            if (_gamepadAutoCrouchLatched)
+            {
+                if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
+                    motor.Crouch();
+                return;
+            }
+
+            if (motor.isCrouching)
+                motor.Crouch();
+        }
+
+        public static bool ReadKeyboardShiftHeld()
+        {
+            Keyboard keyboard = Keyboard.current;
+            return keyboard != null
+                   && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
+        }
+
+        public static bool ReadKeyboardShiftPressedThisFrame()
+        {
+            Keyboard keyboard = Keyboard.current;
+            return keyboard != null
+                   && (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.rightShiftKey.wasPressedThisFrame);
+        }
 
         private float CurrentSlowMultiplier() =>
 

@@ -119,6 +119,9 @@ namespace Project.UI
         private bool menusVisible;
         private float nextMapMarkerRefresh;
         public static bool IsOpen => instance != null && (instance.menusVisible || instance.pendingShowWindow.HasValue);
+
+        /// <summary>Journal shell root for gamepad focus navigation.</summary>
+        public static VisualElement NavigationRoot => instance?.menuRoot;
         public static bool IsInventoryOpen =>
             instance != null && instance.menusVisible && instance.paintedWindow == JournalWindowId.Inventory;
 
@@ -632,6 +635,7 @@ namespace Project.UI
             ReleaseMapPointer();
             menuRoot.pickingMode = PickingMode.Position;
             DMUiToolkitOverlayDocument.SetShown(menuRoot, true);
+            DMUiJournalGamepadNav.NotifyMenuOpened(menuRoot);
             if (document != null)
             {
                 if (!document.gameObject.activeInHierarchy)

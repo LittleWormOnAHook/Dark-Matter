@@ -72,6 +72,16 @@
     border-width: 2px;
 }
 
+.dmg-tab:focus,
+.dmg-tab.dmg-pad-focus,
+.dmg-subtab:focus,
+.dmg-subtab.dmg-pad-focus {
+    border-width: 2px;
+    border-color: rgb(212, 160, 23);
+    background-color: rgba(74, 74, 90, 0.92);
+    color: rgb(237, 233, 228);
+}
+
 .dmg-menu-body {
     flex-grow: 1;
     flex-shrink: 1;

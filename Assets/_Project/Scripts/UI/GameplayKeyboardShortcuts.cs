@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -294,6 +293,75 @@ namespace Project.UI
         }
 
         private static int escapeHandledFrame = -1;
+        private static int uiCancelHandledFrame = -1;
+
+        /// <summary>
+        /// Gamepad B / UI Cancel — back one layer only; never opens pause (Start / Esc own pause).
+        /// stamp: controller-fix-0920
+        /// </summary>
+        public static void HandleUiCancelBack()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (Time.frameCount == uiCancelHandledFrame)
+                return;
+
+            uiCancelHandledFrame = Time.frameCount;
+
+            if (DMUiToolkitLoadingOverlay.IsShowing)
+                return;
+
+            if (DMUiToolkitDevPanel.HandleBack())
+                return;
+
+            if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
+            {
+                DMUiToolkitHotCross.HideAmmoLoadPopup();
+                ResetHotCrossConsumableHold();
+                return;
+            }
+
+            if (DMUiToolkitConfig.IsEnabled && DMUiToolkitMenuPanels.TryHandleEscapeBack())
+                return;
+
+            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            if (settings != null && settings.IsOpen)
+            {
+                settings.Close();
+                return;
+            }
+
+            ControlsPanelController controls = Object.FindAnyObjectByType<ControlsPanelController>();
+            if (controls != null && controls.IsOpen)
+            {
+                controls.HandleBack();
+                return;
+            }
+
+            SaveSlotsPanelController saves = Object.FindAnyObjectByType<SaveSlotsPanelController>();
+            if (saves != null && saves.IsOpen)
+            {
+                saves.Close();
+                return;
+            }
+
+            FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
+            if (navigator != null && navigator.IsAnyOpen)
+            {
+                if (!UiEscapeGate.TryConsumeEscape())
+                    return;
+                navigator.HandleEscape();
+                return;
+            }
+
+            if (DMUiToolkitMainMenu.IsVisible)
+            {
+                MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
+                if (menu != null && MainMenuController.BlocksGameplayHud)
+                    menu.InvokeResumeFromPause();
+            }
+        }
 
         /// <summary>Escape: close sub-panels, journal layers, then pause menu toggle.</summary>
         public static void TryHandleEscapeAndPause()
@@ -608,12 +676,17 @@ namespace Project.UI
         private static bool hotCrossConsumableHoldUsed;
         private static int hotCrossLostKeyFrames;
 
+        private static bool hotCrossGamepadAmmoHeld;
+        private static float hotCrossGamepadAmmoDownTime;
+        private static bool hotCrossGamepadAmmoHoldUsed;
+        private static int hotCrossGamepadAmmoLostFrames;
+
         /// <summary>
         /// Hot Cross face keys: Tab cycles TL weapon focus 1-4 (no equip), LMB arms focused TL,
-        /// X tap cycles TR utility focus 5-10 (no use), X hold 0.5s uses focused TR
-        /// (food/meds consume; ammo opens weapon-target popup).
-        /// While ammo popup is open: X tap cycles weapons, X hold 0.5s confirms load, Esc cancels.
+        /// X / D-Pad Right tap cycles TR utility focus 5-10 (no use), hold 0.5s uses focused TR
+        /// (food/meds consume; ammo loads into the drawn ranged weapon).
         /// B/N are handled via toolbar hotkeys (binoculars / scanner). J opens Journal.
+        /// stamp: controller-ammo-autoload 0920
         /// </summary>
         public static void TryHandleHotCrossHotkeys()
         {
@@ -622,20 +695,18 @@ namespace Project.UI
                 if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
                     DMUiToolkitHotCross.HideAmmoLoadPopup();
                 ResetHotCrossConsumableHold();
+                ResetHotCrossGamepadAmmoHold();
                 return;
             }
 
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                ResetHotCrossConsumableHold();
-                return;
-            }
-
-            if (keyboard.tabKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
                 TryCycleHotCrossWeaponFocus();
 
-            UpdateHotCrossConsumableKey(keyboard);
+            if (keyboard != null)
+                UpdateHotCrossConsumableKey(keyboard);
+
+            UpdateHotCrossGamepadAmmoSelect();
             TryArmFocusedHotCrossWeapon();
         }
 
@@ -682,8 +753,6 @@ namespace Project.UI
         {
             if (UiInputGuard.BlocksGameplayEquipmentInput)
             {
-                if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
-                    DMUiToolkitHotCross.HideAmmoLoadPopup();
                 ResetHotCrossConsumableHold();
                 return;
             }
@@ -692,47 +761,88 @@ namespace Project.UI
             bool released = keyboard.xKey.wasReleasedThisFrame;
             bool down = keyboard.xKey.isPressed;
 
+            ProcessHotCrossConsumableChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossConsumableKeyHeld,
+                ref hotCrossConsumableKeyDownTime,
+                ref hotCrossConsumableHoldUsed,
+                ref hotCrossLostKeyFrames);
+        }
+
+        private static void UpdateHotCrossGamepadAmmoSelect()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+            {
+                ResetHotCrossGamepadAmmoHold();
+                return;
+            }
+
+            Gamepad pad = Gamepad.current;
+            if (pad == null)
+            {
+                ResetHotCrossGamepadAmmoHold();
+                return;
+            }
+
+            bool pressed = pad.dpad.right.wasPressedThisFrame;
+            bool released = pad.dpad.right.wasReleasedThisFrame;
+            bool down = pad.dpad.right.isPressed;
+
+            ProcessHotCrossConsumableChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossGamepadAmmoHeld,
+                ref hotCrossGamepadAmmoDownTime,
+                ref hotCrossGamepadAmmoHoldUsed,
+                ref hotCrossGamepadAmmoLostFrames);
+        }
+
+        private static void ProcessHotCrossConsumableChannel(
+            bool pressed,
+            bool released,
+            bool down,
+            ref bool keyHeld,
+            ref float keyDownTime,
+            ref bool holdUsed,
+            ref int lostKeyFrames)
+        {
             if (pressed)
             {
-                hotCrossConsumableKeyHeld = true;
-                hotCrossConsumableKeyDownTime = Time.unscaledTime;
-                hotCrossConsumableHoldUsed = false;
-                hotCrossLostKeyFrames = 0;
+                keyHeld = true;
+                keyDownTime = Time.unscaledTime;
+                holdUsed = false;
+                lostKeyFrames = 0;
             }
 
-            if (hotCrossConsumableKeyHeld && down)
+            if (keyHeld && down)
             {
-                hotCrossLostKeyFrames = 0;
-                if (!hotCrossConsumableHoldUsed
-                    && Time.unscaledTime - hotCrossConsumableKeyDownTime >= HotCrossConsumableHoldSeconds)
+                lostKeyFrames = 0;
+                if (!holdUsed && Time.unscaledTime - keyDownTime >= HotCrossConsumableHoldSeconds)
                 {
-                    hotCrossConsumableHoldUsed = true;
-                    if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
-                        ConfirmHotCrossAmmoLoad();
-                    else
-                        TryUseFocusedHotCrossConsumable();
+                    holdUsed = true;
+                    TryUseFocusedHotCrossConsumable();
                 }
             }
 
-            // Tap = release before hold threshold.
-            // Lost-key: require several consecutive !isPressed frames (Input System can flicker one frame).
             bool lostKey = false;
-            if (hotCrossConsumableKeyHeld && !down && !pressed && !released)
+            if (keyHeld && !down && !pressed && !released)
             {
-                hotCrossLostKeyFrames++;
-                lostKey = hotCrossLostKeyFrames >= HotCrossLostKeyFrames;
+                lostKeyFrames++;
+                lostKey = lostKeyFrames >= HotCrossLostKeyFrames;
             }
 
-            if (hotCrossConsumableKeyHeld && (released || lostKey))
+            if (keyHeld && (released || lostKey))
             {
-                if (released && !hotCrossConsumableHoldUsed)
-                {
-                    if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
-                        DMUiToolkitHotCross.CycleAmmoLoadHighlight();
-                    else
-                        TryCycleHotCrossConsumableFocus();
-                }
-                ResetHotCrossConsumableHold();
+                if (released && !holdUsed)
+                    TryCycleHotCrossConsumableFocus();
+
+                keyHeld = false;
+                holdUsed = false;
+                keyDownTime = 0f;
+                lostKeyFrames = 0;
             }
         }
 
@@ -742,6 +852,14 @@ namespace Project.UI
             hotCrossConsumableHoldUsed = false;
             hotCrossConsumableKeyDownTime = 0f;
             hotCrossLostKeyFrames = 0;
+        }
+
+        private static void ResetHotCrossGamepadAmmoHold()
+        {
+            hotCrossGamepadAmmoHeld = false;
+            hotCrossGamepadAmmoHoldUsed = false;
+            hotCrossGamepadAmmoDownTime = 0f;
+            hotCrossGamepadAmmoLostFrames = 0;
         }
 
         private static void TryCycleHotCrossConsumableFocus()
@@ -769,10 +887,15 @@ namespace Project.UI
             if (item == null)
                 return;
 
-            // Ammo: open weapon-target popup instead of silently selecting the inventory slot.
             if (item.CountsAsAmmo)
             {
-                TryOpenHotCrossAmmoLoadPopup(absolute, inventory, equipment, itemActions);
+                if (itemActions == null || !itemActions.TryEquipAmmoToActiveRangedWeapon(absolute))
+                {
+                    if (itemActions != null && !itemActions.TryResolveActiveRangedWeaponHotbarSlot(out _))
+                        return;
+                    PickupToastUI.Show("Cannot load — magazine full or incompatible");
+                }
+
                 return;
             }
 
@@ -797,51 +920,6 @@ namespace Project.UI
             }
 
             PickupToastUI.Show($"{item.itemName} cannot be used from Hot Cross");
-        }
-
-        private static void TryOpenHotCrossAmmoLoadPopup(
-            int ammoAbsoluteSlot,
-            InventorySystem inventory,
-            EquipmentController equipment,
-            InventoryItemActions itemActions)
-        {
-            if (itemActions == null)
-            {
-                PickupToastUI.Show("Cannot load ammo");
-                return;
-            }
-
-            List<InventoryItemActions.AmmoEquipOption> options = itemActions.GetAmmoEquipOptions(ammoAbsoluteSlot);
-            if (options == null || options.Count == 0)
-            {
-                PickupToastUI.Show("No compatible weapon for this ammo");
-                return;
-            }
-
-            int preferred = equipment != null ? equipment.ActiveWeaponHotbarSlot : -1;
-            bool opened = DMUiToolkitHotCross.ShowAmmoLoadPopup(
-                ammoAbsoluteSlot,
-                options,
-                preferred,
-                weaponHotbar =>
-                {
-                    if (!TryResolveInventory(out _, out _, out InventoryItemActions actions) || actions == null)
-                        return;
-                    if (!actions.TryEquipAmmoToWeapon(ammoAbsoluteSlot, weaponHotbar))
-                        PickupToastUI.Show("Cannot load — magazine full or incompatible");
-                });
-
-            if (!opened)
-                PickupToastUI.Show("Cannot open ammo load UI");
-        }
-
-        private static void ConfirmHotCrossAmmoLoad()
-        {
-            if (!DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
-                return;
-
-            if (!DMUiToolkitHotCross.TryConfirmAmmoLoad())
-                PickupToastUI.Show("Cannot load — magazine full or incompatible");
         }
 
         private static void TryArmFocusedHotCrossWeapon()

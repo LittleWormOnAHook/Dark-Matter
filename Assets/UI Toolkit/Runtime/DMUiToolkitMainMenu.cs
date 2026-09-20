@@ -347,6 +347,7 @@ namespace Project.UI
 
             RefreshEnvironmentBar();
             HideUguiMenuChromeOnce();
+            DMUiJournalGamepadNav.NotifyMenuOpened(root);
         }
 
 

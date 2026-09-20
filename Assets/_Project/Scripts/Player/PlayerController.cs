@@ -9,11 +9,13 @@ using Project.Audio;
 using Project.Core;
 using Project.Interaction;
 using Project.Player.Invector;
+using Project.Features.Locomotion;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
 using Invector.vCamera;
 using Invector;
+using Invector.vCharacterController;
 
 namespace Project.Player
 {
@@ -771,6 +773,10 @@ namespace Project.Player
             if (IsGameplayPaused)
                 return;
 
+            // Invector camera look is owned by PioneerShooterMeleeInput (single consumer).
+            if (UsesInvectorMotor())
+                return;
+
             if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen && !_buildingControlOpen && !_shelterSessionOpen)
                 _lookInput = context.ReadValue<Vector2>();
         }
@@ -779,6 +785,17 @@ namespace Project.Player
         {
             if (IsGameplayPaused)
                 return;
+
+            if (UsesInvectorMotor())
+            {
+                if (DMInputSchemeRouter.IsGamepadScheme && context.performed)
+                {
+                    DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
+                    gait?.ToggleGamepadAutoRunLatch();
+                }
+
+                return;
+            }
 
             _sprintInput = context.ReadValueAsButton();
         }
@@ -796,6 +813,17 @@ namespace Project.Player
         {
             if (IsGameplayPaused)
                 return;
+
+            if (UsesInvectorMotor() && DMInputSchemeRouter.IsGamepadScheme)
+            {
+                if (context.performed)
+                {
+                    DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
+                    gait?.ToggleGamepadAutoCrouchLatch();
+                }
+
+                return;
+            }
 
             if (context.started || context.performed)
                 _crouchInput = true;
