@@ -1,5 +1,6 @@
 using Invector.vCharacterController;
 using Project.Core;
+using Project.Features.Locomotion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -126,6 +127,12 @@ namespace Project.Player.Invector
 
             PioneerInvectorGenericInputGate.ApplyGamepadMute(shooterInput, gamepad);
             SyncInvectorInputDevice(gamepad);
+
+            if (!gamepad)
+            {
+                DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
+                gait?.ClearGamepadAutoRunLatch();
+            }
 
             if (!stampedLog && Application.isPlaying)
             {

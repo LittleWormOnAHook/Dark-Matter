@@ -80,7 +80,9 @@ namespace Project.Features.Locomotion
 
         private float _nextProfilePollUnscaled;
 
+        private bool _gamepadAutoRunLatched;
 
+        public const string AutoRunLatchStamp = "controller-autorun-l3 0920";
 
         public Gait CurrentGait { get; private set; } = Gait.SlowWalk;
 
@@ -88,7 +90,34 @@ namespace Project.Features.Locomotion
 
         public bool IsBurstSprinting => CurrentGait == Gait.SprintBurst;
 
+        public bool IsGamepadAutoRunLatched => _gamepadAutoRunLatched;
 
+        /// <summary>L3 / Sprint action toggle while on Gamepad scheme (jog latch, not hold).</summary>
+        public void ToggleGamepadAutoRunLatch()
+        {
+            _gamepadAutoRunLatched = !_gamepadAutoRunLatched;
+            Debug.Log(
+                $"[DMLocomotionGaitController] {AutoRunLatchStamp} auto-run {(_gamepadAutoRunLatched ? "ON" : "OFF")}");
+
+            if (motor == null)
+                return;
+
+            bool speedsChanged = RefreshSpeedsFromProfile();
+            ApplyGaitFromInput(EffectiveShiftHeld(), false, speedsChanged);
+        }
+
+        public void ClearGamepadAutoRunLatch()
+        {
+            if (!_gamepadAutoRunLatched)
+                return;
+
+            _gamepadAutoRunLatched = false;
+            if (motor == null)
+                return;
+
+            bool speedsChanged = RefreshSpeedsFromProfile();
+            ApplyGaitFromInput(ReadKeyboardShiftHeld(), false, speedsChanged);
+        }
 
         /// <summary>
 
@@ -198,9 +227,9 @@ namespace Project.Features.Locomotion
 
 
 
-            bool shiftHeld = ReadShiftHeld();
+            bool shiftHeld = EffectiveShiftHeld();
 
-            bool shiftPressed = ReadShiftPressedThisFrame();
+            bool shiftPressed = ReadKeyboardShiftPressedThisFrame();
 
 
 
@@ -412,47 +441,36 @@ namespace Project.Features.Locomotion
 
 
 
-        public static bool ReadShiftHeld()
-
+        /// <summary>Keyboard Shift hold or latched gamepad auto-run (jog).</summary>
+        public bool ComputeShiftHeldForLocomotion()
         {
-
-            Keyboard keyboard = Keyboard.current;
-
-            if (keyboard != null &&
-
-                (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
-
+            if (ReadKeyboardShiftHeld())
                 return true;
 
-
-
-            Gamepad pad = Gamepad.current;
-
-            return pad != null && pad.leftStickButton.isPressed;
-
+            return _gamepadAutoRunLatched && DMInputSchemeRouter.IsGamepadScheme;
         }
 
+        private bool EffectiveShiftHeld() => ComputeShiftHeldForLocomotion();
 
-
-        public static bool ReadShiftPressedThisFrame()
-
+        public static bool ReadKeyboardShiftHeld()
         {
-
             Keyboard keyboard = Keyboard.current;
-
-            if (keyboard != null &&
-
-                (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.rightShiftKey.wasPressedThisFrame))
-
-                return true;
-
-
-
-            Gamepad pad = Gamepad.current;
-
-            return pad != null && pad.leftStickButton.wasPressedThisFrame;
-
+            return keyboard != null
+                   && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
         }
+
+        public static bool ReadKeyboardShiftPressedThisFrame()
+        {
+            Keyboard keyboard = Keyboard.current;
+            return keyboard != null
+                   && (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.rightShiftKey.wasPressedThisFrame);
+        }
+
+        [System.Obsolete("Use ReadKeyboardShiftHeld; L3 auto-run is a toggle via Input System Sprint.")]
+        public static bool ReadShiftHeld() => ReadKeyboardShiftHeld();
+
+        [System.Obsolete("Use ReadKeyboardShiftPressedThisFrame; L3 uses Sprint toggle.")]
+        public static bool ReadShiftPressedThisFrame() => ReadKeyboardShiftPressedThisFrame();
 
 
 

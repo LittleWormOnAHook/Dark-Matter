@@ -9,6 +9,7 @@ using Project.Audio;
 using Project.Core;
 using Project.Interaction;
 using Project.Player.Invector;
+using Project.Features.Locomotion;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
@@ -784,6 +785,17 @@ namespace Project.Player
         {
             if (IsGameplayPaused)
                 return;
+
+            if (UsesInvectorMotor())
+            {
+                if (DMInputSchemeRouter.IsGamepadScheme && context.performed)
+                {
+                    DMLocomotionGaitController gait = GetComponent<DMLocomotionGaitController>();
+                    gait?.ToggleGamepadAutoRunLatch();
+                }
+
+                return;
+            }
 
             _sprintInput = context.ReadValueAsButton();
         }

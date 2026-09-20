@@ -258,7 +258,7 @@ namespace Project.Player.Invector
             {
                 if (_locomotionGait != null)
                     _locomotionGait.ApplyGaitFromInput(
-                        DMLocomotionGaitController.ReadShiftHeld(),
+                        _locomotionGait.ComputeShiftHeldForLocomotion(),
                         false);
                 else
                     _motor.isSprinting = false;
