@@ -771,6 +771,10 @@ namespace Project.Player
             if (IsGameplayPaused)
                 return;
 
+            // Invector camera look is owned by PioneerShooterMeleeInput (single consumer).
+            if (UsesInvectorMotor())
+                return;
+
             if (!_inventoryOpen && !_journalOpen && !_mapOpen && !_questDialogOpen && !_lootDialogOpen && !_buildingControlOpen && !_shelterSessionOpen)
                 _lookInput = context.ReadValue<Vector2>();
         }

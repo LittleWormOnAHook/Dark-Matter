@@ -1134,7 +1134,7 @@ MonoBehaviour:
   invertCameraInputVertical: 0
   invertCameraInputHorizontal: 0
   rotateCameraXInput:
-    useInput: 1
+    useInput: 0
     isAxisInUse: 0
     isUnityInput: 0
     keyboard: Mouse X
@@ -1150,7 +1150,7 @@ MonoBehaviour:
     lastTimeTheButtonWasPressed: 0
     inButtomTimer: 0
   rotateCameraYInput:
-    useInput: 1
+    useInput: 0
     isAxisInUse: 0
     isUnityInput: 0
     keyboard: Mouse Y
