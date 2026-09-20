@@ -51,6 +51,7 @@ namespace Project.UI
             GameplayKeyboardShortcuts.TryHandleDevPanel();
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
             GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
+            DMUiJournalGamepadNav.Tick();
 
             if (Time.unscaledTime >= nextGhostClear)
             {

@@ -242,7 +242,7 @@ namespace Project.UI
 
                 if (ctx.performed)
 
-                    GameplayKeyboardShortcuts.HandleEscapePressed();
+                    GameplayKeyboardShortcuts.HandleUiCancelBack();
 
             });
 

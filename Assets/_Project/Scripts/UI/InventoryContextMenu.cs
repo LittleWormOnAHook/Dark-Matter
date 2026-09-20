@@ -154,13 +154,6 @@ namespace Project.UI
             if (itemActions == null || ammoSubmenuPanel == null)
                 return;
 
-            List<InventoryItemActions.AmmoEquipOption> options = itemActions.GetAmmoEquipOptions(activeSlotIndex);
-            if (options.Count == 0)
-            {
-                ammoSubmenuPanel.SetActive(false);
-                return;
-            }
-
             for (int i = 0; i < ammoSubmenuButtons.Count; i++)
             {
                 if (ammoSubmenuButtons[i] != null)
@@ -168,18 +161,40 @@ namespace Project.UI
             }
             ammoSubmenuButtons.Clear();
 
-            for (int i = 0; i < options.Count; i++)
+            if (itemActions.CanEquipAmmoToActiveRangedWeapon(activeSlotIndex))
             {
-                InventoryItemActions.AmmoEquipOption option = options[i];
-                Button optionButton = MenuUiBuilder.CreateButton(ammoSubmenuContent, option.WeaponLabel, new Vector2(184f, 34f), 16f);
-                optionButton.name = "AmmoOption_" + option.WeaponHotbarSlot;
+                Button optionButton = MenuUiBuilder.CreateButton(ammoSubmenuContent, "Load into drawn weapon", new Vector2(184f, 34f), 16f);
+                optionButton.name = "AmmoOption_ActiveWeapon";
                 optionButton.onClick.RemoveAllListeners();
                 optionButton.onClick.AddListener(() =>
                 {
-                    Execute(itemActions?.TryEquipAmmoToWeapon(activeSlotIndex, option.WeaponHotbarSlot) ?? false);
+                    Execute(itemActions.TryEquipAmmoToActiveRangedWeapon(activeSlotIndex));
                     Hide();
                 });
                 ammoSubmenuButtons.Add(optionButton.gameObject);
+            }
+            else
+            {
+                List<InventoryItemActions.AmmoEquipOption> options = itemActions.GetAmmoEquipOptions(activeSlotIndex);
+                if (options.Count == 0)
+                {
+                    ammoSubmenuPanel.SetActive(false);
+                    return;
+                }
+
+                for (int i = 0; i < options.Count; i++)
+                {
+                    InventoryItemActions.AmmoEquipOption option = options[i];
+                    Button optionButton = MenuUiBuilder.CreateButton(ammoSubmenuContent, option.WeaponLabel, new Vector2(184f, 34f), 16f);
+                    optionButton.name = "AmmoOption_" + option.WeaponHotbarSlot;
+                    optionButton.onClick.RemoveAllListeners();
+                    optionButton.onClick.AddListener(() =>
+                    {
+                        Execute(itemActions?.TryEquipAmmoToWeapon(activeSlotIndex, option.WeaponHotbarSlot) ?? false);
+                        Hide();
+                    });
+                    ammoSubmenuButtons.Add(optionButton.gameObject);
+                }
             }
 
             ammoSubmenuPanel.SetActive(true);

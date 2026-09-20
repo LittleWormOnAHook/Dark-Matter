@@ -294,7 +294,7 @@ namespace Project.UI
             if (!context.performed)
                 return;
 
-            GameplayKeyboardShortcuts.HandleEscapePressed();
+            GameplayKeyboardShortcuts.HandleUiCancelBack();
         }
 
         private JournalPanelUI GetJournalPanel()

@@ -31,7 +31,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="hot-cross-ammo-popup" picking-mode="Position" class="hot-cross-ammo-popup">
             <ui:Label name="hot-cross-ammo-title" text="Load ammo into" picking-mode="Ignore" class="hot-cross-ammo-title"/>
-            <ui:Label name="hot-cross-ammo-hint" text="X cycle  |  Hold X confirm  |  Esc cancel" picking-mode="Ignore" class="hot-cross-ammo-hint"/>
+            <ui:Label name="hot-cross-ammo-hint" text="Hold confirm  |  Esc cancel" picking-mode="Ignore" class="hot-cross-ammo-hint"/>
             <ui:VisualElement name="hot-cross-ammo-list" picking-mode="Position" class="hot-cross-ammo-list"/>
         </ui:VisualElement>
     </ui:VisualElement>

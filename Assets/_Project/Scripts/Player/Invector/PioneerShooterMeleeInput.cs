@@ -24,7 +24,11 @@ namespace Project.Player.Invector
     [DisallowMultipleComponent]
     public class PioneerShooterMeleeInput : vShooterMeleeInput
     {
-        private const float MouseLookScale = 0.1f;
+        private const float MouseLookScale = PioneerInvectorRecoilUtility.CameraInputScale;
+        private const float GamepadStickDeadZone = 0.18f;
+        /// <summary>Maps right-stick -1..1 into RotateCamera before Invector sensitivity.</summary>
+        private const float GamepadStickLookScale = 6f;
+        private const string KbmLookStamp = "controller-kbm-look 0920";
         /// <summary>Fallback discrete mouse-wheel zoom stops when no profile is assigned.</summary>
         private const int DefaultZoomClickLevels = 10;
         private const int UiZoomRestoreFrames = 12;
@@ -54,6 +58,7 @@ namespace Project.Player.Invector
         private DMLocomotionGaitController _locomotionGait;
         private EquipmentController _equipment;
         private PlayerController _playerController;
+        private static bool _loggedKbmLookStamp;
         private bool _miningScanAimHold;
         /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
         private float _preferredCameraZoom = -1f;
@@ -75,6 +80,7 @@ namespace Project.Player.Invector
             _locomotionGait = GetComponent<DMLocomotionGaitController>();
             _equipment = GetComponent<EquipmentController>();
             _playerController = GetComponent<PlayerController>();
+            _playerInput = GetComponent<PlayerInput>();
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, shooterManager);
             SyncPioneerCursorState();
 
@@ -484,6 +490,14 @@ namespace Project.Player.Invector
             }
         }
 
+        public override void CrouchInput()
+        {
+            if (DMInputSchemeRouter.IsGamepadScheme)
+                return;
+
+            base.CrouchInput();
+        }
+
         public override void MoveInput()
         {
             if (lockMoveInput || cc == null || !CanReadGameplayInput())
@@ -554,12 +568,8 @@ namespace Project.Player.Invector
 
             float x = 0f;
             float y = 0f;
-            if (!lockCameraInput && Mouse.current != null)
-            {
-                Vector2 delta = Mouse.current.delta.ReadValue();
-                x = delta.x * MouseLookScale;
-                y = delta.y * MouseLookScale;
-            }
+            if (!lockCameraInput)
+                ReadSchemeGatedLookDelta(out x, out y);
 
             if (invertCameraInputHorizontal)
                 x *= -1f;
@@ -578,6 +588,53 @@ namespace Project.Player.Invector
 
             EnsureRuntimeZoomState();
             tpCamera.RotateCamera(x, y);
+        }
+
+        /// <summary>
+        /// Single look consumer: KBM uses pointer delta only; gamepad uses right stick only.
+        /// Syncs Invector vInput device with PlayerInput scheme (avoids OnGUI stick-drift flapping).
+        /// stamp: controller-kbm-look 0920
+        /// </summary>
+        private void ReadSchemeGatedLookDelta(out float x, out float y)
+        {
+            x = 0f;
+            y = 0f;
+
+            if (_playerInput == null)
+                _playerInput = GetComponent<PlayerInput>();
+
+            bool useGamepadScheme = DMInputSchemeRouter.IsGamepadScheme;
+
+            if (!_loggedKbmLookStamp && Application.isPlaying)
+            {
+                _loggedKbmLookStamp = true;
+                Debug.Log($"[PioneerShooterMeleeInput] {KbmLookStamp} scheme-gated look active");
+            }
+
+            if (useGamepadScheme)
+            {
+                Gamepad pad = Gamepad.current;
+                if (pad == null)
+                    return;
+
+                Vector2 stick = pad.rightStick.ReadValue();
+                if (stick.sqrMagnitude < GamepadStickDeadZone * GamepadStickDeadZone)
+                    return;
+
+                x = stick.x * GamepadStickLookScale;
+                y = stick.y * GamepadStickLookScale;
+                return;
+            }
+
+            if (Mouse.current == null)
+                return;
+
+            Vector2 delta = Mouse.current.delta.ReadValue();
+            if (delta.sqrMagnitude < 0.0001f)
+                return;
+
+            x = delta.x * MouseLookScale;
+            y = delta.y * MouseLookScale;
         }
 
         /// <summary>
@@ -1230,8 +1287,18 @@ namespace Project.Player.Invector
         }
 
 
-        private static Vector2 ReadMoveVector()
+        private Vector2 ReadMoveVector()
         {
+            if (_playerController == null)
+                _playerController = GetComponent<PlayerController>();
+
+            Vector2 fromInputSystem = _playerController != null ? _playerController.MoveInput : Vector2.zero;
+            if (fromInputSystem.sqrMagnitude > 0.0001f)
+                return fromInputSystem;
+
+            if (DMInputSchemeRouter.IsGamepadScheme)
+                return Vector2.zero;
+
             Vector2 move = Vector2.zero;
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
