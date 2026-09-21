@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Commissary
   kind: 0
   catalog: {fileID: 11400000, guid: 210f5d0cb14850b459d3e7087ce04d52, type: 2}
+  buyLog: {fileID: 11400000, guid: 6a11c2d3e4f5489ab0c1d2e3f4a5b6c7, type: 2}
   buyMarkup: 1.24
   sellRate: 0.587
   purseMin: 560

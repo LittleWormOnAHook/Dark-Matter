@@ -402,7 +402,7 @@ namespace Project.UI
                     stockSlots[slotIndex],
                     item,
                     stock,
-                    item != null && (stock <= 0 || !item.ResolveCanBuy()),
+                    item != null && stock <= 0,
                     focusSide == FocusSide.Vendor && focusIndex == slotIndex,
                     item != null);
                 slotIndex++;
@@ -637,12 +637,16 @@ namespace Project.UI
             if (focusSide == FocusSide.Vendor)
             {
                 int offerIndex = VendorOfferIndex(focusIndex);
-                ItemData offer = DMVendorService.ResolveOffer(npc.Profile, offerIndex, out DMVendorListing listing, out _);
+                ItemData offer = DMVendorService.ResolveOffer(
+                    npc.Profile,
+                    offerIndex,
+                    out DMVendorListing listing,
+                    out int extraIndex);
                 if (listing != null && listing.armorPlaceholder)
                     return true;
-                return offer == null
-                    || DMVendorService.GetOfferStock(npc.Profile, offerIndex) <= 0
-                    || !offer.ResolveCanBuy();
+                if (offer == null || DMVendorService.GetOfferStock(npc.Profile, offerIndex) <= 0)
+                    return true;
+                return extraIndex < 0 && !offer.ResolveCanBuy();
             }
 
             if (focusSide == FocusSide.Player)

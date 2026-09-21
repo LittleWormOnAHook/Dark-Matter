@@ -273,6 +273,14 @@ new DMStudioSubtab(
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Resources/Vendors",
                             typeFilter: "t:DMVendorCatalog",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "vendor-buy-logs",
+                            "Vendor Buy Logs",
+                            "What each vendor will buy from the player. Not shop stock.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorBuyLog",
                             playModeSave: true)
                     }),
                 new DMStudioCategory(

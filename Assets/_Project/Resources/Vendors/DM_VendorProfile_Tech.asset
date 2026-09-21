@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Tech
   kind: 1
   catalog: {fileID: 11400000, guid: 411dde126dcd8ba4bb97931bc23fec40, type: 2}
+  buyLog: {fileID: 11400000, guid: 6b22d3e4f5a64b0bc1d2e3f4a5b6c8d9, type: 2}
   buyMarkup: 1.25
   sellRate: 0.5
   purseMin: 500

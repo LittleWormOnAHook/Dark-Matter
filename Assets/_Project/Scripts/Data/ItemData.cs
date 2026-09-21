@@ -344,7 +344,7 @@ namespace Project.Data
         public bool canSell = true;
         [Tooltip("Off = vendor will not restock this item (starter miner, sell-only junk).")]
         public bool canBuy = true;
-        [Tooltip("None infers from item type. Commissary = supplies/scrap; Tech = weapons/tools.")]
+        [Tooltip("Shop restock class. Buyback uses each vendor's Buy Log, not this alone.")]
         public DmVendorTradeClass vendorClass = DmVendorTradeClass.None;
         [Tooltip("If true, the player must keep at least one copy (inventory + equipped + crates).")]
         public bool cannotSellLastCopy;
@@ -437,7 +437,10 @@ namespace Project.Data
         {
             if (!canSell)
                 return false;
-            if (ResolveVendorClass() == DmVendorTradeClass.None)
+            if (itemType == ItemType.Quest
+                || itemType == ItemType.Vehicle
+                || itemType == ItemType.WorldDeployable
+                || IsStoryBoundName)
                 return false;
             return ResolveTradeBaseAc() > 0;
         }

@@ -17,6 +17,8 @@ namespace Project.EditorTools.Vendor
         private const string TechProfilePath = VendorFolder + "/DM_VendorProfile_Tech.asset";
         private const string CommissaryCatalogPath = VendorFolder + "/DM_VendorCatalog_Commissary_Camp.asset";
         private const string TechCatalogPath = VendorFolder + "/DM_VendorCatalog_Tech_Camp.asset";
+        private const string CommissaryBuyLogPath = VendorFolder + "/DM_VendorBuyLog_Commissary.asset";
+        private const string TechBuyLogPath = VendorFolder + "/DM_VendorBuyLog_Tech.asset";
 
         [MenuItem(DarkMatterGenesisEditorMenus.EnsureIoClockProfile)]
         public static void EnsureIoClockProfile()
@@ -68,16 +70,22 @@ namespace Project.EditorTools.Vendor
 
             DMVendorCatalog commissaryCatalog = LoadOrCreate<DMVendorCatalog>(CommissaryCatalogPath);
             DMVendorCatalog techCatalog = LoadOrCreate<DMVendorCatalog>(TechCatalogPath);
-            commissaryCatalog.listings = BuildListings(DmVendorTradeClass.Commissary);
-            techCatalog.listings = AppendArmorPlaceholder(BuildListings(DmVendorTradeClass.TechGear, DmVendorTradeClass.TechUpgrade));
+            if (commissaryCatalog.listings == null || commissaryCatalog.listings.Length == 0)
+                commissaryCatalog.listings = BuildListings(DmVendorTradeClass.Commissary);
+            if (techCatalog.listings == null || techCatalog.listings.Length == 0)
+                techCatalog.listings = AppendArmorPlaceholder(BuildListings(DmVendorTradeClass.TechGear, DmVendorTradeClass.TechUpgrade));
             EditorUtility.SetDirty(commissaryCatalog);
             EditorUtility.SetDirty(techCatalog);
+
+            DMVendorBuyLog commissaryBuy = FillBuyLog(CommissaryBuyLogPath, DMVendorKind.Commissary);
+            DMVendorBuyLog techBuy = FillBuyLog(TechBuyLogPath, DMVendorKind.Tech);
 
             DMVendorProfile commissary = LoadOrCreate<DMVendorProfile>(CommissaryProfilePath);
             commissary.vendorId = "vendor_commissary";
             commissary.displayName = "Commissary";
             commissary.kind = DMVendorKind.Commissary;
             commissary.catalog = commissaryCatalog;
+            commissary.buyLog = commissaryBuy;
             commissary.promptText = "Press E — Commissary";
             commissary.purseMin = 500;
             commissary.purseMax = 800;
@@ -88,6 +96,7 @@ namespace Project.EditorTools.Vendor
             tech.displayName = "Tech";
             tech.kind = DMVendorKind.Tech;
             tech.catalog = techCatalog;
+            tech.buyLog = techBuy;
             tech.promptText = "Press E — Tech";
             tech.purseMin = 500;
             tech.purseMax = 800;
@@ -95,7 +104,32 @@ namespace Project.EditorTools.Vendor
 
             AssetDatabase.SaveAssets();
             Selection.activeObject = commissary;
-            Debug.Log("[DM] Vendor profiles and catalogs are ready under " + VendorFolder);
+            Debug.Log("[DM] Vendor profiles, catalogs, and buy logs are ready under " + VendorFolder);
+        }
+
+        [MenuItem(DarkMatterGenesisEditorMenus.FillVendorBuyLogs)]
+        public static void FillVendorBuyLogs()
+        {
+            EnsureFolder(VendorFolder);
+            DMVendorBuyLog commissaryBuy = FillBuyLog(CommissaryBuyLogPath, DMVendorKind.Commissary);
+            DMVendorBuyLog techBuy = FillBuyLog(TechBuyLogPath, DMVendorKind.Tech);
+
+            DMVendorProfile commissary = AssetDatabase.LoadAssetAtPath<DMVendorProfile>(CommissaryProfilePath);
+            if (commissary != null)
+            {
+                commissary.buyLog = commissaryBuy;
+                EditorUtility.SetDirty(commissary);
+            }
+
+            DMVendorProfile tech = AssetDatabase.LoadAssetAtPath<DMVendorProfile>(TechProfilePath);
+            if (tech != null)
+            {
+                tech.buyLog = techBuy;
+                EditorUtility.SetDirty(tech);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[DM] Vendor buy logs filled. Shop catalogs were not changed.");
         }
 
         private static void ApplyTrade(ItemData item)
@@ -131,6 +165,49 @@ namespace Project.EditorTools.Vendor
                 item.vendorClass = DmVendorTradeClass.None;
                 item.acValue = 0;
             }
+        }
+
+        private static DMVendorBuyLog FillBuyLog(string path, DMVendorKind kind)
+        {
+            DMVendorBuyLog log = LoadOrCreate<DMVendorBuyLog>(path);
+            var list = new List<ItemData>();
+            string[] guids = AssetDatabase.FindAssets("t:ItemData", new[] { "Assets/_Project/Data/Items" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (SkipBuyLogPath(assetPath))
+                    continue;
+
+                ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
+                if (!IsVendorPickupItem(item, kind))
+                    continue;
+
+                list.Add(item);
+            }
+
+            log.items = list.ToArray();
+            EditorUtility.SetDirty(log);
+            return log;
+        }
+
+        private static bool IsVendorPickupItem(ItemData item, DMVendorKind kind)
+        {
+            if (item == null)
+                return false;
+            if (item.itemType == ItemType.Quest
+                || item.itemType == ItemType.Vehicle
+                || item.itemType == ItemType.WorldDeployable)
+                return false;
+            if (item.name != null && item.name.StartsWith("DMAmmoFx"))
+                return false;
+            return DMVendorService.AcceptsClass(kind, item.ResolveVendorClass());
+        }
+
+        private static bool SkipBuyLogPath(string path)
+        {
+            return path.Contains("/Nodes/")
+                || path.Contains("/HitMarks/")
+                || path.Contains("/ammo/DMAmmoFx");
         }
 
         private static DMVendorListing[] BuildListings(params DmVendorTradeClass[] classes)

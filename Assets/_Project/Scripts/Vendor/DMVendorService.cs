@@ -17,6 +17,19 @@ namespace Project.Vendor
             return tradeClass == DmVendorTradeClass.TechGear || tradeClass == DmVendorTradeClass.TechUpgrade;
         }
 
+        public static bool WillBuy(DMVendorProfile profile, ItemData item)
+        {
+            if (profile == null || item == null)
+                return false;
+            if (FindCatalogIndex(profile, item) >= 0)
+                return true;
+            if (profile.buyLog != null && profile.buyLog.Contains(item))
+                return true;
+            if (profile.buyLog == null || profile.buyLog.Count == 0)
+                return AcceptsClass(profile.kind, item.ResolveVendorClass());
+            return false;
+        }
+
         public static bool CanPlayerSellItem(
             DMVendorProfile profile,
             ItemData item,
@@ -25,8 +38,7 @@ namespace Project.Vendor
         {
             if (profile == null || item == null || !item.ResolveCanSell())
                 return false;
-            if (!AcceptsClass(profile.kind, item.ResolveVendorClass())
-                && FindCatalogIndex(profile, item) < 0)
+            if (!WillBuy(profile, item))
                 return false;
             if (item.cannotSellLastCopy)
             {
@@ -112,7 +124,8 @@ namespace Project.Vendor
                 return false;
             }
 
-            if (!item.ResolveCanBuy() || !AcceptsClass(profile.kind, item.ResolveVendorClass()))
+            if (extraIndex < 0
+                && (!item.ResolveCanBuy() || !AcceptsClass(profile.kind, item.ResolveVendorClass())))
             {
                 message = "This vendor does not sell that.";
                 return false;
