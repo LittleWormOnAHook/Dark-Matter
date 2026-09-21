@@ -87,6 +87,10 @@ namespace Project.Player
         private float _currentFollowDistance;
         private float _followDistanceSmoothVelocity;
         private float _inputRecoveryCheckTimer;
+        private bool _cursorApplied;
+        private CursorLockMode _lastAppliedCursorLock;
+        private bool _lastAppliedCursorVisible;
+        private bool _lastAppliedStopMovement;
         private float _locomotionRotationIdleSince = float.NegativeInfinity;
         private CombatFocusController _combatFocus;
         private Animator _animator;
@@ -731,33 +735,56 @@ namespace Project.Player
             // Shelter session keeps cursor locked for orbit look; hold-E menu frees it via building control / menu UI.
             // Game Over must stay None (not Confined) so UITK buttons receive clicks.
             bool deathOpen = Project.UI.DMUiToolkitDeath.IsOpen;
+            bool vendorOpen = DMUiToolkitVendor.IsOpen;
+            bool crateOpen = DMUiToolkitCrate.IsOpen;
             bool cursorFree = deathOpen || _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
                               _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f ||
-                              DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen;
+                              DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen
+                              || vendorOpen || crateOpen;
 
+            CursorLockMode wantLock;
+            bool wantVisible;
             if (_opticsOpen && !deathOpen)
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                wantLock = CursorLockMode.Locked;
+                wantVisible = false;
             }
             else if (deathOpen || DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                wantLock = CursorLockMode.None;
+                wantVisible = true;
             }
             else if (cursorFree)
             {
-                Cursor.lockState = CursorLockMode.Confined;
-                Cursor.visible = true;
+                wantLock = CursorLockMode.Confined;
+                wantVisible = true;
             }
             else
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                wantLock = CursorLockMode.Locked;
+                wantVisible = false;
             }
 
-            if ((_inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen))
+            bool wantStop = _inventoryOpen || _journalOpen || _mapOpen || _opticsOpen || _questDialogOpen
+                || _lootDialogOpen || _buildingControlOpen || _shelterSessionOpen
+                || vendorOpen || crateOpen;
+
+            bool cursorChanged = !_cursorApplied
+                || wantLock != _lastAppliedCursorLock
+                || wantVisible != _lastAppliedCursorVisible;
+            if (cursorChanged)
+            {
+                _cursorApplied = true;
+                _lastAppliedCursorLock = wantLock;
+                _lastAppliedCursorVisible = wantVisible;
+                Cursor.lockState = wantLock;
+                Cursor.visible = wantVisible;
+            }
+
+            if (wantStop)
                 StopPlayerMovement();
+
+            _lastAppliedStopMovement = wantStop;
         }
 
         public void OnMove(InputAction.CallbackContext context)
@@ -930,7 +957,6 @@ namespace Project.Player
 
             if (UsesInvectorMotor())
             {
-                ApplyCursorState();
                 ApplyOpticsCameraFov();
                 ApplyBinocularEyePose();
                 return;

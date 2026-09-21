@@ -105,6 +105,7 @@
                         <ui:Label name="character-vitals-heading" text="Vitals" picking-mode="Ignore" class="dmg-gold-heading" />
                         <ui:VisualElement name="character-vitals" class="dmg-vitals" picking-mode="Ignore" />
                         <ui:Label name="character-loadout" text="Loadout unavailable." picking-mode="Ignore" class="dmg-quest-body" />
+                        <ui:Label name="character-io-clock" text="Io Day 1 · 06:00:00 AM" picking-mode="Ignore" class="dmg-gold-heading" />
                         <ui:Label name="character-credits" text="Aether Credits: 0" picking-mode="Ignore" class="dmg-gold-heading" />
                         <ui:Label name="character-unlocks" text="" picking-mode="Ignore" class="dmg-hint" />
                     </ui:VisualElement>

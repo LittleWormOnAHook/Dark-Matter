@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Project.Core;
 using Project.Interaction;
 using Project.Player;
@@ -35,6 +35,9 @@ namespace Project.UI
                 return;
 
             if (DMUiToolkitDeath.IsOpen)
+                return;
+
+            if (HasLiveOverlayPause())
                 return;
 
             DMUiToolkitMainMenu.SyncVisibilityToPainted();
@@ -92,6 +95,9 @@ namespace Project.UI
 
             // Game Over owns the pointer; do not clear inventory-open under it.
             if (DMUiToolkitDeath.IsOpen)
+                return;
+
+            if (HasLiveOverlayPause())
                 return;
 
             // stamp: journal-hotkeys-ghost-pause 0905 - always sync + clear stuck pauseOverlayActive when toolkit pause not painted.
@@ -232,7 +238,16 @@ namespace Project.UI
                    WalkerDrillInteractMenuUI.IsOpen ||
                    HovercraftInteractMenuUI.IsOpen ||
                    QuoraShelterMenuUI.IsOpen ||
-                   DMUiToolkitDevPanel.IsOpen;
+                   DMUiToolkitDevPanel.IsOpen ||
+                   HasLiveOverlayPause();
+        }
+
+        private static bool HasLiveOverlayPause()
+        {
+            return DMUiToolkitVendor.IsOpen
+                || DMUiToolkitCrate.IsOpen
+                || GameplayMenuTime.HasPauseReason(GameplayMenuTime.ReasonVendorShop)
+                || GameplayMenuTime.HasPauseReason(GameplayMenuTime.ReasonStorageCrate);
         }
 
         private static void RefreshInvectorInputLocks()

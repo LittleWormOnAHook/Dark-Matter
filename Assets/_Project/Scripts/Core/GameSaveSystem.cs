@@ -15,6 +15,8 @@ using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
 using Project.Map;
+using Project.Vendor;
+using Project.World.Clock;
 using UnityEngine;
 
 namespace Project.Core
@@ -25,7 +27,7 @@ namespace Project.Core
         public const int ContinueSlotIndex = 0;
         public const int AutosaveSlotCount = 2;
         public const float AutosaveIntervalSeconds = 5f * 60f;
-        public const int CurrentSaveVersion = 22;
+        public const int CurrentSaveVersion = 23;
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
@@ -360,6 +362,10 @@ namespace Project.Core
                 pptKnownKeywordIds = Project.PPT.PptKeywordLog.BuildSave()
             };
 
+            DMIoClock.CaptureSave(out data.ioDay, out data.ioHour, out data.ioMinute);
+            data.vendors = DMVendorRuntime.BuildSave();
+            data.storageCrates = Project.Storage.DMStorageCrateRuntime.BuildSave();
+
             if (progressionManager != null)
             {
                 ProgressionSaveSnapshot snapshot = progressionManager.BuildSaveSnapshot();
@@ -471,6 +477,9 @@ namespace Project.Core
             ApplyScannerDiscoverySave(data);
             ApplyResourceIdentificationSave(data);
             ApplyPptKeywordSave(data);
+            ApplyIoClockSave(data);
+            ApplyVendorSave(data);
+            ApplyStorageCrateSave(data);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
@@ -766,6 +775,39 @@ namespace Project.Core
                 Project.PPT.PptKeywordLog.ApplySave(data.pptKnownKeywordIds);
 
             Project.PPT.PptManager.Instance?.EnsureSessionStartKeywords();
+        }
+
+        private static void ApplyIoClockSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                DMIoClock.ResetToNewGame();
+                return;
+            }
+
+            DMIoClock.ApplySave(data.ioDay, data.ioHour, data.ioMinute);
+        }
+
+        private static void ApplyVendorSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                DMVendorRuntime.ResetAll();
+                return;
+            }
+
+            DMVendorRuntime.ApplySave(data.vendors);
+        }
+
+        private static void ApplyStorageCrateSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                Project.Storage.DMStorageCrateRuntime.ResetAll();
+                return;
+            }
+
+            Project.Storage.DMStorageCrateRuntime.ApplySave(data.storageCrates);
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

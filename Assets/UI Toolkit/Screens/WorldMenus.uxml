@@ -72,6 +72,15 @@
         <ui:VisualElement name="item-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip">
             <ui:Label name="item-tip-title" text="" picking-mode="Ignore" class="dmg-fmenu-tip-title"/>
             <ui:Label name="item-tip-body" text="" picking-mode="Ignore" class="dmg-fmenu-tip-body"/>
+            <ui:VisualElement name="item-tip-trade" picking-mode="Position" class="dmg-item-tip-trade">
+                <ui:VisualElement name="item-tip-qty-row" picking-mode="Position" class="dmg-item-tip-qty-row">
+                    <ui:SliderInt name="item-tip-qty" low-value="1" high-value="1" picking-mode="Position" class="dmg-item-tip-slider"/>
+                    <ui:Label name="item-tip-qty-value" text="1" picking-mode="Ignore" class="dmg-gold"/>
+                </ui:VisualElement>
+                <ui:Label name="item-tip-price" text="" picking-mode="Ignore" class="dmg-gold"/>
+                <ui:Button name="item-tip-action" text="Buy" picking-mode="Position" class="dmg-item-tip-action"/>
+                <ui:Button name="item-tip-close" text="×" picking-mode="Position" class="dmg-item-tip-close"/>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="recipe-tooltip" picking-mode="Ignore" class="dmg-fmenu-tip dmg-bp-tip">
             <ui:VisualElement name="recipe-tip-head" picking-mode="Ignore" class="dmg-bp-tip-head">

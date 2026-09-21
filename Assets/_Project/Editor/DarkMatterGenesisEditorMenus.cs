@@ -13,7 +13,11 @@ namespace Project.EditorTools
         public const string JetpackPresets = Jetpack + "Presets/";
         public const string Player = Root + "Player/";
         public const string Companions = Root + "Companions/";
+        public const string Items = Root + "Items/";
+        public const string ApplyDefaultTradeValues = Items + "Apply Default Trade Values";
+        public const string EnsureVendorContent = Items + "Ensure Vendor Content";
         public const string World = Root + "World/";
+        public const string EnsureIoClockProfile = World + "Ensure Io Clock Profile";
         public const string WorldGaia = World + "Gaia/";
         public const string SplineCreatorWindowPrimary = Root + "Spline Creator Window";
         public const string SplineCreatorWindow = World + "Spline Creator Window";

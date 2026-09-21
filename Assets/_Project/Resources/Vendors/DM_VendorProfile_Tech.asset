@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8434cb3866bc66c48862b9ae7bca6a82, type: 3}
+  m_Name: DM_VendorProfile_Tech
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Vendor.DMVendorProfile
+  vendorId: vendor_tech
+  displayName: Tech
+  kind: 1
+  catalog: {fileID: 11400000, guid: 411dde126dcd8ba4bb97931bc23fec40, type: 2}
+  buyMarkup: 1.25
+  sellRate: 0.5
+  purseMin: 500
+  purseMax: 800
+  interactRange: 3.5
+  shopSlots: 42
+  promptText: "Press E \u2014 Tech"

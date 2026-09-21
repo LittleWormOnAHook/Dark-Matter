@@ -1,0 +1,30 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Vendor.uss"/>
+    <Style src="Crate.uss"/>
+    <ui:VisualElement name="crate-root" picking-mode="Position" class="dmg-vendor-root">
+        <ui:VisualElement name="crate-veil" picking-mode="Position" class="dmg-vendor-veil"/>
+        <ui:VisualElement name="crate-panel" picking-mode="Position" class="dmg-vendor-panel">
+            <ui:VisualElement name="crate-header" picking-mode="Ignore" class="dmg-vendor-header">
+                <ui:Label name="crate-title" text="STORAGE" picking-mode="Ignore" class="dmg-section-title dmg-gold"/>
+                <ui:Label name="crate-hint" text="Drag stacks to move · right-click for Split, Drop, Transfer" picking-mode="Ignore" class="dmg-hint"/>
+                <ui:Button name="crate-close" text="Close" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="crate-split" picking-mode="Position" class="dmg-vendor-split">
+                <ui:VisualElement name="crate-left" picking-mode="Position" class="dmg-vendor-col">
+                    <ui:Label name="crate-player-heading" text="Your Inventory" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:ScrollView name="crate-player-grid" picking-mode="Position" class="dmg-scroll dmg-vendor-grid"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="crate-split-rule" picking-mode="Ignore" class="dmg-vendor-rule"/>
+                <ui:VisualElement name="crate-right" picking-mode="Position" class="dmg-vendor-col">
+                    <ui:Label name="crate-stash-heading" text="Crate" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:ScrollView name="crate-stash-grid" picking-mode="Position" class="dmg-scroll dmg-vendor-grid"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="crate-status" text="" picking-mode="Ignore" class="dmg-hint"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="crate-ctx-root" picking-mode="Ignore" class="dmg-vendor-ctx-root">
+            <ui:VisualElement name="crate-ctx-panel" picking-mode="Position" class="dmg-vendor-ctx-panel"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -333,11 +333,21 @@ namespace Project.Data
         public float oxygenRestore = 0;
 
         [Header("Aether Credits")]
-        [Tooltip("World pickup grants AC when collected.")]
+        [Tooltip("World pickup grants this AC into the player wallet when collected.")]
         [FormerlySerializedAs("isPiInfused")]
         public bool isAcInfused = false;
+        [Tooltip("Vendor buy/sell base price and infused pickup amount. Always authored.")]
         [FormerlySerializedAs("piValue")]
         public int acValue = 0;
+        public ItemRarity rarity = ItemRarity.Common;
+        [Tooltip("Off = never appears on vendor Sell (story uniques, bound tools).")]
+        public bool canSell = true;
+        [Tooltip("Off = vendor will not restock this item (starter miner, sell-only junk).")]
+        public bool canBuy = true;
+        [Tooltip("None infers from item type. Commissary = supplies/scrap; Tech = weapons/tools.")]
+        public DmVendorTradeClass vendorClass = DmVendorTradeClass.None;
+        [Tooltip("If true, the player must keep at least one copy (inventory + equipped + crates).")]
+        public bool cannotSellLastCopy;
 
         [Header("Progression")]
         [Tooltip("When true, collecting or using this item can grant XP (shards, recipe scrolls, gather yields, etc.). Normal items stay false.")]
@@ -379,6 +389,122 @@ namespace Project.Data
         public bool unlocksInventoryStorageRow;
 
         public bool IsInventoryStorageModule => unlocksInventoryStorageRow;
+
+        public bool IsStoryBoundName =>
+            !string.IsNullOrEmpty(itemName)
+            && (itemName.IndexOf("Sword of Fear", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || itemName.IndexOf("Spear of Fate", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || itemName.IndexOf("Blade Of Chaos", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || itemName.IndexOf("Blade of Chaos", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || itemName.IndexOf("Death Axe", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || itemName.IndexOf("Resonance Stabilizer", System.StringComparison.OrdinalIgnoreCase) >= 0);
+
+        public DmVendorTradeClass ResolveVendorClass()
+        {
+            if (vendorClass != DmVendorTradeClass.None)
+                return vendorClass;
+
+            if (itemType == ItemType.Quest || itemType == ItemType.Vehicle || itemType == ItemType.WorldDeployable)
+                return DmVendorTradeClass.None;
+            if (IsWeapon)
+                return DmVendorTradeClass.TechGear;
+            if (itemType == ItemType.Tool || isMiningTool)
+                return DmVendorTradeClass.TechGear;
+            if (IsInventoryStorageModule)
+                return DmVendorTradeClass.TechUpgrade;
+            if (IsAmmo || CountsAsAmmo || itemType == ItemType.Consumable || itemType == ItemType.Resource)
+                return DmVendorTradeClass.Commissary;
+            if (componentCategory != ComponentCategory.None)
+                return DmVendorTradeClass.Commissary;
+            return DmVendorTradeClass.None;
+        }
+
+        public int ResolveTradeLevel()
+        {
+            int level = 1;
+            if (requiredLevelToEquip > level)
+                level = requiredLevelToEquip;
+            if (requiredLevelToUse > level)
+                level = requiredLevelToUse;
+            if (requiredLevelToPickup > level)
+                level = requiredLevelToPickup;
+            if (requiredLevelToCraft > level)
+                level = requiredLevelToCraft;
+            return level;
+        }
+
+        public bool ResolveCanSell()
+        {
+            if (!canSell)
+                return false;
+            if (ResolveVendorClass() == DmVendorTradeClass.None)
+                return false;
+            return ResolveTradeBaseAc() > 0;
+        }
+
+        public bool ResolveCanBuy()
+        {
+            if (!canBuy)
+                return false;
+            if (ResolveVendorClass() == DmVendorTradeClass.None)
+                return false;
+            return ResolveTradeBaseAc() > 0;
+        }
+
+        public int ResolveTradeBaseAc()
+        {
+            return acValue > 0 ? acValue : InferDefaultAcValue();
+        }
+
+        public int InferDefaultAcValue()
+        {
+            if (itemType == ItemType.Quest
+                || itemType == ItemType.Vehicle
+                || itemType == ItemType.WorldDeployable
+                || IsStoryBoundName)
+                return 0;
+
+            if (componentCategory != ComponentCategory.None)
+                return 2;
+
+            if (itemType == ItemType.Consumable
+                && healthRestore <= 0f
+                && energyRestore <= 0f
+                && staminaRestore <= 0f
+                && oxygenRestore <= 0f
+                && !string.IsNullOrEmpty(itemName)
+                && itemName.IndexOf("rock", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return 2;
+
+            if (IsWeapon)
+                return 12;
+
+            if (itemType == ItemType.Tool || isMiningTool)
+                return 14;
+
+            if (IsInventoryStorageModule)
+                return 24;
+
+            if (IsAmmo || CountsAsAmmo)
+                return 6;
+
+            if (itemType == ItemType.Resource)
+                return 4;
+
+            if (IsConsumable)
+            {
+                if (healthRestore >= 25f
+                    || (!string.IsNullOrEmpty(itemName)
+                        && itemName.IndexOf("med", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                    return 8;
+                return 5;
+            }
+
+            if (itemType == ItemType.Consumable)
+                return 5;
+
+            return 0;
+        }
 
         public bool IsConsumable =>
             itemType == ItemType.Consumable &&

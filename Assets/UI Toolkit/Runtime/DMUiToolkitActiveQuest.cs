@@ -119,6 +119,9 @@ namespace Project.UI
                 ApplyShown(show);
             }
 
+            if (uguiHidden)
+                return;
+
             HideUgui();
         }
 

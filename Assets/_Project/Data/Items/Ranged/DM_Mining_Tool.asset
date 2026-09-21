@@ -59,6 +59,8 @@ MonoBehaviour:
   recoilHorizontal: 0
   recoilFireRateScale: 4.5
   fireRate: 12
+  shotsPerBurst: 1
+  burstFireRate: 10
   magazineSize: 100
   reloadTimeSeconds: 1.8
   defaultAmmoType: 5
@@ -81,10 +83,18 @@ MonoBehaviour:
   ammoType: 5
   ammoPerPickup: 0
   ammoPickupGrant: 0
+  ammoRecoilProfile:
+    pistolCameraVertical: 0
+    pistolCameraHorizontal: 0
+    pistolAnimationWeight: 0
+    rifleCameraVertical: 0
+    rifleCameraHorizontal: 0
+    rifleAnimationWeight: 0
   isHitscanBeam: 1
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
+  fxProfile: {fileID: 0}
   muzzleFlashPrefab: {fileID: 1347307786625236, guid: 5b0ac738fb141244d96b28bbd07be221, type: 3}
   tracerPrefab: {fileID: 1966839576898216, guid: 6e1ac1786b73ae8429067b310fd5021d, type: 3}
   impactVfxPrefab: {fileID: 1917278997959164276, guid: ac9513bf03e30174984a8bb64fce9675, type: 3}
@@ -124,7 +134,12 @@ MonoBehaviour:
   staminaRestore: 0
   oxygenRestore: 0
   isAcInfused: 0
-  acValue: 0
+  acValue: 12
+  rarity: 0
+  canSell: 1
+  canBuy: 0
+  vendorClass: 2
+  cannotSellLastCopy: 1
   grantsXp: 1
   xpAmount: 150
   xpSource: 5

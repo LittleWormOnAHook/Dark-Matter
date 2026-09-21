@@ -1,4 +1,4 @@
-﻿using Project.Core;
+using Project.Core;
 using Project.Data;
 using Project.Interaction;
 using Project.Inventory;
@@ -356,6 +356,12 @@ namespace Project.UI
             if (DMUiToolkitDevPanel.HandleBack())
                 return;
 
+            if (DMUiToolkitVendor.TryHandleBack())
+                return;
+
+            if (DMUiToolkitCrate.TryHandleBack())
+                return;
+
             if (DMUiToolkitMenus.TryHideInventoryContextMenu())
                 return;
 
@@ -426,6 +432,8 @@ namespace Project.UI
                 return true;
             if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
                 return true;
+            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen)
+                return true;
             if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
                 return true;
             if (DMUiToolkitMenus.IsInventoryContextOpen || DMUiToolkitContext.IsOpen)
@@ -486,6 +494,21 @@ namespace Project.UI
             if (DMUiToolkitDevPanel.HandleBack())
                 return;
 
+            if (DMUiToolkitVendor.TryHandleBack())
+                return;
+
+            if (DMUiToolkitCrate.TryHandleBack())
+                return;
+
+            if (DMUiToolkitMenus.TryHideInventoryContextMenu())
+                return;
+
+            if (DMUiToolkitContext.IsOpen)
+            {
+                DMUiToolkitContext.Hide();
+                return;
+            }
+
             if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
             {
                 DMUiToolkitHotCross.HideAmmoLoadPopup();
@@ -518,11 +541,10 @@ namespace Project.UI
             }
 
             FullscreenUiNavigator navigator = FullscreenUiNavigator.Instance;
-            if (navigator != null && navigator.IsAnyOpen)
+            if ((navigator != null && navigator.IsAnyOpen) || DMUiToolkitMenus.IsOpen)
             {
-                if (!UiEscapeGate.TryConsumeEscape())
-                    return;
-                navigator.HandleEscape();
+                navigator?.CloseAll();
+                DMUiToolkitMenus.ForceHideIfNavigatorClosed();
                 return;
             }
 
@@ -554,10 +576,15 @@ namespace Project.UI
             if (menu == null)
                 return;
 
-            if (MainMenuController.BlocksGameplayHud)
+            if (DMUiToolkitMainMenu.IsVisible
+                || MainMenuController.IsPauseOverlayActive
+                || MainMenuController.BlocksGameplayHud)
+            {
                 menu.InvokeResumeFromPause();
-            else
-                menu.ShowPauseMenu();
+                return;
+            }
+
+            menu.ShowPauseMenu();
         }
 
         public static bool TryHandleHotbarKeyCode(KeyCode keyCode)

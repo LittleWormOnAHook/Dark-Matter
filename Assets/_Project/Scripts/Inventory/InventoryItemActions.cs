@@ -126,6 +126,15 @@ namespace Project.Inventory
             return true;
         }
 
+        public bool TryCombine(int slotIndex)
+        {
+            if (inventory == null || !inventory.TryCombineStacksAt(slotIndex))
+                return false;
+
+            GameAudioManager.Instance?.PlayInventoryItemClick();
+            return true;
+        }
+
         public bool TryDrop(int slotIndex)
         {
             if (inventory == null || !inventory.DropItemAt(slotIndex))
@@ -467,6 +476,11 @@ namespace Project.Inventory
 
             InventorySystem.InventorySlot slot = inventory.slots[slotIndex];
             return !slot.IsEmpty && slot.amount > 1 && HasEmptySlot();
+        }
+
+        public bool CanCombine(int slotIndex)
+        {
+            return inventory != null && inventory.CanCombineStacksAt(slotIndex);
         }
 
         public bool CanDrop(int slotIndex)

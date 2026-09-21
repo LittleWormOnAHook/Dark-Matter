@@ -127,6 +127,11 @@ namespace Project.EditorTools
         private SerializedProperty oxygenRestore;
         private SerializedProperty isAcInfused;
         private SerializedProperty acValue;
+        private SerializedProperty rarity;
+        private SerializedProperty canSell;
+        private SerializedProperty canBuy;
+        private SerializedProperty vendorClass;
+        private SerializedProperty cannotSellLastCopy;
         private SerializedProperty grantsXp;
         private SerializedProperty xpAmount;
         private SerializedProperty xpSource;
@@ -256,6 +261,11 @@ namespace Project.EditorTools
             oxygenRestore = serializedObject.FindProperty("oxygenRestore");
             isAcInfused = serializedObject.FindProperty("isAcInfused");
             acValue = serializedObject.FindProperty("acValue");
+            rarity = serializedObject.FindProperty("rarity");
+            canSell = serializedObject.FindProperty("canSell");
+            canBuy = serializedObject.FindProperty("canBuy");
+            vendorClass = serializedObject.FindProperty("vendorClass");
+            cannotSellLastCopy = serializedObject.FindProperty("cannotSellLastCopy");
             grantsXp = serializedObject.FindProperty("grantsXp");
             xpAmount = serializedObject.FindProperty("xpAmount");
             xpSource = serializedObject.FindProperty("xpSource");
@@ -378,8 +388,12 @@ namespace Project.EditorTools
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Progression", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(isAcInfused);
-            using (new EditorGUI.DisabledScope(!isAcInfused.boolValue))
-                EditorGUILayout.PropertyField(acValue);
+            EditorGUILayout.PropertyField(acValue);
+            EditorGUILayout.PropertyField(rarity);
+            EditorGUILayout.PropertyField(canSell);
+            EditorGUILayout.PropertyField(canBuy);
+            EditorGUILayout.PropertyField(vendorClass);
+            EditorGUILayout.PropertyField(cannotSellLastCopy);
             EditorGUILayout.PropertyField(grantsXp);
             using (new EditorGUI.DisabledScope(!grantsXp.boolValue))
             {

@@ -6,6 +6,7 @@ using Project.Inventory;
 using Project.Map;
 using Project.Pioneers;
 using Project.Quests;
+using Project.World.Clock;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -124,8 +125,6 @@ namespace Project.UI
         public static VisualElement NavigationRoot => instance?.menuRoot;
         public static bool IsInventoryOpen =>
             instance != null && instance.menusVisible && instance.paintedWindow == JournalWindowId.Inventory;
-
-        /// <summary>True when UITK paints this journal tab instead of uGUI fullscreen hosts.</summary>
         public static bool HandlesWindow(JournalWindowId windowId)
         {
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
@@ -425,6 +424,8 @@ namespace Project.UI
             MapRegistry.MarkerUnregistered += HandleMapMarkerRegistryChanged;
             MapRegistry.MarkerUpdated -= HandleMapMarkerRegistryChanged;
             MapRegistry.MarkerUpdated += HandleMapMarkerRegistryChanged;
+            DMIoClock.OnPainted -= RefreshCharacterClock;
+            DMIoClock.OnPainted += RefreshCharacterClock;
             eventsHooked = true;
         }
 
@@ -435,6 +436,7 @@ namespace Project.UI
             MapRegistry.MarkerRegistered -= HandleMapMarkerRegistryChanged;
             MapRegistry.MarkerUnregistered -= HandleMapMarkerRegistryChanged;
             MapRegistry.MarkerUpdated -= HandleMapMarkerRegistryChanged;
+            DMIoClock.OnPainted -= RefreshCharacterClock;
             eventsHooked = false;
 
             if (boundNav != null)

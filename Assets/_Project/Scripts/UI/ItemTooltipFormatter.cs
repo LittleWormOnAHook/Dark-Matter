@@ -35,7 +35,7 @@ namespace Project.UI
             AppendToolLines(text, item);
             AppendVehicleLines(text, item);
             AppendDeployableShelterLines(text, item);
-            AppendAcLine(text, item);
+            AppendAcLine(text, item, alwaysShow: false);
             AppendProgressionLines(text, item);
             AppendCraftedItemLine(text, item);
 
@@ -45,6 +45,19 @@ namespace Project.UI
                 text.Append(SanitizeForTmp(item.tooltipDescription.Trim()));
             }
 
+            return SanitizeForTmp(text.ToString().TrimEnd());
+        }
+
+        /// <summary>Short vendor buy/sell card: name lives in the title; body is ID, stack, and AC only.</summary>
+        public static string BuildTradeBody(ItemData item, int amount)
+        {
+            if (item == null)
+                return string.Empty;
+
+            StringBuilder text = new StringBuilder();
+            text.AppendLine($"<color=#A0A8B8>ID:</color> {item.name}");
+            text.AppendLine($"<color=#A0A8B8>Stack:</color> {Mathf.Max(0, amount)} / {Mathf.Max(1, item.maxStack)}");
+            AppendAcLine(text, item, alwaysShow: true);
             return SanitizeForTmp(text.ToString().TrimEnd());
         }
 
@@ -275,12 +288,17 @@ namespace Project.UI
             text.AppendLine("<color=#8890A0><i>Right-click to Deploy.</i></color>");
         }
 
-        private static void AppendAcLine(StringBuilder text, ItemData item)
+        private static void AppendAcLine(StringBuilder text, ItemData item, bool alwaysShow)
         {
-            if (!item.isAcInfused || item.acValue <= 0)
+            int value = item.ResolveTradeBaseAc();
+            if (!alwaysShow && value <= 0)
                 return;
 
-            text.AppendLine($"<color=#FFD966>AC Value: {item.acValue}</color>");
+            text.AppendLine($"<color=#FFD966>AC Value: {value}</color>");
+            if (alwaysShow || item.ResolveCanSell())
+                text.AppendLine($"<color=#FFD966>Sell: {Project.Vendor.DMVendorPricing.ResolveSellPrice(item, Project.Vendor.DMVendorPricing.DefaultSellRate)} AC</color>");
+            if (alwaysShow || item.ResolveCanBuy())
+                text.AppendLine($"<color=#FFD966>Buy: {Project.Vendor.DMVendorPricing.ResolveBuyPrice(item, Project.Vendor.DMVendorPricing.DefaultBuyMarkup)} AC</color>");
         }
 
         private static void AppendProgressionLines(StringBuilder text, ItemData item)

@@ -18,7 +18,8 @@ namespace Project.EditorTools.GenesisStudio
         EmbeddedCompanionEditor = 9,
         EmbeddedCompanionSystems = 10,
         CameraCombined = 11,
-        LandingCombined = 12
+        LandingCombined = 12,
+        ControlsInputEditor = 13
     }
 
     public readonly struct DMStudioSubtab
@@ -224,7 +225,7 @@ new DMStudioSubtab(
                     "world",
                     "World",
                     "◎",
-                    "Map calibration and fog-of-war.",
+                    "Map calibration, fog-of-war, and the Io clock.",
                     FromHex("#4A4A5A"),
                     new[]
                     {
@@ -249,6 +250,29 @@ new DMStudioSubtab(
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Resources/Environment/SlidingDoors",
                             typeFilter: "t:DMSlidingDoorProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "io-clock",
+                            "Io Clock",
+                            "30-hour Io day, real-time scale, and new-game start time.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_IoClockProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "vendors",
+                            "Vendors",
+                            "Commissary / Tech markups and daily AC purse.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "vendor-catalogs",
+                            "Vendor Stock",
+                            "Daily listing stock min/max and catalog rows.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorCatalog",
                             playModeSave: true)
                     }),
                 new DMStudioCategory(
@@ -338,6 +362,21 @@ new DMStudioSubtab(
                             "Sync Resources/Crafting/BlueprintRegistry.",
                             DMStudioPanelMode.ExternalBlueprintTab,
                             externalMenuPath: DarkMatterGenesisEditorMenus.BlueprintCraftingManager)
+                    }),
+                new DMStudioCategory(
+                    "controls",
+                    "Controls",
+                    "⌘",
+                    "RETIRED binding editor — use InputSystem_Actions.inputactions (Project Settings > Input System Package).",
+                    FromHex("#4EC8E8"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "bindings",
+                            "Bindings",
+                            "Opens a pointer to InputSystem_Actions only — Studio does not write binds.",
+                            DMStudioPanelMode.ControlsInputEditor,
+                            "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions")
                     }),
                 new DMStudioCategory(
                     "ui",

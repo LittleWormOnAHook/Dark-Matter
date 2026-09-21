@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Player;
 using Project.Player.Invector;
 using ECM2;
@@ -15,6 +15,8 @@ using Project.Quests;
 using Project.Survival;
 using Project.UI;
 using Project.Vehicles;
+using Project.Storage;
+using Project.Vendor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -45,6 +47,8 @@ namespace Project.Interaction
         private const float PickupAimForwardScreenBias = 0.04f;
         private const float CraftingStationAimRadius = 1.25f;
         private const float BuildingControlPanelAimRadius = 1.25f;
+        private const float VendorAimRadius = 1.25f;
+        private const float StorageCrateAimRadius = 1.25f;
         private const float QuestGiverAimRadius = 1.25f;
         private const float RecipePickupScanRange = MaxPickupDistance;
 
@@ -177,14 +181,15 @@ namespace Project.Interaction
 
         private static bool IsUseHeld()
         {
+            if (DMPlayerInputActions.IsPressed("Use"))
+                return true;
+
             Keyboard kb = Keyboard.current;
             if (kb != null && kb.eKey.isPressed)
                 return true;
 
-            Gamepad pad = Gamepad.current;
-            if (pad != null && pad.buttonWest.isPressed)
-                return true;
-
+            // Gamepad Y (North) is SwitchWeapon: tap cycles Hot Cross weapon focus, hold arms.
+            // Pickup / interact hold stays on Use (E / A) only.
             return false;
         }
 
@@ -255,6 +260,33 @@ namespace Project.Interaction
                 return;
 
             lastUseTime = Time.time;
+
+            // Hold-E collectibles: press path must not steal into NPC/craft/loot.
+            {
+                if (gatherer == null)
+                    gatherer = GetComponent<ResourceGatherer>();
+                if (inventory == null)
+                    inventory = GetComponent<InventorySystem>();
+
+                Camera earlyCam = ResolveCamera();
+                if (earlyCam != null)
+                {
+                    Ray earlyRay = BuildScreenCenterRay(earlyCam, transform);
+                    float earlyRange = gatherer != null ? gatherer.pickupRange : useRange;
+                    WorldUseContext earlyCtx = new WorldUseContext(
+                        transform,
+                        transform.position,
+                        earlyCam,
+                        inventory,
+                        gatherer,
+                        earlyRange,
+                        earlyRay,
+                        null);
+                    if (WorldPickupFocus.TryGetFocusedHoldPickup(earlyCtx, out _)
+                        || IsPlayerFocusedOnPickup(earlyCtx))
+                        return;
+                }
+            }
 
             if (inventory == null)
                 inventory = GetComponent<InventorySystem>();
@@ -388,7 +420,9 @@ namespace Project.Interaction
         {
             return IsAimedAtAnyInRangeQuestGiver(context)
                 || IsAimedAtAnyInRangeCraftingStation(context)
-                || IsAimedAtAnyInRangeBuildingControlPanel(context);
+                || IsAimedAtAnyInRangeBuildingControlPanel(context)
+                || IsAimedAtAnyInRangeVendor(context)
+                || IsAimedAtAnyInRangeStorageCrate(context);
         }
 
         public static bool IsAimedAtAnyInRangeCraftingStation(WorldUseContext context)
@@ -1008,6 +1042,127 @@ namespace Project.Interaction
             return GetViewRayDistance(context.ViewRay, aimPoint) <= CraftingStationAimRadius;
         }
 
+        public static bool IsAimedAtAnyInRangeVendor(WorldUseContext context)
+        {
+            IReadOnlyList<DMVendorNpc> vendors = DMVendorNpc.Active;
+            for (int i = 0; i < vendors.Count; i++)
+            {
+                DMVendorNpc vendor = vendors[i];
+                if (vendor == null || !vendor.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+
+                if (IsAimedAtVendor(context, vendor, vendor.InteractCollider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsAimedAtVendor(WorldUseContext context, DMVendorNpc vendor, Collider vendorCollider)
+        {
+            if (vendor == null)
+                return false;
+
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                DMVendorNpc hitVendor = context.AimHit.Value.collider.GetComponentInParent<DMVendorNpc>();
+                if (hitVendor == vendor)
+                    return true;
+            }
+
+            Collider targetCollider = vendorCollider;
+            if (targetCollider == null)
+                targetCollider = vendor.GetComponentInChildren<Collider>();
+            if (targetCollider == null)
+                return false;
+
+            Vector3 aimPoint = targetCollider.bounds.center;
+            return GetViewRayDistance(context.ViewRay, aimPoint) <= VendorAimRadius;
+        }
+
+        private static DMVendorNpc FindAimedVendorInRange(WorldUseContext context)
+        {
+            IReadOnlyList<DMVendorNpc> vendors = DMVendorNpc.Active;
+            DMVendorNpc best = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < vendors.Count; i++)
+            {
+                DMVendorNpc vendor = vendors[i];
+                if (vendor == null || !vendor.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+                if (!IsAimedAtVendor(context, vendor, vendor.InteractCollider))
+                    continue;
+
+                float distance = Vector3.Distance(context.PlayerPosition, vendor.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+                best = vendor;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        public static bool IsAimedAtAnyInRangeStorageCrate(WorldUseContext context)
+        {
+            IReadOnlyList<DMStorageCrate> crates = DMStorageCrate.Active;
+            for (int i = 0; i < crates.Count; i++)
+            {
+                DMStorageCrate crate = crates[i];
+                if (crate == null || !crate.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+                if (IsAimedAtStorageCrate(context, crate, crate.InteractCollider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsAimedAtStorageCrate(WorldUseContext context, DMStorageCrate crate, Collider crateCollider)
+        {
+            if (crate == null)
+                return false;
+
+            if (context.AimHit.HasValue && context.AimHit.Value.collider != null)
+            {
+                DMStorageCrate hitCrate = context.AimHit.Value.collider.GetComponentInParent<DMStorageCrate>();
+                if (hitCrate == crate)
+                    return true;
+            }
+
+            Collider targetCollider = crateCollider;
+            if (targetCollider == null)
+                targetCollider = crate.GetComponentInChildren<Collider>();
+            if (targetCollider == null)
+                return false;
+
+            Vector3 aimPoint = targetCollider.bounds.center;
+            return GetViewRayDistance(context.ViewRay, aimPoint) <= StorageCrateAimRadius;
+        }
+
+        private static DMStorageCrate FindAimedStorageCrateInRange(WorldUseContext context)
+        {
+            IReadOnlyList<DMStorageCrate> crates = DMStorageCrate.Active;
+            DMStorageCrate best = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < crates.Count; i++)
+            {
+                DMStorageCrate crate = crates[i];
+                if (crate == null || !crate.IsWithinInteractRange(context.PlayerPosition))
+                    continue;
+                if (!IsAimedAtStorageCrate(context, crate, crate.InteractCollider))
+                    continue;
+
+                float distance = Vector3.Distance(context.PlayerPosition, crate.transform.position);
+                if (distance >= bestDistance)
+                    continue;
+                best = crate;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
         public static bool IsAimedAtQuestGiver(WorldUseContext context, QuestGiverNpc giver, Collider giverCollider)
         {
             if (giver == null)
@@ -1315,6 +1470,14 @@ namespace Project.Interaction
                 return injuredRecoverable.GetPromptText();
 
             // Hold-harvest plants use proximity dots + map markers instead of Hold-E prompt text.
+
+            DMVendorNpc vendor = FindAimedVendorInRange(context);
+            if (vendor != null)
+                return vendor.GetInteractionPromptMessage();
+
+            DMStorageCrate crate = FindAimedStorageCrateInRange(context);
+            if (crate != null)
+                return crate.GetInteractionPromptMessage();
 
             QuestGiverNpc questGiver = FindClosestQuestGiverInRange(context.PlayerPosition);
             if (questGiver != null)

@@ -263,3 +263,48 @@
     font-size: 13px;
     white-space: normal;
 }
+
+.dmg-item-tip-trade {
+    margin-top: 10px;
+    padding-bottom: 28px;
+    flex-direction: column;
+}
+
+.dmg-item-tip-qty-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.dmg-item-tip-slider {
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+.dmg-item-tip-action {
+    align-self: stretch;
+    min-height: 32px;
+    margin-top: 6px;
+    color: rgb(212, 160, 23);
+    background-color: rgb(143, 30, 94);
+    border-color: rgb(192, 46, 122);
+    border-width: 1px;
+    -unity-font-style: bold;
+}
+
+.dmg-item-tip-close {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 11px;
+    color: rgb(212, 160, 23);
+    background-color: rgb(18, 18, 22);
+    border-color: rgb(212, 160, 23);
+    border-width: 1px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}

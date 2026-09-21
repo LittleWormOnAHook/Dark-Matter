@@ -55,6 +55,7 @@ namespace Project.UI
         private VisualElement barsLayer;
         private bool bound;
         private bool lastGameplayWant;
+        private bool chromeHiddenCleaned;
         private bool uguiHidden;
         private float nextInteractScan;
         private float nextExclusivePickupScan;
@@ -161,15 +162,22 @@ namespace Project.UI
 
             if (!show)
             {
-                pendingDots.Clear();
-                RecycleDots(0);
-                RecycleBars(0);
-                hasExclusiveDot = false;
-                WorldPickupFocus.Clear();
+                if (!chromeHiddenCleaned)
+                {
+                    chromeHiddenCleaned = true;
+                    pendingDots.Clear();
+                    RecycleDots(0);
+                    RecycleBars(0);
+                    hasExclusiveDot = false;
+                    WorldPickupFocus.Clear();
+                }
+
                 if (want && !uguiHidden)
                     HideUguiCounterparts();
                 return;
             }
+
+            chromeHiddenCleaned = false;
 
             // Keep uGUI pickup/interact painters suppressed every frame while UITK drives chrome.
             HideUguiCounterparts();

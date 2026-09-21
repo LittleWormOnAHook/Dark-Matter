@@ -74,6 +74,15 @@ namespace Project.UI
         {
             instance = this;
             BindTree();
+            DMUiToolkitOverlayDocument.SetShown(root, false);
+            DMUiToolkitOverlayDocument.SetShown(dot, false);
+            if (!uguiHidden)
+            {
+                HideUgui();
+                uguiHidden = true;
+            }
+
+            enabled = false;
         }
 
         private void OnDestroy()

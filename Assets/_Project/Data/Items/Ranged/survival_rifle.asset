@@ -59,6 +59,8 @@ MonoBehaviour:
   recoilHorizontal: 0.2
   recoilFireRateScale: 4.5
   fireRate: 5.5
+  shotsPerBurst: 1
+  burstFireRate: 10
   magazineSize: 50
   reloadTimeSeconds: 2.2
   defaultAmmoType: 0
@@ -132,7 +134,12 @@ MonoBehaviour:
   staminaRestore: 0
   oxygenRestore: 0
   isAcInfused: 0
-  acValue: 0
+  acValue: 12
+  rarity: 0
+  canSell: 1
+  canBuy: 1
+  vendorClass: 2
+  cannotSellLastCopy: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 5

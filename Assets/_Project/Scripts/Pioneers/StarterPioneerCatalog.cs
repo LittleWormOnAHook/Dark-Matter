@@ -20,7 +20,7 @@ namespace Project.Pioneers
 
     public static class StarterPioneerCatalog
     {
-        public const int StarterAcGrant = 0;
+        public const int StarterAcGrant = 200;
 
         public static IReadOnlyList<StarterPioneerOffer> Offers => offers;
 

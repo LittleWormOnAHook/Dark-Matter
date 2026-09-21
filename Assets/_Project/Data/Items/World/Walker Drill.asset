@@ -59,6 +59,8 @@ MonoBehaviour:
   recoilHorizontal: 0
   recoilFireRateScale: 0
   fireRate: 0
+  shotsPerBurst: 1
+  burstFireRate: 10
   magazineSize: 0
   reloadTimeSeconds: 0
   defaultAmmoType: 0
@@ -92,6 +94,7 @@ MonoBehaviour:
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0
+  fxProfile: {fileID: 0}
   muzzleFlashPrefab: {fileID: 0}
   tracerPrefab: {fileID: 0}
   impactVfxPrefab: {fileID: 0}
@@ -132,6 +135,11 @@ MonoBehaviour:
   oxygenRestore: 0
   isAcInfused: 0
   acValue: 0
+  rarity: 0
+  canSell: 0
+  canBuy: 0
+  vendorClass: 0
+  cannotSellLastCopy: 0
   grantsXp: 0
   xpAmount: 10
   xpSource: 0

@@ -1,0 +1,22 @@
+.dmg-crate-header-spacer {
+    flex-grow: 1;
+}
+
+#crate-title {
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+}
+
+#crate-hint {
+    margin-left: 18px;
+    color: rgb(212, 160, 23);
+}
+
+#crate-close {
+    margin-left: auto;
+    color: rgb(212, 160, 23);
+    background-color: rgb(18, 18, 22);
+    border-color: rgb(74, 74, 90);
+    border-width: 1px;
+    padding: 6px 14px;
+}

@@ -12,6 +12,18 @@ namespace Project.UI
     /// </summary>
     internal static class DMUiToolkitOverlayDocument
     {
+        private static bool appQuitting;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetQuittingFlag()
+        {
+            appQuitting = false;
+            Application.quitting -= MarkQuitting;
+            Application.quitting += MarkQuitting;
+        }
+
+        private static void MarkQuitting() => appQuitting = true;
+
         public const string LevelUpName = "UITK_LevelUp";
         public const string DialogueName = "UITK_Dialogue";
         public const string HovercraftName = "UITK_Hovercraft";
@@ -26,6 +38,8 @@ namespace Project.UI
         public const string HoverInteractName = "UITK_HoverInteract";
         public const string WorldMenusName = "UITK_WorldMenus";
         public const string CraftName = "UITK_Craft";
+        public const string VendorName = "UITK_Vendor";
+        public const string CrateName = "UITK_Crate";
         public const string AcRewardName = "UITK_AcReward";
         public const string GameStartName = "UITK_GameStart";
         public const string ContextName = "UITK_Context";
@@ -45,8 +59,10 @@ namespace Project.UI
         public const int PickupReticleSort = 16;
         public const int LevelUpSort = ModalInteractiveSort;
         public const int HoverInteractSort = ModalInteractiveSort;
-        public const int WorldMenusSort = ModalInteractiveSort;
+        public const int WorldMenusSort = ModalInteractiveSort + 10;
         public const int CraftSort = ModalInteractiveSort;
+        public const int VendorSort = ModalInteractiveSort;
+        public const int CrateSort = ModalInteractiveSort;
         public const int DialogueSort = ModalInteractiveSort;
         public const int AcRewardSort = ModalInteractiveSort + 5;
         public const int DeathSort = ModalInteractiveSort;
@@ -92,6 +108,10 @@ namespace Project.UI
         public const string WorldMenusUss = "Assets/UI Toolkit/Screens/WorldMenus.uss";
         public const string CraftUxml = "Assets/UI Toolkit/Screens/Craft.uxml";
         public const string CraftUss = "Assets/UI Toolkit/Screens/Craft.uss";
+        public const string VendorUxml = "Assets/UI Toolkit/Screens/Vendor.uxml";
+        public const string VendorUss = "Assets/UI Toolkit/Screens/Vendor.uss";
+        public const string CrateUxml = "Assets/UI Toolkit/Screens/Crate.uxml";
+        public const string CrateUss = "Assets/UI Toolkit/Screens/Crate.uss";
         public const string AcRewardUxml = "Assets/UI Toolkit/Screens/AcReward.uxml";
         public const string AcRewardUss = "Assets/UI Toolkit/Screens/AcReward.uss";
         public const string GameStartUxml = "Assets/UI Toolkit/Screens/GameStart.uxml";
@@ -105,7 +125,7 @@ namespace Project.UI
 
         public static UIDocument Ensure(string objectName, string uxmlPath, string ussPath, int sortingOrder)
         {
-            if (!Application.isPlaying)
+            if (appQuitting || !Application.isPlaying)
                 return null;
 
             if (!DMUiToolkitConfig.IsEnabled)
@@ -132,6 +152,9 @@ namespace Project.UI
             GameObject host = FindNamed(objectName);
             if (host == null)
             {
+                // Never spawn overlay hosts during play-mode teardown / OnDestroy.
+                if (appQuitting || !Application.isPlaying)
+                    return null;
                 host = new GameObject(objectName);
                 host.transform.SetParent(parent, false);
             }
@@ -343,16 +366,23 @@ namespace Project.UI
         public static readonly Vector2 DefaultHoverOffset = new Vector2(18f, -18f);
         public static readonly Vector2 ContextMenuOffset = new Vector2(4f, -4f);
         public static readonly Vector2 ContextMenuPanelOffset = new Vector2(4f, 4f);
+        public static readonly Vector2 BelowPointerOffset = new Vector2(0f, -36f);
 
         /// <summary>Place a panel at the visual center of its parent (screen center for full-screen hosts).</summary>
         public static void PositionCenterOnScreen(VisualElement element)
+        {
+            PositionRaisedCenterOnScreen(element, 50f);
+        }
+
+        /// <summary>Center horizontally and sit a bit above mid-screen so trade cards read in the open middle.</summary>
+        public static void PositionRaisedCenterOnScreen(VisualElement element, float topPercent = 38f)
         {
             if (element == null)
                 return;
 
             element.style.position = Position.Absolute;
             element.style.left = Length.Percent(50);
-            element.style.top = Length.Percent(50);
+            element.style.top = Length.Percent(Mathf.Clamp(topPercent, 8f, 80f));
             element.style.right = StyleKeyword.Auto;
             element.style.bottom = StyleKeyword.Auto;
             element.style.marginLeft = 0;
@@ -438,6 +468,22 @@ namespace Project.UI
 
             VisualElement root = clampRoot ?? element.panel.visualTree;
             ScheduleClampFloating(element, root);
+        }
+
+        /// <summary>
+        /// Pin a card just below the pointer, pulled toward screen center so it stays readable.
+        /// Screen origin is bottom-left; negative Y offset moves the card down the monitor.
+        /// </summary>
+        public static void PositionBelowPointerTowardCenter(VisualElement element, Vector2 screenPosition)
+        {
+            if (element == null || element.panel == null)
+                return;
+
+            float centerX = Screen.width * 0.5f;
+            Vector2 biased = new Vector2(
+                Mathf.Lerp(screenPosition.x, centerX, 0.42f),
+                screenPosition.y + BelowPointerOffset.y);
+            PositionNearPointer(element, biased, Vector2.zero, element.panel.visualTree);
         }
 
         /// <summary>Journal / HUD right-click menus on a separate UIDocument: screen position from Mouse.current.</summary>

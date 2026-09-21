@@ -6,6 +6,7 @@ using Project.Survival;
 using Project.Features.Jetpack;
 using Project.Progression;
 using Project.Survival.Exposure;
+using Project.World.Clock;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -87,6 +88,8 @@ namespace Project.UI
         private Label loadValue;
         private Label healthValue;
         private Label elevLabel;
+        private Label ioClockLabel;
+        private string lastIoClockText;
         private Label tempLabel;
         private Label latLabel;
         private Label longLabel;
@@ -220,10 +223,14 @@ namespace Project.UI
         {
             instance = this;
             BindTree();
+            DMIoClock.OnPainted -= RefreshIoClock;
+            DMIoClock.OnPainted += RefreshIoClock;
+            RefreshIoClock();
         }
 
         private void OnDisable()
         {
+            DMIoClock.OnPainted -= RefreshIoClock;
             if (instance == this)
                 instance = null;
         }
@@ -288,6 +295,9 @@ namespace Project.UI
             loadValue = tree.Q<Label>("pilot-load-value");
             healthValue = tree.Q<Label>("pilot-health-value");
             elevLabel = tree.Q<Label>("pilot-elev");
+            ioClockLabel = tree.Q<Label>("pilot-io-clock");
+            if (ioClockLabel != null)
+                ioClockLabel.style.color = DarkMatterGenesisUiPalette.WarmOffWhite;
             tempLabel = tree.Q<Label>("pilot-temp");
             latLabel = tree.Q<Label>("pilot-lat");
             longLabel = tree.Q<Label>("pilot-long");
@@ -326,6 +336,12 @@ namespace Project.UI
             ApplyMinimapPlayerIconRotation();
             BuildCompassTicks();
             bound = root != null;
+            RefreshIoClock();
+        }
+
+        private void RefreshIoClock()
+        {
+            SetLabelText(ioClockLabel, DMIoClock.DisplayText, ref lastIoClockText);
         }
 
         private void ApplyMinimapPlayerIconRotation()

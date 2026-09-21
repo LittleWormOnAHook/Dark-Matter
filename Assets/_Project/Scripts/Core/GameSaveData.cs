@@ -69,6 +69,11 @@ namespace Project.Core
         public string[] scannedDiscoveryIds;
         public string[] identifiedResourceIds;
         public string[] pptKnownKeywordIds;
+        public int ioDay = 1;
+        public int ioHour = 6;
+        public int ioMinute;
+        public Project.Vendor.VendorRuntimeSave[] vendors;
+        public Project.Storage.StorageCrateSave[] storageCrates;
     }
 
     /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it

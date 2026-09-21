@@ -70,6 +70,14 @@ namespace Project.UI
         private VisualElement itemTooltip;
         private Label itemTipTitle;
         private Label itemTipBody;
+        private VisualElement itemTipTrade;
+        private SliderInt itemTipQty;
+        private Label itemTipQtyValue;
+        private Label itemTipPrice;
+        private Button itemTipAction;
+        private Button itemTipClose;
+        private DMVendorTradeCard itemTipTradeCard;
+        private bool itemTipTradeOpen;
         private VisualElement recipeTooltip;
         private VisualElement recipeTipIcon;
         private Label recipeTipTitle;
@@ -96,8 +104,10 @@ namespace Project.UI
         private bool echoOpen;
         private bool scanOpen;
         private bool tamingOpen;
+        private float nextTameScanTime;
         private bool itemTipOpen;
         private bool itemTipCentered;
+        private bool itemTipPinned;
         private bool recipeTipOpen;
         private bool pioneerHoverOpen;
         private bool pioneerOpen;
@@ -226,12 +236,39 @@ namespace Project.UI
 
         public static bool TryShowItemTooltip(ItemData item, int amount, Vector2 screenPosition, bool centerOnScreen = false)
         {
+            if (IsVendorTradeCardOpen)
+                return false;
             if (!CanShowJournalFloatingUi() || item == null)
                 return false;
             DMUiToolkitWorldMenus host = EnsureHost();
             if (host == null)
                 return false;
             host.ShowItemTipInternal(item, amount, screenPosition, centerOnScreen);
+            return true;
+        }
+
+        public static bool IsVendorTradeCardOpen => instance != null && instance.itemTipTradeOpen;
+
+        public static bool TryHideVendorTradeCard()
+        {
+            if (instance == null || !instance.itemTipTradeOpen)
+                return false;
+            instance.HideVendorTradeInternal();
+            return true;
+        }
+
+        public static bool TryShowVendorTradeCard(
+            ItemData item,
+            int amount,
+            Vector2 screenPosition,
+            DMVendorTradeCard trade)
+        {
+            if (!CanShowJournalFloatingUi() || item == null || trade == null)
+                return false;
+            DMUiToolkitWorldMenus host = EnsureHost();
+            if (host == null)
+                return false;
+            host.ShowVendorTradeInternal(item, amount, screenPosition, trade);
             return true;
         }
 
@@ -270,7 +307,10 @@ namespace Project.UI
         {
             if (MainMenuController.BlocksGameplayHud || DMUiToolkitLoadingOverlay.IsShowing)
                 return false;
-            return DMUiToolkitHud.IsDriving || DMUiToolkitMenus.IsOpen;
+            return DMUiToolkitHud.IsDriving
+                || DMUiToolkitMenus.IsOpen
+                || DMUiToolkitVendor.IsOpen
+                || DMUiToolkitCrate.IsOpen;
         }
 
         public static bool TryShowPioneerRoster(PioneerRosterPanelUI panel, string pioneerId, Vector2 screenPosition)
@@ -427,23 +467,27 @@ namespace Project.UI
 
             TickTamingProximity();
 
-            Vector2 pointer = CurrentPointerScreenPosition();
-            if (itemTipOpen && !itemTipCentered)
+            bool followItemTip = itemTipOpen && !itemTipCentered && !itemTipPinned && !itemTipTradeOpen;
+            if (followItemTip || recipeTipOpen || pioneerHoverOpen)
             {
-                itemTipScreenPosition = pointer;
-                PositionItemTip(pointer);
-            }
+                Vector2 pointer = CurrentPointerScreenPosition();
+                if (followItemTip)
+                {
+                    itemTipScreenPosition = pointer;
+                    PositionItemTip(pointer);
+                }
 
-            if (recipeTipOpen)
-            {
-                recipeTipScreenPosition = pointer;
-                PositionRecipeTip(pointer);
-            }
+                if (recipeTipOpen)
+                {
+                    recipeTipScreenPosition = pointer;
+                    PositionRecipeTip(pointer);
+                }
 
-            if (pioneerHoverOpen)
-            {
-                pioneerHoverScreenPosition = pointer;
-                PositionPioneerHover(pointer);
+                if (pioneerHoverOpen)
+                {
+                    pioneerHoverScreenPosition = pointer;
+                    PositionPioneerHover(pointer);
+                }
             }
 
             if (!DMUiToolkitHud.IsDriving)
@@ -511,6 +555,12 @@ namespace Project.UI
             itemTooltip = tree.Q<VisualElement>("item-tooltip");
             itemTipTitle = tree.Q<Label>("item-tip-title");
             itemTipBody = tree.Q<Label>("item-tip-body");
+            itemTipTrade = tree.Q<VisualElement>("item-tip-trade");
+            itemTipQty = tree.Q<SliderInt>("item-tip-qty");
+            itemTipQtyValue = tree.Q<Label>("item-tip-qty-value");
+            itemTipPrice = tree.Q<Label>("item-tip-price");
+            itemTipAction = tree.Q<Button>("item-tip-action");
+            itemTipClose = tree.Q<Button>("item-tip-close");
             recipeTooltip = tree.Q<VisualElement>("recipe-tooltip");
             recipeTipIcon = tree.Q<VisualElement>("recipe-tip-icon");
             recipeTipTitle = tree.Q<Label>("recipe-tip-title");
@@ -560,6 +610,12 @@ namespace Project.UI
             if (lootAll != null) lootAll.clicked += OnLootAll;
             if (lootClose != null) lootClose.clicked += HideLootInternal;
             if (echoClose != null) echoClose.clicked += HideEchoInternal;
+            if (itemTipQty != null)
+                itemTipQty.RegisterValueChangedCallback(OnVendorTradeQtyChanged);
+            if (itemTipAction != null)
+                itemTipAction.clicked += ConfirmVendorTrade;
+            if (itemTipClose != null)
+                itemTipClose.clicked += () => HideVendorTradeInternal();
             if (pioneerDismiss != null) pioneerDismiss.RegisterCallback<ClickEvent>(_ => HidePioneerInternal());
             if (labDismiss != null) labDismiss.RegisterCallback<ClickEvent>(_ => HideLabInternal());
             if (weaponHost != null)
@@ -583,6 +639,7 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(scanHost, scanOpen);
             DMUiToolkitOverlayDocument.SetShown(tamingHost, tamingOpen);
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, itemTipOpen);
+            DMUiToolkitOverlayDocument.SetShown(itemTipTrade, itemTipTradeOpen);
             DMUiToolkitOverlayDocument.SetShown(recipeTooltip, recipeTipOpen);
             DMUiToolkitOverlayDocument.SetShown(pioneerHover, pioneerHoverOpen);
             DMUiToolkitOverlayDocument.SetShown(pioneerDismiss, pioneerOpen);
@@ -1050,6 +1107,11 @@ namespace Project.UI
                 return;
             }
 
+            if (Time.unscaledTime < nextTameScanTime)
+                return;
+
+            nextTameScanTime = Time.unscaledTime + 0.125f;
+
             Transform player = PlayerLocator.FindPlayerObject()?.transform;
             if (player == null)
             {
@@ -1076,6 +1138,8 @@ namespace Project.UI
             if (!GameSession.HasStarted || MainMenuController.BlocksGameplayHud || DMUiToolkitLoadingOverlay.IsShowing)
                 return false;
             if (IsAnyModalOpen)
+                return false;
+            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || DMUiToolkitMenus.IsOpen)
                 return false;
 
             PlayerController player = PlayerLocator.FindPlayerController();
@@ -1106,22 +1170,103 @@ namespace Project.UI
             RecipeHoverTooltip.HideAny();
             HideRecipeTipInternal();
             HidePioneerHoverInternal();
+            HideVendorTradeFooter();
             itemTipOpen = true;
             itemTipCentered = centerOnScreen;
+            itemTipPinned = !centerOnScreen && (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen);
             itemTipScreenPosition = screenPosition;
             if (itemTipTitle != null)
                 itemTipTitle.text = ItemTooltipFormatter.BuildTitle(item);
             if (itemTipBody != null)
                 itemTipBody.text = ItemTooltipFormatter.BuildBody(item, amount);
+            if (itemTooltip != null)
+                itemTooltip.pickingMode = PickingMode.Ignore;
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, true);
+            if (document != null && document.sortingOrder < DMUiToolkitOverlayDocument.WorldMenusSort)
+                document.sortingOrder = DMUiToolkitOverlayDocument.WorldMenusSort;
             PositionItemTip(screenPosition);
         }
 
         private void HideItemTipInternal()
         {
+            HideVendorTradeFooter();
             itemTipOpen = false;
             itemTipCentered = false;
+            itemTipPinned = false;
+            if (itemTooltip != null)
+                itemTooltip.pickingMode = PickingMode.Ignore;
             DMUiToolkitOverlayDocument.SetShown(itemTooltip, false);
+        }
+
+        private void ShowVendorTradeInternal(ItemData item, int amount, Vector2 screenPosition, DMVendorTradeCard trade)
+        {
+            ShowItemTipInternal(item, amount, screenPosition, false);
+            itemTipTradeCard = trade;
+            itemTipTradeOpen = true;
+            itemTipCentered = false;
+            itemTipPinned = true;
+            if (itemTipBody != null)
+                itemTipBody.text = ItemTooltipFormatter.BuildTradeBody(item, amount);
+            if (itemTooltip != null)
+                itemTooltip.pickingMode = PickingMode.Position;
+            if (itemTipAction != null)
+                itemTipAction.text = string.IsNullOrWhiteSpace(trade.ActionLabel) ? "Buy" : trade.ActionLabel;
+            if (itemTipQty != null)
+            {
+                int min = Mathf.Max(1, trade.MinQty);
+                int max = Mathf.Max(min, trade.MaxQty);
+                int start = Mathf.Clamp(trade.DefaultQty > 0 ? trade.DefaultQty : min, min, max);
+                itemTipQty.lowValue = min;
+                itemTipQty.highValue = max;
+                itemTipQty.SetValueWithoutNotify(start);
+            }
+
+            RefreshVendorTradePrice();
+            DMUiToolkitOverlayDocument.SetShown(itemTipTrade, true);
+            PositionItemTip(screenPosition);
+        }
+
+        private void HideVendorTradeInternal()
+        {
+            bool wasTrade = itemTipTradeOpen;
+            HideVendorTradeFooter();
+            if (wasTrade)
+                HideItemTipInternal();
+        }
+
+        private void HideVendorTradeFooter()
+        {
+            itemTipTradeOpen = false;
+            itemTipTradeCard = null;
+            if (itemTooltip != null)
+                itemTooltip.pickingMode = PickingMode.Ignore;
+            DMUiToolkitOverlayDocument.SetShown(itemTipTrade, false);
+        }
+
+        private void OnVendorTradeQtyChanged(ChangeEvent<int> evt)
+        {
+            RefreshVendorTradePrice();
+        }
+
+        private void RefreshVendorTradePrice()
+        {
+            int qty = itemTipQty != null ? Mathf.Max(1, itemTipQty.value) : 1;
+            if (itemTipQtyValue != null)
+                itemTipQtyValue.text = qty.ToString();
+            if (itemTipPrice != null)
+                itemTipPrice.text = itemTipTradeCard != null && itemTipTradeCard.FormatPrice != null
+                    ? itemTipTradeCard.FormatPrice(qty)
+                    : string.Empty;
+        }
+
+        private void ConfirmVendorTrade()
+        {
+            if (itemTipTradeCard == null)
+                return;
+
+            int qty = itemTipQty != null ? Mathf.Max(1, itemTipQty.value) : 1;
+            Action<int> confirm = itemTipTradeCard.Confirm;
+            confirm?.Invoke(qty);
         }
 
         private VisualElement recipeTipCenterOver;
@@ -1178,10 +1323,28 @@ namespace Project.UI
             if (itemTooltip == null || itemTooltip.panel == null)
                 return;
 
+            if (itemTipTradeOpen)
+            {
+                itemTooltip.style.width = 280f;
+                DMUiToolkitOverlayDocument.PositionNearPointer(
+                    itemTooltip,
+                    screenPosition,
+                    DMUiToolkitOverlayDocument.ContextMenuOffset,
+                    itemTooltip.panel != null ? itemTooltip.panel.visualTree : null);
+                return;
+            }
+
             if (itemTipCentered)
             {
                 itemTooltip.style.width = 320f;
                 DMUiToolkitOverlayDocument.PositionCenterOnScreen(itemTooltip);
+                return;
+            }
+
+            if (itemTipPinned)
+            {
+                itemTooltip.style.width = 240f;
+                DMUiToolkitOverlayDocument.PositionBelowPointerTowardCenter(itemTooltip, screenPosition);
                 return;
             }
 
@@ -1400,5 +1563,15 @@ namespace Project.UI
             if (found != null)
                 DMUiToolkitOverlayDocument.HideGameObject(found.gameObject);
         }
+    }
+
+    public sealed class DMVendorTradeCard
+    {
+        public string ActionLabel;
+        public int MinQty = 1;
+        public int MaxQty = 1;
+        public int DefaultQty = 1;
+        public Func<int, string> FormatPrice;
+        public Action<int> Confirm;
     }
 }

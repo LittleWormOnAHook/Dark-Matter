@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef9380f57f0d46c40a5bc1057da2363e, type: 3}
+  m_Name: DM_IoClockProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.World.Clock.DMIoClockProfile
+  hoursPerDay: 30
+  realSecondsPerGameHour: 120
+  uiPaintRealSeconds: 60
+  startDay: 1
+  startHour: 6
+  startMinute: 0

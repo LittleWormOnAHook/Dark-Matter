@@ -1,0 +1,41 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Vendor.uss"/>
+    <ui:VisualElement name="vendor-root" picking-mode="Position" class="dmg-vendor-root">
+        <ui:VisualElement name="vendor-veil" picking-mode="Position" class="dmg-vendor-veil"/>
+        <ui:VisualElement name="vendor-panel" picking-mode="Position" class="dmg-vendor-panel">
+            <ui:VisualElement name="vendor-header" picking-mode="Ignore" class="dmg-vendor-header">
+                <ui:Label name="vendor-title" text="COMMISSARY" picking-mode="Ignore" class="dmg-section-title dmg-gold"/>
+                <ui:Label name="vendor-clock" text="Io Day 1 · 06:00:00 AM" picking-mode="Ignore" class="dmg-vendor-clock"/>
+                <ui:VisualElement name="vendor-ac-row" picking-mode="Ignore" class="dmg-vendor-ac-row">
+                    <ui:Label name="vendor-player-ac" text="Your AC 0" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:Label name="vendor-npc-ac" text="Vendor AC 0" picking-mode="Ignore" class="dmg-gold-heading"/>
+                </ui:VisualElement>
+                <ui:Button name="vendor-close" text="Close" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="vendor-split" picking-mode="Position" class="dmg-vendor-split">
+                <ui:VisualElement name="vendor-left" picking-mode="Position" class="dmg-vendor-col">
+                    <ui:Label name="vendor-stock-heading" text="Vendor Stock" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:ScrollView name="vendor-stock-grid" picking-mode="Position" class="dmg-scroll dmg-vendor-grid"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="vendor-split-rule" picking-mode="Ignore" class="dmg-vendor-rule"/>
+                <ui:VisualElement name="vendor-right" picking-mode="Position" class="dmg-vendor-col">
+                    <ui:Label name="vendor-inv-heading" text="Your Inventory" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:ScrollView name="vendor-inv-grid" picking-mode="Position" class="dmg-scroll dmg-vendor-grid"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="vendor-qty-row" picking-mode="Position" class="dmg-vendor-qty-row">
+                <ui:Label name="vendor-qty-label" text="Amount" picking-mode="Ignore" class="dmg-hint"/>
+                <ui:SliderInt name="vendor-qty" low-value="1" high-value="1" picking-mode="Position" class="dmg-vendor-slider"/>
+                <ui:Label name="vendor-qty-value" text="1" picking-mode="Ignore" class="dmg-gold-heading"/>
+                <ui:Label name="vendor-qty-price" text="" picking-mode="Ignore" class="dmg-gold-heading"/>
+            </ui:VisualElement>
+            <ui:Label name="vendor-status" text="" picking-mode="Ignore" class="dmg-hint"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="vendor-ctx-root" picking-mode="Ignore" class="dmg-vendor-ctx-root">
+            <ui:VisualElement name="vendor-ctx-panel" picking-mode="Position" class="dmg-vendor-ctx-panel">
+                <ui:Button name="vendor-ctx-action" text="Buy" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

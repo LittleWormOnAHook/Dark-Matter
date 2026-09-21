@@ -72,6 +72,7 @@ namespace Project.UI
         private ExposureController exposure;
         private float hitUntil;
         private float hitStarted;
+        private bool hitLayerCleared = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -239,9 +240,13 @@ namespace Project.UI
 
             if (!GameSession.HasStarted)
             {
-                zoneOpacity = 0f;
-                zoneOpacityTarget = 0f;
-                zoneLayer.style.opacity = 0f;
+                if (zoneOpacity != 0f || zoneOpacityTarget != 0f)
+                {
+                    zoneOpacity = 0f;
+                    zoneOpacityTarget = 0f;
+                    zoneLayer.style.opacity = 0f;
+                }
+
                 return;
             }
 
@@ -342,9 +347,16 @@ namespace Project.UI
 
             if (Time.unscaledTime >= hitUntil)
             {
-                damageLayer.style.opacity = 0f;
+                if (!hitLayerCleared)
+                {
+                    damageLayer.style.opacity = 0f;
+                    hitLayerCleared = true;
+                }
+
                 return;
             }
+
+            hitLayerCleared = false;
 
             float t = Time.unscaledTime - hitStarted;
             float alpha;

@@ -23,6 +23,7 @@
             </ui:VisualElement>
 
             <ui:VisualElement name="pilot-top-meta" picking-mode="Ignore" class="pilot-top-meta">
+                <ui:Label name="pilot-io-clock" text="Io Day 1 · 06:00:00 AM" picking-mode="Ignore" class="pilot-io-clock"/>
                 <ui:Label name="pilot-elev" text="Elevation +0 M" picking-mode="Ignore" class="pilot-meta-line"/>
                 <ui:Label name="pilot-lat" text="Lat +0" picking-mode="Ignore" class="pilot-meta-line"/>
                 <ui:Label name="pilot-long" text="Long +0" picking-mode="Ignore" class="pilot-meta-line"/>

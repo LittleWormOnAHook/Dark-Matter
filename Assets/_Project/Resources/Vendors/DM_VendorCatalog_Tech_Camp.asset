@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9037f9edc2abc4a4f94a50709948a918, type: 3}
+  m_Name: DM_VendorCatalog_Tech_Camp
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Vendor.DMVendorCatalog
+  listings:
+  - item: {fileID: 11400000, guid: 05ca656529d958b4fa6e52e83f5529a0, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: 2 Hander
+  - item: {fileID: 11400000, guid: 4a8c1d93e7b2456f9c0e2a5d6b8f1c03, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Two-Handed Sword
+  - item: {fileID: 11400000, guid: a9618f10f8cb43842bdd8f8bbf4ba058, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Wood Axe
+  - item: {fileID: 11400000, guid: 93fca7746814c434fa0b6af897c4bfaf, type: 2}
+    stockMin: 1
+    stockMax: 8
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 10
+    armorPlaceholder: 0
+    placeholderLabel: Increase Storage Module
+  - item: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Sci-Fi Pistol
+  - item: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Survival Rifle
+  - item: {fileID: 11400000, guid: 3de00f2ad64a18644a0ea967050502b5, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Binoculars 250
+  - item: {fileID: 11400000, guid: e99251903192f2d4c95d505b718fde00, type: 2}
+    stockMin: 1
+    stockMax: 3
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 0
+    armorPlaceholder: 0
+    placeholderLabel: Scanner B44
+  - item: {fileID: 11400000, guid: 2c99136a5a15f274293913ad040e6dde, type: 2}
+    stockMin: 2
+    stockMax: 2
+    buyPriceOverride: 150
+    sellPriceOverride: 200
+    requiredLevel: 10
+    armorPlaceholder: 0
+    placeholderLabel: Quora Shelter
+  - item: {fileID: 11400000, guid: acc8c5e8067ca3644964e55a91642ee8, type: 2}
+    stockMin: 1
+    stockMax: 1
+    buyPriceOverride: 0
+    sellPriceOverride: 0
+    requiredLevel: 7
+    armorPlaceholder: 0
+    placeholderLabel: Death Axe
+  - item: {fileID: 11400000, guid: e09b1bacd07f6184ca23fc5b1bfe4701, type: 2}
+    stockMin: 1
+    stockMax: 2
+    buyPriceOverride: 100
+    sellPriceOverride: 175
+    requiredLevel: 1
+    armorPlaceholder: 0
+    placeholderLabel: Sword of Fear

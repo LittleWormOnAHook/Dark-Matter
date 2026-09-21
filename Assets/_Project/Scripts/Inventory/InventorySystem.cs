@@ -41,6 +41,11 @@ namespace Project.Inventory
 
         public event System.Action OnInventoryChanged;
 
+        public void NotifyChanged()
+        {
+            OnInventoryChanged?.Invoke();
+        }
+
         private SurvivalStats survivalStats;
         private EquipmentController equipment;
 
@@ -505,6 +510,64 @@ namespace Project.Inventory
             return true;
         }
 
+        public bool CanCombineStacksAt(int index)
+        {
+            if (index < 0 || index >= slots.Count)
+                return false;
+
+            InventorySlot dest = slots[index];
+            if (dest == null || dest.IsEmpty || dest.item == null || dest.amount >= dest.item.maxStack)
+                return false;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (i == index)
+                    continue;
+                InventorySlot other = slots[i];
+                if (other != null && !other.IsEmpty && other.item == dest.item && other.amount > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool TryCombineStacksAt(int index)
+        {
+            if (!CanCombineStacksAt(index))
+                return false;
+
+            InventorySlot dest = slots[index];
+            int maxStack = Mathf.Max(1, dest.item.maxStack);
+            bool changed = false;
+            for (int i = 0; i < slots.Count && dest.amount < maxStack; i++)
+            {
+                if (i == index)
+                    continue;
+
+                InventorySlot other = slots[i];
+                if (other == null || other.IsEmpty || other.item != dest.item)
+                    continue;
+
+                int take = Mathf.Min(maxStack - dest.amount, other.amount);
+                if (take <= 0)
+                    continue;
+
+                dest.amount += take;
+                other.amount -= take;
+                if (other.amount <= 0)
+                {
+                    other.item = null;
+                    other.amount = 0;
+                }
+
+                changed = true;
+            }
+
+            if (changed)
+                OnInventoryChanged?.Invoke();
+            return changed;
+        }
+
         public bool RemoveItemAt(int index, int amount = 1)
         {
             if (index < 0 || index >= slots.Count) return false;
@@ -563,6 +626,11 @@ namespace Project.Inventory
 
             RemoveItemAt(index, dropAmount);
             return true;
+        }
+
+        public bool TrySpawnWorldDrop(ItemData item, int amount)
+        {
+            return SpawnDroppedItem(item, amount);
         }
 
         private bool SpawnDroppedItem(ItemData item, int amount)

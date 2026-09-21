@@ -146,6 +146,9 @@ namespace Project.UI
         private float lastHazardPinLeft = float.NaN;
         private float lastHazardPinBottom = float.NaN;
         private int nextPinAboveElevFrame;
+        private bool lastRootShown;
+        private bool hasRootShown;
+        private bool lastBannerShown;
 
         private void LateUpdate()
         {
@@ -155,7 +158,13 @@ namespace Project.UI
             bool toastActive = bannerPhase != 0;
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted()
                 && !GameplayHudVisibility.CinematicChromeHidden;
-            DMUiToolkitOverlayDocument.SetShown(root, want || toastActive);
+            bool showRoot = want || toastActive;
+            if (!hasRootShown || showRoot != lastRootShown)
+            {
+                hasRootShown = true;
+                lastRootShown = showRoot;
+                DMUiToolkitOverlayDocument.SetShown(root, showRoot);
+            }
 
             if (!uguiHidden)
             {
@@ -165,15 +174,29 @@ namespace Project.UI
 
             if (!want && !toastActive)
             {
-                hazardAlpha = 0f;
-                ApplyHazardAlpha();
-                DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
+                if (hazardAlpha != 0f)
+                {
+                    hazardAlpha = 0f;
+                    ApplyHazardAlpha();
+                }
+
+                if (lastBannerShown)
+                {
+                    lastBannerShown = false;
+                    DMUiToolkitOverlayDocument.SetShown(zoneBanner, false);
+                }
+
                 return;
             }
 
-            hazardAlpha = 0f;
-            ApplyHazardAlpha();
+            if (hazardAlpha != 0f)
+            {
+                hazardAlpha = 0f;
+                ApplyHazardAlpha();
+            }
+
             TickBanner();
+            lastBannerShown = bannerPhase != 0;
             if (boundReceiver == null)
                 BindZoneReceiver();
         }

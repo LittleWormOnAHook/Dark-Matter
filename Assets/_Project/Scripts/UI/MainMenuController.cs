@@ -246,12 +246,14 @@ namespace Project.UI
 
         private static void EnsureEventSystem()
         {
-            if (FindAnyObjectByType<EventSystem>() != null)
-                return;
+            if (FindAnyObjectByType<EventSystem>() == null)
+            {
+                GameObject eventSystemObject = new GameObject("EventSystem");
+                eventSystemObject.AddComponent<EventSystem>();
+                eventSystemObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            }
 
-            GameObject eventSystemObject = new GameObject("EventSystem");
-            eventSystemObject.AddComponent<EventSystem>();
-            eventSystemObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            DMUiGamepadNavigation.EnsureConfigured();
         }
 
         private static void EnsureGraphicRaycaster(Canvas canvas)
@@ -912,6 +914,8 @@ namespace Project.UI
             // Fresh expedition: clear hold-R mode prefs / lasers and holster any drawn weapon.
             WeaponModeSwitchController.ClearPersistedStatesForNewGame();
             PlayerProgressionManager.EnsureExists()?.ResetToNewGame();
+            Project.World.Clock.DMIoClock.ResetToNewGame();
+            Project.Vendor.DMVendorRuntime.ResetAll();
             GameObject player = PlayerLocator.FindPlayerObject();
             ProgressionStatScaler scaler = player != null ? player.GetComponent<ProgressionStatScaler>() : null;
             if (scaler != null)

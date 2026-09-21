@@ -12,6 +12,7 @@ using Project.Pet;
 using Project.Pioneers;
 using Project.Progression;
 using Project.Survival;
+using Project.World.Clock;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -37,6 +38,7 @@ namespace Project.UI
         private Label characterXpCount;
         private VisualElement characterVitals;
         private Label characterLoadout;
+        private Label characterIoClock;
         private Label characterCredits;
         private Label characterUnlocks;
         private readonly List<VitalRow> vitalRows = new List<VitalRow>();
@@ -255,6 +257,7 @@ namespace Project.UI
             characterXpCount = tree.Q<Label>("character-xp-count");
             characterVitals = tree.Q<VisualElement>("character-vitals");
             characterLoadout = tree.Q<Label>("character-loadout");
+            characterIoClock = tree.Q<Label>("character-io-clock");
             characterCredits = tree.Q<Label>("character-credits");
             characterUnlocks = tree.Q<Label>("character-unlocks");
             blueprintsSummary = tree.Q<Label>("blueprints-summary");
@@ -886,10 +889,18 @@ namespace Project.UI
                 characterLoadout.text = BuildLoadoutText(boundEquipment, boundAmmo);
 
             float ac = boundRoster != null ? boundRoster.AetherCredits : 0f;
+            if (characterIoClock != null)
+                characterIoClock.text = DMIoClock.DisplayText;
             if (characterCredits != null)
                 characterCredits.text = "Aether Credits: " + Mathf.RoundToInt(ac);
             if (characterUnlocks != null)
                 characterUnlocks.text = LevelUnlockRegistry.BuildUnlockSummary(level);
+        }
+
+        private void RefreshCharacterClock()
+        {
+            if (characterIoClock != null)
+                characterIoClock.text = DMIoClock.DisplayText;
         }
 
         private static void SetVitalAccuracy(VitalRow row, float current, float start)

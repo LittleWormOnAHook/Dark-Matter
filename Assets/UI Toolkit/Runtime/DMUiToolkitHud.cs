@@ -252,22 +252,25 @@ namespace Project.UI
         private void LateUpdate()
         {
             RefreshVisibility();
-            if (gameplayVisible)
-            {
+            if (!gameplayVisible)
+                return;
+
+            if (!uguiHidden)
                 HideUguiCounterparts();
-                if (!GameplayHudVisibility.CinematicChromeHidden)
-                {
-                    TickCompanionHud();
-                    TickLeftoverChrome();
-                    TickNoPowerHold();
-                }
-                else
-                {
-                    HideLeftoverPreviewHosts();
-                    ApplyNoPowerVisible(false);
-                }
-                TickDeferredVehicleOverlays();
+
+            if (!GameplayHudVisibility.CinematicChromeHidden)
+            {
+                TickCompanionHud();
+                TickLeftoverChrome();
+                TickNoPowerHold();
             }
+            else
+            {
+                HideLeftoverPreviewHosts();
+                ApplyNoPowerVisible(false);
+            }
+
+            TickDeferredVehicleOverlays();
         }
 
         private static bool vehicleOverlaysEnsured;

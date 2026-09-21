@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -28,6 +29,8 @@ namespace Project.Pet
         public float InteractRange => interactRange;
         public string InstanceId => ResolveInstanceId();
 
+        private static readonly List<PetWorldAdoptable> Live = new List<PetWorldAdoptable>(16);
+
         private void Awake()
         {
             if (pet == null)
@@ -41,11 +44,14 @@ namespace Project.Pet
         private void OnEnable()
         {
             WorldUseController.Register(this);
+            if (!Live.Contains(this))
+                Live.Add(this);
         }
 
         private void OnDisable()
         {
             WorldUseController.Unregister(this);
+            Live.Remove(this);
             PetTamingProgressUI.Hide();
         }
 
@@ -267,14 +273,19 @@ namespace Project.Pet
 
         public static PetWorldAdoptable FindClosestAdoptable(Vector3 playerPosition, float range)
         {
-            PetWorldAdoptable[] adoptables = Object.FindObjectsByType<PetWorldAdoptable>(FindObjectsInactive.Exclude);
             PetWorldAdoptable best = null;
             float bestDistance = float.MaxValue;
 
-            for (int i = 0; i < adoptables.Length; i++)
+            for (int i = Live.Count - 1; i >= 0; i--)
             {
-                PetWorldAdoptable adoptable = adoptables[i];
-                if (adoptable == null || adoptable.pet == null || adoptable.pet.IsOwned || !adoptable.isActiveAndEnabled)
+                PetWorldAdoptable adoptable = Live[i];
+                if (adoptable == null)
+                {
+                    Live.RemoveAt(i);
+                    continue;
+                }
+
+                if (adoptable.pet == null || adoptable.pet.IsOwned || !adoptable.isActiveAndEnabled)
                     continue;
 
                 float distance = Vector3.Distance(playerPosition, adoptable.transform.position);
@@ -290,14 +301,19 @@ namespace Project.Pet
 
         public static PetWorldAdoptable FindBestAdoptable(WorldUseContext context, float minPriority = 70f)
         {
-            PetWorldAdoptable[] adoptables = Object.FindObjectsByType<PetWorldAdoptable>(FindObjectsInactive.Exclude);
             PetWorldAdoptable best = null;
             float bestScore = float.MinValue;
 
-            for (int i = 0; i < adoptables.Length; i++)
+            for (int i = Live.Count - 1; i >= 0; i--)
             {
-                PetWorldAdoptable adoptable = adoptables[i];
-                if (adoptable == null || !adoptable.isActiveAndEnabled)
+                PetWorldAdoptable adoptable = Live[i];
+                if (adoptable == null)
+                {
+                    Live.RemoveAt(i);
+                    continue;
+                }
+
+                if (!adoptable.isActiveAndEnabled)
                     continue;
 
                 float score = adoptable.GetUsePriority(context);
