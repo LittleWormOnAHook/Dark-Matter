@@ -261,7 +261,7 @@ Pair with A2b scheduler — these fire **primarily underground** or **amplify in
 
 ### Story hooks
 
-- Mid-game arc (GDD 3.0): *Human–AI symbiosis experiments in lava tubes* → wreck modules in Stratum 2.
+- Mid-game arc: *Human–AI symbiosis experiments in lava tubes* → wreck modules in Stratum 2.
 - Kairos Memory Cores → vault antechambers in Stratum 5.
 - Failed expeditions built **inside brood tunnels** — environmental storytelling prop.
 

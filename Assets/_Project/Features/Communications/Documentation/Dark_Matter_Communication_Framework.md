@@ -10,7 +10,7 @@ Engineering contract: [Dark_Matter_Framework_Engineering_Standard.md](Dark_Matte
 
 **WoOS layer:** Communications is **Presentation** (HLA §2.8) — it delivers what Intelligence and Experience authorize. It is not the world's brain.
 
-**Disk status (July 22, 2026):** This folder contains **Documentation + Data/Audio READMEs only**. No Runtime / UI / Adapters / Tests `.cs`. Phases below are the **build target**. Phase 8.1 and Phase 9+ LLM are **deferred**; next Comms work is rule-based internal radio (GDD B4 Run 2) after World Engine spine (Run 1).
+**Disk status (September 22, 2026):** This folder contains **Documentation + Data/Audio READMEs only**. No Runtime / UI / Adapters / Tests `.cs`. Next Comms work is rule-based internal radio (GDD B4 Run 2). **In-game language models are not in the product** (Phase 8.1 LocalVoiceLLM, Phase 9+ cloud conversation). Gameplay AI is authored logic.
 
 
 ## Vision
@@ -179,20 +179,11 @@ Speech-to-text, push-to-talk, mic capture, procedural incoming voice, radio filt
 - `RadioPttController` — hold **V** (gamepad L3) for outgoing PTT
 - `RadioHudUI` RX (Gold) / TX (Rich Fuchsia) channel pill + TX static bar
 - Bootstrap: **F8** audio smoke; Alt+1..7 replies play through audio layer
-- **Phase 8.1 (deferred):** import SimpleOfflineSTT + SimpleOfflineTTS → swap adapters via `LocalVoiceLLM` proxies (no queue/HUD rewrite)
+- **Phase 8.1 LocalVoiceLLM:** **not in the product.** Do not import a voice language model. Incoming voice stays procedural; lines stay authored.
 
 ### Phase 9 — LLM Integration
 
-**Status: deferred** (optional later). Build internal template radio first (Phases 3–7).
-
-```
-IConversationProvider
-  TemplateConversationProvider
-  OpenAIConversationProvider
-  LocalLLMConversationProvider
-```
-
-Same Game State + context; replaceable providers. Not required for offline play.
+**Status: not in the product.** Do not implement `OpenAIConversationProvider`, `LocalLLMConversationProvider`, or any in-game model call. Crew lines are authored templates. Gameplay choices are director and finite-state logic.
 
 ### Phase 10 — Memory System
 
@@ -216,7 +207,7 @@ Natural-language teammate prompts over the same radio stack.
 
 ### Phase 15 — Full Dynamic Crew
 
-Memory + relationships + schedules + radio + context + optional LLM — crew feel alive.
+Memory + relationships + schedules + radio + context — crew feel alive through authored logic, not a language model.
 
 ---
 
@@ -227,13 +218,13 @@ Memory + relationships + schedules + radio + context + optional LLM — crew fee
 | Phase -1 Engineering Standard | **Present** (this Documentation folder) |
 | Phase 0 folder scaffold | **Partial** — Data/Audio READMEs only; no Runtime asmdef / interface stubs |
 | Phases 1–8 (GameState through procedural audio) | **Designed — not on disk** |
-| Phase 8.1 LocalVoiceLLM | **Deferred** |
-| Phase 9+ LLM | **Deferred** |
+| Phase 8.1 LocalVoiceLLM | **Not in the product** |
+| Phase 9+ LLM | **Not in the product** |
 
-## Explicit non-goals until later
+## Explicit non-goals
 
-- LLM packages (Phase 9+) — deferred; template radio first
-- Phase 8.1 SimpleOffline STT/TTS
+- In-game language models (Phase 8.1 LocalVoiceLLM, Phase 9+ cloud conversation, JEV, Ollama in Play)
+- Phase 8.1 SimpleOffline STT/TTS as a model backend — voice stays procedural / authored
 - Kairos idle machine / repair quest / cores / Resonance runtime (Intelligence layer, not Communications)
 - ExperienceDirector silence / density scheduling (after World Engine spine)
 - Treating prior “Phase X complete” ChatGPT notes as repo truth

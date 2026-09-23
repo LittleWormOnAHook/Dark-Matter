@@ -47,7 +47,7 @@ Enter **Pioneer** scene (`SimpleGameManager` → `CompanionSystemsBootstrap`).
 - Communications Runtime / Radio HUD / ContextBuilder — Run 2
 - World seed / WorldState persistence in `GameSaveData` — Run 3
 - Full WeatherDirector scheduler (F11 command adapter exists)
-- LLM / Phase 8.1 / Phase 9+ — deferred
+- In-game language models (Phase 8.1 LocalVoiceLLM, Phase 9+) — **not in the product**. Gameplay AI is authored logic.
 
 Safe Mode: [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md)
 

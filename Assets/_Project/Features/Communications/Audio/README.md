@@ -8,4 +8,4 @@ Planned: radio DSP, procedural voice, PTT SFX, and swappable TTS/STT adapters (P
 - **Hold V** (L3 on gamepad) — push-to-talk outgoing stub line
 - Optional `RadioAudioProfile` asset via editor menu (when implemented)
 
-Phase 8.1 LocalVoiceLLM / SimpleOffline STT+TTS — **deferred**.
+Phase 8.1 LocalVoiceLLM / SimpleOffline STT+TTS — **not in the product**. Voice stays procedural and authored.

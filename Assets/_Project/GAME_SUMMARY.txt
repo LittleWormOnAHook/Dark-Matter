@@ -4,8 +4,8 @@ Dark Matter Studios
 Canonical copy lives in GDD 5.0 — PRODUCT IDENTITY (5.0 — canonical game summary):
   Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt
 
-This file is a one-page export for sharing. When in doubt, read GDD 5.0 (or the
-highest GAME_DESIGN_DOCUMENT_*.txt revision under Assets/_Project/).
+This file is a one-page export for sharing. When in doubt, read
+Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt only.
 
 ================================================================================
 

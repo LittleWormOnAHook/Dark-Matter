@@ -425,7 +425,7 @@ Alt+1..7 → CommsQueryService.Ask(CommsQueryKind)
 **Subscribes:** `CommunicationsManager.TransmissionStarted/Ended`  
 **Palette:** `DarkMatterGenesisUiPalette`
 
-### 6.5 Audio pipeline (planned — Run 2; Phase 8.1 deferred)
+### 6.5 Audio pipeline (planned — Run 2; no in-game language model)
 
 **Assembly:** `Project.Features.Communications.Audio` (not created yet)
 
@@ -436,7 +436,7 @@ Alt+1..7 → CommsQueryService.Ask(CommsQueryKind)
 
 **Player:** `RadioTransmissionAudioPlayer`  
 **PTT:** `RadioPttController` — hold V / gamepad L3  
-**Phase 8.1:** LocalVoiceLLM adapters — deferred
+**Phase 8.1:** LocalVoiceLLM adapters — **not in the product**. Voice stays procedural / authored. No in-game language model.
 ---
 
 ## 7. Bootstrap registry
@@ -678,6 +678,7 @@ Detailed per-domain findings:
 | 1.0 | July 2026 | Initial TDB implementing HLA v1.0. Specifies GameState, Communications, WorldState, Directors, Experience. |
 | 1.1 | July 2026 | Draft claimed Phase B–D shipped (out of sync with repo). |
 | 1.2 | July 22, 2026 | **Disk correction:** Features runtime absent; bootstrap/planned-module tables match GDD B4–B5 and World_Engine_Disk_Status.md. LLM deferred. |
+| 1.3 | September 22, 2026 | In-game language models are not in the product. Gameplay AI is authored logic. |
 | 1.3 | July 22, 2026 | **Run 1:** GameState / WorldState / Directors / Validation C# + bootstrap + F9–F11 smoke. |
 
 ---

@@ -6,15 +6,15 @@ alwaysApply: false
 
 # Dark Matter: Genesis — GDD Authority
 
-**When asked for the GDD:** use **`Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`**, or the **highest `GAME_DESIGN_DOCUMENT_*.txt` revision** in `Assets/_Project/` if a newer file exists.
+**When asked for the GDD:** use **`Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`** only. Do not search for, open, or restore an earlier version file.
 
 **Single primary doc:** `Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`  
 **Summary:** `Assets/_Project/GAME_SUMMARY.txt` (export; canonical copy in GDD 5.0 **PRODUCT IDENTITY**)
-**Archives:** `GAME_DESIGN_DOCUMENT_4.0.txt`, `GAME_DESIGN_DOCUMENT_3.0.txt` — do not treat as competing authority.
+**Revisions:** one file at a time. A revision renames it to the next whole number (`6.0`, then `7.0`) and updates this path in the same change. The previous filename does not remain.
 
 - **Chapters 1–5** — Dark Matter Studios Production Bible (vision / pillars / solo AAA strategy)
 - **Appendix A** — Interim mechanics lock (roster, Echoes, thermal, Building Control Panels, economy, platforms)
-- **Appendix B** — Current Implementation / Progress. Prefer `Documentation/Architecture/World_Engine_Disk_Status.md` over any “[SHIPPED] Features” claims in older drafts.
+- **Appendix B** — Current Implementation / Progress. Prefer `Documentation/Architecture/World_Engine_Disk_Status.md` for what is actually on disk.
 
 **Engineering rules:** `.cursor/rules/dark-matter-genesis-unity-hdrp.mdc` (Unity 6 + HDRP, PC/consoles, combat/AI systems).
 
@@ -40,6 +40,7 @@ alwaysApply: false
 - **Base 22:** impervious to most pressures; **sulfur storms** → Command Center rooms; building damage **injures, never kills**
 - **Classes:** Architect Engineer, Science Specialist, Combat Tactician, Infiltrator Scout, Med Tech, Logistics Officer, Salvage Engineer, Communications Officer (+ hybrids)
 - **Building Control Panels:** each major structure has an in-world terminal (E) → **Building Control UI** with tabs **Overview | Companions | Production | Craft | Changes**. Assign base-22 companions, queues, and per-building / module settings here. Planned attachment modules: generators, power grids, automated gather/logistics, communications, defense, mining. **Journal Craft = recipe library / scroll learning only** — not primary production UI. Queues pause in sulfur storms.
+- **Gameplay AI:** authored logic only (`DirectorOrchestrator` on `WorldStateSnapshot`, finite-state behavior, ScriptableObject profiles). No in-game language model (LocalVoiceLLM, Phase 9+ cloud conversation, JEV, or Ollama inside Play). `Assets/Server/LocalAgent` is an editor/dev bridge — do not add it to the playable scene.
 
 ## Before building off-design
 If the user asks for features unrelated to the GDD, **ask** whether it is canon, prototype, or a new direction. Prototypes OK when explicitly labeled.

@@ -422,15 +422,15 @@ Audio Framework (music, SFX, radio DSP, mix)
 
 ---
 
-## 2.13 AI Layer (optional)
+## 2.13 AI Layer
 
-**Purpose:** Swappable conversation/planning backends — never required for offline play.
+**Purpose:** Authored gameplay AI only. Directors, finite-state behavior, and ScriptableObject profiles decide. No language model inside Play.
 
-**Responsibilities:** `IConversationProvider`, context pack consumption, snapshot-only grounding, fail-soft to templates.
+**Out of product:** `IConversationProvider` cloud/local LLM backends, Phase 8.1 LocalVoiceLLM, Phase 9+ conversation, and JEV as a runtime brain. Radio lines are authored templates.
 
-**Dependencies:** Presentation (Communications), WorldState, Intelligence (AIDirector future)
+**Dependencies:** Intelligence reads `WorldStateSnapshot` only (`DirectorOrchestrator.Evaluate()`).
 
-**Current state:** Communications docs under `Features/Communications/`; Runtime Phases 0–8 **not on disk**. Phase 9+ LLM deferred.
+**Current state:** Communications docs under `Features/Communications/`; Runtime Phases 0–8 **not on disk**. In-game language models are not a later phase.
 
 ---
 

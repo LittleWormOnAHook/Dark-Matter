@@ -35,6 +35,7 @@ alwaysApply: true
 - **Underground map** is later content. The surface map lower-right `?` / Underground box is the teaser — do not build the second map unless asked.
 - **Companion runtime anims** are paused until UITK HUD work is done.
 - **All created UI is UITK only.** No new uGUI. See `dark-matter-genesis-uitk-lock.mdc` and `dark-matter-genesis-ui-toolkit.mdc`. Hot Cross uses `Assets/_Project/Resources/UI/HotCrossIcons` cutouts only.
+- **Gameplay AI is authored logic only.** No language model inside Play (LocalVoiceLLM, Phase 9+ cloud conversation, JEV, or Ollama). `Assets/Server/LocalAgent` is an editor/dev bridge — do not add it to the playable scene.
 
 ## Engineering essentials
 

@@ -37,6 +37,10 @@ public class OllamaMessage
     public string content;
 }
 
+/// <summary>
+/// Editor/dev bridge to a local Ollama coder. Not gameplay AI.
+/// Do not add this component to the playable scene.
+/// </summary>
 public class LocalAgent : MonoBehaviour
 {
     [SerializeField] private string url = LocalAgentClient.DefaultUrl;

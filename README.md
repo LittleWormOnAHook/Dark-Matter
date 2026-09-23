@@ -11,7 +11,5 @@
 | Architecture | `Assets/_Project/Documentation/Architecture/README.md` | The World Engine / WoOS docs |
 | Disk status | `Assets/_Project/Documentation/Architecture/World_Engine_Disk_Status.md` | What exists vs designed |
 
-**When asked for the GDD:** use **GDD 5.0** or the highest `GAME_DESIGN_DOCUMENT_*.txt` revision in `Assets/_Project/`.
-
-Archives: `GAME_DESIGN_DOCUMENT_4.0.txt`, `GAME_DESIGN_DOCUMENT_3.0.txt` — do not use their Appendix B shipping claims (superseded by GDD 5.0 disk correction).
+**When asked for the GDD:** use **`Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`** only. A revision renames that file to the next whole number (`6.0`, then `7.0`). The previous filename does not remain.
 

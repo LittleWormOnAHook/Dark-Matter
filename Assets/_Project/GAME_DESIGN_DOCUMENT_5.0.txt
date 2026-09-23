@@ -5,7 +5,8 @@ Version 5.0
 Status: Production Bible — SINGLE AUTHORITATIVE GDD
 Revision: July 22, 2026 — disk-status correction: World Engine / Communications
           Features runtime not yet in repo; B4/B5 match on-disk truth. Design docs remain
-          the build target. LLM Phase 9+ deferred.
+          the build target. In-game language models are not in the product.
+          Gameplay AI is authored logic.
 
 Audience
 
@@ -21,18 +22,17 @@ Future Team Members
 
 Authority
 ---------
-This file is the primary GDD on git. When asked for "the GDD", use this file
-(GDD 5.0) or the highest GAME_DESIGN_DOCUMENT_*.txt revision under Assets/_Project/.
+This file is the only GDD. When asked for "the GDD", use this file.
+Do not search for or restore an earlier version.
 
-Chapters 1-5 define vision and production philosophy. Appendix A folds locked
-mechanics formerly split across GDD 3.0/4.0. Appendix B records Current
-Implementation / Progress (surveyed July 2026; refreshed September 2026).
-Sections B1–B3 gameplay status; B4 near-term roadmap; B5 The World Engine
-(design ratified; Features C# not on disk until Runs 1–2 — see World_Engine_Disk_Status.md).
+A revision renames this file to the next whole number (6.0, then 7.0) and
+updates the path in the same change. The previous filename does not remain.
 
-Archives only (do not treat as competing authority):
-  GAME_DESIGN_DOCUMENT_4.0.txt
-  GAME_DESIGN_DOCUMENT_3.0.txt
+Chapters 1-5 define vision and production philosophy. Appendix A is the locked
+mechanics. Appendix B records Current Implementation / Progress (surveyed July
+2026; refreshed September 2026). Sections B1–B3 gameplay status; B4 near-term
+roadmap; B5 The World Engine (design ratified; Features C# not on disk until
+Runs 1–2 — see World_Engine_Disk_Status.md).
 
 Companion doc: GAME_SUMMARY.txt — quick one-page export of PRODUCT IDENTITY below;
   canonical copy lives in this GDD only.
@@ -605,7 +605,7 @@ that are listed as NOT STARTED.
 
 
 ================================================================================
-APPENDIX A — Interim Mechanics Lock (folded from GDD 3.0)
+APPENDIX A — Interim Mechanics Lock
 ================================================================================
 
 Identity recap
@@ -1076,7 +1076,10 @@ B3. NOT STARTED — vision systems still planned
 B4. Near-term roadmap priority (order of value)
 -----------------------------------------------
   Track: internal Communications + The World Engine + persistent generated world.
-  LLM / Communications Phase 9+ and Phase 8.1 voice LLM are DEFERRED.
+  In-game language models are NOT IN THE PRODUCT (Phase 8.1 LocalVoiceLLM,
+  Phase 9+ cloud conversation, JEV, or any other model inside Play).
+  Gameplay AI is authored logic: DirectorOrchestrator on WorldStateSnapshot,
+  finite-state behavior, and ScriptableObject profiles.
 
   0. [DONE] Doc honesty — B4/B5 + Architecture status match disk
   1. [DONE] World Engine spine — Features/GameState + WorldState + Directors stubs + Validation
@@ -1114,7 +1117,9 @@ Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Valid
   [ ] WorldState / world-seed fields persisted into GameSaveData (Run 3)
   [ ] WeatherDirector live schedule (F11 command adapter exists; full scheduler later)
   [ ] Kairos Intelligence service, Memory Core Resonance Events, full director logic
-  [ ] LLM / cloud conversation (Communications Phase 9+) — DEFERRED
+  In-game language models are not in the product. Gameplay AI is authored logic
+  (directors, finite-state behavior, ScriptableObject profiles). Do not add
+  Phase 8.1 LocalVoiceLLM, Phase 9+ cloud conversation, or JEV to Play.
 
   On-disk gameplay that feeds the engine (reuse, do not rewrite):
   [x] Scripts/Survival/Exposure — zone pressures + ExposureStatusService

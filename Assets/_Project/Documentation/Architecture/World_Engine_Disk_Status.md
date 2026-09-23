@@ -36,7 +36,7 @@ A Features module is shipped only when its `.cs` / `.asmdef` files exist under `
 
 ---
 
-## Near-term build track (LLM deferred)
+## Near-term build track
 
 0. Doc honesty — done  
 1. World Engine spine — **done (this pass)**  
@@ -48,10 +48,13 @@ Safe Mode: see [Unity_Safe_Mode_Recovery.md](Unity_Safe_Mode_Recovery.md).
 
 ---
 
+## Not in the product
+
+- **In-game language models.** Communications Phase 8.1 LocalVoiceLLM, Phase 9+ cloud conversation, JEV, and any other model inside Play are out. Gameplay AI is authored logic: `DirectorOrchestrator.Evaluate()` on `WorldStateSnapshot`, finite-state behavior, and ScriptableObject profiles.
+- **`Assets/Server/LocalAgent.cs`** is an editor/dev bridge (Ollama). Do not add it to the playable scene.
+
 ## Deferred
 
-- Communications Phase 8.1 LocalVoiceLLM  
-- Communications Phase 9+ LLM / cloud conversation  
 - Gaia terrain **16 → 64** subtile split (1024 m scenes + impostors) — plan only: [Terrain_Subtile_Split_64_Plan.md](Terrain_Subtile_Split_64_Plan.md). Expedition streaming stays Gaia TLM; do not dual-run `TerrainChunkStreamer`.
 - Full Io biomes / ecology prefabs / pet migration (design docs present; runtime deferred to GDD B4 #9 / W0–W8)
 - **Exception:** Sulfur Hound prototype is on disk — Malbers AC + DMI brain (`Prefabs/Creatures/Sulfur_Hound.prefab`) + B1 `SurfaceEncounterTable_B1_SulfurPlains` Lifeform entry

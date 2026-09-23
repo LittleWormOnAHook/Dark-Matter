@@ -324,7 +324,7 @@ Each biome links to **dominant pressure**, **signature weather**, **primary verb
 | **Gameplay** | **Time + Route** — learn vent cadence; audio telegraph |
 
 **Signature activities**
-- **Vent crossing** — memorize hiss → blast → cooldown (Echo rescue setpiece from GDD 3.0).
+- **Vent crossing** — memorize hiss → blast → cooldown (Echo rescue setpiece).
 - **Vent Crab nest clear** — destroy queen vent or stealth past for gas harvest.
 - **Pressure tap** — Architect seals vent to open rare side tunnel (Stratum 2).
 
