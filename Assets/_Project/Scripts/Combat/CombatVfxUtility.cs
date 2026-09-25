@@ -122,7 +122,10 @@ namespace Project.Combat
 
                 if (typeName == "AutoDestroyPS"
                     || typeName == "SFX_SimpleProjectile"
-                    || typeName == "SFX_PhysicsMotion")
+                    || typeName == "SFX_PhysicsMotion"
+                    || typeName == "CFX_LightIntensityFade"
+                    || typeName == "ProjectileMover"
+                    || typeName == "ProjectileMover2D")
                 {
                     Object.Destroy(behaviour);
                     continue;
@@ -142,12 +145,15 @@ namespace Project.Combat
             string typeName = behaviour.GetType().Name;
             return typeName == "CFX_AutoStopLoopedEffect"
                 || typeName == "CFX_Lifetime"
+                || typeName == "CFX_LightIntensityFade"
                 || typeName == "AutoDestroy"
                 || typeName == "AutoDestroyPS"
                 || typeName == "DestroyAfterTime"
                 || typeName == "DestroyAfterSeconds"
                 || typeName == "SFX_SimpleProjectile"
-                || typeName == "SFX_PhysicsMotion";
+                || typeName == "SFX_PhysicsMotion"
+                || typeName == "ProjectileMover"
+                || typeName == "ProjectileMover2D";
         }
 
         public static void DisableVendorAutoReleaseBehaviours(GameObject root)
@@ -159,6 +165,31 @@ namespace Project.Combat
             if (cache == null)
                 cache = root.AddComponent<TracerVfxCache>();
             DisableVendorAutoReleaseBehaviours(cache);
+        }
+
+
+        /// <summary>
+        /// Forces a uniform world scale so hit marks / impacts stay the same size when parented
+        /// to colliders whose transform scale is not (1,1,1).
+        /// </summary>
+        public static void NormalizeAttachedWorldScale(Transform instance, float worldUniformScale = 1f)
+        {
+            if (instance == null)
+                return;
+
+            float desired = Mathf.Max(0.0001f, worldUniformScale);
+            Transform parent = instance.parent;
+            if (parent == null)
+            {
+                instance.localScale = Vector3.one * desired;
+                return;
+            }
+
+            Vector3 parentLossy = parent.lossyScale;
+            instance.localScale = new Vector3(
+                desired / Mathf.Max(0.0001f, Mathf.Abs(parentLossy.x)),
+                desired / Mathf.Max(0.0001f, Mathf.Abs(parentLossy.y)),
+                desired / Mathf.Max(0.0001f, Mathf.Abs(parentLossy.z)));
         }
 
         /// <summary>
@@ -186,6 +217,8 @@ namespace Project.Combat
             {
                 root.SetPositionAndRotation(worldPoint, worldRotation);
             }
+
+            NormalizeAttachedWorldScale(root);
 
             if (freezeProjectileVisual)
             {
@@ -260,6 +293,7 @@ namespace Project.Combat
                     if (parent != null && handler.UseWorldSpacePosition)
                         instance.transform.SetPositionAndRotation(spawnPoint, rotation);
 
+                    NormalizeAttachedWorldScale(instance.transform);
                     PreparePooledOneShotVfx(instance, life);
                 }
             }
@@ -384,7 +418,11 @@ namespace Project.Combat
 
                 string typeName = behaviour.GetType().Name;
                 if (typeName == "ProjectileMover" || typeName == "ProjectileMover2D")
-                    behaviour.enabled = false;
+                {
+                    behaviour.StopAllCoroutines();
+                    Object.Destroy(behaviour);
+                    continue;
+                }
             }
 
             Rigidbody[] bodies = cache.Bodies;

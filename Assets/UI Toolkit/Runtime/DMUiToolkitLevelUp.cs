@@ -28,6 +28,9 @@ namespace Project.UI
         private Label requireValue;
         private VisualElement noticeCard;
         private Label noticeText;
+        private VisualElement lowOxygenCard;
+        private Label lowOxygenText;
+        private bool lowOxygenActive;
         private VisualElement achievementCard;
         private Label achievementTitle;
         private Label achievementDesc;
@@ -110,6 +113,37 @@ namespace Project.UI
             return true;
         }
 
+        /// <summary>Sticky center Low Oxygen warning (flashed by OxygenDeprivationFx).</summary>
+        public static bool TrySetLowOxygenWarning(bool active, string message)
+        {
+            // Hiding must never EnsureHost — OnDisable during scene close would spawn UITK_LevelUp.
+            if (!active)
+            {
+                if (instance == null)
+                    return false;
+                instance.SetLowOxygenWarning(false, message);
+                return true;
+            }
+
+            if (!CanShowCenterToast())
+                return false;
+
+            DMUiToolkitLevelUp host = EnsureHost();
+            if (host == null)
+                return false;
+
+            host.SetLowOxygenWarning(true, message);
+            return true;
+        }
+
+        public static void SetLowOxygenFlashAlpha(float alpha01)
+        {
+            if (instance == null || !instance.lowOxygenActive || instance.lowOxygenCard == null)
+                return;
+
+            instance.lowOxygenCard.style.opacity = Mathf.Clamp01(alpha01);
+        }
+
         private static bool CanShowCenterToast()
         {
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
@@ -174,6 +208,8 @@ namespace Project.UI
                     requireCard.style.opacity = 0f;
                 if (noticeCard != null)
                     noticeCard.style.opacity = 0f;
+                if (lowOxygenCard != null)
+                    lowOxygenCard.style.opacity = 0f;
                 if (achievementCard != null)
                     achievementCard.style.opacity = 0f;
             }
@@ -202,6 +238,10 @@ namespace Project.UI
             requireValue = tree.Q<Label>("require-level-value");
             noticeCard = tree.Q<VisualElement>("center-notice");
             noticeText = tree.Q<Label>("center-notice-text");
+            lowOxygenCard = tree.Q<VisualElement>("low-oxygen");
+            lowOxygenText = tree.Q<Label>("low-oxygen-text");
+            if (lowOxygenCard != null)
+                lowOxygenCard.style.display = DisplayStyle.None;
             achievementCard = tree.Q<VisualElement>("achievement");
             achievementTitle = tree.Q<Label>("achievement-title");
             achievementDesc = tree.Q<Label>("achievement-desc");
@@ -216,6 +256,7 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(levelUpCard, false);
             DMUiToolkitOverlayDocument.SetShown(requireCard, false);
             DMUiToolkitOverlayDocument.SetShown(noticeCard, false);
+            DMUiToolkitOverlayDocument.SetShown(lowOxygenCard, false);
             DMUiToolkitOverlayDocument.SetShown(achievementCard, false);
             if (levelUpCard != null)
                 levelUpCard.style.opacity = 0f;
@@ -275,6 +316,20 @@ namespace Project.UI
             if (requireRoutine != null)
                 StopCoroutine(requireRoutine);
             requireRoutine = StartCoroutine(AnimateCard(requireCard, 0.28f, 1.8f, 0.3f, 28f, 18f));
+        }
+
+        private void SetLowOxygenWarning(bool active, string message)
+        {
+            BindTree();
+            lowOxygenActive = active;
+            if (lowOxygenCard == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(message) && lowOxygenText != null)
+                lowOxygenText.text = message;
+
+            lowOxygenCard.style.display = active ? DisplayStyle.Flex : DisplayStyle.None;
+            lowOxygenCard.style.opacity = active ? 1f : 0f;
         }
 
         private void PresentCenterNotice(string message)

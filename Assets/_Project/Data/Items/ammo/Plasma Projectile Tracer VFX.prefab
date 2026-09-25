@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1300573103503756, guid: c0ddb623e2878c94190a0546149028c8, type: 3}
       propertyPath: m_Name
-      value: Plasma Projectile Variant
+      value: Plasma Projectile Tracer VFX
       objectReference: {fileID: 0}
     - target: {fileID: 4603611077099896, guid: c0ddb623e2878c94190a0546149028c8, type: 3}
       propertyPath: m_LocalPosition.x

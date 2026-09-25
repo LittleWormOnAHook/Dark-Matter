@@ -1,4 +1,6 @@
 using Project.Core;
+using Project.Data;
+using Project.Inventory;
 using Project.Player;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -6,8 +8,8 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// UITK GAME OVER overlay with Retry / End Game. Forwards from UIManager.ShowDeathPopup.
-    /// stamp: gameover-mouse-uitk 0905
+    /// UITK GAME OVER overlay with Bio Gel revive / Retry / End Game.
+    /// Forwards from UIManager.ShowDeathPopup.
     /// </summary>
     [DefaultExecutionOrder(-376)]
     [DisallowMultipleComponent]
@@ -17,6 +19,9 @@ namespace Project.UI
 
         private UIDocument document;
         private VisualElement root;
+        private VisualElement gelIcon;
+        private Label gelCount;
+        private Button useGelButton;
         private Button retryButton;
         private Button exitButton;
         private bool bound;
@@ -121,17 +126,34 @@ namespace Project.UI
             if (root != null && root.pickingMode != PickingMode.Position)
                 root.pickingMode = PickingMode.Position;
 
+            gelIcon = tree.Q<VisualElement>("death-gel-icon");
+            gelCount = tree.Q<Label>("death-gel-count");
+            Button nextUseGel = tree.Q<Button>("death-use-gel");
             Button nextRetry = tree.Q<Button>("death-retry");
             Button nextExit = tree.Q<Button>("death-exit");
-            WireButtons(nextRetry, nextExit);
+            WireButtons(nextUseGel, nextRetry, nextExit);
 
             if (!open)
                 DMUiToolkitOverlayDocument.SetShown(root, false);
             bound = root != null;
         }
 
-        private void WireButtons(Button nextRetry, Button nextExit)
+        private void WireButtons(Button nextUseGel, Button nextRetry, Button nextExit)
         {
+            if (useGelButton != nextUseGel)
+            {
+                if (useGelButton != null)
+                    useGelButton.clicked -= HandleUseGel;
+                useGelButton = nextUseGel;
+                if (useGelButton != null)
+                {
+                    useGelButton.clicked -= HandleUseGel;
+                    useGelButton.clicked += HandleUseGel;
+                    if (useGelButton.pickingMode != PickingMode.Position)
+                        useGelButton.pickingMode = PickingMode.Position;
+                }
+            }
+
             if (retryButton != nextRetry)
             {
                 if (retryButton != null)
@@ -167,10 +189,33 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             open = true;
+            RefreshGelRow();
             EnsurePointerForOpenDeath();
 
-            if (retryButton != null)
+            if (useGelButton != null && useGelButton.enabledSelf)
+                useGelButton.Focus();
+            else if (retryButton != null)
                 retryButton.Focus();
+        }
+
+        private void RefreshGelRow()
+        {
+            ItemData gel = DMDeathRevive.ResolveBioGel();
+            int count = 0;
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player != null)
+                count = DMDeathRevive.CountBioGel(player.GetComponent<InventorySystem>());
+
+            if (gelCount != null)
+                gelCount.text = count.ToString();
+
+            if (gelIcon != null
+                && !DMUiToolkitStyle.TrySetItemIcon(gelIcon, gel)
+                && !DMUiToolkitStyle.TrySetSpriteBackground(gelIcon, Resources.Load<Sprite>("UI/Game Icons/Bio Gel")))
+                DMUiToolkitStyle.ClearBackgroundImage(gelIcon);
+
+            if (useGelButton != null)
+                useGelButton.SetEnabled(count > 0);
         }
 
         private void HideInternal()
@@ -226,6 +271,27 @@ namespace Project.UI
                 cam.SetInventoryOpen(false);
         }
 
+        private void HandleUseGel()
+        {
+            if (!open)
+                return;
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            InventorySystem inventory = player != null ? player.GetComponent<InventorySystem>() : null;
+            if (!DMDeathRevive.TryConsumeBioGel(inventory))
+            {
+                RefreshGelRow();
+                return;
+            }
+
+            HideInternal();
+            UIManager ui = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            if (ui != null)
+                ui.RespawnPlayer();
+            else
+                player?.GetComponent<PlayerDeathHandler>()?.Respawn();
+        }
+
         private void HandleRetry()
         {
             if (!open)
@@ -234,13 +300,10 @@ namespace Project.UI
             HideInternal();
             UIManager ui = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
             if (ui != null)
-                ui.RespawnPlayer();
-            else
-            {
-                // Fallback if UIManager missing: still try player respawn.
-                GameObject player = PlayerLocator.FindPlayerObject();
-                player?.GetComponent<PlayerDeathHandler>()?.Respawn();
-            }
+                ui.RetryFromDeath();
+            else if (!GameSaveSystem.TryLoadNewestSave(out _))
+                UnityEngine.SceneManagement.SceneManager.LoadScene(
+                    UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
         }
 
         private void HandleExit()
@@ -268,6 +331,73 @@ namespace Project.UI
             Transform death = ui.transform.Find("DeathPopupPanel");
             if (death != null && death.gameObject.activeSelf)
                 death.gameObject.SetActive(false);
+        }
+    }
+
+    internal static class DMDeathRevive
+    {
+        private const string BioGelName = "Bio Gel";
+        private const string BioGelAssetName = "Bio_Gel";
+
+        public static ItemData ResolveBioGel()
+        {
+            return ItemRegistry.Resolve(BioGelName) ?? ItemRegistry.Resolve(BioGelAssetName);
+        }
+
+        public static int CountBioGel(InventorySystem inventory)
+        {
+            if (inventory == null || inventory.slots == null)
+                return 0;
+
+            ItemData gel = ResolveBioGel();
+            int count = gel != null ? inventory.CountItem(gel) : 0;
+            if (count > 0)
+                return count;
+
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null)
+                    continue;
+
+                if (IsBioGel(slot.item))
+                    count += slot.amount;
+            }
+
+            return count;
+        }
+
+        public static bool TryConsumeBioGel(InventorySystem inventory)
+        {
+            if (inventory == null)
+                return false;
+
+            ItemData gel = ResolveBioGel();
+            if (gel != null && inventory.RemoveItem(gel, 1))
+                return true;
+
+            if (inventory.slots == null)
+                return false;
+
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null || !IsBioGel(slot.item))
+                    continue;
+
+                return inventory.RemoveItemAt(i, 1);
+            }
+
+            return false;
+        }
+
+        private static bool IsBioGel(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            return string.Equals(item.itemName, BioGelName, System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.name, BioGelAssetName, System.StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -83,3 +83,30 @@
     -unity-text-align: middle-center;
     white-space: normal;
 }
+
+.dmg-lu-low-oxygen {
+    position: absolute;
+    left: 50%;
+    top: 216px;
+    width: 480px;
+    margin-left: -240px;
+    margin-top: 0;
+    padding: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.dmg-lu-low-oxygen-text {
+    margin-top: 0;
+    font-size: 38px;
+    color: rgb(220, 40, 36);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-SemiBold.ttf?fileID=12800000&guid=28b6d07166d6d8947a6671e5480cbf66&type=3#Rajdhani-SemiBold");
+}
+

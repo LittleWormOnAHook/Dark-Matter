@@ -268,6 +268,49 @@ namespace Project.Features.Dash
             return true;
         }
 
+        
+        /// <summary>
+        /// Gamepad B double-press+hold / optional KBM Dash action — dash in move or camera forward.
+        /// stamp: controller-b-dodge-dash 0920
+        /// </summary>
+        public bool TryStartDashFromInput()
+        {
+            if (_dashing || !CanDash())
+                return false;
+
+            Vector3 local = ReadMoveLocal();
+            if (local.sqrMagnitude < 0.01f)
+                local = Vector3.forward;
+
+            StartDash(WorldDir(local));
+            return _dashing;
+        }
+
+        private static Vector3 ReadMoveLocal()
+        {
+            Vector2 stick = Vector2.zero;
+            Gamepad pad = Gamepad.current;
+            if (pad != null)
+                stick = pad.leftStick.ReadValue();
+
+            if (stick.sqrMagnitude < 0.04f)
+            {
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.wKey.isPressed) stick.y += 1f;
+                    if (keyboard.sKey.isPressed) stick.y -= 1f;
+                    if (keyboard.aKey.isPressed) stick.x -= 1f;
+                    if (keyboard.dKey.isPressed) stick.x += 1f;
+                }
+            }
+
+            if (stick.sqrMagnitude < 0.01f)
+                return Vector3.zero;
+
+            stick.Normalize();
+            return new Vector3(stick.x, 0f, stick.y);
+        }
         private void TryDoubleTap(Key key, Vector3 localDir)
         {
             Keyboard keyboard = Keyboard.current;

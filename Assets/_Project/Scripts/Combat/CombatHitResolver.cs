@@ -374,6 +374,9 @@ namespace Project.Combat
             if (instance != null && attach != null)
                 instance.transform.SetPositionAndRotation(point, rotation);
 
+            if (instance != null)
+                CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
+
             CombatVfxUtility.PreparePooledOneShotVfx(instance, 4f);
         }
 

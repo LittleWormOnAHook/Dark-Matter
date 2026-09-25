@@ -23,7 +23,8 @@ namespace Project.Combat
             ItemData ammoItem,
             Vector3 direction,
             float spreadDegrees,
-            float damageOverride = 0f)
+            float damageOverride = 0f,
+            Vector3? lockedSpawnPosition = null)
         {
             if (owner == null || muzzle == null || weapon == null)
                 return null;
@@ -41,7 +42,7 @@ namespace Project.Combat
 
             if (ammoItem != null && ammoItem.isHitscanBeam)
             {
-                ResolveHitscanBeam(owner, muzzle, weapon, ammoItem, fireDirection, damage);
+                ResolveHitscanBeam(owner, muzzle, weapon, ammoItem, fireDirection, damage, lockedSpawnPosition);
                 return null;
             }
 
@@ -49,10 +50,18 @@ namespace Project.Combat
             if (prefab == null)
                 return null;
 
-            Vector3 barrelForward = RangedFireSolver.ResolveWeaponAimForward(muzzle);
-            Vector3 spawnPosition = muzzle.position;
-            if (barrelForward.sqrMagnitude > 0.0001f)
-                spawnPosition += barrelForward * RangedFireSolver.ProjectileSpawnSkin;
+            Vector3 spawnPosition;
+            if (lockedSpawnPosition.HasValue)
+            {
+                spawnPosition = lockedSpawnPosition.Value;
+            }
+            else
+            {
+                Vector3 barrelForward = RangedFireSolver.ResolveWeaponAimForward(muzzle);
+                spawnPosition = muzzle.position;
+                if (barrelForward.sqrMagnitude > 0.0001f)
+                    spawnPosition += barrelForward * RangedFireSolver.ProjectileSpawnSkin;
+            }
 
             GameObject instance = PoolManager.Spawn(
                 prefab,
@@ -86,16 +95,18 @@ namespace Project.Combat
             ItemData weapon,
             ItemData ammoItem,
             Vector3 direction,
-            float damage)
+            float damage,
+            Vector3? lockedSpawnPosition = null)
         {
             float range = DMRangedAmmoStats.ResolveRange(weapon, ammoItem);
-            Vector3 origin = muzzle.position + direction * RangedFireSolver.MuzzleRayStartSkin;
+            Vector3 muzzlePos = lockedSpawnPosition ?? muzzle.position;
+            Vector3 origin = muzzlePos + direction * RangedFireSolver.MuzzleRayStartSkin;
             float castRange = Mathf.Max(0.01f, range - RangedFireSolver.MuzzleRayStartSkin);
             Vector3 endPoint = origin + direction * castRange;
 
             int mask = Physics.DefaultRaycastLayers & ~(1 << 8);
             if (RangedFireSolver.TryRaycastAim(
-                    muzzle.position,
+                    muzzlePos,
                     direction,
                     range,
                     mask,

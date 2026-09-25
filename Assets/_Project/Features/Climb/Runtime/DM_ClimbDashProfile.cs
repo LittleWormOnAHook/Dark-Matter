@@ -268,7 +268,7 @@ namespace Project.Features.Climb
         public float maxStamina = 100f;
         public float maxOxygen = 2400f;
 
-        [Header("Survival — passive drain")]
+        [Header("Survival - passive drain")]
         [Tooltip("Passive walk/idle energy drain. Tool use (jetpack, mining, scanner) uses toolEnergyDrainPerSecond instead.")]
         public float energyDrainPerSecond;
         [Tooltip("Energy drained per second while jetpack, mining tool, or scanner is active.")]
@@ -276,13 +276,25 @@ namespace Project.Features.Climb
         [Tooltip("Energy spent per output item when crafting away from a workbench.")]
         public float handCraftEnergyPerItem = 0.5f;
         public float oxygenDrainPerSecond = 4f;
+
+        [Header("Survival - low oxygen warning")]
+        [Tooltip("Show the center-screen Low Oxygen toast when oxygen is at or below this percent (0-100).")]
+        [Range(1f, 50f)]
+        public float lowOxygenWarningPercent = 10f;
+        [Tooltip("Flash the Low Oxygen toast this many times per second while below the threshold.")]
+        [Min(0.25f)]
+        public float lowOxygenFlashPerSecond = 1.5f;
+        [Tooltip("Center-screen warning copy.")]
+        public string lowOxygenWarningText = "Low Oxygen";
+        public bool lowOxygenWarningEnabled = true;
+
         [Tooltip("Health drained per second while energy is below lowStatThresholdPercent.")]
         public float healthDrainPerSecond = 2f;
         [Range(1f, 99f)]
         public float lowStatThresholdPercent = 25f;
         public float oxygenDepletedHealthDrainMultiplier = 5f;
 
-        [Header("Survival — health regen")]
+        [Header("Survival - health regen")]
         public bool enableHealthRegen;
         public float healthRegenPerSecond = 1f;
         public float healthRegenDelayAfterDamage = 5f;

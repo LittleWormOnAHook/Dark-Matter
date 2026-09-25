@@ -26,14 +26,47 @@
     left: 50%;
     top: 50%;
     width: 520px;
-    height: 320px;
+    height: 480px;
     margin-left: -260px;
-    margin-top: -160px;
+    margin-top: -240px;
     background-color: rgba(28, 42, 56, 0.98);
     border-width: 1px;
     border-color: rgb(212, 160, 23);
     align-items: center;
     padding: 28px 24px;
+}
+
+.dmg-death-gel {
+    align-items: center;
+    margin-top: 4px;
+}
+
+.dmg-death-gel-icon {
+    width: 64px;
+    height: 64px;
+    background-color: rgba(74, 74, 90, 0.82);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-death-gel-count {
+    height: 28px;
+    margin-top: 2px;
+    font-size: 22px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.dmg-death-btn-use {
+    border-width: 1px;
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-death-btn:disabled {
+    background-color: rgba(74, 74, 90, 0.45);
+    color: rgb(140, 127, 117);
+    border-color: rgb(74, 74, 90);
 }
 
 .dmg-death-title {

@@ -88,6 +88,8 @@ namespace Project.Features.Locomotion
 
         public const string AutoCrouchLatchStamp = "controller-autocrouch-r3 0920";
 
+        // stamp: controller-compile-fix 0920 — Crouch lives on vThirdPersonController, not Motor.
+
         public Gait CurrentGait { get; private set; } = Gait.SlowWalk;
 
         public bool IsJogging => CurrentGait == Gait.Jog;
@@ -299,7 +301,7 @@ namespace Project.Features.Locomotion
             bool speedsChanged = RefreshSpeedsFromProfile();
 
             ApplyGaitFromInput(shiftHeld, shiftPressed, speedsChanged);
-
+            ReassertMotorGaitFlags();
         }
 
 
@@ -433,8 +435,12 @@ namespace Project.Features.Locomotion
 
 
             if (!speedsChanged && desiredGait == _appliedGait)
-
+            {
+                // Invector onlyWalkWhenAiming re-sets walkByDefault every Update after we ApplyJog once;
+                // reassert so Shift-run stays while armed / ADS (stamp: armed-shift-run 0920).
+                ReassertMotorGaitFlags();
                 return;
+            }
 
 
 
@@ -483,29 +489,41 @@ namespace Project.Features.Locomotion
 
         private bool EffectiveShiftHeld() => ComputeShiftHeldForLocomotion();
 
+        private vThirdPersonController ResolveController()
+        {
+            return motor as vThirdPersonController
+                   ?? GetComponent<vThirdPersonController>();
+        }
+
         private void EnforceGamepadAutoCrouchLatch()
         {
-            if (!_gamepadAutoCrouchLatched || !DMInputSchemeRouter.IsGamepadScheme || motor == null)
+            if (!_gamepadAutoCrouchLatched || !DMInputSchemeRouter.IsGamepadScheme)
                 return;
 
-            if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
-                motor.Crouch();
+            vThirdPersonController cc = ResolveController();
+            if (cc == null)
+                return;
+
+            // Invector Crouch() is on vThirdPersonController (not Motor).
+            if (!cc.isCrouching && cc.isGrounded && !cc.customAction)
+                cc.Crouch();
         }
 
         private void ApplyGamepadAutoCrouchLatchState()
         {
-            if (motor == null)
+            vThirdPersonController cc = ResolveController();
+            if (cc == null)
                 return;
 
             if (_gamepadAutoCrouchLatched)
             {
-                if (!motor.isCrouching && motor.isGrounded && !motor.customAction)
-                    motor.Crouch();
+                if (!cc.isCrouching && cc.isGrounded && !cc.customAction)
+                    cc.Crouch();
                 return;
             }
 
-            if (motor.isCrouching)
-                motor.Crouch();
+            if (cc.isCrouching)
+                cc.Crouch();
         }
 
         public static bool ReadKeyboardShiftHeld()
@@ -664,6 +682,23 @@ namespace Project.Features.Locomotion
 
 
 
+        
+        /// <summary>
+        /// Re-apply walkByDefault flags for the current gait. Invector onlyWalkWhenAiming
+        /// forces walk each frame while ADS; without this, Shift-run dies after the first frame when armed.
+        /// stamp: armed-shift-run 0920
+        /// </summary>
+        public void ReassertMotorGaitFlags()
+        {
+            if (motor == null)
+                return;
+
+            bool walk = CurrentGait == Gait.SlowWalk || _appliedGait == Gait.SlowWalk;
+            motor.freeSpeed.walkByDefault = walk;
+            motor.strafeSpeed.walkByDefault = walk;
+            motor.alwaysWalkByDefault = walk;
+            EnforceMotorSprintState();
+        }
         private void ApplySlowWalk()
 
         {

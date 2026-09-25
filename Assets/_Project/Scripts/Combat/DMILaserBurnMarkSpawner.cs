@@ -136,6 +136,7 @@ namespace Project.Combat
             // Keep world pose after parenting so surface offset / normal orientation stay correct
             // even if the resource root is rotated or slightly scaled.
             instance.transform.SetPositionAndRotation(spawnPos, rotation);
+            CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
 
             DMILaserBurnMark mark = instance.GetComponent<DMILaserBurnMark>();
             if (mark != null)

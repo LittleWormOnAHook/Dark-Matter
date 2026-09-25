@@ -10,6 +10,7 @@ using Project.Pioneers;
 using Project.Player;
 using Project.Quests;
 using Project.Progression;
+using Project.Inventory;
 using Project.Survival;
 using Project.Survival.Exposure;
 
@@ -36,6 +37,41 @@ namespace Project.UI
                     deathHandler.Respawn();
                     return;
                 }
+            }
+
+            RestartScene();
+        }
+
+        public void UseBioGelRevive()
+        {
+            Time.timeScale = 1f;
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                return;
+
+            if (!DMDeathRevive.TryConsumeBioGel(player.GetComponent<InventorySystem>()))
+                return;
+
+            PlayerDeathHandler deathHandler = player.GetComponent<PlayerDeathHandler>();
+            if (deathHandler != null)
+                deathHandler.Respawn();
+            else
+                RestartScene();
+        }
+
+        public void RetryFromDeath()
+        {
+            Time.timeScale = 1f;
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            PlayerDeathHandler deathHandler = player != null ? player.GetComponent<PlayerDeathHandler>() : null;
+            deathHandler?.ClearDeathPresentationForLoad();
+
+            if (GameSaveSystem.TryLoadNewestSave(out _))
+            {
+                player?.GetComponent<SurvivalStats>()?.NotifyRevivedAfterRespawn(5f);
+                return;
             }
 
             RestartScene();
@@ -125,7 +161,7 @@ namespace Project.UI
             // Create retry button
             GameObject retryObj = CreateStyledButton(contentPanel.transform, "RetryButton", "RETRY", new Vector2(0f, 20f));
             Button retryBtn = retryObj.GetComponent<Button>();
-            retryBtn.onClick.AddListener(RespawnPlayer);
+            retryBtn.onClick.AddListener(RetryFromDeath);
 
             // Create exit button
             GameObject exitObj = CreateStyledButton(contentPanel.transform, "ExitButton", "END GAME", new Vector2(0f, -60f));
@@ -156,7 +192,7 @@ namespace Project.UI
             if (retryBtn != null)
             {
                 retryBtn.onClick.RemoveAllListeners();
-                retryBtn.onClick.AddListener(RespawnPlayer);
+                retryBtn.onClick.AddListener(RetryFromDeath);
             }
 
             Button exitBtn = content.Find("ExitButton")?.GetComponent<Button>();

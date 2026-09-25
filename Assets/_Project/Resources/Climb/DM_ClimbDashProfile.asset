@@ -77,9 +77,13 @@ MonoBehaviour:
   energyDrainPerSecond: 0
   toolEnergyDrainPerSecond: 0.5
   handCraftEnergyPerItem: 0.5
-  oxygenDrainPerSecond: 10
-  healthDrainPerSecond: 0
-  lowStatThresholdPercent: 25
+  oxygenDrainPerSecond: 2
+  lowOxygenWarningPercent: 10
+  lowOxygenFlashPerSecond: 1.5
+  lowOxygenWarningText: Low Oxygen
+  lowOxygenWarningEnabled: 1
+  healthDrainPerSecond: 10
+  lowStatThresholdPercent: 13.1
   oxygenDepletedHealthDrainMultiplier: 5
   enableHealthRegen: 1
   healthRegenPerSecond: 5

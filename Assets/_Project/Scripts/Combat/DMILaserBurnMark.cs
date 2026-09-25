@@ -25,7 +25,6 @@ namespace Project.Combat
         private float _intensityMul = 1f;
         private float _twistDegrees;
         private Vector3 _baseLocalScale = Vector3.one;
-        private bool _capturedBaseScale;
         private int _leaseId;
         private MaterialPropertyBlock _block;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -49,14 +48,9 @@ namespace Project.Combat
             _scaleMul = Mathf.Clamp(scaleMul, 0.75f, 1.35f);
             _intensityMul = Mathf.Clamp(intensityMul, 0.7f, 1.35f);
 
-            if (!_capturedBaseScale)
-            {
-                _baseLocalScale = transform.localScale;
-                if (_baseLocalScale.sqrMagnitude < 0.0001f)
-                    _baseLocalScale = Vector3.one;
-                _capturedBaseScale = true;
-            }
-
+            // Re-normalize every play so a prior stamp on a scaled collider does not lock a bad base.
+            CombatVfxUtility.NormalizeAttachedWorldScale(transform);
+            _baseLocalScale = transform.localScale;
             transform.localScale = _baseLocalScale * _scaleMul;
             Align(point, normal, _twistDegrees);
             ApplyVisuals(1f, 1f);

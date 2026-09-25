@@ -251,6 +251,7 @@ namespace Project.Combat
             if (parent != null)
                 instance.transform.SetPositionAndRotation(point, rotation);
 
+            CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
             CombatVfxUtility.PreparePooledOneShotVfx(instance, life);
             return instance;
         }

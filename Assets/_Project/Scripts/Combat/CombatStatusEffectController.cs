@@ -23,6 +23,7 @@ namespace Project.Combat
             public float nextTickTime;
             public GameObject source;
             public GameObject vfxInstance;
+            public Transform vfxFollow;
         }
 
         private readonly List<ActiveEffect> activeEffects = new List<ActiveEffect>(4);
@@ -86,6 +87,7 @@ namespace Project.Combat
                 existing.damagePerTick = damagePerTick;
                 existing.tickInterval = tickInterval;
                 existing.source = source;
+                existing.vfxFollow = transform;
                 return;
             }
 
@@ -97,12 +99,18 @@ namespace Project.Combat
                 remainingDuration = duration,
                 nextTickTime = Time.time + tickInterval,
                 source = source,
+                vfxFollow = transform,
             };
 
             if (vfxPrefab != null)
             {
-                Transform anchor = transform;
-                effect.vfxInstance = PoolManager.Spawn(vfxPrefab, anchor.position, Quaternion.identity, anchor);
+                // Keep DOT VFX in world space (no SetParent onto this host). Parenting under a
+                // TrainingDummy/enemy while it enables/disables throws Unity console errors.
+                effect.vfxInstance = PoolManager.Spawn(
+                    vfxPrefab,
+                    transform.position,
+                    Quaternion.identity,
+                    null);
             }
 
             activeEffects.Add(effect);
@@ -118,6 +126,7 @@ namespace Project.Combat
                 damageable = GetComponent<IDamageable>();
                 if (damageable == null)
                 {
+                    ReleaseAllVfx();
                     activeEffects.Clear();
                     return;
                 }
@@ -128,11 +137,12 @@ namespace Project.Combat
                 ActiveEffect effect = activeEffects[i];
                 effect.remainingDuration -= Time.deltaTime;
 
+                if (effect.vfxInstance != null && effect.vfxFollow != null)
+                    effect.vfxInstance.transform.position = effect.vfxFollow.position;
+
                 if (effect.remainingDuration <= 0f)
                 {
-                    if (effect.vfxInstance != null)
-                        PoolManager.Release(effect.vfxInstance);
-
+                    ReleaseVfx(effect);
                     activeEffects.RemoveAt(i);
                     continue;
                 }
@@ -148,13 +158,31 @@ namespace Project.Combat
 
         private void OnDisable()
         {
-            for (int i = 0; i < activeEffects.Count; i++)
-            {
-                if (activeEffects[i].vfxInstance != null)
-                    PoolManager.Release(activeEffects[i].vfxInstance);
-            }
-
+            // Host is deactivating — never SetParent back through the pool while we are the parent.
+            ReleaseAllVfx();
             activeEffects.Clear();
+        }
+
+        private void ReleaseAllVfx()
+        {
+            for (int i = 0; i < activeEffects.Count; i++)
+                ReleaseVfx(activeEffects[i]);
+        }
+
+        private static void ReleaseVfx(ActiveEffect effect)
+        {
+            if (effect == null || effect.vfxInstance == null)
+                return;
+
+            GameObject vfx = effect.vfxInstance;
+            effect.vfxInstance = null;
+            effect.vfxFollow = null;
+
+            // Detach first so GameObjectPool.Release does not reparent while this host disables.
+            if (vfx.transform.parent != null)
+                vfx.transform.SetParent(null, true);
+
+            PoolManager.ReleaseDelayed(vfx, 0f);
         }
     }
 }

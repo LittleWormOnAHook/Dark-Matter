@@ -5,6 +5,11 @@
         <ui:VisualElement name="death-veil" picking-mode="Position" class="dmg-death-veil"/>
         <ui:VisualElement name="death-panel" picking-mode="Position" class="dmg-death-panel">
             <ui:Label name="death-title" text="GAME OVER" picking-mode="Ignore" class="dmg-death-title"/>
+            <ui:VisualElement name="death-gel" picking-mode="Ignore" class="dmg-death-gel">
+                <ui:VisualElement name="death-gel-icon" picking-mode="Ignore" class="dmg-death-gel-icon"/>
+                <ui:Label name="death-gel-count" text="0" picking-mode="Ignore" class="dmg-death-gel-count"/>
+            </ui:VisualElement>
+            <ui:Button name="death-use-gel" text="USE BIO GEL" picking-mode="Position" class="dmg-death-btn dmg-death-btn-use"/>
             <ui:Button name="death-retry" text="RETRY" picking-mode="Position" class="dmg-death-btn"/>
             <ui:Button name="death-exit" text="END GAME" picking-mode="Position" class="dmg-death-btn"/>
         </ui:VisualElement>
