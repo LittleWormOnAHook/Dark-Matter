@@ -326,6 +326,7 @@ namespace Project.UI
             minimapHost = root.Q<VisualElement>("minimap");
             BindCompanionHud(root);
             BindLeftoverChrome(root);
+            DMUiToolkitBuildingHotbar.Bind(this, root);
 
             bound = hudRoot != null;
             if (bound && !stamped)

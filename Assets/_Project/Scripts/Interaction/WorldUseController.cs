@@ -1425,6 +1425,10 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(walkerDrillPrompt))
                 return walkerDrillPrompt;
 
+            string doorPrompt = Project.Building.DMBuildingDoor.TryGetPrompt(context);
+            if (!string.IsNullOrEmpty(doorPrompt))
+                return doorPrompt;
+
             // Close-range UITK Hold-E chrome owns the prompt; skip duplicate bottom text.
         if (WorldPickupFocus.Item != null
             && WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, WorldPickupFocus.Item.GetIndicatorWorldAnchor()))

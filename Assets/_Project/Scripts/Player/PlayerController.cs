@@ -877,6 +877,10 @@ namespace Project.Player
             if (context.started)
                 GameAudioManager.Instance?.PlayButtonClick();
 
+            // Binder forwards Use on performed, not started. Either edge must confirm the build highlight.
+            if ((context.started || context.performed) && DMUiToolkitBuildingHotbar.TryActivateFocused())
+                return;
+
             if (PlayerVehicleState.IsMounted && PlayerVehicleState.ActiveCraft != null)
             {
                 PlayerVehicleState.ActiveCraft.TryExit(this);
@@ -1088,7 +1092,7 @@ namespace Project.Player
             if (pitch > 180f)
                 pitch -= 360f;
 
-            pitch = Mathf.Clamp(pitch - lookY, minPitch, maxPitch);
+            pitch = Mathf.Clamp(pitch - lookY, PitchMin(), PitchMax());
             float yaw = euler.y + lookX;
             cam.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
@@ -1156,7 +1160,7 @@ namespace Project.Player
             _cameraYaw = MathLib.ClampAngle(_cameraYaw + scaledLook.x, -180f, 180f);
 
             float pitchDelta = invertLook ? -scaledLook.y : scaledLook.y;
-            _cameraPitch = MathLib.ClampAngle(_cameraPitch + pitchDelta, minPitch, maxPitch);
+            _cameraPitch = MathLib.ClampAngle(_cameraPitch + pitchDelta, PitchMin(), PitchMax());
 
             _lookInput = Vector2.zero;
         }
@@ -1164,6 +1168,9 @@ namespace Project.Player
         private void HandleZoom()
         {
             if (_opticsOpen || PlayerVehicleState.IsMounted || Mouse.current == null)
+                return;
+
+            if (Project.Building.DMBuildingMode.IsActive)
                 return;
 
             float scroll = Mouse.current.scroll.ReadValue().y;
@@ -1280,6 +1287,23 @@ namespace Project.Player
             return position;
         }
 
+        float PitchExtra()
+        {
+            return Project.Building.DMBuildingMode.IsActive
+                ? Project.Building.DMBuildingGhostProfile.BuildLookUpDegrees
+                : 0f;
+        }
+
+        float PitchMin()
+        {
+            return Mathf.Max(-89f, minPitch - PitchExtra());
+        }
+
+        float PitchMax()
+        {
+            return Mathf.Min(89f, maxPitch + PitchExtra());
+        }
+
         public void RefreshCameraFollow()
         {
             if (_character == null || _character.cameraTransform == null)
@@ -1289,7 +1313,7 @@ namespace Project.Player
                 _character.camera = Camera.main;
 
             _cameraYaw = transform.eulerAngles.y;
-            _cameraPitch = Mathf.Clamp(_cameraPitch, minPitch, maxPitch);
+            _cameraPitch = Mathf.Clamp(_cameraPitch, PitchMin(), PitchMax());
             _currentFollowDistance = followDistance;
             _followDistanceSmoothVelocity = 0f;
             GameplayAudioUtility.EnsureListenerOnCamera(_character.camera);

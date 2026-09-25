@@ -400,3 +400,122 @@
     -unity-font-style: bold;
     -unity-text-align: middle-center;
 }
+
+.dmg-build-hold-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 64px;
+    height: 64px;
+    margin-left: -32px;
+    margin-top: -32px;
+}
+
+.dmg-build-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 108px;
+    width: 760px;
+    margin-left: -380px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.dmg-build-list {
+    position: absolute;
+    left: 0;
+    bottom: 58px;
+    width: 220px;
+    max-height: 240px;
+    padding: 6px;
+    background-color: rgb(28, 42, 56);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-build-list-header {
+    margin-top: 4px;
+    margin-bottom: 2px;
+    padding-left: 4px;
+    font-size: 11px;
+    color: rgb(140, 127, 117);
+    -unity-font-style: bold;
+}
+
+.dmg-build-list-row {
+    height: 28px;
+    margin-bottom: 4px;
+    color: rgb(237, 233, 228);
+    background-color: rgb(47, 47, 47);
+    border-width: 0;
+    -unity-text-align: middle-left;
+}
+
+.dmg-build-list-row-selected {
+    background-color: rgb(192, 46, 122);
+    color: rgb(237, 233, 228);
+}
+
+.dmg-build-cost {
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    font-size: 14px;
+    color: rgb(237, 233, 228);
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    -unity-text-align: middle-left;
+}
+
+.dmg-build-row {
+    flex-direction: row;
+    align-items: center;
+    height: 56px;
+    padding: 4px;
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+}
+
+.dmg-build-arrow {
+    width: 28px;
+    height: 44px;
+    margin-right: 4px;
+    color: rgb(237, 233, 228);
+    background-color: rgb(143, 30, 94);
+    border-width: 0;
+    font-size: 16px;
+}
+
+.dmg-build-slots {
+    flex-direction: row;
+    flex-grow: 1;
+    align-items: center;
+}
+
+.dmg-build-slot {
+    width: 64px;
+    height: 44px;
+    margin-right: 4px;
+    background-color: rgb(28, 42, 56);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-build-slot-selected {
+    border-color: rgb(192, 46, 122);
+    border-width: 2px;
+}
+
+.dmg-build-slot-short {
+    background-color: rgb(74, 74, 90);
+}
+
+.dmg-build-slot-label {
+    font-size: 11px;
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}

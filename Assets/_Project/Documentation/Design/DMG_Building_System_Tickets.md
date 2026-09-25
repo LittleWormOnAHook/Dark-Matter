@@ -1,10 +1,10 @@
 # Building System — Implementation Tickets
 
 **Parent plan:** [`DMG_Building_System_Scope_Plan.md`](DMG_Building_System_Scope_Plan.md)  
-**Last updated:** 2026-08-28  
+**Last updated:** 2026-09-24  
 **Convention:** `BUILD-###` · status: `backlog` | `ready` | `in_progress` | `done` | `blocked`  
 
-**Global constraints (every ticket):** No NavMesh · palette hologram (not gold) · border fences stay in v1.6 · wrecks in `Terrain_X_Y_Content` · drain mats on hold · reuse multitool/BCP/scanner/reverse dissolve.
+**Global constraints (every ticket):** No NavMesh · palette hologram (not gold) · border fences stay in v1.6 · wrecks in `Terrain_X_Y_Content` · drain mats on hold · reuse multitool/BCP/scanner/reverse dissolve. Component track: UITK build hotbar, ten visible slots, arrow scroll, no scrollbar, Stone before other tiers.
 
 ---
 
@@ -20,6 +20,7 @@
 | **E5** BCP depth | 6 | Companions, queues, storm pause | Act I-D |
 | **E6** Prologue content | — | Quest items, pads, defs, scenes | Act I ship |
 | **E7** Campaign facilities | 7 | Act III buildings + Resonance hooks | Post-prologue |
+| **E8** Components | C1–C6 | Stone snap library, hotbar, Studio, map blueprints, tiers | After Slice 1 |
 
 ---
 
@@ -105,13 +106,13 @@
 | **Depends on** | BUILD-001, BUILD-002, BUILD-003 |
 
 **Scope**
-- When multitool equipped + blueprint selected: spawn preview mesh at aim ray hit.
+- While build mode is active (Hold B, BUILD-006) and a blueprint is selected: spawn preview mesh at aim ray hit.
 - Apply hologram mat + valid/invalid tint from BUILD-003 each frame.
 - Reuse deploy-style input from hovercraft/walker drill patterns (read first, match).
 - Do not commit on click yet (BUILD-005).
 
 **Acceptance**
-- [ ] Equip multitool → preview follows aim
+- [ ] Hold B → preview follows aim
 - [ ] Green on valid flat ground inside fence
 - [ ] Red on invalid; no commit when red
 
@@ -151,13 +152,19 @@
 | **Depends on** | BUILD-004 |
 
 **Scope**
-- Ensure player can equip `ItemType.Multitool` from hotbar.
+- Build mode is **Hold B** on keyboard (Input System Hold interaction). Tap B stays `Binoculars` in `InputSystem_Actions` and `GameplayKeyboardShortcuts`.
+- Gamepad: Hold on Left Shoulder enters build mode; tap stays binoculars.
+- Hold B again exits. While build mode is active, binoculars are suppressed.
+- Journal, pause, and other modals block the hold.
+- Multitool equip is not the mode switch. The multitool remains the construct tool used inside the mode.
 - Minimal blueprint select: one unlocked def for Slice 1 test (debug menu or single bound def).
 - Defer full deploy wheel to BUILD-015 if needed for prologue.
 
 **Acceptance**
-- [ ] Multitool in hotbar enters placement mode
-- [ ] Exiting multitool clears preview
+- [ ] Hold B enters placement mode and shows the build hotbar
+- [ ] Tap B still toggles binoculars when build mode is off
+- [ ] Hold B again exits and clears the preview
+- [ ] A modal open ignores the hold
 
 ---
 
@@ -265,12 +272,15 @@
 | **Depends on** | BUILD-006, BUILD-001 |
 
 **Scope**
-- Extend existing deploy/hotbar pattern to list **unlocked** `BuildingDefinition`s.
-- Filter by unlock state (scan/quest/schematic flags).
+- Player-facing picker is the **building hotbar** (BUILD-093), not a new fullscreen builder.
+- Lists **unlocked** `BuildingDefinition`s for the selected material, Kits, or Vital Machines.
+- Filter by unlock state (scan / map blueprint / quest / schematic flags).
+- `starterUnlocked` Stone first basic kit (seven pieces) is visible before any find.
 
 **Acceptance**
-- [ ] Player can pick among unlocked defs
-- [ ] Locked defs hidden or shown disabled
+- [ ] Player can pick among unlocked defs from the ten-slot bar
+- [ ] Locked defs stay off the bar
+- [ ] Side arrows scroll; there is no scrollbar
 
 ---
 
@@ -343,13 +353,14 @@
 | **Depends on** | BUILD-001, BUILD-002 |
 
 **Scope**
-- Menu: `Tools/Dark Matter Genesis/Buildings/Author Building`
-- Input: finished prefab → create/update `BuildingDefinition`, stamp hologram mat, wire BCP id, optional wreck prefab, recipe slot link.
+- Menu: `Tools/Dark Matter Genesis/Buildings/Building Studio` opens Genesis Studio on the **Building** category (BUILD-095).
+- One-pass action lives **inside** that studio: finished prefab → create/update `BuildingDefinition`, stamp hologram mat, wire BCP id, optional wreck prefab, recipe slot link.
 - Validation checklist log (mirror creature prefab builder pattern).
 
 **Acceptance**
-- [ ] One-pass author from prefab
-- [ ] Missing BCP on prefab warns
+- [ ] One-pass author from prefab inside Building Studio
+- [ ] Missing BCP on a kit or vital-machine prefab warns
+- [ ] Component drops do not require a BCP
 
 ---
 
@@ -686,6 +697,166 @@
 
 ---
 
+## E8 — Components (C1–C6)
+
+Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only until a later tier is authored.
+
+### BUILD-090 — Definition fields for pieces, kits, and machines
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P0 |
+| **Depends on** | BUILD-001 |
+
+**Scope**
+- Extend `BuildingDefinition` with `kind`, `materialTier`, `section`, `footprintMeters`, `sockets`, `upgradeToId`, `starterUnlocked` (scope §7 and §18).
+- Kinds: `Component`, `Kit`, `VitalMachine`.
+- Tiers: `Stone`, `Iron`, `Steel`, `Silicate`, `Amalgam`.
+
+**Acceptance**
+- [ ] Existing kit-style def still validates
+- [ ] A Stone wall def stores 4×4 m and a socket list
+- [ ] Registry lookup by id unchanged
+
+---
+
+### BUILD-091 — Stone library folders + ProBuilder first basic kit
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P0 |
+| **Depends on** | BUILD-090 |
+
+**Scope**
+- Create `Assets/_Project/Prefabs/Buildings/Library/` as in scope §18.5. Stone section folders only need meshes; other tier folders may be empty.
+- ProBuilder primitives, all `starterUnlocked`: `stone_foundation_4x4`, `stone_wall_4x4`, `stone_floor_4x4`, `stone_slope_4x4`, `stone_wall_window_4x4`, `stone_door_frame_4x4`, `stone_door_basic`.
+- Window wall matches the solid wall footprint and includes a glass pane. Door frame matches the solid wall footprint and exposes one door socket. Basic door fills that socket only.
+
+**Acceptance**
+- [ ] Seven prefabs and seven definitions exist under Library/Stone
+- [ ] Wall, window wall, and door frame are 4 m wide and 4 m tall
+- [ ] Basic door cannot commit unless a door frame socket is in range
+- [ ] Iron/Steel/Silicate/Amalgam folders exist for later drops
+
+---
+
+### BUILD-092 — Snap to grid and snap to components
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P0 |
+| **Depends on** | BUILD-003, BUILD-004, BUILD-090 |
+
+**Scope**
+- 1 m grid, 90° yaw.
+- Prefer a neighbor socket in range; otherwise the grid point under the aim ray.
+- Support rule from scope §18.3 (foundation on ground, wall on foundation or floor edge, and the rest of that table).
+- Sizes the validator must accept: 4×4, 1×4, 2×4, 4×8, 8×8, triangle, slope.
+- No NavMesh. No chain-collapse.
+
+**Acceptance**
+- [ ] Foundation commits on flat ground inside the fence
+- [ ] Wall, window wall, and door frame snap to that foundation's edge socket
+- [ ] Basic door snaps only into the door frame
+- [ ] Wall in open air stays red
+- [ ] Red cannot commit
+
+---
+
+### BUILD-093 — Building hotbar (UITK)
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P0 |
+| **Depends on** | BUILD-006, BUILD-090, BUILD-091 |
+
+**Scope**
+- `BuildingHotbar.uxml` on `UITK_Hud`. Runtime `DMUiToolkitBuildingHotbar`.
+- Visible only in build mode (**Hold B** to enter, hold again to exit). Tilde hides it with gameplay HUD. Hide in C# only.
+- Layout: up-arrow button, then a holder with a left arrow, **10** slots, and a right arrow.
+- Arrows shift one slot. No scrollbar.
+- Up panel lists Stone, Iron, Steel, Silicate, Amalgam, then Kits, then Vital Machines. Locked tiers disabled. Selection resets the window.
+- Palette: Dark Navy, Slate, Deep Magenta, Warm Off-White, Rich Fuchsia selection. Not gold.
+- Selected slot drives the placement hologram.
+
+**Acceptance**
+- [ ] Hold B shows the bar; hold B again hides it
+- [ ] Tap B does not show the bar
+- [ ] More than ten unlocked Stone pieces scroll with the arrows only
+- [ ] Up panel changes the list
+- [ ] Unaffordable slots stay visible and cannot commit
+- [ ] No second HUD document
+
+---
+
+### BUILD-094 — Map blueprint pickups
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P1 |
+| **Depends on** | BUILD-090, BUILD-042 |
+
+**Scope**
+- `BuildingBlueprintPickup`: grants one or more definition ids (component, kit, building, or vital machine).
+- Same unlock flag as a wreck scan.
+- Gathering stone does not unlock anything.
+
+**Acceptance**
+- [ ] Pickup adds the entry to the matching hotbar list
+- [ ] Reload keeps the unlock
+- [ ] Duplicate pickup does not double-grant
+
+---
+
+### BUILD-095 — Building Studio in Genesis Studio
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P1 |
+| **Depends on** | BUILD-090, BUILD-002 |
+
+**Scope**
+- Genesis Studio category **Building**, menu `Tools/Dark Matter Genesis/Buildings/Building Studio`.
+- Material workflow: create tier + folder. Stone seeded.
+- Drop wells: foundations, walls, floors, roofs, blocks, mini blocks, door frames, doors, windows, stairs, ramps, triangles, slopes, plus Kits and Vital Machines.
+- Drag-drop prefab writes the definition and files it into the library folder.
+- Create-primitive action emits the ProBuilder mesh for that section's default size.
+- Not a Play-mode save profile.
+
+**Acceptance**
+- [ ] Dropping a prefab on Walls under Stone creates a definition and a prefab in `Library/Stone/Walls`
+- [ ] New material creates `Library/<Tier>/` and a disabled hotbar row
+- [ ] Kit drop warns if the prefab has no BCP
+
+---
+
+### BUILD-096 — Tier upgrade and skill gates
+
+| Field | Value |
+|-------|-------|
+| **Status** | backlog |
+| **Priority** | P2 |
+| **Depends on** | BUILD-012, BUILD-090 |
+
+**Scope**
+- Hold on a finished piece pays the recipe delta and swaps to `upgradeToId` when that tier is unlocked and the skill gate in scope §18.4 passes.
+- Stone is the only tier with meshes. Iron and above can be data-only until art exists.
+- Amalgam recipes are mixes (steel + silicate, optional AC), not a single resource.
+- Save the resulting definition id (BUILD-040).
+
+**Acceptance**
+- [ ] Stone piece with an Iron `upgradeToId` upgrades when the gate passes
+- [ ] Missing skill or blueprint leaves the piece unchanged
+- [ ] Reload shows the upgraded id
+
+---
+
 ## Suggested sprint order
 
 ```
@@ -696,7 +867,11 @@ Sprint D (wrecks + save):   BUILD-020 → 021 → 040 → 041 → 022
 Sprint E (quests):          BUILD-063 → 054 → 070
 Sprint F (production):      BUILD-052 → 042 → 031
 Sprint G (campaign):        BUILD-080 → 081 → 082 → 083
+Sprint H (stone components): BUILD-090 → 091 → 092 → 093 → 095
+Sprint I (blueprints + tiers): BUILD-094 → 096
 ```
+
+Sprint H starts once Sprint A (BUILD-001–004) is in. It does not wait on campaign tickets.
 
 ---
 
@@ -712,7 +887,8 @@ Sprint G (campaign):        BUILD-080 → 081 → 082 → 083
 | E5 BCP depth | 5 | 0 |
 | E6 Prologue content | 5 | 0 |
 | E7 Campaign | 4 | 0 |
-| **Total** | **34** | **9** |
+| E8 Components | 7 | 4 |
+| **Total** | **41** | **13** |
 
 ---
 

@@ -1,7 +1,9 @@
 using Invector.vCharacterController;
+using InvInputDevice = Invector.vCharacterController.InputDevice;
 using Invector.vShooter;
 using Invector;
 using Invector.IK;
+using Project.Building;
 using Project.Core;
 using Project.Data;
 using Project.Features.Jetpack;
@@ -28,7 +30,7 @@ namespace Project.Player.Invector
         private const float GamepadStickDeadZone = 0.18f;
         /// <summary>Maps right-stick -1..1 into RotateCamera before Invector sensitivity.</summary>
         private const float GamepadStickLookScale = 6f;
-        private const string KbmLookStamp = "controller-kbm-look 0920";
+        private const string KbmLookStamp = "controller-look-triggers 0920k";
         /// <summary>Fallback discrete mouse-wheel zoom stops when no profile is assigned.</summary>
         private const int DefaultZoomClickLevels = 10;
         private const int UiZoomRestoreFrames = 12;
@@ -58,6 +60,7 @@ namespace Project.Player.Invector
         private DMLocomotionGaitController _locomotionGait;
         private EquipmentController _equipment;
         private PlayerController _playerController;
+        private PlayerInput _playerInput; // stamp: controller-compile-fix 0920
         private static bool _loggedKbmLookStamp;
         private bool _miningScanAimHold;
         /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
@@ -70,6 +73,9 @@ namespace Project.Player.Invector
         private float _lastArmedCameraZoom = -1f;
         private Coroutine _startZoomRoutine;
         private static bool _loggedScrollStamp;
+        private bool _buildLookRaised;
+        private float _savedLookUpLimit;
+        private float _savedLookDownLimit;
 
         protected override void Start()
         {
@@ -97,6 +103,7 @@ namespace Project.Player.Invector
 
         private void OnDisable()
         {
+            RestoreBuildModeLookUp();
             GameSession.GameStarted -= HandleGameStartedZoom;
             if (_startZoomRoutine != null)
             {
@@ -152,6 +159,13 @@ namespace Project.Player.Invector
                 return;
 
             TryDrawWeaponOnAimPress();
+
+            // Pad LT can be missed if AimInput runs while Player map was left disabled — nudge ADS early.
+            if (!GameplayKeyboardShortcuts.IsGameplayInputLockedByUi() && ReadAimHeld())
+            {
+                if (_equipment == null || _equipment.IsWeaponDrawn)
+                    isAimingByInput = true;
+            }
 
             base.Update();
             SyncPioneerCursorState();
@@ -248,26 +262,73 @@ namespace Project.Player.Invector
 
         public override void AimInput()
         {
-            base.AimInput();
-
-            if (cc == null || cc.ragdolled || CurrentActiveWeapon == null)
+            if (cc == null || cc.ragdolled)
+            {
+                isAimingByInput = false;
                 return;
+            }
 
             bool opticsOpen = _playerController != null && _playerController.IsOpticsOpen;
-
-            // Legacy Input.GetKey(Mouse1) is unreliable with Input System â€” keep ADS while RMB held.
-            // Skip while optics own the view so B/Esc/RMB close paths stay clean.
+            bool weaponDrawn = _equipment == null || _equipment.IsWeaponDrawn;
             bool rmbAimHeld = !opticsOpen
                 && Mouse.current != null
                 && Mouse.current.rightButton.isPressed
-                && (_equipment == null || _equipment.IsWeaponDrawn);
+                && weaponDrawn;
+            bool ltAimHeld = !opticsOpen && ReadAimHeld();
+            // LT held while sheathed: draw so ADS can engage (press helper only sees wasPressed).
+            if (ltAimHeld && !weaponDrawn && _equipment != null)
+            {
+                TryDrawWeaponOnAimPress();
+                if (!_equipment.IsWeaponDrawn)
+                {
+                    int focusedLocal = DMUiToolkitHotCross.WeaponLocalIndex;
+                    if (_equipment.IsWeaponHotbarSlot(focusedLocal)
+                        && EquipmentController.IsWeaponItem(_equipment.GetHotbarItem(focusedLocal)))
+                    {
+                        int weaponSlot = _equipment.GetWeaponSlotIndexForHotbar(focusedLocal);
+                        if (weaponSlot >= 0)
+                            _equipment.SelectWeaponSlot(weaponSlot);
+                    }
+                    if (!_equipment.IsWeaponDrawn)
+                        _equipment.DrawWeapon();
+                }
+                weaponDrawn = _equipment.IsWeaponDrawn;
+            }
 
-            if (!_miningScanAimHold && !rmbAimHeld)
+            bool wantAim = !opticsOpen && (_miningScanAimHold || rmbAimHeld || (ltAimHeld && weaponDrawn));
+
+            if (!DMInputSchemeRouter.IsGamepadScheme)
+            {
+                // KBM: keep Invector GenericInput aim path, then force RMB if Input System saw it.
+                base.AimInput();
+                if (wantAim)
+                    isAimingByInput = true;
+                else if (!rmbAimHeld && !_miningScanAimHold)
+                {
+                    // Leave base result unless we know RMB is up — base already cleared when Mouse1 up.
+                }
+            }
+            else
+            {
+                // Gamepad: muted aimInput would clear ADS every frame if we called base.
+                if (!wantAim)
+                {
+                    isAimingByInput = false;
+                    return;
+                }
+
+                if (CurrentActiveWeapon == null && weaponDrawn)
+                {
+                    PioneerInvectorWeaponBridge bridge = GetComponent<PioneerInvectorWeaponBridge>();
+                    bridge?.EnsureDrawnShooterBound();
+                }
+
+                isAimingByInput = true;
+            }
+
+            if (!isAimingByInput)
                 return;
 
-            isAimingByInput = true;
-
-            // base.AimInput may have cleared strafe when legacy Mouse1 was not seen â€” re-enter strafe.
             if (cc.locomotionType == vThirdPersonMotor.LocomotionType.FreeWithStrafe &&
                 !cc.lockInStrafe &&
                 !cc.isStrafing)
@@ -280,6 +341,22 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
+        /// ADS only from LT/RMB (isAimingByInput). Ignore Invector hipfire-aim so RT fires from the hip
+        /// without pulling aim camera/strafe — hold LT to ADS, then RT to fire.
+        /// </summary>
+        public override bool IsAiming
+        {
+            get
+            {
+                if (lockShooterInput)
+                    return false;
+                if (cc == null || cc.isRolling)
+                    return false;
+                return isAimingByInput;
+            }
+        }
+
+        /// <summary>
         /// Right mouse with a sheathed weapon arms it. Ranged weapons additionally begin aiming so the
         /// same press doubles as ready-to-aim; melee weapons are only drawn. When a weapon is already
         /// drawn, right mouse falls through to the base shooter/melee aim handling unchanged.
@@ -289,7 +366,9 @@ namespace Project.Player.Invector
             if (_equipment == null || _equipment.IsWeaponDrawn)
                 return;
 
-            if (Mouse.current == null || !Mouse.current.rightButton.wasPressedThisFrame)
+            bool rmbPressed = Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
+            bool ltPressed = DMPlayerInputActions.WasPressedThisFrame("Aim") || ReadAimPressedThisFrame();
+            if (!rmbPressed && !ltPressed)
                 return;
 
             if (!GameSession.HasStarted || Time.timeScale <= 0f)
@@ -480,14 +559,7 @@ namespace Project.Player.Invector
 
         public bool IsAimingActive
         {
-            get
-            {
-                // Guard before base IsAiming â€” it reads cc.isRolling and NRE's during early Awake.
-                if (cc == null || shooterManager == null)
-                    return isAimingByInput;
-
-                return isAimingByInput || IsAiming;
-            }
+            get { return isAimingByInput; }
         }
 
         public override void CrouchInput()
@@ -534,7 +606,8 @@ namespace Project.Player.Invector
 
         public override void JumpInput()
         {
-            if (!jumpInput.useInput || cc == null || !CanReadGameplayInput())
+            // jumpInput GenericInput is muted on Gamepad scheme — still poll Space/A / Jump action.
+            if (cc == null || !CanReadGameplayInput())
                 return;
 
             if (_climb == null)
@@ -546,19 +619,22 @@ namespace Project.Player.Invector
             if (_jetpackInputBridge != null && _jetpackInputBridge.TryHandleJumpPress())
                 return;
 
-            if (Keyboard.current != null &&
-                Keyboard.current.spaceKey.wasPressedThisFrame &&
-                JumpConditions())
-            {
-                cc.Jump(true);
-            }
+            if (!ReadJumpPressedThisFrame())
+                return;
 
-            if (Gamepad.current != null &&
-                Gamepad.current.buttonSouth.wasPressedThisFrame &&
-                JumpConditions())
-            {
+            if (JumpConditions())
                 cc.Jump(true);
-            }
+        }
+
+        private static bool ReadJumpPressedThisFrame()
+        {
+            if (DMPlayerInputActions.WasPressedThisFrame("Jump"))
+                return true;
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+                return true;
+            if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+                return true;
+            return false;
         }
 
         public override void CameraInput()
@@ -568,8 +644,9 @@ namespace Project.Player.Invector
 
             float x = 0f;
             float y = 0f;
+            bool fromMouse = false;
             if (!lockCameraInput)
-                ReadSchemeGatedLookDelta(out x, out y);
+                ReadSchemeGatedLookDelta(out x, out y, out fromMouse);
 
             if (invertCameraInputHorizontal)
                 x *= -1f;
@@ -587,54 +664,138 @@ namespace Project.Player.Invector
                 return;
 
             EnsureRuntimeZoomState();
+
+            // Sticky Gamepad scheme sets vInput to Joystick — mouse deltas must NOT use joystickSensitivity
+            // or ADS+fire hitches (huge delta) violently spin the camera.
+            bool restoreDevice = false;
+            InvInputDevice previousDevice = InvInputDevice.MouseKeyboard;
+            if (fromMouse && vInput.instance != null)
+            {
+                previousDevice = vInput.instance.inputDevice;
+                restoreDevice = true;
+                vInput.instance.inputDevice = InvInputDevice.MouseKeyboard;
+            }
+
+            ApplyBuildModeLookUp();
             tpCamera.RotateCamera(x, y);
+
+            if (restoreDevice && vInput.instance != null)
+                vInput.instance.inputDevice = previousDevice;
+        }
+
+        /// <summary>
+        /// Invector look-up is the negative pitch (yMinLimit). Build mode lowers that limit and restores it on exit.
+        /// yMaxLimit is look-down and is left alone. The saved camera asset is restored when build mode ends.
+        /// </summary>
+        void ApplyBuildModeLookUp()
+        {
+            if (tpCamera == null || tpCamera.lerpState == null)
+                return;
+
+            if (Project.Building.DMBuildingMode.IsActive)
+            {
+                if (!_buildLookRaised)
+                {
+                    _savedLookUpLimit = tpCamera.lerpState.yMinLimit;
+                    _savedLookDownLimit = tpCamera.lerpState.yMaxLimit;
+                    if (_savedLookUpLimit > -5f)
+                        _savedLookUpLimit = -40f;
+                    if (_savedLookDownLimit < 5f)
+                        _savedLookDownLimit = 80f;
+                    _buildLookRaised = true;
+                }
+
+                float extra = Project.Building.DMBuildingGhostProfile.BuildLookUpDegrees;
+                float lookUp = Mathf.Max(-89f, _savedLookUpLimit - extra);
+                float lookDown = Mathf.Min(89f, _savedLookDownLimit + extra);
+                tpCamera.lerpState.yMinLimit = lookUp;
+                tpCamera.lerpState.yMaxLimit = lookDown;
+                if (tpCamera.currentState != null)
+                {
+                    tpCamera.currentState.yMinLimit = lookUp;
+                    tpCamera.currentState.yMaxLimit = lookDown;
+                }
+                return;
+            }
+
+            if (!_buildLookRaised)
+                return;
+
+            RestoreBuildModeLookUp();
+        }
+
+        void RestoreBuildModeLookUp()
+        {
+            if (!_buildLookRaised || tpCamera == null)
+            {
+                _buildLookRaised = false;
+                return;
+            }
+
+            if (tpCamera.currentState != null)
+            {
+                tpCamera.currentState.yMinLimit = _savedLookUpLimit;
+                tpCamera.currentState.yMaxLimit = _savedLookDownLimit;
+            }
+            if (tpCamera.lerpState != null)
+            {
+                tpCamera.lerpState.yMinLimit = _savedLookUpLimit;
+                tpCamera.lerpState.yMaxLimit = _savedLookDownLimit;
+            }
+            _buildLookRaised = false;
         }
 
         /// <summary>
         /// Single look consumer: KBM uses pointer delta only; gamepad uses right stick only.
         /// Syncs Invector vInput device with PlayerInput scheme (avoids OnGUI stick-drift flapping).
-        /// stamp: controller-kbm-look 0920
+        /// stamp: controller-kbm-look 0920; pad-jump-aim-fire 0920
         /// </summary>
-        private void ReadSchemeGatedLookDelta(out float x, out float y)
+        private void ReadSchemeGatedLookDelta(out float x, out float y, out bool fromMouse)
         {
             x = 0f;
             y = 0f;
+            fromMouse = false;
 
             if (_playerInput == null)
                 _playerInput = GetComponent<PlayerInput>();
 
-            bool useGamepadScheme = DMInputSchemeRouter.IsGamepadScheme;
-
             if (!_loggedKbmLookStamp && Application.isPlaying)
             {
                 _loggedKbmLookStamp = true;
-                Debug.Log($"[PioneerShooterMeleeInput] {KbmLookStamp} scheme-gated look active");
+                Debug.Log($"[PioneerShooterMeleeInput] {KbmLookStamp} look+triggers");
             }
 
-            if (useGamepadScheme)
+            // Mouse delta always wins when present — sticky Gamepad scheme must not brick KBM look.
+            if (Mouse.current != null)
             {
-                Gamepad pad = Gamepad.current;
-                if (pad == null)
-                    return;
+                Vector2 delta = Mouse.current.delta.ReadValue();
+                // Clamp hitch spikes (VFX/ADS shot frames can dump 100+ px in one delta).
+                const float maxDelta = 48f;
+                if (delta.sqrMagnitude > maxDelta * maxDelta)
+                    delta = Vector2.ClampMagnitude(delta, maxDelta);
 
+                if (delta.sqrMagnitude >= 0.0001f)
+                {
+                    fromMouse = true;
+                    x = delta.x * MouseLookScale;
+                    y = delta.y * MouseLookScale;
+                    return;
+                }
+            }
+
+            // Otherwise right stick from any pad.
+            for (int i = 0; i < Gamepad.all.Count; i++)
+            {
+                Gamepad pad = Gamepad.all[i];
+                if (pad == null)
+                    continue;
                 Vector2 stick = pad.rightStick.ReadValue();
                 if (stick.sqrMagnitude < GamepadStickDeadZone * GamepadStickDeadZone)
-                    return;
-
+                    continue;
                 x = stick.x * GamepadStickLookScale;
                 y = stick.y * GamepadStickLookScale;
                 return;
             }
-
-            if (Mouse.current == null)
-                return;
-
-            Vector2 delta = Mouse.current.delta.ReadValue();
-            if (delta.sqrMagnitude < 0.0001f)
-                return;
-
-            x = delta.x * MouseLookScale;
-            y = delta.y * MouseLookScale;
         }
 
         /// <summary>
@@ -670,7 +831,7 @@ namespace Project.Player.Invector
 
             bool opticsOwnsScroll = _playerController != null && _playerController.IsOpticsOpen;
             bool minimapOwnsScroll = MapUI.IsMinimapScrollZoomActive;
-            if (opticsOwnsScroll || minimapOwnsScroll)
+            if (opticsOwnsScroll || minimapOwnsScroll || DMBuildingMode.IsActive)
                 return;
 
             ApplyMouseWheelZoom();
@@ -988,6 +1149,132 @@ namespace Project.Player.Invector
                     MinCamDistance,
                     state.maxDistance);
             }
+        }
+
+
+        public override void ShotInput()
+        {
+            if (Project.Building.DMBuildingMode.IsActive)
+            {
+                shootCountA = 0;
+                return;
+            }
+
+            // shotInput GenericInput is muted on Gamepad — drive HandleShotCount from RT / Attack / LMB.
+            if (!shooterManager || CurrentActiveWeapon == null || cc == null || cc.isDead || isReloading || isAttacking || isEquipping)
+            {
+                if (shooterManager && CurrentActiveWeapon != null && CurrentActiveWeapon.chargeWeapon && CurrentActiveWeapon.powerCharge != 0)
+                    CurrentActiveWeapon.powerCharge = 0;
+                shootCountA = 0;
+                return;
+            }
+
+            bool fireHeld = ReadShotHeld();
+            var weapon = shooterManager.CurrentWeapon != null ? shooterManager.CurrentWeapon : CurrentActiveWeapon;
+
+            if (IsAiming && !shooterManager.isShooting && aimConditions)
+            {
+                if (weapon != null)
+                    HandleShotCount(weapon, fireHeld);
+            }
+            else if (!IsAiming)
+            {
+                // Hip fire on RT/LMB even if the Invector hipfireShot checkbox was left off.
+                if (fireHeld && weapon != null)
+                    HandleShotCount(weapon, fireHeld);
+                else
+                {
+                    if (CurrentActiveWeapon != null && CurrentActiveWeapon.chargeWeapon && CurrentActiveWeapon.powerCharge != 0)
+                        CurrentActiveWeapon.powerCharge = 0;
+                    shootCountA = 0;
+                }
+            }
+        }
+
+        private static bool ReadAimPressedThisFrame()
+        {
+            return ReadTriggerPressedThisFrame(left: true);
+        }
+
+        private static bool ReadAimHeld()
+        {
+            if (DMPlayerInputActions.IsPressed("Aim"))
+                return true;
+
+            // ReadValue even when PlayerInput disabled Gamepad binds (KBM scheme active).
+            InputAction aim = DMPlayerInputActions.Find("Aim");
+            if (aim != null)
+            {
+                try
+                {
+                    if (aim.ReadValue<float>() >= 0.2f)
+                        return true;
+                }
+                catch (System.Exception) { /* non-axis */ }
+            }
+
+            return ReadTriggerHeld(left: true);
+        }
+
+        private static bool ReadShotHeld()
+        {
+            if (DMPlayerInputActions.IsPressed("Attack"))
+                return true;
+
+            InputAction attack = DMPlayerInputActions.Find("Attack");
+            if (attack != null)
+            {
+                try
+                {
+                    if (attack.ReadValue<float>() >= 0.2f)
+                        return true;
+                }
+                catch (System.Exception) { /* non-axis */ }
+            }
+
+            if (ReadTriggerHeld(left: false))
+                return true;
+            if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                return true;
+            return false;
+        }
+
+        private static bool ReadTriggerHeld(bool left)
+        {
+            for (int i = 0; i < Gamepad.all.Count; i++)
+            {
+                Gamepad pad = Gamepad.all[i];
+                if (pad == null)
+                    continue;
+                float v = left ? pad.leftTrigger.ReadValue() : pad.rightTrigger.ReadValue();
+                if (v >= 0.2f)
+                    return true;
+            }
+
+            // Fallback: any dualshock / generic HID gamepad-like device in the Input System list.
+            foreach (UnityEngine.InputSystem.InputDevice device in InputSystem.devices)
+            {
+                if (device is Gamepad pad && pad != null)
+                {
+                    float v = left ? pad.leftTrigger.ReadValue() : pad.rightTrigger.ReadValue();
+                    if (v >= 0.2f)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool ReadTriggerPressedThisFrame(bool left)
+        {
+            for (int i = 0; i < Gamepad.all.Count; i++)
+            {
+                Gamepad pad = Gamepad.all[i];
+                if (pad == null)
+                    continue;
+                if (left ? pad.leftTrigger.wasPressedThisFrame : pad.rightTrigger.wasPressedThisFrame)
+                    return true;
+            }
+            return false;
         }
 
         private bool CanReadGameplayInput()

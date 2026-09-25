@@ -75,7 +75,7 @@ namespace Project.UI
                 TryHandleJournalKeyCode(KeyCode.J);
             if (keyboard.iKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.I);
-            if (keyboard.mKey.wasPressedThisFrame)
+            if (keyboard.mKey.wasPressedThisFrame && !Project.Building.DMBuildingMode.IsActive)
                 TryHandleJournalKeyCode(KeyCode.M);
             if (keyboard.kKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.K);
@@ -178,9 +178,33 @@ namespace Project.UI
             HandleBinocularsKey(keyboard);
         }
 
+        private static float binocularsHoldStart = -1f;
+        private static bool binocularsHoldConsumed;
+
         private static void HandleBinocularsKey(Keyboard keyboard)
         {
-            if (!keyboard.bKey.wasPressedThisFrame)
+            if (keyboard.bKey.wasPressedThisFrame)
+            {
+                binocularsHoldStart = Time.unscaledTime;
+                binocularsHoldConsumed = false;
+            }
+
+            if (keyboard.bKey.isPressed
+                && !binocularsHoldConsumed
+                && binocularsHoldStart >= 0f
+                && Time.unscaledTime - binocularsHoldStart >= Project.Building.DMBuildingMode.HoldSeconds)
+            {
+                binocularsHoldConsumed = true;
+                Project.Building.DMBuildingMode.Toggle();
+            }
+
+            if (!keyboard.bKey.wasReleasedThisFrame)
+                return;
+
+            bool tap = !binocularsHoldConsumed;
+            binocularsHoldStart = -1f;
+            binocularsHoldConsumed = false;
+            if (!tap || Project.Building.DMBuildingMode.IsActive)
                 return;
 
             DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
@@ -629,11 +653,7 @@ namespace Project.UI
                 return false;
 
             if (keyCode == KeyCode.B)
-            {
-                DMUiToolkitHotCross.NotifyToolFace(DMUiToolkitHotCross.ToolFace.Binoculars);
-                TryUseTool(ToolType.Binoculars);
-                return true;
-            }
+                return false;
 
             if (keyCode == KeyCode.N)
             {
@@ -662,6 +682,8 @@ namespace Project.UI
                     EnsureJournalPanel()?.OpenToInventoryTab();
                     return true;
                 case KeyCode.M:
+                    if (Project.Building.DMBuildingMode.IsActive)
+                        return false;
                     return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map)
                         || EnsureJournalPanel()?.TryToggleMapTab() == true;
                 case KeyCode.K:
@@ -831,11 +853,16 @@ namespace Project.UI
 
             Keyboard keyboard = Keyboard.current;
             Gamepad pad = Gamepad.current;
-            bool wpnPressed = (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
+            bool buildPanel = Project.Building.DMBuildingMode.IsActive;
+            bool tabPressed = keyboard != null && keyboard.tabKey.wasPressedThisFrame;
+            if (buildPanel && tabPressed)
+                Project.Building.DMBuildingMode.ToggleMaterials();
+
+            bool wpnPressed = (!buildPanel && tabPressed)
                 || (pad != null && pad.buttonNorth.wasPressedThisFrame);
-            bool wpnReleased = (keyboard != null && keyboard.tabKey.wasReleasedThisFrame)
+            bool wpnReleased = (!buildPanel && keyboard != null && keyboard.tabKey.wasReleasedThisFrame)
                 || (pad != null && pad.buttonNorth.wasReleasedThisFrame);
-            bool wpnDown = (keyboard != null && keyboard.tabKey.isPressed)
+            bool wpnDown = (!buildPanel && keyboard != null && keyboard.tabKey.isPressed)
                 || (pad != null && pad.buttonNorth.isPressed);
             UpdateHotCrossWeaponCycleArm(wpnPressed, wpnReleased, wpnDown);
 

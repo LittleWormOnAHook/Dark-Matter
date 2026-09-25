@@ -2,21 +2,21 @@
 
 **Status:** Scope lock for implementation  
 **Merged from:** GDD 5.0 Appendix A7/A6, `GAME_BREAKDOWN.txt`, prologue/act bibles, asset-mapped plans, `Audit_05_Colony.md`, `World_Engine_Disk_Status.md`, desktop `DMG-building-system-plan.md` (2026-08-27)  
-**Last updated:** 2026-08-28 (story + disk expansion)  
+**Last updated:** 2026-09-24 (component library, material tiers, build hotbar, Building Studio)  
 
-This document is the **single implementation scope** for building. Where the desktop plan and GDD disagree on *feel*, the desktop plan wins for placement/materialization UX. Where GDD locks economy, BCP tabs, storms, colony sim, and story beats, GDD wins.
+This document is the **single implementation scope** for building. Where the desktop plan and GDD disagree on *feel*, the desktop plan wins for placement/materialization UX. Where GDD locks economy, BCP tabs, storms, colony sim, and story beats, GDD wins. The 2026-09-24 component track is **additive**: wreck scans still unlock blueprints; map finds, crafted pieces, kits, and the Stone snap library sit on the same placement pipeline.
 
 ---
 
 ## 0. Executive summary
 
-**Player fantasy:** Death Stranding construction + NMS/Subnautica hologram validity — scan Io wrecks to learn, hold-multitool to materialize, operate camp through Building Control Panels while Colony Ops (then Kairos) drives the Memory Core hunt.
+**Player fantasy:** Death Stranding construction + NMS/Subnautica hologram validity + Dune Awakening modular sets — learn blueprints by scanning wrecks and vital machines **or** by finding them on the map, spend gathered resources (stone first) to materialize snapped components and complete-structure kits, operate major structures through Building Control Panels while Colony Ops (then Kairos) drives the Memory Core hunt.
 
 **Story spine:** Kade crashes on Io (Act 0) → claims Camp Plateau and bootstraps a real colony (Act I) → earns field certification and wakes **Aether-9 / Kairos** (Act II) → accepts the **10 Memory Core** mandate (Act II end) → each core triggers **Resonance Events** that stress and grow the base (Act III+).
 
-**Engineering spine:** Six ordered slices (definition → hold-construct → wrecks → authoring → save → BCP depth), reusing multitool, BCP, scanner, reverse dissolve, and World Engine `BuildingSnapshot`.
+**Engineering spine:** Structure slices 1–7 (definition → hold-construct → wrecks → authoring → save → BCP depth → campaign facilities), then the component track (Stone library → snap grid → build hotbar → Building Studio → map blueprints → tier upgrades). Reuse multitool, BCP, scanner, reverse dissolve, inventory resources, and World Engine `BuildingSnapshot`.
 
-**Gap today:** BCP shell + queue registry exist; **no** `BuildingDefinition`, ghost/wreck pipeline, or prologue placement quests on disk.
+**Gap today:** BCP shell + queue registry exist; **no** `BuildingDefinition`, ghost/wreck pipeline, component library, build hotbar, Building Studio, or prologue placement quests on disk.
 
 ---
 
@@ -24,15 +24,17 @@ This document is the **single implementation scope** for building. Where the des
 
 | Pillar | Description |
 |--------|-------------|
-| **Feel** | Death Stranding construction + No Man’s Sky / Subnautica hologram validity |
-| **Not** | Fallout 4 junk-scrap snap; freeform glue parts; NavMesh-driven placement |
-| **Learn loop** | Wrecks teach — scan Io ruin → unlock blueprint → repair in place or place new copy later |
+| **Feel** | Death Stranding construction + No Man’s Sky / Subnautica hologram validity + Dune Awakening piece sets |
+| **Not** | Fallout 4 junk-scrap welding; off-grid freeform glue; NavMesh-driven placement |
+| **Learn loop** | Scan a wreck or vital machine, **or** pick up a blueprint in the world. Either unlocks a component, a kit, a building, or a machine. Repair in place or place a new copy later |
+| **Craft loop** | Pick up stone and later ores. Spend them to materialize unlocked components, bases, and complete-structure kits |
+| **Snap** | Snap to a 1 m grid and to neighboring component sockets. Base module is **4×4 m** |
 | **Materialize** | Hold-construct: silhouette undissolves into finished prefab (`EnemyDisintegrate` reversed) |
-| **Operate** | Finished major structures use **Building Control Panels** (GDD lock) |
+| **Operate** | Finished major structures and vital machines use **Building Control Panels** (GDD lock). Loose components do not each open a BCP |
 | **Story** | Buildings are narrative proof of foothold (Act I), competence (Act II), and campaign growth (Act III Resonance) |
 | **Economy** | Resources + AC where GDD applies; Journal Craft = library only |
 
-**Validity hologram:** green = valid seat, red = invalid. Cannot commit red.  
+**Validity hologram:** the aim ghost is **green** when the player has the components for that part or building and the seat is valid. **Red** is the ghost after it is placed. A seat that is blocked, or a part the player cannot pay for, is not green and cannot be committed.  
 **Resources:** drain **during hold**, not on ghost commit (cancel refunds drained ticks).
 
 ---
@@ -247,9 +249,18 @@ flowchart TB
 
 ### B. New build (learned blueprint)
 
-- Unlock via scan, schematic, quest, or Resonance reward
-- Equip multitool → blueprint select (deploy menu pattern)
-- Hologram → ghost → hold → finished → BCP
+- Unlock via scan, map blueprint pickup, schematic, quest, or Resonance reward
+- Equip nothing extra to open the bar. **Hold B** enters build mode; the building hotbar selects the unlocked piece, kit, or machine. Tap B stays binoculars.
+- Hologram → ghost → hold → finished
+- **Kits and vital machines** finish into a prefab with **Building Control Panel**
+- **Components** finish into a snapped piece. They do not each open a BCP
+
+### C. Component piece (Dune Awakening style)
+
+- Same hologram, validity, hold-construct, and resource drain as a kit
+- Footprint is a fixed meter size on the 1 m grid (section 18)
+- Prefers **socket snap** to a neighboring piece; otherwise sits on the grid
+- First playable set is **Stone**, blocked out with ProBuilder
 
 ---
 
@@ -277,15 +288,22 @@ Green only if **all** pass:
 | Field | Purpose |
 |-------|---------|
 | `id` | Stable save key — never rename after ship |
-| `displayName` | BCP header + UI |
-| `finishedPrefab` | Usable building |
-| `wreckPrefab` | Optional ruined visual |
-| `recipe` | Mats + counts — crafting inventory language |
-| `footprint` | Box/capsule check shape |
+| `displayName` | BCP header + hotbar label |
+| `kind` | `Component` · `Kit` · `VitalMachine` |
+| `materialTier` | `Stone` · `Iron` · `Steel` · `Silicate` · `Amalgam` (components; kits may stay unset) |
+| `section` | Foundation, Wall, Floor, Roof, Block, MiniBlock, DoorFrame, Door, Window, Stair, Ramp, Triangle, Slope, Kit, Machine |
+| `footprintMeters` | World size in meters (4×4, 1×4, 2×4, 4×8, 8×8, triangle, slope) |
+| `sockets` | Named snap points (bottom, top, edges, door) |
+| `upgradeToId` | Next-tier definition, empty on Amalgam |
+| `finishedPrefab` | Usable building or piece |
+| `wreckPrefab` | Optional ruined visual (kits / machines) |
+| `recipe` | Mats + counts — stone first, later ores and mixes |
+| `footprint` | Box/capsule overlap shape derived from `footprintMeters` |
 | `maxSlope` | Degrees |
-| `unlock` | Scan / schematic / quest / `requiredPlayerLevel` |
+| `unlock` | Scan / map blueprint / schematic / quest / skill rank / `requiredPlayerLevel` |
+| `starterUnlocked` | True only for the Stone starter set (first basic kit, seven pieces) |
 | `constructTime` | Hold duration (seconds) |
-| `controlPanel` / `craftStation` | BCP mode + `CraftingStationType` |
+| `controlPanel` / `craftStation` | BCP mode + `CraftingStationType` (kits and vital machines) |
 | `ghostMaterial` | Palette hologram instance |
 | `storyAct` | Optional: `Prologue`, `Act3`, etc. — for authoring filters |
 | `requiresSnapPad` | Optional: CC Seed pad on plateau |
@@ -296,6 +314,8 @@ Green only if **all** pass:
 |-----------|------|--------|
 | `BuildingGhost` | Committed silhouette, progress | **New** |
 | `BuildingWreck` | Scan target + in-place repair | **New** |
+| `BuildingSnapSocket` | Piece-to-piece snap point | **New** |
+| `BuildingBlueprintPickup` | Map item that unlocks a def id | **New** |
 | `BuildingSnapPad` | Story placement volumes | **New** (thin) |
 | `BuildingControlPanel` | E terminal | **Exists** |
 | `BuildingOperationRegistry` | Queues / assignments | **Exists** |
@@ -320,6 +340,9 @@ Per player-placed instance: `definitionId`, world pose, ghost vs complete, const
 | Playable fence | v1.6 border fences — placement tests against them |
 | Crisis / storm pause | `EnvironmentalCrisisHudMode` + `BuildingOperationRegistry` |
 | Editor menus | `DarkMatterGenesisEditorMenus` → `Tools/Dark Matter Genesis/Buildings/` |
+| Build hotbar | UITK on `UITK_Hud` — `BuildingHotbar.uxml` + `DMUiToolkitBuildingHotbar` |
+| Authoring hub | Genesis Studio category **Building** (Building Studio) |
+| Piece blockout | ProBuilder primitives saved as prefabs under the library folders |
 | World save | `BuildingSnapshot`, `GameSaveSystem` |
 | Companion assign | `PioneerRosterManager` + BCP Companions tab |
 
@@ -366,7 +389,7 @@ Per player-placed instance: `definitionId`, world pose, ghost vs complete, const
 **Goal:** Prove placement pipeline.
 
 - [ ] `BuildingDefinition` SO + registry by `id`
-- [ ] Multitool equip → aim hologram (green/red)
+- [ ] Hold B → aim hologram (green/red). Tap B stays binoculars
 - [ ] Validity: footprint, slope, overlap, v1.6 fence
 - [ ] Click → **instant** finished prefab
 - [ ] First target: existing **workbench** or `PowerGenerator` mesh in project
@@ -462,6 +485,26 @@ Per player-placed instance: `definitionId`, world pose, ghost vs complete, const
 
 ---
 
+### Component track — Stone snap library (after Slice 1, parallel with Slices 2–4)
+
+Does not replace kits, wrecks, or BCP. Shares hologram, validity, hold-drain, and `BuildingDefinition`. Full rules are section 18.
+
+**C1 — Stone blockout.** ProBuilder primitives in the library folders. First basic kit unlocked without a blueprint: foundation 4×4, wall 4×4, floor 4×4, slope 4×4, window wall 4×4, door frame 4×4, basic door.
+
+**C2 — Snap.** 1 m grid, 90° yaw, socket snap to neighbors, same green/red commit rule. Sizes: 4×4 base, plus 1×4, 2×4, 4×8, 8×8, triangle, slope.
+
+**C3 — Build hotbar.** UITK. Ten visible slots, side arrows, no scrollbar. Up-arrow on the left opens the material panel. Stone is the only live tier.
+
+**C4 — Building Studio.** Genesis Studio **Building** category. Drag-drop prefabs into sections. Workflow to add the next material tier.
+
+**C5 — Map blueprints + craft.** World pickups unlock components, kits, buildings, and vital machines. Gathered stone (then ores and mixes) pays the hold-drain.
+
+**C6 — Tiers and skills.** In-place upgrade Stone → Iron → Steel → Silicate → Amalgam. Later tiers stay empty until a blueprint and the skill rank exist.
+
+**Exit:** Inside the fence, hold B opens the Stone hotbar, a foundation snaps to the grid, a wall snaps to that foundation, cancel refunds stone, and Building Studio can drop another Stone prefab into Walls without a code change.
+
+---
+
 ## 12. Prologue QA checklist (building)
 
 Cross-ref `Prologue_Acts_Expanded.md` QA section:
@@ -483,12 +526,15 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 
 ## 13. Out of scope (v1 / prologue)
 
-- Fallout junk-scrap snap
+- Fallout junk-scrap welding and off-grid freeform glue (snapped modular pieces are **in** scope)
 - NavMesh placement or pathing
 - Moving border fences to content scenes
 - Gold hologram look
-- New fullscreen builder HUD
-- Multi-tile mega structures
+- A scrollbar on the building hotbar
+- A second HUD `UIDocument` for the build bar
+- Full structural-collapse simulation (v1 snaps and requires a supporting socket; pieces do not chain-collapse)
+- Iron / Steel / Silicate / Amalgam art beyond empty tier slots and the upgrade hook
+- Multi-tile mega structures beyond the 8×8 piece
 - Gaia User Data as base truth
 - Aether-9 shell as multitool build (quest POI only)
 - Relay Pylon as player-placed building (story interact)
@@ -509,6 +555,9 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | 5 | Save/load camp after Act I-D sequence |
 | 6 | Companion assigned; gust pauses queue; Act I-D completable |
 | 7 | Core 1 Resonance pauses camp; new wreck unlock in B1 |
+| C1–C4 | Stone foundation + wall snap; hotbar scrolls by arrows; Studio accepts a dropped prefab |
+| C5 | Map blueprint unlocks a door; stone in inventory drains on hold |
+| C6 | Placed Stone piece upgrades one tier when Iron is unlocked |
 
 ---
 
@@ -517,12 +566,17 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | Question | Recommendation |
 |----------|----------------|
 | Cancel refund | Refund all drained ticks |
-| Blueprint UI | Extend deploy menu first |
+| Blueprint UI | Building hotbar (section 18), not a new fullscreen builder. Deploy-menu pattern only if the hotbar is blocked |
 | BCP tab gating | Overview-only until Act I-D step 4.3 |
 | First author mesh | Scene workbench or `PowerGenerator` |
 | Fabricator ruin | Teaches `craft_station_settlement` or `cc_seed`? → **station** (Scene B craft teach) |
 | Starter AC | GDD says 5000; story Act 0 says 0 — **follow story doc for prologue** when quests land |
 | Kairos comms | Ops only until trust gate; building UI unchanged |
+| Build hotbar vs inventory hotbar | Build bar shows **only in build mode**. Inventory hotbar stays the gameplay bar |
+| Enter build mode | **Hold B** (keyboard). Tap B stays binoculars. Hold B again exits. Gamepad: hold Left Shoulder, tap stays binoculars |
+| Starter Stone pieces | First basic kit is `starterUnlocked`: foundation, wall, floor, slope, window wall, and door frame (all 4×4) plus a basic door. Every other piece, kit, and machine needs a scan or a map blueprint |
+| Kits on the hotbar | Up panel lists **Stone** and **known buildings**. A building click loads that building’s hotbar. Stone click returns to stone components |
+| Piece collapse | Supporting socket required to place. Removing supports does not collapse the structure in v1 |
 
 ---
 
@@ -538,6 +592,7 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | `Stages_0_1_Playthrough_Quest_Stages.md` | Quest stage breakdown |
 | `Audit_05_Colony.md` | Architecture risks |
 | `World_Engine_Disk_Status.md` | What is actually shipped |
+| Section 18 of this plan | Component sizes, tiers, hotbar, library folders, Building Studio |
 
 ---
 
@@ -546,13 +601,172 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 ```
 Act 0 (no building)
   → Act I Slice 1–2: cc_seed, shelter, station on Camp Plateau
-  → Act I Slice 3: fabricator wreck (Resource Ring content)
+  → Act I C1–C4: Stone snap pieces + build hotbar + Building Studio
+  → Act I Slice 3 + C5: fabricator wreck and map blueprint pickups
   → Act I Slice 5–6: save camp + gust pause + companion assign
-  → Act II: camp persistence check only
+  → Act II: camp persistence check only; Iron+ tiers if skill and blueprint say so
   → Act III Slice 7: Resonance + new defs/wrecks per core
-  → Campaign: full GDD facility set + attachment modules
+  → Campaign: full GDD facility set + attachment modules + amalgam mixes
 ```
 
 ---
 
-*Constraints:* No NavMesh · Palette hologram not gold · Fences in v1.6 · Wrecks in content scenes · Reuse multitool/BCP/scanner/dissolve · Drain on hold · Instant Slice 1 before hold Slice 2 · Story POIs (Aether-9, Relay) stay quest-driven until explicitly promoted to `BuildingDefinition`.
+## 18. Component construction, materials, hotbar, Building Studio
+
+Added 2026-09-24. This is the modular track. Kits, wreck scans, and Building Control Panels stay as specified above.
+
+### 18.1 Three ways to learn a blueprint
+
+| Source | Unlocks |
+|--------|---------|
+| **Scan** a wreck or a vital machine | That building, machine, or the component it teaches |
+| **Find** a blueprint pickup on the map | One component, a building, a vital machine, or a **kit** (complete structure) |
+| **Quest / Resonance** | Same registry flag as a scan or a find |
+
+A locked entry is absent from the hotbar. `starterUnlocked` pieces are the exception. The first basic kit is known when build mode first opens: Stone foundation, wall, floor, slope, window wall, and door frame (all 4×4), plus a basic door that only seats in the frame.
+
+Gathering resources does **not** unlock a blueprint. Stone, iron, and the later mixes only pay the recipe once the entry is already known.
+
+### 18.2 What the player places
+
+| Kind | Examples | After it finishes |
+|------|----------|-------------------|
+| **Component** | Foundation, wall, floor, roof, block, mini block, door frame, door, window, stair, ramp, triangle, slope | Snapped piece. No BCP |
+| **Kit** | Command Center Seed, Survival Shelter, Crafting Station | Complete structure. BCP on the prefab |
+| **Vital machine** | Power cell socket, O₂ scrubber, fabricator | Machine prefab. BCP when the design says the machine is operated |
+
+Story POIs stay out of this list: Relay Pylon and the Aether-9 shell are quest interacts.
+
+### 18.3 Snap style (Dune Awakening)
+
+Reference for **feel**, not a meter-for-meter copy: repeating piece sets, sockets between pieces, material tiers, and upgrading a placed piece into the next set.
+
+| Rule | v1 |
+|------|----|
+| Grid | 1 m. Yaw in 90° steps |
+| Priority | Socket on a neighbor within snap range, otherwise the grid under the aim point |
+| Base module | **4×4 m** (foundations, floors, standard walls, standard roofs) |
+| Partial widths | **1×4 m**, **2×4 m** |
+| Long / large | **4×8 m**, **8×8 m** |
+| Shapes | Right **triangle** (half of a 4×4), **slope** / ramp (4×4 run, one story rise) |
+| Support to commit | Foundation on ground. Floor on a foundation or another floor. Solid wall, window wall, and door frame on a foundation or floor edge. Roof on a wall top. Basic door only in a door-frame socket |
+| Collapse | Not in v1. A piece stays if its support is later removed |
+| Validity | Same green/red hologram as section 6, plus the support rule. Red cannot commit |
+| Bounds | Inside the v1.6 construction fences. No NavMesh |
+
+Wall height for a standard wall matches the module: 4 m tall and 4 m wide. Mini walls keep the 4 m height and narrow to 1 m or 2 m.
+
+### 18.4 Material tiers, mixes, skills, upgrades
+
+Live tier at the start of implementation: **Stone** only. The other tiers exist as data so Building Studio can add them without a second system.
+
+| Tier | Paid with | Skill gate |
+|------|-----------|------------|
+| **Stone** | Gathered stone | None. First basic kit is known immediately |
+| **Iron** | Iron plus a stone binder | Building rank 1 (artisan / building skill) |
+| **Steel** | Iron plus fuel / carbon | Building rank 2, or the Level 5 field cert |
+| **Silicate** | Silicate shards (Io glass) | Building rank 3 |
+| **Amalgam** | A **mix** — steel + silicate, optional AC | Building rank 4, and both Steel and Silicate already unlocked |
+
+Amalgam is not a single ore. Later mixes (other pairings) are new tiers or new recipes authored in Building Studio, not new code.
+
+**In-place upgrade.** Aim the multitool at a finished piece whose `upgradeToId` is unlocked and whose skill gate passes. Hold pays the **difference** in resources and swaps the visual to the next tier prefab. Save stores the definition id actually placed, so a reload does not revert the tier.
+
+Skill ranks may later reduce recipe cost or `constructTime`. No numbers in this plan.
+
+### 18.5 Library folders (ProBuilder first)
+
+Blockout meshes are ProBuilder primitives saved as prefabs. Final art replaces the mesh on the same prefab. Folders are the library Building Studio writes into:
+
+```
+Assets/_Project/Prefabs/Buildings/Library/
+  Stone/
+    Foundations/
+    Walls/
+    Floors/
+    Roofs/
+    Blocks/
+    MiniBlocks/
+    DoorFrames/
+    Doors/
+    Windows/
+    Stairs/
+    Ramps/
+    Triangles/
+    Slopes/
+  Iron/          (empty until that tier is authored)
+  Steel/
+  Silicate/
+  Amalgam/
+  Kits/
+  VitalMachines/
+```
+
+Each prefab gets one `BuildingDefinition` whose `kind`, `materialTier`, `section`, and `footprintMeters` match the folder. First basic kit (`starterUnlocked`):
+
+| Id | Section | Size | Snap |
+|----|---------|------|------|
+| `stone_foundation_4x4` | Foundations | 4×4 m | Ground |
+| `stone_wall_4x4` | Walls | 4 m wide × 4 m tall | Foundation or floor edge |
+| `stone_floor_4x4` | Floors | 4×4 m | Foundation or adjacent floor |
+| `stone_slope_4x4` | Slopes | 4×4 m run, one story | Same as a floor |
+| `stone_wall_window_4x4` | Windows | 4 m wide × 4 m tall | Same sockets as the solid wall. Opening holds a glass pane |
+| `stone_door_frame_4x4` | DoorFrames | 4 m wide × 4 m tall | Same sockets as the solid wall. Empty doorway with one door socket |
+| `stone_door_basic` | Doors | Fills the frame opening | Door socket on `stone_door_frame_4x4` only. Cannot commit on open ground |
+
+ProBuilder blockout: flat box, vertical slab, thin floor slab, wedge, wall slab with a window hole plus a transparent pane, wall slab with a doorway hole, and a door slab sized to that hole. Glass is a blockout material on the window piece, not a new resource tier. The window wall and the door frame still cost stone. Further Stone pieces (1×4, 2×4, 4×8, 8×8, triangle, roofs) stay locked until a blueprint unlocks them.
+
+### 18.6 Building hotbar (player UI)
+
+UI Toolkit only, on the existing gameplay HUD host (`UITK_Hud`). No second `UIDocument`. No uGUI. No scrollbar.
+
+Shown only in **build mode**. **Hold B** enters it. **Hold B** again exits. Tap B stays the existing binoculars shortcut and does not enter or exit build mode. While build mode is on, binoculars stay suppressed so a short press of B does not open them. Gamepad uses the same split on Left Shoulder (tap binoculars, hold build mode).
+
+Hold-to-materialize (fire / use on a ghost) is a different hold from the B key. B only toggles the mode.
+
+Tilde hides the bar with the rest of the gameplay HUD. Hidden in C# when build mode is off so the UXML stays visible in UI Builder. Journal, pause, and other modal UI block the hold.
+
+```
+[ ↑ ]   [ ← ] [ s ][ s ][ s ][ s ][ s ][ s ][ s ][ s ][ s ][ s ] [ → ]
+```
+
+| Piece | Behavior |
+|-------|----------|
+| **Ten slots** | The visible window into the unlocked list for the current selection |
+| **← and →** | Sit on the ends of the 10-slot holder. Each click shifts **one** slot. Disabled at either end of the list. Hold may repeat. **No scrollbar** |
+| **↑** | Sits to the **left** of that holder. Opens a panel **upward** listing **Stone** and every **known building** |
+| **Known building** | Click loads that building into the hotbar |
+| **Stone** | Click returns the hotbar to the Stone component list |
+| **Empty list** | Stone is always in the panel, so the component list is never missing. A building row appears only after that building is known |
+| **Can't afford** | Slot stays visible, Slate tint, cannot commit |
+| **Selected slot** | Rich Fuchsia. That definition is what the hologram places |
+
+Palette: Dark Navy slots, Slate borders, Deep Magenta arrows, Warm Off-White labels, Rich Fuchsia selection. Gold is not a building-bar color.
+
+Files: `Assets/UI Toolkit/Screens/BuildingHotbar.uxml`, styles on the screen USS plus `DarkMatterGenesis.uss`, runtime `DMUiToolkitBuildingHotbar` on the HUD document. Bind with `root.Q`. Do not hide the bar with USS `display: none`.
+
+### 18.7 Building Studio (tools)
+
+Authoring lives in **Genesis Studio** as a **Building** category, opened from `Tools/Dark Matter Genesis/Buildings/Building Studio`. It is an editor workflow, not a Play-mode slider profile. `playModeSave` stays off.
+
+**Create a material.** Name, tier, folder under `Library/`. Stone is the only one seeded. The button is how Iron and the later tiers appear.
+
+**Sections** (drop wells, per selected material):
+
+Base foundations · Walls · Floors · Roofs · Blocks · Mini blocks · Door frames · Doors · Windows · Stairs · Ramps · Triangles · Slopes
+
+Kits and Vital Machines are their own sections, not nested under Stone.
+
+**Drag a prefab** onto a section. Studio writes or updates the `BuildingDefinition` (id, kind, tier, section, default footprint for that section, recipe stub, hologram material) and files the prefab into the matching library folder.
+
+**Create primitive.** Per section, generates the ProBuilder mesh at that section's default size, saves the prefab, and registers it the same way as a drop.
+
+Replaces the one-off "Author Building" window as the place new pieces are added. The old one-pass prefab→definition action can be a button inside this studio (Slice 4) so kit authoring and piece authoring stay one tool.
+
+### 18.8 Save
+
+Each placed piece stores the same payload as a kit instance: `definitionId` (the tier actually built), pose, ghost vs complete, construct progress, drained resources. A Stone wall upgraded to Iron saves the Iron id. Blueprint unlocks persist beside the recipe-unlock set (BUILD-042).
+
+---
+
+*Constraints:* No NavMesh · Palette hologram not gold · Fences in v1.6 · Wrecks in content scenes · Reuse multitool/BCP/scanner/dissolve · Drain on hold · Instant Slice 1 before hold Slice 2 · Component track starts after Slice 1 · Stone before other tiers · **Hold B** enters build mode, tap B stays binoculars · Build hotbar is UITK, ten slots, arrow scroll, no scrollbar · Story POIs (Aether-9, Relay) stay quest-driven until explicitly promoted to `BuildingDefinition`.

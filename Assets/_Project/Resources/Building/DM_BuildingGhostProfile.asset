@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69127ecfd4cebd64cbf8846000a2c999, type: 3}
+  m_Name: DM_BuildingGhostProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBuildingGhostProfile
+  ghostColor: {r: 1, g: 0, b: 0, a: 1}
+  ghostAlpha: 0.24
+  finishedColor: {r: 0.62, g: 0.58, b: 0.52, a: 1}
+  glassColor: {r: 0.3830188, g: 0.82724524, b: 1, a: 1}
+  glassAlpha: 0.2209
+  largeModuleMeters: 4
+  smallModuleMeters: 2
+  yawStepDegrees: 90
+  heightStepMeters: 0.25
+  maxHeightOffsetMeters: 4
+  edgeSnapRangeMeters: 4
+  topSnapRangeMeters: 7
+  buildLookUpDegrees: 45
+  doorFrameRangeMeters: 5
+  edgeFacingDot: 0.5
+  buildSeconds: 2
+  destroyHoldSeconds: 2
+  aimDistanceMeters: 80
+  doorSeatDropMeters: 0.4
+  overlapPaddingMeters: 0.08

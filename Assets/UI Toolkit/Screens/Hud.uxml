@@ -110,5 +110,32 @@
                 <ui:VisualElement name="reticle-arm-bottom" picking-mode="Ignore" class="dmg-weapon-reticle-arm dmg-weapon-reticle-arm-v dmg-weapon-reticle-arm-bottom"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="build-hold-ring" picking-mode="Ignore" class="dmg-build-hold-ring"/>
+        <ui:VisualElement name="build-bar" picking-mode="Position" class="dmg-build-bar">
+            <ui:ScrollView name="build-list" mode="Vertical" class="dmg-build-list">
+                <ui:Label text="Components" picking-mode="Ignore" class="dmg-build-list-header"/>
+                <ui:Label text="Stone" picking-mode="Ignore" class="dmg-build-list-row"/>
+                <ui:Label text="Buildings" picking-mode="Ignore" class="dmg-build-list-header"/>
+                <ui:Label text="Known Building" picking-mode="Ignore" class="dmg-build-list-row"/>
+            </ui:ScrollView>
+            <ui:Label name="build-cost" text="Rock 4 / 12" picking-mode="Ignore" class="dmg-build-cost"/>
+            <ui:VisualElement name="build-row" picking-mode="Position" class="dmg-build-row">
+                <ui:Button name="build-materials" text="▲" picking-mode="Position" class="dmg-build-arrow"/>
+                <ui:Button name="build-scroll-left" text="◀" picking-mode="Position" class="dmg-build-arrow"/>
+                <ui:VisualElement name="build-slots" picking-mode="Position" class="dmg-build-slots">
+                    <ui:VisualElement name="build-slot-0" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-0" text="Foundation" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-1" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-1" text="Wall" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-2" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-2" text="Floor" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-3" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-3" text="Slope" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-4" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-4" text="Window" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-5" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-5" text="Frame" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-6" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-6" text="Door" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-7" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-7" text="" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-8" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-8" text="" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                    <ui:VisualElement name="build-slot-9" picking-mode="Position" class="dmg-build-slot"><ui:Label name="build-slot-label-9" text="" picking-mode="Ignore" class="dmg-build-slot-label"/></ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Button name="build-scroll-right" text="▶" picking-mode="Position" class="dmg-build-arrow"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

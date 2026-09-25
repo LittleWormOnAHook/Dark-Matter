@@ -415,6 +415,28 @@ new DMStudioSubtab(
                             externalMenuPath: DarkMatterGenesisEditorMenus.Ui + "UI Studio")
                     }),
                 new DMStudioCategory(
+                    "building",
+                    "Building",
+                    "⌂",
+                    "Ghost tint, snap grid, and placement profile.",
+                    FromHex("#C02E7A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "ghost-snap",
+                            "Ghost & Snap",
+                            "Hologram color, alpha, yaw, height, grid, and hold time.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "building-studio",
+                            "Building Studio",
+                            "Grouped ghost, material, and snap fields. Same profile asset.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: "Tools/Dark Matter Genesis/Buildings/Building Studio")
+                    }),
+                new DMStudioCategory(
                     "audio",
                     "Audio",
                     "♫",
