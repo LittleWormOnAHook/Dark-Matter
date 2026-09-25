@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Data;
 using Project.Inventory;
+using Project.Storage;
 using UnityEngine;
 
 namespace Project.Building
@@ -58,9 +59,36 @@ namespace Project.Building
                 || pieceId == DoorFrameId;
         }
 
+        public static bool IsFoundation(string pieceId)
+        {
+            return pieceId == "stone_foundation_4x4";
+        }
+
         public static bool IsFloor(string pieceId)
         {
             return pieceId == FloorId;
+        }
+
+        /// <summary>Only the first foundation uses terrain aim. Further pieces must snap to built modules.</summary>
+        public static bool IsFreestanding(string pieceId)
+        {
+            return IsFoundation(pieceId) && !HasBuiltBaseForCatalog();
+        }
+
+        static bool HasBuiltBaseForCatalog()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            DMBuildingGhost[] ghosts = UnityEngine.Object.FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost != null && ghost.Built && IsFoundation(ghost.PieceId))
+                    return true;
+            }
+
+            return false;
         }
 
         public static bool IsCeiling(string pieceId)
@@ -115,6 +143,11 @@ namespace Project.Building
 
         public static int CountStone()
         {
+            return CountStoneInInventory() + DMStorageCrateRuntime.CountMatching(IsStoneItem);
+        }
+
+        static int CountStoneInInventory()
+        {
             InventorySystem inventory = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
             if (inventory == null || inventory.slots == null)
                 return 0;
@@ -165,6 +198,9 @@ namespace Project.Building
                     paid = item;
                 remaining -= take;
             }
+
+            if (remaining > 0)
+                remaining -= DMStorageCrateRuntime.RemoveMatching(IsStoneItem, remaining);
 
             return remaining <= 0;
         }

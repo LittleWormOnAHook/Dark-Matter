@@ -11,20 +11,61 @@ namespace Project.Building
     [DisallowMultipleComponent]
     public sealed class DMBuildingDoor : MonoBehaviour, IWorldUsable
     {
-        const float SwingDegrees = 90f;
-        const float SwingSeconds = 0.35f;
-        const float InteractRange = 2.4f;
-
         DMBuildingGhost ghost;
         bool open;
         bool swinging;
         Quaternion closedRotation;
         Vector3 closedPosition;
         bool poseCaptured;
+        Collider[] doorColliders;
+        bool[] colliderEnabledSnapshot;
+        bool collidersDisabledForSwing;
 
         void Awake()
         {
             ghost = GetComponent<DMBuildingGhost>();
+            CacheColliders();
+        }
+
+        void CacheColliders()
+        {
+            doorColliders = GetComponentsInChildren<Collider>(true);
+            colliderEnabledSnapshot = new bool[doorColliders.Length];
+        }
+
+        void DisableCollidersForSwing()
+        {
+            if (doorColliders == null || doorColliders.Length == 0)
+                CacheColliders();
+
+            collidersDisabledForSwing = false;
+            for (int i = 0; i < doorColliders.Length; i++)
+            {
+                Collider collider = doorColliders[i];
+                if (collider == null)
+                    continue;
+
+                colliderEnabledSnapshot[i] = collider.enabled;
+                collider.enabled = false;
+                collidersDisabledForSwing = true;
+            }
+        }
+
+        void RestoreCollidersAfterSwing()
+        {
+            if (!collidersDisabledForSwing || doorColliders == null)
+                return;
+
+            for (int i = 0; i < doorColliders.Length; i++)
+            {
+                Collider collider = doorColliders[i];
+                if (collider == null)
+                    continue;
+
+                collider.enabled = colliderEnabledSnapshot[i];
+            }
+
+            collidersDisabledForSwing = false;
         }
 
         void OnEnable()
@@ -34,6 +75,7 @@ namespace Project.Building
 
         void OnDisable()
         {
+            RestoreCollidersAfterSwing();
             WorldUseController.Unregister(this);
         }
 
@@ -53,6 +95,7 @@ namespace Project.Building
             CaptureClosedPose();
             open = !open;
             StopAllCoroutines();
+            RestoreCollidersAfterSwing();
             StartCoroutine(Swing(open));
             return true;
         }
@@ -78,7 +121,7 @@ namespace Project.Building
             if (ghost == null || !ghost.Built)
                 return false;
 
-            return Vector3.Distance(playerPosition, transform.position) <= InteractRange;
+            return Vector3.Distance(playerPosition, transform.position) <= DMBuildingGhostProfile.DoorInteractRangeMeters;
         }
 
         void CaptureClosedPose()
@@ -94,19 +137,23 @@ namespace Project.Building
         IEnumerator Swing(bool toOpen)
         {
             swinging = true;
+            DisableCollidersForSwing();
+
+            float swingDegrees = DMBuildingGhostProfile.DoorSwingDegrees;
+            float swingSeconds = DMBuildingGhostProfile.DoorSwingSeconds;
             float elapsed = 0f;
             Quaternion fromRotation = transform.rotation;
             Vector3 fromPosition = transform.position;
-            float angle = toOpen ? SwingDegrees : 0f;
+            float angle = toOpen ? swingDegrees : 0f;
             Quaternion yaw = Quaternion.Euler(0f, angle, 0f);
             Quaternion targetRotation = yaw * closedRotation;
             Vector3 hinge = closedPosition + closedRotation * new Vector3(-DMBuildingCatalog.DoorWidth * 0.5f, 0f, 0f);
             Vector3 targetPosition = hinge + yaw * (closedPosition - hinge);
 
-            while (elapsed < SwingSeconds)
+            while (elapsed < swingSeconds)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / SwingSeconds);
+                float t = Mathf.Clamp01(elapsed / swingSeconds);
                 transform.SetPositionAndRotation(
                     Vector3.Lerp(fromPosition, targetPosition, t),
                     Quaternion.Slerp(fromRotation, targetRotation, t));
@@ -114,6 +161,7 @@ namespace Project.Building
             }
 
             transform.SetPositionAndRotation(targetPosition, targetRotation);
+            RestoreCollidersAfterSwing();
             swinging = false;
         }
 
@@ -121,7 +169,7 @@ namespace Project.Building
         {
             DMBuildingDoor[] doors = FindObjectsByType<DMBuildingDoor>(FindObjectsInactive.Exclude);
             DMBuildingDoor best = null;
-            float bestDistance = InteractRange;
+            float bestDistance = DMBuildingGhostProfile.DoorInteractRangeMeters;
             for (int i = 0; i < doors.Length; i++)
             {
                 DMBuildingDoor door = doors[i];

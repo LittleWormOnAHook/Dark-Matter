@@ -13,7 +13,12 @@ namespace Project.EditorTools.GenesisStudio
         LocomotionOnly = 4,
         FootstepsAudioOnly = 5,
         CombatAmmoOnly = 6,
-        LandingHeightsOnly = 7
+        LandingHeightsOnly = 7,
+        BuildingPreviewOnly = 8,
+        BuildingSnapOnly = 9,
+        BuildingPlacementOnly = 10,
+        BuildingDoorOnly = 11,
+        BuildingBuiltTintsOnly = 12
     }
 
     internal static class DMStudioProfileSections
@@ -41,6 +46,55 @@ namespace Project.EditorTools.GenesisStudio
             "fallDamageLethalPercent",
             "fallDamageHealthFraction",
             "jetpackLethalDelay"
+        };
+
+        private static readonly string[] BuildingPreviewFields =
+        {
+            "validGhostMaterial",
+            "ghostColor",
+            "ghostAlpha",
+            "blockedGhostMaterial",
+            "blockedGhostColor",
+            "blockedGhostAlpha"
+        };
+
+        private static readonly string[] BuildingBuiltTintFields =
+        {
+            "finishedColor",
+            "glassColor",
+            "glassAlpha"
+        };
+
+        private static readonly string[] BuildingSnapFields =
+        {
+            "largeModuleMeters",
+            "smallModuleMeters",
+            "yawStepDegrees",
+            "heightStepMeters",
+            "maxHeightOffsetMeters",
+            "edgeSnapRangeMeters",
+            "topSnapRangeMeters",
+            "buildLookUpDegrees",
+            "buildModeCameraDistanceMultiplier",
+            "buildModeCameraExtraMeters",
+            "doorFrameRangeMeters",
+            "edgeFacingDot"
+        };
+
+        private static readonly string[] BuildingPlacementFields =
+        {
+            "buildSeconds",
+            "destroyHoldSeconds",
+            "aimDistanceMeters",
+            "doorSeatDropMeters",
+            "overlapPaddingMeters"
+        };
+
+        private static readonly string[] BuildingDoorFields =
+        {
+            "doorSwingDegrees",
+            "doorSwingSeconds",
+            "doorInteractRangeMeters"
         };
 
         private static readonly string[] SurvivalFields =
@@ -179,6 +233,11 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
                 DMStudioProfileSectionFilter.CombatAmmoOnly => IsCombatAmmoField(propertyPath),
                 DMStudioProfileSectionFilter.LandingHeightsOnly => IsLandingHeightField(propertyPath),
+                DMStudioProfileSectionFilter.BuildingPreviewOnly => IsBuildingPreviewField(propertyPath),
+                DMStudioProfileSectionFilter.BuildingBuiltTintsOnly => IsBuildingBuiltTintField(propertyPath),
+                DMStudioProfileSectionFilter.BuildingSnapOnly => IsBuildingSnapField(propertyPath),
+                DMStudioProfileSectionFilter.BuildingPlacementOnly => IsBuildingPlacementField(propertyPath),
+                DMStudioProfileSectionFilter.BuildingDoorOnly => IsBuildingDoorField(propertyPath),
                 _ => true
             };
         }
@@ -201,6 +260,16 @@ namespace Project.EditorTools.GenesisStudio
                     "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>
                     "Jump/Landing 3-tier height band on DM_ClimbDashProfile (bounce / hero / hero+damage + jetpack grace) - same asset as Climb/Dash; Play-mode edits persist via Profile Save.",
+                DMStudioProfileSectionFilter.BuildingPreviewOnly =>
+                    "Valid snap/build and blocked preview holograms on DM_BuildingGhostProfile — optional materials plus color and alpha.",
+                DMStudioProfileSectionFilter.BuildingBuiltTintsOnly =>
+                    "Finished mesh and window glass tints on DM_BuildingGhostProfile. Stone finishes (M key) live in DMBuildingMaterialLibrary — use Building Studio.",
+                DMStudioProfileSectionFilter.BuildingSnapOnly =>
+                    "Module grid, yaw/height steps, edge/top snap, and build look-up on DM_BuildingGhostProfile.",
+                DMStudioProfileSectionFilter.BuildingPlacementOnly =>
+                    "Hold to build/destroy, aim distance, overlap padding, and door frame seat on DM_BuildingGhostProfile.",
+                DMStudioProfileSectionFilter.BuildingDoorOnly =>
+                    "Built stone door swing and interact range on DM_BuildingGhostProfile.",
                 _ => string.Empty
             };
         }
@@ -276,6 +345,16 @@ namespace Project.EditorTools.GenesisStudio
 
             return false;
         }
+
+        private static bool IsBuildingPreviewField(string propertyPath) => MatchesField(propertyPath, BuildingPreviewFields);
+
+        private static bool IsBuildingBuiltTintField(string propertyPath) => MatchesField(propertyPath, BuildingBuiltTintFields);
+
+        private static bool IsBuildingSnapField(string propertyPath) => MatchesField(propertyPath, BuildingSnapFields);
+
+        private static bool IsBuildingPlacementField(string propertyPath) => MatchesField(propertyPath, BuildingPlacementFields);
+
+        private static bool IsBuildingDoorField(string propertyPath) => MatchesField(propertyPath, BuildingDoorFields);
     }
 }
 #endif

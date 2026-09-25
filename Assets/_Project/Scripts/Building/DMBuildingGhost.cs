@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project.Building
 {
     /// <summary>
-    /// Committed placement. Always the red ghost until a later slice materializes it.
+    /// Built piece after a completed hold. Preview holograms live on the placement controller.
     /// </summary>
     public sealed class DMBuildingGhost : MonoBehaviour
     {

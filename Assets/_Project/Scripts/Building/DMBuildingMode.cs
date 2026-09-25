@@ -75,34 +75,27 @@ namespace Project.Building
             Changed?.Invoke();
         }
 
-        /// <summary>Moves the hotbar highlight. E confirms it onto the placed piece.</summary>
-        public static void StepHighlight(int direction)
-        {
-            int count = DMBuildingCatalog.PiecesFor(HotbarId).Count;
-            if (count <= 0 || direction == 0)
-                return;
-
-            SlotFocus = (SlotFocus + direction) % count;
-            if (SlotFocus < 0)
-                SlotFocus += count;
-
-            if (SlotFocus < WindowStart)
-                WindowStart = SlotFocus;
-            else if (SlotFocus >= WindowStart + 10)
-                WindowStart = SlotFocus - 9;
-
-            Changed?.Invoke();
-        }
-
         public static void ConfirmHighlight()
         {
             SelectSlot(SlotFocus);
         }
 
+        /// <summary>Cycles the selected piece immediately. Used by the mouse wheel and side arrows.</summary>
         public static void StepSelection(int direction)
         {
-            StepHighlight(direction);
-            ConfirmHighlight();
+            int count = DMBuildingCatalog.PiecesFor(HotbarId).Count;
+            if (count <= 0 || direction == 0)
+                return;
+
+            int next = (SelectedIndex + direction) % count;
+            if (next < 0)
+                next += count;
+            SelectSlot(next);
+        }
+
+        public static void StepHighlight(int direction)
+        {
+            StepSelection(direction);
         }
     }
 }

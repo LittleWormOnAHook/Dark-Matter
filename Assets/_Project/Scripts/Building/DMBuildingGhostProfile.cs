@@ -11,12 +11,25 @@ namespace Project.Building
         public const string ResourcePath = "Building/DM_BuildingGhostProfile";
         public const string AssetPath = "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset";
 
-        [Header("Materials")]
-        public Color ghostColor = new Color(0.92f, 0.38f, 0.32f, 1f);
+        [Header("Preview — Snap & build (valid seat)")]
+        [Tooltip("Optional HDRP material for the green build-ready hologram. Color and alpha still tint each frame.")]
+        public Material validGhostMaterial;
+
+        public Color ghostColor = new Color(0.18f, 0.78f, 0.36f, 1f);
 
         [Range(0f, 1f)]
         public float ghostAlpha = 0.45f;
 
+        [Header("Preview — Blocked seat")]
+        [Tooltip("Optional material when the seat is invalid or unaffordable.")]
+        public Material blockedGhostMaterial;
+
+        public Color blockedGhostColor = new Color(0.561f, 0.118f, 0.369f, 1f);
+
+        [Range(0f, 1f)]
+        public float blockedGhostAlpha = 0.45f;
+
+        [Header("Built piece tints")]
         public Color finishedColor = new Color(0.62f, 0.58f, 0.52f, 1f);
 
         public Color glassColor = new Color(0.85f, 0.92f, 0.95f, 1f);
@@ -39,6 +52,11 @@ namespace Project.Building
 
         [Tooltip("Extra degrees the camera may look up while build mode is on. Applied to the look-up limit only, then restored.")]
         public float buildLookUpDegrees = 45f;
+
+        [Tooltip("Pull camera back in build mode: saved distance × this, plus extra meters. Keep low indoors to avoid wall clip fight.")]
+        public float buildModeCameraDistanceMultiplier = 1.35f;
+
+        public float buildModeCameraExtraMeters = 1.25f;
         public float doorFrameRangeMeters = 5f;
 
         [Range(0f, 1f)]
@@ -50,6 +68,11 @@ namespace Project.Building
         public float aimDistanceMeters = 80f;
         public float doorSeatDropMeters = 0.4f;
         public float overlapPaddingMeters = 0.08f;
+
+        [Header("Door swing (E)")]
+        public float doorSwingDegrees = 90f;
+        public float doorSwingSeconds = 0.35f;
+        public float doorInteractRangeMeters = 2.4f;
 
         static DMBuildingGhostProfile live;
 
@@ -66,10 +89,21 @@ namespace Project.Building
         public static Color ResolveGhostColor()
         {
             DMBuildingGhostProfile profile = Live;
-            Color color = profile != null ? profile.ghostColor : new Color(0.92f, 0.38f, 0.32f, 1f);
+            Color color = profile != null ? profile.ghostColor : new Color(0.18f, 0.78f, 0.36f, 1f);
             color.a = Mathf.Clamp01(profile != null ? profile.ghostAlpha : 0.45f);
             return color;
         }
+
+        public static Color ResolveBlockedGhostColor()
+        {
+            DMBuildingGhostProfile profile = Live;
+            Color color = profile != null ? profile.blockedGhostColor : new Color(0.561f, 0.118f, 0.369f, 1f);
+            color.a = Mathf.Clamp01(profile != null ? profile.blockedGhostAlpha : 0.45f);
+            return color;
+        }
+
+        public static Material ValidGhostMaterialTemplate => Live != null ? Live.validGhostMaterial : null;
+        public static Material BlockedGhostMaterialTemplate => Live != null ? Live.blockedGhostMaterial : null;
 
         public static Color ResolveFinishedColor()
         {
@@ -95,6 +129,10 @@ namespace Project.Building
         public static float EdgeSnapRangeMeters => Positive(Live != null ? Live.edgeSnapRangeMeters : 4f, 4f);
         public static float TopSnapRangeMeters => Positive(Live != null ? Live.topSnapRangeMeters : 7f, 7f);
         public static float BuildLookUpDegrees => Mathf.Clamp(Live != null ? Live.buildLookUpDegrees : 45f, 0f, 75f);
+        public static float BuildModeCameraDistanceMultiplier =>
+            Positive(Live != null ? Live.buildModeCameraDistanceMultiplier : 1.35f, 1.35f);
+        public static float BuildModeCameraExtraMeters =>
+            Mathf.Max(0f, Live != null ? Live.buildModeCameraExtraMeters : 1.25f);
         public static float DoorFrameRangeMeters => Positive(Live != null ? Live.doorFrameRangeMeters : 5f, 5f);
         public static float EdgeFacingDot => Mathf.Clamp(Live != null ? Live.edgeFacingDot : 0.5f, -1f, 1f);
         public static float BuildSeconds => Positive(Live != null ? Live.buildSeconds : 2f, 2f);
@@ -102,6 +140,9 @@ namespace Project.Building
         public static float AimDistanceMeters => Positive(Live != null ? Live.aimDistanceMeters : 80f, 80f);
         public static float DoorSeatDropMeters => Mathf.Max(0f, Live != null ? Live.doorSeatDropMeters : 0.4f);
         public static float OverlapPaddingMeters => Mathf.Max(0f, Live != null ? Live.overlapPaddingMeters : 0.08f);
+        public static float DoorSwingDegrees => Positive(Live != null ? Live.doorSwingDegrees : 90f, 90f);
+        public static float DoorSwingSeconds => Positive(Live != null ? Live.doorSwingSeconds : 0.35f, 0.35f);
+        public static float DoorInteractRangeMeters => Positive(Live != null ? Live.doorInteractRangeMeters : 2.4f, 2.4f);
 
         static float Positive(float value, float fallback)
         {

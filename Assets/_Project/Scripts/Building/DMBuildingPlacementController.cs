@@ -7,8 +7,8 @@ using UnityEngine.Rendering.HighDefinition;
 namespace Project.Building
 {
     /// <summary>
-    /// Green seat places a ghost on left click. Hold left click for 2 seconds to finish it.
-    /// Right click destroys a placed ghost and refunds the stone.
+    /// Preview ghost follows aim. Hold left click to create it when the seat is green.
+    /// Red means not enough Rock in inventory or storage. Hold right click to destroy.
     /// </summary>
     public sealed class DMBuildingPlacementController : MonoBehaviour
     {
@@ -18,16 +18,76 @@ namespace Project.Building
         static Material blockedMaterial;
         static Material glassMaterial;
         static Material ghostGlassMaterial;
+        static int validGhostMaterialSourceId = int.MinValue;
+        static int blockedGhostMaterialSourceId = int.MinValue;
 
         GameObject preview;
         string previewId;
         float buildHold;
         float destroyHold;
-        DMBuildingGhost buildTarget;
         DMBuildingGhost lastPlaced;
         DMBuildingGhost destroyFocus;
+        Vector3 holdSeat;
         float yawDegrees;
         float heightOffset;
+        string heightResetPieceId;
+        int stickyVerticalSide = -1;
+
+        static int builtGhostCacheFrame = -1;
+        static DMBuildingGhost[] builtGhostCache = System.Array.Empty<DMBuildingGhost>();
+
+        static DMBuildingGhost[] BuiltGhosts()
+        {
+            int frame = Time.frameCount;
+            if (builtGhostCacheFrame == frame)
+                return builtGhostCache;
+
+            builtGhostCacheFrame = frame;
+            builtGhostCache = Object.FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            return builtGhostCache;
+        }
+
+        static void InvalidateBuiltGhostCache()
+        {
+            builtGhostCacheFrame = -1;
+        }
+
+        static bool IsHorizontalLatticePiece(string pieceId)
+        {
+            return DMBuildingCatalog.IsEdgeSupport(pieceId);
+        }
+
+        static DMBuildingGhost NearestHorizontalLatticeReference(Vector3 aim, float searchRadius)
+        {
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            DMBuildingGhost bestFloor = null;
+            float bestFloorDistance = searchRadius;
+            DMBuildingGhost bestAny = null;
+            float bestAnyDistance = searchRadius;
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost == null || !ghost.Built || !IsHorizontalLatticePiece(ghost.PieceId))
+                    continue;
+
+                float distance = FlatDistance(aim, HorizontalPlacementCenter(ghost));
+                if (DMBuildingCatalog.IsFloor(ghost.PieceId))
+                {
+                    if (distance >= bestFloorDistance)
+                        continue;
+                    bestFloorDistance = distance;
+                    bestFloor = ghost;
+                    continue;
+                }
+
+                if (distance >= bestAnyDistance)
+                    continue;
+                bestAnyDistance = distance;
+                bestAny = ghost;
+            }
+
+            return bestFloor != null ? bestFloor : bestAny;
+        }
 
         public static void Ensure()
         {
@@ -64,9 +124,27 @@ namespace Project.Building
             instance = this;
         }
 
+        void OnEnable()
+        {
+            DMBuildingMode.Changed += OnBuildingModeChanged;
+        }
+
         void OnDisable()
         {
+            DMBuildingMode.Changed -= OnBuildingModeChanged;
             DestroyPreview();
+        }
+
+        void OnBuildingModeChanged()
+        {
+            DMBuildingPiece piece = DMBuildingMode.SelectedPiece;
+            string id = piece != null ? piece.Id : null;
+            if (id == heightResetPieceId)
+                return;
+
+            heightResetPieceId = id;
+            heightOffset = 0f;
+            stickyVerticalSide = -1;
         }
 
         void OnDestroy()
@@ -88,7 +166,6 @@ namespace Project.Building
             {
                 buildHold = 0f;
                 destroyHold = 0f;
-                buildTarget = null;
                 destroyFocus = null;
                 lastPlaced = null;
                 yawDegrees = 0f;
@@ -104,7 +181,6 @@ namespace Project.Building
 
             Mouse mouse = Mouse.current;
             bool overBar = DMUiToolkitBuildingHotbar.PointerOverBar();
-            bool leftPressed = mouse != null && mouse.leftButton.wasPressedThisFrame;
             bool leftHeld = mouse != null && mouse.leftButton.isPressed;
             bool rightHeld = mouse != null && mouse.rightButton.isPressed;
 
@@ -142,53 +218,35 @@ namespace Project.Building
             destroyHold = 0f;
             destroyFocus = null;
 
-            bool placedThisFrame = false;
             DMBuildingPiece aimedPiece = null;
             Vector3 aimedPosition = default;
             Quaternion aimedRotation = Quaternion.identity;
             bool canCommit = false;
-            if (leftPressed && !overBar
-                && TryAim(out aimedPiece, out aimedPosition, out aimedRotation, out canCommit)
-                && canCommit
-                && DMBuildingCatalog.TrySpendStone(aimedPiece.StoneCost, out ItemData paid))
-            {
-                lastPlaced = Commit(aimedPiece, aimedPosition, aimedRotation, paid);
-                placedThisFrame = true;
-                buildHold = 0f;
-                buildTarget = null;
-            }
+            bool seated = !overBar && TryAim(out aimedPiece, out aimedPosition, out aimedRotation, out canCommit);
 
-            // Hold-to-build does not require the crosshair on the piece.
-            // Prefer the unbuilt ghost just placed. Otherwise the nearest unbuilt ghost
-            // of the selected piece within aim distance, then any nearest unbuilt ghost.
-            if (!placedThisFrame && leftHeld && !overBar && TryResolveBuildTarget(out DMBuildingGhost ghost))
+            if (leftHeld && seated && canCommit)
             {
-                if (buildTarget != ghost)
-                {
-                    buildTarget = ghost;
+                if ((aimedPosition - holdSeat).sqrMagnitude > 0.04f)
                     buildHold = 0f;
-                }
-
+                holdSeat = aimedPosition;
                 buildHold += Time.deltaTime;
                 DMUiToolkitBuildingHotbar.SetHoldRing(true, buildHold / DMBuildingGhostProfile.BuildSeconds, Vector3.zero);
-                if (buildHold >= DMBuildingGhostProfile.BuildSeconds)
+                if (buildHold >= DMBuildingGhostProfile.BuildSeconds
+                    && DMBuildingCatalog.TrySpendStone(aimedPiece.StoneCost, out ItemData paid))
                 {
-                    Finish(ghost);
-                    if (lastPlaced == ghost)
-                        lastPlaced = null;
+                    lastPlaced = Commit(aimedPiece, aimedPosition, aimedRotation, paid);
                     buildHold = 0f;
-                    buildTarget = null;
                     DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
                 }
             }
-            else if (!leftHeld)
+            else
             {
                 buildHold = 0f;
-                buildTarget = null;
-                DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
+                if (!leftHeld)
+                    DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
             }
 
-            if (!TryAim(out aimedPiece, out aimedPosition, out aimedRotation, out canCommit))
+            if (!seated)
             {
                 if (preview != null)
                     preview.SetActive(false);
@@ -217,40 +275,27 @@ namespace Project.Building
                 return false;
 
             Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            bool hasHit = TryGroundHit(ray, out RaycastHit hit);
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
+            ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             if (!hasHit && !lookingUp)
                 return false;
 
             Vector3 feet = PlayerFeet();
-            Vector3 aim = hasHit ? hit.point : feet;
             float yaw = instance.yawDegrees;
             float lift = Mathf.Clamp(instance.heightOffset, -DMBuildingGhostProfile.MaxHeightOffsetMeters, DMBuildingGhostProfile.MaxHeightOffsetMeters);
             rotation = Quaternion.Euler(0f, yaw, 0f);
+            bool hasBase = HasBuiltBase();
 
-            if (lookingUp
-                && piece.Snap != DMBuildingSnap.Door
-                && TrySeatOnNearestTop(aim, piece, yaw, lift, out position, out rotation))
+            if (!hasBase)
             {
-                int layer = StackLayer(position.y - piece.Size.y * 0.5f, feet.y);
-                canCommit = DMBuildingCatalog.IsStackLayerAllowed(layer)
-                    && DMBuildingCatalog.HasStone(piece.StoneCost)
-                    && !Overlaps(position, piece.Size, rotation, piece.Id);
-                return true;
-            }
-
-            if (DMBuildingCatalog.IsFloor(piece.Id) || DMBuildingCatalog.IsCeiling(piece.Id))
-            {
-                if (TrySnapFloorOrCeiling(aim, piece, lift, lookingUp, out position, out int layer))
-                {
-                    canCommit = DMBuildingCatalog.IsStackLayerAllowed(layer)
-                        && DMBuildingCatalog.HasStone(piece.StoneCost)
-                        && !Overlaps(position, piece.Size, rotation, piece.Id);
-                    return true;
-                }
+                if (!DMBuildingCatalog.IsFoundation(piece.Id))
+                    return false;
+                if (!hasHit)
+                    return false;
 
                 position = SnapModule(aim, piece);
                 position.y = SeatY(aim.y, piece, lift);
+                canCommit = CanAffordAndClear(piece, position, rotation);
                 return true;
             }
 
@@ -258,42 +303,174 @@ namespace Project.Building
             {
                 DMBuildingGhost frame = FindDoorFrame(aim);
                 if (frame == null)
+                    return false;
+
+                SeatDoor(frame, lift, out position, out rotation);
+                canCommit = CanAffordAndClear(piece, position, rotation);
+                return true;
+            }
+
+            if (lookingUp
+                && !DMBuildingCatalog.IsFoundation(piece.Id)
+                && TrySeatOnNearestTop(aim, piece, yaw, lift, out position, out rotation))
+            {
+                int layer = StackLayer(position.y - piece.Size.y * 0.5f, feet.y);
+                canCommit = DMBuildingCatalog.IsStackLayerAllowed(layer) && CanAffordAndClear(piece, position, rotation);
+                return true;
+            }
+
+            if (DMBuildingCatalog.IsFloor(piece.Id) || DMBuildingCatalog.IsCeiling(piece.Id))
+            {
+                if (TrySnapFloorOrCeiling(aim, piece, lift, lookingUp, out position, out int layer))
                 {
-                    position = SnapModule(aim, piece);
-                    position.y = SeatY(aim.y, piece, lift);
+                    canCommit = DMBuildingCatalog.IsStackLayerAllowed(layer) && CanAffordAndClear(piece, position, rotation);
                     return true;
                 }
 
-                SeatDoor(frame, lift, out position, out rotation);
-                canCommit = DMBuildingCatalog.HasStone(piece.StoneCost);
-                return true;
+                return false;
+            }
+
+            if (DMBuildingCatalog.IsFoundation(piece.Id))
+            {
+                if (TrySnapModuleToNeighbor(aim, piece, lift, out position))
+                {
+                    canCommit = CanAffordAndClear(piece, position, rotation);
+                    return true;
+                }
+
+                return false;
             }
 
             if (piece.Snap == DMBuildingSnap.Edge
                 && TrySnapEdge(aim, piece, yaw, lift, lookingUp, out position, out rotation))
             {
-                canCommit = DMBuildingCatalog.HasStone(piece.StoneCost) && !Overlaps(position, piece.Size, rotation, piece.Id);
-                return true;
-            }
-
-            if (piece.Snap == DMBuildingSnap.Edge)
-            {
-                position = SnapModule(aim, piece);
-                position.y = SeatY(aim.y, piece, lift);
+                canCommit = CanAffordAndClear(piece, position, rotation);
                 return true;
             }
 
             if (TrySnapModuleToNeighbor(aim, piece, lift, out position))
             {
-                canCommit = DMBuildingCatalog.HasStone(piece.StoneCost) && !Overlaps(position, piece.Size, rotation, piece.Id);
+                canCommit = CanAffordAndClear(piece, position, rotation);
                 return true;
             }
 
-            position = SnapModule(aim, piece);
-            position.y = SeatY(aim.y, piece, lift);
-            bool clear = !Overlaps(position, piece.Size, rotation, piece.Id);
-            canCommit = clear && DMBuildingCatalog.HasStone(piece.StoneCost);
-            return true;
+            return false;
+        }
+
+        static bool CanAffordAndClear(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
+        {
+            return piece != null
+                && DMBuildingCatalog.HasStone(piece.StoneCost)
+                && PassesStructureAnchor(piece, position, rotation)
+                && !Overlaps(position, piece.Size, rotation, piece.Id);
+        }
+
+        /// <summary>
+        /// First foundation uses terrain aim only. After that, every seat must touch the built graph.
+        /// </summary>
+        static bool PassesStructureAnchor(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
+        {
+            if (piece == null)
+                return false;
+
+            if (!HasBuiltBase())
+                return DMBuildingCatalog.IsFoundation(piece.Id);
+
+            return IsAnchoredToBuiltPiece(piece, position, rotation);
+        }
+
+        static bool HasBuiltBase()
+        {
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost != null && ghost.Built && DMBuildingCatalog.IsFoundation(ghost.PieceId))
+                    return true;
+            }
+
+            return false;
+        }
+
+        static bool IsAnchoredToBuiltPiece(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
+        {
+            if (piece.Snap == DMBuildingSnap.Door)
+            {
+                DMBuildingGhost frame = FindDoorFrame(position);
+                return frame != null && frame.Built;
+            }
+
+            float halfY = piece.Size.y * 0.5f;
+            float bottom = position.y - halfY;
+            float module = ModuleFor(piece);
+            float yTol = 0.5f;
+            float xzTol = module * 0.55f;
+
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost support = ghosts[i];
+                if (support == null || !support.Built)
+                    continue;
+
+                float top = SurfaceTop(support);
+                Vector3 supportPos = HorizontalPlacementCenter(support);
+
+                if (Mathf.Abs(bottom - top) <= yTol)
+                {
+                    if (FlatDistance(position, supportPos) <= xzTol)
+                        return true;
+                }
+
+                if (DMBuildingCatalog.IsFoundation(piece.Id) && DMBuildingCatalog.IsEdgeSupport(support.PieceId))
+                {
+                    float neighbor = FlatDistance(position, supportPos);
+                    float centerY = support.transform.position.y;
+                    if (Mathf.Abs(position.y - centerY) <= yTol && IsModuleGridDistance(neighbor, module))
+                        return true;
+                }
+
+                if ((DMBuildingCatalog.IsFloor(piece.Id) || DMBuildingCatalog.IsCeiling(piece.Id))
+                    && (DMBuildingCatalog.IsEdgeSupport(support.PieceId) || DMBuildingCatalog.IsVerticalSupport(support.PieceId)))
+                {
+                    float expectedY = SeatCenterY(top, piece, 0f);
+                    if (Mathf.Abs(expectedY - position.y) <= yTol)
+                    {
+                        float neighbor = FlatDistance(position, supportPos);
+                        if (IsModuleGridDistance(neighbor, module))
+                            return true;
+                    }
+                }
+
+                if (piece.Snap != DMBuildingSnap.Edge || !DMBuildingCatalog.IsEdgeSupport(support.PieceId))
+                    continue;
+
+                if (Mathf.Abs(SeatCenterY(top, piece, 0f) - position.y) > yTol)
+                    continue;
+
+                if (IsEdgeSeatOnSupport(support, position, piece))
+                    return true;
+            }
+
+            return false;
+        }
+
+        static bool IsEdgeSeatOnSupport(DMBuildingGhost support, Vector3 position, DMBuildingPiece piece)
+        {
+            float top = SurfaceTop(support);
+
+            if (TrySeatVerticalOnCornerEdge(support, position, top, piece, 0f, out Vector3 seat, out _, out _, out _, out _))
+            {
+                if (FlatDistance(seat, position) <= 0.08f && Mathf.Abs(seat.y - position.y) <= 0.08f)
+                    return true;
+            }
+
+            if (DMBuildingCatalog.IsVerticalSupport(support.PieceId)
+                && FlatDistance(position, HorizontalPlacementCenter(support)) <= DMBuildingGhostProfile.TopSnapRangeMeters
+                && Mathf.Abs(position.y - piece.Size.y * 0.5f - top) <= 0.5f)
+                return true;
+
+            return false;
         }
 
         static bool AimIsAboveWallMid(Ray ray)
@@ -334,19 +511,59 @@ namespace Project.Building
             float top = SurfaceTop(wall);
             if (piece.Snap == DMBuildingSnap.Edge)
             {
-                position = wall.transform.position;
-                position.y = top + piece.Size.y * 0.5f + lift;
-                rotation = Quaternion.Euler(0f, yaw, 0f) * Quaternion.LookRotation(wall.transform.forward, Vector3.up);
+                position = HorizontalPlacementCenter(wall);
+                position.y = SeatCenterY(top, piece, lift);
+                rotation = Quaternion.LookRotation(wall.transform.forward, Vector3.up);
                 return true;
             }
 
             float module = ModuleFor(piece);
             Vector3 anchor = FlatDistance(aim, feet) > DMBuildingGhostProfile.TopSnapRangeMeters ? feet : aim;
-            position = new Vector3(
-                SnapCenter(anchor.x, module),
-                top + piece.Size.y * 0.5f + lift,
-                SnapCenter(anchor.z, module));
+            position = SnapToOuterModuleGrid(anchor, piece, SeatCenterY(top, piece, lift));
             return true;
+        }
+
+        static DMBuildingGhost SelectHorizontalSupportForVertical(Vector3 aim, Vector3 feet, DMBuildingPiece piece, float heightOffset)
+        {
+            float search = DMBuildingGhostProfile.EdgeSnapRangeMeters * 1.5f;
+            DMBuildingGhost bestFloor = null;
+            float bestFloorScore = float.MaxValue;
+            DMBuildingGhost bestOther = null;
+            float bestOtherScore = float.MaxValue;
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost == null || !ghost.Built || !IsHorizontalLatticePiece(ghost.PieceId))
+                    continue;
+
+                float top = SurfaceTop(ghost);
+                if (!SupportsSnapStory(top, aim, feet))
+                    continue;
+
+                float distance = FlatDistance(aim, HorizontalPlacementCenter(ghost));
+                if (distance >= search)
+                    continue;
+
+                float seatY = SeatCenterY(top, piece, heightOffset);
+                float score = distance + Mathf.Abs(aim.y - seatY) * 0.15f;
+                if (DMBuildingCatalog.IsFloor(ghost.PieceId))
+                {
+                    if (score >= bestFloorScore)
+                        continue;
+                    bestFloorScore = score;
+                    bestFloor = ghost;
+                }
+                else
+                {
+                    if (score >= bestOtherScore)
+                        continue;
+                    bestOtherScore = score;
+                    bestOther = ghost;
+                }
+            }
+
+            return bestFloor != null ? bestFloor : bestOther;
         }
 
         static bool TrySnapEdge(
@@ -360,93 +577,33 @@ namespace Project.Building
         {
             position = default;
             rotation = Quaternion.identity;
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
-            Vector3 feet = PlayerFeet();
-            float edgeRange = DMBuildingGhostProfile.EdgeSnapRangeMeters;
-            float topRange = DMBuildingGhostProfile.TopSnapRangeMeters;
-            float bestScore = float.MaxValue;
-            bool found = false;
-            Vector3 bestEdge = default;
-            Vector3 bestOutward = Vector3.forward;
-
-            bool stackOnWall = false;
-            for (int i = 0; i < ghosts.Length; i++)
-            {
-                DMBuildingGhost support = ghosts[i];
-                if (support == null)
-                    continue;
-
-                float top = SurfaceTop(support);
-                if (lookingUp && support.Built && DMBuildingCatalog.IsVerticalSupport(support.PieceId))
-                {
-                    float aimDist = FlatDistance(aimPoint, support.transform.position);
-                    float playerDist = FlatDistance(feet, support.transform.position);
-                    if (aimDist > topRange && playerDist > topRange)
-                        continue;
-                    if (top < feet.y + 1.25f)
-                        continue;
-
-                    float score = aimDist;
-                    if (score >= bestScore)
-                        continue;
-
-                    bestScore = score;
-                    bestEdge = support.transform.position;
-                    bestEdge.y = top;
-                    bestOutward = support.transform.forward;
-                    stackOnWall = true;
-                    found = true;
-                    continue;
-                }
-
-                if (!DMBuildingCatalog.IsEdgeSupport(support.PieceId))
-                    continue;
-                if (!SameStory(top, feet.y))
-                    continue;
-
-                Vector3 half = HalfExtents(support);
-                Vector3 right = support.transform.right;
-                Vector3 forward = support.transform.forward;
-                Vector3[] outwards = { right, -right, forward, -forward };
-                float[] reach = { half.x, half.x, half.z, half.z };
-                for (int e = 0; e < 4; e++)
-                {
-                    Vector3 outward = outwards[e].normalized;
-                    Vector3 edge = support.transform.position + outward * reach[e];
-                    float edgeAim = FlatDistance(aimPoint, edge);
-                    float edgePlayer = FlatDistance(feet, edge);
-                    if (edgeAim > edgeRange && edgePlayer > edgeRange)
-                        continue;
-
-                    float score = edgeAim <= edgeRange ? edgeAim : edgePlayer + edgeRange;
-                    if (score >= bestScore)
-                        continue;
-
-                    bestScore = score;
-                    bestEdge = edge;
-                    bestEdge.y = top;
-                    bestOutward = outward;
-                    stackOnWall = false;
-                    found = true;
-                }
-            }
-
-            if (!found)
+            if (piece == null)
                 return false;
 
-            if (stackOnWall)
-            {
-                position = bestEdge;
-                position.y = bestEdge.y + piece.Size.y * 0.5f + heightOffset;
-                rotation = Quaternion.Euler(0f, yawDegrees, 0f) * Quaternion.LookRotation(bestOutward, Vector3.up);
-                return true;
-            }
+            Vector3 feet = PlayerFeet();
+            DMBuildingGhost support = SelectHorizontalSupportForVertical(aimPoint, feet, piece, heightOffset);
+            if (support == null)
+                return false;
 
-            float thickness = Mathf.Max(0.1f, piece.Size.z);
-            position = bestEdge + bestOutward * (thickness * 0.5f);
-            position.y = bestEdge.y + piece.Size.y * 0.5f + heightOffset;
-            Quaternion seat = Quaternion.LookRotation(bestOutward, Vector3.up);
-            rotation = Quaternion.Euler(0f, yawDegrees, 0f) * seat;
+            float top = SurfaceTop(support);
+            if (!SupportsSnapStory(top, aimPoint, feet))
+                return false;
+
+            int sticky = instance != null ? instance.stickyVerticalSide : -1;
+            if (!TrySeatVerticalOnCornerEdge(
+                    support,
+                    aimPoint,
+                    top,
+                    piece,
+                    heightOffset,
+                    sticky,
+                    out position,
+                    out rotation,
+                    out int side))
+                return false;
+
+            if (instance != null)
+                instance.stickyVerticalSide = side;
             return true;
         }
 
@@ -478,7 +635,7 @@ namespace Project.Building
                     surface = top;
             }
 
-            return surface + (piece != null ? piece.Size.y : 0.4f) * 0.5f + lift;
+            return SeatCenterY(surface, piece, lift);
         }
 
         static bool TryGroundHit(Ray ray, out RaycastHit chosen)
@@ -506,6 +663,204 @@ namespace Project.Building
             }
 
             return found;
+        }
+
+        static void ResolveAimPoint(Ray ray, bool lookingUp, out Vector3 aim, out bool hasHit)
+        {
+            hasHit = false;
+            aim = PlayerFeet();
+            float maxDistance = DMBuildingGhostProfile.AimDistanceMeters;
+
+            if (TryHitBuiltAlongRay(ray, maxDistance, out RaycastHit builtHit))
+            {
+                aim = builtHit.point;
+                hasHit = true;
+                return;
+            }
+
+            if (TryGroundHit(ray, out RaycastHit groundHit))
+            {
+                aim = groundHit.point;
+                hasHit = true;
+                return;
+            }
+
+            if (lookingUp)
+            {
+                aim = ray.GetPoint(Mathf.Min(maxDistance, 12f));
+                hasHit = true;
+            }
+        }
+
+        static bool TryHitBuiltAlongRay(Ray ray, float maxDistance, out RaycastHit chosen)
+        {
+            chosen = default;
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Collider collider = hits[i].collider;
+                if (collider == null || collider.gameObject.layer == 8)
+                    continue;
+                DMBuildingGhost ghost = collider.GetComponentInParent<DMBuildingGhost>();
+                if (ghost == null || !ghost.Built)
+                    continue;
+                if (hits[i].distance >= best)
+                    continue;
+                best = hits[i].distance;
+                chosen = hits[i];
+                found = true;
+            }
+
+            return found;
+        }
+
+        static Vector3 SnapOnSupportGrid(DMBuildingGhost support, Vector3 aim, float module, DMBuildingPiece piece)
+        {
+            if (piece != null && UsesLargeModuleGrid(piece))
+                return SnapModule(aim, piece);
+
+            if (support == null)
+                return SnapModule(aim, piece);
+
+            Vector3 right = support.transform.right;
+            Vector3 forward = support.transform.forward;
+            Vector3 local = aim - support.transform.position;
+            float u = Vector3.Dot(local, right);
+            float v = Vector3.Dot(local, forward);
+            int iu = Mathf.RoundToInt(u / module);
+            int iv = Mathf.RoundToInt(v / module);
+            float y = aim.y;
+            Vector3 snapped = support.transform.position + right * (iu * module) + forward * (iv * module);
+            snapped.y = y;
+            return snapped;
+        }
+
+        const float LatticeEndBindMeters = 0.2f;
+        const float VerticalPeerBindMeters = 0.25f;
+
+        static void SeatHorizontalTile(
+            Vector3 aim,
+            DMBuildingPiece piece,
+            float storyTop,
+            float lift,
+            float module,
+            out Vector3 position)
+        {
+            float seatY = SeatCenterY(storyTop, piece, lift);
+            float search = module * 3f + DMBuildingGhostProfile.EdgeSnapRangeMeters;
+            position = SnapToOuterModuleGrid(aim, piece, seatY);
+            DMBuildingGhost reference = NearestHorizontalLatticeReference(aim, search);
+            if (reference != null)
+                position = ModuleCornerLattice.FromSupport(reference).SnapCellCenter(aim, seatY);
+
+            if (DMBuildingCatalog.IsCeiling(piece.Id))
+            {
+                DMBuildingGhost floorBelow = NearestFloorBelowCeiling(aim, seatY, search);
+                if (floorBelow != null)
+                    position = ModuleCornerLattice.FromSupport(floorBelow).SnapCellCenter(aim, seatY);
+            }
+        }
+
+        static DMBuildingGhost NearestFloorBelowCeiling(Vector3 aim, float ceilingSeatY, float searchRadius)
+        {
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            DMBuildingGhost best = null;
+            float bestDistance = searchRadius;
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost == null || !ghost.Built || !DMBuildingCatalog.IsFloor(ghost.PieceId))
+                    continue;
+                if (ghost.transform.position.y >= ceilingSeatY - 0.05f)
+                    continue;
+
+                float distance = FlatDistance(aim, HorizontalPlacementCenter(ghost));
+                if (distance >= bestDistance)
+                    continue;
+                bestDistance = distance;
+                best = ghost;
+            }
+
+            return best;
+        }
+
+        static DMBuildingGhost NearestWallTopRelaxed(Vector3 aim, Vector3 feet)
+        {
+            float range = DMBuildingGhostProfile.TopSnapRangeMeters * 1.35f;
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            DMBuildingGhost best = null;
+            float bestScore = range;
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost ghost = ghosts[i];
+                if (ghost == null || !ghost.Built || !DMBuildingCatalog.IsVerticalSupport(ghost.PieceId))
+                    continue;
+
+                Vector3 center = HorizontalPlacementCenter(ghost);
+                float aimDist = FlatDistance(aim, center);
+                float playerDist = FlatDistance(feet, center);
+                if (aimDist >= range && playerDist >= range)
+                    continue;
+
+                float score = Mathf.Min(aimDist, playerDist);
+                if (score >= bestScore)
+                    continue;
+                bestScore = score;
+                best = ghost;
+            }
+
+            return best;
+        }
+
+        static void FinalizeVerticalSeatFromCorners(
+            ref Vector3 seat,
+            float seatY,
+            Vector3 cornerA,
+            Vector3 cornerB,
+            Vector3 outward,
+            float halfThick)
+        {
+            outward.y = 0f;
+            if (outward.sqrMagnitude < 0.0001f)
+                return;
+
+            outward.Normalize();
+            Vector3 mid = (cornerA + cornerB) * 0.5f;
+            seat = mid + outward * halfThick;
+            seat.y = seatY;
+            float plane = Vector3.Dot(cornerA, outward);
+            seat += outward * (plane + halfThick - Vector3.Dot(seat, outward));
+        }
+
+        /// <summary>
+        /// Fills an upper-story bay using the nearest wall top and support-local module grid.
+        /// </summary>
+        static bool TrySnapHorizontalBay(
+            Vector3 aim,
+            DMBuildingPiece piece,
+            float lift,
+            float module,
+            out Vector3 position,
+            out int layer)
+        {
+            position = default;
+            layer = -1;
+            Vector3 feet = PlayerFeet();
+            DMBuildingGhost wall = NearestWallTopRelaxed(aim, feet);
+            if (wall == null)
+                return false;
+
+            float wallTop = SurfaceTop(wall);
+            layer = StackLayer(wallTop, feet.y);
+            if (layer < 1)
+                layer = 1;
+            if (!DMBuildingCatalog.IsStackLayerAllowed(layer))
+                return false;
+
+            SeatHorizontalTile(aim, piece, wallTop, lift, module, out position);
+            return true;
         }
 
         static bool TryHitGhost(out DMBuildingGhost ghost)
@@ -562,58 +917,64 @@ namespace Project.Building
             float module = ModuleFor(piece);
             bool ceiling = DMBuildingCatalog.IsCeiling(piece.Id);
             Vector3 feet = PlayerFeet();
+            float story = DMBuildingGhostProfile.LargeModuleMeters;
 
-            if (lookingUp || ceiling)
+            DMBuildingGhost foundation = NearestFoundation(aim, module * 2.5f);
+            float foundationTop = foundation != null ? SurfaceTop(foundation) : float.NegativeInfinity;
+
+            DMBuildingGhost wall = NearestWallTopRelaxed(aim, feet);
+            float wallTop = wall != null ? SurfaceTop(wall) : float.NegativeInfinity;
+
+            bool aimUpperStory = ceiling
+                || lookingUp
+                || aim.y >= foundationTop + story * 0.3f;
+
+            if (foundation != null && !ceiling && !aimUpperStory && SupportsSnapStory(foundationTop, aim, feet))
             {
-                DMBuildingGhost wall = NearestWallTop(aim, feet);
-                if (wall != null)
+                Vector3 flat = aim - HorizontalPlacementCenter(foundation);
+                flat.y = 0f;
+                if (flat.magnitude <= module * 1.15f
+                    || FlatDistance(feet, HorizontalPlacementCenter(foundation)) <= module * 1.15f)
                 {
-                    float wallTop = SurfaceTop(wall);
-                    layer = StackLayer(wallTop, feet.y);
-                    if (layer < 1)
-                        layer = 1;
-                    if (DMBuildingCatalog.IsStackLayerAllowed(layer))
-                    {
-                        position = wall.transform.position;
-                        position.y = wallTop + piece.Size.y * 0.5f + lift;
-                        position.x = SnapCenter(aim.x, module);
-                        position.z = SnapCenter(aim.z, module);
-                        return true;
-                    }
+                    layer = 0;
+                    SeatHorizontalTile(aim, piece, foundationTop, lift, module, out position);
+                    return true;
                 }
-
-                if (ceiling)
-                    return false;
             }
 
-            DMBuildingGhost foundation = NearestFoundation(aim, module);
-            if (foundation == null || !SameStory(SurfaceTop(foundation), feet.y))
-                return false;
+            if (wall != null && wallTop > foundationTop + story * 0.2f && aimUpperStory)
+            {
+                int upperLayer = StackLayer(wallTop, feet.y);
+                if (upperLayer < 1)
+                    upperLayer = 1;
 
-            Vector3 flat = aim - foundation.transform.position;
-            flat.y = 0f;
-            if (flat.magnitude > module * 0.6f && FlatDistance(feet, foundation.transform.position) > module * 0.6f)
-                return false;
+                if (DMBuildingCatalog.IsStackLayerAllowed(upperLayer))
+                {
+                    SeatHorizontalTile(aim, piece, wallTop, lift, module, out position);
+                    layer = upperLayer;
+                    return true;
+                }
+            }
 
-            layer = 0;
-            position = foundation.transform.position;
-            position.y = SurfaceTop(foundation) + piece.Size.y * 0.5f + lift;
-            return true;
+            if (ceiling && TrySnapHorizontalBay(aim, piece, lift, module, out position, out layer))
+                return true;
+
+            return false;
         }
 
         static DMBuildingGhost NearestFoundation(Vector3 aim, float range)
         {
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestDistance = range;
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost ghost = ghosts[i];
-                if (ghost == null || ghost.PieceId != "stone_foundation_4x4")
+                if (ghost == null || !ghost.Built || ghost.PieceId != "stone_foundation_4x4")
                     continue;
                 float distance = Vector2.Distance(
                     new Vector2(aim.x, aim.z),
-                    new Vector2(ghost.transform.position.x, ghost.transform.position.z));
+                    new Vector2(HorizontalPlacementCenter(ghost).x, HorizontalPlacementCenter(ghost).z));
                 if (distance >= bestDistance)
                     continue;
                 bestDistance = distance;
@@ -626,7 +987,7 @@ namespace Project.Building
         static DMBuildingGhost NearestWallTop(Vector3 aim, Vector3 feet)
         {
             float range = DMBuildingGhostProfile.TopSnapRangeMeters;
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestScore = range;
             for (int i = 0; i < ghosts.Length; i++)
@@ -636,7 +997,8 @@ namespace Project.Building
                     continue;
 
                 float top = SurfaceTop(ghost);
-                if (top < feet.y + 1.25f)
+                float story = DMBuildingGhostProfile.LargeModuleMeters;
+                if (top < feet.y + 0.35f && aim.y < top - story * 0.35f)
                     continue;
 
                 float aimDist = FlatDistance(aim, ghost.transform.position);
@@ -656,7 +1018,7 @@ namespace Project.Building
 
         static DMBuildingGhost NearestSameStorySupport(Vector3 feet, float range)
         {
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestDistance = range;
             for (int i = 0; i < ghosts.Length; i++)
@@ -680,6 +1042,28 @@ namespace Project.Building
         static bool SameStory(float surfaceTop, float feetY)
         {
             return surfaceTop >= feetY - 1.6f && surfaceTop <= feetY + 1.25f;
+        }
+
+        /// <summary>
+        /// Snap targets the support's top when the player or crosshair is on that story band.
+        /// </summary>
+        static bool SupportsSnapStory(float surfaceTop, Vector3 aim, Vector3 feet)
+        {
+            if (SameStory(surfaceTop, feet.y))
+                return true;
+
+            float story = DMBuildingGhostProfile.LargeModuleMeters;
+            float band = story * 0.55f;
+            if (Mathf.Abs(surfaceTop - aim.y) <= band)
+                return true;
+
+            return SameStory(surfaceTop, aim.y);
+        }
+
+        static float SeatCenterY(float supportTop, DMBuildingPiece piece, float lift)
+        {
+            float half = piece != null ? piece.Size.y * 0.5f : 0.2f;
+            return supportTop + half + lift;
         }
 
         static float SurfaceTop(DMBuildingGhost ghost)
@@ -726,22 +1110,423 @@ namespace Project.Building
             float span = piece == null ? 4f : Mathf.Max(piece.Size.x, piece.Size.z);
             float large = DMBuildingGhostProfile.LargeModuleMeters;
             float small = DMBuildingGhostProfile.SmallModuleMeters;
-            return span >= (large + small) * 0.5f ? large : small;
+            if (span < (large + small) * 0.5f)
+                return small;
+            return large;
+        }
+
+        static bool UsesLargeModuleGrid(DMBuildingPiece piece)
+        {
+            return ModuleFor(piece) >= DMBuildingGhostProfile.LargeModuleMeters - 0.01f;
         }
 
         /// <summary>
-        /// Centers sit half a module in from the lattice so neighboring edges meet at 2 m or 4 m.
+        /// 4 m pieces share one world lattice (SnapCenter). 2 m pieces only when footprint is below 3 m span.
         /// </summary>
         static Vector3 SnapModule(Vector3 point, DMBuildingPiece piece)
         {
-            float module = ModuleFor(piece);
-            return new Vector3(SnapCenter(point.x, module), point.y, SnapCenter(point.z, module));
+            return SnapToOuterModuleGrid(point, piece, point.y);
         }
 
         static float SnapCenter(float value, float module)
         {
-            float cell = Mathf.Floor(value / module) * module;
-            return cell + module * 0.5f;
+            float half = module * 0.5f;
+            return Mathf.Round((value - half) / module) * module + half;
+        }
+
+        static Vector3 PlacementCenter(DMBuildingGhost ghost)
+        {
+            if (ghost == null)
+                return Vector3.zero;
+
+            Renderer renderer = ghost.GetComponentInChildren<Renderer>();
+            return renderer != null ? renderer.bounds.center : ghost.transform.position;
+        }
+
+        /// <summary>XZ from renderer bounds; Y from root so story height stays stable.</summary>
+        static Vector3 HorizontalPlacementCenter(DMBuildingGhost ghost)
+        {
+            Vector3 center = PlacementCenter(ghost);
+            center.y = ghost.transform.position.y;
+            return center;
+        }
+
+        static DMBuildingGhost NearestOuterGridReference(Vector3 aim, float seatY, DMBuildingPiece piece)
+        {
+            float module = ModuleFor(piece);
+            float search = module * 3f + DMBuildingGhostProfile.EdgeSnapRangeMeters;
+            return NearestHorizontalLatticeReference(aim, search);
+        }
+
+        static float VerticalPieceHalfThickness(DMBuildingPiece piece)
+        {
+            if (piece == null)
+                return 0.15f;
+
+            return Mathf.Min(piece.Size.x, piece.Size.z) * 0.5f;
+        }
+
+        /// <summary>
+        /// 4 m snap lattice: outer corner origin + integer steps. Horizontals use cell center (corner + half module).
+        /// Verticals use pairs of cell corner vertices per edge.
+        /// </summary>
+        struct ModuleCornerLattice
+        {
+            public Vector3 Origin;
+            public Vector3 Right;
+            public Vector3 Forward;
+            public float Module;
+
+            public static ModuleCornerLattice FromSupport(DMBuildingGhost support)
+            {
+                GetCatalogFootprint(support, out Vector3 center, out float halfRight, out float halfForward);
+                return new ModuleCornerLattice
+                {
+                    Origin = center - support.transform.right * halfRight - support.transform.forward * halfForward,
+                    Right = support.transform.right,
+                    Forward = support.transform.forward,
+                    Module = DMBuildingGhostProfile.LargeModuleMeters,
+                };
+            }
+
+            public Vector3 Corner(int iu, int iv)
+            {
+                return Origin + Right * (iu * Module) + Forward * (iv * Module);
+            }
+
+            public void SnapCornerIndices(Vector3 aim, out int iu, out int iv)
+            {
+                Vector3 local = aim - Origin;
+                float u = Vector3.Dot(local, Right);
+                float v = Vector3.Dot(local, Forward);
+                iu = Mathf.RoundToInt(u / Module);
+                iv = Mathf.RoundToInt(v / Module);
+            }
+
+            public void PickEdgeFromCellCenter(
+                Vector3 cellCenter,
+                Vector3 aim,
+                int stickySide,
+                out Vector3 cornerA,
+                out Vector3 cornerB,
+                out Vector3 outward,
+                out Vector3 tangent,
+                out int side)
+            {
+                GetCellCorners(cellCenter, out Vector3 sw, out Vector3 se, out Vector3 ne, out Vector3 nw);
+                Vector3 local = aim - cellCenter;
+                local.y = 0f;
+                float alongRight = Vector3.Dot(local, Right);
+                float alongForward = Vector3.Dot(local, Forward);
+                float bias = Module * 0.04f;
+
+                side = 0;
+                if (Mathf.Abs(alongRight) >= Mathf.Abs(alongForward))
+                    side = alongRight >= 0f ? 1 : 3;
+                else
+                    side = alongForward >= 0f ? 2 : 0;
+
+                if (stickySide >= 0 && Mathf.Abs(Mathf.Abs(alongRight) - Mathf.Abs(alongForward)) <= bias)
+                    side = stickySide;
+
+                switch (side)
+                {
+                    case 0:
+                        cornerA = sw;
+                        cornerB = se;
+                        tangent = Right;
+                        outward = -Forward;
+                        break;
+                    case 1:
+                        cornerA = se;
+                        cornerB = ne;
+                        tangent = Forward;
+                        outward = Right;
+                        break;
+                    case 2:
+                        cornerA = ne;
+                        cornerB = nw;
+                        tangent = -Right;
+                        outward = Forward;
+                        break;
+                    default:
+                        cornerA = nw;
+                        cornerB = sw;
+                        tangent = -Forward;
+                        outward = -Right;
+                        break;
+                }
+            }
+
+            public void PickEdgeFromCorner(int iu, int iv, Vector3 aim, out Vector3 cornerA, out Vector3 cornerB, out Vector3 tangent)
+            {
+                Vector3 anchor = Corner(iu, iv);
+                Vector3 local = aim - anchor;
+                local.y = 0f;
+                float alongRight = Vector3.Dot(local, Right);
+                float alongForward = Vector3.Dot(local, Forward);
+
+                if (Mathf.Abs(alongRight) >= Mathf.Abs(alongForward))
+                {
+                    if (alongRight >= 0f)
+                    {
+                        tangent = Right;
+                        cornerA = anchor;
+                        cornerB = Corner(iu + 1, iv);
+                    }
+                    else
+                    {
+                        tangent = -Right;
+                        cornerA = Corner(iu - 1, iv);
+                        cornerB = anchor;
+                    }
+                }
+                else if (alongForward >= 0f)
+                {
+                    tangent = Forward;
+                    cornerA = anchor;
+                    cornerB = Corner(iu, iv + 1);
+                }
+                else
+                {
+                    tangent = -Forward;
+                    cornerA = Corner(iu, iv - 1);
+                    cornerB = anchor;
+                }
+            }
+
+            public Vector3 SnapCellCenter(Vector3 aim, float seatY)
+            {
+                float half = Module * 0.5f;
+                Vector3 local = aim - Origin;
+                float u = Vector3.Dot(local, Right);
+                float v = Vector3.Dot(local, Forward);
+                int iu = Mathf.RoundToInt((u - half) / Module);
+                int iv = Mathf.RoundToInt((v - half) / Module);
+                Vector3 snapped = Origin + Right * (half + iu * Module) + Forward * (half + iv * Module);
+                snapped.y = seatY;
+                return snapped;
+            }
+
+            public void GetCellCorners(Vector3 cellCenter, out Vector3 sw, out Vector3 se, out Vector3 ne, out Vector3 nw)
+            {
+                float half = Module * 0.5f;
+                sw = cellCenter - Right * half - Forward * half;
+                se = cellCenter + Right * half - Forward * half;
+                ne = cellCenter + Right * half + Forward * half;
+                nw = cellCenter - Right * half + Forward * half;
+            }
+        }
+
+        static Quaternion RotationForVerticalEdgePiece(Vector3 outward, Vector3 tangent)
+        {
+            outward.y = 0f;
+            tangent.y = 0f;
+            if (outward.sqrMagnitude < 0.0001f)
+                return Quaternion.identity;
+
+            outward.Normalize();
+            tangent.Normalize();
+            // LookRotation: local Z+ = outward (thin axis), local X+ = cross(up, outward) when aligned with edge run.
+            Quaternion rotation = Quaternion.LookRotation(outward, Vector3.up);
+            Vector3 widthAxis = rotation * Vector3.right;
+            if (Vector3.Dot(widthAxis, tangent) < 0f)
+                rotation *= Quaternion.Euler(0f, 180f, 0f);
+            return rotation;
+        }
+
+        static Vector3 OuterCornerOrigin(DMBuildingGhost ghost)
+        {
+            return ModuleCornerLattice.FromSupport(ghost).Origin;
+        }
+
+        static Vector3 SnapLargeModuleHorizontalCenter(Vector3 aim, float seatY, DMBuildingGhost reference)
+        {
+            return ModuleCornerLattice.FromSupport(reference).SnapCellCenter(aim, seatY);
+        }
+
+        static void GetCatalogFootprint(DMBuildingGhost ghost, out Vector3 center, out float halfRight, out float halfForward)
+        {
+            center = ghost.transform.position;
+            Vector3 ext = HalfExtents(ghost);
+            halfRight = ext.x;
+            halfForward = ext.z;
+        }
+
+        static bool TrySeatVerticalOnCornerEdge(
+            DMBuildingGhost support,
+            Vector3 aim,
+            float top,
+            DMBuildingPiece piece,
+            float heightOffset,
+            int stickySide,
+            out Vector3 seat,
+            out Quaternion rotation,
+            out int side)
+        {
+            seat = default;
+            rotation = Quaternion.identity;
+            side = -1;
+            if (support == null || piece == null)
+                return false;
+
+            float halfThick = VerticalPieceHalfThickness(piece);
+            float seatY = SeatCenterY(top, piece, heightOffset);
+            ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(support);
+            Vector3 cellCenter = lattice.SnapCellCenter(aim, seatY);
+            lattice.PickEdgeFromCellCenter(
+                cellCenter,
+                aim,
+                stickySide,
+                out Vector3 cornerA,
+                out Vector3 cornerB,
+                out Vector3 outward,
+                out Vector3 tangent,
+                out side);
+
+            FinalizeVerticalSeatFromCorners(ref seat, seatY, cornerA, cornerB, outward, halfThick);
+            rotation = RotationForVerticalEdgePiece(outward, tangent);
+            return true;
+        }
+
+        static bool TrySeatVerticalOnCornerEdge(
+            DMBuildingGhost support,
+            Vector3 aim,
+            float top,
+            DMBuildingPiece piece,
+            float heightOffset,
+            out Vector3 seat,
+            out Vector3 outward,
+            out Vector3 tangent,
+            out Vector3 cornerA,
+            out Vector3 cornerB)
+        {
+            if (!TrySeatVerticalOnCornerEdge(
+                    support,
+                    aim,
+                    top,
+                    piece,
+                    heightOffset,
+                    -1,
+                    out seat,
+                    out Quaternion rotation,
+                    out _))
+            {
+                outward = Vector3.forward;
+                tangent = Vector3.right;
+                cornerA = default;
+                cornerB = default;
+                return false;
+            }
+
+            outward = rotation * Vector3.forward;
+            tangent = rotation * Vector3.right;
+            ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(support);
+            float seatY = SeatCenterY(top, piece, heightOffset);
+            Vector3 cellCenter = lattice.SnapCellCenter(aim, seatY);
+            lattice.GetCellCorners(cellCenter, out Vector3 sw, out Vector3 se, out Vector3 ne, out Vector3 nw);
+            lattice.PickEdgeFromCellCenter(cellCenter, aim, -1, out cornerA, out cornerB, out _, out _, out _);
+            return true;
+        }
+
+        static Vector3 VerticalRunEndBottomOuter(Vector3 seat, Quaternion rotation, DMBuildingPiece piece, bool maxTangentEnd)
+        {
+            float halfW = piece.Size.x * 0.5f;
+            float halfH = piece.Size.y * 0.5f;
+            float halfT = VerticalPieceHalfThickness(piece);
+            float x = maxTangentEnd ? halfW : -halfW;
+            return seat + rotation * new Vector3(x, -halfH, halfT);
+        }
+
+        static void SnapVerticalRunEndsToLattice(ref Vector3 seat, Quaternion rotation, DMBuildingPiece piece, Vector3 cornerA, Vector3 cornerB)
+        {
+            if (piece == null)
+                return;
+
+            float bind = LatticeEndBindMeters;
+            Vector3 endMin = VerticalRunEndBottomOuter(seat, rotation, piece, false);
+            Vector3 endMax = VerticalRunEndBottomOuter(seat, rotation, piece, true);
+
+            Vector3 targetA = cornerA;
+            targetA.y = endMin.y;
+            Vector3 targetB = cornerB;
+            targetB.y = endMin.y;
+
+            if (FlatDistance(endMin, targetA) <= bind)
+                seat += targetA - endMin;
+            else if (FlatDistance(endMin, targetB) <= bind)
+                seat += targetB - endMin;
+
+            endMax = VerticalRunEndBottomOuter(seat, rotation, piece, true);
+            endMin = VerticalRunEndBottomOuter(seat, rotation, piece, false);
+            targetA.y = endMax.y;
+            targetB.y = endMax.y;
+
+            if (FlatDistance(endMax, targetB) <= bind)
+                seat += targetB - endMax;
+            else if (FlatDistance(endMax, targetA) <= bind)
+                seat += targetA - endMax;
+        }
+
+        static Vector3 VerticalRunEndBottomOuterFromGhost(DMBuildingGhost ghost, bool maxTangentEnd)
+        {
+            Vector3 ext = HalfExtents(ghost);
+            float x = maxTangentEnd ? ext.x : -ext.x;
+            return ghost.transform.position + ghost.transform.rotation * new Vector3(x, -ext.y, ext.z);
+        }
+
+        static void LockVerticalSeatToBuiltPeers(ref Vector3 seat, Quaternion rotation, DMBuildingPiece piece)
+        {
+            if (piece == null)
+                return;
+
+            float bind = VerticalPeerBindMeters;
+            Vector3 endMin = VerticalRunEndBottomOuter(seat, rotation, piece, false);
+            Vector3 endMax = VerticalRunEndBottomOuter(seat, rotation, piece, true);
+
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                DMBuildingGhost peer = ghosts[i];
+                if (peer == null || !peer.Built || !DMBuildingCatalog.IsVerticalSupport(peer.PieceId))
+                    continue;
+
+                Vector3 peerMin = VerticalRunEndBottomOuterFromGhost(peer, false);
+                Vector3 peerMax = VerticalRunEndBottomOuterFromGhost(peer, true);
+
+                if (FlatDistance(endMin, peerMin) <= bind)
+                    seat += peerMin - endMin;
+                else if (FlatDistance(endMin, peerMax) <= bind)
+                    seat += peerMax - endMin;
+
+                endMax = VerticalRunEndBottomOuter(seat, rotation, piece, true);
+                endMin = VerticalRunEndBottomOuter(seat, rotation, piece, false);
+
+                if (FlatDistance(endMax, peerMax) <= bind)
+                    seat += peerMax - endMax;
+                else if (FlatDistance(endMax, peerMin) <= bind)
+                    seat += peerMin - endMax;
+            }
+        }
+
+        static Vector3 SnapToOuterModuleGrid(Vector3 aim, DMBuildingPiece piece, float seatY)
+        {
+            float module = ModuleFor(piece);
+            float half = module * 0.5f;
+
+            if (UsesLargeModuleGrid(piece))
+            {
+                DMBuildingGhost reference = NearestOuterGridReference(aim, seatY, piece);
+                if (reference != null)
+                    return SnapLargeModuleHorizontalCenter(aim, seatY, reference);
+
+                return new Vector3(
+                    Mathf.Round((aim.x - half) / module) * module + half,
+                    seatY,
+                    Mathf.Round((aim.z - half) / module) * module + half);
+            }
+
+            return new Vector3(SnapCenter(aim.x, module), seatY, SnapCenter(aim.z, module));
         }
 
         static bool TrySnapModuleToNeighbor(Vector3 aim, DMBuildingPiece piece, float lift, out Vector3 position)
@@ -752,37 +1537,83 @@ namespace Project.Building
             if (support == null)
                 return false;
 
-            Vector3 flat = aim - support.transform.position;
+            Vector3 flat = aim - HorizontalPlacementCenter(support);
             flat.y = 0f;
             float distance = flat.magnitude;
-            if (distance < module * 0.45f)
+
+            if (UsesLargeModuleGrid(piece))
             {
-                position = support.transform.position;
-                position.y = SurfaceTop(support) + piece.Size.y * 0.5f + lift;
+                float seatY = HorizontalSeatCenterY(support, lift);
+                position = SnapToOuterModuleGrid(aim, piece, seatY);
+                if (DMBuildingCatalog.IsFoundation(piece.Id))
+                {
+                    float cell = FlatDistance(position, HorizontalPlacementCenter(support));
+                    return cell >= module * 0.55f;
+                }
+
+                if (distance < module * 0.45f)
+                {
+                    position = SnapToOuterModuleGrid(HorizontalPlacementCenter(support), piece, SeatCenterY(SurfaceTop(support), piece, lift));
+                    return true;
+                }
+
                 return true;
             }
 
-            Vector3 axis = Mathf.Abs(flat.x) >= Mathf.Abs(flat.z) ? Vector3.right : Vector3.forward;
-            if (Vector3.Dot(axis, flat) < 0f)
-                axis = -axis;
-            position = support.transform.position + axis * module;
-            position.y = support.transform.position.y + lift;
-            return true;
+            if (distance < module * 0.45f && !DMBuildingCatalog.IsFoundation(piece.Id))
+            {
+                position = support.transform.position;
+                position.y = SeatCenterY(SurfaceTop(support), piece, lift);
+                return true;
+            }
+
+            Vector3 right = support.transform.right;
+            Vector3 forward = support.transform.forward;
+            Vector3 supportCenter = HorizontalPlacementCenter(support);
+            Vector3[] neighbors =
+            {
+                supportCenter + right * module,
+                supportCenter - right * module,
+                supportCenter + forward * module,
+                supportCenter - forward * module,
+            };
+
+            float bestAim = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < neighbors.Length; i++)
+            {
+                Vector3 candidate = neighbors[i];
+                candidate.y = HorizontalSeatCenterY(support, lift);
+                float aimDist = FlatDistance(aim, candidate);
+                if (aimDist >= bestAim)
+                    continue;
+                bestAim = aimDist;
+                position = candidate;
+                found = true;
+            }
+
+            return found;
+        }
+
+        /// <summary>Same-story modules share pivot height; only floors/ceilings stack on SurfaceTop.</summary>
+        static float HorizontalSeatCenterY(DMBuildingGhost support, float lift)
+        {
+            return support.transform.position.y + lift;
         }
 
         static DMBuildingGhost NearestSupport(Vector3 aim, float range)
         {
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestDistance = range;
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost ghost = ghosts[i];
-                if (ghost == null || !DMBuildingCatalog.IsEdgeSupport(ghost.PieceId))
+                if (ghost == null || !ghost.Built || !DMBuildingCatalog.IsEdgeSupport(ghost.PieceId))
                     continue;
                 float distance = Vector2.Distance(
                     new Vector2(aim.x, aim.z),
-                    new Vector2(ghost.transform.position.x, ghost.transform.position.z));
+                    new Vector2(HorizontalPlacementCenter(ghost).x, HorizontalPlacementCenter(ghost).z));
                 if (distance >= bestDistance)
                     continue;
                 bestDistance = distance;
@@ -813,7 +1644,7 @@ namespace Project.Building
                 DMBuildingGhost ghost = collider.GetComponentInParent<DMBuildingGhost>();
                 if (ghost != null)
                 {
-                    if (ghost.PieceId == pieceId)
+                    if (ghost.PieceId == pieceId && OccupiesSameModuleCell(center, ghost, size))
                         return true;
                     continue;
                 }
@@ -824,16 +1655,37 @@ namespace Project.Building
             return false;
         }
 
+        static bool IsModuleGridDistance(float distance, float module)
+        {
+            if (module <= 0.01f)
+                return false;
+            if (distance <= module * 0.12f)
+                return true;
+
+            float steps = distance / module;
+            int rounded = Mathf.RoundToInt(steps);
+            return rounded >= 1 && Mathf.Abs(steps - rounded) <= 0.12f;
+        }
+
+        static bool OccupiesSameModuleCell(Vector3 center, DMBuildingGhost existing, Vector3 size)
+        {
+            if (existing == null)
+                return false;
+
+            float module = Mathf.Max(size.x, size.z);
+            return FlatDistance(center, HorizontalPlacementCenter(existing)) < module * 0.42f;
+        }
+
         static DMBuildingGhost FindDoorFrame(Vector3 near)
         {
             Vector3 feet = PlayerFeet();
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestDistance = DMBuildingGhostProfile.DoorFrameRangeMeters;
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost frame = ghosts[i];
-                if (frame == null || frame.PieceId != DMBuildingCatalog.DoorFrameId)
+                if (frame == null || !frame.Built || frame.PieceId != DMBuildingCatalog.DoorFrameId)
                     continue;
 
                 Renderer renderer = frame.GetComponentInChildren<Renderer>();
@@ -863,7 +1715,7 @@ namespace Project.Building
             marker.PieceId = piece.Id;
             marker.StoneCost = piece.StoneCost;
             marker.PaidItem = paid;
-            marker.Built = false;
+            marker.Built = true;
             marker.LocalHalfExtents = piece.Size * 0.5f;
             if (piece.Id == "stone_door_basic")
                 marker.MaterialVariantId = "door";
@@ -876,16 +1728,9 @@ namespace Project.Building
             if (piece.Id == "stone_door_basic")
                 ghostObject.AddComponent<DMBuildingDoor>();
 
-            ApplyTint(ghostObject, GhostMaterial(), keepGlass: true);
+            ApplyBuiltMaterial(marker);
+            InvalidateBuiltGhostCache();
             return marker;
-        }
-
-        static void Finish(DMBuildingGhost ghost)
-        {
-            if (ghost == null)
-                return;
-            ghost.Built = true;
-            ApplyBuiltMaterial(ghost);
         }
 
         /// <summary>
@@ -939,23 +1784,6 @@ namespace Project.Building
             return keyboard != null && keyboard.mKey.wasPressedThisFrame;
         }
 
-        static bool TryResolveBuildTarget(out DMBuildingGhost ghost)
-        {
-            if (instance != null && instance.lastPlaced != null && !instance.lastPlaced.Built)
-            {
-                ghost = instance.lastPlaced;
-                return true;
-            }
-
-            string selectedId = DMBuildingMode.SelectedPiece != null ? DMBuildingMode.SelectedPiece.Id : null;
-            ghost = NearestGhost(selectedId, 0);
-            if (ghost != null)
-                return true;
-
-            ghost = NearestGhost(null, 0);
-            return ghost != null;
-        }
-
         static bool TryResolveDestroyTarget(out DMBuildingGhost ghost)
         {
             if (TryHitGhost(out ghost))
@@ -982,7 +1810,7 @@ namespace Project.Building
 
             Vector3 origin = camera.transform.position;
             float range = DMBuildingGhostProfile.AimDistanceMeters;
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             DMBuildingGhost best = null;
             float bestDistance = range;
             for (int i = 0; i < ghosts.Length; i++)
@@ -1009,7 +1837,7 @@ namespace Project.Building
 
         public static void DiscardUnbuiltGhosts()
         {
-            DMBuildingGhost[] ghosts = FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            DMBuildingGhost[] ghosts = BuiltGhosts();
             for (int i = 0; i < ghosts.Length; i++)
             {
                 if (ghosts[i] != null && !ghosts[i].Built)
@@ -1020,7 +1848,6 @@ namespace Project.Building
                 return;
 
             instance.buildHold = 0f;
-            instance.buildTarget = null;
             DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
         }
 
@@ -1029,6 +1856,7 @@ namespace Project.Building
             if (ghost == null)
                 return;
             DMBuildingCatalog.RefundStone(ghost.PaidItem, ghost.StoneCost);
+            InvalidateBuiltGhostCache();
             Destroy(ghost.gameObject);
         }
 
@@ -1066,21 +1894,11 @@ namespace Project.Building
 
             bool shift = Keyboard.current != null
                 && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
-            if (DMBuildingMode.MaterialsOpen && !shift)
-            {
-                DMUiToolkitBuildingHotbar.NudgeMenu(-notches);
+            if (!shift)
                 return;
-            }
 
-            if (shift)
-            {
-                float limit = DMBuildingGhostProfile.MaxHeightOffsetMeters;
-                heightOffset = Mathf.Clamp(heightOffset + notches * DMBuildingGhostProfile.HeightStepMeters, -limit, limit);
-                return;
-            }
-
-            float step = YawStep();
-            yawDegrees = Mathf.Repeat(yawDegrees + notches * step, 360f);
+            float limit = DMBuildingGhostProfile.MaxHeightOffsetMeters;
+            heightOffset = Mathf.Clamp(heightOffset + notches * DMBuildingGhostProfile.HeightStepMeters, -limit, limit);
         }
 
         static float YawStep()
@@ -1129,17 +1947,54 @@ namespace Project.Building
 
         static void ApplyProfileColors()
         {
-            Color ghost = DMBuildingGhostProfile.ResolveGhostColor();
-            Paint(GhostMaterial(), ghost);
+            Material validMat = ResolvePreviewMaterial(
+                ref ghostMaterial,
+                ref validGhostMaterialSourceId,
+                DMBuildingGhostProfile.ValidGhostMaterialTemplate,
+                "DM_BuildGhost");
+            Material blockedMat = ResolvePreviewMaterial(
+                ref blockedMaterial,
+                ref blockedGhostMaterialSourceId,
+                DMBuildingGhostProfile.BlockedGhostMaterialTemplate,
+                "DM_BuildGhost_Blocked");
+
+            Paint(validMat, DMBuildingGhostProfile.ResolveGhostColor());
             Paint(SolidMaterial(), DMBuildingGhostProfile.ResolveFinishedColor());
             Paint(GlassMaterial(), DMBuildingGhostProfile.ResolveGlassColor());
             Color ghostGlass = DMBuildingGhostProfile.ResolveGlassColor();
             ghostGlass.a *= 0.55f;
             Paint(GhostGlassMaterial(), ghostGlass);
+            Paint(blockedMat, DMBuildingGhostProfile.ResolveBlockedGhostColor());
+        }
 
-            Color blocked = DarkMatterGenesisUiPalette.DeepMagenta;
-            blocked.a = ghost.a;
-            Paint(BlockedMaterial(), blocked);
+        static Material ResolvePreviewMaterial(
+            ref Material runtime,
+            ref int cachedSourceId,
+            Material template,
+            string fallbackName)
+        {
+            int sourceId = template != null ? template.GetEntityId().GetHashCode() : 0;
+            if (runtime == null || cachedSourceId != sourceId)
+            {
+                if (runtime != null)
+                {
+                    if (Application.isPlaying)
+                        Object.Destroy(runtime);
+                    else
+                        Object.DestroyImmediate(runtime);
+                }
+
+                cachedSourceId = sourceId;
+                runtime = template != null
+                    ? new Material(template)
+                    {
+                        name = fallbackName + "_Inst",
+                        hideFlags = HideFlags.HideAndDontSave,
+                    }
+                    : CreateMaterial(fallbackName);
+            }
+
+            return runtime;
         }
 
         static Material GhostMaterial()
