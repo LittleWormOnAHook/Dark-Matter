@@ -96,6 +96,10 @@ namespace Project.Building
         public float doorSwingDegrees = 90f;
         public float doorSwingSeconds = 0.35f;
         public float doorInteractRangeMeters = 2.4f;
+        [Tooltip("Kit phase 3: both leaves of an 8 m gate swing this far.")]
+        public float gateSwingDegrees = 90f;
+        [Tooltip("Kit phase 3: gates are heavy, so they swing slower than doors.")]
+        public float gateSwingSeconds = 1.4f;
 
         static DMBuildingGhostProfile live;
 
@@ -170,6 +174,8 @@ namespace Project.Building
         public static float DoorSwingDegrees => Positive(Live != null ? Live.doorSwingDegrees : 90f, 90f);
         public static float DoorSwingSeconds => Positive(Live != null ? Live.doorSwingSeconds : 0.35f, 0.35f);
         public static float DoorInteractRangeMeters => Positive(Live != null ? Live.doorInteractRangeMeters : 2.4f, 2.4f);
+        public static float GateSwingDegrees => Positive(Live != null ? Live.gateSwingDegrees : 90f, 90f);
+        public static float GateSwingSeconds => Positive(Live != null ? Live.gateSwingSeconds : 1.4f, 1.4f);
 
         public static string BuildingLayerName => Live != null && !string.IsNullOrWhiteSpace(Live.buildingLayerName) ? Live.buildingLayerName.Trim() : "Building";
         public static int BuiltAimLayersRaw => Live != null ? Live.builtAimLayers.value : 0;

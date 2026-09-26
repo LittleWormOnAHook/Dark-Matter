@@ -378,11 +378,11 @@ namespace Project.Building
 
             if (piece.Snap == DMBuildingSnap.Door)
             {
-                DMBuildingGhost frame = FindDoorFrame(aim);
+                DMBuildingGhost frame = FindDoorFrame(aim, piece);
                 if (frame == null)
                     return false;
 
-                SeatDoor(frame, lift, out position, out rotation);
+                SeatDoor(frame, piece, lift, out position, out rotation);
                 canCommit = CanAffordAndClear(piece, position, rotation);
                 return true;
             }
@@ -730,7 +730,7 @@ namespace Project.Building
         {
             if (piece.Snap == DMBuildingSnap.Door)
             {
-                DMBuildingGhost frame = FindDoorFrame(position);
+                DMBuildingGhost frame = FindDoorFrame(position, piece);
                 return frame != null && frame.Built;
             }
 
@@ -983,7 +983,7 @@ namespace Project.Building
             return true;
         }
 
-        static void SeatDoor(DMBuildingGhost frame, float lift, out Vector3 position, out Quaternion rotation)
+        static void SeatDoor(DMBuildingGhost frame, DMBuildingPiece door, float lift, out Vector3 position, out Quaternion rotation)
         {
             rotation = frame.transform.rotation;
             float nudge = DMBuildingGhostProfile.DoorSeatDropMeters - DMBuildingCatalog.DoorSeatDrop;
@@ -992,7 +992,8 @@ namespace Project.Building
             {
                 Bounds bounds = renderer.bounds;
                 position = bounds.center;
-                position.y = bounds.min.y + DMBuildingCatalog.DoorHeight * 0.5f - nudge + lift;
+                float doorHeight = door != null ? door.Size.y : DMBuildingCatalog.DoorHeight;
+                position.y = bounds.min.y + doorHeight * 0.5f - nudge + lift;
                 return;
             }
 
@@ -2031,6 +2032,8 @@ namespace Project.Building
                 {
                     if (DMBuildingCatalog.SameShape(ghost.PieceId, pieceId) && OccupiesSameModuleCell(center, ghost, size))
                         return true;
+                    if (Kit3OverlapBlocks(ghost, center, size, rotation, pieceId))
+                        return true;
                     continue;
                 }
 
@@ -2061,7 +2064,7 @@ namespace Project.Building
             return FlatDistance(center, HorizontalPlacementCenter(existing)) < module * 0.42f;
         }
 
-        static DMBuildingGhost FindDoorFrame(Vector3 near)
+        static DMBuildingGhost FindDoorFrame(Vector3 near, DMBuildingPiece door)
         {
             Vector3 feet = PlayerFeet();
             DMBuildingGhost[] ghosts = BuiltGhosts();
@@ -2070,7 +2073,9 @@ namespace Project.Building
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost frame = ghosts[i];
-                if (frame == null || !frame.Built || !DMBuildingCatalog.IsDoorFrame(frame.PieceId))
+                if (frame == null || !frame.Built)
+                    continue;
+                if (door != null ? !DMBuildingCatalog.FrameFits(door.Id, frame.PieceId) : !DMBuildingCatalog.IsDoorFrame(frame.PieceId))
                     continue;
 
                 Renderer renderer = frame.GetComponentInChildren<Renderer>();

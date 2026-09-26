@@ -65,6 +65,8 @@ MonoBehaviour:
     spiralSteps: 16
     ladderRungs: 12
     rooftopEdgeHeightMeters: 0.6
+    doorLeafGapMeters: 0.03
+    gateCrossbars: 3
   parts:
   - id: stone_foundation_4x4
     displayName: Foundation
@@ -684,6 +686,78 @@ MonoBehaviour:
     category: 4
     prefab: {fileID: 5726224393698788877, guid: 86d5ca94c7d728b4593c6b82fb22ecdd, type: 3}
     icon: {fileID: 2800000, guid: 9716f5ab5f5c82c46970e9daf20bf92f, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_door_frame_double_4x4
+    displayName: Double Door Frame
+    shape: 46
+    category: 4
+    prefab: {fileID: 47247407968483972, guid: b05730907c030ec4bbce99afa4ce5476, type: 3}
+    icon: {fileID: 2800000, guid: 9e1a3febdb115654c845c0cef602c1a7, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_door_double
+    displayName: Double Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 8451187533145080139, guid: b0483cfffb826da40924aa8c26e68e74, type: 3}
+    icon: {fileID: 2800000, guid: 1a9ce06285ce5c441ba2a20b8dc4d137, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_gate_frame_8x8
+    displayName: Gate Frame (8 m)
+    shape: 48
+    category: 4
+    prefab: {fileID: 4126226986376275825, guid: 1974f08b7ef1384499c7bd67181d07b8, type: 3}
+    icon: {fileID: 2800000, guid: 8765eaef7b5ba3a44a6eef86afd1d348, type: 3}
+    cost: 12
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_gate_8x8
+    displayName: Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 5846447792463633878, guid: 906ec593a88f1a94a92b313d66d1d975, type: 3}
+    icon: {fileID: 2800000, guid: 0b747dbfbb7dbd247b99420b26fec302, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_foundation_half_4x2
+    displayName: Half Foundation
+    shape: 50
+    category: 0
+    prefab: {fileID: 7191871283241102592, guid: 27e9d9fcf9b7ef3479b92c3ba1e56a79, type: 3}
+    icon: {fileID: 2800000, guid: 624eee9e0450a964482b7d5f07cd65df, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_foundation_quarter_2x2
+    displayName: Quarter Foundation
+    shape: 51
+    category: 0
+    prefab: {fileID: 3888495337295360414, guid: 55358b114caa5c74d92c4507bb550a9c, type: 3}
+    icon: {fileID: 2800000, guid: 036a8102c2ff2df4c8472756487c70ea, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1

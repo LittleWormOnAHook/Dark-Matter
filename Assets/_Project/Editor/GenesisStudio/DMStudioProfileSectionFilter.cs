@@ -95,7 +95,9 @@ namespace Project.EditorTools.GenesisStudio
         {
             "doorSwingDegrees",
             "doorSwingSeconds",
-            "doorInteractRangeMeters"
+            "doorInteractRangeMeters",
+            "gateSwingDegrees",
+            "gateSwingSeconds"
         };
 
         private static readonly string[] SurvivalFields =

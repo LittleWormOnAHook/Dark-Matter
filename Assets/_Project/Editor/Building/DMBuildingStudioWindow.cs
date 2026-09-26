@@ -189,6 +189,8 @@ namespace Project.EditorTools.Building
             profile.doorSwingDegrees = EditorGUILayout.FloatField("Swing degrees", profile.doorSwingDegrees);
             profile.doorSwingSeconds = EditorGUILayout.FloatField("Swing duration (s)", profile.doorSwingSeconds);
             profile.doorInteractRangeMeters = EditorGUILayout.FloatField("Interact range (m)", profile.doorInteractRangeMeters);
+            profile.gateSwingDegrees = EditorGUILayout.FloatField("Gate swing degrees", profile.gateSwingDegrees);
+            profile.gateSwingSeconds = EditorGUILayout.FloatField("Gate swing duration (s)", profile.gateSwingSeconds);
         }
 
         void DrawCreationFx()

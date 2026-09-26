@@ -69,6 +69,8 @@ MonoBehaviour:
     spiralSteps: 16
     ladderRungs: 12
     rooftopEdgeHeightMeters: 0.6
+    doorLeafGapMeters: 0.03
+    gateCrossbars: 3
   parts:
   - id: iron_foundation_4x4
     displayName: Foundation
@@ -676,6 +678,78 @@ MonoBehaviour:
     category: 4
     prefab: {fileID: 3184824710238057349, guid: fea2378fa765705498fe8473baf04dfe, type: 3}
     icon: {fileID: 2800000, guid: ec55218d290797242871a7b4113f3774, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_door_frame_double_4x4
+    displayName: Double Door Frame
+    shape: 46
+    category: 4
+    prefab: {fileID: 1247591276082251854, guid: d2b7cb5008db6eb448fd2e534bd939b6, type: 3}
+    icon: {fileID: 2800000, guid: 556d69b3aea77e843a7063c710eba915, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_door_double
+    displayName: Double Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 1914790974569271942, guid: 9a3a631c6da164d4dac7b80635ae3019, type: 3}
+    icon: {fileID: 2800000, guid: 767e0bd138fe8684b9d5f97b8f3f3fbf, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_gate_frame_8x8
+    displayName: Gate Frame (8 m)
+    shape: 48
+    category: 4
+    prefab: {fileID: 6597082322004320074, guid: 59216009862c37e4494926488b2cc24b, type: 3}
+    icon: {fileID: 2800000, guid: 4ba9949e6b0e57b4cabf8b6cb351a1d7, type: 3}
+    cost: 12
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_gate_8x8
+    displayName: Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 7220295279321679890, guid: 5a6fe3cdac695c949aac33e5b41954ec, type: 3}
+    icon: {fileID: 2800000, guid: 9e95bd669897b7742b512950ea0512da, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_foundation_half_4x2
+    displayName: Half Foundation
+    shape: 50
+    category: 0
+    prefab: {fileID: 5831043731432453296, guid: 8c77851e9dad6dc4683355dba23dcc61, type: 3}
+    icon: {fileID: 2800000, guid: a3a0632c0ef84814496ae6f5ca396fa5, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_foundation_quarter_2x2
+    displayName: Quarter Foundation
+    shape: 51
+    category: 0
+    prefab: {fileID: 4851872996701195144, guid: 936b307f3005f6e4892598b21b7798ce, type: 3}
+    icon: {fileID: 2800000, guid: 9459ab8a3563d3e4a976b49e346dcd9f, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1

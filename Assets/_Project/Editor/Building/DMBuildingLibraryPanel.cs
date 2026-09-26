@@ -278,6 +278,12 @@ namespace Project.EditorTools.Building
             kit.ladderRungs = EditorGUILayout.IntSlider("Ladder rungs", kit.ladderRungs, 4, 24);
             kit.rooftopEdgeHeightMeters = EditorGUILayout.FloatField("Rooftop edge height (m)", kit.rooftopEdgeHeightMeters);
 
+            // Kit phase 3 (0926).
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Phase 3 pieces (double doors, 8 m gates, half-cell foundations)", EditorStyles.boldLabel);
+            kit.doorLeafGapMeters = EditorGUILayout.FloatField("Door / gate leaf gap (m)", kit.doorLeafGapMeters);
+            kit.gateCrossbars = EditorGUILayout.IntSlider("Gate crossbars", kit.gateCrossbars, 0, 8);
+
             EditorGUILayout.Space(4f);
             if (GUILayout.Button("Rebuild " + style.displayName + " Kit (ProBuilder)", GUILayout.Height(26f)))
             {

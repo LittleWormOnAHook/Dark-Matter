@@ -69,6 +69,14 @@ namespace Project.Building
         public const float RidgeCapWidth = 1.2f;
         public const float RidgeCapHeight = 0.35f;
         public const float HatchLidThickness = 0.1f;
+        // Kit phase 3 (0926): double doors, 8 m gates, half-cell foundations.
+        public const float DoubleDoorWidth = 3.2f;
+        public const float GateWidth = 8f;
+        public const float GateHeight = 8f;
+        public const float GateOpeningWidth = 7f;
+        public const float GateOpeningHeight = 7f;
+        public const float GateLeafDepth = 0.25f;
+        public const float HalfCellMeters = 2f;
 
         /// <summary>Kit template. Suffixes are appended to a style prefix (stone_, iron_, silicate_).</summary>
         public struct KitPartTemplate
@@ -134,6 +142,13 @@ namespace Project.Building
             new KitPartTemplate("roof_ridge_4m", "Ridge Cap", DMBuildingShape.RidgeCap, 1),
             new KitPartTemplate("rooftop_4x4", "Flat Rooftop", DMBuildingShape.Rooftop, 4),
             new KitPartTemplate("hatch_lid", "Hatch Lid", DMBuildingShape.HatchLid, 1),
+            // Kit phase 3 (0926)
+            new KitPartTemplate("door_frame_double_4x4", "Double Door Frame", DMBuildingShape.DoubleDoorFrame, 4),
+            new KitPartTemplate("door_double", "Double Door", DMBuildingShape.DoubleDoor, 3),
+            new KitPartTemplate("gate_frame_8x8", "Gate Frame (8 m)", DMBuildingShape.GateFrame, 12),
+            new KitPartTemplate("gate_8x8", "Gate (8 m)", DMBuildingShape.Gate, 8),
+            new KitPartTemplate("foundation_half_4x2", "Half Foundation", DMBuildingShape.HalfFoundation, 2),
+            new KitPartTemplate("foundation_quarter_2x2", "Quarter Foundation", DMBuildingShape.QuarterFoundation, 1),
         };
 
         static readonly List<DMBuildingPiece> pieces = new List<DMBuildingPiece>();
@@ -300,7 +315,13 @@ namespace Project.Building
                 case DMBuildingShape.Brace:
                 case DMBuildingShape.HalfRailing:
                 case DMBuildingShape.Ladder:
+                case DMBuildingShape.DoubleDoorFrame:
                     return DMBuildingSnap.Edge;
+                case DMBuildingShape.GateFrame:
+                    return DMBuildingSnap.WideEdge;
+                case DMBuildingShape.HalfFoundation:
+                case DMBuildingShape.QuarterFoundation:
+                    return DMBuildingSnap.HalfCell;
                 case DMBuildingShape.SupportPillar:
                     return DMBuildingSnap.Under;
                 case DMBuildingShape.Column:
@@ -315,6 +336,8 @@ namespace Project.Building
                 case DMBuildingShape.HatchLid:
                     return DMBuildingSnap.Lid;
                 case DMBuildingShape.Door:
+                case DMBuildingShape.DoubleDoor:
+                case DMBuildingShape.Gate:
                     return DMBuildingSnap.Door;
                 case DMBuildingShape.SurfaceItem:
                     return DMBuildingSnap.Surface;
@@ -331,6 +354,8 @@ namespace Project.Building
                 case DMBuildingShape.TriFoundation:
                 case DMBuildingShape.FoundationSteps:
                 case DMBuildingShape.SupportPillar:
+                case DMBuildingShape.HalfFoundation:
+                case DMBuildingShape.QuarterFoundation:
                     return DMBuildingCategory.Foundations;
                 case DMBuildingShape.QuarterWall:
                 case DMBuildingShape.WideWindow:
@@ -357,6 +382,10 @@ namespace Project.Building
                 case DMBuildingShape.Ladder:
                     return DMBuildingCategory.StructureAndStairs;
                 case DMBuildingShape.HatchLid:
+                case DMBuildingShape.DoubleDoorFrame:
+                case DMBuildingShape.DoubleDoor:
+                case DMBuildingShape.GateFrame:
+                case DMBuildingShape.Gate:
                     return DMBuildingCategory.Doors;
                 case DMBuildingShape.Wall:
                 case DMBuildingShape.HalfWall:
@@ -462,6 +491,19 @@ namespace Project.Building
                     return new Vector3(ModuleMeters, RidgeCapHeight, RidgeCapWidth);
                 case DMBuildingShape.HatchLid:
                     return new Vector3(1.6f, HatchLidThickness, 1.6f);
+                // Kit phase 3 (0926)
+                case DMBuildingShape.DoubleDoorFrame:
+                    return new Vector3(ModuleMeters, StoryHeight, WallThickness);
+                case DMBuildingShape.DoubleDoor:
+                    return new Vector3(DoubleDoorWidth, DoorHeight, DoorDepth);
+                case DMBuildingShape.GateFrame:
+                    return new Vector3(GateWidth, GateHeight, WallThickness);
+                case DMBuildingShape.Gate:
+                    return new Vector3(GateOpeningWidth, GateOpeningHeight, GateLeafDepth);
+                case DMBuildingShape.HalfFoundation:
+                    return new Vector3(ModuleMeters, FoundationHeight, HalfCellMeters);
+                case DMBuildingShape.QuarterFoundation:
+                    return new Vector3(HalfCellMeters, FoundationHeight, HalfCellMeters);
             }
 
             if (sizeOverride.x > 0.001f && sizeOverride.y > 0.001f && sizeOverride.z > 0.001f)
@@ -574,7 +616,8 @@ namespace Project.Building
                 || shape == DMBuildingShape.WideWindow
                 || shape == DMBuildingShape.SlitWindow
                 || shape == DMBuildingShape.Archway
-                || shape == DMBuildingShape.VentWall;
+                || shape == DMBuildingShape.VentWall
+                || shape == DMBuildingShape.DoubleDoorFrame;
         }
 
         public static bool IsFoundation(string pieceId)
@@ -590,12 +633,43 @@ namespace Project.Building
         public static bool IsDoor(string pieceId)
         {
             DMBuildingShape shape = ShapeOf(pieceId);
-            return shape == DMBuildingShape.Door || shape == DMBuildingShape.HatchLid;
+            return shape == DMBuildingShape.Door
+                || shape == DMBuildingShape.HatchLid
+                || shape == DMBuildingShape.DoubleDoor
+                || shape == DMBuildingShape.Gate;
         }
 
         public static bool IsDoorFrame(string pieceId)
         {
             return ShapeOf(pieceId) == DMBuildingShape.DoorFrame;
+        }
+
+        /// <summary>Kit phase 3: the frame each door piece seats in (door, double door, 8 m gate).</summary>
+        public static bool FrameFits(string doorPieceId, string framePieceId)
+        {
+            DMBuildingShape frame = ShapeOf(framePieceId);
+            switch (ShapeOf(doorPieceId))
+            {
+                case DMBuildingShape.DoubleDoor:
+                    return frame == DMBuildingShape.DoubleDoorFrame;
+                case DMBuildingShape.Gate:
+                    return frame == DMBuildingShape.GateFrame;
+                default:
+                    return frame == DMBuildingShape.DoorFrame;
+            }
+        }
+
+        /// <summary>Kit phase 3: 4x2 and 2x2 foundations that hang flush off a foundation edge.</summary>
+        public static bool IsHalfCellFoundation(string pieceId)
+        {
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return shape == DMBuildingShape.HalfFoundation || shape == DMBuildingShape.QuarterFoundation;
+        }
+
+        /// <summary>Full or half-cell foundation. Half-cell pieces can hang off any of these.</summary>
+        public static bool IsFoundationLike(string pieceId)
+        {
+            return IsFoundation(pieceId) || IsHalfCellFoundation(pieceId);
         }
 
         public static bool IsSurfaceItem(string pieceId)
@@ -959,7 +1033,11 @@ namespace Project.Building
         /// <summary>Kit phase 2: hangs off the outside of a foundation or floor edge (foundation steps, balcony).</summary>
         Overhang,
         /// <summary>Kit phase 2: lies in a built hatch opening (hatch lid).</summary>
-        Lid
+        Lid,
+        /// <summary>Kit phase 3: an edge seat that spans two grid edges (8 m gate frame).</summary>
+        WideEdge,
+        /// <summary>Kit phase 3: half-cell foundation hanging flush off a foundation edge.</summary>
+        HalfCell
     }
 
     public sealed class DMBuildingPiece

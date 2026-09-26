@@ -57,7 +57,15 @@ namespace Project.Building
         SteepRoof,
         RidgeCap,
         Rooftop,
-        HatchLid
+        HatchLid,
+
+        // Kit phase 3 (0926): double doors, 8 m gates, half-cell foundations.
+        DoubleDoorFrame,
+        DoubleDoor,
+        GateFrame,
+        Gate,
+        HalfFoundation,
+        QuarterFoundation
     }
 
     public enum DMBuildingCategory
@@ -119,6 +127,15 @@ namespace Project.Building
         public int spiralSteps = 16;
         public int ladderRungs = 12;
         public float rooftopEdgeHeightMeters = 0.6f;
+
+        [Header("Kit phase 3")]
+        [Tooltip("Gap left between the two leaves of a double door or gate.")]
+        public float doorLeafGapMeters = 0.03f;
+        [Tooltip("Horizontal bars across each face of a gate leaf.")]
+        public int gateCrossbars = 3;
+
+        public float DoorLeafGap => Mathf.Clamp(doorLeafGapMeters, 0f, 0.2f);
+        public int GateCrossbars => Mathf.Clamp(gateCrossbars, 0, 8);
 
         public float WideWindowWidth => Mathf.Clamp(wideWindowWidthMeters, 0.4f, 3.6f);
         public float WideWindowHeight => Mathf.Clamp(wideWindowHeightMeters, 0.4f, 3.6f);

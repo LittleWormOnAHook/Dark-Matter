@@ -45,6 +45,9 @@ namespace Project.EditorTools.Building
             public readonly List<ProBuilderMesh> Solid = new List<ProBuilderMesh>();
             public readonly List<ProBuilderMesh> Glass = new List<ProBuilderMesh>();
             public readonly List<ProBuilderMesh> Trim = new List<ProBuilderMesh>();
+            // Kit phase 3: hinged door leaves, saved as hidden "Leaf" children pivoted on their hinge line.
+            public readonly List<List<ProBuilderMesh>> Leaves = new List<List<ProBuilderMesh>>();
+            public readonly List<Vector3> LeafHinges = new List<Vector3>();
         }
 
         static int kitLayer = -1;
@@ -138,6 +141,10 @@ namespace Project.EditorTools.Building
 
             // Kit phase 2 (0926).
             foreach (KitPiece extra in BuildKit2Pieces(stone, door))
+                yield return extra;
+
+            // Kit phase 3 (0926).
+            foreach (KitPiece extra in BuildKit3Pieces(stone, door))
                 yield return extra;
         }
 
@@ -432,6 +439,12 @@ namespace Project.EditorTools.Building
             DestroyParts(piece.Solid);
             DestroyParts(piece.Glass);
             DestroyParts(piece.Trim);
+            var leafMeshes = new List<Mesh>();
+            for (int i = 0; i < piece.Leaves.Count; i++)
+            {
+                leafMeshes.Add(piece.Leaves[i].Count > 0 ? Combine(piece.Leaves[i]) : null);
+                DestroyParts(piece.Leaves[i]);
+            }
             if (solid == null)
                 return null;
 
@@ -447,6 +460,13 @@ namespace Project.EditorTools.Building
                 glass = SaveMesh(glass, piece.Id + "_glass");
             if (trim != null)
                 trim = SaveMesh(trim, piece.Id + "_trim");
+            for (int i = 0; i < leafMeshes.Count; i++)
+            {
+                if (leafMeshes[i] == null)
+                    continue;
+                Recentre(leafMeshes[i], piece.LeafHinges[i]);
+                leafMeshes[i] = SaveMesh(leafMeshes[i], piece.Id + "_leaf" + i);
+            }
 
             var root = new GameObject(piece.Id);
             try
@@ -482,6 +502,22 @@ namespace Project.EditorTools.Building
                     trimObject.AddComponent<MeshRenderer>().sharedMaterial = piece.Material;
                     MeshCollider trimCollider = trimObject.AddComponent<MeshCollider>();
                     trimCollider.sharedMesh = trim;
+                }
+
+                // Kit phase 3: leaves stay hidden until the first swing; DMBuildingDoor then swaps the body for them.
+                for (int i = 0; i < leafMeshes.Count; i++)
+                {
+                    if (leafMeshes[i] == null)
+                        continue;
+                    var leaf = new GameObject(DMBuildingDoor.LeafPrefix + i);
+                    leaf.transform.SetParent(root.transform, false);
+                    leaf.transform.localPosition = piece.LeafHinges[i] - offset;
+                    leaf.AddComponent<MeshFilter>().sharedMesh = leafMeshes[i];
+                    leaf.AddComponent<MeshRenderer>().sharedMaterial = piece.Material;
+                    BoxCollider leafBox = leaf.AddComponent<BoxCollider>();
+                    leafBox.center = leafMeshes[i].bounds.center;
+                    leafBox.size = leafMeshes[i].bounds.size;
+                    leaf.SetActive(false);
                 }
 
                 // 0925: every build piece is climbable.

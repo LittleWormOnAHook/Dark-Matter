@@ -21,6 +21,10 @@ namespace Project.Building
                     return TryAimKit2(piece, out position, out rotation, out canCommit);
                 if (piece.Shape == DMBuildingShape.Ladder)
                     return TryAimLadder(piece, out position, out rotation, out canCommit);
+                if (piece.Snap == DMBuildingSnap.WideEdge)
+                    return TryAimGateFrame(piece, out position, out rotation, out canCommit);
+                if (piece.Snap == DMBuildingSnap.HalfCell)
+                    return TryAimHalfCell(piece, out position, out rotation, out canCommit);
             }
 
             return TryAimCore(out piece, out position, out rotation, out canCommit);

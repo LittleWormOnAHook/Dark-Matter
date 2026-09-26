@@ -69,6 +69,8 @@ MonoBehaviour:
     spiralSteps: 16
     ladderRungs: 12
     rooftopEdgeHeightMeters: 0.6
+    doorLeafGapMeters: 0.03
+    gateCrossbars: 3
   parts:
   - id: silicate_foundation_4x4
     displayName: Foundation
@@ -676,6 +678,78 @@ MonoBehaviour:
     category: 4
     prefab: {fileID: 1555105984019837032, guid: 92b931a5872c1804d821f729e306d3eb, type: 3}
     icon: {fileID: 2800000, guid: dd9661b7beee268429deee5fc6da325b, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_door_frame_double_4x4
+    displayName: Double Door Frame
+    shape: 46
+    category: 4
+    prefab: {fileID: 6585654158765453371, guid: 6cc7fbc71eb52c046bbd9346e4b1c8ad, type: 3}
+    icon: {fileID: 2800000, guid: 0d73065e00d777c428bf548bfbdfca1c, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_door_double
+    displayName: Double Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 6633662448374972113, guid: 16f4678bc8744fc4999bee6d3b982db2, type: 3}
+    icon: {fileID: 2800000, guid: 246aff9344e48d4409e32d74c427d5ef, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_gate_frame_8x8
+    displayName: Gate Frame (8 m)
+    shape: 48
+    category: 4
+    prefab: {fileID: 652283755560972425, guid: 4a0668d685c6f4b498c9f65898683392, type: 3}
+    icon: {fileID: 2800000, guid: 98d4440213693ac47975f6e845617b16, type: 3}
+    cost: 12
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_gate_8x8
+    displayName: Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 7732222562372003686, guid: e0dbb957b04327045b8d52c41d1bf433, type: 3}
+    icon: {fileID: 2800000, guid: 5d25daee8215456408c3077ca771fb8d, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_foundation_half_4x2
+    displayName: Half Foundation
+    shape: 50
+    category: 0
+    prefab: {fileID: 5004199300277647202, guid: 313eba28eb7d2754199d95b87120b2e9, type: 3}
+    icon: {fileID: 2800000, guid: dfbfc69cda81e614987d82780f956751, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_foundation_quarter_2x2
+    displayName: Quarter Foundation
+    shape: 51
+    category: 0
+    prefab: {fileID: 8244031475888516339, guid: dbeb562795da5a04188073afd2a87a95, type: 3}
+    icon: {fileID: 2800000, guid: 61ac4d6797f3036429276c917f3e8eb8, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1
